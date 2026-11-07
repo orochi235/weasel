@@ -16,12 +16,9 @@ import { test, expect, type Page } from './fixture';
 
 /** Ink bounding box and coverage of the demo canvas backing store. */
 async function inkStats(page: Page) {
-  return page.evaluate(() => {
+  return page.evaluate(async () => {
     const c = document.querySelector('canvas')!;
-    const o = document.createElement('canvas');
-    o.width = c.width; o.height = c.height;
-    const ctx = o.getContext('2d')!;
-    ctx.drawImage(c, 0, 0);
+    const ctx = await window.weaselCanvasSnapshot(c);
     const { data } = ctx.getImageData(0, 0, c.width, c.height);
     let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1, ink = 0;
     for (let y = 0; y < c.height; y++) {

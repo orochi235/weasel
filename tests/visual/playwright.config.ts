@@ -10,9 +10,14 @@ const repoRoot = resolve(here, '../..');
 const port = Number(process.env.WEASEL_VISUAL_PORT ?? ports.visual);
 // `./fixture` carries it into every page.goto as `?backend=`.
 const webgpu = process.env.WEASEL_VISUAL_BACKEND === 'webgpu';
+// The headless shell runs with the GPU process off, which cannot present a
+// WebGPU canvas. On the GPU-less runner this set alone keeps a device alive
+// through presentation: --enable-gpu with SwiftShader for ANGLE, Vulkan and the
+// WebGPU adapter (probed on ubuntu-22.04, 2026-11-07). WebGL reports the same
+// SwiftShader Vulkan device with or without it.
 const WEBGPU_ARGS = [
-  '--enable-unsafe-webgpu', '--enable-features=Vulkan', '--enable-gpu',
-  '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--use-webgpu-adapter=swiftshader',
+  '--enable-unsafe-webgpu', '--enable-features=Vulkan', '--enable-gpu', '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader', '--use-vulkan=swiftshader', '--use-webgpu-adapter=swiftshader',
 ];
 
 export default defineConfig({
@@ -39,8 +44,6 @@ export default defineConfig({
     // patterns build their textures with canvas2d strokes, so without this the
     // same baseline cannot pass on both. Forcing the software path locally is a
     // no-op on CI, which already takes it.
-    // Without --enable-unsafe-webgpu headless Chromium has no WebGPU adapter;
-    // on Linux its adapter also needs Vulkan, which SwiftShader provides.
     launchOptions: {
       args: ['--disable-accelerated-2d-canvas', ...(webgpu ? WEBGPU_ARGS : [])],
     },

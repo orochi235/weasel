@@ -217,17 +217,16 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       const cases: { name: string; probes: unknown[] }[] = [];
 
-      /** Render one frame and read its probes *before* the next frame clears
-       *  the buffer. */
-      function frame(
+      /** Render one frame and read its probes before the next one is drawn. */
+      async function frame(
         name: string,
         commands: unknown[],
         probes: { name: string; x: number; y: number; want: [number, number, number] }[],
-      ): void {
+      ): Promise<void> {
         gl?.clearColor(0, 0, 0, 0);
         gl?.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         renderer.render(commands, identity);
-        px = window.weaselCanvasPixels(canvas);
+        px = await window.weaselCanvasPixels(canvas);
         cases.push({
           name,
           probes: probes.map((p) => ({ ...p, got: read(p.x, p.y) })),
@@ -235,19 +234,19 @@ test('batched runs paint their own colors', async ({ page }) => {
       }
 
       // The quad is beside the rect rather than over it, so the ground shows.
-      frame('solid beside a quad', [rect(8, 8, 32, '#ffffff'), quad(red, 56, 8, 32)], [
+      await frame('solid beside a quad', [rect(8, 8, 32, '#ffffff'), quad(red, 56, 8, 32)], [
         { name: 'white ground', x: 24, y: 24, want: [255, 255, 255] },
         { name: 'red quad', x: 72, y: 24, want: [255, 0, 0] },
       ]);
 
       // Order reversed, so the run adopts its bitmap before the solid joins
       // rather than after.
-      frame('quad before solid', [quad(red, 8, 8, 32), rect(56, 8, 32, '#ffffff')], [
+      await frame('quad before solid', [quad(red, 8, 8, 32), rect(56, 8, 32, '#ffffff')], [
         { name: 'red quad', x: 24, y: 24, want: [255, 0, 0] },
         { name: 'white ground', x: 72, y: 24, want: [255, 255, 255] },
       ]);
 
-      frame('two bitmaps and a ground per cell', [
+      await frame('two bitmaps and a ground per cell', [
         rect(8, 8, 32, '#ffffff'), quad(red, 8, 8, 16), quad(blue, 24, 24, 16),
         rect(56, 8, 32, '#ffffff'), quad(red, 56, 8, 16), quad(blue, 72, 24, 16),
       ], [
@@ -261,7 +260,7 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       // A solid between two draws of the same bitmap: the run breaks and
       // reopens around it, so the second quad must not inherit anything.
-      frame('same bitmap either side of a solid', [
+      await frame('same bitmap either side of a solid', [
         quad(blue, 8, 8, 32), rect(56, 8, 32, '#ffffff'), quad(blue, 104, 8, 32),
       ], [
         { name: 'first quad', x: 24, y: 24, want: [0, 0, 255] },
@@ -271,7 +270,7 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       // A label between a ground and a bitmap, all in one run. The glyph's
       // atlas takes a slot, and neither neighbour may sample it.
-      frame('solid and quad beside a label', [
+      await frame('solid and quad beside a label', [
         rect(4, 8, 32, '#ffffff'),
         label('H', 44, 4, 64, '#ff0000'),
         quad(blue, 100, 8, 32),
@@ -284,7 +283,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       });
 
       // The label first, so the run adopts the atlas before anything else joins.
-      frame('label before a solid', [
+      await frame('label before a solid', [
         label('H', 4, 4, 64, '#ff0000'),
         rect(60, 8, 32, '#ffffff'),
       ], [
@@ -297,7 +296,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       // A gradient joins the run as a quad off the ramp atlas, a texture in a
       // slot exactly as a bitmap is. Flat ramps, so a wrong texture reads as a
       // wrong color.
-      frame('solid and quad beside a gradient', [
+      await frame('solid and quad beside a gradient', [
         rect(8, 8, 32, '#ffffff'),
         gradRect(56, 8, 32, 56, 88, stops('#00ff00', '#00ff00')),
         quad(blue, 104, 8, 32),
@@ -309,7 +308,7 @@ test('batched runs paint their own colors', async ({ page }) => {
 
       // Two ramps in one run, which is the atlas's own hazard: they share a
       // texture slot and are told apart only by the row each vertex names.
-      frame('two gradients and a ground in one run', [
+      await frame('two gradients and a ground in one run', [
         gradRect(8, 8, 32, 8, 40, stops('#00ff00', '#00ff00')),
         rect(56, 8, 32, '#ffffff'),
         gradRect(104, 8, 32, 104, 136, stops('#ff00ff', '#ff00ff')),
@@ -322,7 +321,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       // The ramp position rides the vertices, so this is where a fold that
       // reversed or rescaled it shows up. The rect runs past both ends of the
       // ramp, and those clamp to the end texels exactly.
-      frame('a gradient runs the way it was pointed', [
+      await frame('a gradient runs the way it was pointed', [
         gradRect(8, 8, 64, 24, 56, stops('#ff0000', '#0000ff')),
       ], [
         { name: 'before the ramp', x: 12, y: 24, want: [255, 0, 0] },
@@ -336,7 +335,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       // Radial and conic gradients carry a gradient-space coordinate the shader
       // turns into a ramp position, so unlike the flat cases above these read
       // the arithmetic as well as the composition.
-      frame('a radial and a conic beside a ground', [
+      await frame('a radial and a conic beside a ground', [
         rect(8, 8, 32, '#ffffff'),
         radialRect(56, 8, 32, 72.5, 24.5, 8, stops('#ff0000', '#0000ff')),
         conicRect(104, 8, 32, 120.5, 24.5, 0, stops('#ff0000', '#0000ff')),
@@ -358,7 +357,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       // turn going the wrong way. Two angles, because at a quarter turn the
       // cosine terms vanish and at none the sine terms do — a wrong
       // coefficient hides in whichever one it is not in.
-      frame('a conic turned by its angle', [
+      await frame('a conic turned by its angle', [
         conicRect(8, 8, 32, 24.5, 24.5, Math.PI / 2, stops('#ff0000', '#0000ff')),
         conicRect(56, 8, 32, 72.5, 24.5, Math.PI / 4, stops('#ff0000', '#0000ff')),
       ], [
@@ -370,7 +369,7 @@ test('batched runs paint their own colors', async ({ page }) => {
       // The ramp atlas sits in the last slot, not the next free one, and the
       // radial and conic arm fetches it from there. Two bitmaps take the slots
       // below it in the same run, so a fetch from the wrong unit reads red or blue.
-      frame('a radial and a conic after two bitmaps', [
+      await frame('a radial and a conic after two bitmaps', [
         quad(red, 8, 8, 32),
         quad(blue, 56, 8, 32),
         radialRect(104, 8, 32, 120.5, 24.5, 8, stops('#00ff00', '#ff00ff')),
@@ -548,15 +547,15 @@ test('a rect clip cut on the CPU paints what the stencil would', async ({ page }
     // (planeClip.browser.test.ts). Off here, so the polygons go on the stencil
     // and the triangle is refused the cut, which is what this compares.
     Object.defineProperty(renderer._batchVariants(), 'cuts', { value: false });
-    function draw(asPolygon: boolean): { pixels: Uint8Array; draws: number } {
+    async function draw(asPolygon: boolean): Promise<{ pixels: Uint8Array; draws: number }> {
       gl?.clearColor(0, 0, 0, 0);
       gl?.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
       renderer.render(scene(asPolygon), identity);
-      const pixels = window.weaselCanvasPixels(canvas);
+      const pixels = await window.weaselCanvasPixels(canvas);
       return { pixels, draws: renderer.lastFrameStats().drawCalls };
     }
-    const cut = draw(false);
-    const stencil = draw(true);
+    const cut = await draw(false);
+    const stencil = await draw(true);
     let differ = 0;
     let worst = 0;
     let firstAt = -1;

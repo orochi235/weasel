@@ -153,11 +153,11 @@ const BOTTOM = { x0: 20, y0: 160, x1: 220, y1: 280 };
 /** Row bands of glyph ink inside `box`, read off the canvas's framebuffer,
  *  and how many ink pixels there are in all. */
 async function canvasInk(page: Page, box: typeof BOTTOM) {
-  return page.evaluate((box) => {
+  return page.evaluate(async (box) => {
     const c = document.querySelector<HTMLCanvasElement>('.ckd-canvas')!;
     const w = c.width;
     const h = c.height;
-    const buf = window.weaselCanvasPixels(c);
+    const buf = await window.weaselCanvasPixels(c);
     let bands = 0;
     let pixels = 0;
     let inBand = false;

@@ -57,11 +57,11 @@ test("text decoration — rules are gap-free runs at the font's own em offsets",
   // The MSDF atlas loads async; the first frame can be empty.
   await page.waitForTimeout(500);
 
-  const rows = await page.evaluate(({ BOX, INK_MIN, RULE_MIN_RUN }) => {
+  const rows = await page.evaluate(async ({ BOX, INK_MIN, RULE_MIN_RUN }) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
     const w = c.width;
     const h = c.height;
-    const buf = window.weaselCanvasPixels(c);
+    const buf = await window.weaselCanvasPixels(c);
     // The read is bottom-up; this takes top-down scene coords. The canvas is
     // 600×360 at deviceScaleFactor 1, so scene units map 1:1 to pixels.
     const inkAt = (x: number, y: number): number => {

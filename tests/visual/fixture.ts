@@ -2,7 +2,8 @@
  * The visual suite's `test`: Playwright's, with every `page.goto` carrying
  * `?backend=` when `WEASEL_VISUAL_BACKEND` is set, so the site paints every
  * canvas with that backend against the same baselines. Every page also gets
- * `window.weaselCanvasPixels`, a spec's one way to read a canvas it did not draw.
+ * `window.weaselCanvasSnapshot` and `weaselCanvasPixels`, a spec's way to read
+ * a canvas on either backend.
  */
 import { test as base } from '@playwright/test';
 
@@ -13,11 +14,14 @@ export const backend = process.env.WEASEL_VISUAL_BACKEND === 'webgpu' ? 'webgpu'
 
 declare global {
   interface Window {
+    /** A 2D context holding `canvas`'s frame: drawn straight from it on WebGL,
+     *  and through `toDataURL` on WebGPU, where a 2D draw of a canvas already
+     *  shown comes out transparent (CI, 2026-11-07). */
+    weaselCanvasSnapshot(canvas: HTMLCanvasElement): Promise<CanvasRenderingContext2D>;
     /** `canvas`'s pixels as WebGL's `readPixels` returns them: premultiplied
-     *  RGBA, rows bottom-up. A WebGL canvas is read with `readPixels`; a WebGPU
-     *  one through a 2D snapshot, which holds the frame last shown, or the one
-     *  drawn in this task before it is shown. */
-    weaselCanvasPixels(canvas: HTMLCanvasElement): Uint8Array;
+     *  RGBA, rows bottom-up. Read with `readPixels` on WebGL, from
+     *  `weaselCanvasSnapshot` on WebGPU. */
+    weaselCanvasPixels(canvas: HTMLCanvasElement): Promise<Uint8Array>;
   }
 }
 
@@ -33,8 +37,23 @@ export function withBackend(url: string, backend: string): string {
   return `${path}?${query}${hash}`;
 }
 
-function installCanvasPixels(webgpu: boolean): void {
-  window.weaselCanvasPixels = (c) => {
+function installCanvasReaders(webgpu: boolean): void {
+  window.weaselCanvasSnapshot = async (c) => {
+    const snapshot = document.createElement('canvas');
+    snapshot.width = c.width;
+    snapshot.height = c.height;
+    const ctx = snapshot.getContext('2d', { willReadFrequently: true })!;
+    if (!webgpu) {
+      ctx.drawImage(c, 0, 0);
+      return ctx;
+    }
+    const image = new Image();
+    image.src = c.toDataURL('image/png');
+    await image.decode();
+    ctx.drawImage(image, 0, 0);
+    return ctx;
+  };
+  window.weaselCanvasPixels = async (c) => {
     const w = c.width;
     const h = c.height;
     const buf = new Uint8Array(w * h * 4);
@@ -43,12 +62,7 @@ function installCanvasPixels(webgpu: boolean): void {
       gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf);
       return buf;
     }
-    const snapshot = document.createElement('canvas');
-    snapshot.width = w;
-    snapshot.height = h;
-    const ctx = snapshot.getContext('2d', { willReadFrequently: true })!;
-    ctx.drawImage(c, 0, 0);
-    const top = ctx.getImageData(0, 0, w, h).data;
+    const top = (await window.weaselCanvasSnapshot(c)).getImageData(0, 0, w, h).data;
     const row = w * 4;
     for (let y = 0; y < h; y++) {
       const from = y * row;
@@ -67,7 +81,7 @@ function installCanvasPixels(webgpu: boolean): void {
 
 export const test = base.extend({
   page: async ({ page }, use) => {
-    await page.addInitScript(installCanvasPixels, backend === 'webgpu');
+    await page.addInitScript(installCanvasReaders, backend === 'webgpu');
     if (process.env.WEASEL_VISUAL_BACKEND) {
       const goto = page.goto.bind(page);
       page.goto = (url, options) => goto(withBackend(url, backend), options);

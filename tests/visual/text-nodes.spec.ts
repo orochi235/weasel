@@ -49,11 +49,11 @@ interface RowSpan {
 }
 
 async function probe(page: Page) {
-  return page.evaluate(({ LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT }) => {
+  return page.evaluate(async ({ LARGE, BOLD, ITALIC, RUNS, BOTTOM, ROTATED, CENTER, RIGHT }) => {
     const c = document.querySelector<HTMLCanvasElement>('canvas')!;
     const w = c.width;
     const h = c.height;
-    const buf = window.weaselCanvasPixels(c);
+    const buf = await window.weaselCanvasPixels(c);
     const px = (x: number, y: number) => {
       const i = ((h - 1 - y) * w + x) * 4;
       return [buf[i], buf[i + 1], buf[i + 2]];
