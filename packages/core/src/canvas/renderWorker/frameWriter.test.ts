@@ -43,4 +43,14 @@ describe('frameWriter', () => {
     expect(copy().scroll.get(id('g'))).toEqual({ x: 5, y: -2 });
     expect(copy().overrides.read(id('a'))?.pose).toEqual({ x: 40, y: 0, width: 10, height: 10 });
   });
+
+  it('shows a write to stored data through an override that shows data', () => {
+    const { page, sync, copy } = pair();
+    page.overrides.set(id('a'), { data: (stored) => ({ ...stored, fill: `${stored.fill ?? 'none'}!` }) });
+    sync();
+    expect(copy().overrides.read(id('a'))?.data?.({})).toEqual({ fill: 'none!' });
+    page.update(id('a'), { data: { fill: 'red' } });
+    sync();
+    expect(copy().overrides.read(id('a'))?.data?.({})).toEqual({ fill: 'red!' });
+  });
 });

@@ -38,6 +38,12 @@ function alphaChanges(scene: AnyScene, alphaFor: ((id: string) => number) | unde
   return out;
 }
 
+/** Whether any pose override shows data, which the page evaluates against the stored data. */
+function showsData(scene: AnyScene): boolean {
+  for (const id of scene.overrides.ids()) if (scene.overrides.read(id)?.data) return true;
+  return false;
+}
+
 export function createFrameWriter(): FrameWriter {
   const sent: Partial<Record<'view' | 'layers' | 'cull' | 'extra' | 'size', unknown>> = {};
   const diff = createSceneDiff();
@@ -74,7 +80,8 @@ export function createFrameWriter(): FrameWriter {
         // reset sends them all again.
         if (delta?.reset) alphas.clear();
       }
-      if (overridesDirty || delta?.reset) {
+      // An override's shown data is its function of the stored data, which a delta may change.
+      if (overridesDirty || delta?.reset || (delta && showsData(scene))) {
         overridesDirty = false;
         msg.overrides = wireOverrides(scene);
       }
