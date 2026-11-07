@@ -6,12 +6,13 @@
 import { describe, expect, it } from 'vitest';
 import { strokeInsets } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke } from '@weasel-js/paint';
-import { capCases, cutsOf, disposeAfterEach, edgesOf, frame, offCuts, paint, TRIMS, zigzag } from './testing/trimClip';
+import { capCases, paintCases, cutsOf, disposeAfterEach, edgesOf, frame, offCuts, paint, TRIMS, zigzag } from './testing/trimClip';
 
 disposeAfterEach();
 
 describe('a trimmed stroke clipped in the shader', () => {
   capCases(false);
+  paintCases(false);
 
   it('keeps the dash pattern and the heads where the rebuilt one draws them', () => {
     for (const trim of TRIMS) {
