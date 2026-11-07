@@ -310,6 +310,15 @@ Owner tags, after the priority (2026-10-26):
   Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
   its own bound.
 
+- **(P3) [agent] `createMarkdownRenderer` ignores a run's `letterSpacing`, `fontWeight` and
+  `fontFamily`.** `layoutMarkdown`'s `MeasureFn` takes only size, bold and italic, and `buildFont`
+  sets the node's family and weight on every run, so a styled run the GL tier tracks or sets in
+  another face measures and paints untracked in the node's face on the 2D path. Tracking needs the
+  width counted per grapheme cluster, as `measuredWidth` does, and the paint to match it
+  (`ctx.letterSpacing`, or a pen per cluster), so the `MeasureFn` contract changes with it. Closes
+  when a run carrying each of the three measures and paints in `layoutMarkdown` as it does in
+  `layoutRuns`.
+
 ---
 
 ## Scene, adapters & layout
