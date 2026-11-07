@@ -79,7 +79,7 @@ export type SceneCanvasLayers<TNode extends { id: string }, TPose> = LayersMap<
   Partial<SceneSlotConfig<TNode, TPose>>
 >;
 
-import type { BuiltinToolId } from './builtinToolSets';
+import type { BuiltinToolId } from './builtinToolSets'; import type { SceneCanvasPaintedBy } from './workerProps';
 import type { ToolEntry } from '@weasel-js/routing';
 export { BUILTIN_TOOL_IDS, type BuiltinToolId } from './builtinToolSets';
 
@@ -97,7 +97,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
     | 'contentVersion'  // SceneCanvas wires this to the scene's own version
     | 'layerVisibility' | 'layerOrder' // re-declared below: they gate picking here too
-    | 'debug'           // re-declared below with SceneCanvas's own `slops`
+    | 'debug' | 'worker' // `debug` re-declared below with `slops`; `worker` in `SceneCanvasPaintedBy`
   > & SceneCameraProps
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene` JSON
@@ -513,4 +513,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps;
+  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasPaintedBy;

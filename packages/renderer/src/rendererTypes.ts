@@ -88,8 +88,9 @@ export interface WeaselRendererOptions {
   /** A WebGL2 context to draw with. Wins over `canvas`. */
   gl?: WebGL2RenderingContext;
   /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent.
-   *  The renderer sets its drawing buffer and never its CSS size. */
-  canvas?: HTMLCanvasElement;
+   *  The renderer sets its drawing buffer and never its CSS size. An `OffscreenCanvas` — one a
+   *  worker was handed by `transferControlToOffscreen` — is sized the same way. */
+  canvas?: HTMLCanvasElement | OffscreenCanvas;
   /** Drawing size in CSS pixels. */
   width: number;
   /** Drawing size in CSS pixels. */

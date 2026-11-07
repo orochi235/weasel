@@ -38,7 +38,7 @@ export interface CanvasPaintSize {
 
 /** The density a canvas given `dpr` paints at. */
 export function resolveDpr(dpr: number | undefined): number {
-  return dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
+  return dpr ?? (globalThis.devicePixelRatio || 1);
 }
 
 /** How one paint reaches the canvas, beyond its size. */

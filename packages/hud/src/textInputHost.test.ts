@@ -20,6 +20,7 @@ function makeApi(element: HTMLElement): CanvasExtensionApi {
     getView: vi.fn(() => ({ x: 0, y: 0, scale: { x: 1, y: 1 } })), setView: vi.fn(), subscribeView: vi.fn(() => () => {}),
     getPaintedVersion: vi.fn(() => 0), paintedCursor: createPaintedCursorState(),
     cursorSink: { setBase() {}, setOverride() {} }, getDebug: () => null, pickAt: () => 0, readIds: () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }),
+    readIdsAsync: async () => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) }), pickAtAsync: async () => 0, worker: null,
   };
 }
 

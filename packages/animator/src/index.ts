@@ -1,4 +1,5 @@
 export * from './types';
+export { hostAnimator, type AnimatorHost, type HostedAnimator } from './hostAnimator';
 export { createTarget, type AxisBuffer, type Target, type TargetAxes, type TargetOptions } from './target';
 export type { AxisName, AxisRef } from './axisNames';
 export { createTargetTable, type ShownArray, type TargetTable, type TargetTableOptions } from './targetTable';

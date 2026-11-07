@@ -39,6 +39,13 @@ and a new name. The cache holds these weakly and never budget-drops them; the
 maker keeps the bitmap alive, and `releaseImageSource(old)` frees a replaced
 one's texture without waiting for GC.
 
+A name carries a token of the realm that minted it, so a page's and a worker's
+never collide. A name minted in another realm — a render worker drawing a
+bitmap its page made — is not held weakly: it goes to the loader like any `src`,
+and `adoptBitmapSrc(src, bitmap)` hands the cache a bitmap for it outright. Either
+way the cache owns that copy, drops it to fit the budget, and asks again if it is
+drawn after.
+
 ## SVG sources
 
 An SVG source (`isVectorImageSrc`) has no single right raster. `kit:image`

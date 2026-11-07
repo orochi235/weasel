@@ -56,17 +56,6 @@ When work merges, retire its entry here in the same change.
 
 ---
 
-## Backends
-
-- **(P3) [agent] Worker-thread render offload.** Rendering the GL pipeline in a worker — major perf win,
-  significant API complexity. Defer until measured pain on the single-thread pipeline. The
-  main-thread `OffscreenCanvas` that rasterizes pattern tiles in
-  `packages/renderer/src/patterns/` is not worker offload.
-  Closes when a scene draws into a canvas handed to a worker with `transferControlToOffscreen`, the main
-  thread sending only scene changes, pinned by a browser test.
-
----
-
 ## Benchmarks in CI
 
 - **(P3) [maintainer] The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11

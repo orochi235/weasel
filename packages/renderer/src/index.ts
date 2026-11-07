@@ -104,11 +104,14 @@ export { createTilePattern, type TilePatternOpts } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {
+  adoptBitmapSrc,
   bitmapSrc,
   getImageBitmap,
+  isBitmapSrc,
   imageStatus,
   isVectorImageSrc,
   releaseImage,
+  setImageLoader,
   setImageCacheBudget,
   retryImage,
   subscribeImageReady,
@@ -116,3 +119,4 @@ export {
   type ImageRasterSize,
   type ImageStatus,
 } from './images/imageCache';
+export { loadImageBitmap, type ImageLoader } from './images/imageLoader';

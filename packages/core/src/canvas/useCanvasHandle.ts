@@ -7,6 +7,7 @@ import type { IdBuffer } from '@weasel-js/renderer';
 import type { CanvasElements } from './useCanvasElements';
 import type { HitTestExtrasIn } from './useExtraLayers';
 import type { SurfaceFrame } from './useViewRegistrySurface';
+import type { WorkerCanvasHandle } from './renderWorker/WorkerSceneView';
 
 const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
 
@@ -14,7 +15,14 @@ const NO_IDS: IdBuffer = Object.freeze({ x: 0, y: 0, width: 0, height: 0, data: 
 export type CanvasHandleApi = Omit<
   CanvasExtensionApi,
   'element' | 'surface' | 'getSurfaceRect' | 'hitTestExtras' | 'ingest' | 'addView' | 'pickAt' | 'readIds'
+  | 'readIdsAsync' | 'pickAtAsync' | 'worker'
 > & { hitTestExtrasIn: HitTestExtrasIn };
+
+/** A worker-mode canvas's id reads and handle, which the stack answers. */
+export interface CanvasHandleWorker {
+  readIds: CanvasExtensionApi['readIdsAsync'];
+  handle: WorkerCanvasHandle;
+}
 
 /** The elements the handle names, as of this render. */
 export interface CanvasHandleTarget
@@ -30,6 +38,7 @@ export function useCanvasHandle(
   target: CanvasHandleTarget,
   frame: SurfaceFrame,
   api: CanvasHandleApi,
+  worker: CanvasHandleWorker | null = null,
 ): { current: CanvasExtensionApi['readIds'] } {
   const { canvasRef, ownCanvasRef, detached, paintRectRef, inputElement, paintCanvas } = target;
   const { viewRef, dimsRef, helpersRef } = frame;
@@ -42,6 +51,12 @@ export function useCanvasHandle(
   const readIds = useCallback<CanvasExtensionApi['readIds']>((rect, options) => readIdsRef.current(rect, options), []);
   const pickAt = useCallback<CanvasExtensionApi['pickAt']>(
     (x, y, options) => readIdsRef.current({ x, y, width: 0, height: 0 }, options).data[0] ?? 0, []);
+
+  const readIdsAsync = useCallback<CanvasExtensionApi['readIdsAsync']>(
+    (rect, options) => (worker ? worker.readIds(rect, options) : Promise.resolve(readIdsRef.current(rect, options))),
+    [worker]);
+  const pickAtAsync = useCallback<CanvasExtensionApi['pickAtAsync']>(
+    async (x, y, options) => (await readIdsAsync({ x, y, width: 0, height: 0 }, options)).data[0] ?? 0, [readIdsAsync]);
 
   const hitTestExtras = useCallback((worldX: number, worldY: number, at?: { view: View; dims: Dims }) => (
     hitTestExtrasIn(worldX, worldY, at?.view ?? viewRef.current, at?.dims ?? dimsRef.current, helpersRef.current)
@@ -75,7 +90,10 @@ export function useCanvasHandle(
     getDebug,
     pickAt,
     readIds,
-  }), [canvasRef, ownCanvasRef, detached, inputElement, paintCanvas,
+    readIdsAsync,
+    pickAtAsync,
+    worker: worker?.handle ?? null,
+  }), [readIdsAsync, pickAtAsync, worker, canvasRef, ownCanvasRef, detached, inputElement, paintCanvas,
        getSurfaceRect, clientToWorld, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume,
        registerLayer,
        hitTestExtras, getView, setView, subscribeView, getPaintedVersion,

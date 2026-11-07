@@ -91,7 +91,7 @@ export class WeaselRenderer {
   private widthCss: number;
   private heightCss: number;
   private dpr: number;
-  private canvas: HTMLCanvasElement | null = null;
+  private canvas: HTMLCanvasElement | OffscreenCanvas | null = null;
   /** Where context loss is announced: the context's own canvas, which the
    *  renderer need not own the size of. */
   private lossTarget: EventTarget | null = null;

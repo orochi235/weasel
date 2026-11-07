@@ -1,3 +1,4 @@
+import type { WorkerCanvasHandle } from './renderWorker/WorkerSceneView';
 import type { LayerHit } from '../affordances/types';
 import type { Dims, LayerDims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
@@ -179,6 +180,17 @@ export interface CanvasExtensionApi {
    * empty buffer before the first paint or while the context is lost.
    */
   readIds(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): IdBuffer;
+  /**
+   * {@link readIds}, answered once every canvas that painted the frame has: on a canvas a worker
+   * paints part of (`<SceneCanvas worker>`) the scene's ids are a round trip away, so `readIds`
+   * and `pickAt` throw there and these are what read it. On any other canvas they answer at once.
+   */
+  readIdsAsync(rect: { x: number; y: number; width: number; height: number }, options?: CanvasIdReadOptions): Promise<IdBuffer>;
+  /** {@link pickAt}, answered as {@link readIdsAsync} is. */
+  pickAtAsync(x: number, y: number, options?: CanvasIdReadOptions): Promise<number>;
+  /** The render worker's side of a canvas a worker paints part of: its animator and a snapshot of
+   *  the whole stack of canvases. `null` when the page paints it all. */
+  readonly worker: WorkerCanvasHandle | null;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;
