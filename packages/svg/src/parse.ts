@@ -280,14 +280,8 @@ function parseElement(
 }
 
 function parseLeaf(
-  el: Element,
-  tag: string,
-  ctm: Matrix,
-  style: StyleContext,
-  from: GroupPaintFrom,
-  gradients: GradientTable,
-  onWarn: (m: string) => void,
-  uriToPrefix: Map<string, string>,
+  el: Element, tag: string, ctm: Matrix, style: StyleContext, from: GroupPaintFrom, gradients: GradientTable,
+  onWarn: (m: string) => void, uriToPrefix: Map<string, string>,
 ): SvgNode | SvgNode[] | null {
   if (tag === 'text') {
     const textNode = parseTextElement(el, ctm, style, gradients, onWarn);
