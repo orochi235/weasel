@@ -509,21 +509,16 @@ Owner tags, after the priority (2026-10-26):
 
 ### Domain bundles
 
-- **(P3) [maintainer] A presentation bundle and a whiteboard bundle.** Each would be a `Contribution` bundle,
-  the way `@weasel-js/diagram` is (`createDiagramContribution`).
-  - Presentation: to be rethought before anything is built. This bullet predates sherpa (the
-    presentation runtime) and blits (concurrent effects).
-    Ruled 2026-10-17: a presentation strategy now runs through those two, not an in-canvas
-    slide bundle. What weasel contributes, if anything, is undecided. The page primitives it would
-    have used are in `packages/core/src/core/pages/` (`layoutPages`, `fitViewToPage`,
-    `adjacentPage`).
-  - Whiteboard. The tools are all in core: `usePencilTool`, `useTextTool`, and `useStickyTool`
-    (built-in id `sticky`, a text node with a `background`; its look is `toolOptions.sticky`).
-    The bundle itself is not to be built yet (decided 2026-10-17). apps/draw leaves `sticky` out
-    of its tools: its `TextObj` and SVG round trip carry no text `background` or `padding`, and
-    SVG import reads a written note back as a rect and a text node.
-  Closes when the maintainer has ruled what weasel contributes to a presentation and whether the
-  whiteboard bundle is built, and each is built or its bullet deleted.
+- **(P3) [agent] A presentation bundle and a whiteboard bundle.** Each a `Contribution` bundle, the way
+  `@weasel-js/diagram` is (`createDiagramContribution`). Ruled (2026-11-07): build both.
+  - Presentation: a slide-navigation contribution that sherpa (the presentation runtime) can mount — keys and
+    view animation stepping between pages, over `layoutPages`, `fitViewToPage` and `adjacentPage`
+    (`packages/core/src/core/pages/`). Not an in-canvas slide format (ruled 2026-10-17).
+  - Whiteboard: bundles core's `usePencilTool`, `useTextTool`, and `useStickyTool` (built-in id `sticky`, a text
+    node with a `background`; its look is `toolOptions.sticky`). apps/draw leaves `sticky` out today: its
+    `TextObj` and SVG round trip carry no text `background` or `padding`, and SVG import reads a written note
+    back as a rect and a text node, so that round trip is part of the work.
+  Closes when both contributions ship and draw round-trips a sticky.
 ### d3 integration plugin
 
 - **(P3) [maintainer] `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
@@ -739,20 +734,6 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
-- **(P3) [maintainer] CI tests Linux Chromium; the fleet does not.** `ci.yml` runs the `browser` project on
-  `ubuntu-latest`, while every fleet node is a Mac, so a browser test that leans on the OS fails only in CI.
-  The 11 that failed every `main` run from 2026-10-15 were fixed on 2026-10-29, passing in the lane below:
-  they read Mac shortcut glyphs or the Apple word-delete key, measured text in the OS's fallback font
-  instead of the kit's Oswald, or held WebGL rounding to 1 where CI's SwiftShader reaches 2. Likewise
-  `forge-stories` dropped its browser connection only on Linux, failing CI from 2026-10-29 until it ran
-  with isolate off (2026-10-31). Open: whether
-  the fleet should run that lane routinely, so the next one is caught before CI.
-  Repro lane: `onto do --kind test --node studio -- node scripts/browser-linux.mjs --project=browser <files>`
-  (Playwright's Linux image under Docker, arm64 rather than CI's x86; it reproduced CI's numbers exactly).
-  Studio's Docker Desktop has to be running (`open -g -a Docker` there).
-  Closes when the maintainer has ruled: on a no, delete the entry; on a yes, when the fleet runs the
-  Linux lane on its own.
-
 
 - **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
@@ -785,11 +766,10 @@ only story runner in the repo.
     Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
     tests in a run that logged `ERR_NETWORK_CHANGED`.
 
-- **(P3) [maintainer] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
+- **(P3) [agent] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
   is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
   factories, shape kinds, and the `features` presets; the rest of the public exports are uncovered.
-  Closes when the maintainer has said whether he wants the inventory: on a no, delete the entry; on a
-  yes, when the barrel test covers every public export.
+  Ruled (2026-11-07): wanted. Closes when a checked-in inventory holds core's barrel to every public export.
 
 ---
 
