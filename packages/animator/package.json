@@ -44,7 +44,7 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@msb235/blits": "0.20.0",
+    "@msb235/blits": "^1.0.0",
     "@weasel-js/clock": "1.17.0",
     "@weasel-js/geom": "1.17.0",
     "@weasel-js/paint": "1.17.0",
