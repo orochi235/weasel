@@ -127,15 +127,15 @@ describe('timeScale', () => {
 
   it('ticks on whole days and labels them as dates', () => {
     const s = timeScale({ domain: [jan1, jan1 + 10 * day], range: [0, 100] });
-    expect(s.ticks().map(s.format)).toEqual(['2026-01-01', '2026-01-03', '2026-01-05', '2026-01-07', '2026-01-09', '2026-01-11'].slice(0, s.ticks().length));
+    expect(s.ticks().map((t) => s.format(t))).toEqual(['2026-01-01', '2026-01-03', '2026-01-05', '2026-01-07', '2026-01-09', '2026-01-11'].slice(0, s.ticks().length));
     expect(s.ticks()[0]).toBe(jan1);
   });
 
   it('ticks on calendar months and years', () => {
     const months = timeScale({ domain: [jan1, Date.UTC(2026, 6, 1)], range: [0, 1] });
-    expect(months.ticks().map(months.format)).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07']);
+    expect(months.ticks().map((t) => months.format(t))).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07']);
     const years = timeScale({ domain: [jan1, Date.UTC(2031, 0, 1)], range: [0, 1] });
-    expect(years.ticks().map(years.format)).toEqual(['2026', '2027', '2028', '2029', '2030', '2031']);
+    expect(years.ticks().map((t) => years.format(t))).toEqual(['2026', '2027', '2028', '2029', '2030', '2031']);
   });
 
   it('labels a denser tick count to its own unit', () => {
@@ -157,7 +157,7 @@ describe('timeScale', () => {
 
   it('ticks on hours within a day', () => {
     const s = timeScale({ domain: [jan1, jan1 + day], range: [0, 1] });
-    expect(s.ticks().map(s.format)).toEqual(['2026-01-01', '06:00', '12:00', '18:00', '2026-01-02']);
+    expect(s.ticks().map((t) => s.format(t))).toEqual(['2026-01-01', '06:00', '12:00', '18:00', '2026-01-02']);
   });
 });
 
