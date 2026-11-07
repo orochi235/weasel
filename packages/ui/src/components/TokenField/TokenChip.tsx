@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode, Ref } from 'react';
+import { dropSide } from '@weasel-js/ui-logic';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { Badge } from '../Badge';
 import s from './TokenField.module.css';
@@ -21,12 +22,13 @@ interface TokenChipProps {
 /** One token: a badge in a slot that shows where a dragged token would land against it. */
 export function TokenChip({ text, problem, tooltip, index, count, drag, chipRef, onEdit, onRemove, labelProps }: TokenChipProps) {
   const name = text === '' ? 'Empty' : text;
+  const side = dropSide(drag.targetIndex, index, count);
   return (
     <span
       data-token=""
       className={s.slot}
-      data-drop-before={drag.targetIndex === index ? '' : undefined}
-      data-drop-after={drag.targetIndex === count && index === count - 1 ? '' : undefined}
+      data-drop-before={side === 'before' ? '' : undefined}
+      data-drop-after={side === 'after' ? '' : undefined}
       data-dragging={drag.draggedIds?.includes(String(index)) ? '' : undefined}
     >
       <Badge
