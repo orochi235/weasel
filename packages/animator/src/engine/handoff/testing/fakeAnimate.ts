@@ -39,14 +39,14 @@ export class FakeAnimation {
   pause(): void { this.hold = this.currentTime; }
   cancel(): void { this.canceled = true; }
 
-  /** Fires `finish` once its current time has passed its end, or its start played backward. */
+  /** Fires `finish` as its current time passes its end, or its start played backward: again
+   *  after it is placed back short of them. */
   advance(): void {
-    if (this.canceled || this.done || this.hold !== null) return;
+    if (this.canceled || this.hold !== null) return;
     const t = this.currentTime;
-    if ((this.rate > 0 && t >= this.duration) || (this.rate < 0 && t <= 0)) {
-      this.done = true;
-      this.onfinish?.();
-    }
+    const done = (this.rate > 0 && t >= this.duration) || (this.rate < 0 && t <= 0);
+    if (done && !this.done) this.onfinish?.();
+    this.done = done;
   }
 
   /** The `translateX` its keyframes show at its current time, as a browser blends them. */

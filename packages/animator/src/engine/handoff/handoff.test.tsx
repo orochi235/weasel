@@ -197,6 +197,44 @@ describe('a handed-off run in a page that was hidden', () => {
     expect(e.target.read().x).toBeCloseTo(3, 6);
     expect(e.last().currentTime).toBeCloseTo(300, 6);
   });
+
+  it('carries on though the browser finished it while hidden, its own clock short of the end', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let done = 0;
+    act(() => { tween(animator, e.target, 100, { onDone: () => { done += 1; } }); });
+    step(0);
+    step(300);
+    hide(true);
+    step(5000);
+    hide(false);
+    step(16);
+    expect(done).toBe(0);
+    expect(e.target.read().x).toBeCloseTo(30, 6);
+    expect(e.last().currentTime).toBeCloseTo(300, 6);
+    for (let i = 0; i < 7; i++) step(100);
+    expect(done).toBe(1);
+    expect(e.inlineX()).toBe(100);
+  });
+});
+
+describe('a handed-off run the browser finishes', () => {
+  it('turned backward before the frame that would end it, plays back from where it stands', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let h: ReturnType<typeof tween>;
+    act(() => { h = tween(animator, e.target, 100); });
+    step(0);
+    step(990);
+    act(() => {
+      timeline.now += 10;
+      e.last().advance();
+      h.setTimeScale(-1);
+    });
+    step(100);
+    expect(e.target.read().x).toBeCloseTo(89, 6);
+    expect(animator.isActive()).toBe(true);
+  });
 });
 
 describe('another animation on a handed-off target', () => {
