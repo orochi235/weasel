@@ -1,15 +1,8 @@
 import { fullSelection, pickAll } from '../../axes.ts';
 import { resolveTokens } from '../../dtcg/resolve.ts';
 import { TOKEN_HOOKS } from '../../hooks.ts';
+import { tokenGroupOf } from '../../tokenGroup.ts';
 import type { EmitInput } from './css.ts';
-
-/** Prefixes that share a group with their siblings rather than standing alone. */
-const MERGED_GROUPS: Readonly<Record<string, string>> = { danger: 'status', warning: 'status', success: 'status' };
-
-const groupOf = (name: string) => {
-  const prefix = name.includes('-') ? name.slice(0, name.indexOf('-')) : name;
-  return MERGED_GROUPS[prefix] ?? prefix;
-};
 
 const row = (
   name: string,
@@ -18,7 +11,7 @@ const row = (
   description: string,
   hook: boolean,
 ): string =>
-  `  { name: '--wzl-${name}', type: ${JSON.stringify(type)}, group: ${JSON.stringify(groupOf(name))}, defaultValue: ${JSON.stringify(value)}, description: ${JSON.stringify(description)}, hook: ${hook} },`;
+  `  { name: '--wzl-${name}', type: ${JSON.stringify(type)}, group: ${JSON.stringify(tokenGroupOf(name))}, defaultValue: ${JSON.stringify(value)}, description: ${JSON.stringify(description)}, hook: ${hook} },`;
 
 /** The `manifest.ts` source: `TOKEN_MANIFEST` for this theme at its default selection, then every override hook. */
 export function emitManifest({ baked }: EmitInput): string {

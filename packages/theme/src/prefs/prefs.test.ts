@@ -152,6 +152,22 @@ describe('a token that asks to be scoped by an axis', () => {
     const theme = defineTheme({ name: 'scoped', pins: { 'gray-50': { value: '#f5f5f6', scope: ['mode'] } } });
     expect(prefLeaves(themePrefsSchema(theme)).get('gray.gray-50')!.scopes).toEqual([{ selector: 'axis.mode' }]);
   });
+
+  it('is scoped by it when the ask sits on any branch of a split definition', () => {
+    const theme = defineTheme({
+      name: 'scoped-branch',
+      extends: weaselTheme,
+      pins: { 'gray-50': { by: 'density', compact: '#000000', comfortable: '#000000', roomy: { value: '#000000', scope: ['mode'] } } },
+    });
+    expect(prefLeaves(themePrefsSchema(theme)).get('gray.gray-50')!.scopes).toEqual([{ selector: 'axis.mode' }]);
+  });
+});
+
+describe('a token the manifest does not list', () => {
+  it('is grouped the way the manifest groups its siblings', () => {
+    const theme = defineTheme({ name: 'extra', extends: weaselTheme, pins: { 'danger-extra': '#ff0000' } });
+    expect(prefLeaves(themePrefsSchema(theme)).has('status.danger-extra')).toBe(true);
+  });
 });
 
 describe('themePrefsValues', () => {
