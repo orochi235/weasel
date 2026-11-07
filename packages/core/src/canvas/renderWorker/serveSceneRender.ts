@@ -178,7 +178,9 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     try {
       receive(msg);
     } catch (e) {
+      // The page waits on these answers.
       if (msg.type === 'frame') post({ type: 'drawn' });
+      else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: NO_IDS() });
       post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
     }
   });

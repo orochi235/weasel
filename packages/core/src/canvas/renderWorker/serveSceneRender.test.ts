@@ -61,4 +61,11 @@ describe('hostSceneRender', () => {
     expect(out).toContainEqual({ type: 'snapshot', id: 3, bitmap: null });
   });
 
+  it('answers an id read that threw with no ids', () => {
+    vi.spyOn(WeaselRenderer.prototype, 'renderIds').mockImplementation(() => { throw new Error('lost'); });
+    const { send, frame, out } = host();
+    frame();
+    send({ type: 'readIds', id: 4, rect: { x: 0, y: 0, width: 2, height: 2 } });
+    expect(out).toContainEqual({ type: 'ids', id: 4, ids: expect.objectContaining({ width: 0, height: 0 }) });
+  });
 });
