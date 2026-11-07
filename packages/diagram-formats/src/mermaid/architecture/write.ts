@@ -21,7 +21,7 @@ class ArchWriter {
   readonly clusters = new Map<string, Cluster>();
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
     const visit = (c: Cluster, parent: string | undefined) => {
       this.clusters.set(c.id, c);
       if (parent !== undefined) this.parent.set(c.id, parent);

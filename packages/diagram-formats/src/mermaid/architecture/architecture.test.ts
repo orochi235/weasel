@@ -79,6 +79,14 @@ describe('writing a Mermaid architecture diagram', () => {
     expect(text).toContain('  db:L <-- R:disk1\n  server{group}:R <--> L:web\n');
   });
 
+  it('keeps ids in other scripts, which it reads', () => {
+    const { text } = writeArchitecture({ pages: [{
+      kind: 'graph', id: 'p', width: 100, height: 100,
+      data: { nodes: [{ id: 'café', lines: ['A'] }, { id: '日本' }], edges: [{ from: 'café', to: '日本' }] },
+    }] });
+    expect(page(text).data.nodes.map((n) => n.id)).toEqual(['café', '日本']);
+  });
+
   it('writes a page from elsewhere with default sides, warning of what it drops', () => {
     const { text, warnings } = writeArchitecture({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100,

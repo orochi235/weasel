@@ -18,7 +18,7 @@ class BlockWriter {
   readonly order: ReadonlyMap<string, number>;
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
     this.grid = out.page.layout?.name === 'grid' ? out.page.layout.options?.grid ?? {} : {};
     this.order = new Map(out.page.data.nodes.map((n, i) => [n.id, i]));
   }

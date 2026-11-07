@@ -20,7 +20,7 @@ class KanbanWriter {
 
   constructor(readonly out: GraphOut) {
     const lanes = (out.page.data.containers ?? []).flatMap((c) => (c.lanes ?? []).map((l) => l.id));
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes]);
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...lanes], { unicode: true });
   }
 
   head(id: string): string {

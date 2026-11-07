@@ -26,7 +26,7 @@ class MermaidWriter {
   readonly ids: Map<string, string>;
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds]);
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
   }
 
   id(id: string): string {

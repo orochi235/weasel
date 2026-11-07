@@ -72,6 +72,13 @@ describe('writing Mermaid', () => {
     expect(topology(p.data)).toEqual([['end_', 'two_words_2', undefined], ['two_words_2', 'x_y', undefined]]);
   });
 
+  it('keeps ids in other scripts, which a flowchart reads', () => {
+    const data: DiagramData = { nodes: [{ id: 'café' }, { id: '日本' }, { id: 'Ωmega_2' }], edges: [{ from: 'café', to: '日本' }] };
+    const p = back(pageOf(data));
+    expect(p.data.nodes.map((n) => n.id)).toEqual(['café', '日本', 'Ωmega_2']);
+    expect(topology(p.data)).toEqual([['café', '日本', undefined]]);
+  });
+
   it('writes the theme\'s colors as the default class and each item\'s own over them', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', lines: ['A'], colors: { fill: 'rgba(255, 0, 0, 0.5)' } }, { id: 'b', lines: ['B'], colors: { fill: 'rgba(255, 0, 0, 0.5)' } }, { id: 'c' }],
