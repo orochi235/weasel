@@ -57,9 +57,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const subscribers = createEmitter();
   let nextId = 1;
   let atEnd = false;
-  /** Between `suspended` and `resumed`, when the clock counts nothing. */
-  let unseen = false;
-  const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !unseen && !frame.framing() && !table.awake && handoffs.any());
+  const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !frame.framing() && !table.awake && handoffs.any());
   const seedClock = (): void => { if (clock.frameT == null) { clock.frameT = host.now(); pacing.seeded(); } };
 
   /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
@@ -157,18 +155,10 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (drive !== clock.drive) table.turn(() => { clock.drive = drive; });
       frame.tick(t);
     },
-    suspended() {
-      // Runs on the compositor ask for no frames, so the clock has counted only to its last read.
-      pacing.host.elapsed();
-      unseen = true;
-    },
+    suspended: pacing.suspend,
     resumed() {
-      unseen = false;
-      // An hour spent hidden is not an hour the animation ran: dropping the last frame's
-      // timestamp makes the resuming frame advance the clock by nothing.
-      clock.frameT = null;
+      pacing.resume();
       handoffs.resumed();
-      // That frame seeds the clock again and places the compositor's runs, which ask for none.
       if (handoffs.any()) host.requestFrame();
     },
   };
@@ -179,12 +169,14 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
 function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => number, asleep: () => boolean) {
   /** Whether an outside clock drives the frames, at what rate, and the wall time of its last. */
   const outside = { on: false, rate: 1, wall: 0 };
+  /** Between `suspend` and `resume`, when the clock counts nothing. */
+  let unseen = false;
   const pacing = {
     outside,
     /** The animator's clock now. Runs handed to the compositor ask for no frames, so while only
      *  they run (`asleep`), the time since the last frame is counted as it is read. */
     current(): number {
-      if (clock.frameT == null || outside.on || !asleep()) return clock.elapsed;
+      if (clock.frameT == null || outside.on || unseen || !asleep()) return clock.elapsed;
       const t = now();
       if (t > clock.frameT) {
         clock.elapsed += (t - clock.frameT) * (clock.paused ? 0 : Math.abs(clock.timeScale));
@@ -204,6 +196,19 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
     },
     /** The clock was seeded from idle. */
     seeded(): void { if (outside.on) outside.wall = wallNow(); },
+    /** The frame loop stops unseen. Runs on the compositor ask for no frames, so the clock has
+     *  counted only to its last read. */
+    suspend(): void {
+      pacing.current();
+      unseen = true;
+    },
+    /** An hour spent hidden is not an hour the animation ran: dropping the last frame's
+     *  timestamp makes the resuming frame advance the clock by nothing. That frame has to be
+     *  asked for where only runs on the compositor play, which ask for none. */
+    resume(): void {
+      unseen = false;
+      clock.frameT = null;
+    },
   };
   return pacing;
 }

@@ -142,15 +142,9 @@ export function useVisibleRaf(
     if (!aliveRef.current) return;
     syncObserver();
     pendingRef.current = true;
-    if (!isVisible()) {
-      if (!suspendedRef.current) {
-        suspendedRef.current = true;
-        optsRef.current.onSuspend?.();
-      }
-      return;
-    }
+    if (!isVisible()) { syncGate(); return; }
     scheduleRaf();
-  }, [isVisible, scheduleRaf, syncObserver]);
+  }, [isVisible, scheduleRaf, syncGate, syncObserver]);
 
   const cancel = useCallback(() => {
     pendingRef.current = false;

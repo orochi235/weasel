@@ -241,9 +241,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
       if (!v) return undefined;
       if (v.kind === 'spring') return current(v);
       if (v.kind === 'path') {
-        // Back at its start it has left blits' mix with `last` where its final call left it.
-        const value = rewinds.has(v) ? v.from : v.last ?? v.from;
-        return { value, velocity: new Array<number>(v.from.length).fill(0) };
+        return { value: rewinds.has(v) ? v.from : v.last ?? v.from, velocity: new Array<number>(v.from.length).fill(0) };
       }
       return (!v.queued && v.patch.read(v.slot.key))
         || { value: v.queued?.atEnd ? v.queued.to : v.from, velocity: zeros(v.from.length) };
