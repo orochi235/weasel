@@ -181,6 +181,15 @@ describe('DevtoolsPanel', () => {
     await waitFor(() => expect(table.textContent).toMatch(/12\.0\s+34\.0/));
   });
 
+  it('shows a coord record whose world point is not finite', async () => {
+    const t = mount({ tabs: ['dispatch'] });
+    fireEvent.click(await screen.findByRole('switch', { name: 'coords' }));
+    const record = { ts: Date.now(), clientX: 12, clientY: 34, rect: null, view: null, world: { x: NaN, y: Infinity }, fallback: true };
+    act(() => { t.root().source.coords.push(record); });
+    const table = await screen.findByRole('region', { name: 'Coord records' });
+    await waitFor(() => expect(table.textContent).toMatch(/NaN\s+Infinity/));
+  });
+
   it('polls frame stats only while the Frame tab is open and the fps overlay on', async () => {
     const t = mount({ tabs: ['scene', 'frame'] });
     await waitFor(() => row('solo'));

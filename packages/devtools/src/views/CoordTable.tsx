@@ -15,8 +15,9 @@ export interface CoordEntry {
 }
 
 const DISPLAY_LIMIT = 100;
-/** Wide enough for a coordinate in the tens of thousands, sign included, at one decimal. */
-const fixed = (n: number, digits = 1): string => n.toFixed(digits).padStart(8, ' ');
+/** Wide enough for a coordinate in the tens of thousands, sign included, at one decimal. Serialization writes a
+ *  non-finite number as its name (`'NaN'`), which `Number` reads back. */
+const fixed = (n: number, digits = 1): string => Number(n).toFixed(digits).padStart(8, ' ');
 const pair = (x: number, y: number): string => `${fixed(x)} ${fixed(y)}`;
 
 export function CoordTable({ entries, now }: { entries: readonly CoordEntry[]; now: number }): ReactElement {
