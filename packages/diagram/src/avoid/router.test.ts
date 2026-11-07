@@ -153,6 +153,16 @@ describe('createAvoidRouter', () => {
     flat.slice(1).forEach((p, i) => expect(entersBox(flat[i]!, p, box)).toBe(false));
   });
 
+  it('previews a drag frame keeping the label clearance from a label, as a commit does', () => {
+    const left = rectShape('left', 0, 0);
+    const right = rectShape('right', 400, 0);
+    const tag: AvoidObstacle = { id: 'tag', kind: 'label', edge: 'other', box: { x: 230, y: 36, width: 40, height: 14 } };
+    const at = (r: AvoidObstacle) => scene([left, r, tag], [edgeBetween('flat', left, r, 'e', 'w')]);
+    const router = createAvoidRouter();
+    expect(router.update(at(right)).get('flat')).toEqual([]);
+    expect(router.update(at(moved(right, 5, 0)), { preview: true }).get('flat')).toEqual([]);
+  });
+
   it('routes a connector straight through its own label', () => {
     const label = { id: 'top/label', placement: { at: 'mid' as const }, size: { width: 40, height: 14 } };
     const input = scene([shapes.a, shapes.b], [{ ...edgeBetween('top', shapes.a, shapes.b, 'e', 'w'), label }]);

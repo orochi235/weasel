@@ -44,9 +44,13 @@ export function mermaidIds(ids: readonly string[]): Map<string, string> {
   return out;
 }
 
-/** Text with the characters Mermaid reads as syntax spelled as entities, lines joined by `<br>`. */
+/** Text with the characters Mermaid reads as syntax spelled as entities, lines joined by `<br>`: an `&` only where
+ *  it opens an entity, and a backtick only where the text opens and closes with one, as a markdown string does. */
 export function mermaidEscaped(lines: readonly string[]): string {
-  return lines.map((l) => l.replace(/#/g, '#35;').replace(/"/g, '#quot;').replace(/</g, '#lt;').replace(/>/g, '#gt;')).join('<br>');
+  const text = lines.map((l) => l
+    .replace(/#/g, '#35;').replace(/&(?=(?:#x[\da-f]+|#\d+|[a-z]+);)/gi, '#38;')
+    .replace(/"/g, '#quot;').replace(/</g, '#lt;').replace(/>/g, '#gt;')).join('<br>');
+  return /^`[\s\S]*`$/.test(text) ? `#96;${text.slice(1)}` : text;
 }
 
 /** Text as Mermaid quotes it: {@link mermaidEscaped}, in double quotes. */

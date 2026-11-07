@@ -98,14 +98,16 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   }
 
   const leaves = new Map<string | undefined, ElkNode[]>();
+  // A node or group naming a group the graph does not hold sits at the top level, as it would with no group named.
+  const known = (group: string | undefined) => (group !== undefined && index.groups.has(elkIdOf.get(group) ?? '') ? group : undefined);
   for (const n of graph.nodes) {
-    pushTo(leaves, n.group, leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
+    pushTo(leaves, known(n.group), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
   }
   const transposed = minimumTransposed(layoutOptions);
   const boxOf = (g: GraphGroup): ElkNode => ({
     id: elkIdOf.get(g.id)!,
     layoutOptions: groupOptions(g, transposed),
-    children: [...groups.filter((c) => c.parent === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])],
+    children: [...groups.filter((c) => known(c.parent) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])],
   });
 
   const elkEdges: ElkExtendedEdge[] = edges.map((e, i) => {
@@ -125,7 +127,7 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
   const root: ElkNode = {
     id: 'root',
     layoutOptions,
-    children: [...groups.filter((g) => g.parent === undefined).map(boxOf), ...(leaves.get(undefined) ?? [])],
+    children: [...groups.filter((g) => known(g.parent) === undefined).map(boxOf), ...(leaves.get(undefined) ?? [])],
     edges: elkEdges,
   };
   return { root, index };

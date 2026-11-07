@@ -34,6 +34,8 @@ export interface PolarScale {
   ticks(count?: number): number[];
   /** `value` as a tick label reads it. */
   format(value: number): string;
+  /** A formatter for the ticks `ticks(count)` gives, at the precision they need. */
+  tickFormat(count?: number): (value: number) => string;
 }
 
 /** A polar scale: values from `domain` out along `axes` spokes from `center`, `radius[0]` to `radius[1]` away. */
@@ -68,5 +70,6 @@ export function polarScale(opts: PolarScaleOptions): PolarScale {
     tickStep: linear.tickStep,
     ticks: linear.ticks,
     format: linear.format,
+    tickFormat: linear.tickFormat,
   };
 }

@@ -34,6 +34,13 @@ describe('axisMarks', () => {
     expect(title.data.text).toBe('Kind');
   });
 
+  it('labels a denser tick count to its own step', () => {
+    const scale = linearScale({ domain: [0, 1], range: [200, 0] });
+    const labels = axisMarks({ scale, side: 'left', at: 50, ticks: 20, theme, measure, key: 'y' })
+      .filter((m) => m.key.startsWith('y:label:')).map((m) => m.data.text);
+    expect(labels.slice(0, 4)).toEqual(['0', '0.05', '0.1', '0.15']);
+  });
+
   it('a vertical title turns', () => {
     const scale = linearScale({ domain: [0, 1], range: [100, 0] });
     const title = axisMarks({ scale, side: 'left', at: 60, title: 'Rate', theme, measure }).find((m) => m.key === 'axis:left:title')!;

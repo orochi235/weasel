@@ -10,6 +10,7 @@ export interface TimeScaleOptions {
 /** A scale over instants, whose ticks fall on whole seconds, minutes, hours, days, months or years, in UTC. */
 export interface TimeScale extends ContinuousScale {
   readonly kind: 'time';
+  tickFormat(count?: number): (value: number) => string;
 }
 
 const SECOND = 1000;
@@ -44,9 +45,18 @@ function intervalFor(span: number, count: number): Interval {
   return best;
 }
 
+/** The first instant of month `month`, counted from January of year 0. `Date.UTC` would read years 0 to 99 as
+ *  1900 to 1999. */
+function monthStart(month: number): number {
+  const at = new Date(0);
+  at.setUTCFullYear(Math.floor(month / 12), ((month % 12) + 12) % 12, 1);
+  return at.getTime();
+}
+
 /** Every instant on `interval`'s grid from `lo` to `hi`. */
 function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   const out: number[] = [];
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) return out;
   if (interval.ms !== undefined) {
     for (let t = Math.ceil(lo / interval.ms) * interval.ms; t <= hi; t += interval.ms) out.push(t);
     return out;
@@ -55,7 +65,7 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   let month = at.getUTCFullYear() * 12 + at.getUTCMonth();
   month = Math.ceil(month / interval.months) * interval.months;
   for (;; month += interval.months) {
-    const t = Date.UTC(Math.floor(month / 12), month % 12, 1);
+    const t = monthStart(month);
     if (t < lo) continue;
     if (t > hi) break;
     out.push(t);
@@ -99,5 +109,9 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
       return d0 <= d1 ? out : out.reverse();
     },
     format: (v) => formatInstant(v, interval().unit),
+    tickFormat: (count) => {
+      const { unit } = interval(count);
+      return (v) => formatInstant(v, unit);
+    },
   };
 }

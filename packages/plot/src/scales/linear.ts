@@ -34,22 +34,24 @@ export interface LinearScale extends ContinuousScale {
   /** Ticks on the finest 1/2/5 step that keeps neighbors `minSpacing` apart along the range, so a longer axis
    *  gets more of them. Empty for an empty domain or range. */
   spacedTicks(options: SpacedTickOptions): TickSet;
+  tickFormat(count?: number): (value: number) => string;
 }
 
 const DEFAULT_TICKS = 5;
 
 /** The round step, 1, 2 or 5 times a power of ten, that cuts `lo`..`hi` into about `count` pieces. */
 export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number {
-  const span = Math.abs(hi - lo);
-  if (span === 0 || !Number.isFinite(span)) return 1;
-  const raw = span / Math.max(1, count);
+  // Halved first, so ends near ±Number.MAX_VALUE still give a step rather than an infinite span.
+  const raw = (Math.abs(hi / 2 - lo / 2) / Math.max(1, count)) * 2;
+  if (raw === 0 || !Number.isFinite(raw)) return 1;
   const power = 10 ** Math.floor(Math.log10(raw));
   const error = raw / power;
   const factor = error >= Math.sqrt(50) ? 10 : error >= Math.sqrt(10) ? 5 : error >= Math.sqrt(2) ? 2 : 1;
   return factor * power;
 }
 
-const MAX_DECIMALS = 20;
+/** The most `toFixed` accepts. */
+const MAX_DECIMALS = 100;
 
 /** How many decimals a value on a grid of `step` needs; 0 for a step that is not a positive number. */
 export function decimalsOf(step: number): number {
@@ -65,14 +67,20 @@ export function niceStep(rough: number): number {
   return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
 }
 
+/** Whether `i++` from `i` moves, so a loop over step indices ends. */
+const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER;
+
 /** `i` steps of `step`, without the float noise a bare product carries. */
 const onGrid = (i: number, step: number): number => Number((i * step).toFixed(decimalsOf(step)));
 
-/** Every multiple of `step` from `lo` to `hi`, inclusive. */
+/** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
 export function stepTicks(lo: number, hi: number, step: number): number[] {
   const [a, b] = lo <= hi ? [lo, hi] : [hi, lo];
+  const first = Math.ceil(a / step - 1e-9);
+  const last = Math.floor(b / step + 1e-9);
+  if (!countable(first) || !countable(last)) return [];
   const out: number[] = [];
-  for (let i = Math.ceil(a / step - 1e-9); i <= Math.floor(b / step + 1e-9); i++) out.push(onGrid(i, step));
+  for (let i = first; i <= last; i++) out.push(onGrid(i, step));
   return lo <= hi ? out : out.reverse();
 }
 
@@ -95,7 +103,7 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
 
 /** `value` written as plainly as a grid of `step` allows: no trailing zeros, no exponent. */
 export function formatNumber(value: number, step: number): string {
-  const fixed = value.toFixed(Math.min(20, decimalsOf(step)));
+  const fixed = value.toFixed(decimalsOf(step));
   return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 
@@ -129,5 +137,9 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
     format: (v) => formatNumber(v, step()),
+    tickFormat: (count) => {
+      const s = step(count);
+      return (v) => formatNumber(v, s);
+    },
   };
 }

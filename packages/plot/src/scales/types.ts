@@ -8,8 +8,11 @@ export interface Scale<T> {
   position(value: T): number;
   /** The values an axis marks, about `count` of them where the scale chooses. */
   ticks(count?: number): T[];
-  /** `value` as an axis label reads it. */
+  /** `value` as an axis label reads it, among the ticks `ticks()` gives. */
   format(value: T): string;
+  /** A formatter for the ticks `ticks(count)` gives, at the precision they need. A scale without one labels every
+   *  count with {@link format}. */
+  tickFormat?(count?: number): (value: T) => string;
 }
 
 /** A scale over numbers that maps both ways. */
