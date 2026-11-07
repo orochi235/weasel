@@ -127,9 +127,14 @@ describe('startSceneRenderWorker, the worker animator', () => {
     // The time the last frame stood at was on the page's timeline, not the clock's.
     expect(frames(posted)[1]).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 }, resumed: true });
     answer({ type: 'drawn' });
+    // A seek made while the page's frames were away still plays.
+    client.resumed();
+    client.sync();
+    expect(frames(posted).at(-1)).toEqual({ type: 'frame', at: { elapsed: 250, rate: 0 } });
+    answer({ type: 'drawn' });
     client.update({ clock: undefined });
     client.sync();
-    expect(frames(posted)[2]).toEqual({ type: 'frame', at: AT, resumed: true });
+    expect(frames(posted).at(-1)).toEqual({ type: 'frame', at: AT, resumed: true });
     void scene;
   });
 

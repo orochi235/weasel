@@ -60,7 +60,8 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   subscribe(fn: () => void): () => void;
   /** The worker's animator, which plays the programs its module registered. */
   readonly animator: WorkerAnimator;
-  /** The host's frame loop is back after time nobody saw: the worker's animator does not count it. */
+  /** The host's frame loop is back after time nobody saw: the worker's animator does not count it,
+   *  unless it follows a clock, whose position stands whatever the frame loop missed. */
   resumed(): void;
   /** The `pickId`s the worker's last frame painted over `rect`, CSS pixels from the canvas's
    *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. Empty before the
@@ -181,7 +182,8 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     },
     subscribe: due.subscribe,
     animator,
-    resumed() { resumed = true; },
+    // On a clock the clock's position is the time, hidden or not, as `useAnimator({ clock })` has it.
+    resumed() { if (!inputs.clock) resumed = true; },
     readIds(rect, options) {
       if (disposed) return Promise.resolve(EMPTY_IDS());
       return idReads.ask((id) => post({
