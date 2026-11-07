@@ -37,6 +37,8 @@ export interface AnimatorCore {
    *  `rate` is the clock's, which sets the direction when it has not moved. `wall` is the
    *  frame's time on the document timeline, where the host has it. */
   follow(t: number, rate: number, wall?: number): void;
+  /** Says the frame loop stops for time nobody will see, which is charged to no animation. */
+  suspended(): void;
   /** Says the frame loop is back after time unseen, which is charged to no animation. */
   resumed(): void;
 }
@@ -55,7 +57,9 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   const subscribers = createEmitter();
   let nextId = 1;
   let atEnd = false;
-  const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !frame.framing() && !table.awake && handoffs.any());
+  /** Between `suspended` and `resumed`, when the clock counts nothing. */
+  let unseen = false;
+  const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !unseen && !frame.framing() && !table.awake && handoffs.any());
   const seedClock = (): void => { if (clock.frameT == null) { clock.frameT = host.now(); pacing.seeded(); } };
 
   /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
@@ -153,11 +157,19 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (drive !== clock.drive) table.turn(() => { clock.drive = drive; });
       frame.tick(t);
     },
+    suspended() {
+      // Runs on the compositor ask for no frames, so the clock has counted only to its last read.
+      pacing.host.elapsed();
+      unseen = true;
+    },
     resumed() {
+      unseen = false;
       // An hour spent hidden is not an hour the animation ran: dropping the last frame's
       // timestamp makes the resuming frame advance the clock by nothing.
       clock.frameT = null;
       handoffs.resumed();
+      // That frame seeds the clock again and places the compositor's runs, which ask for none.
+      if (handoffs.any()) host.requestFrame();
     },
   };
 }

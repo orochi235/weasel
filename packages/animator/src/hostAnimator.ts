@@ -25,6 +25,8 @@ export interface HostedAnimator {
   /** Run one frame at time `t` of an outside clock playing at `rate`, which may have gone back
    *  since the last: running animations then play backward over the difference. */
   follow(t: number, rate: number): void;
+  /** The host's frames stop for time nobody will see, which is charged to no animation. */
+  suspended(): void;
   /** The host's frames are back after time nobody saw, which is charged to no animation. */
   resumed(): void;
   /** Cancel everything and clear the paint overrides. A frame after this does nothing. */
@@ -48,6 +50,7 @@ export function hostAnimator(host: AnimatorHost): HostedAnimator {
     animator: core.api,
     tick: (t) => { if (!disposed) core.tick(t); },
     follow: (t, rate) => { if (!disposed) core.follow(t, rate); },
+    suspended: () => core.suspended(),
     resumed: () => core.resumed(),
     dispose() {
       if (disposed) return;

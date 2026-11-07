@@ -35,6 +35,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       requestFrame: opts.requestFrame,
       cancelFrame: opts.cancelFrame,
       onResume: () => { if (!optsRef.current.clock) coreRef.current?.resumed(); },
+      onSuspend: () => { if (!optsRef.current.clock) coreRef.current?.suspended(); },
     },
   );
   const frameLoopRef = useLatest(frameLoop);

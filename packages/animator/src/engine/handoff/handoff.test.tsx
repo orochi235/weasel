@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { createTarget } from '../../target';
@@ -158,6 +158,44 @@ describe('the browser animation follows the animator clock', () => {
     expect(done).toBe(1);
     expect(e.target.committed().x).toBe(0);
     expect(e.inlineX()).toBe(0);
+  });
+});
+
+describe('a handed-off run in a page that was hidden', () => {
+  const hide = (hidden: boolean) => act(() => {
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  afterEach(() => { Reflect.deleteProperty(document, 'hidden'); });
+
+  it('carries on from where the animator stood, its clock running again', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    act(() => { tween(animator, e.target, 100, { ms: 10_000 }); });
+    step(0);
+    step(300);
+    hide(true);
+    step(5000);
+    hide(false);
+    step(16);
+    step(100);
+    expect(e.target.read().x).toBeCloseTo(4, 6);
+    expect(e.last().currentTime).toBeCloseTo(400, 6);
+  });
+
+  it('counts none of the time hidden, though its value is read meanwhile', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    act(() => { tween(animator, e.target, 100, { ms: 10_000 }); });
+    step(0);
+    step(300);
+    hide(true);
+    step(5000);
+    expect(e.target.read().x).toBeCloseTo(3, 6);
+    hide(false);
+    step(16);
+    expect(e.target.read().x).toBeCloseTo(3, 6);
+    expect(e.last().currentTime).toBeCloseTo(300, 6);
   });
 });
 

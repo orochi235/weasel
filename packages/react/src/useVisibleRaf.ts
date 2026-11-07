@@ -36,6 +36,9 @@ export interface VisibleRafOptions {
    * suspended — without it, an hour hidden arrives as one hour-long frame.
    */
   onResume?: () => void;
+  /** Runs once as the loop goes into suspension, the counterpart of `onResume`: where a loop
+   *  whose clock runs between frames stops counting. */
+  onSuspend?: () => void;
 }
 
 /** The handle {@link useVisibleRaf} returns. Nothing runs until `request()` is called. */
@@ -125,6 +128,7 @@ export function useVisibleRaf(
       if (suspendedRef.current) return;
       suspendedRef.current = true;
       cancelRaf();
+      optsRef.current.onSuspend?.();
       return;
     }
     if (!suspendedRef.current) return;
@@ -139,7 +143,10 @@ export function useVisibleRaf(
     syncObserver();
     pendingRef.current = true;
     if (!isVisible()) {
-      suspendedRef.current = true;
+      if (!suspendedRef.current) {
+        suspendedRef.current = true;
+        optsRef.current.onSuspend?.();
+      }
       return;
     }
     scheduleRaf();
