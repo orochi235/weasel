@@ -4,7 +4,7 @@ import { dashPattern } from '@weasel-js/paint';
 
 /** A polyline whose points may also carry their arc length along a longer
  *  line it was cut from, which dashing carries to each dash. */
-export type MeasuredPolyline = Polyline & { lengths?: Float64Array };
+export type MeasuredPolyline = Polyline & { lengths?: Float64Array; tangent?: readonly [number, number] };
 
 /** One "on" run being collected: points with their anchor params and, when
  *  the source carries them, widths, offsets and lengths. */
@@ -142,8 +142,10 @@ export function splitForDash(pl: MeasuredPolyline, pattern: readonly number[], p
   }
   let cur: Run | null = onPhase ? runFrom(pointAt(0), has) : null;
 
+  // The direction of the segment being walked: what a zero-length dash's square cap faces.
+  let tangent: readonly [number, number] = [1, 0];
   const flushAndAdvance = (at: At) => {
-    if (cur && cur.pts.length >= 4) out.push(toPolyline(cur));
+    if (cur && cur.pts.length >= 4) out.push({ ...toPolyline(cur), tangent });
     dashIdx = (dashIdx + 1) % dash.length;
     dashRemaining = dash[dashIdx];
     onPhase = !onPhase;
@@ -164,6 +166,7 @@ export function splitForDash(pl: MeasuredPolyline, pattern: readonly number[], p
     }
     let segLen = segFullLen;
     let traveled = 0;
+    tangent = [(end.x - prevX) / segFullLen, (end.y - prevY) / segFullLen];
 
     while (segLen > 1e-9) {
       if (segLen <= dashRemaining) {

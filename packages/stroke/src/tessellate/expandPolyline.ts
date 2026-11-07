@@ -35,7 +35,7 @@ export interface RibbonOut {
  * shows exactly while that point does. A join's corners are its own copies
  * then, not the segments'.
  */
-export function expandPolyline(pl: Polyline, style: RibbonStyle, out: RibbonOut, at?: ArrayLike<number>): void {
+export function expandPolyline(pl: Polyline & { tangent?: readonly [number, number] }, style: RibbonStyle, out: RibbonOut, at?: ArrayLike<number>): void {
   const { verts, idx, anchorA, anchorB, anchorT } = out;
   const half = style.width / 2;
   const pts = pl.points;
@@ -76,7 +76,10 @@ export function expandPolyline(pl: Polyline, style: RibbonStyle, out: RibbonOut,
       segSrcIdx.push(closerSrcIdx);
     }
   }
-  if (segs.length === 0) return;
+  if (segs.length === 0) {
+    if (!pl.closed && style.cap !== 'butt') emitDot(pl, style.cap, pos(0), neg(0), plA[0], plB[0], plT[0], out, at);
+    return;
+  }
 
   // Emit ribbon quads. For each emitted vertex, record the (A, B, t) of the
   // source polyline point that the geometric vertex sits at. Per-end
@@ -174,4 +177,27 @@ function ownVertices(out: RibbonOut, mark: Mark, s: number, copy = true): void {
     }
   }
   for (let v = mark.vertex; v < verts.length / 2; v++) lengths[v] = s;
+}
+
+/**
+ * The caps of an open polyline that never leaves its first point, which SVG
+ * strokes for a round or square cap: a disc, or a square turned to `tangent`,
+ * the direction of the line a zero-length dash was cut from, or else the x axis.
+ */
+function emitDot(
+  pl: Polyline & { tangent?: readonly [number, number] }, cap: Cap, pos: number, neg: number,
+  a: number, b: number, t: number, out: RibbonOut, at?: ArrayLike<number>,
+): void {
+  const { verts, idx, anchorA, anchorB, anchorT } = out;
+  const x = pl.points[0], y = pl.points[1];
+  const [tx, ty] = pl.tangent ?? [1, 0];
+  const mark = markOf(out);
+  const left = verts.length / 2;
+  verts.push(x - ty * pos, y + tx * pos, x + ty * neg, y - tx * neg);
+  anchorA.push(a, a); anchorB.push(b, b); anchorT.push(t, t);
+  const ahead = makeSeg(x, y, x + tx, y + ty, pos, neg, pos, neg)!;
+  const behind = makeSeg(x - tx, y - ty, x, y, pos, neg, pos, neg)!;
+  emitCap(ahead, left, left + 1, false, pos, neg, cap, verts, idx, anchorA, anchorB, anchorT, a, b, t);
+  emitCap(behind, left, left + 1, true, pos, neg, cap, verts, idx, anchorA, anchorB, anchorT, a, b, t);
+  if (at && out.lengths) ownVertices(out, mark, at[0], false);
 }
