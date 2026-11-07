@@ -66,18 +66,6 @@ When work merges, retire its entry here in the same change.
 
 ---
 
-## Backends
-
-- **(P3) [agent] Worker-thread render offload for `<SceneCanvas>`.** `<SceneViewCanvas worker>` paints
-  from a worker, sent only scene changes, with its own animator and the page's bitmaps (2026-11-06;
-  `packages/core/src/canvas/renderWorker/README.md`). `<SceneCanvas>` has no worker mode: its layer stack
-  interleaves scene layers with page-painted ones (chrome, previews, consumer layers), so it needs splitting
-  into canvases below and above the scene, and `readIds` needs a round trip to the worker's last frame.
-  Closes when `<SceneCanvas worker>` paints its scene layers from a worker with chrome, previews, and
-  `readIds` working over them, pinned by a browser test.
-
----
-
 ## Benchmarks in CI
 
 - **(P3) [maintainer] The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11

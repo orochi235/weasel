@@ -1,7 +1,7 @@
 # renderWorker
 
-`<SceneViewCanvas worker>`: a scene view painted by a worker into a canvas handed to it with
-`transferControlToOffscreen`. For whoever extends worker rendering or reviews what crosses
+`<SceneViewCanvas worker>` and `<SceneCanvas worker>`: a scene painted by a worker into a canvas
+handed to it with `transferControlToOffscreen`. For whoever extends worker rendering or reviews what crosses
 between the page and the worker. The decisions here date from 2026-11-06.
 
 ## API
@@ -143,11 +143,45 @@ Unmount terminates the worker, and the context with it. A canvas can be transfer
 StrictMode remount, which runs cleanup and setup back to back on one element, keeps the client:
 cleanup releases it a task later and the setup in between takes it back.
 
-## What it does not do yet
+## `<SceneCanvas worker>`
 
-`docs/PERF.md` ("Worker-thread render offload") tracks it:
+`<SceneCanvas worker={start}>` paints its scene layers from a render worker and everything else
+on the page. Its layers, in draw order, are cut into runs by who paints them (`layerRuns`), and
+each run is its own canvas in one stack, sized as a lone canvas would be:
 
-- **`<SceneCanvas worker>`.** Its layer stack interleaves scene layers with layers whose painters
-  are page functions (chrome, previews, consumer layers), so a worker scene needs the stack split
-  into surfaces below and above the scene layers, each its own canvas. `readIds`, the GPU pick,
-  needs a round trip to the worker's last frame.
+| Run | Paints | Canvas |
+|---|---|---|
+| below the scene | background fill, grid, cell highlight, consumer layers before `scene` | the page's, its own renderer |
+| the scene layers | `scene:<layerId>` (or `scene`) | the worker's, transferred |
+| above the scene | ghosts of removed and in-flight nodes, selection and path-edit chrome, snap readout, consumer layers after `scene`, devtools overlays | the page's: the canvas that takes input, always on top |
+
+A page layer between two scene layers (`after: 'scene:a'`) cuts the scene in two, and each part
+gets a worker of its own, painting only its scene layers; `worker` is called once per part, and
+the ref's animator plays an animation in every one. Hiding a layer does not cut a run, so the
+stack holds still while visibility changes; a new cut restarts the workers.
+
+The page still holds the scene, so geometric hit-testing, the gesture dispatcher, chrome and the
+text editor are unchanged. A node an in-flight gesture is ghosting is sent to the worker at
+alpha 0, the way the page leaves its committed paint out, and the page paints its ghost.
+
+**Ids are a round trip away.** `readIdsAsync(rect)` and `pickAtAsync(x, y)` read every canvas of
+the stack, the worker's last frame through `WeaselRenderer.renderIds` there, and give each pixel
+the id of the highest canvas that painted one. `readIds` and `pickAt` throw in worker mode rather
+than answer from part of the stack. Caching a whole id frame per frame would cost an id render
+every frame to save a round trip a pick rarely needs, so the reads stay on demand. Both async
+reads exist on every canvas and answer at once where the page paints it all.
+
+**Every prop either works or is a type error.** The props are a union (`SceneCanvas/workerProps.ts`):
+
+| In worker mode | |
+|---|---|
+| `animator` | a type error: play animations through `ref.worker.animator`, with `clock` for a page clock |
+| `paintInto`, `inputElement` | a type error: a transferred canvas cannot be a tile of a shared buffer |
+| `geometry.picking: 'pixels'` | a type error: it reads ids synchronously; `'pose'` and `'shape'` work |
+| `layers.scene` with `drawOne`, `toPose`, `objects`, `postProcess`, `paintBounds` and the other functions | a type error: the worker module's `drawOne` paints; `cull` and `ghostAlpha` cross |
+| `layers.scene` as a pre-built layer, or `null` | works: the page paints it, and no worker starts |
+| `alphaFor`, `layerVisibility`, `layerOrder` | work: alphas cross as they change, the run's layers as its `layerOrder` |
+| `shaders`, `flattenTolerance`, `imageMinification`, `retain`, `debug` | apply to the page's canvases; the worker's renderer takes its own from `serveSceneRender` |
+| `layerGroups` | apply to the page's runs; a group naming a worker-painted layer warns once, since its effects cannot reach the worker's canvas |
+
+`ref.worker.snapshot()` composes the whole stack bottom first.

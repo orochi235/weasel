@@ -5,7 +5,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { SerializedNode, SerializedScene } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
-import type { ImageRasterSize } from '@weasel-js/renderer';
+import type { IdBuffer, ImageRasterSize } from '@weasel-js/renderer';
 
 /** A node as it crosses: its saved form, function fields as registry keys. */
 export type WireNode = SerializedNode<unknown, string, unknown>;
@@ -76,7 +76,17 @@ export type ToWorker =
   | { type: 'init'; canvas: OffscreenCanvas; width: number; height: number; dpr: number }
   | ({ type: 'frame'; scene?: SceneDelta; overrides?: WireOverride[] } & FrameInputs)
   | { type: 'snapshot'; id: number }
-  | { type: 'image'; src: string; bitmap?: ImageBitmap; error?: string };
+  | { type: 'image'; src: string; bitmap?: ImageBitmap; error?: string }
+  /** The ids the last frame painted over `rect`, CSS pixels from the canvas's top-left. */
+  | { type: 'readIds'; id: number; rect: IdRect; minAlpha?: number; exclude?: number[] };
+
+/** A rectangle of the canvas, CSS pixels from its top-left. */
+export interface IdRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export type FromWorker =
   /** A frame landed. */
@@ -87,4 +97,5 @@ export type FromWorker =
   /** The worker cannot load `src` itself. */
   | { type: 'image'; src: string; size?: ImageRasterSize }
   | { type: 'snapshot'; id: number; bitmap: ImageBitmap | null }
+  | { type: 'ids'; id: number; ids: IdBuffer }
   | { type: 'error'; message: string };

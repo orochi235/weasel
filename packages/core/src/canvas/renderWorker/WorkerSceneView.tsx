@@ -11,9 +11,8 @@ import { SurfaceCanvas } from '../SurfaceCanvas';
 import { useFrameLoop } from '../useFrameLoop';
 import { useSurfaceSize, type SurfaceSizeProps } from '../useSurfaceSize';
 import type { SceneViewLayers } from '../sceneViewRender';
-import {
-  startSceneRenderWorker, type FollowedClock, type SceneRenderInputs, type SceneRenderWorker,
-} from './startSceneRenderWorker';
+import type { FollowedClock, SceneRenderInputs } from './startSceneRenderWorker';
+import { holdRenderWorker, type AnyRenderWorker } from './liveClients';
 import { workerAnimator, type WorkerAnimator } from './workerAnimator';
 
 /** What a page can ask of a canvas a worker paints. */
@@ -38,15 +37,10 @@ export interface WorkerSceneViewProps<TData, TLayer extends string, TPose> exten
   dpr?: number;
 }
 
-type AnyWorker = SceneRenderWorker<unknown, string, unknown>;
+type AnyWorker = AnyRenderWorker;
 
 /** What `workerRef.animator` answers while no worker runs: calls that go nowhere. */
 const IDLE_ANIMATOR = workerAnimator(() => {});
-
-/** Clients by canvas. A StrictMode remount runs cleanup and setup back to back on the same
- *  element, and a canvas can be transferred only once, so a cleanup lets its client go a task
- *  later and a setup in between takes it back. */
-const LIVE = new WeakMap<HTMLCanvasElement, { client: AnyWorker; release?: ReturnType<typeof setTimeout> }>();
 
 function useSceneRenderWorker(
   canvasRef: { readonly current: HTMLCanvasElement | null },
@@ -60,24 +54,14 @@ function useSceneRenderWorker(
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    let entry = LIVE.get(canvas);
-    if (entry?.release !== undefined) clearTimeout(entry.release);
-    else if (!entry) {
-      entry = { client: startSceneRenderWorker(startRef.current(), canvas, inputsRef.current) };
-      LIVE.set(canvas, entry);
-    }
-    const held = entry;
-    held.release = undefined;
+    const held = holdRenderWorker(canvas, startRef.current, inputsRef.current);
     clientRef.current = held.client;
     const off = held.client.subscribe(onDue);
     onDue();
     return () => {
       off();
       clientRef.current = null;
-      held.release = setTimeout(() => {
-        LIVE.delete(canvas);
-        held.client.dispose();
-      }, 0);
+      held.release();
     };
   }, [canvasRef, onDue, clientRef, startRef, inputsRef]);
 }

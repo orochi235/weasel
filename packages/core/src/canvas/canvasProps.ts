@@ -1,4 +1,5 @@
 /** The props `<Canvas>` takes. */
+import type { CanvasWorkerSurface } from './renderWorker/workerStack';
 import type React from 'react';
 import type { Paint } from '@weasel-js/paint';
 import type { FlattenTolerance, ImageMinification, ShaderProgramHandle } from '@weasel-js/renderer';
@@ -275,4 +276,7 @@ export interface CanvasProps<TPose = unknown> extends SurfaceSizeProps {
    * {@link LayerGroup}.
    */
   layerGroups?: readonly LayerGroup[];
+  /** Paint the layers `paints` names from a render worker, the rest on the page, each run of
+   *  them its own canvas stacked under this one. `<SceneCanvas worker>` sets it. */
+  worker?: CanvasWorkerSurface;
 }

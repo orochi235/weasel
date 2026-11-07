@@ -6,7 +6,7 @@
  */
 import {
   WeaselRenderer, subscribeGlyphReady, subscribeImageReady, viewToMat3,
-  type FlattenTolerance, type ImageMinification, type ShaderProgramHandle,
+  type DrawCommand, type FlattenTolerance, type IdBuffer, type ImageMinification, type ShaderProgramHandle,
 } from '@weasel-js/renderer';
 import type { Node } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
@@ -58,6 +58,8 @@ interface Painting {
   canvas: OffscreenCanvas;
   /** `null` until the first frame names one. */
   view: View | null;
+  /** What the last frame drew, for an id read of it. */
+  last: { commands: DrawCommand[]; view: View } | null;
   size: { width: number; height: number; dpr: number };
   inputs: Required<Pick<FrameInputs, 'layers' | 'cull'>> & { extraCommands: FrameInputs['extraCommands'] };
 }
@@ -124,6 +126,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       inputs.cull ? { ...size, paintBounds } : undefined,
     );
     renderer.render(commands, viewToMat3(view));
+    painting.last = { commands, view };
   };
 
   const receive = (msg: ToWorker): void => {
@@ -132,7 +135,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
         const renderer = openRenderer(msg, options);
         const size = { width: msg.width, height: msg.height, dpr: msg.dpr };
         painting = {
-          renderer, canvas: msg.canvas, size, view: null,
+          renderer, canvas: msg.canvas, size, view: null, last: null,
           inputs: { layers: {}, cull: false, extraCommands: undefined },
         };
         msg.canvas.addEventListener('webglcontextrestored', dirty);
@@ -148,6 +151,11 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
         return;
       case 'image':
         answerImage(msg);
+        return;
+      case 'readIds': {
+        const ids = readIds(painting, msg);
+        port.postMessage({ type: 'ids', id: msg.id, ids }, [ids.data.buffer]);
+      }
     }
   };
 
@@ -158,6 +166,16 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       if (event.data.type === 'frame') port.postMessage({ type: 'drawn' });
       port.postMessage({ type: 'error', message: e instanceof Error ? e.message : String(e) });
     }
+  });
+}
+
+const NO_IDS = (): IdBuffer => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
+
+function readIds(painting: Painting | null, msg: Extract<ToWorker, { type: 'readIds' }>): IdBuffer {
+  const last = painting?.last;
+  if (!painting || !last || painting.renderer.isContextLost()) return NO_IDS();
+  return painting.renderer.renderIds(last.commands, viewToMat3(last.view), {
+    rect: msg.rect, minAlpha: msg.minAlpha, ...(msg.exclude ? { exclude: new Set(msg.exclude) } : {}),
   });
 }
 

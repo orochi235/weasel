@@ -5,16 +5,19 @@
  * `extraCommands`. Hit-testing, input and overlays stay on the page, which still holds the scene.
  */
 import { createEmitter } from '@weasel-js/registry';
-import type { DrawCommand } from '@weasel-js/renderer';
+import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
 import type { Scene } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import { resolveDpr } from '../canvasRenderer';
 import type { SceneViewLayers } from '../sceneViewRender';
-import type { FromWorker, ToWorker } from './protocol';
+import type { FromWorker, IdRect, ToWorker } from './protocol';
 import { createFrameWriter } from './frameWriter';
+import { createRequests } from './requests';
 import type { AnimationOp } from './protocol';
 import { workerAnimator, type WorkerAnimator } from './workerAnimator';
 import { answerImage } from './workerImages';
+
+const EMPTY_IDS = (): IdBuffer => ({ x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) });
 
 /** What the worker's animator follows of a page clock: a `ClockHandle` from `@weasel-js/clock`. */
 export interface FollowedClock {
@@ -58,6 +61,10 @@ export interface SceneRenderWorker<TData, TLayer extends string, TPose> {
   readonly animator: WorkerAnimator;
   /** The host's frame loop is back after time nobody saw: the worker's animator does not count it. */
   resumed(): void;
+  /** The `pickId`s the worker's last frame painted over `rect`, CSS pixels from the canvas's
+   *  top-left: `WeaselRenderer.renderIds` on that frame, a round trip away. Empty before the
+   *  first frame and after dispose. */
+  readIds(rect: IdRect, options?: { minAlpha?: number; exclude?: ReadonlySet<number> }): Promise<IdBuffer>;
   /** What the canvas shows now. `null` when it shows nothing yet. */
   snapshot(): Promise<ImageBitmap | null>;
   /** Stop the worker, and with it the canvas's context. */
@@ -79,8 +86,8 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   let owed = false;
   let disposed = false;
   let warned = false;
-  const snapshots = new Map<number, (b: ImageBitmap | null) => void>();
-  let nextSnapshot = 0;
+  const snapshots = createRequests<ImageBitmap | null>();
+  const idReads = createRequests<IdBuffer>();
   const imageWaits = new Set<() => void>();
   const post = (msg: ToWorker, transfer: Transferable[] = []) => worker.postMessage(msg, transfer);
 
@@ -106,10 +113,9 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       inFlight = false;
       if (owed) { owed = false; due.emit(); }
     } else if (msg.type === 'dirty') due.emit();
-    else if (msg.type === 'snapshot') {
-      snapshots.get(msg.id)?.(msg.bitmap);
-      snapshots.delete(msg.id);
-    } else if (msg.type === 'image') {
+    else if (msg.type === 'snapshot') snapshots.settle(msg.id, msg.bitmap);
+    else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);
+    else if (msg.type === 'image') {
       const stop = answerImage(msg, (answer) => {
         imageWaits.delete(stop);
         post(answer, answer.bitmap ? [answer.bitmap] : []);
@@ -155,21 +161,25 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     subscribe: due.subscribe,
     animator,
     resumed() { resumed = true; },
+    readIds(rect, options) {
+      if (disposed) return Promise.resolve(EMPTY_IDS());
+      return idReads.ask((id) => post({
+        type: 'readIds', id, rect,
+        ...(options?.minAlpha !== undefined ? { minAlpha: options.minAlpha } : {}),
+        ...(options?.exclude && options.exclude.size > 0 ? { exclude: [...options.exclude] } : {}),
+      }));
+    },
     snapshot() {
       if (disposed) return Promise.resolve(null);
-      const id = ++nextSnapshot;
-      return new Promise((resolve) => {
-        snapshots.set(id, resolve);
-        post({ type: 'snapshot', id });
-      });
+      return snapshots.ask((id) => post({ type: 'snapshot', id }));
     },
     dispose() {
       if (disposed) return;
       disposed = true;
       unwatch();
       for (const stop of imageWaits) stop();
-      for (const resolve of snapshots.values()) resolve(null);
-      snapshots.clear();
+      snapshots.drain(null);
+      idReads.drain(EMPTY_IDS());
       worker.terminate();
     },
   };

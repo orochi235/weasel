@@ -12,7 +12,8 @@ const LEAN_SOURCE: PresetSource = { named: null, pool: toolDrivenActions, baseli
 /** Props for {@link LeanSceneCanvas}: `<SceneCanvas>`'s, with `features`
  *  taking preset objects only. */
 export type LeanSceneCanvasProps<TData, TLayer extends string, TPose> =
-  Omit<SceneCanvasProps<TData, TLayer, TPose>, 'features'> & { features?: readonly FeaturePreset[] };
+  SceneCanvasProps<TData, TLayer, TPose> extends infer P ? (P extends unknown ? Omit<P, 'features'> : never)
+    & { features?: readonly FeaturePreset[] } : never;
 
 function LeanSceneCanvasWrapper<TData, TLayer extends string, TPose>(
   props: LeanSceneCanvasProps<TData, TLayer, TPose>,
