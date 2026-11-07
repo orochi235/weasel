@@ -20,6 +20,22 @@ describe('marker serialization', () => {
     expect(out.indexOf('<defs>')).toBeLessThan(out.indexOf('marker-end='));
   });
 
+  it('says so when it leaves out a marker no registry entry backs', () => {
+    const warnings: string[] = [];
+    const out = serializeSvg(line({ markerEnd: 'never-registered' }), { onWarn: (m) => warnings.push(m) });
+    expect(out).not.toContain('marker-end');
+    expect(warnings).toEqual(['marker "never-registered" is not registered, so the stroke is written without it']);
+  });
+
+  it('says so for a text stroke too', () => {
+    const warnings: string[] = [];
+    serializeSvg([{
+      kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'a',
+      stroke: { paint: { kind: 'solid', color: '#000' }, width: 1, markerEnd: 'never-registered' },
+    } as SvgNode], { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toContain('marker "never-registered" is not registered, so the stroke is written without it');
+  });
+
   it('emits one def for a key used many times', () => {
     const many = [...line({ markerEnd: 'arrow' }), ...line({ markerEnd: 'arrow' })];
     const out = serializeSvg(many);

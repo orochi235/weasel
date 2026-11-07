@@ -78,17 +78,7 @@ export function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServe
     attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
   }
   if (stroke.miterLimit != null) attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
-  for (const [field, attr] of [
-    ['markerStart', 'marker-start'],
-    ['markerMid', 'marker-mid'],
-    ['markerEnd', 'marker-end'],
-  ] as const) {
-    const ref = stroke[field];
-    if (ref === undefined) continue;
-    const id = registry.markerId(ref);
-    if (id === undefined) continue;
-    attrs.push(`${attr}="url(#${id})"`);
-  }
+  attrs.push(...markerAttrs(stroke, registry, warn));
   return attrs;
 }
 
@@ -116,6 +106,16 @@ export function strokeAttrsFor(
   if (stroke.miterLimit != null) {
     attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
   }
+  attrs.push(...markerAttrs(stroke, registry, warn, seat));
+  return attrs;
+}
+
+/** `marker-*` attributes for the heads `stroke` names that the marker registry knows. */
+function markerAttrs(
+  stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'markerEnd'>, registry: PaintServerRegistry, warn: Warn,
+  seat?: { start: boolean; end: boolean },
+): string[] {
+  const attrs: string[] = [];
   for (const [field, attr] of [
     ['markerStart', 'marker-start'],
     ['markerMid', 'marker-mid'],
@@ -125,7 +125,10 @@ export function strokeAttrsFor(
     if (ref === undefined) continue;
     const seated = field === 'markerStart' ? seat?.start : field === 'markerEnd' ? seat?.end : false;
     const id = registry.markerId(ref, seated ?? false);
-    if (id === undefined) continue;
+    if (id === undefined) {
+      warn(`marker "${typeof ref === 'string' ? ref : ref.key}" is not registered, so the stroke is written without it`);
+      continue;
+    }
     attrs.push(`${attr}="url(#${id})"`);
   }
   return attrs;
