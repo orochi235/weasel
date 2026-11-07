@@ -10,6 +10,7 @@ import type { ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
 import { createHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { NodeId } from 'core/scene/types';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
 import { joinPathsAction, snipAtCrossingsAction } from './pathCommands/cutJoin';
@@ -52,14 +53,14 @@ function consumerDeps(scene: AnyScene, selection: ReturnType<typeof heldSelectio
 }
 
 function crossing() {
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(0, 50, 100, 50) });
   const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(50, 0, 50, 100) });
   return { scene, a, b };
 }
 
 function ends() {
-  const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(0, 0, 10, 0) });
   const b = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: line(10, 0, 20, 0) });
   return { scene, a, b };

@@ -68,6 +68,7 @@ function renderWith(
     set() {}, add() {}, remove() {}, toggle() {}, clear() {},
     contains(id: NodeId) { return selection.includes(id); },
     applyClick() {},
+    intentOf: () => 'replace' as const,
     adapterMethods: {
       getSelection: () => [...selection],
       setSelection: () => {},
@@ -155,6 +156,7 @@ describe('SceneCanvas — resize-handles gated by selectTool.resize.resizable', 
       set() {}, add() {}, remove() {}, toggle() {}, clear() {},
       contains(id: NodeId) { return selection.includes(id); },
       applyClick() {},
+      intentOf: () => 'replace' as const,
       adapterMethods: { getSelection: () => [...selection], setSelection: () => {} },
     };
     function Probe() {

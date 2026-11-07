@@ -9,6 +9,7 @@ import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from
 import { createHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
+import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import type { NodeId, RectPose } from 'core/scene/types';
 import { defaultCommitAdapter } from './defaultCommitAdapter';
 import { makeBooleanGroupAction } from './booleans/booleanGroupAction';
@@ -95,7 +96,7 @@ describe('commits through applyOps, undone by its history', () => {
   });
 
   it('Offset Path', () => {
-    const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<object, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
     const square = new PathBuilder().moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close().build();
     const p = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: square });
     const r = rig(scene, [p]);

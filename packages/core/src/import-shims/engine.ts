@@ -28,6 +28,8 @@ export type { ArrangeArgs, ArrangedPose } from '../core/ops/arrange';
 export { createHistory } from '../core/ops/createHistory';
 export { opFactoryRegistry, rebuildOp, registerOpFactory, registeredOpNames } from '../core/ops/registry';
 export type { OpFactory } from '../core/ops/registry';
+export { createSetSelectionOp } from '../core/ops/select';
+export type { SetSelectionArgs } from '../core/ops/select';
 export { createSetDataOp } from '../core/ops/setData';
 export type { SetDataArgs } from '../core/ops/setData';
 export { createTransformOp } from '../core/ops/transform';
@@ -137,6 +139,7 @@ export { aimRectOf, aimSpace2d, isRectAim, rectAim, viewForAim } from '../domain
 export type { AimOutline, AimPoint, AimRect, AimSpace, RectAim, ViewAim } from '../domains/viewports/aim';
 export { IconRegistryProvider } from '../iconRegistry/IconRegistryProvider';
 export { commitOps, commitSelectionOps, defaultCommitAdapter, selectCommitted } from '../interactions/actions/defaultCommitAdapter';
+export type { CommitSelection } from '../interactions/actions/defaultCommitAdapter';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
 export { drawnBoxes, poseBoxes } from '../interactions/actions/drawnBoxes';
 export type { DrawnBoxes, DrawnBoxesDeps, DrawnBoxesSource } from '../interactions/actions/drawnBoxes';
@@ -149,7 +152,6 @@ export type { GeometryProjection, PoseChange } from '../interactions/actions/geo
 export type { GestureLifecycleOptions } from '../interactions/actions/gestureLifecycle';
 export { insertAction } from '../interactions/actions/insert/action';
 export type { InsertDep, InsertEnds, InsertExtras, InsertIntoDep, InsertLive, PathSymmetryDep } from '../interactions/actions/insertDeps';
-export type { CommitSelection } from '../interactions/actions/defaultCommitAdapter';
 export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDeps';
 export { moveAction } from '../interactions/actions/move/action';
 export { sceneBoxFrames, scenePoseFrame } from '../interactions/actions/poseFrame';
