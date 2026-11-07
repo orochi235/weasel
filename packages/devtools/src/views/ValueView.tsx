@@ -1,23 +1,35 @@
-/** A serialized value as a reader expects to see it: tagged maps, sets and typed arrays named, functions and cycles marked. */
+/** A serialized value as a reader expects to see it: tagged values named, containers folding, cuts and cycles marked. */
 import { useState, type ReactElement, type ReactNode } from 'react';
-import type { SerializedValue } from '@weasel-js/core/devtools-protocol';
+import { unescapeKey, type SerializedValue } from '@weasel-js/core/devtools-protocol';
 import { Disclosure } from '@weasel-js/ui/components/Disclosure';
 import s from './ValueView.module.css';
 
 type Obj = { [key: string]: SerializedValue };
 
 const isObj = (v: SerializedValue): v is Obj => typeof v === 'object' && v !== null && !Array.isArray(v);
+const tagOf = (v: SerializedValue): string | null => (isObj(v) && typeof v.$type === 'string' ? v.$type : null);
+
+/** The row that stands for entries cut past the item limit. */
+const moreRow = (count: SerializedValue): [string, SerializedValue] => ['…', { $type: 'more', count }];
+
+/** An array's rows, a `more` tag at its end named `…` rather than by index. */
+const listed = (items: readonly SerializedValue[]): [string, SerializedValue][] =>
+  items.map((x, i) => [tagOf(x) === 'more' ? '…' : String(i), x]);
 
 /** The children a container lists, or null for a value shown on one line. */
 function entriesOf(v: SerializedValue): [string, SerializedValue][] | null {
-  if (Array.isArray(v)) return v.map((x, i) => [String(i), x]);
+  if (Array.isArray(v)) return listed(v);
   if (!isObj(v)) return null;
-  if (v.$type === 'Map' || v.$type === 'Set') {
-    const items = Array.isArray(v.entries) ? v.entries : [];
-    return items.map((x, i) => [String(i), x]);
+  const tag = tagOf(v);
+  if (tag === 'Map' || tag === 'Set') return listed(Array.isArray(v.entries) ? v.entries : []);
+  if (tag !== null) return null;
+  const rows: [string, SerializedValue][] = [];
+  for (const [key, value] of Object.entries(v)) {
+    const name = unescapeKey(key);
+    if (name !== null) rows.push([name, value]);
   }
-  if (typeof v.$type === 'string') return null;
-  return Object.entries(v).filter(([k]) => k !== '$class');
+  if (v.$more !== undefined) rows.push(moreRow(v.$more));
+  return rows;
 }
 
 /** What a container is called on its own row: `Array(3)`, `Map(2)`, `Path {…}`. */
@@ -26,7 +38,25 @@ function summaryOf(v: SerializedValue): string {
   if (!isObj(v)) return '';
   if (v.$type === 'Map' || v.$type === 'Set') return `${v.$type}(${String(v.size)})`;
   const name = typeof v.$class === 'string' ? v.$class : '';
-  return Object.keys(v).length === 0 ? `${name}{}` : `${name ? `${name} ` : ''}{…}`;
+  return (entriesOf(v)?.length ?? 0) === 0 ? `${name}{}` : `${name ? `${name} ` : ''}{…}`;
+}
+
+/** A tagged value on one line, or null for a tag that is a container. */
+function taggedScalar(v: Obj, tag: string): ReactNode {
+  switch (tag) {
+    case 'number': return <span className={s.number}>{String(v.value)}</span>;
+    case 'bigint': return <span className={s.number}>{String(v.value)}n</span>;
+    case 'symbol': return <span className={s.keyword}>{String(v.value)}</span>;
+    case 'function': return <span className={s.fn}>ƒ {String(v.name)}</span>;
+    case 'cycle': return <span className={s.muted}>[cycle]</span>;
+    case 'threw': return <span className={s.muted}>[threw: {String(v.value)}]</span>;
+    case 'depth': return <span className={s.muted}>…</span>;
+    case 'more': return <span className={s.muted}>… {String(v.count)} more</span>;
+    case 'Date': return <span className={s.tag}>Date {String(v.value)}</span>;
+    case 'Map':
+    case 'Set': return null;
+    default: return <span className={s.tag}>{tag}({String(v.length)})</span>;
+  }
 }
 
 function Scalar({ value }: { value: SerializedValue }): ReactElement {
@@ -34,16 +64,10 @@ function Scalar({ value }: { value: SerializedValue }): ReactElement {
   if (value === null) return <span className={s.keyword}>null</span>;
   if (typeof value === 'number') return <span className={s.number}>{value}</span>;
   if (typeof value === 'boolean') return <span className={s.keyword}>{String(value)}</span>;
-  if (typeof value === 'string') {
-    if (value.startsWith('ƒ ')) return <span className={s.fn}>{value}</span>;
-    if (value === '[cycle]' || value === '…' || value.startsWith('… ') || value.startsWith('[threw: ')) return <span className={s.muted}>{value}</span>;
-    return <span className={s.string}>{JSON.stringify(value)}</span>;
-  }
-  if (isObj(value) && value.$type === 'Date') return <span className={s.tag}>Date {String(value.value)}</span>;
-  if (isObj(value) && typeof value.$type === 'string') {
-    return <span className={s.tag}>{value.$type}({String(value.length)})</span>;
-  }
-  return <span className={s.muted}>{summaryOf(value)}</span>;
+  if (typeof value === 'string') return <span className={s.string}>{JSON.stringify(value)}</span>;
+  const tag = tagOf(value);
+  const shown = tag !== null && isObj(value) ? taggedScalar(value, tag) : null;
+  return <>{shown ?? <span className={s.muted}>{summaryOf(value)}</span>}</>;
 }
 
 function Entry({ name, value, depth }: { name: ReactNode; value: SerializedValue; depth: number }): ReactElement {
