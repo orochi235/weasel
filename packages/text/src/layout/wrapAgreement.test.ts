@@ -78,6 +78,20 @@ describe('layoutMarkdown and layoutRuns wrap at the same places', () => {
     }
   }
 
+  it('wraps and measures a tracked text alike, tabs included', () => {
+    const text = `${PARAGRAPHS.hyphenated}\tend`;
+    const runs = pieces(text, 5);
+    for (let maxWidth = 60; maxWidth <= 400; maxWidth += 17) {
+      const gl = layoutRuns(runs.map((t) => ({ ...RUN(t), letterSpacing: 3 })), {
+        align: 'left', maxWidth, lineHeight: 1.2,
+      });
+      const md = layoutMarkdown(runs.map((t) => ({ text: t, letterSpacing: 3 })), maxWidth, SIZE, measure);
+      expect(md.lines.map((l) => l.runs.map((r) => r.text).join('').trimEnd()), `at ${maxWidth}`)
+        .toEqual(gl.lines.map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)).trimEnd()));
+      expect(md.width, `at ${maxWidth}`).toBeCloseTo(gl.bounds.width, 9);
+    }
+  });
+
   it('ends a line at every UAX #14 hard break, CRLF counting once', () => {
     const want = ['one two', 'three four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', '', 'eleven'];
     const texts = [PARAGRAPHS['hard-broken']];

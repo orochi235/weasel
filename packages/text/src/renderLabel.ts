@@ -1,4 +1,4 @@
-import type { TextRenderer } from './markdownText';
+import type { TextRenderer } from './markdownRenderer';
 
 
 /** Visual options for `renderLabel`. */

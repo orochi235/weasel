@@ -281,6 +281,6 @@ export function resolveTextStyleInto(
 const NO_STYLE: TextStyle = Object.freeze({});
 
 /** Build a CSS `font` shorthand suitable for `ctx.font`. */
-export function fontString(s: ResolvedTextStyle): string {
+export function fontString(s: Pick<ResolvedTextStyle, 'fontStyle' | 'fontWeight' | 'fontSize' | 'fontFamily'>): string {
   return `${s.fontStyle} ${s.fontWeight} ${s.fontSize}px ${cssFamilyName(s.fontFamily)}`;
 }

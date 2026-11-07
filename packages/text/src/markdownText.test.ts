@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { createMarkdownRenderer, layoutMarkdown } from './markdownText';
-import { markdownToRuns } from './runs';
+import { layoutMarkdown, type MarkdownFont } from './markdownText';
+import { createMarkdownRenderer } from './markdownRenderer';
+import { markdownToRuns, type StyledRun } from './runs';
+import { resolveRuns } from './runs/resolveRuns';
+import { resolveTextStyle } from './textStyle';
 
 function makeMockCtx() {
   const fillCalls: Array<{ text: string; font: string; fillStyle: string; y: number }> = [];
@@ -48,12 +51,12 @@ describe('layoutMarkdown', () => {
   });
 
   it('sets small caps as runs of capitals, the lowercase ones at the small size', () => {
-    const sized = (t: string, size: number) => t.length * size;
+    const sized = (t: string, font: MarkdownFont) => t.length * font.fontSize;
     const result = layoutMarkdown([{ text: 'Hello', fontVariantCaps: 'small-caps' }], Infinity, 20, sized);
     const [h, ello] = result.lines[0].runs;
     expect([h.text, ello.text]).toEqual(['H', 'ELLO']);
-    expect(h.size).toBe(20);
-    expect(ello.size).toBeCloseTo(14, 9);
+    expect(h.font.fontSize).toBe(20);
+    expect(ello.font.fontSize).toBeCloseTo(14, 9);
     expect(ello.x).toBe(20);
     expect(result.lines[0].height).toBe(20 * 1.3);
     expect('smallCaps' in ello).toBe(false);
@@ -68,7 +71,7 @@ describe('layoutMarkdown', () => {
   });
 
   it('takes its stops from the tab size, and wraps by the width a tab takes', () => {
-    const four = layoutMarkdown([{ text: 'ab\tcd' }], Infinity, 13, mockMeasure, 1.3, undefined, 4);
+    const four = layoutMarkdown([{ text: 'ab\tcd' }], Infinity, 13, mockMeasure, { tabSize: 4 });
     expect(four.lines[0].runs[2].x).toBe(40);
     // Read as one space the line is 90 wide and fits; set to its stop, `gh` ends at 100.
     const wrapped = layoutMarkdown([{ text: 'abcdef\tgh' }], 95, 13, mockMeasure);
@@ -188,8 +191,8 @@ describe('createMarkdownRenderer', () => {
     r.renderer(ctx, 'a **b** c', 0, 0);
     const aFont = fillCalls.find((c) => c.text === 'a ')!.font;
     const bFont = fillCalls.find((c) => c.text === 'b')!.font;
-    expect(aFont).toContain('600');
-    expect(bFont).toContain('bold');
+    expect(aFont).toBe('normal 600 13px sans-serif');
+    expect(bFont).toBe('normal 700 13px sans-serif');
   });
 
   it('strokeRenderer calls strokeText with the same layout', () => {
@@ -211,9 +214,9 @@ describe('createMarkdownRenderer', () => {
       );
       const [base, sup] = layout.lines[0].runs;
       expect(base.y).toBe(0);
-      expect(base.size).toBe(20);
+      expect(base.font.fontSize).toBe(20);
       // Adobe's defaults: 58.3% size, 33.3% rise, both off the inherited size.
-      expect(sup.size).toBeCloseTo(20 * 0.583);
+      expect(sup.font.fontSize).toBeCloseTo(20 * 0.583);
       expect(sup.y).toBeCloseTo(-20 * 0.333);
     });
 
@@ -235,7 +238,7 @@ describe('createMarkdownRenderer', () => {
         () => 10,
       );
       const [run] = layout.lines[0].runs;
-      expect(run.size).toBe(10);
+      expect(run.font.fontSize).toBe(10);
       // The rise is untouched by naming the size.
       expect(run.y).toBeCloseTo(-20 * 0.333);
     });
@@ -246,7 +249,7 @@ describe('createMarkdownRenderer', () => {
         [{ text: '2', script: 'super' }],
         Infinity,
         20,
-        (_t, size) => { sizes.push(size); return 10; },
+        (_t, font) => { sizes.push(font.fontSize); return 10; },
       );
       expect(sizes.every((s) => s < 20)).toBe(true);
     });
@@ -417,5 +420,59 @@ describe('createMarkdownRenderer decorations', () => {
     const r = createMarkdownRenderer(ctx, [{ text: 'aaa bbb', underline: true }], 20, 40);
     r.renderer(ctx, '', 0, 100);
     expect(rects.map((q) => [q.x, q.y, q.w])).toEqual([[0, 102, 30], [0, 128, 30]]);
+  });
+});
+
+describe('a run\'s own font and letter spacing', () => {
+  it('measures each run in the family, weight and style resolveRuns sets it in on the GL tier', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', fontFamily: 'Mono', fontWeight: 300 }, { text: 'b', bold: true }, { text: 'c', italic: true },
+    ];
+    const seen: MarkdownFont[] = [];
+    layoutMarkdown(runs, Infinity, 20, (t, font) => { seen.push(font); return t.length * 10; }, {
+      family: 'Serif', weight: 500,
+    });
+    const gl = resolveRuns(runs, resolveTextStyle({ fontFamily: 'Serif', fontWeight: 500, fontSize: 20 }));
+    for (const { fontFamily, fontWeight, fontStyle, fontSize } of gl) {
+      expect(seen).toContainEqual({ fontFamily, fontWeight, fontStyle, fontSize });
+    }
+  });
+
+  it('tracks after every grapheme cluster, the last included, and sets tab stops on tracked spaces', () => {
+    const [line] = layoutMarkdown(
+      [{ text: 'aé', letterSpacing: 3 }, { text: '\tx' }], Infinity, 13, mockMeasure, { letterSpacing: 1 },
+    ).lines;
+    // Two clusters tracked 3: 30 + 6. The second run inherits 1, so its stops are 8 * (10 + 1) apart.
+    expect(line.runs.map((r) => [r.text, r.x, r.width, r.tracking])).toEqual([
+      ['aé', 0, 36, 3], ['\t', 36, 52, 1], ['x', 88, 11, 1],
+    ]);
+  });
+
+  it('paints a tracked run through the context\'s letterSpacing, in the run\'s font, and restores it', () => {
+    const painted: Array<[string, number, string, string]> = [];
+    const ctx = {
+      font: '', fillStyle: '#000', textAlign: 'left', textBaseline: 'alphabetic', direction: 'ltr',
+      letterSpacing: '7px',
+      // A context tracking its own measure: the layout has to measure untracked and add its own.
+      measureText(t: string) { return { width: t.length * 10 + (ctx.letterSpacing === '0px' ? 0 : 99) }; },
+      fillText(t: string, x: number) { painted.push([t, x, ctx.font, ctx.letterSpacing]); },
+    };
+    const c = ctx as unknown as CanvasRenderingContext2D;
+    const r = createMarkdownRenderer(c, [
+      { text: 'ab', letterSpacing: 3, fontFamily: 'Mono', fontWeight: 300, italic: true }, { text: 'c' },
+    ], 20);
+    expect(r.width).toBe(26 + 10);
+    expect(ctx.letterSpacing).toBe('7px');
+    r.renderer(c, '', 0, 0);
+    expect(painted).toEqual([
+      ['ab', 0, 'italic 300 20px "Mono"', '3px'], ['c', 26, 'normal 400 20px sans-serif', '0px'],
+    ]);
+    expect(ctx.letterSpacing).toBe('7px');
+  });
+
+  it('paints a tracked run a cluster at a time on a context with no letterSpacing', () => {
+    const { ctx, texts } = makeRecordingCtx({ textAlign: 'left' });
+    createMarkdownRenderer(ctx, [{ text: 'aé', letterSpacing: 3 }], 20).renderer(ctx, '', 0, 0);
+    expect(texts.map((t) => [t.text, t.x])).toEqual([['a', 0], ['é', 13]]);
   });
 });
