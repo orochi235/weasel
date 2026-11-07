@@ -16,9 +16,15 @@ describe('kindSchemas', () => {
   it('describes a number leaf with base, default and number attributes', () => {
     const { shared, own, readOnly } = attributeSchema(num);
     expect(Object.keys(shared)).toEqual(expect.arrayContaining(['name', 'description', 'tags', 'hidden']));
-    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'stops', 'control', 'endless', 'measure']);
+    expect(Object.keys(own)).toEqual(['default', 'min', 'max', 'step', 'stops', 'control', 'scale', 'endless', 'measure']);
     expect(own.default).toMatchObject({ kind: 'number', min: 0, max: 10 });
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
+  });
+
+  it('offers a number leaf linear, log and sqrt scales, and spaces its default\'s slider by the leaf\'s own', () => {
+    const { own } = attributeSchema({ ...num, scale: 'log' } as PrefLeaf);
+    expect((own.scale as { options: { value: string }[] }).options.map((o) => o.value)).toEqual(['linear', 'log', 'sqrt']);
+    expect(own.default).toMatchObject({ scale: 'log' });
   });
 
   it('offers no default for a clearable enum, whose default is always nothing', () => {
