@@ -6,15 +6,16 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## State (2026-11-07)
 
-- 1.17.1 is on npm (all 54 packages, 2026-11-07), after 1.17.0 the same day. 1.17.0 was published from a5278f120
-  by dispatching Release on a branch at that commit after its first run was canceled. 1.17.1 added blits as
-  `^1.0.0` (core, animator, clock, labkit), forge depending on TypeScript 6 itself, the diagram NodeInk stroke
-  change, and a root dev-dependency sweep with zod and minimatch overrides (`npm audit` 41 → 1, typedoc's, filed).
-- 1.17.1's batch `test:fleet --full` at a54066909: 35048 passed, 1 failed, `AnnotationOverlay.clip.browser.test.tsx`,
-  which fails in full runs on main as well (filed as a P2 with the evidence); `test:fleet:postbuild` passed.
-- `main` pins `@msb235/blits` at exactly 1.1.0 again (475e37d05, unreleased). When the release carrying it reaches
-  npm, message the "Blinken documentation site" session: it moves blinken onto that weasel and blits 1.1.0 together.
-- CI on 1218c89e3 passed, including the Linux browser job with the SwiftShader flag; the visual suite passed.
+- 1.17.2 is on npm (all 54 packages), after 1.17.0 and 1.17.1 the same day. It carries labkit's `reportAuto` and
+  `.quote()` (an auto row can name the value it came to), geom's `pathFaceArrangement` (curve-keeping faces with
+  adjacency, no segment ceiling), `@msb235/blits` pinned exactly at 1.1.0, and the tranches pulled from other hosts.
+  Its batch (`batch/2026-11-07f`, 17ce930a6) ran `test:fleet` green (35319 passed) and `test:fleet:postbuild` green.
+- Ready for the next batch: branch `geom-crossing-polish` (worktree `.claude/worktrees/geom-crossing-polish`,
+  fe1f6130d) polishes face crossings onto the exact intersections, 92.5% of them on printable ASCII, topology
+  unchanged. When merging, drop its edit to `.changeset/geom-face-arrangement.md`, which 1.17.2 already consumed;
+  keep `.changeset/geom-crossing-polish.md`. When it ships, tell the segmento session.
+- `AnnotationOverlay.clip.browser.test.tsx` fails in some full fleet runs and not others (filed as a P2); it
+  passed in 1.17.2's run.
 - Release no longer repeats `check:manifests`, `check:treeshake` and `check:react-free`: postbuild runs them.
 - The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
   `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
