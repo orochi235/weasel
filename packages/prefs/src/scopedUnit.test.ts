@@ -66,4 +66,17 @@ describe('prefLeafInScopes', () => {
     const more = out.children.more as { members: Record<string, PrefLeaf> };
     expect((more.members.inset as PrefNumber).unit).toEqual(scopedPrefUnit([INCHES, MM]));
   });
+  it('reaches the lengths a list, a map and a union hold', () => {
+    const unit = scopedPrefUnit([INCHES, MM]);
+    const dashes = { kind: 'list', name: 'Dashes', description: 'd', default: [], item: X } as PrefLeaf;
+    expect(((prefLeafInScopes(dashes, [INCHES, MM]) as { item: PrefNumber }).item).unit).toEqual(unit);
+    const named = { kind: 'map', name: 'Named', description: 'n', default: {}, item: X } as PrefLeaf;
+    expect(((prefLeafInScopes(named, [INCHES, MM]) as { item: PrefNumber }).item).unit).toEqual(unit);
+    const box: PrefObject = { kind: 'object', name: 'Box', description: 'b', default: {}, children: { inset: X } };
+    const shape = { kind: 'union', name: 'Shape', description: 's', default: {}, tag: 'type', variants: { box } } as PrefLeaf;
+    const out = prefLeafInScopes(shape, [INCHES, MM]) as { variants: Record<string, PrefObject> };
+    expect((out.variants.box!.children.inset as PrefNumber).unit).toEqual(unit);
+    const plain = { kind: 'list', name: 'Counts', description: 'c', default: [], item: { ...X, measure: undefined } } as PrefLeaf;
+    expect(prefLeafInScopes(plain, [INCHES, MM])).toBe(plain);
+  });
 });
