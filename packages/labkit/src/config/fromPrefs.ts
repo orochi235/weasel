@@ -25,13 +25,14 @@ type OpenShape = Record<string, ConfigEntry>;
 
 /** The options `prefsFromConfig` put on a node beside its prefs fields, and those fields without them. */
 function optionsOn(node: Record<string, unknown>): [Record<string, unknown>, NodeOptions] {
-  const { render, dialog, showWhen, enableWhen, autoResolve, ...rest } = node;
+  const { render, dialog, showWhen, enableWhen, autoResolve, autoQuote, ...rest } = node;
   const options: Record<string, unknown> = {
     render,
     dialog,
     showIf: showWhen,
     enableIf: enableWhen,
     autoResolve,
+    autoQuote,
   };
   for (const k of Object.keys(options)) if (options[k] === undefined) delete options[k];
   return [rest, options as NodeOptions];

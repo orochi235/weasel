@@ -165,13 +165,14 @@ function resolveEntry(
       `[labkit] "${path}" is an f.value whose kind cannot be inferred from its default (${String(entry.default)}) — declare it with a typed builder, or f.custom(kind, default) for a value with no row`,
     );
   }
-  const { autoResolve, auto } = entry.options;
+  const { autoResolve, autoQuote, auto } = entry.options;
   return {
     ...patch,
     default: entry.default,
     // Extra keys survive onto the leaf at runtime; `ControlPanel` reads them
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
     ...(autoResolve === undefined ? {} : { autoResolve }),
+    ...(autoQuote === undefined ? {} : { autoQuote }),
     // labkit's auto is opt-in, where a leaf with no `auto` can be auto to any other reader. A leaf
     // `fromPrefs` carried over keeps the `auto` its schema gave it.
     auto: auto ?? ownAuto(patch) ?? false,

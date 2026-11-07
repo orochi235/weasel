@@ -42,6 +42,8 @@ function settingsWrites(ctx: TrialChromeContext) {
   return { setConfig: write, draftConfig: write };
 }
 
+const settingsAuto = (ctx: TrialChromeContext) => ({ auto: ctx.auto, reported: ctx.reported });
+
 /** Built-in ids contributed only while runtime state says so — the loupe
  *  toggle appears once a lens mounts, after the trial's first render, the
  *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
@@ -213,7 +215,7 @@ export function builtinContributions(
           <ControlPanel
             schema={ctx.configSchema}
             config={settingsConfig(ctx)}
-            auto={ctx.auto}
+            {...settingsAuto(ctx)}
             {...settingsWrites(ctx)}
             renderers={controls}
             collapsed={groupFolds(ctx.collapsedSections, 'settings')}

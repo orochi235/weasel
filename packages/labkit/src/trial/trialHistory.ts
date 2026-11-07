@@ -1,3 +1,4 @@
+import type { History } from '@weasel-js/core';
 import {
   createContext,
   useCallback,
@@ -78,4 +79,10 @@ export function useMountedHistory(): {
     history ? `${history.canUndo()}:${history.canRedo()}` : '',
   );
   return { mount, history, holds };
+}
+
+/** `history`, re-rendering the caller whenever it changes. */
+export function useHistoryVersion(history: History | undefined): History | undefined {
+  useSyncExternalStore(history?.subscribe ?? NO_SUBSCRIBE, () => history?.getVersion() ?? 0);
+  return history;
 }

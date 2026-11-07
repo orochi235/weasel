@@ -501,12 +501,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
   its hooks.
 
-- **(P2) [agent] An auto lever whose value only the instrument knows can't show it.** `.auto()` with no
-  resolver reads `undefined` and the instrument substitutes its own value, so the row reads "auto" with no
-  number — segmento's Count, which a worker works out after each build (2026-11-07). `.auto(fn)` sees only
-  the config. The instrument needs a way to report the value it used for an auto path (a call beside
-  `setConfig`, say), which the ghosted control then draws, never stored and dropped once the path is pinned.
-  Closes when an instrument can report an auto path's value and its row draws that number.
 - **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
@@ -754,6 +748,11 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] vitest's `fsModuleCache` keeps a CSS module whose `@import`ed sheet changed.** It keys an entry by
+  the importing file alone, so a new class in `PropertyRow.auto.css` read `undefined` through
+  `Properties.module.css` in the `labkit` project until `node_modules/.vitest-cache` was deleted (2026-11-07,
+  `docs/traps/testing.md`). A fleet node keeps its cache, so a batch can fail on classes that exist. Closes when
+  editing an imported sheet alone changes what the next run of a test importing the module sees.
 - **(P3) [agent] jsdom 31 fails nine weasel-ui tests on how it serializes CSS.** Tried and held at 30.1.3 in the
   2026-11-07 dependency sweep (fleet run of 1002ad7a6). The failures: `theme/src/react.test.tsx` (a rule's selector
   now reads `[data-wzl-mode="light"]`, the test looks for single quotes), three in

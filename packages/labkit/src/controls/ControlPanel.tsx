@@ -13,6 +13,7 @@ import {
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
+import { type AutoReports, withAutoReports } from '../config/autoReports';
 import { fromConfigFields } from '../config/fromConfigField';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
@@ -99,6 +100,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
    *  toggle and the sentinel never reaches `setConfig`, which would otherwise
    *  store it as the row's value. */
   auto?: ReadonlySet<string>;
+  /** Values the instrument says it used for auto paths, by dotted path: what `RenderContext.reportAuto`
+   *  collects. An auto row reads its report over its resolver's value; a pinned row's report is ignored. */
+  reported?: AutoReports;
   /** Draw leaves marked `hidden`. */
   showHidden?: boolean;
   /** Paths whose rows are marked as changed, as `PrefsForm`'s `changed` marks them: what differs from a
@@ -152,6 +156,26 @@ function usePanelAuto(
   return { auto: given ?? ownAuto, setRowAuto };
 }
 
+/**
+ * What the instrument is reading, with what it reported over that. A row draws and reports from this
+ * rather than calling its own resolver against the raw config, which would disagree with the instrument
+ * whenever a resolver depends on another auto path.
+ */
+function useShown<TC>(
+  resolved: ResolvedConfig,
+  config: TC,
+  auto: ReadonlySet<string>,
+  reported: AutoReports | undefined,
+): TC {
+  return useMemo(
+    () =>
+      auto.size > 0
+        ? withAutoReports(resolveAutoConfig(resolved, config, auto), reported, auto)
+        : config,
+    [resolved, config, auto, reported],
+  );
+}
+
 /** Render an instrument's config schema as a stack of controls, each writing
  *  back through `setConfig`. Built on the property rows, so a lab's controls
  *  are the same aligned, themed rows the rest of the kit uses. */
@@ -176,6 +200,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   defaultCollapsed,
   twisty,
   auto: given,
+  reported,
   showHidden = false,
   changed,
   title,
@@ -188,13 +213,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
 
   const { auto, setRowAuto } = usePanelAuto(given, setConfig);
 
-  // What the instrument is reading. A row draws and reports from this rather
-  // than calling its own resolver against the raw config, which would disagree
-  // with the instrument whenever a resolver depends on another auto path.
-  const shown = useMemo(
-    () => (auto && auto.size > 0 ? resolveAutoConfig(resolved, config, auto) : config),
-    [resolved, config, auto],
-  );
+  const shown = useShown(resolved, config, auto, reported);
 
   const gridPack = gridOf(pack);
   // A section that declares how it opens is foldable whether or not the lab

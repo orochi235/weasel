@@ -22,6 +22,12 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   /** Write one config value, by dotted path — `'grid.size'` for a leaf under
    *  an `f.group`, `'cellSize'` for one at the root. */
   setConfig: (path: ConfigPath<TC>, value: unknown) => void;
+  /** Say what value an auto path came to, where only the instrument can work it out — a count a build
+   *  settles on. Its settings row then quotes that value as it would a resolver's, and a report outranks
+   *  the resolver. Nothing stores it: a report for a pinned path is ignored, pinning the path drops it,
+   *  and `undefined` withdraws it. The same function every render; call it from an effect or a callback, not
+   *  during `render`. */
+  reportAuto: (path: ConfigPath<TC>, value: unknown) => void;
   /** The settings of the schema the instrument's config is drawn over (`f.schema(nodes, { over })`),
    *  which the lab keeps rather than the trial. Absent where it is drawn over none. */
   over?: OverAccess;

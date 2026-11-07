@@ -1,8 +1,10 @@
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
+import { autoQuotes } from './autoConfig';
 import { f } from './builder';
 import { schemaNodeAtPath } from './path';
 import { resolveConfigSchema } from './resolve';
+import { prefsFromConfig } from './toPrefs';
 import { isLeafEnabled, isLeafVisible } from './visible';
 
 const num = (name: string, extra: Partial<PrefLeaf> = {}): PrefLeaf =>
@@ -35,6 +37,12 @@ describe('f.prefs', () => {
     const resolved = resolveConfigSchema(config, []);
     const auto = (path: string) => (schemaNodeAtPath(resolved.group, path) as PrefLeaf).auto;
     expect([auto('a'), auto('b'), auto('c')]).toEqual([{ on: true }, false, false]);
+  });
+
+  it("keeps a leaf's .quote() through a round trip to a prefs schema", () => {
+    const once = resolveConfigSchema(f.schema({ count: f.number(3).quote() }), []);
+    const back = resolveConfigSchema(f.prefs(prefsFromConfig(once)), []);
+    expect(autoQuotes(schemaNodeAtPath(back.group, 'count') as PrefLeaf)).toBe(true);
   });
 
   it('nests each leaf at the path its key names, as the config holds it', () => {
