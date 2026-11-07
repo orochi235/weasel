@@ -9,6 +9,10 @@ import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import type { ImmediateParams } from '@weasel-js/routing';
 
+const MODIFIER_HOTKEYS = ['alt', 'ctrl', 'meta', 'shift'] as const;
+const isModifier = (hotkey: HotkeyTrigger | undefined): hotkey is typeof MODIFIER_HOTKEYS[number] =>
+  (MODIFIER_HOTKEYS as readonly string[]).includes(hotkey ?? '');
+
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
   /** Called when the user picks a color. `null` means `colorOf` returned
@@ -91,7 +95,12 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       // and no-ops on empty. Sampling deliberately reads the PRESS point
       // rather than the release — a 4px drift between the two can land on a
       // different node, and the color you meant is the one you pressed.
-      bindings: [{ spec: { kind: 'click' as const }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } }],
+      // A modifier hotkey is still held through the click it engaged the tool for.
+      bindings: [{
+        spec: { kind: 'click' as const, ...(isModifier(hotkey) ? { mods: { [hotkey]: 'optional' as const } } : {}) },
+        actionId: 'eyedropper.pick',
+        opts: { id: 'eyedropper.click' },
+      }],
     });
   }, [opts.keybinding, opts.hotkey, pickAction]);
 }
