@@ -40,22 +40,22 @@ export function createStepRepeat<K>(
     key = null;
     hold++;
   };
-  const tick = (k: K, ms: number) => {
+  /** Step `k`, then wait `ms` for the next one, unless `step` ended or replaced this hold. */
+  const stepThenWait = (k: K, ms: number) => {
+    const mine = hold;
+    step(k);
+    if (hold !== mine) return;
     cancel = (opts.scheduler ?? timerScheduler).set(() => {
       // A stepper at its bound may be disabled while still held, and never hear the release that ends the hold.
       if (spent(k)) return stop();
-      step(k);
-      tick(k, opts.everyMs ?? REPEAT_EVERY_MS);
+      stepThenWait(k, opts.everyMs ?? REPEAT_EVERY_MS);
     }, ms);
   };
   return {
     start(k) {
       stop();
-      const mine = hold;
       key = k;
-      step(k);
-      // `step` may have ended or replaced this hold.
-      if (hold === mine) tick(k, opts.delayMs ?? REPEAT_DELAY_MS);
+      stepThenWait(k, opts.delayMs ?? REPEAT_DELAY_MS);
     },
     stop,
     held: () => key,
