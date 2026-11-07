@@ -1,5 +1,6 @@
 import { firstStop, rovingKey, type ListShape } from '@weasel-js/ui-logic';
 import { entriesAt, isRow, type MenuEntry } from './entries';
+import type { MenuDirection } from './placement';
 
 /** The highlighted index at each open level; its length is how many are open. */
 export type MenuStack = readonly (number | null)[];
@@ -35,11 +36,13 @@ function openSub(root: readonly MenuEntry[], stack: MenuStack): MenuStack | null
 }
 
 /** Apply one key to the menu: the new stack, any effect, and whether the key
- *  was the menu's (an unhandled key goes on to typeahead). */
+ *  was the menu's (an unhandled key goes on to typeahead). Under `'rtl'` Left opens a submenu and Right closes one,
+ *  and an edge's `dir` stays forward (1) and back (-1) in reading order. */
 export function keyStep(
   root: readonly MenuEntry[],
   stack: MenuStack,
   key: string,
+  dir: MenuDirection = 'ltr',
 ): { stack: MenuStack; effect: KeyEffect; handled: boolean } {
   const level = stack.length - 1;
   const rows = entriesAt(root, stack, level);
@@ -47,12 +50,14 @@ export function keyStep(
   const done = (s: MenuStack, effect: KeyEffect = NONE) => ({ stack: s, effect, handled: true });
   const roved = rovingKey(rows, at, key, MENU_LIST);
   if (roved.handled) return done(withTop(stack, roved.at));
+  const inward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
+  const outward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
   switch (key) {
-    case 'ArrowRight': {
+    case inward: {
       const opened = openSub(root, stack);
       return opened ? done(opened) : done(stack, { kind: 'edge', dir: 1 });
     }
-    case 'ArrowLeft': return level > 0 ? done(stack.slice(0, -1)) : done(stack, { kind: 'edge', dir: -1 });
+    case outward: return level > 0 ? done(stack.slice(0, -1)) : done(stack, { kind: 'edge', dir: -1 });
     case 'Escape': return level > 0 ? done(stack.slice(0, -1)) : done(stack, { kind: 'close' });
     case 'Tab': return done(stack, { kind: 'close' });
     case 'Enter':

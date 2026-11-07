@@ -47,6 +47,14 @@ describe('keyStep', () => {
   it('ArrowLeft at a deeper level closes the level and is no edge', () => {
     expect(keyStep(root, [3, 0], 'ArrowLeft').effect).toEqual({ kind: 'none' });
   });
+  it('under rtl, ArrowLeft opens a submenu and ArrowRight closes it', () => {
+    expect(keyStep(root, [3], 'ArrowLeft', 'rtl').stack).toEqual([3, 0]);
+    expect(keyStep(root, [3, 1], 'ArrowRight', 'rtl').stack).toEqual([3]);
+  });
+  it('under rtl, the edges run forward on ArrowLeft and back on ArrowRight', () => {
+    expect(keyStep(root, [0], 'ArrowLeft', 'rtl').effect).toEqual({ kind: 'edge', dir: 1 });
+    expect(keyStep(root, [0], 'ArrowRight', 'rtl').effect).toEqual({ kind: 'edge', dir: -1 });
+  });
   it('ArrowLeft closes a submenu level and not the root', () => {
     expect(keyStep(root, [3, 1], 'ArrowLeft').stack).toEqual([3]);
     expect(keyStep(root, [3], 'ArrowLeft').stack).toEqual([3]);

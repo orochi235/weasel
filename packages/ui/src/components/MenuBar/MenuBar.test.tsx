@@ -122,6 +122,36 @@ describe('MenuBar', () => {
     expect(document.activeElement).toBe(file);
   });
 
+  describe('in a right-to-left layout', () => {
+    beforeEach(() => { document.documentElement.dir = 'rtl'; });
+    afterEach(() => { document.documentElement.removeAttribute('dir'); });
+
+    it('steps to the next title on Left and the previous on Right', () => {
+      const { file, edit } = setup(pref.group('', {
+        ...SCHEMA.children,
+        view: pref.group('View', { undo: pref.action('edit.undo') }, { as: 'menu' }),
+      }));
+      act(() => file.focus());
+      fireEvent.keyDown(file, { key: 'ArrowLeft' });
+      expect(document.activeElement).toBe(edit);
+      fireEvent.keyDown(edit, { key: 'ArrowRight' });
+      expect(document.activeElement).toBe(file);
+    });
+
+    it('opens a submenu on Left, closes it on Right, and runs on to the next menu on Left', () => {
+      const { file } = setup(WITH_SUBMENU);
+      act(() => file.focus());
+      fireEvent.keyDown(file, { key: 'ArrowDown' });
+      fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowLeft' });
+      expect(screen.getAllByRole('menu')).toHaveLength(2);
+      fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
+      expect(screen.getAllByRole('menu')).toHaveLength(1);
+      fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
+      fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowLeft' });
+      expect(rowNames()).toEqual(['Undo']);
+    });
+  });
+
   it('moves to the neighboring menu, open, on Left or Right inside one', () => {
     const { file } = setup();
     act(() => file.focus());

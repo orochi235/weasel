@@ -387,4 +387,12 @@ describe('access letters and edges', () => {
     expect(onEdge).toHaveBeenLastCalledWith(-1);
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('reads the arrows by the direction a key arrives with', () => {
+    const onEdge = vi.fn();
+    const { c } = make([{ kind: 'item', key: 'a', label: 'A', run }], onEdge);
+    c.hover(0, 0);
+    c.key('ArrowLeft', 'rtl');
+    expect(onEdge).toHaveBeenCalledWith(1);
+  });
 });

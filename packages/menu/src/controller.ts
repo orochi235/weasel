@@ -5,7 +5,7 @@ import { entriesAt, isRow, type MenuColorEntry, type MenuEntry, type MenuNumberE
 import { firstRow, type MenuStack } from './keys';
 import { EMPTY_TYPEAHEAD, timerScheduler, type Scheduler, type TypeaheadBuffer } from '@weasel-js/ui-logic';
 import { planKey } from './keyPlan';
-import type { Point, Rect } from './placement';
+import type { MenuDirection, Point, Rect } from './placement';
 import { inTriangle } from './triangle';
 
 export { TYPEAHEAD_RESET_MS } from '@weasel-js/ui-logic';
@@ -25,7 +25,7 @@ export interface MenuControllerOptions {
   highlightFirst?: boolean;
   /** The menu is done: an item was chosen, or it was dismissed. */
   onClose(): void;
-  /** An arrow key ran off the menu: left from the first level (-1), or right from a row with no submenu (1). */
+  /** An arrow key ran off the menu: back from the first level (-1), or forward from a row with no submenu (1). */
   onEdge?(dir: -1 | 1): void;
   scheduler?: MenuScheduler;
 }
@@ -34,8 +34,8 @@ export interface MenuControllerOptions {
 export interface MenuController {
   stack(): MenuStack;
   entriesAt(level: number): readonly MenuEntry[];
-  /** Returns whether the key was the menu's. */
-  key(key: string): boolean;
+  /** Returns whether the key was the menu's. `dir` is the inline direction the menu is laid out in. */
+  key(key: string, dir?: MenuDirection): boolean;
   /** The pointer is over row `index` of `level`, or over none of its rows. */
   hover(level: number, index: number | null, point?: Point): void;
   press(level: number, index: number): void;
@@ -135,9 +135,9 @@ export function createMenuController(opts: MenuControllerOptions): MenuControlle
   return {
     stack: () => stack,
     entriesAt: (level) => entriesAt(root, stack, level),
-    key(key) {
+    key(key, dir) {
       if (closed) return false;
-      const plan = planKey(root, stack, typed, key, sched.now());
+      const plan = planKey(root, stack, typed, key, sched.now(), dir);
       if (!plan) return false;
       cancel();
       typed = plan.typed;
