@@ -151,33 +151,49 @@ const GRADIENT: CommandPaint = {
   stops: [{ offset: 0, color: '#2060ff' }, { offset: 1, color: '#ff6020' }],
 };
 
-/** Every paint the clip marks and covers rather than drawing straight, with the
- *  per-channel difference each may show: vertex colors interpolate across
- *  triangles the two builds cut differently. */
-const PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>, number][] = [
-  ['translucent', { paint: { color: '#ffb000', opacity: 0.5 } }, 0],
-  ['a gradient', { paint: GRADIENT }, 0],
-  ['a translucent gradient', { paint: { ...GRADIENT, opacity: 0.6 } as CommandPaint }, 0],
-  ['vertex colors', { paint: { color: '#ffffff', opacity: 0.7 }, vertexColors: Array.from({ length: 41 }, (_, k) => [k / 40, 0.4, 1 - k / 40, 1]).flat() }, 3],
+/**
+ * Every paint the clip marks and covers rather than drawing straight. Its
+ * reference is the stroke rebuilt in the same paint made opaque, drawn in a
+ * group of its own at the paint's alpha: the rebuilt ribbon covers some
+ * ground twice at a sharp turn, which a stroke's paint must not show. Each
+ * may differ by `tolerance` in a channel: the rebuilt ribbon is small enough
+ * to batch, which reads a gradient off a ramp, and vertex colors interpolate
+ * across triangles the two builds cut differently.
+ */
+const PAINTS: [string, Pick<CommandStroke, 'paint' | 'vertexColors'>, CommandPaint, number, number][] = [
+  ['translucent', { paint: { color: '#ffb000', opacity: 0.5 } }, { color: '#ffb000' }, 0.5, 1],
+  ['a gradient', { paint: GRADIENT }, GRADIENT, 1, 3],
+  ['a translucent gradient', { paint: { ...GRADIENT, opacity: 0.6 } as CommandPaint }, GRADIENT, 0.6, 3],
+  ['vertex colors', {
+    paint: { color: '#ffffff', opacity: 0.7 },
+    vertexColors: Array.from({ length: 41 }, (_, k) => [k / 40, 0.4, 1 - k / 40, 1]).flat(),
+  }, { color: '#ffffff' }, 0.7, 3],
 ];
 
 /** One test per shape and paint, each against every trim. */
 export function paintCases(antialias: boolean): void {
   for (const [name, path, curved] of SHAPES) {
-    for (const [painted, fields, tolerance] of PAINTS) {
+    for (const [painted, fields, opaquePaint, alpha, tolerance] of PAINTS) {
       it(`paints what the rebuilt one does: ${name}, ${painted}${antialias ? ', multisampled' : ''}`, () => {
         for (const trim of TRIMS) {
           const stroke: CommandStroke = { width: 9, cap: 'round', join: 'round', ...fields, trim };
           const clipped = paint(frame(path, stroke), antialias, true);
-          const rebuilt = paint(frame(path, stroke), antialias, false);
+          const once: DrawCommand[] = [{ kind: 'path', path, stroke: { ...stroke, paint: opaquePaint } }];
+          const rebuilt = paint(alpha < 1 ? [{ kind: 'group', isolate: true, alpha, children: once }] : once, antialias, false);
           expect(clipped.programs, JSON.stringify(trim)).toBe(1);
           expect(inked(clipped.px)).toBeGreaterThan(0);
           const near = antialias ? 0.75 : 1 / 16;
           const edges = edgesOf(path, stroke);
           const off = offCuts(clipped.px, rebuilt.px, cutsOf(path, trim), edges, near, curved ? 14 : 0, tolerance);
-          expect(off, JSON.stringify(trim)).toEqual([]);
+          expect(off.slice(0, 8).map((at) => `${at} ${pixelAt(clipped.px, at)} vs ${pixelAt(rebuilt.px, at)}`), JSON.stringify(trim)).toEqual([]);
         }
       });
     }
   }
+}
+
+function pixelAt(px: Uint8Array, at: string): string {
+  const [x, y] = at.split(',').map(Number);
+  const i = ((H - 1 - Math.floor(y)) * W + Math.floor(x)) * 4;
+  return Array.from(px.subarray(i, i + 4)).join('/');
 }
