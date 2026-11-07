@@ -46,6 +46,23 @@ describe('usePublishPointer', () => {
     expect(store.get()).toEqual({ world: { x: 150, y: 4 }, viewId: 'a' });
   });
 
+  it('clears once a press that left the element is released outside it', () => {
+    const { store, a } = mount();
+    fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
+    fireEvent.pointerLeave(a, { pointerId: 1, buttons: 1 });
+    moveAt(document.body, 300, 8, 1);
+    fireEvent.pointerUp(document.body, { pointerId: 1 });
+    expect(store.get()).toBeNull();
+  });
+
+  it('keeps the pointer of a press released over the element', () => {
+    const { store, a } = mount();
+    fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
+    moveAt(a, 20, 40, 1);
+    fireEvent.pointerUp(a, { pointerId: 1 });
+    expect(store.get()).toEqual({ world: { x: 10, y: 20 }, viewId: 'a' });
+  });
+
   it("does not clear another view's pointer when it leaves", () => {
     const { store, a, b } = mount();
     moveAt(a, 2, 2);

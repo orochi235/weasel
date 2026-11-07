@@ -6,6 +6,7 @@ import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 // ---------------------------------------------------------------------------
 // Shared helper
@@ -70,7 +71,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // Modifier matching is strict, so Shift must be absent here — listing
       // the shifted `'}'` on this binding would be dead weight, since you
       // can't type it without the Shift this spec forbids.
-      spec: { kind: 'key', key: [']'], mods: { mod: true } },
+      spec: { kind: 'key', key: [']'], mods: { mod: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.forward.adjacent', params: { distance: 'adjacent' } },
     },
     {
@@ -79,7 +80,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // are listed. Some browsers bind Cmd+Shift+[ / ] to tab switching and
       // may consume the event before the page sees it — hence the Cmd+Alt
       // binding below, which nothing reserves.
-      spec: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } },
+      spec: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.forward.extreme', params: { distance: 'extreme' } },
     },
     {
@@ -87,7 +88,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       // whether Cmd suppresses that transform is browser-dependent, so match
       // both the bracket and the Option-produced char (US layout). `code`
       // covers the layouts where Option types something else on that key.
-      spec: { kind: 'key', key: [']', '‘'], code: 'BracketRight', mods: { mod: true, alt: true } },
+      spec: { kind: 'key', key: [']', '‘'], code: 'BracketRight', mods: { mod: true, alt: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.forward.extremeAlt', params: { distance: 'extreme' } },
     },
   ],
@@ -123,18 +124,18 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   ],
   defaultBinding: [
     {
-      spec: { kind: 'key', key: ['['], mods: { mod: true } },
+      spec: { kind: 'key', key: ['['], mods: { mod: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.backward.adjacent', params: { distance: 'adjacent' } },
     },
     {
       // Cmd+Shift+[ → send-to-back. See the bring-to-front notes above.
-      spec: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true } },
+      spec: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.backward.extreme', params: { distance: 'extreme' } },
     },
     {
       // Cmd+Alt+[ → send-to-back, the binding no browser reserves. On macOS
       // Option+[ emits '“' (U+201C), included alongside the bracket.
-      spec: { kind: 'key', key: ['[', '“'], code: 'BracketLeft', mods: { mod: true, alt: true } },
+      spec: { kind: 'key', key: ['[', '“'], code: 'BracketLeft', mods: { mod: true, alt: true }, phase: BETWEEN_GESTURES },
       opts: { id: 'reorder.backward.extremeAlt', params: { distance: 'extreme' } },
     },
   ],

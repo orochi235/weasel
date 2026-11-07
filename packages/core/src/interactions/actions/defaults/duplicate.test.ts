@@ -5,6 +5,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 interface StubNode { id: NodeId; kind: 'mark' | 'group'; layer: string; pose: { x: number; y: number }; data: unknown; parent: NodeId | null }
 
@@ -44,7 +45,7 @@ function inserted(ops: Op[]): StubNode[] {
 describe('duplicateAction', () => {
   it('is Cmd/Ctrl+Shift+D and declares the `selection` its gate reads', () => {
     expect(duplicateAction.id).toBe('duplicate');
-    expect(duplicateAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true } }, opts: { id: 'duplicate.key' } }]);
+    expect(duplicateAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: ['d', 'D'], mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'duplicate.key' } }]);
     expect(duplicateAction.requires).toContain('selection');
   });
 

@@ -7,6 +7,7 @@ import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
 import { hiddenSourcesTakenWith } from 'domains/pathEffects/hiddenSources';
 import { withoutPageStructure } from 'core/scene/nodeGates';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** `id`'s slot among the scene roots or its parent's children, or `-1`. */
 function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
@@ -87,13 +88,13 @@ export interface DeleteActionOptions {
 
 /** The default commit: removes `ids`, their dependents, and the sources a
  *  path effect among them hid, as one undo entry, then empties the selection. */
-export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps): void {
+export function commitDeleteToScene(ids: readonly NodeId[], deps: ActionDeps, label = 'Delete'): void {
   const { selection, scene, applyOps } = deps;
   if (!selection || !scene) return;
-  const ops = buildDeleteOps(scene, ids, 'Delete', { takeHiddenSources: true });
+  const ops = buildDeleteOps(scene, ids, label, { takeHiddenSources: true });
   if (ops.length > 0) {
-    if (applyOps) applyOps(ops, 'Delete');
-    else scene.applyBatch(ops, 'Delete', defaultCommitAdapter(scene, selection.adapterMethods));
+    if (applyOps) applyOps(ops, label);
+    else scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
   }
   selection.set([]);
 }
@@ -113,7 +114,7 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
       spec: {
         kind: 'key',
         key: ['Delete', 'Backspace'],
-        phase: [{ channel: '*', phase: 'initial' }],
+        phase: BETWEEN_GESTURES,
       },
       opts: { id: 'delete.key' },
     }],

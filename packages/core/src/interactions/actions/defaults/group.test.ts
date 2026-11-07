@@ -16,6 +16,7 @@ import {
 import type { NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { ImmediateInvoker } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 describe('groupAction (descriptor)', () => {
   it('id="group", label="Group"', () => {
@@ -24,7 +25,7 @@ describe('groupAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "g", mods: { mod: true } }', () => {
-    expect(groupAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'g', mods: { mod: true } }, opts: { id: 'group.key' } }]);
+    expect(groupAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'group.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -39,7 +40,7 @@ describe('ungroupAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "g", mods: { mod: true, shift: true } }', () => {
-    expect(ungroupAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true } }, opts: { id: 'ungroup.key' } }]);
+    expect(ungroupAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'ungroup.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

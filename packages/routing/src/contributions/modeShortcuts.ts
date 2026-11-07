@@ -5,6 +5,7 @@ import type { ActionDeps } from '../interactions/actions/invoker';
 import { returnToModeDefault } from '../tools/returnToModeDefault';
 import type { Rule } from '../eligibility';
 import type { Contribution } from './types';
+import { BETWEEN_GESTURES } from '../interactions/actions/betweenGestures';
 
 /**
  * What each mode shortcut does. A role left out binds nothing, so its key
@@ -98,7 +99,7 @@ function shortcutAction(
     label: `${VERB[role]} ${modeLabel(mode)}`,
     scope: 'hotkey',
     defaultBinding: [{
-      spec: { ...modeShortcutSpec(shortcut), phase: [{ channel: '*', phase: 'initial' }] },
+      spec: { ...modeShortcutSpec(shortcut), phase: BETWEEN_GESTURES },
       opts: { id: `mode.${mode.id}.${role}.key`, yields },
     }],
     eligible,
