@@ -106,6 +106,14 @@ describe('reading DOT', () => {
     expect(page('digraph { a [pos="1,1"]; b }').data.nodes.every((n) => n.at === undefined)).toBe(true);
   });
 
+  it('sizes the page around every node when there is no bb, a node left of or below the origin included', () => {
+    const p = page('digraph { a [pos="10,20!", width=1, height=1]; b [pos="100,-30"]; }');
+    expect(node(p.data, 'a').at).toEqual({ x: 0, y: 0 });
+    expect(node(p.data, 'b').at).toEqual({ x: 99, y: 68 });
+    expect(p).toMatchObject({ width: 153, height: 104 });
+    expect(page('digraph { a [pos="Infinity,1"]; }').data.nodes[0]!.at).toBeUndefined();
+  });
+
   it('reads colors in each of DOT\'s spellings', () => {
     const p = page('digraph { a [color="/x11/red:blue"]; b [color="0.000 1.000 1.000"]; c [fontcolor="#ff000080"] }');
     expect(p.data.nodes.map((n) => n.colors)).toEqual([{ stroke: 'red' }, { stroke: '#ff0000' }, { text: '#ff000080' }]);

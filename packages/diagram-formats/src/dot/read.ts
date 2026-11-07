@@ -150,12 +150,13 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
 /** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. */
 function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
   const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map(Number));
-  if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || c.some(Number.isNaN))) return null;
+  if (nodes.length === 0 || centers.some((c) => c === undefined || c.length < 2 || !c.every(Number.isFinite))) return null;
   const size = (n: DataNode) => ({ w: n.width ?? 0.75 * POINTS_PER_INCH, h: n.height ?? 0.5 * POINTS_PER_INCH });
   const box = bb?.split(',').map(Number);
-  const [llx, lly, urx, ury] = box?.length === 4 && !box.some(Number.isNaN) ? box : [0, 0, undefined, undefined];
-  const top = ury ?? Math.max(...nodes.map((n, i) => centers[i]![1]! + size(n).h / 2));
-  const right = urx ?? Math.max(...nodes.map((n, i) => centers[i]![0]! + size(n).w / 2));
+  const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).w / 2, centers[i]![0]! + size(n).w / 2]);
+  const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).h / 2, centers[i]![1]! + size(n).h / 2]);
+  const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
+    ? box : [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
   const placed = nodes.map((n, i) => ({
     ...n, at: { x: round(centers[i]![0]! - llx! - size(n).w / 2), y: round(top - centers[i]![1]! - size(n).h / 2) },
   }));
