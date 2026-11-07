@@ -17,7 +17,9 @@ export interface GpuRect {
   readonly height: number;
 }
 
+/** How a texture is filtered: the nearest texel, or a blend of the nearest four. */
 export type GpuFilter = 'nearest' | 'linear';
+/** What a texture coordinate outside 0–1 samples: the edge texel, or the texture tiled. */
 export type GpuWrap = 'clamp' | 'repeat';
 
 /** How a texture is sampled. `mipmap` filters between levels on minification
@@ -30,6 +32,7 @@ export interface GpuSampling {
   readonly wrapT: GpuWrap;
 }
 
+/** A texture's texel format: four 8-bit normalized channels, or one. */
 export type GpuTextureFormat = 'rgba8' | 'r8';
 
 /** A texture source the browser decodes. */
@@ -53,6 +56,7 @@ export interface GpuVertexAttribute {
   readonly offset: number;
 }
 
+/** One vertex buffer of a geometry, and the attributes read from each vertex in it. */
 export interface GpuVertexBufferLayout {
   readonly buffer: GpuBuffer;
   /** Bytes per vertex; 0 for tightly packed. */
@@ -60,6 +64,7 @@ export interface GpuVertexBufferLayout {
   readonly attributes: readonly GpuVertexAttribute[];
 }
 
+/** The integer type an index buffer holds. */
 export type GpuIndexFormat = 'uint16' | 'uint32';
 
 /** Vertex buffers and an index buffer, bound together for a draw. */
@@ -69,6 +74,8 @@ export interface GpuGeometryDesc {
   readonly indexFormat: GpuIndexFormat;
 }
 
+/** Geometry `createGeometry` made from a {@link GpuGeometryDesc}. Opaque: only the backend
+ *  that made it reads it. */
 export interface GpuGeometry {
   readonly kind: 'geometry';
   readonly indexFormat: GpuIndexFormat;
@@ -114,7 +121,11 @@ export interface GpuPassDesc {
   readonly clear?: { readonly color?: boolean; readonly stencil?: boolean };
 }
 
+/** When a fragment passes the stencil test: always, or where the stencil equals `ref` under
+ *  `readMask`. */
 export type GpuStencilCompare = 'always' | 'equal';
+/** What a passing fragment writes to the stencil, under `writeMask`: nothing, `ref`, the
+ *  bitwise inverse of what is there, or 0. */
 export type GpuStencilOp = 'keep' | 'replace' | 'invert' | 'zero';
 
 /** The stencil a draw tests and writes. Fail and depth-fail always keep. */
@@ -154,6 +165,7 @@ export interface GpuUniformArray {
   readonly size: number;
 }
 
+/** The values `GpuProgram.set` uploads: a typed array, or plain numbers. */
 export type GpuUniformData = Float32Array | Int32Array | Uint32Array | readonly number[];
 
 /**
@@ -193,12 +205,14 @@ export interface GpuProgramSource {
   readonly wgsl?: string;
 }
 
+/** What `createProgram` takes beside the source. */
 export interface GpuProgramOptions {
   /** Add the id output. Default `true`; `false` for a program that writes
    *  location 1 itself. */
   readonly ids?: boolean;
 }
 
+/** What a device reports of itself and its canvas target. */
 export interface GpuLimits {
   /** `MAX_TEXTURE_SIZE`, as the backend reports it; `undefined` where it
    *  reports nothing usable. */
@@ -209,6 +223,8 @@ export interface GpuLimits {
   readonly stencil: boolean | undefined;
 }
 
+/** How often a buffer's contents are rewritten: once, or often (GL's `STATIC_DRAW` and
+ *  `DYNAMIC_DRAW`). */
 export type GpuBufferUsage = 'static' | 'dynamic';
 
 /** A texture's pixels, whole: from a decoded image, or tightly packed bytes. */
