@@ -121,6 +121,13 @@ Owner tags, after the priority (2026-10-26):
   extend share, and the path-edit chrome, which is why it was not done in the actions audit. Closes when
   `pathNodesOf` answers world paths through the scene's frames, `reshapeOps`/`pathCopy` store back into each
   node's frame, and cutting across a framed group finds the crossing.
+- **(P2) [agent] The curve-keeping booleans have no public surface.** `curveRegions`
+  (`packages/geom/src/booleans/curveBoolean.ts`) cuts an arrangement and keeps the curves, but `@weasel-js/geom`'s
+  `./booleans` entry does not export it, so a consumer cutting glyph outlines into faces (segmento, 2026-11-07)
+  gets `pathFacePieces`' flattened polylines instead. As it stands it would not serve that use: it labels a region
+  only by which inputs cover it, so two faces with the same cover merge, and it returns `null` past 4,096 segments
+  or where curves run nearly along each other. Closes when `./booleans` exports a curve-keeping face arrangement
+  that keeps faces with the same cover apart and has no segment ceiling a glyph set reaches.
 
 - **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
