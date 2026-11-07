@@ -1,6 +1,8 @@
 import type { Display } from './quantity';
 import type { Unit } from './units';
-import { MINUS_SIGN, unsignedZero } from './number';
+import { LEADING_MINUS, MINUS_SIGN, signed, unsignedZero } from './number';
+
+export { signed };
 
 /**
  * One run of a formatted value, named for what it is: `number`, `unit`,
@@ -50,15 +52,10 @@ export function numberPart(value: number, locale: string, options?: Intl.NumberF
   return { type: 'number', value: signed(unsignedZero(value, (n) => n.toLocaleString(locale, options))) };
 }
 
-/** `-` swapped for {@link MINUS_SIGN} at the front of already-formatted text. */
-export function signed(text: string): string {
-  return text.replace(/^-/, MINUS_SIGN);
-}
-
 /** A leading minus sign read aloud: `−3` is spoken `minus 3`, which a screen
  *  reader otherwise renders as a dash or drops. */
 export function spokenSign(text: string): string {
-  return text.replace(/^[-−]/, 'minus ');
+  return text.replace(LEADING_MINUS, 'minus ');
 }
 
 /** `singular` or `plural` for `value`, by the locale's plural rules. */

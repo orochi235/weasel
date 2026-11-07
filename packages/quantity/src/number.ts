@@ -16,8 +16,19 @@ export function formatNumber(value: number, options?: Intl.NumberFormatOptions):
   const formatted = Number.isFinite(value)
     ? unsignedZero(value, (n) => n.toLocaleString(undefined, options))
     : String(value);
-  return formatted.replace(/^-/, MINUS_SIGN);
+  return signed(formatted);
 }
+
+/** `-` swapped for {@link MINUS_SIGN} at the front of already-formatted text,
+ *  past the bidi marks some locales write before a sign (`؜-` in `ar-EG`). */
+export function signed(text: string): string {
+  return text.replace(LEADING_HYPHEN, `$1${MINUS_SIGN}`);
+}
+
+const LEADING_HYPHEN = /^([\u061c\u200e\u200f]*)-/;
+
+/** Whether `text` starts with a minus sign, either spelling, past any bidi marks before it. */
+export const LEADING_MINUS = /^[\u061c\u200e\u200f]*[-\u2212]/;
 
 /**
  * `value` through `format`, with a negative that rounds to zero shown as the
@@ -59,7 +70,7 @@ export function formatCompact(value: number, decimals = 0): string {
     Number(Math.abs(value).toFixed(decimals)) < 1000
       ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
       : { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 };
-  return unsignedZero(value, (n) => n.toLocaleString('en-US', options)).replace(/^-/, MINUS_SIGN);
+  return signed(unsignedZero(value, (n) => n.toLocaleString('en-US', options)));
 }
 
 /**

@@ -229,6 +229,15 @@ describe('duration clock in a locale', () => {
   });
 });
 
+it('writes and speaks a minus sign behind the bidi mark ar-EG puts before it', () => {
+  for (const display of [decimal(), integer(), bytes(), unit('mm')]) {
+    const p = present(-3, display, { locale: 'ar-EG' });
+    expect(p.text, JSON.stringify(display)).not.toContain('-');
+    expect(p.text).toContain(MINUS);
+    expect(p.spoken, p.spoken).toMatch(/^minus /);
+  }
+});
+
 it('reads back what ar-EG shows', () => {
   for (const display of [decimal({ maxPlaces: 6 }), integer()]) {
     for (const v of [0.5, 3, 1234.5, -1_234_567]) {
