@@ -39,6 +39,16 @@ Owner tags, after the priority (2026-10-26):
   binding in the active scope takes falls through to the other dispatcher on the same surface.
   Closes when the maintainer picks one and it is built, with a case in `useGestureDispatcher.keyScope.test.tsx`.
 
+- **(P3) [agent] A tool held on a modifier hotkey gets its own gestures with that modifier down.**
+  Modifier matching is strict, so a binding that omits `alt` refuses a click made while Alt is held,
+  and a tool whose `hotkey` is `'alt'`, `'shift'`, `'ctrl'` or `'meta'` sees every one of its gestures
+  that way. The eyedropper names its hotkey's modifier optional on its click (2026-11-07,
+  `useEyedropperTool.ts`); any other tool, a consumer's included, has to know to do the same. The
+  engine fix is in the dispatcher: while a tool holds the hotkey slot on a modifier, its bindings
+  read that modifier as optional.
+  Closes when a tool with `hotkey: 'shift'` and a bare `{ kind: 'click' }` binding takes a
+  Shift-held click in a `useGestureDispatcher` test, and the eyedropper's own workaround is gone.
+
 - **(P3) [maintainer] Whether an alt-drag clone should snap to its own source.** Clone snaps as move
   does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
   the box being snapped and hides those nodes as targets. During a clone the source stays put, so the
