@@ -30,22 +30,23 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [maintainer] In the 3D lab, Shift+F10 and the ContextMenu key stop opening the lab's menu once the pane
+- **(P2) [agent] In the 3D lab, Shift+F10 and the ContextMenu key stop opening the lab's menu once the pane
   has been clicked.** Two dispatchers share the pane: the instrument's and its trial camera's. Since 66345dc66 the
   first to activate for a press keeps it (`dispatchCore.ts`), which is the instrument's, and keys then go only to
   its registry, which has no `menu.context`; the camera owns that and `menuHost`. Letting a right-click activate
   the camera again would send undo after a right-click to the camera, and would not help Shift+F10 after a
   left-click. The decision: whether the instrument and its camera share one input scope, or whether a key no
   binding in the active scope takes falls through to the other dispatcher on the same surface.
-  Closes when the maintainer picks one and it is built, with a case in `useGestureDispatcher.keyScope.test.tsx`.
+  Ruled (2026-11-07): the fall-through, as a general rule for dispatchers sharing a surface.
+  Closes when it is built, with a case in `useGestureDispatcher.keyScope.test.tsx`.
 
-- **(P3) [maintainer] Whether an alt-drag clone should snap to its own source.** Clone snaps as move
+- **(P3) [agent] An alt-drag clone should snap to its own source.** Clone snaps as move
   does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
   the box being snapped and hides those nodes as targets. During a clone the source stays put, so the
   copy cannot line up with the original's edges. Allowing it needs a separate exclude list on
   `SnapBegin`; the copy starts on its source, so a short drag would snap back onto it.
-  Closes when the maintainer decides, and either the exclude list is built or this is recorded as
-  decided against.
+  Ruled (2026-11-07): it should; build the exclude list.
+  Closes when a clone snaps to its source's edges, with a test.
 
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
@@ -375,14 +376,15 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P2) [maintainer] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
+- **(P2) [agent] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
   (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
   itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl
   off macOS) adds or removes the pressed node, and Shift selects from the last node clicked to the pressed one.
   Two calls are open: where `select.deep` moves (Alt is clone-drag, double-click enters groups), and what a range
   is in a free 2D scene. collego's answer, which it wires over weasel's picks in its own press handler: every
-  item of the same kind whose center lies in the box the two span (`drawersBetween`). Closes when the select
-  tool's bindings follow the convention and `select.deep` has a new home.
+  item of the same kind whose center lies in the box the two span (`drawersBetween`). Ruled (2026-11-07):
+  `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
+  box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
 
 - **(P3) [maintainer] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
