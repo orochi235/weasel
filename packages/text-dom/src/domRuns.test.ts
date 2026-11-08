@@ -432,6 +432,18 @@ describe('domRuns round-trip — decoration and tracking', () => {
     expect(domToRuns(parent)).toEqual(runs);
   });
 
+  it('round-trips a screen-pixel fontSize and letterSpacing, drawn at the overlay\'s zoom', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', fontSize: { px: 12 } },
+      { text: 'b', letterSpacing: { px: 2 } },
+      { text: 'c', fontSize: 30 },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+    const span = parent.firstElementChild as HTMLElement;
+    expect(span.style.fontSize).toBe('calc(12px / var(--weasel-zoom, 1))');
+  });
+
   it('takes an absolute fontSize over fontScale, as resolveRuns does', () => {
     runsToDom([{ text: 'a', fontSize: 24, fontScale: 0.5 }], parent);
     const span = parent.firstElementChild as HTMLElement;

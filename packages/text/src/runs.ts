@@ -189,35 +189,60 @@ function sameFlags(a: ReadonlySet<RunFlag>, b: readonly RunFlag[]): boolean {
  * A run whose flags exactly match one marker takes it; otherwise the markers
  * that cover them nest. Flags no marker spells are dropped — the text still
  * round-trips, without that styling.
+ *
+ * Markers are written where a flag changes, not around every run: the reader
+ * toggles flags, so two runs sharing one would close and reopen it as a
+ * single delimiter run (`*a**b*`), which reads as a different marker.
  */
 export function runsToMarkdown(
   runs: readonly StyledRun[],
   grammar: RunGrammar = MARKDOWN_RUN_GRAMMAR,
 ): string {
   const chars = escapees(grammar);
+  /** Active flags, in the order they were opened. */
+  let open: RunFlag[] = [];
   let out = '';
+  const cover = (flags: readonly RunFlag[]): RunMarker[] | null => {
+    if (flags.length === 0) return [];
+    const exact = grammar.markers.find((m) => sameFlags(new Set(flags), m.flags));
+    if (exact) return [exact];
+    const singles = flags.map((f) => grammar.markers.find((m) => m.flags.length === 1 && m.flags[0] === f));
+    return singles.every((m) => m !== undefined) ? singles as RunMarker[] : null;
+  };
+  const write = (markers: readonly RunMarker[]): void => {
+    for (const m of markers) out += m.delimiter.repeat(m.repeat);
+  };
+  const moveTo = (want: ReadonlySet<RunFlag>): void => {
+    const kept = open.filter((f) => want.has(f));
+    const opening = [...want].filter((f) => !kept.includes(f));
+    const close = cover(open.filter((f) => !want.has(f)).reverse());
+    const reopen = cover(opening);
+    if (close && reopen) {
+      write(close);
+      write(reopen);
+      open = [...kept, ...opening];
+      return;
+    }
+    // Only a marker spelling several flags at once says the change: close them all and open afresh.
+    write(cover([...open].reverse()) ?? []);
+    write(cover([...want]) ?? []);
+    open = [...want];
+  };
   for (const r of runs) {
     // An empty run would write its markers back to back, which read as a toggle.
     if (r.text.length === 0) continue;
-    const escaped = escapeFor(r.text, chars);
-    const on = flagsOf(r, grammar);
-    if (on.size === 0) { out += escaped; continue; }
-
-    const exact = grammar.markers.find((m) => sameFlags(on, m.flags));
-    if (exact) {
-      const d = exact.delimiter.repeat(exact.repeat);
-      out += `${d}${escaped}${d}`;
-      continue;
-    }
-    // No single marker says all of it: nest the ones that each say part.
-    const covering = grammar.markers.filter(
-      (m) => m.flags.length === 1 && on.has(m.flags[0]),
-    );
-    const open = covering.map((m) => m.delimiter.repeat(m.repeat)).join('');
-    const close = [...covering].reverse().map((m) => m.delimiter.repeat(m.repeat)).join('');
-    out += `${open}${escaped}${close}`;
+    moveTo(spelled(flagsOf(r, grammar), grammar));
+    out += escapeFor(r.text, chars);
   }
+  moveTo(new Set());
   return out;
+}
+
+/** `flags` less any the grammar can only spell in combination with others it
+ *  does not hold: those are dropped, as no marker says them alone. */
+function spelled(flags: Set<RunFlag>, grammar: RunGrammar): Set<RunFlag> {
+  if (grammar.markers.some((m) => sameFlags(flags, m.flags))) return flags;
+  return new Set([...flags].filter((f) => grammar.markers.some((m) => m.flags.length === 1 && m.flags[0] === f)));
 }
 
 /**

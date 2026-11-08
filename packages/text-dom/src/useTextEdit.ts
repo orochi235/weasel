@@ -22,7 +22,7 @@ import {
 } from '@weasel-js/text';
 import { overlayAlignEdge } from './overlayDirection';
 import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
-import { overlayClipPath, overlayTop, overlayTransform } from './overlayFrame';
+import { applyOverlayTransform, overlayClipPath, overlayTop } from './overlayFrame';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
@@ -656,7 +656,7 @@ function placeOverlay(
   // overlay carries the view scale as a transform. Anchored at the top-left so
   // `left`/`top` stay screen pixels.
   el.style.transformOrigin = '0 0';
-  el.style.transform = overlayTransform(pose, left, top, anchor);
+  applyOverlayTransform(el, pose, left, top, anchor);
   el.style.clipPath = pose.clip ? overlayClipPath(el, pose, left, top, anchor, pose.clip) : '';
   // `letter-spacing` is not part of the CSS `font` shorthand. Under a
   // transform the world value is the value. Without one, `pose.fontSize` is

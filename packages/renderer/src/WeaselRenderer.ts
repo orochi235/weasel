@@ -8,6 +8,7 @@ import {
   BatchVariantPrograms, createBatchFill,
 } from './shaders/builtinPrograms';
 import { glyphGeneration, markAllFontsNotUploaded, resetBakeBudget, DEFAULT_BAKE_BUDGET } from '@weasel-js/font';
+import { textEngineGeneration } from '@weasel-js/text';
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
@@ -317,10 +318,9 @@ export class WeaselRenderer {
     const gpu = this.gpu;
     this.imageCache.beginFrame();
     this.beginFrame();
-    this.retained.beginFrame([
-      glyphGeneration(), textureRegistry.getVersion(), paintDrawKindRegistry.getVersion(),
-      this.programs.epoch, this.flattenTolerance, this.widthCss, this.heightCss, this.dpr, this.imageMinification,
-    ]);
+    this.retained.beginFrame([glyphGeneration(), textEngineGeneration(), textureRegistry.getVersion(),
+      paintDrawKindRegistry.getVersion(), this.programs.epoch, this.flattenTolerance, this.widthCss, this.heightCss,
+      this.dpr, this.imageMinification]);
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
     // The effect buffer a frame that threw was drawing into, and whichever

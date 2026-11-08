@@ -81,6 +81,20 @@ describe('runsToMarkdown', () => {
   });
 });
 
+describe('runsToMarkdown then markdownToRuns', () => {
+  const flags = (runs: StyledRun[]) => runs.flatMap((r) => [...r.text].map((ch) => `${ch}${r.bold ? 'B' : ''}${r.italic ? 'I' : ''}`));
+
+  it.each<[string, StyledRun[]]>([
+    ['two italic runs', [{ text: 'a', italic: true }, { text: 'b', italic: true, fontSize: 9 }]],
+    ['two bold runs', [{ text: 'a', bold: true }, { text: 'b', bold: true, underline: true }]],
+    ['italic then bold italic', [{ text: 'a', italic: true }, { text: 'b', bold: true, italic: true }]],
+    ['bold italic then italic', [{ text: 'a', bold: true, italic: true }, { text: 'b', italic: true }]],
+    ['bold then italic', [{ text: 'a', bold: true }, { text: 'b', italic: true }]],
+  ])('keeps each character\'s flags across %s', (_, runs) => {
+    expect(flags(markdownToRuns(runsToMarkdown(runs)))).toEqual(flags(runs));
+  });
+});
+
 describe('markdownToRuns', () => {
   it('returns a single plain run for unstyled text', () => {
     expect(markdownToRuns('hello')).toEqual([{ text: 'hello' }]);
