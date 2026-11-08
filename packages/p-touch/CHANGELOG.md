@@ -1,5 +1,67 @@
 # @weasel-js/p-touch
 
+## 1.18.0
+
+### Patch Changes
+
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- d83476e: Fix edge cases in quantity formatting, color parsing and paint keys, and in `.lbx` output.
+  
+  - A `compact` value that shows as `1.00K` (999.6, say) is now spoken `1 thousand`, not `1.00K`.
+  - `nearestFraction` reads a denominator cap under 1 as 1 instead of returning a fraction over 0.
+  - `parseColor` throws on an empty or non-decimal channel: `rgb(255, 0, 0,)` used to parse as transparent red, `rgb(1 2 3 / foo)` as opaque, and `rgb(0x10, 0, 0)` as hex.
+  - `paintKey` gives two solids one key when their colors are the same color spelled differently (`#fff`, `#FFFFFF`, `white`).
+  - `sampleGradientStops` reads a NaN position as the first stop instead of writing `#NaNNaNNaNNaN`, and answers an empty stop list in hex (`#00000000`) like every other answer.
+  - `hexToColorLiteral` leaves `alpha` off a fully opaque `#rrggbbaa`, as `cssColorLiteral` does.
+  - `writeLbx` frames a rect drawn with a negative width or height where it lies, and writes a cut position given twice only once.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [d83476e]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [d025e1b]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [c675905]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/paint@1.18.0
+  - @weasel-js/renderer@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/text@1.18.0
+  - @weasel-js/dither@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

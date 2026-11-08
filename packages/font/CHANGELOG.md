@@ -1,5 +1,25 @@
 # @weasel-js/font
 
+## 1.18.0
+
+### Patch Changes
+
+- c7e8680: Text fixes from an audit:
+  
+  - An outline face registered again while its first file was still loading no longer builds the DOM face from the old file's bytes.
+  - Registering a bidi engine or shaper (`registerBidi`, `registerShaper`) after text was first drawn now lays that text out again in its picking silhouette, in `textClusters` and in retained layers; it used to keep the order and widths from before. New `textEngineGeneration()` counts those registrations.
+  - `runsToMarkdown` writes markers only where a flag changes, so two adjacent italic (or bold) runs no longer come back from `markdownToRuns` as bold (or plain).
+  - The text edit overlay keeps a run's screen-pixel `fontSize` and `letterSpacing` (`{ px }`): it showed the run at the node's size and dropped the override on commit.
+- 5f9b5d0: Type fixes from an audit:
+  
+  - The text edit overlay waits for, and sets, a run's own family in the node's weight and style when the run names no weight or style of its own. It asked for 400 normal, so an edit in a bold node could show before its face had loaded.
+  - `fontHold: 0` shows the edit overlay at once, as documented; it stayed transparent until a zero-length timer fired.
+  - A numeric `startEdit` caret is placed by the same offset rules as every other selection in the overlay.
+  - `unregisterCanvasFont` drops the family's glyphs still waiting to bake, so they no longer take atlas room.
+  - Bidi reordering is linear in the number of tabs and separators on a line; it was quadratic.
+- Updated dependencies [b93c1dd]
+  - @weasel-js/registry@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

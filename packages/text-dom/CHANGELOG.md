@@ -1,5 +1,56 @@
 # @weasel-js/text-dom
 
+## 1.18.0
+
+### Patch Changes
+
+- c7e8680: Text fixes from an audit:
+  
+  - An outline face registered again while its first file was still loading no longer builds the DOM face from the old file's bytes.
+  - Registering a bidi engine or shaper (`registerBidi`, `registerShaper`) after text was first drawn now lays that text out again in its picking silhouette, in `textClusters` and in retained layers; it used to keep the order and widths from before. New `textEngineGeneration()` counts those registrations.
+  - `runsToMarkdown` writes markers only where a flag changes, so two adjacent italic (or bold) runs no longer come back from `markdownToRuns` as bold (or plain).
+  - The text edit overlay keeps a run's screen-pixel `fontSize` and `letterSpacing` (`{ px }`): it showed the run at the node's size and dropped the override on commit.
+- 082fa2f: Fix text editing and mixed-face line heights
+  
+  - A character typed under an armed style (Cmd+B at a collapsed caret) keeps the styling of the run it is typed into.
+  - Text committed through an input method takes the armed style, and small-caps letters it typed are re-split once the composition ends.
+  - A paste that ends the text with a line break keeps that break on commit.
+  - A line holding two faces grows to clear the lower one's descent, as CSS does, so canvas lines no longer overlap or sit closer than the edit overlay's.
+  - The scene edit overlay sizes `{ px }` font sizes and letter spacing as `kit:text` draws them, at any zoom. `TextEditScreenPose` takes a new `pxScale`.
+- 5f9b5d0: Type fixes from an audit:
+  
+  - The text edit overlay waits for, and sets, a run's own family in the node's weight and style when the run names no weight or style of its own. It asked for 400 normal, so an edit in a bold node could show before its face had loaded.
+  - `fontHold: 0` shows the edit overlay at once, as documented; it stayed transparent until a zero-length timer fired.
+  - A numeric `startEdit` caret is placed by the same offset rules as every other selection in the overlay.
+  - `unregisterCanvasFont` drops the family's glyphs still waiting to bake, so they no longer take atlas room.
+  - Bidi reordering is linear in the number of tabs and separators on a line; it was quadratic.
+- c675905: Type fixes from an audit:
+  
+  - The text edit overlay keeps a run's solid fill opacity. It wrote only the CSS color, so committing an edit dropped the opacity.
+  - The overlay splits a small-caps run under `textTransform: 'capitalize'` the way the canvas draws it: a run that continues a word started in the run before it has no capital at its start.
+  - A pasted weight reads as bold by `isBoldWeight`, the same line every other bold check draws.
+  - `createMarkdownRenderer` underlines, strikes and overlines a small-caps word as one rule at its run's size, as the GL tier does. It drew one rule per piece, the small pieces' thinner and higher. `PositionedRun` gains `lineSize`, the size of the run a piece was cut from.
+- Updated dependencies [fe6a382]
+- Updated dependencies [c7e8680]
+- Updated dependencies [b4163e6]
+- Updated dependencies [082fa2f]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [d83476e]
+- Updated dependencies [56e54c0]
+- Updated dependencies [c675905]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a287c54]
+  - @weasel-js/paint@1.18.0
+  - @weasel-js/font@1.18.0
+  - @weasel-js/text@1.18.0
+  - @weasel-js/react@1.18.0
+  - @weasel-js/ui-logic@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

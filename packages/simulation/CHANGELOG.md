@@ -1,5 +1,16 @@
 # @weasel-js/simulation
 
+## 1.18.0
+
+### Patch Changes
+
+- 7e83b0f: A wallpaper whose extent leaves its center out now draws its cell's copies about the original, as its guide and its edit symmetries already assumed. `useSimulation`'s docs say which options it reads only at mount, and the loupe model's docs spell color the US way.
+- Updated dependencies [b4163e6]
+- Updated dependencies [6cd51e2]
+- Updated dependencies [e3ce292]
+  - @weasel-js/react@1.18.0
+  - @weasel-js/clock@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,29 @@
 # @weasel-js/audio
 
+## 1.18.0
+
+### Patch Changes
+
+- bf2e0c3: Fix teardown gaps in storage and audio.
+  
+  - `createMemoryAdapter` no longer reports a change to a subscriber that unsubscribed while the change was on its way.
+  - A record cache no longer sends a write made while its `close()` was still flushing.
+  - `engine.analyser()` throws once the audio engine is disposed, as `engine.graph()` does, instead of handing out a tap nothing tracks.
+  - The audio engine stops listening for unlock gestures once its context closes, rather than calling `resume()` on a closed context at every press.
+- 6cd51e2: A clock whose `loop` is a fraction, such as 2.5, now counts its passes whole: it ends in pass 2, partway through, rather than reporting pass 1.5, and `shownInPass` places a time past such a run in its last pass.
+  `createClock` given a reopened position now throws on a NaN time or rate, and on a negative rate for a clock that is not seekable, as a seek or a rate write does.
+  An insert chain's `add` throws once its bus graph is disposed, where it used to accept an effect that was never routed and leave `settled()` waiting forever.
+  `createDelayEffect` throws on an opening `time` outside `0..maxTime`, as `setTime` does, instead of letting the node clamp it.
+  A pattern player whose `onStep` throws keeps booking steps; before, it went silent while `playing()` still said true.
+- 1e0adbb: Fix lookups, hue interpolation and bus ramps in quantity, paint and audio.
+  
+  - A unit, display kind or spoken unit named for an `Object.prototype` member (`toString`, `constructor`) reads as unknown: `unitScale` throws, the display falls back to `decimal`, and the unit is spoken by its name, instead of picking up the inherited function.
+  - `snapToStep` and spin keys keep every decimal of a step written in e-notation: a step of `1.5e-7` now snaps to multiples of it rather than of `1e-7`.
+  - `lerpHueDeg` keeps the sign of a half turn, as CSS's hue fixup and `lerpOklch` do: 180° to 0° under `shorter` now passes 90°, not 270°. This changes theme ramps between exactly opposite hues.
+  - `parseColor('constructor')` and the other `Object.prototype` names throw as unrecognized colors, and `cssColorNotation` answers `null` for such a space instead of throwing a `TypeError`.
+  - `paintKey` folds a solid's `opacity` into its color's alpha, so `rgba(255, 0, 0, 0.5)` and `#f00` at opacity 0.5 share a key, as they draw the same.
+  - Changing one bus's gain, mute or solo no longer cuts another bus's gain ramp short: only faders whose value changed are written.
+
 ## 1.17.3
 
 No changes in this release.

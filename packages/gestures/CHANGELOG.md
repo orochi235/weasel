@@ -1,5 +1,36 @@
 # @weasel-js/gestures
 
+## 1.18.0
+
+### Patch Changes
+
+- 5c6d898: Fixes from a second audit of gesture recognition and input routing:
+  
+  - A three-finger tap whose fingers lift in the order they landed is a `multiTouchTap` again; it was rejected because the centroid of the last two fingers was compared with that of the first two. A tap also reports its peak finger count when fingers lift and land again during it.
+  - A long-press or a canceled press between two clicks ends the double-click sequence, as a drag already did, so the next click is not a double click.
+  - A wheel counted in pages scales its horizontal delta by the canvas width, not its height.
+  - A held key that went down with Cmd is released when Cmd comes up: macOS sends no keyup for a key released while Cmd is down, so a `key-held` binding on Cmd+key stayed engaged.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- 229d0e7: `setWeights` weighs a joint named like an `Object.prototype` member (`constructor`, `toString`) as its own joint, where it used to drop it and write the weights onto the prototype's function; `dropSkinJoints` hands back the same skin for such a name when the skin does not weigh it.
+  Canceling a `cycleVertexColors` cycle leaves alone an override set on the same node and channel since, and a second cancel does nothing.
+  A release of a pointer the recognizer never saw pressed no longer ends the multitouch gesture the held fingers are making.
+  `keySpecFromKey` and `keySpecFromCode` print a key named like an `Object.prototype` member as itself rather than throwing or answering a function, and `key('constructor+K')` throws as for any unknown modifier.
+  kernel3d's pick and snap indexes share one box-validity test and one padding.
+- 69988f1: A multitouch gesture counts only touch pointers. A pen or mouse held while a finger touches used to count as a second finger, so a palm resting while drawing could start a pinch and withhold the pen's press; the pen's press now goes out as its own, and the fingers alone make the pinch.
+- Updated dependencies [12c538a]
+- Updated dependencies [56e54c0]
+  - @weasel-js/menu@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,165 @@
 # @weasel-js/labkit
 
+## 1.18.0
+
+### Patch Changes
+
+- 3c434f1: - `ExportMenu` exports a target that still exists once the one it had chosen is gone, instead of failing with "no annotation target".
+  - `LabBoundary` hides every context a lab or a trial publishes, so a trial clock, a camera, the lab's commands and its lightbox no longer reach what is under it.
+  - The Pixel grid clears when its capture fails, instead of leaving an unhandled rejection and the old grid.
+  - A custom or dialog row offers no auto toggle where unpinning it would close a resolver cycle, as a plain row already did.
+  - A trial's next default snapshot name is one none of its snapshots holds, so deleting one no longer repeats a name.
+- 0f72734: Fixes left from the third audit round:
+  
+  - labkit: calling a `watch3d` unsubscribe a second time does nothing; it could delete a listener set registered later for the same trial.
+  - labkit: `PresentationState.time` and `labkit:seek`'s `time` are documented as what they are, shown time: the clock's `origin` plus the time into the pass.
+  - diagram: adding an edge label with the default double-click edit and committing its first text are one undo entry, so an undo after typing takes the label away instead of leaving it empty and invisible. `dropEmptyEdgeLabel` removes an emptied new label within that entry.
+  - core: `textEditJoin(id)` gives a batch that makes a node for a text edit the options that let the edit's commit join its undo entry. `useSceneTextEdit` ends that run when the edit ends, so a later edit of the node stays its own entry.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- 48eecfa: A Follow lens's reticle takes the size of the patch a new zoom or a resized body shows the next time it moves, rather than keeping the size it had when it started following.
+  An annotation `update` that moves a mark and changes its fields is one undo step and one notice to subscribers.
+  The CSS vars panel, its "used" marks and a story capture read a document's adopted stylesheets, where a theme writes its tokens, as the loupe's token chain already did.
+  The loupe's token chain leaves out a stylesheet whose own `media` list does not hold.
+  A story running in a frame can no longer write a config key forge keeps for itself, such as `$playhead`; one rendered in the page already could not.
+  An in-page story's CSS vars report answers an override the way a framed story's does, without rescanning the document.
+- 2455bb4: An eyedropper that samples exactly, as the loupe's complement.
+  
+  `@weasel-js/loupe`: `createSampler` reads an ordered stack of pixel sources and composites translucent
+  layers source-over to the color a viewer sees, answering with a promise when a source does.
+  `createEyedropperModel` sits beside `createLoupeModel`: `hover`, `pick` and `color`, and given a loupe,
+  `hover` aims it. Breaking: `pixelHex` and `sourcePixel` are gone, folded into the sampler
+  (`canvasPixelSource`, and `rgbaHex` in `@weasel-js/paint`), and `CanvasSource.sample` is now `pixel`,
+  answering RGBA bytes rather than a hex.
+  
+  `@weasel-js/core`: a `colorAt` dep (screen point to color), which `<SceneCanvas>` sources by redrawing
+  its document layers offscreen around the point — never the selection handles or other chrome over
+  them. `sampleLayers` names those layers. `useEyedropperTool` samples pixels through it when given no
+  `colorOf`, which is now optional. The canvas readback hud's loupe used (`createCanvasReader`,
+  `readGl`, `regionOnCanvas`, `regionAround`) moves to core, beside `createLayerSampler`,
+  `planLayerSample` and `RasterSession.renderCommands`.
+  
+  `@weasel-js/hud`: `createLoupe` in vector mode with a `source` reports the color of those layers, not
+  the presented canvas.
+  
+  `@weasel-js/labkit`: `sampleStack` is replaced by `stackSources` over the engine sampler, which reads
+  WebGL layers and composites translucent ones. A trial offers an Eyedropper toggle beside its loupe
+  toggle, and one readout of the color picked whose press copies it.
+- d2d8753: Any lab can have lenses: `<Lab labChrome={[labLoupe]} />` from `@weasel-js/labkit/loupe` mounts the lens canvas
+  over the lab body and the Loupe keymap (Alt+L, then L adds a lens). Each lens shows a copy of the trial under its
+  reticle, from the new `createCloneSource`, so SVG and text stay sharp at any factor. The lens API forge's workshop
+  used — `createLensApi`, `useLensFocus`, `lensClient`, `useLensRemeasure` — moved into labkit, and forge now uses it
+  from there.
+- bdb314c: A pref leaf can carry `meta`, the consumer's own data, which the kit keeps and never reads: no settings search matches it. labkit fields set it with `.meta({...})`, merged across calls; it rides the resolved leaf and survives a round trip through prefs.
+- d77f2e2: Every trial has undo and redo unless its instrument opts out: an instrument that declares no `undo` gets the buttons and Mod+Z. `undo: false` turns them off, and an instrument with `annotations` still gets them for its marks.
+  
+  Undo now steps a trial's settings along with its state. An undo entry used to hold only `state`, so undoing a settings change put back what `onConfigChange` had derived and left the setting itself changed; it now restores both. A trial snapshots on `state.change` and `config.change` unless its instrument names other events, where it used to snapshot on `state.change` alone.
+- 4fc36e9: A trial's undo now hears every write to it. A settings change in a trial whose instrument hands over a history of its own (`<TrialSceneCanvas>`, `useTrialHistory`) goes onto that history, in order with the instrument's edits; before, it was recorded on a stack nothing stepped, and could not be undone. `TrialHistorySource` gains a required `record(op, label)` for this, which breaks a history passed to `useTrialHistory` without one.
+  
+  `useTrialState().setConfig` and `setState`, inside a trial, are now the trial's own writers: undo records them and `setConfig` runs the instrument's `onConfigChange`, where both used to write the store directly.
+  
+  Reset and loading a snapshot start the trial on a fresh undo history, as Clone already did, and as a scene's history already was on Reset. Before, the first undo after either stepped back past the last change made before it.
+  
+  A trial leaves Mod+Z and Shift+Mod+Z alone when it has nothing to step, as `useUndoKeys` already did, so a lens or any other handler further out still gets the chord; before, a trial with Undo buttons took it either way.
+  
+  `useTrialScene` no longer reloads its scene from an older JSON it wrote itself. Two scene edits between a render and its effect left that render holding the first edit's JSON, which the hook read as an outside write and loaded, undoing the second.
+- dad1aae: `TrialLoupe` takes a `sceneView` option: a bare `@weasel-js/core` scene — a host with no `<CanvasStack>`
+  of its own, the common case for a weasel consumer app — can now get a true circular, vector-sharp
+  magnifier in one prop, painted by the new `SceneLoupe` through `SceneViewCanvas`. Previously such a
+  host had to either hand-assemble `useLoupe` + `LoupeBubble` + `LoupeGestures` + `SceneViewCanvas`
+  itself, or reach for the much heavier `<LensOverlay>` multi-lens system to get both a circle and
+  real vector redraw together.
+  
+  `LoupeOptions`, `ResolvedLoupe`, `TrialLoupeProps` and `useLoupe` are now generic over
+  `<TData, TLayer, TPose>`, defaulted so every existing caller is unaffected.
+- b470ff1: Add `<Sequence>`: one component repeated over the steps of a parameter
+  
+  - `Sweep` (ui-logic) is a parameter's domain, apart from how it is walked: `at(u)` reads it as a scrubber does, one value from 0 to 1 along it, and `walk()` reads every step at once. `range` (by `step`, or `count` samples), `values`, `frames` (a clock's run, `every` ms apart, one pass or `passes: 'all'`) and `until` (stop before the first step a predicate accepts) build one; `stepsOf` takes up to a cap from one that never ends.
+  - `<Sequence sweep>` (ui) renders its child once per step, captioned with the sweep's label, wrapped or as one scrolling strip. Given `across`, a second sweep, it lays out every pairing as a grid with its rows and columns labeled. Each cell is live. This is new API.
+  - `<HeldClock spec at>` (labkit) gives what renders inside a clock of its own, paused at `at`, which `useTrialClock` and `useClockFrame` read in place of the trial's; a clock that is not seekable is run there `step` ms a frame. `<ClockFrames spec every>` is a `<Sequence>` of a clock's frames, each under one.
+  - `fieldSweep(node)` (labkit) walks the values a config field's control offers: a number's stops or its range by its step, an enum's options, a boolean's off and on.
+  - forge's `usePlayhead` and `useTimeline` read the clock of a `<HeldClock>` around them ahead of the story's own (labkit's `useHeldClock`), so a story's clock-driven component shows the held moment in each frame of a `<ClockFrames>`.
+  - forge's API panel lists required props first, then every prop by name; their `required` badge takes the secondary accent, and badges there read in the body font rather than the code font.
+- e3ce292: Follow a lab tile that moves with nothing resizing
+  
+  - A lab's surface re-measures a tile that moves while neither it nor the surface changes size, such as when a sibling beside it settles. An annotation's input box and marks used to stay where the tile was first measured.
+  - `watchElementMove(element, onMove)` is exported from `@weasel-js/react`. It calls `onMove` when an element's box moves in the viewport for a reason no event reports. It moved there from core, which exported it only for tests.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [26f3d8f]
+- Updated dependencies [bf2e0c3]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [0720167]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [1ba75a2]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [5c6d898]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [54eba02]
+- Updated dependencies [98b212a]
+- Updated dependencies [f148cf9]
+- Updated dependencies [082fa2f]
+- Updated dependencies [6cd51e2]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [7e83b0f]
+- Updated dependencies [12c538a]
+- Updated dependencies [d83476e]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [229d0e7]
+- Updated dependencies [bf18471]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [bdb314c]
+- Updated dependencies [479c893]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/routing@1.18.0
+  - @weasel-js/kernel3d@1.18.0
+  - @weasel-js/svg@1.18.0
+  - @weasel-js/storage@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/prefs@1.18.0
+  - @weasel-js/quantity@1.18.0
+  - @weasel-js/theme@1.18.0
+  - @weasel-js/ui@1.18.0
+  - @weasel-js/react@1.18.0
+  - @weasel-js/animator@1.18.0
+  - @weasel-js/clock@1.18.0
+  - @weasel-js/icons@1.18.0
+  - @weasel-js/registry@1.18.0
+  - @weasel-js/loupe@1.18.0
+  - @weasel-js/minimap@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

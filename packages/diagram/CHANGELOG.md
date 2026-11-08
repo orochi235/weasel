@@ -1,5 +1,105 @@
 # @weasel-js/diagram
 
+## 1.18.0
+
+### Patch Changes
+
+- 4161bcd: Fixes from an audit of core's canvas, tools and input:
+  
+  - A paste that lands in a container or on a page puts the members of a pasted envelope group where they were drawn; they were stored in world coordinates under the container's frame and landed offset by it.
+  - An Alt-drag clone snaps to its own source, which stays where it was. `SnapBegin` takes `exclude`, the nodes that offer no targets, which defaults to `ids`.
+  - A Shift-drag on empty canvas marquees and adds what it takes to the selection; the select tool's marquee forbade Shift, so it did nothing.
+  - A drag started with a modifier already held now starts: every shape tool (rect, ellipse, line, polygon, star, text, sticky, image, pencil, diagram stencils) with Shift, Alt or Ctrl; move, resize, rotate, clone and measure with Shift or Ctrl; anchor and handle drags, the anchor marquee, balance grips and diagram waypoints with the keys their roles read. Their bindings left those keys out, which the matcher reads as forbidden. `roleMods(roles)` builds a binding's `mods` from an action's modifier roles, and `INSERT_DRAG_MODS` is the insert drag's.
+- d370754: Fix connector edge cases in `@weasel-js/diagram`.
+  
+  - A self-edge that names a port at only one end now loops around a corner from that port. Before, it drew a zero-length edge or a line straight through its node.
+  - `commitReconnectToScene` now moves the edge and its labels onto the page both ends share, or into the page run, the same way a connect does.
+  - The avoid router no longer hangs when `margin` is 0 or less.
+  - The avoid, label placement, line-jump and off-page passes now skip locked connectors and labels. Before, moving a shape near one threw an error and the move failed.
+- 0f72734: Fixes left from the third audit round:
+  
+  - labkit: calling a `watch3d` unsubscribe a second time does nothing; it could delete a listener set registered later for the same trial.
+  - labkit: `PresentationState.time` and `labkit:seek`'s `time` are documented as what they are, shown time: the clock's `origin` plus the time into the pass.
+  - diagram: adding an edge label with the default double-click edit and committing its first text are one undo entry, so an undo after typing takes the label away instead of leaving it empty and invisible. `dropEmptyEdgeLabel` removes an emptied new label within that entry.
+  - core: `textEditJoin(id)` gives a batch that makes a node for a text edit the options that let the edit's commit join its undo entry. `useSceneTextEdit` ends that run when the edit ends, so a later edit of the node stays its own entry.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- b616cad: Fixes from a second audit of core's scene, viewport, selection and geometry:
+  
+  - `usePointerStylus` commits the last sample its throttle held back once the gap has passed, so a pen that comes to rest inside the gap no longer leaves the state on an older sample.
+  - `unionBounds` folds a box with a negative width or height by the span it covers, as `unionAABB` does.
+  - `sceneNodeClientRect` returns a positive rect at the box's screen top-left under a flipped (y-up) view.
+  - `RECT_POSE_DESCRIPTOR.lerp` (and `ROTATED_POSE_DESCRIPTOR.lerp`) interpolates `rotation` the short way round, as the descriptor's `axes` do; it carried the start angle through and jumped at the end.
+  - `AUTO_POSE_DESCRIPTOR` has a `lerp`, dispatching to the rect or Path descriptor, so `tweenPose` and `springPose` no longer throw on the default descriptor.
+  - `setLayerVisible`, `setLayerLocked`, `setLayerParallax` and `renameLayer` record no undo entry and leave the version alone when handed the value the layer already has.
+  - A fit with nothing to fit lands on the view Cmd-0 gives. `HOME_VIEW` and `resetView` define that view once: the canvas's `viewport.recenter`, else `HOME_VIEW`, the world origin at 100%. `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` now return `null` for content with no extent on either axis (`hasExtent`), with no warning and no fall to `ZOOM_FLOOR`; `fitViewToBounds` no longer hands back the current view for it. This is a breaking change to those return types. `viewport.zoom`'s Fit Content, the off-page follow and the editor's page fits resolve `null` to the reset view, `useAutoCenter` waits for content before it centers, and `ViewAnimationApi.animateToBounds` returns `false` without moving. `fitViewToBounds` fits a lone line along the axis it has; Fit Content no longer centers a lone point at the current zoom, and goes to the reset view instead.
+  - `scene.update` and `scene.setPose` record no undo entry, leave the version alone and notify no one when handed the data or pose the node already has, compared by structure as the declared-field setters compare. A drag whose pointer holds still for a frame still lands as one undo entry.
+- ef454d2: Fix diagram placement in paged scenes and diagram-formats ids
+  
+  - A label added by double-clicking an edge goes on the edge's page in a paged scene, as a connect places the edge, instead of at the top of the tree outside the page run.
+  - A sequence started by the Participant tool goes on the page under the click in a paged scene, instead of outside the page run.
+  - `documentFromScene` sizes the one page of a scene with no pages around its shapes. Connectors, stored as an empty box at the origin, no longer stretch the page back to (0, 0).
+  - A DOT cluster whose short name and full name are both node ids gets a container id no node holds.
+  - New `edgeLabelIdOf` and an exported `groupLabelIdOf` name the label node of an edge and of a group, which several places spelled out by hand.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [bf2e0c3]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [6cd51e2]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [7e83b0f]
+- Updated dependencies [12c538a]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [27d8adb]
+- Updated dependencies [56e54c0]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [229d0e7]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/audio@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/font@1.18.0
+  - @weasel-js/react@1.18.0
+  - @weasel-js/animator@1.18.0
+  - @weasel-js/clock@1.18.0
+  - @weasel-js/icons@1.18.0
+  - @weasel-js/registry@1.18.0
+  - @weasel-js/ui-logic@1.18.0
+  - @weasel-js/simulation@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

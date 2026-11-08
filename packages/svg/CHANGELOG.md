@@ -1,5 +1,75 @@
 # @weasel-js/svg
 
+## 1.18.0
+
+### Patch Changes
+
+- fe6a382: Stroke, paint and alignment fixes:
+  
+  - A closed zero-length subpath (`M5 5Z`, `M5 5L5 5Z`) draws its round or square cap as a dot, as SVG strokes it.
+  - A closed subpath's last vertex takes a mid marker.
+  - An inner stroke at least as wide as a rect's narrower side fills the rect, as it does the same polygon, instead of turning the rect inside out and drawing outside it. `ribbonAligns` (stroke) and `alignedStrokeRectHolds` (paint) say when a rect's aligned ribbon is built in place.
+  - An upright selection outline and the selection handles' outlines are aligned once; they were shifted for `align` and then shifted again by the renderer.
+  - SVG export writes gradient stops in offset order, and a stop past 0..1 as the color the ramp has there, so the file reads back as the gradient the kit paints.
+  - Interpolating two gradients pairs their stops by offset, not by list position.
+- b7ef242: Fix SVG import and PDF path output found in an audit.
+  
+  - `writePdf` places a path measured from an origin (far from 0) at its own coordinates instead of offset by the origin.
+  - `parseSvg` reads `<rect>` `rx`/`ry` as SVG 2 does: a missing or negative radius takes the other's value, the two stay independent, each is clamped to half its own side, and either one at 0 gives square corners.
+  - `parseSvg` gives an `<ellipse>` radius left out the other's value.
+  - `pathFromD` reads a form feed between arc arguments as whitespace.
+  - `parseSvg` multiplies a color's own alpha by `fill-opacity` / `stroke-opacity` rather than replacing it.
+  - `parseSvg` reads `fill-opacity` and a color's alpha on `<text>` and `<tspan>`, and `serializeSvg` writes a run's fill opacity.
+  - `serializeSvg`'s default `viewBox` boxes each path's stroke and marker heads, not just its geometry, so a stroked shape at the edge keeps the outer half of its stroke. Core exports `strokedBounds`, the box a stroke covers along a path, which it measures with.
+- f148cf9: SVG import fixes:
+  
+  - A declaration CSS rejects (`style="fill: bogus"`, an invalid presentation attribute) no longer wins the cascade and paints black; the declaration below it, or inheritance, stands. `unset` and `initial` are read.
+  - `url('#id')` and `url("#id")` references resolve in paints and markers, a paint's `none` fallback is taken, and `none` is read in any case.
+  - A `<clipPath>`'s own `transform` is applied, and `clip-rule` is read and written back.
+  - `<a>` is read as a group, and `<switch>` draws its first child whose `requiredExtensions` and `systemLanguage` hold and that the parser can draw.
+  - `<use>` draws the element it references, `<symbol>` included; a reference cycle is reported and drawn as nothing.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/stroke@1.18.0
+  - @weasel-js/geom@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,37 @@
 # @weasel-js/animator
 
+## 1.18.0
+
+### Patch Changes
+
+- a78c393: - A nested timeline's `duration` now ends it: its events past that time no longer fire or book, and its sampled tracks hold where they stand at it, as a root timeline does at its own.
+  - A timeline seeked from inside an event's handler goes on from where the seek landed: the rest of the span the frame crossed no longer fires, the events after the seek fire on the replay, and a seek from the last edge no longer calls `onDone` early or skips it at the end of the replayed pass.
+  - `TimelineHandle.seek` throws a `RangeError` on NaN or an infinite time, which used to leave the timeline stuck.
+  - `easeInSine` and `easeInBack` now return exactly 1 at t=1, and `easeOutBack` exactly 0 at t=0, so a tween with a discrete `interpolate` lands on `to`.
+- 229d0e7: `setWeights` weighs a joint named like an `Object.prototype` member (`constructor`, `toString`) as its own joint, where it used to drop it and write the weights onto the prototype's function; `dropSkinJoints` hands back the same skin for such a name when the skin does not weigh it.
+  Canceling a `cycleVertexColors` cycle leaves alone an override set on the same node and channel since, and a second cancel does nothing.
+  A release of a pointer the recognizer never saw pressed no longer ends the multitouch gesture the held fingers are making.
+  `keySpecFromKey` and `keySpecFromCode` print a key named like an `Object.prototype` member as itself rather than throwing or answering a function, and `key('constructor+K')` throws as for any unknown modifier.
+  kernel3d's pick and snap indexes share one box-validity test and one padding.
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [a78c393]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [6cd51e2]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [d83476e]
+- Updated dependencies [89b2c65]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+  - @weasel-js/paint@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/react@1.18.0
+  - @weasel-js/clock@1.18.0
+  - @weasel-js/registry@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

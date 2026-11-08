@@ -1,5 +1,54 @@
 # @weasel-js/plot
 
+## 1.18.0
+
+### Patch Changes
+
+- 7d409c8: Fix chart scales and Mermaid readers on edge cases
+  
+  - `spacedTicks` returns no ticks, rather than looping until the array overflows, where the step multiples are past counting (a domain like 1e17..1e17+100), as `ticks()` already did.
+  - A time scale spanning decades ticks on 1, 2 or 5 times a power of ten years, so a 40-year span asked for 5 ticks gets 4 rather than 41.
+  - A gantt date in years 0 to 99 reads as itself rather than as 1900 to 1999, and `%j` counts its day of the year from its own January.
+  - A Mermaid `accDescr { … }` block closed on the line it opens on no longer swallows the statements after it.
+  - A Mermaid flowchart reads an `accDescr { … }` block running over several lines instead of throwing.
+  - A Mermaid xychart or sequence diagram reads past a `%%{…}%%` directive running over several lines instead of throwing.
+  - A quoted front matter title reads the same in a Mermaid sequence diagram and xychart as in every other kind: escapes in double quotes read, `''` in single quotes as one quote.
+  - A Mermaid packet diagram writes a gap between fields as an unlabeled field, which Mermaid reads, instead of a field Mermaid rejects for not starting where the one before ends; an unlabeled field reads back as a gap.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [c675905]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/text@1.18.0
+  - @weasel-js/theme@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,66 @@
 # @weasel-js/kernel3d
 
+## 1.18.0
+
+### Patch Changes
+
+- 4161bcd: Fixes from an audit of core's canvas, tools and input:
+  
+  - A paste that lands in a container or on a page puts the members of a pasted envelope group where they were drawn; they were stored in world coordinates under the container's frame and landed offset by it.
+  - An Alt-drag clone snaps to its own source, which stays where it was. `SnapBegin` takes `exclude`, the nodes that offer no targets, which defaults to `ids`.
+  - A Shift-drag on empty canvas marquees and adds what it takes to the selection; the select tool's marquee forbade Shift, so it did nothing.
+  - A drag started with a modifier already held now starts: every shape tool (rect, ellipse, line, polygon, star, text, sticky, image, pencil, diagram stencils) with Shift, Alt or Ctrl; move, resize, rotate, clone and measure with Shift or Ctrl; anchor and handle drags, the anchor marquee, balance grips and diagram waypoints with the keys their roles read. Their bindings left those keys out, which the matcher reads as forbidden. `roleMods(roles)` builds a binding's `mods` from an action's modifier roles, and `INSERT_DRAG_MODS` is the insert drag's.
+- 54eba02: An orbit, pan or pinch dolly no longer undoes a camera change made while it runs, such as a wheel dolly during an orbit drag; the gesture carries on from the camera the other writer set.
+  `projectAabbToScreen` clips at the far plane as well as the near one, so a marquee no longer selects, and selection chrome no longer outlines, a solid the camera does not draw.
+  `createInsert` declines a rectangle with no drag ends whose corners reach past the horizon, rather than minting a footprint from the corners that reached the ground.
+- 229d0e7: `setWeights` weighs a joint named like an `Object.prototype` member (`constructor`, `toString`) as its own joint, where it used to drop it and write the weights onto the prototype's function; `dropSkinJoints` hands back the same skin for such a name when the skin does not weigh it.
+  Canceling a `cycleVertexColors` cycle leaves alone an override set on the same node and channel since, and a second cancel does nothing.
+  A release of a pointer the recognizer never saw pressed no longer ends the multitouch gesture the held fingers are making.
+  `keySpecFromKey` and `keySpecFromCode` print a key named like an `Object.prototype` member as itself rather than throwing or answering a function, and `key('constructor+K')` throws as for any unknown modifier.
+  kernel3d's pick and snap indexes share one box-validity test and one padding.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [26f3d8f]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [5c6d898]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [d83476e]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [bdb314c]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/routing@1.18.0
+  - @weasel-js/stroke@1.18.0
+  - @weasel-js/paint@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/prefs@1.18.0
+  - @weasel-js/react@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

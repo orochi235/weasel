@@ -1,5 +1,12 @@
 # @weasel-js/text-shaping
 
+## 1.18.0
+
+### Patch Changes
+
+- Updated dependencies [5f9b5d0]
+  - @weasel-js/bidi@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,55 @@
 # @weasel-js/ui-logic
 
+## 1.18.0
+
+### Patch Changes
+
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- 56e54c0: Fix three gaps in guides, menus and the HUD menu.
+  
+  - Moving a placed guide off the rulers now snaps to the edges and centers of the top-level nodes, as placing a new one does. `alignmentSnapSource` took the guide's id as a node whose siblings to measure, and found none.
+  - A menu access letter, or a typeahead key, outside the Basic Multilingual Plane (an emoji) is now read as one character.
+  - A HUD menu's color picker checks the swatch the color holds at its current alpha, so the swatch just chosen shows checked after the alpha has changed.
+  
+  A list's typeahead counts a typed key by code point, as menus now do, so an emoji types and a repeated one cycles; `isOneChar` from `@weasel-js/ui-logic` is the one rule both use.
+- 8c39a05: Add `selection` and `selectionOfEach` to `@weasel-js/ui-logic`: which of a run of items are on, as one value, a list of them, or a boolean each item owns. The model gives each item's state (`on`, `off`, `mixed`), what a press does, and an `edit` that sets several in a row and can be reverted; `sweepFrom` is a sweep's run over it, `selectionKeys` says what the keyboard does with it, and `@weasel-js/ui`'s `selectionRoving` hands that to `useRovingTabIndex`. `ToggleBar` and `OptionsBar` run on it.
+  
+  `ToggleBar`'s single mode takes `mixedValues` and `followsFocus`. With `followsFocus: false` its segments are toggle buttons whose arrows move focus without choosing, so a clearable enum's toggle in a property panel is a single-mode bar rather than a multiple-mode one held to one value.
+- b470ff1: Add `<Sequence>`: one component repeated over the steps of a parameter
+  
+  - `Sweep` (ui-logic) is a parameter's domain, apart from how it is walked: `at(u)` reads it as a scrubber does, one value from 0 to 1 along it, and `walk()` reads every step at once. `range` (by `step`, or `count` samples), `values`, `frames` (a clock's run, `every` ms apart, one pass or `passes: 'all'`) and `until` (stop before the first step a predicate accepts) build one; `stepsOf` takes up to a cap from one that never ends.
+  - `<Sequence sweep>` (ui) renders its child once per step, captioned with the sweep's label, wrapped or as one scrolling strip. Given `across`, a second sweep, it lays out every pairing as a grid with its rows and columns labeled. Each cell is live. This is new API.
+  - `<HeldClock spec at>` (labkit) gives what renders inside a clock of its own, paused at `at`, which `useTrialClock` and `useClockFrame` read in place of the trial's; a clock that is not seekable is run there `step` ms a frame. `<ClockFrames spec every>` is a `<Sequence>` of a clock's frames, each under one.
+  - `fieldSweep(node)` (labkit) walks the values a config field's control offers: a number's stops or its range by its step, an enum's options, a boolean's off and on.
+  - forge's `usePlayhead` and `useTimeline` read the clock of a `<HeldClock>` around them ahead of the story's own (labkit's `useHeldClock`), so a story's clock-driven component shows the held moment in each frame of a `<ClockFrames>`.
+  - forge's API panel lists required props first, then every prop by name; their `required` badge takes the secondary accent, and badges there read in the body font rather than the code font.
+- a287c54: Add `tileGrid` to `@weasel-js/ui-logic`: a run of same-size items laid out as a grid `columns` across, with a short last row at its start, centered, at its end, or stretched across the row (`lastRow: 'fill'`), giving its tracks, each item's span, and which of the grid's outer corners each item sits on. `@weasel-js/ui`'s `tiling` draws it as a CSS grid: the container's class and style and each item's attributes, among them `data-tile-corners`; `tilingRoving` gives the matching `useRovingTabIndex` options. `SwatchGrid` and `ToolGroup` now lay out through it.
+  
+  `ToggleBar`, `ButtonBar` and `OptionsBar` take `columns` and `lastRow`, wrapping their segments into a grid in one well rounded at its outer corners. A sweep runs across the rows.
+  
+  `rovingGridTarget` moves from `@weasel-js/ui` to `@weasel-js/ui-logic`, beside `rowOffset`, `gridLayout`, and `tileKey` (the same for a run tiled by a spec, which `SwatchGrid` now walks by), and takes a layout (`{ dir, offsets, widths }`) in place of its `dir` argument: Up and Down move to the item drawn under the focused one in a row that sits off the start or is stretched, the later of two half-covering it going down and the earlier going up. `useRovingTabIndex` takes `lastRow`. A Down or Up with no item beneath now lands on that row's nearest item in `SwatchGrid` too, as it already did in every other roving grid, where before it stayed put.
+- Updated dependencies [b7ef242]
+- Updated dependencies [26e836e]
+- Updated dependencies [206b78d]
+- Updated dependencies [a78c393]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [d83476e]
+- Updated dependencies [89b2c65]
+- Updated dependencies [1e0adbb]
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/quantity@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,84 @@
 # @weasel-js/routing
 
+## 1.18.0
+
+### Patch Changes
+
+- 4161bcd: Fixes from an audit of core's canvas, tools and input:
+  
+  - A paste that lands in a container or on a page puts the members of a pasted envelope group where they were drawn; they were stored in world coordinates under the container's frame and landed offset by it.
+  - An Alt-drag clone snaps to its own source, which stays where it was. `SnapBegin` takes `exclude`, the nodes that offer no targets, which defaults to `ids`.
+  - A Shift-drag on empty canvas marquees and adds what it takes to the selection; the select tool's marquee forbade Shift, so it did nothing.
+  - A drag started with a modifier already held now starts: every shape tool (rect, ellipse, line, polygon, star, text, sticky, image, pencil, diagram stencils) with Shift, Alt or Ctrl; move, resize, rotate, clone and measure with Shift or Ctrl; anchor and handle drags, the anchor marquee, balance grips and diagram waypoints with the keys their roles read. Their bindings left those keys out, which the matcher reads as forbidden. `roleMods(roles)` builds a binding's `mods` from an action's modifier roles, and `INSERT_DRAG_MODS` is the insert drag's.
+- 26f3d8f: A keystroke the dispatcher holding the keys does not take now goes on to the other dispatchers listening on the same element, so in a labkit 3D lab Shift+F10 and the ContextMenu key open the trial camera's menu after a click in the pane.
+  A wheel over a surface nested inside another dispatcher's surface goes to the nested one first, and to the outer one only when the nested one leaves it.
+  A press or a right-click on a nested surface no longer also runs the click, drag or menu bindings of the surface around it; a right-click the nested one does not take still reaches the outer one.
+  A dispatcher with `claimKeys` takes the keys again when the registry it dispatches on changes.
+- 5c6d898: Fixes from a second audit of gesture recognition and input routing:
+  
+  - A three-finger tap whose fingers lift in the order they landed is a `multiTouchTap` again; it was rejected because the centroid of the last two fingers was compared with that of the first two. A tap also reports its peak finger count when fingers lift and land again during it.
+  - A long-press or a canceled press between two clicks ends the double-click sequence, as a drag already did, so the next click is not a double click.
+  - A wheel counted in pages scales its horizontal delta by the canvas width, not its height.
+  - A held key that went down with Cmd is released when Cmd comes up: macOS sends no keyup for a key released while Cmd is down, so a `key-held` binding on Cmd+key stayed engaged.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- bdf1a62: `getAlpha01` reads the alpha of a `#rgba` color too, where it used to answer 1, so `mergeAlphaFromPrev` keeps a short-form color's alpha.
+  The debug overlay's `ids` feature labels nodes on its own; before, it drew nothing unless `bounds` was on as well.
+  A devtools panel no longer misses a change made while the page was sending it the previous change notice.
+  `usePublishPointer` clears the pointer when a press that left the element is canceled outside it, as it already did when one was released there.
+  `@weasel-js/core` exports the types its own hooks and defaults are written in: `IconRegistry`, `IconGlyph`, `IconEntry`, `IconVariantState`, `IconVariantLoader`, `Palette` and `PaletteEntry`.
+- 9b7e5c7: Fixes from an audit of theme, routing and prefs:
+  
+  - An axis value, a token name or a tool id that matches the name of an `Object.prototype` member (`toString`, `constructor`) now reads as any other name. Before, `fullSelection` kept `{ mode: 'toString' }` and resolved a function as a token's value, `resolveTokens` resolved a token named `constructor` to `Object`, `flattenTokens` reported such a token as a duplicate, `loadDTCG` filled a mode that lacked the token with `Object`, and `useTools` answered `has('toString')` with true.
+  - `useColorModePreference` reads the stored choice again when `storageKey` changes. It kept the old key's choice and wrote it into the new slot on the next `setPreference`.
+  - `prefsCss` leaves out a held color whose text could end its declaration or its rule, as it already escapes a string or an enum option.
+  - `applyTheme` leaves out a token whose value has `;`, `{` or `}` outside a quoted string, or a quote left open, and warns once in development, as `ThemeProvider` warns of an unknown axis value. Such a value, which a theme built from prefs can carry from storage, ended the theme's rule and wrote rules of its own.
+  - `prefDisplayBounds` converts a number leaf's `step` into its display unit without rounding, then rounds it up to the smallest step the unit's `precision` shows, so a step always changes the shown value and never moves less than declared: 1 mm shown in whole centimeters steps by 1 cm. A step that rounded to nothing fell back to the declared step in stored units. `resolvePrefUnit` gives `toDisplayExact`, the unrounded conversion, and `precision`.
+- a1f2242: Add `sweepAction`: an action bound to a drag that sets each item of a surface the pointer crosses, and a `sweep` prop on `ToggleBar` (multiple mode) and `OptionsBar`, which sets every segment a drag reaches to what the press set the pressed one to. `sweep` takes `true` or a function that decides per press (`SegmentSweep`).
+  
+  `useGestureDispatcher` takes `controls: 'take'`, for a surface whose buttons are its items: presses on them are dispatched, and the pointer is captured only once a press becomes a drag, so a click still reaches the button. A dispatcher now gives up a press that an element inside it opened its own pointer session for, so an item's drag beats its surface's gesture. A `PointerSession` gains `capture()`.
+- Updated dependencies [b7ef242]
+- Updated dependencies [26e836e]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [5c6d898]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [d83476e]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [56e54c0]
+- Updated dependencies [229d0e7]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [bdb314c]
+- Updated dependencies [69988f1]
+- Updated dependencies [479c893]
+- Updated dependencies [e3ce292]
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/prefs@1.18.0
+  - @weasel-js/quantity@1.18.0
+  - @weasel-js/react@1.18.0
+  - @weasel-js/history@1.18.0
+  - @weasel-js/gestures@1.18.0
+  - @weasel-js/icons@1.18.0
+  - @weasel-js/registry@1.18.0
+  - @weasel-js/menu@1.18.0
+  - @weasel-js/select@1.18.0
+  - @weasel-js/cursor@1.18.0
+  - @weasel-js/modes@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

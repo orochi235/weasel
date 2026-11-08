@@ -1,5 +1,37 @@
 # @weasel-js/d3
 
+## 1.18.0
+
+### Patch Changes
+
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [c148384]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [229d0e7]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/animator@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/prefs",
-  "version": "1.17.3",
+  "version": "1.18.0",
   "description": "A preferences schema, a store that loads, validates, migrates and persists values against it, and React hooks over the store.",
   "weasel": {
     "tier": "base"
@@ -48,12 +48,12 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/icons": "1.17.3",
-    "@weasel-js/paint": "1.17.3",
-    "@weasel-js/quantity": "1.17.3",
-    "@weasel-js/react": "1.17.3",
-    "@weasel-js/registry": "1.17.3",
-    "@weasel-js/storage": "1.17.3"
+    "@weasel-js/icons": "1.18.0",
+    "@weasel-js/paint": "1.18.0",
+    "@weasel-js/quantity": "1.18.0",
+    "@weasel-js/react": "1.18.0",
+    "@weasel-js/registry": "1.18.0",
+    "@weasel-js/storage": "1.18.0"
   },
   "peerDependencies": {
     "react": ">=18",

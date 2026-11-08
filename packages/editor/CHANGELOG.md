@@ -1,5 +1,66 @@
 # @weasel-js/editor
 
+## 1.18.0
+
+### Patch Changes
+
+- b616cad: Fixes from a second audit of core's scene, viewport, selection and geometry:
+  
+  - `usePointerStylus` commits the last sample its throttle held back once the gap has passed, so a pen that comes to rest inside the gap no longer leaves the state on an older sample.
+  - `unionBounds` folds a box with a negative width or height by the span it covers, as `unionAABB` does.
+  - `sceneNodeClientRect` returns a positive rect at the box's screen top-left under a flipped (y-up) view.
+  - `RECT_POSE_DESCRIPTOR.lerp` (and `ROTATED_POSE_DESCRIPTOR.lerp`) interpolates `rotation` the short way round, as the descriptor's `axes` do; it carried the start angle through and jumped at the end.
+  - `AUTO_POSE_DESCRIPTOR` has a `lerp`, dispatching to the rect or Path descriptor, so `tweenPose` and `springPose` no longer throw on the default descriptor.
+  - `setLayerVisible`, `setLayerLocked`, `setLayerParallax` and `renameLayer` record no undo entry and leave the version alone when handed the value the layer already has.
+  - A fit with nothing to fit lands on the view Cmd-0 gives. `HOME_VIEW` and `resetView` define that view once: the canvas's `viewport.recenter`, else `HOME_VIEW`, the world origin at 100%. `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` now return `null` for content with no extent on either axis (`hasExtent`), with no warning and no fall to `ZOOM_FLOOR`; `fitViewToBounds` no longer hands back the current view for it. This is a breaking change to those return types. `viewport.zoom`'s Fit Content, the off-page follow and the editor's page fits resolve `null` to the reset view, `useAutoCenter` waits for content before it centers, and `ViewAnimationApi.animateToBounds` returns `false` without moving. `fitViewToBounds` fits a lone line along the axis it has; Fit Content no longer centers a lone point at the current zoom, and goes to the reset view instead.
+  - `scene.update` and `scene.setPose` record no undo entry, leave the version alone and notify no one when handed the data or pose the node already has, compared by structure as the declared-field setters compare. A drag whose pointer holds still for a frame still lands as one undo entry.
+- 02eb957: `usePages().add` puts a new page after the page shown, so a view sitting between pages adds after the one it was last on rather than at the end. It takes an optional `make`, which adds a page of its own at the place and size `add` picked and answers its id. `snapToContainer` no longer offers a drop into a dragged node or one of its descendants, which the scene refused by throwing. Deserialization reads a registry key, and `isLayerVisible` a layer's visibility, only as an own property, so a key or layer id like `toString` no longer resolves through the object's prototype.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [0720167]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [1ba75a2]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [98b212a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [e63dd06]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [56e54c0]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [bf18471]
+- Updated dependencies [2455bb4]
+- Updated dependencies [bdb314c]
+- Updated dependencies [479c893]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.18.0
+  - @weasel-js/geom@1.18.0
+  - @weasel-js/prefs@1.18.0
+  - @weasel-js/ui@1.18.0
+  - @weasel-js/guides@1.18.0
+
 ## 1.17.3
 
 ### Patch Changes
