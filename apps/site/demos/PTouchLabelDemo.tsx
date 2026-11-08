@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { commandFill, SceneCanvas, solid, textCommand, useScene, useSelection, type DrawCommand, type Fill, type SceneViewDrawOne } from '@weasel-js/core';
 import { ellipsePath } from '@weasel-js/geom';
 import {
@@ -17,6 +17,7 @@ import s from './PTouchLabelDemo.module.css';
 const TAPE = tapeForWidthMm(24)!;
 const LENGTH = 288;
 const MEDIA = Printers.ptP710bt.media(TAPE.widthMm);
+const CAN_PRINT = typeof navigator !== 'undefined' && ('usb' in navigator || 'serial' in navigator);
 
 interface LabelData {
   shape: 'rect' | 'ellipse' | 'text';
@@ -61,8 +62,15 @@ export function PTouchLabelDemo() {
   const selection = useSelection({ scene, mode: 'multi' });
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
   const preview = useRef<HTMLCanvasElement>(null);
-  const printer = useMemo<BrotherPrinter | null>(() => ('usb' in navigator || 'serial' in navigator ? createBrotherPrinter() : null), []);
-  useEffect(() => () => printer?.dispose(), [printer]);
+  const [printer, setPrinter] = useState<BrotherPrinter | null>(null);
+  // Made in the effect that disposes it: StrictMode's remount disposes the first printer and keeps a memoized one.
+  useEffect(() => {
+    if (!CAN_PRINT) return;
+    const made = createBrotherPrinter();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the printer's lifetime is this effect's
+    setPrinter(made);
+    return () => made.dispose();
+  }, []);
   const [status, setStatus] = useState('');
 
   useEffect(() => {
@@ -108,7 +116,7 @@ export function PTouchLabelDemo() {
       <div className="ckd-row">
         <Button size="sm" onClick={() => void download()}>Download .lbx</Button>
         <Button size="sm" onClick={() => void print()} disabled={!printer}>Print</Button>
-        <span>{printer ? status : 'printing needs WebUSB or Web Serial'}</span>
+        <span>{CAN_PRINT ? status : 'printing needs WebUSB or Web Serial'}</span>
       </div>
     </div>
   );

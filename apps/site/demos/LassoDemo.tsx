@@ -46,8 +46,8 @@ const MODE_ITEMS: ToggleBarItem<LassoHitMode>[] = [
 export function LassoDemo() {
   // `pick` brings the select tool and `defaultTools` adds the lasso. The
   // `toolOptions.lasso.mode` knob drives the live hit-mode comparison —
-  // press L to switch to lasso, drag a closed polygon, watch which rects
-  // get selected based on the chosen mode.
+  // drag a closed polygon, watch which rects get selected based on the
+  // chosen mode.
   const scene = useScene({ systemLayers: [{ id: 'default' }], initial: INITIAL });
   const selection = useSelection({ scene, mode: 'multi' });
   const [mode, setMode] = useState<LassoHitMode>('intersect');
@@ -57,7 +57,7 @@ export function LassoDemo() {
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12 }}>
         <span>Hit mode:</span>
         <ToggleBar items={MODE_ITEMS} value={mode} onChange={(m) => m && setMode(m)} ariaLabel="Hit mode" size="sm" />
-        <span style={{ marginLeft: 'auto', opacity: 0.7 }}>Press <kbd>L</kbd> for lasso</span>
+        <span style={{ marginLeft: 'auto', opacity: 0.7 }}><kbd>V</kbd> select · <kbd>L</kbd> lasso</span>
       </div>
       <DemoStage width={W} height={H}>
         <SceneCanvas

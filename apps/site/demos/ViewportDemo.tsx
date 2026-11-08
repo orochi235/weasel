@@ -22,6 +22,7 @@ const NODES: Array<{ id: string; pose: Pose; data: Data }> = [
 ];
 type Boundary = 'none' | 'stop' | 'bounce';
 const BOUNDARIES: Boundary[] = ['none', 'stop', 'bounce'];
+const BOUNDS = { minX: -20, maxX: 300, minY: -20, maxY: 200 };
 
 export function ViewportDemo() {
   const [boundary, setBoundary] = useState<Boundary>('none');
@@ -40,7 +41,7 @@ export function ViewportDemo() {
         friction: 0.88,
         ...(boundary !== 'none' ? {
           boundary: boundary as 'stop' | 'bounce',
-          bounds: { minX: -20, maxX: 300, minY: -20, maxY: 200 },
+          bounds: BOUNDS,
         } : {}),
       }
     : false as const;
@@ -58,7 +59,7 @@ export function ViewportDemo() {
           size="sm"
         />
         <span className="ckd-hint">
-          {boundary !== 'none' && inertiaOn ? '(bounds: x 0–300, y 0–200)' : ''}
+          {boundary !== 'none' && inertiaOn ? `(bounds: x ${BOUNDS.minX}–${BOUNDS.maxX}, y ${BOUNDS.minY}–${BOUNDS.maxY})` : ''}
         </span>
       </div>
       <DemoStage width={480} height={320}>

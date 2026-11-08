@@ -123,6 +123,7 @@ function compile(gl: WebGLRenderingContext): WebGLProgram {
     gl.shaderSource(shader, src);
     gl.compileShader(shader);
     gl.attachShader(program, shader);
+    gl.deleteShader(shader);
   }
   gl.linkProgram(program);
   return program;
@@ -133,7 +134,7 @@ function compile(gl: WebGLRenderingContext): WebGLProgram {
  * `preserveDrawingBuffer`, and draws from its own loop. The only thing it does
  * for the lens is call `source.capture()` after each frame.
  */
-function ForeignGl() {
+export function ForeignGl() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [source, setSource] = useState<CanvasSource | null>(null);
   const gl = useRef<{ ctx: WebGLRenderingContext; program: WebGLProgram } | null>(null);
@@ -175,7 +176,8 @@ function ForeignGl() {
     if (!ctx) return;
     const program = compile(ctx);
     ctx.useProgram(program);
-    ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+    const buffer = ctx.createBuffer();
+    ctx.bindBuffer(ctx.ARRAY_BUFFER, buffer);
     // One triangle covering the whole clip space.
     ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), ctx.STATIC_DRAW);
     const loc = ctx.getAttribLocation(program, 'a_pos');
@@ -183,6 +185,11 @@ function ForeignGl() {
     ctx.vertexAttribPointer(loc, 2, ctx.FLOAT, false, 0, 0);
     gl.current = { ctx, program };
     setSource(createCanvasSource(ctx));
+    return () => {
+      gl.current = null;
+      ctx.deleteBuffer(buffer);
+      ctx.deleteProgram(program);
+    };
   }, []);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
 import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
@@ -67,10 +67,32 @@ export function EffectChartDemo() {
 /** Kept steady, so the chart lays out once. */
 const SHOW_VALUES = { showValues: true };
 
-/** The pipeline's run `frame` frames in: the oscillator swings the blur
+/** Seconds the demo has been on screen, advanced once per animation frame. */
+export function useRunClock(): number {
+  const [t, setT] = useState(0);
+  const clock = useRef<{ start: number | null; at: number }>({ start: null, at: 0 });
+  const loop = useVisibleRaf((now, loop) => {
+    loop.request();
+    const c = clock.current;
+    c.start ??= now;
+    c.at = now;
+    setT((now - c.start) / 1000);
+  }, {
+    onResume: () => {
+      const c = clock.current;
+      if (c.start !== null) c.start += performance.now() - c.at;
+    },
+  });
+  useEffect(() => {
+    loop.request();
+    return () => loop.cancel();
+  }, [loop]);
+  return t;
+}
+
+/** The pipeline's run `t` seconds in: the oscillator swings the blur
  *  radius, and every two seconds the quality check flips, skipping the blur. */
-export function runAt(frame: number): EffectRun {
-  const t = frame / 60;
+export function runAt(t: number): EffectRun {
   const radius = radiusAt(t);
   const high = Math.floor(t / 2) % 2 === 0;
   return {
@@ -88,20 +110,12 @@ export function runAt(frame: number): EffectRun {
 }
 
 export function EffectChartRunDemo() {
-  const [frame, setFrame] = useState(0);
-  const loop = useVisibleRaf((_now, loop) => {
-    loop.request();
-    setFrame((f) => f + 1);
-  });
-  useEffect(() => {
-    loop.request();
-    return () => loop.cancel();
-  }, [loop]);
+  const t = useRunClock();
   return (
     <DemoStage width={W} height={H}>
       <EffectChart
         pipeline={PIPELINE}
-        run={runAt(frame)}
+        run={runAt(t)}
         options={SHOW_VALUES}
         background={GROUND}
         className="ckd-canvas"
@@ -112,9 +126,9 @@ export function EffectChartRunDemo() {
 
 const SHOW_PREVIEWS = { showPreviews: true, previewSize: { width: 64, height: 36 } };
 
-/** `runAt(frame)` with a picture on every slot the run reached, each drawn from what is wired into it.
+/** `runAt(t)` with a picture on every slot the run reached, each drawn from what is wired into it.
  *  A decision shows a picture only on the output it took. */
-function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, frame: number): EffectRun {
+function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, t: number): EffectRun {
   const slots = PIPELINE.stages.flatMap((stage) => {
     const ran = run.stages[stage.id];
     if (ran === undefined) return [];
@@ -122,7 +136,7 @@ function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, fr
       .filter((p) => ran.taken === undefined || p.id === ran.taken)
       .map((p) => `${stage.id}/${p.id}`);
   });
-  const bitmaps = paint(canvases, SHOW_PREVIEWS.previewSize, slots, { t: frame / 60, high: run.stages.q?.taken === 'yes' });
+  const bitmaps = paint(canvases, SHOW_PREVIEWS.previewSize, slots, { t, high: run.stages.q?.taken === 'yes' });
   const stages = Object.fromEntries(Object.entries(run.stages).map(([id, ran]): [string, EffectStageRun] => {
     const previews = Object.fromEntries([...bitmaps].flatMap(([slot, bitmap]) => {
       const [stage, port] = slot.split('/') as [string, string];
@@ -135,16 +149,8 @@ function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, fr
 
 export function EffectChartPreviewDemo() {
   const [canvases] = useState(() => new Map<string, OffscreenCanvas>());
-  const [frame, setFrame] = useState(0);
-  const loop = useVisibleRaf((_now, loop) => {
-    loop.request();
-    setFrame((f) => f + 1);
-  });
-  useEffect(() => {
-    loop.request();
-    return () => loop.cancel();
-  }, [loop]);
-  const run = useMemo(() => withPreviews(runAt(frame), canvases, frame), [frame, canvases]);
+  const t = useRunClock();
+  const run = useMemo(() => withPreviews(runAt(t), canvases, t), [t, canvases]);
   return (
     <DemoStage width={W} height={H}>
       <EffectChart
