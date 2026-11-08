@@ -37,7 +37,7 @@ export function createDebugSink(config: DebugConfig): CanvasDebugSink {
       snap.handles.push({ id, position, kind });
     },
     recordBounds(id, bounds) {
-      if (!config.bounds && !highlighted.has(id)) return;
+      if (!config.bounds && !config.ids && !highlighted.has(id)) return;
       snap.bounds.push({ id, bounds });
     },
     recordOrigin(id, point) {

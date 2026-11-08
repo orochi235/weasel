@@ -11,6 +11,12 @@ describe('createDebugSink', () => {
     expect(s.origins).toHaveLength(1);
   });
 
+  it('records bounds for the id labels with only ids on', () => {
+    const sink = createDebugSink({ ids: true });
+    sink.recordBounds('a', { x: 0, y: 0, width: 10, height: 10 });
+    expect(sink.snapshot().bounds.map((b) => b.id)).toEqual(['a']);
+  });
+
   it('no-ops when feature flag is off', () => {
     const sink = createDebugSink({ bounds: true });
     sink.recordOrigin('a', { x: 5, y: 5 });
