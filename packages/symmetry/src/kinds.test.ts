@@ -4,6 +4,7 @@ import {
   DEFAULT_SYMMETRY, HORIZONTAL_AXIS, SYMMETRY_KINDS, VERTICAL_AXIS, symmetryTransforms,
   type SymmetryKind, type SymmetrySpec,
 } from './kinds';
+import { MAX_WALLPAPER_COPIES } from './wallpaper';
 
 const C = { x: 40, y: -25 };
 const spec = (kind: SymmetryKind, over: Partial<SymmetrySpec> = {}): SymmetrySpec => ({ ...DEFAULT_SYMMETRY, kind, ...over });
@@ -41,6 +42,21 @@ describe('symmetryTransforms', () => {
     ['mirror', 1], ['both', 3], ['point', 1], ['radial', 5], ['kaleidoscope', 11],
   ] as const)('%s with a count of 6 makes %i copies', (kind, n) => {
     expect(symmetryTransforms(spec(kind), C)).toHaveLength(n);
+  });
+
+  it.each(['radial', 'kaleidoscope', 'repeat', 'wallpaper'] as const)(
+    '%s holds a huge or infinite count to MAX_WALLPAPER_COPIES copies',
+    (kind) => {
+      for (const count of [1e7, Infinity]) {
+        const n = symmetryTransforms(spec(kind, { count, cell: 'kaleidoscope' }), C).length;
+        expect(n, `${kind} ×${count}`).toBeLessThanOrEqual(MAX_WALLPAPER_COPIES);
+        expect(n).toBeGreaterThan(0);
+      }
+    },
+  );
+
+  it.each(['radial', 'repeat'] as const)('%s with a NaN count draws no copies', (kind) => {
+    expect(symmetryTransforms(spec(kind, { count: Number.NaN }), C)).toEqual([]);
   });
 
   it.each(Object.keys(SYMMETRY_KINDS) as SymmetryKind[])(
