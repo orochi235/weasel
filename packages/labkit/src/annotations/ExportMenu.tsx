@@ -63,7 +63,7 @@ export function ExportMenu() {
 
   if (!marks) return null;
   const targets = marks.targets();
-  const chosen = target ?? targets[0]?.id ?? null;
+  const chosen = targets.some((t) => t.id === target) ? target : (targets[0]?.id ?? null);
 
   const run = async (then: (r: CaptureResult) => void | Promise<void>): Promise<void> => {
     if (!chosen) return;
