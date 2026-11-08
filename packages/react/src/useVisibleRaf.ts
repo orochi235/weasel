@@ -58,6 +58,11 @@ const documentHidden = (): boolean => typeof document !== 'undefined' && documen
 const gateOpen = (opts: VisibleRafOptions, intersecting: boolean): boolean =>
   opts.dangerouslyRunWhenHidden === true || (!documentHidden() && intersecting);
 
+/** The newest of `entries` about `el`: they arrive oldest first, and one already queued for an
+ *  element since unobserved still arrives. */
+const latestFor = (entries: readonly IntersectionObserverEntry[], el: Element | null): IntersectionObserverEntry | undefined =>
+  entries.filter((e) => e.target === el).at(-1);
+
 const resolveTarget =(target: VisibleRafTarget | undefined): Element | null =>
   typeof target === 'function' ? target() : (target?.current ?? null);
 
@@ -149,10 +154,7 @@ export function useVisibleRaf(
     scheduleRaf();
   }, [isVisible, scheduleRaf, syncGate, syncObserver]);
 
-  const cancel = useCallback(() => {
-    pendingRef.current = false;
-    cancelRaf();
-  }, [cancelRaf]);
+  const cancel = useCallback(() => { pendingRef.current = false; cancelRaf(); }, [cancelRaf]);
 
   // Re-armed in setup because the refs survive StrictMode's simulated remount, and
   // a layout effect so the arming precedes the host's own layout effects — a loop
@@ -163,11 +165,8 @@ export function useVisibleRaf(
     document.addEventListener('visibilitychange', syncGate);
     if (typeof IntersectionObserver !== 'undefined') {
       observerRef.current = new IntersectionObserver((entries) => {
-        // Entries arrive oldest first, and one already queued for an unobserved element still arrives.
-        const last = entries.filter((e) => e.target === observedRef.current).at(-1);
-        if (!last) return;
-        intersectingRef.current = last.isIntersecting;
-        syncGate();
+        const last = latestFor(entries, observedRef.current);
+        if (last) { intersectingRef.current = last.isIntersecting; syncGate(); }
       });
       syncObserver();
     }
