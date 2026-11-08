@@ -5,7 +5,7 @@
 import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
-import { axisMap, fillColor, opaqueHex, plainStroke, uniformScale, type DrawState } from './style';
+import { axisMap, fillColor, plainStroke, uniformScale, type DrawState } from './style';
 
 const NO_PEN = { style: 'NULL' as const };
 const NO_BRUSH = { style: 'NULL' as const };
@@ -111,10 +111,8 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     if (run.underline !== first!.underline || run.strikethrough !== first!.strikethrough) return undefined;
     if (run.stroke?.paint !== undefined || run.overline || run.sizeMap || run.rotate) return undefined;
     if (run.letterSpacing !== 0 || run.baselineShift !== 0) return undefined;
-    const paint = run.fill?.paint;
-    if (!paint || (paint.kind !== undefined && paint.kind !== 'solid')) return undefined;
-    const hex = opaqueHex(paint.color, (paint.opacity ?? 1) * state.alpha);
-    if (hex === undefined || (color !== undefined && hex !== color)) return undefined;
+    const hex = fillColor(run.fill, state.alpha);
+    if (!hex || (color !== undefined && hex !== color)) return undefined;
     color = hex;
   }
   const align = cmd.justify ? 'justify' : (cmd.align ?? cmd.style.align ?? 'left');
