@@ -39,23 +39,23 @@ export function pointToGridCell(
   origin: { x: number; y: number } = { x: 0, y: 0 },
   scoped?: GridScoping,
 ): GridCell | null {
+  const shifted = (cell: Omit<GridCell, 'frame'> | null) =>
+    cell && { ...cell, box: { ...cell.box, x: cell.box.x + origin.x, y: cell.box.y + origin.y } };
   const region = regionAt(scoped?.regions, point);
-  if (!region) {
-    const cell = cellIn(gridLines(spacing, unitSystem, scoped?.scopes), point.x - origin.x, point.y - origin.y);
-    return cell && { ...cell, box: { ...cell.box, x: cell.box.x + origin.x, y: cell.box.y + origin.y } };
-  }
+  if (!region) return shifted(cellIn(gridLines(spacing, unitSystem, scoped?.scopes), point.x - origin.x, point.y - origin.y));
   const lines = containerLines(region.spacing, spacing, unitSystem, scoped?.scopes, region.chain);
   if (!lines) return null;
   const back = region.frame && invert(region.frame);
   if (region.frame && !back) return null;
+  // Without a frame the region's lattice is world-aligned through `origin`, as the root's is.
   const local = (p: { x: number; y: number }) => {
-    if (!back) return p;
+    if (!back) return { x: p.x - origin.x, y: p.y - origin.y };
     const [x, y] = applyToPoint(back, p.x, p.y);
     return { x, y };
   };
   const at = local(point);
   const cell = cellIn(lines, at.x, at.y, outlineBox(region.outline.map(local)));
-  return cell && (region.frame ? { ...cell, frame: region.frame } : cell);
+  return region.frame ? cell && { ...cell, frame: region.frame } : shifted(cell);
 }
 
 function cellIn(lines: GridLines, x: number, y: number, within?: Rect): Omit<GridCell, 'frame'> | null {
