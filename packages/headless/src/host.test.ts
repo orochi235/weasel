@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { Browser } from 'playwright-core';
 import { planPixelRender, sceneFromJSON, type SavedScene } from '@weasel-js/core';
 import { createNodeRasterHost } from './host';
 import { sceneFromWire, sceneToWire } from './protocol';
@@ -18,5 +19,21 @@ describe('node raster host', () => {
     await host.dispose();
     await host.dispose();
     await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/disposed/);
+  });
+
+  it('closes the context it opened in a caller\'s browser when the page script fails', async () => {
+    const closeContext = vi.fn(async () => {});
+    const closeBrowser = vi.fn(async () => {});
+    const browser = {
+      close: closeBrowser,
+      newContext: async () => ({
+        close: closeContext,
+        newPage: async () => ({ addScriptTag: async () => { throw new Error('bad script'); } }),
+      }),
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/bad script/);
+    expect(closeContext).toHaveBeenCalledTimes(1);
+    expect(closeBrowser).not.toHaveBeenCalled();
   });
 });
