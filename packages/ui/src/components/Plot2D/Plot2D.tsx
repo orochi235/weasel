@@ -200,8 +200,10 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     const rect = svgRef.current?.getBoundingClientRect();
     const left = rect?.left ?? 0;
     const top = rect?.top ?? 0;
-    return { x: e.clientX - left, y: e.clientY - top };
-  }, []);
+    const sx = rect && rect.width > 0 ? width / rect.width : 1;
+    const sy = rect && rect.height > 0 ? height / rect.height : 1;
+    return { x: (e.clientX - left) * sx, y: (e.clientY - top) * sy };
+  }, [width, height]);
 
   useEffect(() => {
     dlog('plot2d', 'mount', { width, height });
