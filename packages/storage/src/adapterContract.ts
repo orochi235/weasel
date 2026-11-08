@@ -156,4 +156,18 @@ function subscriptionCases(name: string, setup: () => AdapterHarness): void {
     await settle();
     expect(heard).toEqual([]);
   });
+
+  it('drops a change still on its way when unsubscribed', async () => {
+    const { adapter, foreign } = setup();
+    if (!foreign || !adapter.subscribe) return;
+    const heard: StorageChange[] = [];
+    const off = adapter.subscribe('lk:x:', (changes) => heard.push(...changes));
+    await settle();
+    const writing = foreign.set('lk:x:racing', 1);
+    const already = heard.length;
+    off();
+    await writing;
+    await settle();
+    expect(heard.length).toBe(already);
+  });
 }
