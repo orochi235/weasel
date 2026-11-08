@@ -126,7 +126,7 @@ function markerOptions(): MarkerOptions {
       generation,
       options: [
         { value: '', label: 'None', icon: icon('markerNone') },
-        ...listMarkers().map((m) => ({ value: m.id, label: m.id, icon: MARKER_ICONS[m.id] })),
+        ...listMarkers().map((m) => ({ value: m.id, label: m.id, icon: Object.hasOwn(MARKER_ICONS, m.id) ? MARKER_ICONS[m.id] : undefined })),
       ],
     };
   }
