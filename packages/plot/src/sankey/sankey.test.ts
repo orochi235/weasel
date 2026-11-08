@@ -142,4 +142,12 @@ describe('sankey edits', () => {
     expect(text(ENERGY, { edit: 'node', node: 'Coal' }, '')).toBe(ENERGY);
     expect(text(ENERGY, { edit: 'title' }, 'Flows').title).toBe('Flows');
   });
+
+  it('leaves a value whose label rounds it alone when the label comes back unchanged', () => {
+    const noisy = setSankeyValue(ENERGY, 0, 0.1 + 0.2);
+    const shown = byKey(noisy).get('link:0:value')!.data.text!;
+    expect(shown).toBe('0.3');
+    expect(sankeyEditor.text!(noisy, { edit: 'value', link: 0 }, shown)).toBe(noisy);
+    expect(sankeyEditor.text!(noisy, { edit: 'value', link: 0 }, '0.30').links[0]!.value).toBe(0.3);
+  });
 });
