@@ -158,6 +158,18 @@ describe('createCanvasSource', () => {
     expect(s.pixel({ x: 3, y: NaN })).toBeNull();
   });
 
+  it('samples nothing past the captured frame when the canvas has grown since', () => {
+    // A browser's drawImage draws nothing from outside its source, so the probe would report the last pixel it held.
+    const c = canvas(64, 32);
+    const s = createCanvasSource(gl(false, c));
+    s.retain();
+    s.capture();
+    (c as { width: number; height: number }).width = 200;
+    (c as { width: number; height: number }).height = 100;
+    expect(s.pixel({ x: 100, y: 50 })).toBeNull();
+    expect([...s.pixel({ x: 10, y: 10 })!]).toEqual([10, 20, 30, 255]);
+  });
+
   it('never calls getContext on the canvas it reads', () => {
     const c = canvas();
     const getContext = vi.fn(() => null);

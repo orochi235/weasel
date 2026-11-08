@@ -25,7 +25,7 @@ export interface LoupeSurface {
    * pointer never covers it and answers `false`.
    */
   covers(p: LoupePoint): boolean;
-  /** Hex color at a surface point, or `null` when the surface cannot say. */
+  /** Hex color at a surface point, or `null` where nothing is drawn there or the surface cannot say. */
   sample(p: LoupePoint): string | null;
   /** Is the lens off screen? Aims are ignored while it is. */
   hidden(): boolean;
@@ -53,8 +53,9 @@ export interface LoupeModelOptions {
   /** Bounds `setFactor` clamps to. Unset means bounded only by that rule. */
   minFactor?: number;
   maxFactor?: number;
-  /** Called with the hex color under the aim point whenever it changes. */
-  onColorChange?: (hex: string) => void;
+  /** Called with the hex color under the aim point whenever it changes: `null` once the aim is
+   *  over a point the surface answers `null` for, where a pick takes nothing. */
+  onColorChange?: (hex: string | null) => void;
   /** Called when a pick lands — an eyedropper on the magnified surface. Where
    *  the color goes is the consumer's business. */
   onPick?: (hex: string) => void;
@@ -69,7 +70,7 @@ export interface LoupeModel {
   readonly factor: number;
   /** Last aimed point, in the surface's CSS px. */
   readonly aim: LoupePoint;
-  /** Hex color under the aim point. `null` until something answers. */
+  /** Hex color under the aim point. `null` before an aim is sampled, and where the surface answers `null`. */
   readonly color: string | null;
   setMode(mode: LoupeMode): void;
   setFactor(factor: number): void;
@@ -105,7 +106,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
 
   const sampleColor = () => {
     const hex = surface.sample(aim);
-    if (hex === null || hex === color) return;
+    if (hex === color) return;
     color = hex;
     opts.onColorChange?.(hex);
   };

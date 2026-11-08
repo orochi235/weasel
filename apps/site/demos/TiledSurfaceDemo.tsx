@@ -29,7 +29,7 @@ const LOUPE_BOUNDS = { x: 10, y: 180, w: 140, h: 170 };
 /** A pixel-mode loupe over one pane. `region` is what keeps its readback on
  *  this pane's pixels rather than the shared canvas's at the same offset. */
 function PaneLoupe({ api, onColor }: {
-  api: RefObject<SceneCanvasApi | null>; onColor: (hex: string) => void;
+  api: RefObject<SceneCanvasApi | null>; onColor: (hex: string | null) => void;
 }) {
   const hud = useHud(api);
   useEffect(() => {
@@ -85,7 +85,7 @@ function Pane({
   id, x, y, view, fill, bg, loupe, surface, onLoupeColor,
 }: {
   id: string; x: number; y: number; view: View; fill: string; bg: string;
-  loupe: boolean; surface: HTMLCanvasElement | null; onLoupeColor: (hex: string) => void;
+  loupe: boolean; surface: HTMLCanvasElement | null; onLoupeColor: (hex: string | null) => void;
 }) {
   const apiRef = useRef<SceneCanvasApi | null>(null);
   const hudTool = useHudContribution();

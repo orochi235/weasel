@@ -53,7 +53,7 @@ function parked(extra: { contentVersion?: () => number } = {}) {
   const host = bindHost(hud);
   const made = vi.fn(() => Promise.resolve({ close: () => {} } as ImageBitmap));
   vi.stubGlobal('createImageBitmap', made);
-  const colors: string[] = [];
+  const colors: (string | null)[] = [];
   const requestRedraw = vi.fn();
   const loupe = createLoupe({
     hud, canvas: makeElement(() => px), source, requestRedraw, mode: 'pixel',

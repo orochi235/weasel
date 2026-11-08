@@ -172,11 +172,12 @@ export function createCanvasSource(
     },
 
     pixel(p) {
-      const frame = source.frame();
+      const frame = source.frame() as SourceCanvas | null;
       if (!frame) return null;
       const x = Math.floor(p.x);
       const y = Math.floor(p.y);
-      if (!(x >= 0 && y >= 0 && x < canvas.width && y < canvas.height)) return null;
+      // The frame's own size: a capture taken before the canvas was resized is smaller or larger than it.
+      if (!(x >= 0 && y >= 0 && x < frame.width && y < frame.height)) return null;
       if (!probe) {
         const c = makeCanvas(1, 1);
         probe = context2d(c, true);

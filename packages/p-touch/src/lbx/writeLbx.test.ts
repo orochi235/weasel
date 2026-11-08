@@ -160,6 +160,14 @@ describe('lbxObjects', () => {
     expect(first.clip).toEqual({ kind: 'rect', x: 0, y: 0, width: 60, height: 20 });
   });
 
+  it('places carried objects inside a rect clip drawn from its far corner', async () => {
+    const { config, skipped } = await lbxConfig(page([
+      frame({ kind: 'rect', x: 60, y: 20, width: -60, height: -20 }, [lbxObjects([barcode])]),
+    ]));
+    expect(skipped).toEqual([]);
+    expect(config.objects).toEqual([{ ...barcode, position: { x: 12, y: 4, width: 40, height: 10 } }]);
+  });
+
   it('skips carried objects a clip would cut, or under a group the writer must rasterize', async () => {
     const narrow = await lbxConfig(page([frame({ kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, [lbxObjects([barcode])])]));
     expect(narrow.config.objects).toEqual([]);
