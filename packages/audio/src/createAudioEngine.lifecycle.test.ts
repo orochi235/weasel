@@ -126,6 +126,17 @@ describe('createAudioEngine automatic unlock', () => {
 });
 
 describe('createAudioEngine re-suspension', () => {
+  it('stops listening for gestures once the context closes', async () => {
+    const { ctx, engine } = engineHarness();
+    await engine.unlock();
+    const resume = vi.spyOn(ctx, 'resume');
+    ctx._setState('closed');                           // the consumer closed its own context
+    window.dispatchEvent(new Event('pointerdown'));
+    await flush();
+    expect(resume).not.toHaveBeenCalled();
+    engine.dispose();
+  });
+
   it('re-arms the gesture listener after the context suspends again', async () => {
     const { ctx, engine } = engineHarness();
     window.dispatchEvent(new Event('pointerdown'));

@@ -42,6 +42,8 @@ export function createResumeWatch(
   // once-per-engine latch.
   const onStateChange = (): void => {
     if (disposed) return;
+    // A closed context never runs again, so no gesture can resume it.
+    if (ctx.state === 'closed') return disarm();
     if (ctx.state === 'running') {
       disarm();
       if (suspendedSince) staleFloor = hooks.now();

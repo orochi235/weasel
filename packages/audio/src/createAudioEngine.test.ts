@@ -477,4 +477,10 @@ describe('createAudioEngine', () => {
     engine.dispose();
     expect(() => engine.graph()).toThrow('@weasel-js/audio: engine is disposed');
   });
+
+  it('analyser() throws once the engine is disposed', () => {
+    const { engine } = engineHarness();
+    engine.dispose();
+    expect(() => engine.analyser()).toThrow('@weasel-js/audio: engine is disposed');
+  });
 });
