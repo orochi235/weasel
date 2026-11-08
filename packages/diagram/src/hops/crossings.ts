@@ -3,6 +3,7 @@
  * the lower. Arithmetic on polylines: nothing here reads a scene.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { rectBetween } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
 import type { EdgeHop } from './types';
 
@@ -23,9 +24,7 @@ const EPS = 1e-9;
 
 const round = (v: number): number => Math.round(v * 1000) / 1000;
 
-const boxOf = (a: Vec2, b: Vec2) => ({
-  x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y),
-});
+const boxOf = (a: Vec2, b: Vec2) => rectBetween(a.x, a.y, b.x, b.y);
 
 /** Where segments `p` and `q` cross at one point inside both, as the
  *  fraction along `p`; null for a touch at an end, parallel, or apart. */

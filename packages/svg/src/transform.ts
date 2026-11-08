@@ -4,7 +4,7 @@
  * geometry at parse time.
  */
 
-import { DEG_TO_RAD, applyToPoint, invert, multiply } from '@weasel-js/geom';
+import { DEG_TO_RAD, applyToPoint, invert, multiply, trimNumber } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
@@ -163,11 +163,4 @@ export function formatMatrix(m: Matrix): string | null {
   return `matrix(${m.map((n) => trimNumber(n)).join(' ')})`;
 }
 
-/** Trim trailing zeros from a numeric value for compact SVG output. */
-export function trimNumber(n: number): string {
-  if (!Number.isFinite(n)) return '0';
-  // Round to ~6 decimal places to avoid floating-point cruft.
-  const r = Math.round(n * 1e6) / 1e6;
-  if (Number.isInteger(r)) return String(r);
-  return String(r);
-}
+export { trimNumber };

@@ -54,6 +54,12 @@ export function boxesIntersect(a: Box, b: Box): boolean {
   return a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
 }
 
+/** The rect with corners `(ax, ay)` and `(bx, by)`, whichever way round they are: what a drag from one to the other
+ *  spans. */
+export function rectBetween(ax: number, ay: number, bx: number, by: number): Rect {
+  return { x: Math.min(ax, bx), y: Math.min(ay, by), width: Math.abs(bx - ax), height: Math.abs(by - ay) };
+}
+
 /** Whether `a` and `b` share interior: rects that only touch along an edge or
  *  at a corner answer false. */
 export function rectsOverlap(a: Readonly<Rect>, b: Readonly<Rect>): boolean {

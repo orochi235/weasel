@@ -3,6 +3,7 @@
  * routes it last made, and each update reroutes only what changed.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { rectBetween } from '@weasel-js/geom';
 import { samePoints } from '../edgeTrait';
 import { changedObstacles, dirtyEdges, fullRoute, stopsKey } from './dirty';
 import { DragIndex } from './dragIndex';
@@ -229,6 +230,4 @@ function withRoute(edge: AvoidEdge, routes: AvoidRoutes): AvoidEdge {
 }
 
 /** A segment's box, its thickness zero. */
-const segmentBox = (a: Vec2, b: Vec2): Box => ({
-  x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y),
-});
+const segmentBox = (a: Vec2, b: Vec2): Box => rectBetween(a.x, a.y, b.x, b.y);

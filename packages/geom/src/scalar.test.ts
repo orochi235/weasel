@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
+import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, trimNumber, EPS } from './scalar';
 
 describe('scalar primitives', () => {
   it('cross product is the 2D wedge', () => {
@@ -82,5 +82,18 @@ describe('clamp01', () => {
   });
   it('passes NaN through', () => {
     expect(clamp01(NaN)).toBeNaN();
+  });
+});
+
+describe('trimNumber', () => {
+  it('rounds to six places by default, or the places asked for', () => {
+    expect(trimNumber(1.23456789)).toBe('1.234568');
+    expect(trimNumber(1.23456789, 4)).toBe('1.2346');
+    expect(trimNumber(2)).toBe('2');
+  });
+  it('writes no minus zero, and 0 for a non-finite value', () => {
+    expect(trimNumber(-0.0000001)).toBe('0');
+    expect(trimNumber(NaN)).toBe('0');
+    expect(trimNumber(Infinity)).toBe('0');
   });
 });

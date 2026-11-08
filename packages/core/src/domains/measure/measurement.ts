@@ -1,6 +1,6 @@
 import type { Node, NodeId, RectPose } from 'core/scene/types';
 import { sceneMagnification, type ScopedScene } from 'core/scene/unitScopes';
-import type { Point } from '@weasel-js/geom';
+import { rectBetween, type Point } from '@weasel-js/geom';
 
 /** A world-space point. */
 export type MeasurePoint = Point;
@@ -91,12 +91,7 @@ export function measurementOf(node: Pick<Node<unknown, string, unknown>, 'data'>
 /** The box a measurement's pose holds: its two ends' bounds, which is what
  *  culling, area queries, and fitting the view read. */
 export function measurePose(start: MeasurePoint, end: MeasurePoint): RectPose {
-  return {
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    width: Math.abs(end.x - start.x),
-    height: Math.abs(end.y - start.y),
-  };
+  return rectBetween(start.x, start.y, end.x, end.y);
 }
 
 /** A measurement node on `layer`, ready to insert. */

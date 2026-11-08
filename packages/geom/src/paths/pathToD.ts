@@ -9,10 +9,9 @@
 
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z } from '../commands';
 import type { Path } from '../path';
+import { trimNumber as num } from '../scalar';
 import { resolveCorners } from './corners';
 import { worldCoords } from './pathOrigin';
-
-const num = (n: number): string => (Number.isFinite(n) ? String(Math.round(n * 1e6) / 1e6) : '0');
 
 /** `path` as SVG path data. */
 export function pathToD(given: Path): string {

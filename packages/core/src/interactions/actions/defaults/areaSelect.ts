@@ -1,3 +1,4 @@
+import { rectBetween } from '@weasel-js/geom';
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
@@ -87,19 +88,16 @@ export const areaSelectAction: Action & { requires: string[] } = {
 
           const { dep: d, view, startX, startY, currentX, currentY, shiftHeld } = scratch;
 
-          const x = Math.min(startX, currentX);
-          const y = Math.min(startY, currentY);
-          const width = Math.abs(currentX - startX);
-          const height = Math.abs(currentY - startY);
+          const area = rectBetween(startX, startY, currentX, currentY);
 
           // A marquee with no extent at all is a click: clear the selection (or no-op with
           // shift). One flat on a single axis still crosses what lies along it.
-          if (width === 0 && height === 0) {
+          if (area.width === 0 && area.height === 0) {
             if (!shiftHeld) d.setSelection([]);
             return;
           }
 
-          const hits = hitTargets(d.hitTestArea({ x, y, width, height }, view), d.targetOf) as NodeId[];
+          const hits = hitTargets(d.hitTestArea(area, view), d.targetOf) as NodeId[];
 
           d.setSelection(selectionFromHits(d.getSelection(), hits, shiftHeld));
         },

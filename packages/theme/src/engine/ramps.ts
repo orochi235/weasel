@@ -1,3 +1,4 @@
+import { lerpHueDeg } from '@weasel-js/paint';
 import { DEFAULT_CONSTRAINTS, generate, type Anchor, type Constraints } from './color/generate.ts';
 import { toHex, toLch } from './color/oklch.ts';
 
@@ -54,8 +55,7 @@ export function lightnessRamp(p: LightnessParams): Record<string, string> {
     const a = anchors[next - 1];
     const b = anchors[next];
     const f = (i - a.i) / (b.i - a.i);
-    const arc = ((((b.hue - a.hue) % 360) + 540) % 360) - 180;
-    return { hue: (((a.hue + arc * f) % 360) + 360) % 360, peak: a.peak + (b.peak - a.peak) * f };
+    return { hue: lerpHueDeg(a.hue, b.hue, f), peak: a.peak + (b.peak - a.peak) * f };
   };
 
   const out: Record<string, string> = {};

@@ -5,7 +5,7 @@
  * clear spot.
  */
 import { polylineFromPoints, type Path, type Vec2 } from '@weasel-js/core/math';
-import { nearestOnLine } from '@weasel-js/geom';
+import { nearestOnLine, rectBetween } from '@weasel-js/geom';
 import { SpatialHash } from '../avoid/hash';
 import type { DiagramLabel, LabelSpot } from '../labelTrait';
 import type { Bounds } from '../outline';
@@ -188,7 +188,7 @@ function fileSegments(field: Field, edge: string, run: readonly Vec2[]): void {
   for (let i = 0; i + 1 < run.length; i++) {
     const a = run[i]!;
     const b = run[i + 1]!;
-    field.segments.insert({ edge, a, b }, { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) });
+    field.segments.insert({ edge, a, b }, rectBetween(a.x, a.y, b.x, b.y));
   }
 }
 

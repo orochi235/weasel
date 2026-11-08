@@ -10,7 +10,7 @@
 import type { GradStop } from '@weasel-js/paint';
 import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, PaintTexture } from '../paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
-import { DEG_TO_RAD, mat3 } from '@weasel-js/geom';
+import { DEG_TO_RAD, mat3, trimNumber } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../fillInPoseFrame';
@@ -304,7 +304,7 @@ export function meshGradientXml(id: string, mesh: MeshGradientPaint): string {
   const space = mesh.interpolate && mesh.interpolate !== 'rgb'
     ? ` interpolate="${mesh.interpolate}"` : '';
   const patches = mesh.patches.map((patch) => {
-    const points = patch.points.map((p) => `${trim(p.x)},${trim(p.y)}`).join(' ');
+    const points = patch.points.map((p) => `${trimNumber(p.x)},${trimNumber(p.y)}`).join(' ');
     const colors = patch.colors.join(' ');
     return `<${P}:patch points="${points}" colors="${colors}"/>`;
   }).join('');
@@ -312,9 +312,4 @@ export function meshGradientXml(id: string, mesh: MeshGradientPaint): string {
     `<${P}:meshGradient id="${id}" gradientUnits="${units}"${space}>` +
     `${patches}</${P}:meshGradient>`
   );
-}
-
-/** Short decimals, matching what `@weasel-js/svg` writes elsewhere. */
-function trim(n: number): string {
-  return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(4)));
 }

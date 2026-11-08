@@ -10,9 +10,10 @@ export function tableBeside(genFile: string): IconTable | undefined {
   return existsSync(file) ? read(file) : undefined;
 }
 
-/** The namespace a generated icons.gen module binds, read from its scopedIcon call. */
+/** The namespace a generated icons.gen module binds, read from its scopedIcon call, whose type argument a
+ *  compiled `.js` one has lost. */
 export function namespaceIn(genFile: string): string | undefined {
-  return /scopedIcon<[^>]*>\(\s*['"]([^'"]+)['"]\s*\)/.exec(readFileSync(genFile, 'utf8'))?.[1];
+  return /scopedIcon(?:<[^>]*>)?\(\s*['"]([^'"]+)['"]\s*\)/.exec(readFileSync(genFile, 'utf8'))?.[1];
 }
 
 /**

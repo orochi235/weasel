@@ -1,5 +1,6 @@
 /** Edits to a pipeline's groups: what each holds, its label, and its box under `nodeGraph`. */
 import type { Vec2 } from '@weasel-js/core/math';
+import { freshId } from '@weasel-js/registry';
 import type { EffectBox, EffectDoc, EffectGroup, EffectPipeline } from './types';
 
 const groupsOf = (doc: EffectDoc): readonly EffectGroup[] => doc.pipeline.groups ?? [];
@@ -35,10 +36,7 @@ const parentOf = (groups: readonly EffectGroup[], id: string) => groups.find((g)
 /** `group` if no stage or group has it, else `group-2`, `group-3`, … */
 export function nextGroupId(p: EffectPipeline): string {
   const used = new Set([...p.stages.map((s) => s.id), ...(p.groups ?? []).map((g) => g.id)]);
-  if (!used.has('group')) return 'group';
-  let n = 2;
-  while (used.has(`group-${n}`)) n++;
-  return `group-${n}`;
+  return freshId('group', used, { bare: true, from: 2 });
 }
 
 /**

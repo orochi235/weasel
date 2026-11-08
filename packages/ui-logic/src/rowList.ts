@@ -1,6 +1,6 @@
-import type { Rect } from '@weasel-js/geom';
+import { clamp, type Rect } from '@weasel-js/geom';
 import {
-  centeredBaseline, clampTo, envNumber, envPx,
+  centeredBaseline, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
 } from './measure';
 
@@ -111,8 +111,8 @@ export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEn
   if (face.rows.length === 0) {
     const t = env.text(face.empty ?? '—', m.font);
     const line = m.lineHeight;
-    const width = clampTo(t.width + m.padX * 2, c.minWidth, c.maxWidth);
-    const height = clampTo(line + m.emptyPadY * 2, c.minHeight, c.maxHeight);
+    const width = clamp(t.width + m.padX * 2, c.minWidth, c.maxWidth);
+    const height = clamp(line + m.emptyPadY * 2, c.minHeight, c.maxHeight);
     const empty = { x: m.padX, y: m.emptyPadY, width: Math.max(0, width - m.padX * 2), height: line };
     return { width, height, baseline: m.emptyPadY + centeredBaseline(line, line, t), layout: { rows: [], empty, metrics: m } };
   }
@@ -121,9 +121,9 @@ export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEn
   const side = (r: RowFace) => (r.leadingWidth != null ? r.leadingWidth + m.gap : 0)
     + (r.trailingWidth != null ? r.trailingWidth + m.gap : 0);
   const intrinsic = Math.max(...face.rows.map((r, i) => m.padX * 2 + side(r) + extents[i]!.width));
-  const width = clampTo(intrinsic, c.minWidth, c.maxWidth);
+  const width = clamp(intrinsic, c.minWidth, c.maxWidth);
   const n = face.rows.length;
-  const height = clampTo(n * m.rowHeight + (n - 1) * ROW_GAP, c.minHeight, c.maxHeight);
+  const height = clamp(n * m.rowHeight + (n - 1) * ROW_GAP, c.minHeight, c.maxHeight);
 
   const rows = face.rows.map((r, i): RowBox => {
     const y = i * (m.rowHeight + ROW_GAP);

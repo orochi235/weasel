@@ -4,6 +4,7 @@ import {
   holdElapsed,
   type PlayheadHold,
 } from '@weasel-js/clock';
+import { freshId } from '@weasel-js/registry';
 import { useEffect, useState } from 'react';
 import { declaredClock } from '../clock/trialClock';
 import type { InstrumentList } from '../instrument/types';
@@ -33,8 +34,7 @@ export function snapshotCommands(
       const taken = new Set(
         current.savedSnapshots.filter((s) => s.trialId === trialId).map((s) => s.name),
       );
-      let n = taken.size + 1;
-      while (taken.has(`Snapshot ${n}`)) n += 1;
+      const fallback = freshId('Snapshot', taken, { from: taken.size + 1, sep: ' ' });
       const handle = ownClock(trialId);
       const trial = current.trials.find((w) => w.id === trialId);
       const instrument = instruments.find((i) => i.name === trial?.instrumentName);
@@ -46,7 +46,7 @@ export function snapshotCommands(
           clockPosition(handle.clock, spec?.duration, spec?.origin),
         );
       }
-      store.getState().saveSnapshot(trialId, name ?? `Snapshot ${n}`);
+      store.getState().saveSnapshot(trialId, name ?? fallback);
     },
     loadSnapshot: (trialId, snapshotId) => {
       const before = store.getState().trials.find((w) => w.id === trialId);

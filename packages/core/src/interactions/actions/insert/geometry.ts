@@ -1,3 +1,5 @@
+import { rectBetween } from '@weasel-js/geom';
+
 /** Resolve the effective origin mode from the binding's nominal opt
  *  and live Alt state. Alt inverts: `corner` ⇄ `center`. Applies to
  *  every shape kind — radial shapes (polygon/star) included; the
@@ -28,10 +30,5 @@ export function computeBounds(
     const dy = Math.abs(currentY - startY);
     return { x: startX - dx, y: startY - dy, width: dx * 2, height: dy * 2 };
   }
-  return {
-    x: Math.min(startX, currentX),
-    y: Math.min(startY, currentY),
-    width: Math.abs(currentX - startX),
-    height: Math.abs(currentY - startY),
-  };
+  return rectBetween(startX, startY, currentX, currentY);
 }

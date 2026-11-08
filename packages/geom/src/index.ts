@@ -6,13 +6,13 @@
  *
  * @packageDocumentation
  */
-export { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, lerp, EPS } from './scalar';
+export { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, lerp, trimNumber, EPS } from './scalar';
 export { DEG_TO_RAD, RAD_TO_DEG, wrapAngle, wrapPositive, type HalfTurn } from './angle';
 export { normalizeZoom, viewRectToScreen, viewScreenToWorld, viewWorldToScreen, ZOOM_FLOOR, type View } from './view';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
 export {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
-  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, unionRects,
+  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, unionRects,
   type Box, type Rect,
 } from './box';
 export { alignToGrid, snapToPitch, type OutputGrid } from './outputGrid';

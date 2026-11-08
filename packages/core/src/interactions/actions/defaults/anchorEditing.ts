@@ -39,7 +39,7 @@ import {
   type AnchorSet,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
-import { pxReach } from '@weasel-js/geom';
+import { pxReach, rectBetween } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
@@ -360,12 +360,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
       const base = new Set(dep.selectedAnchors);
       const start = { x: ctx.world.x, y: ctx.world.y };
 
-      const rectFrom = (cx: number, cy: number) => ({
-        x: Math.min(start.x, cx),
-        y: Math.min(start.y, cy),
-        width: Math.abs(cx - start.x),
-        height: Math.abs(cy - start.y),
-      });
+      const rectFrom = (cx: number, cy: number) => rectBetween(start.x, start.y, cx, cy);
 
       return {
         kind: 'marquee-anchors',

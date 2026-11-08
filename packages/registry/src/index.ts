@@ -4,6 +4,7 @@ export { isDev } from './isDev';
 export { isPlainObject, isPlainPrototype } from './isPlainObject';
 export { deepEqual, type DeepEqualOptions } from './deepEqual';
 export { sameList } from './sameList';
+export { freshId, type FreshIdOptions } from './freshId';
 export type {
   Reflectable,
   Reflection,

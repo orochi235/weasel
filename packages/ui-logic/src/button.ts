@@ -1,6 +1,6 @@
-import type { Rect } from '@weasel-js/geom';
+import { clamp, type Rect } from '@weasel-js/geom';
 import {
-  centeredBaseline, clampTo, envNumber, envPx,
+  centeredBaseline, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured, type TextExtent,
 } from './measure';
 
@@ -97,8 +97,8 @@ export function measureButton(face: ButtonFace, c: Constraints, env: MeasureEnv)
   });
   const gaps = Math.max(0, parts.length - 1) * m.gap;
   const content = widths.reduce((a, b) => a + b, 0) + gaps;
-  const width = clampTo(face.iconOnly ? m.height : content + m.padX * 2, c.minWidth, c.maxWidth);
-  const height = clampTo(m.height, c.minHeight, c.maxHeight);
+  const width = clamp(face.iconOnly ? m.height : content + m.padX * 2, c.minWidth, c.maxWidth);
+  const height = clamp(m.height, c.minHeight, c.maxHeight);
 
   const over = content - (width - m.padX * 2);
   const label = parts.indexOf('label');

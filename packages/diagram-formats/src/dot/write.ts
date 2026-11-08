@@ -2,6 +2,7 @@
 import type { DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../document';
 import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, nodeStyleIn, type Cluster, type GraphOut } from '../graphWrite';
+import { num } from '../drawXml/writeXml';
 import { arrowName, dashStyle, OUTLINE_ATTR, quoteLabel, shapeOf } from './values';
 
 const RANKDIR: Readonly<Record<LayoutDirection, string | null>> = { down: null, up: 'BT', right: 'LR', left: 'RL' };
@@ -21,7 +22,6 @@ const attrList = (attrs: readonly (string | null)[]) => {
   return set.length > 0 ? ` [${set.join(', ')}]` : '';
 };
 const color = (key: string, value: string | undefined) => (value === undefined ? null : `${key}="${hexColor(value)}"`);
-const num = (n: number) => String(Math.round(n * 10000) / 10000);
 
 function nodeAttrs(out: GraphOut, node: DataNode, placed: boolean): string {
   const { shape, rounded, missing, marked } = shapeOf(node.outline);

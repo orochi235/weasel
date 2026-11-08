@@ -69,6 +69,17 @@ describe('createIconRegistry', () => {
     expect(r.entries()).not.toBe(first);
     expect(r.entries()).toBe(r.entries());
   });
+
+  it('changes nothing when a table is released a second time', () => {
+    const r = createIconRegistry();
+    const release = r.add(core({ undo: 'u' }));
+    release();
+    const v = r.getVersion();
+    const entries = r.entries();
+    release();
+    expect(r.getVersion()).toBe(v);
+    expect(r.entries()).toBe(entries);
+  });
 });
 
 describe('merged namespaces and overrides', () => {

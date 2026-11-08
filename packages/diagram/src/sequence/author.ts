@@ -3,6 +3,7 @@
  * around them, messages numbered. Pure functions from one `SequenceData` to
  * the next; a no-op returns the data it was given.
  */
+import { freshId } from '@weasel-js/registry';
 import type { Outline } from '../outline';
 import { flatSteps } from './columns';
 import { hasId, pruneSteps } from './edit';
@@ -21,10 +22,7 @@ export const seqIdTaken = (data: SequenceData, id: string): boolean => idsOf(dat
 
 /** An id nothing in `data` uses yet: `prefix` and the lowest free number from 1. */
 export function freshSeqId(data: SequenceData, prefix: string): string {
-  const ids = idsOf(data);
-  let n = 1;
-  while (ids.has(`${prefix}${n}`)) n++;
-  return `${prefix}${n}`;
+  return freshId(prefix, idsOf(data), { sep: '' });
 }
 
 /** What a new participant is drawn as: a plain box, or the UML stick figure. */
