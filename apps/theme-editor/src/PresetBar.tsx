@@ -4,6 +4,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
 import styles from './PaletteLab.module.css';
 import { BUILTIN_PRESETS, persist, toSource, type LabState, type Preset } from './presets';
+import { useFlash } from './useFlash';
 
 export interface PresetBarProps {
   state: LabState;
@@ -15,7 +16,7 @@ export interface PresetBarProps {
 /** Name, save, reload and export the constraint set currently on screen. */
 export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProps) {
   const [name, setName] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
+  const [copied, flashCopied] = useFlash<string | null>(null, 1200);
 
   const all = [...BUILTIN_PRESETS, ...saved];
 
@@ -58,8 +59,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
               ariaLabel={`Copy ${p.name} as source`}
               onClick={() => {
                 void navigator.clipboard?.writeText(toSource(p));
-                setCopied(p.name);
-                window.setTimeout(() => setCopied(null), 1200);
+                flashCopied(p.name);
               }}
             >
               {copied === p.name ? '✓' : '⧉'}

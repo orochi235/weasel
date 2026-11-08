@@ -121,7 +121,7 @@ never per frame:
 const lab = iframe.contentWindow; // `window` for a <Lab present> in this page
 lab.postMessage({ type: 'labkit:play' }, origin); // an ended run starts over
 lab.postMessage({ type: 'labkit:pause' }, origin);
-lab.postMessage({ type: 'labkit:seek', time: 1200 }, origin); // ms into the pass
+lab.postMessage({ type: 'labkit:seek', time: 1200 }, origin); // shown ms: origin + time into the pass
 lab.postMessage({ type: 'labkit:query' }, origin); // ask for the state
 
 window.addEventListener('message', ({ data }) => {

@@ -14,6 +14,9 @@ export const PAPER_PRESETS = Object.fromEntries(
   PAPER_SIZES.map(({ key, width, height }) => [key, { width, height }]),
 ) as Record<PaperSizeKey, { width: number; height: number }>;
 
+/** What a select shows for a page of none of the sizes. It is not a size, so it is never chosen. */
+export const CUSTOM_PAPER = { value: 'custom', label: 'Custom', disabled: true } as const;
+
 /** The sizes as `{ value, label }`, the shape a menu or a select takes. */
 export const PAPER_OPTIONS: ReadonlyArray<{ value: PaperSizeKey; label: string }> =
   PAPER_SIZES.map(({ key, label }) => ({ value: key, label }));

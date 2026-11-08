@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { DEFAULT_FILENAME } from '../docPersistence';
-import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_OPTIONS, type PaperSizeKey } from '../paperSizes';
+import { CUSTOM_PAPER, DEFAULT_PAPER_SIZE, isPaperSize, PAPER_OPTIONS, type PaperSizeKey } from '../paperSizes';
 import { backgroundHex, DocumentLayers, HistoryEntries, PaletteSwatches, SelectionProperties } from '../sidebarPanels';
 import { blockLeaf, inPopover } from './appLeaves';
 import { useSurfaceHost } from './hostContext';
@@ -18,7 +18,7 @@ const WHILE_DOCUMENT = { showIf: { not: { path: 'selection' } } } as const;
 
 export const PROPERTIES_SCHEMA = pref.group('Properties', {
   file: pref.string('File', '', { placeholder: DEFAULT_FILENAME, ...WHILE_DOCUMENT }),
-  paper: pref.enum<PaperSizeKey>('Paper', DEFAULT_PAPER_SIZE, PAPER_OPTIONS, WHILE_DOCUMENT),
+  paper: pref.enum<PaperSizeKey | typeof CUSTOM_PAPER.value>('Paper', DEFAULT_PAPER_SIZE, [...PAPER_OPTIONS, CUSTOM_PAPER], WHILE_DOCUMENT),
   background: pref.color('Background', '#ffffffff', { alpha: true, ...WHILE_DOCUMENT }),
   selection: blockLeaf(SELECTION_KIND, 'Selection', { showIf: { path: 'selection' } }),
 });
@@ -28,7 +28,7 @@ function usePropertiesBinding(): SchemaBinding {
   const { docSelected, filename, paperSize, backgroundColor, setFilename, setPaperSize, setBackgroundColor } = host;
   return useMemo((): SchemaBinding => ({
     title: docSelected ? 'Document' : 'Properties',
-    values: { selection: !docSelected, file: filename, paper: paperSize, background: backgroundHex(backgroundColor) },
+    values: { selection: !docSelected, file: filename, paper: paperSize ?? CUSTOM_PAPER.value, background: backgroundHex(backgroundColor) },
     onChange: (path, value) => {
       if (path === 'file' && typeof value === 'string') setFilename(value);
       else if (path === 'paper' && isPaperSize(value)) setPaperSize(value);

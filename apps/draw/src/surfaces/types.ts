@@ -37,7 +37,8 @@ export interface SidebarHost {
   setFilename: (v: string) => void;
   backgroundColor: string;
   setBackgroundColor: (v: string) => void;
-  paperSize: PaperSizeKey;
+  /** The shown page's paper size; `null` for a page of none of draw's sizes. */
+  paperSize: PaperSizeKey | null;
   setPaperSize: (v: PaperSizeKey) => void;
   docSelected: boolean;
   setDocSelected: (v: boolean) => void;

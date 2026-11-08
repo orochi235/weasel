@@ -117,6 +117,14 @@ describe('a presented lab’s messages', () => {
     expect(c().elapsed).toBe(1500);
   });
 
+  it('reports and seeks shown time, origin included', async ({ host }) => {
+    await host.mount({ duration: 4000, origin: 10_000 });
+    await host.send({ type: 'labkit:seek', time: 11_500 });
+    expect(c().elapsed).toBe(1500);
+    await host.send({ type: 'labkit:query' });
+    expect(lastState()?.time).toBe(11_500);
+  });
+
   it('stops the replay of an ended run once the host has spoken', async ({ host }) => {
     vi.useFakeTimers();
     try {

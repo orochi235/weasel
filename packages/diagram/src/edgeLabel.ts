@@ -12,6 +12,7 @@ import {
   type InvocationCtx,
   type RectPose,
   type Scene,
+  textEditJoin,
 } from '@weasel-js/core';
 import type { MeasureRowText, RowTextStyle } from './body';
 import { diagramEdgeOf } from './edgeTrait';
@@ -82,14 +83,15 @@ export function edgeLabelSpec<TLayer extends string>(
 /**
  * Removes node `id` if it is an edge label left with no text, and says whether
  * it did. The default edit adds a label before its text is typed, so a host
- * passes this as its text edit's `onEnd` to drop one that ends empty.
+ * passes this as its text edit's `onEnd` to drop one that ends empty; the
+ * removal joins the add's undo entry, so undo brings no empty label back.
  */
 export function dropEmptyEdgeLabel(scene: Scene<unknown, string, unknown>, id: string): boolean {
   const node = scene.get(id as never);
   if (node === undefined || diagramLabelOf(node) === null) return false;
   const text = (node.data as { text?: unknown }).text;
   if (typeof text === 'string' && text.trim() !== '') return false;
-  scene.remove(id as never);
+  scene.batch('Remove label', () => scene.remove(id as never), textEditJoin(id));
   return true;
 }
 
@@ -123,11 +125,11 @@ function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLab
   if (scene.get(labelId as never) === undefined) {
     const edge = scene.get(edgeId as never);
     if (edge === undefined) return;
-    scene.add(edgeLabelSpec(edgeId, '', {
+    scene.batch('Add label', () => scene.add(edgeLabelSpec(edgeId, '', {
       layer: edge.layer,
       ...(look.style ? { style: look.style } : {}),
       ...(look.fill !== undefined ? { fill: look.fill } : {}),
-    }) as never);
+    }) as never), textEditJoin(labelId));
   }
   textEdit?.startEdit(labelId);
 }

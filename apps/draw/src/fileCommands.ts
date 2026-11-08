@@ -3,7 +3,7 @@ import { useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { importSvgFile, openSvgFile, type OpenSvgTarget } from './openSvg';
 import { onePage, replacePages } from './pages/drawPages';
-import { isPaperSize, PAPER_PRESETS, PAPER_SIZES, type PaperSizeKey } from './paperSizes';
+import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, PAPER_SIZES, type PaperSizeKey } from './paperSizes';
 import { exportPageSvgFile, saveSvgFile, type SavedDoc } from './saveSvg';
 
 export const FILE_ACTIONS = {
@@ -20,7 +20,7 @@ export const FILE_NEW_MENU: PrefGroup = pref.group(
 /** The document the file commands read and write. */
 export interface FileCommandsTarget extends OpenSvgTarget, SavedDoc {
   /** The shown page's paper size: what New with no size makes while no page is shown. */
-  paperSize: PaperSizeKey;
+  paperSize: PaperSizeKey | null;
   /** The page Export Page writes, and whose size New with no size keeps: the one in view, or the last that was. */
   page: PlacedPage | null;
 }
@@ -34,7 +34,7 @@ export function useFileCommands(target: FileCommandsTarget): void {
     const size = params?.size;
     const { page } = target;
     const paper = isPaperSize(size) ? PAPER_PRESETS[size]
-      : page ? { width: page.width, height: page.height } : PAPER_PRESETS[target.paperSize];
+      : page ? { width: page.width, height: page.height } : PAPER_PRESETS[target.paperSize ?? DEFAULT_PAPER_SIZE];
     target.leaveMode();
     // The batch is what names the entry and captures the prior selection.
     scene.batch('New document', () => {

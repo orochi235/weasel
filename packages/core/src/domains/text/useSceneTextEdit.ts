@@ -230,6 +230,7 @@ export function useSceneTextEditor<
     onEnd: (id) => {
       drafts.end(id);
       optsRef.current.onEnd?.(id);
+      sceneRef.current.history.seal();
     },
     onDraft: drafts.draft,
     getText: (id) => {

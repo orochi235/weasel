@@ -35,17 +35,18 @@ const ACTIONS: Action[] = [
 ];
 
 const setFilename = vi.fn();
+const setPaperSize = vi.fn();
 
 const NO_CORNERS: CornerControlsSelection = { editingId: () => null, selectedAnchors: () => new Set(), subscribe: () => () => {} };
 
-function App({ docSelected = false }: { docSelected?: boolean }) {
+function App({ docSelected = false, paperSize = 'a4' }: { docSelected?: boolean; paperSize?: SidebarHost['paperSize'] }) {
   const [scene] = useState(() => createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: DRAW_LAYERS }));
   const selection = useSelection({ mode: 'multi', scene });
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
   const [simplifyTolerance, setSimplifyTolerance] = useState(1);
   const host: SidebarHost = {
     scene, selection, measurements, filename: 'drawing', setFilename, backgroundColor: '#ffffff',
-    setBackgroundColor: () => {}, paperSize: 'a4', setPaperSize: () => {}, docSelected, setDocSelected: () => {},
+    setBackgroundColor: () => {}, paperSize, setPaperSize, docSelected, setDocSelected: () => {},
     cornerSelection: NO_CORNERS, simplifyTolerance, setSimplifyTolerance,
   };
   return (
@@ -106,6 +107,22 @@ describe('the Properties asset', () => {
       fireEvent.blur(file);
     });
     expect(setFilename).toHaveBeenCalledWith('poster');
+  });
+
+  it('shows the paper size of the shown page', () => {
+    renderWithIcons(<App docSelected />);
+    expect(sidebar().getByRole('button', { name: /Paper/ }).textContent).toContain('A4');
+  });
+
+  it('shows Custom for a page of none of the paper sizes, and offers it only to show', () => {
+    renderWithIcons(<App docSelected paperSize={null} />);
+    const paper = sidebar().getByRole('button', { name: /Paper/ });
+    expect(paper.textContent).toContain('Custom');
+    expect(paper.textContent).not.toContain('US Letter');
+    click(paper);
+    expect(screen.getByRole('option', { name: 'Custom' })).toHaveAttribute('aria-disabled', 'true');
+    click(screen.getByRole('option', { name: 'Legal' }));
+    expect(setPaperSize).toHaveBeenCalledWith('legal');
   });
 });
 

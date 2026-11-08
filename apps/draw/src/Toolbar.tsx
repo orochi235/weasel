@@ -34,7 +34,7 @@ export interface ToolbarProps {
   scene: DrawScene;
   selection: SelectionApi;
   /** The shown page's paper size: what New with no size makes while no page is shown. */
-  paperSize: PaperSizeKey;
+  paperSize: PaperSizeKey | null;
   /** Fit the view to the first page, after New or Open replaces the document. */
   showFirstPage: () => void;
   /** Leave the open mode, before New or Open replaces the document. */

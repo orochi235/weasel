@@ -7,6 +7,17 @@ import { asNodeId, type PoseHold, type Scene } from '../../core/scene/types';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import type { TextEditDraft } from '@weasel-js/text-dom';
 import type { DefaultTextData, UseSceneTextEditOptions } from './useSceneTextEdit';
+import type { SceneBatchOptions } from '../../core/scene/recorder';
+
+/**
+ * Options for a batch that makes node `id` for a text edit to fill in: `scene.batch('Add label', add,
+ * textEditJoin(id))`. The edit's commit then joins that batch's undo entry, so one undo takes the node and its
+ * first text away together. A host's `onEnd` that removes a node left empty passes the same options, and the
+ * removal joins too. The run ends with the edit: a later edit of the node is an entry of its own.
+ */
+export function textEditJoin(id: string): SceneBatchOptions {
+  return { coalesceKey: `textEdit:${id}` };
+}
 
 /** `data` with an edit's text, runs and style folded in through the options' setters, for one `scene.update`. */
 export function editedData<TData extends DefaultTextData>(
@@ -52,7 +63,7 @@ export function sceneTextDrafts<TData extends DefaultTextData, TLayer extends st
     },
     commit: (id, data) => {
       const scene = sceneRef.current;
-      scene.batch('Edit text', () => scene.update(asNodeId(id), { data }));
+      scene.batch('Edit text', () => scene.update(asNodeId(id), { data }), textEditJoin(id));
       // After the write, so no frame shows the text from before the edit in between.
       release(id);
     },

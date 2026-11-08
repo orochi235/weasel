@@ -11,6 +11,7 @@ export type {
   UseTextEditReturn,
 } from '@weasel-js/text-dom';
 export { useSceneTextEdit } from './useSceneTextEdit';
+export { textEditJoin } from './sceneTextDrafts';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { textCommand, textCommandFromRuns, textCommandFromRunsInto, textCommandFromPose } from '@weasel-js/renderer';
 export {

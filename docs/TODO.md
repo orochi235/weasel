@@ -299,6 +299,14 @@ Owner tags, after the priority (2026-10-26):
   Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
   its own bound.
 
+- **(P3) [agent] A text box or sticky note inserted and typed into is two undo entries, so one undo leaves it
+  empty and invisible.** Read from the code, not run: the `insert` dep commits through the adapter's
+  `applyOps(ops, label)` (`canvas/deps/insert.ts`), which pushes "Insert text" with no batch key, and the edit's
+  commit is a separate "Edit text". `textEditJoin(id)` (`domains/text/sceneTextDrafts.ts`) is the mechanism the
+  diagram's edge-label edit uses for the same case; the insert path cannot pass it because `applyOps` takes no
+  batch options, and consumer adapters implement that contract. Closes when inserting text, typing and undoing
+  once leaves no node behind, for the text tool and both sticky inserts (drag and click).
+
 ---
 
 ## Scene, adapters & layout

@@ -31,7 +31,8 @@ export interface PresentationState {
   clock: boolean;
   playing: boolean;
   ended: boolean;
-  /** ms into the current pass; for a run with no end, ms played. */
+  /** Shown time, ms: the clock's `origin` plus the time into the current pass (for a run with no end,
+   *  the time played). The time `labkit:seek` takes. */
   time: number;
   /** ms per pass; `null` for a run with no end. */
   duration: number | null;
