@@ -13,6 +13,7 @@ const pdf = vi.hoisted(() => vi.fn(async (_scene: unknown, _pages: readonly unkn
   ({ blob: new Blob(['%PDF'], { type: 'application/pdf' }), skipped: [] as { kind: string; detail: string }[] })));
 const warned = vi.hoisted(() => vi.fn());
 const noPages = vi.hoisted(() => ({ on: false }));
+const between = vi.hoisted(() => ({ on: false }));
 
 vi.mock('@weasel-js/editor', async (actual) => ({
   ...(await actual<typeof import('@weasel-js/editor')>()),
@@ -31,7 +32,10 @@ vi.mock('./pages/useChartPages', async (actual) => {
     ...real,
     useChartPages: (...args: Parameters<typeof real.useChartPages>) => {
       const pages = real.useChartPages(...args);
-      return noPages.on ? { ...pages, placed: [] } : pages;
+      if (noPages.on) return { ...pages, placed: [], current: null, shown: null };
+      // The view between pages: no current page, and the one last shown is not the first.
+      if (between.on && pages.shown) return { ...pages, current: null, shown: { ...pages.shown, id: 'last-shown' } };
+      return pages;
     },
   };
 });
@@ -50,6 +54,7 @@ afterEach(() => {
   pdf.mockClear();
   warned.mockClear();
   noPages.on = false;
+  between.on = false;
   chartPrefs().reset();
   localStorage.clear();
 });
@@ -94,6 +99,13 @@ describe('File › Export', () => {
     pdf.mockResolvedValueOnce({ blob: new Blob(['%PDF']), skipped: [{ kind: 'glyph', detail: 'glyph U+1F600' }] });
     exportAs('Pages as PDF');
     await vi.waitFor(() => expect(warned).toHaveBeenCalledWith('Exported', ['glyph U+1F600'], 'chart-export-pdf'));
+  });
+
+  it('draws the page last shown while the view is between pages', async () => {
+    between.on = true;
+    exportAs('Page as PNG (2×)');
+    await new Promise((r) => setTimeout(r, 0));
+    expect((png.mock.calls[0]?.[1] as { id: string } | undefined)?.id).toBe('last-shown');
   });
 
   it('writes no PDF when no page is placed', async () => {

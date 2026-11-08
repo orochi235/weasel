@@ -36,7 +36,7 @@ export async function importChart(scene: ChartScene, file: { name: string; text(
 /** The chart in `format`: the whole chart, or for a one-page format the page in view, named for what it holds. */
 export function exportChart(scene: ChartScene, format: DiagramFormat, pages: ChartPages): { blob: Blob; name: string; warnings: readonly string[] } {
   const doc = documentFromScene(scene, { theme: chartThemeOf(scene) });
-  const page = pages.current ?? undefined;
+  const page = pages.shown?.id;
   const { text, warnings } = format.write!(doc, page !== undefined ? { page } : {});
   const written = format.onePage ? writtenPage(doc, page !== undefined ? { page } : {}) : null;
   const index = written === null ? -1 : doc.pages.indexOf(written);
