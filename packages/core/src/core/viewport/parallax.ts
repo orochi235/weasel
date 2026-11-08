@@ -1,4 +1,4 @@
-import type { Rect } from '@weasel-js/geom';
+import { rectBetween, type Rect } from '@weasel-js/geom';
 import type { View } from './view';
 import { normalizeZoom } from './zoomBounds';
 
@@ -85,12 +85,7 @@ export function fromPlane(m: PlaneMap, p: { x: number; y: number }): { x: number
 function mapRect(r: Rect, map: (p: { x: number; y: number }) => { x: number; y: number }): Rect {
   const a = map({ x: r.x, y: r.y });
   const b = map({ x: r.x + r.width, y: r.y + r.height });
-  return {
-    x: Math.min(a.x, b.x),
-    y: Math.min(a.y, b.y),
-    width: Math.abs(b.x - a.x),
-    height: Math.abs(b.y - a.y),
-  };
+  return rectBetween(a.x, a.y, b.x, b.y);
 }
 
 /** A camera-world rect in the plane's world. The map is axis-aligned, so a

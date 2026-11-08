@@ -12,7 +12,7 @@ export { normalizeZoom, viewRectToScreen, viewScreenToWorld, viewWorldToScreen, 
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
 export {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
-  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, unionRects,
+  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, unionRects,
   type Box, type Rect,
 } from './box';
 export { alignToGrid, snapToPitch, type OutputGrid } from './outputGrid';

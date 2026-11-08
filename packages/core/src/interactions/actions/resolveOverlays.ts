@@ -16,7 +16,7 @@ import { insertPreviewExtent } from '../../canvas/insertPreviewExtent';
 import type { Bounds } from '../../core/viewport/fitViewToBounds';
 import type { KitInsertShape } from '../../core/shapeKinds';
 import type { OngoingOverlay, OverlayRole } from '@weasel-js/routing';
-import type { Point } from '@weasel-js/geom';
+import { rectBetween, type Point } from '@weasel-js/geom';
 
 /**
  * The chrome-caps id a surface consults before painting each variant. The
@@ -109,15 +109,12 @@ export function resolveOverlays(overlays: Iterable<OngoingOverlay>): ResolvedOve
   for (const ov of overlays) {
     switch (ov.kind) {
       case 'marquee': {
-        const x = Math.min(ov.start.x, ov.current.x);
-        const y = Math.min(ov.start.y, ov.current.y);
-        const width = Math.abs(ov.current.x - ov.start.x);
-        const height = Math.abs(ov.current.y - ov.start.y);
-        if (width === 0 && height === 0) break;
+        const bounds = rectBetween(ov.start.x, ov.start.y, ov.current.x, ov.current.y);
+        if (bounds.width === 0 && bounds.height === 0) break;
         out.push({
           kind: 'marquee',
           visibilityId: 'action.marquee',
-          bounds: { x, y, width, height },
+          bounds,
           shiftHeld: ov.shiftHeld,
         });
         break;

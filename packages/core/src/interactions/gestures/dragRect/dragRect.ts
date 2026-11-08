@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { rectBetween } from '@weasel-js/geom';
 import { useLatest } from '@weasel-js/react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
@@ -59,12 +60,7 @@ export interface DragRectController {
 }
 
 function boundsFrom(start: DragRectPoint, current: DragRectPoint): DragRectBounds {
-  return {
-    x: Math.min(start.x, current.x),
-    y: Math.min(start.y, current.y),
-    width: Math.abs(current.x - start.x),
-    height: Math.abs(current.y - start.y),
-  };
+  return rectBetween(start.x, start.y, current.x, current.y);
 }
 
 interface DragRectScratch<TConsumer> {
