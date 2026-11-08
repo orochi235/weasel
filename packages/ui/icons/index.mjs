@@ -18,6 +18,7 @@ import { APPEARANCE } from './appearance.mjs';
 import { VARIANTS } from './variants.mjs';
 import { MARKS } from './marks.mjs';
 import { KEYS } from './keys.mjs';
+import { WEATHER } from './weather.mjs';
 
 export const namespace = 'ui';
 export const owner = '@weasel-js/ui';
@@ -40,6 +41,12 @@ export const groups = [
   ['App chrome', CHROME],
   ['Files', FILES],
   ['State', STATUS],
+  ['Weather', WEATHER, {
+    tags: {
+      snowflake: ['freeze', 'frozen', 'cold', 'ice'],
+      droplet: ['thaw', 'melt', 'water', 'liquid'],
+    },
+  }],
   ['Appearance', APPEARANCE],
   ['Component variants', VARIANTS],
   ['Instrument', INSTRUMENT],

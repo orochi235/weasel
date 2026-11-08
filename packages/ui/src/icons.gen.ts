@@ -114,6 +114,8 @@ export type UiIconName =
   | 'modeLight'
   | 'modeDark'
   | 'modeAuto'
+  | 'snowflake'
+  | 'droplet'
   | 'gradeSuccess'
   | 'emphasisHigh'
   | 'emphasisLow'
@@ -483,6 +485,13 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
     ]
   },
   {
+    "label": "Weather",
+    "names": [
+      "snowflake",
+      "droplet"
+    ]
+  },
+  {
     "label": "Appearance",
     "names": [
       "gradeSuccess",
@@ -833,6 +842,8 @@ declare module '@weasel-js/icons' {
     'ui:modeLight': true;
     'ui:modeDark': true;
     'ui:modeAuto': true;
+    'ui:snowflake': true;
+    'ui:droplet': true;
     'ui:gradeSuccess': true;
     'ui:emphasisHigh': true;
     'ui:emphasisLow': true;
