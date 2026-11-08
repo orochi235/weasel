@@ -263,6 +263,11 @@ describe('argsToSchema', () => {
       ).toEqual({ textColor: 'string', fillColor: 'enum', strokeColor: 'number' });
     });
 
+    it('makes a string arg whose argType names the color control a color leaf, matcher or not', () => {
+      expect(shape(leaf({ ink: '#00ff00' }, { ink: { control: 'color' } }, 'ink'))).toEqual({ kind: 'color', default: '#00ff00' });
+      expect(shape(leaf({ ink: '#00ff00' }, { ink: { control: { type: 'color' } } }, 'ink'))).toEqual({ kind: 'color', default: '#00ff00' });
+    });
+
     it('leaves a `date` match as a string, which has no date leaf in labkit', () => {
       expect(kinds({ startDate: '2026-01-01' })).toEqual({ startDate: 'string' });
     });

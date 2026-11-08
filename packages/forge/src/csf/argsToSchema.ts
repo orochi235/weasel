@@ -189,6 +189,8 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'text':
     case 'textarea':
       return f.string(def());
+    case 'color':
+      return f.color(def());
     case 'select':
     case 'radio':
     case 'inline-radio':
