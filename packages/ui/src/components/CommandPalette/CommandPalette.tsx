@@ -102,7 +102,7 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
             aria-disabled={!enabled}
             className={cls}
             onMouseEnter={() => { if (enabled) onHighlight(idx); }}
-            onMouseDown={(e) => { e.preventDefault(); if (enabled) onRun(item); }}
+            onMouseDown={(e) => { e.preventDefault(); if (enabled && e.button === 0) onRun(item); }}
             title={reason}
           >
             <span className={styles.label}>{actionItemTitle(item)}</span>
