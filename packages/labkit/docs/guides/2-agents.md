@@ -121,10 +121,10 @@ An instrument may declare any of these on its `defineInstrument({...})` spec:
 | `annotations` | Marks drawn over named regions | Adds the annotation tool palette, an overlay per target, a `Marks` sidebar panel, an `Export` toolbar button, and undo/redo |
 | `tools` | Instrument-owned tools | Adds a palette region and a trial tool slot |
 | `job` | Async work with progress | Starts on mount, aborts on unmount and key change; renders progress and cancel into the chrome |
-| `undo` | Undo/redo bindings | Wires toolbar buttons; snapshots `state` on `snapshotOn` events |
+| `undo` | Undo/redo, on unless `undo: false` | Wires toolbar buttons and Mod+Z; snapshots `state` and `config` together on `snapshotOn` events (default `state.change` and `config.change`), or records settings changes onto a history the instrument hands over with `useTrialHistory` |
 | `clock` | Playback time | Gives the trial a `TrialClock` on `ctx.trial.clock`; `timed` layers repaint as it moves |
 
-Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all three behaviors automatically. See `src/trial/Trial.tsx` for the wiring.
+Capabilities compose: an instrument with `canvas` + `dragDrop` gets both behaviors, and undo, automatically. See `src/trial/Trial.tsx` for the wiring.
 
 ## The trial clock
 
