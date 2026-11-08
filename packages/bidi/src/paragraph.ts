@@ -9,7 +9,7 @@
 import type { BidiClass } from './types';
 
 /** Isolate initiators, per BD8. */
-function isIsolateInitiator(c: BidiClass): boolean {
+export function isIsolateInitiator(c: BidiClass): boolean {
   return c === 'LRI' || c === 'RLI' || c === 'FSI';
 }
 

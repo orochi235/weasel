@@ -178,10 +178,25 @@ export function unregisterCanvasFont(family: string): void {
   if (!canvasFamilies.has(family)) return;
   canvasFamilies.delete(family);
   autoEnrolledFamilies.delete(family);
-  for (const key of [...faces.keys()]) {
-    if (faces.get(key)!.family === family) faces.delete(key);
+  const dropped = new Set<BmFontChar>();
+  for (const [key, face] of [...faces]) {
+    if (face.family !== family) continue;
+    collectGlyphs(face, dropped);
+    faces.delete(key);
   }
+  dropBakes(dropped);
   notifyGlyphReady();
+}
+
+/** Every record `face` has handed out, its sharper color bakes included, into `into`. */
+function collectGlyphs(face: Face, into: Set<BmFontChar>): void {
+  for (const char of face.font.chars) into.add(char);
+  for (const char of face.shaped.values()) if (char) into.add(char);
+  for (const char of face.clusters.values()) {
+    if (!char) continue;
+    into.add(char);
+    for (const sharp of sharpBakesOf(char)) into.add(sharp);
+  }
 }
 
 /**
@@ -285,13 +300,7 @@ function refreshFamilies(families: readonly string[] | null): void {
   let measured = 0;
   for (const face of faces.values()) {
     if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
-    for (const char of face.font.chars) dropped.add(char);
-    for (const char of face.shaped.values()) if (char) dropped.add(char);
-    for (const char of face.clusters.values()) {
-      if (!char) continue;
-      dropped.add(char);
-      for (const sharp of sharpBakesOf(char)) dropped.add(sharp);
-    }
+    collectGlyphs(face, dropped);
     measureFace(face);
     measured++;
   }

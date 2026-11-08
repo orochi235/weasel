@@ -56,11 +56,12 @@ export function reorderLine(
 
   // L1, clauses 1 and 2: separators themselves. Clause 3 then walks back over
   // any whitespace leading into one.
-  for (const i of kept) {
+  for (let at = 0; at < kept.length; at++) {
+    const i = kept[at];
     const c = original[i];
     if (c !== 'S' && c !== 'B') continue;
     levels[i - start] = paragraphLevel;
-    for (let k = kept.indexOf(i) - 1; k >= 0; k--) {
+    for (let k = at - 1; k >= 0; k--) {
       const j = kept[k];
       if (!isResettable(original[j])) break;
       levels[j - start] = paragraphLevel;

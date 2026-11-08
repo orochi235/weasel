@@ -9,13 +9,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
-  numericWeight, resolveTextStyle, scriptMetricsFor,
+  numericWeight, resolveRunFace, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
 import { editEnd, imeKey } from '@weasel-js/ui-logic';
 import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
-import { domToRuns, type OverlayRunBase } from './domRuns';
+import { charOffsetToDomPosition, domToRuns, type OverlayRunBase } from './domRuns';
 import {
   applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, setFlagOverRange,
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
@@ -325,7 +325,8 @@ export function useTextEdit(
     openedRef.current = JSON.stringify(domToRuns(overlay));
     sentRef.current = JSON.stringify(overlayDraft(domToRuns(overlay), holderRef.current, initialRuns));
     applyOverlayStyle(overlay, style);
-    const hold = holdForFaces(style, initialRuns ?? []);
+    const holdFor = optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD;
+    const hold = holdFor > 0 ? holdForFaces(style, initialRuns ?? []) : null;
     if (hold) overlay.style.opacity = '0';
     const styleEl = installSelectionStyle(overlayClass, style);
     const clipBox = createClipBox();
@@ -347,16 +348,10 @@ export function useTextEdit(
       place();
       overlay.style.opacity = '';
     };
-    const holdTimer = held ? setTimeout(release, optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD) : undefined;
+    const holdTimer = held ? setTimeout(release, holdFor) : undefined;
     void hold?.then(release);
 
-    const range = document.createRange();
-    const initial = initialCaretRef.current;
-    if (initial === 'all') {
-      range.selectNodeContents(overlay);
-    } else {
-      placeCaretAt(overlay, range, initial);
-    }
+    const range = openingRange(overlay, initialCaretRef.current);
     // Focus first, then place the caret: focusing an editable host itself
     // moves the selection (jsdom collapses to the start; browsers vary).
     overlay.focus();
@@ -487,34 +482,26 @@ function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Pro
     cssFontFamilyLoading(style.fontFamily, {
       weight: numericWeight(style.fontWeight), style: style.fontStyle,
     }),
-    ...runs.filter((r) => r.fontFamily != null).map((r) => cssFontFamilyLoading(r.fontFamily!, {
-      weight: r.fontWeight ?? (r.bold ? 700 : undefined),
-      style: r.italic ? 'italic' : undefined,
-    })),
+    ...runs.filter((r) => r.fontFamily != null).map((r) => {
+      const face = resolveRunFace(r, style);
+      return cssFontFamilyLoading(face.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
+    }),
   ].filter((p) => p !== null);
   return pending.length === 0 ? null : Promise.all(pending);
 }
 
-/**
- * Place a collapsed caret `offset` characters into the overlay's text,
- * walking its text nodes. Out-of-range offsets clamp to the end.
- */
-function placeCaretAt(root: HTMLElement, range: Range, offset: number): void {
-  let remaining = offset;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node: Text | null = walker.nextNode() as Text | null;
-  while (node) {
-    const len = node.data.length;
-    if (remaining <= len) {
-      range.setStart(node, remaining);
-      range.setEnd(node, remaining);
-      return;
-    }
-    remaining -= len;
-    node = walker.nextNode() as Text | null;
+/** The selection an edit opens with: the whole text, or a caret `caret`
+ *  characters in, clamped to the end. */
+function openingRange(overlay: HTMLElement, caret: number | 'all'): Range {
+  const range = document.createRange();
+  if (caret === 'all') {
+    range.selectNodeContents(overlay);
+    return range;
   }
-  range.selectNodeContents(root);
-  range.collapse(false);
+  const at = charOffsetToDomPosition(overlay, caret);
+  if (at) range.setStart(at.node, at.offset);
+  range.collapse(true);
+  return range;
 }
 
 /** The overlay's positioning parent. Passes pointer input through everywhere
