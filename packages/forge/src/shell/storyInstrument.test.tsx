@@ -556,12 +556,13 @@ describe('FrameView with declared globals', () => {
     expect(received.map((m) => m.type)).toEqual(['init', 'globals', 'config', 'globals']);
   });
 
-  it('drops a frame setConfig aimed at the pins', async () => {
+  it('drops a frame setConfig aimed at the pins, or at any other key forge owns', async () => {
     const { frame, received } = await mountGlobals();
     frame.send(ready);
     await flush();
     frame.send({ type: 'setConfig', path: '$globals.theme', value: 'light' });
     frame.send({ type: 'setConfig', path: '$globals', value: { theme: 'light' } });
+    frame.send({ type: 'setConfig', path: '$playhead', value: 3 });
     await flush();
     expect(config()).toEqual({ label: 'clicks', $globals: { theme: 'lab' } });
     expect(received.map((m) => m.type)).toEqual(['init']);
