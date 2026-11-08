@@ -469,6 +469,12 @@ describe('createClock', () => {
     });
   });
 
+  it('checks a reopened position as it checks a seek and a rate', () => {
+    expect(() => createClock({ duration: 100 }, { elapsed: Number.NaN, rate: 0 })).toThrow(RangeError);
+    expect(() => createClock({ duration: 100 }, { elapsed: 10, rate: Number.NaN })).toThrow(RangeError);
+    expect(() => createClock({ seekable: false }, { elapsed: 10, rate: -1 })).toThrow(RangeError);
+  });
+
   describe('rates', () => {
     it('offers the transport defaults unless told otherwise, sorted', () => {
       expect(createClock({}).clock.rates).toEqual([0.25, 0.5, 1, 2, 4]);

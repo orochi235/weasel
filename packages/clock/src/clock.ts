@@ -275,6 +275,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   const seekable = spec.seekable ?? true;
   const openRate = spec.rate ?? 0;
   checkRate(openRate, seekable);
+  if (at) checkRate(at.rate, seekable);
   const rates = ratesOf(spec);
 
   const origin = at?.origin ?? spec.origin ?? 0;
@@ -304,6 +305,8 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     return run.span;
   };
   run.elapsed = at ? clamp(run, at.elapsed) : opening();
+  if (!Number.isFinite(run.elapsed))
+    throw new RangeError(`a clock opens at a time in its run, not ${at ? at.elapsed : spec.start}`);
 
   const mix = spec.mix?.() ?? null;
   const hub: Hub = {
