@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { act, fireEvent, render } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { CompoundPathsDemo } from '../CompoundPathsDemo';
 
 describe('CompoundPathsDemo', () => {
@@ -11,5 +11,25 @@ describe('CompoundPathsDemo', () => {
     const canvas = container.querySelector('canvas');
     expect(canvas).toBeTruthy();
     expect(canvas!.isConnected).toBe(true);
+  });
+});
+
+describe('the compound paths honk', () => {
+  it('stays up its full time after a second honk', () => {
+    vi.useFakeTimers();
+    try {
+      const { queryByText, getByRole } = render(<CompoundPathsDemo />);
+      const toast = () => queryByText('HONK', { selector: 'div' });
+      const honk = getByRole('button', { name: 'honk' });
+      act(() => { fireEvent.pointerDown(honk); });
+      act(() => { vi.advanceTimersByTime(600); });
+      act(() => { fireEvent.pointerDown(honk); });
+      act(() => { vi.advanceTimersByTime(600); });
+      expect(toast()).not.toBeNull();
+      act(() => { vi.advanceTimersByTime(400); });
+      expect(toast()).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

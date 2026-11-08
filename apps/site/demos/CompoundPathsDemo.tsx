@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IDENTITY_POSE_COMPOSITION,
   DEFAULT_HANDLE_SIZE,
   SceneCanvas,
@@ -150,6 +150,8 @@ export function CompoundPathsDemo() {
     })),
   });
   const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const honkBounds = () => {
     const g = scene.get(asNodeId('goose'));
@@ -205,7 +207,8 @@ export function CompoundPathsDemo() {
         getBounds={honkBounds}
         onHonk={() => {
           setToast('HONK');
-          setTimeout(() => setToast(null), 900);
+          window.clearTimeout(toastTimer.current);
+          toastTimer.current = window.setTimeout(() => setToast(null), 900);
         }}
       />
       {toast && (
