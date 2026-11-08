@@ -66,6 +66,13 @@ describe('wallpaper', () => {
     ]);
   });
 
+  it('draws the cell about the original when the extent leaves it out, as the guide and the edit symmetries do', () => {
+    const spec = square({ cell: 'point', extent: { x: 50, y: -50, width: 200, height: 100 } });
+    const ms = symmetryTransforms(spec, C);
+    expect(ms.map((m) => at(m, C.x + 10, C.y + 3))).toContainEqual({ x: C.x - 10, y: C.y - 3 });
+    expect(ms).toHaveLength(5);
+  });
+
   it('turns the cell by its own angle from the lattice\'s', () => {
     const [m] = symmetryTransforms(square({ cell: 'mirror', cellAngle: Math.PI / 2, extent: { x: -1, y: -1, width: 2, height: 2 } }), C);
     expect(at(m, C.x + 10, C.y + 3)).toEqual({ x: C.x - 10, y: C.y + 3 });
