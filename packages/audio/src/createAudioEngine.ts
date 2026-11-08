@@ -278,9 +278,8 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     activeVoices: active,
     analyser(busName, tapOpts) {
       if (disposed) throw new Error('@weasel-js/audio: engine is disposed');
-      // Every tap is one more live FFT on the graph. They are tracked so
-      // `dispose()` detaches them; a consumer calling this per frame still
-      // wants to keep one tap rather than mint one.
+      // Every tap is one more live FFT, tracked so `dispose()` detaches it; a
+      // consumer calling this per frame still wants to keep one tap rather than mint one.
       const tap = createAnalyserTap(ctx, busName ? graph.node(busName) : graph.master, tapOpts);
       taps.add(tap);
       return {
