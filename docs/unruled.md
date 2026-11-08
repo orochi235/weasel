@@ -712,8 +712,8 @@ Calls the round made:
 - `parseColor` throws on a channel that is not a plain CSS number (`rgb(255, 0, 0,)`, `rgb(1 2 3 / foo)`,
   `rgb(0x10, 0, 0)`), where it read them as 0 or alpha 1.
 - renderer's mesh writer keeps 6 decimal places, as svg does (`trimNumber`), where it kept 4.
-- theme's ramps blend two exactly opposite hues the positive way round (paint's `lerpHueDeg`, CSS
-  `shorter`), where they went the negative way.
+- theme's ramps blend hues through paint's `lerpHueDeg`. Round eight corrected its half turn to CSS Color 4's
+  (the sign of `h2 − h1` decides), so two exactly opposite hues go the way they did before round five.
 - ui-logic's `clampTo` stays as a deprecated alias of geom's `clamp` rather than being removed.
 - `useDragHandle` ignores a second press during a drag; `useHandleDrag` lets one cancel the drag.
 - A tiled layer's source still draws without its `effects` and without `drawOneLayer`'s throw
@@ -763,3 +763,22 @@ Calls the round made:
   frames (the 2026-09-13 no-rescan choice). Left as is.
 - draw saves the background (in the scene) and the filename (its own key) on separate paths, with no guard keeping
   them in step if one save lands without the other.
+
+## Audit round eight (2026-11-08)
+
+- loupe's `pixelHex` and `sourcePixel` are gone and `CanvasSource.sample` became `pixel`, folding three samplers
+  into one for the eyedropper: breaking, said in the changeset. Not yet ruled whether deprecated wrappers come back.
+- A list or menu counts a typed key by code point (`isOneChar` in ui-logic), so an emoji types and an access letter
+  can be one.
+- `lerpHueDeg` with `longer` and two equal hues stays put, where CSS goes a full turn, because an achromatic endpoint
+  takes the other side's hue and a full turn would spin a ramp to white or black. Left as is.
+- Marquee and lasso extend the selection only with Shift, whatever key the selection extends with. Left as is.
+- `ActionSettingsDialog` stays editable when its action turns disabled; the popover disables. Left as is.
+- `CommandPalette`'s `reasonLabels` replaces the default wording rather than merging with it. Left as is.
+- `createMarkdownRenderer` ignores a run's own `fill`, and under a `textBaseline` other than alphabetic places each
+  run by its own font's metrics. Left as is. `PositionedRun.lineSize` is new, after `size` was removed.
+- `onClick`, hover, `getNodeAtPoint` and press classification take the topmost hit, not `selectTool.pickBest`, whose
+  docs say they name the node a click selects; `pickBest` cannot see the asking view's camera or the live Alt key.
+  Left as is.
+- `ActionSettings` is exported from `@weasel-js/ui`'s root barrel, the one component folder that was not.
+- Group puts the new group in its frontmost member's place and keeps its members' stacking, as Make Boolean Group did.
