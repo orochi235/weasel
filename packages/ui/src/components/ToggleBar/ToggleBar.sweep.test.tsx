@@ -89,6 +89,32 @@ describe('ToggleBar sweep', () => {
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'true']);
   });
 
+  it('sweeps across the rows of a wrapped bar, along the line the drag takes', () => {
+    const seen: string[][] = [];
+    const cells = Array.from({ length: 9 }, (_, i) => ({ value: String(i), label: String(i) }));
+    function Grid() {
+      const [value, setValue] = useState<string[]>([]);
+      return (
+        <ToggleBar mode="multiple" columns={3} sweep items={cells} value={value}
+          onChange={(next) => { seen.push(next); setValue(next); }} ariaLabel="grid" />
+      );
+    }
+    const utils = render(<Grid />);
+    const buttons = utils.getAllByRole('button');
+    // Three 10px columns by three 10px rows.
+    document.elementFromPoint = (x: number, y: number) => buttons[Math.floor(y / 10) * 3 + Math.floor(x / 10)] ?? null;
+    const at = (type: string, x: number, y: number): void => {
+      act(() => {
+        buttons[0]!.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, button: 0, buttons: 1, clientX: x, clientY: y }));
+      });
+    };
+    // Corner to corner, one move: the diagonal's cells, nothing beside them.
+    at('pointerdown', 5, 5);
+    at('pointermove', 25, 25);
+    at('pointerup', 25, 25);
+    expect(seen.at(-1)).toEqual(['0', '4', '8']);
+  });
+
   it('asks a sweep function per press, with the modifiers held', () => {
     const { fire, pressed } = setup({ sweep: (p) => p.modifiers.alt });
     fire('pointerdown', 5);

@@ -338,6 +338,18 @@ describe('rovingGridTarget', () => {
     expect(rovingGridTarget(0, 'ArrowDown', six, grid, layout)).toBe(4);
     expect(rovingGridTarget(3, 'ArrowDown', six, grid, layout)).toBe(5);
   });
+
+  it('moves to the stretched item that covers most of this one, and back', () => {
+    // a b c d
+    // e   f      <- two items stretched across four columns, two each
+    const grid = [[0, 1, 2, 3], [4, 5]];
+    const six = Array(6).fill(true) as boolean[];
+    const layout = { widths: [1, 2] };
+    expect(rovingGridTarget(1, 'ArrowDown', six, grid, layout)).toBe(4);
+    expect(rovingGridTarget(2, 'ArrowDown', six, grid, layout)).toBe(5);
+    expect(rovingGridTarget(4, 'ArrowUp', six, grid, layout)).toBe(0);
+    expect(rovingGridTarget(5, 'ArrowUp', six, grid, layout)).toBe(2);
+  });
 });
 
 describe('useRovingTabIndex — columns', () => {

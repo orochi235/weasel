@@ -30,7 +30,7 @@ export type UseRovingTabIndexOptions = {
   columns?: number;
   /** With `columns`, where a last row shorter than `columns` sits, so Up and Down land on the item
    *  drawn under this one. Default `'start'`. See {@link tiling}. */
-  lastRow?: 'start' | 'center' | 'end';
+  lastRow?: 'start' | 'center' | 'end' | 'fill';
   /** With `columns`, the elements whose items each start on a row of their own — a toolbar whose
    *  groups are each a grid. Items under none of them count as one group. */
   groupSelector?: string;
@@ -90,16 +90,31 @@ export interface RovingGridLayout {
   /** How many columns in each row's first item sits, by row: a short row centered in an even gap sits a half
    *  column in. Omitted rows start at column 0. */
   offsets?: readonly number[];
+  /** How many columns wide each row's items are, by row: a stretched last row's are wider than one. Omitted
+   *  rows' items are one column wide. */
+  widths?: readonly number[];
 }
 
-/** Which item of `row`, starting `offset` columns in, sits under the column span `lo`–`lo + 1`: of two
- *  that each half cover it, the later going down and the earlier going up, so Down then Up comes back.
+/** Where one row sits: how far in its first item starts and how wide each item is, in columns. */
+interface RowSpan { offset: number; width: number }
+
+/** Which item of `row`, laid out as `at`, sits under the column span `lo`–`hi`: the one covering most of it,
+ *  and of two covering it equally the later going down and the earlier going up, so Down then Up comes back.
  *  Under none, the nearest end. */
-function itemUnder(row: readonly number[], offset: number, lo: number, down: boolean): number | undefined {
-  const first = Math.max(0, Math.floor(lo - offset - 1) + 1);
-  const last = Math.min(row.length - 1, Math.ceil(lo + 1 - offset) - 1);
-  if (first <= last) return row[down ? last : first];
-  return row[Math.min(row.length - 1, Math.max(0, Math.round(lo - offset)))];
+function itemUnder(row: readonly number[], at: RowSpan, lo: number, hi: number, down: boolean): number | undefined {
+  let best = -1;
+  let most = 0;
+  for (let j = 0; j < row.length; j++) {
+    const start = at.offset + j * at.width;
+    const cover = Math.min(hi, start + at.width) - Math.max(lo, start);
+    if (cover > most + 1e-9 || (down && cover > 0 && Math.abs(cover - most) <= 1e-9)) {
+      best = j;
+      most = cover;
+    }
+  }
+  if (best >= 0) return row[best];
+  const nearest = Math.round(((lo + hi) / 2 - at.offset) / at.width - 0.5);
+  return row[Math.min(row.length - 1, Math.max(0, nearest))];
 }
 
 /** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading
@@ -118,17 +133,19 @@ export function rovingGridTarget(
   if (step === 0) return rovingTarget(current, key, enabled, 'horizontal', layout.dir);
   const r = rows.findIndex((row) => row.includes(current));
   if (r < 0) return null;
-  const at = (row: number): number => layout.offsets?.[row] ?? 0;
-  const lo = at(r) + rows[r].indexOf(current);
+  const at = (row: number): RowSpan => ({ offset: layout.offsets?.[row] ?? 0, width: layout.widths?.[row] ?? 1 });
+  const here = at(r);
+  const lo = here.offset + rows[r].indexOf(current) * here.width;
   for (let rr = r + step; rr >= 0 && rr < rows.length; rr += step) {
-    const i = itemUnder(rows[rr], at(rr), lo, step > 0);
+    const i = itemUnder(rows[rr], at(rr), lo, lo + here.width, step > 0);
     if (i !== undefined && enabled[i]) return i;
   }
   return null;
 }
 
-/** How far in, in columns, a row of `length` items sits in a grid `columns` across, aligned `align`. */
-export function rowOffset(length: number, columns: number, align: 'start' | 'center' | 'end' = 'start'): number {
+/** How far in, in columns, a row of `length` items sits in a grid `columns` across, aligned `align`. A
+ *  stretched (`'fill'`) row starts at the start. */
+export function rowOffset(length: number, columns: number, align: 'start' | 'center' | 'end' | 'fill' = 'start'): number {
   const gap = Math.max(0, columns - length);
   return align === 'center' ? gap / 2 : align === 'end' ? gap : 0;
 }
@@ -289,9 +306,12 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       const dir = latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];
       // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.
-      const offsets = rows.map((row) => (row.length < columns! ? rowOffset(row.length, columns!, latest.current.lastRow) : 0));
+      const { lastRow } = latest.current;
+      const short = (row: readonly number[]): boolean => row.length < columns!;
+      const offsets = rows.map((row) => (short(row) ? rowOffset(row.length, columns!, lastRow) : 0));
+      const widths = rows.map((row) => (short(row) && lastRow === 'fill' ? columns! / row.length : 1));
       const next = columns
-        ? rovingGridTarget(current, e.key, enabled, rows, { dir, offsets })
+        ? rovingGridTarget(current, e.key, enabled, rows, { dir, offsets, widths })
         : rovingTarget(current, e.key, enabled, orientation, dir);
       if (next === null || next === current) return;
       e.preventDefault();

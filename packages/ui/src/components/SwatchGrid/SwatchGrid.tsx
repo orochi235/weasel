@@ -2,7 +2,7 @@ import { useRef, type ReactElement, type ReactNode } from 'react';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
 import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, type SwatchChange } from './SwatchButton';
-import { ROW_LEAD, tiling } from '../../tiling';
+import { tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
 import s from './SwatchGrid.module.css';
 
@@ -104,7 +104,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
           current={i === current}
           apply={apply}
           onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lead)}
-          data={i === tiles.rowLead ? ROW_LEAD : undefined}
+          data={tiles.item(i)}
         />
       ))}
     </div>

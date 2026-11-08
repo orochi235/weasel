@@ -1,7 +1,8 @@
 import { useRef, type ReactElement, type ReactNode } from 'react';
 import { SWEEP_INDEX_ATTR, ToggleSweep, type ToggleBarSweep } from './ToggleSweep';
 import s from '../segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentPlaceProps, type SegmentState } from '../segmentedRow';
+import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps, type SegmentState } from '../segmentedRow';
+import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
@@ -25,7 +26,7 @@ export type ToggleBarSize = SegmentedSize;
 export type ToggleBarVariant = SegmentedVariant;
 
 /** What a {@link ToggleBar} takes whichever selection mode it is in. */
-export type ToggleBarCommonProps = {
+export type ToggleBarCommonProps = SegmentedGridProps & {
   ariaLabel?: string;
   className?: string;
   height?: number;
@@ -76,6 +77,14 @@ export type ToggleBarProps<V extends string | number = string> =
       sweep?: ToggleBarSweep<NoInfer<V>>;
     });
 
+/** Each value's segment state under `props`: on where `value` holds it, mixed where only `mixedValues` does (multiple
+ *  mode alone takes it), else off. */
+function segmentStates<V extends string | number>(props: ToggleBarProps<V>): (value: V) => SegmentState {
+  if (props.mode !== 'multiple') return (value) => (props.value === value ? 'on' : 'off');
+  const { value: on, mixedValues: mixed } = props;
+  return (value) => (on.includes(value) ? 'on' : mixed?.includes(value) ? 'mixed' : 'off');
+}
+
 /**
  * Segmented control for choosing among a fixed set of values — one of them
  * (`mode: 'single'`, the default) or any number (`mode: 'multiple'`).
@@ -89,19 +98,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   const { items, ariaLabel, className, height, size, variant, orientation } = props;
   const mode = props.mode ?? 'single';
 
-  const isSelected = (value: V): boolean => {
-    if (mode === 'multiple') return (props.value as readonly V[]).includes(value);
-    return (props.value as V | null) === value;
-  };
-
-  /** Mixed only in multiple mode, and only where `value` doesn't already
-   *  claim the segment. */
-  const isMixed = (value: V): boolean => {
-    if (mode !== 'multiple') return false;
-    const mixed = (props as { mixedValues?: readonly V[] }).mixedValues;
-    return mixed !== undefined && mixed.includes(value) && !isSelected(value);
-  };
-
+  const stateOf = segmentStates(props);
   const sweep = mode === 'multiple' ? (props as { sweep?: ToggleBarSweep<V> }).sweep : undefined;
   // Set as a sweep ends and cleared before the next task: the click its release makes is not a toggle.
   const justSwept = useRef(false);
@@ -135,8 +132,10 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     ? items.findIndex(it => it.value === (props.value as V | null))
     : -1;
 
+  const tiles = segmentedTiling(props);
   const roving = useRovingTabIndex({
     itemSelector: `.${s.segment}`,
+    ...(tiles ? tilingRoving(tiles) : {}),
     tabStopIndex: selectedIndex >= 0 ? selectedIndex : undefined,
     onNavigate: mode === 'single'
       ? (index) => (props.onChange as (n: V | null) => void)(items[index].value)
@@ -153,16 +152,17 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
       roving={roving}
       role={mode === 'multiple' ? 'group' : 'radiogroup'}
       ariaLabel={ariaLabel}
-      className={sweep ? [className, s.sweeps].filter(Boolean).join(' ') : className}
+      className={className}
+      tiling={tiles}
       height={height}
       size={size}
       variant={variant}
       orientation={orientation}
       wrap={(segments) => <FitScope value={fit}>{segments}</FitScope>}
       segments={items.map((item, i) => {
-        const selected = isSelected(item.value);
-        const mixed = isMixed(item.value);
-        const state: SegmentState = selected ? 'on' : mixed ? 'mixed' : 'off';
+        const state = stateOf(item.value);
+        const selected = state === 'on';
+        const mixed = state === 'mixed';
         return {
           key: String(item.value),
           state,
@@ -196,7 +196,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
         rootRef={roving.rootRef}
         values={items.map((it) => it.value)}
         sweepable={(i) => items[i] !== undefined && !items[i].disabled}
-        stateOf={(i) => (isSelected(items[i]!.value) ? 'on' : isMixed(items[i]!.value) ? 'mixed' : 'off')}
+        stateOf={(i) => stateOf(items[i]!.value)}
         value={props.value as readonly V[]}
         onChange={props.onChange as (next: V[]) => void}
         sweep={sweep}

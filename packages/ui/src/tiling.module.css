@@ -1,13 +1,18 @@
-/* Half-column tracks, so a short last row can sit centered between two columns. */
+/* `--tracks` columns of track: two per column, so a short last row can sit centered between two columns, or as many
+   as a stretched last row needs to divide evenly. Each item spans `--span` of them. */
 .tiles {
   display: grid;
   grid-template-columns: repeat(var(--tracks), minmax(0, 1fr));
 }
 
 .tiles > * {
-  grid-column-end: span 2;
+  grid-column-end: span var(--span);
 }
 
 .tiles > [data-row-lead] {
   grid-column-start: calc(1 + var(--lead));
+}
+
+.tiles > [data-row-fill] {
+  grid-column-end: span var(--fill-span);
 }
