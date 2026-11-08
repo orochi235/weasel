@@ -318,7 +318,8 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, stops =
   // the last render: a draft cleared in the same keydown is still set there.
   const canceled = useRef(false);
   const commit = () => {
-    if (draft !== null && !canceled.current) {
+    // A draft still reading as the value shown writes nothing: the readout rounds, and that text is not an edit.
+    if (draft !== null && !canceled.current && draft !== text(value)) {
       const n = read(draft);
       if (!Number.isNaN(n)) onCommit(settle(n));
     }

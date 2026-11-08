@@ -33,3 +33,12 @@ it('writes a typed readout once when focus leaves it', async () => {
   await userEvent.tab();
   expect(onChange.mock.calls).toEqual([[50]]);
 });
+
+it('writes nothing when a readout showing a rounded value is focused and left untouched', async () => {
+  const onChange = vi.fn();
+  render(<PropertyField kind="number" control="slider" label="Width" value={0.37} min={0} max={100} onChange={onChange} />);
+  const readout = screen.getByRole('spinbutton', { name: 'Width' });
+  await userEvent.click(readout);
+  await userEvent.tab();
+  expect(onChange).not.toHaveBeenCalled();
+});
