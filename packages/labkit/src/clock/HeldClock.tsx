@@ -5,8 +5,8 @@ import {
   Sequence,
   type SequenceProps,
 } from '@weasel-js/ui/components/Sequence';
-import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from 'react';
-import { TrialClockContext } from './contexts';
+import { type ReactElement, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { HeldClockContext, TrialClockContext } from './contexts';
 import { runs, runTo } from './runTo';
 import { type ClockCapability, createTrialClock, type TrialClockHandle } from './trialClock';
 
@@ -62,7 +62,17 @@ export function HeldClock({ spec, at, children }: HeldClockProps): ReactElement 
   const handle = useMemo(() => holdAt(declared, at), [declared, at]);
   // Children's effects run first, so their frame listeners hear this one sync.
   useEffect(() => handle.clock.sync(performance.now()), [handle]);
-  return <TrialClockContext.Provider value={handle}>{children}</TrialClockContext.Provider>;
+  return (
+    <HeldClockContext.Provider value={handle}>
+      <TrialClockContext.Provider value={handle}>{children}</TrialClockContext.Provider>
+    </HeldClockContext.Provider>
+  );
+}
+
+/** The clock the nearest {@link HeldClock} holds, else null: for a host whose own playhead hook
+ *  should read a held moment rather than the clock it provides. */
+export function useHeldClock(): TrialClockHandle | null {
+  return useContext(HeldClockContext);
 }
 
 export type ClockFramesProps = Omit<SequenceProps<number>, 'sweep' | 'across' | 'children'> &

@@ -34,7 +34,7 @@ export const Grid = story({
     return (
       <Sequence
         label="Hue by lightness"
-        sweep={range({ from: 0.3, to: 0.9, step: 0.15 })}
+        sweep={range({ from: 0.3, to: 0.9, step: 0.15, label: (l) => l.toFixed(2) })}
         across={range({ from: 0, to: 360 - 360 / c.hues, count: c.hues, label: (h) => `${Math.round(h)}°` })}
       >
         {(l, h) => <span className={s.swatch} style={{ '--swatch': oklchToHex(l, c.chroma, h) } as CSSProperties} />}

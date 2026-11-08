@@ -2,6 +2,7 @@
 '@weasel-js/ui-logic': patch
 '@weasel-js/ui': patch
 '@weasel-js/labkit': patch
+'@weasel-js/forge': patch
 ---
 
 Add `<Sequence>`: one component repeated over the steps of a parameter
@@ -10,3 +11,4 @@ Add `<Sequence>`: one component repeated over the steps of a parameter
 - `<Sequence sweep>` (ui) renders its child once per step, captioned with the sweep's label, wrapped or as one scrolling strip. Given `across`, a second sweep, it lays out every pairing as a grid with its rows and columns labeled. Each cell is live. This is new API.
 - `<HeldClock spec at>` (labkit) gives what renders inside a clock of its own, paused at `at`, which `useTrialClock` and `useClockFrame` read in place of the trial's; a clock that is not seekable is run there `step` ms a frame. `<ClockFrames spec every>` is a `<Sequence>` of a clock's frames, each under one.
 - `fieldSweep(node)` (labkit) walks the values a config field's control offers: a number's stops or its range by its step, an enum's options, a boolean's off and on.
+- forge's `usePlayhead` and `useTimeline` read the clock of a `<HeldClock>` around them ahead of the story's own (labkit's `useHeldClock`), so a story's clock-driven component shows the held moment in each frame of a `<ClockFrames>`.
