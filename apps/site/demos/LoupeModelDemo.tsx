@@ -1,7 +1,8 @@
-import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
+import { useEffect, useId, useReducer, useRef, useState } from 'react';
 import {
   createLoupeModel,
   loupeInnerView,
+  type LoupeModel,
   type LoupePoint,
   type LoupeRect,
   type LoupeSurface,
@@ -53,21 +54,28 @@ function Swatch({ color }: { color: string | null }) {
 }
 
 export function LoupeModelDemo() {
-  const gridId = useId();
   const [, redraw] = useReducer((n: number) => n + 1, 0);
-  const [pointer, setPointer] = useState<LoupePoint | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
-  const loupe = useMemo(
-    () => createLoupeModel({
+  const [loupe, setLoupe] = useState<LoupeModel | null>(null);
+  // Made in the effect that disposes it: StrictMode's remount disposes the first model and keeps a memoized one.
+  useEffect(() => {
+    const model = createLoupeModel({
       surface: gridSurface(redraw),
       factor: 8,
       minFactor: 2,
       maxFactor: 32,
       onPick: setPicked,
-    }),
-    [],
-  );
-  useEffect(() => () => loupe.dispose(), [loupe]);
+    });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the model's lifetime is this effect's
+    setLoupe(model);
+    return () => model.dispose();
+  }, []);
+  return loupe ? <LoupeStage loupe={loupe} picked={picked} /> : null;
+}
+
+function LoupeStage({ loupe, picked }: { loupe: LoupeModel; picked: string | null }) {
+  const gridId = useId();
+  const [pointer, setPointer] = useState<LoupePoint | null>(null);
 
   const stage = useRef<SVGSVGElement>(null);
   useEffect(() => {
