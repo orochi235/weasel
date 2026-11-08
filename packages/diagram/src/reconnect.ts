@@ -6,15 +6,21 @@
  * the same resolver and the same `canConnect`, asked with the edge's from/to
  * order kept, so a reconnect can never make an edge a connect could not.
  */
-import type {
-  Action,
-  Contribution,
-  GestureBinding,
-  InvocationCtx,
-  OngoingHandle,
-  OngoingOverlay,
-  RenderLayer,
-  Vec2,
+import {
+  composeWorldPose,
+  followerHome,
+  rebaseLocalPose,
+  sceneViewPoseAdapter,
+  type Action,
+  type Contribution,
+  type GestureBinding,
+  type InvocationCtx,
+  type NodeId,
+  type OngoingHandle,
+  type OngoingOverlay,
+  type RenderLayer,
+  type Scene,
+  type Vec2,
 } from '@weasel-js/core';
 import {
   defaultCanConnect,
@@ -63,10 +69,35 @@ export interface ReconnectOptions<TPose> extends Omit<ConnectActionOptions<TPose
 
 const DEFAULT_SNAP = 16;
 
+type AnyScene = Scene<unknown, string, unknown>;
+
+/** Moves follower `id` onto the page the nodes it follows share, else into the
+ *  page run (`followerHome`), keeping its world place, and then each follower
+ *  of it, such as its label. */
+function rehome(scene: AnyScene, id: string, seen = new Set<string>()): void {
+  if (seen.has(id)) return;
+  seen.add(id);
+  const node = scene.get(id as never);
+  const home = node === undefined ? null : followerHome(scene, node);
+  if (node === undefined || home === null) return;
+  if (home !== node.parent) {
+    const adapter = sceneViewPoseAdapter(scene);
+    const { compose, decompose } = scene.composition;
+    const pose = rebaseLocalPose(adapter, composeWorldPose(adapter, id, compose), home, compose, decompose);
+    scene.move(id as NodeId, home);
+    scene.setPose(id as NodeId, pose);
+  }
+  for (const other of scene.renderOrderNodes()) {
+    if (Array.isArray(other.dependsOn) && other.dependsOn.includes(id as never)) rehome(scene, other.id, seen);
+  }
+}
+
 /**
  * The default commit: rewrites the moved end in `data.diagram` — `{ port }`,
  * or `{}` for a body — and points the edge's `dependsOn` at the new node, as
- * one history entry.
+ * one history entry. In a paged scene the edge, with its labels, moves onto
+ * the page both its ends are now on, else into the page run, as a connect
+ * places a new one.
  */
 export function commitReconnectToScene(change: EndChange, ctx: InvocationCtx): void {
   const scene = ctx.deps.scene;
@@ -83,6 +114,7 @@ export function commitReconnectToScene(change: EndChange, ctx: InvocationCtx): v
       data: { ...data, diagram: { ...trait, [change.end]: edgeEndOf(change.target) } } as never,
     });
     scene.setDependsOn(node.id, nextDeps);
+    rehome(scene as unknown as AnyScene, node.id);
   });
 }
 
