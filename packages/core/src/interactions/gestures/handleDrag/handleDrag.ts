@@ -86,9 +86,10 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       };
 
       let moved = false;
+      const { clientX: pressX, clientY: pressY } = e;
       live.current = openPointerSession(target, e, {
         onMove: (ev) => {
-          moved = true;
+          if (ev.clientX !== pressX || ev.clientY !== pressY) moved = true;
           optsRef.current.onMove(localOf(ev.clientX, ev.clientY), ev);
         },
         onEnd: (ev) => {
