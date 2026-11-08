@@ -4,6 +4,7 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type RefObject,
 } from 'react';
@@ -157,6 +158,8 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   const items = useCallback((): HTMLElement[] => itemsOf(rootRef.current), [itemsOf]);
   // The container last placed in, so letting go of the ref gives its items their own tab order back.
   const placedIn = useRef<HTMLElement | null>(null);
+  // The container the listeners below are on, so a ref attached after mount, or moved, gets them too.
+  const [listened, setListened] = useState<T | null>(null);
 
   // `focused` is the item focus sits on, or null when it is outside.
   const place = useCallback(
@@ -194,9 +197,14 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
     root?.setAttribute(ROOT_ATTR, '');
     place(focusedItem());
   });
+  // Every render, since a ref changes without one; it sets state only when the container did.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    if (rootRef.current !== listened) setListened(rootRef.current);
+  });
 
   useEffect(() => {
-    const root = rootRef.current;
+    const root = listened;
     if (!root) return;
     // Children can change without this component rendering — arbitrary
     // children re-render on their own, and `disabled` moves an item out of the
@@ -225,7 +233,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       root.removeEventListener('focusin', onFocusIn);
       root.removeEventListener('focusout', onFocusOut);
     };
-  }, [items, place, focusedItem]);
+  }, [listened, items, place, focusedItem]);
 
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent<T>) => {

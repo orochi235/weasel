@@ -82,4 +82,23 @@ describe('Toolbar', () => {
     );
     expect(screen.getAllByRole('button').every((b) => b.tabIndex === 0)).toBe(true);
   });
+
+  test('follows focus with the tab stop when roving is turned on after mount', () => {
+    const view = threeButtons(false);
+    view.rerender(
+      <Toolbar aria-label="Trial actions" roving>
+        <Toolbar.Group aria-label="History">
+          <button type="button">Undo</button>
+          <button type="button">Redo</button>
+        </Toolbar.Group>
+        <Toolbar.Spacer />
+        <button type="button">Close</button>
+      </Toolbar>,
+    );
+    const close = screen.getByRole('button', { name: 'Close' });
+    close.focus();
+    close.blur();
+    expect(close.tabIndex).toBe(0);
+    expect(screen.getByRole('button', { name: 'Undo' }).tabIndex).toBe(-1);
+  });
 });
