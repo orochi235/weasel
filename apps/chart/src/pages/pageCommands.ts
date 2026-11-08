@@ -29,11 +29,11 @@ export const PAGE_TAB_MENUS: readonly MenuDef[] = [{
   }),
 }];
 
-/** The page a command acts on: the tab it was opened from, else the current page, else the first. */
+/** The page a command acts on: the tab it was opened from, else the page shown (`DocPages.shown`). */
 function targetOf(pages: ChartPages, params?: Readonly<Record<string, unknown>>): string | null {
   const page = params?.page;
   if (typeof page === 'string') return page;
-  return pages.current ?? pages.placed[0]?.id ?? null;
+  return pages.shown?.id ?? null;
 }
 
 /** Registers the Page menu's commands. `openSetup` opens Page Setup on a page, and `openAdd` the page templates. */

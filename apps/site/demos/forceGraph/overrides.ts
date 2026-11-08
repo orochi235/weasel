@@ -24,6 +24,7 @@ export function syncGraphPoses(scene: GraphScene, nodes: readonly Positioned[], 
     const pose = entry.pose;
     pose.x = n.x - radius;
     pose.y = n.y - radius;
+    pose.width = pose.height = radius * 2;
   }
   scene.overrides.commit();
 }

@@ -7,6 +7,7 @@ import { Input } from '@weasel-js/ui/components/Input';
 import { icon } from './icons.gen';
 import styles from './PaletteLab.module.css';
 import { BUILTIN_PRESETS, persist, toSource, type LabState, type Preset } from './presets';
+import { copyText } from './copyText';
 import { useFlash } from './useFlash';
 
 export interface PresetBarProps {
@@ -61,8 +62,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
               tooltip="Copy as a built-in entry"
               ariaLabel={copied === p.name ? `Copied ${p.name}` : `Copy ${p.name} as source`}
               onClick={() => {
-                void navigator.clipboard?.writeText(toSource(p));
-                flashCopied(p.name);
+                void copyText(toSource(p)).then((took) => took && flashCopied(p.name));
               }}
             >
               <Icon name={copied === p.name ? icon('ui:check') : icon('core:copy')} size={14} />

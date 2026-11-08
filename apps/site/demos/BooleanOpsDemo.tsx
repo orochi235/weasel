@@ -158,8 +158,8 @@ function InteractivePanel() {
       setSelection: (ids: NodeId[]) => {
         selectionRef.current.set(ids);
       },
-      applyOps: (ops: Op[]) => {
-        for (const op of ops) op.apply(adapterRef.current!);
+      applyOps: (ops: Op[], label?: string) => {
+        sceneRef.current.applyBatch(ops, label ?? 'Pathfinder', adapterRef.current!);
       },
     };
   }
@@ -173,24 +173,9 @@ function InteractivePanel() {
   useBooleansAdapter(adapter);
 
   const reset = useCallback(() => {
-    // Remove all current nodes
-    for (const id of [...scene.renderOrder()]) {
-      scene.remove(id);
-    }
-    // Re-add initial nodes
-    scene.add({
-      kind: 'mark',
-      layer: 'default',
-      id: asNodeId('rect'),
-      pose: RECT_INPUT,
-      data: { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
-    });
-    scene.add({
-      kind: 'mark',
-      layer: 'default',
-      id: asNodeId('circle'),
-      pose: CIRCLE_INPUT,
-      data: { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
+    scene.batch('Reset', () => {
+      scene.removeMany([...scene.roots]);
+      for (const node of INITIAL_NODES) scene.add(node);
     });
     nextIdRef.current = 0;
     pendingPathsRef.current.clear();

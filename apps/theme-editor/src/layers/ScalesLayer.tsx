@@ -5,7 +5,7 @@ import { PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui/compo
 import { useEffect, useMemo, useRef } from 'react';
 import styles from '../ThemeEditor.module.css';
 import type { DerivedDraft } from '../theme/draft';
-import { describeIssue } from '../theme/issues';
+import { issuesAt } from '../theme/issues';
 import { setScale } from '../theme/model';
 import { scaleTable } from '../theme/scales';
 
@@ -144,11 +144,7 @@ export function ScalesLayer({ draft, derived, lookup, highlight, onChange }: Sca
   const scales = Object.entries(derived.merged.scales ?? {});
   if (scales.length === 0) return <p className={styles.empty}>{draft.name} has no scales.</p>;
   const allIssues = derived.views.flatMap((v) => v.result.issues);
-  const issuesOf = (name: string) => {
-    const prefix = `scales.${name}`;
-    const own = allIssues.filter((i) => 'path' in i && (i.path === prefix || i.path.startsWith(`${prefix}.`)));
-    return [...new Set(own.map(describeIssue))];
-  };
+  const issuesOf = (name: string) => issuesAt(allIssues, 'scales', name);
   return (
     <div ref={ref} className={styles.ramps}>
       {scales.map(([name, entry]) => (

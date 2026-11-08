@@ -124,8 +124,8 @@ function Pane({
                 // Poses are plain rects here, so both branches build their own
                 // path rather than taking the descriptor's — `ring` needs an
                 // even-odd compound path that no pose shape can express.
-                drawOne: (node): DrawCommand[] => {
-                  const pose = node.pose as Pose;
+                drawOne: (node, drawn): DrawCommand[] => {
+                  const pose = drawn as Pose;
                   const fill = commandFill(node.data.fill, pose);
                   return [{
                     kind: 'path',

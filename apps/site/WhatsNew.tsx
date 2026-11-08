@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { isoDay } from './isoDay';
 import { DEMOS, placeOf, type DemoEntry } from './registry';
 
 type SortKey = 'title' | 'place' | 'created' | 'lastModified';
@@ -95,19 +96,11 @@ function Th({
 
 function DateCell({ iso }: { iso: string | undefined }) {
   if (!iso) return <span className="ckd-whatsnew-empty">—</span>;
-  const date = new Date(iso);
   return (
     <time dateTime={iso} title={iso}>
-      {formatShortDate(date)}
+      {isoDay(iso)}
     </time>
   );
-}
-
-function formatShortDate(d: Date): string {
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }
 
 function valueOf(d: DemoEntry, key: SortKey): string {

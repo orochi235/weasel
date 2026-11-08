@@ -15,9 +15,9 @@ export const EXPORT_MENU: PrefGroup = pref.group('', {
   export: pref.group('Export', { page: menuRun(EXPORT_ACTIONS), formats: FORMAT_EXPORT_RUN }, { as: 'menu' }),
 });
 
-/** The page an export draws: the one in view, else the first. */
+/** The page an export draws: the one shown (`DocPages.shown`). */
 function exportedPage(pages: ChartPages): PlacedPage | undefined {
-  return pages.placed.find((p) => p.id === pages.current) ?? pages.placed[0];
+  return pages.shown ?? undefined;
 }
 
 function exportPage(pages: ChartPages, write: (page: PlacedPage, name: string) => Promise<{ blob: Blob; name: string }>): void {

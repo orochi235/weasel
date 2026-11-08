@@ -1,3 +1,4 @@
+import { copyText } from './copyText';
 import { useFlash } from './useFlash';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './PaletteLab.module.css';
@@ -158,8 +159,7 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
         <Button
           size="sm"
           onClick={() => {
-            void navigator.clipboard?.writeText(tokenJson);
-            flashCopied(true);
+            void copyText(tokenJson).then((took) => took && flashCopied(true));
           }}
         >
           {copied ? 'Copied' : 'Copy as tokens'}

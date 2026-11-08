@@ -58,6 +58,14 @@ describe('forceGraph overrides', () => {
     });
   });
 
+  it('sizes the rendered pose at the radius of this sync, not the first', () => {
+    const { scene, nodes } = setup();
+    syncGraphPoses(scene, nodes, R);
+    scene.overrides.clearAll();
+    syncGraphPoses(scene, nodes, 4);
+    expect(scene.overrides.get('a' as never)!.pose).toEqual({ x: -4, y: -4, width: 8, height: 8 });
+  });
+
   it('bakes the settled layout as one history entry and clears the overrides', () => {
     const { scene, nodes } = setup();
     const entries = scene.historyEntries().length;

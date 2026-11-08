@@ -91,13 +91,13 @@ function membersOf(el: HTMLElement | null): Element[] {
 }
 
 /** How far the scope's stages may shrink from `start`: until the smallest reaches `MIN_STAGE` on
- *  each axis. Unbounded on an axis no stage has a laid-out size to measure on. */
+ *  each axis, and not at all once one is under it. Unbounded on an axis no stage has a laid-out size to measure on. */
 function floorOf(el: HTMLElement | null, start: Delta): Delta {
   const floor = { dw: -Infinity, dh: -Infinity };
   for (const stage of membersOf(el)) {
     const rect = stage.getBoundingClientRect();
-    if (rect.width > 0) floor.dw = Math.max(floor.dw, start.dw - (rect.width - MIN_STAGE));
-    if (rect.height > 0) floor.dh = Math.max(floor.dh, start.dh - (rect.height - MIN_STAGE));
+    if (rect.width > 0) floor.dw = Math.max(floor.dw, start.dw - Math.max(0, rect.width - MIN_STAGE));
+    if (rect.height > 0) floor.dh = Math.max(floor.dh, start.dh - Math.max(0, rect.height - MIN_STAGE));
   }
   return floor;
 }

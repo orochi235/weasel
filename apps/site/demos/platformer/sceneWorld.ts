@@ -54,8 +54,7 @@ export const POLE_ID = asNodeId('pole');
 export const POLE_BALL_ID = asNodeId('pole:ball');
 export const FLAG_ID = asNodeId('flag');
 
-/** Question-block glyph: `kit:text` anchors on the top of the first line box
- *  and does not forward `verticalAlign`, so the box is nudged instead. */
+/** Question-block glyph size. */
 const QUESTION_FONT = TILE * 0.6;
 
 /**

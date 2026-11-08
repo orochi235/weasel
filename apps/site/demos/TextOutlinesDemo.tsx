@@ -8,6 +8,7 @@ import type { SceneCanvasApi, SceneViewDrawOne, Stroke, TextStyle, Fill } from '
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { DemoStage } from './DemoStage';
+import { useVisiblePoll } from '../useVisiblePoll';
 
 const W = 600, H = 300;
 
@@ -125,12 +126,9 @@ export function TextOutlinesDemo() {
     if (outlines) registerFontOutlines(FAMILY, VARIANT, INTER_TTF);
     else unregisterFontOutlines(FAMILY, VARIANT);
     canvasRef.current?.requestRedraw();
-    // This poll drives only the readout, which has no other reason to re-render.
-    const id = setInterval(() => {
-      setStatus(outlines ? outlineStatus(FAMILY, 400, 'normal') ?? 'none' : 'off (canvas SDF)');
-    }, 200);
-    return () => clearInterval(id);
   }, [outlines]);
+  // This poll drives only the readout, which has no other reason to re-render.
+  useVisiblePoll(() => setStatus(outlines ? outlineStatus(FAMILY, 400, 'normal') ?? 'none' : 'off (canvas SDF)'), 200);
 
   return (
     <div style={{ position: 'relative', width: 'min-content' }}>

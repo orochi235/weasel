@@ -1218,7 +1218,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'easings',
     title: 'Easings',
     package: 'geom',
-    description: 'Every named curve in the kit\'s easing library tweening a marker side-by-side. Each lane is one easing from the `EASINGS` lookup, three to a row (`linear` + quad/cubic/quart/quint + sine/expo/circ + back/elastic/bounce, with In/Out/InOut variants); click "play all" to fire one `animator.tween` per lane simultaneously, sharing a duration slider. The dim line below each track plots the curve shape (clamped to [0,1] so back/elastic overshoot rows still fit their lane — the marker itself still travels past the endpoints when the curve does).',
+    description: 'Every named curve in the kit\'s easing library tweening a marker side-by-side. Each lane is one easing from the `EASINGS` lookup (`linear`, then quad/cubic/quart/quint, sine/expo/circ and back/elastic/bounce, each as In/Out/InOut, one color per variant); click "play all" to fire one `animator.tween` per lane simultaneously, sharing a duration slider. The dim line below each track plots the curve shape (clamped to [0,1] so back/elastic overshoot rows still fit their lane — the marker itself still travels past the endpoints when the curve does).',
     hint: 'Click "play all" to fire every easing at once; drag the slider to change duration.',
     load: () => import('./demos/EasingsDemo').then((m) => m.EasingsDemo),
     path: 'apps/site/demos/EasingsDemo.tsx',

@@ -4,7 +4,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../ThemeEditor.module.css';
 import type { DerivedDraft } from '../theme/draft';
-import { describeIssue } from '../theme/issues';
+import { issuesAt } from '../theme/issues';
 import { removePin, setSemantic } from '../theme/model';
 import { semanticRows, type SemanticRowView } from '../theme/semantics';
 import { SemanticDrawer } from './SemanticDrawer';
@@ -47,17 +47,8 @@ export function SemanticsLayer({ draft, derived, lookup, highlight, onChange }: 
   const modes = derived.views.map((v) => v.mode);
   const revert = (name: string) => onChange(removePin(draft, name), `pin:${name}`, `revert ${name}`);
   const open = rows.find((r) => r.name === selected);
-  const issuesOf = (name: string) => {
-    const prefix = `semantics.${name}`;
-    const own = derived.views
-      .flatMap((v) => v.result.issues)
-      .filter((i) =>
-        i.kind === 'contrast-unmet' || i.kind === 'check-failed'
-          ? i.token === name
-          : 'path' in i && (i.path === prefix || i.path.startsWith(`${prefix}.`)),
-      );
-    return [...new Set(own.map(describeIssue))];
-  };
+  const allIssues = derived.views.flatMap((v) => v.result.issues);
+  const issuesOf = (name: string) => issuesAt(allIssues, 'semantics', name);
 
   return (
     <div ref={ref} className={styles.semantics}>

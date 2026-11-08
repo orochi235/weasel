@@ -144,7 +144,10 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const version = JSON.stringify(cfg);
   // A layout effect, so the scene holds the new trims before the export pane's own effect reads it.
   useLayoutEffect(() => {
-    for (const shape of SHAPES) scene.update(asNodeId(shape.id), { data: dataOf(shape, cfg) });
+    // The trims follow from the config, which keeps its own undo; recording them too splits one change into six.
+    scene.untracked(() => {
+      for (const shape of SHAPES) scene.update(asNodeId(shape.id), { data: dataOf(shape, cfg) });
+    });
     // `version` stands for `cfg`, whose identity changes on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, version]);

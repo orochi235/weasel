@@ -19,7 +19,7 @@ import styles from '../ThemeEditor.module.css';
 import { ConstraintsPanel, type SetConstraint } from '../palette/ConstraintsPanel';
 import { unmetGates } from '../palette/unmetGates';
 import type { DerivedDraft, ModeView } from '../theme/draft';
-import { describeIssue } from '../theme/issues';
+import { issuesAt } from '../theme/issues';
 import { adoptGenerated, removePin, setPin, setRamp } from '../theme/model';
 import { rampView, readParam, writeParam, type StepView } from '../theme/ramps';
 
@@ -159,13 +159,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
   const requestAdopt = (ramp: string) => (draft.name === 'weasel' ? setConfirming(ramp) : adopt(ramp));
   const ownPin = (token: string) => Object.hasOwn(draft.pins ?? {}, token);
   const allIssues = derived.views.flatMap((v) => v.result.issues);
-  const issuesOf = (name: string) => {
-    const prefix = `ramps.${name}`;
-    const own = allIssues.filter((i) =>
-      i.kind === 'infeasible-ramp' ? i.ramp === name : 'path' in i && (i.path === prefix || i.path.startsWith(`${prefix}.`)),
-    );
-    return [...new Set(own.map(describeIssue))];
-  };
+  const issuesOf = (name: string) => issuesAt(allIssues, 'ramps', name);
   const hexIn = (v: ModeView, s: StepView) =>
     (v.resolved as Readonly<Record<string, string>>)[`--wzl-${s.token}`] ?? String(v.result.tokens[s.token]?.value ?? s.hex);
   const pinOf = (s: StepView): Varying<PinValue> => {

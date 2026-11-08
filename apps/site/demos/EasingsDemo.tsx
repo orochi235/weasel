@@ -16,36 +16,32 @@ import { DemoStage } from './DemoStage';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 
-const W = 600, H = 520;
-const COLS = 3;
+const ALL_EASINGS = Object.keys(EASINGS) as EasingName[];
+
+const W = 600;
 const TRACK_LEFT = 110;
 const TRACK_RIGHT = W - 24;
-const ROW_HEIGHT = 44;
-const TOP_PAD = 28;
+const ROW_HEIGHT = 22;
+const TOP_PAD = 16;
+const H = TOP_PAD * 2 + ALL_EASINGS.length * ROW_HEIGHT;
 const MARKER_SIZE = 14;
 const TRACK_WIDTH = TRACK_RIGHT - TRACK_LEFT;
 
-const ALL_EASINGS = Object.keys(EASINGS) as EasingName[];
-
-// Three columns × ceil(N/3) rows; column lanes share their x range so the
-// curves animate against the same length. Pick a warm palette so adjacent
-// rows don't read as the same animation.
-const COLUMN_COLORS = ['#d4a574', '#a8d469', '#a8c4d4'];
+// One lane per easing, every lane the same length. After `linear`, the curves
+// come in In/Out/InOut triples, and each variant keeps one color.
+const VARIANT_COLORS = ['#d4a574', '#a8d469', '#a8c4d4'];
+const colorOf = (i: number) => VARIANT_COLORS[i === 0 ? 0 : (i - 1) % VARIANT_COLORS.length];
 
 function buildInitial(): Marker[] {
-  return ALL_EASINGS.map((name, i) => {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
-    return {
-      id: name,
-      x: TRACK_LEFT,
-      y: TOP_PAD + row * ROW_HEIGHT + (ROW_HEIGHT - MARKER_SIZE) / 2,
-      width: MARKER_SIZE,
-      height: MARKER_SIZE,
-      easing: name,
-      color: COLUMN_COLORS[col],
-    };
-  });
+  return ALL_EASINGS.map((name, i) => ({
+    id: name,
+    x: TRACK_LEFT,
+    y: TOP_PAD + i * ROW_HEIGHT + (ROW_HEIGHT - MARKER_SIZE) / 2,
+    width: MARKER_SIZE,
+    height: MARKER_SIZE,
+    easing: name,
+    color: colorOf(i),
+  }));
 }
 
 export function EasingsDemo() {
@@ -79,9 +75,7 @@ export function EasingsDemo() {
       const cmds: DrawCommand[] = [];
       for (let i = 0; i < ALL_EASINGS.length; i++) {
         const name = ALL_EASINGS[i];
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
-        const y = TOP_PAD + row * ROW_HEIGHT + ROW_HEIGHT / 2;
+        const y = TOP_PAD + i * ROW_HEIGHT + ROW_HEIGHT / 2;
         // Per-row label. Right-aligned approximation: x = right_edge - text_width.
         const charW = 6.6;
         cmds.push(textCommandFromRuns(
@@ -102,8 +96,8 @@ export function EasingsDemo() {
           stroke: { paint: { color: '#3a2e22' }, width: 1 },
         });
         // Mini curve plot.
-        const plotY = y + 14;
-        const plotH = 8;
+        const plotY = y + 3;
+        const plotH = 6;
         const fn = EASINGS[name];
         const samples = 32;
         const commands = new Uint8Array(samples + 1);
@@ -123,7 +117,7 @@ export function EasingsDemo() {
           children: [{
             kind: 'path',
             path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
-            stroke: { paint: { color: COLUMN_COLORS[col] }, width: 1 },
+            stroke: { paint: { color: colorOf(i) }, width: 1 },
           }],
         });
       }

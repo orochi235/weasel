@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { DemoFrame } from '../DemoFrame';
 import { DemoStage, DemoStageGroup } from '../demos/DemoStage';
@@ -101,5 +101,13 @@ describe('DemoFrame', () => {
     fireEvent.keyDown(corner(container), { key: 'ArrowRight' });
     fireEvent.keyDown(corner(container), { key: 'ArrowUp' });
     expect([dw(stage(container)), dh(stage(container))]).toEqual(['16px', '-16px']);
+  });
+
+  it('never grows a stage that started under the minimum when it is shrunk', () => {
+    const { container } = render(<DemoFrame><DemoStage width={100} height={100}><i /></DemoStage></DemoFrame>);
+    vi.spyOn(stage(container), 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 100, 100));
+    fireEvent.keyDown(corner(container), { key: 'ArrowLeft' });
+    fireEvent.keyDown(corner(container), { key: 'ArrowUp' });
+    expect([dw(stage(container)), dh(stage(container))]).toEqual(['0px', '0px']);
   });
 });

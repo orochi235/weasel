@@ -3,6 +3,8 @@ import { CanvasBackendProvider } from '@weasel-js/core';
 import { FrontPage } from './FrontPage/FrontPage';
 import { atFront } from './routes';
 import { backendFromUrl } from './canvasBackend';
+import { sessionStore } from './chunkReload';
+import { PageBoundary } from './PageBoundary';
 
 // Everything behind the front page — the demo registry, the kit, the fonts —
 // loads when a visitor first leaves it.
@@ -23,9 +25,11 @@ export function App() {
   return (
     <CanvasBackendProvider value={backend}>
       {front ? <FrontPage /> : (
-        <Suspense fallback={null}>
-          <Shell />
-        </Suspense>
+        <PageBoundary reload={() => window.location.reload()} store={sessionStore()}>
+          <Suspense fallback={null}>
+            <Shell />
+          </Suspense>
+        </PageBoundary>
       )}
     </CanvasBackendProvider>
   );
