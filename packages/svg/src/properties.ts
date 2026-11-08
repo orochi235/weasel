@@ -285,6 +285,7 @@ export const PROPERTIES = {
   'baseline-shift': own(readBaselineShift),
   'vector-effect': own(keyword('none', 'non-scaling-stroke'), 'unread'),
   'clip-path': own(readClipRef),
+  'clip-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
   'display': own(keyword('none', 'inline')),
   'visibility': inherited(keyword('visible', 'hidden', 'collapse'), 'unread'),
 } as const satisfies Record<string, PropertyDef<unknown>>;

@@ -111,6 +111,11 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
       rejected: 'circle(5px)',
       on: '<clipPath id="k"><rect width="1" height="1"/></clipPath><g class="t"><rect width="5" height="5"/></g>',
     },
+    'clip-rule': {
+      honored: 'evenodd',
+      rejected: 'oddeven',
+      on: '<clipPath id="k" class="t"><path d="M0 0h4v4h-4zM1 1h2v2h-2z"/></clipPath><g clip-path="url(#k)"><rect width="5" height="5"/></g>',
+    },
     'display': shape('none', 'contents'),
     'visibility': shape('hidden', 'invisible'),
     'font-size': text('20px', '2rem'),

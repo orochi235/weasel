@@ -434,7 +434,7 @@ export class PaintServerRegistry {
     for (const path of this.clips) {
       parts.push(
         `<clipPath id="${this.clipIds.get(path)!}">`
-        + `<path d="${serializePathD(path)}"/>`
+        + `<path d="${serializePathD(path)}"${path.kind === 'polygon' && path.fillRule === 'evenodd' ? ' clip-rule="evenodd"' : ''}/>`
         + '</clipPath>',
       );
     }
