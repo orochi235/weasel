@@ -74,6 +74,15 @@ type SortState = { columnId: string; direction: 'asc' | 'desc' } | null;
 
 const INTERACTIVE = 'a[href], button, input, select, textarea, label, summary, [role="button"], [contenteditable="true"]';
 
+type CellValue = string | number | null | undefined;
+
+/** How `col` reads a row's value: its `accessor`, else the row's property named by its id. */
+const valueOf = <Row,>(col: DataGridColumn<Row>): ((row: Row) => CellValue) =>
+  col.accessor ?? ((row: Row) => (row as unknown as Record<string, unknown>)[col.id] as CellValue);
+
+/** Nullish or NaN: a value sorting cannot place, which goes last either way. */
+const unplaced = (v: CellValue): v is null | undefined => v == null || Number.isNaN(v);
+
 /** Did this event start on a control inside the row rather than on the row itself? */
 function fromControl(e: MouseEvent | KeyboardEvent): boolean {
   const target = e.target as Element | null;
@@ -83,7 +92,7 @@ function fromControl(e: MouseEvent | KeyboardEvent): boolean {
 
 /**
  * Sortable table for inspector-style data. Rows are keyed by `id`. Clicking a
- * sortable header cycles ascending, descending, unsorted; nullish values sort
+ * sortable header cycles ascending, descending, unsorted; nullish and NaN values sort
  * last regardless of direction. Passing `onReorder` adds a leading drag-handle
  * column — note that the drag indices it reports are into the *sorted* row
  * order, not the input order.
@@ -110,14 +119,14 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
     if (!sort) return [...rows];
     const col = columns.find((c) => c.id === sort.columnId);
     if (!col) return [...rows];
-    const get = col.accessor ?? ((row: Row) => (row as unknown as Record<string, unknown>)[col.id] as string | number | null | undefined);
+    const get = valueOf(col);
     const dir = sort.direction === 'asc' ? 1 : -1;
     return [...rows].sort((a, b) => {
       const av = get(a);
       const bv = get(b);
-      if (av == null && bv == null) return 0;
-      if (av == null) return 1;
-      if (bv == null) return -1;
+      if (unplaced(av) && unplaced(bv)) return 0;
+      if (unplaced(av)) return 1;
+      if (unplaced(bv)) return -1;
       if (av < bv) return -1 * dir;
       if (av > bv) return 1 * dir;
       return 0;
@@ -231,8 +240,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                     </td>
                   )}
                   {columns.map((col) => {
-                    const get = col.accessor ?? ((r: Row) => (r as unknown as Record<string, unknown>)[col.id] as string | number | null | undefined);
-                    const content = col.render ? col.render(row) : String(get(row) ?? '');
+                    const content = col.render ? col.render(row) : String(valueOf(col)(row) ?? '');
                     return (
                       <td key={col.id} className={[col.className, col.numeric && s.numeric].filter(Boolean).join(' ') || undefined}>
                         {content}
