@@ -24,6 +24,18 @@ describe('scanCssVars', () => {
     expect(vars.map((v) => v.name)).toContain('--fg-t-nested');
   });
 
+  it('finds a var read only inside an adopted sheet, where a theme writes its tokens', () => {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(':root { --fg-t-alias: var(--fg-t-adopted); }');
+    // jsdom has no adoptedStyleSheets of its own.
+    Object.defineProperty(document, 'adoptedStyleSheets', { value: [sheet], configurable: true });
+    try {
+      expect(scanCssVars(document).map((v) => v.name)).toContain('--fg-t-adopted');
+    } finally {
+      delete (document as { adoptedStyleSheets?: unknown }).adoptedStyleSheets;
+    }
+  });
+
   it('finds a var used in an inline style and resolves it on the element that declares it', () => {
     const el = document.createElement('div');
     el.setAttribute('style', '--fg-t-local: blue; color: var(--fg-t-local)');

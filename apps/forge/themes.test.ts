@@ -31,5 +31,6 @@ describe('the Theme global', () => {
   it('falls back to weasel, and comfortable, for values nothing is registered under', () => {
     expect(applied({ theme: 'gone', density: 'vast' })).toMatchObject({ wzlTheme: 'weasel', wzlDensity: 'comfortable' });
     expect(applied({}).wzlTheme).toBe('weasel');
+    expect(applied({ theme: 'toString' }).wzlTheme).toBe('weasel');
   });
 });

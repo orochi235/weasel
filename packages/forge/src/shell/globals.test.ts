@@ -6,7 +6,6 @@ import {
   followApp,
   type GlobalDeclarations,
   isForgePath,
-  isGlobalsPath,
   labGlobals,
   labOptions,
   storyConfig,
@@ -89,7 +88,9 @@ describe('storyConfig', () => {
 describe('isForgePath', () => {
   it('names the keys a story may not write', () => {
     expect(isForgePath('$playhead')).toBe(true);
+    expect(isForgePath('$globals')).toBe(true);
     expect(isForgePath('$globals.mode')).toBe(true);
+    expect(isForgePath('$globalsx')).toBe(false);
     expect(isForgePath('label')).toBe(false);
   });
 });
@@ -141,16 +142,5 @@ describe('a global that follows the app', () => {
     expect(followApp(following, { mode: FOLLOW_APP, font: 'inter' }, { mode: 'dark' })).toEqual({ mode: 'dark', font: 'inter' });
     const picked = { mode: 'light', font: 'inter' };
     expect(followApp(following, picked, { mode: 'dark' })).toBe(picked);
-  });
-});
-
-describe('isGlobalsPath', () => {
-  it('matches the group and paths beneath it only', () => {
-    expect([isGlobalsPath('$globals'), isGlobalsPath('$globals.mode'), isGlobalsPath('$globalsx'), isGlobalsPath('mode')]).toEqual([
-      true,
-      true,
-      false,
-      false,
-    ]);
   });
 });

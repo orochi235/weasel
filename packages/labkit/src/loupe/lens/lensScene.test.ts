@@ -137,6 +137,20 @@ describe('lens scene', () => {
     });
   });
 
+  it('sizes a held Follow reticle to the patch a new factor shows, not the size it was held at', () => {
+    apply(setAimOps(scene, 'a', 'follow'));
+    const hold = scene.overrides.hold();
+    hold.set([['a:reticle' as never, reticleAt(scene, 'a', { x: 50, y: 60 })!]]);
+    apply(setLensOps(scene, 'a', { factor: 8 }));
+    expect(reticleAt(scene, 'a', { x: 50, y: 60 })).toEqual({
+      x: 40,
+      y: 50,
+      width: 20,
+      height: 20,
+    });
+    hold.drop();
+  });
+
   it('draws the leader from the body’s rim to the reticle’s, and not at all while they overlap', () => {
     const leader = () => scene.get('a:leader' as never)!;
     const bounds = () => {

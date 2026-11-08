@@ -13,7 +13,7 @@ import {
 } from '../protocol/messages';
 import type { IndexEntry } from '../story/types';
 import type { AnswerBook } from './answers';
-import { isGlobalsPath, storyConfig } from './globals';
+import { isForgePath, storyConfig } from './globals';
 import { reportFrameScroll } from './loupe/frameScroll';
 import { type Ready, readyKey } from './readyKey';
 import { type A11yOutcome, type TrialFrames } from './trialFrames';
@@ -155,8 +155,8 @@ function receive(deps: LinkDeps, current: Link, msg: FromFrame): void {
       for (const ask of current.queued.splice(0)) ask();
       break;
     case 'setConfig':
-      // The pins belong to the trial; a story cannot see them, so it cannot set them either.
-      if (!isGlobalsPath(msg.path)) live.setConfig(msg.path, msg.value);
+      // The pins and forge's other keys belong to the trial; a story cannot see them, so it cannot set them either.
+      if (!isForgePath(msg.path)) live.setConfig(msg.path, msg.value);
       break;
     case 'setState':
       if (current.sent) current.sent.state = msg.state;
