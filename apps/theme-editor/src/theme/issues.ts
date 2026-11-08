@@ -16,3 +16,15 @@ export function describeIssue(issue: Issue): string {
       return `${issue.path}: ${issue.message}`;
   }
 }
+
+/** The distinct descriptions of the issues entry `name` of `layer` owns: those whose path is the entry or under it,
+ *  a ramp's infeasibility, and a semantic's contrast issues. */
+export function issuesAt(issues: readonly Issue[], layer: 'ramps' | 'scales' | 'semantics', name: string): string[] {
+  const prefix = `${layer}.${name}`;
+  const owns = (i: Issue): boolean => {
+    if (i.kind === 'infeasible-ramp') return layer === 'ramps' && i.ramp === name;
+    if (i.kind === 'contrast-unmet' || i.kind === 'check-failed') return layer === 'semantics' && i.token === name;
+    return 'path' in i && (i.path === prefix || i.path.startsWith(`${prefix}.`));
+  };
+  return [...new Set(issues.filter(owns).map(describeIssue))];
+}
