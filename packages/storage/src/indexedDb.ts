@@ -36,6 +36,47 @@ function lazyChannel(name: string): () => NodeChannel | null {
   };
 }
 
+/** `database` at `version`, or at whatever version it has when omitted, with `store` created by an
+ *  upgrade. Answers the version it opened at instead when that has no `store`, since only an upgrade
+ *  past it can create one. */
+function request(database: string, store: string, version: number | undefined): Promise<IDBDatabase | number> {
+  return new Promise((resolve, reject) => {
+    // No `onblocked`: a blocked open is still pending, and lands once the
+    // connections in its way close.
+    const req = version === undefined ? indexedDB.open(database) : indexedDB.open(database, version);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store);
+    };
+    req.onsuccess = () => {
+      const db = req.result;
+      if (db.objectStoreNames.contains(store)) {
+        resolve(db);
+        return;
+      }
+      db.close();
+      resolve(db.version);
+    };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+/** A connection to `database` holding `store`, upgrading the database one version to create it. */
+async function openWithStore(database: string, store: string): Promise<IDBDatabase> {
+  if (typeof indexedDB === 'undefined') throw new Error('[storage] IndexedDB is not available here');
+  let db = await request(database, store, undefined);
+  // Another connection upgrading first makes the version stale, so a few tries.
+  for (let tries = 0; typeof db === 'number' && tries < 3; tries++) {
+    db = await request(database, store, db + 1).catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'VersionError') return request(database, store, undefined);
+      throw error;
+    });
+  }
+  if (typeof db === 'number') {
+    throw new Error(`[storage] IndexedDB database "${database}" would not take a store "${store}"`);
+  }
+  return db;
+}
+
 /** Persist to IndexedDB, which stores structured-clone values natively — typed
  *  arrays, `Map`s, `Blob`s — and holds far more than localStorage. Other tabs
  *  hear writes through a `BroadcastChannel`. The database opens on first use. */
@@ -50,46 +91,10 @@ export function createIndexedDbAdapter({
     connection = null;
     opened = null;
   };
-  /** The database at `version`, or at whatever version it has when omitted, with `store` created by
-   *  an upgrade. Answers the version it opened at instead when that has no `store`, since only an
-   *  upgrade past it can create one. */
-  const request = (version: number | undefined): Promise<IDBDatabase | number> =>
-    new Promise((resolve, reject) => {
-      // No `onblocked`: a blocked open is still pending, and lands once the
-      // connections in its way close.
-      const req = version === undefined ? indexedDB.open(database) : indexedDB.open(database, version);
-      req.onupgradeneeded = () => {
-        if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store);
-      };
-      req.onsuccess = () => {
-        const db = req.result;
-        if (db.objectStoreNames.contains(store)) {
-          resolve(db);
-          return;
-        }
-        db.close();
-        resolve(db.version);
-      };
-      req.onerror = () => reject(req.error);
-    });
-
   const open = (): Promise<IDBDatabase> => {
     if (opened) return opened;
     const mine = (async (): Promise<IDBDatabase> => {
-      if (typeof indexedDB === 'undefined') throw new Error('[storage] IndexedDB is not available here');
-      let db = await request(undefined);
-      // Another connection upgrading first makes the version stale, so a few tries.
-      for (let tries = 0; typeof db === 'number' && tries < 3; tries++) {
-        const at = db;
-        db = await request(at + 1).catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === 'VersionError') return request(undefined);
-          throw error;
-        });
-      }
-      if (typeof db === 'number') {
-        throw new Error(`[storage] IndexedDB database "${database}" would not take a store "${store}"`);
-      }
-      const live = db;
+      const live = await openWithStore(database, store);
       connection = live;
       // The browser closing the connection: site data cleared, or evicted.
       live.onclose = () => forget(live);
