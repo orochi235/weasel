@@ -145,13 +145,26 @@ describe('matrix arithmetic', () => {
     expectMatClose(multiply(tiny, inv!), identity(), 9);
   });
 
-  it('inverts a projection with a tiny near plane', () => {
-    // One column is ~1e-12 long; judged against the largest column instead
-    // of all four, a legitimate camera would read as singular.
-    const m = perspective(Math.PI / 4, 1, 1e-12, 1);
+  it('inverts the cameras a 3D host builds, a deep frustum far off included', () => {
+    for (const [near, far, d] of [[0.1, 1000, 10], [0.01, 1e5, 10], [1e-3, 1e6, 1e4]] as const) {
+      const m = multiply(perspective(Math.PI / 4, 1.5, near, far), lookAt({ x: d, y: d / 2, z: d }, { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }));
+      expect(invert(m), `near ${near}, far ${far}`).not.toBeNull();
+    }
+  });
+
+  it('refuses a projection too ill-conditioned to invert, as the 2D invert does', () => {
+    expect(invert(perspective(Math.PI / 4, 1, 1e-12, 1))).toBeNull();
+  });
+
+  it('refuses a scale too uneven to invert, as the 2D invert does', () => {
+    expect(invert([1e6, 0, 0, 0, 0, 1e-7, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])).toBeNull();
+  });
+
+  it('inverts a far translation, which never costs an inverse its precision', () => {
+    const m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1e9, -1e9, 1e9, 1];
     const inv = invert(m);
     expect(inv).not.toBeNull();
-    expectMatClose(multiply(m, inv!), identity(), 6);
+    expect(inv![12]).toBeCloseTo(-1e9, 0);
   });
 
   it('rejects a large matrix whose determinant is cancellation', () => {

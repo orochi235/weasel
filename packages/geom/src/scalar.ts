@@ -9,10 +9,17 @@
 /** Base relative epsilon, sized for Float32 storage (~1 part in 1e-6). */
 export const EPS = 1e-6;
 
-/** A determinant at or below this fraction of its matrix's own scale counts as
- *  singular. Dimensionless, so a uniformly tiny matrix still inverts while a
- *  large one whose determinant is only rounding does not. */
+/** The reciprocal of the largest condition number a matrix may have and still invert, and the fraction of a
+ *  quantity's own scale below which it counts as zero. Dimensionless, so a uniformly tiny matrix still inverts
+ *  while a large one whose determinant is only rounding does not. */
 export const SINGULAR_RATIO = 1e-12;
+
+/** Whether a matrix whose 1-norm is `norm`, and its inverse's `inverseNorm`, is well enough conditioned to
+ *  invert: their product, the matrix's condition number, stays under `1 / SINGULAR_RATIO`. Both `invert`s use
+ *  it, so 2D and 3D refuse the same matrices. `NaN` and `Infinity` count as refused. */
+export function invertible(norm: number, inverseNorm: number): boolean {
+  return norm * inverseNorm < 1 / SINGULAR_RATIO;
+}
 
 /** `v` held to `lo`..`hi`. `lo` wins when the bounds cross; `NaN` passes through. */
 export function clamp(v: number, lo: number, hi: number): number {

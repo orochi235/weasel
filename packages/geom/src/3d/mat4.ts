@@ -2,7 +2,7 @@
  *  `m[c * 4 + r]`, which is the layout `gl.uniformMatrix4fv` reads without a
  *  transpose and the one three.js `toArray()` emits. */
 
-import { SINGULAR_RATIO } from '../scalar';
+import { invertible, SINGULAR_RATIO } from '../scalar';
 import { cross, dot, len, normalize, sub, vec3, type Quat, type Vec3 } from './vec3';
 
 /** 16 numbers, column-major. */
@@ -48,8 +48,8 @@ export function transformPoint(m: Mat4, p: Vec3): Vec3 {
   return vec3(x / w, y / w, z / w);
 }
 
-/** Inverse, or null when the matrix is singular, non-finite, or too
- *  ill-conditioned to invert meaningfully at its own scale. */
+/** Inverse, or null when the matrix is singular, non-finite, or too ill-conditioned to invert meaningfully
+ *  (`invertible`), as geom's 2D `invert` judges it. */
 export function invert(m: Mat4): Mat4 | null {
   const [
     m00, m01, m02, m03,
@@ -71,19 +71,9 @@ export function invert(m: Mat4): Mat4 | null {
   const b10 = m21 * m33 - m23 * m31;
   const b11 = m22 * m33 - m23 * m32;
 
-  const det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-  // Hadamard: |det| never exceeds the product of the column lengths, so the
-  // ratio is a volume in [0, 1] that no per-column scale can shrink.
-  const scale =
-    Math.sqrt(m00 * m00 + m01 * m01 + m02 * m02 + m03 * m03) *
-    Math.sqrt(m10 * m10 + m11 * m11 + m12 * m12 + m13 * m13) *
-    Math.sqrt(m20 * m20 + m21 * m21 + m22 * m22 + m23 * m23) *
-    Math.sqrt(m30 * m30 + m31 * m31 + m32 * m32 + m33 * m33);
-  // Negated so a non-finite determinant falls out as singular.
-  if (!(Math.abs(det) > SINGULAR_RATIO * scale)) return null;
-  const d = 1 / det;
+  const d = 1 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06);
 
-  return [
+  const inv = [
     (m11 * b11 - m12 * b10 + m13 * b09) * d,
     (m02 * b10 - m01 * b11 - m03 * b09) * d,
     (m31 * b05 - m32 * b04 + m33 * b03) * d,
@@ -101,6 +91,19 @@ export function invert(m: Mat4): Mat4 | null {
     (m31 * b01 - m30 * b03 - m32 * b00) * d,
     (m20 * b03 - m21 * b01 + m22 * b00) * d,
   ];
+  // An affine matrix is judged on its 3x3 block, since translation never costs an inverse its precision.
+  const n = m03 === 0 && m13 === 0 && m23 === 0 && m33 === 1 ? 3 : 4;
+  return invertible(norm1(m, n), norm1(inv, n)) ? inv : null;
+}
+
+function norm1(m: Mat4, n: number): number {
+  let most = 0;
+  for (let c = 0; c < n; c++) {
+    let sum = 0;
+    for (let r = 0; r < n; r++) sum += Math.abs(m[c * 4 + r]!);
+    most = Math.max(most, sum);
+  }
+  return most;
 }
 
 /** Translation · rotation · scale: the matrix that scales a point, then
