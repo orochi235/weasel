@@ -76,11 +76,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const next = {};
   const over = [];
   const stale = [];
+  const seen = new Set();
   for (const pkg of readdirSync(join(ROOT, 'packages')).sort()) {
     const src = join(ROOT, 'packages', pkg, 'src');
     if (!existsSync(src) || !statSync(src).isDirectory()) continue;
     for (const file of walk(src)) {
       const rel = relative(ROOT, file);
+      seen.add(rel);
       const size = measure(readFileSync(file, 'utf8'), file);
       const result = seeding ? 'stale' : verdict(size, allow[rel], CAPS);
       const entry = entryFor(size, CAPS);
@@ -96,6 +98,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       }
     }
   }
+
+  // An entry whose file is gone would hand its ceiling to the next file made at that path.
+  for (const rel of Object.keys(allow)) if (!seen.has(rel)) stale.push(`  ${rel} (gone)`);
 
   if (update) {
     const sorted = Object.fromEntries(Object.keys(next).sort().map((k) => [k, next[k]]));
