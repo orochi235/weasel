@@ -287,6 +287,28 @@ describe('CurveEditor — add and delete', () => {
     expect(next).toHaveLength(3);
   });
 
+  it('adds on a curve press beside a hidden pinned endpoint, which takes no press', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onInput={() => {}}
+        onChange={onChange}
+        addPointMode="click-curve"
+        endpoints="pinned-both"
+        hideNonInteractive
+        width={200}
+        height={100}
+      />,
+    );
+    // Model (0.05, 0.05) on the curve, 11px from the hidden endpoint at plot (0, 100).
+    const svg = container.querySelector('svg')!;
+    fireEvent.pointerDown(svg, { clientX: 10, clientY: 95, pointerId: 3 });
+    fireEvent.pointerUp(document, { clientX: 10, clientY: 95, pointerId: 3 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0]).toHaveLength(3);
+  });
+
   it('does not add on click when addPointMode="never"', () => {
     const onChange = vi.fn();
     const { container } = render(

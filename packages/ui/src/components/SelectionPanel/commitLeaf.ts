@@ -77,8 +77,11 @@ export interface LeafWrites {
   draft(selection: Pick<SelectionApi, 'current'>, leaf: PanelLeaf, next: Next): void;
 }
 
-/** What a node held before a draft wrote over it. */
-interface Held { pose: unknown; data: unknown; field: unknown }
+/** What a node held before a draft wrote over it, and what the last draft left it holding. */
+interface Held { pose: unknown; data: unknown; field: unknown; left?: Omit<Held, 'left'> }
+
+const sameHeld = (a: Omit<Held, 'left'> | undefined, b: Omit<Held, 'left'>): boolean =>
+  a !== undefined && a.pose === b.pose && a.data === b.data && a.field === b.field;
 
 /** The writes of one panel over `scene`. Keep one per panel: it holds what the drafts in flight wrote over. */
 export function leafWrites<TData, TLayer extends string, TPose>(
@@ -114,15 +117,26 @@ export function leafWrites<TData, TLayer extends string, TPose>(
     draft: (selection, leaf, next) => {
       if (!writable(leaf)) return;
       const ids = selection.current.map(asNodeId);
+      const head = leaf.path.split('.')[0];
       const before = drafted.get(leaf.path) ?? new Map<NodeId, Held>();
       drafted.set(leaf.path, before);
-      for (const id of ids) {
+      const now = (id: NodeId): Omit<Held, 'left'> | null => {
         const node = scene.get(id);
-        if (node && !before.has(id)) {
-          before.set(id, { pose: node.pose, data: node.data, field: nodeRoot(node as AnyNode, leaf.path.split('.')[0]) });
-        }
+        return node ? { pose: node.pose, data: node.data, field: nodeRoot(node as AnyNode, head) } : null;
+      };
+      for (const id of ids) {
+        const at = now(id);
+        const held = before.get(id);
+        // A node changed since the last draft left it starts an edit of its own: an edit that never committed
+        // (a slider dragged back where it began fires no change) must not put back what it held before that.
+        if (at && (!held || !sameHeld(held.left, at))) before.set(id, at);
       }
       scene.untracked(() => writeLeaf(scene, ids, leaf, next, settleOf));
+      for (const id of ids) {
+        const held = before.get(id);
+        const at = now(id);
+        if (held && at) held.left = at;
+      }
     },
   };
 }

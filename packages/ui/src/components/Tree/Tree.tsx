@@ -104,7 +104,7 @@ export const Tree = forwardRef(function Tree(
   };
 
   const order = () => visible.map((v) => v.node.id);
-  const eligible = (id: string) => !nodeAt(id)?.disabled;
+  const disabled = (id: string) => !!nodeAt(id)?.disabled;
   const commitSelection = (ids: readonly string[]) => {
     const next = new Set(ids);
     if (next.size !== selected.size || [...next].some((x) => !selected.has(x))) setSelected(next);
@@ -113,7 +113,7 @@ export const Tree = forwardRef(function Tree(
   const select = (id: string, mods: PressModifiers) => {
     const policy: SelectPolicy = { mode: selectionMode === 'multiple' ? 'multi' : 'single', ...LIST_KEYS };
     const result = selectFrom({ ids: [...selected], anchor: anchor.current }, id, intentOf(selectModifiers(mods), policy), {
-      order: order(), eligible,
+      order: order(), forceSingle: disabled,
     });
     anchor.current = result.anchor;
     commitSelection(result.ids);
@@ -131,13 +131,13 @@ export const Tree = forwardRef(function Tree(
     isSelected: (id) => selectable && selected.has(id),
     // Selection with focus, and Shift's range, pass over disabled rows: focus alone moves there.
     onReach: (id) => {
-      if (selectable && selectionFollowsFocus && eligible(id)) select(id, NO_MODS);
+      if (selectable && selectionFollowsFocus && !disabled(id)) select(id, NO_MODS);
     },
     ...(selectionMode === 'multiple' ? {
-      onExtend: (id: string) => { if (eligible(id)) select(id, { ...NO_MODS, shiftKey: true }); },
+      onExtend: (id: string) => { if (!disabled(id)) select(id, { ...NO_MODS, shiftKey: true }); },
       onSelectAll: () => {
         const ids = order();
-        commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, eligible));
+        commitSelection(rangeOf(ids, ids[0]!, ids[ids.length - 1]!, disabled));
       },
     } : {}),
     onActivate: (id, mods) => { const node = nodeAt(id); if (node) activate(node, mods); },

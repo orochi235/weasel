@@ -28,7 +28,7 @@ export function SelectDemo() {
   const press = (id: string, e: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
     const intent = intentOf({ shift: e.shiftKey, meta: e.metaKey, ctrl: e.ctrlKey }, POLICIES[convention]);
     setLast(`${intent} ${id}`);
-    setState((prev) => select(prev, id, intent, { order: ROWS, eligible: (x) => !LOCKED.has(x) }));
+    setState((prev) => select(prev, id, intent, { order: ROWS, forceSingle: (x) => LOCKED.has(x) }));
   };
 
   return (

@@ -289,11 +289,11 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
             opts: { id: 'select.collapseDeferred' },
           },
           GROUP_LEAVE_PRESS_BINDING,
-          // Empty drag → marquee. `onEmptyCanvas` rather than a bare `'empty'`
+          // Empty drag → marquee, adding to the selection with Shift held. `onEmptyCanvas` rather than a bare `'empty'`
           // target: the ambient bindings that own the handles rank below this
           // active one, so `'empty'` took drags that start on them.
           {
-            spec: { kind: 'drag' as const, target: { kindOf: onEmptyCanvas } },
+            spec: { kind: 'drag' as const, target: { kindOf: onEmptyCanvas }, mods: { shift: 'optional' as const } },
             actionId: 'areaSelect',
             opts: { id: 'select.marquee' },
           },

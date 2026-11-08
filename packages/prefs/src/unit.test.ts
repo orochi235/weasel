@@ -35,6 +35,13 @@ describe('resolvePrefUnit', () => {
     expect(deg.fromDisplay(90)).toBeCloseTo(Math.PI / 2, 12);
   });
 
+  it('rounds a negative half the way its format does, away from zero', () => {
+    const unit = resolvePrefUnit({ scale: 1, precision: 2 });
+    expect(unit.format(-0.125)).toBe('-0.13');
+    expect(unit.toDisplay(-0.125)).toBe(-0.13);
+    expect(unit.toDisplay(-2.5 / 100)).toBe(Number(unit.format(-0.025)));
+  });
+
   it('stores a decimal typed at a decimal scale as the decimal it is, with no binary dust', () => {
     const percent = resolvePrefUnit({ scale: 0.01, precision: 1, suffix: '%' });
     expect(33.3 * 0.01).not.toBe(0.333);

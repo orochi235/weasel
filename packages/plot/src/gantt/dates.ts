@@ -38,6 +38,13 @@ function partsOf(format: string): Part[] {
   return parts;
 }
 
+/** `Date.UTC`, but reading years 0 to 99 as themselves rather than as 1900 to 1999. */
+function utc(year: number, month: number, day: number, hour = 0, minute = 0, second = 0, ms = 0): number {
+  const d = new Date(Date.UTC(2000, month, day, hour, minute, second, ms));
+  d.setUTCFullYear(year, month, day);
+  return d.getTime();
+}
+
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Whether dates in `format` carry a time of day, so an edit snaps to whole hours rather than days. */
@@ -69,7 +76,7 @@ export function parseGanttDate(text: string, format: string): number | null {
     }
   }
   if (f.month < 1 || f.month > 12 || f.day < 1 || f.hour > 23 || f.minute > 59 || f.second > 59) return null;
-  const t = Date.UTC(f.year, f.month - 1, f.day, f.hour, f.minute, f.second, f.ms);
+  const t = utc(f.year, f.month - 1, f.day, f.hour, f.minute, f.second, f.ms);
   return new Date(t).getUTCDate() === f.day ? t : null;
 }
 
@@ -95,7 +102,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 export function strftime(t: number, format: string): string {
   const d = new Date(t);
   const hour = d.getUTCHours();
-  const yearDay = Math.floor((t - Date.UTC(d.getUTCFullYear(), 0, 1)) / 86_400_000) + 1;
+  const yearDay = Math.floor((t - utc(d.getUTCFullYear(), 0, 1)) / 86_400_000) + 1;
   const field: Readonly<Record<string, () => string>> = {
     Y: () => String(d.getUTCFullYear()), y: () => pad(d.getUTCFullYear() % 100), m: () => pad(d.getUTCMonth() + 1),
     d: () => pad(d.getUTCDate()), e: () => String(d.getUTCDate()).padStart(2, ' '), b: () => MONTHS[d.getUTCMonth()]!.slice(0, 3),

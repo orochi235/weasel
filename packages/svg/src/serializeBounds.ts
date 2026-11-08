@@ -1,5 +1,6 @@
-import { boundsOfPath, poseFrameOf, type Path } from '@weasel-js/core';
-import { type Matrix, type SvgNode, IDENTITY_MATRIX } from './types';
+import { boundsOfPath, poseFrameOf, strokedBounds, type Path } from '@weasel-js/core';
+import { kitStroke } from './strokeOutlineSvg';
+import { type Matrix, type SvgNode, type SvgStroke, IDENTITY_MATRIX } from './types';
 import { multiply } from './transform';
 
 /**
@@ -24,7 +25,7 @@ export function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: 
     const frame = n.kind === 'path' ? null : poseFrameOf(n);
     const local = frame ? multiply(ctm, frame)
       : n.rotation ? rotateAboutCenter(ctm, b, n.rotation) : ctm;
-    for (const [x, y] of corners(b)) {
+    for (const [x, y] of corners(n.kind === 'path' ? inked(n.path, b, n.stroke) : b)) {
       const px = local[0] * x + local[2] * y + local[4];
       const py = local[1] * x + local[3] * y + local[5];
       if (px < minX) minX = px;
@@ -40,7 +41,26 @@ export function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: 
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-function corners(b: { minX: number; minY: number; maxX: number; maxY: number }): [number, number][] {
+type Box = { minX: number; minY: number; maxX: number; maxY: number };
+
+/** `b` grown by what `stroke` paints along `path`: width, joins, caps,
+ *  alignment, per-vertex widths and marker heads. A `{ px }` length is taken
+ *  at one document unit per pixel, the scale the root draws at without a `width`. */
+function inked(path: Path, b: Box, stroke: SvgStroke | undefined): Box {
+  if (!stroke) return b;
+  const kit = kitStroke(stroke);
+  // SVG draws markers under `stroke="none"` too; an inner stroke boxes only them.
+  const ink = strokedBounds(path, stroke.paint.kind === 'none' ? { ...kit, align: 'inner' } : kit, 1);
+  if (!ink) return b;
+  return {
+    minX: Math.min(b.minX, ink.x),
+    minY: Math.min(b.minY, ink.y),
+    maxX: Math.max(b.maxX, ink.x + ink.width),
+    maxY: Math.max(b.maxY, ink.y + ink.height),
+  };
+}
+
+function corners(b: Box): [number, number][] {
   return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]];
 }
 

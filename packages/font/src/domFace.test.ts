@@ -152,6 +152,21 @@ describe('building the DOM face when the bytes arrive', () => {
     await loadFontOutlines('Helvetica');
     expect(StubFace.made.map((f) => f.source)).toEqual(['local("Helvetica")']);
   });
+
+  it('drops the bytes of a registration replaced while they loaded', async () => {
+    await registerTestFont('sans-serif');
+    const old = new ArrayBuffer(8);
+    let arrive!: (b: ArrayBuffer) => void;
+    registerFontOutlines('sans-serif', {}, () => new Promise<ArrayBuffer>((r) => { arrive = r; }),
+      { parser: () => PARSED });
+    const loading = loadFontOutlines('sans-serif');
+    registerFontOutlines('sans-serif', {}, '/fonts/b.ttf', { parser: () => PARSED });
+    arrive(old);
+    await loading;
+    expect(StubFace.made.map((f) => f.source)).not.toContain(old);
+    cssFontFamily('sans-serif');
+    expect(StubFace.made.map((f) => f.source)).toEqual(['url("/fonts/b.ttf")']);
+  });
 });
 
 describe('cssFontFamilyLoading', () => {

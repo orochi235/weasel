@@ -181,7 +181,7 @@
     "longestFunction": 174
   },
   "packages/svg/src/gradients.ts": {
-    "lines": 525
+    "lines": 514
   },
   "packages/text-dom/src/useTextEdit.ts": {
     "lines": 669,
@@ -221,7 +221,7 @@
     "longestFunction": 290
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 411,
+    "lines": 409,
     "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
@@ -235,7 +235,6 @@
     "longestFunction": 183
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
-    "lines": 403,
     "longestFunction": 134
   },
   "packages/ui/src/components/NumberField/UnitField.tsx": {
@@ -266,7 +265,7 @@
     "longestFunction": 133
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 197
+    "longestFunction": 192
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
     "longestFunction": 185

@@ -98,6 +98,7 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   const decimals = decimalsOf(step);
   const first = Math.ceil((lo + inset * perUnit) / step - 1e-9);
   const last = Math.floor((hi - inset * perUnit) / step + 1e-9);
+  if (!countable(first) || !countable(last)) return { values: [], step, decimals };
   const values: number[] = [];
   for (let i = first; i <= last; i++) values.push(onGrid(i, step) + 0);
   return { values, step, decimals };

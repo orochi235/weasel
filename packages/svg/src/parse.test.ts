@@ -11,6 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { boundsOfPath } from '@weasel-js/core';
 import { parseSvg } from './index';
 import type { SvgPathNode, SvgTextNode } from './types';
 
@@ -405,6 +406,13 @@ describe('values read through the property table', () => {
     expect(p.opacity).toBe(0.5);
     expect(p.fill).toMatchObject({ opacity: 0.25 });
   });
+  it('multiplies a color\'s own alpha by fill-opacity and stroke-opacity', () => {
+    const p = parse('<rect width="1" height="1" fill="rgba(255,0,0,0.5)" fill-opacity="0.5"'
+      + ' stroke="url(#none) rgba(0,0,255,0.5)" stroke-opacity="0.4"/>').nodes[0] as SvgPathNode;
+    expect(p.fill).toEqual({ kind: 'solid', color: '#ff0000', opacity: 0.25 });
+    expect(p.stroke?.paint).toEqual({ kind: 'solid', color: '#0000ff', opacity: 0.2 });
+    expect(p.stroke?.opacity).toBe(0.2);
+  });
   it('resolves a percentage font-size on <text> against the parent\'s', () => {
     const lone = parse('<text font-size="150%">hi</text>');
     expect(lone.nodes[0]).toMatchObject({ style: { fontSize: 24 } });
@@ -422,5 +430,41 @@ describe('values read through the property table', () => {
     const g = parse('<g color="red"><rect width="1" height="1" color="currentColor" fill="currentColor"/></g>')
       .nodes[0] as { children: SvgPathNode[] };
     expect(g.children[0].fill).toMatchObject({ color: '#ff0000' });
+  });
+});
+
+describe('<rect> corner radii', () => {
+  const corner = (attrs: string): { kind: string; first?: number[] } => {
+    const { nodes } = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg"><rect width="100" height="20" ${attrs}/></svg>`);
+    const n = nodes[0] as SvgPathNode;
+    if (n.path.kind !== 'polygon') return { kind: n.path.kind };
+    // The first edge's ends, then the first corner's end: (x + rx, y) … (x2, y + ry).
+    const c = Array.from(n.path.coords);
+    return { kind: 'polygon', first: [c[0], c[1], c[8], c[9]] };
+  };
+
+  it('gives an absent ry the value of rx, each clamped to half its own side', () => {
+    expect(corner('rx="30"')).toEqual({ kind: 'polygon', first: [30, 0, 100, 10] });
+  });
+
+  it('keeps rx and ry apart when both are given', () => {
+    expect(corner('rx="8" ry="4"')).toEqual({ kind: 'polygon', first: [8, 0, 100, 4] });
+  });
+
+  it('draws square corners when either radius is zero', () => {
+    expect(corner('rx="0" ry="5"')).toEqual({ kind: 'rect' });
+    expect(corner('rx="5" ry="0"')).toEqual({ kind: 'rect' });
+  });
+
+  it('reads a negative radius as auto', () => {
+    expect(corner('rx="-3" ry="6"')).toEqual({ kind: 'polygon', first: [6, 0, 100, 6] });
+  });
+});
+
+describe('<ellipse> radii', () => {
+  it('gives an absent radius the value of the other', () => {
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><ellipse cx="0" cy="0" rx="10"/></svg>');
+    const b = boundsOfPath((nodes[0] as SvgPathNode).path);
+    expect([b.width, b.height]).toEqual([20, 20]);
   });
 });

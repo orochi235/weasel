@@ -14,7 +14,7 @@ import {
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
 import { dropSide, LIST_ROLES, listMode } from '@weasel-js/ui-logic';
-import { modsOf, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
+import { modsOf, REORDER_SKIP, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
@@ -247,7 +247,7 @@ export const ItemList = forwardRef(function ItemList(
       role={roles.container}
       aria-multiselectable={selection === 'multi' && mode !== 'list' ? true : undefined}
     >
-      {overlay}
+      {overlay !== undefined && <div className={s.overlay} {...{ [REORDER_SKIP]: '' }}>{overlay}</div>}
       {ghost && container ? (
         <DragGhost at={ghost} from={container}><GhostRows rows={rows} ids={ghost.ids} /></DragGhost>
       ) : null}

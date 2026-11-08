@@ -69,6 +69,14 @@ describe('Slider regions', () => {
     expect(values(onChange)).toEqual([60, 100]);
   });
 
+  it('drags a region narrower than its room the whole way, its thumbs not bounding each other', () => {
+    const { region, onChange } = setup({ thumbs: [{ value: 40, bounds: between }, { value: 50, bounds: between }] });
+    fireEvent.pointerDown(region(1), { clientX: 180, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 380, clientY: 12 });
+    fireEvent.pointerUp(document, { clientX: 380, clientY: 12 });
+    expect(values(onChange)).toEqual([90, 100]);
+  });
+
   it('leaves a press that never passes the drag threshold as a click, and an end region where it is', () => {
     const { region, onInput, onChange } = setup();
     fireEvent.pointerDown(region(1), { clientX: 160, clientY: 12, button: 0 });

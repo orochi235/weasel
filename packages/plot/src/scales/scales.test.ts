@@ -171,6 +171,16 @@ describe('timeScale', () => {
     expect(s.ticks(100).slice(0, 3).map(s.tickFormat(100))).toEqual(['2026-01-01', '06:00', '12:00']);
   });
 
+  it('ticks a span of decades on 1, 2 or 5 times a power of ten years, about as many as asked for', () => {
+    for (const years of [8, 15, 25, 40, 60, 300]) {
+      const s = timeScale({ domain: [jan1, Date.UTC(2026 + years, 0, 1)], range: [0, 1] });
+      expect(s.ticks().length).toBeGreaterThanOrEqual(3);
+      expect(s.ticks().length).toBeLessThanOrEqual(11);
+    }
+    const forty = timeScale({ domain: [jan1, Date.UTC(2066, 0, 1)], range: [0, 1] });
+    expect(forty.ticks().map(forty.format)).toEqual(['2030', '2040', '2050', '2060']);
+  });
+
   it('ticks centuries before the year 100 in order', () => {
     const at = (year: number) => new Date(0).setUTCFullYear(year, 0, 1);
     const s = timeScale({ domain: [at(0), at(2000)], range: [0, 1] });

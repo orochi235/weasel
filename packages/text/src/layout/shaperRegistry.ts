@@ -2,6 +2,7 @@
  * Where the shaping engine arrives, the way the bidi engine does
  * (`bidiRegistry.ts`): registered once, found by every layout.
  */
+import { bumpTextEngineGeneration } from './engineGeneration';
 import {
   cachedFontVariant, outlineMetrics, type FaceEmbedding, type FontStyle, type OutlineFace, type ResolveResult,
 } from '@weasel-js/font';
@@ -24,8 +25,13 @@ let registered: TextShaper | null = null;
  * glyphs.
  */
 export function registerShaper(shaper: TextShaper | null): () => void {
+  if (registered !== shaper) bumpTextEngineGeneration();
   registered = shaper;
-  return () => { if (registered === shaper) registered = null; };
+  return () => {
+    if (registered !== shaper) return;
+    registered = null;
+    bumpTextEngineGeneration();
+  };
 }
 
 /** The shaper {@link registerShaper} was last given, or null. */

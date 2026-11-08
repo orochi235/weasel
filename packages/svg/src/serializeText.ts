@@ -186,8 +186,10 @@ function runAttrs(
   if (run.fill !== undefined) {
     const paint = run.fill?.paint;
     if (!paint) attrs.push('fill="none"');
-    else if (isSolidPaint(paint)) attrs.push(`fill="${escapeAttr(paint.color)}"`);
-    else attrs.push(`fill="${registry.ref(paint)}"`);
+    else {
+      attrs.push(`fill="${isSolidPaint(paint) ? escapeAttr(paint.color) : registry.ref(paint)}"`);
+      attrs.push(...opacityAttr('fill-opacity', paint.opacity));
+    }
   }
   for (const a of coreStrokeAttrs(run.stroke, registry, warn)) attrs.push(a);
   // `none` included: on a run it overrides a transform the node would pass down.

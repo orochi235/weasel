@@ -110,6 +110,8 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
   };
 
   const handleCommit = (next: Thumb[]) => {
+    // The next gesture starts from where the value is, which a consumer that declined the detent left unchanged.
+    liveRef.current = index;
     if (!changedRef.current) return;
     changedRef.current = false;
     const i = next[0].value;

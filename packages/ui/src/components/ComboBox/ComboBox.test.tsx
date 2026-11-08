@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ComboBox, ComboBoxItem } from './ComboBox';
@@ -96,6 +97,29 @@ describe('ComboBox keyboard navigation', () => {
     await user.tab();
     await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
     expect(onCommit).toHaveBeenCalledWith({ source: 'option', key: 'g' });
+  });
+
+  it('commits nothing on a blur that puts a controlled selection\'s text back', async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    function Controlled() {
+      const [text, setText] = useState('Red');
+      const [key, setKey] = useState<'r' | 'g' | 'b' | null>('r');
+      return (
+        <>
+          <ComboBox label="Color" options={OPTIONS} selectedKey={key} inputValue={text} onInputChange={setText}
+            onSelectionChange={(k) => { setKey(k); setText(OPTIONS.find((o) => o.value === k)?.label ?? ''); }}
+            onCommit={onCommit} />
+          <button type="button">elsewhere</button>
+        </>
+      );
+    }
+    render(<Controlled />);
+    await user.click(screen.getByRole('combobox'));
+    await user.keyboard('xy');
+    await user.click(screen.getByRole('button', { name: 'elsewhere' }));
+    expect(onCommit).not.toHaveBeenCalled();
+    expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('Red');
   });
 
   it('commits a picked option on click', async () => {

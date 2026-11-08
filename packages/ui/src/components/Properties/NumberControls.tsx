@@ -210,8 +210,9 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
       style={stops.style}
       aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
-      // tab stop here too would be two stops for one value.
-      tabIndex={tabbable ? undefined : -1}
+      // tab stop here too would be two stops for one value. With no value it
+      // shows a dash that takes no focus, so the track is the way in.
+      tabIndex={tabbable || (!known && !p.mixed) ? undefined : -1}
       min={place.min}
       max={place.max}
       step={place.step}
@@ -318,7 +319,8 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, stops =
   // the last render: a draft cleared in the same keydown is still set there.
   const canceled = useRef(false);
   const commit = () => {
-    if (draft !== null && !canceled.current) {
+    // A draft still reading as the value shown writes nothing: the readout rounds, and that text is not an edit.
+    if (draft !== null && !canceled.current && draft !== text(value)) {
       const n = read(draft);
       if (!Number.isNaN(n)) onCommit(settle(n));
     }

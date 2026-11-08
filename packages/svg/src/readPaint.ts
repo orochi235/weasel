@@ -1,7 +1,7 @@
 /** Reading an element's fill and stroke off the cascade. */
 
 import type { SvgPaint, SvgStroke } from './types';
-import type { Paint, Stroke } from '@weasel-js/core';
+import type { Fill, Paint, Stroke } from '@weasel-js/core';
 import type { GradientTable } from './gradients';
 import { ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext } from './cascade';
 import { readProperty, type InheritedPropertyName } from './properties';
@@ -36,7 +36,7 @@ export function readPaint(
       // behavior rather than a recovery — nothing to warn about.
       if (parsed.fallback) {
         const flat: SvgPaint = { kind: 'solid', color: parsed.fallback.color };
-        const a = opacity ?? (parsed.fallback.alpha < 1 ? parsed.fallback.alpha : undefined);
+        const a = paintAlpha(opacity, parsed.fallback.alpha);
         if (a != null) (flat as { opacity?: number }).opacity = a;
         return flat;
       }
@@ -46,9 +46,15 @@ export function readPaint(
     return { kind: 'gradient', paint: opacity != null ? { ...paint, opacity } : paint };
   }
   const out: SvgPaint = { kind: 'solid', color: parsed.color };
-  const a = opacity ?? (parsed.alpha < 1 ? parsed.alpha : undefined);
+  const a = paintAlpha(opacity, parsed.alpha);
   if (a != null) (out as { opacity?: number }).opacity = a;
   return out;
+}
+
+/** A color's own alpha under `fill-opacity` / `stroke-opacity`: SVG multiplies them. */
+function paintAlpha(opacity: number | undefined | null, alpha: number): number | undefined {
+  if (opacity != null) return opacity * alpha;
+  return alpha < 1 ? alpha : undefined;
 }
 
 export function readStroke(
@@ -64,8 +70,10 @@ export function readStroke(
   if (paint.kind === 'none') return undefined;
   const n = styleValue(style, 'stroke-width', onWarn) ?? 1;
   const stroke: SvgStroke = { paint, width: nonScaling ? { px: n } : n };
-  const opacity = styleValue(style, 'stroke-opacity', onWarn);
-  if (opacity != null) stroke.opacity = opacity;
+  // The paint already carries `stroke-opacity`, times a color's own alpha.
+  if (styleValue(style, 'stroke-opacity', onWarn) != null) {
+    stroke.opacity = paint.kind === 'solid' ? paint.opacity : paint.paint.opacity;
+  }
   const cap = styleValue(style, 'stroke-linecap', onWarn);
   if (cap) stroke.cap = cap;
   const join = styleValue(style, 'stroke-linejoin', onWarn);
@@ -128,17 +136,8 @@ export function ownStrokeStyle(el: Element, computed: StyleContext): StyleContex
  * that paints nothing, so callers can leave the field absent.
  */
 export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
-  if (!stroke) return undefined;
-  let paint: Paint;
-  if (stroke.paint.kind === 'gradient') {
-    paint = stroke.paint.paint;
-  } else if (stroke.paint.kind === 'solid') {
-    paint = stroke.paint.opacity != null
-      ? { kind: 'solid', color: stroke.paint.color, opacity: stroke.paint.opacity }
-      : { kind: 'solid', color: stroke.paint.color };
-  } else {
-    return undefined;
-  }
+  const paint = stroke && corePaint(stroke.paint);
+  if (!stroke || !paint) return undefined;
   const out: Stroke = { paint, width: stroke.width };
   if (stroke.cap) out.cap = stroke.cap;
   if (stroke.join) out.join = stroke.join;
@@ -150,4 +149,23 @@ export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (stroke.markerMid) out.markerMid = stroke.markerMid;
   if (stroke.markerEnd) out.markerEnd = stroke.markerEnd;
   return out;
+}
+
+/** An {@link SvgPaint} as the kit's `Paint`, or `null` for one that paints nothing. */
+export function corePaint(paint: SvgPaint): Paint | null {
+  if (paint.kind === 'gradient') return paint.paint;
+  if (paint.kind === 'none') return null;
+  return paint.opacity != null
+    ? { kind: 'solid', color: paint.color, opacity: paint.opacity }
+    : { kind: 'solid', color: paint.color };
+}
+
+/**
+ * The fill a `<text>` or `<tspan>` paints with, as the runs model holds it:
+ * `null` for `none`. Read off `style`, the element's computed cascade, so
+ * `fill-opacity` and a color's own alpha come with it.
+ */
+export function coreTextFill(style: StyleContext, gradients: GradientTable, onWarn: (msg: string) => void): Fill | null {
+  const paint = corePaint(readPaint(style, 'fill', '#000000', gradients, onWarn));
+  return paint ? { paint } : null;
 }

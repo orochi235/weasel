@@ -29,12 +29,19 @@ export function useHeldKeys(target?: EventTarget | null): ReadonlySet<string> {
       });
     };
     const clear = () => setHeld((prev) => (prev.size === 0 ? prev : new Set()));
+    // Focus leaving an element target sends the key-ups to wherever it went.
+    const left = (e: Event) => {
+      const to = (e as FocusEvent).relatedTarget;
+      if (!(on instanceof Node && to instanceof Node && on.contains(to))) clear();
+    };
     on.addEventListener('keydown', down);
     on.addEventListener('keyup', up);
+    if (on !== window) on.addEventListener('focusout', left);
     window.addEventListener('blur', clear);
     return () => {
       on.removeEventListener('keydown', down);
       on.removeEventListener('keyup', up);
+      on.removeEventListener('focusout', left);
       window.removeEventListener('blur', clear);
       clear();
     };

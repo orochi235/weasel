@@ -22,7 +22,9 @@ export function createMemoryAdapter(backing: Map<string, unknown> = new Map()): 
     for (const sub of peers) {
       if (sub.owner === adapter || !key.startsWith(sub.prefix)) continue;
       const copy = value === undefined ? undefined : structuredClone(value);
-      queueMicrotask(() => sub.on([[key, copy]]));
+      queueMicrotask(() => {
+        if (peers.has(sub)) sub.on([[key, copy]]);
+      });
     }
   };
   const listNow = (prefix: string): [string, unknown][] =>

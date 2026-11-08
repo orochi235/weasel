@@ -356,6 +356,8 @@ export function onOutlineBytes(listener: BytesListener): void {
 }
 
 function announceBytes(slot: FaceSlot, bytes: ArrayBuffer): void {
+  // A registration replaced or dropped while its bytes loaded must not hand them to the face that replaced it.
+  if (slots.get(slotKey(slot.family, slot.weight, slot.style)) !== slot) return;
   try {
     bytesListener?.(slot, bytes);
   } catch {

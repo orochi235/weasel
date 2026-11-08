@@ -1,9 +1,10 @@
 import type { Action } from '@weasel-js/routing';
 import type { DragSample, InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '@weasel-js/routing';
 import { resolveParams } from '@weasel-js/routing';
+import type { ModSpec } from '@weasel-js/gestures';
 import { shapeKindInfo } from 'core/shapeKinds';
 import type { KitInsertShape } from 'core/shapeKinds';
-import { SNAP_ROLES } from 'domains/snap/roles';
+import { SNAP_ROLE_MODS, SNAP_ROLES } from 'domains/snap/roles';
 import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
 import { copiesWithin } from 'canvas/copiesAbove';
@@ -19,6 +20,10 @@ import { insertLanding } from './lands';
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
  *  press that drifts a few pixels draws nothing rather than a shape a few pixels wide. */
 export const INSERT_DRAG_THRESHOLD_PX = 8;
+
+/** The modifiers an `insert` drag binding lets be held from the press: Alt, which draws from the
+ *  center, and the snap roles' keys ({@link SNAP_ROLE_MODS}). */
+export const INSERT_DRAG_MODS: ModSpec = { ...SNAP_ROLE_MODS, alt: 'optional' };
 
 /**
  * Drag-to-insert. The node `kind` is read from `opts.params.kind`.

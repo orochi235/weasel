@@ -57,6 +57,7 @@ export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSe
 export { registerBidi, registeredBidi, paragraphDirection, warnRtlWithoutEngine } from './layout/bidiRegistry';
 export type { TextShaper, ShapedGlyph, ShapedCluster } from './layout/shaperSeam';
 export { registerShaper } from './layout/shaperRegistry';
+export { textEngineGeneration } from './layout/engineGeneration';
 export type { LayoutRunsOpts } from './layout/layoutOpts';
 export type {
   LaidOutRuns,

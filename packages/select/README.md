@@ -24,7 +24,7 @@ const policy = { mode: 'multi', toggle: ['meta', 'ctrl'], range: 'shift' } as co
 let state = { ids: ['b'], anchor: 'b' };
 state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, policy), {
   order: ['a', 'b', 'c', 'd'],          // what a range walks
-  eligible: (id) => id !== 'c',         // locked rows never join a multi-selection
+  forceSingle: (id) => id === 'c',      // a locked row is selected only alone
 });
 // → { ids: ['b', 'd'], anchor: 'b' }
 ```
@@ -32,8 +32,9 @@ state = select(state, 'd', intentOf({ shift: true, meta: false, ctrl: false }, p
 | intent | ids | anchor |
 |---|---|---|
 | `replace` | `[id]` | `id` |
-| `toggle` | eligible ids, with `id` added or removed; `[id]` if `id` is ineligible | `id` |
-| `range` | eligible ids from anchor to `id` in `order`; unchanged if none is eligible; `[id]` if there is no anchor or either end is outside `order` | unchanged |
+| `single` | `[id]`; every intent resolves to it on an id `forceSingle` holds | `id` |
+| `toggle` | the selected ids `forceSingle` does not hold, with `id` added or removed | `id` |
+| `range` | ids from anchor to `id` in `order`, skipping those `forceSingle` holds; `[id]` if there is no anchor or either end is outside `order` | unchanged |
 
 `createSelectionStore` keeps ids outside a component, behind the `SelectionStore` contract that
 `@weasel-js/core`'s `Scene` also satisfies.

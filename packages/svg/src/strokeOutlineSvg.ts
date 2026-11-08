@@ -87,10 +87,9 @@ export function outlinedStrokeAttrs(stroke: SvgStroke, strokeAttrs: readonly str
   return out;
 }
 
-/** The outline element drawn for an outlined stroke along `path`.
- *  `fillAttrs` paint it in the stroke's paint; `transform` is the path's own. */
-export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: readonly string[], transform: string | null): string {
-  const kit: Stroke = {
+/** `stroke`'s geometry as the kit's `Stroke`, without its paint. */
+export function kitStroke(stroke: SvgStroke): Stroke {
+  return {
     width: stroke.width,
     ...(stroke.vertexWidths ? { vertexWidths: stroke.vertexWidths } : {}),
     ...(stroke.nib ? { nib: stroke.nib } : {}),
@@ -105,7 +104,12 @@ export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: reado
     ...(stroke.markerEnd ? { markerEnd: stroke.markerEnd } : {}),
     ...(stroke.trim ? { trim: stroke.trim } : {}),
   };
-  const outline = strokeToPath(path, kit);
+}
+
+/** The outline element drawn for an outlined stroke along `path`.
+ *  `fillAttrs` paint it in the stroke's paint; `transform` is the path's own. */
+export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: readonly string[], transform: string | null): string {
+  const outline = strokeToPath(path, kitStroke(stroke));
   const attrs = [`d="${serializePathD(outline)}"`, ...fillAttrs, 'stroke="none"'];
   if (transform) attrs.push(transform);
   attrs.push(`${WEASEL_NS_PREFIX}:${ROLE}="${OUTLINE}"`);

@@ -1,5 +1,5 @@
 /** The wheel channel. */
-import type { DispatchCore } from '../dispatchCore';
+import { landedNestedIn, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { underPointer } from '../underPointer';
 
@@ -14,7 +14,16 @@ function pixelsPer(e: WheelEvent, canvas: HTMLElement | null): number {
   return 1;
 }
 
-export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: WheelEvent) => void {
+/**
+ * The wheel listeners for the capture and bubble phases. A wheel that landed on
+ * this surface is handled while capturing, ahead of the element's other wheel
+ * listeners; one that landed in a surface nested inside waits for the bubble,
+ * after that surface has had it and left it.
+ */
+export function wheelInput(core: DispatchCore, pinchLive: () => boolean): {
+  capture: (e: WheelEvent) => void;
+  bubble: (e: WheelEvent) => void;
+} {
   const { routeAt, toWorld, target, dispatch } = core;
 
   const onWheel = (e: WheelEvent) => {
@@ -51,5 +60,8 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): (e: Wh
     }
   };
 
-  return onWheel;
+  return {
+    capture: (e) => { if (!landedNestedIn(core.canvas, e)) onWheel(e); },
+    bubble: (e) => { if (landedNestedIn(core.canvas, e)) onWheel(e); },
+  };
 }

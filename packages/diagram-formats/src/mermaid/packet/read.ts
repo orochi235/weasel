@@ -29,17 +29,23 @@ function fieldOf(s: Statement, after: number): PacketField {
   return { start, end, label };
 }
 
-/** Reads a Mermaid `packet-beta` (or `packet`). Throws, naming the line, on text that is not one. */
+/** Reads a Mermaid `packet-beta` (or `packet`), an unlabeled field as a gap. Throws, naming the line, on text that is not one. */
 export function readMermaidPacket(text: string): ImportResult {
   const src = statementsOf(text);
   if (!/^packet(?:-beta)?$/.test(src.header.text)) throw lineError('Mermaid', src.header.line, `"${src.header.text}" is not a packet header`);
   const warnings = new Warnings();
   let title: string | undefined;
   const fields: PacketField[] = [];
+  let after = -1;
   for (const s of src.body) {
     const t = /^title(?:\s+(.*))?$/.exec(s.text);
-    if (t !== null) title = t[1]?.trim() || undefined;
-    else fields.push(fieldOf(s, fields[fields.length - 1]?.end ?? -1));
+    if (t !== null) {
+      title = t[1]?.trim() || undefined;
+      continue;
+    }
+    const field = fieldOf(s, after);
+    after = field.end;
+    if (field.label !== '') fields.push(field);
   }
   const named = pageNameOf(src, warnings);
   if (title !== undefined && src.title !== undefined && src.title !== title) warnings.add('The front matter title was dropped; the chart is titled by its own.');

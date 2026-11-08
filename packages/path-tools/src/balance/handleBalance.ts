@@ -19,7 +19,7 @@
  */
 
 import {
-  type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker, type InvocationCtx, isBalanceGrip, type OngoingHandle,
+  type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker, type InvocationCtx, isBalanceGrip, type OngoingHandle, roleMods,
 } from '@weasel-js/routing';
 import {
   balanceFactorToward,
@@ -67,7 +67,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
   tags: pathOperationTags('drag'),
   // Ties the marquee's `empty` and move's `selected-body` on specificity and
   // registers ahead of the marquee; move turns path-edit presses down itself.
-  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isBalanceGrip } }, opts: { id: 'balanceHandles.drag' } }],
+  defaultBinding: [{ spec: { kind: 'drag', target: { kindOf: isBalanceGrip }, mods: roleMods(HANDLE_LOCK_ROLES) }, opts: { id: 'balanceHandles.drag' } }],
   cursor: 'grab',
   eligible: { capability: 'edits-anchors' },
   modifierRoles: HANDLE_LOCK_ROLES,

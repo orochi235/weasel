@@ -113,8 +113,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
   useKeyLease(actions, enabled);
   useEffect(() => {
-    if (enabled && claimKeys) registryRef.current.activate();
-  }, [enabled, claimKeys, registryRef]);
+    if (enabled && claimKeys) actions.activate();
+  }, [enabled, claimKeys, actions]);
 
   useEffect(() => {
     if (!enabled) return;

@@ -2,7 +2,7 @@
  * `textClusters` against the bundled Inter subset, the face `textToPath.test.ts`
  * reads, so kerning and the x-height are a real font's.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { registerFontOutlines, loadFontOutlines, type OutlineFace } from '@weasel-js/font';
@@ -123,6 +123,15 @@ describe('textClusters', () => {
     expect(cs[1].x).toBeLessThan(cs[2].x);
     expect(cs[2].advance).toBeCloseTo(30, 6);
     expect(cs[0].advance).toBeCloseTo(60, 6);
+  });
+
+  it('lays out again once a bidi engine is registered', async () => {
+    await registerAll();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const src = text('אבג', 'all');
+    expect(textClusters(src)[0].advance).toBeCloseTo(30, 6);
+    registerBidi(bidi);
+    expect(textClusters(src)[0].advance).toBeCloseTo(60, 6);
   });
 
   it('a color glyph keeps its slot and paints nothing', () => {

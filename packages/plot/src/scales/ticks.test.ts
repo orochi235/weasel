@@ -94,6 +94,10 @@ describe('spacedTicks', () => {
     expect(spaced([0, Number.NaN], 72, 24).values).toEqual([]);
     expect(spaced([0, 1], 72, 0).values).toEqual([]);
   });
+
+  it('returns nothing where the step multiples are past counting, as ticks() does', () => {
+    expect(spaced([1e17, 1e17 + 100], 100, 10).values).toEqual([]);
+  });
 });
 
 describe('tickDecimals', () => {

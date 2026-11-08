@@ -3,7 +3,7 @@
  * by what they do rather than which key they are, so a binding or a tuning can
  * move one to another key without forking the action.
  */
-import { isApplePlatform, type ModifierKey } from '@weasel-js/gestures';
+import { isApplePlatform, type ModifierKey, type ModSpec } from '@weasel-js/gestures';
 import type { ModifierState } from '../../vocabulary';
 
 /** The keys that hold a role: any one of them held holds it. `'mod'` is Cmd
@@ -22,6 +22,21 @@ export type ModifierRoles = Readonly<Record<string, ModifierRole>>;
 
 /** Keys a tuning or a binding gives some of an action's roles. */
 export type RoleRebinds = Readonly<Record<string, RoleKeys>>;
+
+/**
+ * A binding's `mods` that let every key of `roles` be held from the press, or not. The binding
+ * matcher forbids a modifier the spec leaves out, so without these a drag started with a role's key
+ * down never reaches the action that reads it. `'mod'` lets both Cmd and Ctrl be held.
+ */
+export function roleMods(roles: ModifierRoles): ModSpec {
+  const out: ModSpec = {};
+  for (const role of Object.values(roles)) {
+    for (const key of role.keys) {
+      if (key === 'mod') { out.meta = 'optional'; out.ctrl = 'optional'; } else out[key] = 'optional';
+    }
+  }
+  return out;
+}
 
 /** Whether any of `keys` is held. */
 export function keysHeld(keys: RoleKeys, modifiers: ModifierState, isMac: boolean): boolean {

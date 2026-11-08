@@ -15,7 +15,7 @@ import type { DrawnBoundsScene } from 'canvas/drawnBounds';
 import { containerAwareBoundsResolver } from './selectionPose';
 import { targetCorners, targetTransformOf, type TargetTransform } from 'core/geometry/targetFrame';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
-import { alignedStrokeRect, type CommandStroke } from '@weasel-js/paint';
+import type { CommandStroke } from '@weasel-js/paint';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -173,13 +173,13 @@ function outlineCommandsFor(
     };
     const xf = targetTransformOf(worldB);
     if (xf.identity) {
-      const r = alignedStrokeRect(padded, align, width);
-      out.push({ kind: 'path', path: rectPathFor(r.x, r.y, r.width, r.height), stroke });
+      // Upright, the renderer aligns the stroke on the rect itself.
+      out.push({ kind: 'path', path: rectPathFor(padded.x, padded.y, padded.width, padded.height), stroke });
       continue;
     }
     // Turned or skewed, the target lands on screen as a parallelogram, so the
-    // outline is traced through its projected corners. `alignedStrokeRect`'s
-    // shift is folded into the offset so the ribbon lands where it would.
+    // outline is traced through its projected corners, with the alignment's
+    // half-width shift folded into the offset.
     const shift = align === 'outer' ? width / 2 : align === 'inner' ? -width / 2 : 0;
     const q = screenCorners(worldB, xf, view, pad + shift);
     out.push({

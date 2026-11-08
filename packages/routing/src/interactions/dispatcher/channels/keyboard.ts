@@ -4,6 +4,7 @@ import type { DispatchCore } from '../dispatchCore';
 import type { KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
+import { passOn, type TakeKey } from './keyPeers';
 import { inModalOver } from './modal';
 import { followPointer, type HeldKey } from './overKeys';
 
@@ -29,12 +30,25 @@ function keystrokeEvents(e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boo
   };
 }
 
+type Mods = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
+const NO_MODS: Mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+
+/** The `key-held` up event releasing `down`, with the modifiers of `mods`. */
+function releaseOf(down: HeldKey, mods: Mods): InputEvent {
+  return {
+    kind: 'key-held', key: down.key, ...(down.code !== undefined ? { code: down.code } : {}), phase: 'up',
+    altKey: mods.altKey, ctrlKey: mods.ctrlKey, metaKey: mods.metaKey, shiftKey: mods.shiftKey,
+  };
+}
+
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
 
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
   onKeyUp: (e: KeyboardEvent) => void;
+  /** A keystroke the dispatcher holding the keys on this surface declined: handle it as though this one held them. */
+  take: TakeKey;
   /** End every held key, as a window that lost focus must: it never delivers the keyup. */
   releaseAll: () => void;
   /** The pointer came over the canvas: press the keys already held for its `over` bindings. */
@@ -53,17 +67,28 @@ export function keyboardInput(core: DispatchCore): {
   const keymaps = keymapKeys(core.keymaps);
   const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
+  // Keystrokes already offered here by a peer on the surface, which this channel's own listener leaves.
+  const taken = new WeakSet<Event>();
 
   const onKeyDown = (e: KeyboardEvent) => {
     // Before the filters: a key another surface took is still down.
     downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e) });
     if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
-    if (inModalOver(e.target, core.canvas)) return;
+    if (inModalOver(e.target, core.canvas) || taken.has(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
     const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };
     if (!reach.held && !reach.over) return;
+    consider(e, reach);
+    if (reach.held && core.canvas) passOn(core.canvas, take, e);
+  };
 
+  const take: TakeKey = (e) => {
+    taken.add(e);
+    consider(e, { held: true, over: core.pointerOver() });
+  };
+
+  const consider = (e: KeyboardEvent, reach: KeyReach): void => {
     // Autorepeat for a key that's already engaged a key-held binding is
     // suppressed entirely — no dispatch (no trace flood) and the
     // browser default is blocked. Holding Space-for-hand otherwise
@@ -116,18 +141,8 @@ export function keyboardInput(core: DispatchCore): {
     keymaps.up(e, physical);
     const down = heldKeys.get(physical);
     if (down === undefined) return;
-    const ev: InputEvent = {
-      kind: 'key-held',
-      key: down.key,
-      ...(down.code !== undefined ? { code: down.code } : {}),
-      phase: 'up',
-      altKey: e.altKey,
-      ctrlKey: e.ctrlKey,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
-    };
     heldKeys.delete(physical);
-    dispatch(ev, down.on);
+    dispatch(releaseOf(down, e), down.on);
   };
 
   const releaseAll = (): void => {
@@ -135,20 +150,8 @@ export function keyboardInput(core: DispatchCore): {
     keymaps.clear();
     const releasing = [...heldKeys.values()];
     heldKeys.clear();
-    for (const { key, code, on } of releasing) {
-      const ev: InputEvent = {
-        kind: 'key-held',
-        key,
-        ...(code !== undefined ? { code } : {}),
-        phase: 'up',
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        shiftKey: false,
-      };
-      dispatch(ev, on);
-    }
+    for (const down of releasing) dispatch(releaseOf(down, NO_MODS), down.on);
   };
 
-  return { onKeyDown, onKeyUp, releaseAll, ...followPointer(core, downKeys, heldKeys) };
+  return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
 }

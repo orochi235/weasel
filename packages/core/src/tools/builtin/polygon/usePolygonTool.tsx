@@ -7,6 +7,7 @@ import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insert
 import type { Action, WorldPoint } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 /** A point in world coordinates. */
 export type PolygonPoint = WorldPoint;
@@ -101,7 +102,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           // polygon vertex sits at the AABB corner. Alt held flips to
           // center mode (insertAction reads live modifier state).
           {
-            spec: { kind: 'drag' },
+            spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
             actionId: 'insert',
             // Thunked params re-evaluated at commit time (and on every
             // overlay() call for live preview) so mid-gesture

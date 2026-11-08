@@ -56,7 +56,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
   const [active, setActive] = useState<string | null>(null);
   const seq = useRef(0);
   const openedNow = useLatest(opened);
-  const focus = useMenuBarFocus(bar);
+  const focus = useMenuBarFocus(bar, opened !== null);
   const idBase = useId();
   const titleId = (key: string) => `${idBase}-${key}`;
   const { anchor, target } = useMenuPortal();

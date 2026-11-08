@@ -109,6 +109,26 @@ describe('a clone snapping through the snap session', () => {
     near(r.copyPose(), { x: 33, y: 3 });
   });
 
+  it('lines the copy up with its own source, which stays where it was', () => {
+    // Snaps a box's left edge to the left edge of any node the session offers.
+    const edges: SnapSource = {
+      id: 'edges', tier: 'target', reachPx: 8, roles: ['origin'],
+      *collect(q) {
+        const excluded = new Set(q.exclude);
+        for (const node of q.scene!.renderOrderNodes()) {
+          if (excluded.has(node.id)) continue;
+          const x = (node.pose as Point).x;
+          for (const p of q.probes) yield { probe: p.id, locus: { at: { x, y: p.at.y }, dirs: [{ x: 0, y: 1 }] } };
+        }
+      },
+    };
+    const r = rig([edges]);
+    const h = r.press({ x: 5, y: 5 });
+    h.onMove!(r.at({ x: 8, y: 45 }));
+    h.onEnd!(r.at({ x: 8, y: 45 }), 'commit');
+    near(r.copyPose(), { x: 3, y: 43 });
+  });
+
   it('clears the marks when Escape cancels, and makes no copy', () => {
     const r = rig([grid10]);
     const h = r.press({ x: 5, y: 5 });

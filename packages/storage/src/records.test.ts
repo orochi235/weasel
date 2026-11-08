@@ -332,6 +332,17 @@ describe('writing', () => {
     expect(backing.get('lk:t:layout')).toEqual({ a: 1 });
   });
 
+  it('sends nothing written while a close is on its way', async () => {
+    const backing = new Map<string, unknown>();
+    const cache = await openRecords({ storage: createMemoryAdapter(backing), prefix: PREFIX });
+    cache.set('layout', { a: 1 });
+    const closing = cache.close();
+    cache.set('layout', { a: 2 });
+    expect(await closing).toBe(true);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(backing.get('lk:t:layout')).toEqual({ a: 1 });
+  });
+
   it('seeds records without writing them', async () => {
     const backing = new Map<string, unknown>();
     const cache = createRecordCache({ storage: createMemoryAdapter(backing), prefix: PREFIX });

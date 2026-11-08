@@ -1,4 +1,5 @@
-import { roleReader, type ModifierRoles, type ModifierState } from '@weasel-js/routing';
+import { roleMods, roleReader, type ModifierRoles, type ModifierState } from '@weasel-js/routing';
+import type { ModSpec } from '@weasel-js/gestures';
 import type { SnapMods } from 'interactions/actions/snapDep';
 
 /** The modifier roles a snapping action declares. */
@@ -6,6 +7,9 @@ export const SNAP_ROLES = {
   'snap.suspend': { label: 'Suspend snapping', keys: ['ctrl'] },
   'snap.constrain': { label: 'Constrain', keys: ['shift'] },
 } as const satisfies ModifierRoles;
+
+/** The {@link SNAP_ROLES} keys a snapping action's drag binding lets be held from the press. */
+export const SNAP_ROLE_MODS: ModSpec = roleMods(SNAP_ROLES);
 
 /** The angle step `snap.constrain` (Shift) holds a direction to: a line, a
  *  measurement, a rotate, a symmetry axis. 15 degrees. */

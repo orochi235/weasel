@@ -7,8 +7,9 @@ export type SelectionExtendKey = 'shift' | 'meta' | 'ctrl';
 /** The modifiers held during a press. */
 export type SelectModifiers = Readonly<Record<SelectionExtendKey, boolean>>;
 
-/** What a press does to the selection. */
-export type SelectIntent = 'replace' | 'toggle' | 'range';
+/** What a press does to the selection. `single` selects the pressed id alone, as a press on an id
+ *  `forceSingle` holds does under any intent. */
+export type SelectIntent = 'replace' | 'toggle' | 'range' | 'single';
 
 /** Which keys toggle and which range, so a surface states its convention: a list usually
  *  toggles on Cmd/Ctrl and ranges on shift, a canvas toggles on shift. */
@@ -24,13 +25,13 @@ export interface Selection<K> {
   readonly anchor: K | null;
 }
 
-/** What a press is resolved against besides the selection: the order a range walks, and which ids may be multi-selected. */
+/** What a press is resolved against besides the selection: the order a range walks, and which ids are selected only alone. */
 export interface SelectContext<K> {
   /** The sequence a range walks. A range without one replaces. */
   readonly order?: readonly K[];
-  /** Whether an id may join a multi-selection. Ineligible ids are skipped by a range, dropped
-   *  when the selection grows, and selected alone when pressed. Default: every id. */
-  readonly eligible?: (id: K) => boolean;
+  /** Whether an id is selected only alone, a locked layer for one. A press on it is a `single` press
+   *  whatever its modifiers; a range walking past it skips it, and a toggle drops it. Default: none. */
+  readonly forceSingle?: (id: K) => boolean;
 }
 
 /** The intent a press carries under `policy`. A range key beats a toggle key. */
@@ -41,28 +42,28 @@ export function intentOf(modifiers: SelectModifiers, policy: SelectPolicy): Sele
   return toggle.some((key) => modifiers[key]) ? 'toggle' : 'replace';
 }
 
-/** The eligible ids from `from` to `to` in `order`, ends included, in order. Empty when either
- *  end is not in `order`. */
-export function rangeOf<K>(order: readonly K[], from: K, to: K, eligible: (id: K) => boolean = always): K[] {
+/** The ids from `from` to `to` in `order`, ends included, in order, less those `forceSingle` holds.
+ *  Empty when either end is not in `order`. */
+export function rangeOf<K>(order: readonly K[], from: K, to: K, forceSingle: (id: K) => boolean = never): K[] {
   const a = order.indexOf(from);
   const b = order.indexOf(to);
   if (a < 0 || b < 0) return [];
-  return order.slice(Math.min(a, b), Math.max(a, b) + 1).filter(eligible);
+  return order.slice(Math.min(a, b), Math.max(a, b) + 1).filter((id) => !forceSingle(id));
 }
 
 /** The selection after pressing `id` with `intent`. Returns `state` itself when nothing changes
  *  hands, so a caller can compare by reference. */
 export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, context: SelectContext<K> = {}): Selection<K> {
-  const eligible = context.eligible ?? always;
-  if (intent === 'toggle' && eligible(id)) {
-    const kept = state.ids.filter(eligible);
+  const forceSingle = context.forceSingle ?? never;
+  if (forceSingle(id)) intent = 'single';
+  if (intent === 'toggle') {
+    const kept = state.ids.filter((x) => !forceSingle(x));
     return { ids: kept.includes(id) ? kept.filter((x) => x !== id) : [...kept, id], anchor: id };
   }
   if (intent === 'range' && state.anchor !== null && context.order) {
     const { order } = context;
     if (order.includes(state.anchor) && order.includes(id)) {
-      const ids = rangeOf(order, state.anchor, id, eligible);
-      return ids.length > 0 ? settle(state, { ids, anchor: state.anchor }) : state;
+      return settle(state, { ids: rangeOf(order, state.anchor, id, forceSingle), anchor: state.anchor });
     }
   }
   return settle(state, { ids: [id], anchor: id });
@@ -75,6 +76,6 @@ function settle<K>(state: Selection<K>, next: Selection<K>): Selection<K> {
   return same ? state : next;
 }
 
-function always(): boolean {
-  return true;
+function never(): boolean {
+  return false;
 }

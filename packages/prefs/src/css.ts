@@ -41,7 +41,7 @@ const CSS_UNITS: Readonly<Record<string, string>> = {
 };
 
 const IDENT = /^-?[A-Za-z_][\w-]*$/;
-const quoted = (text: string): string => `'${text.replace(/[\\']/g, '\\$&')}'`;
+const quoted = (text: string): string => `'${text.replace(/[\\']/g, '\\$&').replace(/\r\n|[\n\r\f]/g, '\\a ')}'`;
 
 /** What a value of a built-in kind is written as, `null` for one with no CSS form. */
 function cssValue(leaf: PrefLeaf, value: unknown): string | null {

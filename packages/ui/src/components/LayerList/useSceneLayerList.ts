@@ -124,10 +124,15 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
     },
     onReorder: ({ ids, parentId, index }) => {
       const parent = parentId ?? topParent(ids);
-      const siblings = parent === null ? scene.roots : scene.childrenOf(asNodeId(parent));
-      // `index` counts from the front among the siblings the drag left behind.
-      const back = siblings.length - ids.length - index;
-      commit([createMoveToIndexOp({ ids, parentId: parent, index: Math.max(0, back) })], label);
+      const moved = new Set(ids);
+      const left = (parent === null ? scene.roots : scene.childrenOf(asNodeId(parent))).filter((id) => !moved.has(id));
+      // `index` counts from the front among the rows the drag left behind, the annotation rows heading the top
+      // level among them; the content rows stand for the siblings that are not annotations.
+      const shown = left.filter((id) => !isAnnotation(id));
+      const at = parentId === null ? Math.max(0, index - annotationRows.length) : index;
+      const back = Math.max(0, shown.length - at);
+      const to = back < shown.length ? left.indexOf(shown[back]!) : shown.length > 0 ? left.indexOf(shown.at(-1)!) + 1 : left.length;
+      commit([createMoveToIndexOp({ ids, parentId: parent, index: to })], label);
     },
     onVisibilityChange: (id, visible) => {
       if (id.startsWith(ANNOTATION_LAYER_ROW)) scene.setLayerVisible(id.slice(ANNOTATION_LAYER_ROW.length) as TLayer, visible);

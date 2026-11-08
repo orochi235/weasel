@@ -32,8 +32,11 @@ export interface SnapResizeBox {
 export interface SnapBegin {
   gesture: SnapGesture;
   press: WorldPoint;
-  /** The subject, whose geometry offers no targets. */
+  /** The subject, whose geometry offers no targets unless `exclude` says otherwise. */
   ids?: readonly string[];
+  /** The nodes that offer no targets, with everything under them. Default `ids`; a clone,
+   *  whose source stays where it was, passes none so its copy can line up with it. */
+  exclude?: readonly string[];
   /** The container a subject not yet in the scene lands in: an insert's
    *  target. Absent for the top of the tree, or a gesture with `ids`. */
   parent?: string;

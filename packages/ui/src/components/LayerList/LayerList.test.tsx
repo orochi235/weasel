@@ -129,6 +129,16 @@ describe('LayerList selection', () => {
     expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
   });
 
+  it('ranges over a card between the two rows it runs between', () => {
+    const onSelect = vi.fn();
+    const renderBody = (item: LayerListItem) => (item.id === 'b' ? <div>body of b</div> : null);
+    const { rerender } = list({ selectedIds: [], onSelect, renderBody });
+    click('Alpha');
+    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelect={onSelect} renderBody={renderBody} />);
+    click('Gamma', { shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+  });
+
   it('ranges over the rows that are showing, not a collapsed branch\'s children', () => {
     const onSelect = vi.fn();
     const { rerender } = list({ items: TREE, collapsedIds: ['g'], selectedIds: [], onSelect });
@@ -142,6 +152,16 @@ describe('LayerList selection', () => {
     const onSelect = vi.fn();
     list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['a'], onSelect });
     click('Background', { metaKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['bg']);
+  });
+
+  it('selects a fixed row alone on Shift-click', () => {
+    const onSelect = vi.fn();
+    const items = [...FLAT, { id: 'bg', label: 'Background', fixed: true }];
+    const { rerender } = list({ items, selectedIds: [], onSelect });
+    click('Alpha');
+    rerender(<LayerList items={items} selectedIds={['a']} onSelect={onSelect} />);
+    click('Background', { shiftKey: true });
     expect(onSelect).toHaveBeenLastCalledWith(['bg']);
   });
 

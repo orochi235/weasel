@@ -34,6 +34,11 @@ describe('TokenField', () => {
     expect((field() as HTMLInputElement).value).toBe('');
   });
 
+  it('swallows a comma typed into an empty field, which would otherwise become a token', () => {
+    renderWithIcons(<Controlled initial={[]} />);
+    expect(fireEvent.keyDown(field(), { key: ',' })).toBe(false);
+  });
+
   it('leaves an input method\'s Enter to it', () => {
     const onChange = vi.fn();
     renderWithIcons(<Controlled initial={[]} onChange={onChange} />);

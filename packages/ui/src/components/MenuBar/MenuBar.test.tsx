@@ -299,6 +299,25 @@ describe('MenuBar conditions', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('gives focus back to what had it when a menu holding it closes for its title turning disabled', () => {
+    const tree = (on: boolean) => (
+      <ActionsProvider>
+        <RegisterActions actions={ACTIONS} />
+        <button type="button">Before</button>
+        <MenuBar schema={GATED} values={{ on }} />
+      </ActionsProvider>
+    );
+    const { rerender } = render(tree(true));
+    act(() => screen.getByRole('button', { name: 'Before' }).focus());
+    const edit = screen.getByRole('menuitem', { name: 'Edit' });
+    act(() => edit.focus());
+    fireEvent.keyDown(edit, { key: 'ArrowDown' });
+    expect(document.activeElement?.closest('[role="menu"]')).not.toBeNull();
+    rerender(tree(false));
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Before' }));
+  });
+
   it('closes an open menu whose title becomes disabled', () => {
     openThenFlip('Edit');
     expect(screen.queryByRole('menu')).toBeNull();

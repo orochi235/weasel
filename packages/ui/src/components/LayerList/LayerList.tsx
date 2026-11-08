@@ -18,40 +18,9 @@ import { PropertyGroup, PropertyList } from '../Properties';
 import s from './LayerList.module.css';
 import type { LayerListItem, LayerListProps, LayerMove } from './layerListProps';
 import { Controls, Handle, Row, rowContextMenu } from './LayerRow';
+import { anyNested, collectCollapsed, showingIds } from './layerTree';
 export type { LayerListItem, LayerListProps, LayerMove };
-
-/** Returns `items` with `move` applied, for a consumer that holds the tree as state. */
-export function moveLayers(items: LayerListItem[], move: LayerMove): LayerListItem[] {
-  if (move.parentId === null) return reorder(items, move);
-  return items.map((item) => {
-    if (item.id === move.parentId) return { ...item, children: reorder(item.children ?? [], move) };
-    return item.children ? { ...item, children: moveLayers(item.children, move) } : item;
-  });
-}
-
-function reorder(siblings: LayerListItem[], { ids, index }: LayerMove): LayerListItem[] {
-  const moving = new Set(ids);
-  const kept = siblings.filter((it) => !moving.has(it.id));
-  const moved = siblings.filter((it) => moving.has(it.id));
-  const at = Math.max(0, Math.min(kept.length, index));
-  return [...kept.slice(0, at), ...moved, ...kept.slice(at)];
-}
-
-function collectCollapsed(
-  items: LayerListItem[],
-  isCollapsed: (item: LayerListItem) => boolean,
-  into = new Set<string>(),
-): Set<string> {
-  for (const item of items) {
-    if (isCollapsed(item)) into.add(item.id);
-    if (item.children) collectCollapsed(item.children, isCollapsed, into);
-  }
-  return into;
-}
-
-function anyNested(items: LayerListItem[]): boolean {
-  return items.some((it) => (it.children?.length ?? 0) > 0);
-}
+export { moveLayers } from './layerTree';
 
 /** What every level of the tree reads from the list. */
 export interface Shared {
@@ -112,17 +81,15 @@ export function LayerList(props: LayerListProps) {
   // The press arrives after the drag session ends, which can be after a render
   // the closure did not see, so it reads the selection from here.
   const live = useLatest(props);
-  // Fixed rows never join a multi-selection: pressed, one is selected alone, and a range or a
-  // toggle passes over them.
-  const unlocked = () => {
-    const fixed = new Set(fixedIds(live.current.items));
-    return (id: string) => !fixed.has(id);
+  const fixed = () => {
+    const ids = new Set(fixedIds(live.current.items));
+    return (id: string) => ids.has(id);
   };
   const press = (item: LayerListItem, mods: PressModifiers) => {
     const { selectedIds = [], onSelect } = live.current;
     if (!onSelect) return;
     const next = select({ ids: selectedIds, anchor: anchor.current }, item.id, intentOf(selectModifiers(mods), PRESS_POLICY), {
-      order: order.current, eligible: unlocked(),
+      order: order.current, forceSingle: fixed(),
     });
     anchor.current = next.anchor;
     onSelect([...next.ids]);
@@ -147,14 +114,16 @@ export function LayerList(props: LayerListProps) {
     }
   };
   walk(items, null, 1);
-  const order = useLatest(visible.map((v) => v.item.id));
+  const order = useLatest(showingIds(items, collapsed));
 
   const byId = new Map(visible.map((v) => [v.item.id, v]));
   const nudgers = useRef(new Map<string | null, (id: string, delta: -1 | 1) => boolean>()).current;
   const selectedIds = props.selectedIds ?? [];
+  // Shift+arrows pass over a fixed row; only a press on one selects it alone.
   const selectRange = (to: string) => {
+    if (fixed()(to)) return;
     const before = { ids: live.current.selectedIds ?? [], anchor: anchor.current };
-    const next = select(before, to, 'range', { order: order.current, eligible: unlocked() });
+    const next = select(before, to, 'range', { order: order.current, forceSingle: fixed() });
     anchor.current = next.anchor;
     if (next !== before) live.current.onSelect?.([...next.ids]);
   };

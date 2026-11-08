@@ -90,6 +90,17 @@ describe('strokeToPath', () => {
     expect(boundsOfPath(inner)).toMatchObject({ x: 0, y: 0, width: 10, height: 10 });
   });
 
+  it('fills a rect with an inner stroke at least as wide as its narrower side, as it does the same polygon', () => {
+    const rect = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 20 };
+    const polygon = new PathBuilder().moveTo(0, 0).lineTo(10, 0).lineTo(10, 20).lineTo(0, 20).close().build();
+    for (const width of [10, 16, 30]) {
+      const inner = strokeToPath(rect, { paint: PAINT, width, align: 'inner' });
+      expect(boundsOfPath(inner)).toMatchObject({ x: 0, y: 0, width: 10, height: 20 });
+      expect(area(inner)).toBeCloseTo(area(strokeToPath(polygon, { paint: PAINT, width, align: 'inner' })), 3);
+      expect(area(inner)).toBeCloseTo(200, 3);
+    }
+  });
+
   it('reads the dashes of a screen-width stroke as screen pixels at the scale it is given', () => {
     const out = strokeToPath(line(0, 0, 100, 0), { paint: PAINT, width: { px: 2 }, dash: [10, 10] }, { scale: 2 });
     expect(pathContainsPoint(out, 2, 0)).toBe(true);

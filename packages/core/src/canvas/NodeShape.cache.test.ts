@@ -18,7 +18,11 @@ import {
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { PathDrawCommand } from '@weasel-js/renderer';
-import { PATH_M, PATH_L, PATH_Z } from '@weasel-js/geom';
+import { PATH_M, PATH_L, PATH_Z, boundsOfPath } from '@weasel-js/geom';
+import { registerBidi } from '@weasel-js/text';
+import { bidi } from '@weasel-js/bidi';
+import { registerFontOutlines, loadFontOutlines, type OutlineFace } from '@weasel-js/font';
+import { _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { solid } from '../util/paint';
 
 interface RectPose { x: number; y: number; width: number; height: number }
@@ -248,5 +252,27 @@ describe('painter caching', () => {
     expect(findShapeSilhouette(node, node.pose)).toMatchObject({ x: 7, y: 7 });
     dispose();
     expect(findNodeShape(node)?.id).toBe('kit:shape');
+  });
+});
+
+describe('kit:text silhouette and the layout engines', () => {
+  const BARS: OutlineFace = {
+    unitsPerEm: 1000, ascender: 0.8, advanceOf: () => 0.6, kernOf: () => 0,
+    glyphD: () => 'M0 -0.5L0.2 -0.5L0.2 0L0 0Z',
+  };
+  afterEach(() => { registerBidi(null); _resetFontOutlinesForTests(); });
+
+  it('rebuilds when a bidi engine is registered after it was measured', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerFontOutlines('bars', {}, new ArrayBuffer(4), { parser: () => BARS });
+    await loadFontOutlines('bars');
+    const node = makeNode(
+      { text: 'אבג', style: { fontFamily: 'bars', fontSize: 20, align: 'start' } },
+      { x: 0, y: 0, width: 400, height: 60 },
+    );
+    const left = (): number => boundsOfPath(findShapeSilhouette(node, node.pose)!).x;
+    const before = left();
+    registerBidi(bidi);
+    expect(left()).toBeGreaterThan(before + 100);
   });
 });

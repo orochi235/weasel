@@ -12,6 +12,8 @@ export interface ContainedModalProps {
   onOpenChange?: (isOpen: boolean) => void;
   isDismissable?: boolean;
   isKeyboardDismissDisabled?: boolean;
+  /** Whether a press on `element` outside the modal may close it. */
+  shouldCloseOnInteractOutside?: (element: Element) => boolean;
   overlayClassName: string;
   modalClassName: string;
   modalProps?: HTMLAttributes<HTMLDivElement>;
@@ -72,7 +74,10 @@ export function ContainedModal(props: ContainedModalProps) {
   const overlay = useRef<HTMLDivElement>(null);
   const modal = useRef<HTMLDivElement>(null);
   const { overlayProps, underlayProps } = useOverlay(
-    { isOpen: state.isOpen, onClose: state.close, isDismissable, isKeyboardDismissDisabled },
+    {
+      isOpen: state.isOpen, onClose: state.close, isDismissable, isKeyboardDismissDisabled,
+      shouldCloseOnInteractOutside: props.shouldCloseOnInteractOutside,
+    },
     modal,
   );
 

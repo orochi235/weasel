@@ -9,6 +9,7 @@ import type { Fill, Stroke } from '@weasel-js/paint';
 import { paintsOf, placedGlyphOutline } from './glyphOutlines';
 import { lineDecorations, type DecorationKind } from './layout/decorationMetrics';
 import { layoutRuns, type PlacedGlyph } from './layout/layoutRuns';
+import { textEngineGeneration } from './layout/engineGeneration';
 import { runFaces } from './layout/paintRuns';
 import {
   outlineLayoutInput, type TextOutlineSource, type TextPaintPath, type TextToPathOptions,
@@ -69,23 +70,26 @@ const MIDDLE_FALLBACK = 0.25;
  * cluster's leading code points stay blank too.
  *
  * Remembered per `data` object: the same `data`, `width` and `scale` hand
- * back the same array until a face or glyph changes, so treat `data` as
+ * back the same array until a face or glyph, or the registered bidi engine or
+ * shaper, changes, so treat `data` as
  * immutable and don't mutate the result. A throw is not remembered.
  */
 export function textClusters(data: TextOutlineSource, opts: TextClustersOptions = {}): TextCluster[] {
   const width = opts.width ?? Infinity;
   const scale = opts.scale ?? 1;
   const generation = glyphGeneration();
+  const engines = textEngineGeneration();
   const hit = remembered.get(data);
-  if (hit && hit.width === width && hit.scale === scale && hit.generation === generation) return hit.clusters;
+  if (hit && hit.width === width && hit.scale === scale && hit.generation === generation
+    && hit.engines === engines) return hit.clusters;
   const clusters = clustersOf(data, width, scale);
-  remembered.set(data, { width, scale, generation, clusters });
+  remembered.set(data, { width, scale, generation, engines, clusters });
   return clusters;
 }
 
 // One slot per data object: a resize drag replaces it rather than piling up a width per frame.
 const remembered = new WeakMap<TextOutlineSource, {
-  width: number; scale: number; generation: number; clusters: TextCluster[];
+  width: number; scale: number; generation: number; engines: number; clusters: TextCluster[];
 }>();
 
 function clustersOf(data: TextOutlineSource, width: number, scale: number): TextCluster[] {

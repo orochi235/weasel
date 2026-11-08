@@ -6,6 +6,7 @@ import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insert
 import type { WorldPoint } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 /** An endpoint of a line, in world coordinates. */
 export type LinePoint = WorldPoint;
@@ -35,7 +36,7 @@ export function useLineTool(options: InsertToolOptions = {}): Tool {
         },
         bindings: [
           {
-            spec: { kind: 'drag' },
+            spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
             actionId: 'insert',
             opts: { id: 'line.drag', params: { kind: 'line' }, ...insertBindingBehaviors(behaviors) },
           },

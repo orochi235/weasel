@@ -24,7 +24,10 @@ export function ActionSettingsPopover({ form, ...button }: ActionSettingsPopover
   const trigger = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const { anchor, provide, ready } = useOverlayPortal();
-  const shown = open && !button.disabled && button.missing === undefined;
+  const available = !button.disabled && button.missing === undefined;
+  // The action going away closes the form for good, so its coming back does not reopen it unasked.
+  if (open && !available) setOpen(false);
+  const shown = open && available;
   return (
     <>
       <span ref={trigger} className={s.trigger}>

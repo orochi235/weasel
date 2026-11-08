@@ -35,7 +35,8 @@ import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /**
  * Produce an SVG document string. The root `viewBox` is `opts.viewBox` if
- * supplied, otherwise a tight bounding box around every leaf.
+ * supplied, otherwise a tight box around everything the tree draws, strokes
+ * and marker heads included.
  */
 export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();

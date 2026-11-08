@@ -10,6 +10,7 @@ import { CurveFill } from './CurveFill';
 import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
+import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
 import { arrowMove } from '@weasel-js/ui-logic';
 import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
@@ -28,6 +29,8 @@ export type {
 };
 
 const SAMPLES_PER_SEGMENT = 16;
+/** Out of every hit radius. */
+const FAR: PlotPoint = { x: Infinity, y: Infinity };
 const ENDPOINT_HALF = handleHalf('--wzl-handle-size-lg');
 const LOCKED_HALF = handleHalf('--wzl-handle-size-sm');
 const ANCHOR_RADIUS = handleHalf('--wzl-handle-dot-size');
@@ -50,11 +53,6 @@ function clampToModelRange(p: ModelPoint, ctx: LayerCtx): ModelPoint {
     x: Math.max(xLo, Math.min(xHi, p.x)),
     y: Math.max(yLo, Math.min(yHi, p.y)),
   };
-}
-
-function isPinnedEndpointAt(index: number, count: number, endpoints: EndpointMode): boolean {
-  if (endpoints === 'free') return false;
-  return index === 0 || index === count - 1;
 }
 
 function projectAnchors(points: readonly ControlPoint[], ctx: LayerCtx): PlotPoint[] {
@@ -146,7 +144,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
         {interactive && plotAnchors.map((a, i) => {
           const pinned = isPinnedEndpointAt(i, points.length, endpoints);
           const locked = points[i]?.locked === true;
-          if ((locked || pinned) && cfg.hideNonInteractive) return null;
+          if (isHiddenAnchor(points, i, endpoints, cfg.hideNonInteractive)) return null;
           const active = activeIndex === i;
           const isEndpoint = curveVisible && (i === 0 || i === points.length - 1);
           const focus = !locked && !(endpoints === 'pinned-both' && pinned)
@@ -208,7 +206,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
   // ── hit test ────────────────────────────────────────────────────────
   function hitTest(state: FunctionLayerState, plot: PlotPoint, ctx: LayerCtx) {
     if (!interactive) return null;
-    const plotAnchors = projectAnchors(state.points, ctx);
+    const plotAnchors = projectAnchors(state.points, ctx).map((p, i) => (isHiddenAnchor(state.points, i, endpoints, cfg.hideNonInteractive) ? FAR : p));
     const a = hitTestAnchor(plotAnchors, plot, ctx.kitSettings?.get('targets.curveAnchorSnapPx') ?? ANCHOR_SNAP_PX);
     if (a) return { kind: 'anchor' as const, payload: { index: a.index } };
     if (addPointMode === 'click-curve' && curveVisible) {

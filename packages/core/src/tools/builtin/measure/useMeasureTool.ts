@@ -7,6 +7,7 @@ import type { Measurements } from 'domains/measure/measurements';
 import { measureCreateAction, measurePickAtAction } from 'domains/measure/measureGestures';
 import { MEASURE_ACTION_IDS } from 'domains/measure/actionIds';
 import { icon } from '../../../icons.gen';
+import { SNAP_ROLE_MODS } from 'domains/snap/roles';
 
 /** Options for `useMeasureTool`. */
 export interface UseMeasureToolOptions {
@@ -51,7 +52,7 @@ export function useMeasureTool(options: UseMeasureToolOptions): Tool {
     bindings: [
       { spec: { kind: 'click' }, actionId: MEASURE_ACTION_IDS.pickAt, opts: { id: 'measure.pick' } },
       {
-        spec: { kind: 'drag', mods: { shift: 'optional' } },
+        spec: { kind: 'drag', mods: SNAP_ROLE_MODS },
         actionId: MEASURE_ACTION_IDS.measure,
         opts: { id: 'measure.drag', params: () => (angleStep.current === undefined ? {} : { angleStep: angleStep.current }) },
       },
