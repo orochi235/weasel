@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { act, render, screen, fireEvent, cleanup } from '@testing-library/react';
+import type { Ref } from 'react';
 import { ItemList } from './ItemList';
+import { useReorderDragList } from '../../useReorderDragList';
 
 afterEach(() => { cleanup(); });
 
@@ -67,8 +69,8 @@ describe('ItemList', () => {
       overlay={<div data-testid="drop" />}
     />);
     const drop = screen.getByTestId('drop');
-    expect(drop.parentElement).toContainElement(screen.getByText('Row'));
-    expect(drop.parentElement!.firstElementChild).toBe(drop);
+    const list = screen.getByText('Row').closest('[role="list"]')!;
+    expect(list.firstElementChild).toContainElement(drop);
   });
 
   it('drops the overlay when there are no rows — there is nothing to drop onto', () => {
@@ -424,5 +426,36 @@ describe('ItemList range anchor', () => {
     act(() => { opt('D').focus(); });
     fireEvent.keyDown(opt('D'), { key: 'ArrowUp', shiftKey: true });
     expect(onSelectRange).toHaveBeenLastCalledWith(['c', 'd']);
+  });
+});
+
+describe('ItemList under useReorderDragList', () => {
+  function Dragged({ onReorder }: { onReorder: (ids: string[], at: number) => void }) {
+    const items = [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }];
+    const drag = useReorderDragList({ items, selectedIds: [], onReorder });
+    return (
+      <ItemList
+        rows={items.map((it, i) => ({ id: it.id, label: it.label, rowProps: drag.rowProps(it.id, i) }))}
+        containerProps={{ ref: drag.containerProps.ref as Ref<HTMLDivElement> }}
+        dropIndex={drag.state.targetIndex}
+        overlay={<div data-testid="overlay" />}
+      />
+    );
+  }
+
+  it('counts only the rows, not the overlay, when placing a drop', () => {
+    const onReorder = vi.fn();
+    render(<Dragged onReorder={onReorder} />);
+    const box = (el: Element, top: number) => Object.defineProperty(el, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ x: 0, y: top, top, left: 0, right: 200, bottom: top + 20, width: 200, height: 20 }) as DOMRect,
+    });
+    box(screen.getByTestId('overlay'), 0);
+    ['A', 'B', 'C'].forEach((l, i) => box(screen.getByText(l).closest('[role]')!, i * 20));
+    const a = screen.getByText('A').closest('[role]') as HTMLElement;
+    fireEvent.pointerDown(a, { pointerId: 1, button: 0, clientX: 100, clientY: 10 });
+    fireEvent.pointerMove(document, { pointerId: 1, clientX: 100, clientY: 45 });
+    fireEvent.pointerUp(document, { pointerId: 1, clientX: 100, clientY: 45 });
+    expect(onReorder).toHaveBeenCalledWith(['a'], 2);
   });
 });
