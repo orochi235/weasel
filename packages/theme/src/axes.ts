@@ -38,7 +38,7 @@ export function fullSelection(axes: AxisDefs, selection: Selection = {}): Select
   const out: Record<string, string> = {};
   for (const [name, def] of Object.entries(axes)) {
     const v = selection[name];
-    out[name] = v !== undefined && v in def.values ? v : def.default;
+    out[name] = v !== undefined && Object.hasOwn(def.values, v) ? v : def.default;
   }
   return out;
 }
@@ -65,9 +65,9 @@ export function enumerateSelections(axes: AxisDefs): Selection[] {
  *  scheme-less value resets it. A value the axis doesn't declare takes its default's, whose tokens it falls
  *  back to, rather than a blanket reset. */
 export function axisScheme(axes: AxisDefs, axis: string, value: string): string | undefined {
-  const def = axes[axis];
+  const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
   if (!def) return undefined;
-  if (!(value in def.values)) return axisScheme(axes, axis, def.default);
+  if (!Object.hasOwn(def.values, value)) return axisScheme(axes, axis, def.default);
   return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
 }
 
@@ -87,7 +87,7 @@ export function pick<T>(v: Varying<T>, selection: Selection): Picked<T> {
   while (isByAxis(cur)) {
     const axis = cur.by;
     const value = selection[axis];
-    if (value === undefined || value === 'by' || !(value in cur)) return { ok: false, axis, value: value ?? '' };
+    if (value === undefined || value === 'by' || !Object.hasOwn(cur, value)) return { ok: false, axis, value: value ?? '' };
     cur = cur[value];
   }
   return { ok: true, value: cur as T };

@@ -3,8 +3,32 @@ import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
 import { holdRule, styleRootOf } from './themeSheet';
+import { warnThemeOnce } from './warnOnce';
 
 export { __resetThemeSheet } from './themeSheet';
+
+/** Whether `value` can stand as a declaration's value: no `;`, `{` or `}` outside a quoted string, and no quote left open. */
+function declarable(value: string): boolean {
+  let quote: string | null = null;
+  for (let i = 0; i < value.length; i++) {
+    const c = value[i];
+    if (c === '\\') i++;
+    else if (quote !== null) {
+      if (c === quote) quote = null;
+    } else if (c === '"' || c === "'") quote = c;
+    else if (c === ';' || c === '{' || c === '}') return false;
+  }
+  return quote === null;
+}
+
+/** The declarations of `tokens`, less any whose value would end its declaration or rule. */
+function declarations(theme: Theme, tokens: Readonly<Record<string, string>>): string[] {
+  return Object.entries(tokens).flatMap(([name, value]) => {
+    if (declarable(value)) return [`${name}: ${value};`];
+    warnThemeOnce(`value\0${theme.name}\0${name}\0${value}`, `applyTheme: theme "${theme.name}" leaves out ${name}, whose value "${value}" would end its rule.`);
+    return [];
+  });
+}
 
 /** What an element holds from its last `applyTheme`, so the next one, or its release, can let go of it. */
 const holds = new WeakMap<HTMLElement, () => void>();
@@ -41,7 +65,7 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
   const scheme = names.map((a) => axisScheme(axes, a, sel[a])).find((s) => s !== undefined);
   const body = [
     ...(scheme ? [`color-scheme: ${scheme};`] : []),
-    ...Object.entries(options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel)).map(([name, value]) => `${name}: ${value};`),
+    ...declarations(theme, options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel)),
   ].join(' ');
   const selector = `${wzlAttr('theme', theme.name)}${names.map((a) => wzlAttr(a, sel[a])).join('')}`;
   // Held before the last one is let go, so re-applying the same rule rewrites nothing.
