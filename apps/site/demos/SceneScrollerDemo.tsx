@@ -268,11 +268,10 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     g.enemies = [...g.enemies, ...extra];
     sound.swarm(extra);
     scene.untracked(() => {
-      entityNodes([], extra)
-        .filter((n) => String(n.id).startsWith('enemy:'))
-        .forEach((n, i) => {
-          scene.add({ ...n, id: `enemy:${base + i}` as typeof n.id });
-        });
+      // Renumber each enemy, eye and all, past the ones already in the scene.
+      for (const n of entityNodes([], extra)) {
+        scene.add({ ...n, id: String(n.id).replace(/^enemy:(\d+)/, (_, k: string) => `enemy:${base + Number(k)}`) as typeof n.id });
+      }
     });
   };
 
