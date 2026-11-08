@@ -341,7 +341,7 @@ export function GesturesDemo() {
     setMode(id);
     dragO.current = rectO.current = radialO.current = thO.current = clickO.current = handleO.current = null;
     setReadout(HINTS[id]);
-    requestAnimationFrame(draw);
+    draw();
   };
 
   useEffect(() => { draw(); }, [draw]);
