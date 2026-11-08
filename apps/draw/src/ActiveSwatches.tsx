@@ -11,12 +11,11 @@
  */
 import type { ReactElement } from 'react';
 import {
-  DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useOngoingAction,
+  DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, useOngoingAction,
   type Paint,
 } from '@weasel-js/core';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
-import { solidColorOf } from '@weasel-js/ui/paint-value';
-import { useColorContext } from './tools/colorContext';
+import { colorKeepingAlpha, useColorContext } from './tools/colorContext';
 
 /** The paint a new shape takes, as a node holds one: `null` is none. */
 export type ActivePaint = Paint | null;
@@ -28,12 +27,7 @@ export function ActiveSwatches(): ReactElement {
   const colors = useColorContext();
   const edits = { fill: useOngoingAction('setFill'), stroke: useOngoingAction('setStroke') };
 
-  // The native picker has no alpha, so a pick keeps the paint's own.
-  const withAlpha = (slot: 'fill' | 'stroke', color: string): string => {
-    const cur = slot === 'fill' ? colors.fill : colors.stroke;
-    const prev = solidColorOf(cur) ?? (slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR);
-    return mergeAlphaFromPrev(color, prev);
-  };
+  const withAlpha = (slot: 'fill' | 'stroke', color: string): string => colorKeepingAlpha(slot, colors[slot], color);
   const pick = (slot: 'fill' | 'stroke', color: string): string => {
     const merged = withAlpha(slot, color);
     if (slot === 'fill') colors.setFill({ kind: 'solid', color: merged });
