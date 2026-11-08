@@ -141,8 +141,10 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
-    if (!held) events.to(opts.tracks, playhead);
+    const sought = !held && events.to(opts.tracks, playhead);
     booker?.tick(virtualNow, rate);
+    // A handler that seeks has started playback over from where it landed.
+    if (sought) return false;
 
     if ((finished || rewound) && !done) { done = true; opts.onDone?.(); playbackChanged(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
