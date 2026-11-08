@@ -133,3 +133,29 @@ describe('useSceneTextEdit — a turned, skewed text node', () => {
     expect(doubleClickAt([110, 60])).toBeNull();
   });
 });
+
+describe('useSceneTextEdit — a { px } size', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  // `kit:text` lays a `{ px }` size out as that many world units, whatever the
+  // view scale, so the overlay has to as well.
+  it('sizes the overlay as the node is drawn, at the view scale', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const data = { text: 'ab', style: { fontSize: { px: 16 } }, runs: [{ text: 'a' }, { text: 'b', fontSize: { px: 12 } }] };
+    const hook = renderHook(() => {
+      const scene = useScene<DefaultTextData, 'default', RectPose>({
+        systemLayers: [{ id: 'default' }],
+        initial: [{ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 200, height: 40 }, data }],
+      });
+      return useSceneTextEdit(scene, container, { view: VIEW });
+    });
+    act(() => hook.result.current.startEdit('a'));
+    const el = overlayOf(container);
+    expect(el.style.transform).toBe('scale(2)');
+    expect(el.style.fontSize).toBe('16px');
+    expect(el.style.getPropertyValue('--weasel-zoom')).toBe('1');
+  });
+});

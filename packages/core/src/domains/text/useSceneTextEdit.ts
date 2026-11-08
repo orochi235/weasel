@@ -313,9 +313,9 @@ function screenPoseOf<TData extends DefaultTextData>(
   const box = screenBoxOf({ ...painted, ...inset }, view, origin);
   return {
     ...box,
-    // Against `zoom`, the same factor the overlay scales back up by, so a
-    // `{ px }` size arrives on screen at the pixel count it names.
-    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? defaultFontSize, box.zoom),
+    // `kit:text` lays a `{ px }` size out at scale 1, as that many world units.
+    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? defaultFontSize, 1),
+    pxScale: 1,
     verticalAlign: read.verticalAlign(d),
     ...(read.overflow(d) === 'clip' ? { clip: clipToBox(inset, painted) } : {}),
   };

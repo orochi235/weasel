@@ -31,7 +31,7 @@ export function applyOverlayTransform(
   el: HTMLElement, pose: TextEditScreenPose, left: number, top: number, anchor: number,
 ): void {
   el.style.transform = overlayTransform(pose, left, top, anchor);
-  el.style.setProperty(ZOOM_PROPERTY, String(pose.zoom ?? 1));
+  el.style.setProperty(ZOOM_PROPERTY, String(pose.pxScale ?? pose.zoom ?? 1));
 }
 
 /**
