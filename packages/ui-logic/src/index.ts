@@ -37,9 +37,9 @@ export type {
 } from './button';
 export { SWEEP_CAP, stepsOf, range, values, frames, until } from './sweep';
 export type { Sweep, RangeSpec, FrameSpan, FrameOptions } from './sweep';
-export { rowOffset, tileGrid, gridLayout, rovingGridTarget } from './grid';
+export { rowOffset, tileGrid, tileRows, tileKey, gridLayout, rovingGridTarget } from './grid';
 export type { LastRow, Tiling, TileGrid, GridLayout } from './grid';
-export { selection, selectionOfEach, selectionKeys } from './selection';
+export { selection, selectionOfEach, selectionKeys, sweepFrom } from './selection';
 export type {
   SelectState, SingleSelection, MultipleSelection, SelectionSpec, OwnSelection, SelectionEdit, SelectionModel,
 } from './selection';

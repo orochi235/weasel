@@ -89,6 +89,26 @@ export interface GridLayout {
   widths?: readonly number[];
 }
 
+/** The rows of `count` items `columns` across, as item indices in reading order. */
+export function tileRows(count: number, columns: number): number[][] {
+  return Array.from({ length: Math.ceil(count / columns) }, (_, r) =>
+    Array.from({ length: Math.min(columns, count - r * columns) }, (_, j) => r * columns + j));
+}
+
+/** Where `key` takes focus from `current` among `count` items tiled by `spec`, by {@link rovingGridTarget}: null
+ *  if it does not move it. Every item is enabled unless `enabled` says otherwise. */
+export function tileKey(
+  current: number,
+  key: string,
+  count: number,
+  spec: Tiling,
+  opts: { dir?: 'ltr' | 'rtl'; enabled?: readonly boolean[] } = {},
+): number | null {
+  const rows = tileRows(count, spec.columns);
+  const enabled = opts.enabled ?? Array<boolean>(count).fill(true);
+  return rovingGridTarget(current, key, enabled, rows, { dir: opts.dir, ...gridLayout(rows, spec.columns, spec.lastRow) });
+}
+
 /** The layout of `rows` in a grid `columns` across whose short rows sit as `lastRow` says. */
 export function gridLayout(rows: readonly (readonly number[])[], columns: number, lastRow: LastRow = 'start'): GridLayout {
   const short = (row: readonly number[]): boolean => row.length < columns;

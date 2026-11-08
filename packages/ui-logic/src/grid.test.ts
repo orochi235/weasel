@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gridLayout, rovingGridTarget, tileGrid, type Tiling } from './grid';
+import { gridLayout, rovingGridTarget, tileGrid, tileKey, tileRows, type Tiling } from './grid';
 
 describe('tileGrid', () => {
   it('puts the spare columns of a short last row before it, in half-column tracks', () => {
@@ -115,5 +115,45 @@ describe('rovingGridTarget — right-to-left', () => {
     expect(rovingGridTarget(2, 'ArrowLeft', all, rows, { dir: 'rtl' })).toBe(3);
     expect(rovingGridTarget(3, 'ArrowRight', all, rows, { dir: 'rtl' })).toBe(2);
     expect(rovingGridTarget(1, 'ArrowDown', all, rows, { dir: 'rtl' })).toBe(4);
+  });
+});
+
+describe('tileRows', () => {
+  it('splits a run into rows in reading order, the last one short', () => {
+    expect(tileRows(5, 2)).toEqual([[0, 1], [2, 3], [4]]);
+  });
+});
+
+describe('tileKey', () => {
+  it('moves up and down by a row when the last row sits at the start', () => {
+    expect(tileKey(2, 'ArrowDown', 13, { columns: 10, lastRow: 'start' })).toBe(12);
+    expect(tileKey(12, 'ArrowUp', 13, { columns: 10, lastRow: 'start' })).toBe(2);
+  });
+
+  it('moves to the swatch beneath in an end-aligned last row, and back', () => {
+    expect(tileKey(8, 'ArrowDown', 13, { columns: 10, lastRow: 'end' })).toBe(11);
+    expect(tileKey(11, 'ArrowUp', 13, { columns: 10, lastRow: 'end' })).toBe(8);
+  });
+
+  it('pairs a column with a half-shifted swatch both ways in a centered last row', () => {
+    // Three swatches in ten columns start 3.5 columns in, covering 3.5–4.5, 4.5–5.5 and 5.5–6.5.
+    for (const [above, below] of [[4, 11], [5, 12]] as const) {
+      expect(tileKey(above, 'ArrowDown', 13, { columns: 10, lastRow: 'center' })).toBe(below);
+      expect(tileKey(below, 'ArrowUp', 13, { columns: 10, lastRow: 'center' })).toBe(above);
+    }
+    expect(tileKey(3, 'ArrowDown', 13, { columns: 10, lastRow: 'center' })).toBe(10);
+    expect(tileKey(6, 'ArrowDown', 13, { columns: 10, lastRow: 'center' })).toBe(12);
+  });
+
+  it('goes to the nearest swatch of a short last row with none beneath, as every roving grid does', () => {
+    expect(tileKey(5, 'ArrowDown', 13, { columns: 10, lastRow: 'start' })).toBe(12);
+    expect(tileKey(2, 'ArrowDown', 13, { columns: 10, lastRow: 'end' })).toBe(10);
+    expect(tileKey(2, 'ArrowDown', 13, { columns: 10, lastRow: 'center' })).toBe(10);
+    expect(tileKey(7, 'ArrowDown', 13, { columns: 10, lastRow: 'center' })).toBe(12);
+  });
+
+  it('does not move from the top row up or the bottom row down', () => {
+    expect(tileKey(3, 'ArrowUp', 13, { columns: 10, lastRow: 'start' })).toBeNull();
+    expect(tileKey(11, 'ArrowDown', 13, { columns: 10, lastRow: 'start' })).toBeNull();
   });
 });

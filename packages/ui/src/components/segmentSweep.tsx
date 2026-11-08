@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
-import type { SelectionModel, SelectState } from '@weasel-js/ui-logic';
+import { sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-logic';
 
 /** The attribute naming a segment's index, which is what a sweep reaches. */
 export const SWEEP_INDEX_ATTR = 'data-sweep-index';
@@ -75,13 +75,12 @@ function Dispatch<V>(props: SegmentSweeperProps<V>): null {
       const p = latest.current;
       const state = p.model.stateOf(key);
       if (typeof p.sweep === 'function' && !p.sweep({ value: p.values[key]!, state, modifiers: ctx.modifiers })) return null;
-      const latch = state !== 'on';
-      const edit = p.model.edit();
+      const run = sweepFrom(p.model, key);
       return {
-        enter: ({ key: index }) => edit.set(index, latch),
+        enter: ({ key: index }) => run.reach(index),
         end: (how) => {
           latest.current.swept();
-          if (how === 'cancel') edit.revert();
+          if (how === 'cancel') run.revert();
         },
       };
     },

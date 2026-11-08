@@ -147,6 +147,15 @@ export function selectionOfEach(items: readonly OwnSelection[]): SelectionModel 
   };
 }
 
+/** A sweep over `model` from a press on item `from`: each item it `reach`es is set to the opposite of whether the
+ *  pressed one was on, so a drag from an off or mixed item turns on everything it crosses and one from an on item
+ *  turns it off. `revert` puts back what the sweep started from. */
+export function sweepFrom(model: SelectionModel, from: number): { reach(index: number): void; revert(): void } {
+  const to = model.stateOf(from) !== 'on';
+  const edit = model.edit();
+  return { reach: (i) => edit.set(i, to), revert: () => edit.revert() };
+}
+
 /** What the keyboard does with `model`'s items. Where a single selection follows focus, the tab stop sits on the
  *  chosen item and an arrow landing on one chooses it; otherwise the arrows only move focus, and Space or Enter
  *  presses. `enabled(i)` is false for an item nothing may choose. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selection, selectionKeys, selectionOfEach, type OwnSelection } from './selection';
+import { selection, selectionKeys, selectionOfEach, sweepFrom, type OwnSelection } from './selection';
 
 const VALUES = ['a', 'b', 'c'] as const;
 
@@ -72,5 +72,20 @@ describe('selectionOfEach', () => {
     edit.set(2, false);
     edit.revert();
     expect(calls).toEqual(['a:true', 'c:true', 'c:false', 'a:false']);
+  });
+});
+
+describe('sweepFrom', () => {
+  it('turns on what it reaches from an off or mixed press, and off from an on one', () => {
+    const seen: string[][] = [];
+    const spec = (value: string[]) => ({ mode: 'multiple' as const, value, mixedValues: ['b'], onChange: (v: string[]) => seen.push(v) });
+    const fromMixed = sweepFrom(selection<string>(spec(['c']), VALUES), 1);
+    fromMixed.reach(1);
+    fromMixed.reach(0);
+    const fromOn = sweepFrom(selection<string>(spec(['a', 'c']), VALUES), 0);
+    fromOn.reach(0);
+    fromOn.reach(2);
+    fromOn.revert();
+    expect(seen).toEqual([['c', 'b'], ['c', 'b', 'a'], ['c'], [], ['a', 'c']]);
   });
 });

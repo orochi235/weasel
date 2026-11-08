@@ -1,6 +1,6 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
-import { rovingGridTarget } from '@weasel-js/ui-logic';
-import { inlineDirection, rovingTarget } from '../../useRovingTabIndex';
+import { tileKey, type LastRow } from '@weasel-js/ui-logic';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
@@ -36,21 +36,11 @@ export function useSwatchApply(onChange: SwatchChange, onAltChange?: SwatchChang
 
 const GRID_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
 
-/** Where Up or Down moves focus from swatch `i` of `count`, `columns` to a row, the last row shifted
- *  `lead` half-columns along: to the swatch over or under this one, by `rovingGridTarget`'s rule. -1 for any other key. */
-export function nextSwatch(key: string, i: number, count: number, columns: number, lead = 0): number {
-  if (key !== 'ArrowUp' && key !== 'ArrowDown') return -1;
-  const rows = Array.from({ length: Math.ceil(count / columns) }, (_, r) =>
-    Array.from({ length: Math.min(columns, count - r * columns) }, (_, j) => r * columns + j));
-  const offsets = rows.map((row, r) => (r === rows.length - 1 && row.length < columns ? lead / 2 : 0));
-  return rovingGridTarget(i, key, Array<boolean>(count).fill(true), rows, { offsets }) ?? i;
-}
-
 /** The swatches of one palette, under `root`, in order. */
 export const swatchesIn = (root: Element | null): HTMLElement[] => [...(root?.querySelectorAll<HTMLElement>('[data-swatch]') ?? [])];
 
 /** The key handler of swatch `i`: arrows rove focus among `swatches()`, Shift+Enter applies to the alternate target. */
-export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], columns: number, apply: SwatchApply, swatches: () => HTMLElement[], lead = 0) {
+export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], columns: number, apply: SwatchApply, swatches: () => HTMLElement[], lastRow: LastRow = 'start') {
   return (e: KeyboardEvent<HTMLButtonElement>): void => {
     if (e.key === 'Enter') {
       if (e.shiftKey && apply.onAltChange) {
@@ -61,9 +51,7 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
     }
     if (!GRID_KEYS.has(e.key)) return;
     e.preventDefault();
-    const next = e.key === 'ArrowUp' || e.key === 'ArrowDown'
-      ? nextSwatch(e.key, i, options.length, columns, lead)
-      : rovingTarget(i, e.key, options.map(() => true), 'horizontal', inlineDirection(e.currentTarget));
+    const next = tileKey(i, e.key, options.length, { columns, lastRow }, { dir: inlineDirection(e.currentTarget) });
     if (next !== null && next !== i) swatches()[next]?.focus();
   };
 }

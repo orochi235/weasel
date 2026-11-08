@@ -80,8 +80,8 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const { options, value, className } = props;
   const apply = useSwatchApply(props.onChange, props.onAltChange);
   const columns = props.columns ?? 6;
-  const tiles = tiling(options.length, { columns, lastRow: props.align ?? 'start' });
-  const lead = tiles.lead;
+  const lastRow = props.align ?? 'start';
+  const tiles = tiling(options.length, { columns, lastRow });
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
@@ -103,7 +103,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
           tabStop={i === tabStop}
           current={i === current}
           apply={apply}
-          onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lead)}
+          onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lastRow)}
           data={tiles.item(i)}
         />
       ))}
