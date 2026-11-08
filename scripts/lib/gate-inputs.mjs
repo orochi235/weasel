@@ -1,7 +1,7 @@
 /**
  * What the gate's slow checks read, so a branch run can skip one whose inputs the branch leaves alone.
  * A check not listed here always runs, and so does every check on `main`, under `--full`, and on a
- * branch that changes one of `vitest.config.ts`'s triggers. Each list is the files the check's script
+ * branch that changes one of the fleet's triggers (`fleet-triggers.mjs`). Each list is the files the check's script
  * and everything it imports read, widened to the directory where that is the honest answer.
  */
 import { matchesGlob } from 'node:path';
