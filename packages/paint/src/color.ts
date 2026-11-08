@@ -62,28 +62,16 @@ function parseColorUncached(input: string): [number, number, number, number] {
   throw new Error(`parseColor: unrecognized color "${input}"`);
 }
 
-const RESOLVE_COLOR_CACHE_CAP = 1024;
-const resolveColorCache = new Map<string, readonly [number, number, number, number]>();
-
-/** Cached `parseColor`. Use this from renderer hot paths (per-frame draw
- *  callbacks, gradient ramp builds). The cache is capped at ~1024 entries and
- *  cleared wholesale on overflow. */
+/** `parseColor`, typed read-only: the form for renderer hot paths (per-frame
+ *  draw callbacks, gradient ramp builds), which share its cache. */
 export function resolveColor(input: string): readonly [number, number, number, number] {
-  const hit = resolveColorCache.get(input);
-  if (hit) return hit;
-  if (resolveColorCache.size >= RESOLVE_COLOR_CACHE_CAP) {
-    resolveColorCache.clear();
-  }
-  const parsed = parseColor(input);
-  const frozen = parsed as readonly [number, number, number, number];
-  resolveColorCache.set(input, frozen);
-  return frozen;
+  return parseColor(input);
 }
 
-/** @internal Test-only: drops the resolveColor memoization cache so tests
- *  can assert behavior in isolation. Never call from production code. */
+/** @internal Test-only: drops the color cache so tests can assert behavior in
+ *  isolation. Never call from production code. */
 export function __resetResolveColorCache(): void {
-  resolveColorCache.clear();
+  CACHE.clear();
 }
 
 /** Same as `parseColor` but returns integer 0..255 components. */
