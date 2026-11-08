@@ -424,3 +424,31 @@ describe('values read through the property table', () => {
     expect(g.children[0].fill).toMatchObject({ color: '#ff0000' });
   });
 });
+
+describe('<rect> corner radii', () => {
+  const corner = (attrs: string): { kind: string; first?: number[] } => {
+    const { nodes } = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg"><rect width="100" height="20" ${attrs}/></svg>`);
+    const n = nodes[0] as SvgPathNode;
+    if (n.path.kind !== 'polygon') return { kind: n.path.kind };
+    // The first edge's ends, then the first corner's end: (x + rx, y) … (x2, y + ry).
+    const c = Array.from(n.path.coords);
+    return { kind: 'polygon', first: [c[0], c[1], c[8], c[9]] };
+  };
+
+  it('gives an absent ry the value of rx, each clamped to half its own side', () => {
+    expect(corner('rx="30"')).toEqual({ kind: 'polygon', first: [30, 0, 100, 10] });
+  });
+
+  it('keeps rx and ry apart when both are given', () => {
+    expect(corner('rx="8" ry="4"')).toEqual({ kind: 'polygon', first: [8, 0, 100, 4] });
+  });
+
+  it('draws square corners when either radius is zero', () => {
+    expect(corner('rx="0" ry="5"')).toEqual({ kind: 'rect' });
+    expect(corner('rx="5" ry="0"')).toEqual({ kind: 'rect' });
+  });
+
+  it('reads a negative radius as auto', () => {
+    expect(corner('rx="-3" ry="6"')).toEqual({ kind: 'polygon', first: [6, 0, 100, 6] });
+  });
+});

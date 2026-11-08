@@ -33,7 +33,8 @@ export function lowerLeaf(
   const y = (name: string): number => readLength(el, name, 'y', 0, onWarn);
   const r = (name: string): number => readLength(el, name, 'other', 0, onWarn);
   if (tag === 'rect') {
-    return rectElementToPath(x('x'), y('y'), x('width'), y('height'), x('rx'), y('ry'), m);
+    const radius = (name: string, axis: 'x' | 'y'): number => readLength(el, name, axis, NaN, onWarn);
+    return rectElementToPath(x('x'), y('y'), x('width'), y('height'), radius('rx', 'x'), radius('ry', 'y'), m);
   }
   if (tag === 'circle') return circleToPath(x('cx'), y('cy'), r('r'), m);
   if (tag === 'ellipse') return ellipseToPath(x('cx'), y('cy'), x('rx'), y('ry'), m);

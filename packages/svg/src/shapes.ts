@@ -21,36 +21,37 @@ import { IDENTITY_MATRIX } from './types';
 const KAPPA = (4 * (Math.sqrt(2) - 1)) / 3;
 
 /**
- * `<rect x y width height rx ry>` → Path. Returns a `RectPath` when there
- * are no corner radii (and matrix is benign); otherwise lowers to a
- * polygon with cubic-curve corners.
+ * `<rect x y width height rx ry>` → Path. A radius that is missing, negative
+ * or not a number is `auto` and takes the other's value, as SVG 2 has it; each
+ * is then clamped to half its own side. No radius left gives a `RectPath`.
  */
 export function rectElementToPath(
   x: number, y: number, width: number, height: number,
   rx: number, ry: number,
   m: Matrix = IDENTITY_MATRIX,
 ): Path {
-  if (rx <= 0 && ry <= 0) {
+  const given = (r: number): number | null => (Number.isFinite(r) && r >= 0 ? r : null);
+  const rxGiven = given(rx);
+  const ryGiven = given(ry);
+  const ax = Math.min(rxGiven ?? ryGiven ?? 0, width / 2);
+  const ay = Math.min(ryGiven ?? rxGiven ?? 0, height / 2);
+  if (!(ax > 0 && ay > 0)) {
     return transformPath({ kind: 'rect', x, y, width, height }, m);
   }
-  const r = Math.min(Math.max(rx, ry), Math.min(width, height) / 2);
-  const r2 = Math.min(rx > 0 ? rx : r, ry > 0 ? ry : r, Math.min(width, height) / 2);
-  // For simplicity treat rx === ry === r2. Independent rx/ry can be
-  // added later; weasel doesn't have a rounded-rect primitive anyway.
-  const rad = r2;
-  const k = KAPPA * rad;
+  const kx = KAPPA * ax;
+  const ky = KAPPA * ay;
   const x2 = x + width;
   const y2 = y + height;
   const b = new PathBuilder().autoOrigin();
-  b.moveTo(x + rad, y);
-  b.lineTo(x2 - rad, y);
-  b.curveTo(x2 - rad + k, y, x2, y + rad - k, x2, y + rad);
-  b.lineTo(x2, y2 - rad);
-  b.curveTo(x2, y2 - rad + k, x2 - rad + k, y2, x2 - rad, y2);
-  b.lineTo(x + rad, y2);
-  b.curveTo(x + rad - k, y2, x, y2 - rad + k, x, y2 - rad);
-  b.lineTo(x, y + rad);
-  b.curveTo(x, y + rad - k, x + rad - k, y, x + rad, y);
+  b.moveTo(x + ax, y);
+  b.lineTo(x2 - ax, y);
+  b.curveTo(x2 - ax + kx, y, x2, y + ay - ky, x2, y + ay);
+  b.lineTo(x2, y2 - ay);
+  b.curveTo(x2, y2 - ay + ky, x2 - ax + kx, y2, x2 - ax, y2);
+  b.lineTo(x + ax, y2);
+  b.curveTo(x + ax - kx, y2, x, y2 - ay + ky, x, y2 - ay);
+  b.lineTo(x, y + ay);
+  b.curveTo(x, y + ay - ky, x + ax - kx, y, x + ax, y);
   b.close();
   return transformPath(b.build(), m);
 }
