@@ -92,6 +92,8 @@ export interface Annotations {
   of?: string;
   /** The selectors the leaf's value is kept separately for, outermost first. Set by `.per`. */
   scopes?: readonly PrefScopeSpec[];
+  /** The consumer's own data on the leaf, which the kit carries and never reads. Set by `.meta`. */
+  meta?: Readonly<Record<string, unknown>>;
 }
 
 /** What an `f.action`'s run is told where labkit draws it: its path, and the config of the
