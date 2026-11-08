@@ -14,8 +14,10 @@ For the session picking this up: what is in flight and what has no other home. O
   Its batch (`batch/2026-11-07g`) ran `test:fleet --full` at 21180df69 (35395 passed, 1 failed:
   `AnnotationOverlay.clip`, the filed P2 that fails in some full runs) and `test:fleet:postbuild` green at 47cce78f9,
   which fixed the consumer smoke to treat third-party peers as external.
-- In flight (2026-11-07 evening): a second bug-audit round, one agent each in `.worktrees/audit2-<area>` (routing, ui,
-  core-canvas, svg-pdf, path-stroke, text, formats-plot, theme-prefs, small-pkgs), merging as one batch with one fleet run.
+- In flight (2026-11-07 evening): the second bug-audit round is merged on `batch/2026-11-07h`
+  (`.worktrees/batch-2026-11-07h`, not yet on `main`), waiting on its fleet rerun after a red first run. A third round
+  runs on top of it, one agent each in `.worktrees/audit3-<area>` (labkit, forge, ui-b, core-b, diagram, geom,
+  renderer, draw, leftovers), branched from 479c893d1; it merges as the next batch.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
 - Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
   new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
