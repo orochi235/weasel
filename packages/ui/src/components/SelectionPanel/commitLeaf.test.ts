@@ -11,7 +11,7 @@ function setup() {
     composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }],
   });
   scene.add({ id: asNodeId('a'), kind: 'mark', layer: 'default', pose: { x: 0, opacity: 0.5 }, data: { kind: 'thing' } });
-  const selection = { current: ['a'] };
+  const selection = { current: [asNodeId('a')] };
   return { scene, selection, pose: () => scene.get(asNodeId('a'))!.pose };
 }
 

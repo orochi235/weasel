@@ -436,7 +436,7 @@ describe('ItemList under useReorderDragList', () => {
     return (
       <ItemList
         rows={items.map((it, i) => ({ id: it.id, label: it.label, rowProps: drag.rowProps(it.id, i) }))}
-        containerProps={{ ref: drag.containerProps.ref as Ref<HTMLDivElement> }}
+        ref={drag.containerProps.ref as Ref<HTMLDivElement>}
         dropIndex={drag.state.targetIndex}
         overlay={<div data-testid="overlay" />}
       />
