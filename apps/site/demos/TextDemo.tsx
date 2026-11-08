@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
   SceneCanvas,
   createTextLayer,
@@ -28,7 +28,7 @@ export function TextDemo() {
       return { ...n.data, x: p.x, y: p.y, width: p.width, height: p.height };
     });
 
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   // helpersRef gives custom layers overlay-aware pose lookups so the text
   // and selection ghost follow live drag/resize without us re-implementing
   // the overlay fold-in.
@@ -37,7 +37,7 @@ export function TextDemo() {
   // Scene-aware text edit + double-click-to-edit binding. Wires getText /
   // getStyle / getScreenPose / setText / getRuns / setRuns + the dblclick
   // caret-resolver against `scene` automatically.
-  const edit = useSceneTextEdit(scene, containerRef.current);
+  const edit = useSceneTextEdit(scene, container);
 
   const resolvePose = (n: TextNode): Pose => {
     const overlayPose = helpersRef.current?.getEffectivePose(n.id);
@@ -88,7 +88,7 @@ export function TextDemo() {
   };
 
   return (
-    <div ref={containerRef} className="ckd-canvas-frame" onDoubleClick={edit.onDoubleClick}>
+    <div ref={setContainer} className="ckd-canvas-frame" onDoubleClick={edit.onDoubleClick}>
       <DemoStage width={W} height={H}>
         <SceneCanvas
           features={['view', 'pick', 'move', 'resize', 'edit']}
