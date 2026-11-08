@@ -456,6 +456,29 @@ describe('a multitouch tap', () => {
     expect(h.events.filter((e) => e.kind === 'multitouchtap')).toEqual([{ kind: 'multitouchtap', fingers: 3, ...MODS }]);
   });
 
+  it('fires for three fingers lifted in the order they landed', () => {
+    const h = harness();
+    twoDown(h);
+    h.down(3, 80, touch);
+    h.recognizer.release(h.at(1, 0));
+    h.recognizer.release(h.at(2, 40));
+    h.recognizer.release(h.at(3, 80));
+    expect(h.events.filter((e) => e.kind === 'multitouchtap')).toEqual([{ kind: 'multitouchtap', fingers: 3, ...MODS }]);
+  });
+
+  it('keeps the peak finger count when fewer land again after some lift', () => {
+    const h = harness();
+    twoDown(h);
+    h.down(3, 80, touch);
+    h.down(4, 120, touch);
+    h.recognizer.release(h.at(4, 120));
+    h.recognizer.release(h.at(3, 80));
+    h.down(5, 80, touch);
+    h.recognizer.release(h.at(5, 80));
+    h.recognizer.release(h.at(2, 40));
+    expect(h.events.filter((e) => e.kind === 'multitouchtap')).toEqual([{ kind: 'multitouchtap', fingers: 4, ...MODS }]);
+  });
+
   it('does not fire once a finger has moved past the tap threshold, even about a still center', () => {
     const h = harness();
     twoDown(h);

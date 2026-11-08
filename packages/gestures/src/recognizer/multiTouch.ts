@@ -36,7 +36,6 @@ export function multiTouchGeometry(positions: Iterable<Point>): MultiTouchGeomet
 interface Episode {
   /** The most fingers down at once. */
   fingers: number;
-  centroid: Point;
   /** Where each finger was when it joined: a pinch about a still center moves
    *  every finger and no centroid. */
   joinedAt: Map<number, Point>;
@@ -46,13 +45,13 @@ interface Episode {
 
 export interface MultiTouchEpisode {
   /** A finger landed with at least two now down. `positions` is every held pointer's. */
-  join(positions: ReadonlyMap<number, Point>, centroid: Point, now: number): void;
+  join(positions: ReadonlyMap<number, Point>, now: number): void;
   moved(pointerId: number, to: Point): void;
   /**
-   * The hand dropped below two fingers, its centroid last at `centroid`. The
-   * peak finger count when the episode was a tap: brief, and nothing moved.
+   * The hand dropped below two fingers. The peak finger count when the
+   * episode was a tap: brief, and no finger moved.
    */
-  finish(centroid: Point, now: number, maxHoldMs: number): number | null;
+  finish(now: number, maxHoldMs: number): number | null;
   /** End the episode with no tap. */
   abandon(): void;
 }
@@ -61,14 +60,9 @@ export interface MultiTouchEpisode {
 export function createMultiTouchEpisode(tapPx: () => number = () => TAP_THRESHOLD_PX): MultiTouchEpisode {
   let episode: Episode | null = null;
   return {
-    join(positions, centroid, now) {
-      if (!episode) {
-        episode = {
-          fingers: positions.size, centroid: { ...centroid }, joinedAt: new Map(), moved: false, startedAt: now,
-        };
-      } else {
-        episode.fingers = positions.size;
-      }
+    join(positions, now) {
+      episode ??= { fingers: 0, joinedAt: new Map(), moved: false, startedAt: now };
+      episode.fingers = Math.max(episode.fingers, positions.size);
       for (const [id, p] of positions) {
         if (!episode.joinedAt.has(id)) episode.joinedAt.set(id, { ...p });
       }
@@ -77,14 +71,13 @@ export function createMultiTouchEpisode(tapPx: () => number = () => TAP_THRESHOL
       const from = episode?.joinedAt.get(pointerId);
       if (episode && from && Math.hypot(to.x - from.x, to.y - from.y) > tapPx()) episode.moved = true;
     },
-    finish(centroid, now, maxHoldMs) {
+    finish(now, maxHoldMs) {
       const e = episode;
       episode = null;
       if (!e) return null;
       // A hold as long as a long-press is not a tap, for two fingers as for one.
       const brief = now - e.startedAt < maxHoldMs;
-      const still = Math.hypot(centroid.x - e.centroid.x, centroid.y - e.centroid.y) <= tapPx();
-      return brief && !e.moved && still ? e.fingers : null;
+      return brief && !e.moved ? e.fingers : null;
     },
     abandon() { episode = null; },
   };

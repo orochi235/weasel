@@ -108,13 +108,9 @@ function multiTouchEvent(
 const positionsOf = (held: ReadonlyMap<number, Held>): Map<number, Point> =>
   new Map([...held].map(([id, p]) => [id, p.pos]));
 
-/** The held pointers' geometry, plus `extra` points, with the centroid in surface space. */
-function heldGeometry(
-  held: ReadonlyMap<number, Held>,
-  toSurface: (client: Point) => Point,
-  extra: Point[],
-): MultiTouchGeometry {
-  const g = multiTouchGeometry([...positionsOf(held).values(), ...extra]);
+/** The held pointers' geometry, with the centroid in surface space. */
+function heldGeometry(held: ReadonlyMap<number, Held>, toSurface: (client: Point) => Point): MultiTouchGeometry {
+  const g = multiTouchGeometry(positionsOf(held).values());
   return { ...g, centroid: toSurface(g.centroid) };
 }
 
@@ -161,7 +157,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
   const { longPressMs, tapPx, dragPx, doubleClick } = thresholdsOf(opts);
   const touches = createMultiTouchEpisode(tapPx);
   const hold = createLongPressHold(clock, (pending) => { observer.holdChanged?.(pending); });
-  const geometry = (extra: Point[] = []) => heldGeometry(held, toSurface, extra);
+  const geometry = () => heldGeometry(held, toSurface);
   const happenedAt = sampleTime(clock);
 
   // MULTI-POINTER POLICY: multitouch takes every pointer that has not already
@@ -171,9 +167,8 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
   const claimForMultiTouch = (s: PointerSample): void => {
     hold.cancel();
     spendPresses(held, clicks);
-    const g = geometry();
-    touches.join(positionsOf(held), g.centroid, happenedAt(s));
-    sink.dispatch(multiTouchEvent(held.size, s, g));
+    touches.join(positionsOf(held), happenedAt(s));
+    sink.dispatch(multiTouchEvent(held.size, s, geometry()));
   };
 
   return {
@@ -220,11 +215,9 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       held.delete(s.pointerId);
       // Any finger lifting ends the multitouch gesture the hand was making.
       if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
+      touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
       if (before >= 2 && held.size < 2) {
-        // The centroid as it was with this pointer still down.
-        const fingers = touches.finish(
-          geometry([{ x: s.clientX, y: s.clientY }]).centroid, happenedAt(s), longPressMs(),
-        );
+        const fingers = touches.finish(happenedAt(s), longPressMs());
         if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
       }
       sink.dispatch(pointerUpEvent(s, world(s)));
