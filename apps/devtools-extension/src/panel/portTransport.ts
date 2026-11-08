@@ -21,11 +21,8 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
   let port: PortLike | null = null;
   /** The requests sent on the current port that it has not answered; a port that drops never will. */
   const asked = new Set<number>();
-  const answer = (requestId: number): void =>
-    listeners.emit({
-      type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId,
-      message: 'weasel devtools: the connection to the page restarted',
-    });
+  const answer = (requestId: number, message = 'weasel devtools: the connection to the page restarted'): void =>
+    listeners.emit({ type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId, message });
 
   const open = (): PortLike | null => {
     if (closed) return null;
@@ -61,8 +58,12 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
       if (message.type === 'yo') yo = message;
       else if (message.type === 'bye') yo = null;
       const p = port ?? open();
-      if (p && 'requestId' in message) asked.add(message.requestId);
-      p?.postMessage(message);
+      if (!p) {
+        if ('requestId' in message) answer(message.requestId, 'weasel devtools: the panel is disconnected from the page');
+        return;
+      }
+      if ('requestId' in message) asked.add(message.requestId);
+      p.postMessage(message);
     },
     onMessage: listeners.subscribe,
     close() {
