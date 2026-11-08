@@ -1,6 +1,5 @@
 import { colorLiteralToHex, type ColorSource, type Palette } from '@weasel-js/paint';
 import React, { createContext, useCallback, useContext, useMemo, useRef, useLayoutEffect } from 'react';
-import { isDev } from '@weasel-js/registry';
 import { applyTheme } from './applyTheme';
 import { themeTints, type ColorList } from './colorListItems';
 import { colorSourceCss, colorSourceLiteral } from './colorSource';
@@ -8,6 +7,7 @@ import { fullSelection, selectionKey, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 import { useResolvedColorMode } from './useColorMode';
+import { warnThemeOnce } from './warnOnce';
 
 export {
   useColorModePreference,
@@ -103,18 +103,14 @@ export function ThemeProvider({
   );
 }
 
-const warned = new Set<string>();
-
 function warnUnknownAxisValues(theme: Theme, axes: ReturnType<typeof themeAxes>, selection: Selection | undefined): void {
-  if (!selection || !isDev()) return;
+  if (!selection) return;
   for (const [axis, value] of Object.entries(selection)) {
     const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
     if (!def || Object.hasOwn(def.values, value)) continue;
-    const key = `${theme.name}\0${axis}\0${value}`;
-    if (warned.has(key)) continue;
-    warned.add(key);
-    console.warn(
-      `[weasel theme] ThemeProvider: theme "${theme.name}" has no ${axis} "${value}"; using "${def.default}". Its ${axis} values: ${Object.keys(def.values).join(', ')}.`,
+    warnThemeOnce(
+      `axis\0${theme.name}\0${axis}\0${value}`,
+      `ThemeProvider: theme "${theme.name}" has no ${axis} "${value}"; using "${def.default}". Its ${axis} values: ${Object.keys(def.values).join(', ')}.`,
     );
   }
 }
