@@ -1,24 +1,23 @@
-import { useCallback, useMemo, useRef } from 'react';
-import { IDENTITY_POSE_COMPOSITION,
+import { useCallback, useMemo } from 'react';
+import {
   asNodeId,
-  defaultCommitAdapter,
+  boundsOfPath,
   PATH_L,
   PATH_M,
   PATH_Z,
   pathDivide,
   pathExclude,
+  pathInPoseFrame,
   pathIntersect,
   pathSubtract,
   pathUnion,
   SceneCanvas,
-  useBooleansAdapter,
-  useLatest,
   useScene,
   useSelection,
   useStandardActions,
   WeaselProvider,
 } from '@weasel-js/core';
-import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
+import type { PolygonPath, RectPose } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -61,24 +60,21 @@ interface PanelItem {
   color: string;
 }
 
-// Nodes use the path itself as their pose so SceneCanvas's built-in
-// path-pose hit-tester picks them up without a custom pickEvery.
+/** The interactive panel's inputs, by id; a node with any other id is a result. */
+const INPUT_COLORS: Record<string, string> = { rect: RECT_COLOR, circle: CIRCLE_COLOR };
+
+// Path leaves as the kit reads them: the path in `data.path`, drawn through the box its pose describes, so
+// the booleansAdapter <SceneCanvas> publishes works on them.
 const INITIAL_NODES = [
-  {
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    id: asNodeId('rect'),
-    pose: RECT_INPUT,
-    data: { id: 'rect', path: RECT_INPUT, color: RECT_COLOR },
-  },
-  {
-    kind: 'mark' as const,
-    layer: 'default' as const,
-    id: asNodeId('circle'),
-    pose: CIRCLE_INPUT,
-    data: { id: 'circle', path: CIRCLE_INPUT, color: CIRCLE_COLOR },
-  },
-];
+  { id: 'rect', path: RECT_INPUT },
+  { id: 'circle', path: CIRCLE_INPUT },
+].map(({ id, path }) => ({
+  kind: 'mark' as const,
+  layer: 'default' as const,
+  id: asNodeId(id),
+  pose: boundsOfPath(path) as RectPose,
+  data: { path },
+}));
 
 function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
   const scene = useScene<PanelItem>({ items: paths });
@@ -107,7 +103,7 @@ function Panel({ id, paths }: { id: string; paths: PanelItem[] }) {
 }
 
 function InteractivePanel() {
-  const scene = useScene<PanelItem, 'default', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION,
+  const scene = useScene<{ path: PolygonPath }, 'default', RectPose>({
     systemLayers: [{ id: 'default' }],
     initial: INITIAL_NODES,
   });
@@ -118,67 +114,16 @@ function InteractivePanel() {
     initial: [asNodeId('rect'), asNodeId('circle')],
   });
 
-  const nextIdRef = useRef(0);
-  const pendingPathsRef = useRef<Map<string, PolygonPath>>(new Map());
-
-  // All mutable state accessed through refs so adapter is constructed once.
-  const sceneRef = useLatest(scene);
-  const selectionRef = useLatest(selection);
-
-  const adapterRef = useRef<BooleansAdapter | null>(null);
-  if (adapterRef.current === null) {
-    adapterRef.current = {
-      ...defaultCommitAdapter(sceneRef.current),
-      getSelection: () => selectionRef.current.get(),
-      getWorldPath: (id: NodeId) => sceneRef.current.get(id)?.data.path,
-      compareZ: (a: NodeId, b: NodeId) => {
-        const order = [...sceneRef.current.renderOrder()];
-        return order.indexOf(a) - order.indexOf(b);
-      },
-      createPathNode: (path) => {
-        const id = `result-${nextIdRef.current++}`;
-        pendingPathsRef.current.set(id, path as PolygonPath);
-        return { id };
-      },
-      insertNode: (node: { id: string }) => {
-        const path = pendingPathsRef.current.get(node.id);
-        if (!path) return;
-        pendingPathsRef.current.delete(node.id);
-        sceneRef.current.add({
-          kind: 'mark',
-          layer: 'default',
-          id: asNodeId(node.id),
-          pose: path,
-          data: { id: node.id, path, color: RESULT_COLOR },
-        });
-      },
-      removeNode: (id: string) => {
-        sceneRef.current.remove(asNodeId(id));
-      },
-      setSelection: (ids: NodeId[]) => {
-        selectionRef.current.set(ids);
-      },
-      applyOps: (ops: Op[], label?: string) => {
-        sceneRef.current.applyBatch(ops, label ?? 'Pathfinder', adapterRef.current!);
-      },
-    };
-  }
-  const adapter = adapterRef.current;
-
-  // Register the kit-standard action descriptors (including pathfinder.*)
-  // with the ambient ActionsProvider, and publish the booleansAdapter dep so
-  // their invokers can reach this panel's adapter. Together these power the
-  // <ActionBar group="pathfinder"/> below.
+  // Register the kit-standard action descriptors, pathfinder.* among them, with the ambient ActionsProvider.
+  // Their invokers reach the booleansAdapter <SceneCanvas> publishes over this scene. Together these power
+  // the <ActionBar group="pathfinder"/> below.
   useStandardActions({ selection });
-  useBooleansAdapter(adapter);
 
   const reset = useCallback(() => {
     scene.batch('Reset', () => {
       scene.removeMany([...scene.roots]);
       for (const node of INITIAL_NODES) scene.add(node);
     });
-    nextIdRef.current = 0;
-    pendingPathsRef.current.clear();
     selection.set([asNodeId('rect'), asNodeId('circle')]);
   }, [scene, selection]);
 
@@ -196,10 +141,10 @@ function InteractivePanel() {
           selection={selection}
           layers={{
             scene: {
-              drawOne: (node): DrawCommand[] => [{
+              drawOne: (node, pose): DrawCommand[] => [{
                 kind: 'path',
-                path: node.data.path,
-                fill: { paint: { color: node.data.color } },
+                path: pathInPoseFrame(node.data.path, pose),
+                fill: { paint: { color: INPUT_COLORS[node.id] ?? RESULT_COLOR } },
               }],
             },
             selectionOverlay: { outline: { follow: 'shape' } },
@@ -231,8 +176,8 @@ export function BooleanOpsDemo() {
     <DemoStageGroup>
       <div className="ckd-boolops-grid">
         {/* The scope sits above InteractivePanel, not inside it: its
-            useBooleansAdapter / useStandardActions hooks publish into the dep
-            registry before its SceneCanvas mounts, so the registry has to be in
+            useStandardActions hook registers into the actions and dep
+            registries before its SceneCanvas mounts, so they have to be in
             scope by the time they fire. Isolated because this canvas's non-empty
             initial selection would otherwise fight the static panels' empty
             ones. */}
