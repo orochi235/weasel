@@ -135,7 +135,7 @@ export function Lane(props: LaneProps): ReactElement {
   const times = entryTimes(row);
 
   return (
-    <div className={s.lane} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
+    <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
       <div className={s.laneLabel}>
         {row.kind === 'timeline' ? (
           <span
@@ -216,6 +216,7 @@ export function Lane(props: LaneProps): ReactElement {
                 aria-label={`${row.label} key at ${Math.round(t)} ms`}
                 aria-current={selection === i ? 'true' : undefined}
                 data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
+                data-keyframe-index={i}
                 data-dragging={drag?.keyIndex === i ? 'true' : undefined}
                 className={row.kind === 'event' ? s.eventMark : s.key}
                 style={{ left: pct(t) }}

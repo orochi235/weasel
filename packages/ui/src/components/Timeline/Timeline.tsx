@@ -126,12 +126,23 @@ export function Timeline(props: TimelineProps): ReactElement {
       setSegmentSelection(null);
       return;
     }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selection && selectedTrack?.kind === 'sampled') {
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    const target = deleteTarget(e.target as Element);
+    if (target && trackAtPath(tracks, target.trackPath)?.kind === 'sampled') {
       e.preventDefault();
-      const r = deleteKey(tracks, selection);
+      const r = deleteKey(tracks, target);
       onChange(r.tracks);
       selectKey(r.selection);
     }
+  };
+
+  /** The key a Delete pressed on `el` removes: the mark it is on, else the selected key. */
+  const deleteTarget = (el: Element): KeySelection | null => {
+    const mark = el.closest?.('[data-keyframe-index]');
+    const lane = mark?.closest('[data-lane-key]');
+    if (!mark || !lane) return selection;
+    const row = rows.find((r) => r.key === lane.getAttribute('data-lane-key'));
+    return row ? { trackPath: row.path, keyIndex: Number(mark.getAttribute('data-keyframe-index')) } : null;
   };
 
   const selectedKey = selectedTrack?.kind === 'sampled'
