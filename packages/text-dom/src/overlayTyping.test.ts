@@ -118,11 +118,11 @@ function compose(
   handlers: ReturnType<typeof mount>, node: Text, offset: number, data: string,
 ): void {
   caretAt(node, offset);
-  handlers.onCompositionStart(new CompositionEvent('compositionstart', { data: '' }));
+  handlers.onCompositionStart();
   node.insertData(offset, data);
   caretAt(node, offset + data.length);
   handlers.onInput(new InputEvent('input', { inputType: 'insertCompositionText', data, isComposing: true }));
-  handlers.onCompositionEnd(new CompositionEvent('compositionend', { data }));
+  handlers.onCompositionEnd();
 }
 
 describe('typingHandlers: a composition', () => {
