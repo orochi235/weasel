@@ -10,10 +10,12 @@ import {
   type ReactElement,
   type Ref,
   useCallback,
+  useMemo,
   useRef,
 } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
+import { sceneTrialHistory } from './sceneTrialHistory';
 import { useSceneCamera } from './useSceneCamera';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 
@@ -47,7 +49,7 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   }: TrialSceneCanvasProps<TData, TLayer, TPose>,
   ref: ForwardedRef<SceneCanvasApi>,
 ) {
-  useTrialHistory(history ? scene : null);
+  useTrialHistory(useMemo(() => (history ? sceneTrialHistory(scene) : null), [history, scene]));
   const toolsReported = useSceneToolSlot(trial, onToolsCreated);
   const title = useTrialTitle();
   const api = useRef<SceneCanvasApi | null>(null);

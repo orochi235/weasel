@@ -33,7 +33,9 @@ export function loadedFrom(
   const state = reg?.deserialize
     ? reg.deserialize(snapshot.state, snapshot.config)
     : snapshot.state;
-  const loaded: TrialRecord = { ...trial, state, config: snapshot.config };
+  // A loaded trial starts a fresh undo history, as a reset or cloned one does.
+  const { history: _history, ...kept } = trial;
+  const loaded: TrialRecord = { ...kept, state, config: snapshot.config };
   if (snapshot.clock) loaded.clock = { ...snapshot.clock };
   if (snapshot.auto === undefined) return loaded;
   delete loaded.auto;

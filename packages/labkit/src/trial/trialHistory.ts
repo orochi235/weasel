@@ -1,4 +1,4 @@
-import type { History } from '@weasel-js/core';
+import type { History, Op } from '@weasel-js/core';
 import {
   createContext,
   useCallback,
@@ -11,9 +11,9 @@ import {
 } from 'react';
 
 /**
- * An undo history an instrument keeps itself — a weasel `Scene` is one as it
- * stands — which the trial's undo and redo then step instead of its own
- * snapshots of `state`.
+ * An undo history an instrument keeps itself, which the trial's undo and redo
+ * then step instead of its own snapshots of `state`. `<TrialSceneCanvas>`
+ * hands over a weasel scene's.
  */
 export interface TrialHistorySource {
   canUndo(): boolean;
@@ -22,6 +22,9 @@ export interface TrialHistorySource {
   redo(): unknown;
   /** Called whenever `canUndo` or `canRedo` may have changed. */
   subscribe(listener: () => void): () => void;
+  /** Take an entry the trial records itself — a settings change — onto this
+   *  stack, already applied, so one undo order covers both. */
+  record(op: Op, label: string): void;
 }
 
 /** Reports a history mounted; the returned function reports it gone. */
@@ -32,10 +35,10 @@ export const TrialHistoryContext = createContext<MountTrialHistory | null>(null)
 
 /**
  * Hands the trial around the caller a history of the instrument's own. While
- * it is mounted, the trial's Undo and Redo buttons and their keys step it, and
- * `setState` stops snapshotting — that stack would never be stepped. The
- * buttons still come from declaring `undo` on the instrument. Pass `null` to
- * hand nothing over; outside a trial it does nothing.
+ * it is mounted, the trial's Undo and Redo buttons and their keys step it,
+ * settings changes are recorded onto it, and the trial stops snapshotting
+ * `state` — the instrument's history is what covers it. Pass `null` to hand
+ * nothing over; outside a trial it does nothing.
  */
 export function useTrialHistory(source: TrialHistorySource | null): void {
   const mount = useContext(TrialHistoryContext);
@@ -55,21 +58,21 @@ const NO_SUBSCRIBE = () => () => {};
 export function useMountedHistory(): {
   mount: MountTrialHistory;
   history: TrialHistorySource | null;
-  /** Whether one is mounted now, ahead of the render that shows it — a write
-   *  in the same commit as the mount must already see it. */
-  holds: () => boolean;
+  /** The one mounted now, ahead of the render that shows it — a write in the
+   *  same commit as the mount must already see it. */
+  current: () => TrialHistorySource | null;
 } {
   const [mounted, setMounted] = useState<readonly TrialHistorySource[]>([]);
-  const count = useRef(0);
+  const live = useRef<readonly TrialHistorySource[]>([]);
   const mount = useCallback<MountTrialHistory>((source) => {
-    count.current += 1;
-    setMounted((list) => [...list, source]);
+    live.current = [...live.current, source];
+    setMounted(live.current);
     return () => {
-      count.current -= 1;
-      setMounted((list) => list.filter((s) => s !== source));
+      live.current = live.current.filter((s) => s !== source);
+      setMounted(live.current);
     };
   }, []);
-  const holds = useCallback(() => count.current > 0, []);
+  const current = useCallback(() => live.current.at(-1) ?? null, []);
   const history = mounted.at(-1) ?? null;
   const subscribe = useMemo(
     () => (history ? (listener: () => void) => history.subscribe(listener) : NO_SUBSCRIBE),
@@ -78,7 +81,7 @@ export function useMountedHistory(): {
   useSyncExternalStore(subscribe, () =>
     history ? `${history.canUndo()}:${history.canRedo()}` : '',
   );
-  return { mount, history, holds };
+  return { mount, history, current };
 }
 
 /** `history`, re-rendering the caller whenever it changes. */

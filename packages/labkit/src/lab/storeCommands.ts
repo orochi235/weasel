@@ -98,7 +98,7 @@ export function useStoreCommands(
         store.setState((s) => ({
           trials: s.trials.map((w) => {
             if (w.id !== id) return w;
-            const { auto: _pinnedNow, ...kept } = w;
+            const { auto: _pinnedNow, history: _history, ...kept } = w;
             const reset: TrialRecord = {
               ...kept,
               config: record.config,

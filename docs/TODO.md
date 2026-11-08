@@ -501,15 +501,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
   its hooks.
 
-- **(P2) [agent] A labkit trial's undo misses writes that don't go through `useTrialWrites`.** Undo steps a
-  trial's state and settings together (2026-11-08), but three paths step around it. An instrument that hands
-  over a history of its own (`<TrialSceneCanvas>`, `useTrialHistory`) gets settings edits recorded on the
-  trial's snapshot history, which undo never steps once the instrument's own history is mounted.
-  `useTrialState().setConfig`/`setState` (forge's `RouteKnobs`) write the store directly: no undo entry and
-  no `onConfigChange`. Reset keeps the history, so the first undo after Reset restores the state from before
-  the last change made before Reset, not the state Reset replaced. Closes when each of the three either
-  records through `useTrialWrites` or is ruled out of undo on purpose.
-
 - **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
   Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
   of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as

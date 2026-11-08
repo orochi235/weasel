@@ -17,6 +17,7 @@ function fakeHistory() {
     canRedo: () => false,
     undo: vi.fn(),
     redo: vi.fn(),
+    record: vi.fn(),
     subscribe: (l: () => void) => {
       listeners.add(l);
       return () => listeners.delete(l);

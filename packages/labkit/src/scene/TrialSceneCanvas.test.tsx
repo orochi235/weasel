@@ -5,6 +5,7 @@ import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { f } from '../config/builder';
 import { icon } from '../icons.gen';
 import { defineInstrument } from '../instrument/defineInstrument';
 import type { RenderContext } from '../instrument/types';
@@ -154,5 +155,35 @@ describe('<TrialSceneCanvas>', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
     expect(live.scene).toBe(scene);
     expect(live.scene.nodes.size).toBe(1);
+  });
+});
+
+describe('<TrialSceneCanvas> with settings', () => {
+  const withSettings = defineInstrument({
+    name: 'Scene',
+    config: f.schema({ grid: f.boolean(true) }),
+    initialState: (): State => ({ scene: null }),
+    render: (ctx) => <Body ctx={ctx as never} />,
+  });
+
+  it("puts a settings change on the scene's history, in order with the scene's edits", async () => {
+    await mount(withSettings as never);
+    const grid = () => screen.getByLabelText('Grid');
+    addOne();
+    act(() => grid().click());
+    addOne();
+    expect(live.scene.nodes.size).toBe(3);
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    await userEvent.click(undo);
+    expect(live.scene.nodes.size).toBe(2);
+    expect(grid()).not.toBeChecked();
+    await userEvent.click(undo);
+    expect(grid()).toBeChecked();
+    expect(live.scene.nodes.size).toBe(2);
+    await userEvent.click(undo);
+    expect(live.scene.nodes.size).toBe(1);
+    await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(grid()).not.toBeChecked();
   });
 });

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
+import { useTrialState } from '../state/useTrialState';
 
 // The settings panel and the instrument's own `ctx.setConfig` are one write.
 
@@ -119,5 +120,43 @@ describe('a trial config write', () => {
     click('flip');
     fireEvent.click(undo());
     expect(changes()).toBe('1');
+  });
+});
+
+describe("a trial's other writes", () => {
+  it("routes useTrialState's setConfig through the trial: onConfigChange and undo hear it", async () => {
+    function Knob() {
+      const { setConfig } = useTrialState<{ changes: number }, { cellSize: number }>();
+      return (
+        <button type="button" onClick={() => setConfig('cellSize', 40)}>
+          knob
+        </button>
+      );
+    }
+    const base = counting(['config.change']);
+    const withKnob = {
+      ...base,
+      render: (ctx: Parameters<typeof base.render>[0]) => (
+        <>
+          {base.render(ctx)}
+          <Knob />
+        </>
+      ),
+    };
+    await renderSettled(<Lab instruments={[withKnob]} defaultInstrument="Counting" />, {
+      wrapper: withIcons,
+    });
+    click('knob');
+    expect(changes()).toBe('1');
+    fireEvent.click(undo());
+    expect(changes()).toBe('0');
+  });
+
+  it('starts a fresh undo history on Reset', async () => {
+    await mount();
+    click('wider');
+    expect(undo()).not.toBeDisabled();
+    click('Reset trial');
+    expect(undo()).toBeDisabled();
   });
 });

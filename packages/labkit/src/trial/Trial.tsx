@@ -149,17 +149,14 @@ function TrialRuntime({
     clock: clockHandle?.clock,
   });
 
+  const { mount: mountHistory, history: ownHistory, current: ownHistoryNow } = useMountedHistory();
   const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
     store,
     trialId: record.id,
     instrument,
     schema,
+    ownHistory: ownHistoryNow,
   });
-
-  const { mount: mountHistory, history: ownHistory, holds: holdsHistory } = useMountedHistory();
-  const snapshotState = (event: string): void => {
-    if (!holdsHistory()) snapshotIfNeeded(event);
-  };
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
@@ -214,7 +211,7 @@ function TrialRuntime({
     state: record.state,
     config,
     setState: (next) => {
-      snapshotState('state.change');
+      snapshotIfNeeded('state.change');
       updateTrialState(record.id, next);
     },
     setConfig,
@@ -232,7 +229,7 @@ function TrialRuntime({
       pointer,
       ...(clockHandle ? { clock: clockHandle.clock } : {}),
     },
-    emit: snapshotState,
+    emit: snapshotIfNeeded,
     job: jobCap ? job : undefined,
   };
 
@@ -368,7 +365,7 @@ function TrialRuntime({
   );
 
   return (
-    <TrialIdProvider trialId={record.id}>
+    <TrialIdProvider trialId={record.id} writes={renderCtx}>
       <TrialOrbitProvider orbit={cam.orbit} instrument={instrument} trialId={record.id}>
         <TrialClockContext.Provider value={providedClock}>
           <TrialRootContext.Provider value={rootRef}>

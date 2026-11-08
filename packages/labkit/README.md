@@ -404,9 +404,11 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   is what a fresh or reset trial opens on.
 - **Undo.** The trial has the buttons by default; `<TrialSceneCanvas>` hands the
   trial the scene's history, so the buttons and Mod+Z step `scene.undo()` and
-  `scene.redo()`, and the trial stops snapshotting `state`. Any history of an
-  instrument's own goes the same way: `useTrialHistory({ canUndo, canRedo,
-  undo, redo, subscribe })`.
+  `scene.redo()`, and the trial stops snapshotting `state`. A settings change
+  goes onto the scene's history, so one undo order covers both. Any history of
+  an instrument's own goes the same way: `useTrialHistory({ canUndo, canRedo,
+  undo, redo, subscribe, record })`, where `record` takes the trial's settings
+  entries.
 - **Tools.** A `tools` capability whose ids are the canvas's tool ids makes the
   trial's palette the canvas's tool slot, in both directions: a pick there
   activates the tool, and the canvas's own hotkeys move the palette.

@@ -11,7 +11,14 @@ import { undoCapability } from '../instrument/undo';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { stateOp } from '../undo/stateOp';
-import { readTrialEdit, type TrialEdit, writeTrialEdit } from './trialEdit';
+import {
+  readTrialEdit,
+  readTrialSettings,
+  type TrialEdit,
+  type TrialSettings,
+  writeTrialEdit,
+} from './trialEdit';
+import type { TrialHistorySource } from './trialHistory';
 
 /** A config write within this long of the last one to the same path belongs
  *  to the same gesture — a slider drag writes on every move. */
@@ -20,6 +27,11 @@ const GESTURE_MS = 500;
 /** What a trial snapshots on when its instrument names no events. */
 const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
 
+const NO_HISTORY = (): null => null;
+
+const isConfigEvent = (event: string): boolean =>
+  event === 'config.change' || event.startsWith('config.change:');
+
 /** What `useTrialWrites` takes. */
 export interface TrialWritesOptions {
   store: LabStore;
@@ -27,11 +39,17 @@ export interface TrialWritesOptions {
   // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList
   instrument: Instrument<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   schema: ResolvedConfig;
+  /** The history the instrument handed over with `useTrialHistory`, if any.
+   *  Absent means none. */
+  ownHistory?: () => TrialHistorySource | null;
 }
 
 /** A trial's writes that its undo history hears. */
 export interface TrialWrites {
-  /** Record the trial's state for undo, if its instrument snapshots on `event`. */
+  /** Record the trial's state and settings for undo, if its instrument
+   *  snapshots on `event`. With a history of the instrument's own mounted,
+   *  only a settings change is recorded, onto that history: the instrument's
+   *  history is what covers its state. */
   snapshot: (event: string) => void;
   /** Write one config value: snapshots on `config.change` and
    *  `config.change:<path>`, once for a run of writes to one path, then runs
@@ -47,6 +65,7 @@ export function useTrialWrites({
   trialId,
   instrument,
   schema,
+  ownHistory = NO_HISTORY,
 }: TrialWritesOptions): TrialWrites {
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
@@ -68,6 +87,17 @@ export function useTrialWrites({
       if (!undoCap || !undoEvents.has(event)) return;
       const current = stored();
       if (!current) return;
+      const own = ownHistory();
+      if (own) {
+        if (!isConfigEvent(event)) return;
+        const read = (): TrialSettings | undefined => {
+          const record = stored();
+          return record ? readTrialSettings(record) : undefined;
+        };
+        const write = (settings: TrialSettings) => writeTrialEdit(store, trialId, settings);
+        own.record(stateOp(structuredClone(readTrialSettings(current)), read, write), event);
+        return;
+      }
       let history = current.history;
       if (!history) {
         history = createHistory(null, { historyLimit: maxDepth });
@@ -80,7 +110,7 @@ export function useTrialWrites({
       const write = (edit: TrialEdit) => writeTrialEdit(store, trialId, edit);
       history.recordEntry([stateOp(structuredClone(readTrialEdit(current)), read, write)], event);
     },
-    [undoCap, undoEvents, maxDepth, stored, store, trialId, setTrialHistory],
+    [undoCap, undoEvents, maxDepth, stored, ownHistory, store, trialId, setTrialHistory],
   );
 
   const lastWrite = useRef<{ path: string; at: number; version: number } | null>(null);
