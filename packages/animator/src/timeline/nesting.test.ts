@@ -121,4 +121,29 @@ describe('nested timelines', () => {
     h.advance(50);
     expect(fired).toEqual(['x']);
   });
+  it('fires nothing of a child past the duration it declares', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 400,
+      tracks: [{
+        kind: 'timeline',
+        at: 100,
+        timeline: { duration: 50, tracks: [{ kind: 'event', events: [{ t: 80, fire: () => fired.push('x') }] }] },
+      }],
+    });
+    h.advance(300);
+    expect(fired).toEqual([]);
+  });
+
+  it('holds a child at the end it declares, as the root holds at its own', () => {
+    const h = harness();
+    const seen: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 400,
+      tracks: [{ kind: 'timeline', at: 100, timeline: { duration: 50, tracks: [ramp((v) => seen.push(v))] } }],
+    });
+    h.advance(250);
+    expect(seen.at(-1)).toBe(50);
+  });
 });

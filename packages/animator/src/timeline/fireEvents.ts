@@ -58,8 +58,10 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
           }
         }
       } else if (track.kind === 'timeline') {
+        const end = track.timeline.duration ?? Infinity;
+        if (from - track.at > end) continue;
         path.push(k);
-        fire(track.timeline.tracks, from - track.at, to - track.at, fromOpen);
+        fire(track.timeline.tracks, from - track.at, Math.min(to - track.at, end), fromOpen);
         path.pop();
       }
     }
