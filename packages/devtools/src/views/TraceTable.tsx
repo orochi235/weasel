@@ -6,6 +6,7 @@ import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid
 import { FallthroughDiagram } from '@weasel-js/ui/components/FallthroughDiagram';
 import { DecisionPath } from './DecisionPath';
 import { formatAge } from './formatAge';
+import { keyName } from './keyName';
 import type { Sequenced } from './sequenced';
 import s from './TraceTable.module.css';
 
@@ -32,7 +33,7 @@ function renderEvent(entry: TraceLogEntry): ReactNode {
     return <><code>{entry.mode}</code>{entry.detail ? <span className={s.modeDetail}> ({entry.detail})</span> : null}</>;
   }
   const { key } = entry.input;
-  return <>{entry.input.eventKind}{key !== undefined ? <> <code>{key === ' ' ? 'Space' : key}</code></> : null}</>;
+  return <>{entry.input.eventKind}{key !== undefined ? <> <code>{keyName(key)}</code></> : null}</>;
 }
 
 function renderOutcome(entry: TraceLogEntry): ReactNode {
