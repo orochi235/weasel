@@ -74,9 +74,9 @@ function wheelAt(el: Element, clientX: number) {
 }
 
 /** One pointer event on the canvas, at `clientX` on the y = 10 line. */
-function pointer(el: Element, type: string, pointerId: number, clientX: number) {
+function pointer(el: Element, type: string, pointerId: number, clientX: number, pointerType = 'mouse') {
   el.dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, pointerId, clientX, clientY: 10,
+    bubbles: true, cancelable: true, pointerId, pointerType, clientX, clientY: 10,
   }));
 }
 
@@ -122,9 +122,9 @@ describe('<CanvasView>', () => {
 
     // Two fingers straddling client x = 150, then spread from 20px to 30px.
     act(() => {
-      pointer(canvas, 'pointerdown', 1, 140);
-      pointer(canvas, 'pointerdown', 2, 160);
-      pointer(canvas, 'pointermove', 2, 170);
+      pointer(canvas, 'pointerdown', 1, 140, 'touch');
+      pointer(canvas, 'pointerdown', 2, 160, 'touch');
+      pointer(canvas, 'pointermove', 2, 170, 'touch');
     });
 
     expect(panel.mock.calls.at(-1)?.[0]).toMatchObject({ scale: { x: 1.5, y: 1.5 } });

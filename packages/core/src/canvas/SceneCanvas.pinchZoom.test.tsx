@@ -61,7 +61,7 @@ function mountAndPinch(
   }) as DOMRect;
 
   const fire = (type: string, pointerId: number, clientX: number, clientY: number) => {
-    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId, clientX, clientY }));
+    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId, pointerType: 'touch', clientX, clientY }));
   };
 
   act(() => {

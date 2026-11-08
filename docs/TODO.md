@@ -652,7 +652,8 @@ only story runner in the repo.
   fleet runs, with the same numbers every time.** The input box's left reads 534.3125 against the visible part's
   533.078125 (tolerance 0.5): at 98d525569 on 2026-10-28, and at 51d4a8f9f and a54066909 on 2026-11-07 (both on
   teitou, the first changing only package manifests), and twice at 511a88729 on 2026-11-08, each time with the
-  browser project beside 13 jsdom workers on an 18-core node. It passed in the full run of e0591848d the same morning,
+  browser project beside 13 jsdom workers on an 18-core node. At 2317d1654 on 2026-11-08 it failed the same way on teitou
+  with the browser project run after the rest, in one process, so running beside jsdom is not the cause. It passed in the full run of e0591848d the same morning,
   3 of 3 alone on studio at a54066909, and in a run of the whole browser project alone at 511a88729. A steady 1.23 px is not a reflow still settling: a `waitFor` that re-read
   both rects on every attempt failed the same way. The box takes its rect from `placement`, which only the
   surface's painter sets (`registerPainter` in `AnnotationOverlay.tsx`), so a layout shift with no frame painted
