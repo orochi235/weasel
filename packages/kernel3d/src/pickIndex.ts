@@ -12,7 +12,8 @@ import { intersectRayAabb, type Aabb, type Ray } from '@weasel-js/geom/3d';
 import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { projectAabbToScreen, screenToNdc, type ScreenBox } from './screen';
-import { boxAt, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
+import { padQuery } from './snap/boxIndex';
+import { boxAt, boxIndexable, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
 
 export interface WorldPickIndex {
   /** The nearest node the ray enters no further along it than `maxT`; a tie on
@@ -32,14 +33,6 @@ export function screenBoxOf<TData, TLayer extends string>(
   const pose = node && worldPoseOf(world.scene, id);
   const box = node && pose && boxAt(world, node, pose);
   return box ? projectAabbToScreen(box, viewProjectionOf(viewport), rectOf(viewport)) : null;
-}
-
-function boxValid({ min, max }: Aabb): boolean {
-  return (
-    Number.isFinite(min.x) && Number.isFinite(min.y) && Number.isFinite(min.z) &&
-    Number.isFinite(max.x) && Number.isFinite(max.y) && Number.isFinite(max.z) &&
-    min.x <= max.x && min.y <= max.y && min.z <= max.z
-  );
 }
 
 /** Widens each side plane, in NDC, past the rounding between it and the exact screen test. */
@@ -133,17 +126,6 @@ interface Cached {
 
 const CACHE = new WeakMap<object, Cached>();
 
-/** The box grown by a relative epsilon, so rounding in the tree's tests can
- *  only add candidates for the exact ones to drop. */
-function padded({ min, max }: Aabb): number[] {
-  const m = Math.max(
-    Math.abs(min.x), Math.abs(min.y), Math.abs(min.z),
-    Math.abs(max.x), Math.abs(max.y), Math.abs(max.z),
-  );
-  const e = 1e-9 * (1 + m);
-  return [min.x - e, min.y - e, min.z - e, max.x + e, max.y + e, max.z + e];
-}
-
 function build<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   order: readonly Node3d<TData, TLayer>[],
@@ -154,7 +136,7 @@ function build<TData, TLayer extends string>(
   const always: number[] = [];
   boxes.forEach((b, i) => {
     if (b === null) return;
-    if (boxValid(b)) entries.push([i, padded(b)]);
+    if (boxIndexable(b)) entries.push([i, padQuery([b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z])]);
     else always.push(i);
   });
   return new BuiltIndex(order, boxes, createBvh<number>(3, entries), always);

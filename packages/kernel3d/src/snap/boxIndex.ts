@@ -8,7 +8,7 @@
 import type { NodeId } from '@weasel-js/routing';
 import type { Aabb } from '@weasel-js/geom/3d';
 import { createBvh, createSettledCache, type BoxN, type Bvh, type SettledCache } from '@weasel-js/geom/nd';
-import { withDescendants, worldBoxes, type Node3d, type World3d } from '../world';
+import { boxIndexable, withDescendants, worldBoxes, type Node3d, type World3d } from '../world';
 
 interface Built {
   ids: readonly NodeId[];
@@ -31,14 +31,6 @@ function nodesOf<TData, TLayer extends string>(world: World3d<TData, TLayer>): r
   return world.scene.renderOrderNodes() as readonly Node3d<TData, TLayer>[];
 }
 
-function boxValid({ min, max }: Aabb): boolean {
-  return (
-    Number.isFinite(min.x) && Number.isFinite(min.y) && Number.isFinite(min.z) &&
-    Number.isFinite(max.x) && Number.isFinite(max.y) && Number.isFinite(max.z) &&
-    min.x <= max.x && min.y <= max.y && min.z <= max.z
-  );
-}
-
 function build<TData, TLayer extends string>(world: World3d<TData, TLayer>): Built {
   builds++;
   const nodes = nodesOf(world);
@@ -48,7 +40,7 @@ function build<TData, TLayer extends string>(world: World3d<TData, TLayer>): Bui
   boxes.forEach((box, i) => {
     if (box === null) return;
     const { min, max } = box;
-    if (boxValid(box)) entries.push([i, [min.x, min.y, min.z, max.x, max.y, max.z]]);
+    if (boxIndexable(box)) entries.push([i, [min.x, min.y, min.z, max.x, max.y, max.z]]);
     else always.push(i);
   });
   return { ids: nodes.map((n) => n.id), boxes, tree: createBvh<number>(3, entries), always };
@@ -60,8 +52,8 @@ function current<TData, TLayer extends string>(world: World3d<TData, TLayer>): B
   return cache.read([world.scene.getVersion(), world.bounds], () => build(world));
 }
 
-/** Grows a query box by a relative epsilon, so rounding between the tree's
- *  overlap test and a source's exact one only ever adds candidates. */
+/** Grows a box by a relative epsilon, so rounding between the tree's tests
+ *  and the exact ones only ever adds candidates. */
 export function padQuery(box: number[]): number[] {
   let m = 0;
   for (const v of box) if (Number.isFinite(v)) m = Math.max(m, Math.abs(v));
