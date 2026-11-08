@@ -301,10 +301,7 @@ export function forge(options: ForgeOptions): Plugin[] {
           ...ownEntries(['shell', 'frame']),
         ];
         const optimizeDeps = { entries };
-        if (command !== 'build') {
-          const watch = settledWatch(config.server?.watch);
-          return { optimizeDeps, ...(watch ? { server: { watch } } : {}) };
-        }
+        if (command !== 'build') return { optimizeDeps, server: { watch: settledWatch(config.server?.watch) } };
         return { optimizeDeps, build: { rolldownOptions: { input: writePages(at, shellUnder(at).title) } } };
       },
       generateBundle: {

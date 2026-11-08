@@ -6,7 +6,7 @@ import { settledWatch, WRITE_SETTLE } from './watchSettle';
 
 const configOf = (watch?: Record<string, unknown> | null) => {
   const own = forge({ stories: ['*.stories.tsx'] }).find((p) => p.name === 'weaselforge') as Plugin;
-  const hook = own.config as (config: object, env: { command: 'serve' | 'build'; mode: string }) => { server?: unknown };
+  const hook = own.config as (config: object, env: { command: 'serve' | 'build'; mode: string }) => { server?: { watch?: unknown } };
   return hook({ root: '/repo', ...(watch === undefined ? {} : { server: { watch } }) }, { command: 'serve', mode: 'development' });
 };
 
@@ -27,8 +27,8 @@ describe('the forge plugin', () => {
     const platform = Object.getOwnPropertyDescriptor(process, 'platform')!;
     Object.defineProperty(process, 'platform', { ...platform, value: 'linux' });
     try {
-      expect(configOf().server).toEqual({ watch: { awaitWriteFinish: WRITE_SETTLE } });
-      expect(configOf({ awaitWriteFinish: false }).server).toBeUndefined();
+      expect(configOf().server?.watch).toEqual({ awaitWriteFinish: WRITE_SETTLE });
+      expect(configOf({ awaitWriteFinish: false }).server?.watch).toBeUndefined();
     } finally {
       Object.defineProperty(process, 'platform', platform);
     }
