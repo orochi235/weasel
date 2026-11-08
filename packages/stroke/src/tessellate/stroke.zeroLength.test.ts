@@ -67,6 +67,11 @@ describe('tessellateStroke on zero-length runs', () => {
     expect([e.x0, e.x1].map((v) => +v.toFixed(5))).toEqual([-2, 42]);
   });
 
+  it('draws the zero-length dash a dash offset lands exactly on at the line\'s start', () => {
+    const mesh = tessellateStroke(pathFromD('M0 0L45 0'), { ...ink, cap: 'round', dash: [5, 5, 0, 10], dashOffset: 10 });
+    expect(+extent(mesh.vertices).x0.toFixed(5)).toBe(-2);
+  });
+
   it('draws that dot once on a closed line, where the end is the start', () => {
     const square = tessellateStroke(pathFromD('M0 0L10 0L10 10L0 10Z'), { ...ink, cap: 'round', dash: [0, 10] });
     const dots = new Set<string>();
