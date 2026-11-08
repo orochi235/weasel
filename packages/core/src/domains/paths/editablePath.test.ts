@@ -33,7 +33,7 @@ describe('liveEditablePath', () => {
     expect(coords(liveEditablePath('a', node, [editing], null))).toEqual([100, 0, 110, 0, 105, 10]);
   });
 
-  it('takes the first previewed pose and the last previewed data', () => {
+  it('takes the first previewed pose and the first previewed data, each on its own, as the drawn preview does', () => {
     const node = { pose: rect(0), data: { path: tri() } };
     const first: GesturePreviewSource = {
       previewIds: () => ['a'], previewPose: () => rect(200), previewData: () => ({ path: tri(1) }),
@@ -41,7 +41,9 @@ describe('liveEditablePath', () => {
     const second: GesturePreviewSource = {
       previewIds: () => ['a'], previewPose: () => rect(900), previewData: () => ({ path: tri(2) }),
     };
-    expect(coords(liveEditablePath('a', node, [first, second], null))).toEqual([200, 0, 210, 0, 202, 10]);
+    expect(coords(liveEditablePath('a', node, [first, second], null))).toEqual([200, 0, 210, 0, 201, 10]);
+    const dataOnly: GesturePreviewSource = { previewIds: () => ['a'], previewData: () => ({ path: tri(3) }) };
+    expect(coords(liveEditablePath('a', node, [dataOnly, second], null))).toEqual([900, 0, 910, 0, 903, 10]);
   });
 
   it('carries a path stored in a parallax plane into the asking camera', () => {
