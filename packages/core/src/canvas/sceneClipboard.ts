@@ -142,7 +142,8 @@ function restoredFnFields<TData, TLayer extends string, TPose>(
   const registry = scene.registry as Record<string, Record<string, unknown> | undefined>;
   for (const spec of NODE_FN_FIELDS) {
     const key = item[spec.jsonKey];
-    const registered = typeof key === 'string' ? registry[spec.field]?.[key] : undefined;
+    const table = registry[spec.field];
+    const registered = typeof key === 'string' && table && Object.hasOwn(table, key) ? table[key] : undefined;
     const fn = registered ?? (isLive(item[spec.field]) ? item[spec.field] : undefined);
     if (fn !== undefined) out[spec.field] = fn;
   }
