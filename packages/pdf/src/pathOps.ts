@@ -8,6 +8,7 @@ import {
   PATH_Z,
   type Path,
   resolveCorners,
+  worldCoords,
 } from '@weasel-js/geom';
 import type { ContentStream } from './content';
 
@@ -25,7 +26,9 @@ export function pathOps(out: ContentStream, path: Path, which: 'all' | 'closed')
     out.op('re', path.x, path.y, path.width, path.height);
     return;
   }
-  const { commands, coords } = resolveCorners(path);
+  const resolved = resolveCorners(path);
+  const { commands } = resolved;
+  const coords = worldCoords(resolved);
   const contours: Contour[] = [];
   let cur: Contour | undefined;
   forEachSegment(commands, coords, (cmd, ci, px, py, _i, opens) => {

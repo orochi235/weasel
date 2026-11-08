@@ -77,7 +77,7 @@ function readArcArgs(s: string): number[] {
   let i = 0;
   while (i < s.length) {
     const c = s[i];
-    if (c === ',' || c === ' ' || c === '\t' || c === '\n' || c === '\r') { i++; continue; }
+    if (c === ',' || c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '\f') { i++; continue; }
     const slot = out.length % 7;
     if (slot === 3 || slot === 4) {
       if (c !== '0' && c !== '1') return out;

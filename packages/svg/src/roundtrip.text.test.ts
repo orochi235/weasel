@@ -204,3 +204,29 @@ describe('round-trip', () => {
     expect(out).not.toContain('stroke-width=');
   });
 });
+
+describe('text fill opacity', () => {
+  const text = (body: string) => parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`).nodes[0];
+
+  it('reads fill-opacity and a color\'s alpha on <text> and <tspan>', () => {
+    expect(text('<text fill="red" fill-opacity="0.5">hi</text>')).toMatchObject({
+      fill: { paint: { kind: 'solid', color: '#ff0000', opacity: 0.5 } },
+    });
+    expect(text('<text fill="rgba(255,0,0,0.5)">hi</text>')).toMatchObject({
+      fill: { paint: { kind: 'solid', color: '#ff0000', opacity: 0.5 } },
+    });
+    expect(text('<text>a<tspan fill="blue" fill-opacity="0.5">b</tspan></text>')).toMatchObject({
+      runs: [{ text: 'a' }, { text: 'b', fill: { paint: { kind: 'solid', color: '#0000ff', opacity: 0.5 } } }],
+    });
+  });
+
+  it('keeps a run\'s fill opacity through serialize and parse', () => {
+    const node: SvgNode = {
+      kind: 'text', x: 0, y: 0, width: 40, height: 20, text: 'ab',
+      runs: [{ text: 'a' }, { text: 'b', fill: { paint: { kind: 'solid', color: '#0000ff', opacity: 0.5 } } }],
+    };
+    expect(parseSvg(serializeSvg([node])).nodes[0]).toMatchObject({
+      runs: [{ text: 'a' }, { text: 'b', fill: { paint: { kind: 'solid', color: '#0000ff', opacity: 0.5 } } }],
+    });
+  });
+});
