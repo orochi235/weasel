@@ -1,4 +1,5 @@
-import { interpolateSrgbSplit, type ColorInterpolationSpace, type HueInterpolation } from './colorSpaces';
+import { interpolateSrgbSplit, type ColorInterpolationSpace } from './colorSpaces';
+import type { HueInterpolation } from './hue';
 
 type Rgba = readonly [number, number, number, number];
 

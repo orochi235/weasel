@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { lerpHueDeg, lerpOklch } from './colorSpaces';
+import { lerpOklch } from './colorSpaces';
+import { lerpHueDeg } from './hue';
 
 const PI = Math.PI;
 const TWO_PI = 2 * PI;

@@ -85,12 +85,11 @@ export {
   srgbToHsl,
   hslToSrgb,
   interpolateSrgb,
-  lerpHueDeg,
   type ColorInterpolationSpace,
-  type HueInterpolation,
   type ColorSpace,
   type OklchDeg,
 } from './colorSpaces';
+export { lerpHueDeg, type HueInterpolation } from './hue';
 export { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
