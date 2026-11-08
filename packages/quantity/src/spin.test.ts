@@ -13,6 +13,10 @@ describe('snapToStep', () => {
     expect(snapToStep(0.44, 0.25, 0.1)).toBe(0.35);
   });
 
+  it('keeps every place a step written in e-notation carries', () => {
+    expect(snapToStep(4.6e-7, 1.5e-7)).toBe(4.5e-7);
+  });
+
   it('leaves a value alone when there is no step', () => {
     expect(snapToStep(0.123, 0)).toBe(0.123);
   });
