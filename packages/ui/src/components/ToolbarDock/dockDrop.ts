@@ -1,5 +1,5 @@
 import { gapByMidpoint } from '@weasel-js/ui-logic';
-import { canEnter, isVerticalEdge, moveBar, type BarTarget, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
+import { canEnter, dockRows, isVerticalEdge, moveBar, type BarTarget, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 
 /** Marks the element a dock draws round each bar, holding the bar's id. */
 export const DOCK_BAR = 'data-dock-bar';
@@ -56,7 +56,7 @@ export function drawnLayout(layout: ToolbarLayout, drawn: ReadonlySet<string>, b
  */
 export function spreadTarget(layout: ToolbarLayout, barId: string, to: BarTarget, drawn: ReadonlySet<string>): BarTarget {
   if ('float' in to || to.newRow) return to;
-  const row = (layout.docks[to.dock]?.[to.row] ?? []).filter((id) => id !== barId);
+  const row = (dockRows(layout, to.dock)?.[to.row] ?? []).filter((id) => id !== barId);
   const shown = row.filter((id) => drawn.has(id));
   if (!shown.length) return to;
   const beside = shown[to.index];
@@ -166,7 +166,7 @@ export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar
   const allowed = docks.filter((d) => canEnter(bar, d)).map((d) => d.id);
   const dock = allowed[allowed.indexOf(at.dock) + step];
   if (dock === undefined) return null;
-  const into = layout.docks[dock] ?? [];
+  const into = dockRows(layout, dock) ?? [];
   const entry = step < 0 ? Math.max(0, into.length - 1) : 0;
   return { dock, row: entry, index: into[entry]?.length ?? 0 };
 }

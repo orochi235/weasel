@@ -1,7 +1,7 @@
 import { DEFAULT_INSET } from 'windease';
 import { dragPlacement, floatingItem } from '../../floating/dragPlacement';
 import { DOCK_BAR, drawnBars, dropAt, locateBar, measureDocks, type DockBox, type DockDropMark, type DockPoint } from './dockDrop';
-import { canEnter, homeDock, isVerticalEdge, type BarTarget, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
+import { canEnter, dockRows, floatOf, homeDock, isVerticalEdge, type BarTarget, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 
 /** How far across its dock row a docked bar is dragged before it lifts off to float, in pixels. */
 export const TEAR_PX = 24;
@@ -63,14 +63,14 @@ export function grabBar(root: HTMLElement, layer: HTMLElement, docks: readonly D
     const at = dock.rows.find((r) => r.bars.some((b) => b.id === bar.id));
     if (at) row = { vertical: dock.vertical, start: at.start, end: at.end };
   }
-  const floating = layout.floating[bar.id];
+  const floating = floatOf(layout, bar.id);
   const orientation = floating?.orientation ?? (row?.vertical ? 'vertical' : 'horizontal');
   const r = barElement(root, bar.id)?.getBoundingClientRect();
   const l = layer.getBoundingClientRect();
   return {
     boxes,
     drawn: drawnBars(root),
-    empties: docks.some((d) => canEnter(bar, d) && !layout.docks[d.id]?.length) ? null : [],
+    empties: docks.some((d) => canEnter(bar, d) && !dockRows(layout, d.id)?.length) ? null : [],
     row,
     from: floatHere(root, layer, bar.id, orientation),
     size: { w: r?.width ?? 0, h: r?.height ?? 0 },
@@ -115,7 +115,7 @@ export function tearStep(grab: DockGrab, bar: DockBar, press: DockPoint, p: Dock
 export function homeTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar): BarTarget | null {
   const home = homeDock(docks, bar);
   if (!home) return null;
-  const rows = layout.docks[home.id] ?? [];
+  const rows = dockRows(layout, home.id) ?? [];
   const last = rows.length - 1;
   return last < 0 ? { dock: home.id, row: 0, index: 0, newRow: true } : { dock: home.id, row: last, index: rows[last]!.length };
 }

@@ -192,3 +192,15 @@ describe('moveBar', () => {
     expect(layout).toEqual(copy);
   });
 });
+
+describe('ids that name Object.prototype members', () => {
+  it('resolves a stored layout that does not name the dock', () => {
+    const out = resolveLayout([{ id: 'constructor', edge: 'top' }], [bar('a', { docks: ['constructor'] })], { docks: {}, floating: {} });
+    expect(out.docks).toEqual({ constructor: [['a']] });
+  });
+
+  it('moves a bar into a dock the layout has no rows for yet', () => {
+    const out = moveBar({ docks: {}, floating: {} }, 'a', { dock: 'toString', row: 0, index: 0 });
+    expect(out.docks).toEqual({ toString: [['a']] });
+  });
+});

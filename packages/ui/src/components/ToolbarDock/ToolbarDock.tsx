@@ -5,7 +5,7 @@ import { useBarHosts } from './barHosts';
 import { DockBarContext } from './dockContext';
 import { DOCK_BAR } from './dockDrop';
 import { FloatingLayer, floatPlaces } from './floatingLayer';
-import { canEnter, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
+import { canEnter, dockRows, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 import { useDockDrag, type DockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
 
@@ -57,7 +57,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
   const move = useDockDrag({ root, layer, docks, bars, layout: resolved, onLayoutChange });
   const { view, layout: shown } = move;
   const dragged = view ? byId.get(view.barId) : undefined;
-  const empties = dragged ? docks.filter((d) => canEnter(dragged, d) && !(shown.docks[d.id]?.length ?? 0)) : [];
+  const empties = dragged ? docks.filter((d) => canEnter(dragged, d) && !(dockRows(shown, d.id)?.length ?? 0)) : [];
 
   const hosts = useBarHosts(bars.map((b) => b.id));
   const drawn = (id: string, orientation: BarOrientation) => drawsIn(byId.get(id), orientation);
@@ -69,7 +69,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
     <div ref={root} className={[s.root, className].filter(Boolean).join(' ')}>
       {movable && <span aria-live="polite" aria-atomic="true" data-dock-announce="" className={s.status}>{move.announcement}</span>}
       {EDGES.map((edge) => {
-        const filled = docks.filter((d) => d.edge === edge && (shown.docks[d.id]?.length ?? 0) > 0);
+        const filled = docks.filter((d) => d.edge === edge && (dockRows(shown, d.id)?.length ?? 0) > 0);
         if (!filled.length) return null;
         const orientation = isVerticalEdge(edge) ? 'vertical' : 'horizontal';
         return (
@@ -118,7 +118,7 @@ function drawsIn(bar: DockBar | undefined, orientation: BarOrientation): boolean
 /** The orientation each placed bar is drawn in where it is now: its dock's, or the one it floats with. */
 function orientations(docks: readonly DockSpec[], layout: ToolbarLayout, view: DockDragView | null): Map<string, BarOrientation> {
   const at = new Map<string, BarOrientation>();
-  for (const dock of docks) for (const row of layout.docks[dock.id] ?? []) for (const id of row) at.set(id, isVerticalEdge(dock.edge) ? 'vertical' : 'horizontal');
+  for (const dock of docks) for (const row of dockRows(layout, dock.id) ?? []) for (const id of row) at.set(id, isVerticalEdge(dock.edge) ? 'vertical' : 'horizontal');
   for (const [id, place] of floatPlaces(layout, view)) at.set(id, place.orientation);
   return at;
 }
