@@ -1,8 +1,9 @@
 /** Extend to next path: carry an open end on until it meets a stroke. */
 import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import {
-  DEG_TO_RAD, distance, extendToMeet, openEndAt, openEndRay, openPathEnds, pathDistanceToPoint, pathToAnchors,
-  type AnchorSet, type ExtendToMeetOptions, type OpenPathEnd, type PolygonPath,
+  anchorAt, anchorsToPath, DEG_TO_RAD, distance, editAnchorSetTracked, extendToMeet, lengthenPathEnd, openEndAt, openEndRay,
+  openPathEnds, pathDistanceToPoint, pathEndAnchorIndex, pathToAnchors,
+  type AnchorSet, type ExtendToMeetOptions, type OpenPathEnd, type PenAnchor, type PointOrigin, type PolygonPath,
 } from '@weasel-js/geom';
 import { pref } from '@weasel-js/prefs';
 import { commitOps, type Op, type PathNode, reshapeOps, selectedPathNodes, pathOperationTags } from '@weasel-js/core';
@@ -69,9 +70,45 @@ function endNearPress(all: readonly PathNode[], press: StrokePress) {
   return [];
 }
 
+/** What Extend to next path makes of one node: its path, where its anchors came from, and the flat indexes of
+ *  `selected` once the ends have grown, an end anchor following its end. */
+interface Extended {
+  node: PathNode;
+  path: PolygonPath;
+  origins: readonly (PointOrigin | null)[];
+  selected: number[];
+}
+
+/** Carry each of `ends` on to meet `boundaries`, as one edit of `path`; null when none meets anything. */
+function extendEnds(
+  path: PolygonPath, boundaries: Parameters<typeof extendToMeet>[1], ends: readonly OpenPathEnd[],
+  opts: ExtendToMeetOptions, selected: ReadonlySet<number>,
+): Omit<Extended, 'node'> | null {
+  let after: number[] = [];
+  const next = editAnchorSetTracked(path, (set) => {
+    const kept = new Map<PenAnchor, OpenPathEnd | null>();
+    for (const flat of selected) {
+      const anchor = anchorAt(set, flat);
+      if (anchor) kept.set(anchor, openEndAt(set, flat));
+    }
+    let changed = false;
+    for (const end of ends) {
+      const met = extendToMeet(anchorsToPath(set.anchors, set.closed, path), boundaries, end, opts);
+      if (met && lengthenPathEnd(set, end, met.distance, opts.mode ?? 'eased', opts)) changed = true;
+    }
+    const flatOf = new Map(set.anchors.flat().map((a, k) => [a, k]));
+    after = [...kept].flatMap(([anchor, end]) => {
+      const at = end ? pathEndAnchorIndex(set, end) : flatOf.get(anchor) ?? -1;
+      return at >= 0 ? [at] : [];
+    });
+    return changed;
+  });
+  return next && { ...next, selected: [...new Set(after)].sort((a, b) => a - b) };
+}
+
 /** What Extend to next path would make of each node it reaches. */
-function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string, { node: PathNode; path: PolygonPath }> {
-  const out = new Map<string, { node: PathNode; path: PolygonPath }>();
+function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string, Extended> {
+  const out = new Map<string, Extended>();
   const all = scenePathNodes(deps);
   const editing = deps?.editAnchors?.editingId;
   const press = deps ? pressOf(deps, params) : null;
@@ -80,10 +117,10 @@ function planExtend(deps: ActionDeps | undefined, params?: unknown): Map<string,
     ? all.filter((n) => n.id === editing).map((node) => ({ node, ends: endsAt(node.path, deps!.editAnchors!.selectedAnchors) }))
     : selectedPathNodes(deps).map((node) => ({ node, ends: openPathEnds(node.path) }));
   for (const { node, ends } of subjects) {
-    const boundaries = strokesBesides(deps, node.id);
-    let path = node.path;
-    for (const end of ends) path = extendToMeet(path, boundaries, end, opts)?.path ?? path;
-    if (path !== node.path) out.set(node.id, { node, path });
+    if (node.path.kind !== 'polygon') continue;
+    const selected = node.id === editing ? deps!.editAnchors!.selectedAnchors : new Set<number>();
+    const next = extendEnds(node.path, strokesBesides(deps, node.id), ends, opts, selected);
+    if (next) out.set(node.id, { node, ...next });
   }
   return out;
 }
@@ -109,8 +146,17 @@ export const extendToMeetAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
+      const plan = planExtend(deps, params);
+      const dep = deps.editAnchors;
+      const edited = dep?.editingId ? plan.get(dep.editingId) : undefined;
+      if (dep && edited && plan.size === 1) {
+        // The edited path goes through path edit, so what its extensions keep per anchor follows the anchors.
+        dep.applyEdit(dep.editingId, edited.path, EXTEND_LABEL, edited.origins);
+        dep.setSelectedAnchors(edited.selected);
+        return;
+      }
       const ops: Op[] = [];
-      for (const { node, path } of planExtend(deps, params).values()) ops.push(...reshapeOps(node.node, path, EXTEND_LABEL));
+      for (const { node, path } of plan.values()) ops.push(...reshapeOps(node.node, path, EXTEND_LABEL));
       commitOps(deps, ops, EXTEND_LABEL);
     },
   } satisfies ImmediateInvoker,
