@@ -106,6 +106,13 @@ describe('useFileCommands', () => {
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1056 }]);
   });
 
+  it('New with no size keeps the shown page\'s size when it is none of the paper sizes', () => {
+    const { registry, scene, target, rerender } = setup();
+    rerender({ ...target, page: { ...target.page!, width: 420, height: 595 } });
+    act(() => { registry.trigger('file.new'); });
+    expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 420, height: 595 }]);
+  });
+
   it('Open and Import hand the picker the document', () => {
     const { registry, scene } = setup();
     act(() => { registry.trigger('file.open'); });

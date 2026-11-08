@@ -3,6 +3,7 @@ import { HORIZONTAL_AXIS, isSymmetryGroup, readGroup, symmetryGroupSpec, VERTICA
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DRAW_REGISTRY, type DrawScene } from './drawDocument';
+import { onePage, replacePages } from './pages/drawPages';
 import { drawPrefs } from './prefs';
 import { useSymmetry } from './useSymmetry';
 
@@ -79,5 +80,20 @@ describe('useSymmetry', () => {
     const { result } = renderHook(() => useSymmetry(scene, p2));
     expect(groups(scene)).toHaveLength(1);
     expect(insertInto(result)).toBe(group!.id);
+  });
+
+  it('draws into a group on the new document after New replaces the pages, and into the old one again on undo', () => {
+    act(() => drawPrefs().set('view.symmetry', true));
+    const scene = newScene();
+    createPageRun(scene, [{ id: 'page-1', ...PAGE }]);
+    const { result } = renderHook(() => useSymmetry(scene, placedPagesOf(scene)[0]!));
+    const [old] = groups(scene);
+    act(() => scene.batch('New document', () => replacePages(scene, onePage(PAGE))));
+    const [fresh] = groups(scene);
+    expect(fresh).toBeDefined();
+    expect(insertInto(result)).toBe(fresh!.id);
+    act(() => { scene.undo(); });
+    act(() => { scene.undo(); });
+    expect(insertInto(result)).toBe(old!.id);
   });
 });
