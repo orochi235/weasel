@@ -5,6 +5,7 @@
  * muddy brown.
  */
 import { parseColor, rgbaToHex } from './color';
+import { isSolidPaint } from './commandPaint';
 import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
@@ -29,8 +30,7 @@ function solidOf(rgba: Rgba): Paint {
 
 /** A solid paint's color, or `null` for any other kind. */
 function solidRgba(paint: Paint): Rgba | null {
-  if (paint.kind !== undefined && paint.kind !== 'solid') return null;
-  return rgbaOf((paint as { color: string }).color, paint.opacity);
+  return isSolidPaint(paint) ? rgbaOf(paint.color, paint.opacity) : null;
 }
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
