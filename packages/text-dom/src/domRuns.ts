@@ -12,7 +12,7 @@
 
 import { isSolidPaint, type Paint, type ScreenLength } from '@weasel-js/paint';
 import {
-  DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
+  DEFAULT_TEXT_STYLE, isHardLineBreak, resolveRunFace, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
   type FontVariantCaps, type ResolvedTextStyle, type StyledRun, type TextTransform,
 } from '@weasel-js/text';
@@ -167,12 +167,9 @@ export function runsToDom(
   for (const run of runs) {
     const span = document.createElement('span');
     span.setAttribute('data-run', '');
+    const face = resolveRunFace(run, base);
     if ((run.fontVariantCaps ?? base.fontVariantCaps) === 'small-caps') {
-      const scale = smallCapsScaleFor(
-        run.fontFamily ?? base.fontFamily,
-        run.fontWeight ?? (run.bold ? 700 : numericWeight(base.fontWeight)),
-        run.italic ? 'italic' : base.fontStyle,
-      );
+      const scale = smallCapsScaleFor(face.fontFamily, face.fontWeight, face.fontStyle);
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
       writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang);
     } else {
@@ -190,10 +187,7 @@ export function runsToDom(
     if (run.fontSize != null) setLength(span, 'fontSize', FONT_SIZE_PX_ATTR, run.fontSize);
     else if (run.fontScale != null) span.style.fontSize = `${run.fontScale * 100}%`;
     if (run.fontFamily != null) {
-      span.style.fontFamily = cssFontFamily(run.fontFamily, {
-        weight: run.fontWeight ?? (run.bold ? 700 : undefined),
-        style: run.italic ? 'italic' : undefined,
-      });
+      span.style.fontFamily = cssFontFamily(run.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
       span.setAttribute('data-font-family', run.fontFamily);
     }
     const color = solidColor(run.fill?.paint);

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import {
-  numericWeight, resolveTextStyle, scriptMetricsFor,
+  numericWeight, resolveRunFace, resolveTextStyle, scriptMetricsFor,
 } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
 import { editEnd, imeKey } from '@weasel-js/ui-logic';
@@ -487,10 +487,10 @@ function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Pro
     cssFontFamilyLoading(style.fontFamily, {
       weight: numericWeight(style.fontWeight), style: style.fontStyle,
     }),
-    ...runs.filter((r) => r.fontFamily != null).map((r) => cssFontFamilyLoading(r.fontFamily!, {
-      weight: r.fontWeight ?? (r.bold ? 700 : undefined),
-      style: r.italic ? 'italic' : undefined,
-    })),
+    ...runs.filter((r) => r.fontFamily != null).map((r) => {
+      const face = resolveRunFace(r, style);
+      return cssFontFamilyLoading(face.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
+    }),
   ].filter((p) => p !== null);
   return pending.length === 0 ? null : Promise.all(pending);
 }
