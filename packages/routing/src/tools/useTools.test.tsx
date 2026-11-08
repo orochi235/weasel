@@ -4,7 +4,7 @@
  * tools nor its comparison behind.
  */
 import { describe, expect, it } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { useLayoutEffect, useState } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
@@ -31,6 +31,20 @@ function setup(): { committed: () => ToolsApi; bump: () => void } {
   ));
   return { committed: () => committed, bump: () => bump() };
 }
+
+describe('useTools ids', () => {
+  it('treats an id named like an Object.prototype member as no tool', () => {
+    let tools!: ToolsApi;
+    function Host(): null {
+      tools = useTools({ registry: { a } });
+      return null;
+    }
+    render(<ActiveToolContextProvider><Host /></ActiveToolContextProvider>);
+    expect(tools.has('toString')).toBe(false);
+    expect(() => tools.setActive('constructor')).toThrow(/not in registry/);
+    expect(() => tools.engageHotkey('toString')).toThrow(/not in registry/);
+  });
+});
 
 describe('useTools after an abandoned render', () => {
   it('answers has() from the committed registry', () => {

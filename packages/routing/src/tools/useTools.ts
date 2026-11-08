@@ -87,7 +87,7 @@ function useStableSources<T extends AnyTool, A extends Contribution<unknown>>(
 function sameRecord<T>(a: Record<string, T>, b: Record<string, T>): boolean {
   const ak = Object.keys(a);
   if (ak.length !== Object.keys(b).length) return false;
-  return ak.every((k) => k in b && a[k] === b[k]);
+  return ak.every((k) => Object.hasOwn(b, k) && a[k] === b[k]);
 }
 
 function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
@@ -113,7 +113,7 @@ export function useTools<TOverlay = KernelOverlay>(
   opts: UseToolsOptions<TOverlay>,
 ): ToolsApi<TOverlay> {
   const initialActive = opts.active ?? null;
-  if (initialActive !== null && !(initialActive in opts.registry)) {
+  if (initialActive !== null && !Object.hasOwn(opts.registry, initialActive)) {
     throw new Error(`useTools: active "${initialActive}" not in registry`);
   }
 
@@ -155,7 +155,7 @@ export function useTools<TOverlay = KernelOverlay>(
   const setFocused = contributions.setFocused;
   const setActive = useCallback(
     (id: string | null) => {
-      if (id !== null && !(id in slottedRef.current.registry)) {
+      if (id !== null && !Object.hasOwn(slottedRef.current.registry, id)) {
         throw new Error(`setActive: "${id}" not in registry`);
       }
       dlog('tools', 'active:', activeRef.current, '→', id);
@@ -166,7 +166,7 @@ export function useTools<TOverlay = KernelOverlay>(
 
   const engageHotkey = useCallback(
     (id: string) => {
-      if (!(id in slottedRef.current.registry)) {
+      if (!Object.hasOwn(slottedRef.current.registry, id)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('tools', 'hotkey engaged:', id);
@@ -183,7 +183,7 @@ export function useTools<TOverlay = KernelOverlay>(
   // May be called while rendering, so it reads this render's tools, not a ref.
   const has = useCallback(
     (id: string): boolean =>
-      id in slotted.registry
+      Object.hasOwn(slotted.registry, id)
       || slotted.ambient.some((t) => t.id === id),
     [slotted],
   );
