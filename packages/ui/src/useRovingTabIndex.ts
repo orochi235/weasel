@@ -28,6 +28,9 @@ export type UseRovingTabIndexOptions = {
   /** Lays the items out as a grid this many across: Left and Right step through them in reading
    *  order, and Up and Down move a row, keeping the column. See {@link rovingGridTarget}. */
   columns?: number;
+  /** With `columns`, where a last row shorter than `columns` sits, so Up and Down land on the item
+   *  drawn under this one. Default `'start'`. See {@link tiling}. */
+  lastRow?: 'start' | 'center' | 'end';
   /** With `columns`, the elements whose items each start on a row of their own — a toolbar whose
    *  groups are each a grid. Items under none of them count as one group. */
   groupSelector?: string;
@@ -81,28 +84,53 @@ export function rovingTarget(
   return step.handled ? step.at : null;
 }
 
+/** How a grid's rows sit for {@link rovingGridTarget}. */
+export interface RovingGridLayout {
+  dir?: RovingDirection;
+  /** How many columns in each row's first item sits, by row: a short row centered in an even gap sits a half
+   *  column in. Omitted rows start at column 0. */
+  offsets?: readonly number[];
+}
+
+/** Which item of `row`, starting `offset` columns in, sits under the column span `lo`–`lo + 1`: of two
+ *  that each half cover it, the later going down and the earlier going up, so Down then Up comes back.
+ *  Under none, the nearest end. */
+function itemUnder(row: readonly number[], offset: number, lo: number, down: boolean): number | undefined {
+  const first = Math.max(0, Math.floor(lo - offset - 1) + 1);
+  const last = Math.min(row.length - 1, Math.ceil(lo + 1 - offset) - 1);
+  if (first <= last) return row[down ? last : first];
+  return row[Math.min(row.length - 1, Math.max(0, Math.round(lo - offset)))];
+}
+
 /** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading
  *  order, or null if it does not move it. Left, Right, Home and End behave as {@link rovingTarget}
- *  with `'horizontal'` and the same `dir`. Up and Down keep the column, landing on the last item of a row too short
- *  to have it, pass over rows where that item is disabled, and stop at the first and last rows. */
+ *  with `'horizontal'` and the layout's `dir`. Up and Down move to the item under this one in the next row, by
+ *  where each row sits (`layout.offsets`), or to that row's nearest end when none is under it; they pass over
+ *  rows where that item is disabled, and stop at the first and last rows. */
 export function rovingGridTarget(
   current: number,
   key: string,
   enabled: readonly boolean[],
   rows: readonly (readonly number[])[],
-  dir: RovingDirection = 'ltr',
+  layout: RovingGridLayout = {},
 ): number | null {
   const step = key === 'ArrowDown' ? 1 : key === 'ArrowUp' ? -1 : 0;
-  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal', dir);
+  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal', layout.dir);
   const r = rows.findIndex((row) => row.includes(current));
   if (r < 0) return null;
-  const column = rows[r].indexOf(current);
+  const at = (row: number): number => layout.offsets?.[row] ?? 0;
+  const lo = at(r) + rows[r].indexOf(current);
   for (let rr = r + step; rr >= 0 && rr < rows.length; rr += step) {
-    const row = rows[rr];
-    const i = row[Math.min(column, row.length - 1)];
+    const i = itemUnder(rows[rr], at(rr), lo, step > 0);
     if (i !== undefined && enabled[i]) return i;
   }
   return null;
+}
+
+/** How far in, in columns, a row of `length` items sits in a grid `columns` across, aligned `align`. */
+export function rowOffset(length: number, columns: number, align: 'start' | 'center' | 'end' = 'start'): number {
+  const gap = Math.max(0, columns - length);
+  return align === 'center' ? gap / 2 : align === 'end' ? gap : 0;
 }
 
 /** `items` split into rows `columns` long, a new row starting wherever the group changes. */
@@ -259,8 +287,11 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       }
       const enabled = found.map(isEnabled);
       const dir = latest.current.dir ?? inlineDirection(e.currentTarget);
+      const rows = columns ? gridRows(found, columns, groupSelector) : [];
+      // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.
+      const offsets = rows.map((row) => (row.length < columns! ? rowOffset(row.length, columns!, latest.current.lastRow) : 0));
       const next = columns
-        ? rovingGridTarget(current, e.key, enabled, gridRows(found, columns, groupSelector), dir)
+        ? rovingGridTarget(current, e.key, enabled, rows, { dir, offsets })
         : rovingTarget(current, e.key, enabled, orientation, dir);
       if (next === null || next === current) return;
       e.preventDefault();

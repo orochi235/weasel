@@ -1,5 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import type { Orientation } from '../orientation';
+import { tiling } from '../../tiling';
 import s from './ToolGroup.module.css';
 
 /** Props for {@link ToolGroup}. */
@@ -30,10 +31,10 @@ export interface ToolGroupProps {
  */
 export function ToolGroup(props: ToolGroupProps) {
   const { children, orientation = 'vertical', columns, groupKey, ariaLabel, className } = props;
-  const cls = [s.group, columns ? s.grid : orientation === 'horizontal' && s.horizontal, className]
+  const tiles = columns ? tiling(Children.count(children), { columns }) : null;
+  const cls = [s.group, tiles ? tiles.className : orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');
-  // The column count is data, so it reaches the stylesheet as a custom property.
-  const style = columns ? ({ '--wzl-tool-columns': columns } as CSSProperties) : undefined;
+  const style = tiles?.style;
   return (
     <div className={cls} style={style} role="group" data-group={groupKey} aria-label={ariaLabel}>
       {children}

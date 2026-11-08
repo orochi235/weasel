@@ -33,9 +33,9 @@ describe('rovingGridTarget — right-to-left', () => {
   const all = Array(6).fill(true) as boolean[];
 
   it('swaps Left and Right and keeps Up and Down', () => {
-    expect(rovingGridTarget(2, 'ArrowLeft', all, rows, 'rtl')).toBe(3);
-    expect(rovingGridTarget(3, 'ArrowRight', all, rows, 'rtl')).toBe(2);
-    expect(rovingGridTarget(1, 'ArrowDown', all, rows, 'rtl')).toBe(4);
+    expect(rovingGridTarget(2, 'ArrowLeft', all, rows, { dir: 'rtl' })).toBe(3);
+    expect(rovingGridTarget(3, 'ArrowRight', all, rows, { dir: 'rtl' })).toBe(2);
+    expect(rovingGridTarget(1, 'ArrowDown', all, rows, { dir: 'rtl' })).toBe(4);
   });
 });
 

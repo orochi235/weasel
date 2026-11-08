@@ -325,6 +325,19 @@ describe('rovingGridTarget', () => {
     expect(rovingGridTarget(4, 'Home', all, rows)).toBe(0);
     expect(rovingGridTarget(4, 'End', all, rows)).toBe(6);
   });
+
+  it('moves to the item drawn under this one in a row that sits off the start', () => {
+    // a b c d
+    //  e f     <- two items centered in four columns: one column in
+    const grid = [[0, 1, 2, 3], [4, 5]];
+    const six = Array(6).fill(true) as boolean[];
+    const layout = { offsets: [0, 1] };
+    expect(rovingGridTarget(1, 'ArrowDown', six, grid, layout)).toBe(4);
+    expect(rovingGridTarget(2, 'ArrowDown', six, grid, layout)).toBe(5);
+    expect(rovingGridTarget(5, 'ArrowUp', six, grid, layout)).toBe(2);
+    expect(rovingGridTarget(0, 'ArrowDown', six, grid, layout)).toBe(4);
+    expect(rovingGridTarget(3, 'ArrowDown', six, grid, layout)).toBe(5);
+  });
 });
 
 describe('useRovingTabIndex — columns', () => {

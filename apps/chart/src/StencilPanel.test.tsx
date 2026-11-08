@@ -62,7 +62,7 @@ describe('StencilPanel', () => {
   it('lays the stencils out three across', () => {
     panel();
     const group = screen.getByRole('toolbar', { name: 'Flowchart' }).querySelector('[role="group"]') as HTMLElement;
-    expect(group.style.getPropertyValue('--wzl-tool-columns')).toBe('3');
+    expect(group.style.getPropertyValue('--tracks')).toBe('6');
   });
 
   it("draws each stencil's own glyph, not the unknown-tool placeholder", () => {

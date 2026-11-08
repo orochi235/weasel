@@ -1,7 +1,8 @@
-import { useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+import { useRef, type ReactElement, type ReactNode } from 'react';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
-import { rowLead, SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, type SwatchChange } from './SwatchButton';
+import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, type SwatchChange } from './SwatchButton';
+import { ROW_LEAD, tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
 import s from './SwatchGrid.module.css';
 
@@ -79,8 +80,8 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const { options, value, className } = props;
   const apply = useSwatchApply(props.onChange, props.onAltChange);
   const columns = props.columns ?? 6;
-  const lead = rowLead(options.length, columns, props.align ?? 'start');
-  const lastStart = options.length - (options.length % columns || columns);
+  const tiles = tiling(options.length, { columns, lastRow: props.align ?? 'start' });
+  const lead = tiles.lead;
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
@@ -90,10 +91,10 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
   return (
     <div
       ref={rootRef}
-      className={[s.grid, className].filter(Boolean).join(' ')}
+      className={[s.grid, tiles.className, className].filter(Boolean).join(' ')}
       role="group"
       aria-label={props['aria-label']}
-      style={{ '--tracks': 2 * columns, '--lead': lead } as CSSProperties}
+      style={tiles.style}
     >
       {options.map((o, i) => (
         <SwatchButton
@@ -103,7 +104,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
           current={i === current}
           apply={apply}
           onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lead)}
-          data={{ 'data-row-lead': i === lastStart && lead > 0 ? '' : undefined }}
+          data={i === tiles.rowLead ? ROW_LEAD : undefined}
         />
       ))}
     </div>

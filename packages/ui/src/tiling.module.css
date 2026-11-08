@@ -1,0 +1,13 @@
+/* Half-column tracks, so a short last row can sit centered between two columns. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(var(--tracks), minmax(0, 1fr));
+}
+
+.tiles > * {
+  grid-column-end: span 2;
+}
+
+.tiles > [data-row-lead] {
+  grid-column-start: calc(1 + var(--lead));
+}
