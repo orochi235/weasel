@@ -4,7 +4,7 @@
  * and its children's as `'inherit'`. A paint set on the root `<svg>`, or a
  * nested one, belongs to no group, so the leaves beneath keep it resolved.
  */
-import { ownProp, type StyleContext } from './cascade';
+import { setsOwn, type StyleContext } from './cascade';
 import { INHERITED_PROPERTIES } from './properties';
 import { paintThroughMatrix, strokeThroughMatrix } from './paintThroughMatrix';
 import { readPaint, readStroke } from './readPaint';
@@ -21,12 +21,8 @@ export const NO_GROUP_PAINT: GroupPaintFrom = { fill: false, stroke: false };
 
 const STROKE_PROPS = INHERITED_PROPERTIES.filter((p) => p.startsWith('stroke') || p.startsWith('marker'));
 
-const sets = (el: Element, prop: string): boolean => {
-  const v = ownProp(el, prop as never);
-  return v != null && v.trim() !== 'inherit';
-};
-const setsFill = (el: Element): boolean => sets(el, 'fill');
-const setsStroke = (el: Element): boolean => STROKE_PROPS.some((p) => sets(el, p));
+const setsFill = (el: Element): boolean => setsOwn(el, 'fill');
+const setsStroke = (el: Element): boolean => STROKE_PROPS.some((p) => setsOwn(el, p));
 
 /** What a nested `<svg>`'s children take: a paint it sets is no group's. */
 export function viewportPaintFrom(el: Element, from: GroupPaintFrom): GroupPaintFrom {

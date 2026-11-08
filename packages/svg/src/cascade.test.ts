@@ -3,6 +3,7 @@ import {
   deriveStyle, EMPTY_STYLE, ownProp, parseDeclarations, parseStylesheet, resolveCurrentColor, specificity,
 } from './cascade';
 import { DEFAULT_MEDIA_ENVIRONMENT } from './media';
+import { parseSvg } from './parse';
 
 /** Parse an SVG string and return a lookup by element id. */
 function els(svg: string): (id: string) => Element {
@@ -344,5 +345,42 @@ describe('cascade layers', () => {
     const warnings: string[] = [];
     parseStylesheet('@layer a; @import "a.css"; .x { fill: red }', 0, { onWarn: (m) => warnings.push(m) });
     expect(warnings).toEqual(['@import "a.css" is not fetched; its rules do not apply']);
+  });
+});
+
+describe('declarations CSS rejects', () => {
+  const fillOf = (svg: string) => {
+    const { nodes, warnings } = parseSvg(svg);
+    return { fill: (nodes[0] as { fill?: unknown }).fill, warnings };
+  };
+  const NS = 'xmlns="http://www.w3.org/2000/svg"';
+
+  it('an invalid style="" value leaves the presentation attribute standing', () => {
+    const { fill, warnings } = fillOf(`<svg ${NS}><rect width="1" height="1" fill="red" style="fill: bogus"/></svg>`);
+    expect(fill).toEqual({ kind: 'solid', color: '#ff0000' });
+    expect(warnings).toEqual(['fill: bogus is not a valid fill; it is ignored, as CSS ignores it']);
+  });
+
+  it('an invalid value in a more specific rule leaves the less specific one standing', () => {
+    const { fill } = fillOf(`<svg ${NS}><style>rect { fill: #00f } rect.a { fill: 12px }</style><rect class="a" width="1" height="1"/></svg>`);
+    expect(fill).toEqual({ kind: 'solid', color: '#0000ff' });
+  });
+
+  it('an invalid presentation attribute inherits instead', () => {
+    const { fill } = fillOf(`<svg ${NS} fill="lime"><rect width="1" height="1" fill="nonsense"/></svg>`);
+    expect(fill).toEqual({ kind: 'solid', color: '#00ff00' });
+  });
+
+  it('a value this parser only cannot read still wins the cascade', () => {
+    const get = els('<svg><rect id="r" display="none" style="display: block"/></svg>');
+    expect(ownProp(get('r'), 'display')).toBe('block');
+  });
+
+  it('unset inherits an inherited property, and initial resets it', () => {
+    expect(fillOf(`<svg ${NS} fill="red"><rect width="1" height="1" style="fill: unset"/></svg>`).fill)
+      .toEqual({ kind: 'solid', color: '#ff0000' });
+    const initial = fillOf(`<svg ${NS} fill="red"><rect width="1" height="1" style="fill: initial"/></svg>`);
+    expect(initial.fill).toEqual({ kind: 'solid', color: '#000000' });
+    expect(initial.warnings).toEqual([]);
   });
 });

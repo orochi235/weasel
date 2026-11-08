@@ -16,6 +16,7 @@ import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
+import { SUPPORTED_LEAF_TAGS } from './lowerLeaf';
 import { defUsesPrivateNamespace, markerDefOf, markerDefXml, type MarkerDef } from './markerDefs';
 
 /** Collected gradient definitions, keyed by element id. */
@@ -119,20 +120,16 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
   return out;
 }
 
-/** Paint servers, `<marker>`, `<clipPath>` and `<style>` aside, a `<defs>` child is
- *  something this package does not model (a `<use>` template, a `<filter>`).
- *  Say so once here. */
+/** A `<defs>` child something reads: a paint server, marker, clip, style, or what a `<use>` draws. */
+const DEFS_READ = new Set(['pattern', 'marker', 'clippath', 'style', 'g', 'symbol', 'text', 'image', 'use', 'a', 'switch', 'svg']);
+
+/** Say once here which `<defs>` child this package does not model (a `<filter>`, a `<mask>`). */
 function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void): void {
-  if (!onWarn) return;
-  const defs = svg.getElementsByTagName('defs');
-  for (let d = 0; d < defs.length; d++) {
-    const root = defs[d];
-    for (let i = 0; i < root.children.length; i++) {
-      const child = root.children[i];
+  for (const defs of Array.from(svg.getElementsByTagName('defs'))) {
+    for (const child of Array.from(defs.children)) {
       const tag = child.tagName.toLowerCase();
-      if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag))) continue;
-      if (tag === 'pattern' || tag === 'marker' || tag === 'clippath' || tag === 'style') continue;
-      onWarn(`unsupported <defs> child: <${child.tagName}>`);
+      if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag)) || DEFS_READ.has(tag) || SUPPORTED_LEAF_TAGS.has(tag)) continue;
+      onWarn?.(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
 }
@@ -434,7 +431,7 @@ export class PaintServerRegistry {
     for (const path of this.clips) {
       parts.push(
         `<clipPath id="${this.clipIds.get(path)!}">`
-        + `<path d="${serializePathD(path)}"/>`
+        + `<path d="${serializePathD(path)}"${path.kind === 'polygon' && path.fillRule === 'evenodd' ? ' clip-rule="evenodd"' : ''}/>`
         + '</clipPath>',
       );
     }

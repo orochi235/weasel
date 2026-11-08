@@ -13,7 +13,16 @@ import { parseColor, rgbaToHex } from '@weasel-js/core';
 export type ParsedColor =
   | { kind: 'none' }
   | { kind: 'solid'; color: string; alpha: number }
-  | { kind: 'ref'; id: string; fallback?: { color: string; alpha: number } };
+  | { kind: 'ref'; id: string; fallback?: { kind: 'none' } | { kind: 'solid'; color: string; alpha: number } };
+
+/**
+ * The id a same-document `url(#id)` names, its id bare or quoted, and the text
+ * after it; null for any other value.
+ */
+export function parseUrlRef(s: string): { id: string; rest: string } | null {
+  const m = /^url\(\s*(?:"#([^"]+)"|'#([^']+)'|#([^)\s"']+))\s*\)([\s\S]*)$/i.exec(s.trim());
+  return m ? { id: (m[1] ?? m[2] ?? m[3]) as string, rest: m[4].trim() } : null;
+}
 
 /**
  * Parse an SVG paint string. Returns `null` for inputs we don't recognize
@@ -27,7 +36,7 @@ export function parsePaintAttr(raw: string | null | undefined): ParsedColor | nu
   if (raw == null) return null;
   const s = raw.trim();
   if (s === '') return null;
-  if (s === 'none') return { kind: 'none' };
+  if (s.toLowerCase() === 'none') return { kind: 'none' };
   if (s.toLowerCase() === 'currentcolor') {
     return { kind: 'solid', color: '#000000', alpha: 1 };
   }
@@ -35,15 +44,13 @@ export function parsePaintAttr(raw: string | null | undefined): ParsedColor | nu
   // grammar allows — what a renderer takes when it cannot resolve the
   // reference. A mesh gradient or any other paint outside this package's
   // vocabulary arrives that way.
-  const urlMatch = /^url\(\s*#([^)\s]+)\s*\)(.*)$/.exec(s);
-  if (urlMatch) {
-    const out: ParsedColor = { kind: 'ref', id: urlMatch[1] };
-    const rest = urlMatch[2].trim();
-    if (rest !== '' && rest !== 'none') {
-      const fallback = parsePaintAttr(rest);
-      if (fallback?.kind === 'solid') {
-        (out as { fallback?: { color: string; alpha: number } }).fallback =
-          { color: fallback.color, alpha: fallback.alpha };
+  const url = parseUrlRef(s);
+  if (url) {
+    const out: ParsedColor = { kind: 'ref', id: url.id };
+    if (url.rest !== '') {
+      const fallback = parsePaintAttr(url.rest);
+      if (fallback?.kind === 'solid' || fallback?.kind === 'none') {
+        (out as { fallback?: typeof fallback }).fallback = fallback;
       }
     }
     return out;

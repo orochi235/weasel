@@ -8,21 +8,22 @@
  * the inherited cascade once, and leaves read resolved values directly.
  */
 
-import {
-  parseDeclarations, skipBlock, skipString, splitTopLevel, stripComments, type Declaration,
-} from './cssScan';
+import { parseDeclarations, type Declaration } from './cssScan';
 import { containerQueryHolds, queryContainerOf } from './container';
 import { compareSpecificity, specificity, type Specificity } from './specificity';
 import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
 import {
-  INHERITED_PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
+  INHERITED_PROPERTIES, isDeclarationInvalid, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
 } from './properties';
-import { evaluateSupports } from './supports';
+import {
+  CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext,
+} from './stylesheet';
 import { computeFontRelative, fontSizeOf } from './fontSize';
 
 export { parseDeclarations, specificity, type Declaration, type Specificity };
+export { CascadeLayers, parseStylesheet, type StyleRule, type StylesheetContext };
 
 /**
  * Raw resolved value of each inheritable presentation property in effect at a
@@ -35,181 +36,6 @@ export type StyleContext = Readonly<Partial<Record<InheritedPropertyName, string
 
 /** The empty cascade — seeds the root. */
 export const EMPTY_STYLE: StyleContext = {};
-
-/** One selector from a style rule; a comma list becomes one rule per selector. */
-export interface StyleRule {
-  readonly selector: string;
-  readonly declarations: readonly Declaration[];
-  /** `[ids, classes/attributes/pseudo-classes, types/pseudo-elements]`. */
-  readonly specificity: Specificity;
-  /** Source position across every `<style>` in the document. */
-  readonly order: number;
-  /** The cascade layer's full dotted name; `''` is unlayered. An anonymous layer's segment starts with U+0000. */
-  readonly layer: string;
-  /** The prelude of each `@container` block around the rule, outermost first. */
-  readonly containers?: readonly string[];
-}
-
-/** What a stylesheet's conditional at-rules are evaluated against. */
-export interface StylesheetContext {
-  /** The environment `@media` answers to; {@link DEFAULT_MEDIA_ENVIRONMENT} when omitted. */
-  readonly media?: SvgMediaEnvironment;
-  /** Answers `@supports selector(…)`; every selector test is false without it. */
-  readonly selector?: (selector: string) => boolean;
-  /** Receives a notice for each `@import`, which is never fetched. */
-  readonly onWarn?: (message: string) => void;
-}
-
-/**
- * The cascade layers a document declares, in the order CSS Cascade 5 ranks
- * them. Several sheets share one, since a layer's position is fixed by its
- * first declaration anywhere in the document.
- */
-export class CascadeLayers {
-  private readonly children = new Map<string, string[]>();
-  private anonymous = 0;
-
-  /** Declare `name` (possibly dotted) inside `parent`, keeping any earlier position; returns its full name. */
-  declare(parent: string, name: string): string {
-    let full = parent;
-    for (const segment of name.split('.')) {
-      const child = full ? `${full}.${segment}` : segment;
-      const siblings = this.children.get(full) ?? [];
-      if (!siblings.includes(child)) {
-        siblings.push(child);
-        this.children.set(full, siblings);
-      }
-      full = child;
-    }
-    return full;
-  }
-
-  /** A fresh layer inside `parent` that nothing can reopen. */
-  declareAnonymous(parent: string): string {
-    return this.declare(parent, `\u0000${this.anonymous++}`);
-  }
-
-  /**
-   * Each layer's rank for normal declarations, higher winning: a layer's
-   * sublayers rank below its own rules, in declaration order, and unlayered
-   * rules (`''`) rank above every layer.
-   */
-  ranks(): ReadonlyMap<string, number> {
-    const out = new Map<string, number>();
-    const visit = (name: string): void => {
-      for (const child of this.children.get(name) ?? []) visit(child);
-      out.set(name, out.size);
-    };
-    visit('');
-    return out;
-  }
-}
-
-/**
- * Parse stylesheet text into rules. `@media` and `@supports` blocks
- * contribute their rules when their condition holds against `ctx`, nested to
- * any depth, and `@layer` blocks contribute theirs tagged with the layer,
- * which is declared into `layers`. `@container` blocks contribute theirs
- * tagged with the query, which is answered per element. `@import` is reported
- * and not fetched; every other at-rule (`@font-face`, `@keyframes`, …) is
- * skipped whole, as are nested blocks inside a rule body. `order` continues
- * from `firstOrder` so several sheets share one source order.
- */
-export function parseStylesheet(
-  text: string, firstOrder = 0, ctx: StylesheetContext = {}, layers = new CascadeLayers(),
-): StyleRule[] {
-  const src = stripComments(text).replace(/<!\[CDATA\[|\]\]>|<!--|-->/g, ' ');
-  const rules: StyleRule[] = [];
-  parseRuleList(src, 0, src.length, '', ctx, rules, { order: firstOrder, importsAllowed: true, layers });
-  return rules;
-}
-
-const IDENT = '-?[a-zA-Z_\\u0080-\\uffff][\\w\\u0080-\\uffff-]*';
-const LAYER_NAME = new RegExp(`^${IDENT}(?:\\.${IDENT})*$`);
-
-/** The names in a `@layer` prelude, or null when any is malformed. */
-function layerNames(prelude: string): string[] | null {
-  if (!prelude.trim()) return [];
-  const names = splitTopLevel(prelude, ',').map((n) => n.trim());
-  return names.every((n) => LAYER_NAME.test(n)) ? names : null;
-}
-
-const AT_RULE = /^@([\w-]+)\s*([\s\S]*)$/;
-
-interface ListState {
-  order: number;
-  /** `@import` is valid only at the top of a sheet, ahead of every rule but `@charset` and `@layer`. */
-  importsAllowed: boolean;
-  readonly layers: CascadeLayers;
-  /** The `@container` preludes around the rules being read. */
-  containers?: readonly string[];
-}
-
-function parseRuleList(
-  src: string, from: number, to: number, layer: string, ctx: StylesheetContext, rules: StyleRule[], state: ListState,
-): void {
-  let i = from;
-  let preludeStart = from;
-  while (i < to) {
-    const ch = src[i];
-    if (ch === '"' || ch === "'") { i = skipString(src, i); continue; }
-    if (ch === ';') {
-      const text = src.slice(preludeStart, i).trim();
-      const statement = AT_RULE.exec(text);
-      const name = statement?.[1].toLowerCase();
-      if (name === 'import' && state.importsAllowed) {
-        ctx.onWarn?.(`@import ${statement?.[2]} is not fetched; its rules do not apply`);
-      } else if (name === 'layer') {
-        for (const n of layerNames(statement?.[2] ?? '') ?? []) state.layers.declare(layer, n);
-      } else if (text && name !== 'charset') {
-        state.importsAllowed = false;
-      }
-      i++;
-      preludeStart = i;
-      continue;
-    }
-    if (ch !== '{') { i++; continue; }
-    const prelude = src.slice(preludeStart, i).trim();
-    const end = Math.min(skipBlock(src, i), to);
-    const at = AT_RULE.exec(prelude);
-    state.importsAllowed = false;
-    if (at) {
-      const name = at[1].toLowerCase();
-      const names = name === 'layer' ? layerNames(at[2]) : null;
-      if (names && names.length <= 1) {
-        const inner = names.length ? state.layers.declare(layer, names[0]) : state.layers.declareAnonymous(layer);
-        parseRuleList(src, i + 1, end - 1, inner, ctx, rules, state);
-      } else if (name === 'container') {
-        const outer = state.containers;
-        state.containers = [...(outer ?? []), at[2]];
-        parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
-        state.containers = outer;
-      } else if (conditionHolds(name, at[2], ctx)) {
-        parseRuleList(src, i + 1, end - 1, layer, ctx, rules, state);
-      }
-    } else if (prelude) {
-      const declarations = parseDeclarations(src.slice(i + 1, end - 1));
-      for (const raw of splitTopLevel(prelude, ',')) {
-        const selector = raw.trim();
-        if (selector) {
-          const { containers } = state;
-          rules.push({
-            selector, declarations, specificity: specificity(selector), order: state.order++, layer,
-            ...(containers ? { containers } : {}),
-          });
-        }
-      }
-    }
-    i = end;
-    preludeStart = end;
-  }
-}
-
-function conditionHolds(name: string, condition: string, ctx: StylesheetContext): boolean {
-  if (name === 'media') return evaluateMediaQuery(condition, ctx.media ?? DEFAULT_MEDIA_ENVIRONMENT);
-  if (name === 'supports') return evaluateSupports(condition, { selector: ctx.selector });
-  return false;
-}
 
 function appliesAsCss(style: Element, ctx: StylesheetContext): boolean {
   const type = style.getAttribute('type')?.trim().toLowerCase();
@@ -227,6 +53,7 @@ interface RankedRule extends StyleRule {
 interface BoundSheet {
   readonly rules: readonly RankedRule[];
   readonly media: SvgMediaEnvironment;
+  readonly onWarn?: (message: string) => void;
 }
 
 const sheetCache = new WeakMap<Document, BoundSheet>();
@@ -239,7 +66,7 @@ const sheetCache = new WeakMap<Document, BoundSheet>();
 export function bindStylesheets(
   doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
 ): void {
-  sheetCache.set(doc, { rules: collectRules(doc, media, onWarn), media });
+  sheetCache.set(doc, { rules: collectRules(doc, media, onWarn), media, onWarn });
 }
 
 function documentSheet(doc: Document): BoundSheet {
@@ -260,7 +87,7 @@ function documentSheet(doc: Document): BoundSheet {
 function containersHold(el: Element, containers: readonly string[], media: SvgMediaEnvironment): boolean {
   const root = el.ownerDocument?.documentElement;
   if (!root || el === root) return false;
-  const declared = authorDeclarations(root);
+  const declared = cascaded(root);
   const container = queryContainerOf((prop) => declared.get(prop), media);
   return containers.every((prelude) => containerQueryHolds(prelude, container));
 }
@@ -307,14 +134,16 @@ function matches(el: Element, selector: string): boolean {
 
 const elementCache = new WeakMap<Element, ReadonlyMap<string, string>>();
 
+const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
+
 /**
- * The cascaded value of every property an author rule or `style=""` sets on
- * `el`. Lowest to highest: normal rules, normal inline, `!important` rules,
- * `!important` inline (CSS Cascade 5). Layers order the rules within each
- * importance, reversed for `!important`. Presentation attributes sit below
- * all of these and are left to {@link ownProp}.
+ * The cascaded value of every property `el` sets. Lowest to highest:
+ * presentation attributes, normal rules, normal inline, `!important` rules,
+ * `!important` inline (CSS Cascade 5, SVG2). Layers order the rules within
+ * each importance, reversed for `!important`. A value CSS rejects is dropped,
+ * as CSS drops it, so the one below it stands.
  */
-function authorDeclarations(el: Element): ReadonlyMap<string, string> {
+function cascaded(el: Element): ReadonlyMap<string, string> {
   const cached = elementCache.get(el);
   if (cached) return cached;
   const sheet = el.ownerDocument && documentSheet(el.ownerDocument);
@@ -322,12 +151,21 @@ function authorDeclarations(el: Element): ReadonlyMap<string, string> {
     && (!r.containers || containersHold(el, r.containers, sheet!.media)));
   const inline = parseDeclarations(el.getAttribute('style') ?? '');
   const out = new Map<string, string>();
+  const take = (prop: string, value: string, written: string): void => {
+    if (!isDeclarationInvalid(prop, value)) out.set(prop, value);
+    else sheet?.onWarn?.(`${written} is not a valid ${prop}; it is ignored, as CSS ignores it`);
+  };
+  for (const prop of PROPERTY_NAMES) {
+    const attr = el.getAttribute(prop);
+    if (attr != null) take(prop, attr, `${prop}="${attr}"`);
+  }
   const importantOrder = [...matched].sort((x, y) => y.rank - x.rank || compareCascade(x, y));
   for (const [important, ordered] of [[false, matched], [true, importantOrder]] as const) {
-    for (const r of ordered) {
-      for (const d of r.declarations) if (d.important === important) out.set(d.prop, d.value);
-    }
-    for (const d of inline) if (d.important === important) out.set(d.prop, d.value);
+    const declare = (d: Declaration): void => {
+      if (d.important === important) take(d.prop, d.value, `${d.prop}: ${d.value}`);
+    };
+    for (const r of ordered) r.declarations.forEach(declare);
+    inline.forEach(declare);
   }
   elementCache.set(el, out);
   return out;
@@ -339,7 +177,19 @@ function authorDeclarations(el: Element): ReadonlyMap<string, string> {
  * attribute, which ranks below any author rule (SVG2).
  */
 export function ownProp(el: Element, prop: PropertyName): string | null {
-  return authorDeclarations(el).get(prop) ?? el.getAttribute(prop);
+  return cascaded(el).get(prop) ?? null;
+}
+
+/** Whether a cascaded value of an inherited property hands on the parent's: `inherit`, or `unset`. */
+export function keepsParent(value: string): boolean {
+  const word = value.trim().toLowerCase();
+  return word === 'inherit' || word === 'unset';
+}
+
+/** Whether `el` gives an inherited property a value of its own rather than taking its parent's. */
+export function setsOwn(el: Element, prop: InheritedPropertyName): boolean {
+  const own = ownProp(el, prop);
+  return own != null && !keepsParent(own);
 }
 
 /**
@@ -354,9 +204,10 @@ export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
   for (const prop of INHERITED_PROPERTIES) {
     const own = ownProp(el, prop);
     // `color: currentColor` is `inherit` by another name (CSS Color 4).
-    if (own == null || own === 'inherit' || (prop === 'color' && own.trim().toLowerCase() === 'currentcolor')) continue;
+    if (own == null || keepsParent(own) || (prop === 'color' && own.trim().toLowerCase() === 'currentcolor')) continue;
     if (!next) next = { ...parent };
-    next[prop] = own;
+    if (own.trim().toLowerCase() === 'initial') delete next[prop];
+    else next[prop] = own;
   }
   if (next) computeFontRelative(next, fontSizeOf(parent));
   return next ?? parent;

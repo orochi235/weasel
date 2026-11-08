@@ -9,7 +9,7 @@ import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './gradients';
-import { deriveStyle, ownProp, ownValue, type StyleContext } from './cascade';
+import { deriveStyle, ownValue, setsOwn, type StyleContext } from './cascade';
 import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
@@ -120,7 +120,7 @@ function readTspanRun(
   const lang = ownLang(el)?.trim();
   if (lang) run.lang = lang;
   // Own attributes only, as for the stroke: an inherited fill is the node's already.
-  if ((['fill', 'fill-opacity'] as const).some((k) => { const v = ownProp(el, k); return v != null && v !== 'inherit'; })) {
+  if (setsOwn(el, 'fill') || setsOwn(el, 'fill-opacity')) {
     run.fill = coreTextFill(tspanStyle, gradients, onWarn);
   }
   // Own attributes only — see `ownStrokeStyle`.

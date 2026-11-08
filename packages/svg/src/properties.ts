@@ -13,7 +13,7 @@
 import { clamp01 } from '@weasel-js/geom';
 import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
 import { ABSOLUTE_PX } from './absoluteUnits';
-import { parsePaintAttr, type ParsedColor } from './color';
+import { parsePaintAttr, parseUrlRef, type ParsedColor } from './color';
 import { DEFAULT_FONT_SIZE, emsPer, fontSizeKeyword } from './fontSize';
 
 export type Warn = (message: string) => void;
@@ -24,6 +24,9 @@ interface PropertyDef<T> {
   /** `value` arrives trimmed and never `inherit`. Keywords compare case-sensitively unless a reader folds case.
    *  `fontSize` is what an `em` or `ex` in it is of. */
   readonly read: (value: string, warn: Warn, prop: string, fontSize: number) => T | undefined;
+  /** Whether CSS itself rejects a value, so the cascade drops the declaration as if it were never
+   *  written. Absent where `read` covers only part of the property's grammar. */
+  readonly invalid?: (value: string) => boolean;
 }
 
 /** `text-transform` keywords the runs model carries. */
@@ -92,8 +95,9 @@ function readSolidColor(v: string, warn: Warn, prop: string): { color: string; a
 
 /** `null` is `none`. */
 function readMarkerRef(v: string): string | null | undefined {
-  if (v === 'none') return null;
-  return /^url\(\s*#([^)\s]+)\s*\)$/.exec(v)?.[1];
+  if (v.toLowerCase() === 'none') return null;
+  const url = parseUrlRef(v);
+  return url && url.rest === '' ? url.id : undefined;
 }
 
 function readLinecap(v: string, warn: Warn): 'butt' | 'round' | 'square' | undefined {
@@ -228,48 +232,62 @@ function readBaselineShift(
 /** `none`, or the id a `url(#id)` names. Any other clip (a basic shape, a
  *  reference into another file) is not one this parser can resolve. */
 function readClipRef(v: string): { id: string } | 'none' | undefined {
-  if (v === 'none') return 'none';
-  const ref = /^url\(\s*["']?#([^)\s"']+)["']?\s*\)$/.exec(v);
-  return ref ? { id: ref[1] } : undefined;
+  if (v.toLowerCase() === 'none') return 'none';
+  const url = parseUrlRef(v);
+  return url && url.rest === '' ? { id: url.id } : undefined;
 }
 
-const inherited = <T>(read: PropertyDef<T>['read']): PropertyDef<T> & { inherits: true } => ({ inherits: true, read });
-const own = <T>(read: PropertyDef<T>['read']): PropertyDef<T> & { inherits: false } => ({ inherits: false, read });
+/** `'unread'` says the reader is the property's whole grammar: what it cannot read, CSS cannot either. */
+type Invalid = 'unread' | ((v: string) => boolean);
+
+const invalidOf = <T>(read: PropertyDef<T>['read'], invalid?: Invalid): { invalid?: (v: string) => boolean } => {
+  if (invalid === 'unread') return { invalid: (v) => read(v.toLowerCase(), () => {}, '', DEFAULT_FONT_SIZE) === undefined };
+  return invalid ? { invalid } : {};
+};
+const inherited = <T>(read: PropertyDef<T>['read'], invalid?: Invalid): PropertyDef<T> & { inherits: true } =>
+  ({ inherits: true, read, ...invalidOf(read, invalid) });
+const own = <T>(read: PropertyDef<T>['read'], invalid?: Invalid): PropertyDef<T> & { inherits: false } =>
+  ({ inherits: false, read, ...invalidOf(read, invalid) });
+
+/** A color the reader cannot read is invalid unless it is a function, some of which it does not know. */
+const unreadColor = (read: (v: string) => unknown) => (v: string): boolean =>
+  !v.includes('(') && read(v) === undefined;
 
 export const PROPERTIES = {
-  'fill': inherited(readPaint),
-  'fill-opacity': inherited(readRatio),
-  'fill-rule': inherited(keyword('nonzero', 'evenodd')),
-  'stroke': inherited(readPaint),
+  'fill': inherited(readPaint, unreadColor(readPaint)),
+  'fill-opacity': inherited(readRatio, 'unread'),
+  'fill-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
+  'stroke': inherited(readPaint, unreadColor(readPaint)),
   'stroke-width': inherited(worldLength),
-  'stroke-opacity': inherited(readRatio),
-  'stroke-linecap': inherited(readLinecap),
-  'stroke-linejoin': inherited(readLinejoin),
+  'stroke-opacity': inherited(readRatio, 'unread'),
+  'stroke-linecap': inherited(readLinecap, 'unread'),
+  'stroke-linejoin': inherited(readLinejoin, 'unread'),
   'stroke-dasharray': inherited(readDashArray),
   'stroke-dashoffset': inherited(worldLength),
-  'stroke-miterlimit': inherited(readMiterLimit),
+  'stroke-miterlimit': inherited(readMiterLimit, 'unread'),
   'marker-start': inherited(readMarkerRef),
   'marker-mid': inherited(readMarkerRef),
   'marker-end': inherited(readMarkerRef),
-  'color': inherited(readColor),
+  'color': inherited(readColor, unreadColor(readColor)),
   'font-size': inherited(readFontSize),
   'font-family': inherited((v) => (v.length > 0 ? v : undefined)),
   'font-weight': inherited(readFontWeight),
   'font-style': inherited(readFontStyle),
-  'text-anchor': inherited(keyword('start', 'middle', 'end')),
+  'text-anchor': inherited(keyword('start', 'middle', 'end'), 'unread'),
   'letter-spacing': inherited(readLetterSpacing),
   'text-decoration': inherited(readDecoration),
-  'direction': inherited(keyword('ltr', 'rtl')),
+  'direction': inherited(keyword('ltr', 'rtl'), 'unread'),
   'text-transform': inherited(readTextTransform),
   'font-variant': inherited(readFontVariant),
-  'opacity': own(readRatio),
-  'stop-color': own(readSolidColor),
-  'stop-opacity': own(readRatio),
+  'opacity': own(readRatio, 'unread'),
+  'stop-color': own(readSolidColor, unreadColor((v) => readSolidColor(v, () => {}, ''))),
+  'stop-opacity': own(readRatio, 'unread'),
   'baseline-shift': own(readBaselineShift),
-  'vector-effect': own(keyword('none', 'non-scaling-stroke')),
+  'vector-effect': own(keyword('none', 'non-scaling-stroke'), 'unread'),
   'clip-path': own(readClipRef),
+  'clip-rule': inherited(keyword('nonzero', 'evenodd'), 'unread'),
   'display': own(keyword('none', 'inline')),
-  'visibility': inherited(keyword('visible', 'hidden', 'collapse')),
+  'visibility': inherited(keyword('visible', 'hidden', 'collapse'), 'unread'),
 } as const satisfies Record<string, PropertyDef<unknown>>;
 
 export type PropertyName = keyof typeof PROPERTIES;
@@ -291,8 +309,24 @@ export function readProperty<K extends PropertyName>(
 ): PropertyValue<K> | undefined {
   if (raw == null) return undefined;
   const v = raw.trim();
-  if (v === 'inherit') return undefined;
+  if (CSS_WIDE_KEYWORDS.has(v.toLowerCase())) return undefined;
   return PROPERTIES[prop].read(v, warn, prop, fontSize) as PropertyValue<K> | undefined;
+}
+
+/** The keywords every property takes. */
+export const CSS_WIDE_KEYWORDS: ReadonlySet<string> = new Set(['inherit', 'initial', 'unset', 'revert', 'revert-layer']);
+
+/**
+ * Whether CSS drops a declaration of `prop: value` at parse time, so that a
+ * lower-ranked one (or inheritance) stands. False for a value this parser only
+ * fails to understand, and for any property it does not read.
+ */
+export function isDeclarationInvalid(prop: string, value: string): boolean {
+  if (!isPropertyName(prop)) return false;
+  const v = value.trim();
+  if (CSS_WIDE_KEYWORDS.has(v.toLowerCase())) return false;
+  const invalid = (PROPERTIES[prop] as PropertyDef<unknown>).invalid;
+  return invalid ? invalid(v) : false;
 }
 
 function isPropertyName(prop: string): prop is PropertyName {

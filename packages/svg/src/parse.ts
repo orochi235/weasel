@@ -35,6 +35,8 @@ import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
 import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
 import { booleanAttrOf } from './booleanGroup';
+import { conditionsHold, drawnChildren } from './conditional';
+import { parseUse } from './use';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
@@ -76,7 +78,7 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
-  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, NO_GROUP_PAINT, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
+  const nodes = parseChildren(root.children, IDENTITY_MATRIX, rootStyle, NO_GROUP_PAINT, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
   const markers = ingestMarkers(root, nodes, gradients, onWarn);
 
   const result: ParseResult = { nodes, warnings };
@@ -204,7 +206,7 @@ function collectElementMeta(
 }
 
 function parseChildren(
-  parent: Element,
+  children: ArrayLike<Element>,
   ctm: Matrix,
   style: StyleContext,
   from: GroupPaintFrom,
@@ -215,12 +217,12 @@ function parseChildren(
   keepHidden: boolean,
 ): SvgNode[] {
   const out: SvgNode[] = [];
-  for (let i = 0; i < parent.children.length; i++) {
-    const el = parent.children[i];
+  for (let i = 0; i < children.length; i++) {
+    const el = children[i];
     // Skip namespaced children — they belong to `meta.elements`, not nodes.
     // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
     const ns = el.namespaceURI;
-    if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el)) continue;
+    if ((ns && ns !== 'http://www.w3.org/2000/svg') || isStrokeOutline(el) || !conditionsHold(el)) continue;
     const hidden = isHiddenElement(el, style);
     if (hidden && !keepHidden && booleanAttrOf(el).boolean === undefined) continue;
     const node = unwrapStrokeGroup(el, parseElement(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden));
@@ -253,7 +255,8 @@ function parseElement(
       return image;
     }
   }
-  if (tag === 'g') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
+  if (tag === 'use') return parseUse(el, ctm, style, (t, m, s) => parseElement(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn);
+  if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
     if (SUPPORTED_GROUP_TAGS.has(tag)) {
@@ -274,7 +277,7 @@ function parseElement(
     if (el.hasAttribute('viewBox')) {
       onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
     }
-    return parseChildren(el, multiply(ctm, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
+    return parseChildren(el.children, multiply(ctm, offset), childStyle, viewportPaintFrom(el, from), gradients, clips, onWarn, uriToPrefix, keepHidden);
   }
   return parseLeaf(el, tag, ctm, style, from, gradients, onWarn, uriToPrefix);
 }
@@ -372,7 +375,7 @@ function parseGroup(
   const childCtm = multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn));
   const childStyle = deriveStyle(style, el);
   const paint = groupPaint(el, from, childStyle, childCtm, gradients, onWarn);
-  const children = parseChildren(el, childCtm, childStyle, paint.children, gradients, clips, onWarn, uriToPrefix, keepHidden);
+  const children = parseChildren(drawnChildren(el, onWarn), childCtm, childStyle, paint.children, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const opacity = ownValue(el, 'opacity');
   const group: SvgNode = { kind: 'group', children, ...paint.paint, ...booleanAttrOf(el) };
   const clip = clipFor(el, childCtm, clips, onWarn);
@@ -390,7 +393,7 @@ function isHiddenElement(el: Element, style: StyleContext): boolean {
   const tag = el.tagName.toLowerCase();
   if (IGNORED_TAGS.has(tag)) return false;
   if (ownValue(el, 'display') === 'none') return true;
-  if (SUPPORTED_GROUP_TAGS.has(tag)) return false;
+  if (SUPPORTED_GROUP_TAGS.has(tag) || tag === 'a' || tag === 'switch') return false;
   const v = styleValue(deriveStyle(style, el), 'visibility');
   return v === 'hidden' || v === 'collapse';
 }

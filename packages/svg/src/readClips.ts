@@ -2,9 +2,10 @@
 
 import { type Path, transformPath } from '@weasel-js/core';
 import type { Matrix } from './types';
-import { parseTransform } from './transform';
+import { multiply, parseTransform } from './transform';
 import { collectElementsByTag } from './elements';
-import { ownProp } from './cascade';
+import { ownProp, styleValue } from './cascade';
+import { styleAt } from './styleAt';
 import { readProperty } from './properties';
 import { SUPPORTED_LEAF_TAGS, lowerLeaf } from './lowerLeaf';
 import { isStrokeOutline } from './strokeOutlineSvg';
@@ -41,9 +42,14 @@ export function collectClipPaths(root: Element, onWarn: (m: string) => void): Cl
       continue;
     }
     const shape = shapes[0];
-    const local = parseTransform(shape.getAttribute('transform'), onWarn);
+    const local = multiply(
+      parseTransform(el.getAttribute('transform'), onWarn),
+      parseTransform(shape.getAttribute('transform'), onWarn),
+    );
     const path = lowerLeaf(shape, shape.tagName.toLowerCase(), local, onWarn);
-    if (path) out.set(id, path);
+    if (!path) continue;
+    const evenodd = styleValue(styleAt(shape), 'clip-rule') === 'evenodd' && path.kind === 'polygon';
+    out.set(id, evenodd ? { ...path, fillRule: 'evenodd' } : path);
   }
   return out;
 }

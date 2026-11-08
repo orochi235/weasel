@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseSvg } from './parse';
+import { serializeSvg } from './serialize';
 import type { SvgGroupNode } from './types';
 
 const CLIP = '<clipPath id="c"><rect x="1" y="2" width="3" height="4"/></clipPath>';
@@ -49,6 +50,28 @@ describe('clip-path', () => {
       { keepHidden: true },
     );
     expect(out.nodes[0]!.hidden).toBe(true);
+  });
+
+  it("applies the <clipPath>'s own transform to its shape", () => {
+    const out = parseSvg(
+      '<svg xmlns="http://www.w3.org/2000/svg"><clipPath id="t" transform="translate(100 0)">'
+      + `<rect width="3" height="4" transform="translate(0 10)"/></clipPath><g clip-path="url(#t)">${INNER}</g></svg>`,
+    );
+    expect((out.nodes[0] as SvgGroupNode).clip).toEqual({ kind: 'rect', x: 100, y: 10, width: 3, height: 4 });
+  });
+
+  it('reads clip-rule, from the shape or the <clipPath>, and writes it back', () => {
+    const HOLE = '<path d="M0 0h10v10h-10zM2 2h2v2h-2z"/>';
+    for (const def of [
+      `<clipPath id="e">${HOLE.replace('<path', '<path clip-rule="evenodd"')}</clipPath>`,
+      `<clipPath id="e" clip-rule="evenodd">${HOLE}</clipPath>`,
+    ]) {
+      const out = parseSvg(`<svg xmlns="http://www.w3.org/2000/svg">${def}<g clip-path="url(#e)">${INNER}</g></svg>`);
+      const clip = (out.nodes[0] as SvgGroupNode).clip as { fillRule?: string };
+      expect(clip.fillRule).toBe('evenodd');
+      const again = parseSvg(serializeSvg(out.nodes));
+      expect(((again.nodes[0] as SvgGroupNode).clip as { fillRule?: string }).fillRule).toBe('evenodd');
+    }
   });
 
   it('says nothing about clip-path="none"', () => {

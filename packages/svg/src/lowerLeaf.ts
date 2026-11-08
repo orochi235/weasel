@@ -20,7 +20,7 @@ export const SUPPORTED_LEAF_TAGS = new Set([
 
 export const IGNORED_TAGS = new Set([
   'defs', 'lineargradient', 'radialgradient', 'pattern', 'marker', 'clippath',
-  'title', 'desc', 'metadata', 'style',
+  'title', 'desc', 'metadata', 'style', 'symbol',
 ]);
 
 export function lowerLeaf(
