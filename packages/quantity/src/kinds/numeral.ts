@@ -1,5 +1,5 @@
 import { numberPart, spokenSign, type DisplayKind } from '../kind';
-import { parseNumber } from '../number';
+import { parseNumber, roundWhole } from '../number';
 
 /**
  * A whole number in Roman numerals, `XII`. Spoken as the plain number, since a
@@ -23,7 +23,7 @@ const NUMERALS: readonly [number, string][] = [
 
 /** `n` in Roman numerals, or undefined outside 1–3999. */
 export function toRoman(n: number): string | undefined {
-  let rest = Math.round(n);
+  let rest = roundWhole(n);
   if (!(rest >= 1 && rest <= 3999)) return undefined;
   let out = '';
   for (const [v, s] of NUMERALS) {
@@ -59,7 +59,7 @@ export const romanKind: DisplayKind<RomanDisplay> = {
     if (r === undefined) return [numberPart(value, ctx.locale, { maximumFractionDigits: 0 })];
     return [{ type: 'numeral', value: d.lower ? r.toLowerCase() : r }];
   },
-  speak: (value, _d, ctx) => spokenSign(numberPart(Math.round(value), ctx.locale, { maximumFractionDigits: 0, useGrouping: false }).value),
+  speak: (value, _d, ctx) => spokenSign(numberPart(roundWhole(value), ctx.locale, { maximumFractionDigits: 0, useGrouping: false }).value),
   parse: (text, _d, ctx) => {
     const r = fromRoman(text);
     return Number.isNaN(r) ? parseNumber(text, undefined, ctx.locale) : r;
@@ -83,11 +83,11 @@ const SUFFIXES: Record<string, string> = { one: 'st', two: 'nd', few: 'rd', othe
 export const ordinalKind: DisplayKind<OrdinalDisplay> = {
   kind: 'ordinal',
   format: (value, _d, ctx) => {
-    const n = Math.round(value);
+    const n = roundWhole(value);
     const number = numberPart(n, ctx.locale, { maximumFractionDigits: 0 });
     if (!Number.isFinite(n) || !ctx.locale.startsWith('en')) return [number];
     const rule = new Intl.PluralRules('en-US', { type: 'ordinal' }).select(n);
     return [number, { type: 'ordinal', value: SUFFIXES[rule] ?? 'th' }];
   },
-  parse: (text, _d, ctx) => Math.round(parseNumber(text.replace(/(st|nd|rd|th)\s*$/i, ''), undefined, ctx.locale)),
+  parse: (text, _d, ctx) => roundWhole(parseNumber(text.replace(/(st|nd|rd|th)\s*$/i, ''), undefined, ctx.locale)),
 };

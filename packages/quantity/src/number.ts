@@ -49,6 +49,12 @@ export function parseSignedNumber(text: string): number {
   return Number(text.replace(MINUS_SIGN, '-'));
 }
 
+/** `n` to the nearest whole number, a half away from zero, as `Intl` rounds one: `Math.round(-2.5)` is −2. */
+export function roundWhole(n: number): number {
+  const r = Math.sign(n) * Math.round(Math.abs(n));
+  return r === 0 ? 0 : r;
+}
+
 /** One unsigned number in the text `readNumber` sees: digits, with an optional `.` fraction. */
 const TERM_NUMBER = String.raw`\d+(?:\.\d+)?|\.\d+`;
 

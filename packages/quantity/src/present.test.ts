@@ -365,3 +365,14 @@ describe('infinity', () => {
     expect(qty(retag(q, Infinity)).text).toBe('unlimited');
   });
 });
+
+describe('whole-number kinds round a half the one way', () => {
+  it('away from zero, as the integer display shows it, in every kind and in what a typed fraction reads as', () => {
+    expect(qty(-2.5, integer()).text).toBe('−3');
+    expect(qty(-2.5, ordinal()).text).toBe('−3rd');
+    expect(present(-2.5, roman()).spoken).toBe(present(-2.5, integer()).spoken);
+    expect(parseAs('-2.5', integer())).toBe(-3);
+    expect(parseAs('-2.5', ordinal())).toBe(-3);
+    expect(parseAs('nope', integer())).toBeNaN();
+  });
+});
