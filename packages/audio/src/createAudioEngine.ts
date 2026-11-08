@@ -71,6 +71,7 @@ export interface AudioEngine {
   /** Voices currently sounding, on one bus or on all of them. A voice booked
    *  for a future `when` is not counted until it starts. */
   activeVoices(bus?: string): number;
+  /** A live tap on `busName` (default: the master). Throws once the engine is disposed. */
   analyser(busName?: string, opts?: AnalyserTapOptions): AnalyserTap;
   /** A graph feeding `bus`'s input (default: the first bus). Disposed with the engine. */
   graph(bus?: string): AudioGraph;
@@ -276,6 +277,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     busNames: graph.names,
     activeVoices: active,
     analyser(busName, tapOpts) {
+      if (disposed) throw new Error('@weasel-js/audio: engine is disposed');
       // Every tap is one more live FFT on the graph. They are tracked so
       // `dispose()` detaches them; a consumer calling this per frame still
       // wants to keep one tap rather than mint one.
