@@ -63,8 +63,10 @@ function Demo() {
       ...cell(hud, 2, 1, 'button · press to flip'),
     ];
 
+    let sprite: ImageBitmap | null = null;
     spriteBitmap().then((bitmap) => {
-      if (canceled) return;
+      if (canceled) { bitmap.close(); return; }
+      sprite = bitmap;
       const size = { y: ROW[1] + 8, w: 56, h: 56 };
       const nearest = hud.image({ id: 'nearest', x: COL[0] + 10, ...size, image: bitmap, sampling: 'nearest' });
       const linear = hud.image({ id: 'linear', x: COL[1] + 10, ...size, image: bitmap, sampling: 'linear', flipX: true });
@@ -79,6 +81,7 @@ function Demo() {
     return () => {
       canceled = true;
       for (const w of widgets) w.dispose();
+      sprite?.close();
     };
   }, [hud]);
 

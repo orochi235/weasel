@@ -789,7 +789,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'hud-gallery',
     title: 'HUD widget gallery',
     package: 'hud',
-    description: "Every widget @weasel-js/hud ships, side by side, each created with the HUD's own factory and captioned with the options it shows. rect is a solid fill — the backdrop behind each cell is one too. text takes its own size and color; label is text with the HUD's defaults, 13px in the theme's foreground and font. image draws an ImageBitmap stretched to its bounds: the same 5×5 sprite with nearest and linear sampling, a sub-rectangle of it picked out with source, and a mirrored copy. The button's press handler calls setFlip on that copy, and the HUD redraws on its own.",
+    description: "Every widget @weasel-js/hud ships, side by side, each created with the HUD's own factory and captioned with the options it shows. rect is a solid fill — the backdrop behind each cell is one too. text takes its own size and color; label is text with the HUD's defaults, 13px in the theme's foreground and font. image draws an ImageBitmap stretched to its bounds: the same 5×5 sprite with nearest sampling, with linear sampling and mirrored by flipX, and a sub-rectangle of it picked out with source. The button's press handler calls setFlip on the mirrored one, and the HUD redraws on its own.",
     hint: 'Press "Flip the F" — the linear-sampled sprite mirrors back and forth.',
     load: () => import('./demos/HudGalleryDemo').then((m) => m.HudGalleryDemo),
     path: 'apps/site/demos/HudGalleryDemo.tsx',
