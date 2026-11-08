@@ -73,9 +73,7 @@ export function workspaceTintLayer(opts: WorkspaceTintLayerOptions): RenderLayer
       const pt = Math.max(0, Math.min(sy0, sy1));
       const pr = Math.min(W, Math.max(sx0, sx1));
       const pb = Math.min(H, Math.max(sy0, sy1));
-      if (pr <= pl || pb <= pt) {
-        return [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: W, height: H }, fill: { paint: { kind: 'solid', color: tint, opacity } } }];
-      }
+      if (pr <= pl || pb <= pt) return whole();
 
       const cmds: DrawCommand[] = [];
       const push = (
