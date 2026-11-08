@@ -1,16 +1,17 @@
 import { useCallback, useRef } from 'react';
 import { unionAABB } from 'core/geometry/unionBounds';
-import { nodeGates } from 'core/scene/nodeGates';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { sceneContentBounds } from '../contentBounds';
 import type { GestureSource } from '../gestureBounds';
 import { gestureBoundsOf, useInFlightBounds } from '../useInFlightBounds';
 import { worldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
 
 /**
  * The world rect a scene's content covers: every root it draws, boxed as the
- * picker boxes it, and whatever an in-flight gesture proposes, such as a node
- * being dragged, where it is shown, or a shape drawn before it exists. `null`
+ * picker boxes it, every copy a group draws (`sceneContentBounds`), and
+ * whatever an in-flight gesture proposes, such as a node being dragged, where
+ * it is shown, or a shape drawn before it exists. `null`
  * when nothing is drawn. Read live: the scene's part is kept until its version
  * or its bounds source moves, and the gesture's part is read fresh.
  */
@@ -44,12 +45,10 @@ export function useContentBounds<TPose>(args: {
     const version = scene.getVersion();
     let held = committed.current;
     if (held === null || held.scene !== scene || held.boundsOf !== boundsOf || held.version !== version) {
-      const gates = nodeGates(scene);
-      const parts: (Bounds | null)[] = [];
-      for (const id of scene.roots) if (!gates.hidden(id)) parts.push(boundsOf(id));
-      held = { scene, boundsOf, version, bounds: unionAABB(parts) };
+      const bounds = sceneContentBounds(scene, boundsOf, (node) => committedPoseOf(node.id) ?? node.pose);
+      held = { scene, boundsOf, version, bounds };
       committed.current = held;
     }
     return unionAABB([held.bounds, gestureBoundsOf(gestureSource, previewBoundsOf)]);
-  }, [scene, boundsOf, gestureSource, previewBoundsOf]);
+  }, [scene, boundsOf, committedPoseOf, gestureSource, previewBoundsOf]);
 }
