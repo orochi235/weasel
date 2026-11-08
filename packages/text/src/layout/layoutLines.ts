@@ -93,10 +93,10 @@ function pushSpan(start: number, end: number, wrapped: boolean): void {
 
 /**
  * Break `entries` into lines: at hard breaks, and at UAX #14 opportunities
- * when `maxWidth` is finite. A line is as tall as its tallest entry's line
- * box, with one baseline sunk to clear whichever entry reaches highest above
- * it — from unshifted ascents, so a `baselineShift` cannot drag the rest of
- * the line with it. A blank line takes both from the hard break that closed
+ * when `maxWidth` is finite. A line runs from the top of whichever entry's
+ * line box reaches highest above its one baseline to the bottom of whichever
+ * reaches lowest below it, as CSS stacks inline boxes — from unshifted
+ * ascents, so a `baselineShift` cannot drag the rest of the line with it. A blank line takes both from the hard break that closed
  * it, the only carrier of a size it has.
  *
  * The entry opening each line has its kerning zeroed, and each tab its
@@ -135,15 +135,18 @@ export function breakLines(
       continue;
     }
     const out = line.entries;
+    let below = -Infinity;
     for (let k = line.start; k < line.end; k++) {
       const e = entries[k];
       if (k === line.start) e.kerningBefore = 0;
       if (e.tab) e.advance = tabAdvance(line.width, e.tab.stop, e.tab.min);
       out[k - line.start] = e;
       line.width += e.kerningBefore + e.advance + e.tracking;
-      line.height = Math.max(line.height, e.lineSize * lineHeight);
-      line.ascent = Math.max(line.ascent, aboveBaseline(e, lineHeight));
+      const above = aboveBaseline(e, lineHeight);
+      line.ascent = Math.max(line.ascent, above);
+      below = Math.max(below, e.lineSize * lineHeight - above);
     }
+    line.height = line.ascent + below;
     out.length = line.end - line.start;
     line.srcEnd = entries[line.end - 1].srcEnd;
   }
