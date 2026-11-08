@@ -57,6 +57,7 @@ function walk(starts, { values }) {
   const prev = new Map(starts.map((s) => [join(SRC, s), null]));
   const queue = [...prev.keys()];
   const found = new Map();
+  const unresolved = [];
   while (queue.length) {
     const file = queue.shift();
     for (const m of readFileSync(file, 'utf8').matchAll(IMPORT)) {
@@ -67,6 +68,8 @@ function walk(starts, { values }) {
         if (!prev.has(local)) { prev.set(local, file); queue.push(local); }
         continue;
       }
+      // An import the walk cannot follow would end it there, and hide whatever lies past it.
+      if (spec.startsWith('.')) { unresolved.push(`${relative(SRC, file)} imports ${spec}`); continue; }
       const pkg = packageName(spec);
       if (!TWO_D.includes(pkg) || found.has(pkg)) continue;
       const chain = [];
@@ -74,21 +77,21 @@ function walk(starts, { values }) {
       found.set(pkg, chain);
     }
   }
-  return { files: new Set(prev.keys()), found };
+  return { files: new Set(prev.keys()), found, unresolved };
 }
 
 /** The engine files: everything the seeds reach, type imports included. */
 export const engineFiles = () => walk(SEEDS, { values: false }).files;
 
 function main() {
-  const failures = [
-    ['the engine files', walk(SEEDS, { values: false }).found],
-    [ENTRY, walk([ENTRY], { values: true }).found],
-  ].flatMap(([from, found]) => [...found].map(([pkg, chain]) => ({ from, pkg, chain })));
+  const walks = [['the engine files', walk(SEEDS, { values: false })], [ENTRY, walk([ENTRY], { values: true })]];
+  const failures = walks.flatMap(([from, { found }]) => [...found].map(([pkg, chain]) => ({ from, pkg, chain })));
   for (const { from, pkg, chain } of failures) {
     console.error(`[engine-boundary] ${pkg} is reachable from ${from}:\n  ${chain.join('\n  -> ')}`);
   }
-  if (failures.length) process.exit(1);
+  const unresolved = [...new Set(walks.flatMap(([, walked]) => walked.unresolved))];
+  for (const line of unresolved) console.error(`[engine-boundary] cannot follow an import, so the walk stops there: ${line}`);
+  if (failures.length || unresolved.length) process.exit(1);
   console.log('[engine-boundary] OK — neither the engine files nor the engine entry reach a 2D package.');
 }
 
