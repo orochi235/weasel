@@ -129,6 +129,16 @@ describe('LayerList selection', () => {
     expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
   });
 
+  it('ranges over a card between the two rows it runs between', () => {
+    const onSelect = vi.fn();
+    const renderBody = (item: LayerListItem) => (item.id === 'b' ? <div>body of b</div> : null);
+    const { rerender } = list({ selectedIds: [], onSelect, renderBody });
+    click('Alpha');
+    rerender(<LayerList items={FLAT} selectedIds={['a']} onSelect={onSelect} renderBody={renderBody} />);
+    click('Gamma', { shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['a', 'b', 'c']);
+  });
+
   it('ranges over the rows that are showing, not a collapsed branch\'s children', () => {
     const onSelect = vi.fn();
     const { rerender } = list({ items: TREE, collapsedIds: ['g'], selectedIds: [], onSelect });

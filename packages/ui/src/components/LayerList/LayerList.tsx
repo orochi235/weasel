@@ -140,14 +140,17 @@ export function LayerList(props: LayerListProps) {
   // The rows the arrow keys walk: open branches only, and not cards, whose
   // heads are their own controls.
   const visible: VisibleRow[] = [];
+  // Every layer showing, cards too, in drawn order: what a range selects across.
+  const shown: string[] = [];
   const walk = (list: LayerListItem[], parentId: string | null, level: number) => {
     for (const item of list) {
+      shown.push(item.id);
       if (!hasBody(bodies.get(item.id))) visible.push({ item, parentId, level });
       if (item.children?.length && !collapsed.has(item.id)) walk(item.children, item.id, level + 1);
     }
   };
   walk(items, null, 1);
-  const order = useLatest(visible.map((v) => v.item.id));
+  const order = useLatest(shown);
 
   const byId = new Map(visible.map((v) => [v.item.id, v]));
   const nudgers = useRef(new Map<string | null, (id: string, delta: -1 | 1) => boolean>()).current;
