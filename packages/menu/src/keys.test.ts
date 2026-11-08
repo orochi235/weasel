@@ -26,6 +26,10 @@ describe('keyStep', () => {
   it('ArrowUp from nothing lands on the last row', () => {
     expect(keyStep(root, [null], 'ArrowUp').stack).toEqual([3]);
   });
+  it('hands back the same stack when the highlight does not move', () => {
+    const stack = [0];
+    expect(keyStep(root, stack, 'Home').stack).toBe(stack);
+  });
   it('Home and End', () => {
     expect(keyStep(root, [2], 'Home').stack).toEqual([0]);
     expect(keyStep(root, [0], 'End').stack).toEqual([3]);

@@ -49,7 +49,7 @@ export function keyStep(
   const at = stack[level] ?? null;
   const done = (s: MenuStack, effect: KeyEffect = NONE) => ({ stack: s, effect, handled: true });
   const roved = rovingKey(rows, at, key, MENU_LIST);
-  if (roved.handled) return done(withTop(stack, roved.at));
+  if (roved.handled) return done(roved.at === at ? stack : withTop(stack, roved.at));
   const inward = dir === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
   const outward = dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft';
   switch (key) {
