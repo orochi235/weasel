@@ -118,15 +118,21 @@ export class CustomPrograms {
     return this.registry.get(id) ?? null;
   }
 
-  /** Compile every program again on a restored context. */
+  /** Compile every program again on a restored context. One that fails is
+   *  dropped, not left holding the lost context's program; and a compile that
+   *  failed before the loss is tried again, as the loss may be why it failed. */
   restore(): void {
-    for (const id of this.registry.keys()) {
+    this.declined.clear();
+    for (const id of [...this.registry.keys()]) {
       const src = getProgramSource(id);
-      if (!src) continue;
       try {
+        if (!src) throw new Error('its source is no longer registered');
         this.registry.set(id, compileCustomProgram(this.gpu, id, src));
         this.sources.set(id, src);
       } catch (e) {
+        this.registry.delete(id);
+        this.sources.delete(id);
+        if (src) this.declined.set(id, src);
         console.error(`weasel: failed to recompile program "${id}" after context restore:`, e);
       }
     }
