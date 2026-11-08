@@ -78,9 +78,9 @@ describe('RegistryProbe', () => {
     const last = snapshots[snapshots.length - 1]!;
     const rect = last.tools.find((t) => t.id === 'rect');
     expect(rect, 'rect tool should be probed').toBeTruthy();
-    // rect's only routing path is `bindings: [{ spec: { kind: 'drag' }, ... }]`.
-    // An unphased bare drag formats as `[*:*] drag`.
-    expect(rect!.routes).toContain('[*:*] drag');
+    // rect's only routing path is `bindings: [{ spec: { kind: 'drag' }, ... }]`, which allows a draw
+    // begun with Shift, Alt or Ctrl held; an allowed modifier formats as `?key`.
+    expect(rect!.routes).toContain('[*:*] drag ?shift ?alt ?ctrl');
   });
 
   // `useSelectTool` attaches its bindings to the Tool it returns (it spreads
@@ -113,7 +113,7 @@ describe('RegistryProbe', () => {
     // Moving and transforming the selection are ambient bindings of the
     // `move` / `transform` presets, not the select tool's.
     expect(actionIds).not.toContain('move');
-    const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*:*] drag => predicate');
+    const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*:*] drag => predicate ?shift');
     expect(predicateDrags.map((d) => d.actionId)).toEqual(['areaSelect']);
   });
 
