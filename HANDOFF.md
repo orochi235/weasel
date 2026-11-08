@@ -76,6 +76,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-08, sweep and tiling: a drag across `ToggleBar` (`sweep`, multiple mode) or `OptionsBar` setting each
+  segment it crosses, in a real browser; a wrapped bar (`columns`) drawn as one well rounded only at its outer
+  corners, and `lastRow: 'fill'` stretching the short row (ToggleBar stories `Sweep` and `Wrapped`).
 - 2026-11-08, eyedropper arc: labkit's Eyedropper toggle and picked-color readout in a trial's toolbar
   (and that a click on the stage picks while it is on); draw's eyedropper on `I` in the tool palette, its
   cursor, and that a pick sets the focused fill or stroke.
