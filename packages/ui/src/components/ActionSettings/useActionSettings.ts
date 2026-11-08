@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
+import { deepEqual } from '@weasel-js/registry';
 import {
   actionSettingsParams,
   buildDepsFromRequires,
@@ -30,17 +31,20 @@ export function useActionSettings(item: ActionItem | undefined): ActionSettingsF
   const depReg = useOptionalDepRegistry();
   const action = item?.action;
   const settings = action?.settings;
-  const snapshot = (): string => {
-    if (!action || !settings) return '';
+  // The last read, handed back while a new one equals it, so the store sees a stable snapshot.
+  const last = useRef<ReturnType<typeof readActionSettings>>(null);
+  const snapshot = (): ReturnType<typeof readActionSettings> => {
+    if (!action || !settings) return null;
     const deps = depReg ? buildDepsFromRequires(action, depReg) : undefined;
-    return JSON.stringify(readActionSettings(action, deps));
+    const read = readActionSettings(action, deps);
+    if (!deepEqual(read, last.current)) last.current = read;
+    return last.current;
   };
-  const key = useSyncExternalStore(depReg?.subscribe ?? noSubscribe, snapshot, snapshot);
-  const state = useMemo(() => {
-    if (key === '') return null;
-    const parsed = JSON.parse(key) as { values: Record<string, unknown>; mixed?: string[] };
-    return { values: parsed.values, mixed: new Set(parsed.mixed ?? []) };
-  }, [key]);
+  const read = useSyncExternalStore(depReg?.subscribe ?? noSubscribe, snapshot, snapshot);
+  const state = useMemo(
+    () => (read === null ? null : { values: read.values, mixed: new Set(read.mixed ?? []) }),
+    [read],
+  );
   const id = action?.id;
   const params = item?.params;
   const onChange = useCallback((path: string, value: unknown) => {

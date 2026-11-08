@@ -1,8 +1,10 @@
 import { afterEach, expect, it } from 'vitest';
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, renderHook, screen } from '@testing-library/react';
+import { ActionsProvider, type Action, type ActionItem } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ActionSettingsPopover } from './ActionSettingsPopover';
+import { useActionSettings } from './useActionSettings';
 
 afterEach(cleanup);
 
@@ -21,4 +23,15 @@ it('stays shut when an action disabled while its form is open comes back', () =>
   expect(screen.queryByRole('dialog')).toBeNull();
   rerender(<ActionSettingsPopover form={form} label="Snap" />);
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+it('hands the form the values read returns, Infinity included', () => {
+  const action = {
+    id: 'a', label: 'A', invoker: { timing: 'immediate', run: () => {} },
+    settings: { schema: form.schema, read: () => ({ values: { n: Infinity, strict: true } }) },
+  } as unknown as Action;
+  const { result } = renderHook(() => useActionSettings({ action } as ActionItem), {
+    wrapper: ({ children }) => <ActionsProvider>{children}</ActionsProvider>,
+  });
+  expect(result.current?.values.n).toBe(Infinity);
 });
