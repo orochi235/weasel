@@ -111,6 +111,19 @@ describe('Plot2D — ref handle', () => {
     expect(p.y).toBeCloseTo(30, 6);
   });
 
+  it('clientToPlot maps through a rendered size other than width and height', () => {
+    const ref = createRef<Plot2DHandle>();
+    render(<Plot2D ref={ref} width={200} height={100} />);
+    const svg = ref.current!.svg!;
+    svg.getBoundingClientRect = () => ({
+      left: 10, top: 20, right: 410, bottom: 220,
+      width: 400, height: 200, x: 10, y: 20, toJSON: () => ({}),
+    });
+    const p = ref.current!.clientToPlot({ clientX: 410, clientY: 120 });
+    expect(p.x).toBeCloseTo(200, 6);
+    expect(p.y).toBeCloseTo(50, 6);
+  });
+
   it('honors xRange / yRange in the transforms', () => {
     const ref = createRef<Plot2DHandle>();
     render(

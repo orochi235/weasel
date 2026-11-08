@@ -157,6 +157,22 @@ describe('StoryTrial', () => {
     expect(renders.mock.calls.length).toBe(before);
   });
 
+  it("seeds the lab's state from the story's config alone, as the trial does, without the globals pins", () => {
+    const seen = vi.fn();
+    const [seeded] = loadNativeModule(
+      {
+        default: meta({ title: 'Test/Seeded' }),
+        Seeded: story({ config: f.schema({ n: f.number(1) }), state: (config) => seen(config), render: () => null }),
+      },
+      'Test/Seeded',
+    );
+    const entry = { id: 'test-seeded--seeded', title: 'Test/Seeded', name: 'Seeded', exportName: 'Seeded', file: '/seeded.stories.tsx' };
+    const globals = { mode: { label: 'Mode', default: 'light', options: [{ value: 'light', label: 'Light' }] } };
+    const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: seeded! }, setup: {}, globals });
+    instrument.initialState(instrument.defaultConfig());
+    expect(seen).toHaveBeenCalledWith({ n: 1 });
+  });
+
   it("writes the story's setState and setConfig to the committed trial, not an abandoned render's", async () => {
     const trial = () => ({ setConfig: vi.fn(), setState: vi.fn() });
     const committed = trial();

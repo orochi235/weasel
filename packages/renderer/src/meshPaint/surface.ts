@@ -114,8 +114,8 @@ function tensorNet(patch: MeshPatch<unknown>): MeshPoint[][] {
   // Boundary, read off the same walk; interior from the four trailing points.
   return [
     [p[0], p[11], p[10], p[9]],
-    [p[1], p[12], p[13], p[8]],
-    [p[2], p[15], p[14], p[7]],
+    [p[1], p[12], p[15], p[8]],
+    [p[2], p[13], p[14], p[7]],
     [p[3], p[4], p[5], p[6]],
   ];
 }

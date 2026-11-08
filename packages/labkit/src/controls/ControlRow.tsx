@@ -257,22 +257,26 @@ function LeafRow<TC extends Record<string, unknown>>({
   const changed = changedPaths?.has(path) === true;
   const custom = customRow(resolved, renderers, path, leaf);
   // The grid cannot see what a custom row draws, so the row takes the whole width rather than half a pair.
-  if (custom)
+  if (custom) {
+    // A renderer drawing its own row reads `pref.auto` to decide whether to offer the toggle.
+    const offered = autoProps.onAutoChange !== undefined;
+    const bound = boundAction(leaf, config, setConfig);
     return spanned(
       custom({
         path,
-        pref: boundAction(leaf, config, setConfig),
+        pref: offered ? bound : { ...bound, auto: false },
         value,
         values: config,
         changed,
         setValue: write,
         auto: isAutoRow,
-        setAuto,
+        setAuto: offered ? setAuto : () => {},
         fields: choices,
         disabled,
         error,
       }),
     );
+  }
 
   const label = leaf.name;
   const description = leaf.description;

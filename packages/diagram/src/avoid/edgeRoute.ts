@@ -56,13 +56,14 @@ export function routeEdge(edge: AvoidEdge, ctx: EdgeRouteContext): Vec2[] | null
       ? toPorts.map((p) => ({ point: exitOf(p, clearance), arrive: dirOf(reversed(p.normal)) }))
       : [{ point: waypoints[k]!, arrive: null }];
     const points = [...sources.map((s) => s.point), ...targets.map((t) => t.point)];
-    let grow = margin;
+    let grow = Math.max(margin, 0);
     let found: LegResult | typeof ENCLOSED | null = null;
     for (;;) {
       const window = searchWindow(points, grow);
       found = searchLeg(sources, targets, { edge: edge.id, obstacles, window, bendPenalty, crossings });
       if (found !== null || within(ctx.limit, window)) break;
-      grow *= 2;
+      // A margin of 0 would double to 0 forever.
+      grow = grow > 0 ? grow * 2 : Math.max(clearance, 1);
     }
     if (found === null || found === ENCLOSED) return null;
     if (k === 0) fromPort = fromPorts[found.source]!;

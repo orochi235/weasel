@@ -114,7 +114,7 @@ export function avoidSceneInput<TPose>(
     const edge = diagramEdgeOf(node)!;
     const ends = node.dependsOn;
     if (!Array.isArray(ends) || ends.length !== 2) continue;
-    if (ends[0] === ends[1] && edge.from.port === undefined && edge.to.port === undefined) continue;
+    if (ends[0] === ends[1] && (edge.from.port === undefined || edge.to.port === undefined)) continue;
     const [a, b] = ends.map((id) => sc.get(id as never));
     if (a === undefined || b === undefined) continue;
     const portsAt = (n: SceneNode, port: string | undefined) => facingPorts(port === undefined

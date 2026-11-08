@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTiledLayer } from './createTiledLayer';
 import { createParallaxLayer } from './createParallaxLayer';
+import { drawOneLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
@@ -104,7 +105,26 @@ describe('createTiledLayer', () => {
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
     const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims);
     expect(draw).toHaveBeenCalledOnce();
-    expect(out).toEqual([unit]);
+    expect(out).toHaveLength(1);
+    expect((out[0] as { children?: DrawCommand[] }).children).toEqual([unit]);
+  });
+
+  it('keeps a screen-space source in screen space once the canvas applies the view', () => {
+    const { layer } = spyLayer('screen');
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
+    const view: View = { x: 100, y: 50, scale: { x: 2, y: 4 } };
+    const [wrapped] = drawOneLayer(l, undefined, view, dims) as Array<{ transform?: ArrayLike<number>; children: DrawCommand[] }>;
+    const [inner] = wrapped!.children as Array<{ transform?: ArrayLike<number>; children: DrawCommand[] }>;
+    const o = wrapped!.transform!;
+    const i = inner!.transform ?? [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    // Column-major 2D affine product: outer * inner.
+    const product = [
+      o[0]! * i[0]!, 0, 0,
+      0, o[4]! * i[4]!, 0,
+      o[0]! * i[6]! + o[6]!, o[4]! * i[7]! + o[7]!, 1,
+    ];
+    expect(product.map((v) => v + 0)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    expect(inner!.children).toEqual([unit]);
   });
 
   it('emits nothing for a source that drew nothing', () => {

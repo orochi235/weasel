@@ -150,8 +150,3 @@ export function prop(obj: t.ObjectExpression | null, key: string): t.Node | unde
   }
   return undefined;
 }
-
-export function stringProp(obj: t.ObjectExpression | null, key: string): string | undefined {
-  const value = prop(obj, key);
-  return value?.type === 'StringLiteral' ? value.value : undefined;
-}

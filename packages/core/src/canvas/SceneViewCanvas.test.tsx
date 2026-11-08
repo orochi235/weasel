@@ -451,16 +451,19 @@ describe('<SceneViewCanvas> — late content', () => {
 describe('<SceneViewCanvas> scrolled out of view', () => {
   it('holds its repaint until the canvas is back on screen', async () => {
     // An observer reports only on what it was told to watch.
-    const watching: Array<() => IntersectionObserverCallback | null> = [];
+    const watching: Array<() => [IntersectionObserverCallback, Element] | null> = [];
     vi.stubGlobal('IntersectionObserver', class {
-      private observed = 0;
-      constructor(cb: IntersectionObserverCallback) { watching.push(() => (this.observed > 0 ? cb : null)); }
-      observe(): void { this.observed++; }
-      unobserve(): void { this.observed--; }
-      disconnect(): void { this.observed = 0; }
+      private observed: Element | null = null;
+      constructor(cb: IntersectionObserverCallback) { watching.push(() => (this.observed ? [cb, this.observed] : null)); }
+      observe(el: Element): void { this.observed = el; }
+      unobserve(): void { this.observed = null; }
+      disconnect(): void { this.observed = null; }
     });
     const setIntersecting = (isIntersecting: boolean): void => {
-      for (const get of watching) get()?.([{ isIntersecting } as IntersectionObserverEntry], null as never);
+      for (const get of watching) {
+        const live = get();
+        if (live) live[0]([{ isIntersecting, target: live[1] } as IntersectionObserverEntry], null as never);
+      }
     };
     try {
       const scene = makeScene();

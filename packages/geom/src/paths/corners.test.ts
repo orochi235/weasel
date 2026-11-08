@@ -13,6 +13,7 @@ import { anchorsToPath, pathToAnchors } from './anchors';
 import { pathFromD } from './pathFromD';
 import { pointInPath } from '../pathHitTest';
 import { tessellate } from '../tessellate/tessellate';
+import { pathSignedArea } from './winding';
 
 const square = (): PolygonPath =>
   polygonFromPoints([{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }]);
@@ -141,6 +142,10 @@ describe('the geometry readers see corners expanded', () => {
     expect(pointInPath(square(), 98, 2)).toBe(true);
     expect(pointInPath(cut(), 98, 2)).toBe(false);
     expect(pointInPath(cut(), 50, 50)).toBe(true);
+  });
+
+  it('measures the area of the expanded outline', () => {
+    expect(Math.abs(pathSignedArea(cut()))).toBeCloseTo(100 * 100 - (20 * 20) / 2, 6);
   });
 
   it('tessellates the expanded outline', () => {

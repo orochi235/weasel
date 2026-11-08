@@ -81,4 +81,25 @@ describe('<ControlPanel> rows', () => {
     expect(screen.queryByRole('button', { name: /B/ })).toBeNull();
     expect(screen.getByLabelText('B')).toHaveValue('2');
   });
+
+  it('offers no auto toggle on a dialog row whose unpinning would close a resolver cycle', async () => {
+    const schema = resolveConfigSchema(
+      f.schema({
+        a: f
+          .number(1)
+          .label('A')
+          .auto((c) => (c.b as number) + 1),
+        b: f
+          .number(2)
+          .label('B')
+          .auto((c) => (c.a as number) + 1)
+          .dialog(() => null),
+      }),
+      [],
+    );
+    render(<ControlPanel schema={schema} config={{ a: 1, b: 2 }} setConfig={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /A/ }));
+    const named = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'));
+    expect(named.filter((name) => name?.endsWith('B'))).toEqual(['Edit B']);
+  });
 });

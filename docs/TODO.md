@@ -104,14 +104,15 @@ Owner tags, after the priority (2026-10-26):
   `pathNodesOf` answers world paths through the scene's frames, `reshapeOps`/`pathCopy` store back into each
   node's frame, and cutting across a framed group finds the crossing.
 
+- **(P3) [agent] 2D and 3D `invert` call different matrices singular.** geom's `invert` (`affine.ts`, and
+  `mat3.invert` through it) judges the determinant against the larger squared column norm, so `scale(1e6, 1e-7)`
+  has no inverse, and `glMat3.test.ts` pins that. `@weasel-js/geom/3d`'s `invert` (`3d/mat4.ts`) judges it against
+  the product of the column lengths, so the same axis scales in a `Mat4` invert. Which rule is wanted, refusing
+  ill-conditioned scales or only near-dependent columns, is the maintainer's call. Closes when both use one rule.
+
 - **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
   output change. Closes when Repeat Along places through `placeAlongRun`.
-
-- **(P3) [agent] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
-  Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is the maintainer's call.
-  Ruled (2026-11-07): keep corners, and let saved output change. Closes when `bendAlongPath` measures its spine
-  with `keepCorners`.
 
 - **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
   (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
@@ -555,18 +556,6 @@ only story runner in the repo.
   may not run typedoc at all. Not decided: keep the reader, switch to typedoc, or read typedoc's JSON as a
   richer source where a build has made one. Ruled (2026-11-07): the last, with forge's reader as the fallback.
   Closes when the panel reads typedoc's JSON when present.
-
-- **(P3) [agent] forge's vite plugin should wait for writes to settle off macOS, as the repo's own dev servers do.**
-  On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
-  server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
-  the write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30); macOS skips the
-  wait, which the measurements below show it does not need (ruled 2026-10-30). A consumer's server
-  that adds only `forge()` does not, and `replacedFile.test.ts`, which runs such a server, still rewrites until
-  served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
-  stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
-  fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
-  Ruled (2026-11-07): it should. Closes when `forge()` waits off macOS and `replacedFile.test.ts` no longer
-  rewrites until served.
 
 - **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and

@@ -14,6 +14,14 @@ describe('bendAlongPath', () => {
     expect(b.height).toBeCloseTo(4, 3);
   });
 
+  it('keeps a sharp spine corner sharp, heading each leg along itself up to the corner', () => {
+    const spine = pathFromD('M0 0 L100 0 L100 100');
+    const out = bendAlongPath(pathFromD('M0 -5 L90 -5 L200 -5 L200 5 L0 5 Z'), spine)!;
+    const pts: [number, number][] = [];
+    for (let i = 0; i < out.coords.length; i += 2) pts.push([out.coords[i]!, out.coords[i + 1]!]);
+    expect(pts.some(([x, y]) => Math.abs(x - 90) < 1e-3 && Math.abs(y + 5) < 1e-3)).toBe(true);
+  });
+
   it('keeps its width with natural fit', () => {
     const out = bendAlongPath(rectPath(0, 0, 10, 4), linePath({ x: 100, y: 50 }, { x: 200, y: 50 }), { fit: 'natural' })!;
     expect(boundsOfPath(out).width).toBeCloseTo(10, 3);

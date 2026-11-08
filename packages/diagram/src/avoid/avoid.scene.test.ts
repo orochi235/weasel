@@ -88,6 +88,18 @@ describe('avoid routing in a scene', () => {
     expect(points.every((p, i) => i === 0 || p.x === points[i - 1]!.x || p.y === points[i - 1]!.y)).toBe(true);
   });
 
+  it.each([{ from: { port: 'e' } }, { to: { port: 'n' } }])('draws a self-edge naming one port %j round its corner, leaving it unrouted', (ends) => {
+    const scene: AvoidScene = createScene<unknown, 'main', RectPose>({
+      systemLayers: [{ id: 'main' }],
+      registry: withDiagramRegistry(),
+      initial: [box('a', 0, 0), connector('aa', 'a', 'a', ends)] as never,
+    });
+    installAvoidRouting(scene);
+    scene.add(box('b', 300, 300) as never);
+    expect(routeOf(scene, 'aa')).toBeUndefined();
+    expect(drawn(scene, 'aa')).toEqual([{ x: 100, y: 30 }, { x: 130, y: 30 }, { x: 130, y: -30 }, { x: 50, y: -30 }, { x: 50, y: 0 }]);
+  });
+
   it('routes the rest around a pinned segment, in the pin’s own entry', () => {
     const { scene } = load();
     scene.add(box('wall', 200, -100, 60, 260) as never);

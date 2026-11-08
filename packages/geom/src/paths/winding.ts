@@ -9,6 +9,7 @@ import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, forEachSegment } from '../comma
 import type { Path, PolygonPath } from '../path';
 import { fillsOpenSubpaths } from '../openFill';
 import { carryCorners } from './cornerCarry';
+import { resolveCorners } from './corners';
 
 // Three-point Gauss-Legendre: exact for polynomials up to degree 5, and the
 // Green's-theorem integrand of a cubic is degree 5.
@@ -22,11 +23,12 @@ const GL_W = [5 / 18, 8 / 18, 5 / 18];
  * closed by a straight edge back to its start where a fill closes it, and as
  * nothing where one does not: see `fillsOpenSubpaths`.
  * Curved segments are integrated exactly, not through their control polygon.
- * A `RectPath` has no direction and counts as positive.
+ * Corner shapes count as they are drawn. A `RectPath` has no direction and
+ * counts as positive.
  */
 export function pathSignedArea(path: Path): number {
   if (path.kind === 'rect') return path.width * path.height;
-  const { commands, coords } = path;
+  const { commands, coords } = resolveCorners(path);
   const fillsOpen = fillsOpenSubpaths(path);
   let total = 0;
   let twice = 0;

@@ -82,6 +82,15 @@ describe('a self-edge with no named ports', () => {
     expect(points({ waypoints: [{ x: 90, y: 20 }] })).toEqual([[40, 20], [90, 20], [20, 0]]);
   });
 
+  it('takes the side next round from the one port named at the start', () => {
+    expect(points({ from: { port: 'n' } })).toEqual([[20, 0], [-20, -20], [0, 20]]);
+    expect(points({ from: { port: 's' } })).toEqual([[20, 40], [60, 60], [40, 20]]);
+  });
+
+  it('takes the side before the one port named at the end', () => {
+    expect(points({ to: { port: 'e' } })).toEqual([[20, 40], [60, 60], [40, 20]]);
+  });
+
   it('leaves an edge between two named ports as it was', () => {
     expect(points({ from: { port: 'e' }, to: { port: 'w' } })).toEqual([[40, 20], [0, 20]]);
   });

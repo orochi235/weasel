@@ -23,6 +23,13 @@ describe('cubicCurvatureAt', () => {
     expect(cubicCurvatureAt(p3, p2, p1, p0, 0.5)).toBeCloseTo(-0.01, 3);
   });
 
+  it('reads the same bend on a curve of any size', () => {
+    for (const k of [1e-8, 1e6]) {
+      const [p0, p1, p2, p3] = quarter.map((p) => ({ x: p.x * k, y: p.y * k }));
+      expect(cubicCurvatureAt(p0, p1, p2, p3, 0.5) * k).toBeCloseTo(0.01, 3);
+    }
+  });
+
   it('is zero on a straight cubic', () => {
     expect(cubicCurvatureAt({ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }, { x: 30, y: 0 }, 0.4)).toBe(0);
   });

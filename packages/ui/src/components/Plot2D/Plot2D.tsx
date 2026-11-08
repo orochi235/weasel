@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  modelToPlot, plotToModel,
+  clientToPlotPoint, modelToPlot, plotToModel,
   type ModelRange, type Point,
 } from './geometry';
 import {
@@ -196,12 +196,10 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
 
   const plotSize = useMemo(() => ({ width, height }), [width, height]);
 
-  const clientToPlot = useCallback((e: { clientX: number; clientY: number }): Point => {
-    const rect = svgRef.current?.getBoundingClientRect();
-    const left = rect?.left ?? 0;
-    const top = rect?.top ?? 0;
-    return { x: e.clientX - left, y: e.clientY - top };
-  }, []);
+  const clientToPlot = useCallback(
+    (e: { clientX: number; clientY: number }): Point => clientToPlotPoint(e, svgRef.current?.getBoundingClientRect(), plotSize),
+    [plotSize],
+  );
 
   useEffect(() => {
     dlog('plot2d', 'mount', { width, height });

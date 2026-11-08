@@ -133,8 +133,8 @@ export function ResizeHandle(props: ResizeHandleProps) {
     let next: number | undefined;
     if (e.key === grow) next = value + amount;
     else if (e.key === shrink) next = value - amount;
-    else if (e.key === 'Home') next = invert ? max : min;
-    else if (e.key === 'End') next = invert ? min : max;
+    else if (e.key === 'Home') next = min;
+    else if (e.key === 'End') next = max;
     if (next === undefined) return;
     e.preventDefault();
     const settled = settle(next, min, max, step);

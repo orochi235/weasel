@@ -36,10 +36,9 @@ export interface MeshHandle {
   refs: readonly MeshPointRef[];
 }
 
-/** Corner `k`'s interior neighbor in the tensor net. PDF's trailing four walk
- *  the net as (1,1) (1,2) (2,2) (2,1), which puts corner 1's at index 15 and
- *  corner 3's at 13 — the transpose of the obvious reading. */
-const INTERIOR_OF_CORNER = [12, 15, 14, 13] as const;
+/** Corner `k`'s interior neighbor in the tensor net: PDF's trailing four
+ *  (p11 p12 p22 p21) sit beside corners 0, 1, 2 and 3 in turn. */
+const INTERIOR_OF_CORNER = [12, 13, 14, 15] as const;
 
 function kindOf(index: number): MeshHandleKind {
   if (index >= 12) return 'interior';

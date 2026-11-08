@@ -70,8 +70,8 @@ function translate(tx: number, ty: number): Float64Array {
  * **Zoomed out until a draw would take more than a few thousand copies, the
  * lattice draws none.** A cell is then a pixel or two across.
  *
- * **A `space: 'screen'` source is drawn once, untiled** — it ignores the view
- * by definition, so every copy would land on top of the last. Same constraint
+ * **A `space: 'screen'` source is drawn once, untiled, in screen space** — it
+ * ignores the view by definition, so every copy would land on top of the last. Same constraint
  * `createParallaxLayer` carries.
  */
 export function createTiledLayer<TData>(
@@ -91,8 +91,17 @@ export function createTiledLayer<TData>(
       const ky = tiledProject(shown.y, shown.y + shown.height, p.y, b.y);
 
       const out: DrawCommand[] = [];
+      const onScreen: DrawCommand[] = [];
       for (const layer of source) {
-        if ((layer.space ?? 'world') === 'screen') out.push(...layer.draw(data, view, dims));
+        if ((layer.space ?? 'world') === 'screen') onScreen.push(...layer.draw(data, view, dims));
+      }
+      // This plane is drawn through the view, so screen content is handed the view's inverse.
+      if (onScreen.length > 0) {
+        out.push({
+          kind: 'group',
+          transform: new Float64Array([1 / view.scale.x, 0, 0, 0, 1 / view.scale.y, 0, view.x, view.y, 1]),
+          children: onScreen,
+        });
       }
       const tiles = source.filter((layer) => (layer.space ?? 'world') !== 'screen');
       // Written so a non-finite span, which a zero view scale gives, fails it too.

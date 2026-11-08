@@ -13,7 +13,6 @@ import {
   prop,
   stringLiteral,
   stringOf,
-  stringProp,
 } from './ast.ts';
 import { type Foreign, mayBeStory } from './nativeExports.ts';
 
@@ -155,7 +154,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
       return {
         id: storyId(title, name),
         title,
-        name: stringProp(spec, 'name') ?? stringProp(spec, 'storyName') ?? storyNameFromExport(name),
+        name: stringOf(prop(spec, 'name'), bindings) ?? stringOf(prop(spec, 'storyName'), bindings) ?? storyNameFromExport(name),
         exportName: name,
         file,
         ...(doc === undefined ? {} : { description: doc }),

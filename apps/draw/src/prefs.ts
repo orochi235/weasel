@@ -119,7 +119,7 @@ export const PREFS = {
         gridDensity: {
           kind: 'number',
           name: 'Grid density',
-          description: 'Spacing between grid lines, in document units (72 to the inch). Snap to grid uses the same spacing.',
+          description: 'Spacing between grid lines, in document units (CSS pixels, 96 to the inch). Snap to grid uses the same spacing.',
           default: 20,
           min: 4,
           max: 288,

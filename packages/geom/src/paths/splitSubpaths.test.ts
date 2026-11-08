@@ -83,4 +83,20 @@ describe('splitSubpaths', () => {
     expect(Array.from(out[1].coords)).toEqual([10, 10, 11, 11]);
     expect(Array.from(out[2].coords)).toEqual([20, 20, 21, 21]);
   });
+
+  it('cuts where a drawing command after Z opens a subpath, writing the M it implies', () => {
+    // A closed triangle, then an open run drawn from where the Z left the pen: (0,0).
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 20, 5, 20]),
+      fillRule: 'nonzero',
+    };
+    const out = splitSubpaths(path);
+    expect(out).toHaveLength(2);
+    expect(Array.from(out[0].commands)).toEqual([PATH_M, PATH_L, PATH_L, PATH_Z]);
+    expect(Array.from(out[1].commands)).toEqual([PATH_M, PATH_L, PATH_L]);
+    expect(Array.from(out[1].coords)).toEqual([0, 0, 0, 20, 5, 20]);
+  });
 });
+

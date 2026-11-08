@@ -127,6 +127,22 @@ export const Named: Story = { name: 'A named one', render: () => null };
     ]);
   });
 
+  it('reads a story name written as a template literal or a top-level const, as the module does when it runs', () => {
+    const code = `
+const LABEL = 'From a const';
+export default { title: 'ui/Slider' };
+export const Templated = { name: \`A template\`, render: () => null };
+export const Constant = { name: LABEL, render: () => null };
+export const Old = () => null;
+Old.storyName = LABEL;
+`;
+    expect(ids(code)).toEqual([
+      ['ui-slider--templated', 'A template'],
+      ['ui-slider--constant', 'From a const'],
+      ['ui-slider--old', 'From a const'],
+    ]);
+  });
+
   it('reads a meta constant written with satisfies', () => {
     const code = `
 const meta = { title: 'ui/Button' } satisfies Meta<typeof Button>;

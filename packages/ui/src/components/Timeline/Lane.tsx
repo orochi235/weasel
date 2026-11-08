@@ -46,6 +46,12 @@ function entryTimes(row: LaneRow): number[] {
   return [];
 }
 
+/** `px` along `el`, with `win` laid across it, as a span of ms. */
+function pxToMs(el: HTMLElement | null, win: TimeWindow, px: number): number {
+  const scale = windowScale(win, el?.getBoundingClientRect().width ?? 0);
+  return scale.invert(px) - scale.invert(0);
+}
+
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes,
@@ -70,10 +76,7 @@ export function Lane(props: LaneProps): ReactElement {
     return windowScale(win, rect.width).invert(clientX - rect.left) - row.offset;
   };
 
-  const snapPxToMs = (): number => {
-    const scale = windowScale(win, trackRef.current?.getBoundingClientRect().width ?? 0);
-    return scale.invert(snapRadiusPx) - scale.invert(0);
-  };
+  const snapPxToMs = (): number => pxToMs(trackRef.current, win, snapRadiusPx);
 
   // Only a numeric sampled row has an honest value axis to graph.
   const graph = mode === 'graph' && row.numeric;
@@ -135,7 +138,7 @@ export function Lane(props: LaneProps): ReactElement {
   const times = entryTimes(row);
 
   return (
-    <div className={s.lane} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
+    <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
       <div className={s.laneLabel}>
         {row.kind === 'timeline' ? (
           <span
@@ -216,6 +219,7 @@ export function Lane(props: LaneProps): ReactElement {
                 aria-label={`${row.label} key at ${Math.round(t)} ms`}
                 aria-current={selection === i ? 'true' : undefined}
                 data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
+                data-keyframe-index={i}
                 data-dragging={drag?.keyIndex === i ? 'true' : undefined}
                 className={row.kind === 'event' ? s.eventMark : s.key}
                 style={{ left: pct(t) }}

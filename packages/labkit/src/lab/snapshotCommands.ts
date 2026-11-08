@@ -30,7 +30,11 @@ export function snapshotCommands(
   return {
     saveSnapshot: (trialId, name) => {
       const current = store.getState();
-      const taken = current.savedSnapshots.filter((s) => s.trialId === trialId).length;
+      const taken = new Set(
+        current.savedSnapshots.filter((s) => s.trialId === trialId).map((s) => s.name),
+      );
+      let n = taken.size + 1;
+      while (taken.has(`Snapshot ${n}`)) n += 1;
       const handle = ownClock(trialId);
       const trial = current.trials.find((w) => w.id === trialId);
       const instrument = instruments.find((i) => i.name === trial?.instrumentName);
@@ -42,7 +46,7 @@ export function snapshotCommands(
           clockPosition(handle.clock, spec?.duration, spec?.origin),
         );
       }
-      store.getState().saveSnapshot(trialId, name ?? `Snapshot ${taken + 1}`);
+      store.getState().saveSnapshot(trialId, name ?? `Snapshot ${n}`);
     },
     loadSnapshot: (trialId, snapshotId) => {
       const before = store.getState().trials.find((w) => w.id === trialId);

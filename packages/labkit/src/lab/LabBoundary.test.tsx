@@ -1,15 +1,38 @@
 import { render } from '@testing-library/react';
 import type { RecordCache } from '@weasel-js/storage';
 import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
-import { useContext } from 'react';
+import { type Context, createElement, type ReactNode, use, useContext } from 'react';
 import { describe, expect, it } from 'vitest';
+import { AnnotationsContext } from '../annotations/AnnotationsContext';
+import { AnnotationPreloadContext } from '../annotations/preload';
+import { CameraContext } from '../canvas/CameraInput';
+import { CameraWheelContext } from '../canvas/CameraWheelContext';
+import { CanvasStackContext } from '../canvas/CanvasStackContext';
+import { CameraGesturesContext } from '../canvas/cameraGestures';
+import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
+import { ClockRegistryContext, TrialClockContext, TrialRootContext } from '../clock/contexts';
+import { LabOverContext } from '../config/over';
+import { LightboxContext } from '../lightbox/LightboxContext';
+import { LightboxLayersContext } from '../lightbox/LightboxLayers';
 import { LabStoreContext, LabStoreProvider, TrialIdContext } from '../state/context';
 import { PersistenceContext } from '../state/Persistence';
 import { createLabStore } from '../state/store';
+import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
 import { interstellarTheme } from '../theme/interstellar';
+import { LoupeSwitchContext } from '../trial/loupeSwitch';
+import { TrialDragContext } from '../trial/TrialDragContext';
+import { TrialHistoryContext } from '../trial/trialHistory';
+import { TrialTitleContext } from '../trial/trialTitle';
+import { CameraMissingContext, OrbitViewContext } from '../trial/useOrbitView';
+import { TrialOrbitContext } from '../trial/useTrialOrbit';
+import { LabActionsContext } from './LabActions';
 import { LabBoundary } from './LabBoundary';
-import { LabContext, type LabContextValue } from './LabContext';
+import { LabCommandsContext, LabContext, type LabContextValue } from './LabContext';
 import { LabRoot } from './LabRoot';
+import { LabAmbientContext, LabEntriesContext } from './labAmbient';
+import { LabContextMenusContext } from './labContextMenus';
+import { PanelHostContext } from './panelHost';
+import { PresentationContext } from './presentation';
 
 function Probe() {
   const lab = useContext(LabContext);
@@ -68,5 +91,60 @@ describe('LabBoundary', () => {
     const themed = container.querySelectorAll('[data-wzl-theme]');
     expect(themed).toHaveLength(2);
     expect(themed[1]?.getAttribute('data-wzl-mode')).toBe('light');
+  });
+
+  it('hides every context a lab or a trial publishes', () => {
+    const published: Record<string, Context<never>> = {
+      AnnotationPreloadContext,
+      AnnotationsContext,
+      CameraContext,
+      CameraGesturesContext,
+      CameraMissingContext,
+      CameraPublishContext,
+      CameraRegistryContext,
+      CameraWheelContext,
+      CanvasStackContext,
+      ClockRegistryContext,
+      LabActionsContext,
+      LabAmbientContext,
+      LabCommandsContext,
+      LabContext,
+      LabContextMenusContext,
+      LabEntriesContext,
+      LabOverContext,
+      LabStoreContext,
+      LightboxContext,
+      LightboxLayersContext,
+      LoupeSwitchContext,
+      OrbitViewContext,
+      PanelHostContext,
+      PersistenceContext,
+      PresentationContext,
+      SurfaceCanvasContext,
+      SurfaceContext,
+      TrialClockContext,
+      TrialDragContext,
+      TrialHistoryContext,
+      TrialIdContext,
+      TrialOrbitContext,
+      TrialRootContext,
+      TrialTitleContext,
+    } as unknown as Record<string, Context<never>>;
+    const sentinel = { sentinel: true } as never;
+    const seen: string[] = [];
+    function Read() {
+      for (const [name, ctx] of Object.entries(published)) {
+        if (use(ctx) === sentinel) seen.push(name);
+      }
+      return null;
+    }
+    const tree = Object.values(published).reduceRight<ReactNode>(
+      (inner, ctx) => createElement(ctx.Provider, { value: sentinel }, inner),
+      <LabBoundary>
+        <Read />
+      </LabBoundary>,
+    );
+    render(tree);
+    expect(seen).toEqual([]);
   });
 });

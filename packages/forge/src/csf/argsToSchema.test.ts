@@ -263,6 +263,11 @@ describe('argsToSchema', () => {
       ).toEqual({ textColor: 'string', fillColor: 'enum', strokeColor: 'number' });
     });
 
+    it('makes a string arg whose argType names the color control a color leaf, matcher or not', () => {
+      expect(shape(leaf({ ink: '#00ff00' }, { ink: { control: 'color' } }, 'ink'))).toEqual({ kind: 'color', default: '#00ff00' });
+      expect(shape(leaf({ ink: '#00ff00' }, { ink: { control: { type: 'color' } } }, 'ink'))).toEqual({ kind: 'color', default: '#00ff00' });
+    });
+
     it('leaves a `date` match as a string, which has no date leaf in labkit', () => {
       expect(kinds({ startDate: '2026-01-01' })).toEqual({ startDate: 'string' });
     });
@@ -301,6 +306,15 @@ describe('argsToSchema', () => {
       expect(at({ eq: 'b' }, { mode: 'a' })).toBe(false);
       expect(at({ neq: 'b' }, { mode: 'a' })).toBe(true);
       expect(at({ neq: 'b' }, { mode: 'b' })).toBe(false);
+    });
+
+    it('compares eq and neq as data, as Storybook does, so an array or object can match', () => {
+      const at = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
+        shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode', ...condition } } }, 'gridDivisions', config);
+      expect(at({ eq: [1, 2] }, { mode: [1, 2] })).toBe(true);
+      expect(at({ eq: { a: 1 } }, { mode: { a: 1 } })).toBe(true);
+      expect(at({ neq: [1, 2] }, { mode: [1, 2] })).toBe(false);
+      expect(at({ eq: [1, 2] }, { mode: [2, 1] })).toBe(false);
     });
 
     it('ignores a condition on a global, which a story’s config does not hold', () => {

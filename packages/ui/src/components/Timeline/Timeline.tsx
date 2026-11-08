@@ -7,7 +7,7 @@ import { EasingPicker } from './EasingPicker';
 import { Lane } from './Lane';
 import { Ruler } from './Ruler';
 import { PlayheadReadout, Transport, type TransportProps } from './Transport';
-import { buildLanes, trackAtPath } from './lanes';
+import { buildLanes, trackAtPath, type LaneRow } from './lanes';
 import { deleteKey, insertKey, moveKey, samePath, setKeyEasing, setKeys, setKeyValue, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 
@@ -71,17 +71,17 @@ export function Timeline(props: TimelineProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   // Null until the user zooms in, so the window follows a duration that changes.
   const [ownWindow, setOwnWindow] = useState<TimeWindow | null>(null);
-  const [ownSelection, setOwnSelection] = useState<KeySelection | null>(null);
-  const [ownMode, setOwnMode] = useState<'dope' | 'graph'>('dope');
+  const [selection, setSelection] = useHeld<KeySelection | null>(props.selection, null, props.onSelect);
+  const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   // By key index, so an edit that renumbers a track's keys drops it.
   const [segmentSelection, setSegmentSelection] = useState<KeySelection | null>(null);
 
   const bounds: TimeWindow = { from: 0, to: duration };
   const win = props.window ?? ownWindow ?? bounds;
-  const setWindow = props.onWindowChange
-    ?? ((w: TimeWindow): void => setOwnWindow(w.from <= 0 && w.to >= duration ? null : w));
-  const selection = props.selection !== undefined ? props.selection : ownSelection;
-  const setSelection = props.onSelect ?? setOwnSelection;
+  const setWindow = (w: TimeWindow): void => {
+    if (props.window === undefined) setOwnWindow(w.from <= 0 && w.to >= duration ? null : w);
+    props.onWindowChange?.(w);
+  };
   // A key and a segment are one selection: taking either gives up the other.
   const selectKey = (sel: KeySelection | null): void => {
     setSelection(sel);
@@ -91,18 +91,10 @@ export function Timeline(props: TimelineProps): ReactElement {
     setSegmentSelection(sel);
     if (selection) setSelection(null);
   };
-  const mode = props.mode ?? ownMode;
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
-  /** Every key time on every row — what a dragged key snaps to. */
-  const snapTimes = useMemo(() => {
-    const out = new Set<number>([0, duration]);
-    for (const row of rows) {
-      if (row.kind === 'sampled') for (const k of (row.track as SampledTrack<unknown>).keys) out.add(k.t + row.offset);
-    }
-    return [...out];
-  }, [rows, duration]);
+  const snapTimes = useMemo(() => snapTimesOf(rows, duration), [rows, duration]);
 
   const toggle = (key: string): void => {
     setExpanded((prev) => {
@@ -121,9 +113,12 @@ export function Timeline(props: TimelineProps): ReactElement {
       setSegmentSelection(null);
       return;
     }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selection && selectedTrack?.kind === 'sampled') {
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    const marked = markedKey(e.target as Element, rows);
+    const target = marked === undefined ? selection : marked;
+    if (target && trackAtPath(tracks, target.trackPath)?.kind === 'sampled') {
       e.preventDefault();
-      const r = deleteKey(tracks, selection);
+      const r = deleteKey(tracks, target);
       onChange(r.tracks);
       selectKey(r.selection);
     }
@@ -163,9 +158,7 @@ export function Timeline(props: TimelineProps): ReactElement {
             aria-label="Graph mode"
             className={s.transportButton}
             onClick={() => {
-              const next = mode === 'graph' ? 'dope' : 'graph';
-              setOwnMode(next);
-              props.onModeChange?.(next);
+              setMode(mode === 'graph' ? 'dope' : 'graph');
             }}
           >
             Graph
@@ -245,4 +238,32 @@ export function Timeline(props: TimelineProps): ReactElement {
       ) : null}
     </div>
   );
+}
+
+/** Every key time on every row — what a dragged key snaps to — and either end. */
+function snapTimesOf(rows: readonly LaneRow[], duration: number): number[] {
+  const out = new Set<number>([0, duration]);
+  for (const row of rows) {
+    if (row.kind === 'sampled') for (const k of (row.track as SampledTrack<unknown>).keys) out.add(k.t + row.offset);
+  }
+  return [...out];
+}
+
+/** The key whose mark `el` is in, `null` for a mark on no row drawn, or `undefined` when `el` is on no mark. */
+function markedKey(el: Element, rows: readonly LaneRow[]): KeySelection | null | undefined {
+  const mark = el.closest?.('[data-keyframe-index]');
+  const lane = mark?.closest('[data-lane-key]');
+  if (!mark || !lane) return undefined;
+  const row = rows.find((r) => r.key === lane.getAttribute('data-lane-key'));
+  return row ? { trackPath: row.path, keyIndex: Number(mark.getAttribute('data-keyframe-index')) } : null;
+}
+
+/** A value held here unless `given` is, reporting each change to `onChange` either way. */
+function useHeld<T>(given: T | undefined, initial: T, onChange?: (next: T) => void): [T, (next: T) => void] {
+  const [own, setOwn] = useState<T>(initial);
+  const set = (next: T): void => {
+    if (given === undefined) setOwn(next);
+    onChange?.(next);
+  };
+  return [given !== undefined ? given : own, set];
 }

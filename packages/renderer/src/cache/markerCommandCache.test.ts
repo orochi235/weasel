@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { CommandStroke } from '@weasel-js/paint';
-import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { PATH_M, PATH_L, PATH_C, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { registerMarker, getMarker, type MarkerEntry } from '@weasel-js/stroke';
 import { cachedMarkerHeads, _markerShapesBuiltForTests, _resetMarkerCommandCacheForTests, type PlacedHead } from './markerCommandCache';
 
@@ -60,6 +60,31 @@ describe('cachedMarkerHeads', () => {
     const [a] = cachedMarkerCommands(LINE, { ...STROKE }, { ...STROKE }, 2, undefined);
     const again = { ...STROKE, vertexColors: [1, 0, 0, 1, 0, 0, 1, 1] };
     expect(cachedMarkerCommands(LINE, again, again, 2, undefined)[0]).toBe(a);
+  });
+
+  // Per-vertex widths decide how finely a curve is flattened, which is where
+  // a head on it sits and which way it points.
+  it('places heads again when per-vertex widths change the flattening', () => {
+    const curve: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_C]),
+      coords: new Float32Array([0, 0, 0, 100, 100, 100, 100, 0]),
+      fillRule: 'nonzero',
+    };
+    // A head that says what it reads is cached by value, across stroke objects.
+    const dispose = registerMarker({ ...getMarker('arrow')!, id: 'app-arrow', reads: [] });
+    try {
+      // Trimmed, so the head sits inside the curve rather than at its end.
+      const plain: CommandStroke = { ...STROKE, markerEnd: 'app-arrow', trim: { end: 0.47 } };
+      const wide: CommandStroke = { ...plain, vertexWidths: [2, 2, 2, 80] };
+      const fresh = cachedMarkerHeads(curve, wide, wide, 2, 0.5).map((h) => [...h.transform]);
+      _resetMarkerCommandCacheForTests();
+      cachedMarkerHeads(curve, plain, plain, 2, 0.5);
+      const after = cachedMarkerHeads(curve, wide, wide, 2, 0.5).map((h) => [...h.transform]);
+      expect(after).toEqual(fresh);
+    } finally {
+      dispose();
+    }
   });
 
   it('repaints a head in a new paint without rebuilding its geometry', () => {

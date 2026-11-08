@@ -24,7 +24,7 @@ import {
 import { getMarker, markerGeneration } from '@weasel-js/stroke';
 import { markerKeyOf } from '@weasel-js/stroke';
 import { STROKE_CONFIGS_PER_PATH } from './strokeMeshCache';
-import { screenSpaceKey, type StrokeSpaces } from '@weasel-js/stroke';
+import { screenSpaceKey, widestStrokeWidth, type StrokeSpaces } from '@weasel-js/stroke';
 
 type Role = MarkerPlacement['role'];
 
@@ -100,6 +100,8 @@ export function cachedMarkerHeads(
   const map = mapFor(path, source, reads);
   const key = [
     strokeWidth,
+    // How finely the path is flattened, which is where a head sits on a curve.
+    widestStrokeWidth(strokeWidth, stroke.vertexWidths),
     flattenTolerance ?? '',
     markerGeneration(),
     refKey(stroke.markerStart),

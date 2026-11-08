@@ -364,6 +364,22 @@ describe('createSelectionOutlineLayer', () => {
     expect((tree[0] as PathDrawCommand).stroke).toBeDefined();
   });
 
+  it('pads the outline outward on a flipped view', () => {
+    const layer = createSelectionOutlineLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 10, y: 20, width: 30, height: 40 }),
+      outline: { paint: { kind: 'solid', color: '#000' }, width: 1, pad: 2 },
+    });
+    const view = { x: 0, y: 100, scale: { x: 1, y: -1 } };
+    const [cmd] = layer.draw(undefined, view, DIMS) as PathDrawCommand[];
+    const r = cmd!.path as { x: number; y: number; width: number; height: number };
+    // World y 20..60 lands on screen y 80..40 under the flip.
+    const top = Math.min(r.y, r.y + r.height);
+    const bottom = Math.max(r.y, r.y + r.height);
+    expect([r.x, r.x + r.width]).toEqual([8, 42]);
+    expect([top, bottom]).toEqual([38, 82]);
+  });
+
   it('returns [] when nothing is selected', () => {
     const layer = createSelectionOutlineLayer<Pose>({
       getSelection: () => [],
