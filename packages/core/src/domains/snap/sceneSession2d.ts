@@ -8,6 +8,8 @@ import type { OriginProjection } from 'interactions/gestures/shared/originProjec
 import type { DrawnBoxes, DrawnBoxesSource } from 'interactions/actions/drawnBoxes';
 import { inkBoxes } from 'canvas/inkBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
+import { ownGeometryAt } from 'domains/paths/pathSnap/pathSnapSource';
+import { snapSourcesFor } from './gather';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
@@ -26,6 +28,9 @@ export interface SceneSessionInputs {
   view(): View | null;
   reachPx: number;
   store: SnapOutcomeStore;
+  /** Where a move's `geometry` probe sits. Default, when a source answering
+   *  the gesture takes that role: the subject's own outline nearest the press
+   *  (`ownGeometryAt`), within `reachPx`. */
   geometryAt?: (press: WorldPoint, ids: readonly string[]) => WorldPoint | null;
   /** How a pose's origin is read. Default `AUTO_ORIGIN_PROJECTION`. */
   originProjection?: OriginProjection<unknown>;
@@ -39,9 +44,12 @@ export interface SceneSessionInputs {
 
 /** A 2D session whose probes are the subject's, read from the scene at press. */
 export function sceneSession2d(i: SceneSessionInputs): SnapSession {
+  const geometryAt = i.geometryAt ?? (snapSourcesFor(i.sources, i.req.gesture).some((s) => s.roles.includes('geometry'))
+    ? (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(i.scene, press, ids, i.view()?.scale ?? { x: 1, y: 1 }, i.reachPx)
+    : undefined);
   const reads = sceneProbeReads({
     scene: i.scene, boxes: i.boxes,
-    ...(i.geometryAt ? { geometryAt: i.geometryAt } : {}),
+    ...(geometryAt ? { geometryAt } : {}),
     ...(i.originProjection ? { originProjection: i.originProjection } : {}),
     ...(i.anchors ? { anchors: i.anchors } : {}),
   });
