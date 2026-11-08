@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, expect, it } from 'vitest';
-import { declaredTable, genFile, packageDirFinder, reachableTables, sourceTablesUnder } from './tables';
+import { declaredTable, genFile, namespaceIn, packageDirFinder, reachableTables, sourceTablesUnder } from './tables';
 
 const temps: string[] = [];
 afterAll(() => temps.forEach((d) => rmSync(d, { recursive: true, force: true })));
@@ -85,4 +85,11 @@ it('finds the icons.gen source a .js specifier names, as a TypeScript importer w
   const importer = join(root, 'main.ts');
   expect(genFile('./icons.gen.js', importer)).toBe(join(root, 'icons.gen.ts'));
   expect(genFile('./icons.gen', importer)).toBe(join(root, 'icons.gen.ts'));
+});
+
+it('reads the namespace of an icons.gen compiled to JavaScript, its type argument erased', () => {
+  const root = temp();
+  writeFileSync(join(root, 'icons.gen.js'), `export const icon = scopedIcon('fx');\n`);
+  expect(genFile('./icons.gen.js', join(root, 'main.js'))).toBe(join(root, 'icons.gen.js'));
+  expect(namespaceIn(join(root, 'icons.gen.js'))).toBe('fx');
 });
