@@ -96,12 +96,11 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
     return { ...unit, format: unit.format ?? ((stored) => `${unit.toDisplay(stored)}${unit.suffix ?? ''}`) };
   }
   const { scale, offset = 0, precision, suffix, accepts } = unit;
-  const round = precision === undefined ? undefined : 10 ** precision;
   const system: UnitSystem = { base: 'stored', units: { [SHOWN]: { factor: scale, offset } } };
   return {
     toDisplay: (stored) => {
       const shown = (stored - offset) / scale;
-      return round === undefined ? shown : Math.round(shown * round) / round;
+      return precision === undefined ? shown : Number(shown.toFixed(precision));
     },
     fromDisplay: (shown) => storedOf(shown, scale, offset),
     format: (stored) =>

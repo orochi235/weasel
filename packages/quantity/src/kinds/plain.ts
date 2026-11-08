@@ -1,5 +1,5 @@
 import { intlParts, spokenSign, textOf, type DisplayKind } from '../kind';
-import { formatCompact, parseNumber } from '../number';
+import { formatCompact, parseNumber, roundWhole } from '../number';
 
 /** A plain number. `places` fixes the decimals, trailing zeros included;
  *  otherwise up to `maxPlaces` (default 3) show and trailing zeros drop. */
@@ -49,7 +49,7 @@ export const integerKind: DisplayKind<IntegerDisplay> = {
     intlParts(value, ctx.locale, { maximumFractionDigits: 0, useGrouping: d.grouping ?? true }),
   speak: (value, d, ctx) =>
     spokenSign(textOf(integerKind.format(value, d, ctx))),
-  parse: (text, _d, ctx) => Math.round(parseNumber(text, undefined, ctx.locale)),
+  parse: (text, _d, ctx) => roundWhole(parseNumber(text, undefined, ctx.locale)),
 };
 
 /**

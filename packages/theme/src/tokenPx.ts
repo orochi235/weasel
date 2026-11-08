@@ -18,6 +18,7 @@ const DEFAULTS = new Map<string, string>(TOKEN_MANIFEST.map((t) => [t.name, t.de
 export function tokenPx(name: TokenName, resolved?: ResolvedTheme): number {
   const raw = resolved?.[name] ?? DEFAULTS.get(name);
   const length = raw === undefined ? undefined : readCssNumber(raw);
-  if (length?.unit.toLowerCase() !== 'px') throw new Error(`tokenPx: ${name} is not a px length (${raw ?? 'unknown token'})`);
+  const px = length?.unit.toLowerCase() === 'px' || (length?.unit === '' && length.value === 0);
+  if (!length || !px) throw new Error(`tokenPx: ${name} is not a px length (${raw ?? 'unknown token'})`);
   return length.value;
 }
