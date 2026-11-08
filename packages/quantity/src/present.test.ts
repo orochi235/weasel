@@ -76,6 +76,7 @@ const CASES: [Display, number, string, string][] = [
   [integer(), 41.6, '42', '42'],
   [compact(), 2_000_000, '2.00M', '2 million'],
   [compact({ places: 1 }), 12.34, '12.3', '12.3'],
+  [compact(), 999.6, '1.00K', '1 thousand'],
   [percent(), 0.25, '25%', '25 percent'],
   [fraction(), 1 / 12, '1/12', '1 over 12'],
   [fraction(), -0.75, `${MINUS}3/4`, 'minus 3 over 4'],

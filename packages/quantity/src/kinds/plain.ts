@@ -1,5 +1,5 @@
 import { intlParts, spokenSign, textOf, type DisplayKind } from '../kind';
-import { formatCompact, parseNumber, roundWhole } from '../number';
+import { belowCompact, formatCompact, parseNumber, roundWhole } from '../number';
 
 /** A plain number. `places` fixes the decimals, trailing zeros included;
  *  otherwise up to `maxPlaces` (default 3) show and trailing zeros drop. */
@@ -83,7 +83,7 @@ export const compactKind: DisplayKind<CompactDisplay> = {
   speak: (value, d, ctx) =>
     spokenSign(
       textOf(
-        Math.abs(value) < 1000
+        belowCompact(value, d.places ?? 0)
           ? compactKind.format(value, d, ctx)
           : intlParts(value, ctx.locale, {
               notation: 'compact',
