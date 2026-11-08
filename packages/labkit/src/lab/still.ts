@@ -1,6 +1,7 @@
 import type { ClockRegistry } from '@weasel-js/clock';
 import { isDev } from '@weasel-js/react';
 import { useEffect, useLayoutEffect, useState } from 'react';
+import { runs, runTo } from '../clock/runTo';
 import type { TrialClock, TrialClockHandle } from '../clock/trialClock';
 
 /** A presented lab held still, for a poster to be taken of it. */
@@ -22,10 +23,6 @@ export function stillOf(prop: boolean | number | undefined): Still | null {
   return text !== '' && Number.isFinite(at) ? { at } : {};
 }
 
-/** Whether a still at a time reaches it by running `handle`'s clock there. */
-const runs = (handle: TrialClockHandle): handle is TrialClockHandle & { step: number } =>
-  !handle.clock.seekable && handle.step !== undefined && handle.step > 0;
-
 function holdStill(handle: TrialClockHandle, still: Still): void {
   const { clock } = handle;
   if (clock.rate !== 0) clock.rate = 0;
@@ -35,22 +32,6 @@ function holdStill(handle: TrialClockHandle, still: Still): void {
     console.warn(
       `[labkit] a still at ${still.at}ms leaves a clock that is not seekable where it opens; a \`step\` in its declaration runs it there`,
     );
-}
-
-/** Play `clock` forward to `at`, `step` ms a frame, as frames nothing showed. */
-function runTo(clock: TrialClock, at: number, step: number): void {
-  let now = 0;
-  clock.rebase();
-  clock.rate = 1;
-  clock.sync(now);
-  // The count bounds a sum of steps that rounding leaves a hair short of `at`.
-  for (let left = Math.ceil((at - clock.elapsed) / step) + 1; left > 0; left--) {
-    if (clock.rate === 0 || clock.elapsed >= at) break;
-    now += Math.min(step, at - clock.elapsed);
-    clock.sync(now);
-  }
-  clock.rate = 0;
-  clock.rebase();
 }
 
 /** How many frames a still waits, once its fonts have loaded, before it says

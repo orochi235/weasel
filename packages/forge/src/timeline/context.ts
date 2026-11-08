@@ -1,6 +1,6 @@
 import type { ClockHandle } from '@weasel-js/clock';
 import { useLatest } from '@weasel-js/core';
-import { useTransportControl, useTrialClockHandle } from '@weasel-js/labkit';
+import { useHeldClock, useTransportControl, useTrialClockHandle } from '@weasel-js/labkit';
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 import { spanOverrideOf } from './clockSpec';
 import { ownMoves, type PlayMoves, setLoop, subscribeSpeed } from './moves';
@@ -28,7 +28,10 @@ export interface StoryTimeline {
 }
 
 function useClock(hook: string): ClockHandle {
-  const handle = useContext(ClockContext);
+  const held = useHeldClock();
+  const story = useContext(ClockContext);
+  // A held clock renders inside the story, so it is always the nearer of the two.
+  const handle = held ?? story;
   if (!handle) {
     throw new Error(
       `${hook}: this story declares no timeline. Give it \`timeline: { duration }\`, or \`parameters.forge.timeline\` in CSF.`,

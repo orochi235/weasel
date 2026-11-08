@@ -207,6 +207,7 @@ export {
   UnionNode,
   ValueNode,
 } from './config/builder';
+export { type FieldSweepOptions, fieldSweep } from './config/fieldSweep';
 export { fromConfigFields } from './config/fromConfigField';
 export type { LabOver, OverAccess } from './config/over';
 export {

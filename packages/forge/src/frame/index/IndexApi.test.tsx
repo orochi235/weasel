@@ -16,6 +16,7 @@ const API: ApiTable = {
     { name: 'label', type: 'string', required: true, description: 'Shown beside the glyph.' },
     { name: 'size', type: "'sm' | 'md'", required: false, default: "'md'" },
     { name: 'loud', type: 'boolean', required: false, deprecated: 'use tone' },
+    { name: 'data', type: 'number[]', required: true },
   ],
   inherited: [{ from: 'DomProps', count: 2 }],
   ref: {
@@ -58,6 +59,14 @@ describe('IndexApi', () => {
     const label = within(panel()).getByText('label', { selector: 'code' }).closest('dt') as HTMLElement;
     expect(within(label).getByText('required')).toBeTruthy();
     expect(within(entry('loud')).getByText('Deprecated: use tone')).toBeTruthy();
+  });
+
+  it('lists required props first, each group by name, and tints the required badge with the secondary accent', () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    const names = within(panel()).getAllByRole('term').map((dt) => dt.querySelector('code')?.textContent);
+    expect(names.slice(0, 4)).toEqual(['data', 'label', 'loud', 'size']);
+    const badge = within(panel()).getAllByText('required')[0]!.closest('[data-tint]');
+    expect(badge?.getAttribute('data-tint')).toBe('var(--wzl-secondary)');
   });
 
   it('collapses inherited props to one line per source', () => {

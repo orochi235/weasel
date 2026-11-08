@@ -375,6 +375,11 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
+  (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
+  necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
+  over time in each cell. Raised as a direction, not to build yet (2026-11-08). Closes when the maintainer
+  has said how a third sweep shows and `<Sequence>` takes any number of sweeps.
 - **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
   and `useRovingTabIndex.test.tsx` pins that. But `ToolButton`'s `ariaDisabled` promises such a button stays
   "reachable by keyboard (roving-tabindex still applies)", and a segment with a `disabledReason` swaps `disabled`

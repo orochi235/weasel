@@ -71,7 +71,9 @@
   align-items: center;
   gap: var(--wzl-space-4);
   margin-top: var(--wzl-space-8);
-  font-family: var(--wzl-font-mono);
+}
+
+.fg-index-api__name > code {
   font-weight: var(--wzl-font-weight-medium);
 }
 

@@ -1,0 +1,63 @@
+.sequence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  min-width: 0;
+  color: var(--wzl-fg);
+}
+
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wzl-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cells[data-layout='strip'] {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  /* A strip scrolls across only; left visible, overflow-y would compute to auto beside overflow-x. */
+  overflow-y: hidden;
+}
+
+.item {
+  flex: none;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wzl-space-2);
+  margin: 0;
+}
+
+.caption {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: var(--wzl-font-size-sm);
+  font-weight: normal;
+  color: var(--wzl-fg-muted);
+  text-align: center;
+}
+
+.grid {
+  border-collapse: separate;
+  border-spacing: var(--wzl-space-4);
+}
+
+.grid th[scope='row'] {
+  text-align: end;
+}
+
+.gridCell {
+  padding: 0;
+  vertical-align: middle;
+}
+
+.capped {
+  margin: 0;
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}

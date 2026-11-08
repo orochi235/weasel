@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { type Clock, createClock } from '@weasel-js/clock';
-import { type Instrument, Lab } from '@weasel-js/labkit';
+import { HeldClock, type Instrument, Lab } from '@weasel-js/labkit';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { installResizeObserver } from '../shell/labHarness';
 import { clockSpecOf } from './clockSpec';
-import { ClockContext, useTimeline } from './context';
+import { ClockContext, usePlayhead, useTimeline } from './context';
 import { shownTime } from './shown';
 import type { TimelineSpec } from './types';
 
@@ -28,6 +28,21 @@ const timeline = (spec: TimelineSpec) => {
 };
 
 describe('a story clock', () => {
+  it('reads a held clock inside the story ahead of the story’s own', () => {
+    const story = createClock(clockSpecOf({ duration: 1000 }));
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <ClockContext.Provider value={story}>
+        <HeldClock spec={{ duration: 1000 }} at={400}>
+          {children}
+        </HeldClock>
+      </ClockContext.Provider>
+    );
+    expect(renderHook(() => usePlayhead(), { wrapper }).result.current).toBe(400);
+    expect(renderHook(() => usePlayhead(), { wrapper: ({ children }) => (
+      <ClockContext.Provider value={story}>{children}</ClockContext.Provider>
+    ) }).result.current).toBe(0);
+  });
+
   it('loops by default, its playhead wrapping back into the span, and stops paused at the end when told not to', () => {
     expect(shownTime(ran({ start: -200, duration: 1000 }, 1500))).toBe(300);
     const once = ran({ duration: 1000, loop: false }, 1500);

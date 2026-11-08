@@ -14,3 +14,7 @@ export const TrialClockContext = createContext<ClockHandle | typeof PENDING_CLOC
 /** Where the trial around a component keeps its outermost element, which the
  *  trial's clock registers as the element showing it. */
 export const TrialRootContext = createContext<MutableRefObject<HTMLElement | null> | null>(null);
+
+/** The clock a `<HeldClock>` stands paused for what renders inside it, which a host's own playhead hook
+ *  (forge's `usePlayhead`) reads ahead of the clock it would otherwise. */
+export const HeldClockContext = createContext<ClockHandle | null>(null);

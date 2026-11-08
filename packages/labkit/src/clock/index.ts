@@ -1,3 +1,10 @@
+export {
+  ClockFrames,
+  type ClockFramesProps,
+  HeldClock,
+  type HeldClockProps,
+  useHeldClock,
+} from './HeldClock';
 export { useClockFrame, useTrialClock, useTrialClockHandle, useTrialMix } from './hooks';
 export { TrialTransport, type TrialTransportProps } from './TrialTransport';
 export type { TransportControl } from './transportControl';

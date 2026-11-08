@@ -7,13 +7,26 @@ import { Description } from './Description';
 import { useEnv } from './envContext';
 import './api.css';
 
-function Entry({ name, badge, children }: { name: string; badge?: string | undefined; children: ReactNode }) {
+/** A marker that changes how the entry is used, as `required` does, rather than describing it. */
+const LOUD = { ref: 'secondary' } as const;
+
+function Entry({
+  name,
+  badge,
+  loud = false,
+  children,
+}: {
+  name: string;
+  badge?: string | undefined;
+  loud?: boolean;
+  children: ReactNode;
+}) {
   return (
     <>
       <dt className="fg-index-api__name">
         <code>{name}</code>
         {badge ? (
-          <Badge variant="subtle" size="sm">
+          <Badge variant="subtle" size="sm" {...(loud ? { tint: LOUD } : {})}>
             {badge}
           </Badge>
         ) : null}
@@ -25,7 +38,7 @@ function Entry({ name, badge, children }: { name: string; badge?: string | undef
 
 function PropEntry({ prop }: { prop: ApiProp }) {
   return (
-    <Entry name={prop.name} badge={prop.required ? 'required' : undefined}>
+    <Entry name={prop.name} badge={prop.required ? 'required' : undefined} loud={prop.required}>
       <code className="fg-index-api__type">{prop.type}</code>
       {prop.default === undefined ? null : (
         <p className="fg-index-api__default">
@@ -48,6 +61,10 @@ function MemberEntry({ member }: { member: ApiMember }) {
     </Entry>
   );
 }
+
+/** Required props first, then by name. */
+export const propsInOrder = (props: readonly ApiProp[]): ApiProp[] =>
+  [...props].sort((a, b) => Number(b.required) - Number(a.required) || a.name.localeCompare(b.name));
 
 const methodsFirst = (members: readonly ApiMember[]): ApiMember[] => [
   ...members.filter((m) => m.kind === 'method'),
@@ -80,7 +97,7 @@ function ApiBody({ api }: { api: ApiTable }) {
       {none ? <p className="fg-index-api__note">Takes no props.</p> : null}
       {api.props.length === 0 ? null : (
         <dl className="fg-index-api__list">
-          {api.props.map((prop) => (
+          {propsInOrder(api.props).map((prop) => (
             <PropEntry key={prop.name} prop={prop} />
           ))}
         </dl>
