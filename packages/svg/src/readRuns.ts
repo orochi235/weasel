@@ -120,7 +120,7 @@ function readTspanRun(
   const lang = ownLang(el)?.trim();
   if (lang) run.lang = lang;
   // Own attributes only, as for the stroke: an inherited fill is the node's already.
-  if (['fill', 'fill-opacity'].some((k) => { const v = ownProp(el, k); return v != null && v !== 'inherit'; })) {
+  if ((['fill', 'fill-opacity'] as const).some((k) => { const v = ownProp(el, k); return v != null && v !== 'inherit'; })) {
     run.fill = coreTextFill(tspanStyle, gradients, onWarn);
   }
   // Own attributes only — see `ownStrokeStyle`.

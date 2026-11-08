@@ -63,7 +63,13 @@ describe('pathOps', () => {
   });
 
   it('writes a path measured from an origin in its own space', () => {
-    const p: Path = { ...poly([PATH_M, PATH_L, PATH_Q, PATH_Z], [0, 0, 10, 0, 10, 6, 4, 12]), origin: { x: 1000, y: 2000 } };
+    const p: Path = {
+      kind: 'polygon',
+      commands: Uint8Array.from([PATH_M, PATH_L, PATH_Q, PATH_Z]),
+      coords: Float32Array.from([0, 0, 10, 0, 10, 6, 4, 12]),
+      fillRule: 'nonzero',
+      origin: { x: 1000, y: 2000 },
+    };
     expect(ops(p)).toBe('1000 2000 m\n1010 2000 l\n1010 2004 1008 2008 1004 2012 c\nh\n');
   });
 });
