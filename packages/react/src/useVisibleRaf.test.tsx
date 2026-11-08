@@ -46,7 +46,7 @@ const setHidden = (next: boolean) => {
 
 const setIntersecting = (next: boolean) => {
   for (const cb of observerCallbacks) {
-    cb([{ isIntersecting: next } as IntersectionObserverEntry], null as never);
+    cb([{ isIntersecting: next, target: observed.at(-1) } as IntersectionObserverEntry], null as never);
   }
 };
 
@@ -245,6 +245,24 @@ describe('useVisibleRaf', () => {
     act(() => { clock.flush(); });
     expect(onResume).toHaveBeenCalledTimes(1);
     expect(frame).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads the latest of several reports the observer batches together', () => {
+    const clock = makeClock();
+    const frame = vi.fn();
+    const { loop } = mount(frame, clock, true);
+    const target = observed[0]!;
+    act(() => {
+      for (const cb of observerCallbacks) {
+        cb([
+          { isIntersecting: true, target } as IntersectionObserverEntry,
+          { isIntersecting: false, target } as IntersectionObserverEntry,
+        ], null as never);
+      }
+    });
+    act(() => { loop().request(); });
+    act(() => { clock.flush(); });
+    expect(frame).not.toHaveBeenCalled();
   });
 
   it('suspends while the named element is out of the viewport', () => {

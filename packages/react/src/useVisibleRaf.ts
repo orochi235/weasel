@@ -163,7 +163,10 @@ export function useVisibleRaf(
     document.addEventListener('visibilitychange', syncGate);
     if (typeof IntersectionObserver !== 'undefined') {
       observerRef.current = new IntersectionObserver((entries) => {
-        intersectingRef.current = entries.some((e) => e.isIntersecting);
+        // Entries arrive oldest first, and one already queued for an unobserved element still arrives.
+        const last = entries.filter((e) => e.target === observedRef.current).at(-1);
+        if (!last) return;
+        intersectingRef.current = last.isIntersecting;
         syncGate();
       });
       syncObserver();
