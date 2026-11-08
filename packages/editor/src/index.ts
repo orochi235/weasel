@@ -11,7 +11,7 @@ export {
 export { readStored, writeSession, type SessionEntry } from './sessionStore';
 export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutosave';
 export { usePageFit } from './usePageFit';
-export { usePages, type DocPages, type UsePagesOptions } from './usePages';
+export { usePages, type AddPageOptions, type DocPages, type PagePlace, type UsePagesOptions } from './usePages';
 export { PAGE_SETTLE_MS, usePageSettle, type Paging, type ViewSink } from './usePageSettle';
 export { useSessionPersistence, type SessionPersistenceOptions } from './useSessionPersistence';
 export { TextEditDepPublisher } from './TextEditDepPublisher';
