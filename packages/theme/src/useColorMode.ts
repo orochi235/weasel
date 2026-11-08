@@ -51,7 +51,7 @@ export function useColorModePreference(
 ): ColorModePreferenceState {
   const { storageKey, storage, defaultPreference = 'auto' } = options;
 
-  const [preference, setState] = useState<ColorModePreference>(() => {
+  const read = (): ColorModePreference => {
     if (storageKey === undefined) return defaultPreference;
     try {
       const stored = (storage ?? defaultStorage())?.getItem(storageKey);
@@ -59,11 +59,17 @@ export function useColorModePreference(
     } catch {
       return defaultPreference;
     }
-  });
+  };
+  const [state, setState] = useState(() => ({ key: storageKey, preference: read() }));
+  let { preference } = state;
+  if (state.key !== storageKey) {
+    preference = read();
+    setState({ key: storageKey, preference });
+  }
 
   const setPreference = useCallback(
     (next: ColorModePreference) => {
-      setState(next);
+      setState({ key: storageKey, preference: next });
       if (storageKey === undefined) return;
       try {
         (storage ?? defaultStorage())?.setItem(storageKey, next);
