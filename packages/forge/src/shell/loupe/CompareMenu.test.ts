@@ -16,12 +16,12 @@ import {
   PIXELS_ONLY,
 } from './CompareMenu';
 import type { ForgeComparison } from './conditions';
-import { createApi } from './ForgeLoupe';
+import { createLensApi } from '@weasel-js/labkit/loupe';
 
 /** The workshop's lens API over a fresh scene, with one lens up. */
 function createSettledLensApi() {
   const scene = createLensScene<ForgeComparison>();
-  const api = createApi(scene, {
+  const api = createLensApi(scene, {
     body: { current: document.createElement('div') },
     pointer: { current: null },
     focus: { current: null },

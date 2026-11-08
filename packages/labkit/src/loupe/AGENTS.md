@@ -106,6 +106,17 @@ the keys are plain (`LENS_KEYS`), each binding's `opts.id` is its action id so
 `<LensActions>`; `loupe.seam` alone registers on the lens canvas, since a drag
 on the seam reaches that dispatcher and not the lab's.
 
+### A lab's own lenses
+
+`labLoupe` (`lens/LabLoupe.tsx`) is the lab chrome that gives any lab lenses:
+`<Lab labChrome={[labLoupe]} />`. It is a lens host like forge's `ForgeLoupe`,
+sharing its API (`createLensApi`, `useLensFocus` in `lens/lensApi.ts`) and its
+re-measuring (`useLensRemeasure`), with one source: `createCloneSource`
+(`lens/cloneSource.ts`), a Live source that copies the trial body under each
+reticle into the lens and scales it about that point. SVG and text stay sharp;
+a canvas is copied pixel for pixel on every frame, so it magnifies blocky. A
+plain lab compares nothing, so the opposite preset clears a comparison.
+
 ## How it reads the trial
 
 Only through context, the way `<TrialOverview>` does. `CanvasStackContext`'s
