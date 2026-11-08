@@ -27,6 +27,17 @@ describe('tessellateStroke on zero-length runs', () => {
     expect([e.x0, e.y0, e.x1, e.y1]).toEqual([3, 3, 7, 7]);
   });
 
+  it('draws a closed zero-length subpath as SVG does, a disc or a square', () => {
+    for (const d of ['M5 5Z', 'M5 5L5 5Z', 'M5 5L5 5L5 5Z']) {
+      const round = tessellateStroke(pathFromD(d), { ...ink, cap: 'round' });
+      expect(round.indices.length).toBeGreaterThan(0);
+      const e = extent(round.vertices);
+      expect([e.x0, e.y0, e.x1, e.y1].map((v) => +v.toFixed(5))).toEqual([3, 3, 7, 7]);
+      expect(extent(tessellateStroke(pathFromD(d), { ...ink, cap: 'square' }).vertices)).toEqual({ x0: 3, y0: 3, x1: 7, y1: 7 });
+      expect(tessellateStroke(pathFromD(d), { ...ink, cap: 'butt' }).indices.length).toBe(0);
+    }
+  });
+
   it('draws nothing for a butt-capped one, nor for a lone moveto', () => {
     expect(tessellateStroke(pathFromD('M5 5L5 5'), { ...ink, cap: 'butt' }).indices.length).toBe(0);
     expect(tessellateStroke(pathFromD('M5 5'), { ...ink, cap: 'round' }).indices.length).toBe(0);
