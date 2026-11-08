@@ -86,6 +86,17 @@ describe('readMermaidSequence', () => {
     ]));
   });
 
+  it('reads past a directive running over several lines, before the header or after it', () => {
+    for (const text of [
+      '%%{init: {\n  "theme": "dark"}}%%\nsequenceDiagram\nA->>B: x',
+      'sequenceDiagram\n%%{init: {\n  "theme": "dark"}}%%\nA->>B: x',
+    ]) {
+      const { document, warnings } = readMermaidSequence(text);
+      expect((document.pages[0] as SequencePage).data.steps).toHaveLength(1);
+      expect(warnings).toContain('Mermaid configuration directives were dropped.');
+    }
+  });
+
   it('throws naming the line on what it cannot read', () => {
     expect(() => readMermaidSequence('sequenceDiagram\nA->>B: x\nwhat is this')).toThrow(/line 3/);
     expect(() => readMermaidSequence('sequenceDiagram\nend')).toThrow(/line 2: "end" closes nothing/);

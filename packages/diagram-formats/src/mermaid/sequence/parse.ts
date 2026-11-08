@@ -105,10 +105,20 @@ export function parseSequence(text: string): ParsedSequence {
   const stmts: SeqStmt[] = [];
   let header = false;
   let inDescr = false;
+  let inDirective = false;
   lines.forEach((raw, k) => {
     const line = first + k;
     if (inDescr) {
       inDescr = !raw.includes('}');
+      return;
+    }
+    if (inDirective) {
+      inDirective = !raw.includes('}%%');
+      return;
+    }
+    if (/^\s*%%\{/.test(raw) && !raw.includes('}%%')) {
+      dropped.push('Mermaid configuration directives were dropped.');
+      inDirective = true;
       return;
     }
     if (/^\s*accDescr\s*\{/.test(raw)) {
