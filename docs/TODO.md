@@ -30,13 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P3) [agent] An alt-drag clone should snap to its own source.** Clone snaps as move
-  does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
-  the box being snapped and hides those nodes as targets. During a clone the source stays put, so the
-  copy cannot line up with the original's edges. Allowing it needs a separate exclude list on
-  `SnapBegin`; the copy starts on its source, so a short drag would snap back onto it.
-  Ruled (2026-11-07): it should; build the exclude list.
-  Closes when a clone snaps to its source's edges, with a test.
 
 - **(P3) [agent] A warp press on text that ends before any move may leave an outlines-only undo entry.**
   Read from `path-tools/src/warp/warpActions.ts` and `outlineSession.ts`, not run: the text-to-outlines

@@ -107,7 +107,7 @@ function collectAtPress(inputs: Session2dInputs): FixedCollect {
     gesture: req.gesture,
     ...(req.ids ? { ids: req.ids } : {}),
     ...(req.parent !== undefined ? { parent: req.parent } : {}),
-    exclude: inputs.exclude ?? req.ids ?? [],
+    exclude: inputs.exclude ?? req.exclude ?? req.ids ?? [],
     ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
     ...(req.origin ? { origin: req.origin } : {}),
     ...(req.also ? { also: req.also } : {}),

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 import { solid } from '../../../util/paint';
 import { STICKY_DEFAULTS } from './stickyNode';
 import { useStickyTool } from './useStickyTool';
@@ -19,7 +20,7 @@ describe('useStickyTool', () => {
   it('draws a sticky with a drag, through insert', () => {
     const { result } = renderHook(() => useStickyTool());
     expect(bindingFor(result.current, 'drag')).toEqual({
-      spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'sticky.drag', params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize } },
+      spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: 'sticky.drag', params: { kind: 'sticky', minSize: STICKY_DEFAULTS.minSize } },
     });
   });
 

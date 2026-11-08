@@ -139,7 +139,8 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         applyOps,
       };
       const behaviors = startCloneBehaviors(ctx, opts, scene, scratch.ids, originPoses, descriptorOf);
-      const snap = beginDragSnap(ctx, scratch.ids);
+      // The source stays put, so it is something the copy can line up with.
+      const snap = beginDragSnap(ctx, scratch.ids, []);
 
       return {
         kind: 'clone',

@@ -11,10 +11,13 @@ export interface DragSnap {
   readonly press: WorldPoint;
 }
 
-/** The snapping of a drag that translates `ids`, which offer no targets. */
-export function beginDragSnap(ctx: InvocationCtx, ids: readonly string[]): DragSnap {
+/** The snapping of a drag that translates `ids`, which offer no targets unless `exclude` names others. */
+export function beginDragSnap(ctx: InvocationCtx, ids: readonly string[], exclude?: readonly string[]): DragSnap {
   const press = ctx.drag?.start ?? ctx.world;
-  return { snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis' }), press };
+  return {
+    snap: lazySnapSession(ctx.deps.snap, { gesture: 'move', ids, press, constrain: 'axis', ...(exclude ? { exclude } : {}) }),
+    press,
+  };
 }
 
 /** The pointer's delta, moved so the subject lands on what the snap session

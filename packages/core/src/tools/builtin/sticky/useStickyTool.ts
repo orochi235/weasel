@@ -6,6 +6,7 @@ import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insert
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { STICKY_DEFAULTS, type StickyStyle } from './stickyNode';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 /** Options for `useStickyTool`: the look of the notes it makes, and the
  *  insert behaviors every drag-to-insert tool takes. Keep object options
@@ -53,7 +54,7 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
         group: 'type',
       },
       bindings: [
-        { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'sticky.drag', params: look, ...insertBindingBehaviors(behaviors) } },
+        { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: 'sticky.drag', params: look, ...insertBindingBehaviors(behaviors) } },
         { spec: { kind: 'click' }, actionId: 'place', opts: { id: 'sticky.click', params: { ...look, size } } },
         { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit', opts: { id: 'sticky.editText' } },
         INSERT_REPOSITION_BINDING,

@@ -5,6 +5,7 @@ import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositio
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 /**
  * Drag-to-draw ellipse tool. Mirrors `useRectTool`: the `drag` binding
@@ -29,7 +30,7 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool {
         },
         bindings: [
           {
-            spec: { kind: 'drag' },
+            spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
             actionId: 'insert',
             opts: { id: 'ellipse.drag', params: { kind: 'ellipse' }, ...insertBindingBehaviors(behaviors) },
           },

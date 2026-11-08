@@ -44,7 +44,7 @@ import type { EditAnchorsDep, SnapDep } from '../depSchema';
 import type { SnapBegin, SnapMods, SnapSession } from '../snapDep';
 import { inputSession } from 'domains/snap/session2d';
 import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
-import { isAnchorOrControl, resolveParams, roleReader, type ModifierRoles } from '@weasel-js/routing';
+import { isAnchorOrControl, resolveParams, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import {
   anchorAt,
   editAnchorSetTracked,
@@ -267,6 +267,7 @@ export const editAnchorsAction: Action & { requires: string[] } = inPlane({
       // Ties moveAction's `selected-body` on specificity and registers after
       // it, so move declines these presses in `start`.
       target: { kindOf: isAnchorOrControl },
+      mods: roleMods(EDIT_ANCHORS_ROLES),
     },
     opts: { id: 'editAnchors.drag' },
   }],

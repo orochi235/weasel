@@ -38,7 +38,7 @@ export type { ActionParams, ActionTuning, TunedBinding } from '@weasel-js/routin
 export { bindingId, resolveBindingOverrides } from '@weasel-js/routing';
 export type { BindingOverrides, ResolvedBindingOverrides } from '@weasel-js/routing';
 export { tuneAction } from '@weasel-js/routing';
-export { roleReader, keysHeld, modifierStateOf } from '@weasel-js/routing';
+export { roleReader, roleMods, keysHeld, modifierStateOf } from '@weasel-js/routing';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from '@weasel-js/routing';
 export type { ActionParamSchema, ActionTunings } from '../interactions/actions/actionParamSchema';
 export { evaluateActive, evaluateEnabled, buildDepsFromRequires } from '@weasel-js/routing';
@@ -50,7 +50,7 @@ export { flipAction } from '../interactions/actions/flip/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
-export { insertAction } from '../interactions/actions/insert/action';
+export { insertAction, INSERT_DRAG_MODS } from '../interactions/actions/insert/action';
 export { insertParams, POLYGON_INSERT_PARAMS, STAR_INSERT_PARAMS } from '../interactions/actions/insert/params';
 export { placeAction } from '../interactions/actions/insert/placeAction';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';

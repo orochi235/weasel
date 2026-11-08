@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createElement, type ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
-import { commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
+import { INSERT_DRAG_MODS, commitOps, createPageRun, createScene, DepRegistryProvider, useDepRegistry, useDepSource, type ActionDeps, type InsertDep, type RectPose } from '@weasel-js/core';
 import { withDiagramRegistry } from './edge';
 import { FLOWCHART_STENCILS, stencilBuild, stencilKind } from './stencil';
 import { DEFAULT_NODE_STYLE } from './fromData';
@@ -108,7 +108,7 @@ describe('useStencilTool', () => {
     const { result } = renderHook(() => useStencilTool(byId('process')));
     expect(result.current.id).toBe('stencil:process');
     const insert = result.current.bindings!.find((b) => b.actionId === 'insert')!;
-    expect(insert.spec).toEqual({ kind: 'drag' });
+    expect(insert.spec).toEqual({ kind: 'drag', mods: INSERT_DRAG_MODS });
     expect((insert.opts as { params: { kind: string } }).params.kind).toBe(stencilKind('process'));
     expect(stencilKind('process')).toBe('stencil:process');
   });

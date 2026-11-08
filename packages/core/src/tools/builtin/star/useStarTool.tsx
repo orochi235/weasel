@@ -8,6 +8,7 @@ import type { Action, WorldPoint } from '@weasel-js/routing';
 import { useLatest } from '@weasel-js/react';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 /** A point in world coordinates. */
 export type StarPoint = WorldPoint;
@@ -96,7 +97,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           // Default = drag from corner; anchor dot in the overlay sells
           // the click point. Alt flips to center mode (live toggle).
           {
-            spec: { kind: 'drag' },
+            spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
             actionId: 'insert',
             opts: {
               id: 'star.drag',

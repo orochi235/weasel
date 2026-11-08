@@ -145,7 +145,7 @@ export { tuneAction } from './interactions/actions/tuning';
 export type { ActionParams, ActionTuning, TunedBinding } from './interactions/actions/tuning';
 export { bindingId, overriddenBindings, resolveBindingOverrides } from './interactions/actions/bindingOverrides';
 export type { BindingOverrides, ResolvedBindingOverrides } from './interactions/actions/bindingOverrides';
-export { roleReader, keysHeld } from './interactions/actions/modifierRoles';
+export { roleReader, keysHeld, roleMods } from './interactions/actions/modifierRoles';
 export { modifierStateOf } from './interactions/dispatcher/inputFacts';
 export type { ImmediateParams } from './interactions/dispatcher/inputFacts';
 export type { ModifierRole, ModifierRoles, RoleKeys, RoleRebinds } from './interactions/actions/modifierRoles';
