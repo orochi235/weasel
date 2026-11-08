@@ -81,12 +81,14 @@ const MAX_OPEN = 64;
  * punctuation, a combining mark) stays in the piece before it, or the one after
  * it when it opens the text; a closing bracket takes the script its opening
  * bracket was in, so the `)` of `abc (שלום) def` goes with the Latin. A
- * piece reads right to left when the first of its own letters with a strong
- * `Bidi_Class` is R or AL. Empty text has no pieces.
+ * piece reads right to left when the first of its script's letters with a
+ * strong `Bidi_Class` is R or AL. Empty text has no pieces.
  */
 export function scriptPieces(text: string): ScriptPiece[] {
   const pieces: ScriptPiece[] = [];
   const open: Open[] = [];
+  /** Each script's direction, from the first of its letters with a strong class. */
+  const directions = new Map<string, boolean>();
   let current: string | null = null;
   let rtl: boolean | null = null;
   let start = 0;
@@ -117,10 +119,13 @@ export function scriptPieces(text: string): ScriptPiece[] {
         rtl = null;
       }
       current = script;
+      // A piece a closing bracket opens may hold none of its script's letters.
+      rtl ??= directions.get(script) ?? null;
       if (rtl === null) {
         const cls = bidiClassOf(cp);
         if (cls === 'L') rtl = false;
         else if (cls === 'R' || cls === 'AL') rtl = true;
+        if (rtl !== null) directions.set(script, rtl);
       }
     }
     at += ch.length;
