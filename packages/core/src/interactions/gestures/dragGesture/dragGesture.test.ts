@@ -180,6 +180,20 @@ describe('useDragGesture', () => {
   });
 
   describe('cancel', () => {
+    it('onGestureEnd fires and the gesture closes even when onCancel throws', () => {
+      const onGestureEnd = vi.fn();
+      const { result } = renderHook(() =>
+        useDragGesture({
+          onCancel: () => { throw new Error('boom'); },
+          onGestureEnd,
+        }),
+      );
+      act(() => result.current.start(P(0, 0), NO_MODS));
+      expect(() => act(() => result.current.cancel())).toThrow('boom');
+      expect(onGestureEnd).toHaveBeenCalledWith(false);
+      expect(result.current.phase).toBe('idle');
+    });
+
     it('fires onCancel and onGestureEnd(false) on active gesture', () => {
       const onCancel = vi.fn();
       const onGestureEnd = vi.fn();

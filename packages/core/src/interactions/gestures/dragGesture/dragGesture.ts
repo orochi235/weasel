@@ -168,10 +168,13 @@ export function useDragGesture<TScratch = unknown>(
     const s = stateRef.current;
     const opts = optsRef.current;
     if (!s) return;
-    opts.onCancel?.(buildCtx());
-    stateRef.current = null;
-    bumpPhase('idle');
-    opts.onGestureEnd?.(false);
+    try {
+      opts.onCancel?.(buildCtx());
+    } finally {
+      stateRef.current = null;
+      bumpPhase('idle');
+      opts.onGestureEnd?.(false);
+    }
   }, [buildCtx, bumpPhase, optsRef]);
 
   return useMemo<DragGestureController>(() => ({

@@ -151,9 +151,12 @@ export function useDragRadial<TScratch = unknown>(
     },
     onCancel: () => {
       dlog('drag-radial', 'cancel');
-      optsRef.current.onCancel?.(buildCtx());
-      scratchRef.current = null;
-      setOverlay(null);
+      try {
+        optsRef.current.onCancel?.(buildCtx());
+      } finally {
+        scratchRef.current = null;
+        setOverlay(null);
+      }
     },
     onGestureStart: () => optsRef.current.onGestureStart?.(),
     onGestureEnd: (committed) => optsRef.current.onGestureEnd?.(committed),

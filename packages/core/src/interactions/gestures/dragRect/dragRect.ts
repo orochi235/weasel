@@ -172,9 +172,12 @@ export function useDragRect<TScratch = unknown>(
     },
     onCancel: () => {
       dlog('drag-rect', 'cancel');
-      optsRef.current.onCancel?.(buildConsumerCtx());
-      scratchRef.current = null;
-      setOverlay(null);
+      try {
+        optsRef.current.onCancel?.(buildConsumerCtx());
+      } finally {
+        scratchRef.current = null;
+        setOverlay(null);
+      }
     },
     onGestureStart: () => optsRef.current.onGestureStart?.(),
     onGestureEnd: (committed) => optsRef.current.onGestureEnd?.(committed),
