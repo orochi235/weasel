@@ -111,6 +111,20 @@ describe('xychart edits', () => {
     expect(xyValueAt(layout, { x: 0, y: layout.value.map(57.8) })).toBe(58);
   });
 
+  it('the editor puts a bar\'s handle on its value end when the bar runs down from the baseline', () => {
+    for (const data of [
+      { ...SALES, y: { min: 30, max: 100 } },
+      { ...SALES, y: { min: 100, max: 0 } },
+      { ...SALES, orientation: 'horizontal' as const, y: { min: 100, max: 0 } },
+    ]) {
+      const { layout, get } = byKey(data);
+      const bar = get('bar:0:0')!;
+      const handle = handlesOf(xyEditor.handle(data, { trait: bar.data.plotMark, pose: bar.pose }))[0]!;
+      const end = layout.value.map(20);
+      expect(data.orientation === 'horizontal' ? handle.at.x : handle.at.y).toBeCloseTo(end);
+    }
+  });
+
   it('the editor puts a handle on a bar\'s end and on each point, and a drag proposes the value under the pointer', () => {
     const { layout, get } = byKey(SALES);
     const bar = get('bar:0:1')!;

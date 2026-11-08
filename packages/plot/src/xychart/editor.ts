@@ -1,7 +1,7 @@
 /** Dragging an xychart's bar ends and line points to change their values. */
 import { withTitle } from '../chartTitle';
 import type { PlotEditor } from '../editing/editors';
-import { compileXyChart } from './compile';
+import { compileXyChart, xyValueDomain } from './compile';
 import { setXyValue, xyValueAt } from './edit';
 import type { XyChartData } from './types';
 
@@ -19,10 +19,13 @@ export const xyEditor: PlotEditor<XyChartData> = {
     const cx = pose.x + pose.width / 2;
     const cy = pose.y + pose.height / 2;
     if (trait.kind === 'point') return { at: { x: cx, y: cy }, cursor };
-    const up = Number(trait.datum?.value ?? 0) >= 0;
+    // The value end is the one away from the baseline, which sits at zero clamped into the value domain.
+    const [d0, d1] = xyValueDomain(data);
+    const baseline = Math.min(Math.max(0, Math.min(d0, d1)), Math.max(d0, d1));
+    const far = (Number(trait.datum?.value ?? 0) >= baseline) === (d0 <= d1);
     return vertical
-      ? { at: { x: cx, y: up ? pose.y : pose.y + pose.height }, cursor }
-      : { at: { x: up ? pose.x + pose.width : pose.x, y: cy }, cursor };
+      ? { at: { x: cx, y: far ? pose.y : pose.y + pose.height }, cursor }
+      : { at: { x: far ? pose.x + pose.width : pose.x, y: cy }, cursor };
   },
   drag(data, trait, size, theme, measure) {
     const which = seriesIndex(trait.datum);
