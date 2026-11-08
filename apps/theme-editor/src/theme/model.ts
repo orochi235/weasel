@@ -88,6 +88,10 @@ export function runtimeTheme(def: ThemeDefinition, lookup: Lookup, name: string 
   )!;
 }
 
+/** Text typed over `previous`, kept a number when `previous` was one: `4` edited to `8` stays a number, not `'8'`. */
+export const keepNumberness = (raw: string, previous: unknown): string | number =>
+  typeof previous === 'number' && raw.trim() !== '' && Number.isFinite(Number(raw)) ? Number(raw) : raw;
+
 function withEntry<T>(record: Readonly<Record<string, T>> | undefined, key: string, value: T): Record<string, T> {
   return { ...record, [key]: value };
 }

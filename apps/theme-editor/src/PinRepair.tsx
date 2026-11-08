@@ -2,7 +2,7 @@ import type { ThemeDefinition } from '@weasel-js/theme';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
 import styles from './ThemeEditor.module.css';
-import { removePin, setPin } from './theme/model';
+import { keepNumberness, removePin, setPin } from './theme/model';
 
 export interface PinRepairProps {
   readonly draft: ThemeDefinition;
@@ -13,10 +13,10 @@ export interface PinRepairProps {
 
 /** A pin's value where it is one string or number, bare or under `value`; null for a pin that varies by axis. */
 function plain(pin: unknown): { text: string; write: (text: string) => unknown } | null {
-  if (typeof pin === 'string' || typeof pin === 'number') return { text: String(pin), write: (text) => text };
+  if (typeof pin === 'string' || typeof pin === 'number') return { text: String(pin), write: (text) => keepNumberness(text, pin) };
   const value = (pin as { value?: unknown } | null)?.value;
   if (typeof value !== 'string' && typeof value !== 'number') return null;
-  return { text: String(value), write: (text) => ({ ...(pin as object), value: text }) };
+  return { text: String(value), write: (text) => ({ ...(pin as object), value: keepNumberness(text, value) }) };
 }
 
 /** Whether the error names something this pin refers to: `{nope}` in the value, `nope` in the message. A reference
