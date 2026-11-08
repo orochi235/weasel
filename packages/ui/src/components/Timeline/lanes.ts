@@ -12,6 +12,9 @@ export interface LaneRow {
   /** Accumulated `at` from every nested parent, in ms. A key drawn on this row
    *  sits at `offset + key.t` on the ruler. */
   offset: number;
+  /** Where, on the ruler, the timelines around this row stop playing it: the soonest of their declared
+   *  durations, `Infinity` when none declares one. A key past it never plays. */
+  end: number;
   kind: Track['kind'];
   /** True only for a sampled track whose every key value is a number — the
    *  sole case where a value axis has an honest meaning. */
@@ -31,7 +34,7 @@ export function buildLanes(
   expanded: ReadonlySet<string>,
 ): LaneRow[] {
   const out: LaneRow[] = [];
-  const walk = (list: readonly Track[], path: number[], depth: number, offset: number): void => {
+  const walk = (list: readonly Track[], path: number[], depth: number, offset: number, end: number): void => {
     list.forEach((track, i) => {
       const nextPath = [...path, i];
       const key = nextPath.join('.');
@@ -42,15 +45,17 @@ export function buildLanes(
         label: track.label ?? `${track.kind} ${i}`,
         depth,
         offset,
+        end,
         kind: track.kind,
         numeric: isNumeric(track),
       });
       if (track.kind === 'timeline' && expanded.has(key)) {
-        walk(track.timeline.tracks, nextPath, depth + 1, offset + track.at);
+        const start = offset + track.at;
+        walk(track.timeline.tracks, nextPath, depth + 1, start, Math.min(end, start + (track.timeline.duration ?? Infinity)));
       }
     });
   };
-  walk(tracks, [], 0, 0);
+  walk(tracks, [], 0, 0, Infinity);
   return out;
 }
 

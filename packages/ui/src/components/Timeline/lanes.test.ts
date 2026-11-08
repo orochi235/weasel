@@ -23,6 +23,18 @@ const nested = (label: string, at: number, children: Track[]): Track => ({
 }) as Track;
 
 describe('buildLanes', () => {
+  it('ends a nested row where its timeline stops playing, within every timeline around it', () => {
+    const inner = { kind: 'timeline', label: 'in', at: 20, timeline: { duration: 500, tracks: [sampled('x', [0, 1])] } } as Track;
+    const outer = { kind: 'timeline', label: 'out', at: 100, timeline: { duration: 300, tracks: [inner] } } as Track;
+    const rows = buildLanes([outer], new Set(['0', '0.0']));
+    expect(rows.map((r) => r.end)).toEqual([Infinity, 400, 400]);
+  });
+
+  it('ends a nested row with no declared duration where its parent ends', () => {
+    const rows = buildLanes([nested('n', 100, [sampled('x', [0])])], new Set(['0']));
+    expect(rows.map((r) => r.end)).toEqual([Infinity, Infinity]);
+  });
+
   it('makes one row per top-level track, in order', () => {
     const rows = buildLanes([sampled('x', [0, 1]), events('step')], new Set());
     expect(rows.map((r) => r.label)).toEqual(['x', 'step']);

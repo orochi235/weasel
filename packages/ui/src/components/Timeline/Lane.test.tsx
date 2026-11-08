@@ -44,6 +44,20 @@ const base = {
 const laneOf = (t: Track) => buildLanes([t], new Set())[0];
 
 describe('Lane', () => {
+  it('marks the keys of a nested row that sit past where its timeline stops', () => {
+    const parent = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: 300, tracks: [sampled] } } as Track;
+    const row = buildLanes([parent], new Set(['0']))[1]!;
+    render(<Lane {...base} row={row} />);
+    const keys = screen.getAllByTestId('timeline-key');
+    expect(keys.map((k) => k.getAttribute('data-past'))).toEqual([null, 'true']);
+    expect(screen.getByTestId('timeline-after-end')).toBeTruthy();
+  });
+
+  it('draws no past-end band on a row that plays to the end', () => {
+    render(<Lane {...base} row={laneOf(sampled)} />);
+    expect(screen.queryByTestId('timeline-after-end')).toBeNull();
+  });
+
   it('renders one key per sampled keyframe', () => {
     render(<Lane {...base} row={laneOf(sampled)} />);
     expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
