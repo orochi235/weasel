@@ -116,7 +116,7 @@ export function routerOf(edge: { router?: string }, routers: Readonly<Record<str
 export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
   /** Routers by key. Defaults to {@link ROUTERS}. */
   routers?: Readonly<Record<string, Router>>;
-  /** How far outside its node a self-edge with no ports named turns, in
+  /** How far outside its node a self-edge naming at most one port turns, in
    *  world units. Defaults to half the node's shorter side. */
   selfLoopStandoff?: number;
 }
@@ -124,8 +124,8 @@ export interface EdgeRouteOptions<TPose> extends PortsOptions<TPose> {
 /**
  * A `derivePath` that routes an edge between its two dependencies.
  *
- * An edge from a node to itself that names no ports leaves and returns by the
- * sides {@link selfLoop} picks, and where the author set no waypoints the
+ * An edge from a node to itself that names at most one port leaves and
+ * returns by the sides {@link selfLoop} picks, and where the author set no waypoints the
  * router is handed that rule's point outside the node as one.
  *
  * An edge carrying `hops` bows over each one that still lies on its route.
@@ -203,11 +203,16 @@ export function edgeRouter<TPose>(
     const [fromDep, toDep] = deps;
     if (fromDep === undefined || toDep === undefined) return null;
 
-    const loop = fromDep.node.id === toDep.node.id && edge.from.port === undefined && edge.to.port === undefined
-      ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep))
-      : null;
     const authored = edge.waypoints ?? [];
     const aims = endAims(boxCenter(geometry, fromDep.pose), boxCenter(geometry, toDep.pose), authored, edge.route);
+    const named = edge.from.port !== undefined ? 'from' : edge.to.port !== undefined ? 'to' : null;
+    const loop = fromDep.node.id === toDep.node.id && (edge.from.port === undefined || edge.to.port === undefined)
+      ? selfLoop(allPorts(fromDep), opts.selfLoopStandoff ?? standoffOf(fromDep), named === null ? {} : {
+        [named]: named === 'from'
+          ? resolveEnd(edge.from, fromDep, aims.from, portOpts, allPorts)
+          : resolveEnd(edge.to, toDep, aims.to, portOpts, allPorts),
+      })
+      : null;
     const from = loop?.from ?? resolveEnd(edge.from, fromDep, aims.from, portOpts, allPorts);
     const to = loop?.to ?? resolveEnd(edge.to, toDep, aims.to, portOpts, allPorts);
     if (from === undefined || to === undefined) return null;

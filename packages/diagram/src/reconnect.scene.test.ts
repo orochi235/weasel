@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { createScene, type InvocationCtx, type Scene } from '@weasel-js/core';
+import { createScene, pageRunOf, type InvocationCtx, type Scene } from '@weasel-js/core';
+import { commitEdgeToScene } from './connect';
+import { edgeLabelSpec } from './edgeLabel';
+import { pagedScene } from './offPage/pagedFixture';
 import { EDGE_DERIVE_PATH } from './edge';
 import { diagramEdgeOf } from './edgeTrait';
 import { commitReconnectToScene } from './reconnect';
@@ -89,5 +92,25 @@ describe('commitReconnectToScene', () => {
       ctx(scene),
     );
     expect(scene.get('A' as never)!.dependsOn).toBeUndefined();
+  });
+
+  it('moves the edge to the page run when its ends come to span pages, and back onto a page they share', () => {
+    const scene = pagedScene([
+      { id: 'a', kind: 'mark', layer: 'main', pose: { x: 20, y: 20, width: 40, height: 30 }, data: { diagram: {} } },
+      { id: 'b', kind: 'mark', layer: 'main', pose: { x: 120, y: 20, width: 40, height: 30 }, data: { diagram: {} } },
+      { id: 'c', kind: 'mark', layer: 'main', pose: { x: 300, y: 20, width: 40, height: 30 }, data: { diagram: {} } },
+    ]);
+    const body = (nodeId: string) => ({ kind: 'body' as const, nodeId, point: { x: 0, y: 0 } });
+    commitEdgeToScene({ from: body('a'), to: body('b'), router: 'straight' }, ctx(scene));
+    const edge = () => scene.renderOrderNodes().find((n) => diagramEdgeOf(n) !== null)!;
+    expect(edge().parent).toBe('p1');
+    scene.add({ ...edgeLabelSpec(edge().id, 'x', { layer: 'main' }), parent: 'p1' } as never);
+    commitReconnectToScene({ edgeId: edge().id, end: 'to', target: body('c') }, ctx(scene));
+    expect(edge().parent).toBe(pageRunOf(scene));
+    expect(scene.get(`${edge().id}/label` as never)!.parent).toBe(pageRunOf(scene));
+    commitReconnectToScene({ edgeId: edge().id, end: 'to', target: body('b') }, ctx(scene));
+    expect(edge().parent).toBe('p1');
+    scene.undo();
+    expect(edge().parent).toBe(pageRunOf(scene));
   });
 });

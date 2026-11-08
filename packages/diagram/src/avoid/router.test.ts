@@ -57,6 +57,15 @@ describe('createAvoidRouter', () => {
     expect(routes.get('top')).toEqual([]);
   });
 
+  it.each([0, -5])('routes around a wall with a margin of %d, widening the search from nothing', (margin) => {
+    const wall: AvoidObstacle = { id: 'wall', kind: 'shape', box: { x: 200, y: -300, width: 40, height: 700 } };
+    const input = scene([shapes.a, shapes.b, wall], [edgeBetween('ab', shapes.a, shapes.b, 'e', 'w')]);
+    const route = createAvoidRouter({ margin }).update(input).get('ab');
+    expect(route).not.toBeNull();
+    const full = [{ x: 100, y: 30 }, ...route!, { x: 400, y: 30 }];
+    full.slice(1).forEach((p, i) => expect(entersBox(full[i]!, p, wall.box)).toBe(false));
+  });
+
   it('reroutes nothing when nothing changed', () => {
     const { router, input } = routed();
     expect(router.update(input).size).toBe(0);

@@ -201,7 +201,8 @@ function placementOps<TPose>(
   seen.shapes = new Map(reading.shapes.map((s) => [s.id, s.box]));
   seen.routes = new Map([...reading.routes.values()].map((r) => [r.id, runsIn(r)]));
   if (moving.size === 0) return fit.ops;
-  const labels = reading.labels.map((l) => ({ ...l, moving: moving.has(l.id) }));
+  // A locked label stays where it stands, and the rest dodge it there.
+  const labels = reading.labels.map((l) => ({ ...l, moving: moving.has(l.id) && !sc.isLocked(l.id as never) }));
   const placed = placeLabels({ shapes: reading.shapes, routes: [...reading.routes.values()], labels }, opts);
   const ops: Op[] = [...fit.ops];
   for (const l of labels) {

@@ -64,13 +64,13 @@ export function withHopsData(data: unknown, trait: DiagramEdge, hops: readonly E
 const sameHop = (a: EdgeHop, b: EdgeHop): boolean =>
   a.at.x === b.at.x && a.at.y === b.at.y && a.r === b.r && a.over.length === b.over.length && a.over.every((o, i) => o === b.over[i]);
 
-/** The data writes that store `hops` on their connectors, skipping any unchanged. */
+/** The data writes that store `hops` on their connectors, skipping any unchanged or locked. */
 export function hopDataOps(scene: AnyScene, hops: ReadonlyMap<string, readonly EdgeHop[]>): Op[] {
   const ops: Op[] = [];
   for (const [id, list] of hops) {
     const node = scene.get(id as never);
     const trait = node === undefined ? null : diagramEdgeOf(node);
-    if (node === undefined || trait === null) continue;
+    if (node === undefined || trait === null || scene.isLocked(id as never)) continue;
     const had = trait.hops ?? [];
     if (had.length === list.length && had.every((h, i) => sameHop(h, list[i]!))) continue;
     ops.push(createSetDataOp({ id, from: node.data, to: withHopsData(node.data, trait, list), label: 'Line jumps' }));
