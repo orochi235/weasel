@@ -45,7 +45,7 @@ function Harness({ children }: { children: React.ReactNode }) {
 
 describe('multi-pointer policy', () => {
   function fire(el: Element, type: string, init: PointerEventInit = {}) {
-    el.dispatchEvent(new PointerEvent(type, { bubbles: true, ...init }));
+    el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'touch', ...init }));
   }
 
   function dragProbe(onStart: () => void) {

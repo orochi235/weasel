@@ -63,8 +63,8 @@ tuple to rank them by, so the narrower description wins.
 `createPointerRecognizer` turns a stream of pointer presses, moves, and
 releases into `InputEvent`s. It decides when a press has moved far enough to be
 a drag, when a release in place is a click, when two clicks make a double
-click, when a held touch is a long-press, and when several pointers form a
-multitouch gesture. It touches no DOM: the host feeds it samples and supplies
+click, when a held touch is a long-press, and when several fingers form a
+multitouch gesture; a pen or mouse held beside them is never one of them. It touches no DOM: the host feeds it samples and supplies
 the clock, and it hands each recognized event to a sink the host provides.
 
 The thresholds it uses are exported as constants: `DRAG_THRESHOLD_PX`,

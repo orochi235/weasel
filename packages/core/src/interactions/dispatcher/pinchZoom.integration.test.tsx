@@ -75,6 +75,7 @@ function firePointerDown(canvas: HTMLElement, opts: { pointerId: number; clientX
     new PointerEvent('pointerdown', {
       bubbles: true,
       pointerId: opts.pointerId,
+      pointerType: 'touch',
       clientX: opts.clientX,
       clientY: opts.clientY,
     }),
@@ -86,6 +87,7 @@ function firePointerMove(canvas: HTMLElement, opts: { pointerId: number; clientX
     new PointerEvent('pointermove', {
       bubbles: true,
       pointerId: opts.pointerId,
+      pointerType: 'touch',
       clientX: opts.clientX,
       clientY: opts.clientY,
     }),
@@ -97,6 +99,7 @@ function firePointerUp(canvas: HTMLElement, opts: { pointerId: number; clientX: 
     new PointerEvent('pointerup', {
       bubbles: true,
       pointerId: opts.pointerId,
+      pointerType: 'touch',
       clientX: opts.clientX,
       clientY: opts.clientY,
     }),

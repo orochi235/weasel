@@ -10,7 +10,9 @@ import type { EventModifiers, InputEvent } from '../ui/inputEvent';
 import { pastDragThreshold } from '../ui/dragThreshold';
 import { composeClick, type ClickMemory, type ClickObserver, type ReleaseOutcome } from './click';
 import { createLongPressHold, type HeldPress, type RecognizerClock } from './longPressHold';
-import { createMultiTouchEpisode, multiTouchGeometry, type MultiTouchGeometry, type Point } from './multiTouch';
+import {
+  createMultiTouchEpisode, multiTouchGeometry, type MultiTouchEpisode, type MultiTouchGeometry, type Point,
+} from './multiTouch';
 import { longPressEvents, type PressFacts } from './pressFacts';
 import {
   modifiersOf, pointerDownEvent, pointerMoveEvent, pointerUpEvent, pressFactsOf,
@@ -87,6 +89,8 @@ interface Held {
    *  forwarded, spent by a long-press, or claimed by multitouch. */
   buffered: InputEvent | null;
   down: PressFacts;
+  /** A finger, the only pointer a multitouch gesture counts. */
+  touch: boolean;
   /** Set on a pointer that armed a long-press, for as long as it is held. */
   holdType?: 'touch' | 'pen';
 }
@@ -104,6 +108,9 @@ function multiTouchEvent(
 ): InputEvent {
   return { kind: 'multitouch', fingers, ...modifiersOf(mods), ...more };
 }
+
+/** The held fingers. A pen or mouse held beside one is no second finger: a palm resting while drawing starts no pinch. */
+const fingersOf = (held: ReadonlyMap<number, Held>): Map<number, Held> => new Map([...held].filter(([, p]) => p.touch));
 
 const positionsOf = (held: ReadonlyMap<number, Held>): Map<number, Point> =>
   new Map([...held].map(([id, p]) => [id, p.pos]));
@@ -151,6 +158,17 @@ function sampleTime(clock: RecognizerClock): (s: PointerSample) => number {
   };
 }
 
+/** A finger of `before` held ones lifting: it ends their multitouch gesture, and a hand of two that tapped taps. */
+function liftFinger(
+  before: number, s: PointerSample, sink: RecognizerSink, touches: MultiTouchEpisode, at: number, longPressMs: number,
+): void {
+  if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
+  touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
+  if (before !== 2) return;
+  const fingers = touches.finish(at, longPressMs);
+  if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
+}
+
 /** Build a recognizer holding no pointers. It touches no DOM: time and timers come from `opts.clock`. */
 export function createPointerRecognizer(opts: PointerRecognizerOptions): PointerRecognizer {
   const { sink, clock, observer = {}, toSurface = (p) => p } = opts;
@@ -160,29 +178,32 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
   const { longPressMs, tapPx, dragPx, doubleClick } = thresholdsOf(opts);
   const touches = createMultiTouchEpisode(tapPx);
   const hold = createLongPressHold(clock, (pending) => { observer.holdChanged?.(pending); });
-  const geometry = () => heldGeometry(held, toSurface);
+  const fingers = () => fingersOf(held);
+  const geometry = () => heldGeometry(fingers(), toSurface);
   const happenedAt = sampleTime(clock);
 
-  // MULTI-POINTER POLICY: multitouch takes every pointer that has not already
+  // MULTI-POINTER POLICY: multitouch takes every finger that has not already
   // committed to a gesture, by clearing its buffered press. One that already
   // opened a drag has no buffer left to claim, so its drag survives the second
   // finger: yanking it from someone who rested a palm is worse than letting it finish.
   const claimForMultiTouch = (s: PointerSample): void => {
-    hold.cancel();
-    spendPresses(held, clicks);
-    touches.join(positionsOf(held), happenedAt(s));
-    sink.dispatch(multiTouchEvent(held.size, s, geometry()));
+    const hand = fingers();
+    for (const id of hand.keys()) hold.cancel(id);
+    spendPresses(hand, clicks);
+    touches.join(positionsOf(hand), happenedAt(s));
+    sink.dispatch(multiTouchEvent(hand.size, s, geometry()));
   };
 
   return {
     press(s) {
       const ev = pointerDownEvent(s);
-      const rec: Held = { pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s) };
+      const rec: Held = { pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s), touch: s.pointerType === 'touch' };
       held.set(s.pointerId, rec);
+      const hand = rec.touch ? fingers().size : 0;
       // The press dispatches twice, to disjoint spec kinds: now for
       // `pointerDown` bindings, and buffered for `drag`. A second finger's is
       // withheld, or it would act under the pinch it belongs to.
-      if (held.size < 2) sink.dispatch({ ...ev, stage: 'press' });
+      if (hand < 2) sink.dispatch({ ...ev, stage: 'press' });
       if ((s.pointerType === 'touch' || s.pointerType === 'pen') && held.size === 1) {
         rec.holdType = s.pointerType;
         hold.arm(
@@ -190,14 +211,14 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
           () => { fireLongPress(held.get(s.pointerId), sink, observer, clicks); },
         );
       }
-      if (held.size >= 2) claimForMultiTouch(s);
+      if (hand >= 2) claimForMultiTouch(s);
     },
 
     move(s) {
       const rec = held.get(s.pointerId);
       const to = { x: s.clientX, y: s.clientY };
       if (rec) rec.pos = to;
-      touches.moved(s.pointerId, to);
+      if (rec?.touch) touches.moved(s.pointerId, to);
       // The buffered press goes out before the move: it opens the drag the moves pump.
       if (rec?.buffered && pastDragThreshold(rec.down, s, dragPx())) {
         const press = rec.buffered;
@@ -205,26 +226,19 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         hold.cancel(s.pointerId);
         sink.dispatch(press);
       }
-      if (held.size >= 2 && sink.multiTouchInFlight(held.size)) {
-        sink.dispatch(multiTouchEvent(held.size, s, geometry()));
-      }
+      const hand = rec?.touch ? fingers().size : 0;
+      if (hand >= 2 && sink.multiTouchInFlight(hand)) sink.dispatch(multiTouchEvent(hand, s, geometry()));
       sink.dispatch(pointerMoveEvent(s, world(s)));
     },
 
     release(s) {
       const rec = held.get(s.pointerId);
-      const before = held.size;
       // A pointer never pressed here takes no part in what the held ones are doing.
       if (rec) {
+        const before = rec.touch ? fingers().size : 0;
         hold.cancel(s.pointerId);
         held.delete(s.pointerId);
-        // Any finger lifting ends the multitouch gesture the hand was making.
-        if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
-        touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
-        if (before >= 2 && held.size < 2) {
-          const fingers = touches.finish(happenedAt(s), longPressMs());
-          if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
-        }
+        if (rec.touch) liftFinger(before, s, sink, touches, happenedAt(s), longPressMs());
       }
       sink.dispatch(pointerUpEvent(s, world(s)));
       // A press still buffered never crossed the drag threshold, and nothing
@@ -241,13 +255,13 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
     cancel(pointerId) {
       const rec = held.get(pointerId);
       if (!rec) return;
-      const before = held.size;
+      const before = rec.touch ? fingers().size : 0;
       held.delete(pointerId);
       hold.cancel(pointerId);
       clicks.last = null;
       // A cancel carries no modifiers of its own, so these are the press's.
       if (before >= 2) sink.dispatch(multiTouchEvent(before, rec.down, { end: 'cancel' }));
-      touches.abandon();
+      if (rec.touch) touches.abandon();
       sink.dispatch({ kind: 'pointercancel', pointerId, ...modifiersOf(rec.down) });
     },
 

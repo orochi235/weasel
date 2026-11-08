@@ -16,36 +16,34 @@ For the session picking this up: what is in flight and what has no other home. O
   which fixed the consumer smoke to treat third-party peers as external.
 - Three more bug-audit rounds landed on 2026-11-07 evening, each through a green fleet batch: round two (66 fixes,
   pushed), round three (43) and round four (53), with `select`'s `'single'` intent and one shared condition-number rule
-  for geom's 2D and 3D `invert`. `main` is at 83b654fef, the round-four batch that ran `test:fleet` (4167 files,
-  35672 tests) and postbuild green; rounds three and four are unpushed.
+  for geom's 2D and 3D `invert`. round four landed through 83b654fef, a batch that ran `test:fleet` (4167 files,
+  35672 tests) and postbuild green; pushed.
 - Round five (2026-11-07 night, 72 fixes across nine lanes: hud and guides, audio and clock, the type packages, quantity
   and paint, history through cursor, the small packages, the secondary apps and devtools, core's interactions, and a
   sweep folding duplicated helpers into geom, paint and registry) is on `main` at f3b6313ff, through `batch/2026-11-07k`
-  (`test:fleet`, a full run since ci.yml changed: 4175 files, 35733 tests; postbuild green). Unpushed. Its open
+  (`test:fleet`, a full run since ci.yml changed: 4175 files, 35733 tests; postbuild green). Pushed. Its open
   questions are under "Audit round five" in `docs/unruled.md`. `check:forge-stories` moved after ci.yml's first
   build: the fleet's test tree keeps a stale `dist`, which forge's vite config reads.
 - Round six (2026-11-08, 29 fixes in core's leftovers: snap and paths, the remaining domains, animation and
   affordances, and the barrel and debug plumbing) is on `main` at 62133c61f through `batch/2026-11-08` (`test:fleet`
-  2541 files, postbuild green). Unpushed. Open questions are under "Audit round six" in `docs/unruled.md`.
+  2541 files, postbuild green). Pushed. Open questions are under "Audit round six" in `docs/unruled.md`.
 - Round seven (2026-11-08, a second pass: renderer, diagram, draw, labkit and forge, geom/stroke/path-tools,
   routing/theme/prefs, core's `core/`, and `scripts/`, plus Mike's rulings: empty fits land on Cmd-0's view, no-op
   `update`/`setPose` record nothing, draw's background is undoable and its filename is not, `applyTheme` drops token
   text that could leave its rule, a number field steps by the smallest step its display shows) is on `main` at
-  d9c637a1a through `batch/2026-11-08b` (`test:fleet` full: 35819 tests; postbuild green). Unpushed. Open questions
+  d9c637a1a through `batch/2026-11-08b` (`test:fleet` full: 35819 tests; postbuild green). Pushed. Open questions
   are under "Audit round seven" in `docs/unruled.md`. The scripts lane's stricter checks now fail where they used to
   pass silently.
 - Round eight (2026-11-08: ui, core's canvas and interactions, animator/gestures/kernel3d, the type packages,
   hud/guides/menu/history/storage, quantity/paint/audio/clock, and site/chart/theme-editor), the eyedropper (one engine
   sampler in `@weasel-js/loupe`, a `colorAt` dep that redraws document layers, labkit's trial toggle, draw's tool on
   `I`) and labkit's `.meta()` field slot are on `main` at 9720cf0c2 through `batch/2026-11-08c` (`test:fleet` full:
-  35916 tests; postbuild green). Unpushed. Open questions are under "Audit round eight" in `docs/unruled.md`.
+  35916 tests; postbuild green). Pushed. Open questions are under "Audit round eight" in `docs/unruled.md`.
   `check:frame-loops` now covers `apps/` too (Mike, 2026-11-08), and `usePages.add` puts a page after the one shown.
 - CI's visual baselines `viewport.png` and `easings.png` will fail until recaptured with `visual-update.yml` after the
   next push: round eight moved those demos' labels onto the kit's text alignment.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
-- Open from round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
-  (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
 - Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
   new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
