@@ -18,7 +18,7 @@ export interface Aabb {
   max: Vec3;
 }
 
-/** Distance along the ray to the box, or null. A ray starting inside returns 0. */
+/** Distance along the ray to the box, or null; null too for a ray with a NaN component. A ray starting inside returns 0. */
 export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null {
   let tMin = Number.NEGATIVE_INFINITY;
   let tMax = Number.POSITIVE_INFINITY;
@@ -26,6 +26,8 @@ export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null 
   for (const axis of ['x', 'y', 'z'] as const) {
     const o = ray.origin[axis];
     const d = ray.direction[axis];
+    // NaN fails every comparison below, so an axis it reached would never narrow the slab.
+    if (Number.isNaN(o) || Number.isNaN(d)) return null;
     // Any other direction, however short, divides to an honest (possibly infinite) t.
     if (d === 0) {
       if (o < min[axis] || o > max[axis]) return null;

@@ -295,6 +295,14 @@ describe('createBvh', () => {
     expect(got).toEqual([['a', 10]]);
   });
 
+  it('raycast meets nothing along a ray with a NaN component, as intersectRayAabb does', () => {
+    const tree = createBvh<string>(2, [['a', [0, 0, 10, 10]], ['b', [20, 0, 30, 10]]]);
+    const got: string[] = [];
+    tree.raycast([NaN, -10], [0, 1], (k) => { got.push(k); });
+    tree.raycast([5, -10], [NaN, NaN], (k) => { got.push(k); });
+    expect(got).toEqual([]);
+  });
+
   it('raycast takes a ray through a box edge that intersectRayAabb takes', () => {
     // Aimed at the edge x = 0.7, z = 1.3; a reciprocal slab test rounds this ray out.
     const origin = { x: 9.125, y: 7.375, z: -5 };
