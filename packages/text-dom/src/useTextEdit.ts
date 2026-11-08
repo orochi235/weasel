@@ -414,14 +414,13 @@ export function useTextEdit(
       commit();
     };
 
-    overlay.addEventListener('keydown', onKeyDown);
-    overlay.addEventListener('blur', onBlur);
-    // Typing can change the line count; re-placing here rather than on the
+    // Typing can change the line count; re-placing on `input` rather than on the
     // next frame keeps a center/bottom-aligned overlay from jumping a frame late.
-    overlay.addEventListener('input', onInput);
-    overlay.addEventListener('beforeinput', onBeforeInput);
-    overlay.addEventListener('compositionstart', onCompositionStart);
-    overlay.addEventListener('compositionend', onCompositionEnd);
+    const listeners = Object.entries({
+      keydown: onKeyDown, blur: onBlur, input: onInput, beforeinput: onBeforeInput,
+      compositionstart: onCompositionStart, compositionend: onCompositionEnd,
+    }) as Array<[string, EventListener]>;
+    for (const [type, fn] of listeners) overlay.addEventListener(type, fn);
     document.addEventListener('pointerdown', onPointerDownOutside, true);
     // `selectionchange` only exists on the document.
     document.addEventListener('selectionchange', syncSelection);
@@ -439,12 +438,7 @@ export function useTextEdit(
       clearTimeout(holdTimer);
       frameLoop.cancel();
       tickRef.current = () => {};
-      overlay.removeEventListener('keydown', onKeyDown);
-      overlay.removeEventListener('blur', onBlur);
-      overlay.removeEventListener('input', onInput);
-      overlay.removeEventListener('beforeinput', onBeforeInput);
-      overlay.removeEventListener('compositionstart', onCompositionStart);
-      overlay.removeEventListener('compositionend', onCompositionEnd);
+      for (const [type, fn] of listeners) overlay.removeEventListener(type, fn);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
       clipBox.remove();
