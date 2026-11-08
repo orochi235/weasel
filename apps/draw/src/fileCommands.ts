@@ -1,6 +1,7 @@
 import { useCommand, type PlacedPage } from '@weasel-js/core';
 import { useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
+import { DEFAULT_BG_COLOR, DEFAULT_FILENAME } from './docPersistence';
 import { importSvgFile, openSvgFile, type OpenSvgTarget } from './openSvg';
 import { onePage, replacePages } from './pages/drawPages';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, PAPER_SIZES, type PaperSizeKey } from './paperSizes';
@@ -10,7 +11,7 @@ export const FILE_ACTIONS = {
   new: 'file.new', open: 'file.open', import: 'file.import', save: 'file.save', exportPage: 'file.exportPage',
 } as const;
 
-/** New, opening onto one row per paper size, in the File menu. A new document is one page. */
+/** New, opening onto one row per paper size, in the File menu. A new document is one page, untitled, on white. */
 export const FILE_NEW_MENU: PrefGroup = pref.group(
   'New',
   { sizes: pref.action(FILE_ACTIONS.new) },
@@ -40,6 +41,8 @@ export function useFileCommands(target: FileCommandsTarget): void {
     scene.batch('New document', () => {
       replacePages(scene, onePage(paper));
     });
+    target.setFilename(DEFAULT_FILENAME);
+    target.setBackgroundColor(DEFAULT_BG_COLOR);
     target.showFirstPage();
   }, { variants: NEW_VARIANTS, tags: ['new', 'document'] });
   useOpenCommand(FILE_ACTIONS.open, 'Open…', () => { void openSvgFile(target); });

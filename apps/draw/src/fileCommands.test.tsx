@@ -54,7 +54,7 @@ function setup() {
     filename: 'a',
     paperSize: 'letter',
     page: placedPagesOf(scene)[1]!,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#336699',
     setFilename: vi.fn(),
     showFirstPage: vi.fn(), leaveMode: vi.fn(),
     setBackgroundColor: vi.fn(),
@@ -94,6 +94,8 @@ describe('useFileCommands', () => {
     expect(contentRoots(scene)).toEqual([]);
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
     expect(target.showFirstPage).toHaveBeenCalledOnce();
+    expect(target.setFilename).toHaveBeenCalledWith('untitled.svg');
+    expect(target.setBackgroundColor).toHaveBeenCalledWith('#ffffff');
     act(() => { scene.undo(); });
     expect(contentRoots(scene)).toHaveLength(2);
     expect(pagesOf(scene)?.pages.map((p) => p.id)).toEqual(['page-1', 'page-2']);
@@ -125,13 +127,13 @@ describe('useFileCommands', () => {
     const { registry, scene, target, rerender } = setup();
     rerender({ ...target, filename: 'b' });
     act(() => { registry.trigger('file.save'); });
-    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', backgroundColor: '#ffffff' });
+    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', backgroundColor: '#336699' });
   });
 
   it('Export Page writes the page in view, and nothing with none', () => {
     const { registry, scene, target, rerender } = setup();
     act(() => { registry.trigger('file.exportPage'); });
-    expect(exportPageSvgFile).toHaveBeenCalledWith(scene, target.page, { filename: 'a', backgroundColor: '#ffffff' });
+    expect(exportPageSvgFile).toHaveBeenCalledWith(scene, target.page, { filename: 'a', backgroundColor: '#336699' });
     vi.mocked(exportPageSvgFile).mockClear();
     rerender({ ...target, page: null });
     act(() => { registry.trigger('file.exportPage'); });
