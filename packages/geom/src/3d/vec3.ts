@@ -62,7 +62,12 @@ export function len(a: Vec3): number {
  *  rather than to `NaN`. Every other vector keeps its direction, however short. */
 export function normalize(a: Vec3): Vec3 {
   const l = len(a);
-  return l > 0 && l < Infinity ? scale(a, 1 / l) : { x: 0, y: 0, z: 0 };
+  if (l > 0 && l < Infinity) return scale(a, 1 / l);
+  // The square under- or overflowed; divided by its largest component first, the vector squares in range.
+  const m = Math.max(Math.abs(a.x), Math.abs(a.y), Math.abs(a.z));
+  if (!(m > 0 && m < Infinity)) return { x: 0, y: 0, z: 0 };
+  const b = { x: a.x / m, y: a.y / m, z: a.z / m };
+  return scale(b, 1 / len(b));
 }
 
 /** Euclidean distance between two points. */
