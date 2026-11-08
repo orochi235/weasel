@@ -62,9 +62,13 @@ export function lerpPaint(a: Paint | undefined, b: Paint | undefined, t: number)
   return t < 0.5 ? a : b;
 }
 
+const byOffset = (stops: readonly GradStop[]): GradStop[] => [...stops].sort((p, q) => p.offset - q.offset);
+
+/** Stops paired in offset order, as a ramp reads them, not in the order each list holds them. */
 function lerpStops(a: readonly GradStop[], b: readonly GradStop[], t: number): GradStop[] {
-  return a.map((stop, i) => {
-    const other = b[i]!;
+  const to = byOffset(b);
+  return byOffset(a).map((stop, i) => {
+    const other = to[i]!;
     return { offset: lerp(stop.offset, other.offset, t), color: mixStopColor(stop.color, other.color, t) };
   });
 }

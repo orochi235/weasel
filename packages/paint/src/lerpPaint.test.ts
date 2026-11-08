@@ -39,6 +39,13 @@ describe('lerpPaint', () => {
     expect(mid.stops[0]!.color).not.toBe('#000000');
   });
 
+  it('pairs stops by offset, whatever order each list holds them in', () => {
+    const a = { kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }] };
+    const b = { ...a, stops: [a.stops[1], a.stops[0]] };
+    const mid = lerpPaint(a, b, 0.5) as typeof a;
+    expect(mid.stops).toEqual([{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }]);
+  });
+
   it('switches halfway between unlike paints', () => {
     const hatch = { kind: 'hatch' as const, color: '#000' };
     expect(lerpPaint(hatch, { color: '#fff' }, 0.4)).toBe(hatch);
