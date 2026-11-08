@@ -9,7 +9,7 @@ export type LoupeMode = 'vector' | 'pixel';
 /**
  * What a loupe needs from the surface it magnifies. A painter implements it,
  * and the model asks nothing about how the lens is drawn — only where it is,
- * what colour is under a point, and whether anyone can still see it.
+ * what color is under a point, and whether anyone can still see it.
  */
 export interface LoupeSurface {
   /**
@@ -25,7 +25,7 @@ export interface LoupeSurface {
    * pointer never covers it and answers `false`.
    */
   covers(p: LoupePoint): boolean;
-  /** Hex colour at a surface point, or `null` when the surface cannot say. */
+  /** Hex color at a surface point, or `null` when the surface cannot say. */
   sample(p: LoupePoint): string | null;
   /** Is the lens off screen? Aims are ignored while it is. */
   hidden(): boolean;
@@ -53,23 +53,23 @@ export interface LoupeModelOptions {
   /** Bounds `setFactor` clamps to. Unset means bounded only by that rule. */
   minFactor?: number;
   maxFactor?: number;
-  /** Called with the hex colour under the aim point whenever it changes. */
+  /** Called with the hex color under the aim point whenever it changes. */
   onColorChange?: (hex: string) => void;
   /** Called when a pick lands — an eyedropper on the magnified surface. Where
-   *  the colour goes is the consumer's business. */
+   *  the color goes is the consumer's business. */
   onPick?: (hex: string) => void;
   /** Called when the model tears itself down because the surface reported the
    *  lens gone, so the painter can drop what it was holding. */
   onDispose?: () => void;
 }
 
-/** Where a loupe is aimed, how far it magnifies, and what colour it is over. */
+/** Where a loupe is aimed, how far it magnifies, and what color it is over. */
 export interface LoupeModel {
   readonly mode: LoupeMode;
   readonly factor: number;
   /** Last aimed point, in the surface's CSS px. */
   readonly aim: LoupePoint;
-  /** Hex colour under the aim point. `null` until something answers. */
+  /** Hex color under the aim point. `null` until something answers. */
   readonly color: string | null;
   setMode(mode: LoupeMode): void;
   setFactor(factor: number): void;
@@ -88,7 +88,7 @@ export interface LoupeModel {
 
 /**
  * Build the loupe's model over a surface. It holds the state a magnifier has —
- * aim, factor, mode, colour — and none of the drawing.
+ * aim, factor, mode, color — and none of the drawing.
  */
 export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
