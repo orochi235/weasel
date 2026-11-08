@@ -35,6 +35,13 @@ describe('reading DOT', () => {
     ]);
   });
 
+  it("gives a cluster an id no node holds when its short name and its full name are both nodes'", () => {
+    const p = page('digraph { x; cluster_x; subgraph cluster_x { a } }');
+    const ids = [...p.data.nodes.map((n) => n.id), ...p.data.containers!.map((c) => c.id)];
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(p.data.containers![0]!.members).toEqual(['a']);
+  });
+
   it('applies node defaults in their scope, and explicit attributes over them', () => {
     const p = page(fixture('clusters.dot'));
     expect(node(p.data, 'a0')).toMatchObject({ outline: 'rect', lines: ['a0'], colors: { fill: '#eeeeee', stroke: 'white' } });
