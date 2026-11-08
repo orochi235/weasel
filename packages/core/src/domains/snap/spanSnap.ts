@@ -38,8 +38,16 @@ export function spanSnap(
   let start: Point = raw;
   let held = false;
   let live: { session: SnapSession; key: string } | null = null;
+  // The start's own session, kept open so its marks stay drawn until the end
+  // snaps: the end's session drops a point target on its origin, the start.
+  let placed: SnapSession | null = null;
 
+  const settle = (): void => {
+    placed?.end();
+    placed = null;
+  };
   const open = (): SnapSession => {
+    settle();
     const c = constrain();
     const key = JSON.stringify(c ?? null);
     if (live?.key === key) return live.session;
@@ -47,17 +55,18 @@ export function spanSnap(
     live = { session: begin({ ...common, gesture: 'point', press: start, origin: start, ...(c ? { constrain: c } : {}) }), key };
     return live.session;
   };
-  const place = (p: Point, mods: SnapMods): SnapOutcome => {
-    raw = p;
+  const drop = (): void => {
+    settle();
     live?.session.end();
     live = null;
-    const out = begin({ ...common, gesture: 'point', press: p });
-    const landed = out.at(p, mods);
-    out.end();
+  };
+  const place = (p: Point, mods: SnapMods): SnapOutcome => {
+    raw = p;
+    drop();
+    placed = begin({ ...common, gesture: 'point', press: p });
+    const landed = placed.at(p, mods);
     start = landed.point;
     held = landed.held;
-    // Draws the start's marks again, from the session the end runs in.
-    open().at(start, { ...mods, constrain: false });
     return landed;
   };
 
@@ -68,13 +77,9 @@ export function spanSnap(
     anchor(p) {
       if (p.x === start.x && p.y === start.y) return;
       start = p;
-      live?.session.end();
-      live = null;
+      drop();
     },
     startHeld: () => held,
-    close() {
-      live?.session.end();
-      live = null;
-    },
+    close: drop,
   };
 }
