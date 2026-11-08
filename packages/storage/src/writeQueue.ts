@@ -59,7 +59,7 @@ export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
     const wait = Math.max(0, Math.min(debounceMs, firstQueuedAt + maxWaitMs - now));
     timer = setTimeout(() => {
       timer = null;
-      void flush();
+      if (!closed()) void flush();
     }, wait);
   };
 
