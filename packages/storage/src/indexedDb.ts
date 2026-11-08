@@ -4,8 +4,8 @@ import type { StorageAdapter, StorageChange } from './types';
 export interface IndexedDbAdapterOptions {
   /** Default `'weasel'`. */
   database?: string;
-  /** Default `'records'`. One object store per database: a store added to a
-   *  database that already exists is not created. */
+  /** Default `'records'`. A database that exists without this store gets it
+   *  by an upgrade, which waits on other connections to it closing. */
   store?: string;
 }
 
@@ -50,41 +50,57 @@ export function createIndexedDbAdapter({
     connection = null;
     opened = null;
   };
-  const open = (): Promise<IDBDatabase> => {
-    if (opened) return opened;
-    const mine = new Promise<IDBDatabase>((resolve, reject) => {
-      if (typeof indexedDB === 'undefined') {
-        reject(new Error('[storage] IndexedDB is not available here'));
-        return;
-      }
+  /** The database at `version`, or at whatever version it has when omitted, with `store` created by
+   *  an upgrade. Answers the version it opened at instead when that has no `store`, since only an
+   *  upgrade past it can create one. */
+  const request = (version: number | undefined): Promise<IDBDatabase | number> =>
+    new Promise((resolve, reject) => {
       // No `onblocked`: a blocked open is still pending, and lands once the
       // connections in its way close.
-      const request = indexedDB.open(database, 1);
-      request.onupgradeneeded = () => {
-        if (!request.result.objectStoreNames.contains(store)) {
-          request.result.createObjectStore(store);
-        }
+      const req = version === undefined ? indexedDB.open(database) : indexedDB.open(database, version);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store);
       };
-      request.onsuccess = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(store)) {
-          db.close();
-          reject(new Error(`[storage] IndexedDB database "${database}" has no store "${store}"`));
+      req.onsuccess = () => {
+        const db = req.result;
+        if (db.objectStoreNames.contains(store)) {
+          resolve(db);
           return;
         }
-        connection = db;
-        // The browser closing the connection: site data cleared, or evicted.
-        db.onclose = () => forget(db);
-        // Another connection wants to delete or upgrade the database, and
-        // waits for as long as this one stays open.
-        db.onversionchange = () => {
-          db.close();
-          forget(db);
-        };
-        resolve(db);
+        db.close();
+        resolve(db.version);
       };
-      request.onerror = () => reject(request.error);
+      req.onerror = () => reject(req.error);
     });
+
+  const open = (): Promise<IDBDatabase> => {
+    if (opened) return opened;
+    const mine = (async (): Promise<IDBDatabase> => {
+      if (typeof indexedDB === 'undefined') throw new Error('[storage] IndexedDB is not available here');
+      let db = await request(undefined);
+      // Another connection upgrading first makes the version stale, so a few tries.
+      for (let tries = 0; typeof db === 'number' && tries < 3; tries++) {
+        const at = db;
+        db = await request(at + 1).catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === 'VersionError') return request(undefined);
+          throw error;
+        });
+      }
+      if (typeof db === 'number') {
+        throw new Error(`[storage] IndexedDB database "${database}" would not take a store "${store}"`);
+      }
+      const live = db;
+      connection = live;
+      // The browser closing the connection: site data cleared, or evicted.
+      live.onclose = () => forget(live);
+      // Another connection wants to delete or upgrade the database, and
+      // waits for as long as this one stays open.
+      live.onversionchange = () => {
+        live.close();
+        forget(live);
+      };
+      return live;
+    })();
     opened = mine;
     // A failed open is not kept, so the next call tries again.
     mine.catch(() => {

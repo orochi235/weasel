@@ -55,3 +55,34 @@ describe('createIndexedDbAdapter — reopening', () => {
     expect(await adapter.get('a')).toBe(2);
   });
 });
+
+describe('createIndexedDbAdapter — stores and versions', () => {
+  it('adds a second store to a database that already has one', async () => {
+    const database = fresh();
+    const records = createIndexedDbAdapter({ database, store: 'records' });
+    await records.set('a', 1);
+    const thumbs = createIndexedDbAdapter({ database, store: 'thumbs' });
+    await thumbs.set('a', 2);
+    expect(await thumbs.get('a')).toBe(2);
+    expect(await records.get('a')).toBe(1);
+    await records.set('b', 3);
+    expect(await records.list('')).toEqual([['a', 1], ['b', 3]]);
+  });
+
+  it('opens a database another writer has taken past version 1', async () => {
+    const database = fresh();
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(database, 3);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore('records').put(7, 'k');
+      };
+      request.onsuccess = () => {
+        request.result.close();
+        resolve();
+      };
+      request.onerror = () => reject(request.error);
+    });
+    const adapter = createIndexedDbAdapter({ database });
+    expect(await adapter.get('k')).toBe(7);
+  });
+});
