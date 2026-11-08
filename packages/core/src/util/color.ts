@@ -1,4 +1,4 @@
-import { tryNormalizeHex } from '@weasel-js/paint';
+import { byteHex, tryNormalizeHex } from '@weasel-js/paint';
 
 /** Color hex8 helpers. All stored colors are `#rrggbbaa`. `<input type="color">`
  *  only round-trips the 6-char form, so call-sites pad the saved alpha back on
@@ -24,8 +24,7 @@ export function getAlpha01(color: string): number {
 /** Replace the alpha channel of `color` with `alpha01` (clamped to 0..1).
  *  Expands shorter hex forms first. Pass-through for non-hex inputs. */
 export function withAlpha01(color: string, alpha01: number): string {
-  const a = Math.max(0, Math.min(1, alpha01));
-  const aa = Math.round(a * 255).toString(16).padStart(2, '0');
+  const aa = byteHex(alpha01 * 255);
   const eight = toHex8(color);
   if (!eight.startsWith('#') || eight.length !== 9) return color;
   return `${eight.slice(0, 7)}${aa}`;
