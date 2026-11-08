@@ -12,7 +12,7 @@
  */
 
 import type { BooleanShapeOp, Fill, NodeClip, Page, PlacedPage, TextStyle } from '@weasel-js/core';
-import { pagesBounds, resolveFill, resolveStroke } from '@weasel-js/core';
+import { pagesBounds, resolveFill, resolveStroke, withAlpha01 } from '@weasel-js/core';
 import {
   svgImageFromKit,
   svgLeafFromKit,
@@ -118,7 +118,10 @@ export function parsedToDoc(parsed: ParseResult): ParsedDocPatch {
   const pages = pagesOfParsed(parsed) ?? (isPaperSize(ps) ? [...onePage(PAPER_PRESETS[ps]).pages] : undefined);
   if (pages) out.pages = pages;
   const bg = parsed.nodes.find(isBackgroundNode);
-  if (bg?.fill.kind === 'solid') out.backgroundColor = bg.fill.color;
+  if (bg?.fill.kind === 'solid') {
+    const { color, opacity } = bg.fill;
+    out.backgroundColor = opacity === undefined || opacity >= 1 ? color : withAlpha01(color, opacity);
+  }
   return out;
 }
 

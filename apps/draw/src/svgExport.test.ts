@@ -268,6 +268,14 @@ describe('Save then Open: the page background', () => {
     expect(parsedToDoc(parsed).backgroundColor).toBe('#ffffcc');
   });
 
+  it.each(['#ff000080', '#ffffff00'])('reads a translucent background %s back with its alpha', async (backgroundColor) => {
+    const scene = fakeScene({}, []);
+    const svg = await sceneToSvgString(scene, {
+      filename: 'page', pages: layoutPages([{ id: 'page-1', width: 100, height: 100 }]), backgroundColor,
+    });
+    expect(parsedToDoc(parseSvg(svg, { namespaces: SWILL_NAMESPACES })).backgroundColor).toBe(backgroundColor);
+  });
+
   it('leaves an ordinary page-sized rectangle in a foreign SVG as a node', () => {
     const parsed = parseSvg(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
