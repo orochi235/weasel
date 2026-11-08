@@ -1,0 +1,113 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-3);
+}
+
+/* `--_stack-kind` is the kind's color, set on each card. */
+.card {
+  --_kind: var(--_stack-kind, var(--wzl-border-strong));
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+  padding: var(--wzl-space-3);
+  border: 1px solid var(--wzl-border);
+  border-left: 4px solid var(--_kind);
+  border-radius: var(--wzl-radius-sm);
+  background: color-mix(in oklab, var(--_kind) 7%, var(--wzl-surface));
+  color: var(--wzl-fg);
+}
+
+.card[data-open] {
+  border-color: var(--_kind);
+  background: color-mix(in oklab, var(--_kind) 14%, var(--wzl-surface));
+}
+
+.card[data-off] {
+  opacity: 0.55;
+}
+
+.card[data-dragging] {
+  opacity: 0.4;
+}
+
+/* Where a dragged card would land: a line on the edge of the card it would land against. */
+.card[data-drop-before] {
+  box-shadow: 0 -3px 0 var(--wzl-accent);
+}
+
+.card[data-drop-after] {
+  box-shadow: 0 3px 0 var(--wzl-accent);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wzl-space-2);
+}
+
+.number {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  flex: none;
+  min-width: 2ch;
+  padding: 0 var(--wzl-space-1);
+  font-size: inherit;
+  font-weight: var(--wzl-font-weight-medium);
+  color: color-mix(in oklab, var(--_kind) 80%, var(--wzl-fg-muted));
+  border-radius: var(--wzl-radius-sm);
+}
+
+.card[data-open] .number {
+  font-weight: var(--wzl-font-weight-bold);
+  color: color-mix(in oklab, var(--_kind) 70%, var(--wzl-fg));
+}
+
+.number:focus-visible,
+.action:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.switch {
+  flex: none;
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wzl-space-1);
+  min-width: 3.5em;
+  color: var(--_kind);
+  font-weight: var(--wzl-font-weight-bold);
+}
+
+.name {
+  flex: 1 1 5em;
+  min-width: 5em;
+  padding: 0 var(--wzl-field-pad-x);
+}
+
+.action {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wzl-icon-button-size);
+  height: var(--wzl-icon-button-size);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wzl-fg-subtle);
+  cursor: pointer;
+}
+
+.action:hover {
+  color: var(--wzl-fg);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wzl-space-2);
+}

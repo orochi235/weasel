@@ -9,6 +9,10 @@ export interface ReorderHandleProps {
   /** What the item is called; the handle is named "Drag to reorder <label>". */
   label: string;
   onPointerDown?: ((e: PointerEvent) => void) | undefined;
+  /** A press from the keyboard, Enter or Space; a pointer press reaches its owner through the drag's `onPress`. */
+  onClick?: (() => void) | undefined;
+  /** Whether what the handle selects is selected, read as a toggle's state. Unset, the handle is no toggle. */
+  pressed?: boolean | undefined;
   /** Alt+Up (`-1`) or Alt+Down (`1`) on the handle. Return `true` when the item moved, and focus follows the handle. Unset, the keys are left to an ancestor. */
   onNudge?: ((delta: -1 | 1) => boolean | void) | undefined;
   /** Drawn in place of the grip. */
@@ -22,7 +26,7 @@ export interface ReorderHandleProps {
 
 /** The button a reorderable item is dragged by, which Alt+Up/Down also move it from. */
 export const ReorderHandle = forwardRef(function ReorderHandle(
-  { label, onPointerDown, onNudge, badge, size = 13, disabled = false, className }: ReorderHandleProps,
+  { label, onPointerDown, onClick, pressed, onNudge, badge, size = 13, disabled = false, className }: ReorderHandleProps,
   ref: Ref<HTMLButtonElement>,
 ) {
   const button = useRef<HTMLButtonElement | null>(null);
@@ -54,9 +58,11 @@ export const ReorderHandle = forwardRef(function ReorderHandle(
       className={[s.handle, className].filter(Boolean).join(' ')}
       aria-label={`Drag to reorder ${label}`}
       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+      aria-pressed={pressed}
       disabled={disabled}
       onPointerDown={disabled ? undefined : onPointerDown}
       onKeyDown={onKeyDown}
+      onClick={onClick}
     >
       {badge ?? <DragGrip size={size} />}
     </button>
