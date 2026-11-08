@@ -175,6 +175,28 @@ test('a mark is cut where its target is, and takes no press past it', async () =
   );
 });
 
+test('the box that takes input follows its target when it moves with nothing resizing', async () => {
+  renderWithIcons(
+    <div className="lk-clip-lab-host">
+      <Lab instruments={[Clipped]} defaultInstrument="Clipped" />
+    </div>,
+  );
+  await userEvent.click(await screen.findByRole('button', { name: 'Rectangle' }));
+  await waitFor(() => expect(document.querySelector('.lk-annotate__input')).not.toBeNull());
+  const input = document.querySelector('.lk-annotate__input') as HTMLElement;
+  const shown = () =>
+    ((pane.current as HTMLElement).parentElement as HTMLElement).getBoundingClientRect();
+  await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
+
+  // Widening the neighbor pushes the target right; neither it nor the lab changes size.
+  const before = shown().left;
+  (document.querySelector('.lk-clip-lab-beside') as HTMLElement).classList.add(
+    'lk-clip-lab-beside--wide',
+  );
+  expect(shown().left - before).toBeCloseTo(7, 0);
+  await waitFor(() => expect(input.getBoundingClientRect().left).toBeCloseTo(shown().left, 0));
+});
+
 const scroller: { current: HTMLDivElement | null } = { current: null };
 
 // The target is the scroller's own box; its marks live in the content it scrolls.

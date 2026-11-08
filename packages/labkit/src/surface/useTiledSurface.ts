@@ -4,6 +4,7 @@ import { createEmitter } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { measureTiles, type SurfaceScope, sameRects, sameScope, scopeHolds } from './measureTiles';
 import type { Box, Rect } from './rect';
+import { useElementWatch } from './useElementWatch';
 
 /** What a surface owner is handed once per animation frame. `rects` carries every
  *  tile, not only the dirty ones: a scissored draw has to know where it is drawing
@@ -97,7 +98,6 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const clears = useRef(new Map<string, SurfaceClear>());
   const needsMeasure = useRef(true);
   const tileLeft = useRef(false);
-  const observer = useRef<ResizeObserver | null>(null);
   const lastDpr = useRef(0);
   const scopeEl = useRef<SurfaceScope>(null);
   const scopeChanged = useRef(createEmitter());
@@ -224,14 +224,15 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     schedule();
   }, [schedule]);
 
+  const { watch } = useElementWatch(invalidateRects);
+
   const registerTile = useCallback(
     (id: string, el: HTMLElement | null) => {
       const known = tiles.current.get(id);
       if (known === el) return;
-      if (known) observer.current?.unobserve(known);
+      watch(`tile:${id}`, el, { moves: true });
       if (el) {
         tiles.current.set(id, el);
-        observer.current?.observe(el);
       } else {
         tiles.current.delete(id);
         // Its rect goes now, so the next measurement cannot see that it left.
@@ -242,7 +243,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       needsMeasure.current = true;
       schedule();
     },
-    [schedule],
+    [schedule, watch],
   );
 
   const registerClear = useCallback((id: string, clear: SurfaceClear) => {
@@ -284,29 +285,15 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
   const containerRef = useCallback(
     (el: HTMLElement | null) => {
       if (container.current === el) return;
-      if (container.current) observer.current?.unobserve(container.current);
       container.current = el;
-      if (el) observer.current?.observe(el);
+      watch('container', el);
       needsMeasure.current = true;
       schedule();
     },
-    [schedule],
+    [schedule, watch],
   );
 
-  useEffect(() => {
-    const ro = new ResizeObserver(() => {
-      needsMeasure.current = true;
-      schedule();
-    });
-    observer.current = ro;
-    if (container.current) ro.observe(container.current);
-    for (const el of tiles.current.values()) ro.observe(el);
-    return () => {
-      ro.disconnect();
-      observer.current = null;
-      frameLoop.cancel();
-    };
-  }, [schedule, frameLoop]);
+  useEffect(() => () => frameLoop.cancel(), [frameLoop]);
 
   // A window moved to a display of another density keeps its CSS box, so no observer fires.
   useEffect(() => watchDevicePixelRatio(invalidateRects), [invalidateRects]);

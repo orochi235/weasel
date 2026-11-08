@@ -73,7 +73,7 @@ function wheelAt(el: Element, clientX: number) {
   });
 }
 
-/** One pointer event on the canvas, at `clientX` on the y = 10 line: a mouse's, or a finger's. */
+/** One pointer event on the canvas, at `clientX` on the y = 10 line. */
 function pointer(el: Element, type: string, pointerId: number, clientX: number, pointerType = 'mouse') {
   el.dispatchEvent(new PointerEvent(type, {
     bubbles: true, cancelable: true, pointerId, pointerType, clientX, clientY: 10,

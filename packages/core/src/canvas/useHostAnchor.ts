@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLatest, useVisibleRaf } from '@weasel-js/react';
+import { useLatest, useVisibleRaf, watchElementMove } from '@weasel-js/react';
 import {
   hostAnchorCss, hostAnchorRect,
   type HostAnchorAlign, type HostAnchorOffset,
 } from './hostAnchor';
-import { watchElementMove } from './watchElementMove';
 
 /** Options for {@link useHostAnchor}. */
 export interface UseHostAnchorOptions {
