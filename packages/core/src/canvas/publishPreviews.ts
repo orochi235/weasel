@@ -83,13 +83,13 @@ function changesOver(origin: unknown, value: unknown): (stored: unknown) => unkn
   if (!isPlainObject(origin) || !isPlainObject(value)) return () => value;
   const changed = new Set<string>();
   for (const key of new Set([...Object.keys(origin), ...Object.keys(value)])) {
-    if (origin[key] !== value[key]) changed.add(key);
+    if (Object.hasOwn(origin, key) !== Object.hasOwn(value, key) || origin[key] !== value[key]) changed.add(key);
   }
   return (stored) => {
     if (stored === origin || !isPlainObject(stored)) return value;
     const out: Fields = { ...stored };
     for (const key of changed) {
-      if (key in value) out[key] = value[key];
+      if (Object.hasOwn(value, key)) out[key] = value[key];
       else delete out[key];
     }
     return out;
