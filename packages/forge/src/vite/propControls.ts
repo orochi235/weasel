@@ -38,7 +38,12 @@ export function storyExports(
   if (api) {
     try {
       const read = reader.api(file, fallback);
-      const table = read && { props: read.props, inherited: read.inherited, ref: read.ref };
+      const table = read && {
+        props: read.props,
+        inherited: read.inherited,
+        ref: read.ref,
+        ...(read.types ? { types: read.types } : {}),
+      };
       code += `\nexport const ${API_EXPORT} = ${JSON.stringify(table)};\n`;
       if (read) sources.push(...read.sources);
     } catch (err) {

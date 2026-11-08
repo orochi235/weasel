@@ -1,10 +1,11 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ApiTable } from '../../story/api';
 import { meta, story } from '../../story/define';
 import { loadNativeModule } from '../../story/native';
 import { runAxe } from '../a11y';
 import { type IndexEnv, IndexPage } from './IndexPage';
+import { clipped, DEF_LINES } from './TypeText';
 
 const stories = loadNativeModule(
   { default: meta({ title: 'ui/Chart' }), Basic: story({ render: () => <p>chart</p> }) },
@@ -26,6 +27,7 @@ const API: ApiTable = {
       { name: 'toModel', kind: 'method', signature: '(pt: Point) => Point', readonly: false, description: 'Maps a point.' },
     ],
   },
+  types: { Point: { text: 'interface Point {\n    x: number;\n}', description: 'A plot point.' } },
 };
 
 const envOf = (over: Partial<IndexEnv> = {}): IndexEnv => ({
@@ -66,7 +68,25 @@ describe('IndexApi', () => {
     const names = within(panel()).getAllByRole('term').map((dt) => dt.querySelector('code')?.textContent);
     expect(names.slice(0, 4)).toEqual(['data', 'label', 'loud', 'size']);
     const badge = within(panel()).getAllByText('required')[0]!.closest('[data-tint]');
-    expect(badge?.getAttribute('data-tint')).toBe('var(--wzl-secondary)');
+    expect(badge?.getAttribute('data-tint')).toBe('var(--wzl-secondary-fg)');
+  });
+
+  it('shows a declared type’s definition on focus of its name, and leaves other names as text', () => {
+    render(<IndexPage env={envOf()} render={null} />);
+    const [point] = within(entry('toModel')).getAllByRole('img', { name: 'Point' });
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => point!.focus());
+    const tip = screen.getByRole('tooltip');
+    expect(tip).toHaveTextContent('A plot point.');
+    expect(tip.querySelector('pre')?.textContent).toBe('interface Point {\n    x: number;\n}');
+    expect(within(entry('label')).queryByRole('img')).toBeNull();
+  });
+
+  it('cuts a long definition short and counts what it left out', () => {
+    const text = Array.from({ length: DEF_LINES + 3 }, (_, i) => `line ${i}`).join('\n');
+    expect(clipped(text).split('\n')).toHaveLength(DEF_LINES + 1);
+    expect(clipped(text).endsWith('… 3 more lines')).toBe(true);
+    expect(clipped('a\nb')).toBe('a\nb');
   });
 
   it('collapses inherited props to one line per source', () => {

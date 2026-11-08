@@ -2,13 +2,16 @@
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { type ReactNode, useState } from 'react';
 import { useOverflowing } from '../../shell/useOverflowing';
-import type { ApiMember, ApiProp, ApiRef, ApiTable } from '../../story/api';
+import type { ApiMember, ApiProp, ApiRef, ApiTable, ApiTypeDef } from '../../story/api';
 import { Description } from './Description';
 import { useEnv } from './envContext';
+import { TypeText } from './TypeText';
 import './api.css';
 
 /** A marker that changes how the entry is used, as `required` does, rather than describing it. */
-const LOUD = { ref: 'secondary' } as const;
+const LOUD = { ref: 'secondary-fg' } as const;
+
+type Types = Readonly<Record<string, ApiTypeDef>> | undefined;
 
 function Entry({
   name,
@@ -36,10 +39,12 @@ function Entry({
   );
 }
 
-function PropEntry({ prop }: { prop: ApiProp }) {
+function PropEntry({ prop, types }: { prop: ApiProp; types: Types }) {
   return (
     <Entry name={prop.name} badge={prop.required ? 'required' : undefined} loud={prop.required}>
-      <code className="fg-index-api__type">{prop.type}</code>
+      <code className="fg-index-api__type">
+        <TypeText text={prop.type} types={types} />
+      </code>
       {prop.default === undefined ? null : (
         <p className="fg-index-api__default">
           Default: <code>{prop.default}</code>
@@ -53,10 +58,12 @@ function PropEntry({ prop }: { prop: ApiProp }) {
   );
 }
 
-function MemberEntry({ member }: { member: ApiMember }) {
+function MemberEntry({ member, types }: { member: ApiMember; types: Types }) {
   return (
     <Entry name={member.name} badge={member.readonly ? 'readonly' : undefined}>
-      <code className="fg-index-api__type">{member.signature}</code>
+      <code className="fg-index-api__type">
+        <TypeText text={member.signature} types={types} />
+      </code>
       {member.description ? <Description text={member.description} className="fg-index-api__description" /> : null}
     </Entry>
   );
@@ -71,17 +78,19 @@ const methodsFirst = (members: readonly ApiMember[]): ApiMember[] => [
   ...members.filter((m) => m.kind === 'property'),
 ];
 
-function RefSection({ handle }: { handle: ApiRef }) {
+function RefSection({ handle, types }: { handle: ApiRef; types: Types }) {
   return (
     <>
       <h2 className="fg-index-api__heading">Ref</h2>
       <p className="fg-index-api__ref">
-        <code className="fg-index-api__type">{handle.type}</code>
+        <code className="fg-index-api__type">
+          <TypeText text={handle.type} types={types} />
+        </code>
       </p>
       {handle.members.length === 0 ? null : (
         <dl className="fg-index-api__list">
           {methodsFirst(handle.members).map((member) => (
-            <MemberEntry key={member.name} member={member} />
+            <MemberEntry key={member.name} member={member} types={types} />
           ))}
         </dl>
       )}
@@ -98,7 +107,7 @@ function ApiBody({ api }: { api: ApiTable }) {
       {api.props.length === 0 ? null : (
         <dl className="fg-index-api__list">
           {propsInOrder(api.props).map((prop) => (
-            <PropEntry key={prop.name} prop={prop} />
+            <PropEntry key={prop.name} prop={prop} types={api.types} />
           ))}
         </dl>
       )}
@@ -107,7 +116,7 @@ function ApiBody({ api }: { api: ApiTable }) {
           + {count} from <code>{from}</code>
         </p>
       ))}
-      {api.ref ? <RefSection handle={api.ref} /> : null}
+      {api.ref ? <RefSection handle={api.ref} types={api.types} /> : null}
     </>
   );
 }
