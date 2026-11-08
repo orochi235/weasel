@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useFlash } from './useFlash';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
@@ -82,7 +82,7 @@ function Marks({ palette, background }: { palette: Palette; background: string }
 }
 
 export function PalettePreview({ palette, surface }: { palette: Palette; surface: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, flashCopied] = useFlash(false, 1400);
   const { stats, swatches } = palette;
   const hexes = swatches.map((s) => s.hex).join(' ');
 
@@ -159,8 +159,7 @@ export function PalettePreview({ palette, surface }: { palette: Palette; surface
           size="sm"
           onClick={() => {
             void navigator.clipboard?.writeText(tokenJson);
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1400);
+            flashCopied(true);
           }}
         >
           {copied ? 'Copied' : 'Copy as tokens'}
