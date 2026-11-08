@@ -86,6 +86,7 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     },
     historyIndex: () => engine.undoDepth(),
     jumpToHistoryIndex(index) {
+      if (Number.isNaN(index) || (Number.isFinite(index) && !Number.isInteger(index))) return false;
       const total = engine.undoDepth() + engine.redoDepth();
       const target = Math.max(0, Math.min(total, index));
       return step(() => target !== engine.undoDepth(), () => engine.goto(target));

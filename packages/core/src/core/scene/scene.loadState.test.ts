@@ -70,4 +70,19 @@ describe('Scene — loadState', () => {
     expect(scene.isLocked(asNodeId('art'))).toBe(true);
     expect(scene.getSelection()).toEqual([asNodeId('free')]);
   });
+
+  it('leaves the document it had when the snapshot cannot be built', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    scene.setPose(asNodeId('a'), { ...POSE, x: 5 });
+    const good = scene.toJSON();
+    const bad = {
+      ...good,
+      nodes: [{ id: 'b', kind: 'mark' as const, layer: 'default' as const, pose: POSE, data: { label: 'b' }, parent: 'missing' }],
+    };
+
+    expect(() => scene.loadState(bad)).toThrow(/missing/);
+    expect(scene.toJSON()).toEqual(good);
+    expect(scene.history.undoDepth()).toBe(2);
+  });
 });

@@ -55,6 +55,18 @@ describe('createDeleteOp', () => {
     expect(adapter.removes).toEqual(['a']);
   });
 
+  it('restores the node as it stood when it was removed, not as the op was handed it', () => {
+    const adapter = makeAdapter([leaf('a', 1)]);
+    const op = createDeleteOp<Obj>({ node: { id: 'a' } as Obj, index: 0 });
+    adapter.nodes.set('a', { id: 'a', value: 7, parent: null });
+    op.apply(adapter as never);
+    op.invert().apply(adapter as never);
+    expect(adapter.getNode('a')).toEqual({ id: 'a', value: 7, parent: null });
+    expect(rebuildOp('delete', JSON.parse(JSON.stringify(op.args)))!.invert().args).toMatchObject({
+      node: { id: 'a', value: 7, parent: null },
+    });
+  });
+
   it('inverts to an insert', () => {
     const adapter = makeAdapter([leaf('a', 1)]);
     const op = createDeleteOp<Obj>({ node: adapter.getNode('a')!, index: 0 });

@@ -97,4 +97,17 @@ describe('History entries touchedIds', () => {
     const { undo } = h.entries();
     expect(undo[0].touchedIds?.size).toBe(0);
   });
+
+  it('keeps a coalesced entry\'s touchedIds across serialize and restore', () => {
+    let t = 0;
+    const keyed = (id: string): Op => ({ ...idOp(id), coalesceKey: 'nudge', invert: () => keyed(id) });
+    const h = createHistory({}, { coalesceWindowMs: 100, now: () => t, rebuildOp: (_name, args) => keyed((args as { id: string }).id) });
+    h.applyOps([keyed('a')], 'nudge');
+    t = 10;
+    h.applyOps([keyed('b')], 'nudge');
+    const before = [...h.entries().undo[0]!.touchedIds!].sort();
+    expect(before).toEqual(['a', 'b']);
+    h.restore(h.serialize());
+    expect([...h.entries().undo[0]!.touchedIds!].sort()).toEqual(before);
+  });
 });

@@ -1,7 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
 import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
-import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
+import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
   type Entry, type HistoryLogger, type SerializedHistory,
@@ -401,9 +401,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     currentEntryId: () => nextEntryId,
     beginJournal(opts: BeginJournalOptions): Journal {
-      if (activeJournal !== null && activeJournal.isActive()) {
-        throw new Error('A journal is already active — commit, cancel, or suspend it first');
-      }
+      refuseWhileActive(activeJournal);
       // `adapter` is the closure-captured adapter passed to createHistory.
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
@@ -416,9 +414,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     activeJournal: () => (activeJournal?.isActive() ? activeJournal : null),
     resumeJournal(journal: Journal): void {
-      if (activeJournal !== null && activeJournal !== journal && activeJournal.isActive()) {
-        throw new Error('A journal is already active — commit, cancel, or suspend it first');
-      }
+      if (_resumedByOwnerInternal(journal, history)) return;
+      refuseWhileActive(activeJournal, journal);
       _resumeJournalInternal(journal);
       activeJournal = journal;
     },
