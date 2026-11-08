@@ -46,6 +46,7 @@ function resolveWorkspace(spec) {
 function closureOf(entry) {
   const seen = new Set();
   const external = new Set();
+  const unbuilt = new Set();
   const walk = (file) => {
     if (seen.has(file)) return;
     seen.add(file);
@@ -55,12 +56,13 @@ function closureOf(entry) {
         continue;
       }
       const sibling = resolveWorkspace(spec);
-      if (sibling === null || !existsSync(sibling)) external.add(spec);
+      if (sibling === null) external.add(spec);
+      else if (!existsSync(sibling)) unbuilt.add(spec);
       else walk(sibling);
     }
   };
   walk(entry);
-  return { modules: seen, external };
+  return { modules: seen, external, unbuilt };
 }
 
 let failed = false;
@@ -73,7 +75,12 @@ for (const { spec, why } of REACT_FREE_ENTRIES) {
     failed = true;
     continue;
   }
-  const { modules, external } = closureOf(abs);
+  const { modules, external, unbuilt } = closureOf(abs);
+  if (unbuilt.size > 0) {
+    console.error(`✗ ${file} — reaches ${[...unbuilt].sort().join(', ')}, not built, whose closure it cannot read. Run \`npm run build\` first.`);
+    failed = true;
+    continue;
+  }
   const bad = [...external].filter(banned).sort();
   if (bad.length > 0) {
     console.error(
