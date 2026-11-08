@@ -4,8 +4,7 @@
  */
 
 import type { DrawCommand, GlMat3 } from '@weasel-js/renderer';
-import { alignedStrokeRect, type CommandStroke, type CommandFill } from '@weasel-js/paint';
-import { resolveStrokeWidth } from '@weasel-js/stroke';
+import type { CommandStroke, CommandFill } from '@weasel-js/paint';
 import { screenAngleOf } from '@weasel-js/geom';
 import { angleOf, localToWorld, targetTransformOf } from 'core/geometry/targetFrame';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -83,8 +82,6 @@ export function handleCommandsFor(
   const layout: ResizeHandleLayout = { edges: true, hitRadiusPx: HANDLE_BASE_PX, ...layoutOpts };
   const out: DrawCommand[] = [];
   const half = handles.size / 2;
-  const handleAlign = handles.outline.align ?? 'center';
-  const handleWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1);
   for (const id of ids) {
     const worldB = resolveBounds(id);
     if (!worldB) continue;
@@ -106,7 +103,6 @@ export function handleCommandsFor(
         width: handles.size,
         height: handles.size,
       };
-      const sr = alignedStrokeRect(baseRect, handleAlign, handleWidth);
       const fillCmd: DrawCommand = {
         kind: 'path',
         path: rectPathFor(baseRect.x, baseRect.y, baseRect.width, baseRect.height),
@@ -114,7 +110,7 @@ export function handleCommandsFor(
       };
       const strokeCmd: DrawCommand = {
         kind: 'path',
-        path: rectPathFor(sr.x, sr.y, sr.width, sr.height),
+        path: rectPathFor(baseRect.x, baseRect.y, baseRect.width, baseRect.height),
         stroke: handles.outline,
       };
       if (angle === 0) {

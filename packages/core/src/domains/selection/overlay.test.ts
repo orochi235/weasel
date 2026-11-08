@@ -501,6 +501,36 @@ describe('createSelectionOverlayLayer.draw', () => {
   });
 });
 
+describe('selection outline alignment', () => {
+  it('leaves an upright outline\'s alignment to the renderer, which shifts the rect itself', () => {
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+      handles: false,
+      outline: { paint: { kind: 'solid', color: '#000' }, width: 4, pad: 0, align: 'outer' },
+    });
+    const [cmd] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS) as PathDrawCommand[];
+    // Shifted here too, it would sit a second half-width out.
+    expect(cmd.path).toMatchObject({ kind: 'rect', x: 0, y: 0, width: 100, height: 100 });
+    expect(cmd.stroke?.align).toBe('outer');
+  });
+});
+
+describe('selection handle alignment', () => {
+  it('leaves a handle outline\'s alignment to the renderer, on the handle\'s own rect', () => {
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+      handles: { size: 8, outline: { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inner' } },
+    });
+    const cmds = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS) as PathDrawCommand[];
+    // The selection outline has no alignment; every handle outline is inner.
+    const handles = cmds.filter((c) => c.stroke?.align === 'inner');
+    expect(handles.length).toBeGreaterThan(0);
+    for (const c of handles) expect(c.path).toMatchObject({ kind: 'rect', width: 8, height: 8 });
+  });
+});
+
 describe('composeSelectionPose — non-rect poses', () => {
   it('collapses a circle container to a circle through the descriptor', () => {
     const poses: Record<string, CirclePose> = { a: circle(0, 0, 10), b: circle(40, 0, 10) };
