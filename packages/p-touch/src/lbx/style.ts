@@ -3,7 +3,7 @@
  * what an `.lbx` object cannot state, and the command goes to the rasterizer instead.
  */
 import type { GlMat3 } from '@weasel-js/geom';
-import { isSolidPaint, parseColor, resolveScreenLength, rgbaToHex, type CommandFill, type CommandStroke } from '@weasel-js/paint';
+import { isSolidPaint, parseColor, resolveScreenLength, rgbaToHex, type CommandStroke, type Fill } from '@weasel-js/paint';
 
 /** The transform and opacity a command draws under. */
 export interface DrawState {
@@ -42,7 +42,7 @@ function opaqueHex(color: string, opacity: number): string | undefined {
 /** A field's solid color: `null` for none, undefined for a paint `.lbx` cannot carry. */
 type Solid = string | null | undefined;
 
-export function fillColor(fill: CommandFill | undefined, alpha: number): Solid {
+export function fillColor(fill: Fill | null | undefined, alpha: number): Solid {
   if (fill?.paint === undefined) return null;
   if (!isSolidPaint(fill.paint)) return undefined;
   return opaqueHex(fill.paint.color, (fill.paint.opacity ?? 1) * alpha);
