@@ -13,7 +13,7 @@ import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
-import type { Node, NodeId, Scene } from 'core/scene/types';
+import type { Node, Scene } from 'core/scene/types';
 import { nodeGates } from 'core/scene/nodeGates';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
@@ -305,9 +305,9 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
 
 /** `hits` less what the shape walk passes over and an id frame cannot know: a locked node and
  *  one that is not pickable. */
-function reachableHits(scene: Parameters<typeof nodeGates>[0] & { get(id: NodeId): { pickable?: boolean } | undefined }, hits: string[]): string[] {
-  const gates = nodeGates(scene);
-  return hits.filter((id) => scene.get(asNodeId(id))?.pickable !== false && !gates.locked(id));
+function reachableHits<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, hits: string[]): string[] {
+  const gates = nodeGates(scene as never);
+  return hits.filter((id) => (scene.get(asNodeId(id)) as { pickable?: boolean } | undefined)?.pickable !== false && !gates.locked(id));
 }
 
 /** Whether a pick asked with `view` is asked for the surface's own camera and gates, which
