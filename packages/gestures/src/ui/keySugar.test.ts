@@ -22,6 +22,8 @@ describe('key', () => {
   it('throws on an unknown modifier or no key', () => {
     expect(() => key('Hyper+K')).toThrow(/unknown modifier "Hyper"/);
     expect(() => key('')).toThrow(/names no key/);
+    expect(() => key('constructor+K')).toThrow(/unknown modifier "constructor"/);
+    expect(key('constructor')).toEqual({ kind: 'key', key: 'constructor' });
   });
 });
 

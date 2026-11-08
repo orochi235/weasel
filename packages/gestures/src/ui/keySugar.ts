@@ -6,6 +6,7 @@
  */
 import { parseRoute } from '../grammar/routeGrammar';
 import { routeToSpec } from '../grammar/routeToSpec';
+import { ownValue } from './keySpecsFromMods';
 import type { GestureSpec, KeyHeldSpec, KeySpec, ModSpec } from './spec';
 
 const MODIFIERS: Record<string, keyof ModSpec> = {
@@ -26,11 +27,11 @@ function parse(shortcut: string): { key: string; mods: ModSpec } {
   if (!raw) throw new Error(`shortcut "${shortcut}" names no key`);
   const mods: ModSpec = {};
   for (const part of parts) {
-    const mod = MODIFIERS[part.toLowerCase()];
+    const mod = ownValue(MODIFIERS, part.toLowerCase());
     if (!mod) throw new Error(`shortcut "${shortcut}": unknown modifier "${part}"`);
     mods[mod] = true;
   }
-  return { key: KEY_NAMES[raw.toLowerCase()] ?? raw, mods };
+  return { key: ownValue(KEY_NAMES, raw.toLowerCase()) ?? raw, mods };
 }
 
 /** A keystroke in the `Mod+Shift+K` form. Modifiers are case-insensitive:
