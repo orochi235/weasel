@@ -13,11 +13,11 @@ export function toHex8(color: string): string {
   return tryNormalizeHex(color, 'rgba') ?? color;
 }
 
-/** Return the alpha channel of `color` as 0..1. Defaults to 1 when the
- *  color is not in 8-char hex form. */
+/** Return the alpha channel of `color` (`#rgba` or `#rrggbbaa`) as 0..1.
+ *  Defaults to 1 for any other form. */
 export function getAlpha01(color: string): number {
-  if (!color.startsWith('#') || color.length !== 9) return 1;
-  const hex = tryNormalizeHex(color);
+  if (!color.startsWith('#') || (color.length !== 5 && color.length !== 9)) return 1;
+  const hex = tryNormalizeHex(color, 'rgba');
   return hex ? Number.parseInt(hex.slice(7), 16) / 255 : 1;
 }
 

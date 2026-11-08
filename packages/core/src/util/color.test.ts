@@ -31,6 +31,10 @@ describe('getAlpha01', () => {
   it('reads alpha from hex8', () => {
     expect(getAlpha01('#aabbcc80')).toBeCloseTo(0x80 / 255);
   });
+  it('reads alpha from #rgba', () => {
+    expect(getAlpha01('#f008')).toBeCloseTo(0x88 / 255);
+    expect(mergeAlphaFromPrev('#00ff00', '#f008')).toBe('#00ff0088');
+  });
   it('returns 1 for hex without alpha', () => {
     expect(getAlpha01('#aabbcc')).toBe(1);
   });
