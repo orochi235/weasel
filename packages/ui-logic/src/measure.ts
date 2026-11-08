@@ -1,4 +1,4 @@
-import type { Rect } from '@weasel-js/geom';
+import { clamp, type Rect } from '@weasel-js/geom';
 
 /** The sizes a box may take, in CSS px. `Infinity` for a max leaves that axis free. */
 export interface Constraints {
@@ -21,10 +21,9 @@ export function fixedWidth(width: number): Constraints {
   return { minWidth: width, maxWidth: width, minHeight: 0, maxHeight: Infinity };
 }
 
-/** `size` clamped to `[min, max]`. A max below its min yields the min, as CSS does. */
-export function clampTo(size: number, min: number, max: number): number {
-  return Math.max(min, Math.min(size, max));
-}
+/** `size` clamped to `[min, max]`; a max below its min yields the min, as CSS does.
+ *  @deprecated `clamp` from `@weasel-js/geom`, which this is. */
+export const clampTo: (size: number, min: number, max: number) => number = clamp;
 
 /** The font a run of text is measured in. `family` is a CSS font-family list; a target that draws with
  *  fonts of its own maps it onto one. */
