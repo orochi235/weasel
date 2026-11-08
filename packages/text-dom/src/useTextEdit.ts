@@ -325,7 +325,8 @@ export function useTextEdit(
     openedRef.current = JSON.stringify(domToRuns(overlay));
     sentRef.current = JSON.stringify(overlayDraft(domToRuns(overlay), holderRef.current, initialRuns));
     applyOverlayStyle(overlay, style);
-    const hold = holdForFaces(style, initialRuns ?? []);
+    const holdFor = optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD;
+    const hold = holdFor > 0 ? holdForFaces(style, initialRuns ?? []) : null;
     if (hold) overlay.style.opacity = '0';
     const styleEl = installSelectionStyle(overlayClass, style);
     const clipBox = createClipBox();
@@ -347,7 +348,7 @@ export function useTextEdit(
       place();
       overlay.style.opacity = '';
     };
-    const holdTimer = held ? setTimeout(release, optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD) : undefined;
+    const holdTimer = held ? setTimeout(release, holdFor) : undefined;
     void hold?.then(release);
 
     const range = document.createRange();
