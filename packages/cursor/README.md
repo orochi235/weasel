@@ -15,7 +15,7 @@ A glyph is a set of SVG path `d` strings with paint roles and a hotspot in
 glyph units. `cursorFor` bakes one into a CSS cursor value and memoizes it.
 
 **Always pass a `fallback`.** If the browser rejects the image the element falls
-back to that keyword, and with none declared it lands on `auto`.
+back to that keyword, and with none declared it lands on `default`, the plain arrow.
 
 Cursors ship as SVG with no bitmap fallback: Chrome rasterizes an SVG data-URI
 cursor at device scale, so it is already crisp on a retina display. `bakeCursor`

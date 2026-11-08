@@ -4,7 +4,7 @@ import type { MenuColorEntry, MenuTextEntry } from './entries';
 interface Held<T> { value: T | undefined; disabled?: boolean; set?(value: T): void }
 
 /** Rows that remember what was set while the menu is open: what each holds now, and how it is written. */
-function createHeld<E extends Held<T>, T>(changed: () => void, closed: () => boolean) {
+export function createHeld<E extends Held<T>, T>(changed: () => void, closed: () => boolean) {
   const held = new Map<E, T>();
   const valueOf = (e: E): T | undefined => (held.has(e) ? held.get(e) : e.value);
   const write = (e: E, value: T): void => {

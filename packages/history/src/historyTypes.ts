@@ -24,11 +24,9 @@ export interface HistoryEntry {
   /** How many pushes this entry holds: 1 when it was pushed once, plus one
    *  for every later push coalesced into it. */
   pushes: number;
-  /** Set of node ids touched by any op in this entry. Populated from ops
-   *  whose `args` carry an `id` field (transform, setPath, reparent) or a
-   *  `node.id` field (insert, delete). Ops without a recognisable id field
-   *  contribute nothing. May be `undefined` for deserialized entries
-   *  restored from an older snapshot that predates this field. */
+  /** Set of node ids touched by any op in this entry, as `touchedIdsFromOps`
+   *  reads them from each op's `args`. A restored entry has it too: `restore`
+   *  derives it from the rebuilt ops. */
   touchedIds?: ReadonlySet<string>;
   /** Selection restored when this entry is undone. */
   selectionBefore?: readonly string[];
