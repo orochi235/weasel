@@ -167,6 +167,7 @@ export {
   paintWithAlpha,
   paintWithColor,
 } from '../util/paint';
+export type { Palette, PaletteEntry } from '@weasel-js/paint';
 export { pathPaintOf } from '../canvas/nodeShapes/nodePaint';
 export type { PathPaint } from '../canvas/nodeShapes/nodePaint';
 export { strokedBounds } from '../canvas/nodeShapes/strokedBounds';

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { isDev, useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
 import type { DebugConfig } from '../debug/types';
-import { parseDebugFlags } from '../debug/parseDebugFlags';
+import { resolveDebugConfig } from '../debug/parseDebugFlags';
 import { installDevtoolsHook } from './hook';
 import { createDevtoolsRoot, type DevtoolsRoot, type DevtoolsRootSource } from './root';
 import type { DevtoolsOverlays } from './protocol';
@@ -19,9 +19,7 @@ export function withOverride<D extends DebugConfig>(
   override: DevtoolsOverride | null,
 ): D | DebugConfig | false | undefined {
   if (!override) return debug;
-  const base: DebugConfig = debug === undefined
-    ? (typeof window === 'undefined' ? null : parseDebugFlags(window.location.search)) ?? {}
-    : debug === false ? {} : debug;
+  const base: DebugConfig = resolveDebugConfig(debug) ?? {};
   return { ...base, ...override.overlays, ...(override.highlight.length ? { highlight: override.highlight } : {}) };
 }
 

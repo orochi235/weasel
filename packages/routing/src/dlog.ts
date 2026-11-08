@@ -4,7 +4,7 @@
  * Enable in the browser:
  *
  *   localStorage.setItem('weasel.debug', '*')                 // all namespaces
- *   localStorage.setItem('weasel.debug', 'tools,dispatch')    // specific ones
+ *   localStorage.setItem('weasel.debug', 'tools,selection')   // specific ones
  *   localStorage.setItem('weasel.debug', '1')                 // legacy "all"
  *
  * Each call site picks a stable namespace string. Off by default; the flag
@@ -15,13 +15,14 @@
  *
  * Known kit namespaces:
  *   - tools           — active-tool + hotkey transitions (useTools)
- *   - dispatch        — gesture start / end / cancel (dispatcher)
+ *   - selection       — selection writes (useSelection)
  *   - drag-rect       — useDragRect lifecycle
  *   - drag-radial     — useDragRadial lifecycle
  *   - scene           — restored-op replay gaps (history persistence)
- *   - scene-canvas    — SceneCanvas mount / unmount; adapter paste-translation warnings
+ *   - scene-canvas    — SceneCanvas mount / unmount
  *   - history         — applyOps push, no-op suppression, serialize/restore
  *   - clipboard       — OS clipboard write/read failures, malformed payloads
+ *   - ingest          — dropped or pasted content no handler took
  */
 
 const KEYS = ['weasel.debug', 'weaseldraw.debug'] as const;

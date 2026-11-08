@@ -24,14 +24,16 @@ export function createNotices(
 
   const flush = (): void => {
     scheduled = false;
-    for (const [rootId, areas] of pending) {
+    // Taken whole first: a send can change a root again, and that change belongs to the next flush.
+    const batch = [...pending];
+    pending.clear();
+    for (const [rootId, areas] of batch) {
       const root = rootOf(rootId);
       if (!root || !following.has(rootId)) continue;
       const versions: Partial<Record<DevtoolsArea, number>> = {};
       for (const area of areas) versions[area] = root.version(area);
       send({ type: 'changed', protocol: DEVTOOLS_PROTOCOL, rootId, areas: versions });
     }
-    pending.clear();
   };
 
   return {

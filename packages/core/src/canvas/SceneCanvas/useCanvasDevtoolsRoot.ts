@@ -7,7 +7,7 @@ import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { DebugConfig } from '../../debug/types';
-import { parseDebugFlags } from '../../debug/parseDebugFlags';
+import { resolveDebugConfig } from '../../debug/parseDebugFlags';
 import { recordHistory } from '../../devtools/history';
 import type { DevtoolsHistoryRecord } from '../../devtools/protocol';
 import { useDevtoolsLabel } from '../../devtools/label';
@@ -31,12 +31,6 @@ export interface CanvasTraces {
 export interface CanvasDevtools {
   debug: DebugConfig | false | undefined;
   setOverride(override: DevtoolsOverride | null): void;
-}
-
-function resolved(debug: DebugConfig | false | undefined): DebugConfig | null {
-  if (debug === false) return null;
-  if (debug !== undefined) return debug;
-  return typeof window === 'undefined' ? null : parseDebugFlags(window.location.search);
 }
 
 /** What `get-registry` reports of `deps`, as one comparable string; null for a registry that cannot list itself. */
@@ -81,7 +75,7 @@ export function useCanvasDevtoolsRoot(c: {
     trace: traces.dispatch,
     coords: traces.coords,
     frame: () => c.api.current?.getDebug()?.snapshot().frame ?? null,
-    overlays: () => resolved(c.devtools.debug),
+    overlays: () => resolveDebugConfig(c.devtools.debug),
     setOverride: (o) => c.devtools.setOverride(o),
     subscribeView: c.viewState.subscribeView,
     registry: () => describeRegistry({

@@ -28,3 +28,13 @@ export function parseDebugFlags(search: string): DebugConfig | null {
   }
   return Object.keys(out).length > 0 ? out : null;
 }
+
+/**
+ * A surface's `debug` prop as it takes effect: a config is itself, `false` is
+ * off, and `undefined` reads `?debug=…` from the URL. Null when off.
+ */
+export function resolveDebugConfig(debug: DebugConfig | false | undefined): DebugConfig | null {
+  if (debug === false) return null;
+  if (debug !== undefined) return debug;
+  return typeof window === 'undefined' ? null : parseDebugFlags(window.location.search);
+}

@@ -1,11 +1,7 @@
-import { viewScreenToWorld } from '@weasel-js/geom';
+import { viewScreenToWorld, type View } from '@weasel-js/geom';
 
-/** The `View` shape: `clientToWorld` is `clientToCanvas` then `viewScreenToWorld`. */
-export interface ViewLike {
-  scale: { x: number; y: number };
-  x: number;
-  y: number;
-}
+/** The view `clientToWorld` reads: geom's `View`, under the name the renderer exports it as too. */
+export type ViewLike = View;
 
 /**
  * Map a browser client coord pair to world coords.
