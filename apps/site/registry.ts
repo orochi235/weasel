@@ -1355,7 +1355,7 @@ const DEMO_META: DemoMeta[] = [
     title: 'Boxes in 3D',
     package: 'kernel3d',
     description: "Three boxes in 3D on an ordinary `SceneCanvas` whose scene holds 3D poses. The kernel draws nothing, so the demo's renderer is one layer that projects each box's corners through the orbit camera and paints the faces far to near. Everything else is the kit's own: the select tool picks through the kernel's ray-cast `nodeAtPoint`, and the selection outline and marquee read the kernel's `poseDescriptor`, which reports each box as the screen rectangle it covers. The orbit tool and the wheel dolly are the kernel's own tool and actions, driving a `camera3d` dep.",
-    hint: 'Click a box to select it, or drag on empty space to marquee. Switch to Orbit and drag to turn the camera, then scroll to dolly; the outline follows the box.',
+    hint: 'Click a box to select it, or drag on empty space to marquee. Switch to Orbit and drag to turn the camera, <kbd>Shift</kbd>+drag to pan it, then scroll to dolly; the outline follows the box.',
     load: () => import('./demos/Kernel3dDemo').then((m) => m.Kernel3dDemo),
     path: 'apps/site/demos/Kernel3dDemo.tsx',
   },
