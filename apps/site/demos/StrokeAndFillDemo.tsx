@@ -245,7 +245,8 @@ function PaintPanel({
 
   const data = node.data;
   const width = typeof data.stroke?.width === 'number' ? data.stroke.width : 1;
-  const taperEntry = data.stroke?.vertexWidths?.[1];
+  // The ribbon's taper only: a pencil stroke's widths are its pressure, one per sample.
+  const taperEntry = node.id === RIBBON ? data.stroke?.vertexWidths?.[1] : undefined;
   const taperSides = taperEntry === undefined ? undefined : vertexHalfWidths(taperEntry, width);
   const taper = taperSides && taperSides.left + taperSides.right;
 
