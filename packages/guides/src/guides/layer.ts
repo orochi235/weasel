@@ -38,8 +38,8 @@ export interface GuidesLayerOpts {
   color?: string;
   /** Gap marker color. Default `color`. */
   gapColor?: string;
-  /** Optional dash pattern (CSS px). Currently unused — reserved for future
-   *  parity with chrome that supports dashes. */
+  /** Dash pattern for the guide lines, in CSS px. Default solid. Gap
+   *  markers stay solid. */
   dash?: number[];
   /** Override the layer id. Useful if a consumer needs more than one
    *  guides-layer (e.g. user-guides vs. system-guides). */
@@ -60,7 +60,9 @@ export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
   const format = opts.gapLabels === false ? null
     : typeof opts.gapLabels === 'function' ? opts.gapLabels
     : (n: number) => String(Math.round(n));
-  const stroke: CommandStroke = { paint: { kind: 'solid', color }, width: lineWidth };
+  const stroke: CommandStroke = {
+    paint: { kind: 'solid', color }, width: lineWidth, ...(opts.dash?.length ? { dash: opts.dash } : {}),
+  };
   const gapStroke: CommandStroke = { paint: { kind: 'solid', color: gapColor }, width: lineWidth };
 
   return {
