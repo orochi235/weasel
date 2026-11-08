@@ -7,6 +7,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
+import { edgeLabelIdOf } from '../edgeLabel';
 import { diagramScene, edgeIdOf, LABEL_PLACEMENT } from '../fromData';
 import { type DataEdge, type DataGroup, type DataNode, type DiagramData, type DiagramRouter, type DiagramSceneOptions, type DiagramSpec, type EdgeStyle } from '../dataTypes';
 import { nestGroups } from '../groupTree';
@@ -318,7 +319,7 @@ export function routeWires(
   const edges = wires.map(({ edge, style }, w) => {
     const { waypoints, path } = routes[w]!;
     const routed: DataEdge = waypoints === undefined ? edge : { ...edge, routed: waypoints };
-    const label = spec.get(`${edgeIdOf(edge)}/label`)?.pose as Box | undefined;
+    const label = spec.get(edgeLabelIdOf(edgeIdOf(edge)))?.pose as Box | undefined;
     // Off the other wires too where there is room for that, else off the stages alone.
     const others = keepOut.concat(segments.flatMap((boxes, k) => (k === w ? [] : boxes)));
     const offset = LABEL_PLACEMENT.offset ?? 0;

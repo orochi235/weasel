@@ -40,6 +40,9 @@ export function labelSize(text: string, style: RowTextStyle, measure?: MeasureRo
   return { width: measure !== undefined ? measure(text, style).width : estimatedWidth(text, { ...style, fontSize: size }), height: size };
 }
 
+/** The id of edge `edgeId`'s label, the one along its route (`DataEdge.label`). */
+export const edgeLabelIdOf = (edgeId: string): string => `${edgeId}/label`;
+
 /** The id of the label at edge `edgeId`'s `from` or `to` end (`DataEdge.endLabels`). */
 export const endLabelIdOf = (edgeId: string, end: 'from' | 'to'): string => `${edgeId}/label:${end}`;
 
@@ -59,13 +62,13 @@ export interface EdgeLabelOptions<TLayer extends string> {
 }
 
 /** The label node for edge `edgeId`: a leaf that derives its pose from the edge's route. `id` defaults to
- *  `<edgeId>/label`. */
+ *  {@link edgeLabelIdOf}. */
 export function edgeLabelSpec<TLayer extends string>(
   edgeId: string, text: string, opts: EdgeLabelOptions<TLayer> & { id?: string },
 ): AddNodeSpec<unknown, TLayer, RectPose> {
   const style = opts.style ?? LABEL_STYLE;
   return {
-    id: (opts.id ?? `${edgeId}/label`) as never,
+    id: (opts.id ?? edgeLabelIdOf(edgeId)) as never,
     kind: 'mark',
     layer: opts.layer,
     pickable: false,
@@ -122,7 +125,7 @@ function edgeUnder(deps: ActionDeps | undefined, at: { x: number; y: number } | 
 function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLabelOptions, 'style' | 'fill'>): void {
   const { scene, textEdit } = ctx.deps;
   if (scene === undefined) return;
-  const labelId = `${edgeId}/label`;
+  const labelId = edgeLabelIdOf(edgeId);
   if (scene.get(labelId as never) === undefined) {
     const edge = scene.get(edgeId as never);
     if (edge === undefined) return;
