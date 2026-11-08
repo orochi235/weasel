@@ -61,10 +61,12 @@ export function commitTransformOps(deps: ActionDeps, ops: Op[], label: string): 
 }
 
 /** What a whole-node transform commits its batch through: `deps.applyOps`
- *  when nothing finishes transforms, else a commit that finishes it first. */
-export function transformApplyOps(deps: ActionDeps): ((ops: Op[], label: string) => void) | undefined {
+ *  when nothing finishes transforms, else a commit that finishes it first and
+ *  returns whether it landed. A caller reads only `false` as refused, so a
+ *  consumer `applyOps`, which returns nothing, is taken at its word. */
+export function transformApplyOps(deps: ActionDeps): ((ops: Op[], label: string) => boolean | void) | undefined {
   if (!transformFinisher(deps)) return deps.applyOps;
-  return (ops, label) => { commitTransformOps(deps, ops, label); };
+  return (ops, label) => commitTransformOps(deps, ops, label);
 }
 
 /** Every follower's preview of `frame`, each reading the frame with the poses and data the ones before it previewed. */

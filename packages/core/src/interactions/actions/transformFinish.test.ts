@@ -10,6 +10,7 @@ import { nudgeRightAction } from './defaults/nudge';
 import { alignRightAction } from './align/action';
 import { commitTransformOps, type TransformFollower } from './transformFinish';
 import { createInsertOp } from 'core/ops/create';
+import { lastTransform } from './transform-again/memory';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 
@@ -68,6 +69,13 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     const { scene, b, deps } = fixture('follow');
     (nudgeRightAction.invoker as ImmediateInvoker).run(deps, undefined);
     expect(scene.get(b)!.data).toEqual({ followed: 'Nudge' });
+  });
+
+  it('records no nudge for Transform Again when the dep refuses it', () => {
+    const { scene, a, deps } = fixture('refuse');
+    (nudgeRightAction.invoker as ImmediateInvoker).run(deps, undefined);
+    expect(scene.get(a)!.pose).toEqual(box(0, 0));
+    expect(lastTransform(scene)).toBeUndefined();
   });
 
   it('finishes an align, in the align\'s one undo step', () => {

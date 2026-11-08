@@ -24,7 +24,7 @@ export function translateSelection(
   scene: Scene<unknown, string, unknown>,
   dx: number,
   dy: number,
-  applyOps: ((ops: Op[], label: string) => void) | undefined,
+  applyOps: ((ops: Op[], label: string) => boolean | void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   d: PoseDescriptor<unknown>,
   label = 'Nudge',
@@ -33,8 +33,7 @@ export function translateSelection(
   if (ops.length === 0) return false;
 
   if (!applyOps) return scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
-  applyOps(ops, label);
-  return true;
+  return applyOps(ops, label) !== false;
 }
 
 /**
