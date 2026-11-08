@@ -34,8 +34,16 @@ For the session picking this up: what is in flight and what has no other home. O
   d9c637a1a through `batch/2026-11-08b` (`test:fleet` full: 35819 tests; postbuild green). Unpushed. Open questions
   are under "Audit round seven" in `docs/unruled.md`. The scripts lane's stricter checks now fail where they used to
   pass silently.
-- The eyedropper (engine sampler, `colorAt` dep, labkit trial toggle, draw's tool on `I`) is built on the
-  `eyedropper` branch and waits for the next batch; it conflicts with labkit loupe commits that landed on `main`.
+- Round eight (2026-11-08: ui, core's canvas and interactions, animator/gestures/kernel3d, the type packages,
+  hud/guides/menu/history/storage, quantity/paint/audio/clock, and site/chart/theme-editor), the eyedropper (one engine
+  sampler in `@weasel-js/loupe`, a `colorAt` dep that redraws document layers, labkit's trial toggle, draw's tool on
+  `I`) and labkit's `.meta()` field slot are on `main` at 9720cf0c2 through `batch/2026-11-08c` (`test:fleet` full:
+  35916 tests; postbuild green). Unpushed. Open questions are under "Audit round eight" in `docs/unruled.md`.
+  `check:frame-loops` now covers `apps/` too (Mike, 2026-11-08), and `usePages.add` puts a page after the one shown.
+- CI's visual baselines `viewport.png` and `easings.png` will fail until recaptured with `visual-update.yml` after the
+  next push: round eight moved those demos' labels onto the kit's text alignment.
+- astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
+  1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - Open from round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
   (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
