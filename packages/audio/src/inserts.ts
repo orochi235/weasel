@@ -293,9 +293,8 @@ export function createInsertChain(
 
   const chain: InsertChain = {
     add(effect, addOpts = {}) {
-      if (disposed) throw new Error('@weasel-js/audio: the insert chain is disposed');
-      if (used.has(effect)) {
-        throw new Error('@weasel-js/audio: that effect is already in an insert slot');
+      if (disposed || used.has(effect)) {
+        throw new Error(`@weasel-js/audio: ${disposed ? 'the insert chain is disposed' : 'that effect is already in an insert slot'}`);
       }
       used.add(effect);
       const s = slotOf(effect, addOpts.bypassed ?? false);
