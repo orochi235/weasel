@@ -37,3 +37,11 @@ describe('typeaheadStep', () => {
     expect(typeaheadStep(names, a.hit, a.buffer, 'l', 1000, shape, 2000).buffer.text).toBe('cl');
   });
 });
+
+describe('an astral character', () => {
+  const emoji = ['🍎 Apple', '🍌 Banana', '🍎 Apricot'];
+  const byLabel = { label: (s: string) => s };
+  it('is one letter of a query, so repeating it cycles', () => {
+    expect(typeaheadMatch(emoji, 0, '🍎', byLabel)).toBe(2);
+  });
+});

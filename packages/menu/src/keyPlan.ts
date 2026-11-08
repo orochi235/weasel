@@ -3,7 +3,7 @@ import { entriesAt } from './entries';
 import type { MenuEntry } from './entries';
 import { firstRow, keyStep, type KeyEffect, type MenuStack } from './keys';
 import type { MenuDirection } from './placement';
-import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/ui-logic';
+import { EMPTY_TYPEAHEAD, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-logic';
 import { typeaheadStep } from './typeahead';
 
 export interface KeyPlan {
@@ -26,8 +26,7 @@ export function planKey(
   if (r.handled) {
     return { stack: r.stack, typed: r.stack !== stack ? EMPTY_TYPEAHEAD : typed, effect: r.effect };
   }
-  // One character, counted as `accessLetter` counts it: by code point.
-  if ([...key].length !== 1 || key === ' ') return null;
+  if (!isOneChar(key) || key === ' ') return null;
   const level = stack.length - 1;
   const rows = entriesAt(root, stack, level);
   const letter = accessMatch(rows, key);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstStop, rovingKey, stepStop } from './list';
+import { firstStop, rovingKey, rowKey, stepStop } from './list';
 
 type Item = { label: string; rule?: boolean };
 const items: Item[] = [{ label: 'a', rule: true }, { label: 'b' }, { label: 'c', rule: true }, { label: 'd' }];
@@ -67,5 +67,12 @@ describe('rovingKey', () => {
   it('holds at an end without wrap', () => {
     expect(rovingKey(items, 3, 'ArrowDown', { wrap: false })).toEqual({ handled: true, at: 3 });
     expect(rovingKey(items, 0, 'ArrowUp', { wrap: false })).toEqual({ handled: true, at: 0 });
+  });
+});
+
+describe('rowKey', () => {
+  it('types an astral character, one character however many UTF-16 units it takes', () => {
+    const fruit = [{ label: '🍎' }, { label: '🍌' }];
+    expect(rowKey(fruit, 0, { key: '🍌' }, { typeahead: true })).toEqual({ kind: 'type', held: false });
   });
 });

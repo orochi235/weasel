@@ -1,4 +1,5 @@
 import { treeKey, type TreeShape } from './tree';
+import { isOneChar } from './typeahead';
 
 /** How a list's items are read: which ones the highlight can land on, and which way its arrows run. */
 export interface ListShape<T> {
@@ -122,6 +123,6 @@ export function rowKey<T>(
   // Mid-search a space is a typed character: "new f" must not activate at the space.
   if (key === ' ' && shape.typeahead && searching) return { kind: 'type', held: true };
   if (key === 'Enter' || key === ' ') return shape.activate ? { kind: 'activate' } : null;
-  if (shape.typeahead && key.length === 1 && !chord && !press.altKey) return { kind: 'type', held: false };
+  if (shape.typeahead && isOneChar(key) && !chord && !press.altKey) return { kind: 'type', held: false };
   return null;
 }
