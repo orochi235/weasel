@@ -24,8 +24,9 @@ export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): Rec
   let maxX = -Infinity;
   let maxY = -Infinity;
   let any = false;
-  for (const p of poses) {
+  for (const pose of poses) {
     any = true;
+    const p = positiveBox(pose);
     if (p.x < minX) minX = p.x;
     if (p.y < minY) minY = p.y;
     const right = p.x + p.width;

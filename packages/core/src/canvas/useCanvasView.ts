@@ -5,6 +5,7 @@
  * `<CanvasView>` makes its own.
  */
 import { useCallback, useRef, type MutableRefObject } from 'react';
+import { HOME_VIEW } from 'core/viewport/homeView';
 import { useLatest } from '@weasel-js/react';
 import type { Dims } from 'core/layers/render';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -78,7 +79,6 @@ export interface CanvasViewState {
   clearSubscribers: () => void;
 }
 
-const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const { view: viewProp, defaultView, onViewChange, viewBounds, dims, requestRedraw } = opts;
@@ -86,7 +86,7 @@ export function useCanvasView(opts: CanvasViewOptions): CanvasViewState {
   const controlledView = viewProp === undefined || derived ? undefined : normalizeView(viewProp as View);
   // The uncontrolled view lives in a ref, not `useState`, so a camera moving
   // at 60 Hz costs no React render; DOM that mirrors it subscribes instead.
-  const viewRef = useRef<View>(controlledView ?? normalizeView(defaultView ?? IDENTITY));
+  const viewRef = useRef<View>(controlledView ?? normalizeView(defaultView ?? HOME_VIEW));
   const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
   const live = useLatest({
     controlled: viewProp !== undefined, derived, onViewChange, viewBounds, dims, requestRedraw,

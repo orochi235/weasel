@@ -115,7 +115,7 @@ export function viewForAim(rect: AimRect, size: Dims, fit: 'exact' | 'contain'):
   const upright = rect.width > 0 && rect.height > 0 && size.width > 0 && size.height > 0
     ? normalizeView(fitViewToBounds(rect, size, UNUSED_CURRENT, {
       mode: fit === 'exact' ? 'stretch' : 'contain', padding: 0, minScale: 0, maxScale: Infinity,
-    }))
+    })!)
     : normalizeView({ x: rect.x, y: rect.y, scale: { x: ZOOM_FLOOR, y: ZOOM_FLOOR } });
   const fx = rect.flip?.x === true;
   const fy = rect.flip?.y === true;

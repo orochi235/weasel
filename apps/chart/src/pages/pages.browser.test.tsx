@@ -43,7 +43,7 @@ const lit = () => tabs().findIndex((t) => t.getAttribute('aria-selected') === 't
 function onPage(host: HTMLElement, index: number, x: number, y: number): { x: number; y: number } {
   const box = host.getBoundingClientRect();
   const placed = layoutPages([{ id: 'a', ...CHART_PAGE }, { id: 'b', ...CHART_PAGE }])[index]!;
-  const view = fitViewToBounds(placed, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: PAGE_FIT_PADDING });
+  const view = fitViewToBounds(placed, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: PAGE_FIT_PADDING })!;
   return { x: box.left + (placed.x + x - view.x) * view.scale.x, y: box.top + (placed.y + y - view.y) * view.scale.y };
 }
 

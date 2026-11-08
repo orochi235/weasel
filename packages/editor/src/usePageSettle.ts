@@ -82,9 +82,11 @@ export function usePageSettle(
       const page = pageInView(placed, v, d) ?? pageHolding(placed, viewportWorldRect(v, d));
       if (!page) return;
       const to = fitViewToPage(page, d, v, { padding });
+      if (!to) return;
       const was = fittedAt.current;
+      const wasFit = was === null ? null : fitViewToPage(page, was, v, { padding });
       const resized = was !== null && (was.width !== d.width || was.height !== d.height)
-        && near(fitViewToPage(page, was, v, { padding }), v);
+        && wasFit !== null && near(wasFit, v);
       if (!resized && v.scale.x > to.scale.x * (1 + ZOOM_TOLERANCE)) {
         fittedAt.current = null;
         return;

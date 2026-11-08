@@ -38,12 +38,14 @@ export function sceneNodeClientRect(opts: SceneNodeClientRectOpts): NodeClientRe
   const bounds = opts.getWorldBounds(opts.id);
   if (bounds === null) return null;
   const t = viewToTransform(opts.view);
-  const [sx, sy] = worldToScreen(bounds.x, bounds.y, t);
+  const [x0, y0] = worldToScreen(bounds.x, bounds.y, t);
+  const [x1, y1] = worldToScreen(bounds.x + bounds.width, bounds.y + bounds.height, t);
   const canvasRect = opts.canvas.getBoundingClientRect();
+  // A flipped (y-up) axis draws the box's far world edge first on screen.
   return {
-    x: canvasRect.left + sx,
-    y: canvasRect.top + sy,
-    width: bounds.width * opts.view.scale.x,
-    height: bounds.height * opts.view.scale.y,
+    x: canvasRect.left + Math.min(x0, x1),
+    y: canvasRect.top + Math.min(y0, y1),
+    width: Math.abs(x1 - x0),
+    height: Math.abs(y1 - y0),
   };
 }

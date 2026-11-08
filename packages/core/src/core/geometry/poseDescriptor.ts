@@ -1,6 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { multiply, poseLinearOf, rotate } from '@weasel-js/geom';
+import { multiply, poseLinearOf, rotate, wrapAngle } from '@weasel-js/geom';
 import type { TargetAxes } from '@weasel-js/animator';
 import type { PoseComposition } from 'core/scene/composeFrame';
 
@@ -109,13 +109,21 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
   },
   fromBounds: (b) => ({ x: b.x, y: b.y, width: b.width, height: b.height }),
   translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
-  lerp: (a, b, t) => ({
-    ...a,
-    x: a.x + (b.x - a.x) * t,
-    y: a.y + (b.y - a.y) * t,
-    width: a.width + (b.width - a.width) * t,
-    height: a.height + (b.height - a.height) * t,
-  }),
+  lerp: (a, b, t) => {
+    const pose = {
+      ...a,
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t,
+      width: a.width + (b.width - a.width) * t,
+      height: a.height + (b.height - a.height) * t,
+    };
+    // The short way round, as `axes` marks the rotation for an animation.
+    if (a.rotation !== undefined || b.rotation !== undefined) {
+      const from = a.rotation ?? 0;
+      pose.rotation = from + wrapAngle((b.rotation ?? 0) - from) * t;
+    }
+    return pose;
+  },
   axes: (like) => {
     const flat = [like.x, like.y, like.width, like.height];
     if (!flat.every((n) => typeof n === 'number')) return null;

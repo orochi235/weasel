@@ -6,7 +6,8 @@ import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from 'core/viewport/zoomBounds';
 import { viewToTransform, type View } from 'core/viewport/view';
 import { screenToWorld } from 'core/viewport/viewTransform';
 import type { ViewAnimationOptions } from 'core/viewport/useViewAnimation';
-import { fitViewToBounds, type Bounds } from 'core/viewport/fitViewToBounds';
+import { fitViewToBounds } from 'core/viewport/fitViewToBounds';
+import { resetView } from 'core/viewport/homeView';
 
 // Multiplicative step for keyboard zoom (matches useKeyboardZoomTool default).
 const KEY_STEP = 1.25;
@@ -156,6 +157,13 @@ export function makeViewportZoomAction(
         // whichever frame the tween happens to be on.
         const stepFrom = (): View => (canAnimate && view.animationTarget?.()) || current;
 
+        // A recenter that returns its target can be animated; one that
+        // returns nothing dispatched the view itself and is already done.
+        const reset = () => {
+          const target = resetView(view);
+          if (target) stepTo(target, resetMs);
+        };
+
         const focal = () => ({
           x: (params?.clientX as number | undefined) ?? 0,
           y: (params?.clientY as number | undefined) ?? 0,
@@ -183,20 +191,16 @@ export function makeViewportZoomAction(
             record(from, target, keyAnchor(view));
             break;
           }
-          case 'reset': {
-            // A recenter that returns its target can be animated; one that
-            // returns nothing dispatched the view itself and is already done.
-            const target = view.recenter
-              ? view.recenter()
-              : { x: 0, y: 0, scale: { x: 1, y: 1 } };
-            if (target) stepTo(target, resetMs);
+          case 'reset':
+            reset();
             break;
-          }
           case 'fit': {
-            const content = view.contentBounds?.();
             const host = view.hostSize?.();
-            if (!content || !host) break;
-            const target = fitContent(content, host, current, clamp);
+            if (!view.contentBounds || !host) break;
+            const content = view.contentBounds();
+            const target = content && fitViewToBounds(content, host, current, { minScale: clamp.min, maxScale: clamp.max });
+            // Nothing to fit lands where Cmd-0 does.
+            if (!target) { reset(); break; }
             stepTo(target, resetMs);
             record(current, target, { x: host.width / 2, y: host.height / 2 });
             break;
@@ -220,21 +224,3 @@ export function makeViewportZoomAction(
  * default 0.1–8 scale clamp. Equivalent to `makeViewportZoomAction()`.
  */
 export const viewportZoomAction: Action & { requires: string[] } = makeViewportZoomAction();
-
-/**
- * The view showing all of `content` in `host` CSS pixels. Content with no
- * width or no height, a lone line, is fitted along the axis it has; a lone
- * point is centered at the current zoom.
- */
-function fitContent(content: Bounds, host: { width: number; height: number }, from: View, clamp: { min: number; max: number }): View {
-  if (content.width > 0 || content.height > 0) {
-    const thin = Math.max(content.width, content.height) * 1e-9;
-    const sized = { ...content, width: Math.max(content.width, thin), height: Math.max(content.height, thin) };
-    return fitViewToBounds(sized, host, from, { minScale: clamp.min, maxScale: clamp.max });
-  }
-  return {
-    x: content.x - host.width / (2 * from.scale.x),
-    y: content.y - host.height / (2 * from.scale.y),
-    scale: from.scale,
-  };
-}

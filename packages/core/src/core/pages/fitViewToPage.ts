@@ -7,13 +7,13 @@ import type { View } from '../viewport/view';
 import { viewportWorldRect } from '../viewport/viewportWorldRect';
 import { pageOfBounds, type PlacedPage } from './pages';
 
-/** The view that shows one placed page whole: `fitViewToBounds` on its rect. */
+/** The view that shows one placed page whole: `fitViewToBounds` on its rect, `null` for a page with no extent. */
 export function fitViewToPage(
   page: PlacedPage,
   viewportDims: ViewportDims,
   currentView: View,
   options?: FitViewToBoundsOptions,
-): View {
+): View | null {
   const { x, y, width, height } = page;
   return fitViewToBounds({ x, y, width, height }, viewportDims, currentView, options);
 }

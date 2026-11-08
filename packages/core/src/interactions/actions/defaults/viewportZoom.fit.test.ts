@@ -4,12 +4,16 @@ import { viewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { HOME_VIEW } from 'core/viewport/homeView';
 
 const HOST = { width: 400, height: 200 };
 
-function fitView(content: Bounds | null, from: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }): View {
+function fitView(content: Bounds | null, from: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }, recenter?: () => View | void): View {
   let v = from;
-  const view: ViewApi = { get: () => v, set: (next) => { v = next; }, hostSize: () => HOST, contentBounds: () => content };
+  const view: ViewApi = {
+    get: () => v, set: (next) => { v = next; }, hostSize: () => HOST, contentBounds: () => content,
+    ...(recenter ? { recenter } : {}),
+  };
   const invoker = viewportZoomAction.invoker;
   if (invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
   invoker.run({ view }, { kind: 'fit' });
@@ -42,17 +46,15 @@ describe("viewport.zoom's fit", () => {
     expect(Number.isFinite(v.scale.x)).toBe(true);
   });
 
-  it('centers a lone point at the zoom it has', () => {
-    const from = { x: 0, y: 0, scale: { x: 2, y: 2 } };
-    const v = fitView({ x: 30, y: 40, width: 0, height: 0 }, from);
-    expect(v.scale).toEqual(from.scale);
-    expect(v.x + HOST.width / 4).toBeCloseTo(30);
-    expect(v.y + HOST.height / 4).toBeCloseTo(40);
+  it('goes to the view Cmd-0 gives for content with no extent', () => {
+    const from = { x: 7, y: 8, scale: { x: 2, y: 2 } };
+    expect(fitView({ x: 30, y: 40, width: 0, height: 0 }, from)).toEqual(HOME_VIEW);
+    expect(fitView(null, from)).toEqual(HOME_VIEW);
   });
 
-  it('leaves the view alone with no content', () => {
-    const from = { x: 7, y: 8, scale: { x: 1, y: 1 } };
-    expect(fitView(null, from)).toBe(from);
+  it("goes to the owner's recenter view for empty content, as Cmd-0 does", () => {
+    const home = { x: -50, y: -20, scale: { x: 0.5, y: 0.5 } };
+    expect(fitView(null, { x: 7, y: 8, scale: { x: 2, y: 2 } }, () => home)).toBe(home);
   });
 
   it('is bound to Cmd-Alt-0 by the key the 0 is on, whatever character Alt makes of it', () => {
