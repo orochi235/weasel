@@ -18,7 +18,7 @@ export const DUPLICATE_OFFSET = 12;
  * Copy each selected node, with its subtree, offset by `(dx, dy)` in world
  * space whatever frame it is stored in, as one
  * undoable batch labeled `label`, and select the copies. Returns the copies'
- * ids, or null when nothing was copied.
+ * ids, or null when nothing was copied or the scene refused the copies.
  */
 export function duplicateSelection(
   deps: ActionDeps,
@@ -47,8 +47,7 @@ export function duplicateSelection(
   );
 
   if (ops.length === 0) return null;
-  commitOps(deps, ops, label, { select: copies });
-  return copies as string[];
+  return commitOps(deps, ops, label, { select: copies }) ? copies as string[] : null;
 }
 
 /**

@@ -6,6 +6,7 @@ import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
+import { lastTransform } from '../transform-again/memory';
 
 interface StubNode { id: NodeId; kind: 'mark' | 'group'; layer: string; pose: { x: number; y: number }; data: unknown; parent: NodeId | null }
 
@@ -26,7 +27,7 @@ function makeScene(spec: Array<[string, { parent?: string | null; kind?: 'mark' 
     get: (id: NodeId) => nodes.get(id),
     childrenOf: (id: NodeId) => [...nodes.values()].filter((n) => n.parent === id).map((n) => n.id),
     get roots() { return [...nodes.values()].filter((n) => n.parent == null).map((n) => n.id); },
-    applyBatch: vi.fn(),
+    applyBatch: vi.fn((): boolean => true),
     mintId: () => asNodeId(`copy-${++minted}`),
     composition: RIGID_POSE_COMPOSITION as { closure: string },
   };
@@ -105,6 +106,13 @@ describe('duplicateAction', () => {
     const scene = makeScene([['a', {}]]);
     (duplicateAction.invoker as ImmediateInvoker).run({ scene, selection: makeSelection(['a']) } as never);
     expect(scene.applyBatch).toHaveBeenCalledWith(expect.any(Array), 'Duplicate', expect.anything());
+  });
+
+  it('records nothing for Transform Again when the scene refuses the copies', () => {
+    const scene = makeScene([['a', {}]]);
+    scene.applyBatch.mockReturnValue(false);
+    (duplicateAction.invoker as ImmediateInvoker).run({ scene, selection: makeSelection(['a']) } as never);
+    expect(lastTransform(scene)).toBeUndefined();
   });
 
   it('no-ops on an empty selection', () => {
