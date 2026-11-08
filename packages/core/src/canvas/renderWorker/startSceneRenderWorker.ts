@@ -101,6 +101,21 @@ function answerFromPage(
   if (!answered) unhook = onDispose(stop);
 }
 
+/** Watch `worker` for an error before its first message, which means its module never ran:
+ *  `fail` runs then, and `failed` answers true from then on. A later error is only warned. */
+function watchStartup(worker: Worker, warn: (what: string, detail: unknown) => void, fail: () => void): { failed(): boolean } {
+  let started = false;
+  let failed = false;
+  worker.addEventListener('message', () => { started = true; });
+  worker.addEventListener('error', (event) => {
+    if (started) return warn('the render worker failed:', event.message);
+    failed = true;
+    warn('the render worker did not start:', event.message);
+    fail();
+  });
+  return { failed: () => failed };
+}
+
 /** Start painting `inputs.scene` into `canvas` from `worker`, a worker whose module calls
  *  `serveSceneRender`. The canvas is the worker's from here on: the page can no longer open a
  *  context on it or set its size attributes. */
@@ -142,13 +157,10 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   };
   watch();
 
-  /** Set by the worker's first message; an error before it means the module never ran. */
-  let started = false;
-  /** The worker never started: nothing asked of it will be answered. */
-  let failed = false;
+  // A worker that never started answers nothing asked of it.
+  const startup = watchStartup(worker, warnOnce, () => { snapshots.drain(null); idReads.drain(EMPTY_IDS()); });
   worker.addEventListener('message', (event: MessageEvent<FromWorker>) => {
     if (disposed) return;
-    started = true;
     const msg = event.data;
     if (msg.type === 'drawn') {
       inFlight = false;
@@ -158,17 +170,6 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     else if (msg.type === 'ids') idReads.settle(msg.id, msg.ids);
     else if (msg.type === 'image') answerFromPage(msg, post, disposing.subscribe);
     else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
-  });
-
-  worker.addEventListener('error', (event) => {
-    if (started || disposed) {
-      warnOnce('the render worker failed:', event.message);
-      return;
-    }
-    failed = true;
-    warnOnce('the render worker did not start:', event.message);
-    snapshots.drain(null);
-    idReads.drain(EMPTY_IDS());
   });
 
   const dpr = resolveDpr(initial.dpr);
@@ -214,7 +215,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     // On a clock the clock's position is the time, hidden or not, as `useAnimator({ clock })` has it.
     resumed() { if (!inputs.clock) resumed = true; },
     readIds(rect, options) {
-      if (disposed || failed) return Promise.resolve(EMPTY_IDS());
+      if (disposed || startup.failed()) return Promise.resolve(EMPTY_IDS());
       return idReads.ask((id) => post({
         type: 'readIds', id, rect,
         ...(options?.minAlpha !== undefined ? { minAlpha: options.minAlpha } : {}),
@@ -222,7 +223,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       }));
     },
     snapshot() {
-      if (disposed || failed) return Promise.resolve(null);
+      if (disposed || startup.failed()) return Promise.resolve(null);
       return snapshots.ask((id) => post({ type: 'snapshot', id }));
     },
     dispose() {
