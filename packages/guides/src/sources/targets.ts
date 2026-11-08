@@ -11,12 +11,14 @@ function visibleRoots(scene: AnyScene): readonly NodeId[] {
 /** Which nodes may be targets; one that fails offers no lines or gaps. */
 export type TargetFilter = (node: SceneNode<unknown, string, unknown>) => boolean;
 
-/** The nodes a gesture's subject lines up with: its siblings when it has
- *  ids, the scene's visible top-level nodes for a point gesture. */
+/** The nodes a gesture's subject lines up with: its siblings when it is
+ *  nodes, else the scene's visible top-level nodes, as for a point gesture or
+ *  a guide being moved. */
 function targetIds(scene: AnyScene, exclude: readonly string[], filter?: TargetFilter): readonly NodeId[] {
-  const ids = exclude.length > 0
-    ? siblingIds(scene, exclude as readonly NodeId[])
-    : visibleRoots(scene);
+  const nodes = exclude.filter((id) => scene.get(id as NodeId) !== undefined) as NodeId[];
+  const ids = nodes.length > 0
+    ? siblingIds(scene, nodes)
+    : visibleRoots(scene).filter((id) => !exclude.includes(id));
   if (!filter) return ids;
   return ids.filter((id) => {
     const node = scene.get(id);
