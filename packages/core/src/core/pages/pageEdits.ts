@@ -4,6 +4,7 @@
  * gives it; what is on a page is its children and goes with it, stored poses
  * untouched.
  */
+import { freshId } from '@weasel-js/registry';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import { sameValue } from '../scene/sameValue';
 import type { NodeId, RectPose, Scene } from '../scene/types';
@@ -31,10 +32,7 @@ const asAny = <TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, 
 
 /** An id none of `pages` has: `page-1`, `page-2`, and so on. */
 export function nextPageId(pages: readonly Page[]): string {
-  const taken = new Set(pages.map((p) => p.id));
-  let n = 1;
-  while (taken.has(`page-${n}`)) n++;
-  return `page-${n}`;
+  return freshId('page', new Set(pages.map((p) => p.id)));
 }
 
 /** The nodes on each placed page, by page id: the page's own children. `descriptor` is not read. */

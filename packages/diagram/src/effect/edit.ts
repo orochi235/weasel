@@ -1,4 +1,5 @@
 import type { Vec2 } from '@weasel-js/core/math';
+import { freshId } from '@weasel-js/registry';
 import type { DiagramLabel } from '../labelTrait';
 import { pruneGroups } from './groupEdit';
 import { pruneLookRoutes } from './lookRoutes';
@@ -14,19 +15,12 @@ const withPipeline = (doc: EffectDoc, pipeline: Partial<EffectPipeline>): Effect
 
 /** `base` if no stage has it, else `base-2`, `base-3`, … */
 export function nextStageId(p: EffectPipeline, base: string): string {
-  const used = new Set(p.stages.map((s) => s.id));
-  if (!used.has(base)) return base;
-  let n = 2;
-  while (used.has(`${base}-${n}`)) n++;
-  return `${base}-${n}`;
+  return freshId(base, new Set(p.stages.map((s) => s.id)), { bare: true, from: 2 });
 }
 
 /** The first of `w1`, `w2`, … no wire has. */
 export function nextWireId(p: EffectPipeline): string {
-  const used = new Set(p.wires.map((w) => w.id));
-  let n = 1;
-  while (used.has(`w${n}`)) n++;
-  return `w${n}`;
+  return freshId('w', new Set(p.wires.map((w) => w.id)), { sep: '' });
 }
 
 /** Appends the stage, pinning it at `at` when given. */
@@ -138,11 +132,9 @@ export function setLaneOrder(doc: EffectDoc, order: readonly string[]): EffectDo
 export function ensureWireIds(doc: EffectDoc): EffectDoc {
   if (doc.pipeline.wires.every((w) => w.id !== undefined)) return doc;
   const used = new Set(doc.pipeline.wires.map((w) => w.id));
-  let n = 1;
   const wires = doc.pipeline.wires.map((w) => {
     if (w.id !== undefined) return w;
-    while (used.has(`w${n}`)) n++;
-    const id = `w${n}`;
+    const id = freshId('w', used, { sep: '' });
     used.add(id);
     return { ...w, id };
   });
