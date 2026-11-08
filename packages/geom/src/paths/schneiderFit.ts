@@ -187,18 +187,15 @@ function solveLS(
     x2 += A2x * targetX + A2y * targetY;
   }
   const det = c11 * c22 - c12 * c12;
+  const chord = distance(a, e);
   let alpha1: number;
   let alpha2: number;
   if (Math.abs(det) < 1e-12) {
-    const chord = distance(a, e);
     alpha1 = alpha2 = chord / 3;
   } else {
     alpha1 = (c22 * x1 - c12 * x2) / det;
     alpha2 = (c11 * x2 - c12 * x1) / det;
-    if (alpha1 < 1e-6 || alpha2 < 1e-6) {
-      const chord = distance(a, e);
-      alpha1 = alpha2 = chord / 3;
-    }
+    if (alpha1 < 1e-6 * chord || alpha2 < 1e-6 * chord) alpha1 = alpha2 = chord / 3;
   }
   return {
     cp1: { x: a.x + tStart.x * alpha1, y: a.y + tStart.y * alpha1 },
@@ -240,8 +237,10 @@ function newtonRefineT(
   const dx = qx - p.x;
   const dy = qy - p.y;
   const numerator = dx * qpx + dy * qpy;
-  const denominator = qpx * qpx + qpy * qpy + dx * qppx + dy * qppy;
-  if (Math.abs(denominator) < 1e-12) return t;
+  const speed2 = qpx * qpx + qpy * qpy;
+  const bend = dx * qppx + dy * qppy;
+  const denominator = speed2 + bend;
+  if (!(Math.abs(denominator) > 1e-12 * (speed2 + Math.abs(bend)))) return t;
   const next = t - numerator / denominator;
   if (next < 0) return 0;
   if (next > 1) return 1;

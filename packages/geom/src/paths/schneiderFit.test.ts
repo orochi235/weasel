@@ -178,3 +178,19 @@ describe('schneiderFit with unevenly spaced samples', () => {
     expect(4 * path.coords[4] - 3 * path.coords[5]).toBeCloseTo(0, 3);
   });
 });
+
+describe('fitCubicWithTangents — scale', () => {
+  it('fits the same handles to a curve of any size', async () => {
+    const { fitCubicWithTangents } = await import('./schneiderFit');
+    const { cubicPointAt } = await import('./cubicMath');
+    const K = 0.5522847498;
+    const fitAt = (k: number) => {
+      const c = [{ x: 100, y: 0 }, { x: 100, y: 100 * K }, { x: 100 * K, y: 100 }, { x: 0, y: 100 }]
+        .map((p) => ({ x: p.x * k, y: p.y * k }));
+      const samples = Array.from({ length: 9 }, (_, i) => cubicPointAt(c[0], c[1], c[2], c[3], i / 8));
+      const { cp1 } = fitCubicWithTangents(samples, { x: 0, y: 1 }, { x: 1, y: 0 });
+      return cp1.y / k;
+    };
+    expect(fitAt(1e-9)).toBeCloseTo(fitAt(1), 6);
+  });
+});

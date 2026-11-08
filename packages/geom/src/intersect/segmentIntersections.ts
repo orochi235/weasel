@@ -83,6 +83,27 @@ function chordCross(p0: Point, p1: Point, q0: Point, q1: Point, slack: number): 
   return [u, v];
 }
 
+/** The ends of the stretch two collinear lines share, one point where they
+ *  only touch end to end, and none when they are apart or not collinear. */
+function collinearOverlap(p0: Point, p1: Point, q0: Point, q1: Point): SegmentCrossing[] {
+  const rx = p1.x - p0.x, ry = p1.y - p0.y;
+  const sx = q1.x - q0.x, sy = q1.y - q0.y;
+  const rr = rx * rx + ry * ry, ss = sx * sx + sy * sy;
+  if (rr === 0 || ss === 0) return [];
+  const off = (q0.x - p0.x) * ry - (q0.y - p0.y) * rx;
+  if (off * off > 1e-24 * rr * Math.max(rr, ss)) return [];
+  const onA = (q: Point) => ((q.x - p0.x) * rx + (q.y - p0.y) * ry) / rr;
+  const onB = (p: Point) => ((p.x - q0.x) * sx + (p.y - q0.y) * sy) / ss;
+  const u0 = onA(q0), u1 = onA(q1);
+  const lo = Math.max(0, Math.min(u0, u1)), hi = Math.min(1, Math.max(u0, u1));
+  if (lo > hi) return [];
+  const at = (ta: number): SegmentCrossing => {
+    const x = ta === 1 ? p1.x : p0.x + rx * ta, y = ta === 1 ? p1.y : p0.y + ry * ta;
+    return { ta, tb: Math.min(1, Math.max(0, onB({ x, y }))), x, y };
+  };
+  return lo === hi ? [at(lo)] : [at(lo), at(hi)];
+}
+
 /** Newton on A(ta) − B(tb) = 0, kept inside [0, 1]. */
 function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
   for (let i = 0; i < 12; i++) {
@@ -112,7 +133,7 @@ function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
 export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): SegmentCrossing[] {
   if (a.length === 2 && b.length === 2) {
     const uv = chordCross(a[0], a[1], b[0], b[1], 1e-12);
-    if (!uv) return [];
+    if (!uv) return collinearOverlap(a[0], a[1], b[0], b[1]);
     const ta = Math.min(1, Math.max(0, uv[0]));
     const tb = Math.min(1, Math.max(0, uv[1]));
     const p = evalSeg(a, ta);

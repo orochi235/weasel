@@ -1,6 +1,7 @@
 import type { AnchorSet } from './anchorEdits';
 import { isStraightSegment, segmentEnds } from './anchors';
 import { cubicPointAt, type Point } from './cubicMath';
+import { EPS } from '../scalar';
 
 /** First derivative of the cubic Bezier (p0, p1, p2, p3) at t. */
 export function cubicDerivativeAt(p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point {
@@ -29,9 +30,12 @@ function cubicSecondDerivativeAt(p0: Point, p1: Point, p2: Point, p3: Point, t: 
 export function cubicCurvatureAt(p0: Point, p1: Point, p2: Point, p3: Point, t: number): number {
   const d1 = cubicDerivativeAt(p0, p1, p2, p3, t);
   const d2 = cubicSecondDerivativeAt(p0, p1, p2, p3, t);
-  const den = Math.pow(d1.x * d1.x + d1.y * d1.y, 1.5);
-  if (den < 1e-12) return 0;
-  return (d1.x * d2.y - d1.y * d2.x) / den;
+  const speed = Math.hypot(d1.x, d1.y);
+  // Judged against the control polygon, so a curve's size does not decide whether it has a direction.
+  const reach = Math.hypot(p1.x - p0.x, p1.y - p0.y) + Math.hypot(p2.x - p1.x, p2.y - p1.y)
+    + Math.hypot(p3.x - p2.x, p3.y - p2.y);
+  if (!(speed > EPS * reach)) return 0;
+  return (d1.x * d2.y - d1.y * d2.x) / (speed * speed * speed);
 }
 
 /** One tooth of a curvature comb: a point on the curve and the tip of the

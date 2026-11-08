@@ -55,6 +55,13 @@ describe('vector algebra', () => {
 
   it('keeps the direction of a tiny vector', () => {
     expectVecClose(normalize({ x: 1e-10, y: 0, z: 0 }), { x: 1, y: 0, z: 0 });
+    expectVecClose(normalize({ x: 0, y: 3e-200, z: 4e-200 }), { x: 0, y: 0.6, z: 0.8 });
+    expectVecClose(normalize({ x: 0, y: 0, z: -5e-324 }), { x: 0, y: 0, z: -1 });
+  });
+
+  it('keeps the direction of a vector whose squared length overflows', () => {
+    expectVecClose(normalize({ x: 3e200, y: 0, z: -4e200 }), { x: 0.6, y: 0, z: -0.8 });
+    expectVecClose(normalize({ x: Infinity, y: 0, z: 0 }), { x: 0, y: 0, z: 0 });
   });
 
   it('normalizes to unit length, and leaves a zero vector alone', () => {
