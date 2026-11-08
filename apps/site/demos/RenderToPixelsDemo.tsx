@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  SceneCanvas, useScene, renderSceneToPixels, defaultDrawOne, textCommand,
+  SceneCanvas, useScene, renderSceneToPixels,
   registerCanvasFont, warmRender,
   solid,
 } from '@weasel-js/core';
-import type { TextStyle, TextVerticalAlign, SceneViewDrawOne, Fill } from '@weasel-js/core';
+import type { TextStyle, TextVerticalAlign, Fill } from '@weasel-js/core';
 
 const W = 480, H = 340;
 
@@ -17,13 +17,7 @@ registerCanvasFont('Arial');
 // `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.fill` and
 // emits it over the pose AABB — no stroke — so that's the shape that
 // guarantees a probe-able interior fill color rather than an outline.
-//
-// `text`/`style`/`verticalAlign` drive a second, box-aligned text node
-// (see `drawOne` below). The generic `kit:text` painter forwards pose
-// `height` but not `verticalAlign` (no data/style slot for it yet — see
-// `NodeShape.ts`), so this demo builds that one node's command directly
-// via the public `textCommand()` to exercise the renderer's box vertical
-// alignment (`TextDrawCommand.height`/`verticalAlign`) end-to-end.
+// `text`/`style`/`verticalAlign` make a node `kit:text`, which lays it out in its pose box.
 interface NodeData {
   fill?: Fill;
   text?: string;
@@ -34,21 +28,10 @@ type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
 // Rotation and per-node dimming are applied by the scene walk, not by
-// `drawOne` — so the headless render and the on-screen canvas below it get
+// the node painter — so the headless render and the on-screen canvas below it get
 // them from the same place. `dimmed` is deliberately near-black so the
 // multiplier is unmistakable against the white background.
 const ALPHA_FOR = (id: string): number => (id === 'dimmed' ? 0.25 : 1);
-
-const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose, view, ctx) => {
-  const d = node.data;
-  if (d.text != null) {
-    return [textCommand(
-      pose.x, pose.y, d.text, d.style, undefined, pose.height, d.verticalAlign,
-      { fill: d.fill },
-    )];
-  }
-  return defaultDrawOne(node, pose, view, ctx);
-};
 
 export function RenderToPixelsDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -70,7 +53,7 @@ export function RenderToPixelsDemo() {
       { id: 'e' as never, kind: 'mark', layer: 'default',
         pose: { x: 10, y: 4, width: 460, height: 32 },
         data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 }, fill: { paint: solid('#000') } } },
-      // Bottom band: rotation and per-node alpha, neither of which `drawOne`
+      // Bottom band: rotation and per-node alpha, neither of which the node painter
       // knows about.
       { id: 'spun' as never, kind: 'mark', layer: 'default',
         pose: { x: 40, y: 260, width: 60, height: 60, rotation: Math.PI / 4 },
@@ -90,7 +73,6 @@ export function RenderToPixelsDemo() {
       sourceRect: { x: 0, y: 0, width: W, height: H },
       scale: { x: 2, y: 1 },
       background: '#ffffff',
-      drawOne,
       alphaFor: ALPHA_FOR,
     } as const;
     let live = true;
@@ -120,7 +102,6 @@ export function RenderToPixelsDemo() {
       <SceneCanvas
         width={W} height={H} className="ckd-canvas" scene={scene}
         alphaFor={ALPHA_FOR}
-        layers={{ scene: { drawOne } }}
       />
       <p data-testid="rtp-readout">{readout}</p>
       <canvas ref={outRef} className="ckd-canvas" data-testid="rtp-output" />
