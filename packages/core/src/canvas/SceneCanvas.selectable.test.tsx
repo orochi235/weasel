@@ -41,7 +41,12 @@ interface Seen {
 
 function Probe({ seen }: { seen: Seen }) {
   seen.adapter = useOptionalViewInputs()!.adapter as unknown as Seen['adapter'];
-  seen.dep = useDepRegistry().get('selection') as SelectionApi | undefined;
+  // Read when asked, as an action reads a dep: the canvas registers it in an
+  // effect, after this render.
+  const registry = useDepRegistry();
+  Object.defineProperty(seen, 'dep', {
+    get: () => registry.get('selection') as SelectionApi | undefined, configurable: true,
+  });
   return null;
 }
 

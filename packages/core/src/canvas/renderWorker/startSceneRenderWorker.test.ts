@@ -14,7 +14,7 @@ function fakeWorker() {
   const errors: ((e: ErrorEvent) => void)[] = [];
   const worker = {
     postMessage: (m: ToWorker) => { posted.push(m); },
-    addEventListener: (type: string, fn: (e: never) => void) => {
+    addEventListener: (type: string, fn: (e: unknown) => void) => {
       if (type === 'message') listeners.push(fn);
       else if (type === 'error') errors.push(fn);
     },
