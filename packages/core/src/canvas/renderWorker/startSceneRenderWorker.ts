@@ -142,8 +142,13 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   };
   watch();
 
+  /** Set by the worker's first message; an error before it means the module never ran. */
+  let started = false;
+  /** The worker never started: nothing asked of it will be answered. */
+  let failed = false;
   worker.addEventListener('message', (event: MessageEvent<FromWorker>) => {
     if (disposed) return;
+    started = true;
     const msg = event.data;
     if (msg.type === 'drawn') {
       inFlight = false;
@@ -155,7 +160,16 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     else if (msg.type === 'error') warnOnce('the render worker failed:', msg.message);
   });
 
-  worker.addEventListener('error', (event) => warnOnce('the render worker did not start:', event.message));
+  worker.addEventListener('error', (event) => {
+    if (started || disposed) {
+      warnOnce('the render worker failed:', event.message);
+      return;
+    }
+    failed = true;
+    warnOnce('the render worker did not start:', event.message);
+    snapshots.drain(null);
+    idReads.drain(EMPTY_IDS());
+  });
 
   const dpr = resolveDpr(initial.dpr);
   const offscreen = canvas.transferControlToOffscreen();
@@ -200,7 +214,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
     // On a clock the clock's position is the time, hidden or not, as `useAnimator({ clock })` has it.
     resumed() { if (!inputs.clock) resumed = true; },
     readIds(rect, options) {
-      if (disposed) return Promise.resolve(EMPTY_IDS());
+      if (disposed || failed) return Promise.resolve(EMPTY_IDS());
       return idReads.ask((id) => post({
         type: 'readIds', id, rect,
         ...(options?.minAlpha !== undefined ? { minAlpha: options.minAlpha } : {}),
@@ -208,7 +222,7 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
       }));
     },
     snapshot() {
-      if (disposed) return Promise.resolve(null);
+      if (disposed || failed) return Promise.resolve(null);
       return snapshots.ask((id) => post({ type: 'snapshot', id }));
     },
     dispose() {
