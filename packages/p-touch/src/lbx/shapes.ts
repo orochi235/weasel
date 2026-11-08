@@ -22,7 +22,11 @@ export function rectObject(cmd: PathDrawCommand, state: DrawState): RectObject[]
   const stroke = plainStroke(cmd.stroke, state.alpha, scale);
   if (stroke === undefined || (stroke && stroke.join !== 'miter')) return undefined;
   if (fill === null && stroke === null) return [];
-  const { x, y, width, height } = cmd.path;
+  const { path } = cmd;
+  const x = Math.min(path.x, path.x + path.width);
+  const y = Math.min(path.y, path.y + path.height);
+  const width = Math.abs(path.width);
+  const height = Math.abs(path.height);
   // P-touch draws the pen inside the object's frame, so the frame reaches the stroke's outer edge.
   const grow = stroke === null ? 0 : stroke.align === 'center' ? stroke.width / 2 : stroke.align === 'outer' ? stroke.width : 0;
   return [{
