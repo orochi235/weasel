@@ -19,7 +19,7 @@ function makeCtx(): GestureContext<Pose> {
     pointer: { worldX: 5, worldY: 5, clientX: 100, clientY: 100 },
     view: null,
     offset: (from, to) => ({ dx: to.x - from.x, dy: to.y - from.y }),
-    adapter: { getParent: () => 'oldParent' } as any,
+    adapter: { getParent: (id: string) => (id === 'oldParent' ? null : 'oldParent') } as any,
     scratch: {},
   };
 }
@@ -109,7 +109,7 @@ describe('snapToContainer', () => {
     ctx.draggedIds = ['p1', 'p2', 'p3'];
     ctx.origin.set('p2', { x: 20, y: 0 }).set('p3', { x: 40, y: 0 });
     ctx.current.set('p2', { x: 21, y: 1 }).set('p3', { x: 41, y: 1 });
-    ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : 'oldParent') } as any;
+    ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : id === 'oldParent' || id === 'box' ? null : 'oldParent') } as any;
     b.onMove!(ctx, tt(1, 1));
     const ops = b.onEnd!(ctx, translating(ctx)) as any[];
     const moves = ops.filter((op) => op.name === 'transform').map((op) => [op.args.id, op.args.to]);
@@ -123,5 +123,14 @@ describe('snapToContainer', () => {
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => null });
     const ctx = makeCtx();
     expect(b.onEnd!(ctx, moveEnd())).toBeUndefined();
+  });
+
+  it.each([['the dragged node itself', 'p1'], ['a descendant of it', 'inner']])('refuses to drop into %s', (_, parentId) => {
+    const parents: Record<string, string | null> = { p1: 'oldParent', inner: 'box', box: 'p1', oldParent: null };
+    const target: SnapTarget<Pose> = { parentId, slotPose: { x: 2, y: 3 } };
+    const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => target, isInstant: () => true });
+    const ctx = { ...makeCtx(), adapter: { getParent: (id: string) => parents[id] ?? null } as any };
+    expect(b.onMove!(ctx, tt(1, 1))).toBeUndefined();
+    expect(b.onEnd!({ ...ctx, snap: target }, moveEnd())).toBeUndefined();
   });
 });

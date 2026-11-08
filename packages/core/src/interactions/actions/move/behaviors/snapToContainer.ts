@@ -5,6 +5,7 @@ import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
 import type { BehaviorResult, MoveBehavior, GestureContext } from '../../../gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
+import { holderOf } from '@weasel-js/select';
 
 interface SnapState<TPose> {
   pendingTargetId: string | null;
@@ -25,6 +26,11 @@ function getState<TPose>(ctx: GestureContext<TPose>): SnapState<TPose> {
     setScratch(ctx.scratch, STATE, s as SnapState<unknown>);
   }
   return s;
+}
+
+/** Whether `snap` would put a dragged node inside itself: its container is one of them or under one. */
+function intoDragged<TPose>(ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): boolean {
+  return holderOf(new Set(ctx.draggedIds), snap.parentId, (id) => ctx.adapter.getParent(id)) !== null;
 }
 
 function clearTimer<TPose>(s: SnapState<TPose>) {
@@ -86,7 +92,8 @@ export function snapToContainer<TPose>(args: {
   return {
     onMove(ctx, _proposed) {
       const s = getState<TPose>(ctx);
-      const target = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
+      const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
+      const target = found && !intoDragged(ctx, found) ? found : null;
 
       if (s.committedSnap) {
         if (target && target.parentId === s.committedSnap.parentId) {
@@ -124,7 +131,7 @@ export function snapToContainer<TPose>(args: {
       const s = getState<TPose>(ctx);
       clearTimer(s);
       const snap = s.committedSnap ?? ctx.snap;
-      if (!snap) return;
+      if (!snap || intoDragged(ctx, snap)) return;
       const ops: Op[] = [];
       const landed = new Map<string, string | null>();
       const reparent = (id: string): void => {
