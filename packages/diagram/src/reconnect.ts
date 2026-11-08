@@ -80,7 +80,7 @@ function rehome(scene: AnyScene, id: string, seen = new Set<string>()): void {
   const node = scene.get(id as never);
   const home = node === undefined ? null : followerHome(scene, node);
   if (node === undefined || home === null) return;
-  if (home !== node.parent) {
+  if (home !== node.parent && !scene.isLocked(id as never)) {
     const adapter = sceneViewPoseAdapter(scene);
     const { compose, decompose } = scene.composition;
     const pose = rebaseLocalPose(adapter, composeWorldPose(adapter, id, compose), home, compose, decompose);
