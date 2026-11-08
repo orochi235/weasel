@@ -18,6 +18,8 @@
 .cells[data-layout='strip'] {
   flex-wrap: nowrap;
   overflow-x: auto;
+  /* A strip scrolls across only; left visible, overflow-y would compute to auto beside overflow-x. */
+  overflow-y: hidden;
 }
 
 .item {

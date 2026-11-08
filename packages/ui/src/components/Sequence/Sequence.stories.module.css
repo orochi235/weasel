@@ -1,7 +1,6 @@
 .digit {
   composes: numeric from '@weasel-js/theme/numeric.module.css';
   font-size: calc(var(--wzl-font-size-xl) * 2);
-  line-height: 1;
 }
 
 .swatch {
