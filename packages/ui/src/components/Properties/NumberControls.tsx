@@ -210,8 +210,9 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
       style={stops.style}
       aria-label={p.name}
       // The readout is the keyboard's way in, and steps as the track would; a
-      // tab stop here too would be two stops for one value.
-      tabIndex={tabbable ? undefined : -1}
+      // tab stop here too would be two stops for one value. With no value it
+      // shows a dash that takes no focus, so the track is the way in.
+      tabIndex={tabbable || (!known && !p.mixed) ? undefined : -1}
       min={place.min}
       max={place.max}
       step={place.step}

@@ -42,3 +42,8 @@ it('writes nothing when a readout showing a rounded value is focused and left un
   await userEvent.tab();
   expect(onChange).not.toHaveBeenCalled();
 });
+
+it('leaves the track in the tab order while there is no value for the readout to edit', () => {
+  render(<PropertyField kind="number" control="slider" label="Width" value={undefined} min={0} max={100} onChange={vi.fn()} />);
+  expect(screen.getByRole('slider', { name: 'Width' })).not.toHaveAttribute('tabindex', '-1');
+});
