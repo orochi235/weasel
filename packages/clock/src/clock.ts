@@ -68,7 +68,7 @@ function passOf(run: Run): { pass: number; into: number } {
 /** Places `into` ms into pass `pass` of the run, the pass clamped to the run's last and
  *  `into` to the pass; a time on a boundary stands as the end of the pass before. */
 function placeIn(run: Run, pass: number, into: number): void {
-  const last = passesOf(run.loop) - 1;
+  const last = Math.ceil(passesOf(run.loop)) - 1;
   const within = Math.min(Math.max(0, into), run.duration);
   run.elapsed = clamp(run, Math.min(pass, last) * run.duration + within);
   run.edge = run.elapsed > 0 && run.elapsed % run.duration === 0;
@@ -275,6 +275,7 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   const seekable = spec.seekable ?? true;
   const openRate = spec.rate ?? 0;
   checkRate(openRate, seekable);
+  if (at) checkRate(at.rate, seekable);
   const rates = ratesOf(spec);
 
   const origin = at?.origin ?? spec.origin ?? 0;
@@ -304,6 +305,8 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     return run.span;
   };
   run.elapsed = at ? clamp(run, at.elapsed) : opening();
+  if (!Number.isFinite(run.elapsed))
+    throw new RangeError(`a clock opens at a time in its run, not ${at ? at.elapsed : spec.start}`);
 
   const mix = spec.mix?.() ?? null;
   const hub: Hub = {

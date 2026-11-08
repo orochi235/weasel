@@ -111,6 +111,12 @@ describe('createDelayEffect', () => {
     expect(() => fx.setTime(5000)).toThrow(RangeError);
   });
 
+  it('refuses an opening time past the line it is given, as setTime does', () => {
+    const ctx = setup();
+    expect(() => createDelayEffect(ctx as never, { time: 3000, maxTime: 2000 })).toThrow(RangeError);
+    expect(() => createDelayEffect(ctx as never, { time: -5 })).toThrow(RangeError);
+  });
+
   it('breaks its feedback loop on dispose', () => {
     const ctx = setup();
     const fx = createDelayEffect(ctx as never);

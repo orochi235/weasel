@@ -11,7 +11,7 @@ export function shownInPass(
   loop: boolean | number = true,
 ): number {
   if (!Number.isFinite(duration)) return origin + elapsed;
-  const last = (passesOf(loop) - 1) * duration;
+  const last = (Math.ceil(passesOf(loop)) - 1) * duration;
   if (elapsed > last + duration) return origin + elapsed - last;
   const into = elapsed % duration;
   return origin + (into === 0 && elapsed > 0 ? duration : into);

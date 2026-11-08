@@ -44,6 +44,7 @@ export interface InsertAddOptions {
  * crossfade at a time, and `settled()` resolves once it has caught up.
  */
 export interface InsertChain {
+  /** Throws once the bus graph is disposed. */
   add(effect: InsertEffect, opts?: InsertAddOptions): InsertSlot;
   slots(): InsertSlot[];
   clear(): void;
@@ -292,8 +293,8 @@ export function createInsertChain(
 
   const chain: InsertChain = {
     add(effect, addOpts = {}) {
-      if (used.has(effect)) {
-        throw new Error('@weasel-js/audio: that effect is already in an insert slot');
+      if (disposed || used.has(effect)) {
+        throw new Error(`@weasel-js/audio: ${disposed ? 'the insert chain is disposed' : 'that effect is already in an insert slot'}`);
       }
       used.add(effect);
       const s = slotOf(effect, addOpts.bypassed ?? false);
