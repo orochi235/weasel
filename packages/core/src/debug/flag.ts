@@ -1,24 +1,7 @@
 /**
- * Namespaced, opt-in console tracing for the kit.
- *
- * Enable in the browser:
- *
- *   localStorage.setItem('weasel.debug', '*')                 // all namespaces
- *   localStorage.setItem('weasel.debug', 'tools,dispatch')    // specific ones
- *   localStorage.setItem('weasel.debug', '1')                 // legacy "all"
- *
- * Each call site picks a stable namespace string. Off by default; the flag
- * is read once and cached per page session — reload to pick up a change.
- *
- * Known kit namespaces:
- *   - tools           — active-tool + hotkey transitions (useTools)
- *   - dispatch        — gesture start / end / cancel (dispatcher)
- *   - drag-rect       — useDragRect lifecycle
- *   - drag-radial     — useDragRadial lifecycle
- *   - scene           — restored-op replay gaps (history persistence)
- *   - scene-canvas    — SceneCanvas mount / unmount; adapter paste-translation warnings
- *   - history         — applyOps push, no-op suppression, serialize/restore
- *   - clipboard       — OS clipboard write/read failures, malformed payloads
+ * Namespaced, opt-in console tracing for the kit: `@weasel-js/routing`'s, passed
+ * on so every package reads the flag from one cache. How to turn it on, and
+ * the kit's namespaces, are in that package's `dlog` module.
  *
  * @packageDocumentation
  */
