@@ -154,4 +154,44 @@ describe('useEyedropperTool', () => {
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledExactlyOnceWith('#abc');
   });
+
+  describe('sampling pixels, with no colorOf', () => {
+    const view = { x: 10, y: 20, scale: { x: 2, y: 2 } };
+    const pixelDeps = (colorAt: (p: { x: number; y: number }) => string | null | Promise<string | null>) =>
+      ({ colorAt, view: { get: () => view } }) as unknown as ActionDeps;
+
+    it('picks the color colorAt reports at the press, in screen px', () => {
+      const onPick = vi.fn();
+      const colorAt = vi.fn(() => '#123456');
+      const { result } = renderHook(() => useEyedropperTool({ onPick }));
+      run(result.current, pixelDeps(colorAt), { press: { x: 15, y: 25 }, world: { x: 40, y: 40 } });
+      // World (15, 25) through a view at (10, 20) scale 2: screen (10, 10).
+      expect(colorAt).toHaveBeenCalledExactlyOnceWith({ x: 10, y: 10 });
+      expect(onPick).toHaveBeenCalledExactlyOnceWith('#123456');
+    });
+
+    it('picks nothing over nothing drawn, and nothing without a colorAt dep', () => {
+      const onPick = vi.fn();
+      const { result } = renderHook(() => useEyedropperTool({ onPick }));
+      run(result.current, pixelDeps(() => null), { press: { x: 0, y: 0 } });
+      run(result.current, {} as ActionDeps, { press: { x: 0, y: 0 } });
+      expect(onPick).not.toHaveBeenCalled();
+    });
+
+    it('waits for a colorAt that answers later', async () => {
+      const onPick = vi.fn();
+      const { result } = renderHook(() => useEyedropperTool({ onPick }));
+      run(result.current, pixelDeps(() => Promise.resolve('#abcdef')), { press: { x: 0, y: 0 } });
+      expect(onPick).not.toHaveBeenCalled();
+      await Promise.resolve();
+      expect(onPick).toHaveBeenCalledExactlyOnceWith('#abcdef');
+    });
+
+    it('takes the press as the screen point where no view is sourced, as on a 3D host', () => {
+      const colorAt = vi.fn(() => '#000000');
+      const { result } = renderHook(() => useEyedropperTool({ onPick: () => {} }));
+      run(result.current, { colorAt } as unknown as ActionDeps, { press: { x: 7, y: 8 } });
+      expect(colorAt).toHaveBeenCalledWith({ x: 7, y: 8 });
+    });
+  });
 });

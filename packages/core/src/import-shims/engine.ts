@@ -156,7 +156,7 @@ export type { CanDropIntoDep, LayoutDep } from '../interactions/actions/layoutDe
 export { moveAction } from '../interactions/actions/move/action';
 export { sceneBoxFrames, scenePoseFrame } from '../interactions/actions/poseFrame';
 export type { PoseFrame } from '../interactions/actions/poseFrame';
-export type { AreaSelectDep, HitTestView, LassoSelectDep, NodeAtPointDep } from '../interactions/actions/regionSelectDeps';
+export type { AreaSelectDep, ColorAtDep, HitTestView, LassoSelectDep, NodeAtPointDep } from '../interactions/actions/regionSelectDeps';
 export { CORNER_ANCHORS, EDGE_HANDLE_MIN_RADII, RESIZE_HANDLE_ANCHORS, cornerPoint, cornerResizeHandles, fixedCornerOf, handlePoint, hitCornerHandle, isCornerHandle, resizeHandlesFor } from '../interactions/actions/resize/cornerHandles';
 export type { CornerAnchor, CornerEdge, CornerHandle, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout } from '../interactions/actions/resize/cornerHandles';
 export { resolveOverlays } from '../interactions/actions/resolveOverlays';

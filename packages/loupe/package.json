@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@weasel-js/geom": "1.17.3",
+    "@weasel-js/paint": "1.17.3",
     "@weasel-js/registry": "1.17.3"
   },
   "devDependencies": {

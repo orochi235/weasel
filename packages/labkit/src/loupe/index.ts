@@ -15,7 +15,7 @@ export type { LoupeKitSettings } from '../kitSettings';
 export type { CanvasLoupeProps } from './CanvasLoupe';
 export { CanvasLoupe } from './CanvasLoupe';
 export type { LensCamera, SourceRect } from './canvasLens';
-export { drawCanvasLens, lensCamera, lensSourceRect, sampleStack } from './canvasLens';
+export { drawCanvasLens, lensCamera, lensSourceRect, stackSources } from './canvasLens';
 export type { DomLoupeProps } from './DomLoupe';
 export { DomLoupe } from './DomLoupe';
 export type { LoupeBubbleProps } from './LoupeBubble';
@@ -88,7 +88,7 @@ export { SceneLoupe } from './SceneLoupe';
 export type { SourceLoupeProps } from './SourceLoupe';
 export { SourceLoupe } from './SourceLoupe';
 export type { LoupeSource, LoupeSourceTarget } from './sourceLens';
-export { drawSourceLens, resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
+export { drawSourceLens, resolveLoupeSource, sourceBoxIn } from './sourceLens';
 export type { TrialLoupeProps } from './TrialLoupe';
 export { TrialLoupe } from './TrialLoupe';
 export type {

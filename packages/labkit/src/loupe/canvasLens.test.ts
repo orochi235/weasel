@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { createSampler } from '@weasel-js/loupe';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { worldToScreen } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DEFAULT_FRAME, resolveFrame } from '../canvas/worldSpec';
-import { drawCanvasLens, lensCamera, lensSourceRect, sampleStack } from './canvasLens';
+import { drawCanvasLens, lensCamera, lensSourceRect, stackSources } from './canvasLens';
 
 const outer = { zoom: 2, pan: { x: 30, y: -10 } };
 
@@ -67,58 +68,57 @@ describe('lensSourceRect', () => {
   });
 });
 
-function fakeCanvas(pixel: [number, number, number, number] | null): HTMLCanvasElement {
-  return {
-    width: 100,
-    height: 100,
-    getContext: () =>
-      pixel === null ? null : { getImageData: () => ({ data: Uint8ClampedArray.from(pixel) }) },
-  } as unknown as HTMLCanvasElement;
+type Rgba = [number, number, number, number];
+
+/** A presented canvas holding one color. jsdom draws nothing, so the probe a
+ *  canvas source reads through is a stand-in that returns the color of the
+ *  canvas last drawn into it. */
+function fakeCanvas(pixel: Rgba): HTMLCanvasElement {
+  return { width: 200, height: 200, getContext: () => null, pixel } as unknown as HTMLCanvasElement;
 }
 
-describe('sampleStack', () => {
+class Probe {
+  last: Rgba = [0, 0, 0, 0];
+  constructor(public width: number, public height: number) {}
+  getContext() {
+    return {
+      globalCompositeOperation: 'source-over',
+      drawImage: (from: { pixel: Rgba }) => { this.last = from.pixel; },
+      getImageData: () => ({ data: Uint8ClampedArray.from(this.last) }),
+    };
+  }
+}
+
+describe('stackSources', () => {
+  beforeEach(() => vi.stubGlobal('OffscreenCanvas', Probe));
+  afterEach(() => vi.unstubAllGlobals());
+
   const layers = (ids: string[]): CanvasLayerDescriptor[] =>
     ids.map((id) => ({ id, visible: true, render: vi.fn() }));
+  const size = { width: 100, height: 100 };
+  const sampleAt = (stack: CanvasLayerDescriptor[], canvases: Map<string, HTMLCanvasElement>, x = 5, y = 5) =>
+    createSampler(stackSources(stack, canvases, size)).sample({ x, y });
 
   it('reports the topmost layer with something opaque there', () => {
-    const canvases = new Map([
-      ['under', fakeCanvas([0, 0, 255, 255])],
-      ['over', fakeCanvas([255, 0, 0, 255])],
-    ]);
-    expect(sampleStack(layers(['under', 'over']), canvases, { x: 5, y: 5 }, 1)).toBe('#ff0000');
+    const canvases = new Map([['under', fakeCanvas([0, 0, 255, 255])], ['over', fakeCanvas([255, 0, 0, 255])]]);
+    expect(sampleAt(layers(['under', 'over']), canvases)).toBe('#ff0000');
   });
 
-  it('falls through a transparent pixel to the layer below', () => {
-    const canvases = new Map([
-      ['under', fakeCanvas([0, 0, 255, 255])],
-      ['over', fakeCanvas([255, 0, 0, 0])],
-    ]);
-    expect(sampleStack(layers(['under', 'over']), canvases, { x: 5, y: 5 }, 1)).toBe('#0000ff');
+  it('composites a translucent layer onto the one below', () => {
+    const canvases = new Map([['under', fakeCanvas([0, 0, 255, 255])], ['over', fakeCanvas([255, 0, 0, 128])]]);
+    expect(sampleAt(layers(['under', 'over']), canvases)).toBe('#80007f');
   });
 
   it('skips a hidden layer even when it has pixels', () => {
     const stack = layers(['under', 'over']);
     stack[1].visible = false;
-    const canvases = new Map([
-      ['under', fakeCanvas([0, 0, 255, 255])],
-      ['over', fakeCanvas([255, 0, 0, 255])],
-    ]);
-    expect(sampleStack(stack, canvases, { x: 5, y: 5 }, 1)).toBe('#0000ff');
+    const canvases = new Map([['under', fakeCanvas([0, 0, 255, 255])], ['over', fakeCanvas([255, 0, 0, 255])]]);
+    expect(sampleAt(stack, canvases)).toBe('#0000ff');
   });
 
-  it('says nothing rather than black when every layer is transparent', () => {
-    const canvases = new Map([['only', fakeCanvas([0, 0, 0, 0])]]);
-    expect(sampleStack(layers(['only']), canvases, { x: 5, y: 5 }, 1)).toBeNull();
-  });
-
-  it('says nothing for a point off the backing store', () => {
-    const canvases = new Map([['only', fakeCanvas([255, 0, 0, 255])]]);
-    expect(sampleStack(layers(['only']), canvases, { x: 400, y: 5 }, 1)).toBeNull();
-  });
-
-  it('pads a single-digit channel, so #0a0a0a is not #aaa', () => {
-    const canvases = new Map([['only', fakeCanvas([10, 10, 10, 255])]]);
-    expect(sampleStack(layers(['only']), canvases, { x: 5, y: 5 }, 1)).toBe('#0a0a0a');
+  it('says nothing rather than black when every layer is transparent, or off the backing store', () => {
+    expect(sampleAt(layers(['only']), new Map([['only', fakeCanvas([0, 0, 0, 0])]]))).toBeNull();
+    expect(sampleAt(layers(['only']), new Map([['only', fakeCanvas([255, 0, 0, 255])]]), 400)).toBeNull();
   });
 });
 

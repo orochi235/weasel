@@ -24,7 +24,7 @@ import type { DebugSink, LongPressState } from '@weasel-js/routing';
 import type { SnapDep } from './snapDep';
 import type { EnteredGroupApi } from 'canvas/deps/enteredGroup';
 import type { TransformFollower, TransformPreviewNode } from './transformFinish';
-import type { HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
+import type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep } from './regionSelectDeps';
 import type { InsertDep, InsertEnds, InsertExtras, PathSymmetryDep, InsertIntoDep, InsertLive } from './insertDeps';
 import type { CommitSelection } from './defaultCommitAdapter';
 import type { LayoutDep, CanDropIntoDep } from './layoutDeps';
@@ -32,7 +32,7 @@ import type { TextEditDep, ClipboardDep, SliceDep } from './editDeps';
 
 export type { EnteredGroupApi, TransformFollower, TransformPreviewNode };
 export type { SnapDep, SnapGeometry } from './snapDep';
-export type { HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
+export type { ColorAtDep, HitTestView, NodeAtPointDep, AreaSelectDep, LassoSelectDep };
 export type { InsertDep, InsertEnds, InsertExtras, CommitSelection, PathSymmetryDep, InsertIntoDep, InsertLive };
 export type { LayoutDep, CanDropIntoDep };
 export type { TextEditDep, ClipboardDep, SliceDep };
@@ -137,6 +137,10 @@ declare module '@weasel-js/routing' {
      *  (e.g. `moveAction` reparent-on-drop) fall back to a no-op when the dep
      *  isn't registered. */
     nodeAtPoint?: NodeAtPointDep;
+    /** The color under a screen point. `<SceneCanvas>` sources one that
+     *  redraws its document layers at the point (`sampleLayers`), so chrome
+     *  drawn over them never answers. Optional: absent, nothing samples. */
+    colorAt?: ColorAtDep;
     /** Insert dep — node factory for drag-to-insert. Override per-consumer to
      *  provide a typed node factory (e.g. with custom data payloads). */
     insert: InsertDep;

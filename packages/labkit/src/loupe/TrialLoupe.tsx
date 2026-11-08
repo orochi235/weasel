@@ -1,5 +1,5 @@
 import { useElementSize, useLatest } from '@weasel-js/core';
-import type { LoupeMode } from '@weasel-js/loupe';
+import { canvasPixelSource, createSampler, type LoupeMode } from '@weasel-js/loupe';
 import { type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from 'react';
 import { CameraContext, type CameraContextValue, CameraScope } from '../canvas/CameraInput';
 import {
@@ -12,13 +12,13 @@ import type { ViewportSize } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
 import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { CanvasLoupe } from './CanvasLoupe';
-import { sampleStack } from './canvasLens';
+import { stackSources } from './canvasLens';
 import { DomLoupe } from './DomLoupe';
 import { LoupeBubble } from './LoupeBubble';
 import { LoupeGestures } from './LoupeGestures';
 import { SceneLoupe } from './SceneLoupe';
 import { SourceLoupe } from './SourceLoupe';
-import { resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
+import { resolveLoupeSource, sourceBoxIn } from './sourceLens';
 import { type LoupeOptions, type ResolvedLoupe, resolveLoupe } from './types';
 import { useLensDamage } from './useLensDamage';
 import { useLoupe } from './useLoupe';
@@ -228,18 +228,15 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
   useEffect(() => mount?.(), [mount]);
 
   const sample = useMemo(() => {
-    if (options.source) {
-      const input = options.source;
-      return (p: { x: number; y: number }): string | null => {
-        const src = resolveLoupeSource(input);
-        return src ? sampleSource(src, p, sourceBoxIn(src, host.current)) : null;
-      };
-    }
-    if (!surface) return undefined;
-    return (p: { x: number; y: number }): string | null => {
-      const canvases = surface.canvases.current;
-      return canvases ? sampleStack(surface.layers, canvases, p, surface.size.dpr) : null;
-    };
+    const input = options.source;
+    const sampler = input
+      ? createSampler(() => {
+          const src = resolveLoupeSource(input);
+          return src ? [canvasPixelSource(src, () => sourceBoxIn(src, host.current))] : [];
+        })
+      : surface && createSampler(() => stackSources(surface.layers, surface.canvases.current, surface.size));
+    // Every source here is a canvas read at once, so the answer never waits.
+    return sampler ? (p: { x: number; y: number }) => sampler.sample(p) as string | null : undefined;
   }, [surface, options.source, host]);
 
   // Keyed on the resolved source, not the prop: an inline getter is re-made

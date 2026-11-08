@@ -1,18 +1,18 @@
 import {
-  createViewportLayer, viewScreenToWorld,
+  createCanvasReader, createViewportLayer, regionOnCanvas, viewScreenToWorld,
   type CanvasViewHandle, type RenderLayer, type SceneCanvasApi, type View, type ViewAt,
 } from '@weasel-js/core';
 import { releaseImageSource, type DrawCommand } from '@weasel-js/core/renderer';
 import {
-  createLoupeModel, loupeInnerView, pixelHex,
+  createLoupeModel, loupeInnerView,
   type LoupeMode, type LoupeModel, type LoupeSurface,
 } from '@weasel-js/loupe';
 import type { Hud } from '../hud';
 import type { WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
 import { createContentWatch } from './contentWatch';
+import { createLoupeColors } from './loupeColors';
 import { followPointer } from './pointerAim';
-import { createCanvasReader, regionOnCanvas } from './readback';
 
 export type { LoupeMode };
 
@@ -48,9 +48,10 @@ export interface LoupeBaseOptions {
    *  `interactive` lens, a grip strip across its top does. */
   titlebar?: boolean;
   /** Called with the hex color under the aim point whenever it changes.
-   *  Sampled from the framebuffer in both modes — vector content is a
-   *  re-render whose edge colors differ from the screen's, so reading the
-   *  color off it would report something the user cannot see. */
+   *  Vector mode with a `source` samples exactly: the source layers drawn
+   *  again at the aim, at the canvas's own view and pixel ratio, so nothing
+   *  painted over them answers. Otherwise — pixel mode, or a lens over the
+   *  canvas's whole stack — it reads the framebuffer, chrome and all. */
   onColorChange?: (hex: string) => void;
   /** Fired when a click inside the lens picks a color — an eyedropper on the
    *  magnified surface. Where the color goes is the consumer's: the loupe
@@ -183,6 +184,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const content = (ctx: HudContentCtx): DrawCommand[] => {
     watch.drew(ctx.view);
+    colors.drew(ctx);
     return model.mode === 'vector' ? drawVector(ctx) : drawPixels(ctx);
   };
 
@@ -262,17 +264,13 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
         if (later) model.resample();
         requestRedraw();
       })
-      .catch(() => {
-        pixelsPending = false;
-        requestRedraw();
-      });
+      .catch(() => { pixelsPending = false; requestRedraw(); });
   };
 
-  const readHex = (at: { x: number; y: number }): string | null => {
-    const region = regionAt(at, () => 1, () => 1);
-    const px = region && reader.pixel(region);
-    return px ? pixelHex(px) : null;
-  };
+  const colors = createLoupeColors({
+    pixel: (at) => { const region = regionAt(at, () => 1, () => 1); return region && reader.pixel(region); },
+    layers: () => (model.mode === 'vector' && aimedView()?.id == null ? opts.source ?? null : null),
+  });
 
   const win = hud.window({
     id: 'weasel-loupe',
@@ -289,7 +287,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const surface: LoupeSurface = {
     lens: () => win.contentRect,
     covers: (p) => win.hitTest(p.x, p.y) || (win.passes?.(p.x, p.y) ?? false),
-    sample: readHex,
+    sample: colors.sample,
     hidden: () => win.hidden,
     gone: () => win.disposed === true,
     changed: () => { scheduleRefresh(); requestRedraw(); },
@@ -347,6 +345,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     lens?.remove();
     lens = null;
     dropPixels();
+    colors.dispose();
   };
 
   return {

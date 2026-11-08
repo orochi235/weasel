@@ -100,7 +100,7 @@
     "longestFunction": 126
   },
   "packages/hud/src/loupe/createLoupe.ts": {
-    "longestFunction": 214
+    "longestFunction": 212
   },
   "packages/hud/src/widgets/window/window.ts": {
     "longestFunction": 228

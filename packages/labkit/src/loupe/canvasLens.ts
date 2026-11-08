@@ -1,9 +1,10 @@
-import { type LoupePoint, type LoupeSize, loupeExtent, pixelHex } from '@weasel-js/loupe';
+import { canvasPixelSource, type LoupePoint, type LoupeSize, loupeExtent, type PixelSource } from '@weasel-js/loupe';
 import { centerOn } from '../canvas/camera';
 import { screenToWorld } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DEFAULT_FRAME, resolveFrame, type WorldFrame, type WorldSpec } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
+import { resolveLoupeSource } from './sourceLens';
 
 /** The camera a lens of `size` shows a magnified region through, and
  *  the coordinate system it is read in — the instrument's own `WorldSpec`,
@@ -63,30 +64,25 @@ export function lensSourceRect(
 }
 
 /**
- * The color a stack presents at a point: the topmost visible layer with
- * anything opaque there, or `null` when every layer is transparent — which is
- * the honest answer for a point showing nothing but the workspace behind.
+ * A stack's layers as a sampler's sources, bottom first: each visible layer's
+ * presented canvas, laid over the stack's `size`. A sampler over them reports
+ * the color the stack shows at a point, its translucent layers composited onto
+ * what lies beneath, and `null` where every layer is transparent — the honest
+ * answer for a point showing nothing but the workspace behind.
  */
-export function sampleStack(
+export function stackSources(
   layers: readonly CanvasLayerDescriptor[],
-  canvases: Map<string, HTMLCanvasElement>,
-  p: LoupePoint,
-  dpr: number,
-): string | null {
-  for (let i = layers.length - 1; i >= 0; i--) {
-    const layer = layers[i];
-    if (!layer.visible) continue;
-    const canvas = canvases.get(layer.id);
-    if (!canvas) continue;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) continue;
-    const x = Math.floor(p.x * dpr);
-    const y = Math.floor(p.y * dpr);
-    if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
-    const hex = pixelHex(ctx.getImageData(x, y, 1, 1).data);
-    if (hex) return hex;
+  canvases: ReadonlyMap<string, HTMLCanvasElement> | null,
+  size: { width: number; height: number },
+): PixelSource[] {
+  const box = () => ({ x: 0, y: 0, width: size.width, height: size.height });
+  const out: PixelSource[] = [];
+  for (const layer of layers) {
+    const canvas = layer.visible ? canvases?.get(layer.id) : undefined;
+    const source = canvas ? resolveLoupeSource(canvas) : null;
+    if (source) out.push(canvasPixelSource(source, box));
   }
-  return null;
+  return out;
 }
 
 /** Redraw the stack into a lens' own canvas. `mode` decides whether the layers

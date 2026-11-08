@@ -35,6 +35,8 @@ import type { useScenePicking } from './useScenePicking';
 import {
   useSceneStandardActions, type SceneStandardActionsInputs, type StandardActionsProps,
 } from './useSceneStandardActions';
+import { useSceneColorAt } from './useSceneColorAt';
+import type { SceneSlotLayers } from '../layerSlots';
 import { useToolKeybindings } from './useToolKeybindings';
 
 type Props = SceneCanvasProps<unknown, string, unknown>;
@@ -45,6 +47,7 @@ export type SceneCanvasInputOptions = StandardActionsProps & Pick<
   Props,
   | 'selectTool' | 'geometryProjection' | 'enableGestureDispatcher' | 'enableKeybindings'
   | 'claimKeys' | 'longPress' | 'modes' | 'versionCheck' | 'onClick' | 'onDoubleClick' | 'routing'
+  | 'sampleLayers' | 'layerVisibility' | 'dpr'
 >;
 
 /** What the content's bounds are read from, and the camera's ref they are published to. */
@@ -86,6 +89,8 @@ export interface SceneCanvasInputProps {
     /** The resize-handle layout the overlay paints, so the hit-test grabs exactly those. */
     resizeHandles: ResizeHandleLayout;
     chromeAffordancesRef: MutableRefObject<readonly Affordance[]>;
+    /** The built scene slot, whose layers the `colorAt` dep samples by default. */
+    layers: { scene?: SceneSlotLayers | null };
   };
   canvas: {
     elementRef: MutableRefObject<HTMLElement | null>;
@@ -134,6 +139,10 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
     canvasRef: canvas.elementRef, canvasApiRef: canvas.apiRef, ingestionClipboard: p.ingestionClipboard,
     ingestionHandlers: p.ingestionHandlers,
     snap: { sources: [...(props.snap?.sources ?? []), ...p.snapSources], registry: snapRegistry, store: p.snapStore },
+  });
+  useSceneColorAt({
+    sampleLayers: props.sampleLayers, sceneSlot: overlay.layers.scene, scene, layerVisibility: props.layerVisibility,
+    viewRef: viewState.viewRef, apiRef: canvas.apiRef, dpr: props.dpr,
   });
 
   // Rides the gesture dispatcher as an OBSERVER rather than an Action binding because the

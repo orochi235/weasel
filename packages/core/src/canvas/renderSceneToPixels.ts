@@ -26,19 +26,18 @@
 import { WeaselRenderer } from '@weasel-js/renderer';
 import { viewToMat3 } from '@weasel-js/geom';
 import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
+import type { GlMat3 } from '@weasel-js/geom';
 import type { View } from '../core/viewport/view';
 import type { Node } from 'core/scene/types';
 import { buildSceneViewCommands, type SceneViewDrawOne } from './sceneViewRender';
 import { defaultDrawOne } from './defaultDrawOne';
-import { warmFonts, type FontRequest } from '@weasel-js/font';
-import { isPaintKindKnown, warmPaintKinds } from '@weasel-js/renderer';
-import { renderNeeds } from './renderNeeds';
 import { straightTopDown } from './rasterReadback';
 import { annotationLayerIds } from 'core/scene/annotation';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { layerNameClaims } from 'core/layers/layerGroup';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 
+export { warmRender, type WarmRenderOptions } from './warmRender';
 export type {
   HeadlessCanvasLike, PixelRenderPlan, RasterImage, RenderSceneToPixelsArgs,
 } from './renderSceneToPixelsTypes';
@@ -170,6 +169,17 @@ export interface RasterSession {
   renderIds<TData, TLayer extends string, TPose>(
     args: RasterRenderArgs<TData, TLayer, TPose>, options?: { minAlpha?: number },
   ): IdBuffer;
+  /**
+   * Draw `commands` with no scene in between, into a `width × height` raster
+   * whose pixels they are already placed in: a frame the caller built itself,
+   * such as a stack of layers sampled at one point. `screen` is where
+   * `'screen'`-unit paint is measured, as on `render`. Throws once disposed.
+   */
+  renderCommands(
+    commands: DrawCommand[],
+    size: { width: number; height: number },
+    options?: { screen?: GlMat3; flattenTolerancePx?: number },
+  ): RasterImage;
   /** Free every GL resource the session created — programs, geometry, and
    *  the texture and mesh caches — and drop its own canvas. A caller-owned
    *  context stays open. Idempotent. */
@@ -225,15 +235,13 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
     return gl;
   }
 
-  /** The plan for `args`, and the context and renderer sized for it. */
-  function prepare<TData, TLayer extends string, TPose>(
-    call: string, args: RasterRenderArgs<TData, TLayer, TPose>,
-  ): { plan: PixelRenderPlan; ctx: WebGL2RenderingContext; renderer: WeaselRenderer } {
+  /** The context and renderer, sized for a `width × height` render. */
+  function sized(
+    call: string, width: number, height: number, flattenTolerancePx: number | undefined,
+  ): { ctx: WebGL2RenderingContext; renderer: WeaselRenderer } {
     if (disposed) throw new Error(`raster session: ${call}() on a disposed session`);
-    const plan = planPixelRender(args);
-    const { width, height } = plan;
     const ctx = contextFor(width, height);
-    const flattenTolerance = { px: args.flattenTolerancePx ?? 0.25 };
+    const flattenTolerance = { px: flattenTolerancePx ?? 0.25 };
     if (!renderer) {
       renderer = new WeaselRenderer({
         gl: ctx,
@@ -250,20 +258,40 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
       renderer.resize({ width, height, dpr: 1 });
       renderer.setFlattenTolerance(flattenTolerance);
     }
-    return { plan, ctx, renderer };
+    return { ctx, renderer };
+  }
+
+  /** The plan for `args`, and the context and renderer sized for it. */
+  function prepare<TData, TLayer extends string, TPose>(
+    call: string, args: RasterRenderArgs<TData, TLayer, TPose>,
+  ): { plan: PixelRenderPlan; ctx: WebGL2RenderingContext; renderer: WeaselRenderer } {
+    if (disposed) throw new Error(`raster session: ${call}() on a disposed session`);
+    const plan = planPixelRender(args);
+    return { plan, ...sized(call, plan.width, plan.height, args.flattenTolerancePx) };
+  }
+
+  /** Draw a frame already sized for, and read its `width × height` back. */
+  function drawAndRead(
+    call: string, ctx: WebGL2RenderingContext, draw: () => void, width: number, height: number,
+  ): RasterImage {
+    draw();
+    if (isLost(ctx)) {
+      throw new Error(`raster session: the WebGL2 context was lost during ${call}`);
+    }
+    const raw = new Uint8Array(width * height * 4);
+    ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, raw);
+    return { width, height, data: straightTopDown(raw, width, height) };
   }
 
   return {
     render(args) {
       const { plan, ctx, renderer: r } = prepare('render', args);
-      const { width, height } = plan;
-      r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
-      if (isLost(ctx)) {
-        throw new Error('raster session: the WebGL2 context was lost during render');
-      }
-      const raw = new Uint8Array(width * height * 4);
-      ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, raw);
-      return { width, height, data: straightTopDown(raw, width, height) };
+      const draw = () => r.render(plan.commands, viewToMat3(plan.view), { screen: args.screen });
+      return drawAndRead('render', ctx, draw, plan.width, plan.height);
+    },
+    renderCommands(commands, { width, height }, options = {}) {
+      const { ctx, renderer: r } = sized('renderCommands', width, height, options.flattenTolerancePx);
+      return drawAndRead('renderCommands', ctx, () => r.render(commands, undefined, { screen: options.screen }), width, height);
     },
     renderIds(args, options) {
       const { plan, ctx, renderer: r } = prepare('renderIds', args);
@@ -289,59 +317,6 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
 
 function isLost(gl: WebGL2RenderingContext): boolean {
   return typeof gl.isContextLost === 'function' && gl.isContextLost() === true;
-}
-
-/** What {@link warmRender} loads. */
-export interface WarmRenderOptions<TData = unknown, TLayer extends string = string, TPose = unknown> {
-  /** The render about to happen, as `renderSceneToPixels` or
-   *  `RasterSession.render` will take it. Its commands are built the way the
-   *  render builds them, and only the faces and paint kinds they draw with
-   *  load. */
-  render?: RasterRenderArgs<TData, TLayer, TPose>;
-  /** Commands about to be drawn, read the same way as `render`'s. Both may be
-   *  given; what either needs loads. */
-  commands?: readonly DrawCommand[];
-  /** Fonts to load in place of the ones derived — family names or single
-   *  variants, as `warmFonts` takes them. */
-  families?: readonly (string | FontRequest)[];
-  /** Paint kinds to load in place of the ones derived, as `warmPaintKinds`
-   *  takes them. */
-  paintKinds?: readonly string[];
-}
-
-/**
- * Load everything a synchronous render would otherwise draw as nothing — the
- * lazily registered font atlases and the paint kinds loaded on demand — so
- * that a `renderSceneToPixels` or `RasterSession.render` issued after it
- * resolves is complete.
- *
- * Pass the render (`{ render: args }`) or its commands, and only what they
- * draw with loads: each face their text is set in, through the same
- * resolution the renderer does, and each paint kind they name. A rejection
- * then means something this render needs failed to load. `families` and
- * `paintKinds` replace either derived list.
- *
- * With neither `render` nor `commands`, an omitted list loads everything
- * registered: every font family and every kind that has a loader — which
- * fails when any one of them does, and fetches what nothing draws.
- */
-export function warmRender<TData, TLayer extends string, TPose>(
-  opts: WarmRenderOptions<TData, TLayer, TPose> = {},
-): Promise<void> {
-  let { families, paintKinds } = opts;
-  if (opts.render || opts.commands) {
-    let planned: DrawCommand[];
-    try {
-      planned = opts.render ? planPixelRender(opts.render).commands : [];
-    } catch (err) {
-      return Promise.reject(err);
-    }
-    const needs = renderNeeds([...planned, ...(opts.commands ?? [])]);
-    families ??= needs.fonts;
-    // A kind nothing registered draws nothing whether or not this waits.
-    paintKinds ??= needs.paintKinds.filter(isPaintKindKnown);
-  }
-  return Promise.all([warmFonts(families), warmPaintKinds(paintKinds)]).then(() => undefined);
 }
 
 /**

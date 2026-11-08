@@ -3,7 +3,7 @@ import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
-import type { SceneCanvasActionProps } from './actionProps';
+import type { SceneCanvasActionProps } from './actionProps'; import type { SceneCanvasSampleProps } from './sampleProps';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
@@ -513,4 +513,4 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * nor picked here. See `CanvasProps.layerOrder`.
      */
     layerOrder?: string[];
-  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasPaintedBy;
+  } & SceneCanvasPointerProps<TData> & SceneCanvasActionProps & SceneCanvasPaintedBy & SceneCanvasSampleProps;

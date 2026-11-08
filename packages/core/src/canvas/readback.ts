@@ -1,5 +1,10 @@
-import { canvasPaintsWith, readCanvasPixels } from '@weasel-js/core';
+/**
+ * Reading a presented canvas back: the one readback a loupe, an eyedropper or
+ * anything else showing the canvas's own pixels goes through.
+ */
 import { clamp } from '@weasel-js/geom';
+import { canvasPaintsWith } from './canvasBackend';
+import { readCanvasPixels } from './readCanvasPixels';
 
 type Rect = { x: number; y: number; width: number; height: number };
 
@@ -38,8 +43,9 @@ export function regionOnCanvas(
   return regionAround(target, at, dpr, rw(dpr), rh(dpr));
 }
 
-/** `rect` of the drawing buffer, top-down. GL reports rows bottom-up, so
- *  both the read origin and the rows are flipped. */
+/** `rect` of the drawing buffer, top-down and premultiplied as the buffer
+ *  holds it. GL reports rows bottom-up, so both the read origin and the rows
+ *  are flipped. */
 export function readGl(gl: WebGL2RenderingContext, bufferHeight: number, rect: Rect): ImageData {
   const raw = new Uint8Array(rect.width * rect.height * 4);
   gl.readPixels(rect.x, bufferHeight - rect.y - rect.height, rect.width, rect.height, gl.RGBA, gl.UNSIGNED_BYTE, raw);
@@ -51,12 +57,20 @@ export function readGl(gl: WebGL2RenderingContext, bufferHeight: number, rect: R
   return new ImageData(flipped, rect.width, rect.height);
 }
 
+/** What {@link createCanvasReader} answers with. */
+export interface CanvasReader {
+  /** `rect`'s pixels, top-down and premultiplied, or null when the canvas cannot answer. */
+  region(rect: Rect): ImageData | Promise<ImageData> | null;
+  /** The RGBA of the pixel at `rect`'s corner, read at once or from the last region read. */
+  pixel(rect: Rect): ArrayLike<number> | null;
+}
+
 /**
- * Reads `canvas` back for a loupe: at once on WebGL, and on WebGPU, which
- * reads back only asynchronously, through `readCanvasPixels`, keeping the last
- * region read so a pixel inside it is answered at once.
+ * Reads `canvas` back: at once on WebGL, and on WebGPU, which reads back only
+ * asynchronously, through `readCanvasPixels`, keeping the last region read so
+ * a pixel inside it is answered at once. Device px from the canvas's top-left.
  */
-export function createCanvasReader(canvas: HTMLCanvasElement) {
+export function createCanvasReader(canvas: HTMLCanvasElement): CanvasReader {
   let last: { rect: Rect; data: ImageData } | null = null;
   const now = (rect: Rect): ImageData | null => {
     if (canvasPaintsWith(canvas) === 'webgpu') return null;
@@ -64,7 +78,6 @@ export function createCanvasReader(canvas: HTMLCanvasElement) {
     return gl ? readGl(gl, canvas.height, rect) : null;
   };
   return {
-    /** `rect`'s pixels, top-down, or null when the canvas cannot answer. */
     region(rect: Rect): ImageData | Promise<ImageData> | null {
       const sync = now(rect);
       if (sync || canvasPaintsWith(canvas) !== 'webgpu') return sync;
@@ -74,7 +87,6 @@ export function createCanvasReader(canvas: HTMLCanvasElement) {
         return data;
       }) ?? null;
     },
-    /** The RGBA of the pixel at `rect`'s corner, read at once or from the last region read. */
     pixel(rect: Rect): ArrayLike<number> | null {
       if (canvasPaintsWith(canvas) !== 'webgpu') return now({ ...rect, width: 1, height: 1 })?.data ?? null;
       if (!last) return null;

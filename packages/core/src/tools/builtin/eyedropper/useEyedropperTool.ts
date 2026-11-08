@@ -7,7 +7,8 @@ import type { ToolKeybinding } from '@weasel-js/routing';
 import type { Action } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
-import type { ImmediateParams } from '@weasel-js/routing';
+import type { ActionDeps, ImmediateParams, WorldPoint } from '@weasel-js/routing';
+import { viewWorldToScreen } from '@weasel-js/geom';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
@@ -15,9 +16,14 @@ export interface UseEyedropperToolOptions {
    *  null on a real hit; an empty click is a no-op. */
   onPick: (color: string | null) => void;
 
-  /** Map a node id to a color string, or `null` if the node has no color
-   *  to sample. Called with the id of the topmost node under the press. */
-  colorOf: (id: string) => string | null;
+  /**
+   * Sample a node's declared color instead of pixels: map the id of the
+   * topmost node under the press to its color, or `null` if it has none.
+   * Omitted, the tool samples the pixel under the press through the
+   * `colorAt` dep — on `<SceneCanvas>`, its document layers drawn again at
+   * that point, with no chrome in them.
+   */
+  colorOf?: (id: string) => string | null;
 
   /** Override the default `{ key: 'I' }` keybinding. Pass `null` to omit
    *  the keybinding entirely (palette-only or hotkey-only wiring). */
@@ -27,16 +33,27 @@ export interface UseEyedropperToolOptions {
   hotkey?: HotkeyTrigger | null;
 }
 
+/** The press in the screen space `colorAt` reads: through the canvas's view,
+ *  or as it came where no view is sourced — a 3D host, whose dispatcher hands
+ *  actions screen points to begin with. */
+function screenOf(deps: ActionDeps, press: WorldPoint): { x: number; y: number } {
+  const view = deps.view?.get();
+  return view ? viewWorldToScreen(view, press) : press;
+}
+
 /**
- * Eyedropper. Click a node to sample its color; the consumer's `onPick`
- * callback decides where the color goes. Engages as a sticky active-slot
- * tool (`I` keybinding) and as a momentary hotkey-slot tool while Alt
- * is held — consumers can override either trigger to `null`.
+ * Eyedropper. Click to sample a color; the consumer's `onPick` callback
+ * decides where it goes. Engages as a sticky active-slot tool (`I`
+ * keybinding) and as a momentary hotkey-slot tool while Alt is held —
+ * consumers can override either trigger to `null`.
  *
  * Does not mutate the scene. Click-only; drag is unbound.
  *
- * The node under the click comes from the `nodeAtPoint` dep, so an
- * eyedropper in a consumer that never registered that dep samples nothing.
+ * By default it samples the pixel under the press, through the `colorAt` dep
+ * at the press's screen point (the `view` dep maps it there), and a click on
+ * nothing drawn picks nothing. Given `colorOf`, it samples the node under the
+ * press instead, which comes from the `nodeAtPoint` dep. Either way, a
+ * consumer that never registered the dep samples nothing.
  */
 export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
   const onPickRef = useLatest(opts.onPick);
@@ -51,16 +68,22 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
       // Same tag the tool declares, so a mode that disallows color sampling
       // can't be reached through the gesture either.
       eligible: { capability: 'samples-color' },
-      requires: ['nodeAtPoint'],
+      requires: ['nodeAtPoint', 'colorAt', 'view'],
       invoker: {
         timing: 'immediate' as const,
         run: (deps, params) => {
           const press = (params as ImmediateParams | undefined)?.press;
           if (!press) return;
-          const nodeAtPoint = deps.nodeAtPoint;
-          const id = nodeAtPoint?.(press) ?? null;
-          if (id === null) return;
-          onPickRef.current(colorOfRef.current(id));
+          const colorOf = colorOfRef.current;
+          if (colorOf) {
+            const id = deps.nodeAtPoint?.(press) ?? null;
+            if (id !== null) onPickRef.current(colorOf(id));
+            return;
+          }
+          const got = deps.colorAt?.(screenOf(deps, press)) ?? null;
+          const report = (hex: string | null) => { if (hex !== null) onPickRef.current(hex); };
+          if (got instanceof Promise) void got.then(report, () => undefined);
+          else report(got);
         },
       },
     }),
