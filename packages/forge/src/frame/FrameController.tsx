@@ -3,7 +3,6 @@ import type { IconTable } from '@weasel-js/icons';
 import { createKitRoot } from '../kitIcons';
 import type { Channel } from '../protocol/channel';
 import {
-  type CssVarReport,
   type FaultPhase,
   type FromFrame,
   type Globals,
@@ -14,7 +13,8 @@ import { answerSchema, describeSchema } from '../protocol/schema';
 import type { Decorator, LoadedStory, StoryContext } from '../story/types';
 import { auditElement } from './a11y';
 import { createA11yHighlighter } from './a11yHighlight';
-import { createOverrides, resolveCssVar, scanCssVars } from './cssVars';
+import { createOverrides } from './cssVars';
+import { watchCssVars } from './cssVarsWatch';
 import { followDocumentScroll } from './documentScroll';
 import { createGlobalsTarget, type GlobalsTarget } from './globalsTarget';
 import { StoryHost } from './StoryHost';
@@ -49,8 +49,6 @@ export interface StartFrameOptions {
   container: HTMLElement;
   setup?: FrameSetup;
 }
-
-const VARS_SETTLE_MS = 100;
 
 function fault(phase: FaultPhase, error: unknown, seq?: number): FromFrame {
   return {
@@ -104,32 +102,9 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   const overrides = createOverrides(document, setup.cssVarsScope);
   const globalsTarget = createGlobalsTarget(document.documentElement, ':root');
   const highlighter = createA11yHighlighter(document);
-  let lastVars: CssVarReport[] | null = null;
-  let reported: string | null = null;
-  const publishVars = (vars: CssVarReport[]) => {
-    lastVars = vars;
-    const key = JSON.stringify(vars);
-    if (key === reported) return;
-    reported = key;
-    send({ type: 'vars', vars });
-  };
-  const reportVars = () => publishVars(scanCssVars(document, overrides.has));
-  const ownMutation = (record: MutationRecord) =>
-    overrides.owns(record.target) ||
-    (record.type === 'childList' &&
-      [...record.addedNodes, ...record.removedNodes].length > 0 &&
-      [...record.addedNodes, ...record.removedNodes].every(overrides.owns));
-  let settleTimer: ReturnType<typeof setTimeout> | undefined;
-  const mutations =
-    typeof MutationObserver === 'undefined'
-      ? null
-      : new MutationObserver((records) => {
-          if (records.every(ownMutation)) return;
-          clearTimeout(settleTimer);
-          settleTimer = setTimeout(reportVars, VARS_SETTLE_MS);
-        });
-  // Every attribute, not just style and class: a stylesheet can select on any of them, `[data-wzl-mode]` included.
-  mutations?.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true });
+  const vars = watchCssVars(document, overrides, (report) => send({ type: 'vars', vars: report }), {
+    under: document.documentElement,
+  });
 
   const setConfig = (path: string, value: unknown) => send({ type: 'setConfig', path, value });
   const setState = (next: unknown) => {
@@ -174,7 +149,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
       rendered = true;
       announceRendered(send);
     }
-    reportVars();
+    vars.scan();
   };
 
   const scroll = followDocumentScroll(document, send);
@@ -214,11 +189,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
         break;
       case 'vars.set': {
         overrides.set(msg.name, msg.value);
-        const at = lastVars?.findIndex((v) => v.name === msg.name) ?? -1;
-        if (!lastVars || at < 0) break;
-        const vars = lastVars.slice();
-        vars[at] = { ...vars[at]!, value: resolveCssVar(document, msg.name), overridden: overrides.has(msg.name) };
-        publishVars(vars);
+        vars.revise(msg.name);
         break;
       }
       case 'a11y.run':
@@ -236,8 +207,7 @@ export function startFrame({ story, channel, container, setup = {} }: StartFrame
   return () => {
     off();
     scroll.dispose();
-    mutations?.disconnect();
-    clearTimeout(settleTimer);
+    vars.dispose();
     overrides.dispose();
     globalsTarget.dispose();
     highlighter.dispose();
