@@ -51,11 +51,12 @@ export interface MeasureEnv {
   text(text: string, font: FontSpec): TextExtent;
 }
 
-/** A px token as a number: `name`, else `fallback`. Throws where neither is a px length, since silently reading
+/** A px token as a number, a unitless `0` included: `name`, else `fallback`. Throws where neither is a px length, since silently reading
  *  0 collapses whatever the token sizes. */
 export function envPx(env: MeasureEnv, name: string, fallback?: number | string): number {
   const raw = env.token(name)?.trim();
   if (raw) {
+    if (raw === '0') return 0;
     const m = /^(-?\d*\.?\d+)px$/.exec(raw);
     if (m) return Number(m[1]);
   }
