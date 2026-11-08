@@ -12,6 +12,12 @@ describe('statementsOf', () => {
     expect(src.body).toEqual([{ text: 'root', line: 12, indent: 2 }, { text: 'child', line: 13, indent: 4 }]);
   });
 
+  it('closes an accDescr block on the line it opens on', () => {
+    const src = statementsOf('pie\naccDescr { one line }\n"a" : 1');
+    expect(src.accDescr).toBe('one line');
+    expect(src.body).toEqual([{ text: '"a" : 1', line: 3, indent: 0 }]);
+  });
+
   it('names the line of an accDescr block never closed, and of a file with no header', () => {
     expect(() => statementsOf('classDiagram\naccDescr {\nnever')).toThrow('Mermaid, line 2: an accDescr block is never closed');
     expect(() => statementsOf('---\ntitle: x\n---\n%% only')).toThrow('Mermaid, line 4: the diagram has no header');
