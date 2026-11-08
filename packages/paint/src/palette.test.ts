@@ -234,6 +234,10 @@ describe('colorLiteralToCss', () => {
     expect(colorLiteralToCss({ space: 'lch', coords: [50, 30, 120] })).toBe('lch(50 30 120)');
   });
 
+  it('answers null for a space named for an Object.prototype member', () => {
+    expect(colorLiteralToCss({ space: 'constructor', coords: [1, 0, 0] })).toBeNull();
+  });
+
   // CSS Color 4: these spaces have functions of their own; color() takes only the predefined ones.
   const VALID = [
     /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/,

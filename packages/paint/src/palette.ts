@@ -163,7 +163,7 @@ const PREDEFINED_SPACES = new Set(['srgb', 'srgb-linear', 'display-p3', 'a98-rgb
 export function cssColorNotation(space: string, coords: readonly (number | 'none')[], alpha = 1): string | null {
   if (coords.length !== 3) return null;
   const slash = alpha < 1 ? ` / ${alpha}` : '';
-  const percent = FUNCTIONAL_SPACES[space];
+  const percent = Object.hasOwn(FUNCTIONAL_SPACES, space) ? FUNCTIONAL_SPACES[space] : undefined;
   if (percent) return `${space}(${coords.map((c, i) => (c !== 'none' && percent.includes(i) ? `${c}%` : c)).join(' ')}${slash})`;
   if (PREDEFINED_SPACES.has(space)) return `color(${space} ${coords.join(' ')}${slash})`;
   return null;
