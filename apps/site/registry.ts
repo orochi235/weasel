@@ -391,7 +391,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'per-axis-zoom',
     title: 'Per-axis zoom',
     category: 'Viewport',
-    description: 'View.scale is {x, y} — the sliders drive each axis independently. The mode dropdown toggles fitViewToBounds between contain (uniform min), fill (uniform max — bounds overflow one axis), and stretch (per-axis exact fit, non-uniform scale). Wheel still zooms uniformly via useWheelZoomTool default axis: both.',
+    description: 'View.scale is {x, y} — the sliders drive each axis independently. The mode dropdown toggles fitViewToBounds between contain (uniform min), fill (uniform max — bounds overflow one axis), and stretch (per-axis exact fit, non-uniform scale). Cmd/Ctrl+wheel still scales both axes by the same factor: the `viewport.zoom` action\'s `axis` defaults to `\'both\'`.',
     hint: 'Drag the scale.x / scale.y sliders · pick a mode and click Fit · Reset returns home.',
     load: () => import('./demos/PerAxisZoomDemo').then((m) => m.PerAxisZoomDemo),
     path: 'apps/site/demos/PerAxisZoomDemo.tsx',
