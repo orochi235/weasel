@@ -56,6 +56,18 @@ describe('SelectionPanel — Inherit', () => {
     for (const radio of within(fillBar()).getAllByRole('radio')) expect(radio).not.toBeChecked();
   });
 
+  it('names the paint two nodes inherit from two containers holding equal paints', () => {
+    const scene = createScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    for (const g of ['g0', 'g1']) {
+      // Equal paints as separate objects, as two containers loaded from a file hold them.
+      scene.add({ id: asNodeId(g), kind: 'group', layer: 'default', pose, data: { fill: structuredClone(RED) } });
+      scene.add({ id: asNodeId(`${g}n`), parent: asNodeId(g), kind: 'mark', layer: 'default', pose, data: { path: PATH, fill: INHERIT } });
+    }
+    renderPanel(scene, ['g0n', 'g1n']);
+    expect(screen.getByRole('img', { name: 'Inherits #ff0000ff' })).toBeTruthy();
+  });
+
   it('edits a container’s own fill', () => {
     const scene = sceneOf({ fill: RED }, { fill: INHERIT });
     renderPanel(scene, ['g']);
