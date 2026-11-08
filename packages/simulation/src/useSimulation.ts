@@ -35,6 +35,9 @@ export function useSimulation<TNode extends SimulationNode>(
   /** Whether onEnd has fired since the last energization (restart / alpha set / target raise). */
   const endedRef = useRef(false);
   const mountedRef = useRef(true);
+  /** Whether the loop should be stepping: false once settled or stopped, until `restart`. A
+   *  new clock carries this over rather than starting a simulation that was left stopped. */
+  const runningRef = useRef(true);
 
   /** One integration step; false once there is no next, settled or unmounted. */
   const step = (): boolean => {
@@ -44,6 +47,7 @@ export function useSimulation<TNode extends SimulationNode>(
     optsRef.current.onTick?.(core.nodes);
 
     if (core.alpha() < core.alphaMin()) {
+      runningRef.current = false;
       if (!endedRef.current) {
         endedRef.current = true;
         optsRef.current.onEnd?.();
@@ -59,6 +63,7 @@ export function useSimulation<TNode extends SimulationNode>(
 
   const startRaf = (): void => {
     if (!mountedRef.current) return;
+    runningRef.current = true;
     stepsRef.current.start();
   };
 
@@ -67,7 +72,7 @@ export function useSimulation<TNode extends SimulationNode>(
   // `createSimulation` has already primed the nodes.
   useLayoutEffect(() => {
     mountedRef.current = true;
-    steps.start();
+    if (runningRef.current) steps.start();
     return () => {
       mountedRef.current = false;
       steps.stop();
@@ -123,6 +128,7 @@ export function useSimulation<TNode extends SimulationNode>(
         return h;
       },
       stop() {
+        runningRef.current = false;
         stepsRef.current.stop();
         return h;
       },
