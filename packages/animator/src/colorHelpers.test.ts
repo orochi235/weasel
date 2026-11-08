@@ -209,6 +209,21 @@ describe('cycleVertexColors', () => {
     expect(result.current.colorOverrides.get('tri', 'fill')).toBeUndefined();
   });
 
+  it('cancel() leaves an override set over the cycle since, and a second cancel does nothing', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const later = [1, 0, 0, 1];
+    let handle: { cancel: () => void } | undefined;
+    act(() => {
+      handle = cycleVertexColors(result.current, { id: 'tri', channel: 'fill', msPerCycle: 1000 });
+      result.current.colorOverrides.set('tri', 'fill', later);
+    });
+    act(() => { handle!.cancel(); });
+    expect(result.current.colorOverrides.get('tri', 'fill')).toBe(later);
+    act(() => { handle!.cancel(); });
+    expect(result.current.colorOverrides.get('tri', 'fill')).toBe(later);
+  });
+
   it('direction: -1 rotates the other way', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
