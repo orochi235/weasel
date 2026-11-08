@@ -1,4 +1,5 @@
-import { type ReactElement, type ReactNode } from 'react';
+import { useRef, type ReactElement, type ReactNode } from 'react';
+import { SWEEP_INDEX_ATTR, ToggleSweep, type ToggleBarSweep } from './ToggleSweep';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentPlaceProps, type SegmentState } from '../segmentedRow';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
@@ -64,6 +65,15 @@ export type ToggleBarProps<V extends string | number = string> =
        */
       mixedValues?: readonly V[];
       onChange: (next: V[]) => void;
+      /**
+       * Let a drag across the segments toggle every one it reaches: the press
+       * decides on or off (on, unless the pressed segment is on) and each
+       * segment swept is set to that, with `onChange` called as each one
+       * changes. Escape or a lost pointer puts `value` back. `true` sweeps
+       * from any segment; a function decides per press. A segment that runs
+       * a drag of its own takes the press instead.
+       */
+      sweep?: ToggleBarSweep<NoInfer<V>>;
     });
 
 /**
@@ -92,9 +102,17 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     return mixed !== undefined && mixed.includes(value) && !isSelected(value);
   };
 
+  const sweep = mode === 'multiple' ? (props as { sweep?: ToggleBarSweep<V> }).sweep : undefined;
+  // Set as a sweep ends and cleared before the next task: the click its release makes is not a toggle.
+  const justSwept = useRef(false);
+  const swept = (): void => {
+    justSwept.current = true;
+    setTimeout(() => { justSwept.current = false; }, 0);
+  };
+
   const handleClick = (index: number) => () => {
     const item = items[index];
-    if (item.disabled) return;
+    if (item.disabled || justSwept.current) return;
     if (mode === 'multiple') {
       const current = props.value as readonly V[];
       const next = current.includes(item.value)
@@ -130,12 +148,12 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   // squeezed or will not fit where it sits.
   const fit = useFitScope(roving.rootRef);
 
-  return (
+  const row = (
     <SegmentedRow
       roving={roving}
       role={mode === 'multiple' ? 'group' : 'radiogroup'}
       ariaLabel={ariaLabel}
-      className={className}
+      className={sweep ? [className, s.sweeps].filter(Boolean).join(' ') : className}
       height={height}
       size={size}
       variant={variant}
@@ -159,6 +177,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
                 disabled={item.disabled}
                 className={segmentClassName(state, place)}
                 {...segmentPlaceProps(place)}
+                {...(sweep ? { [SWEEP_INDEX_ATTR]: i } : {})}
                 onClick={handleClick(i)}
               >
                 {item.label}
@@ -168,5 +187,21 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
         };
       })}
     />
+  );
+  if (!sweep) return row;
+  return (
+    <>
+      {row}
+      <ToggleSweep
+        rootRef={roving.rootRef}
+        values={items.map((it) => it.value)}
+        sweepable={(i) => items[i] !== undefined && !items[i].disabled}
+        stateOf={(i) => (isSelected(items[i]!.value) ? 'on' : isMixed(items[i]!.value) ? 'mixed' : 'off')}
+        value={props.value as readonly V[]}
+        onChange={props.onChange as (next: V[]) => void}
+        sweep={sweep}
+        swept={swept}
+      />
+    </>
   );
 }

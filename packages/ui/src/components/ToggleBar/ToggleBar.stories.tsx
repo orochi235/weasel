@@ -97,6 +97,29 @@ export const MultipleWithMixed: Story = {
   },
 };
 
+const steps = Array.from({ length: 16 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+
+/** Drag across the steps: a press on an off step turns on every step the drag reaches, one on an on step turns them off. */
+export const Sweep: Story = {
+  args: { ariaLabel: 'Steps' },
+  render: ({ ariaLabel, height, size, variant }) => {
+    const [v, setV] = useState<string[]>(['1', '5', '9', '13']);
+    return (
+      <ToggleBar
+        mode="multiple"
+        sweep
+        items={steps}
+        value={v}
+        onChange={setV}
+        ariaLabel={ariaLabel}
+        height={height}
+        size={size}
+        variant={variant}
+      />
+    );
+  },
+};
+
 export const Disabled: Story = {
   render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('a');

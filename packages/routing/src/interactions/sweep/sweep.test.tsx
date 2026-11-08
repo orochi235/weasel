@@ -134,6 +134,17 @@ describe('sweepAction', () => {
     expect(other).toHaveBeenCalledTimes(1);
   });
 
+  it('hands the drag to the next binding when begin declines it', () => {
+    let other = 0;
+    const fallback: Action = {
+      id: 'demo.drag', label: 'drag', defaultBinding: { kind: 'drag' },
+      invoker: { timing: 'ongoing', start: () => { other++; return { onMove: () => {} }; } },
+    };
+    const { at } = setup({ sweep: { begin: () => null }, actions: [fallback] });
+    act(() => { pointer(at(5), 'pointerdown', 5); pointer(at(5), 'pointermove', 30); pointer(at(5), 'pointerup', 30); });
+    expect(other).toBe(1);
+  });
+
   it('runs either the sweep or a drag that outranks it, never both', () => {
     const ran = { sweep: 0, shifted: 0 };
     const shiftDrag: Action = {

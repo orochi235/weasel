@@ -336,6 +336,16 @@ Before making API changes (renames, new fields, new exports) touching anything n
 
 Don't name a field `gesture` if its values are action-shaped (`'move'`/`'marquee'`/etc.), or vice versa.
 
+**The dispatcher is not canvas-only.** `useGestureDispatcher` mounts on any element — labkit's
+overlays, `ToggleBar`'s sweep row — and it already settles who owns a press: which surface hears
+it, which binding wins (view, tier, specificity, context, then registration order), and that one
+gesture runs one action unless that action hands it on. Before writing a pointer handler or a
+component for a new way of dragging, ask whether it is an action bound to an existing gesture on a
+dispatcher; usually it is, and the new code is the action. The ranking and the press-ownership
+rules are under "Interaction" in `docs/taxonomy.md`. Two things that bite: a spec with no `mods`
+matches only an unmodified input, and an ongoing action whose `start` returns an empty handle
+hands the drag to the next candidate rather than taking it.
+
 ## Key concepts
 
 - **Tools** declare bindings from a gesture to an action and handle nothing themselves. The action reads its `InvocationCtx` (world and screen point, modifiers, deps) and either moves the viewport or writes to the scene with ops.

@@ -58,8 +58,12 @@ export interface SweepOptions<K> {
    * surface that sweeps only with Alt held, or only for a pen, says so here.
    */
   binding?: NonNullable<Action['defaultBinding']>;
-  /** Start a sweep from `press`. */
-  begin(press: SweepPress<K>): SweepRun<K>;
+  /**
+   * Start a sweep from `press`, or answer `null` to decline it as the drag
+   * opens, when the modifiers, deps and pointer are all known: the drag is
+   * then handed to the next binding that matches, as `accepts` would have.
+   */
+  begin(press: SweepPress<K>): SweepRun<K> | null;
 }
 
 /** A drag under any modifiers: the lowest-ranked drag binding there is. */
@@ -110,7 +114,9 @@ export function sweepAction<K>(opts: SweepOptions<K>): Action {
         const first = pressed(ctx.drag?.start ?? ctx.world);
         const surface = opts.surface();
         if (!first || !surface) return {};
+        // An empty handle hands the drag on to the next candidate.
         const run = opts.begin({ ...first, ctx });
+        if (!run) return {};
         let current = first;
         let last = ctx.drag?.start ?? ctx.world;
         run.enter(first);

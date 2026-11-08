@@ -57,9 +57,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   useEffect(() => depRegistry.register('dispatchTrace', () => trace), [depRegistry, trace]);
 
   const dispatcherRef = useRef<Dispatcher | null>(null);
-  if (!dispatcherRef.current) {
-    dispatcherRef.current = dispatcherOpt ?? createDispatcher();
-  }
+  dispatcherRef.current ??= dispatcherOpt ?? createDispatcher();
 
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and the core installs the routed view's.
@@ -148,5 +146,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       carry: carryChannel,
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
-    allDispatchers, clientToLocalRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

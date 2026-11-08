@@ -307,6 +307,11 @@
   content: none;
 }
 
+/* A bar a drag sweeps: a touch dragged across it sweeps rather than scrolling the page. */
+.sweeps {
+  touch-action: none;
+}
+
 /* A vertical row: the well and its segments turned a quarter turn, each label still upright. */
 .root[data-orientation='vertical'] {
   flex-direction: column;
