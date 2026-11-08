@@ -9,7 +9,7 @@
  * @packageDocumentation
  */
 
-import { isApplePlatform, matchModifiers } from '@weasel-js/gestures';
+import { isApplePlatform, matchKey, matchModifiers } from '@weasel-js/gestures';
 
 export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 
@@ -47,12 +47,6 @@ export interface KeyBinding {
   preventDefault?: boolean;
 }
 
-function keyMatches(eventKey: string, spec: string | readonly string[]): boolean {
-  const want = typeof spec === 'string' ? [spec] : spec;
-  const ek = eventKey.toLowerCase();
-  return want.some((k) => k.toLowerCase() === ek);
-}
-
 /**
  * Pure matcher for `KeyBinding` against a `KeyboardEvent`. Only checks key +
  * modifier policy — does NOT apply the editable-target skip or
@@ -60,7 +54,7 @@ function keyMatches(eventKey: string, spec: string | readonly string[]): boolean
  * gesture dispatcher so the rules can't drift.
  */
 export function matchesKeyBinding(e: KeyBindingEvent, b: KeyBinding, isMac = isApplePlatform()): boolean {
-  if (!keyMatches(e.key, b.key)) return false;
+  if (!matchKey(e.key, b.key)) return false;
   return matchModifiers(e, { mod: b.mod === true, alt: b.alt === true, shift: b.shift ?? false }, isMac);
 }
 

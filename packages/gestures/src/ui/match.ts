@@ -73,9 +73,9 @@ function checkKey(req: KeyRequirement, held: boolean): boolean {
 }
 
 /** Case-insensitive key match; supports string or string[] (any-of). */
-export function matchKey(eventKey: string, specKey: string | string[]): boolean {
+export function matchKey(eventKey: string, specKey: string | readonly string[]): boolean {
   const lower = eventKey.toLowerCase();
-  if (Array.isArray(specKey)) {
+  if (typeof specKey !== 'string') {
     return specKey.some((k) => k.toLowerCase() === lower);
   }
   return specKey.toLowerCase() === lower;
