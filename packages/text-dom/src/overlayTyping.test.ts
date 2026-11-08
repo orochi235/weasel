@@ -68,6 +68,28 @@ describe('typingHandlers', () => {
     expect(host.onEdited).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the styling of the run an armed style types into', () => {
+    const { overlay, onBeforeInput } = mount({ bold: true });
+    runsToDom([{ text: 'ab', italic: true, fontSize: 30 }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 2);
+    onBeforeInput(insertText('X'));
+    expect(domToRuns(overlay)).toEqual([
+      { text: 'ab', italic: true, fontSize: 30 },
+      { text: 'X', italic: true, fontSize: 30, bold: true },
+    ]);
+  });
+
+  it('takes off a flag an armed false names, keeping the rest of the run', () => {
+    const { overlay, onBeforeInput } = mount({ italic: false });
+    runsToDom([{ text: 'ab', italic: true, underline: true }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 2);
+    onBeforeInput(insertText('X'));
+    expect(domToRuns(overlay)).toEqual([
+      { text: 'ab', italic: true, underline: true },
+      { text: 'X', underline: true },
+    ]);
+  });
+
   // The double-space period and a text replacement arrive as `insertText`
   // over a range that is not the caret.
   it('leaves input that names its own range to the browser, an armed style or not', () => {

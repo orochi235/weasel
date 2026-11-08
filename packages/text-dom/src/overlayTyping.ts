@@ -147,8 +147,8 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
       const at = readSelectionOffsets(overlay) ?? host.lastRange();
       if (!at || at.start !== at.end) return;
       ie.preventDefault();
-      const typed = { ...pending, text: ie.data } as StyledRun;
-      const next = replaceRunRange(domToRuns(overlay), at.start, at.start, [typed]);
+      const runs = domToRuns(overlay);
+      const next = replaceRunRange(runs, at.start, at.start, styledForRange([{ text: ie.data }], runs, at, pending));
       const after = at.start + ie.data.length;
       writeRunsPreservingSelection(overlay, next, after, after, host.base());
       placeCaretBetweenRuns(overlay, next, after);
