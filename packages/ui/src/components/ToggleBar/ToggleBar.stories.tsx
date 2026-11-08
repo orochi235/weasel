@@ -97,6 +97,55 @@ export const MultipleWithMixed: Story = {
   },
 };
 
+const steps = Array.from({ length: 32 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+
+/** Drag across the steps, in any direction: a press on an off step turns on every step the drag reaches, one on an on
+ *  step turns them off. */
+export const Sweep: Story = {
+  args: { ariaLabel: 'Steps' },
+  render: ({ ariaLabel, height, size, variant }) => {
+    const [v, setV] = useState<string[]>(['1', '5', '9', '13', '17', '21', '25', '29']);
+    return (
+      <ToggleBar
+        mode="multiple"
+        sweep
+        columns={8}
+        items={steps}
+        value={v}
+        onChange={setV}
+        ariaLabel={ariaLabel}
+        height={height}
+        size={size}
+        variant={variant}
+      />
+    );
+  },
+};
+
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => ({ value: d, label: d }));
+
+/** Seven segments four across: `lastRow` places the short row, or `'fill'` stretches it so the well stays a rectangle. */
+export const Wrapped: Story = {
+  args: { ariaLabel: 'Days', lastRow: 'fill' },
+  render: ({ ariaLabel, height, size, variant, lastRow }) => {
+    const [v, setV] = useState<string[]>(['Sat', 'Sun']);
+    return (
+      <ToggleBar
+        mode="multiple"
+        columns={4}
+        lastRow={lastRow}
+        items={days}
+        value={v}
+        onChange={setV}
+        ariaLabel={ariaLabel}
+        height={height}
+        size={size}
+        variant={variant}
+      />
+    );
+  },
+};
+
 export const Disabled: Story = {
   render: ({ ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('a');

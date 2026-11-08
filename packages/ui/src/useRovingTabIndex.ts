@@ -1,4 +1,4 @@
-import { rovingKey } from '@weasel-js/ui-logic';
+import { gridLayout, rovingGridTarget, rovingKey, type LastRow } from '@weasel-js/ui-logic';
 import {
   useCallback,
   useEffect,
@@ -26,8 +26,11 @@ export type UseRovingTabIndexOptions = {
   /** Defaults to `'both'`. Ignored when `columns` is set. */
   orientation?: RovingOrientation;
   /** Lays the items out as a grid this many across: Left and Right step through them in reading
-   *  order, and Up and Down move a row, keeping the column. See {@link rovingGridTarget}. */
+   *  order, and Up and Down move a row, keeping the column, by ui-logic's `rovingGridTarget`. */
   columns?: number;
+  /** With `columns`, where a last row shorter than `columns` sits, so Up and Down land on the item
+   *  drawn under this one. Default `'start'`. See {@link tiling}. */
+  lastRow?: LastRow;
   /** With `columns`, the elements whose items each start on a row of their own — a toolbar whose
    *  groups are each a grid. Items under none of them count as one group. */
   groupSelector?: string;
@@ -79,30 +82,6 @@ export function rovingTarget(
 ): number | null {
   const step = rovingKey(enabled, current, pressed, { canStop: isStop, orientation, dir });
   return step.handled ? step.at : null;
-}
-
-/** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading
- *  order, or null if it does not move it. Left, Right, Home and End behave as {@link rovingTarget}
- *  with `'horizontal'` and the same `dir`. Up and Down keep the column, landing on the last item of a row too short
- *  to have it, pass over rows where that item is disabled, and stop at the first and last rows. */
-export function rovingGridTarget(
-  current: number,
-  key: string,
-  enabled: readonly boolean[],
-  rows: readonly (readonly number[])[],
-  dir: RovingDirection = 'ltr',
-): number | null {
-  const step = key === 'ArrowDown' ? 1 : key === 'ArrowUp' ? -1 : 0;
-  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal', dir);
-  const r = rows.findIndex((row) => row.includes(current));
-  if (r < 0) return null;
-  const column = rows[r].indexOf(current);
-  for (let rr = r + step; rr >= 0 && rr < rows.length; rr += step) {
-    const row = rows[rr];
-    const i = row[Math.min(column, row.length - 1)];
-    if (i !== undefined && enabled[i]) return i;
-  }
-  return null;
 }
 
 /** `items` split into rows `columns` long, a new row starting wherever the group changes. */
@@ -259,8 +238,10 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       }
       const enabled = found.map(isEnabled);
       const dir = latest.current.dir ?? inlineDirection(e.currentTarget);
+      const rows = columns ? gridRows(found, columns, groupSelector) : [];
+      // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.
       const next = columns
-        ? rovingGridTarget(current, e.key, enabled, gridRows(found, columns, groupSelector), dir)
+        ? rovingGridTarget(current, e.key, enabled, rows, { dir, ...gridLayout(rows, columns, latest.current.lastRow) })
         : rovingTarget(current, e.key, enabled, orientation, dir);
       if (next === null || next === current) return;
       e.preventDefault();

@@ -1,6 +1,7 @@
 import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentPlaceProps } from '../segmentedRow';
+import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';
+import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from '../segmentTooltip';
@@ -26,7 +27,7 @@ export type ButtonBarSize = SegmentedSize;
 export type ButtonBarVariant = SegmentedVariant;
 
 /** Props for {@link ButtonBar}. */
-export type ButtonBarProps<V extends string | number = string> = {
+export type ButtonBarProps<V extends string | number = string> = SegmentedGridProps & {
   items: readonly ButtonBarItem<V>[];
   ariaLabel?: string;
   className?: string;
@@ -52,7 +53,8 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
     item.onAction();
   };
 
-  const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, onActivate: fire });
+  const tiles = segmentedTiling(props);
+  const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, ...(tiles ? tilingRoving(tiles) : {}), onActivate: fire });
 
   return (
     <SegmentedRow
@@ -60,6 +62,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
       role="toolbar"
       ariaLabel={ariaLabel}
       className={className}
+      tiling={tiles}
       height={height}
       size={size}
       variant={variant}

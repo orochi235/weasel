@@ -150,6 +150,26 @@ describe('PropertyField enum choices', () => {
     expect(onChange).toHaveBeenCalledWith('b');
   });
 
+  it('makes a clearable toggle toggle buttons: the lit one clears, the arrows only move, and mixed shows', () => {
+    const onChange = vi.fn();
+    const onClear = vi.fn();
+    const { rerender } = render(
+      <PropertyField kind="enum" control="toggle" label="Mode" value="a" options={OPTIONS} onChange={onChange} onClear={onClear} />,
+    );
+    const alpha = screen.getByRole('button', { name: 'Alpha' });
+    expect(alpha).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.keyDown(alpha, { key: 'ArrowRight' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.click(alpha);
+    expect(onClear).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Beta' }));
+    expect(onChange).toHaveBeenCalledWith('b');
+    rerender(
+      <PropertyField kind="enum" control="toggle" label="Mode" value="a" mixed options={OPTIONS} onChange={onChange} onClear={onClear} />,
+    );
+    expect(screen.getByRole('button', { name: 'Alpha' })).toHaveAttribute('aria-pressed', 'mixed');
+  });
+
   const GLYPHED = [
     { value: 'a', label: 'Alpha', glyph: <svg data-testid="alpha-glyph" /> },
     { value: 'b', label: 'Beta' },

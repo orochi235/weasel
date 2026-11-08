@@ -79,6 +79,8 @@ export { openPointerSession, DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELEC
 export type { PointerSession, PointerSessionCallbacks, PointerSessionCancelReason, PointerSessionOptions } from '@weasel-js/routing';
 export { startCarry } from '@weasel-js/routing';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from '@weasel-js/routing';
+export { sweepAction, SWEEP_BINDING } from '@weasel-js/routing';
+export type { SweepItem, SweepOptions, SweepPress, SweepRun } from '@weasel-js/routing';
 export { useHandleDrag } from '../interactions/gestures/handleDrag';
 export type {
   HandleDragPoint,

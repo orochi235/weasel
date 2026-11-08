@@ -30,7 +30,7 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope', yieldKeys = false } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope', yieldKeys = false, controls = 'leave' } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -57,9 +57,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   useEffect(() => depRegistry.register('dispatchTrace', () => trace), [depRegistry, trace]);
 
   const dispatcherRef = useRef<Dispatcher | null>(null);
-  if (!dispatcherRef.current) {
-    dispatcherRef.current = dispatcherOpt ?? createDispatcher();
-  }
+  dispatcherRef.current ??= dispatcherOpt ?? createDispatcher();
 
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and the core installs the routed view's.
@@ -98,6 +96,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
   const kitSettingsRef = useLatest(kitSettings);
+  const controlsRef = useLatest(controls);
 
   // Held here rather than in the effect: a re-bind of the listeners between
   // two clicks would otherwise drop the double click.
@@ -134,6 +133,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       onClick: () => onClickRef.current,
       onDoubleClick: () => onDoubleClickRef.current,
       clicks: clicksRef.current,
+      controls: () => controlsRef.current,
       yieldKeys,
     }, {
       keyboard,
@@ -146,5 +146,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       carry: carryChannel,
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
-    allDispatchers, clientToLocalRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }

@@ -600,6 +600,28 @@ on the same input on purpose, because its action declines through `enabled()`
 when the input is not its to take, says so with `opts: { yields: true }`, and
 the pair is not reported.
 
+**A press has one owner, and a gesture runs one action.** Before ranking, the
+pointer channel decides whether its surface hears the press at all: a press in
+a surface nested inside it goes to that surface's dispatcher; a press on a
+control (`CONTROL_SELECTOR`) is left to the control, unless the dispatcher is
+mounted with `controls: 'take'`, which captures the pointer only once the press
+becomes a drag so a click still reaches the control; and a press an element
+inside the surface opened a pointer session of its own for (`openPointerSession`,
+which every kit drag goes through) is given up at its first move or release, so
+an item's own drag always beats its surface's. Of the bindings that rank, the
+first whose action starts the gesture owns it to the end. An action hands a
+drag on only on purpose: an empty handle from `start`, or `'pass'` from
+`onMove`, offers it to the next candidate in rank order.
+
+A **sweep** (`sweepAction`) is that rule set put to use: an action on a
+`drag` taking any modifiers (`SWEEP_BINDING`) at the ambient tier, the lowest
+rank a drag binding holds, that sets each item of its surface the pointer
+crosses. Any drag naming a target or a modifier outranks it, an item's own
+drag takes the press first, and its `begin` returning `null` hands the drag
+on. The `sweep` prop of `ToggleBar` and `OptionsBar` mounts one on the bar's
+row, setting segments through the bar's selection model (ui-logic's
+`selection`).
+
 **A focused HUD widget hears a key before the canvas's key bindings do.** The
 dispatcher listens for keys on `window`; `@weasel-js/hud` listens on the canvas
 element, where the key is targeted while the canvas holds DOM focus, so it

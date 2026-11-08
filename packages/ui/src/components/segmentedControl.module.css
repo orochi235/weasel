@@ -307,6 +307,31 @@
   content: none;
 }
 
+/* A tiled row (tiling.module.css): one well around the whole grid, its cells butted, rounding only the grid's outer
+   corners. A pill's radius would round a tall grid into a stadium, so the well takes the large radius instead. */
+.root.tiled {
+  --_tile-r: max(0px, calc(var(--wzl-radius-lg) - var(--wzl-space-1)));
+  display: grid;
+  height: auto;
+  border-radius: var(--wzl-radius-lg);
+  grid-auto-rows: calc(var(--tb-h, var(--wzl-control-h)) - 2 * var(--wzl-space-1));
+}
+
+.root.tiled.size_sm {
+  --_tile-r: max(0px, calc(var(--wzl-radius-lg) - 1px));
+  grid-auto-rows: calc(var(--tb-h, calc(var(--wzl-font-size-sm) * 1.4 + 2px)) - 2px);
+}
+
+.root.tiled .segment {
+  min-width: 0;
+  border-radius: 0;
+}
+
+.root.tiled .segment[data-tile-corners~='ss'] { border-start-start-radius: var(--_tile-r); }
+.root.tiled .segment[data-tile-corners~='se'] { border-start-end-radius: var(--_tile-r); }
+.root.tiled .segment[data-tile-corners~='es'] { border-end-start-radius: var(--_tile-r); }
+.root.tiled .segment[data-tile-corners~='ee'] { border-end-end-radius: var(--_tile-r); }
+
 /* A vertical row: the well and its segments turned a quarter turn, each label still upright. */
 .root[data-orientation='vertical'] {
   flex-direction: column;

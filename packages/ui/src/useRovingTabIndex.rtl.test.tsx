@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import {
-  rovingGridTarget,
   rovingTarget,
   useRovingTabIndex,
   type UseRovingTabIndexOptions,
@@ -25,17 +24,6 @@ describe('rovingTarget — right-to-left', () => {
 
   it('leaves a vertical set ignoring Left and Right', () => {
     expect(rovingTarget(1, 'ArrowLeft', all3, 'vertical', 'rtl')).toBeNull();
-  });
-});
-
-describe('rovingGridTarget — right-to-left', () => {
-  const rows = [[0, 1, 2], [3, 4, 5]];
-  const all = Array(6).fill(true) as boolean[];
-
-  it('swaps Left and Right and keeps Up and Down', () => {
-    expect(rovingGridTarget(2, 'ArrowLeft', all, rows, 'rtl')).toBe(3);
-    expect(rovingGridTarget(3, 'ArrowRight', all, rows, 'rtl')).toBe(2);
-    expect(rovingGridTarget(1, 'ArrowDown', all, rows, 'rtl')).toBe(4);
   });
 });
 

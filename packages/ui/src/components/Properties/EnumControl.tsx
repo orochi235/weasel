@@ -61,37 +61,6 @@ export function EnumControl(p: PropertyEnumFieldProps) {
       />
     );
   }
-  if (p.control === 'toggle' && p.onClear) {
-    // `multiple` for what `single` cannot give: a mixed state on each segment,
-    // and arrow keys that move focus without choosing. At most one stays lit —
-    // the segment just added wins, and adding none means the lit one was
-    // clicked off.
-    const { onClear } = p;
-    const lit = current === null ? [] : [current];
-    return (
-      <ToggleBar<string>
-        mode="multiple"
-        size="sm"
-        variant="flat"
-        className={p.className ? `${s.toggleBar} ${p.className}` : s.toggleBar}
-        ariaLabel={p.name}
-        items={p.options.map((o) => ({
-          value: o.value,
-          label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,
-          ariaLabel: nameOf(o.label),
-          tooltip: glyphTip(o),
-          disabled: p.disabled || o.disabled,
-        }))}
-        value={lit}
-        mixedValues={p.mixed ? p.options.map((o) => o.value) : []}
-        onChange={(next) => {
-          const added = next.find((v) => !lit.includes(v));
-          if (added !== undefined) p.onChange(added);
-          else onClear();
-        }}
-      />
-    );
-  }
   if (p.control === 'toggle') {
     return (
       <ToggleBar<string>
@@ -107,8 +76,14 @@ export function EnumControl(p: PropertyEnumFieldProps) {
           disabled: p.disabled || o.disabled,
         }))}
         value={current}
+        // Clearable: a click on the lit segment clears it, and the arrows move focus without choosing, so each
+        // segment can show mixed. Otherwise the bar is a radio group.
+        allowDeselect={p.onClear !== undefined}
+        followsFocus={p.onClear === undefined}
+        mixedValues={p.onClear && p.mixed ? p.options.map((o) => o.value) : undefined}
         onChange={(next) => {
           if (next !== null) p.onChange(next);
+          else p.onClear?.();
         }}
       />
     );

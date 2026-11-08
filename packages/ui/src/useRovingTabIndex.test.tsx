@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
-import { rovingGridTarget, useRovingTabIndex, type UseRovingTabIndexOptions } from './useRovingTabIndex';
+import { useRovingTabIndex, type UseRovingTabIndexOptions } from './useRovingTabIndex';
 
 type BarProps = UseRovingTabIndexOptions & {
   items?: readonly { label: string; disabled?: boolean; ariaDisabled?: boolean }[];
@@ -284,46 +284,6 @@ describe('useRovingTabIndex — activation', () => {
 
   it('leaves Space and Enter alone without onActivate, so a button clicks normally', () => {
     expect(press(renderBar()[1], ' ').defaultPrevented).toBe(false);
-  });
-});
-
-describe('rovingGridTarget', () => {
-  // a b c
-  // d e f
-  // g
-  const rows = [[0, 1, 2], [3, 4, 5], [6]];
-  const all = Array(7).fill(true) as boolean[];
-
-  it('moves a row on Up and Down, keeping the column', () => {
-    expect(rovingGridTarget(1, 'ArrowDown', all, rows)).toBe(4);
-    expect(rovingGridTarget(4, 'ArrowUp', all, rows)).toBe(1);
-  });
-
-  it('goes to the last item of a short row the column runs past', () => {
-    expect(rovingGridTarget(5, 'ArrowDown', all, rows)).toBe(6);
-    expect(rovingGridTarget(4, 'ArrowDown', all, rows)).toBe(6);
-  });
-
-  it('stops at the top and bottom rows rather than wrapping', () => {
-    expect(rovingGridTarget(1, 'ArrowUp', all, rows)).toBeNull();
-    expect(rovingGridTarget(6, 'ArrowDown', all, rows)).toBeNull();
-  });
-
-  it('steps Left and Right in reading order, across rows, wrapping at the ends', () => {
-    expect(rovingGridTarget(2, 'ArrowRight', all, rows)).toBe(3);
-    expect(rovingGridTarget(3, 'ArrowLeft', all, rows)).toBe(2);
-    expect(rovingGridTarget(6, 'ArrowRight', all, rows)).toBe(0);
-    expect(rovingGridTarget(0, 'ArrowLeft', all, rows)).toBe(6);
-  });
-
-  it('passes over a row whose item in that column is disabled', () => {
-    const enabled = all.map((_, i) => i !== 4);
-    expect(rovingGridTarget(1, 'ArrowDown', enabled, rows)).toBe(6);
-  });
-
-  it('keeps Home and End on the whole set', () => {
-    expect(rovingGridTarget(4, 'Home', all, rows)).toBe(0);
-    expect(rovingGridTarget(4, 'End', all, rows)).toBe(6);
   });
 });
 

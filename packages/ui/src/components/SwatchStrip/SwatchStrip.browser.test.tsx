@@ -63,7 +63,8 @@ test('an arrow down from a full row lands on the swatch beneath it in a shifted 
   expect(document.activeElement).toBe(swatches[11]);
   await userEvent.keyboard('{ArrowUp}');
   expect(document.activeElement).toBe(swatches[8]);
+  // Nothing under column 2: the nearest swatch of the row below, as in every roving grid.
   swatches[2]!.focus();
   await userEvent.keyboard('{ArrowDown}');
-  expect(document.activeElement).toBe(swatches[2]);
+  expect(document.activeElement).toBe(swatches[10]);
 });

@@ -17,7 +17,7 @@ const groups = () => [...document.querySelectorAll<HTMLElement>('[role="toolbar"
 describe('ToolPalette columns', () => {
   it('lays every group out as a grid that many across', () => {
     renderWithIcons(<ToolPalette tools={fakeTools([tool('a', 'one'), tool('b', 'one'), tool('c', 'two')])} columns={3} />);
-    expect(groups().map((g) => g.style.getPropertyValue('--wzl-tool-columns'))).toEqual(['3', '3']);
+    expect(groups().map((g) => g.style.getPropertyValue('--tracks'))).toEqual(['6', '6']);
   });
 
   it('stacks the groups, with horizontal separators, whatever the orientation', () => {
@@ -44,7 +44,7 @@ describe('ToolPalette columns', () => {
 
   it('leaves the groups a single line without columns', () => {
     renderWithIcons(<ToolPalette tools={fakeTools([tool('a'), tool('b')])} />);
-    expect(groups()[0]!.style.getPropertyValue('--wzl-tool-columns')).toBe('');
+    expect(groups()[0]!.style.getPropertyValue('--tracks')).toBe('');
   });
 });
 

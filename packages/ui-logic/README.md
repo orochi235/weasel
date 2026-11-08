@@ -2,7 +2,7 @@
 
 Component behavior with no substrate: what a DOM component and a canvas-drawn widget both run,
 each drawing it its own way. Today that is a list's roving highlight and typeahead, a tree's
-expand and collapse keys, keyboard focus as one contract, how a text field's edit ends, and the
+expand and collapse keys, a run's selection, grid tiling, keyboard focus as one contract, how a text field's edit ends, and the
 measure/draw contract a button and a row list implement on both targets. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
@@ -60,6 +60,22 @@ focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
 `subscribeFocus`. A `@weasel-js/hud` HUD is one over its widgets, and `@weasel-js/ui`'s
 `domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
 written once for both. `tabSort` and `tabStep` are the order and the step both use.
+
+## Selection and grids
+
+`selection(spec, values)` is which of a run of items are on: one value or `null` (`mode: 'single'`, which may
+`allowDeselect` and may not follow focus), or a list of them (`'multiple'`), either with `mixedValues`, where the
+sources disagree. `selectionOfEach(items)` is the same over items that each own a boolean. The model says each
+item's state (`'on'`, `'off'`, `'mixed'`), what a press does, and runs an `edit`, a run of changes from its own
+copy that it can revert; `sweepFrom` is a sweep's, setting each item it reaches to the opposite of whether the
+pressed one was on. `selectionKeys` says what the keyboard does with it.
+
+`tileGrid(count, { columns, lastRow })` lays a run of same-size items out as a grid, a short last row at its start,
+centered, at its end, or stretched across (`'fill'`): its tracks, each item's span, and which of the grid's outer
+corners each item sits on. `rovingGridTarget` walks such a grid with the arrows, Up and Down landing on the item
+drawn under this one, by `gridLayout`'s per-row offsets and widths; `tileKey` does the same for `count` items
+tiled by a spec. `@weasel-js/ui`'s `ToggleBar`, `OptionsBar`,
+`ButtonBar`, `SwatchGrid` and `ToolGroup` run on these.
 
 ## Steps and sliders
 
