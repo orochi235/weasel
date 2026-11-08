@@ -3,7 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import type { RenderStats } from '@weasel-js/renderer';
 import type { LayerDrawSpan, RenderLayer } from 'core/layers/render';
 import type { CanvasDebugSink, DebugConfig } from './types';
-import { parseDebugFlags } from './parseDebugFlags';
+import { resolveDebugConfig } from './parseDebugFlags';
 import { createDebugSink } from './createDebugSink';
 import { createDebugOverlayLayer, DEBUG_OVERLAY_ID } from './createDebugOverlayLayer';
 import { frameStatsOf } from './frameStats';
@@ -31,9 +31,7 @@ const OFF = { sink: null, overlay: null, frameStats: false };
 export function useDebugSink(debug: DebugConfig | false | undefined): SurfaceDebug {
   const key = debug === undefined ? undefined : JSON.stringify(debug);
   const state = useMemo(() => {
-    const config = key !== undefined
-      ? (JSON.parse(key) as DebugConfig | false) || null
-      : typeof window === 'undefined' ? null : parseDebugFlags(window.location.search);
+    const config = resolveDebugConfig(key === undefined ? undefined : JSON.parse(key) as DebugConfig | false);
     if (!config) return OFF;
     const sink = createDebugSink(config);
     return { sink, overlay: createDebugOverlayLayer({ sink, config }), frameStats: config.fps === true };
