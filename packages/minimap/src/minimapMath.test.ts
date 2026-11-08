@@ -223,6 +223,17 @@ describe('computeFitView — fit={kind:"world", rect}', () => {
     expect(view.y + dims.height / (2 * view.scale.y)).toBeCloseTo(205, 6);
   });
 
+  it('gives a rect with an unbounded side a usable scale, not zero', () => {
+    const view = computeFitView(
+      makeScene(),
+      { width: 200, height: 200 },
+      { kind: 'world', rect: { x: 0, y: 0, width: Infinity, height: 100 } },
+      identityPoseBounds,
+    );
+    expect(view.scale.x).toBe(1);
+    expect(view.scale.y).toBe(1);
+  });
+
   it('zero-height rect fits its width and centers on the line', () => {
     const scene = makeScene();
     const dims = { width: 200, height: 200 };

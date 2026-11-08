@@ -1,5 +1,7 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { composeWorldPose, documentPose, effectivePose, scenePoseAdapter, viewportWorldRect } from '@weasel-js/core';
+import {
+  composeWorldPose, documentPose, effectivePose, fitViewToBounds, scenePoseAdapter, viewportWorldRect,
+} from '@weasel-js/core';
 import type { NodeId, PoseAdapter, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
@@ -43,29 +45,18 @@ export interface IndicatorStyle {
 const DEFAULT_INDICATOR_WIDTH = 1;
 const DEFAULT_INDICATOR_DASH: readonly number[] = [2, 3];
 
-/** Internal: fit a world rect uniformly into dims with padding. */
+/** Internal: fit a world rect uniformly into dims with padding, at whatever
+ *  scale that takes. A rect with nothing to fit, or a minimap not yet measured,
+ *  gets identity scale centered on the rect's top-left. */
 function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
-  const availW = Math.max(1, dims.width - padding * 2);
-  const availH = Math.max(1, dims.height - padding * 2);
-  const hasW = rect.width > 0;
-  const hasH = rect.height > 0;
-  if (!hasW && !hasH) {
-    return {
-      x: rect.x - dims.width / 2,
-      y: rect.y - dims.height / 2,
-      scale: { x: 1, y: 1 },
-    };
+  if (dims.width > 0 && dims.height > 0) {
+    const fitted = fitViewToBounds(rect, dims, FALLBACK_FIT_VIEW, { padding, minScale: 0, maxScale: Infinity });
+    if (fitted) return fitted;
   }
-  const s = Math.min(
-    hasW ? availW / rect.width : Infinity,
-    hasH ? availH / rect.height : Infinity,
-  );
-  const worldCx = rect.x + Math.max(0, rect.width) / 2;
-  const worldCy = rect.y + Math.max(0, rect.height) / 2;
   return {
-    x: worldCx - dims.width / (2 * s),
-    y: worldCy - dims.height / (2 * s),
-    scale: { x: s, y: s },
+    x: rect.x - dims.width / 2,
+    y: rect.y - dims.height / 2,
+    scale: { x: 1, y: 1 },
   };
 }
 
@@ -122,7 +113,8 @@ export interface ComputeFitViewOptions {
  * {@link FALLBACK_FIT_VIEW}; a function `fit` is passed through unchanged.
  *
  * A rect with one zero axis (a line) is fitted along the other. One with no
- * positive axis falls back to identity scale centered on its top-left.
+ * positive axis, or a side that is not finite, falls back to identity scale
+ * centered on its top-left.
  */
 export function computeFitView<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
