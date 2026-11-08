@@ -16,7 +16,7 @@ export type LocatePointer = (
  * `locate` places it. A pointer pressed on the element keeps publishing once
  * it leaves, so a drag that runs off the edge still reports where it is until
  * it is released. A pointer that leaves with nothing held, or is released
- * or cancelled outside, clears the store, unless another view has published since. No-op with no provider in scope.
+ * or canceled outside, clears the store, unless another view has published since. No-op with no provider in scope.
  *
  * `locate` is read on each event, so it need not be stable.
  */
@@ -45,7 +45,7 @@ export function usePublishPointer(
       if (held.count() > 0) publish(e);
       else clear();
     };
-    // A press that left the element is released, or cancelled, with no leave to follow.
+    // A press that left the element is released, or canceled, with no leave to follow.
     const onDocUp = (e: PointerEvent): void => {
       if (held.count() === 0 && !el.contains(e.target as Node | null)) clear();
     };
