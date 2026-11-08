@@ -5,6 +5,26 @@ import { Hang } from '@weasel-js/react/testing/abandonRender';
 import { useTextEdit } from './useTextEdit';
 import { makeHarness, getOverlay, appendChar, seedPlainOverlay } from './testing/textEditHarness';
 
+describe('useTextEdit — the caret an edit opens with', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('publishes a numeric caret as a collapsed selection there', () => {
+    const h = makeHarness({ a: 'hello' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a', { caret: 3 }));
+    expect(result.current.selection).toEqual({ start: 3, end: 3 });
+  });
+
+  it('clamps a caret past the text to its end', () => {
+    const h = makeHarness({ a: 'hi' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a', { caret: 99 }));
+    expect(result.current.selection).toEqual({ start: 2, end: 2 });
+  });
+});
+
 describe('useTextEdit — an edit that changed nothing writes nothing', () => {
   beforeEach(() => {
     document.body.innerHTML = '';

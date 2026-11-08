@@ -15,7 +15,7 @@ import { cssFontFamilyLoading } from '@weasel-js/font';
 import { editEnd, imeKey } from '@weasel-js/ui-logic';
 import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
-import { domToRuns, type OverlayRunBase } from './domRuns';
+import { charOffsetToDomPosition, domToRuns, type OverlayRunBase } from './domRuns';
 import {
   applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, setFlagOverRange,
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
@@ -356,7 +356,9 @@ export function useTextEdit(
     if (initial === 'all') {
       range.selectNodeContents(overlay);
     } else {
-      placeCaretAt(overlay, range, initial);
+      const at = charOffsetToDomPosition(overlay, initial);
+      if (at) range.setStart(at.node, at.offset);
+      range.collapse(true);
     }
     // Focus first, then place the caret: focusing an editable host itself
     // moves the selection (jsdom collapses to the start; browsers vary).
@@ -494,28 +496,6 @@ function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Pro
     }),
   ].filter((p) => p !== null);
   return pending.length === 0 ? null : Promise.all(pending);
-}
-
-/**
- * Place a collapsed caret `offset` characters into the overlay's text,
- * walking its text nodes. Out-of-range offsets clamp to the end.
- */
-function placeCaretAt(root: HTMLElement, range: Range, offset: number): void {
-  let remaining = offset;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node: Text | null = walker.nextNode() as Text | null;
-  while (node) {
-    const len = node.data.length;
-    if (remaining <= len) {
-      range.setStart(node, remaining);
-      range.setEnd(node, remaining);
-      return;
-    }
-    remaining -= len;
-    node = walker.nextNode() as Text | null;
-  }
-  range.selectNodeContents(root);
-  range.collapse(false);
 }
 
 /** The overlay's positioning parent. Passes pointer input through everywhere
