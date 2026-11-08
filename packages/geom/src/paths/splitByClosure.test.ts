@@ -20,6 +20,18 @@ describe('splitByClosure', () => {
     expect(open!.fillRule).toBe(path.fillRule);
   });
 
+  it('keeps a closed subpath closed when the next one opens without an M', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_Z, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 20, 5, 20]),
+      fillRule: 'nonzero',
+    };
+    const { closed, open } = splitByClosure(path);
+    expect(Array.from(closed!.commands)).toEqual([PATH_M, PATH_L, PATH_L, PATH_Z]);
+    expect(Array.from(open!.coords)).toEqual([0, 0, 0, 20, 5, 20]);
+  });
+
   it('answers null for the side with no subpaths', () => {
     expect(splitByClosure(poly('M0 0L10 0L10 10Z')).open).toBeNull();
     expect(splitByClosure(poly('M0 0L10 0L10 10')).closed).toBeNull();
