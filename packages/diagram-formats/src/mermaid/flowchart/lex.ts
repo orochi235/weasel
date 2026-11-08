@@ -155,6 +155,10 @@ class MermaidLexer {
       return;
     }
     this.push({ kind: 'word', value: word[0], line: this.line });
+    if (start && word[0] === 'accDescr' && /^[ \t]*\{/.test(this.text.slice(this.i, this.lineEnd()))) {
+      this.descrBlock();
+      return;
+    }
     if (start && REST_KEYWORDS.has(word[0]) && /^(?:[ \t:]|$|\n)/.test(this.text.slice(this.i, this.i + 1))) {
       const semi = this.text.indexOf(';', this.i);
       const stop = Math.min(this.lineEnd(), semi < 0 ? this.text.length : semi);
@@ -164,6 +168,19 @@ class MermaidLexer {
       return;
     }
     this.shape();
+  }
+
+  /** An `accDescr { … }` block's text, which may run over several lines, as one `rest` token. */
+  descrBlock(): void {
+    const line = this.line;
+    const open = this.text.indexOf('{', this.i);
+    const close = this.text.indexOf('}', open);
+    if (close < 0) throw fail(line, 'an accDescr block is never closed');
+    const body = this.text.slice(open + 1, close);
+    for (const c of body) if (c === '\n') this.line++;
+    const rest = body.split('\n').map((l) => l.trim()).filter((l) => l !== '').join('\n');
+    if (rest !== '') this.push({ kind: 'rest', value: rest, line });
+    this.i = close + 1;
   }
 
   /** Text up to `close`, or a quoted string then `close`. */
