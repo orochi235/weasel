@@ -5,7 +5,8 @@ import {
   RESIZE_HANDLE_ANCHORS, fixedCornerOf, handlePoint, isCornerHandle, type ResizeHandleAnchor,
 } from 'interactions/actions/resize/cornerHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
-import { angleOf, localToWorld, transformOf } from './hitAffordanceRegions';
+import { localToWorld, transformOf, type TargetTransform } from './hitAffordanceRegions';
+import type { View } from 'core/viewport/view';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 import type { CursorSpec } from '@weasel-js/cursor';
 
@@ -106,7 +107,7 @@ export function createCornerResizeAffordance(
           },
           paint,
           hitKind: c.kind,
-          cursor: resizeCursor(c, angleOf(xf)),
+          cursor: resizeCursor(c, xf),
           bind: (): AffordanceBinding => ({
             initialScratch: {
               anchor: c.anchor,
@@ -120,21 +121,25 @@ export function createCornerResizeAffordance(
   };
 }
 
-/** The resize cursor along the axis a handle drags, turned with the target.
- *  The glyph is horizontal at angle 0. A corner takes a diagonal by fixed-corner
- *  parity: a matched-axis anchor (min-min / max-max fixed) puts the dragged
- *  corner on the ↘ diagonal, mixed axes on the ↗ one. The keyword is the
- *  fallback rather than the answer: CSS has four of them, which cannot express
- *  a target rotated to anything but a multiple of 45°. */
-function resizeCursor(c: ResizeHandleAnchor, turn: number): CursorSpec {
-  if (c.anchor.y === 'free') return { glyph: 'resize', angle: turn, fallback: 'ew-resize' };
-  if (c.anchor.x === 'free') return { glyph: 'resize', angle: Math.PI / 2 + turn, fallback: 'ns-resize' };
+/** The resize cursor along the axis a handle drags, as that axis is drawn on
+ *  screen: through the target's frame, a turn or a mirror included, and the
+ *  view's scale. The glyph is horizontal at angle 0. A corner drags along a
+ *  diagonal of its box picked by fixed-corner parity: a matched-axis anchor
+ *  (min-min / max-max fixed) drags along local (1, 1), mixed axes along
+ *  (1, -1). The keyword is the fallback rather than the answer: CSS has four
+ *  of them, which cannot express a target rotated to anything but a multiple
+ *  of 45°. */
+function resizeCursor(c: ResizeHandleAnchor, xf: TargetTransform): (at: unknown, view: View) => CursorSpec {
   const matched = c.anchor.x === c.anchor.y;
-  return {
-    glyph: 'resize',
-    angle: (matched ? Math.PI / 4 : -Math.PI / 4) + turn,
-    fallback: matched ? 'nwse-resize' : 'nesw-resize',
-  };
+  const [lx, ly, fallback]: [number, number, string] = c.anchor.y === 'free'
+    ? [1, 0, 'ew-resize']
+    : c.anchor.x === 'free'
+      ? [0, 1, 'ns-resize']
+      : [1, matched ? 1 : -1, matched ? 'nwse-resize' : 'nesw-resize'];
+  const [a, b, cc, d] = xf.toWorld;
+  const wx = a * lx + cc * ly;
+  const wy = b * lx + d * ly;
+  return (_at, view) => ({ glyph: 'resize', angle: Math.atan2(wy * view.scale.y, wx * view.scale.x), fallback });
 }
 
 function pickRenderTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
