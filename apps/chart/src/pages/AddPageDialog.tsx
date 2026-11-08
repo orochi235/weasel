@@ -10,19 +10,16 @@ import type { ChartPages } from './useChartPages';
  * page's stencil groups join the Shapes panel's, so its symbols are there to draw with. One undo entry.
  */
 export function addChartPage(scene: ChartScene, pages: ChartPages, template: PageTemplate, theme: DiagramTheme): void {
-  const list = pages.placed;
-  const at = list.findIndex((p) => p.id === pages.shown?.id);
-  const like = list[at] ?? list[list.length - 1];
   const groups = template.diagramType !== undefined ? DIAGRAM_TYPES[template.diagramType]?.groups ?? [] : [];
-  const id = scene.batch('Add page', () => {
-    const added = addTemplatePage(scene, template, {
-      layer: 'shapes', theme, measure: rendererMeasure, index: at < 0 ? list.length : at + 1,
-      ...(like !== undefined ? { size: { width: like.width, height: like.height } } : {}),
-    });
-    for (const g of groups) addStencilGroup(scene, g);
-    return added;
+  pages.add({
+    make: ({ index, size }) => scene.batch('Add page', () => {
+      const added = addTemplatePage(scene, template, {
+        layer: 'shapes', theme, measure: rendererMeasure, index, ...(size !== undefined ? { size } : {}),
+      });
+      for (const g of groups) addStencilGroup(scene, g);
+      return added;
+    }),
   });
-  pages.goTo(id);
 }
 
 /** Page › Add Page…: the page templates, the chart's own type chosen to start, the one taken added after the page in view. */

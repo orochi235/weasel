@@ -15,6 +15,19 @@ export interface UsePagesOptions {
   paging?: Paging;
 }
 
+/** Where {@link DocPages.add} puts a new page: its index in the page list, and the size of the page it
+ *  follows, absent when the scene has no page to copy. */
+export interface PagePlace {
+  index: number;
+  size?: PageSize;
+}
+
+/** What {@link DocPages.add} takes. */
+export interface AddPageOptions {
+  /** Adds the page at `place` and answers its id, in place of a blank page. */
+  make?(place: PagePlace): string;
+}
+
 /** A document's pages, which one the view is on, and what can be done to them. */
 export interface DocPages {
   placed: readonly PlacedPage[];
@@ -25,9 +38,9 @@ export interface DocPages {
   goTo(id: string): void;
   /** Go to the next page (`1`) or the one before (`-1`). */
   step(by: 1 | -1): void;
-  /** Add a page after the current one, the same size, and go to it. A scene without pages gets its first,
+  /** Add a page after the one shown, the same size, and go to it. A scene without pages gets its first,
    *  and with it the page run that makes it paged. */
-  add(): void;
+  add(options?: AddPageOptions): void;
   /** Delete a page and what is on it. The last page cannot go. */
   remove(id: string): void;
   move(id: string, index: number): void;
@@ -93,7 +106,7 @@ export function usePages<TData, TLayer extends string, TPose>(
   const placed = usePlaced(scene);
   const current = dims.width > 0 && dims.height > 0 ? pageInView(placed, view, dims)?.id ?? null : null;
   const shown = useShown(placed, current);
-  const latest = useLatest({ view, dims, setView, current });
+  const latest = useLatest({ view, dims, setView, current, shown });
   const result = useMemo<DocPages>(() => {
     const show = (page: PlacedPage | null | undefined) => {
       const { view: v, dims: d, setView: set } = latest.current;
@@ -107,14 +120,18 @@ export function usePages<TData, TLayer extends string, TPose>(
       shown,
       goTo,
       step: (by) => show(adjacentPage(placedPagesOf(scene), latest.current.current, by)),
-      add() {
+      add(options) {
         const pages = pagesOf(scene)?.pages ?? [];
-        const at = pages.findIndex((p) => p.id === latest.current.current);
+        const at = pages.findIndex((p) => p.id === latest.current.shown?.id);
         const like = pages[at] ?? pages[pages.length - 1];
-        const id = nextPageId(pages);
-        const size = like ? { width: like.width, height: like.height } : FIRST_PAGE;
-        addPage(scene, { id, ...size }, { index: at < 0 ? pages.length : at + 1 });
-        goTo(id);
+        const place: PagePlace = { index: at < 0 ? pages.length : at + 1 };
+        if (like) place.size = { width: like.width, height: like.height };
+        const make = options?.make ?? (({ index, size }: PagePlace) => {
+          const id = nextPageId(pages);
+          addPage(scene, { id, ...(size ?? FIRST_PAGE) }, { index });
+          return id;
+        });
+        goTo(make(place));
       },
       remove(id) {
         if ((pagesOf(scene)?.pages.length ?? 0) > 1) removePage(scene, id);

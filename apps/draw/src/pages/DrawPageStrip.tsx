@@ -19,7 +19,7 @@ export function DrawPageStrip({ pages }: { pages: DocPages }): ReactElement {
       onSelect={pages.goTo}
       onRename={pages.rename}
       onMove={pages.move}
-      onAdd={pages.add}
+      onAdd={() => pages.add()}
       onTabContextMenu={(id, e) => {
         const opened = host?.open({ menu: PAGE_TAB_MENU_ID, client: { x: e.clientX, y: e.clientY }, params: { page: id }, source: 'pointer' });
         if (opened) e.preventDefault();

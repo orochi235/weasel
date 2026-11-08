@@ -75,14 +75,13 @@ export function EasingsDemo() {
       const cmds: DrawCommand[] = [];
       for (let i = 0; i < ALL_EASINGS.length; i++) {
         const name = ALL_EASINGS[i];
-        const y = TOP_PAD + i * ROW_HEIGHT + ROW_HEIGHT / 2;
-        // Per-row label. Right-aligned approximation: x = right_edge - text_width.
-        const charW = 6.6;
+        const top = TOP_PAD + i * ROW_HEIGHT;
+        const y = top + ROW_HEIGHT / 2;
         cmds.push(textCommandFromRuns(
-          TRACK_LEFT - 8 - name.length * charW,
-          y,
+          TRACK_LEFT - 8, top,
           [{ text: name, fill: { paint: { kind: 'solid', color: '#a89878' } } }],
-          { fontFamily: 'sans-serif', fontSize: 11 },
+          { fontFamily: 'sans-serif', fontSize: 11, align: 'right' },
+          undefined, ROW_HEIGHT, 'center',
         ));
         // Track line as 2-point polygon path stroke.
         cmds.push({

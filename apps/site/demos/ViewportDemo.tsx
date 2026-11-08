@@ -76,8 +76,6 @@ export function ViewportDemo() {
               drawOne: (node, pose, view): DrawCommand[] => {
                 const p = pose as Pose;
                 const fontSize = 14 / meanScale(view.scale);
-                const label = node.data.label;
-                const charW = fontSize * 0.6;
                 return [
                   {
                     kind: 'path',
@@ -89,13 +87,11 @@ export function ViewportDemo() {
                     path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
                     stroke: { paint: { color: 'rgba(255,255,255,0.25)' }, width: { px: 1.5 } },
                   },
-                  // Center-aligned: x = center - (text_width / 2). Approximates
-                  // ctx.textAlign='center' since TextDrawCommand uses left baseline.
                   textCommandFromRuns(
-                    p.x + p.width / 2 - (label.length * charW) / 2,
-                    p.y + p.height / 2 + fontSize / 3,  // textBaseline='middle' → shift down ~1/3 emHeight
-                    [{ text: label, fill: { paint: { kind: 'solid', color: '#1a130d' } } }],
-                    { fontFamily: 'sans-serif', fontSize },
+                    p.x, p.y,
+                    [{ text: node.data.label, fill: { paint: { kind: 'solid', color: '#1a130d' } } }],
+                    { fontFamily: 'sans-serif', fontSize, align: 'center' },
+                    undefined, p.height, 'center', undefined, p.width,
                   ),
                 ];
               },

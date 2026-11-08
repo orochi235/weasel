@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { createScene, isPaged, pagesOf, type NodeId, type RectPose, type View } from '@weasel-js/core';
+import { addPage, createScene, isPaged, pagesOf, type NodeId, type RectPose, type View } from '@weasel-js/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usePages } from './usePages';
 
@@ -68,5 +68,36 @@ describe('usePages', () => {
     setView.mockClear();
     act(() => { vi.advanceTimersByTime(150); });
     expect(setView).toHaveBeenCalledTimes(1);
+  });
+
+  it('adds after the page last shown while the view sits off every page', () => {
+    const scene = continuous();
+    let view = VIEW;
+    const setView = (v: View) => { view = v; };
+    const { result, rerender } = renderHook(() => usePages(scene, view, DIMS, setView));
+    for (let i = 0; i < 3; i++) { act(() => result.current.add()); rerender(); }
+    act(() => result.current.goTo('page-1'));
+    rerender();
+    expect(result.current.current).toBe('page-1');
+    view = { ...view, x: view.x + 1e6 };
+    rerender();
+    expect(result.current.current).toBeNull();
+    expect(result.current.shown?.id).toBe('page-1');
+    act(() => result.current.add());
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1', 'page-4', 'page-2', 'page-3']);
+  });
+
+  it('places a page another maker draws where its own would go', () => {
+    const scene = continuous();
+    const { result, rerender } = renderHook(() => usePages(scene, VIEW, DIMS, () => {}));
+    act(() => result.current.add());
+    rerender();
+    const make = vi.fn((place: { index: number; size?: { width: number; height: number } }) => {
+      addPage(scene, { id: 'made', width: 10, height: 20 }, { index: place.index });
+      return 'made';
+    });
+    act(() => result.current.add({ make }));
+    expect(make).toHaveBeenCalledWith({ index: 1, size: { width: 816, height: 1056 } });
+    expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1', 'made']);
   });
 });
