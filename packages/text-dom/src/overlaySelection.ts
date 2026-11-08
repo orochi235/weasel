@@ -35,6 +35,13 @@ export function selectOffsets(overlay: HTMLElement, start: number, end: number):
   sel.addRange(range);
 }
 
+/** Whether `el` takes typed text: a field, a text area, or something editable. */
+function isTextEntry(el: Element | null): boolean {
+  return el instanceof HTMLInputElement
+    || el instanceof HTMLTextAreaElement
+    || (el instanceof HTMLElement && el.isContentEditable);
+}
+
 /**
  * Replace the overlay's contents with `runs` and put the selection back on
  * `[start, end)`, which rewriting the DOM destroys.
@@ -54,12 +61,7 @@ export function writeRunsPreservingSelection(
   base: OverlayRunBase,
 ): void {
   const active = document.activeElement;
-  const inTextEntry =
-    active !== overlay &&
-    !overlay.contains(active) &&
-    (active instanceof HTMLInputElement ||
-      active instanceof HTMLTextAreaElement ||
-      (active instanceof HTMLElement && active.isContentEditable));
+  const inTextEntry = active !== overlay && !overlay.contains(active) && isTextEntry(active);
   runsToDom(runs, overlay, base);
   if (!inTextEntry) selectOffsets(overlay, start, end);
 }
@@ -76,12 +78,7 @@ export function writeRunsPreservingSelection(
 export function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
   const active = document.activeElement;
   if (active === overlay || overlay.contains(active)) return;
-  if (
-    active instanceof HTMLInputElement
-    || active instanceof HTMLTextAreaElement
-    || (active instanceof HTMLElement && active.isContentEditable)
-    || (active instanceof Element && active.closest('[role="dialog"]') !== null)
-  ) return;
+  if (isTextEntry(active) || (active instanceof Element && active.closest('[role="dialog"]') !== null)) return;
   overlay.focus();
   selectOffsets(overlay, range.start, range.end);
 }
