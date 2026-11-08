@@ -5,14 +5,13 @@ import {
   type RenderLayer,
   type SceneCanvasApi,
   useAction,
-  useActionsRegistry,
   useLatest,
 } from '@weasel-js/core';
 import type { LoupeMode } from '@weasel-js/hud';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { pref } from '@weasel-js/prefs';
 import type { SchemaBinding } from './surfaces/types';
-import { useColorContext } from './tools/colorContext';
+import { usePickColor } from './usePickColor';
 
 /** The action that copies the hex under the loupe. */
 export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
@@ -96,17 +95,10 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
   onColor: (hex: string) => void;
 }) {
   const hud = useHud(canvasRef, { font: 'sans-serif' });
-  const colors = useColorContext();
-  const actions = useActionsRegistry();
+  const pickColor = usePickColor();
   useLoupe(canvasRef, hud, source, settings, {
     onColorChange: onColor,
-    // A pick is the swatch edit arriving from a different control: it sets the
-    // focused paint and, through the same action the swatch dispatches, paints
-    // the selection with it.
-    onPick: (hex) => {
-      colors.setFocusedColor(hex);
-      actions?.begin(colors.focused === 'fill' ? 'setFill' : 'setStroke', { color: hex })?.end('commit');
-    },
+    onPick: pickColor,
     onClose: () => state.set({ visible: false }),
   });
   return null;
