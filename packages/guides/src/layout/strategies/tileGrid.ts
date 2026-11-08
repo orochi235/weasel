@@ -12,6 +12,7 @@ import {
 } from '@weasel-js/core';
 import type { Rect } from '@weasel-js/geom';
 import { cellAt } from '../snaps';
+import { defaultCenterOf } from './sequence';
 
 interface TileMeta {
   col: number;
@@ -58,11 +59,6 @@ export interface TileGridOptions<TPose> {
    *  `width`/`height` when the pose has them, which is the center of a
    *  `RectPose` and the point itself for a point pose. */
   centerOf?(pose: TPose): { x: number; y: number };
-}
-
-function defaultCenterOf(pose: unknown): { x: number; y: number } {
-  const p = pose as { x?: number; y?: number; width?: number; height?: number };
-  return { x: (p.x ?? 0) + (p.width ?? 0) / 2, y: (p.y ?? 0) + (p.height ?? 0) / 2 };
 }
 
 /**
