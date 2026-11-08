@@ -2,7 +2,7 @@
 
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
-import { SINGULAR_RATIO } from '../scalar';
+import { nearlyParallel } from '../scalar';
 
 /** One crossing of segments `a` and `b`: the parameter on each, and the point. */
 export interface SegmentCrossing {
@@ -84,13 +84,6 @@ function chordCross(p0: Point, p1: Point, q0: Point, q1: Point, slack: number): 
   return [u, v];
 }
 
-/** Whether lines p0→p1 and q0→q1 run parallel to within rounding; a line with no length is parallel to all. */
-function parallel(p0: Point, p1: Point, q0: Point, q1: Point): boolean {
-  const rx = p1.x - p0.x, ry = p1.y - p0.y;
-  const sx = q1.x - q0.x, sy = q1.y - q0.y;
-  return !(Math.abs(rx * sy - ry * sx) > SINGULAR_RATIO * Math.hypot(rx, ry) * Math.hypot(sx, sy));
-}
-
 /** The ends of the stretch two collinear lines share, one point where they
  *  only touch end to end, and none when they are apart or not collinear. */
 function collinearOverlap(p0: Point, p1: Point, q0: Point, q1: Point): SegmentCrossing[] {
@@ -140,8 +133,8 @@ function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
  */
 export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): SegmentCrossing[] {
   if (a.length === 2 && b.length === 2) {
-    // Points rounded onto one line leave a cross product of rounding noise, which divides to an arbitrary crossing.
-    if (parallel(a[0], a[1], b[0], b[1])) return collinearOverlap(a[0], a[1], b[0], b[1]);
+    const [p0, p1] = a, [q0, q1] = b;
+    if (nearlyParallel(p1.x - p0.x, p1.y - p0.y, q1.x - q0.x, q1.y - q0.y)) return collinearOverlap(p0, p1, q0, q1);
     const uv = chordCross(a[0], a[1], b[0], b[1], 1e-12);
     if (!uv) return [];
     const ta = Math.min(1, Math.max(0, uv[0]));

@@ -1,6 +1,7 @@
 /** The cut polyline itself: where it crosses itself, and the loops it closes inside a path. */
 
 import { pointInPolygon } from '../polyline';
+import { nearlyParallel } from '../scalar';
 import type { Point } from '../paths/cubicMath';
 import { type Contour, evalSeg, reverseContour, sampleContour, signedArea } from './contourSegments';
 import { type Crossing, findCrossings } from './cutCrossings';
@@ -27,8 +28,8 @@ export function cutBetween(cut: Point[], from: Crossing, to: Crossing): Point[] 
 function properCrossing(p0: Point, p1: Point, q0: Point, q1: Point): Point | null {
   const r = { x: p1.x - p0.x, y: p1.y - p0.y };
   const s = { x: q1.x - q0.x, y: q1.y - q0.y };
+  if (nearlyParallel(r.x, r.y, s.x, s.y)) return null;
   const den = r.x * s.y - r.y * s.x;
-  if (den === 0) return null;
   const qp = { x: q0.x - p0.x, y: q0.y - p0.y };
   const t = (qp.x * s.y - qp.y * s.x) / den;
   const u = (qp.x * r.y - qp.y * r.x) / den;

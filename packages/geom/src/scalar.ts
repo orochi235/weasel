@@ -50,6 +50,13 @@ export function cross(ax: number, ay: number, bx: number, by: number): number {
   return ax * by - ay * bx;
 }
 
+/** Whether directions (rx,ry) and (sx,sy) are parallel to within rounding: their cross product is under
+ *  `SINGULAR_RATIO` of the product of their lengths. A zero vector is parallel to every direction. Points rounded
+ *  onto one line leave a cross product of noise, which divides to an arbitrary crossing. */
+export function nearlyParallel(rx: number, ry: number, sx: number, sy: number): boolean {
+  return !(Math.abs(rx * sy - ry * sx) > SINGULAR_RATIO * Math.hypot(rx, ry) * Math.hypot(sx, sy));
+}
+
 /** 2D dot product. */
 export function dot(ax: number, ay: number, bx: number, by: number): number {
   return ax * bx + ay * by;
