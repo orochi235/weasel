@@ -134,6 +134,42 @@ describe('replayRecording', () => {
     expect(order).toEqual(['before', 'pointerdown', 'pointerup']);
   });
 
+  it("replays a move inside a gesture with its press's button state and pointer", async () => {
+    const moves: Array<{ buttons: number; pointerId: number; pointerType: string }> = [];
+    canvas.addEventListener('pointermove', (e) => {
+      const pe = e as PointerEvent;
+      moves.push({ buttons: pe.buttons, pointerId: pe.pointerId, pointerType: pe.pointerType });
+    });
+    const rec = baseRecording([
+      { type: 'pointerdown', t: 0, clientX: 0, clientY: 0, button: 0, buttons: 1, pointerType: 'pen', pointerId: 7, target: 'canvas' },
+      { type: 'pointermove', t: 1, clientX: 4, clientY: 4, target: 'canvas' },
+      { type: 'pointerup',   t: 2, clientX: 4, clientY: 4, button: 0, buttons: 0, pointerType: 'pen', pointerId: 7, target: 'canvas' },
+      { type: 'pointermove', t: 3, clientX: 6, clientY: 6, target: 'canvas' },
+    ]);
+    await replayRecording(rec, { canvas, mode: 'flush' });
+    expect(moves).toEqual([
+      { buttons: 1, pointerId: 7, pointerType: 'pen' },
+      { buttons: 0, pointerId: 1, pointerType: 'mouse' },
+    ]);
+  });
+
+  it('replays a key with its physical code and repeat flag', async () => {
+    const keys: Array<{ key: string; code: string; repeat: boolean }> = [];
+    document.addEventListener('keydown', (e) => {
+      const ke = e as KeyboardEvent;
+      keys.push({ key: ke.key, code: ke.code, repeat: ke.repeat });
+    });
+    const rec = baseRecording([
+      { type: 'keydown', t: 0, key: 'º', code: 'Digit0', m: 1 | 4, target: 'document' },
+      { type: 'keydown', t: 1, key: 'º', code: 'Digit0', repeat: true, m: 1 | 4, target: 'document' },
+    ]);
+    await replayRecording(rec, { canvas, mode: 'flush' });
+    expect(keys).toEqual([
+      { key: 'º', code: 'Digit0', repeat: false },
+      { key: 'º', code: 'Digit0', repeat: true },
+    ]);
+  });
+
   it('routes "other" target events to the canvas as a fallback', async () => {
     const seen: string[] = [];
     canvas.addEventListener('pointermove', () => seen.push('canvas'));

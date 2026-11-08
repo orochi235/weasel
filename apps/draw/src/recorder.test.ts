@@ -51,6 +51,17 @@ describe('createRecorder', () => {
     expect(out.scene).toBeNull();
   });
 
+  it("records a key's physical code, and repeat only on an auto-repeat", () => {
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start();
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'º', code: 'Digit0' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'º', code: 'Digit0', repeat: true }));
+    const [first, second] = rec.stop().events;
+    expect(first).toMatchObject({ key: 'º', code: 'Digit0' });
+    expect(first.repeat).toBeUndefined();
+    expect(second).toMatchObject({ code: 'Digit0', repeat: true });
+  });
+
   it("captures a scene snapshot at start() via snapshotScene", () => {
     let calls = 0;
     const fakeSnap = {
