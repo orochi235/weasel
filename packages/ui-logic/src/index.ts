@@ -35,6 +35,8 @@ export {
 export type {
   ButtonSize, ButtonFace, ButtonPart, ButtonMetrics, ButtonLayout, PressState, PressInput,
 } from './button';
+export { SWEEP_CAP, stepsOf, range, values, frames, until } from './sweep';
+export type { Sweep, RangeSpec, FrameSpan, FrameOptions } from './sweep';
 export { listMode, LIST_ROLES, dropSide, ROW_GAP, rowListMetrics, measureRowList, rowAtY } from './rowList';
 export type {
   ListMode, ListModeInput, RowFace, RowListFace, RowListMetrics, RowBox, RowListLayout,

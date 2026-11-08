@@ -10,20 +10,6 @@
   color: var(--wzl-fg);
 }
 
-.dials {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wzl-space-4);
-}
-
-.cell {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--wzl-space-2);
-}
-
 /* A dial: the box both Alongs lay their arcs in, with the circle they share drawn faintly. */
 .dial {
   position: relative;
@@ -33,8 +19,3 @@
   border-radius: 50%;
 }
 
-.caption {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-muted);
-}
