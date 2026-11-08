@@ -30,6 +30,11 @@ export interface TimelineReport {
   lap(lap: number): void;
 }
 
+const finite = (t: number): number => {
+  if (!Number.isFinite(t)) throw new RangeError(`a timeline seeks to a finite time, not ${t}`);
+  return t;
+};
+
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
   switch (track.kind) {
@@ -143,13 +148,11 @@ export function createTimeline(
     sampler.apply(opts.tracks, playhead);
     const sought = !held && events.to(opts.tracks, playhead);
     booker?.tick(virtualNow, rate);
-    // A handler that seeks has started playback over from where it landed.
-    if (sought) return false;
 
-    if ((finished || rewound) && !done) { done = true; opts.onDone?.(); playbackChanged(); }
+    if ((finished || rewound) && !done && !sought) { done = true; opts.onDone?.(); playbackChanged(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
     // retiring the entry would strand the replay its own handler just started.
-    if ((rewound ? playhead > 0 : playhead < duration) || parked) return false;
+    if (sought || (rewound ? playhead > 0 : playhead < duration) || parked) return false;
     live = false;
     sampler.release();
     return true;
@@ -205,9 +208,8 @@ export function createTimeline(
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(t) {
-      if (!Number.isFinite(t)) throw new RangeError(`a timeline seeks to a finite time, not ${t}`);
+      offset = finite(t) - lastVirtual;
       booker?.retract();
-      offset = t - lastVirtual;
       playhead = t;
       events.place(t, true);
       booker?.seek();

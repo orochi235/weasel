@@ -1,4 +1,4 @@
-import type { EventBooking, EventBookingHandle, EventTrack, TimelineEvent, Track } from './types';
+import type { EventBooking, EventBookingHandle, EventTrack, NestedTimeline, TimelineEvent, Track } from './types';
 
 /** A clock read further than this from the frame clock's prediction is taken
  *  as a discontinuity — a hidden tab, a suspended context — not as jitter. */
@@ -66,6 +66,10 @@ interface Booking {
   handle?: EventBookingHandle;
 }
 
+/** Where a nested timeline starting at root time `from` stops, inside parents that stop at `end`. */
+const endWithin = (end: number, from: number, timeline: NestedTimeline): number =>
+  Math.min(end, from + (timeline.duration ?? Infinity));
+
 const isAfter = (a: Cursor, b: Cursor): boolean => a.lap > b.lap || (a.lap === b.lap && a.r > b.r);
 
 export function createBooker(opts: EventBooking, host: BookerHost): Booker {
@@ -103,7 +107,6 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const whenFor = (u: number, playhead: number, scale: number, now: number): number =>
     Math.max(est! + (u - playhead) / scale, now);
 
-  /** `end` is where the nested timelines holding `track` stop, in root time. */
   const scanTrack = (
     track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
   ): void => {
@@ -150,8 +153,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     for (const track of tracks) {
       if (track.kind === 'event') scanTrack(track, at, end, horizon, lastLap, now, scale);
       else if (track.kind === 'timeline') {
-        const from = at + track.at;
-        visit(track.timeline.tracks, from, Math.min(end, from + (track.timeline.duration ?? Infinity)), horizon, lastLap, now, scale);
+        visit(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), horizon, lastLap, now, scale);
       }
     }
   };
