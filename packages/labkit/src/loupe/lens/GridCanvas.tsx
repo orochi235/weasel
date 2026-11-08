@@ -50,15 +50,20 @@ export function GridCanvas<C>({
     let live = true;
     const timer = setTimeout(
       () => {
-        void source.capture?.(latest.current).then((got) => {
-          if (!live) return;
-          if ('reason' in got) {
-            setRead(null);
-            return;
-          }
-          const m = maskOf(got.bitmap);
-          setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
-        });
+        void source.capture?.(latest.current).then(
+          (got) => {
+            if (!live) return;
+            if ('reason' in got) {
+              setRead(null);
+              return;
+            }
+            const m = maskOf(got.bitmap);
+            setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
+          },
+          () => {
+            if (live) setRead(null);
+          },
+        );
       },
       started.current ? LENS_REST_MS : 0,
     );
