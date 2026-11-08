@@ -28,7 +28,7 @@ resizable frame whose interior is painted by an opt-in `content` callback. See
 with the frame, and `createLoupe` in [`src/loupe`](src/loupe/createLoupe.ts) for a
 consumer.
 
-Widgets draw from a data-free context (`{ dims, defaultFont, tokens }`), which
+Widgets draw from a data-free context (`{ dims, defaultFont, tokens, color }`), which
 is what lets a HUD render headlessly and identically. A window's `content`
 painter is the single, explicit exception.
 

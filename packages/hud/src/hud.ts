@@ -110,14 +110,6 @@ export function createHud(): Hud {
     hostFrameSub = host.subscribeFrame(frameSubs.emit);
   };
 
-  // NOTE: factory methods (rect, text, image, label, button) inject
-  // `onChange: () => requestRedraw()` into widget options so widget setters
-  // trigger redraws automatically. Widgets created via the bare factories
-  // (createRect etc.) don't get this and must be added via hud.add() — their
-  // setters won't auto-redraw, which is by design (the bare factories are
-  // for unit tests and advanced consumers who want to manage redraws
-  // explicitly).
-
   /** A factory method: `create` with redraws and removal wired in, its widget added to the HUD. */
   const factory = <O, W extends Widget>(
     create: (opts: O & { onChange: () => void; removeFromHud: () => void }) => W, from: string,

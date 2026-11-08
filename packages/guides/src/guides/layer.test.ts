@@ -21,6 +21,12 @@ describe('createGuidesLayer', () => {
     expect(layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100, dpr: 1 })).toEqual([]);
   });
 
+  it('dashes guide lines with `dash`', () => {
+    const layer = createGuidesLayer({ getGuides: () => [{ id: 'vx', axis: 'x', offset: 50 }], dash: [4, 2] });
+    const [line] = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 100, dpr: 1 });
+    expect((line as PathDrawCommand).stroke?.dash).toEqual([4, 2]);
+  });
+
   it('draws a vertical line for an x-axis guide and a horizontal line for a y-axis guide', () => {
     const guides: Guide[] = [
       { id: 'vx', axis: 'x', offset: 50 },

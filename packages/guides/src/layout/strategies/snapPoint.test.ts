@@ -70,6 +70,11 @@ describe('snapPoint', () => {
     expect(targets).toHaveLength(9);
   });
 
+  it('grid pattern with a zero spacing offers no points', () => {
+    const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 0 });
+    expect(layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }))).toEqual([]);
+  });
+
   it('grid pattern with non-divisible spacing floors to the last in-bounds step', () => {
     const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 30 });
     const targets = layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }));

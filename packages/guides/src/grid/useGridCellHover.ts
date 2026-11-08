@@ -39,7 +39,8 @@ export interface UseGridCellHoverOptions {
   /** Fires when the hovered cell changes (including to/from `null`). Use it
    *  to invalidate your layer renderer. */
   onChange?: (cell: GridCell | null) => void;
-  /** Disable the listeners without unmounting. Default `true`. */
+  /** Disable the listeners without unmounting, dropping the hovered cell.
+   *  Default `true`. */
   enabled?: boolean;
 }
 
@@ -102,6 +103,8 @@ export function useGridCellHover(opts: UseGridCellHoverOptions): UseGridCellHove
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
       el.removeEventListener('pointercancel', onLeave);
+      // No pointerleave reaches a detached listener, so a cell hovered now would stay lit.
+      update(null);
     };
   }, [enabled, opts.ref, optsRef]);
 

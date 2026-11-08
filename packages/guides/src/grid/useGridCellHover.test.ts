@@ -104,6 +104,21 @@ describe('useGridCellHover', () => {
     expect(result.current.cell).toMatchObject({ col: 2, row: 1 });
   });
 
+  it('drops the hovered cell when disabled mid-hover', () => {
+    const el = makeEl();
+    const ref = createRef<HTMLElement>();
+    (ref as { current: HTMLElement }).current = el;
+    const onChange = vi.fn();
+    const { result, rerender } = renderHook(({ enabled }) =>
+      useGridCellHover({ ref, view: () => identityView, spacing: 10, enabled, onChange }), { initialProps: { enabled: true } });
+    act(() => { fire(el, 'pointermove', { clientX: 5, clientY: 5 }); });
+    expect(result.current.getCell()).not.toBeNull();
+    rerender({ enabled: false });
+    expect(result.current.getCell()).toBeNull();
+    expect(result.current.cell).toBeNull();
+    expect(onChange).toHaveBeenLastCalledWith(null);
+  });
+
   it('does not attach listeners when enabled is false', () => {
     const el = makeEl();
     const ref = createRef<HTMLElement>();

@@ -12,7 +12,8 @@ export type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
 /** Options for `snapPoint`. */
 export interface SnapPointOptions<TPose> {
   pattern: SnapPattern;
-  /** Spacing for the 'grid' pattern, in world units. Default 50. */
+  /** Spacing for the 'grid' pattern, in world units. Default 50; one that is
+   *  not positive offers no points. */
   gridSpacing?: number;
   /** Tolerance for the default snap policy (nearestWithin). Default Infinity. */
   tolerance?: number;
@@ -43,6 +44,7 @@ function buildPoints(
       return [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }];
     case 'grid': {
       const out: Vec2[] = [];
+      if (!(gridSpacing > 0)) return out;
       const cols = Math.floor(bounds.width / gridSpacing);
       const rows = Math.floor(bounds.height / gridSpacing);
       for (let j = 0; j <= rows; j++) {

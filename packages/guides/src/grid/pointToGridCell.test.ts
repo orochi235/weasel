@@ -23,6 +23,12 @@ describe('pointToGridCell', () => {
     expect(pointToGridCell({ x: 4, y: 16 }, 10, undefined, { x: 5, y: 5 })).toEqual(cell(-1, 1, -5, 15, 10, 10));
   });
 
+  it('runs a region with no frame through the origin, as the root does', () => {
+    const outline = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 100, y: 100 }, { x: 0, y: 100 }];
+    const regions = [{ outline, spacing: 20 }];
+    expect(pointToGridCell({ x: 7, y: 7 }, 10, undefined, { x: 5, y: 5 }, { regions })).toEqual(cell(0, 0, 5, 5, 20, 20));
+  });
+
   it('throws when a tagged spacing is given without a unit system', () => {
     expect(() => pointToGridCell({ x: 0, y: 0 }, { value: 1, unit: 'ft' })).toThrow(/UnitSystem/);
   });
