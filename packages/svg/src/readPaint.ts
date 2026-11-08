@@ -34,6 +34,7 @@ export function readPaint(
       // A fallback color beside the reference is the author saying what to
       // paint when it cannot be resolved, so taking it is the documented
       // behavior rather than a recovery — nothing to warn about.
+      if (parsed.fallback?.kind === 'none') return { kind: 'none' };
       if (parsed.fallback) {
         const flat: SvgPaint = { kind: 'solid', color: parsed.fallback.color };
         const a = paintAlpha(opacity, parsed.fallback.alpha);

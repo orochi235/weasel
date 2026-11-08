@@ -15,6 +15,15 @@ describe('marker parsing', () => {
     expect((nodes[0] as SvgPathNode).stroke?.markerEnd).toBe('arrow');
   });
 
+  it('reads a quoted url(), in an attribute and in a stylesheet', () => {
+    const { nodes } = parseSvg(wrap(
+      '<style>line { marker-start: url("#circle") }</style>' +
+      `<line x1="0" y1="0" x2="50" y2="0" stroke="#000" marker-end="url('#arrow')"/>`,
+    ));
+    expect((nodes[0] as SvgPathNode).stroke?.markerStart).toBe('circle');
+    expect((nodes[0] as SvgPathNode).stroke?.markerEnd).toBe('arrow');
+  });
+
   it('reads all three positions', () => {
     const { nodes } = parseSvg(wrap(
       '<polyline points="0,0 25,25 50,0" stroke="#000" ' +

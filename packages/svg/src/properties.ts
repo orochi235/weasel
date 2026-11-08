@@ -13,7 +13,7 @@
 import { clamp01 } from '@weasel-js/geom';
 import type { FontVariantCaps, TextTransform } from '@weasel-js/core';
 import { ABSOLUTE_PX } from './absoluteUnits';
-import { parsePaintAttr, type ParsedColor } from './color';
+import { parsePaintAttr, parseUrlRef, type ParsedColor } from './color';
 import { DEFAULT_FONT_SIZE, emsPer, fontSizeKeyword } from './fontSize';
 
 export type Warn = (message: string) => void;
@@ -95,8 +95,9 @@ function readSolidColor(v: string, warn: Warn, prop: string): { color: string; a
 
 /** `null` is `none`. */
 function readMarkerRef(v: string): string | null | undefined {
-  if (v === 'none') return null;
-  return /^url\(\s*#([^)\s]+)\s*\)$/.exec(v)?.[1];
+  if (v.toLowerCase() === 'none') return null;
+  const url = parseUrlRef(v);
+  return url && url.rest === '' ? url.id : undefined;
 }
 
 function readLinecap(v: string, warn: Warn): 'butt' | 'round' | 'square' | undefined {
@@ -231,9 +232,9 @@ function readBaselineShift(
 /** `none`, or the id a `url(#id)` names. Any other clip (a basic shape, a
  *  reference into another file) is not one this parser can resolve. */
 function readClipRef(v: string): { id: string } | 'none' | undefined {
-  if (v === 'none') return 'none';
-  const ref = /^url\(\s*["']?#([^)\s"']+)["']?\s*\)$/.exec(v);
-  return ref ? { id: ref[1] } : undefined;
+  if (v.toLowerCase() === 'none') return 'none';
+  const url = parseUrlRef(v);
+  return url && url.rest === '' ? { id: url.id } : undefined;
 }
 
 /** `'unread'` says the reader is the property's whole grammar: what it cannot read, CSS cannot either. */

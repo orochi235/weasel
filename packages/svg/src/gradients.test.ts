@@ -27,6 +27,28 @@ describe('gradient collection', () => {
     ]);
   });
 
+  it('resolves a quoted url() reference', () => {
+    for (const ref of [`url('#g')`, 'url("#g")', 'URL( #g )']) {
+      const r = parseSvg(
+        `<svg xmlns="http://www.w3.org/2000/svg"><style>.q { fill: ${ref} }</style>`
+        + `<linearGradient id="g"><stop offset="0" stop-color="#ff0000"/></linearGradient>`
+        + `<rect class="q" width="1" height="1"/></svg>`,
+      );
+      expect(r.warnings).toEqual([]);
+      expect((r.nodes[0] as { fill: { kind: string } }).fill.kind).toBe('gradient');
+    }
+  });
+
+  it('paints none for an unresolved reference whose fallback is none', () => {
+    const r = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="url(#missing) none"/></svg>');
+    expect((r.nodes[0] as { fill: unknown }).fill).toEqual({ kind: 'none' });
+  });
+
+  it('reads the none keyword in any case', () => {
+    const r = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="None"/></svg>');
+    expect((r.nodes[0] as { fill: unknown }).fill).toEqual({ kind: 'none' });
+  });
+
   it('reads stop-color and stop-opacity from style="" and from <style> rules', () => {
     const paint = gradientOf(
       `<svg xmlns="http://www.w3.org/2000/svg"><style>.end{stop-color:#0000ff}</style>`
