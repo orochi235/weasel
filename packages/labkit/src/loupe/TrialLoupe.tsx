@@ -136,6 +136,37 @@ export interface TrialLoupeProps<TData = unknown, TLayer extends string = string
 
 const IDENTITY: ViewTransform = { zoom: 1, pan: { x: 0, y: 0 } };
 
+/** What a lens reads its color from — the source it was handed, or the stack it sits over — and how it hears that a
+ *  captured source has a new frame. */
+function useLoupeSampling(
+  surface: CanvasStackSurface | undefined,
+  input: ReturnType<typeof resolveLoupe>['source'],
+  host: RefObject<HTMLElement | null>,
+) {
+  const sample = useMemo(() => {
+    const sampler = input
+      ? createSampler(() => {
+          const src = resolveLoupeSource(input);
+          return src ? [canvasPixelSource(src, () => sourceBoxIn(src, host.current))] : [];
+        })
+      : surface &&
+        createSampler(() => stackSources(surface.layers, surface.canvases.current, surface.size));
+    // Every source here is a canvas read at once, so the answer never waits.
+    return sampler
+      ? (p: { x: number; y: number }) => sampler.sample(p) as string | null
+      : undefined;
+  }, [surface, input, host]);
+
+  // Keyed on the resolved source, not the prop: an inline getter is re-made
+  // every render, and every aim renders.
+  const resolved = resolveLoupeSource(input);
+  const subscribeResample = useMemo(
+    () => (resolved ? (fn: () => void) => resolved.subscribeFrame(fn) : undefined),
+    [resolved],
+  );
+  return { sample, resolved, subscribeResample };
+}
+
 /**
  * A trial's magnifier, mounted by the instrument wherever its content is: in
  * a canvas instrument's `render`, a stage's `overlay`, or around DOM content.
@@ -227,28 +258,7 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
   const mount = enabled === undefined ? loupeSwitch?.mount : undefined;
   useEffect(() => mount?.(), [mount]);
 
-  const sample = useMemo(() => {
-    const input = options.source;
-    const sampler = input
-      ? createSampler(() => {
-          const src = resolveLoupeSource(input);
-          return src ? [canvasPixelSource(src, () => sourceBoxIn(src, host.current))] : [];
-        })
-      : surface &&
-        createSampler(() => stackSources(surface.layers, surface.canvases.current, surface.size));
-    // Every source here is a canvas read at once, so the answer never waits.
-    return sampler
-      ? (p: { x: number; y: number }) => sampler.sample(p) as string | null
-      : undefined;
-  }, [surface, options.source, host]);
-
-  // Keyed on the resolved source, not the prop: an inline getter is re-made
-  // every render, and every aim renders.
-  const resolved = resolveLoupeSource(options.source);
-  const subscribeResample = useMemo(
-    () => (resolved ? (fn: () => void) => resolved.subscribeFrame(fn) : undefined),
-    [resolved],
-  );
+  const { sample, resolved, subscribeResample } = useLoupeSampling(surface, options.source, host);
 
   const loupe = useLoupe({
     options,
