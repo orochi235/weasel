@@ -6,6 +6,7 @@ export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
 export { useLatest } from './useLatest';
 export { useNearViewport } from './useNearViewport';
+export { watchElementMove } from './watchElementMove';
 export { prefersReducedMotion, usePrefersReducedMotion } from './reducedMotion';
 export { DEFAULT_COLOR_SCHEME, systemColorScheme, useSystemColorScheme, watchColorScheme } from './colorScheme';
 export type { ColorScheme } from './colorScheme';

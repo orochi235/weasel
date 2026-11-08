@@ -17,7 +17,8 @@ than a few 3D tiles have to share one surface.
 | `clip.ts` | `clipToAncestors` — a tile's box cut by every ancestor that clips its overflow |
 | `measureTiles.ts` | Every tile's rect and its visible part, measured in one pass |
 | `deviceRect.ts` | `toDeviceRect` — y-flip and device-grid snapping for a GL viewport |
-| `useTiledSurface.ts` | ResizeObserver, dirty set, rAF coalescing, DPR, re-tile clears |
+| `useTiledSurface.ts` | Dirty set, rAF coalescing, DPR, re-tile clears |
+| `useElementWatch.ts` | Re-measures on a tile or the container resizing, and on a tile moving with nothing resizing |
 | `SurfaceContext.ts` | Carries the handle down |
 | `useSurfaceTile.ts` | `useSurfaceTile(id)`, `useTileId(id)`, `useSurface()`, `useSurfaceOptional()` |
 
@@ -129,14 +130,13 @@ buffers, or an expanded tile shows without them.
   surface whose registered clear sizes it (`src/lab/LentTopBuffer.tsx`); a
   tenant outside any lab gets null there, and `useSurfaceCanvas('top')` warns
   in dev.
-- **A tile that moves without resizing** is handled twice over, and it needs
-  both. `Workspace` invalidates rects off the grid's own `node.placementChanged`,
-  which catches the move being *ordered*; the surface then keeps measuring until
-  two measurements agree, which catches where it *lands*. Without the second, a
-  panel whose size settles while its position is still animating leaves
-  `ResizeObserver` with nothing to report, and the tile paints for the rest of
-  its life at the spot it was caught mid-flight. A host that moves something the
-  grid does not know about still calls `invalidateRects()` itself.
+- **A tile that moves without resizing** gives `ResizeObserver` nothing to
+  report, so every tile is also watched with `watchElementMove`
+  (`@weasel-js/react`), and the surface keeps measuring until two measurements
+  agree, which catches where an animated move *lands*. Without either, a tile
+  pushed by a sibling settling paints, and takes input, at where it was first
+  measured. `Workspace` also invalidates rects off the grid's own
+  `node.placementChanged`, which reaches the surface before the move is laid out.
 
 ## Testing
 
