@@ -50,6 +50,28 @@ describe('insertAction — selection across a canceled draw', () => {
     handle.onEnd!(makeCtx({ x: 40, y: 40 }, deps), 'cancel');
     expect(selection.get()).toEqual(['a', 'b', 'c']);
   });
+
+  it('puts it back on a release a behavior aborts', () => {
+    const selection = makeSelection(['a']);
+    const deps = { insert: makeInsertDep().dep, selection };
+    const abort: InsertBehavior<unknown> = { onEnd: () => null };
+    const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' }, behaviors: [abort] });
+    handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
+    handle.onEnd!(makeCtx({ x: 40, y: 40 }, deps), 'commit');
+    expect(selection.get()).toEqual(['a']);
+  });
+
+  it('puts it back on a release that draws nothing', () => {
+    const selection = makeSelection(['a']);
+    const { dep, calls } = makeInsertDep();
+    const deps = { insert: dep, selection };
+    const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' } });
+    handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
+    handle.onMove!(makeCtx({ x: 0, y: 0 }, deps));
+    handle.onEnd!(makeCtx({ x: 0, y: 0 }, deps), 'commit');
+    expect(calls).toHaveLength(0);
+    expect(selection.get()).toEqual(['a']);
+  });
 });
 
 describe('insertAction — Shift on a line whose start a behavior moved', () => {

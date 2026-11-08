@@ -9,7 +9,7 @@ import { runBehaviorSettled } from '../gestureLifecycle';
 import { inPlane, insertLayer } from '../planeInput';
 import { copiesWithin } from 'canvas/copiesAbove';
 import { scenePaintedPoseOf } from 'canvas/derivedPath';
-import { cancelInsert, commitInsert } from './commit';
+import { cancelInsert, commitInsert, restoreSelection } from './commit';
 import { carryStart, nextFrame } from './frame';
 import type { InsertLiveGesture } from './live';
 import { insertParams } from './params';
@@ -104,6 +104,7 @@ export const insertAction: Action & { requires: string[] } = inPlane({
             else {
               trail = endCtx.drag?.points ?? frame.points;
               committed = commitInsert(session, frame, trail, gesture.userRotation);
+              if (!committed) restoreSelection(session);
             }
           } finally {
             session.snap.close();
