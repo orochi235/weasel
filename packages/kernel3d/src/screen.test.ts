@@ -174,6 +174,21 @@ describe('projectAabbToScreen', () => {
     expect(dropped!.width).toBeLessThan(clipped!.width);
   });
 
+  it('reports null for a box entirely past the far plane, which the camera does not draw', () => {
+    const past: Aabb = { min: { x: -0.5, y: -0.5, z: -200 }, max: { x: 0.5, y: 0.5, z: -150 } };
+    expect(projectAabbToScreen(past, cameraAt({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -1 }), RECT)).toBeNull();
+  });
+
+  it('clips a box straddling the far plane to the part the camera draws', () => {
+    const vp = cameraAt({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -1 });
+    const long: Aabb = { min: { x: 10, y: -1, z: -400 }, max: { x: 200, y: 1, z: -50 } };
+    const drawn: Aabb = { min: { ...long.min, z: -100 }, max: long.max };
+    const clipped = projectAabbToScreen(long, vp, RECT)!;
+    const expected = projectAabbToScreen(drawn, vp, RECT)!;
+    expect(clipped.x).toBeCloseTo(expected.x, 6);
+    expect(clipped.width).toBeCloseTo(expected.width, 6);
+  });
+
   it('agrees with corner-dropping when nothing is behind the near plane', () => {
     const vp = cameraAt({ x: 0, y: 0, z: 8 });
     const clipped = projectAabbToScreen(unitCube, vp, RECT)!;
