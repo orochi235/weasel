@@ -37,7 +37,7 @@ export function documentInstrument(options: DocumentInstrumentOptions): Instrume
     ...crumbTitle(entry),
     config,
     defaultConfig: () => config.defaults(),
-    initialState: (c) => initialState?.(c) ?? null,
+    initialState: (c) => initialState?.(storyConfig(c)) ?? null,
     render: (ctx) => (
       <>
         {loaded.kind === 'story' ? (
