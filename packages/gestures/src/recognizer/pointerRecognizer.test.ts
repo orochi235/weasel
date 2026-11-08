@@ -184,11 +184,11 @@ describe('a double click', () => {
     expect(h.kinds()).not.toContain('doubleclick');
   });
 
-  it('is broken off by a second pointer between the clicks', () => {
+  it('is broken off by a pinch between the clicks', () => {
     const h = harness();
     h.click(0);
-    h.down(1, 0);
-    h.down(2, 40);
+    h.down(1, 0, { pointerType: 'touch' });
+    h.down(2, 40, { pointerType: 'touch' });
     h.recognizer.release(h.at(2, 40));
     h.recognizer.release(h.at(1, 0));
     h.click(0);
@@ -353,6 +353,26 @@ describe('two fingers', () => {
     h.down(2, 40, touch);
     expect(h.kinds()).toEqual(['press', 'multitouch']);
     expect(h.events[1]).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 20, y: 0 }, spread: 40, angle: 0, ...MODS });
+  });
+
+  it('count only fingers: a pen or mouse held beside one starts no multitouch, and its press goes out', () => {
+    for (const pointerType of ['pen', 'mouse']) {
+      const h = harness();
+      h.down(1, 0, { pointerType });
+      h.down(2, 40, touch);
+      expect(h.kinds(), pointerType).toEqual(['press', 'press']);
+    }
+  });
+
+  it('count the fingers alone when a pen is held beside them', () => {
+    const h = harness();
+    h.down(1, 0, { pointerType: 'pen' });
+    h.down(2, 0, touch);
+    h.down(3, 40, touch);
+    expect(h.events.at(-1)).toEqual({ kind: 'multitouch', fingers: 2, centroid: { x: 20, y: 0 }, spread: 40, angle: 0, ...MODS });
+    h.recognizer.release(h.at(1, 0));
+    expect(h.kinds()).not.toContain('multitouchtap');
+    expect(h.events.some((e) => e.kind === 'multitouch' && 'end' in e)).toBe(false);
   });
 
   it('report the centroid in the space the host maps to', () => {

@@ -45,7 +45,7 @@ function Harness({ children }: { children: React.ReactNode }) {
 
 describe('pointerDown bindings', () => {
   function fire(el: Element, type: string, init: PointerEventInit = {}) {
-    el.dispatchEvent(new PointerEvent(type, { bubbles: true, ...init }));
+    el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'touch', ...init }));
   }
 
   function pressAction(spy: (p?: Record<string, unknown>) => void): Action {
