@@ -55,6 +55,15 @@ describe('usePublishPointer', () => {
     expect(store.get()).toBeNull();
   });
 
+  it('clears once a press that left the element is cancelled outside it', () => {
+    const { store, a } = mount();
+    fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
+    fireEvent.pointerLeave(a, { pointerId: 1, buttons: 1 });
+    moveAt(document.body, 300, 8, 1);
+    fireEvent.pointerCancel(document.body, { pointerId: 1 });
+    expect(store.get()).toBeNull();
+  });
+
   it('keeps the pointer of a press released over the element', () => {
     const { store, a } = mount();
     fireEvent.pointerDown(a, { pointerId: 1, buttons: 1 });
