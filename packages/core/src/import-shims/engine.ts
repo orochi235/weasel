@@ -110,7 +110,7 @@ export { useSelection } from '../core/selection/useSelection';
 export type { SelectionStore, UseSelectionOptions } from '../core/selection/useSelection';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
 export type { BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere } from '../core/shapeKinds';
-export { fitViewToBounds } from '../core/viewport/fitViewToBounds';
+export { fitViewToBounds, hasExtent } from '../core/viewport/fitViewToBounds';
 export type { FitViewToBoundsOptions, ViewportDims } from '../core/viewport/fitViewToBounds';
 export { interpolateView } from '../core/viewport/interpolateView';
 export { deriveParallaxView, fromPlane, planeMap, planeMatrix, planeToPlane, rectFromPlane, rectToPlane, toPlane } from '../core/viewport/parallax';
