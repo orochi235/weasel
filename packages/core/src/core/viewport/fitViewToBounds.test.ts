@@ -1,6 +1,10 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { fitViewToBounds } from './fitViewToBounds';
+import { fitViewToBounds as fitOrNull } from './fitViewToBounds';
+
 import type { View } from './view';
+
+/** These cases all have something to fit. */
+const fitViewToBounds = (...args: Parameters<typeof fitOrNull>) => fitOrNull(...args)!;
 
 const CURRENT: View = { x: 999, y: 999, scale: { x: 7, y: 7 } };
 
@@ -114,14 +118,14 @@ describe('fitViewToBounds', () => {
   });
 
   it('fits zero-width bounds along the height they have', () => {
-    const v = fitViewToBounds({ x: 10, y: 0, width: 0, height: 100 }, { width: 200, height: 200 }, CURRENT, { padding: 0 })!;
+    const v = fitViewToBounds({ x: 10, y: 0, width: 0, height: 100 }, { width: 200, height: 200 }, CURRENT, { padding: 0 });
     expect(v.scale.y).toBeCloseTo(2);
     expect((10 - v.x) * v.scale.x).toBeCloseTo(100);
     expect((50 - v.y) * v.scale.y).toBeCloseTo(100);
   });
 
   it('fits zero-height bounds along the width they have', () => {
-    const v = fitViewToBounds({ x: 0, y: 10, width: 100, height: 0 }, { width: 200, height: 200 }, CURRENT, { padding: 0 })!;
+    const v = fitViewToBounds({ x: 0, y: 10, width: 100, height: 0 }, { width: 200, height: 200 }, CURRENT, { padding: 0 });
     expect(v.scale.x).toBeCloseTo(2);
     expect((10 - v.y) * v.scale.y).toBeCloseTo(100);
   });
@@ -129,10 +133,10 @@ describe('fitViewToBounds', () => {
   it('reports nothing to fit for bounds with no extent, without a warning', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const dims = { width: 200, height: 200 };
-    expect(fitViewToBounds({ x: 5, y: 5, width: 0, height: 0 }, dims, CURRENT)).toBeNull();
-    expect(fitViewToBounds({ x: 5, y: 5, width: -3, height: -4 }, dims, CURRENT)).toBeNull();
-    expect(fitViewToBounds({ x: NaN, y: 5, width: 10, height: 10 }, dims, CURRENT)).toBeNull();
-    expect(fitViewToBounds({ x: 0, y: 0, width: Infinity, height: 10 }, dims, CURRENT)).toBeNull();
+    expect(fitOrNull({ x: 5, y: 5, width: 0, height: 0 }, dims, CURRENT)).toBeNull();
+    expect(fitOrNull({ x: 5, y: 5, width: -3, height: -4 }, dims, CURRENT)).toBeNull();
+    expect(fitOrNull({ x: NaN, y: 5, width: 10, height: 10 }, dims, CURRENT)).toBeNull();
+    expect(fitOrNull({ x: 0, y: 0, width: Infinity, height: 10 }, dims, CURRENT)).toBeNull();
     expect(warn).not.toHaveBeenCalled();
   });
 

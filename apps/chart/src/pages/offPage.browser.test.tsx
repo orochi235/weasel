@@ -43,7 +43,7 @@ const editor = (): HTMLElement | null => document.querySelector('.wc-host [conte
 function at(host: HTMLElement, x: number, y: number, fitted = 0): { x: number; y: number } {
   const box = host.getBoundingClientRect();
   const placed = layoutPages(PAGES)[fitted]!;
-  const view = fitViewToBounds(placed, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: PAGE_FIT_PADDING });
+  const view = fitViewToBounds(placed, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: PAGE_FIT_PADDING })!;
   return { x: box.left + (x - view.x) * view.scale.x, y: box.top + (y - view.y) * view.scale.y };
 }
 
