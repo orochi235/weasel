@@ -26,7 +26,7 @@ export interface FloatingLayerProps {
 /** Where each floating bar is drawn: its placement, or for the bar a drag has torn off, under the pointer. */
 export function floatPlaces(layout: ToolbarLayout, view: DockDragView | null): [string, FloatPlace][] {
   const places = Object.entries(layout.floating).map(([id, place]): [string, FloatPlace] => [id, view?.barId === id && view.float ? view.float : place]);
-  if (view?.float && !(view.barId in layout.floating)) places.push([view.barId, view.float]);
+  if (view?.float && !Object.hasOwn(layout.floating, view.barId)) places.push([view.barId, view.float]);
   return places;
 }
 

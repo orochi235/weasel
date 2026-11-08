@@ -5,6 +5,7 @@ export { dlog, isDebugEnabled } from './dlog';
 export * from './icons';
 export { solidColorOf, strokeColorOf } from './components/paintValue';
 export * from './components/ActionBar';
+export * from './components/ActionSettings';
 export * from './components/Badge';
 export * from './components/Button';
 export * from './components/CloseButton';

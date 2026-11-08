@@ -47,6 +47,14 @@ export interface ToolbarLayout {
 /** Where a bar goes: a slot in a dock's row, a new row of its own at `row` with `newRow`, or a floating place. */
 export type BarTarget = { dock: string; row: number; index: number; newRow?: boolean } | { float: FloatPlace };
 
+/** The rows `layout` holds for dock `id`, read as an own key so an id like `constructor` finds none. */
+export const dockRows = (layout: ToolbarLayout, id: string): string[][] | undefined =>
+  Object.hasOwn(layout.docks, id) ? layout.docks[id] : undefined;
+
+/** Where `layout` floats bar `id`, read as an own key. */
+export const floatOf = (layout: ToolbarLayout, id: string): FloatPlace | undefined =>
+  Object.hasOwn(layout.floating, id) ? layout.floating[id] : undefined;
+
 /** Whether a dock on `edge` lays its bars vertically. */
 export const isVerticalEdge = (edge: DockEdge | undefined): boolean => edge === 'left' || edge === 'right';
 
@@ -73,7 +81,7 @@ export function resolveLayout(
   const placed = new Set<string>();
 
   for (const d of docks) {
-    for (const row of layout?.docks[d.id] ?? []) {
+    for (const row of (layout && dockRows(layout, d.id)) ?? []) {
       const kept = row.filter((id) => {
         const bar = byId.get(id);
         if (!bar || placed.has(id) || !canEnter(bar, d)) return false;
@@ -129,7 +137,7 @@ export function moveBar(layout: ToolbarLayout, barId: string, to: BarTarget): To
   if ('float' in to) {
     out.floating[barId] = { ...to.float };
   } else {
-    const rows = (out.docks[to.dock] ??= []);
+    const rows = dockRows(out, to.dock) ?? (out.docks[to.dock] = []);
     if (to.newRow) rows.splice(Math.max(0, to.row), 0, [barId]);
     else if (to.row >= rows.length) rows.push([barId]);
     else rows[Math.max(0, to.row)].splice(Math.max(0, to.index), 0, barId);

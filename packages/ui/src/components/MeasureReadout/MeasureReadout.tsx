@@ -13,7 +13,7 @@ import {
 } from '@weasel-js/core';
 import { decimal, qty } from '@weasel-js/quantity';
 import { useActionStates } from '../ActionBar/useActionStates';
-import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
+import { reasonLabel } from '../ActionBar/reasonLabels';
 import { BarActionButton } from '../Bar/BarAction';
 import s from './MeasureReadout.module.css';
 import { RAD_TO_DEG } from '@weasel-js/geom';
@@ -91,7 +91,7 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
               label={label}
               labeled
               disabled={!state.enabled}
-              {...(state.reason !== undefined ? { disabledReason: DEFAULT_REASON_LABELS[state.reason] ?? state.reason } : {})}
+              {...(state.reason !== undefined ? { disabledReason: reasonLabel(state.reason) } : {})}
               onPress={() => trigger(cmd)}
             />
           );

@@ -3,7 +3,7 @@ import type { MenuController, MenuEntry } from '@weasel-js/menu';
 import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
-import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
+import { reasonLabel } from '../ActionBar/reasonLabels';
 import { AccessLabel } from './AccessLabel';
 import { MenuNumberValue, MenuTextValue } from './MenuValue';
 import { MenuColorValue, editsColor } from './MenuColorValue';
@@ -14,7 +14,7 @@ const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
 /** Why a disabled item row cannot be chosen, in words, or `undefined` for a row with nothing to say. */
 export function disabledReasonText(e: MenuEntry | undefined): string | undefined {
   return e?.kind === 'item' && e.disabled && e.disabledReason
-    ? DEFAULT_REASON_LABELS[e.disabledReason] ?? e.disabledReason : undefined;
+    ? reasonLabel(e.disabledReason) : undefined;
 }
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at

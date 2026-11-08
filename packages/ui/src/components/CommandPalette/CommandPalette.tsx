@@ -14,7 +14,7 @@ import {
 } from '@weasel-js/core';
 import { Dialog } from '../Dialog';
 import { ActionSettingsDialog } from '../ActionSettings/ActionSettingsDialog';
-import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
+import { DEFAULT_REASON_LABELS, reasonLabel } from '../ActionBar/reasonLabels';
 import { KeySequence, keySpecFromKey, ShortcutKeys } from '../Keycaps';
 import { describeSelection } from './selectionSummary';
 import { usePaletteItems, type PaletteItems } from './usePaletteItems';
@@ -85,7 +85,7 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
     <ul ref={listRef} id={id} className={styles.list} role="listbox" aria-label="Actions">
       {items.filtered.map((item, idx) => {
         const { enabled, reason: code } = items.enabledOf(item);
-        const reason = code ? (reasonLabels[code] ?? code) : undefined;
+        const reason = code ? reasonLabel(code, reasonLabels) : undefined;
         const tag = items.tagOf(item);
         const cls = [
           styles.row,

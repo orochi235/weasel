@@ -3,6 +3,7 @@ import { Header, ListBox, ListBoxItem, ListBoxSection, Text } from 'react-aria-c
 import type { IconRef } from '@weasel-js/icons';
 import { Icon } from '../../icons';
 import { Badge } from '../Badge';
+import { byRank } from '../../byRank';
 import { PaneHeader } from './PaneHeader';
 import { headingOf, type AssetHeading, type ListedAsset, type ShownAsset } from './workspace';
 
@@ -32,12 +33,6 @@ const HEADING_BADGE: Record<AssetHeading, { word: string; tint: string | undefin
   Bundles: { word: 'bundle', tint: s.bundle },
 };
 
-/** `rows` with the ones `order` names first, as it names them, and the rest after as they stood. */
-function inOrder<T extends { id: string }>(rows: readonly T[], order: readonly string[]): T[] {
-  const at = (row: T) => { const i = order.indexOf(row.id); return i < 0 ? order.length : i; };
-  return [...rows].sort((a, b) => at(a) - at(b));
-}
-
 const byName = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 /** `rows` sorted by label. */
@@ -66,7 +61,7 @@ export function AssetList({ assets, elsewhere = NONE, order, selected, changed, 
     ...assets.map((asset) => ({ id: asset.id, label: asset.label, under: headingOf(asset), readOnly: asset.readOnly, changed: changed.has(asset.id), held: true, ...(asset.root.icon ? { icon: asset.root.icon } : {}) })),
     ...elsewhere.filter((other) => !assets.some((asset) => asset.id === other.id)).map((other) => ({ ...other, held: false })),
   ];
-  const rows = order ? inOrder(listed, order) : byLabel(listed);
+  const rows = order ? byRank(listed, (row) => row.id, order) : byLabel(listed);
   const headingOfSelected = rows.find((row) => row.id === selected)?.under;
   const [folded, setFolded] = useState<ReadonlySet<AssetHeading>>(new Set());
   const [lastSelected, setLastSelected] = useState(selected);

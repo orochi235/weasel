@@ -62,6 +62,13 @@ describe('DataGrid sorting', () => {
     expect(th).toHaveAttribute('aria-sort', 'none');
   });
 
+  it('sorts NaN last with the nullish values, so the numbers around it still sort', () => {
+    const rows: Row[] = [5, Number.NaN, 3, 9, 1].map((count, i) => ({ id: `r${i}`, name: `n${i}`, count }));
+    render(<DataGrid<Row> rows={rows} columns={COLUMNS} defaultSort={{ columnId: 'count', direction: 'asc' }} />);
+    const counts = screen.getAllByRole('row').slice(1).map((tr) => tr.lastElementChild!.textContent);
+    expect(counts).toEqual(['1', '3', '5', '9', 'NaN']);
+  });
+
   it('leaves a non-sortable column with no sort control and no aria-sort', () => {
     render(<DataGrid<Row> rows={ROWS} columns={[{ id: 'name', header: 'Name', sortable: false }]} />);
     expect(screen.queryByRole('button', { name: /Name/ })).toBeNull();

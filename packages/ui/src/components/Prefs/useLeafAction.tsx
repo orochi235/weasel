@@ -5,7 +5,7 @@ import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
 import { actionShortcutText } from '../actionShortcutText';
 import { useActionStates } from '../ActionBar/useActionStates';
-import { DEFAULT_REASON_LABELS } from '../ActionBar/reasonLabels';
+import { reasonLabel } from '../ActionBar/reasonLabels';
 import { useRegisteredActions } from './registeredActions';
 import { useActionSettings, type ActionSettingsForm } from '../ActionSettings/useActionSettings';
 
@@ -72,7 +72,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       icon,
       shortcut: item ? actionShortcutText(item) : undefined,
       disabled: disabled || (item !== undefined && !shown.enabled),
-      disabledReason: item && !shown.enabled && shown.reason !== undefined ? (DEFAULT_REASON_LABELS[shown.reason] ?? shown.reason) : undefined,
+      disabledReason: item && !shown.enabled && shown.reason !== undefined ? reasonLabel(shown.reason) : undefined,
       active: shown.active,
       missing: item ? undefined : key,
       settings,

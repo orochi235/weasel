@@ -6,7 +6,7 @@ import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_LEAD } from '../Bar/useBarOverflow';
 import { DOCK_BAR, drawnBars, drawnLayout, keyTarget, movedLayout, placeWords, spreadTarget, type DockDropMark } from './dockDrop';
 import { floatWhereDrawn, grabBar, homeTarget, measureEmpties, tearStep, type DockGrab } from './dockTear';
-import { canEnter, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
+import { canEnter, floatOf, type DockBar, type DockSpec, type FloatPlace, type ToolbarLayout } from './layout';
 import { isNudgeChord } from '@weasel-js/ui-logic';
 
 /**
@@ -147,7 +147,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
   /** Alt+Enter: a docked bar floats where it is drawn, and a floating one docks at the end of its home dock. */
   const toggleFloat = (was: ToolbarLayout, bar: DockBar, drawn: ReadonlySet<string>): { next: ToolbarLayout; words: string } | null => {
     const specs = latest.current.docks;
-    if (was.floating[bar.id]) {
+    if (floatOf(was, bar.id)) {
       const to = homeTarget(was, specs, bar);
       const next = to && movedLayout(was, bar.id, spreadTarget(was, bar.id, to, drawn));
       return next && { next, words: placeWords(drawnLayout(next, drawn, bar.id), specs, bar, 'docked') };
