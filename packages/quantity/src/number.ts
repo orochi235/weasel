@@ -71,12 +71,17 @@ const EXPONENTS: Record<string, number> = { k: 3, m: 6, b: 9, t: 12 };
  */
 export function formatCompact(value: number, decimals = 0): string {
   if (!Number.isFinite(value)) return formatNumber(value);
-  // Asked of the value as it will be shown: 999.6 reads `1000`, which is a thousand.
   const options: Intl.NumberFormatOptions =
-    Number(Math.abs(value).toFixed(decimals)) < 1000
+    belowCompact(value, decimals)
       ? { useGrouping: false, minimumFractionDigits: decimals, maximumFractionDigits: decimals }
       : { notation: 'compact', minimumSignificantDigits: 3, maximumSignificantDigits: 3 };
   return signed(unsignedZero(value, (n) => n.toLocaleString('en-US', options)));
+}
+
+/** Whether `value` shows below a thousand at `decimals` places, where a compact
+ *  readout writes it plain. Asked of the value as shown: 999.6 reads `1000`. */
+export function belowCompact(value: number, decimals: number): boolean {
+  return Number(Math.abs(value).toFixed(decimals)) < 1000;
 }
 
 /**

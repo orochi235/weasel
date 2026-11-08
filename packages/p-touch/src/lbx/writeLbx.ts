@@ -234,7 +234,7 @@ export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Prom
     paper,
     background: backgroundFor(paper, page.length),
     objects,
-    ...(cuts.length > 0 ? { cut: { freeCut: [...cuts].sort((a, b) => a - b) } } : {}),
+    ...(cuts.length > 0 ? { cut: { freeCut: [...new Set(cuts)].sort((a, b) => a - b) } } : {}),
   };
   return { config, skipped };
 }

@@ -1,5 +1,5 @@
-import { escapeMarkup as escape, textOf, type Part } from './kind';
-import { partsOf, partsToHtml, present, type PresentOptions, type Presentation } from './present';
+import { textOf, type Part } from './kind';
+import { partsHtml, partsOf, partsToHtml, present, type PresentOptions, type Presentation } from './present';
 import { amount, type Display, type Quantity } from './quantity';
 
 /** Options for presenting a range. */
@@ -97,12 +97,6 @@ export function presentVector(members: readonly Quantity[], fallback?: Display, 
 
 function labelParts(label: string | undefined): Part[] {
   return label === undefined ? [] : [{ type: 'label', value: label }, { type: 'literal', value: ' ' }];
-}
-
-function partsHtml(parts: readonly Part[]): string {
-  return parts
-    .map((p) => (p.type === 'literal' ? escape(p.value) : `<span data-part="${escape(p.type)}">${escape(p.value)}</span>`))
-    .join('');
 }
 
 function compositeHtml(kind: string, members: readonly string[], separator: string): string {

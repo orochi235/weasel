@@ -29,6 +29,14 @@ describe('paintKey', () => {
     expect(paintKey({ color: '#abc' })).not.toBe(paintKey({ color: '#abc', opacity: 0.5 }));
   });
 
+  it('keys two spellings of one solid color as one', () => {
+    expect(paintKey({ color: '#fff' })).toBe(paintKey({ color: '#FFFFFF' }));
+    expect(paintKey({ color: 'white' })).toBe(paintKey({ color: 'rgb(255 255 255)' }));
+    expect(paintKey({ color: '#fff' })).not.toBe(paintKey({ color: '#fffe' }));
+    expect(paintKey({ color: 'not a color' })).toBe(paintKey({ color: 'not a color' }));
+    expect(paintKey({ color: 'not a color' })).not.toBe(paintKey({ color: 'also not one' }));
+  });
+
   it('reads a solid again on every call, so one recolored in place takes its new key', () => {
     const paint = { color: 'red' };
     const red = paintKey(paint);

@@ -195,6 +195,10 @@ describe('hexToColorLiteral', () => {
     for (const hex of ['#7fb069', '#d4a57480']) expect(colorLiteralToHex(hexToColorLiteral(hex)!)).toBe(hex);
   });
 
+  it('leaves alpha off a fully opaque #rrggbbaa, as cssColorLiteral does', () => {
+    expect(hexToColorLiteral('#ff0000ff')).toEqual(cssColorLiteral('#ff0000ff'));
+  });
+
   it('returns null for anything else', () => {
     for (const bad of ['red', '#fff', '#12345', '#gg0000']) expect(hexToColorLiteral(bad)).toBeNull();
   });

@@ -165,6 +165,16 @@ describe('parseColor', () => {
     expect(() => parseColor('lab(50 20 30)')).toThrow();
   });
 
+  it('throws on an empty or non-decimal channel rather than reading it as 0 or opaque', () => {
+    for (const bad of [
+      'rgb(255, 0, 0,)', 'rgb(, 0, 0)', 'rgb(%, 0, 0)', 'rgb(0x10, 0, 0)',
+      'rgb(255 0 0 / foo)', 'rgba(255, 0, 0, x)', 'hsl(deg, 50%, 50%)', 'oklab(0.5 0x1 0)',
+    ]) {
+      expect(() => parseColor(bad), bad).toThrow();
+    }
+    expect(parseColor('rgb(+.5e2 1e1% 0 / 5e-1)')).toEqual([50 / 255, 0.1, 0, 0.5]);
+  });
+
   it('caches results: identical input returns identical reference', () => {
     const a = parseColor('#abcdef');
     const b = parseColor('#abcdef');

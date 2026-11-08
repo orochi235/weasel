@@ -68,8 +68,12 @@ describe('sampleGradientStops', () => {
   });
 
   it('handles the degenerate lists a mid-edit stop strip can produce', () => {
-    expect(sampleGradientStops([], 0.5)).toBe('rgba(0,0,0,0)');
+    expect(sampleGradientStops([], 0.5)).toBe('#00000000');
     expect(sampleGradientStops([{ offset: 0.2, color: '#123456' }], 0.9)).toBe('#123456');
+  });
+
+  it('reads a NaN position as the first stop rather than a NaN color', () => {
+    expect(sampleGradientStops(BW, Number.NaN)).toBe(sampleGradientStops(BW, 0));
   });
 });
 

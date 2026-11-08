@@ -43,6 +43,13 @@ describe('lbxConfig', () => {
     } satisfies RectObject]);
   });
 
+  it('frames a rect drawn with a negative extent where it lies', async () => {
+    const { config } = await lbxConfig(page([
+      rect(50, 25, -40, -20, { fill: { paint: { color: 'white' } }, stroke: { paint: { color: '#000' }, width: 2 } }),
+    ]));
+    expect((config.objects[0] as RectObject).position).toEqual({ x: 9, y: 4, width: 42, height: 22 });
+  });
+
   it('places objects through group transforms', async () => {
     const { config } = await lbxConfig(page([{
       kind: 'group',
@@ -107,6 +114,7 @@ describe('lbxConfig', () => {
     const fixed = await lbxConfig({ ...page([]), cuts: [72, 0, 200, 36] });
     expect(fixed.config.paper).toMatchObject({ width: 33.6, format: 259, height: 144, autoLength: false });
     expect(fixed.config.cut).toEqual({ freeCut: [36, 72] });
+    expect((await lbxConfig({ ...page([]), cuts: [72, 36, 72] })).config.cut).toEqual({ freeCut: [36, 72] });
     const auto = await lbxConfig({ ...page([]), autoLength: true });
     expect(auto.config.background!.width).toBeCloseTo(144 - 11.2, 9);
   });

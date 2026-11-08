@@ -48,9 +48,11 @@ function withoutPercentSign(text: string, locale: string): string {
  * `[numerator, denominator]` in lowest terms with the sign on the numerator.
  * Walks the continued fraction and settles the last step on the best
  * semiconvergent, which is the closest any denominator in range can get.
+ * A cap under 1 is 1.
  */
 export function nearestFraction(x: number, maxDenominator: number): [number, number] {
   if (!Number.isFinite(x)) return [x, 1];
+  if (!(maxDenominator >= 1)) maxDenominator = 1;
   const sign = x < 0 ? -1 : 1;
   const target = Math.abs(x);
   let [h0, h1, k0, k1] = [0, 1, 1, 0];

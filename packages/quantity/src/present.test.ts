@@ -76,6 +76,7 @@ const CASES: [Display, number, string, string][] = [
   [integer(), 41.6, '42', '42'],
   [compact(), 2_000_000, '2.00M', '2 million'],
   [compact({ places: 1 }), 12.34, '12.3', '12.3'],
+  [compact(), 999.6, '1.00K', '1 thousand'],
   [percent(), 0.25, '25%', '25 percent'],
   [fraction(), 1 / 12, '1/12', '1 over 12'],
   [fraction(), -0.75, `${MINUS}3/4`, 'minus 3 over 4'],
@@ -296,6 +297,11 @@ describe('nearestFraction', () => {
     expect(nearestFraction(Math.PI, 200)).toEqual([355, 113]);
     expect(nearestFraction(1 / 45, 64)).toEqual([1, 45]);
     expect(nearestFraction(-0.3333333, 64)).toEqual([-1, 3]);
+  });
+
+  it('reads a cap under one as one, the least any fraction carries', () => {
+    expect(nearestFraction(0.4, 0)).toEqual([0, 1]);
+    expect(nearestFraction(2.6, 0.5)).toEqual([3, 1]);
   });
 });
 

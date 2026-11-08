@@ -72,10 +72,14 @@ function contextOf(q: Quantity, options: PresentOptions | undefined): FormatCont
 
 /** Parts as the unstyled HTML fragment {@link Presentation.html} describes. */
 export function partsToHtml(value: number, parts: readonly Part[]): string {
-  const body = parts
+  return `<data value="${escape(String(value))}">${partsHtml(parts)}</data>`;
+}
+
+/** Parts as HTML with no `<data>` around them: a `<span data-part>` per named part. */
+export function partsHtml(parts: readonly Part[]): string {
+  return parts
     .map((p) => (p.type === 'literal' ? escape(p.value) : `<span data-part="${escape(p.type)}">${escape(p.value)}</span>`))
     .join('');
-  return `<data value="${escape(String(value))}">${body}</data>`;
 }
 
 /** Parts of `q` under its own display, else `fallback`, else `decimal`. */

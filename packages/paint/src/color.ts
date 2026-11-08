@@ -62,28 +62,16 @@ function parseColorUncached(input: string): [number, number, number, number] {
   throw new Error(`parseColor: unrecognized color "${input}"`);
 }
 
-const RESOLVE_COLOR_CACHE_CAP = 1024;
-const resolveColorCache = new Map<string, readonly [number, number, number, number]>();
-
-/** Cached `parseColor`. Use this from renderer hot paths (per-frame draw
- *  callbacks, gradient ramp builds). The cache is capped at ~1024 entries and
- *  cleared wholesale on overflow. */
+/** `parseColor`, typed read-only: the form for renderer hot paths (per-frame
+ *  draw callbacks, gradient ramp builds), which share its cache. */
 export function resolveColor(input: string): readonly [number, number, number, number] {
-  const hit = resolveColorCache.get(input);
-  if (hit) return hit;
-  if (resolveColorCache.size >= RESOLVE_COLOR_CACHE_CAP) {
-    resolveColorCache.clear();
-  }
-  const parsed = parseColor(input);
-  const frozen = parsed as readonly [number, number, number, number];
-  resolveColorCache.set(input, frozen);
-  return frozen;
+  return parseColor(input);
 }
 
-/** @internal Test-only: drops the resolveColor memoization cache so tests
- *  can assert behavior in isolation. Never call from production code. */
+/** @internal Test-only: drops the color cache so tests can assert behavior in
+ *  isolation. Never call from production code. */
 export function __resetResolveColorCache(): void {
-  resolveColorCache.clear();
+  CACHE.clear();
 }
 
 /** Same as `parseColor` but returns integer 0..255 components. */
@@ -180,27 +168,25 @@ function splitChannels(body: string): { rgb: [string, string, string]; alpha: st
   return { rgb: [parts[0], parts[1], parts[2]], alpha };
 }
 
-/** Parse a channel value: integer, float, or percent. Returns 0..1 (with `max` as the integer scale). */
-function parseChannel(tok: string, max: number): number | null {
-  if (tok.endsWith('%')) {
-    const n = Number(tok.slice(0, -1));
-    if (!Number.isFinite(n)) return null;
-    return clamp01(n / 100);
-  }
+const CSS_NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/;
+
+/** A CSS `<number>` token, or null: `Number` alone reads `''` as 0 and accepts `0x10`. */
+function cssNumber(tok: string): number | null {
+  if (!CSS_NUMBER.test(tok)) return null;
   const n = Number(tok);
-  if (!Number.isFinite(n)) return null;
-  return clamp01(n / max);
+  return Number.isFinite(n) ? n : null;
 }
 
-/** Alpha may be a number 0..1 or a percent. */
-function parseAlpha(tok: string | null): number {
-  if (tok === null) return 1;
-  if (tok.endsWith('%')) {
-    const n = Number(tok.slice(0, -1));
-    return Number.isFinite(n) ? clamp01(n / 100) : 1;
-  }
-  const n = Number(tok);
-  return Number.isFinite(n) ? clamp01(n) : 1;
+/** Parse a channel value: integer, float, or percent. Returns 0..1 (with `max` as the integer scale). */
+function parseChannel(tok: string, max: number): number | null {
+  const percent = tok.endsWith('%');
+  const n = cssNumber(percent ? tok.slice(0, -1) : tok);
+  return n === null ? null : clamp01(n / (percent ? 100 : max));
+}
+
+/** Alpha may be a number 0..1 or a percent; absent is opaque. */
+function parseAlpha(tok: string | null): number | null {
+  return tok === null ? 1 : parseChannel(tok, 1);
 }
 
 function parseRgbFunction(s: string): [number, number, number, number] | null {
@@ -211,8 +197,9 @@ function parseRgbFunction(s: string): [number, number, number, number] | null {
   const r = parseChannel(channels.rgb[0], 255);
   const g = parseChannel(channels.rgb[1], 255);
   const b = parseChannel(channels.rgb[2], 255);
-  if (r === null || g === null || b === null) return null;
-  return [r, g, b, parseAlpha(channels.alpha)];
+  const a = parseAlpha(channels.alpha);
+  if (r === null || g === null || b === null || a === null) return null;
+  return [r, g, b, a];
 }
 
 function parseHslFunction(s: string): [number, number, number, number] | null {
@@ -223,9 +210,10 @@ function parseHslFunction(s: string): [number, number, number, number] | null {
   const h = parseHue(channels.rgb[0]);
   const sat = parsePercentOrNumber(channels.rgb[1]);
   const lit = parsePercentOrNumber(channels.rgb[2]);
-  if (h === null || sat === null || lit === null) return null;
+  const a = parseAlpha(channels.alpha);
+  if (h === null || sat === null || lit === null || a === null) return null;
   const [r, g, b] = hslToSrgb(h, sat, lit);
-  return [r, g, b, parseAlpha(channels.alpha)];
+  return [r, g, b, a];
 }
 
 /** `color(srgb …)` or `color(srgb-linear …)`, channels as numbers 0..1 or percents. */
@@ -236,9 +224,10 @@ function parseColorFunction(s: string): [number, number, number, number] | null 
   const channels = splitChannels(body.slice(space[0].length));
   if (!channels) return null;
   const rgb = channels.rgb.map((tok) => parseChannel(tok, 1));
-  if (rgb.some((c) => c === null)) return null;
+  const a = parseAlpha(channels.alpha);
+  if (rgb.some((c) => c === null) || a === null) return null;
   const [r, g, b] = (space[1] === 'srgb' ? rgb : rgb.map((c) => linearToSrgb(c as number))) as number[];
-  return [clamp01(r as number), clamp01(g as number), clamp01(b as number), parseAlpha(channels.alpha)];
+  return [clamp01(r as number), clamp01(g as number), clamp01(b as number), a];
 }
 
 /** `oklab(L a b)` or `oklch(L C h)`, clamped into sRGB. L is 0..1 or a percent; a, b and C are numbers. */
@@ -249,39 +238,28 @@ function parseOkFunction(s: string): [number, number, number, number] | null {
   const channels = splitChannels(body);
   if (!channels) return null;
   const L = parsePercentOrNumber(channels.rgb[0]);
-  const second = Number(channels.rgb[1]);
-  if (L === null || !Number.isFinite(second)) return null;
-  let A = second;
-  let B = Number(channels.rgb[2]);
-  if (lch !== null) {
-    const h = parseHue(channels.rgb[2]);
-    if (h === null) return null;
-    [, A, B] = oklchToOklab(L, second, h * (Math.PI / 180));
-  } else if (!Number.isFinite(B)) return null;
+  const second = cssNumber(channels.rgb[1]);
+  const third = lch !== null ? parseHue(channels.rgb[2]) : cssNumber(channels.rgb[2]);
+  const alpha = parseAlpha(channels.alpha);
+  if (L === null || second === null || third === null || alpha === null) return null;
+  const [, A, B] = lch !== null ? oklchToOklab(L, second, third * (Math.PI / 180)) : [L, second, third];
   const [r, g, b] = oklabToLinearSrgb(L, A, B).map((c) => clamp01(linearToSrgb(c)));
-  return [r as number, g as number, b as number, parseAlpha(channels.alpha)];
+  return [r as number, g as number, b as number, alpha];
 }
 
 /** Parse a hue token:`<number>`, `<number>deg`, `<number>rad`, `<number>grad`, `<number>turn`. Returns degrees 0..360 (modulo). */
 function parseHue(tok: string): number | null {
-  let n: number;
-  if (tok.endsWith('deg')) n = Number(tok.slice(0, -3));
-  else if (tok.endsWith('grad')) n = Number(tok.slice(0, -4)) * 0.9; // 400grad = 360deg
-  else if (tok.endsWith('rad')) n = Number(tok.slice(0, -3)) * (180 / Math.PI);
-  else if (tok.endsWith('turn')) n = Number(tok.slice(0, -4)) * 360;
-  else n = Number(tok);
-  if (!Number.isFinite(n)) return null;
-  return ((n % 360) + 360) % 360;
+  const unit = /(deg|grad|rad|turn)$/.exec(tok)?.[1];
+  const n = cssNumber(unit === undefined ? tok : tok.slice(0, -unit.length));
+  if (n === null) return null;
+  // 400grad = 360deg
+  const deg = unit === 'grad' ? n * 0.9 : unit === 'rad' ? n * (180 / Math.PI) : unit === 'turn' ? n * 360 : n;
+  return ((deg % 360) + 360) % 360;
 }
 
 /** Saturation/lightness may be percent (CSS Color 3) or unitless number 0..1 (modern). */
 function parsePercentOrNumber(tok: string): number | null {
-  if (tok.endsWith('%')) {
-    const n = Number(tok.slice(0, -1));
-    return Number.isFinite(n) ? clamp01(n / 100) : null;
-  }
-  const n = Number(tok);
-  return Number.isFinite(n) ? clamp01(n) : null;
+  return parseChannel(tok, 1);
 }
 
 function clamp01(n: number): number {

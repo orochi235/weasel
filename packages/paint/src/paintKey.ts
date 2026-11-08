@@ -3,6 +3,7 @@
  * they were built. Paint is plain data, so the comparison is structural.
  */
 
+import { parseColor } from './color';
 import { isSolidPaint } from './commandPaint';
 import type { Fill, Paint, Stroke } from './paint';
 import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from './resolvePaint';
@@ -34,13 +35,23 @@ const strokeShapeKeys = new WeakMap<object, string>();
  */
 export function paintKey(paint: Paint | null | undefined): string {
   if (paint == null) return 'none';
-  if (isSolidPaint(paint)) return `solid:${paint.color}:${paint.opacity ?? 1}`;
+  if (isSolidPaint(paint)) return `solid:${solidColorKey(paint.color)}:${paint.opacity ?? 1}`;
   let key = structuralKeys.get(paint);
   if (key === undefined) {
     key = canonical(paint);
     structuralKeys.set(paint, key);
   }
   return key;
+}
+
+/** A solid's color by its channels, so `#fff` and `white` key as one; a color
+ *  `parseColor` cannot read keys as its own text. */
+function solidColorKey(color: string): string {
+  try {
+    return parseColor(color).join(',');
+  } catch {
+    return `text:${color}`;
+  }
 }
 
 /** Whether a fill puts ink down: it does not when it is absent or holds no paint. */

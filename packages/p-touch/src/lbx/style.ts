@@ -3,7 +3,7 @@
  * what an `.lbx` object cannot state, and the command goes to the rasterizer instead.
  */
 import type { GlMat3 } from '@weasel-js/geom';
-import { isSolidPaint, parseColor, resolveScreenLength, type CommandFill, type CommandStroke } from '@weasel-js/paint';
+import { isSolidPaint, parseColor, resolveScreenLength, rgbaToHex, type CommandStroke, type Fill } from '@weasel-js/paint';
 
 /** The transform and opacity a command draws under. */
 export interface DrawState {
@@ -32,21 +32,17 @@ export function uniformScale(map: AxisMap): number | undefined {
   return Math.abs(map.sx - map.sy) <= EPS * Math.max(map.sx, map.sy) ? map.sx : undefined;
 }
 
-function hexByte(v: number): string {
-  return Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0');
-}
-
 /** `#rrggbb` for a color painted fully opaque, or undefined: `.lbx` objects have no opacity. */
-export function opaqueHex(color: string | readonly number[], opacity: number): string | undefined {
-  const [r, g, b, a] = typeof color === 'string' ? parseColor(color) : color;
-  if (Math.abs(a! * opacity - 1) > 1e-3) return undefined;
-  return `#${hexByte(r!)}${hexByte(g!)}${hexByte(b!)}`;
+function opaqueHex(color: string, opacity: number): string | undefined {
+  const [r, g, b, a] = parseColor(color);
+  if (Math.abs(a * opacity - 1) > 1e-3) return undefined;
+  return rgbaToHex([r, g, b]);
 }
 
 /** A field's solid color: `null` for none, undefined for a paint `.lbx` cannot carry. */
 type Solid = string | null | undefined;
 
-export function fillColor(fill: CommandFill | undefined, alpha: number): Solid {
+export function fillColor(fill: Fill | null | undefined, alpha: number): Solid {
   if (fill?.paint === undefined) return null;
   if (!isSolidPaint(fill.paint)) return undefined;
   return opaqueHex(fill.paint.color, (fill.paint.opacity ?? 1) * alpha);
