@@ -39,8 +39,7 @@ function parseColorUncached(input: string): [number, number, number, number] {
 
   const lower = s.toLowerCase();
 
-  const named = NAMED_COLORS[lower];
-  if (named !== undefined) return named;
+  if (Object.hasOwn(NAMED_COLORS, lower)) return NAMED_COLORS[lower]!;
 
   if (lower.startsWith('rgb')) {
     const parsed = parseRgbFunction(lower);
