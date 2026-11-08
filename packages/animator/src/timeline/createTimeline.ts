@@ -205,6 +205,7 @@ export function createTimeline(
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(t) {
+      if (!Number.isFinite(t)) throw new RangeError(`a timeline seeks to a finite time, not ${t}`);
       booker?.retract();
       offset = t - lastVirtual;
       playhead = t;
