@@ -704,3 +704,36 @@ calls its builds made where the spec was silent.
   takes optional extra bounds. `documentBoundsOf` is a new export of `@weasel-js/diagram`.
 - 2026-10-20 (arc 4): The `browser` vitest project's `testTimeout` is 45 s, because a chart drag
   test runs 10–24 s on a loaded node; the case rests on one one-process failure on keiei.
+
+## Audit round five (2026-11-07)
+
+Calls the round made:
+
+- `parseColor` throws on a channel that is not a plain CSS number (`rgb(255, 0, 0,)`, `rgb(1 2 3 / foo)`,
+  `rgb(0x10, 0, 0)`), where it read them as 0 or alpha 1.
+- renderer's mesh writer keeps 6 decimal places, as svg does (`trimNumber`), where it kept 4.
+- theme's ramps blend two exactly opposite hues the positive way round (paint's `lerpHueDeg`, CSS
+  `shorter`), where they went the negative way.
+- ui-logic's `clampTo` stays as a deprecated alias of geom's `clamp` rather than being removed.
+- `useDragHandle` ignores a second press during a drag; `useHandleDrag` lets one cancel the drag.
+- A tiled layer's source still draws without its `effects` and without `drawOneLayer`'s throw
+  guard, unlike `createParallaxLayer`'s. Left as is: running effects per copy or once over all copies
+  changes how sources stack.
+- After `close()`, the storage cache's `flush()` still sends what is queued, against `close()`'s doc.
+  Left as is: it may be the intended retry path (`packages/storage/src/records.ts`).
+- `VoiceHandle.setPan` keeps the distance attenuation the voice's position last gave it. Left as is:
+  dropping it matches a voice started with `pan` but jumps in loudness.
+- `createGridPreset({ snap: { origin } })` snaps from `origin`, but `createGridLayer` has no
+  `origin` and draws from world zero or its `bounds` corner, so such a preset draws one grid and snaps
+  to another. Left as is.
+- guides' `quadtree` gives a child bigger than its container the whole container, where an arrival
+  with no free cell of its size is refused. Left as is.
+- Gradients and animations blend through the 8-bit `lerpColorArray`; `color-mix` through the
+  full-precision `interpolateSrgb`, with its own gray-hue rule. Left as is, as the comment there asks.
+- `contrastLineColor` reads only hex (a test pins `papayawhip` to black); `contrastRatio` beside it
+  reads any CSS color. Left as is.
+- Rotate and resize fire `onGestureStart` at press; move fires it on the first movement. Left as is.
+- core's `unionBounds` drops a NaN coordinate; geom's `unionRects` passes it through. Not folded.
+- forge's `ForgeLoupe` clamp, audio's `scoreMood` clamp, plot's `freshName` and editor's page-run id
+  keep their own copies: folding each adds a dependency on geom or registry.
+- theme-editor's `#/theme` route is not in `LABS`, so it has no lab switcher. Left as is.
