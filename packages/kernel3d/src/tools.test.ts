@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
-import { dollyAction, homeAction, panAction, pinchDollyAction, useOrbitTool } from './tools';
+import { dollyAction, homeAction, orbitAction, panAction, pinchDollyAction, useOrbitTool } from './tools';
 
 describe('useOrbitTool', () => {
   it('returns the same tool on every render', () => {
@@ -87,6 +87,69 @@ describe('camera.pan', () => {
     handle.onMove?.(drag(10));
     expect(camera().target.x).toBeCloseTo(twenty / 2);
     expect(camera().distance).toBe(10);
+  });
+});
+
+describe('a camera drag the camera changes under', () => {
+  const dragTo = (deps: ActionDeps, dx: number) => ctxOf(deps, {
+    drag: { start: { x: 0, y: 0 }, current: { x: dx, y: 0 }, delta: { x: dx, y: 0 }, screenDelta: { x: dx, y: 0 } },
+  } as Partial<InvocationCtx>);
+
+  it('keeps a wheel dolly made mid-orbit, and turns on from where it was', () => {
+    const { deps, camera } = depsFor({ distance: 10 });
+    const handle = (orbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    handle.onMove?.(dragTo(deps, 10));
+    const yaw = camera().yaw;
+    run(dollyAction, deps, { deltaY: 200 });
+    const dollied = camera().distance;
+    expect(dollied).toBeGreaterThan(10);
+    handle.onMove?.(dragTo(deps, 20));
+    expect(camera().distance).toBeCloseTo(dollied);
+    expect(camera().yaw).toBeCloseTo(2 * yaw);
+  });
+
+  it('keeps a camera set mid-pan, and pans on from it', () => {
+    const { deps, camera } = depsFor({ distance: 10 });
+    const handle = (panAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    handle.onMove?.(dragTo(deps, 10));
+    (deps.camera3d as Camera3dDep).set(createCamera({ distance: 10, target: { x: 0, y: 5, z: 0 } }));
+    handle.onMove?.(dragTo(deps, 10));
+    expect(camera().target).toEqual({ x: 0, y: 5, z: 0 });
+  });
+
+  it('keeps a dolly made mid-pinch', () => {
+    const { deps, camera } = depsFor({ distance: 10 });
+    const handle = (pinchDollyAction.invoker as OngoingInvoker).start(
+      ctxOf(deps, { multiTouch: { spread: 100 } } as Partial<InvocationCtx>),
+      undefined,
+    );
+    const spreadTo = (s: number) =>
+      ctxOf(deps, { multiTouch: { pinch: { currentSpread: s } } } as Partial<InvocationCtx>);
+    handle.onMove?.(spreadTo(200));
+    expect(camera().distance).toBeCloseTo(5);
+    (deps.camera3d as Camera3dDep).set({ ...camera(), yaw: 1 });
+    handle.onMove?.(spreadTo(400));
+    expect(camera().yaw).toBe(1);
+    expect(camera().distance).toBeCloseTo(2.5);
+  });
+
+  it('reads a host that has not yet caught up with its own last set as unchanged', () => {
+    let held = createCamera({ distance: 10 });
+    let pending: ReturnType<typeof createCamera> | null = null;
+    const camera3d: Camera3dDep = {
+      // As a React host's ref, which takes the value on the next render.
+      get: () => held,
+      set: (c) => { pending = c; },
+      size: () => ({ width: 800, height: 600 }),
+    };
+    const deps = { camera3d } as unknown as ActionDeps;
+    const handle = (orbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    handle.onMove?.(dragTo(deps, 10));
+    const once = pending!;
+    handle.onMove?.(dragTo(deps, 20));
+    held = pending!;
+    handle.onMove?.(dragTo(deps, 30));
+    expect(pending!.yaw).toBeCloseTo(3 * once.yaw);
   });
 });
 

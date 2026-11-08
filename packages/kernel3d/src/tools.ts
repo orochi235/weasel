@@ -29,6 +29,40 @@ function screenDelta(move: InvocationCtx): { x: number; y: number } | undefined 
   return move.drag?.screenDelta ?? move.drag?.delta;
 }
 
+/**
+ * Writes `step` of the camera a gesture began on to `dep`, the gesture's input
+ * `at` read relative to `zero`. Stepping from that one camera keeps every move
+ * exact; when another writer replaces the dep's camera mid-gesture (a wheel
+ * dolly during an orbit, a home), the gesture rebases onto that camera from
+ * the input it had reached, rather than undoing the write on its next move.
+ * A dep still answering with the camera from before this gesture's last write,
+ * as a host whose state lands on its next render does, was not replaced.
+ */
+function cameraStepper<P>(
+  dep: Camera3dDep | undefined,
+  zero: P,
+  relative: (at: P, from: P) => P,
+  step: (origin: Camera3d, input: P, dep: Camera3dDep) => Camera3d,
+): (at: P) => void {
+  let origin = dep?.get();
+  let from = zero;
+  let reached = zero;
+  let written = origin;
+  let prior = origin;
+  return (at) => {
+    if (!dep || !origin) return;
+    const now = dep.get();
+    if (now !== written && now !== prior) {
+      origin = now;
+      from = reached;
+    }
+    prior = now;
+    written = step(origin, relative(at, from), dep);
+    reached = at;
+    dep.set(written);
+  };
+}
+
 /** An ongoing drag replacing the `camera3d` dep with `step` of the camera as
  *  it was when the drag began. `drag.delta` runs from the drag origin, not the
  *  previous move, so every move composes against that one camera. */
@@ -37,14 +71,12 @@ function dragCamera(
   kind: string,
   step: (origin: Camera3d, delta: { x: number; y: number }, dep: Camera3dDep) => Camera3d,
 ) {
-  const dep = ctx.deps.camera3d;
-  const origin: Camera3d | undefined = dep?.get();
+  const apply = cameraStepper(ctx.deps.camera3d, { x: 0, y: 0 }, (a, b) => ({ x: a.x - b.x, y: a.y - b.y }), step);
   return {
     kind,
     onMove(move: InvocationCtx) {
       const delta = screenDelta(move);
-      if (!dep || !origin || !delta) return;
-      dep.set(step(origin, delta, dep));
+      if (delta) apply(delta);
     },
   };
 }
@@ -151,16 +183,18 @@ export const pinchDollyAction: Action = {
     timing: 'ongoing',
     start(ctx) {
       const dep = ctx.deps.camera3d;
-      const origin: Camera3d | undefined = dep?.get();
       const startSpread = ctx.multiTouch?.spread ?? 0;
       const at = ctx.multiTouch?.centroid;
+      const apply = cameraStepper(dep, 1, (a, b) => a / b, (origin, factor, d) => {
+        const pane = d.size();
+        return dollyToward(origin, factor, paneAnchor(at, d, pane), pane, d.limits?.());
+      });
       return {
         kind: 'pinch',
         onMove(move) {
           const spread = move.multiTouch?.pinch?.currentSpread ?? 0;
-          if (!dep || !origin || !(startSpread > 0) || !(spread > 0)) return;
-          const pane = dep.size();
-          dep.set(dollyToward(origin, startSpread / spread, paneAnchor(at, dep, pane), pane, dep.limits?.()));
+          if (!(startSpread > 0) || !(spread > 0)) return;
+          apply(startSpread / spread);
         },
       };
     },
