@@ -40,11 +40,9 @@ export { composeSelectionPose, type ComposeSelectionPoseOpts } from './selection
 function projectBounds<B extends Bounds>(b: B, view: View): B {
   const t = viewToTransform(view);
   const [sx, sy] = worldToScreen(b.x, b.y, t);
-  const w = b.width * view.scale.x;
-  const h = b.height * view.scale.y;
+  const [w, h] = [b.width * view.scale.x, b.height * view.scale.y];
   return { ...b, x: Math.min(sx, sx + w), y: Math.min(sy, sy + h), width: Math.abs(w), height: Math.abs(h) };
 }
-
 
 /** Options every selection layer shares. `getSelection` and `getPose` are
  *  declared on {@link SelectionOverlayLayerOpts}, which makes both optional —
