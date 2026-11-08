@@ -52,24 +52,27 @@ export function selectionMethods(selection: Pick<SelectionApi, 'get' | 'set'> | 
 /** Commit `ops` as one undo entry, through the consumer's `applyOps` when
  *  there is one, else straight to the `scene` dep. With `select`, the entry
  *  also replaces the selection with it, so undo restores the selection the
- *  action started from; with nothing to commit, the selection is still set. */
-export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { select?: readonly string[] } = {}): void {
+ *  action started from; with nothing to commit, the selection is still set.
+ *  Returns whether an entry was committed: false with no ops, no place to
+ *  commit them, or a scene that refused them. A consumer's `applyOps` is
+ *  taken at its word. */
+export function commitOps(deps: ActionDeps, ops: Op[], label: string, opts: { select?: readonly string[] } = {}): boolean {
   const { select } = opts;
   if (select !== undefined && deps.selection) {
     if (ops.length === 0) {
       deps.selection.set(select.map(asNodeId));
-      return;
+      return false;
     }
     ops = [...ops, createSetSelectionOp({ from: deps.selection.get(), to: select.map(asNodeId), label })];
   }
-  if (ops.length === 0) return;
+  if (ops.length === 0) return false;
   if (deps.applyOps) {
     deps.applyOps(ops, label);
-    return;
+    return true;
   }
   const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-  if (!scene) return;
-  scene.applyBatch(ops, label, defaultCommitAdapter(scene, selectionMethods(deps.selection)));
+  if (!scene) return false;
+  return scene.applyBatch(ops, label, defaultCommitAdapter(scene, selectionMethods(deps.selection)));
 }
 
 /** The selection change a commit that makes or edits one node puts in its own

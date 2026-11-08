@@ -57,8 +57,7 @@ export function finishTransformOps(deps: ActionDeps | undefined, ops: Op[], labe
 export function commitTransformOps(deps: ActionDeps, ops: Op[], label: string): boolean {
   const all = finishTransformOps(deps, ops, label);
   if (!all || all.length === 0) return false;
-  commitOps(deps, all, label);
-  return true;
+  return commitOps(deps, all, label);
 }
 
 /** What a whole-node transform commits its batch through: `deps.applyOps`
