@@ -95,4 +95,20 @@ describe('the Pixel grid canvas', () => {
     );
     expect(screen.getByTestId('chrome').textContent).not.toContain(GRID_NEEDS);
   });
+
+  it('drops its grid, rather than rejecting unhandled, when the capture fails', async () => {
+    const pixels = source('pixels');
+    pixels.capture.mockRejectedValue(new Error('the context was lost'));
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      mount({ source: 'pixels', factor: 8, readouts: ['grid'] }, { pixels: pixels.s });
+      await settle();
+      await settle();
+      expect(pixels.capture).toHaveBeenCalledTimes(1);
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
 });

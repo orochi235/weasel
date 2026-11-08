@@ -76,6 +76,35 @@ describe('<ExportMenu>', () => {
     );
   });
 
+  it('falls back to a target that still exists once the chosen one is gone', async () => {
+    let targets = TARGETS;
+    const base = createAnnotationStore({ targets: () => targets });
+    const capture = vi.fn(async (target: string) => ({
+      target,
+      blob: new Blob(['x'], { type: 'image/png' }),
+      format: 'png' as const,
+      width: 1,
+      height: 1,
+    }));
+    const store = { ...base, targets: () => targets, capture } as AnnotationsApi;
+    const { rerender } = mount(store);
+    open();
+    fireEvent.change(screen.getByRole('combobox', { name: /target/i }), {
+      target: { value: 'shaded' },
+    });
+    targets = [TARGETS[0] as AnnotationTargetInfo];
+    rerender(
+      <AnnotationsContext.Provider value={{ ...store }}>
+        <ExportMenu />
+      </AnnotationsContext.Provider>,
+    );
+    expect((screen.getByRole('combobox', { name: /target/i }) as HTMLSelectElement).value).toBe(
+      'flat',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /download/i }));
+    await waitFor(() => expect(capture).toHaveBeenCalledWith('flat', expect.anything()));
+  });
+
   // jsdom resolves neither var() nor color-mix(), so where the panel mounted
   // is the proxy for whether it reads the lab's tokens at all.
   it('opens inside the lab root, not on the body', () => {

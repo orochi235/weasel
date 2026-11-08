@@ -5,7 +5,7 @@ import { type TrialOrbit, TrialOrbitContext } from './useTrialOrbit';
 import { install3dWatch, watch3d } from './watch3d';
 
 /** Tells the trial around it that a 3D view is drawn there, and how. */
-const OrbitViewContext = createContext<((how: string) => void) | null>(null);
+export const OrbitViewContext = createContext<((how: string) => void) | null>(null);
 
 /** How a trial with no camera draws 3D, or `null` while it draws none — what
  *  the title bar's dev-time mark reads. */
