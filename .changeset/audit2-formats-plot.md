@@ -12,3 +12,4 @@ Fix chart scales and Mermaid readers on edge cases
 - A Mermaid flowchart reads an `accDescr { … }` block running over several lines instead of throwing.
 - A Mermaid xychart or sequence diagram reads past a `%%{…}%%` directive running over several lines instead of throwing.
 - A quoted front matter title reads the same in a Mermaid sequence diagram and xychart as in every other kind: escapes in double quotes read, `''` in single quotes as one quote.
+- write a Mermaid packet diagram's gaps as unlabeled fields, since Mermaid rejects a field that does not start where the one before ends, and read an unlabeled field back as a gap

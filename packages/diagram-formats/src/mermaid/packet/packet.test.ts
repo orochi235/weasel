@@ -37,6 +37,12 @@ describe('reading a Mermaid packet diagram', () => {
     });
   });
 
+  it('reads an unlabeled field as a gap', () => {
+    expect(readMermaidPacket('packet-beta\n  0-3: ""\n  +4: "a"').document.pages[0]).toMatchObject({
+      data: { fields: [{ start: 4, end: 7, label: 'a', relative: true }] },
+    });
+  });
+
   it('warns on what it drops, a bits-per-row directive among them', () => {
     const { warnings } = readMermaidPacket('%%{init: {"packet": {"bitsPerRow": 16}}}%%\npacket-beta\n  accDescr: about\n  0: "a"');
     expect(warnings).toEqual(['Mermaid configuration directives were dropped.', 'Mermaid accessible descriptions were dropped.']);
@@ -68,6 +74,7 @@ describe('writing a Mermaid packet diagram', () => {
       '  +16: "Source Port"',
       '  +16: "Destination Port"',
       '  32-47: "Length"',
+      '  48-51: ""',
       '  52: "Flag"',
       '  +11: "Checksum tail"',
       '  64-95: "Data (variable length)"',
@@ -84,11 +91,10 @@ describe('writing a Mermaid packet diagram', () => {
       },
     };
     const { text, warnings } = writeMermaidPacket(page);
-    expect(text).toBe('packet-beta\n  0-7: "a"\n  10-11: "c"\n  20-21: "d"\n');
+    expect(text).toBe('packet-beta\n  0-7: "a"\n  8-9: ""\n  +2: "c"\n  12-19: ""\n  +2: "d"\n');
     expect(warnings).toEqual([
       'Mermaid reads bits per row from its configuration only; it was dropped.',
       'Mermaid reads fields in order of their bits, never overlapping; fields that run backward or overlap were dropped.',
-      'Mermaid counts a field\'s bits from the end of the one before; fields after a gap were written as ranges.',
     ]);
     expect(() => writeMermaidPacket({ ...page, data: { kind: 'pie', slices: [] } })).toThrow(/as a packet diagram only; the page holds a pie/);
   });
