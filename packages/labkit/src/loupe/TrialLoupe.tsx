@@ -1,14 +1,6 @@
 import { useElementSize, useLatest } from '@weasel-js/core';
 import type { LoupeMode } from '@weasel-js/loupe';
-import {
-  type ReactNode,
-  type RefObject,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import { type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from 'react';
 import { CameraContext, type CameraContextValue, CameraScope } from '../canvas/CameraInput';
 import {
   CanvasStackContext,
@@ -18,8 +10,6 @@ import {
 import { fromCameraView } from '../canvas/cameraView';
 import type { ViewportSize } from '../canvas/worldSpec';
 import type { ViewTransform } from '../instrument/types';
-import type { Box } from '../surface/rect';
-import { useSurfaceOptional } from '../surface/useSurfaceTile';
 import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { CanvasLoupe } from './CanvasLoupe';
 import { sampleStack } from './canvasLens';
@@ -29,7 +19,8 @@ import { LoupeGestures } from './LoupeGestures';
 import { SceneLoupe } from './SceneLoupe';
 import { SourceLoupe } from './SourceLoupe';
 import { resolveLoupeSource, sampleSource, sourceBoxIn } from './sourceLens';
-import { type LoupeLens, type LoupeOptions, type ResolvedLoupe, resolveLoupe } from './types';
+import { type LoupeOptions, type ResolvedLoupe, resolveLoupe } from './types';
+import { useLensDamage } from './useLensDamage';
 import { useLoupe } from './useLoupe';
 
 /** Props for {@link LoupePainter}. */
@@ -195,32 +186,7 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
   const wraps = host === ownHost;
   const hostLatest = useLatest(host);
 
-  // A hollow lens is drawn by the host into the tiles under it, so on a shared surface each
-  // move dirties the tiles it left and the ones it landed on.
-  const tiles = useSurfaceOptional();
-  const onLensLatest = useLatest(onLens);
-  const was = useRef<Box | null>(null);
-  const damage = hollow ? tiles : null;
-  const reportLens = useCallback(
-    (lens: LoupeLens | null) => {
-      onLensLatest.current?.(lens);
-      if (!damage) return;
-      const at = hostLatest.current.current?.getBoundingClientRect();
-      const now =
-        lens && at
-          ? {
-              left: at.left + lens.center.x - lens.width / 2,
-              top: at.top + lens.center.y - lens.height / 2,
-              width: lens.width,
-              height: lens.height,
-            }
-          : null;
-      if (was.current) damage.invalidateBox(was.current);
-      if (now) damage.invalidateBox(now);
-      was.current = now;
-    },
-    [damage, onLensLatest, hostLatest],
-  );
+  const reportLens = useLensDamage(hollow, onLens, hostLatest);
   const options = useMemo(
     () =>
       resolveLoupe({
@@ -235,7 +201,7 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
         shape,
         place,
         hollow,
-        onLens: onLens || damage ? reportLens : undefined,
+        onLens: reportLens,
         peekKey,
         onColorChange,
       }),
@@ -251,8 +217,6 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
       shape,
       place,
       hollow,
-      onLens,
-      damage,
       reportLens,
       peekKey,
       onColorChange,

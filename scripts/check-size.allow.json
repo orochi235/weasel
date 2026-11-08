@@ -137,7 +137,7 @@
     "longestFunction": 140
   },
   "packages/labkit/src/loupe/TrialLoupe.tsx": {
-    "longestFunction": 186
+    "longestFunction": 168
   },
   "packages/labkit/src/loupe/useLoupe.ts": {
     "longestFunction": 181
