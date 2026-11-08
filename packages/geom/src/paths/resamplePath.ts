@@ -12,8 +12,9 @@ import { fitCubicWithTangents } from './schneiderFit';
 
 /** Options for {@link resamplePath}. */
 export interface ResamplePathOptions {
-  /** How many anchors the result holds across all its subpaths. Default: as
-   *  many as `path` has. Ignored when `spacing` is given. */
+  /** How many anchors the result holds across all its subpaths. Default, and
+   *  for a count that is not a finite number: as many as `path` has. Ignored
+   *  when `spacing` is given. */
   count?: number;
   /** The distance along the path between neighboring anchors, in path units.
    *  Each run between fixed anchors is cut into the whole number of equal
@@ -101,7 +102,8 @@ function allocate(spans: Span[], fixedBySub: number[][], opts: ResamplePathOptio
     for (const span of spans) span.pieces = Math.max(1, Math.round(span.run.length / opts.spacing));
     return;
   }
-  const count = Math.floor(opts.count ?? anchors.reduce((n, sub) => n + sub.length, 0));
+  const asked = opts.count;
+  const count = Number.isFinite(asked) ? Math.floor(asked!) : anchors.reduce((n, sub) => n + sub.length, 0);
   const fixedCount = fixedBySub.reduce((n, f, s) => n + (anchors[s].length < 2 ? anchors[s].length : f.length), 0);
   const free = count - fixedCount;
   const total = spans.reduce((n, span) => n + span.run.length, 0);
