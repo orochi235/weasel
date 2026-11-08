@@ -44,6 +44,18 @@ describe('createTextLayer', () => {
     expect(cmd.runs[0].fontWeight).toBe(400);
   });
 
+  it('resolves a px font size by the view scale on a flipped view', () => {
+    const layer = createTextLayer<Node>({
+      getTexts: () => [{ id: 'n', pose: { x: 0, y: 0, width: 100, height: 20, text: 'hi', style: { fontSize: { px: 12 } } } }],
+      getPose: (n) => n.pose,
+    });
+    const sizeAt = (scale: { x: number; y: number }) =>
+      (layer.draw(undefined, { x: 0, y: 0, scale }, DIMS)[0] as { runs: { fontSize: number }[] }).runs[0]!.fontSize;
+    expect(sizeAt({ x: 2, y: 2 })).toBeCloseTo(6, 9);
+    expect(sizeAt({ x: 2, y: -2 })).toBeCloseTo(6, 9);
+    expect(sizeAt({ x: -2, y: -2 })).toBeCloseTo(6, 9);
+  });
+
   it('wraps at the pose width when the style declares wrap', () => {
     const layer = createTextLayer<Node>({
       getTexts: () => [{

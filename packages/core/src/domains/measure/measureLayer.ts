@@ -7,6 +7,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { pxReach, rectPath } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { measureCommands } from 'canvas/nodeShapes/measurePainter';
+import { shownLookup } from 'core/scene/nodeAsShown';
 import { measureEndsOf, type MeasurePoint } from './measurement';
 import type { Measurements } from './measurements';
 import { measureAt, type MeasureHit } from './measureHit';
@@ -47,7 +48,7 @@ export function measurementsLayer(scene: AnyScene, ms: Measurements): RenderLaye
       const draft = ms.draft.get();
       if (draft) out.push(...measureCommands(toScreen(draft.start), toScreen(draft.end), 1));
       const picked = ms.picked.get();
-      const ends = picked === null ? null : measureEndsOf(scene.get(picked));
+      const ends = picked === null ? null : measureEndsOf(shownLookup(scene).get(picked));
       if (ends && !scene.isHidden(picked!)) {
         const stroke = { ...OVERLAY_ROLE_STROKES['measure'], width: 1 };
         for (const p of [ends.start, ends.end].map(toScreen)) {
