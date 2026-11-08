@@ -2,6 +2,7 @@ import { stepsOf, SWEEP_CAP, type Sweep } from '@weasel-js/ui-logic';
 import type { ReactElement, ReactNode } from 'react';
 import s from './Sequence.module.css';
 
+/** Props for {@link Sequence}. */
 export interface SequenceProps<A, B = undefined> {
   /** The parameter stepped through: one cell per step, or one row per step with `across`. */
   sweep: Sweep<A>;

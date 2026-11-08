@@ -10,6 +10,7 @@ import { HeldClockContext, TrialClockContext } from './contexts';
 import { runs, runTo } from './runTo';
 import { type ClockCapability, createTrialClock, type TrialClockHandle } from './trialClock';
 
+/** Props for {@link HeldClock}. */
 export interface HeldClockProps {
   /** The clock to open, as an instrument declares it. */
   spec: ClockCapability;
@@ -75,6 +76,7 @@ export function useHeldClock(): TrialClockHandle | null {
   return useContext(HeldClockContext);
 }
 
+/** Props for {@link ClockFrames}: a `Sequence`'s, less the sweep it makes itself, and how far apart its frames are. */
 export type ClockFramesProps = Omit<SequenceProps<number>, 'sweep' | 'across' | 'children'> &
   Omit<FrameOptions, 'label'> & {
     spec: ClockCapability;
