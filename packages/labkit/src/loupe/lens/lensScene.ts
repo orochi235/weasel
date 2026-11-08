@@ -187,13 +187,14 @@ export function settingsOf<C>(scene: LensScene<C>, lensId: string): LensSettings
   return settings;
 }
 
-/** A lens's reticle box moved to center on `at`, at the size it has now: what a Follow reticle is held at. Null when
+/** A lens's reticle box centered on `at`, at the patch its body shows now: what a Follow reticle is held at. Sized
+ *  from the body rather than the reticle, whose held pose keeps the size of the factor it was held under. Null when
  *  the lens is gone. */
 export function reticleAt<C>(scene: LensScene<C>, lensId: string, at: LoupePoint): RectPose | null {
-  const reticle = scene.get(idsFor(lensId).reticle);
-  if (!reticle) return null;
-  const { width, height } = effectivePose(scene, reticle);
-  return { x: at.x - width / 2, y: at.y - height / 2, width, height };
+  const ids = idsFor(lensId);
+  const body = scene.get(ids.body);
+  if (!body || !scene.get(ids.reticle)) return null;
+  return patchAt(effectivePose(scene, body), factorOf(body), at);
 }
 
 /** The shape a lens's body, and so its reticle, is drawn in; null when the lens is gone. */
