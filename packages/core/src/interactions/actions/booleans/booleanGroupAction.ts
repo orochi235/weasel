@@ -15,6 +15,7 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
 import { requiresContent } from '../defaults/requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
+import { inPaintOrder, slotAbove } from '../groupSlot';
 import { icon } from '../../../icons.gen';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -36,11 +37,9 @@ export function booleanGroupOps(
   op: BooleanShapeOp = 'union',
   label = 'Make Boolean Group',
 ): { ops: Op[]; group: NodeId } | null {
-  const order = new Map([...scene.renderOrder()].map((id, i) => [id as string, i]));
-  const nodes = ids
+  const nodes = inPaintOrder(scene, ids
     .map((id) => scene.get(id as NodeId))
-    .filter((n): n is Node<unknown, string, unknown> => n !== undefined)
-    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    .filter((n): n is Node<unknown, string, unknown> => n !== undefined));
   if (nodes.length < 2 || new Set(nodes.map((n) => n.layer)).size > 1) return null;
   const front = nodes.at(-1)!;
   const frame = scenePoseFrame(scene);
@@ -48,8 +47,7 @@ export function booleanGroupOps(
   const { translate, getBounds } = AUTO_POSE_DESCRIPTOR;
   const { parent, shift } = groupingSite(scene, nodes.map((n) => n.id), unionBounds([...worlds.values()].map(getBounds)));
   if (shift.dx !== 0 || shift.dy !== 0) for (const [id, p] of worlds) worlds.set(id, translate!(p, shift.dx, shift.dy));
-  const siblings = parent === null ? scene.roots : scene.childrenOf(parent);
-  const at = siblings.indexOf(front.id);
+  const index = slotAbove(scene, parent, front.id);
   const own = (front.data ?? {}) as Record<string, unknown>;
   const data = { boolean: op, ...Object.fromEntries(PAINT_KEYS.filter((k) => k in own).map((k) => [k, own[k]])) };
   const page = parent === null ? null : pageOfNode(scene, parent);
@@ -58,7 +56,7 @@ export function booleanGroupOps(
   const ops: Op[] = [
     createInsertOp({
       node: { ...booleanGroupFields(), id: group, layer: front.layer, pose: front.pose, data, parent } as Node<unknown, string, unknown>,
-      ...(at >= 0 ? { index: at + 1 } : {}),
+      ...(index !== undefined ? { index } : {}),
       label,
     }),
   ];

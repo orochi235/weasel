@@ -309,6 +309,25 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     expect([...scene.roots]).toEqual([a, b, c, d, e]);
   });
 
+  it('puts the group in its frontmost member\'s slot, under what stacked above every member', () => {
+    const { scene, a, b, c, d, e } = fiveRoots();
+    const selection = makeSelection([b, d]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    const containerId = selection.get()[0]!;
+
+    expect([...scene.roots]).toEqual([a, c, containerId, e]);
+  });
+
+  it('keeps the members\' stacking inside the group, whatever order they were selected in', () => {
+    const { scene, b, c, d } = fiveRoots();
+    const selection = makeSelection([d, b, c]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+
+    expect([...scene.childrenOf(selection.get()[0]!)]).toEqual([b, c, d]);
+  });
+
   it('redo re-groups, and a second undo restores order again', () => {
     const { scene, a, b, c, d, e } = fiveRoots();
     const selection = makeSelection([b, c, d]);
@@ -318,7 +337,7 @@ describe('groupAction.run — undo restores document order for a multi-node grou
     scene.undo();
     scene.redo();
 
-    expect([...scene.roots]).toEqual([a, e, containerId]);
+    expect([...scene.roots]).toEqual([a, containerId, e]);
     expect([...scene.childrenOf(containerId)]).toEqual([b, c, d]);
 
     scene.undo();

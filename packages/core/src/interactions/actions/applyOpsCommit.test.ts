@@ -60,15 +60,15 @@ describe('commits through applyOps, undone by its history', () => {
     const r = rig(scene, [a, b]);
     run(groupAction, r.deps);
     const [group] = r.selected();
-    expect(scene.roots).toEqual([c, group]);
+    expect(scene.roots).toEqual([group, c]);
     const posed = [a, b].map((id) => scene.get(id)!.pose);
     run(ungroupAction, r.deps);
     expect(r.batches()).toBe(2);
-    expect(scene.roots).toEqual([c, a, b]);
+    expect(scene.roots).toEqual([a, b, c]);
     expect(r.selected()).toEqual([a, b]);
     expect(scene.get(a)!.pose).toEqual(box(0));
     r.history.undo();
-    expect(scene.roots).toEqual([c, group]);
+    expect(scene.roots).toEqual([group, c]);
     expect(scene.childrenOf(group!)).toEqual([a, b]);
     expect([a, b].map((id) => scene.get(id)!.pose)).toEqual(posed);
     expect(r.selected()).toEqual([group]);
