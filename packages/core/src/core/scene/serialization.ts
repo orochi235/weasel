@@ -187,7 +187,8 @@ function currentSpecs<TData, TLayer extends string, TPose>(
     for (const field of NODE_FN_FIELDS) {
       const key = serialized[field.jsonKey];
       if (key === undefined) continue;
-      const fn = (registry[field.field] as Record<string, unknown> | undefined)?.[key];
+      const named = registry[field.field] as Record<string, unknown> | undefined;
+      const fn = named && Object.hasOwn(named, key) ? named[key] : undefined;
       if (!fn && opts.unknownKeys === 'skip') {
         opts.onSkip?.({ id: spec.id!, field: field.field, key });
         continue;

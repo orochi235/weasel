@@ -210,6 +210,15 @@ describe('sceneFromJSON', () => {
     expect(() => sceneFromJSON(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
   });
 
+  it('takes no registry key from the registry object\'s prototype', () => {
+    const json: SerializedScene<Data, 'structures', typeof POSE> = {
+      version: 3,
+      systemLayers: [{ id: 'structures' }],
+      nodes: [{ id: 'bed', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPoseKey: 'toString' }],
+    };
+    expect(() => sceneFromJSON(json, { registry: { clipFromPose: {} } })).toThrow(/unknown clipFromPose key 'toString'/);
+  });
+
   it('accepts a higher-layer child subtree in JSON (renders above its parent)', () => {
     const json: SerializedScene<Data, 'structures' | 'plantings', typeof POSE> = {
       version: 3,

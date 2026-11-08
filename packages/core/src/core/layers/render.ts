@@ -263,7 +263,7 @@ export function isLayerVisible<TData>(
   visibility: Record<string, boolean>,
 ): boolean {
   if (layer.alwaysOn) return true;
-  if (layer.id in visibility) return visibility[layer.id]!;
+  if (Object.hasOwn(visibility, layer.id)) return visibility[layer.id]!;
   return layer.defaultVisible ?? true;
 }
 

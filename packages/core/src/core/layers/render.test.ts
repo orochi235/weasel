@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer } from './render';
+import { type LayerCommandCache, type LayerDrawSpan, type LayerGroup, type RenderLayer, drawLayers, drawOneLayer, isLayerVisible } from './render';
 import { viewToMat3, type DrawCommand } from '@weasel-js/renderer';
 
 describe('drawLayers', () => {
@@ -495,5 +495,12 @@ describe('layer groups', () => {
     const out = run([layer], [{ id: 'world', layers: ['a'], effects: fx }]);
     expect(out[0]).toMatchObject({ kind: 'group', effects: fx });
     expect((out[0] as { children: DrawCommand[] }).children[0]).toMatchObject({ effects: own });
+  });
+});
+
+describe('isLayerVisible', () => {
+  it('reads no visibility from the record\'s prototype', () => {
+    const layer: RenderLayer<unknown> = { id: 'constructor', label: 'C', defaultVisible: false, draw: () => [] };
+    expect(isLayerVisible(layer, {})).toBe(false);
   });
 });
