@@ -55,3 +55,20 @@ describe('marquee under the select tool', () => {
     expect([...selection.get()].sort()).toEqual([a, b].sort() as NodeId[]);
   });
 });
+
+describe('drawing a rect with a modifier held from the press', () => {
+  function drawWith(mods: { shiftKey?: boolean; altKey?: boolean }) {
+    const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
+    const { container } = render(
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200} defaultTools={["rect"]} initialActiveTool="rect" />,
+    );
+    const canvas = container.querySelector('canvas')!;
+    const at = (type: string, x: number, y: number) =>
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, ...mods }));
+    act(() => { at('pointerdown', 50, 50); at('pointermove', 70, 60); at('pointermove', 90, 70); at('pointerup', 90, 70); });
+    return [...scene.renderOrderNodes()];
+  }
+  it('draws one with nothing held', () => { expect(drawWith({})).toHaveLength(1); });
+  it('draws one with Shift held', () => { expect(drawWith({ shiftKey: true })).toHaveLength(1); });
+  it('draws one with Alt held', () => { expect(drawWith({ altKey: true })).toHaveLength(1); });
+});

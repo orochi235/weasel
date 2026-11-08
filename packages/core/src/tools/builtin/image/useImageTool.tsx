@@ -3,6 +3,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { icon } from '../../../icons.gen';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 /** Options for `useImageTool`. */
 export interface UseImageToolOptions extends InsertToolOptions {
@@ -46,7 +47,7 @@ export function useImageTool(options: UseImageToolOptions): Tool {
         // dep's image factory and `src` rides along on the new node.
         bindings: [
           {
-            spec: { kind: 'drag' },
+            spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
             actionId: 'insert',
             opts: { id: 'image.drag', params: { kind: 'image', src, preview }, ...insertBindingBehaviors(behaviors) },
           },

@@ -5,6 +5,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
 import { icon } from '../../../icons.gen';
+import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
 const PRESENTATION = {
   label: 'Text',
@@ -33,7 +34,7 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
         cursor: 'text',
         presentation: PRESENTATION,
         bindings: [
-          { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'text.drag', params: { kind: 'text' }, ...insertBindingBehaviors(behaviors) } },
+          { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: 'text.drag', params: { kind: 'text' }, ...insertBindingBehaviors(behaviors) } },
           { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit', opts: { id: 'text.editText' } },
         ],
       }),

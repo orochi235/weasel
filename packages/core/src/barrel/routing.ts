@@ -50,7 +50,7 @@ export { flipAction } from '../interactions/actions/flip/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';
 export { rotateAction } from '../interactions/actions/rotate/action';
 export { areaSelectAction } from '../interactions/actions/defaults/areaSelect';
-export { insertAction } from '../interactions/actions/insert/action';
+export { insertAction, INSERT_DRAG_MODS } from '../interactions/actions/insert/action';
 export { insertParams, POLYGON_INSERT_PARAMS, STAR_INSERT_PARAMS } from '../interactions/actions/insert/params';
 export { placeAction } from '../interactions/actions/insert/placeAction';
 export { insertRepositionAction, INSERT_REPOSITION_BINDING } from '../interactions/actions/insert/repositionAction';

@@ -4,7 +4,7 @@
  */
 import { useMemo } from 'react';
 import {
-  commitOps, defineTool, commitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_REPOSITION_BINDING,
+  commitOps, defineTool, commitSelectionOps, insertSite, scenePoseFrame, useDepRegistry, useDepSource, useLatest, INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
   type ActionDeps, type InsertDep, type NodeId, type Op, type Tool,
 } from '@weasel-js/core';
 import type { MeasureRowText } from './body';
@@ -24,7 +24,7 @@ export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon
     cursor: 'crosshair',
     presentation: { label: stencil.label, icon: stencil.icon, group: 'stencil' },
     bindings: [
-      { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: `${stencilKind(stencil.id)}.drag`, params: { kind: stencilKind(stencil.id) } } },
+      { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: `${stencilKind(stencil.id)}.drag`, params: { kind: stencilKind(stencil.id) } } },
       INSERT_REPOSITION_BINDING,
     ],
   });
