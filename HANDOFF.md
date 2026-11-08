@@ -27,6 +27,15 @@ For the session picking this up: what is in flight and what has no other home. O
 - Round six (2026-11-08, 29 fixes in core's leftovers: snap and paths, the remaining domains, animation and
   affordances, and the barrel and debug plumbing) is on `main` at 62133c61f through `batch/2026-11-08` (`test:fleet`
   2541 files, postbuild green). Unpushed. Open questions are under "Audit round six" in `docs/unruled.md`.
+- Round seven (2026-11-08, a second pass: renderer, diagram, draw, labkit and forge, geom/stroke/path-tools,
+  routing/theme/prefs, core's `core/`, and `scripts/`, plus Mike's rulings: empty fits land on Cmd-0's view, no-op
+  `update`/`setPose` record nothing, draw's background is undoable and its filename is not, `applyTheme` drops token
+  text that could leave its rule, a number field steps by the smallest step its display shows) is on `main` at
+  d9c637a1a through `batch/2026-11-08b` (`test:fleet` full: 35819 tests; postbuild green). Unpushed. Open questions
+  are under "Audit round seven" in `docs/unruled.md`. The scripts lane's stricter checks now fail where they used to
+  pass silently.
+- The eyedropper (engine sampler, `colorAt` dep, labkit trial toggle, draw's tool on `I`) is built on the
+  `eyedropper` branch and waits for the next batch; it conflicts with labkit loupe commits that landed on `main`.
 - Open from round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
   (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
