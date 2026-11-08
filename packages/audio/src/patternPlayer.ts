@@ -175,12 +175,14 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       opts.onStep?.(step, when);
     } finally {
       inStep = false;
+      // Booked even when `onStep` throws, or `playing()` stays true over a silent player.
+      if (running) {
+        count += 1;
+        lastAt = when;
+        nextAt = when + ms;
+        book();
+      }
     }
-    if (!running) return;
-    count += 1;
-    lastAt = when;
-    nextAt = when + ms;
-    book();
   };
 
   return {

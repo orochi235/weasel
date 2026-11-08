@@ -38,6 +38,24 @@ describe('createPatternPlayer', () => {
     expect(ctx._sources.map((s) => s.started[0])).toEqual([0.125]);
   });
 
+  it('books on past an onStep that throws, as it reports itself playing', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16,
+      onStep: (step) => {
+        seen.push(step);
+        if (step === 1) throw new Error('consumer bug');
+      },
+    });
+    player.start(0);
+    await run(400);
+    expect(player.playing()).toBe(true);
+    expect(seen).toEqual([0, 1, 2, 3, 4]);
+    error.mockRestore();
+  });
+
   it('lands a tempo change on the next step', async () => {
     const { engine, run } = await harness();
     const seen: number[] = [];
