@@ -52,6 +52,18 @@ describe('symmetryGuideLayer', () => {
     expect(layer.hitTest!(120, 50, undefined, VIEW, DIMS)).toBeNull();
   });
 
+  it('draws the handle a press takes on top where two overlap', () => {
+    // A step shorter than the hit radius puts the step handle over the center, and a press takes the step.
+    const s = spec({ kind: 'repeat', angle: 0, spacing: 1 });
+    const layer = symmetryGuideLayer(source(s));
+    const hit = layer.hitTest!(C.x, C.y, undefined, VIEW, DIMS);
+    expect((hit?.initialScratch as SymmetryHandlePress).handle).toBe('step');
+    const dots = layer.draw(undefined, VIEW, DIMS).filter((c) => c.kind === 'path' && 'fill' in c && c.fill && c.stroke);
+    const top = dots.at(-1)!;
+    const b = boundsOfPath((top as { path: Parameters<typeof boundsOfPath>[0] }).path);
+    expect(b.x + b.width / 2).toBeCloseTo(102);
+  });
+
   it('outlines a wallpaper\'s extent', () => {
     const wall = spec({ kind: 'wallpaper', extent: { x: -10, y: -20, width: 30, height: 40 } });
     const draws = symmetryGuideLayer(source(wall)).draw(undefined, VIEW, DIMS);

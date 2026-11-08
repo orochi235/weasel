@@ -32,7 +32,7 @@ export interface SymmetrySpec {
   angle: number;
   /** How many there are, the original included: wedges round the center for
    *  `radial` and `kaleidoscope` and a wallpaper cell of either, places along
-   *  the line for `repeat`. */
+   *  the line for `repeat`. Held to what {@link MAX_WALLPAPER_COPIES} allows. */
   count: number;
   /** World distance from one repeat to the next, and from one wallpaper
    *  lattice point to the next along its rows. */
@@ -139,7 +139,9 @@ export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
       const dx = exact(Math.cos(s.angle)) * s.spacing;
       const dy = exact(Math.sin(s.angle)) * s.spacing;
       const glide = mirrorAcross(c, s.angle);
-      return Array.from({ length: Math.max(0, Math.round(s.count) - 1) }, (_, i) => {
+      const places = Math.round(s.count);
+      const n = places > 1 ? Math.min(places - 1, MAX_WALLPAPER_COPIES) : 0;
+      return Array.from({ length: n }, (_, i) => {
         const k = i + 1;
         const step = translate(k * dx, k * dy);
         return s.glide && k % 2 === 1 ? multiply(step, glide) : step;
@@ -180,9 +182,15 @@ function cellTransforms(s: SymmetrySpec, c: Point): Affine[] {
   return s.cell === 'none' ? [] : SYMMETRY_KINDS[s.cell].transforms({ ...s, angle: s.angle + s.cellAngle }, c);
 }
 
-/** The wedge count a radial kind uses: at least one, a whole number. */
+/** The most wedges a radial kind uses: a kaleidoscope of this many draws
+ *  {@link MAX_WALLPAPER_COPIES} less one copies. */
+const MAX_WEDGES = MAX_WALLPAPER_COPIES / 2;
+
+/** The wedge count a radial kind uses: a whole number from one to
+ *  {@link MAX_WEDGES}, and one for a count that is not a number. */
 export function wedges(s: SymmetrySpec): number {
-  return Math.max(1, Math.round(s.count));
+  const n = Math.round(s.count);
+  return n > 1 ? Math.min(n, MAX_WEDGES) : 1;
 }
 
 /**
