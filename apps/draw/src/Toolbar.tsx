@@ -33,7 +33,7 @@ import { clipboardSnapshotRootIds, selectionToClipboardSvgString } from './svgEx
 export interface ToolbarProps {
   scene: DrawScene;
   selection: SelectionApi;
-  /** The shown page's paper size, which New with no size keeps. */
+  /** The shown page's paper size: what New with no size makes while no page is shown. */
   paperSize: PaperSizeKey;
   /** Fit the view to the first page, after New or Open replaces the document. */
   showFirstPage: () => void;

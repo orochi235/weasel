@@ -19,9 +19,9 @@ export const FILE_NEW_MENU: PrefGroup = pref.group(
 
 /** The document the file commands read and write. */
 export interface FileCommandsTarget extends OpenSvgTarget, SavedDoc {
-  /** The shown page's paper size, which New with no size keeps. */
+  /** The shown page's paper size: what New with no size makes while no page is shown. */
   paperSize: PaperSizeKey;
-  /** The page Export Page writes: the one in view, or the last that was. */
+  /** The page Export Page writes, and whose size New with no size keeps: the one in view, or the last that was. */
   page: PlacedPage | null;
 }
 
@@ -32,7 +32,9 @@ export function useFileCommands(target: FileCommandsTarget): void {
   const { scene } = target;
   useNewCommand(FILE_ACTIONS.new, 'New', (params) => {
     const size = params?.size;
-    const paper = PAPER_PRESETS[isPaperSize(size) ? size : target.paperSize];
+    const { page } = target;
+    const paper = isPaperSize(size) ? PAPER_PRESETS[size]
+      : page ? { width: page.width, height: page.height } : PAPER_PRESETS[target.paperSize];
     target.leaveMode();
     // The batch is what names the entry and captures the prior selection.
     scene.batch('New document', () => {
