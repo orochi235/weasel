@@ -30,6 +30,20 @@ describe('coalescing (coalesceWindowMs)', () => {
     expect(s.get(id)?.pose).toEqual({ x: 3, y: 0, width: 10, height: 10 });
   });
 
+  it('a drag with a stationary frame in the middle lands as one undo entry', () => {
+    const s = timedScene();
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const before = s.historyEntries().length;
+    s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
+    vi.advanceTimersByTime(100);
+    s.setPose(id, { x: 1, y: 0, width: 10, height: 10 }); // the pointer held still
+    vi.advanceTimersByTime(100);
+    s.setPose(id, { x: 2, y: 0, width: 10, height: 10 });
+    expect(s.historyEntries().length).toBe(before + 1);
+    s.undo();
+    expect(s.get(id)?.pose).toEqual(POSE);
+  });
+
   it('undo of a coalesced entry returns to the pre-burst state; redo to the final', () => {
     const s = timedScene();
     const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
