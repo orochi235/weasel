@@ -156,7 +156,10 @@ export function RepresentationPanel({
         return {
           kind: 'move-curve-anchor',
           onMove: to,
-          onEnd: (at, reason) => { if (reason === 'commit') to(at); },
+          onEnd: (at, reason) => {
+            if (reason === 'commit') to(at);
+            else onAnchorsChangeRef.current(anchorsRef.current.map((a, i) => (i === index ? origin : a)));
+          },
         };
       },
     },
