@@ -48,6 +48,11 @@ cursors.get('pen'); // 'crosshair'
   not stop the rest.
 - `isPlainObject(value)` and `isPlainPrototype(proto)` — plain-object tests
   that hold for objects from another realm.
+- `deepEqual(a, b, { undefinedAsAbsent })` — structural equality over arrays
+  and plain objects; anything else equals only itself.
+- `sameList(a, b, same)` — equal elements in the same order.
+- `isDev()` — whether to emit development diagnostics; false once a bundler
+  defines `process.env.NODE_ENV` as `'production'`.
 - `matchQuery(query, { text, tags })` and `QueryMatch` — the text search
   every finder shares: whether an entry answers a person's query, by its text
   or by a tag, ignoring case. `hasTag(tags, tag)` is the exact test for
