@@ -1,3 +1,4 @@
+import { downloadBlob } from '@weasel-js/editor';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies, bakeChain, emitCss, serializeDefinition, toDTCG, type Lookup } from '@weasel-js/theme/engine';
 import { runtimeTheme } from './model';
@@ -33,10 +34,5 @@ export function exportFile(kind: ExportKind, def: ThemeDefinition, lookup: Looku
 }
 
 export function download(file: ExportFile): void {
-  const url = URL.createObjectURL(new Blob([file.text], { type: file.type }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = file.filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(new Blob([file.text], { type: file.type }), file.filename);
 }

@@ -1,9 +1,11 @@
-/** History steps as rows, newest first; a row opens to the entries it touched and each entry's ops. */
+/** History steps as rows, newest first, each keyed by its place in the page's ring; a row opens to the entries it touched
+ *  and each entry's ops. */
 import { useState, type ReactElement } from 'react';
 import type { DevtoolsHistoryRecord } from '@weasel-js/core/devtools-protocol';
 import { Code } from '@weasel-js/ui/components/Code';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { formatAge } from './formatAge';
+import type { Sequenced } from './sequenced';
 import { ValueView } from './ValueView';
 import s from './HistoryView.module.css';
 
@@ -37,9 +39,9 @@ function StepDetail({ step }: { step: DevtoolsHistoryRecord }): ReactElement {
   );
 }
 
-export function HistoryTable({ steps, now }: { steps: readonly DevtoolsHistoryRecord[]; now: number }): ReactElement {
+export function HistoryTable({ steps, now }: { steps: readonly Sequenced<DevtoolsHistoryRecord>[]; now: number }): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const rows: StepRow[] = steps.map((step, i) => ({ id: `${step.ts}-${i}`, step })).slice(-DISPLAY_LIMIT).reverse();
+  const rows: StepRow[] = steps.slice(-DISPLAY_LIMIT).map(({ seq, record }) => ({ id: String(seq), step: record })).reverse();
   const columns: readonly DataGridColumn<StepRow>[] = [
     { id: 'age', header: 'Age', sortable: false, className: s.age, render: ({ step }) => formatAge(Math.max(0, now - step.ts)) },
     { id: 'step', header: 'Step', sortable: false, render: ({ step }) => step.step },

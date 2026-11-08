@@ -18,8 +18,8 @@ describe('<PaletteLab> copy confirmations', () => {
   });
 
   const tokens = () => screen.getByRole('button', { name: /^(Copied|Copy as tokens)$/ });
-  const preset = () =>
-    screen.getByRole('button', { name: `Copy ${BUILTIN_PRESETS[0]!.name} as source` });
+  const name = BUILTIN_PRESETS[0]!.name;
+  const preset = () => screen.getByRole('button', { name: new RegExp(`^(Copied ${name}|Copy ${name} as source)$`) });
 
   it('a second token copy restarts the confirmation', () => {
     renderWithIcons(<PaletteLab />);
@@ -38,9 +38,9 @@ describe('<PaletteLab> copy confirmations', () => {
     act(() => vi.advanceTimersByTime(800));
     fireEvent.click(preset());
     act(() => vi.advanceTimersByTime(800));
-    expect(preset().textContent).toBe('✓');
+    expect(preset()).toHaveAccessibleName(`Copied ${name}`);
     act(() => vi.advanceTimersByTime(400));
-    expect(preset().textContent).toBe('⧉');
+    expect(preset()).toHaveAccessibleName(`Copy ${name} as source`);
   });
 
   it('leaves no confirmation timer behind on unmount', () => {

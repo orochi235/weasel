@@ -208,4 +208,13 @@ describe('DevtoolsPanel', () => {
     view.rerender(<DevtoolsPanel transport={t.transport} />);
     expect(await screen.findByText('No canvas on this page.')).toBeTruthy();
   });
+
+  it('opens the first tab shown when the open one is not among them', async () => {
+    const t = recordingTransport();
+    const view = render(<><TestCanvas /><DevtoolsPanel transport={t.transport} tabs={['scene', 'state']} defaultTab="frame" /></>);
+    expect((await screen.findByRole('tab', { name: 'Scene' })).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(screen.getByRole('tab', { name: 'State' }));
+    view.rerender(<><TestCanvas /><DevtoolsPanel transport={t.transport} tabs={['scene', 'dispatch']} /></>);
+    expect(screen.getByRole('tab', { name: 'Scene' }).getAttribute('aria-selected')).toBe('true');
+  });
 });

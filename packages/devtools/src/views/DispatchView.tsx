@@ -14,6 +14,7 @@ import { usePoll } from '../hooks';
 import type { DevtoolsViewProps } from '../tabs';
 import { followTrace } from '../trace';
 import { CoordTable, type CoordEntry } from './CoordTable';
+import { sequenced, type Sequenced } from './sequenced';
 import { TraceTable } from './TraceTable';
 import s from './DispatchView.module.css';
 
@@ -25,7 +26,7 @@ const KEEP = 200;
 
 export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const follower = useMemo(() => followTrace(client, rootId), [client, rootId]);
-  const [entries, setEntries] = useState<TraceLogEntry[]>([]);
+  const [entries, setEntries] = useState<Sequenced<TraceLogEntry>[]>([]);
   const [coords, setCoords] = useState<CoordEntry[]>([]);
   const [live, setLive] = useState<DispatchRecord | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -35,7 +36,10 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
 
   const read = (): void => {
     follower.read().then((slice) => {
-      if (slice.entries.length) setEntries((prev) => [...prev, ...(slice.entries as unknown as TraceLogEntry[])].slice(-KEEP));
+      if (slice.entries.length) {
+        const read = sequenced(slice.entries as unknown as TraceLogEntry[], slice.cursor);
+        setEntries((prev) => [...prev, ...read].slice(-KEEP));
+      }
       if (slice.coords?.length) setCoords((prev) => [...prev, ...(slice.coords as unknown as CoordEntry[])].slice(-KEEP));
       setLive(slice.live as unknown as DispatchRecord | null);
       setNow(Date.now());

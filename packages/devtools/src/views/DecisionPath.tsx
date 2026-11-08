@@ -2,10 +2,11 @@
 import type { ReactElement } from 'react';
 import type { DispatchRecord } from '@weasel-js/core/routing';
 import { Powerline, type PowerlineSegment } from '@weasel-js/ui/components/Powerline';
+import { keyName } from './keyName';
 
 function inputText(record: DispatchRecord): string {
   const { eventKind, key } = record.input;
-  return key === undefined ? eventKind : `${eventKind} ${key === ' ' ? 'Space' : key}`;
+  return key === undefined ? eventKind : `${eventKind} ${keyName(key)}`;
 }
 
 export function DecisionPath({ record }: { record: DispatchRecord }): ReactElement {

@@ -3,7 +3,7 @@
  * between the page's window and a port to the background. It reads only
  * `message` events, never page objects.
  */
-import type { PanelMessage } from '@weasel-js/core/devtools';
+import type { PanelMessage } from '@weasel-js/core/devtools-protocol';
 import type { PortLike } from '../browserApi';
 import { envelopeFrom, wrap } from '../envelope';
 

@@ -5,6 +5,8 @@ import type { DevtoolsClient } from './client';
 /** What one read hands back. `coords` is present only while coord records are asked for. */
 export interface TraceRead {
   entries: SerializedValue[];
+  /** Where the trace stands after `entries`: the last of them is record `cursor - 1` of the canvas's ring. */
+  cursor: number;
   live: SerializedValue;
   coords?: SerializedValue[];
 }
@@ -28,7 +30,7 @@ export function followTrace(client: DevtoolsClient, rootId: string): TraceFollow
       type: 'get-trace', cursor, ...(coordCursor !== null ? { coordCursor } : {}),
     });
     cursor = slice.cursor;
-    const out: TraceRead = { entries: slice.entries, live: slice.live };
+    const out: TraceRead = { entries: slice.entries, cursor: slice.cursor, live: slice.live };
     if (slice.coords && coordCursor !== null) {
       coordCursor = slice.coords.cursor;
       out.coords = slice.coords.entries;

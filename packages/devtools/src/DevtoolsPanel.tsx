@@ -13,7 +13,7 @@ export interface DevtoolsPanelProps {
   transport: PanelTransport;
   /** The tabs to show, in the panel's own order. Default: every tab. With one, the tab bar is left out. */
   tabs?: readonly DevtoolsTabId[];
-  /** The tab open first. Default: the first shown. */
+  /** The tab open first. Default, or when `tabs` leaves it out: the first shown. */
   defaultTab?: DevtoolsTabId;
   className?: string;
 }
@@ -26,7 +26,8 @@ export interface DevtoolsPanelProps {
 export function DevtoolsPanel({ transport, tabs, defaultTab, className }: DevtoolsPanelProps): ReactElement {
   const { client, state } = useDevtoolsClient(transport);
   const shown = tabs ? DEVTOOLS_TABS.filter((t) => tabs.includes(t.id)) : DEVTOOLS_TABS;
-  const [tab, setTab] = useState<DevtoolsTabId>(defaultTab ?? shown[0]?.id ?? 'scene');
+  const [chosen, setTab] = useState<DevtoolsTabId | undefined>(defaultTab);
+  const tab = shown.some((t) => t.id === chosen) ? chosen! : shown[0]?.id ?? 'scene';
   const [picked, setPicked] = useState<string | null>(null);
   const rootId = state.roots.some((r) => r.id === picked) ? picked : state.roots[0]?.id ?? null;
 

@@ -4,7 +4,7 @@ import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
 import styles from './ThemeEditor.module.css';
 import { layerEntries } from './theme/entries';
-import { LAYERS, removePin, setPin, type LayerId } from './theme/model';
+import { LAYERS, keepNumberness, removePin, setPin, type LayerId } from './theme/model';
 
 export interface TokenLayerProps {
   readonly layer: LayerId;
@@ -14,10 +14,6 @@ export interface TokenLayerProps {
   readonly highlight: readonly string[];
   readonly onChange: (next: ThemeDefinition, key: string, label?: string) => void;
 }
-
-/** A seed keeps its number-ness: `4` edited to `8` stays a number, not `'8'`. */
-const seedValue = (raw: string, previous: unknown) =>
-  typeof previous === 'number' && raw.trim() !== '' && Number.isFinite(Number(raw)) ? Number(raw) : raw;
 
 /** Seeds, Components and Pins, edited by token type through weasel-ui's `TokenPanel`. */
 export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenLayerProps) {
@@ -37,7 +33,7 @@ export function TokenLayer({ layer, draft, result, highlight, onChange }: TokenL
       if (value === null) return;
       const key = name.slice('seeds.'.length);
       onChange(
-        { ...draft, seeds: { ...draft.seeds, [key]: seedValue(value, draft.seeds?.[key]) } },
+        { ...draft, seeds: { ...draft.seeds, [key]: keepNumberness(value, draft.seeds?.[key]) } },
         `seed:${key}`,
         `Edit ${name}`,
       );

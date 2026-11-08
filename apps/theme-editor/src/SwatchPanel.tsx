@@ -19,6 +19,8 @@ interface Swatch {
   readonly key: string;
   readonly label: string;
   readonly hex: string;
+  /** The name the swatch's anchor takes, which is how a pinned one is found again. */
+  readonly name: string;
   readonly anchor: () => Anchor;
 }
 
@@ -64,26 +66,23 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
           key: name,
           label: name,
           hex: crayonHex(name),
+          name,
           anchor: () => crayonAnchor(name),
         })),
         bands,
       ),
       lego: ordered(
-        LEGO_COLORS.map((c) => ({
-          key: `lego-${c.name}`,
-          label: c.name,
-          hex: c.hex,
-          anchor: () => anchorFromHex(c.hex, c.name.toLowerCase().replace(/\s+/g, '-')),
-        })),
+        LEGO_COLORS.map((c) => {
+          const name = c.name.toLowerCase().replace(/\s+/g, '-');
+          return { key: `lego-${c.name}`, label: c.name, hex: c.hex, name, anchor: () => anchorFromHex(c.hex, name) };
+        }),
         bands,
       ),
       copic: ordered(
-        COPIC_COLORS.map((c) => ({
-          key: `copic-${c.code}`,
-          label: `${c.code} ${c.name}`,
-          hex: c.hex,
-          anchor: () => anchorFromHex(c.hex, c.code.toLowerCase()),
-        })),
+        COPIC_COLORS.map((c) => {
+          const name = c.code.toLowerCase();
+          return { key: `copic-${c.code}`, label: `${c.code} ${c.name}`, hex: c.hex, name, anchor: () => anchorFromHex(c.hex, name) };
+        }),
         bands,
       ),
     }),
@@ -92,7 +91,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
 
   const swatches = sets[source];
   const full = anchors.length >= count;
-  const pinnedHexes = new Set(anchors.map((a) => a.name));
+  const pinnedNames = new Set(anchors.map((a) => a.name));
 
   const add = (make: () => Anchor) => {
     if (full) return;
@@ -162,7 +161,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
       <TabPanel id={source} className={styles.swatchTabPanel}>
         <div className={styles.crayonGrid} onMouseLeave={() => setHovered(null)} role="group">
           {swatches.map((s) => {
-            const isPinned = pinnedHexes.has(s.key) || anchors.some((a) => a.name === s.label);
+            const isPinned = pinnedNames.has(s.name);
             return (
               <button
                 key={s.key}
@@ -175,7 +174,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
                 aria-pressed={isPinned}
                 onMouseEnter={() => setHovered(`${s.label} · ${s.hex}`)}
                 onFocus={() => setHovered(`${s.label} · ${s.hex}`)}
-                onClick={() => (isPinned ? unpin(s.label) : add(s.anchor))}
+                onClick={() => (isPinned ? unpin(s.name) : add(s.anchor))}
               >
                 {isPinned && <PinIcon size={13} className={styles.crayonPin} />}
               </button>
