@@ -116,7 +116,7 @@ export function strokeAttrsFor(
 /** `stroke-dasharray` and `stroke-dashoffset`, the offset only beside a dash it moves. */
 function dashAttrs(stroke: { dash?: readonly number[]; dashOffset?: number }): string[] {
   if (!stroke.dash || stroke.dash.length === 0) return [];
-  const attrs = [`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`];
+  const attrs = [`stroke-dasharray="${stroke.dash.map((n) => trimNumber(n)).join(' ')}"`];
   if (stroke.dashOffset && Number.isFinite(stroke.dashOffset)) {
     attrs.push(`stroke-dashoffset="${trimNumber(stroke.dashOffset)}"`);
   }
