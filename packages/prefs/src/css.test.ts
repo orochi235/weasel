@@ -39,6 +39,12 @@ describe('prefsCss', () => {
     expect(blocksOf(prefsCss(store))[':where(:root)']).toContain(String.raw`--face: 'Two\a lines\a here';`);
   });
 
+  it('leaves out a held color whose text would end its declaration or its block', () => {
+    const css = prefsCss(make([['surface', 'red; } :root { --hijack: 1']]));
+    expect(css).not.toContain('hijack');
+    expect(blocksOf(css)[':where(:root)']).not.toContainEqual(expect.stringMatching(/^--surface/));
+  });
+
   it('sets every leaf with a CSS form on the root, by kind, and leaves out a kind with none', () => {
     const blocks = blocksOf(prefsCss(make()));
     expect(blocks[':where(:root)']).toEqual([
