@@ -29,3 +29,8 @@ const ICONS = [coreIcons, shapeIcons, uiIcons];
 
 That registers every glyph core, the shapes and ui draw. To ship only the glyphs the app names, use
 `@weasel-js/icons-plugin`.
+
+## Adding or drawing a glyph
+
+Where a new glyph goes, how `npm run gen:icons` picks it up, and the drawing rules a glyph is held
+to: `docs/icons.md` in the weasel repo.
