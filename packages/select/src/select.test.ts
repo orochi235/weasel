@@ -41,8 +41,8 @@ describe('rangeOf', () => {
     expect(rangeOf(order, 'c', 'c')).toEqual(['c']);
   });
 
-  it('leaves out what is not eligible', () => {
-    expect(rangeOf(order, 'a', 'e', (id) => id !== 'c')).toEqual(['a', 'b', 'd', 'e']);
+  it('leaves out what is forced single', () => {
+    expect(rangeOf(order, 'a', 'e', (id) => id === 'c')).toEqual(['a', 'b', 'd', 'e']);
   });
 
   it('is empty when either end is not in the order', () => {
@@ -64,14 +64,18 @@ describe('select', () => {
     expect(select(state(['a', 'c'], 'a'), 'a', 'toggle')).toEqual({ ids: ['c'], anchor: 'a' });
   });
 
-  it('toggle on an ineligible id replaces with it', () => {
-    const locked = (id: string) => id !== 'c';
-    expect(select(state(['a', 'b'], 'a'), 'c', 'toggle', { eligible: locked })).toEqual({ ids: ['c'], anchor: 'c' });
+  it('single selects the one id and anchors there, whatever is selected', () => {
+    expect(select(state(['a', 'b'], 'a'), 'd', 'single', { order })).toEqual({ ids: ['d'], anchor: 'd' });
   });
 
-  it('toggle drops ineligible ids already selected', () => {
-    const locked = (id: string) => id !== 'c';
-    expect(select(state(['c'], 'c'), 'a', 'toggle', { eligible: locked })).toEqual({ ids: ['a'], anchor: 'a' });
+  it('toggle on a forced-single id selects it alone', () => {
+    const locked = (id: string) => id === 'c';
+    expect(select(state(['a', 'b'], 'a'), 'c', 'toggle', { forceSingle: locked })).toEqual({ ids: ['c'], anchor: 'c' });
+  });
+
+  it('toggle drops forced-single ids already selected', () => {
+    const locked = (id: string) => id === 'c';
+    expect(select(state(['c'], 'c'), 'a', 'toggle', { forceSingle: locked })).toEqual({ ids: ['a'], anchor: 'a' });
   });
 
   it('range selects from the anchor to the id and keeps the anchor', () => {
@@ -79,14 +83,19 @@ describe('select', () => {
     expect(select(state(['b', 'c', 'd'], 'b'), 'a', 'range', { order })).toEqual({ ids: ['a', 'b'], anchor: 'b' });
   });
 
-  it('range skips ineligible ids', () => {
-    expect(select(state([], 'a'), 'e', 'range', { order, eligible: (id) => id !== 'c' }))
+  it('range skips forced-single ids it walks past', () => {
+    expect(select(state([], 'a'), 'e', 'range', { order, forceSingle: (id) => id === 'c' }))
       .toEqual({ ids: ['a', 'b', 'd', 'e'], anchor: 'a' });
   });
 
-  it('range with nothing eligible leaves the selection alone', () => {
-    const before = state(['a'], 'b');
-    expect(select(before, 'c', 'range', { order, eligible: (id) => id === 'a' })).toBe(before);
+  it('range on a forced-single id selects it alone and anchors there', () => {
+    expect(select(state(['a'], 'a'), 'c', 'range', { order, forceSingle: (id) => id === 'c' }))
+      .toEqual({ ids: ['c'], anchor: 'c' });
+  });
+
+  it('range from a forced-single anchor leaves the anchor out', () => {
+    expect(select(state(['b'], 'b'), 'd', 'range', { order, forceSingle: (id) => id === 'b' }))
+      .toEqual({ ids: ['c', 'd'], anchor: 'b' });
   });
 
   it('returns the same selection when a press changes nothing', () => {

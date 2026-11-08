@@ -81,17 +81,15 @@ export function LayerList(props: LayerListProps) {
   // The press arrives after the drag session ends, which can be after a render
   // the closure did not see, so it reads the selection from here.
   const live = useLatest(props);
-  // Fixed rows never join a multi-selection: pressed, one is selected alone, and a range or a
-  // toggle passes over them.
-  const unlocked = () => {
-    const fixed = new Set(fixedIds(live.current.items));
-    return (id: string) => !fixed.has(id);
+  const fixed = () => {
+    const ids = new Set(fixedIds(live.current.items));
+    return (id: string) => ids.has(id);
   };
   const press = (item: LayerListItem, mods: PressModifiers) => {
     const { selectedIds = [], onSelect } = live.current;
     if (!onSelect) return;
     const next = select({ ids: selectedIds, anchor: anchor.current }, item.id, intentOf(selectModifiers(mods), PRESS_POLICY), {
-      order: order.current, eligible: unlocked(),
+      order: order.current, forceSingle: fixed(),
     });
     anchor.current = next.anchor;
     onSelect([...next.ids]);
@@ -121,9 +119,11 @@ export function LayerList(props: LayerListProps) {
   const byId = new Map(visible.map((v) => [v.item.id, v]));
   const nudgers = useRef(new Map<string | null, (id: string, delta: -1 | 1) => boolean>()).current;
   const selectedIds = props.selectedIds ?? [];
+  // Shift+arrows pass over a fixed row; only a press on one selects it alone.
   const selectRange = (to: string) => {
+    if (fixed()(to)) return;
     const before = { ids: live.current.selectedIds ?? [], anchor: anchor.current };
-    const next = select(before, to, 'range', { order: order.current, eligible: unlocked() });
+    const next = select(before, to, 'range', { order: order.current, forceSingle: fixed() });
     anchor.current = next.anchor;
     if (next !== before) live.current.onSelect?.([...next.ids]);
   };

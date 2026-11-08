@@ -155,6 +155,16 @@ describe('LayerList selection', () => {
     expect(onSelect).toHaveBeenLastCalledWith(['bg']);
   });
 
+  it('selects a fixed row alone on Shift-click', () => {
+    const onSelect = vi.fn();
+    const items = [...FLAT, { id: 'bg', label: 'Background', fixed: true }];
+    const { rerender } = list({ items, selectedIds: [], onSelect });
+    click('Alpha');
+    rerender(<LayerList items={items} selectedIds={['a']} onSelect={onSelect} />);
+    click('Background', { shiftKey: true });
+    expect(onSelect).toHaveBeenLastCalledWith(['bg']);
+  });
+
   it('drops a fixed row from the selection a Cmd-click builds on', () => {
     const onSelect = vi.fn();
     list({ items: [...FLAT, { id: 'bg', label: 'Background', fixed: true }], selectedIds: ['bg'], onSelect });

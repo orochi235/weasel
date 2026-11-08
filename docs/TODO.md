@@ -361,15 +361,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [maintainer] Decide what a range press on an ineligible id selects.** `select()`
-  (`packages/select/src/select.ts`) skips an id `eligible` refuses when a range walks past it, and
-  that includes the pressed id itself: Shift-click on one leaves it out of what gets selected, and
-  when nothing in the range is eligible the press changes nothing. `SelectContext.eligible`'s doc says
-  an ineligible id is "selected alone when pressed", which a toggle press does. Closes when a range
-  press ending on an ineligible id either selects it alone or the doc says it is skipped, with the
-  tests `range skips ineligible ids` and `range with nothing eligible leaves the selection alone`
-  matching.
-
 - **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
   and `useRovingTabIndex.test.tsx` pins that. But `ToolButton`'s `ariaDisabled` promises such a button stays
   "reachable by keyboard (roving-tabindex still applies)", and a segment with a `disabledReason` swaps `disabled`
