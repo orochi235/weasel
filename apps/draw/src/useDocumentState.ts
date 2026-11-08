@@ -7,8 +7,9 @@ import { DEFAULT_PAPER_SIZE, PAPER_PRESETS, type PaperSizeKey } from './paperSiz
 /**
  * The document's own settings, saved 300 ms after a change under a key apart from the scene's,
  * and whether the document is what the Properties panel shows. `hasSelection` says a scene node
- * is selected, which takes the panel back from the document. The paper size is the shown page's,
- * and setting it resizes that page and fits the view to it.
+ * is selected, which takes the panel back from the document. The paper size is the shown page's
+ * (`null` for a page of none of draw's sizes, the default with no page shown), and setting it
+ * resizes that page and fits the view to it.
  */
 export function useDocumentState(pages: DocPages, hasSelection: boolean) {
   const [initialDoc] = useState(loadDoc);
@@ -22,7 +23,7 @@ export function useDocumentState(pages: DocPages, hasSelection: boolean) {
   useAutosave(() => ({ primary: [DOC_KEY, JSON.stringify(doc)] }), { revision: doc });
 
   const { shown } = pages;
-  const paperSize = (shown && paperSizeOf(shown)) ?? DEFAULT_PAPER_SIZE;
+  const paperSize = shown ? paperSizeOf(shown) : DEFAULT_PAPER_SIZE;
   const setPaperSize = useCallback((size: PaperSizeKey) => {
     if (shown === null) return;
     pages.resize(shown.id, PAPER_PRESETS[size]);

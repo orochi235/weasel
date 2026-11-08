@@ -20,6 +20,14 @@ describe('useDocumentState', () => {
     expect(renderHook(() => useDocumentState(pagesShowing(0), false)).result.current.paperSize).toBe('letter');
   });
 
+  it('reads null off a page of none of the paper sizes, and the default with no page shown', () => {
+    const custom = pagesShowing(0);
+    const placed = layoutPages([{ id: 'page-1', width: 500, height: 700 }]);
+    const pages = { ...custom, placed, shown: placed[0]! };
+    expect(renderHook(() => useDocumentState(pages, false)).result.current.paperSize).toBeNull();
+    expect(renderHook(() => useDocumentState(pagesShowing(null), false)).result.current.paperSize).toBe('letter');
+  });
+
   it('resizes the shown page to a paper size, and fits the view to it', () => {
     const pages = pagesShowing(1);
     const { result } = renderHook(() => useDocumentState(pages, false));
