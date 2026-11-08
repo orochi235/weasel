@@ -198,7 +198,6 @@ export function attachHud(
   };
 }
 
-/** One widget's last frame commands and every input they were built from. */
 /** `w`'s commands, reused from `cache` while nothing they are drawn from changed. */
 function cachedCommands(
   cache: WeakMap<Widget, CachedFrame>, w: Widget, ctx: HudDrawCtx, focus: number,
@@ -227,6 +226,7 @@ function cachedCommands(
   return cmds;
 }
 
+/** One widget's last frame commands and every input they were built from. */
 interface CachedFrame {
   deps: readonly unknown[];
   cmds: DrawCommand[];

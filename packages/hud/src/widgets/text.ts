@@ -11,8 +11,9 @@ import type { Fill } from '@weasel-js/paint';
 const RUN: StyledRun = { text: '' };
 const RUNS: readonly StyledRun[] = [RUN];
 
-/** Options for a text widget. `x`/`y` place the text; its bounds follow from
- *  the string and font size. */
+/** Options for a text widget. `x`/`y` place the text. Its bounds are that
+ *  point, `fontSize` tall and 0 wide: a text widget takes no input, so nothing
+ *  reads its width. */
 export interface TextOptions {
   id: string;
   x: number; y: number;
