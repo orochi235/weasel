@@ -30,6 +30,11 @@ export interface TimelineReport {
   lap(lap: number): void;
 }
 
+const finite = (t: number): number => {
+  if (!Number.isFinite(t)) throw new RangeError(`a timeline seeks to a finite time, not ${t}`);
+  return t;
+};
+
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
   switch (track.kind) {
@@ -112,8 +117,8 @@ export function createTimeline(
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
   const onWrap = (laps: number): void => {
-    if (!held && laps > 0) events.to(opts.tracks, duration);
-    events.place(laps > 0 ? -Infinity : playhead, false);
+    const sought = !held && laps > 0 && events.to(opts.tracks, duration);
+    if (!sought) events.place(laps > 0 ? -Infinity : playhead, false);
     if (report?.watched) report.lap(lap);
   };
 
@@ -141,13 +146,13 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
-    if (!held) events.to(opts.tracks, playhead);
+    const sought = !held && events.to(opts.tracks, playhead);
     booker?.tick(virtualNow, rate);
 
-    if ((finished || rewound) && !done) { done = true; opts.onDone?.(); playbackChanged(); }
+    if ((finished || rewound) && !done && !sought) { done = true; opts.onDone?.(); playbackChanged(); }
     // Re-read: `onDone` may have seeked back or extended the duration, and
     // retiring the entry would strand the replay its own handler just started.
-    if ((rewound ? playhead > 0 : playhead < duration) || parked) return false;
+    if (sought || (rewound ? playhead > 0 : playhead < duration) || parked) return false;
     live = false;
     sampler.release();
     return true;
@@ -203,8 +208,8 @@ export function createTimeline(
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(t) {
+      offset = finite(t) - lastVirtual;
       booker?.retract();
-      offset = t - lastVirtual;
       playhead = t;
       events.place(t, true);
       booker?.seek();

@@ -1,4 +1,4 @@
-import type { EventBooking, EventBookingHandle, EventTrack, TimelineEvent, Track } from './types';
+import type { EventBooking, EventBookingHandle, EventTrack, NestedTimeline, TimelineEvent, Track } from './types';
 
 /** A clock read further than this from the frame clock's prediction is taken
  *  as a discontinuity — a hidden tab, a suspended context — not as jitter. */
@@ -66,6 +66,10 @@ interface Booking {
   handle?: EventBookingHandle;
 }
 
+/** Where a nested timeline starting at root time `from` stops, inside parents that stop at `end`. */
+const endWithin = (end: number, from: number, timeline: NestedTimeline): number =>
+  Math.min(end, from + (timeline.duration ?? Infinity));
+
 const isAfter = (a: Cursor, b: Cursor): boolean => a.lap > b.lap || (a.lap === b.lap && a.r > b.r);
 
 export function createBooker(opts: EventBooking, host: BookerHost): Booker {
@@ -104,7 +108,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     Math.max(est! + (u - playhead) / scale, now);
 
   const scanTrack = (
-    track: EventTrack, at: number, horizon: number, lastLap: number, now: number, scale: number,
+    track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
   ): void => {
     const lap = host.lap();
     const duration = host.duration();
@@ -115,7 +119,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const lapStart = (c.lap - lap) * duration;
       if (lapStart > horizon) break;
       const i = (c.open ? firstAtOrAfter : firstAfter)(events, c.r - at);
-      if (i >= events.length || at + events[i].t > duration) {
+      if (i >= events.length || at + events[i].t > Math.min(duration, end)) {
         if (c.lap >= lastLap) break;
         // A frame that skipped whole laps books the outgoing lap's tail and
         // nothing of the laps in between, as crossings do.
@@ -144,12 +148,12 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   };
 
   const visit = (
-    tracks: Track[], at: number, horizon: number, lastLap: number, now: number, scale: number,
+    tracks: Track[], at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
   ): void => {
     for (const track of tracks) {
-      if (track.kind === 'event') scanTrack(track, at, horizon, lastLap, now, scale);
+      if (track.kind === 'event') scanTrack(track, at, end, horizon, lastLap, now, scale);
       else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, at + track.at, horizon, lastLap, now, scale);
+        visit(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), horizon, lastLap, now, scale);
       }
     }
   };
@@ -188,7 +192,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
 
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
-      visit(host.tracks, 0, playhead + lookahead * scale, lastLap, now, scale);
+      visit(host.tracks, 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
     },
     retract() {
       stopWhere(opts.clock.now(), () => true);

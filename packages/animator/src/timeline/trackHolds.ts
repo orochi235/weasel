@@ -93,7 +93,7 @@ export function createTrackSampler(open?: OpenTrackHold): TrackSampler {
         if (st.target) place(st, v, t);
         st.onTick?.(v);
       } else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, t - track.at);
+        visit(track.timeline.tracks, Math.min(t - track.at, track.timeline.duration ?? Infinity));
       }
     }
   };

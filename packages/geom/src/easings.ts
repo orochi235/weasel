@@ -61,7 +61,7 @@ export const easeInOutQuint: EasingFn = (t) =>
 
 /** Accelerates from a standstill along a sine curve — the mildest
  *  acceleration of the built-ins. */
-export const easeInSine: EasingFn = (t) => 1 - Math.cos((t * Math.PI) / 2);
+export const easeInSine: EasingFn = (t) => (t === 1 ? 1 : 1 - Math.cos((t * Math.PI) / 2));
 /** Decelerates to a stop along a sine curve — the mildest
  *  deceleration of the built-ins. */
 export const easeOutSine: EasingFn = (t) => Math.sin((t * Math.PI) / 2);
@@ -98,15 +98,13 @@ export const easeInOutCirc: EasingFn = (t) =>
 
 const C1 = 1.70158;          // back overshoot
 const C2 = C1 * 1.525;       // back inOut
-const C3 = C1 + 1;
 const C4 = (2 * Math.PI) / 3; // elastic in/out
 const C5 = (2 * Math.PI) / 4.5;
 
 /** Pulls back past the start before moving forward. Overshoots below 0. */
-export const easeInBack: EasingFn = (t) => C3 * t * t * t - C1 * t * t;
+export const easeInBack: EasingFn = (t) => t * t * (C1 * (t - 1) + t);
 /** Overshoots the target, then settles back onto it. Exceeds 1. */
-export const easeOutBack: EasingFn = (t) =>
-  1 + C3 * Math.pow(t - 1, 3) + C1 * Math.pow(t - 1, 2);
+export const easeOutBack: EasingFn = (t) => 1 - easeInBack(1 - t);
 /** Overshoots at both ends. Leaves the 0–1 range on each side. */
 export const easeInOutBack: EasingFn = (t) =>
   t < 0.5

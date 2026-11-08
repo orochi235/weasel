@@ -35,10 +35,10 @@ describe('easings', () => {
 });
 
 describe('EASINGS bag', () => {
-  it('every easing reaches 0 at t=0 and 1 at t=1 (within tolerance for elastic/back overshoot)', () => {
+  it('every easing is exactly 0 at t=0 and exactly 1 at t=1', () => {
     for (const [name, fn] of Object.entries(EASINGS)) {
-      expect(fn(0), `${name} at 0`).toBeCloseTo(0, 5);
-      expect(fn(1), `${name} at 1`).toBeCloseTo(1, 5);
+      expect(fn(0) === 0, `${name} at 0: ${fn(0)}`).toBe(true);
+      expect(fn(1), `${name} at 1`).toBe(1);
     }
   });
 

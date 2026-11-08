@@ -254,4 +254,60 @@ describe('event crossing lateness', () => {
     h.advance(1060);
     expect(late).toEqual([10, 10]);
   });
+  it('replays from where a handler seeks, firing nothing more of the span it left', () => {
+    const h = harness();
+    const fired: string[] = [];
+    let seeks = 1;
+    const tl = createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [{
+        kind: 'event',
+        events: [
+          { t: 10, fire: () => fired.push('a') },
+          { t: 50, fire: () => { fired.push('b'); if (seeks-- > 0) tl.seek(0); } },
+          { t: 55, fire: () => fired.push('c') },
+        ],
+      }],
+    });
+    h.advance(60);
+    expect(fired).toEqual(['a', 'b']);
+    h.advance(120);
+    expect(fired).toEqual(['a', 'b', 'a', 'b', 'c']);
+  });
+  it('goes on from where a handler in the tail of a lap seeks, across the seam', () => {
+    const h = harness();
+    const fired: string[] = [];
+    let seeks = 1;
+    const tl = createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [{
+        kind: 'event',
+        events: [
+          { t: 10, fire: () => fired.push('a') },
+          { t: 30, fire: () => fired.push('c') },
+          { t: 90, fire: () => { fired.push('b'); if (seeks-- > 0) tl.seek(20); } },
+        ],
+      }],
+    });
+    h.advance(80);
+    h.advance(110);
+    expect(fired).toEqual(['a', 'c', 'b']);
+    h.advance(125);
+    expect(fired).toEqual(['a', 'c', 'b', 'c']);
+  });
+  it('finishes once, at the end of the pass a handler on the last edge seeks back into', () => {
+    const h = harness();
+    const done: number[] = [];
+    let seeks = 1;
+    const tl = createTimeline(h.register, 1, {
+      duration: 100,
+      onDone: () => done.push(tl.time()),
+      tracks: [{ kind: 'event', events: [{ t: 100, fire: () => { if (seeks-- > 0) tl.seek(0); } }] }],
+    });
+    expect(h.advance(100)).toBe(false);
+    expect(done).toEqual([]);
+    expect(h.advance(200)).toBe(true);
+    expect(done).toEqual([100]);
+  });
 });
