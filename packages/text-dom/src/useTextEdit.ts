@@ -351,15 +351,7 @@ export function useTextEdit(
     const holdTimer = held ? setTimeout(release, holdFor) : undefined;
     void hold?.then(release);
 
-    const range = document.createRange();
-    const initial = initialCaretRef.current;
-    if (initial === 'all') {
-      range.selectNodeContents(overlay);
-    } else {
-      const at = charOffsetToDomPosition(overlay, initial);
-      if (at) range.setStart(at.node, at.offset);
-      range.collapse(true);
-    }
+    const range = openingRange(overlay, initialCaretRef.current);
     // Focus first, then place the caret: focusing an editable host itself
     // moves the selection (jsdom collapses to the start; browsers vary).
     overlay.focus();
@@ -496,6 +488,20 @@ function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Pro
     }),
   ].filter((p) => p !== null);
   return pending.length === 0 ? null : Promise.all(pending);
+}
+
+/** The selection an edit opens with: the whole text, or a caret `caret`
+ *  characters in, clamped to the end. */
+function openingRange(overlay: HTMLElement, caret: number | 'all'): Range {
+  const range = document.createRange();
+  if (caret === 'all') {
+    range.selectNodeContents(overlay);
+    return range;
+  }
+  const at = charOffsetToDomPosition(overlay, caret);
+  if (at) range.setStart(at.node, at.offset);
+  range.collapse(true);
+  return range;
 }
 
 /** The overlay's positioning parent. Passes pointer input through everywhere
