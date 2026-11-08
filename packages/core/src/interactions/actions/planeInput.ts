@@ -33,7 +33,7 @@ import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
 import type { SnapBegin } from './snapDep';
-import type { Point } from '@weasel-js/geom';
+import { multiply, type Affine, type Point } from '@weasel-js/geom';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Which scene layer an invocation edits, read once as it starts. `undefined`
@@ -292,9 +292,19 @@ function overlayFromPlane(ov: OngoingOverlay, m: PlaneMap): OngoingOverlay {
         ...ov,
         bounds: rectFromPlane(m, ov.bounds),
         extras: insertExtrasFromPlane(ov.extras, m),
+        ...(ov.lands ? { lands: rectFromPlane(m, ov.lands) } : {}),
         ...(ov.anchorPoint ? { anchorPoint: pt(ov.anchorPoint) } : {}),
+        ...(ov.copies ? { copies: ov.copies.map((a) => affineFromPlane(m, a)) } : {}),
       };
   }
+}
+
+/** `a`, an affine of the plane's world, as the one of the camera's world that
+ *  draws the same: into the plane, through `a`, and back out. */
+function affineFromPlane(m: PlaneMap, a: Affine): Affine {
+  const into: Affine = [m.scale.x, 0, 0, m.scale.y, m.offset.x, m.offset.y];
+  const out: Affine = [1 / m.scale.x, 0, 0, 1 / m.scale.y, -m.offset.x / m.scale.x, -m.offset.y / m.scale.y];
+  return multiply(multiply(out, a), into);
 }
 
 /** The geometry the kit's insert kinds carry in `extras`, in the camera's

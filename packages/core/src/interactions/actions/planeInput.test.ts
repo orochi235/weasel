@@ -194,6 +194,25 @@ describe('editing a node on a parallax plane', () => {
     expect(calls).toEqual([{ x: 20, y: 20, width: 20, height: 40 }]);
   });
 
+  it('carries an insert preview\'s landing box and copies into the camera\'s world', () => {
+    const scene = makeScene();
+    const preview: OngoingOverlay = {
+      kind: 'insertPreview', shape: 'rect', extras: { kind: 'rect' },
+      bounds: { x: 20, y: 20, width: 20, height: 40 },
+      lands: { x: 20, y: 20, width: 20, height: 40 },
+      copies: [[1, 0, 0, 1, 40, 0]],
+    };
+    const action = inPlane({
+      id: 'previewOnly', label: 'Preview only',
+      invoker: { timing: 'ongoing', start: () => ({ overlay: () => preview }) },
+    } as Action, () => 'sky');
+    const handle = (action.invoker as OngoingInvoker).start(ctxOf(scene, cam(0, 0), cam(0, 0)));
+    const out = handle.overlay!() as Extract<OngoingOverlay, { kind: 'insertPreview' }>;
+    expect(out.lands).toEqual({ x: 60, y: 10, width: 10, height: 20 });
+    // 40 of the sky's units are 20 of the camera's.
+    expect(out.copies).toEqual([[1, 0, 0, 1, 20, 0]]);
+  });
+
   it('reads no dep the wrapped action did not declare', () => {
     // The dispatcher's dev deps bag throws on an undeclared read. Rotate
     // declares neither `snap` nor `nodeAtPoint`.
