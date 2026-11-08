@@ -81,16 +81,22 @@ describe('writeStroke', () => {
   });
 
   it('fills the outline of a stroke PDF cannot draw', async () => {
-    for (const stroke of [
-      { paint: ink, width: 4, align: 'inner' as const },
-      { paint: ink, width: 4, vertexWidths: [1, 3] },
-      { paint: ink, width: 4, nib: { angle: 0, ratio: 0.5 } },
-    ]) {
-      const c = await content([{ kind: 'path', path: line, stroke }]);
+    const square: Path = { kind: 'rect', x: 10, y: 10, width: 40, height: 40 };
+    for (const [path, stroke] of [
+      [square, { paint: ink, width: 4, align: 'inner' as const }],
+      [line, { paint: ink, width: 4, vertexWidths: [1, 3] }],
+      [line, { paint: ink, width: 4, nib: { angle: 0, ratio: 0.5 } }],
+    ] as const) {
+      const c = await content([{ kind: 'path', path, stroke }]);
       expect(c, JSON.stringify(stroke)).not.toMatch(/\nS\n/);
       expect(c, JSON.stringify(stroke)).toContain('0 0 0 rg\n');
       expect(c, JSON.stringify(stroke)).toMatch(/\nf\n/);
     }
+  });
+
+  it('writes nothing for an inner stroke of an open line, whose outline is empty', async () => {
+    const c = await content([{ kind: 'path', path: line, stroke: { paint: ink, width: 4, align: 'inner' } }]);
+    expect(c).not.toMatch(/\n[fS]\n/);
   });
 
   it('reports vertexColors as approximated by the single paint', async () => {
