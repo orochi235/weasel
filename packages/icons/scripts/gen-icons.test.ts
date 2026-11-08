@@ -22,6 +22,7 @@ describe('gen:icons', () => {
 
   it('refuses one name drawn twice, differently, in a namespace', async () => {
     await expect(generate({ roots: [fixture('twice')], write: false })).rejects.toThrow(/icon "dot" is drawn twice/);
+    await expect(generate({ roots: [fixture('twice-fill')], write: false })).rejects.toThrow(/icon "box" is drawn twice/);
   });
 
   it('refuses an icons directory with no index.mjs', async () => {

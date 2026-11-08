@@ -111,6 +111,14 @@ describe('connectDevtools', () => {
     expect(client.state().status).toBe('closed');
   });
 
+  it('forgets the roots and kit version of a connection it closed', () => {
+    const t = setup();
+    const client = connectDevtools(t.transport);
+    expect(client.state().roots).toHaveLength(1);
+    client.close();
+    expect(client.state()).toMatchObject({ status: 'closed', roots: [], kitVersion: null });
+  });
+
   it('sends nothing until opened, and connects again when opened after a close', async () => {
     const t = setup();
     const inner = createInPagePanelTransport(t.hook);

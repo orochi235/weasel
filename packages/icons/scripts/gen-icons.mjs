@@ -44,13 +44,13 @@ function buildTable(pkg) {
       if (rawKey.startsWith('_') || rawKey === 'attrs') continue;
       const key = camel(pkg.rename?.[rawKey] ?? rawKey);
       const body = element(glyph);
+      const fill = fillElement(glyph);
       const prior = icons[key];
       if (prior) {
-        if (prior.body === body) continue;
+        if (prior.body === body && (prior.fill ?? null) === fill) continue;
         throw new Error(`icon "${key}" is drawn twice, differently, in "${pkg.namespace}" — rename one`);
       }
       if (label === pkg.markGroup) checkMark(key, body);
-      const fill = fillElement(glyph);
       icons[key] = { body, ...(fill ? { fill } : {}), group: label, tags: opts.tags?.[rawKey] ?? [] };
       names.push(key);
     }
