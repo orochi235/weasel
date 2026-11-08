@@ -41,7 +41,7 @@ export function registerDisplayKind<D extends Display>(kind: DisplayKind<D>): ()
  * without it, and its tag survives untouched.
  */
 export function displayKindOf(display: Display | undefined): DisplayKind<Display> {
-  const kind = display === undefined ? undefined : (registered.get(display.kind) ?? BUILTIN[display.kind]);
+  const kind = display === undefined ? undefined : (registered.get(display.kind) ?? (Object.hasOwn(BUILTIN, display.kind) ? BUILTIN[display.kind] : undefined));
   return (kind ?? decimalKind) as unknown as DisplayKind<Display>;
 }
 

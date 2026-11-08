@@ -19,10 +19,11 @@ export function clampToBounds(n: number, { min, max, endless }: SpinBounds): num
 function placesOf(n: number): number {
   if (!Number.isFinite(n)) return 0;
   const text = String(n);
-  const e = text.indexOf('e-');
-  if (e >= 0) return Math.min(10, Number(text.slice(e + 2)));
-  const dot = text.indexOf('.');
-  return dot < 0 ? 0 : Math.min(10, text.length - dot - 1);
+  const e = text.indexOf('e');
+  const mantissa = e < 0 ? text : text.slice(0, e);
+  const dot = mantissa.indexOf('.');
+  const places = (dot < 0 ? 0 : mantissa.length - dot - 1) - (e < 0 ? 0 : Number(text.slice(e + 1)));
+  return Math.min(10, Math.max(0, places));
 }
 
 /**

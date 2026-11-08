@@ -76,14 +76,14 @@ export const unitKind: DisplayKind<UnitDisplay> = {
   speak: (value, d, ctx) => {
     const places = d.places ?? 2;
     const name = d.unit ?? ctx.unit;
-    const intl = name === undefined ? undefined : INTL_UNITS[name];
+    const intl = name !== undefined && Object.hasOwn(INTL_UNITS, name) ? INTL_UNITS[name] : undefined;
     if (intl !== undefined && d.spoken === undefined) {
       return spokenSign(
         textOf(intlParts(value, ctx.locale, { style: 'unit', unit: intl, unitDisplay: 'long', maximumFractionDigits: places })),
       );
     }
     const number = numberPart(value, ctx.locale, { maximumFractionDigits: places, useGrouping: false }).value;
-    const names = d.spoken ?? (name === undefined ? undefined : OWN_UNITS[name]);
+    const names = d.spoken ?? (name !== undefined && Object.hasOwn(OWN_UNITS, name) ? OWN_UNITS[name] : undefined);
     const word = names ? plural(value, ctx.locale, names[0], names[1]) : name;
     return spokenSign(word ? `${number} ${word}` : number);
   },

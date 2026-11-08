@@ -63,6 +63,15 @@ describe('quantity shape', () => {
     expect(qty(q).with(2).raw).toEqual({ value: 2, display: { kind: 'someone-elses', frob: 3 } });
   });
 
+  it('shows a kind named for an Object.prototype member as decimal', () => {
+    expect(qty(tag(1.5, { kind: 'toString' })).text).toBe('1.5');
+    expect(qty(tag(1.5, { kind: 'constructor' })).spoken).toBe('1.5');
+  });
+
+  it('speaks a unit named for an Object.prototype member as its name', () => {
+    expect(qty(tag(2, unit('constructor'))).spoken).toBe('2 constructor');
+  });
+
   it('converts through a unit system, tagging the result', () => {
     expect(qty(tag(12, unit(), 'mm')).to('cm', METRIC_MM).text).toBe('1.2cm');
     expect(qty(25).to('cm', METRIC_MM).raw).toEqual({ value: 2.5, unit: 'cm' });

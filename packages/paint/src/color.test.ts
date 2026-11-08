@@ -163,6 +163,8 @@ describe('parseColor', () => {
   it('throws on unrecognized input', () => {
     expect(() => parseColor('not-a-color')).toThrow();
     expect(() => parseColor('lab(50 20 30)')).toThrow();
+    expect(() => parseColor('constructor')).toThrow();
+    expect(() => parseColor('toString')).toThrow();
   });
 
   it('throws on an empty or non-decimal channel rather than reading it as 0 or opaque', () => {

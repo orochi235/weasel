@@ -49,9 +49,22 @@ describe('lerpOklch hue', () => {
 });
 
 describe('lerpHueDeg', () => {
-  it('takes the shorter arc across 0, and the positive way between opposite hues', () => {
+  it('takes the shorter arc across 0, and keeps the sign of a half turn, as CSS does', () => {
     expect(lerpHueDeg(350, 10, 0.5)).toBeCloseTo(0);
     expect(lerpHueDeg(0, 180, 0.5)).toBeCloseTo(90);
-    expect(lerpHueDeg(180, 0, 0.5)).toBeCloseTo(270);
+    expect(lerpHueDeg(180, 0, 0.5)).toBeCloseTo(90);
+    expect(lerpHueDeg(270, 90, 0.5)).toBeCloseTo(180);
+  });
+
+  it('goes the long way round under longer, keeping the sign of a half turn', () => {
+    expect(lerpHueDeg(0, 90, 0.5, 'longer')).toBeCloseTo(225);
+    expect(lerpHueDeg(0, 180, 0.5, 'longer')).toBeCloseTo(90);
+    expect(lerpHueDeg(180, 0, 0.5, 'longer')).toBeCloseTo(90);
+  });
+
+  it('agrees with lerpOklch on a half turn', () => {
+    const deg = (r: number) => (((r * 180) / PI) % 360 + 360) % 360;
+    expect(lerpHueDeg(180, 0, 0.5)).toBeCloseTo(deg(hueAt(PI, 0, 0.5)));
+    expect(lerpHueDeg(0, 180, 0.5)).toBeCloseTo(deg(hueAt(0, PI, 0.5)));
   });
 });

@@ -47,6 +47,8 @@ interface BusState {
   gain: number;
   muted: boolean;
   soloed: boolean;
+  /** The value last written to the fader. */
+  written: number;
 }
 
 /**
@@ -73,7 +75,7 @@ export function createBusGraph(
     const node = ctx.createGain();
     node.connect(master);
     const inserts = createInsertChain(ctx, input, node, opts);
-    states.set(name, { input, node, inserts, gain: 1, muted: false, soloed: false });
+    states.set(name, { input, node, inserts, gain: 1, muted: false, soloed: false, written: node.gain.value });
   }
 
   const anySoloed = (): boolean => {
@@ -85,11 +87,14 @@ export function createBusGraph(
     !s.muted && (!soloing || s.soloed);
 
   // `ramp` names the one bus whose own value changed, so a solo does not slew
-  // every other bus at whatever rate that bus was last set with.
+  // every other bus at whatever rate that bus was last set with. A bus whose
+  // value did not change is not written, since a write cancels its ramp in flight.
   const apply = (ramp?: { bus: BusState; ms: number }): void => {
     const soloing = anySoloed();
     for (const s of states.values()) {
       const value = audibleUnder(s, soloing) ? s.gain : 0;
+      if (ramp?.bus !== s && value === s.written) continue;
+      s.written = value;
       writeParam(ctx, s.node.gain, value, ramp?.bus === s ? ramp.ms : undefined);
     }
   };

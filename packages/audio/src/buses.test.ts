@@ -87,6 +87,17 @@ describe('createBusGraph', () => {
     expect(music.ramps).toEqual([]);
   });
 
+  it("leaves another bus's ramp in flight when one bus changes", () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx', 'music']);
+    const music = (graph.node('music') as never as { gain: FakeParam }).gain;
+    graph.bus('music').setGain(0, 3000);
+    ctx._advance(1000);
+    graph.bus('sfx').setGain(0.5);
+    graph.bus('sfx').mute(true);
+    expect(music.cancels).toEqual([0]);
+  });
+
   it('writes mute through the scheduled path, not behind it', () => {
     const ctx = createFakeAudioContext();
     const graph = createBusGraph(ctx as never, ['sfx']);

@@ -35,7 +35,7 @@ const strokeShapeKeys = new WeakMap<object, string>();
  */
 export function paintKey(paint: Paint | null | undefined): string {
   if (paint == null) return 'none';
-  if (isSolidPaint(paint)) return `solid:${solidColorKey(paint.color)}:${paint.opacity ?? 1}`;
+  if (isSolidPaint(paint)) return `solid:${solidColorKey(paint.color, paint.opacity ?? 1)}`;
   let key = structuralKeys.get(paint);
   if (key === undefined) {
     key = canonical(paint);
@@ -44,13 +44,14 @@ export function paintKey(paint: Paint | null | undefined): string {
   return key;
 }
 
-/** A solid's color by its channels, so `#fff` and `white` key as one; a color
- *  `parseColor` cannot read keys as its own text. */
-function solidColorKey(color: string): string {
+/** A solid's color by its channels with `opacity` folded into its alpha, as a renderer draws it, so `#fff` and
+ *  `white` key as one; a color `parseColor` cannot read keys as its own text. */
+function solidColorKey(color: string, opacity: number): string {
   try {
-    return parseColor(color).join(',');
+    const [r, g, b, a] = parseColor(color);
+    return `${r},${g},${b},${a * opacity}`;
   } catch {
-    return `text:${color}`;
+    return `text:${color}:${opacity}`;
   }
 }
 
