@@ -3,6 +3,7 @@
  * written out or compressed, or one bare graph model.
  */
 import type { LayoutDirection } from '@weasel-js/diagram';
+import { freshId } from '@weasel-js/registry';
 import type { DocumentPage, ImportResult } from '../document';
 import { DIRECTION_ATTR } from './cells';
 import { Warnings } from '../graphRead';
@@ -106,8 +107,8 @@ export async function readDrawXml(text: string): Promise<ImportResult> {
   const ids: IdSpace = new Set();
   const pageIds: IdSpace = new Set();
   const pageId = (want: string | null, index: number): string => {
-    let id = want ?? `page-${index + 1}`;
-    for (let n = 2; pageIds.has(id); n++) id = `${want ?? 'page'}-${n}`;
+    const first = want ?? `page-${index + 1}`;
+    const id = pageIds.has(first) ? freshId(want ?? 'page', pageIds, { from: 2 }) : first;
     pageIds.add(id);
     return id;
   };
