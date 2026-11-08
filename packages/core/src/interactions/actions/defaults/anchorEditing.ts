@@ -25,7 +25,7 @@
  */
 
 import type { Action } from '@weasel-js/routing';
-import { ActionDisabledReason, roleReader, type ModifierRoles } from '@weasel-js/routing';
+import { ActionDisabledReason, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { EditAnchorsDep, PathSymmetryDep } from '../depSchema';
@@ -342,7 +342,7 @@ export const marqueeAnchorsAction: Action & { requires: string[] } = inPlane({
   id: 'marqueeAnchors',
   label: 'Marquee-select anchors',
   tags: pathOperationTags('drag'),
-  defaultBinding: [{ spec: { kind: 'drag', target: 'empty' }, opts: { id: 'marqueeAnchors.drag' } }],
+  defaultBinding: [{ spec: { kind: 'drag', target: 'empty', mods: roleMods(MARQUEE_ANCHORS_ROLES) }, opts: { id: 'marqueeAnchors.drag' } }],
   eligible: { capability: 'edits-anchors' },
   modifierRoles: MARQUEE_ANCHORS_ROLES,
   requires: ['editAnchors'],

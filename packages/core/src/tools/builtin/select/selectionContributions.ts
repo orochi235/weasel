@@ -8,6 +8,7 @@
 import type { BindingOpts, GestureBinding } from '@weasel-js/routing';
 import { isResizeHandle, isRotateHandle, isPathEditPart } from '@weasel-js/routing';
 import { hitPredicate } from '@weasel-js/gestures';
+import { SNAP_ROLE_MODS } from 'domains/snap/roles';
 import type { Contribution } from '../../overlayBinding';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
 import type { UseRotateOptions } from '../../../interactions/actions/rotate/options';
@@ -61,8 +62,8 @@ export function selectionMoveBindings<TPose>(
     // select tool's pointerDown classifier calls `selection.applyClick(top, mods)`
     // on an unselected hit before the drag fires, so cloneAction's
     // `start` sees the hit node in `selection.get()` either way.
-    { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { alt: true } }, actionId: 'clone', opts: { id: 'selection.move.clone' } },
-    { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { alt: true } }, actionId: 'clone', opts: { id: 'selection.move.cloneUnselected' } },
+    { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { ...SNAP_ROLE_MODS, alt: true } }, actionId: 'clone', opts: { id: 'selection.move.clone' } },
+    { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { ...SNAP_ROLE_MODS, alt: true } }, actionId: 'clone', opts: { id: 'selection.move.cloneUnselected' } },
     {
       // Body-drag → move, BUT defer when the pointerdown hit a path
       // anchor, control, or segment affordance. Those lie on the curve so
@@ -79,6 +80,7 @@ export function selectionMoveBindings<TPose>(
           kindOf: hitPredicate((afford, body) =>
             body === 'selected-body' && !isPathEditPart(afford)),
         },
+        mods: SNAP_ROLE_MODS,
       },
       actionId: 'move',
       opts: { ...moveOpts, id: 'selection.move.body' },
@@ -92,7 +94,7 @@ export function selectionMoveBindings<TPose>(
     // move. Unselected nodes never carry anchor affordances (those gate on
     // selection), so the plain string-form target is sufficient here.
     {
-      spec: { kind: 'drag' as const, target: 'unselected-body' as const },
+      spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: SNAP_ROLE_MODS },
       actionId: 'move',
       opts: { ...moveOpts, id: 'selection.move.unselectedBody' },
     },
@@ -113,7 +115,7 @@ export type SelectionTransformOptions<TPose = unknown> = SelectionRotateOptions<
 /** Drag a resize handle to resize the selection. Options come through the
  *  `resizePolicy` dep (`useResizePolicy`). */
 export function selectionResizeBindings(): GestureBinding[] {
-  return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize', opts: { id: 'selection.resize.handle' } }];
+  return [{ spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle }, mods: SNAP_ROLE_MODS }, actionId: 'resize', opts: { id: 'selection.resize.handle' } }];
 }
 
 /** Drag the rotation handle to rotate the selection. */
@@ -129,7 +131,7 @@ export function selectionRotateBindings<TPose>(
     ...(rotate.behaviors?.length ? { behaviors: rotate.behaviors as BindingOpts['behaviors'] } : {}),
   };
   return [{
-    spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } },
+    spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle }, mods: SNAP_ROLE_MODS },
     actionId: 'rotate',
     opts,
   }];
