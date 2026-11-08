@@ -17,7 +17,7 @@ import {
   DEFAULT_MEDIA_ENVIRONMENT, evaluateMediaQuery, mediaEnvironmentFor, type SvgMediaEnvironment,
 } from './media';
 import {
-  INHERITED_PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
+  INHERITED_PROPERTIES, isDeclarationInvalid, PROPERTIES, readProperty, type InheritedPropertyName, type PropertyName, type PropertyValue, type Warn,
 } from './properties';
 import { evaluateSupports } from './supports';
 import { computeFontRelative, fontSizeOf } from './fontSize';
@@ -227,6 +227,7 @@ interface RankedRule extends StyleRule {
 interface BoundSheet {
   readonly rules: readonly RankedRule[];
   readonly media: SvgMediaEnvironment;
+  readonly onWarn?: (message: string) => void;
 }
 
 const sheetCache = new WeakMap<Document, BoundSheet>();
@@ -239,7 +240,7 @@ const sheetCache = new WeakMap<Document, BoundSheet>();
 export function bindStylesheets(
   doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
 ): void {
-  sheetCache.set(doc, { rules: collectRules(doc, media, onWarn), media });
+  sheetCache.set(doc, { rules: collectRules(doc, media, onWarn), media, onWarn });
 }
 
 function documentSheet(doc: Document): BoundSheet {
@@ -260,7 +261,7 @@ function documentSheet(doc: Document): BoundSheet {
 function containersHold(el: Element, containers: readonly string[], media: SvgMediaEnvironment): boolean {
   const root = el.ownerDocument?.documentElement;
   if (!root || el === root) return false;
-  const declared = authorDeclarations(root);
+  const declared = cascaded(root);
   const container = queryContainerOf((prop) => declared.get(prop), media);
   return containers.every((prelude) => containerQueryHolds(prelude, container));
 }
@@ -307,14 +308,16 @@ function matches(el: Element, selector: string): boolean {
 
 const elementCache = new WeakMap<Element, ReadonlyMap<string, string>>();
 
+const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
+
 /**
- * The cascaded value of every property an author rule or `style=""` sets on
- * `el`. Lowest to highest: normal rules, normal inline, `!important` rules,
- * `!important` inline (CSS Cascade 5). Layers order the rules within each
- * importance, reversed for `!important`. Presentation attributes sit below
- * all of these and are left to {@link ownProp}.
+ * The cascaded value of every property `el` sets. Lowest to highest:
+ * presentation attributes, normal rules, normal inline, `!important` rules,
+ * `!important` inline (CSS Cascade 5, SVG2). Layers order the rules within
+ * each importance, reversed for `!important`. A value CSS rejects is dropped,
+ * as CSS drops it, so the one below it stands.
  */
-function authorDeclarations(el: Element): ReadonlyMap<string, string> {
+function cascaded(el: Element): ReadonlyMap<string, string> {
   const cached = elementCache.get(el);
   if (cached) return cached;
   const sheet = el.ownerDocument && documentSheet(el.ownerDocument);
@@ -322,12 +325,21 @@ function authorDeclarations(el: Element): ReadonlyMap<string, string> {
     && (!r.containers || containersHold(el, r.containers, sheet!.media)));
   const inline = parseDeclarations(el.getAttribute('style') ?? '');
   const out = new Map<string, string>();
+  const take = (prop: string, value: string, written: string): void => {
+    if (!isDeclarationInvalid(prop, value)) out.set(prop, value);
+    else sheet?.onWarn?.(`${written} is not a valid ${prop}; it is ignored, as CSS ignores it`);
+  };
+  for (const prop of PROPERTY_NAMES) {
+    const attr = el.getAttribute(prop);
+    if (attr != null) take(prop, attr, `${prop}="${attr}"`);
+  }
   const importantOrder = [...matched].sort((x, y) => y.rank - x.rank || compareCascade(x, y));
   for (const [important, ordered] of [[false, matched], [true, importantOrder]] as const) {
-    for (const r of ordered) {
-      for (const d of r.declarations) if (d.important === important) out.set(d.prop, d.value);
-    }
-    for (const d of inline) if (d.important === important) out.set(d.prop, d.value);
+    const declare = (d: Declaration): void => {
+      if (d.important === important) take(d.prop, d.value, `${d.prop}: ${d.value}`);
+    };
+    for (const r of ordered) r.declarations.forEach(declare);
+    inline.forEach(declare);
   }
   elementCache.set(el, out);
   return out;
@@ -339,7 +351,19 @@ function authorDeclarations(el: Element): ReadonlyMap<string, string> {
  * attribute, which ranks below any author rule (SVG2).
  */
 export function ownProp(el: Element, prop: PropertyName): string | null {
-  return authorDeclarations(el).get(prop) ?? el.getAttribute(prop);
+  return cascaded(el).get(prop) ?? null;
+}
+
+/** Whether a cascaded value of an inherited property hands on the parent's: `inherit`, or `unset`. */
+export function keepsParent(value: string): boolean {
+  const word = value.trim().toLowerCase();
+  return word === 'inherit' || word === 'unset';
+}
+
+/** Whether `el` gives an inherited property a value of its own rather than taking its parent's. */
+export function setsOwn(el: Element, prop: InheritedPropertyName): boolean {
+  const own = ownProp(el, prop);
+  return own != null && !keepsParent(own);
 }
 
 /**
@@ -354,9 +378,10 @@ export function deriveStyle(parent: StyleContext, el: Element): StyleContext {
   for (const prop of INHERITED_PROPERTIES) {
     const own = ownProp(el, prop);
     // `color: currentColor` is `inherit` by another name (CSS Color 4).
-    if (own == null || own === 'inherit' || (prop === 'color' && own.trim().toLowerCase() === 'currentcolor')) continue;
+    if (own == null || keepsParent(own) || (prop === 'color' && own.trim().toLowerCase() === 'currentcolor')) continue;
     if (!next) next = { ...parent };
-    next[prop] = own;
+    if (own.trim().toLowerCase() === 'initial') delete next[prop];
+    else next[prop] = own;
   }
   if (next) computeFontRelative(next, fontSizeOf(parent));
   return next ?? parent;

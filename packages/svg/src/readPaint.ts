@@ -3,7 +3,7 @@
 import type { SvgPaint, SvgStroke } from './types';
 import type { Fill, Paint, Stroke } from '@weasel-js/core';
 import type { GradientTable } from './gradients';
-import { ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext } from './cascade';
+import { ownProp, ownValue, resolveCurrentColor, setsOwn, styleValue, type StyleContext } from './cascade';
 import { readProperty, type InheritedPropertyName } from './properties';
 
 export function readPaint(
@@ -124,8 +124,7 @@ export function isNonScalingStroke(el: Element): boolean {
 export function ownStrokeStyle(el: Element, computed: StyleContext): StyleContext {
   const out: Partial<Record<InheritedPropertyName, string>> = {};
   for (const k of STROKE_KEYS) {
-    const v = ownProp(el, k);
-    if (v != null) out[k] = v === 'inherit' ? v : computed[k];
+    if (ownProp(el, k) != null) out[k] = setsOwn(el, k) ? computed[k] : 'inherit';
   }
   return out;
 }
