@@ -37,13 +37,19 @@ function footprintPoints(
     { x: bounds.x, y: bounds.y + bounds.height },
     { x: bounds.x + bounds.width, y: bounds.y + bounds.height },
   ];
-  return corners.map(cast).filter((h): h is Vec3 => h !== null);
+  const hits: Vec3[] = [];
+  for (const corner of corners) {
+    const hit = cast(corner);
+    if (!hit) return [];
+    hits.push(hit);
+  }
+  return hits;
 }
 
 /**
  * A drag becomes a footprint on the ground plane: its ends, or without them
  * its box's four corners, are cast onto the plane and the hit points give the
- * extent. What node that implies is the consumer's answer — the kernel does
+ * extent. One that misses the plane, past the horizon, declines the insert. What node that implies is the consumer's answer — the kernel does
  * not know what it is inserting. The depth the 2D contract cannot express
  * comes from the plane, not from the caller.
  */

@@ -156,6 +156,20 @@ describe('createAreaSelect', () => {
     expect(hits).toHaveLength(3);
   });
 
+  it('catches nothing past the far plane, as a pick does not', () => {
+    const scene = createTestScene();
+    const vp = viewport();
+    const eye = cameraEye(vp.camera);
+    const forward = scale(sub(vp.camera.target, eye), 1 / vp.camera.distance);
+    const past = scene.add({
+      kind: 'mark', layer: 'solids', data: {},
+      pose: pose3(add(eye, scale(forward, vp.camera.far * 2)), { x: 50, y: 50, z: 50 }),
+    });
+    const area = createAreaSelect(world(scene, () => vp), { get: () => [], set: () => {} });
+    expect(area.hitTestArea({ x: 0, y: 0, width: WIDTH, height: HEIGHT })).not.toContain(past);
+    expect(screenBoxOf(world(scene, () => vp), past, vp)).toBeNull();
+  });
+
   it('catches nothing in a corner the solids do not reach', () => {
     const scene = createTestScene();
     const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });

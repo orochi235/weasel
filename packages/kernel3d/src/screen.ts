@@ -87,11 +87,12 @@ export function rayThroughScreenPoint(
 
 type Clip = readonly [number, number, number, number];
 
-/** Signed distance to the near plane in clip space; `>= 0` is in front of it.
- *  GL puts the near plane at `z = -w`. */
-function nearSide(p: Clip): number {
-  return p[2] + p[3];
-}
+/** Signed distances to the near and far planes in clip space; `>= 0` is the
+ *  side the camera draws. GL puts them at `z = -w` and `z = w`. */
+const CLIP_SIDES: readonly ((p: Clip) => number)[] = [
+  (p) => p[2] + p[3],
+  (p) => p[3] - p[2],
+];
 
 function lerpClip(a: Clip, b: Clip, t: number): Clip {
   return [
@@ -107,14 +108,14 @@ const EDGE_BITS = [1, 2, 4] as const;
 
 /**
  * The screen rectangle a world-space box covers — the currency weasel's chrome
- * and `PoseDescriptor.getBounds` speak in. `null` when the box is entirely
- * behind the near plane.
+ * and `PoseDescriptor.getBounds` speak in. `null` when none of the box lies
+ * between the near and far planes, which is when the camera draws none of it.
  *
- * Each of the twelve edges is clipped against the near plane before it is
- * projected, rather than dropping the corners behind it. Dropping them reports
- * a box that is too small for anything straddling the near plane, and the error
- * grows as the camera moves in: a solid the pointer is inside of would outline
- * as a sliver, or as nothing.
+ * Each of the twelve edges is clipped against the near and far planes before
+ * it is projected, rather than dropping the corners behind the camera.
+ * Dropping them reports a box that is too small for anything straddling the
+ * near plane, and the error grows as the camera moves in: a solid the pointer
+ * is inside of would outline as a sliver, or as nothing.
  */
 export function projectAabbToScreen(
   box: Aabb,
@@ -150,15 +151,20 @@ export function projectAabbToScreen(
   for (let i = 0; i < 8; i++) {
     for (const bit of EDGE_BITS) {
       if (i & bit) continue;
-      let a = corners[i];
-      let b = corners[i | bit];
-      const da = nearSide(a);
-      const db = nearSide(b);
-      if (da < 0 && db < 0) continue;
-      if (da < 0) a = lerpClip(a, b, da / (da - db));
-      else if (db < 0) b = lerpClip(b, a, db / (db - da));
-      extend(a);
-      extend(b);
+      const a = corners[i];
+      const b = corners[i | bit];
+      let t0 = 0;
+      let t1 = 1;
+      for (const side of CLIP_SIDES) {
+        const da = side(a);
+        const db = side(b);
+        if (da < 0 && db < 0) { t0 = 1; t1 = 0; break; }
+        if (da < 0) t0 = Math.max(t0, da / (da - db));
+        else if (db < 0) t1 = Math.min(t1, da / (da - db));
+      }
+      if (t0 > t1) continue;
+      extend(t0 === 0 ? a : lerpClip(a, b, t0));
+      extend(t1 === 1 ? b : lerpClip(a, b, t1));
     }
   }
 
