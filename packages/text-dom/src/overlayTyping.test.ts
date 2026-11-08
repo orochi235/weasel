@@ -113,6 +113,49 @@ describe('typingHandlers', () => {
   });
 });
 
+/** A composition the browser types into the text node holding the caret, as an IME does. */
+function compose(
+  handlers: ReturnType<typeof mount>, node: Text, offset: number, data: string,
+): void {
+  caretAt(node, offset);
+  handlers.onCompositionStart(new CompositionEvent('compositionstart', { data: '' }));
+  node.insertData(offset, data);
+  caretAt(node, offset + data.length);
+  handlers.onInput(new InputEvent('input', { inputType: 'insertCompositionText', data, isComposing: true }));
+  handlers.onCompositionEnd(new CompositionEvent('compositionend', { data }));
+}
+
+describe('typingHandlers: a composition', () => {
+  beforeEach(() => { document.body.innerHTML = ''; });
+
+  it('gives an armed style to the text an input method commits', () => {
+    const h = mount({ bold: true });
+    runsToDom([{ text: 'ab', italic: true }], h.overlay);
+    compose(h, h.overlay.firstChild!.firstChild as Text, 2, 'かな');
+    expect(domToRuns(h.overlay)).toEqual([
+      { text: 'ab', italic: true },
+      { text: 'かな', italic: true, bold: true },
+    ]);
+    expect(h.host.onWritten).toHaveBeenCalledWith(4);
+  });
+
+  it('leaves a composition with nothing armed as the browser typed it', () => {
+    const h = mount();
+    runsToDom([{ text: 'ab', italic: true }], h.overlay);
+    compose(h, h.overlay.firstChild!.firstChild as Text, 1, 'か');
+    expect(domToRuns(h.overlay)).toEqual([{ text: 'aかb', italic: true }]);
+    expect(h.host.onWritten).not.toHaveBeenCalled();
+  });
+
+  it('puts small-caps letters in their pieces once the composition ends', () => {
+    const h = mount();
+    runsToDom([{ text: 'A', fontVariantCaps: 'small-caps' }], h.overlay);
+    const text = h.overlay.firstChild!.firstChild as Text;
+    compose(h, text, 1, 'b');
+    expect(h.overlay.querySelector('[data-small-caps]')?.textContent).toBe('b');
+  });
+});
+
 function paste(inputType: string, data: Record<string, string> | null, targetRange?: StaticRange): InputEvent {
   const ev = new InputEvent('beforeinput', { inputType, cancelable: true });
   Object.defineProperty(ev, 'dataTransfer', {

@@ -105,10 +105,12 @@ export interface TypingHost {
   onEdited: () => void;
 }
 
-/** The overlay's `beforeinput` and `input` listeners. */
+/** The overlay's `beforeinput`, `input` and composition listeners. */
 export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
   onBeforeInput: (ie: InputEvent) => void;
   onInput: (e: Event) => void;
+  onCompositionStart: () => void;
+  onCompositionEnd: () => void;
 } {
   const edited = (e?: Event): void => {
     resplitSmallCaps(overlay, e);
@@ -170,5 +172,32 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     edited();
   };
 
-  return { onBeforeInput, onInput: edited };
+  /** Where a composition opened and the style armed there: the caret moving
+   *  as the input method types abandons what is armed before it commits. */
+  let composing: { start: number; pending: RunStylePatch } | null = null;
+
+  const onCompositionStart = (): void => {
+    const pending = host.pending();
+    const at = readSelectionOffsets(overlay) ?? host.lastRange();
+    composing = at && Object.keys(pending).length > 0 ? { start: at.start, pending } : null;
+  };
+
+  // Chrome sends the composition's last `input` while it is still composing,
+  // so this is the first point the DOM may be rewritten.
+  const onCompositionEnd = (): void => {
+    const armed = composing;
+    composing = null;
+    const end = readSelectionOffsets(overlay)?.end;
+    if (!armed || end === undefined || end <= armed.start) { edited(); return; }
+    const at = { start: armed.start, end: armed.start };
+    const typed = runsToPlainText(domToRuns(overlay)).slice(armed.start, end);
+    const runs = replaceRunRange(domToRuns(overlay), armed.start, end, []);
+    const next = replaceRunRange(runs, armed.start, armed.start, styledForRange([{ text: typed }], runs, at, armed.pending));
+    writeRunsPreservingSelection(overlay, next, end, end, host.base());
+    placeCaretBetweenRuns(overlay, next, end);
+    host.onWritten(end);
+    host.onEdited();
+  };
+
+  return { onBeforeInput, onInput: edited, onCompositionStart, onCompositionEnd };
 }

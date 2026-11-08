@@ -388,7 +388,7 @@ export function useTextEdit(
       commit();
     };
 
-    const { onBeforeInput, onInput } = typingHandlers(overlay, {
+    const { onBeforeInput, onInput, onCompositionStart, onCompositionEnd } = typingHandlers(overlay, {
       pending: () => pendingRef.current,
       base: () => baseRef.current,
       lastRange: () => selectionRef.current,
@@ -419,6 +419,8 @@ export function useTextEdit(
     // next frame keeps a center/bottom-aligned overlay from jumping a frame late.
     overlay.addEventListener('input', onInput);
     overlay.addEventListener('beforeinput', onBeforeInput);
+    overlay.addEventListener('compositionstart', onCompositionStart);
+    overlay.addEventListener('compositionend', onCompositionEnd);
     document.addEventListener('pointerdown', onPointerDownOutside, true);
     // `selectionchange` only exists on the document.
     document.addEventListener('selectionchange', syncSelection);
@@ -440,6 +442,8 @@ export function useTextEdit(
       overlay.removeEventListener('blur', onBlur);
       overlay.removeEventListener('input', onInput);
       overlay.removeEventListener('beforeinput', onBeforeInput);
+      overlay.removeEventListener('compositionstart', onCompositionStart);
+      overlay.removeEventListener('compositionend', onCompositionEnd);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
       clipBox.remove();
