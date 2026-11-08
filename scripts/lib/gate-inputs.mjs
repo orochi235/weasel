@@ -21,7 +21,7 @@ export const CHECK_INPUTS = {
   },
   // Which test files exist, not what they hold: a test file only edited cannot change who collects it.
   'check:test-projects': {
-    changed: ['scripts/check-test-projects.mjs', '**/{vitest,vite}.config.*', 'vitest.*', 'scripts/{vite,vitest}-*', 'apps/forge/viteShared.ts'],
+    changed: ['scripts/check-test-projects.mjs', '.onto/tests', '**/{vitest,vite}.config.*', 'vitest.*', 'scripts/{vite,vitest}-*', 'apps/forge/viteShared.ts'],
     reshaped: ['**/*.{test,spec}.{ts,tsx,mts,mjs,js}'],
   },
 };
