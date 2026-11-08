@@ -97,8 +97,8 @@ describe('loupe model: factor and mode', () => {
   });
 });
 
-describe('loupe model: colour', () => {
-  it('reports the colour under a new aim, once per change', () => {
+describe('loupe model: color', () => {
+  it('reports the color under a new aim, once per change', () => {
     const onColorChange = vi.fn();
     let hex = '#ff0000';
     const { surface } = stubSurface({ sample: () => hex });
@@ -112,7 +112,7 @@ describe('loupe model: colour', () => {
     expect(loupe.color).toBe('#00ff00');
   });
 
-  it('keeps the last colour when the surface cannot answer', () => {
+  it('keeps the last color when the surface cannot answer', () => {
     let hex: string | null = '#abcdef';
     const { surface } = stubSurface({ sample: () => hex });
     const loupe = createLoupeModel({ surface });
@@ -181,7 +181,7 @@ describe('loupe model: picking', () => {
     const loupe = createLoupeModel({ surface, factor: 4 });
     loupe.aimAt({ x: 200, y: 200 });
     seen.length = 0;
-    // 20px right of the lens centre at 4× is 5px right of the aim point.
+    // 20px right of the lens center at 4× is 5px right of the aim point.
     expect(loupe.pick({ x: 70, y: 50 })).toBe('#010203');
     expect(seen).toEqual([{ x: 205, y: 200 }]);
   });
@@ -207,7 +207,7 @@ describe('loupe model: picking', () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
-  it('leaves the aim and the reported colour alone', () => {
+  it('leaves the aim and the reported color alone', () => {
     const onColorChange = vi.fn();
     const { surface } = stubSurface({ sample: (p) => (p.x === 50 ? '#aaaaaa' : '#bbbbbb') });
     const loupe = createLoupeModel({ surface, onColorChange });

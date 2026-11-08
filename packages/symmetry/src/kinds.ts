@@ -153,7 +153,14 @@ export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
       const cell = [ID, ...cellTransforms(s, c)];
       const glide = s.glide ? mirrorAcross(c, s.angle) : null;
       const out: Affine[] = [];
-      for (const p of latticePoints(s, Math.floor((MAX_WALLPAPER_COPIES + 1) / cell.length))) {
+      const limit = Math.floor((MAX_WALLPAPER_COPIES + 1) / cell.length);
+      let points = latticePoints(s, limit);
+      // The original draws wherever it is, so its cell does too: the guide and `pointGroup` say so.
+      if (!points.some((p) => p.i === 0 && p.j === 0)) {
+        out.push(...cell.slice(1));
+        if (points.length >= limit) points = latticePoints(s, limit - 1);
+      }
+      for (const p of points) {
         const home = p.i === 0 && p.j === 0;
         const step = translate(p.x, p.y);
         const to = glide && (s.glideRows ? p.j : p.i) % 2 !== 0 ? multiply(step, glide) : step;

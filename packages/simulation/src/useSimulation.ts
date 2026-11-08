@@ -18,6 +18,10 @@ import {
  * step and the consumer decides how (and whether) to write through to scene
  * state. Per-tick history bypass and settle-commit semantics are consumer
  * concerns; the kit doesn't have an opinion.
+ *
+ * The nodes, forces and cooling options are read once, at mount; a later render's
+ * values are ignored, so change a running simulation through the handle
+ * (`setForces`, `alphaTarget(…)`). `onTick`, `onEnd` and `clock` are read live.
  */
 export function useSimulation<TNode extends SimulationNode>(
   opts: UseSimulationOptions<TNode>,
