@@ -123,6 +123,17 @@ describe('createClock', () => {
       expect(clock.rate).toBe(0);
     });
 
+    it('counts a fractional loop in whole passes, ending partway through the last', () => {
+      const { clock } = started({ duration: 100, loop: 2.5, rate: 1 });
+      clock.sync(400);
+      expect(clock.elapsed).toBe(250);
+      expect(clock.ended).toBe(true);
+      expect(clock.pass).toBe(2);
+      expect(clock.phase).toBeCloseTo(0.5);
+      clock.seek(1000);
+      expect(clock.pass).toBe(2);
+    });
+
     it('loops forever on loop: true, the phase wrapping both ways', () => {
       const { clock } = started({ duration: 100, loop: true, rate: 1 });
       clock.sync(1050);

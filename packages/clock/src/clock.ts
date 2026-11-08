@@ -68,7 +68,7 @@ function passOf(run: Run): { pass: number; into: number } {
 /** Places `into` ms into pass `pass` of the run, the pass clamped to the run's last and
  *  `into` to the pass; a time on a boundary stands as the end of the pass before. */
 function placeIn(run: Run, pass: number, into: number): void {
-  const last = passesOf(run.loop) - 1;
+  const last = Math.ceil(passesOf(run.loop)) - 1;
   const within = Math.min(Math.max(0, into), run.duration);
   run.elapsed = clamp(run, Math.min(pass, last) * run.duration + within);
   run.edge = run.elapsed > 0 && run.elapsed % run.duration === 0;
