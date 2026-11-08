@@ -16,6 +16,7 @@ import type { TextPose } from '@weasel-js/text';
 import type { RenderLayer } from 'core/layers/render';
 import { textCommandFromPose } from '@weasel-js/renderer';
 import { runsToPlainText } from '@weasel-js/text';
+import { meanScale } from '@weasel-js/geom';
 import { clippedToBox } from '../../canvas/nodeShapes/textPainter';
 
 
@@ -43,7 +44,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
     draw: (_data, view) => {
       // A world-space layer, so a `{ px }` size in a pose's style resolves
       // against the live camera. Radial in effect — one factor for both axes.
-      const scale = (view.scale.x + view.scale.y) / 2;
+      const scale = meanScale(view.scale);
       const children: DrawCommand[] = [];
       for (const node of getTexts()) {
         if (isHidden?.(node)) continue;
