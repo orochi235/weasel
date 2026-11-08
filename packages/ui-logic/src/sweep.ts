@@ -33,6 +33,7 @@ const tidy = (n: number): number => +n.toPrecision(12);
 
 const plain = (n: number): string => String(tidy(n));
 
+/** What {@link range} walks: its ends, and either a `step` or a `count`. */
 export type RangeSpec = {
   from: number;
   /** May be `Infinity`, for a walk that only `until` or a cap ends. */
@@ -97,6 +98,7 @@ export interface FrameSpan {
   origin?: number;
 }
 
+/** How {@link frames} walks a clock's run. */
 export interface FrameOptions {
   /** ms between frames. */
   every: number;
