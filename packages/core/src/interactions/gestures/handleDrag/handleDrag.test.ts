@@ -52,6 +52,26 @@ function press(target: HTMLDivElement, clientX: number, clientY: number): React.
 }
 
 describe('useHandleDrag', () => {
+  it('ignores a right or middle mouse press, and leaves a live drag alone', () => {
+    const onMove = vi.fn();
+    const onStart = vi.fn();
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove, onStart, onCancel }));
+    const target = mount();
+    const mouse = (button: number) => ({ ...press(target, 0, 0), pointerType: 'mouse', button }) as unknown as React.PointerEvent<HTMLDivElement>;
+
+    result.current.onPointerDown(mouse(2));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 5, clientY: 5 }));
+    expect(onStart).not.toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+
+    result.current.onPointerDown(mouse(0));
+    result.current.onPointerDown(mouse(1));
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
+    document.body.removeChild(target);
+  });
+
   it('reports local coords (clientX/Y minus rect origin) on move', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
