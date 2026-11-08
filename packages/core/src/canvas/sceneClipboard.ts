@@ -253,9 +253,11 @@ export function pasteSceneSnapshot<TData, TLayer extends string, TPose>(
   };
   const placed = (item: Item<TData, TLayer, TPose>): TPose => {
     if (ridesPastedFrame(item)) return copyField(item.pose);
-    const shift = paged?.get(rootOf(item).id)!.shift ?? { dx: 0, dy: 0 };
+    // Captured in world, so it is made local to the frame its root lands under.
+    const root = rootOf(item);
+    const shift = paged?.get(root.id)!.shift ?? { dx: 0, dy: 0 };
     const moved = env.translate(copyField(item.pose), dx + shift.dx, dy + shift.dy, item);
-    return landing(item)?.local(moved) as TPose ?? moved;
+    return landing(root)?.local(moved) as TPose ?? moved;
   };
   // `src` is parents-before-children and this keeps it, so children re-attach
   // to freshly inserted parents when the caller's InsertOps apply in order.
