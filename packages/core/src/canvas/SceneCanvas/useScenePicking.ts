@@ -76,13 +76,15 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
     canDropInto,
   });
 
+  // Stable, so the pickers keyed on it are not rebuilt every render.
+  const getView = useCallback(() => viewRef.current, [viewRef]);
   const selectTool = useSceneSelectTool({
     scene,
     adapter,
     poseDescriptor: descriptor,
     geometry,
     // The pick tolerance is declared in screen pixels; this is what converts it.
-    getView: () => viewRef.current,
+    getView,
     // Only when the consumer actually fades something. Without a prop the
     // composed function is just the override lookup, and the source resolves
     // that once per walk instead of once per candidate.
