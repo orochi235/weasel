@@ -132,6 +132,15 @@ describe('pasting across the wire format', () => {
     expect(created.map((n) => n.data.label)).toEqual(['a', 'b']);
     expect(omitted).toEqual([{ id: edge, reason: 'derivation-not-registered' }]);
   });
+
+  it('takes no function from the registry\'s prototype for a key that names one', () => {
+    const { scene, a, b, edge } = makeScene({ derivePath: { between } });
+    const items = overTheWire(copy(scene, [a, b, edge])) as { id: string; derivePathKey?: string }[];
+    items.find((n) => n.id === edge)!.derivePathKey = 'constructor';
+    const { created, omitted } = paste(scene, items);
+    expect(created.map((n) => n.data.label)).toEqual(['a', 'b']);
+    expect(omitted).toEqual([{ id: edge, reason: 'derivation-not-registered' }]);
+  });
 });
 
 describe('pasting a layout container', () => {

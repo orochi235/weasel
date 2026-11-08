@@ -92,6 +92,8 @@ interface DrawnRecord {
   height: number;
   scale: number;
   screen: ScreenMap | undefined;
+  /** Compared too: one inherited from a container changes with no change to the node. */
+  stroke: Stroke | null;
   /** Relative to the pose's top-left, so a move reuses it. */
   box: Bounds | null;
 }
@@ -107,7 +109,7 @@ export function outsetPoseBox(pose: Bounds, stroke: Stroke | null, ctx: NodeInkC
 
 /**
  * The pose box together with what `stroke` covers along `pathAt(pose)`,
- * memoized per node on the pose's size and the view scale: a drag that only
+ * memoized per node on the pose's size, the stroke and the view scale: a drag that only
  * moves the node does not stroke it again.
  */
 export function strokedPoseBox(
@@ -121,13 +123,15 @@ export function strokedPoseBox(
   if (stroke === null) return box;
   const scale = ctx?.scale ?? 1;
   const screen = ctx?.screen;
-  const held = nodeMemo(node, DRAWN_SLOT, undefined, (): DrawnRecord => ({ width: NaN, height: NaN, scale: NaN, screen: undefined, box: null }));
-  if (held.width !== pose.width || held.height !== pose.height || held.scale !== scale || !sameMap(held.screen, screen)) {
+  const held = nodeMemo(node, DRAWN_SLOT, undefined, (): DrawnRecord => ({ width: NaN, height: NaN, scale: NaN, screen: undefined, stroke: null, box: null }));
+  if (held.width !== pose.width || held.height !== pose.height || held.scale !== scale || !sameMap(held.screen, screen)
+    || held.stroke !== stroke) {
     const at = { x: 0, y: 0, width: pose.width, height: pose.height };
     held.width = pose.width;
     held.height = pose.height;
     held.scale = scale;
     held.screen = screen;
+    held.stroke = stroke;
     held.box = strokedBounds(pathAt(at), stroke, scale, screen);
   }
   if (held.box === null) return box;

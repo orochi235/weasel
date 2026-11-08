@@ -64,7 +64,7 @@ export function createWorkerAnimations(
   const apply = (op: AnimationOp, scene: Scene<unknown, string, unknown>): void => {
     switch (op.op) {
       case 'play': {
-        const program = programs[op.key];
+        const program = Object.hasOwn(programs, op.key) ? programs[op.key] : undefined;
         if (!program) throw new Error(`weasel render worker: no animation registered as "${op.key}"`);
         const stopped = new Set<number>();
         stoppedDuringPlay = stopped;

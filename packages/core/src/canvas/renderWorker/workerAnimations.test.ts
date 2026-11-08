@@ -37,6 +37,7 @@ describe('the worker animator', () => {
     anims.run([{ op: 'cancel', id: 7 }], scene);
     expect(anims.animator.isActive()).toBe(false);
     expect(() => anims.run([{ op: 'play', id: 8, key: 'nope' }], scene)).toThrow(/nope/);
+    expect(() => anims.run([{ op: 'play', id: 9, key: 'constructor' }], scene)).toThrow(/constructor/);
   });
 
   it('lets go of a run that ends on its own', () => {

@@ -96,7 +96,9 @@ function edgePan(read: () => EdgePanInputs) {
     if (!(r.width > 0 && r.height > 0)) return null;
     const zone = options.zone ?? DEFAULT_ZONE;
     const speed = options.speed ?? DEFAULT_SPEED;
-    const pull = (inside: number) => speed * Math.min(1, Math.max(0, (zone - inside) / zone));
+    const pull = (inside: number) => (zone > 0
+      ? speed * Math.min(1, Math.max(0, (zone - inside) / zone))
+      : inside < 0 ? speed : 0);
     const x = pull(r.right - at.clientX) - pull(at.clientX - r.left);
     const y = pull(r.bottom - at.clientY) - pull(at.clientY - r.top);
     return x === 0 && y === 0 ? null : { x, y, dims: { width: r.width, height: r.height } };

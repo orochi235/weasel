@@ -2,13 +2,15 @@
  *  pick index so the two cannot disagree about a node's ancestors or path. */
 import type { Path } from '@weasel-js/geom';
 import { asNodeId, type Node, type Scene } from 'core/scene/types';
+import { nodeAsShown } from 'core/scene/nodeAsShown';
 import { sceneDerivedPathOf, showsComputedPath } from './derivedPath';
 import type { PickCandidate } from './pickWalk';
 
 /** Shared, never mutated: most scenes are flat and every node returns it. */
 const EMPTY_PARENTS: readonly never[] = [];
 
-/** `(node) => its ancestors, innermost first`, stopping at a cycle or a missing parent. */
+/** `(node) => its ancestors, innermost first`, stopping at a cycle or a missing parent. Each is
+ *  the node as the scene shows it, so an inherited paint or a clip reads what is painted. */
 export function sceneParentsOf<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
 ): (node: PickCandidate<TPose>) => readonly PickCandidate<TPose>[] {
@@ -22,7 +24,8 @@ export function sceneParentsOf<TData, TLayer extends string, TPose>(
       seen.add(parentId);
       const parent = scene.get(asNodeId(parentId));
       if (!parent) break;
-      chain.push(parent as unknown as PickCandidate<TPose>);
+      const shown = scene.overrides ? nodeAsShown(scene.overrides, parent) : parent;
+      chain.push(shown as unknown as PickCandidate<TPose>);
       parentId = parent.parent ?? null;
     }
     return chain;

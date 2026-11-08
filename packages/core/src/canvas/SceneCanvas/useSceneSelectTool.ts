@@ -14,6 +14,7 @@ import type { View } from 'core/viewport/view';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';
+import { nodeGates } from 'core/scene/nodeGates';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
@@ -275,7 +276,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
             x: (world.x - camera.x) * camera.scale.x, y: (world.y - camera.y) * camera.scale.y,
           };
           const hits = pixelPickEvery(read, scenePickIds(scene), screen, pickTolerancePx, paintOrderOf(scene));
-          if (hits) return hits;
+          if (hits) return reachableHits(scene, hits);
         }
       }
       const viewAlpha = view?.alphaOf ?? alphaOf;
@@ -300,6 +301,13 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
       walk(world, view).filter((id) => isPointerInteractive(id) !== false);
   }, [walk, isPointerInteractive]);
   return wiredHitBody;
+}
+
+/** `hits` less what the shape walk passes over and an id frame cannot know: a locked node and
+ *  one that is not pickable. */
+function reachableHits<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, hits: string[]): string[] {
+  const gates = nodeGates(scene as never);
+  return hits.filter((id) => (scene.get(asNodeId(id)) as { pickable?: boolean } | undefined)?.pickable !== false && !gates.locked(id));
 }
 
 /** Whether a pick asked with `view` is asked for the surface's own camera and gates, which

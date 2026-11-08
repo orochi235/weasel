@@ -80,6 +80,13 @@ describe('checkRequirements', () => {
     ]);
   });
 
+  it('reports a package named like an Object.prototype member as unknown', () => {
+    const requires = { constructor: '^1' } as unknown as { core?: string };
+    expect(checkRequirements(requires, { core: '1.8.2' })).toEqual([
+      { package: 'constructor', range: '^1', running: undefined, reason: 'unknown-package' },
+    ]);
+  });
+
   it('skips a package whose build does not know its own version', () => {
     expect(checkRequirements({ core: '^9' }, { core: '0.0.0-unknown' })).toEqual([]);
   });

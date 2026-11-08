@@ -33,6 +33,14 @@ export function workerAnimator(queue: (op: AnimationOp) => void): WorkerAnimator
   let next = 0;
   return {
     play(key, params) {
+      // Checked here: queued, it would fail every frame it rode on, and the worker would stop painting.
+      if (params !== undefined) {
+        try {
+          structuredClone(params);
+        } catch (e) {
+          throw new TypeError(`[weasel] animator.play('${key}'): params must be data a worker can receive (${String(e)})`);
+        }
+      }
       const id = ++next;
       queue({ op: 'play', id, key, ...(params !== undefined ? { params } : {}) });
       return {

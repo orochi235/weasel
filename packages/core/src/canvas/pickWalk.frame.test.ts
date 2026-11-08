@@ -91,3 +91,27 @@ describe('the adapter area walk composes', () => {
     expect(hits).toContain(FRAME_FIXTURE_IDS.upright);
   });
 });
+
+describe('adapterPickSource gates as buildSceneTree paints', () => {
+  const pose: RectPose = { x: 0, y: 0, width: 10, height: 10 };
+  const nodes: Record<string, { parent: string | null; hidden?: boolean; locked?: boolean; consumesChildren?: boolean }> = {
+    hid: { parent: null, hidden: true },
+    hidKid: { parent: 'hid' },
+    eats: { parent: null, consumesChildren: true },
+    eaten: { parent: 'eats' },
+    lock: { parent: null, locked: true },
+    lockKid: { parent: 'lock' },
+  };
+  const adapter = {
+    getPose: () => pose,
+    getNode: (id: string) => ({ kind: 'mark', layer: 'main', ...nodes[id] }),
+    getChildren: (p: string | null) => Object.keys(nodes).filter((id) => nodes[id]!.parent === p),
+  };
+
+  it('walks no hidden subtree and no consumed children, and reports locks from the node or above', () => {
+    const src = adapterPickSource<RectPose>(adapter);
+    const order = src.order();
+    expect(order.map((n) => n.id)).toEqual(['eats', 'lock', 'lockKid']);
+    expect(order.map((n) => src.isLocked?.(n) ?? false)).toEqual([false, true, true]);
+  });
+});

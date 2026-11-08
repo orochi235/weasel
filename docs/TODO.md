@@ -319,6 +319,15 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P2) [agent] A derived node inside a rotated container is picked turned by the container's angle.**
+  Painting hands the painter the derived path through `withoutInheritedFrame` (`derivedPath.ts`), so
+  the pose wrap turns it by its own frame only. The pick does not: `scenePointQuery`'s `hits` passes
+  the raw world path to `shapeCoversPoint`, whose `findShapeSilhouette` puts it through the whole
+  painted frame, while the pre-filter and the index box test it unturned. Found by reading in audit
+  round eight (2026-11-08), not yet reproduced. The fix needs the node's own pose at the point query
+  (a `PickQuery.hits` argument, or the source handing the silhouette step an adjusted path), so the
+  shape test turns the path as painting does while the pre-filter keeps the world path. Closes with
+  a test picking a connector inside a group rotated 90° on its painted ink.
 - **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.

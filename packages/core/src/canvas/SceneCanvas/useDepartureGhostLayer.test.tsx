@@ -58,6 +58,33 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([130, 134]);
   });
 
+  it('draws a ghost on a parallax layer where its plane draws it', () => {
+    const scene = createScene<null, 'main' | 'far', RectPose>({
+      systemLayers: [{ id: 'main' }, { id: 'far', parallax: { pan: 0.5 } }],
+    });
+    const g = { id: asNodeId('g'), kind: 'mark', layer: 'far', pose: at(0), data: null, parent: null } as unknown as N;
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene: scene as never, sceneSlot: { drawOne }, departures: departing([{ removal: removal(g, at(0)), pose: at(0), alpha: 1 }]),
+    }));
+    const panned: View = { x: 100, y: 0, scale: { x: 1, y: 1 } };
+    const out = result.current.draw(undefined, panned, { width: 100, height: 100, dpr: 1 }) as DrawCommand[];
+    const transformed = (cmds: readonly DrawCommand[]): boolean => cmds.some((c) =>
+      c.kind === 'group' && ((c as GroupDrawCommand).transform !== undefined || transformed((c as GroupDrawCommand).children)));
+    expect(transformed(out)).toBe(true);
+  });
+
+  it('draws no ghost of a node on a hidden layer, but still its descendants on a shown one', () => {
+    const scene = createScene<null, 'main' | 'off', RectPose>({ systemLayers: [{ id: 'main' }, { id: 'off' }] });
+    scene.setLayerVisible('off', false);
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'off', pose: at(0), data: null, parent: null, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(30), [{ node: k, pose: at(4), children: [] }]);
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene: scene as never, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),
+    }));
+    expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([34]);
+  });
+
   it('draws nothing with no ghost leaving', () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const { result } = renderHook(() => useDepartureGhostLayer({ scene, sceneSlot: { drawOne }, departures: departing([]) }));

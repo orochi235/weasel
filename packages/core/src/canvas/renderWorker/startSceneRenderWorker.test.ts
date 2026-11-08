@@ -11,13 +11,18 @@ vi.mock('./workerImages', () => ({ answerImage: vi.fn() }));
 function fakeWorker() {
   const posted: ToWorker[] = [];
   const listeners: ((e: MessageEvent<FromWorker>) => void)[] = [];
+  const errors: ((e: ErrorEvent) => void)[] = [];
   const worker = {
     postMessage: (m: ToWorker) => { posted.push(m); },
-    addEventListener: (type: string, fn: (e: MessageEvent<FromWorker>) => void) => { if (type === 'message') listeners.push(fn); },
+    addEventListener: (type: string, fn: (e: never) => void) => {
+      if (type === 'message') listeners.push(fn);
+      else if (type === 'error') errors.push(fn);
+    },
     terminate: vi.fn(),
   };
   const answer = (data: FromWorker) => { for (const fn of listeners) fn({ data } as MessageEvent<FromWorker>); };
-  return { worker: worker as unknown as Worker, posted, answer, terminate: worker.terminate };
+  const fail = () => { for (const fn of errors) fn({ message: 'boom' } as ErrorEvent); };
+  return { worker: worker as unknown as Worker, posted, answer, fail, terminate: worker.terminate };
 }
 
 const canvas = () => ({ transferControlToOffscreen: () => ({}) }) as unknown as HTMLCanvasElement;
@@ -38,6 +43,19 @@ function start() {
 const frames = (posted: ToWorker[]) => posted.filter((m) => m.type === 'frame');
 
 describe('startSceneRenderWorker', () => {
+  it('answers what waits on a worker that never started, and what is asked of it after', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { client, fail } = start();
+    const rect = { x: 0, y: 0, width: 1, height: 1 };
+    const waiting = client.readIds(rect);
+    const shot = client.snapshot();
+    fail();
+    expect((await waiting).width).toBe(0);
+    expect(await shot).toBeNull();
+    expect((await client.readIds(rect)).width).toBe(0);
+    warn.mockRestore();
+  });
+
   it('hands the canvas over first, then sends a whole first frame', () => {
     const { client, posted } = start();
     expect(posted[0]).toMatchObject({ type: 'init', width: 10, height: 10, dpr: 1 });

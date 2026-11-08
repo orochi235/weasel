@@ -76,6 +76,7 @@ export function useWorkerStack(
   const key = runsKey(runs);
   const canvases = useRef(new Map<number, HTMLCanvasElement>());
   const leases = useRef(new Map<number, CanvasRendererLease>());
+  const restoredOff = useRef(new Map<number, () => void>());
   const clients = useRef(new Map<number, AnyRenderWorker>());
   const frames = useRef<PageFrames>(new Map());
   const surfaceRef = useLatest(surface);
@@ -96,10 +97,12 @@ export function useWorkerStack(
       held.push({ release: hold.release, off: hold.client.subscribe(requestRedraw) });
     });
     requestRedraw();
-    const clientMap = clients.current, leaseMap = leases.current, frameMap = frames.current;
+    const clientMap = clients.current, leaseMap = leases.current, frameMap = frames.current, offMap = restoredOff.current;
     return () => {
       for (const h of held) { h.off(); h.release(); }
       clientMap.clear();
+      for (const off of offMap.values()) off();
+      offMap.clear();
       for (const lease of leaseMap.values()) lease.release();
       leaseMap.clear();
       frameMap.clear();
@@ -130,7 +133,11 @@ export function useWorkerStack(
           const canvas = canvases.current.get(i);
           if (!canvas) return;
           let lease = leases.current.get(i);
-          if (!lease) leases.current.set(i, lease = leaseCanvasRenderer());
+          if (!lease) {
+            leases.current.set(i, lease = leaseCanvasRenderer());
+            // A context restored on a middle canvas needs a frame nothing else asks for.
+            restoredOff.current.set(i, lease.subscribeRestored(() => frameRef.current.requestRedraw()));
+          }
           const renderer = lease.bind(canvas, f.dims, f.options);
           if (renderer) paintPageRun(renderer, run, i, f, frames.current);
         });

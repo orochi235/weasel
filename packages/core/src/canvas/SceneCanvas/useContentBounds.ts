@@ -12,7 +12,7 @@ import { worldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
  * picker boxes it, and whatever an in-flight gesture proposes, such as a node
  * being dragged, where it is shown, or a shape drawn before it exists. `null`
  * when nothing is drawn. Read live: the scene's part is kept until its version
- * moves, and the gesture's part is read fresh.
+ * or its bounds source moves, and the gesture's part is read fresh.
  */
 export function useContentBounds<TPose>(args: {
   scene: Scene<unknown, string, TPose>;
@@ -39,15 +39,15 @@ export function useContentBounds<TPose>(args: {
     gestureSource, previewPoseExtra: args.previewPoseExtra, boxOf: args.boundsOfPose, committedPoseOf, worldOfStored,
   });
 
-  const committed = useRef<{ scene: unknown; version: number; bounds: Bounds | null } | null>(null);
+  const committed = useRef<{ scene: unknown; boundsOf: unknown; version: number; bounds: Bounds | null } | null>(null);
   return useCallback((): Bounds | null => {
     const version = scene.getVersion();
     let held = committed.current;
-    if (held === null || held.scene !== scene || held.version !== version) {
+    if (held === null || held.scene !== scene || held.boundsOf !== boundsOf || held.version !== version) {
       const gates = nodeGates(scene);
       const parts: (Bounds | null)[] = [];
       for (const id of scene.roots) if (!gates.hidden(id)) parts.push(boundsOf(id));
-      held = { scene, version, bounds: unionAABB(parts) };
+      held = { scene, boundsOf, version, bounds: unionAABB(parts) };
       committed.current = held;
     }
     return unionAABB([held.bounds, gestureBoundsOf(gestureSource, previewBoundsOf)]);
