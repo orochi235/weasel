@@ -17,6 +17,15 @@ describe('intersectSegments', () => {
     expect(intersectSegments([P(0, 0), P(10, 0)], [P(0, 1), P(10, 1)])).toEqual([]);
   });
 
+  it('reports where two collinear lines overlap, or touch end to end', () => {
+    expect(intersectSegments([P(0, 0), P(10, 0)], [P(5, 0), P(15, 0)])).toEqual([
+      { ta: 0.5, tb: 0, x: 5, y: 0 },
+      { ta: 1, tb: 0.5, x: 10, y: 0 },
+    ]);
+    expect(intersectSegments([P(0, 0), P(10, 0)], [P(10, 0), P(15, 0)])).toEqual([{ ta: 1, tb: 0, x: 10, y: 0 }]);
+    expect(intersectSegments([P(0, 0), P(10, 0)], [P(12, 0), P(15, 0)])).toEqual([]);
+  });
+
   it('crosses a line and a cubic at a point on both', () => {
     const cubic = [P(0, 0), P(0, 20), P(20, 20), P(20, 0)];
     const hits = intersectSegments([P(-5, 10), P(25, 10)], cubic);
