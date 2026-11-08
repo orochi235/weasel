@@ -98,7 +98,8 @@ function captureCascade<TNode extends { id: string }>(
 /** Op: remove `node` and everything the adapter cascades with it; inverts to a
  *  re-insert of the whole set at its captured slots. */
 export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TNode>): Op {
-  const { node, label } = args;
+  const { label } = args;
+  let node = args.node;
   let slot: SiblingSlot = args.slot ?? slotFromIndex(args.index);
   const argsForSerial: DeleteArgs<TNode> = { node, label, slot, cascaded: args.cascaded };
   let captured: PlacedNode<TNode>[] = args.cascaded ?? [];
@@ -115,6 +116,12 @@ export function createDeleteOp<TNode extends { id: string }>(args: DeleteArgs<TN
       }
       captured = captureCascade(a, node.id);
       argsForSerial.cascaded = captured;
+      // Undo puts back what was removed, not the copy the op was built from.
+      const live = captured.find((e) => e.node.id === node.id)?.node;
+      if (live) {
+        node = live;
+        argsForSerial.node = live;
+      }
       a.removeNode(node.id);
     },
     invert() {
