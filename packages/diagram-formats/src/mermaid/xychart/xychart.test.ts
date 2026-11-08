@@ -45,6 +45,12 @@ describe('reading a Mermaid xychart', () => {
     ]);
   });
 
+  it('reads past a directive running over several lines', () => {
+    const { document, warnings } = readMermaidXychart('%%{init: {\n  "theme": "dark"}}%%\nxychart-beta\n  bar [1, 2]');
+    expect((document.pages[0] as PlotPage).data).toMatchObject({ series: [{ kind: 'bar', values: [1, 2] }] });
+    expect(warnings).toEqual(['Mermaid configuration directives were dropped.']);
+  });
+
   it('throws, naming the line, on what it cannot read', () => {
     expect(() => readMermaidXychart('xychart-beta\n  pie [1]')).toThrow('Mermaid, line 2: "pie" is not an xychart statement');
     expect(() => readMermaidXychart('xychart-beta\n\n  bar [1, x]')).toThrow('Mermaid, line 3: "x" is not a number');

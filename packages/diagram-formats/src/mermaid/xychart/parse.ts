@@ -117,7 +117,10 @@ export function parseXyChart(text: string): XyChartText {
       continue;
     }
     if (l === '' || l.startsWith('%%')) {
-      if (l.startsWith('%%{')) out.statements.push({ kind: 'dropped', what: 'directive', line });
+      if (l.startsWith('%%{')) {
+        out.statements.push({ kind: 'dropped', what: 'directive', line });
+        while (!lines[k]!.includes('}%%') && k < lines.length - 1) k++;
+      }
       continue;
     }
     if (!header) {
