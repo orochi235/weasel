@@ -1,5 +1,6 @@
 /** A Mermaid xychart's text as statements, each with the line it came from. */
 import { lineError } from '../../lineError';
+import { frontTitle } from '../common/header';
 
 /** One statement of an xychart, by the keyword that starts it. */
 export type XyStatement =
@@ -97,7 +98,7 @@ function frontMatter(lines: readonly string[], into: XyChartText): number {
   let k = 1;
   for (; k < lines.length && !/^---\s*$/.test(lines[k]!); k++) {
     const m = /^title:\s*(.*)$/.exec(lines[k]!.trim());
-    if (m !== null) into.frontTitle = /^".*"$/.test(m[1]!) ? JSON.parse(m[1]!) as string : m[1]!;
+    if (m !== null) into.frontTitle = frontTitle(m[1]!);
     else if (lines[k]!.trim() !== '') into.frontOther++;
   }
   return k + 1;

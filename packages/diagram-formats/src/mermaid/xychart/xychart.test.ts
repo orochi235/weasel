@@ -45,6 +45,12 @@ describe('reading a Mermaid xychart', () => {
     ]);
   });
 
+  it('reads a quoted front matter title as every Mermaid kind does', () => {
+    expect(plotOf('---\ntitle: "A \\"b\\""\n---\nxychart-beta\nbar [1]').name).toBe('A "b"');
+    expect(plotOf("---\ntitle: 'It''s'\n---\nxychart-beta\nbar [1]").name).toBe("It's");
+    expect(plotOf('---\ntitle: "a\\q"\n---\nxychart-beta\nbar [1]').name).toBe('a\\q');
+  });
+
   it('reads past a directive running over several lines', () => {
     const { document, warnings } = readMermaidXychart('%%{init: {\n  "theme": "dark"}}%%\nxychart-beta\n  bar [1, 2]');
     expect((document.pages[0] as PlotPage).data).toMatchObject({ series: [{ kind: 'bar', values: [1, 2] }] });

@@ -86,6 +86,11 @@ describe('readMermaidSequence', () => {
     ]));
   });
 
+  it('reads a quoted front matter title as every Mermaid kind does', () => {
+    expect(pageOf('---\ntitle: "A \\"b\\""\n---\nsequenceDiagram\nA->>B: x').name).toBe('A "b"');
+    expect(pageOf("---\ntitle: 'It''s'\n---\nsequenceDiagram\nA->>B: x").name).toBe("It's");
+  });
+
   it('reads past a directive running over several lines, before the header or after it', () => {
     for (const text of [
       '%%{init: {\n  "theme": "dark"}}%%\nsequenceDiagram\nA->>B: x',
