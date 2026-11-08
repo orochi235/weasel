@@ -166,21 +166,6 @@
   line-height: var(--wzl-leading);
 }
 
-.anchor {
-  border: var(--wzl-border-w) solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
-  padding: var(--wzl-space-xs) var(--wzl-space-sm) var(--wzl-space-sm);
-  margin-bottom: var(--wzl-space-xs);
-}
-
-.anchorChip {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--wzl-radius-sm);
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-  flex: none;
-}
-
 .anchorName {
   flex: 1;
   min-width: 0;
@@ -244,54 +229,9 @@
   padding: var(--wzl-space-1) 0;
 }
 
-.anchorField {
-  display: flex;
-  align-items: center;
-  gap: var(--wzl-space-1);
-}
-
-.anchorFieldLabel {
-  font-size: var(--wzl-font-size-2xs);
-  color: var(--wzl-fg-subtle);
-}
-
+/* Room for `359` or `0.97`, in a row this tight. */
 .anchorNumber {
-  composes: numeric from '@weasel-js/theme/numeric.module.css';
-  width: 4.4em;
-  appearance: textfield;
-  height: var(--wzl-control-h);
-  padding: 0 var(--wzl-space-xs);
-  font-size: var(--wzl-font-size-sm);
-  background: var(--wzl-surface-sunken);
-  color: var(--wzl-fg);
-  border: var(--wzl-border-w) solid var(--wzl-border-strong);
-  border-radius: var(--wzl-radius-sm);
-}
-
-/* The spinners cost more width than they buy in a row this tight. */
-.anchorNumber::-webkit-outer-spin-button,
-.anchorNumber::-webkit-inner-spin-button {
-  appearance: none;
-  margin: 0;
-}
-
-.anchorX {
-  display: grid;
-  place-items: center;
-  width: var(--wzl-control-h);
-  height: var(--wzl-control-h);
-  flex: none;
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: var(--wzl-radius-sm);
-  color: var(--wzl-fg-muted);
-  cursor: pointer;
-}
-
-.anchorX:hover {
-  background: var(--wzl-surface-hover);
-  color: var(--wzl-danger);
+  --wzl-number-field-width: 4ch;
 }
 
 /* A grid you scan, not a field you type into: 45 colors you would recognize on
@@ -342,31 +282,6 @@
   pointer-events: none;
 }
 
-/* The swatch is the control: a native color input sits over it, invisible,
-   so clicking the color opens a picker rather than hunting for a button. */
-.anchorChipEdit {
-  position: relative;
-  display: inline-flex;
-  flex: none;
-  cursor: pointer;
-}
-
-.anchorChipEdit input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  border: 0;
-  cursor: pointer;
-}
-
-.anchorChipEdit:hover .anchorChip,
-.anchorChipEdit:focus-within .anchorChip {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: 1px;
-}
 
 .presets {
   display: flex;
@@ -474,4 +389,3 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-

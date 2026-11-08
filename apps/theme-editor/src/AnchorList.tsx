@@ -1,7 +1,10 @@
+import { anchorFromHex, toHexPreview, type Anchor } from '@weasel-js/theme/engine';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { ColorField } from '@weasel-js/ui/components/ColorField';
+import { NumberField } from '@weasel-js/ui/components/NumberField';
 import { PropertyGroup } from '@weasel-js/ui/components/Properties';
 
 import styles from './PaletteLab.module.css';
-import { anchorFromHex, toHexPreview, type Anchor } from '@weasel-js/theme/engine';
 
 export interface AnchorListProps {
   anchors: readonly Anchor[];
@@ -14,12 +17,14 @@ export interface AnchorListProps {
  * have excluded it. Yellow is the sharpest case, not a special one.
  */
 export function AnchorList({ anchors, onChange }: AnchorListProps) {
-
   const replace = (i: number, next: Partial<Anchor>) =>
     onChange(anchors.map((a, j) => (j === i ? { ...a, ...next } : a)));
   const remove = (i: number) => onChange(anchors.filter((_, j) => j !== i));
-
-
+  const recolor = (i: number, hex: string) => replace(i, anchorFromHex(hex, anchors[i]!.name));
+  // A cleared field commits NaN; the anchor keeps the value it had.
+  const setNumber = (i: number, key: 'hue' | 'lightness', value: number) => {
+    if (Number.isFinite(value)) replace(i, { [key]: value });
+  };
 
   return (
     <PropertyGroup title="Anchors">
@@ -32,60 +37,41 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
 
       {anchors.map((a, i) => (
         <div key={`${a.name}-${i}`} className={styles.anchorRow}>
-          <label className={styles.anchorChipEdit} title={`Edit ${a.name}`}>
-            <span className={styles.anchorChip} style={{ background: toHexPreview(a) }} />
-            <input
-              type="color"
-              value={toHexPreview(a)}
-              onChange={(e) => replace(i, anchorFromHex(e.target.value, a.name))}
-              aria-label={`Edit ${a.name}`}
-            />
-          </label>
+          <ColorField
+            value={toHexPreview(a)}
+            onInput={(hex) => recolor(i, hex)}
+            onChange={(hex) => recolor(i, hex)}
+            aria-label={`Edit ${a.name}`}
+          />
           <span className={styles.anchorName} title={a.name}>
             {a.name}
           </span>
-          <label className={styles.anchorField}>
-            <span className={styles.anchorFieldLabel}>h</span>
-            <input
-              type="number"
-              min={0}
-              max={359}
-              value={a.hue}
-              onChange={(e) => replace(i, { hue: Number(e.target.value) })}
-              className={styles.anchorNumber}
-              aria-label={`${a.name} hue`}
-            />
-          </label>
-          <label className={styles.anchorField}>
-            <span className={styles.anchorFieldLabel}>L</span>
-            <input
-              type="number"
-              min={0.3}
-              max={0.97}
-              step={0.01}
-              value={a.lightness}
-              onChange={(e) => replace(i, { lightness: Number(e.target.value) })}
-              className={styles.anchorNumber}
-              aria-label={`${a.name} lightness`}
-            />
-          </label>
-          <button
-            type="button"
-            className={styles.anchorX}
-            onClick={() => remove(i)}
-            aria-label={`Unpin ${a.name}`}
-            title={`Unpin ${a.name}`}
-          >
-            <svg viewBox="0 0 10 10" width={10} height={10} aria-hidden="true">
-              <path
-                d="M1.5 1.5 L8.5 8.5 M8.5 1.5 L1.5 8.5"
-                stroke="currentColor"
-                strokeWidth={1.6}
-                strokeLinecap="round"
-                fill="none"
-              />
-            </svg>
-          </button>
+          <NumberField
+            className={styles.anchorNumber}
+            label="h"
+            orientation="row"
+            width="fit"
+            hideSteppers
+            aria-label={`${a.name} hue`}
+            minValue={0}
+            maxValue={359}
+            value={a.hue}
+            onChange={(v) => setNumber(i, 'hue', v)}
+          />
+          <NumberField
+            className={styles.anchorNumber}
+            label="L"
+            orientation="row"
+            width="fit"
+            hideSteppers
+            aria-label={`${a.name} lightness`}
+            minValue={0.3}
+            maxValue={0.97}
+            step={0.01}
+            value={a.lightness}
+            onChange={(v) => setNumber(i, 'lightness', v)}
+          />
+          <CloseButton ariaLabel={`Unpin ${a.name}`} tooltip={`Unpin ${a.name}`} onClick={() => remove(i)} />
         </div>
       ))}
 
