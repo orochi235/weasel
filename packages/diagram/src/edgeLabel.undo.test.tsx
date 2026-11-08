@@ -26,10 +26,10 @@ function setup() {
   const hook = renderHook(() => useSceneTextEdit(scene, container, { onEnd: (id) => dropEmptyEdgeLabel(scene as never, id) }));
   const entries = scene.historyEntries().length;
   const open = () => {
-    const action = editEdgeLabelAction();
-    if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    const { invoker } = editEdgeLabelAction();
+    if (invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
     const deps = { scene, nodeAtPoint: () => 'e1', textEdit: { startEdit: hook.result.current.startEdit } } as unknown as ActionDeps;
-    act(() => { action.invoker!.timing === 'immediate' && action.invoker!.run(deps, { world: { x: 150, y: 20 } }); });
+    act(() => { invoker.run(deps, { world: { x: 150, y: 20 } }); });
   };
   const type = (text: string) => {
     const overlay = container.querySelector<HTMLElement>('div[contenteditable="true"]')!;
