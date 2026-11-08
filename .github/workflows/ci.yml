@@ -107,8 +107,6 @@ jobs:
       - run: npm run check:forge-isolate
       # Every story title ends in a component's name, and no two stories share an id.
       - run: npm run check:forge-titles
-      # Every story file indexes without a fault.
-      - run: npm run check:forge-stories
       - run: npx vitest run --project=core --project=site --project=weasel-ui --project=draw --project=labkit --project=forge --project=forge-node --project=smoke
       # Tests that need real layout or real IndexedDB (`*.browser.test.*`), in headless Chromium.
       - run: npx playwright install --with-deps chromium-headless-shell
@@ -116,6 +114,9 @@ jobs:
       # Every story mounts, and its `play` checks the layout jsdom cannot see.
       - run: npm run test:stories:forge
       - run: npm run build
+      # Every story file indexes without a fault. After the build: forge's vite config
+      # reaches packages through their dist, which the fleet's test tree does not rebuild.
+      - run: npm run check:forge-stories
       # labkit's declarations are checked against its siblings' built ones, and
       # its stylesheet copies core's and ui's, so it builds after them.
       - run: npm run build -w @weasel-js/labkit

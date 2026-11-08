@@ -23,14 +23,12 @@ describe('skipReason', () => {
     const core = branch(['packages/core/src/scene/Scene.ts']);
     expect(skipReason('check:needs', core)).toBeUndefined();
     expect(skipReason('audit:jsdoc', core)).toBeUndefined();
-    expect(skipReason('check:forge-stories', core)).toBeUndefined();
     expect(skipReason('check:first-publish', core)).toMatch(/none of/);
     expect(skipReason('check:test-projects', core)).toMatch(/none of/);
   });
 
-  it('runs forge-stories, and none of the package-only checks, for a draw change', () => {
+  it('runs none of the package-only checks for a draw change', () => {
     const draw = branch(['apps/draw/src/App.tsx']);
-    expect(skipReason('check:forge-stories', draw)).toBeUndefined();
     expect(skipReason('check:needs', draw)).toMatch(/none of/);
     expect(skipReason('audit:jsdoc', draw)).toMatch(/none of/);
   });

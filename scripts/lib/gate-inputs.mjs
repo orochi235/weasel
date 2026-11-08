@@ -13,10 +13,6 @@ export const CHECK_INPUTS = {
   'check:needs': {
     changed: ['packages/**', 'README.md', 'scripts/check-package-needs.mjs', 'scripts/package-traits.mjs', 'scripts/react-free-entries.mjs', 'scripts/readme-packages.mjs'],
   },
-  // The forge app's vite config loads every story, and stories import across packages, draw and shared.
-  'check:forge-stories': {
-    changed: ['packages/**', 'apps/forge/**', 'apps/draw/**', 'apps/shared/**', 'assets/**', 'scripts/**'],
-  },
   'check:first-publish': {
     changed: ['**/package.json', 'scripts/trust-pending.json', 'scripts/check-first-publish.mjs'],
   },

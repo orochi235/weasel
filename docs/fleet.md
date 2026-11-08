@@ -46,7 +46,7 @@ this is what says a commit would fail there. `test:fleet` runs it with everythin
 results from that log. Don't run `npm run test:gate` yourself: it runs typecheck, lint and every
 check on the machine that types it.
 
-**On a branch run the gate skips `check:needs`, `check:forge-stories`, `check:first-publish`,
+**On a branch run the gate skips `check:needs`, `check:first-publish`,
 `audit:jsdoc` and `check:test-projects` when the branch changes none of the paths each reads**,
 listed in `scripts/lib/gate-inputs.mjs`; the log shows each as skipped, with a `gate: skipped` line
 saying why. A change to ci.yml, the gate, `scripts/lib/`, a manifest, the lockfile or a tsconfig runs
