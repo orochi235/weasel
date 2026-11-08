@@ -14,22 +14,11 @@ For the session picking this up: what is in flight and what has no other home. O
   Its batch (`batch/2026-11-07g`) ran `test:fleet --full` at 21180df69 (35395 passed, 1 failed:
   `AnnotationOverlay.clip`, the filed P2 that fails in some full runs) and `test:fleet:postbuild` green at 47cce78f9,
   which fixed the consumer smoke to treat third-party peers as external.
-- The second bug-audit round (2026-11-07 evening, 66 fixes across routing, ui, core, svg, pdf, path-tools, stroke,
-  paint, text, diagram-formats, plot, theme, prefs, quantity, storage, audio) and `select`'s `'single'` intent are on
-  `main` at f36edd14a and pushed. Its batch ran `test:fleet` green at 479c893d1 (4142 files) and `test:fleet:postbuild`
-  green there; the merge adds only HANDOFF. Round three (nine
-  branches, 43 fixes) is on `main` at 184b4c0a7, unpushed: its full fleet run passed at 436a22d1e (35567 tests) and
-  postbuild at 9a7aff0c2, the commit before a test-only fix; the merge adds only HANDOFF and a doc correction.
-- Round four (2026-11-07 night) branched from 6efccfc46, one agent per `.worktrees/audit4-<area>`. Done, not yet
-  batched: `path-tools-b` (4 fixes, retires the warp P3), `gestures` (4), `kernel3d` (3), and `invert` (from 9a7aff0c2:
-  2D and 3D `invert` share one condition-number rule, refusing liberally as ruled; retires the P3). Stopped at the
-  account's weekly limit mid-work, their commits so far kept, and resumed at 9pm: `fixups`, `core-scene`, `animator`,
-  `site`, `text-b`, `svg-b`. If one stops again, resume it by messaging its agent once the limit resets, or start a fresh agent on the worktree with
-  the brief (that session's scratchpad `audit4-brief.md`; its text is reproducible from round three's commits) and
-  `git log 6efccfc46..` as what is already done. `fixups` takes: theme editor copy timers, draw's Paper select showing
-  "Custom" on an unnamed size, labkit's `watch3d` double unsubscribe and `PresentationState.time` doc, diagram labels
-  taking two undo entries.
-- Left open by round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
+- Three more bug-audit rounds landed on 2026-11-07 evening, each through a green fleet batch: round two (66 fixes,
+  pushed), round three (43) and round four (53), with `select`'s `'single'` intent and one shared condition-number rule
+  for geom's 2D and 3D `invert`. `main` is at 83b654fef, the round-four batch that ran `test:fleet` (4167 files,
+  35672 tests) and postbuild green; rounds three and four are unpushed.
+- Open from round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
   (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
 - Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
@@ -63,6 +52,10 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-07 night, audit rounds three and four: draw's rulers reading CSS px at 96 to the inch with point and inch
+  steps; the Timeline shading a nested timeline's lanes past its declared duration and dimming the keys there; text
+  typed through an input method taking an armed style; a line of mixed faces clearing the deepest descent, against the
+  edit overlay's CSS; a paste ending in a line break keeping it; draw's Paper select showing Custom.
 - 2026-11-07, rulers: draw's View > Show rulers and the site's Rulers demo (`#rulers`). Ticks following pan
   and zoom, labels switching to millimeters over the demo's half-size part, the pointer marker, and dragging
   a guide off a ruler, moving it, dropping it back on a ruler, and undoing each. The look is provisional.
