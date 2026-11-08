@@ -15,6 +15,7 @@ import { createParallaxLayer } from '@weasel-js/parallax';
 import type { Dims, DrawCommand, Effect, LayerGroup, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { useVisiblePoll } from '../useVisiblePoll';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { backdropBand, COLORS, drawCallouts, drawEnding, drawSky } from './platformer/skin';
@@ -129,13 +130,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const frameMs = useRef(0);
   const [stats, setStats] = useState({ frame: 0, nodes: 0, writes: 0, voices: 0, steps: 0, spread: 0 });
   const writes = useRef(0);
-  useEffect(() => {
-    const id = window.setInterval(
-      () => setStats({ frame: frameMs.current, nodes: scene.nodes.size, writes: writes.current, ...soundStats() }),
-      200,
-    );
-    return () => window.clearInterval(id);
-  }, [scene, soundStats]);
+  useVisiblePoll(() => setStats({ frame: frameMs.current, nodes: scene.nodes.size, writes: writes.current, ...soundStats() }), 200);
 
   useEffect(() => animator.keepAlive(), [animator]);
 
