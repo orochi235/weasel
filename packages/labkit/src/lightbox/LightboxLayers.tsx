@@ -10,7 +10,8 @@ export interface LightboxLayerSet {
 
 const NONE: LightboxLayerSet = { below: [], above: [] };
 
-const LightboxLayersContext = createContext<LightboxLayerSet>(NONE);
+/** The layers every lightbox below lifts with it. */
+export const LightboxLayersContext = createContext<LightboxLayerSet>(NONE);
 
 /** Props for `<LightboxLayers>`. Keep the arrays stable across renders. */
 export interface LightboxLayersProps extends Partial<LightboxLayerSet> {

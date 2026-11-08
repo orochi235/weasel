@@ -1,15 +1,73 @@
 import { ThemeContext } from '@weasel-js/theme/react';
-import type { ReactNode } from 'react';
+import type { Context, ReactNode } from 'react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationPreloadContext } from '../annotations/preload';
+import { CameraContext } from '../canvas/CameraInput';
 import { CameraWheelContext } from '../canvas/CameraWheelContext';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
+import { CameraGesturesContext } from '../canvas/cameraGestures';
+import { CameraPublishContext, CameraRegistryContext } from '../canvas/cameraRegistry';
+import { ClockRegistryContext, TrialClockContext, TrialRootContext } from '../clock/contexts';
+import { LabOverContext } from '../config/over';
+import { LightboxContext } from '../lightbox/LightboxContext';
+import { LightboxLayersContext } from '../lightbox/LightboxLayers';
 import { LabStoreContext, TrialIdContext } from '../state/context';
 import { PersistenceContext } from '../state/Persistence';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
+import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { TrialDragContext } from '../trial/TrialDragContext';
-import { LabContext } from './LabContext';
+import { TrialHistoryContext } from '../trial/trialHistory';
+import { TrialTitleContext } from '../trial/trialTitle';
+import { CameraMissingContext, OrbitViewContext } from '../trial/useOrbitView';
+import { TrialOrbitContext } from '../trial/useTrialOrbit';
+import { LabActionsContext } from './LabActions';
+import { LabAmbientContext, LabEntriesContext } from './labAmbient';
+import { LabCommandsContext, LabContext } from './LabContext';
+import { LabContextMenusContext } from './labContextMenus';
 import { PanelHostContext } from './panelHost';
+import { PresentationContext } from './presentation';
+
+type Absent = readonly [Context<never>, unknown];
+const absent = <T,>(ctx: Context<T>, value: T): Absent => [ctx as Context<never>, value];
+
+/** Each context a lab or a trial publishes, with what it reads as on a bare page. */
+const ABSENT: readonly Absent[] = [
+  absent(LabStoreContext, null),
+  absent(PersistenceContext, null),
+  absent(AnnotationPreloadContext, null),
+  absent(LabContext, null),
+  absent(LabCommandsContext, null),
+  absent(LabOverContext, null),
+  absent(LabActionsContext, false),
+  absent(LabAmbientContext, null),
+  absent(LabEntriesContext, new Map()),
+  absent(LabContextMenusContext, null),
+  absent(PresentationContext, null),
+  absent(PanelHostContext, null),
+  absent(SurfaceContext, null),
+  absent(SurfaceCanvasContext, { over: null, under: null }),
+  absent(LightboxContext, null),
+  absent(LightboxLayersContext, { below: [], above: [] }),
+  absent(ClockRegistryContext, null),
+  absent(CameraRegistryContext, null),
+  absent(CameraGesturesContext, null),
+  absent(TrialIdContext, null),
+  absent(TrialClockContext, null),
+  absent(TrialRootContext, null),
+  absent(TrialHistoryContext, null),
+  absent(TrialTitleContext, null),
+  absent(TrialOrbitContext, null),
+  absent(OrbitViewContext, null),
+  absent(CameraMissingContext, null),
+  absent(LoupeSwitchContext, null),
+  absent(AnnotationsContext, null),
+  absent(CameraPublishContext, null),
+  absent(CameraWheelContext, null),
+  absent(CameraContext, null),
+  absent(CanvasStackContext, null),
+  absent(TrialDragContext, null),
+  absent(ThemeContext, null),
+];
 
 /** Props for `<LabBoundary>`. */
 export interface LabBoundaryProps {
@@ -26,31 +84,8 @@ export interface LabBoundaryProps {
  * never needs it.
  */
 export function LabBoundary({ children }: LabBoundaryProps) {
-  return (
-    <LabStoreContext.Provider value={null}>
-      <PersistenceContext.Provider value={null}>
-        <AnnotationPreloadContext.Provider value={null}>
-          <LabContext.Provider value={null}>
-            <PanelHostContext.Provider value={null}>
-              <SurfaceContext.Provider value={null}>
-                <SurfaceCanvasContext.Provider value={{ over: null, under: null }}>
-                  <TrialIdContext.Provider value={null}>
-                    <AnnotationsContext.Provider value={null}>
-                      <CameraWheelContext.Provider value={null}>
-                        <CanvasStackContext.Provider value={null}>
-                          <TrialDragContext.Provider value={null}>
-                            <ThemeContext.Provider value={null}>{children}</ThemeContext.Provider>
-                          </TrialDragContext.Provider>
-                        </CanvasStackContext.Provider>
-                      </CameraWheelContext.Provider>
-                    </AnnotationsContext.Provider>
-                  </TrialIdContext.Provider>
-                </SurfaceCanvasContext.Provider>
-              </SurfaceContext.Provider>
-            </PanelHostContext.Provider>
-          </LabContext.Provider>
-        </AnnotationPreloadContext.Provider>
-      </PersistenceContext.Provider>
-    </LabStoreContext.Provider>
+  return ABSENT.reduceRight<ReactNode>(
+    (inner, [Ctx, value]) => <Ctx.Provider value={value as never}>{inner}</Ctx.Provider>,
+    children,
   );
 }
