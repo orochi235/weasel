@@ -9,6 +9,7 @@ import { normalizeView, type View } from '../../core/viewport/view';
 import type { Scene } from '../../core/scene/types';
 import { SurfaceCanvas } from '../SurfaceCanvas';
 import { useFrameLoop } from '../useFrameLoop';
+import { useRedrawOnDensityChange } from '../useCanvasRenderer';
 import { useSurfaceSize, type SurfaceSizeProps } from '../useSurfaceSize';
 import type { SceneViewLayers } from '../sceneViewRender';
 import type { FollowedClock, SceneRenderInputs } from './startSceneRenderWorker';
@@ -85,6 +86,8 @@ export function WorkerSceneView<TData, TLayer extends string, TPose>(
     view, width, height, dpr, layerVisibility, layerOrder, cull, extraCommands, alphaFor, clock,
   };
   useSceneRenderWorker(localRef, props.worker, inputs, loop.requestRedraw, clientRef);
+  // The frame writer reads the ambient ratio, but only on a frame something else asked for.
+  useRedrawOnDensityChange(loop.requestRedraw, dpr);
 
   // No dependency array: every commit hands the worker what the render read.
   useLayoutEffect(() => {
