@@ -149,6 +149,7 @@ describe('equalizeHandlesAction', () => {
 
 describe('balanceHandles binding', () => {
   it('lets the handle locks\' keys be held as its drag starts', () => {
-    expect(balanceHandlesAction.defaultBinding![0]!.spec.mods).toEqual({ shift: 'optional', meta: 'optional', ctrl: 'optional' });
+    const [binding] = balanceHandlesAction.defaultBinding as { spec: { mods?: unknown } }[];
+    expect(binding!.spec.mods).toEqual({ shift: 'optional', meta: 'optional', ctrl: 'optional' });
   });
 });
