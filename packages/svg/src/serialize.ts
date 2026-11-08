@@ -196,7 +196,7 @@ function imageXml(node: SvgImageNode, namespaces: Record<string, string>): strin
   }
 
   const src = node.source ?? { x: 0, y: 0, width: 1, height: 1 };
-  const viewBox = [src.x, src.y, src.width, src.height].map(trimNumber).join(' ');
+  const viewBox = [src.x, src.y, src.width, src.height].map((n) => trimNumber(n)).join(' ');
   // A mirror about the source window's center, so the flipped image still
   // fills exactly the window the viewport shows.
   const flip = node.flipX || node.flipY

@@ -35,6 +35,10 @@ describe('stroke-dashoffset', () => {
     expect((draft!.data as { stroke?: { dashOffset?: number } }).stroke?.dashOffset).toBe(1.25);
   });
 
+  it('writes every dash length to six places, the first included', () => {
+    expect(serializeSvg([line({ dash: [2.5, 1.25, 0.125] })])).toContain('stroke-dasharray="2.5 1.25 0.125"');
+  });
+
   it('comes out of a kit stroke', () => {
     const stroke = svgStrokeFromKit({ paint: { color: '#000' }, width: 1, dash: [4, 2], dashOffset: 2 }, { x: 0, y: 0, width: 1, height: 1 });
     expect(stroke?.dashOffset).toBe(2);
