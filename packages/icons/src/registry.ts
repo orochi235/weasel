@@ -106,10 +106,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
       for (const key of keys) {
         slotFor(key).tables.set(token, { glyph: t.icons[key.slice(t.namespace.length + 1)]!, owner: t.owner });
       }
-      let released = false;
       return () => {
-        if (released) return;
-        released = true;
         unclaim(t.namespace);
         for (const key of keys) {
           slots.get(key)?.tables.delete(token);
@@ -118,7 +115,10 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
       };
     });
     changed();
+    let released = false;
     return () => {
+      if (released) return;
+      released = true;
       releases.forEach((r) => r());
       changed();
     };
