@@ -24,8 +24,9 @@ export function MoveSnapDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      { id: 'binA' as never, kind: 'mark', layer: 'default', pose: BIN_A, data: { color: '#e8efe4' } },
-      { id: 'binB' as never, kind: 'mark', layer: 'default', pose: BIN_B, data: { color: '#efe9e4' } },
+      // The bins take drops at fixed rectangles, so they stay put: a dragged bin would plant itself.
+      { id: 'binA' as never, kind: 'mark', layer: 'default', pose: BIN_A, pickable: false, data: { color: '#e8efe4' } },
+      { id: 'binB' as never, kind: 'mark', layer: 'default', pose: BIN_B, pickable: false, data: { color: '#efe9e4' } },
       { id: 'token' as never, kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { color: '#7fb069' } },
     ],
   });
