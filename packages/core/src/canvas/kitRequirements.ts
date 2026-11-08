@@ -160,7 +160,7 @@ export function checkRequirements(
   const out: RequirementMismatch[] = [];
   for (const [pkg, range] of Object.entries(requires)) {
     if (range === undefined) continue;
-    const have = running[pkg];
+    const have = Object.hasOwn(running, pkg) ? running[pkg] : undefined;
     if (have === undefined) {
       out.push({ package: pkg, range, running: undefined, reason: 'unknown-package' });
       continue;
