@@ -16,10 +16,14 @@ For the session picking this up: what is in flight and what has no other home. O
   which fixed the consumer smoke to treat third-party peers as external.
 - The second bug-audit round (2026-11-07 evening, 66 fixes across routing, ui, core, svg, pdf, path-tools, stroke,
   paint, text, diagram-formats, plot, theme, prefs, quantity, storage, audio) and `select`'s `'single'` intent are on
-  `main` at f36edd14a, unpushed. Its batch ran `test:fleet` green at 479c893d1 (4142 files) and `test:fleet:postbuild`
-  green there; the merge adds only HANDOFF. A third round is in flight, one agent each in `.worktrees/audit3-<area>`
-  (labkit, forge, ui-b, core-b, diagram, geom, renderer, draw, leftovers), branched from 479c893d1; it merges as the
-  next batch.
+  `main` at f36edd14a and pushed. Its batch ran `test:fleet` green at 479c893d1 (4142 files) and `test:fleet:postbuild`
+  green there; the merge adds only HANDOFF. A third round's
+  eight finished branches are merged on `batch/2026-11-07i` (`.worktrees/batch-2026-11-07i`, at 6efccfc46); `audit3-geom`
+  joins it when it finishes, and the batch then takes a full fleet run (forge changed `scripts/vite-watch.ts`). A fourth
+  round runs on top of 6efccfc46, one agent each in `.worktrees/audit4-<area>` (core-scene, animator, gestures, svg-b,
+  text-b, site, kernel3d, path-tools-b, fixups); `fixups` takes the small bugs the third round left: theme editor copy
+  timers, draw's Paper select on a custom page, labkit's `watch3d` double unsubscribe and `PresentationState.time` doc,
+  and diagram labels taking two undo entries.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
 - Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
   new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
