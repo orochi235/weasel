@@ -57,7 +57,6 @@ const extendInstrument = defineInstrument<State, Config>({
   name: 'Extend to next path',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     initial: 'extend',
     tools: [

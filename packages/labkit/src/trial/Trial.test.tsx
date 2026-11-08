@@ -133,12 +133,14 @@ describe('<TrialChrome>', () => {
     expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
   });
 
-  it('omits undo and redo unless the instrument declares undo', async () => {
-    await renderSettled(<ChromeHarness />, { wrapper: withIcons });
+  it('omits undo and redo only when the instrument declares undo: false', async () => {
+    await renderSettled(<ChromeHarness instrument={{ ...stubInstrument, undo: false }} />, {
+      wrapper: withIcons,
+    });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
     await renderSettled(
       <ChromeHarness
-        instrument={{ ...stubInstrument, undo: {} }}
+        instrument={stubInstrument}
         undoBindings={{ canUndo: true, canRedo: false, undo: vi.fn(), redo: vi.fn() }}
       />,
       { wrapper: withIcons },
@@ -348,8 +350,8 @@ describe('chrome regions in a mounted lab', () => {
     expect(within(toolbar).queryByRole('button', { name: 'Zoom in' })).toBeNull();
   });
 
-  it('renders no undo group for an instrument that does not declare undo', async () => {
-    await renderLabWith({ ...stubInstrument, canvas: { layers: [] } });
+  it('renders no undo group for an instrument that declares undo: false', async () => {
+    await renderLabWith({ ...stubInstrument, canvas: { layers: [] }, undo: false });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
   });
 

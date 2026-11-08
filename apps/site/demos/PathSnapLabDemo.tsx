@@ -71,7 +71,6 @@ const snapInstrument = defineInstrument<State, Config>({
   name: 'Path snapping',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     initial: 'line',
     tools: [

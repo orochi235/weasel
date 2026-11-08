@@ -170,7 +170,6 @@ const trimInstrument = defineInstrument<State, Config>({
   name: 'Stroke trim',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     initial: 'hand',
     tools: [

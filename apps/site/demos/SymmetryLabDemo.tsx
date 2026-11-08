@@ -199,7 +199,6 @@ const symmetryInstrument = defineInstrument<State, Config>({
   name: 'Symmetry',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

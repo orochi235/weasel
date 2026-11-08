@@ -76,7 +76,6 @@ const shapeBuilderInstrument = defineInstrument<State, Config>({
   name: 'Shape builder',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     initial: 'shapeBuilder',
     tools: [

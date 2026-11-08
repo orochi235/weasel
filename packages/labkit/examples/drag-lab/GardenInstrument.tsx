@@ -167,6 +167,5 @@ export const GardenInstrument = defineInstrument<GardenState, GardenConfig>({
   configSchema: () => [
     { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
   ],
-  undo: {},
   render: (ctx) => <GardenBody ctx={ctx} />,
 });

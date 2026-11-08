@@ -75,7 +75,6 @@ const distortInstrument = defineInstrument<State, Config>({
   name: 'Distort',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

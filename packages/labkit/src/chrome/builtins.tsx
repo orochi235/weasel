@@ -5,6 +5,7 @@ import type { ControlRenderer } from '../config/types';
 import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
+import { undoCapability } from '../instrument/undo';
 import { MenuButton } from '../passthrough/weasel-ui';
 import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
@@ -127,8 +128,8 @@ export function builtinContributions(
   const zoom = ctx.zoom;
 
   // Weasel history is the undo authority for marks, so declaring `annotations`
-  // gets the buttons whether or not the instrument also declares `undo`.
-  if (instrument.undo != null || instrument.annotations != null) {
+  // gets the buttons even with `undo: false`.
+  if (undoCapability(instrument) != null || instrument.annotations != null) {
     out.push({
       id: 'undo',
       region: 'toolbar',

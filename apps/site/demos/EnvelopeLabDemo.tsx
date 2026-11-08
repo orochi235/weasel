@@ -74,7 +74,6 @@ const envelopeInstrument = defineInstrument<State, Config>({
   name: 'Envelope',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

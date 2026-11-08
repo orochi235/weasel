@@ -127,7 +127,6 @@ const rectPathEditInstrument = defineInstrument<State, unknown>({
   name: 'Rectangle path edit',
   config: f.schema({}),
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

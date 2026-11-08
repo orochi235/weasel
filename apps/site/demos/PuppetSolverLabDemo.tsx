@@ -82,7 +82,6 @@ const solverInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   // A new pin set opens on its own shape: the scene goes back to `create`'s.
   onConfigChange: (next, prev, state) => (next.preset === prev.preset ? state : { scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

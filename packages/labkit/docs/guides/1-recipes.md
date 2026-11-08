@@ -275,7 +275,7 @@ The Trial automatically:
 
 - Renders the `<Palette>` in the sidebar above any layer list
 - Places `<LayerList>` in the sidebar (because `instrument.layers` is set)
-- Wires Undo/Redo toolbar buttons (because `instrument.undo` is set)
+- Wires Undo/Redo toolbar buttons (every trial has them unless `undo: false`)
 - Snapshots state on `canvas.itemAdded` (emitted by the drop pipeline)
 
 ### Build a layered visualization lab (canvas + layer toggles)

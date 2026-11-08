@@ -139,7 +139,6 @@ const widthInstrument = defineInstrument<State, Config>({
   name: 'Width',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

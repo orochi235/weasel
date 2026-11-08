@@ -70,6 +70,5 @@ export const StubInstrument = defineInstrument<StubState, StubConfig>({
   configSchema: () => [
     { key: 'showGrid', label: 'Show grid', type: 'checkbox', default: true },
   ],
-  undo: {},
   render: (ctx) => <Body ctx={ctx} />,
 });

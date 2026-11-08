@@ -72,7 +72,6 @@ const sceneInstrument = defineInstrument<State, Config>({
   name: 'Scene',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

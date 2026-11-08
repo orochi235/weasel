@@ -58,7 +58,6 @@ const balanceInstrument = defineInstrument<State, Config>({
   name: 'Balance',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <BalanceTrial ctx={ctx} />,
 });

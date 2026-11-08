@@ -58,7 +58,6 @@ const instrument = defineInstrument<State, Config>({
   name: 'Resample',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <ResampleTrial ctx={ctx} />,
 });

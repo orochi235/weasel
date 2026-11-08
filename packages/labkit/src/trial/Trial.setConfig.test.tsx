@@ -61,6 +61,32 @@ describe('a trial config write', () => {
     expect(changes()).toBe('0');
   });
 
+  it('puts the setting back on undo, not only the state derived from it', async () => {
+    await mount();
+    const grid = screen.getByLabelText('Show grid');
+    expect(grid).toBeChecked();
+    fireEvent.click(grid);
+    expect(grid).not.toBeChecked();
+    fireEvent.click(undo());
+    expect(screen.getByLabelText('Show grid')).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(screen.getByLabelText('Show grid')).not.toBeChecked();
+    expect(changes()).toBe('1');
+  });
+
+  it('records a settings change by default', async () => {
+    await renderSettled(
+      <Lab
+        instruments={[{ ...counting([]), undo: undefined }]}
+        defaultInstrument="Counting"
+      />,
+      { wrapper: withIcons },
+    );
+    fireEvent.click(screen.getByLabelText('Show grid'));
+    fireEvent.click(undo());
+    expect(screen.getByLabelText('Show grid')).toBeChecked();
+  });
+
   it('snapshots on the event that names the path, from either side', async () => {
     await mount(['config.change:showGrid']);
     click('wider');

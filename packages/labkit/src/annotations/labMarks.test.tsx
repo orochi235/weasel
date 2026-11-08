@@ -44,6 +44,8 @@ const annotating = defineInstrument<Record<string, never>, Record<string, never>
   defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
+  // Undo stays only while the marks need it.
+  undo: false,
   annotations: {
     targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
   },

@@ -95,6 +95,5 @@ export const SceneInstrument = defineInstrument<SceneState, SceneConfig>({
   name: 'WeaselScene',
   config: sceneConfig,
   initialState: () => ({ scene: null }),
-  undo: {},
   render: (ctx) => <SceneBody ctx={ctx} />,
 });

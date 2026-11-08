@@ -285,7 +285,7 @@ provide the corresponding chrome; they compose freely.
 | `layers` | A sidebar list that hides and reorders those layers |
 | `annotations` | Drawing tools, an overlay on each region you name, a Marks panel, undo and export |
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
-| `undo` | Undo and redo buttons, snapshotting state on the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory` |
+| `undo` | On by default: undo and redo buttons, snapshotting state and settings together on `state.change` and `config.change`, or the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory`. `undo: false` turns it off |
 | `job` | Starts async work, aborts it on unmount and on a key change, and renders progress and a cancel control |
 | `tools` | A tool palette and a tool slot on the trial |
 | `chrome` | Anything else, as contributions keyed to a region |
@@ -393,7 +393,6 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   name: 'Scene',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }, { id: 'rect', label: 'Rectangle', icon: icon('core:rect') }] },
   render: (ctx) => <Body ctx={ctx} />,
 });
@@ -403,7 +402,7 @@ defineInstrument<SceneTrialState, ConfigOf<typeof config>>({
   its history records into `state.scene`, and loads whatever arrives there from
   outside — Reset, Clone, a snapshot, a reload — into the same `Scene`. `create`
   is what a fresh or reset trial opens on.
-- **Undo.** Declaring `undo` gives the buttons; `<TrialSceneCanvas>` hands the
+- **Undo.** The trial has the buttons by default; `<TrialSceneCanvas>` hands the
   trial the scene's history, so the buttons and Mod+Z step `scene.undo()` and
   `scene.redo()`, and the trial stops snapshotting `state`. Any history of an
   instrument's own goes the same way: `useTrialHistory({ canUndo, canRedo,

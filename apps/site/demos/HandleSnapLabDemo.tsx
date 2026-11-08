@@ -38,7 +38,6 @@ const snapInstrument = defineInstrument<PathLabState, Config>({
   name: 'Handle snapping',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <HandleSnapTrial ctx={ctx} />,
 });

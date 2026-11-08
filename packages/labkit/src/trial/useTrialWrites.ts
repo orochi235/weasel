@@ -7,13 +7,18 @@ import { LabOverContext, writesOver } from '../config/over';
 import { hasConfigPath, schemaNodeAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import type { Instrument } from '../instrument/types';
+import { undoCapability } from '../instrument/undo';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { stateOp } from '../undo/stateOp';
+import { readTrialEdit, type TrialEdit, writeTrialEdit } from './trialEdit';
 
 /** A config write within this long of the last one to the same path belongs
  *  to the same gesture — a slider drag writes on every move. */
 const GESTURE_MS = 500;
+
+/** What a trial snapshots on when its instrument names no events. */
+const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
 
 /** What `useTrialWrites` takes. */
 export interface TrialWritesOptions {
@@ -46,8 +51,8 @@ export function useTrialWrites({
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const setTrialHistory = useStore(store, (s) => s.setTrialHistory);
-  const undoCap = instrument.undo;
-  const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? ['state.change']), [undoCap]);
+  const undoCap = undoCapability(instrument);
+  const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? DEFAULT_SNAPSHOT_ON), [undoCap]);
   const maxDepth = undoCap?.maxDepth ?? 50;
   const setOver = useContext(LabOverContext)?.set;
 
@@ -68,13 +73,14 @@ export function useTrialWrites({
         history = createHistory(null, { historyLimit: maxDepth });
         setTrialHistory(trialId, history);
       }
-      const write = (state: unknown) => updateTrialState(trialId, state as never);
-      history.recordEntry(
-        [stateOp(structuredClone(current.state), () => stored()?.state, write)],
-        event,
-      );
+      const read = (): TrialEdit | undefined => {
+        const record = stored();
+        return record ? readTrialEdit(record) : undefined;
+      };
+      const write = (edit: TrialEdit) => writeTrialEdit(store, trialId, edit);
+      history.recordEntry([stateOp(structuredClone(readTrialEdit(current)), read, write)], event);
     },
-    [undoCap, undoEvents, maxDepth, stored, trialId, setTrialHistory, updateTrialState],
+    [undoCap, undoEvents, maxDepth, stored, store, trialId, setTrialHistory],
   );
 
   const lastWrite = useRef<{ path: string; at: number; version: number } | null>(null);

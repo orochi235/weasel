@@ -18,6 +18,7 @@ import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { withDragFeedback } from '../dragdrop/feedbackLayer';
 import { Palette } from '../dragdrop/Palette';
 import type { Instrument, InstrumentList, PaletteItem, RenderContext } from '../instrument/types';
+import { undoCapability } from '../instrument/undo';
 import { useJob } from '../job/useJob';
 import { useLabCommands } from '../lab/LabContext';
 import { PresentedTransport } from '../lab/PresentedTransport';
@@ -148,7 +149,6 @@ function TrialRuntime({
     clock: clockHandle?.clock,
   });
 
-  const undoCap = instrument.undo;
   const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
     store,
     trialId: record.id,
@@ -240,7 +240,7 @@ function TrialRuntime({
   // stack — the spec's rule, and the reason a mark scene is the truth.
   const snapshots = useHistoryVersion(record.history);
   const undoBindings = trialUndoBindings({
-    declaresUndo: undoCap != null,
+    declaresUndo: undoCapability(instrument) != null,
     marks: annotationsCap
       ? { moves: markMoves, undo: () => annotations.undo(), redo: () => annotations.redo() }
       : null,

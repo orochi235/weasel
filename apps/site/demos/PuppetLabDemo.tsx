@@ -68,7 +68,6 @@ const puppetInstrument = defineInstrument<State, Config>({
   name: 'Puppet Warp',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     tools: [
       { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },

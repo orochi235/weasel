@@ -55,7 +55,6 @@ const trimInstrument = defineInstrument<State, Config>({
   name: 'Trim segment',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: {
     initial: 'trim',
     tools: [

@@ -118,9 +118,8 @@ describe('<TrialSceneCanvas>', () => {
     expect(live.scene.nodes.size).toBe(2);
   });
 
-  it("leaves Mod+Z to the scene's own keys when the instrument declares no undo", async () => {
-    const { undo: _undo, ...bare } = instrument;
-    const { container } = await mount(bare);
+  it("leaves Mod+Z to the scene's own keys when the instrument declares undo: false", async () => {
+    const { container } = await mount({ ...instrument, undo: false });
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
     giveKeys(container.querySelector('.lk-trial-scene canvas'));
     addOne();

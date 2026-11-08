@@ -182,8 +182,8 @@ export interface DragDropCapability<TS = unknown, TC = unknown> {
   pickUp?: (hit: HitResult, state: TS, config: TC) => { item: PaletteItem; state: TS } | null;
 }
 
-/** Declares that an instrument's state is undoable: which emitted events
- *  snapshot it, and how many snapshots to keep. */
+/** How an instrument's undo records: which emitted events snapshot its state
+ *  and config, and how many snapshots to keep. */
 export interface UndoCapability {
   snapshotOn?: string[];
   maxDepth?: number;
@@ -213,8 +213,9 @@ export type DragFeedback = { ok: boolean; reason?: string };
  * It owns two pieces of data — `config`, the settings the control panel edits,
  * and `state`, what the experiment is currently doing — and renders from both.
  * The optional capability fields declare what else it wants from the runtime:
- * a canvas, a layer list, palette drag-and-drop, undo. Declaring a capability
- * is what makes the trial provide the corresponding chrome.
+ * a canvas, a layer list, palette drag-and-drop. Declaring a capability is
+ * what makes the trial provide the corresponding chrome. Undo is the
+ * exception: every trial has it unless the instrument declares `undo: false`.
  */
 export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   /** The id a trial record names its instrument by. */
@@ -252,7 +253,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   orbit?: OrbitCapability<TS, TC> | false;
   layers?: LayerCapability;
   dragDrop?: DragDropCapability<TS, TC>;
-  undo?: UndoCapability;
+  /** Undo and redo, on by default: the trial snapshots `state` and `config`
+   *  together on `state.change` and `config.change`. `false` turns them off. */
+  undo?: UndoCapability | false;
   /** Tools this instrument offers. Declaring them gives the trial a palette
    *  region and its own tool slot. */
   tools?: ToolCapability;

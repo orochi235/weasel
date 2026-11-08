@@ -64,7 +64,7 @@ function ids(instrument: Instrument, c: TrialChromeContext = ctx): string[] {
 
 describe('builtinContributions', () => {
   it('always contributes the trial actions', () => {
-    expect(ids(bare)).toEqual(['clone', 'reset', 'snapshot', 'close']);
+    expect(ids({ ...bare, undo: false })).toEqual(['clone', 'reset', 'snapshot', 'close']);
   });
 
   it('puts snapshot in the title bar with clone and reset, not the toolbar', () => {
@@ -73,15 +73,16 @@ describe('builtinContributions', () => {
     expect(snapshot?.end).toBe(true);
   });
 
-  it('contributes undo and redo only when the instrument declares undo', () => {
-    expect(ids(bare)).not.toContain('undo');
-    expect(ids({ ...bare, undo: {} })).toContain('undo');
-    expect(ids({ ...bare, undo: {} })).toContain('redo');
+  it('contributes undo and redo unless the instrument declares undo: false', () => {
+    expect(ids(bare)).toContain('undo');
+    expect(ids(bare)).toContain('redo');
+    expect(ids({ ...bare, undo: false })).not.toContain('undo');
+    expect(ids({ ...bare, undo: false })).not.toContain('redo');
   });
 
   it('contributes the expand toggle only inside a lightbox, ahead of the trial actions', () => {
     expect(ids(bare)).not.toContain('expand');
-    expect(ids(bare, { ...ctx, canExpand: true })).toEqual([
+    expect(ids({ ...bare, undo: false }, { ...ctx, canExpand: true })).toEqual([
       'expand',
       'clone',
       'reset',

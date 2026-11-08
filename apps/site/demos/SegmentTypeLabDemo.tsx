@@ -85,7 +85,6 @@ const segmentInstrument = defineInstrument<State, Config>({
   name: 'Segments',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   chrome: [{
     id: 'segment-keys',

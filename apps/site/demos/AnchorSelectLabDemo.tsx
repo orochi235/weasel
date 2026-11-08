@@ -74,7 +74,6 @@ const instrument = defineInstrument<State, Config>({
   name: 'Anchor selection',
   config,
   initialState: () => ({ scene: null }),
-  undo: {},
   tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
   render: (ctx) => <AnchorSelectTrial ctx={ctx} />,
 });
