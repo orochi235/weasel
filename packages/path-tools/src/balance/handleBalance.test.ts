@@ -60,6 +60,15 @@ describe('balanceHandlesAction', () => {
     expect(h.in.y).toBeCloseTo(80, 4);
   });
 
+  it('commits nothing when the grip is dragged away and back to where it was pressed', () => {
+    const { deps, commits } = setup();
+    const handle = (balanceHandlesAction.invoker as OngoingInvoker).start(at(deps, 40, 30, 'balance:0'), {});
+    handle.onMove!(at(deps, 30, 60));
+    handle.onMove!(at(deps, 40, 30));
+    handle.onEnd!(at(deps, 40, 30), 'commit');
+    expect(commits).toHaveLength(0);
+  });
+
   it('holds still under a length lock, from the dep or Mod, and not under an angle lock', () => {
     const drag = (lock: { angle: boolean; length: boolean } | null, mods: Partial<InvocationCtx['modifiers']> = {}) => {
       const { deps, commits } = setup();

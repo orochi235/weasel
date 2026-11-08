@@ -100,7 +100,7 @@ export const balanceHandlesAction: Action & { requires: string[] } = inPlane({
           }
           const at = balanceFactorToward(origin, sub, segIdx, moveCtx.world);
           const factor = pressFactor > 0 ? at / pressFactor : at;
-          current = editAnchorSetTracked(originPath, (set) => scaleSegmentHandles(set, sub, segIdx, factor, symmetries)) ?? current;
+          current = editAnchorSetTracked(originPath, (set) => scaleSegmentHandles(set, sub, segIdx, factor, symmetries));
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           const done = current;
