@@ -137,6 +137,12 @@ describe('alignmentSnapSource', () => {
       const { scene } = sceneOf([{ x: 0, y: 0, width: 20, height: 20 }]);
       expectNear(drive({ sources: [alignmentSnapSource()], scene }).at({ x: 23, y: 50 }).point, { x: 20, y: 50 });
     });
+
+    it('lines up a point gesture whose subject is no node, such as a guide being moved, with the top-level nodes', () => {
+      const { scene } = sceneOf([{ x: 0, y: 0, width: 20, height: 20 }]);
+      const run = drive({ sources: [alignmentSnapSource()], scene, ids: ['guide-1'] });
+      expectNear(run.at({ x: 23, y: 50 }).point, { x: 20, y: 50 });
+    });
   });
 
   it('filter keeps a rejected sibling from offering lines', () => {

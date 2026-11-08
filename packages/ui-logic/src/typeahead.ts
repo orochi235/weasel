@@ -8,6 +8,11 @@ export interface TypeaheadShape<T> extends Pick<ListShape<T>, 'canStop'> {
 /** How long typing can pause before the typeahead buffer starts over, in milliseconds. */
 export const TYPEAHEAD_RESET_MS = 500;
 
+/** Whether `text` is one typed character, counted by code point: an emoji is one, though it takes two UTF-16 units. */
+export function isOneChar(text: string): boolean {
+  return text.length > 0 && text.length <= 2 && [...text].length === 1;
+}
+
 /** What has been typed so far, and when the last key came. */
 export interface TypeaheadBuffer {
   text: string;
@@ -25,7 +30,7 @@ export function typeaheadMatch<T>(
 ): number | null {
   const q = query.toLowerCase();
   const n = items.length;
-  const start = from == null ? 0 : q.length === 1 ? from + 1 : from;
+  const start = from == null ? 0 : isOneChar(q) ? from + 1 : from;
   for (let k = 0; k < n; k++) {
     const i = (start + k) % n;
     const item = items[i]!;

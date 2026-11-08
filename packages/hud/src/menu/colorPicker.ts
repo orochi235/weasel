@@ -43,7 +43,8 @@ export function withColorPickers(
       const row: MenuEntry = {
         kind: 'item', key: `${e.key}/${color}`, label: color,
         keepOpen: true,
-        get checked() { return hexColor(now() ?? '', alpha) === hexColor(value, alpha); },
+        // Checked when choosing it would write the color held now.
+        get checked() { return hexColor(now() ?? '', alpha) === hexColor(color, alpha, now()); },
         run: () => c().setColor(e, hexColor(color, alpha, now()) ?? color),
       };
       swatches.set(row, () => value);
