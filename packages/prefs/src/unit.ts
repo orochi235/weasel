@@ -50,6 +50,10 @@ export interface ResolvedPrefUnit extends PrefFunctionUnit {
   format: (stored: number) => string;
   /** How a field shows the display number, where the unit fixes its places. */
   display?: Display;
+  /** The decimal places `toDisplay` rounds to, where the unit fixes them. */
+  precision?: number;
+  /** `toDisplay` before any rounding to `precision`. */
+  toDisplayExact: (stored: number) => number;
 }
 
 /** What a unit leaf's field reads as typed text: its `accepts` table, and its
@@ -93,19 +97,21 @@ function storedOf(shown: number, scale: number, offset: number): number {
 /** How to convert and format with `unit`, whichever form it was written in. */
 export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
   if (!isPrefLinearUnit(unit)) {
-    return { ...unit, format: unit.format ?? ((stored) => `${unit.toDisplay(stored)}${unit.suffix ?? ''}`) };
+    return { ...unit, toDisplayExact: unit.toDisplay, format: unit.format ?? ((stored) => `${unit.toDisplay(stored)}${unit.suffix ?? ''}`) };
   }
   const { scale, offset = 0, precision, suffix, accepts } = unit;
   const system: UnitSystem = { base: 'stored', units: { [SHOWN]: { factor: scale, offset } } };
+  const toDisplayExact = (stored: number): number => (stored - offset) / scale;
   return {
     toDisplay: (stored) => {
-      const shown = (stored - offset) / scale;
+      const shown = toDisplayExact(stored);
       return precision === undefined ? shown : Number(shown.toFixed(precision));
     },
+    toDisplayExact,
     fromDisplay: (shown) => storedOf(shown, scale, offset),
     format: (stored) =>
       `${formatUnit(stored, SHOWN, system, { precision: precision ?? 2, suffix: false, pad: precision !== undefined })}${suffix ?? ''}`,
-    ...(precision === undefined ? {} : { display: decimal({ places: precision, grouping: false }) }),
+    ...(precision === undefined ? {} : { precision, display: decimal({ places: precision, grouping: false }) }),
     ...(suffix === undefined ? {} : { suffix }),
     ...(accepts === undefined ? {} : { accepts }),
   };
