@@ -101,9 +101,10 @@ export function TokenField<T>({
   const onInputKey = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (imeKey(e.nativeEvent)) return;
     const caretAtStart = e.currentTarget.selectionStart === 0 && e.currentTarget.selectionEnd === 0;
-    if (SEPARATORS.has(e.key) && draft.trim() !== '') {
+    // A comma is never text: typed into an empty field it would become the next token. Enter there is left alone.
+    if (SEPARATORS.has(e.key) && (e.key !== 'Enter' || draft.trim() !== '')) {
       e.preventDefault();
-      commit();
+      if (draft.trim() !== '') commit();
     } else if (value.length > 0 && caretAtStart && (e.key === 'Backspace' || e.key === 'ArrowLeft')) {
       e.preventDefault();
       focus.request(value.length - 1);
