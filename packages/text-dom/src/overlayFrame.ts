@@ -1,4 +1,5 @@
 import { verticalAlignOffset } from '@weasel-js/text';
+import { ZOOM_PROPERTY } from './domRuns';
 import type { TextEditScreenPose } from './textEditTypes';
 
 /**
@@ -23,6 +24,14 @@ export function overlayTransform(pose: TextEditScreenPose, left: number, top: nu
   }
   if (anchor !== 0) parts.push(`translateX(${-anchor * 100}%)`);
   return parts.length > 0 ? parts.join(' ') : 'none';
+}
+
+/** Set {@link overlayTransform} on `el`, and the zoom its `{ px }` run sizes divide by. */
+export function applyOverlayTransform(
+  el: HTMLElement, pose: TextEditScreenPose, left: number, top: number, anchor: number,
+): void {
+  el.style.transform = overlayTransform(pose, left, top, anchor);
+  el.style.setProperty(ZOOM_PROPERTY, String(pose.zoom ?? 1));
 }
 
 /**

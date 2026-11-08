@@ -10,7 +10,7 @@
  * browser's own synthesis uses a fixed factor of its own.
  */
 
-import { isSolidPaint, type Paint } from '@weasel-js/paint';
+import { isSolidPaint, type Paint, type ScreenLength } from '@weasel-js/paint';
 import {
   DEFAULT_TEXT_STYLE, isHardLineBreak, numericWeight, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
@@ -19,7 +19,7 @@ import {
 import { cssFontFamily } from '@weasel-js/font';
 import { BLOCK_TAGS } from './domOffsets';
 import {
-  cssFontVariant, EMPTY_STYLE, FILL_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
+  cssFontVariant, EMPTY_STYLE, FILL_ATTR, FONT_SIZE_PX_ATTR, LETTER_SPACING_PX_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
   styleStateFromElement, toRun, TRANSFORMS, type StyleState,
 } from './runStyle';
 
@@ -187,7 +187,7 @@ export function runsToDom(
     } else if (run.bold) span.style.fontWeight = '700';
     if (run.italic) span.style.fontStyle = 'italic';
     // An absolute size wins over a relative one, as it does in `resolveRuns`.
-    if (run.fontSize != null) span.style.fontSize = `${run.fontSize}px`;
+    if (run.fontSize != null) setLength(span, 'fontSize', FONT_SIZE_PX_ATTR, run.fontSize);
     else if (run.fontScale != null) span.style.fontSize = `${run.fontScale * 100}%`;
     if (run.fontFamily != null) {
       span.style.fontFamily = cssFontFamily(run.fontFamily, {
@@ -220,12 +220,25 @@ export function runsToDom(
     }
     // World units — the overlay's own node-level tracking is screen-scaled,
     // but a run override is stored as-is so the round-trip is lossless.
-    if (run.letterSpacing != null) span.style.letterSpacing = `${run.letterSpacing}px`;
+    if (run.letterSpacing != null) setLength(span, 'letterSpacing', LETTER_SPACING_PX_ATTR, run.letterSpacing);
     // CSS draws the transform, so the span's text stays the source and the
     // caret-offset walkers below need no map.
     if (run.textTransform != null) span.style.textTransform = run.textTransform;
     parent.appendChild(span);
   }
+}
+
+/** The overlay's screen pixels per world unit, which `placeOverlay` sets. */
+export const ZOOM_PROPERTY = '--weasel-zoom';
+
+/** A world length as CSS pixels; a `{ px }` one divided by the zoom the
+ *  overlay is drawn at, and kept whole in `attr` for `domToRuns`. */
+function setLength(
+  span: HTMLElement, prop: 'fontSize' | 'letterSpacing', attr: string, v: ScreenLength,
+): void {
+  if (typeof v === 'number') { span.style[prop] = `${v}px`; return; }
+  span.style[prop] = `calc(${v.px}px / var(${ZOOM_PROPERTY}, 1))`;
+  span.setAttribute(attr, String(v.px));
 }
 
 /** `el`'s text as `domToRuns` reads it: each break stand-in restored. */

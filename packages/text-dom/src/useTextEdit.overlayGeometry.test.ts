@@ -164,6 +164,13 @@ describe('useTextEdit — zoom-scaled overlay', () => {
     expect(overlay.style.transformOrigin).toBe('0 0');
   });
 
+  it('hands the zoom to run spans sized in screen pixels', () => {
+    const h = makeZoomedHarness([{ text: 'abc', fontSize: { px: 12 } }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.getPropertyValue('--weasel-zoom')).toBe('2');
+  });
+
   it('emits no transform at zoom 1', () => {
     const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 1);
     const { result } = renderHook(() => useTextEdit(h.opts));

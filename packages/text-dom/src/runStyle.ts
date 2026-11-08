@@ -3,7 +3,7 @@
  * ancestors say, read into a `StyleState`, and a `StyledRun` built from one.
  */
 
-import type { Fill, Stroke } from '@weasel-js/paint';
+import type { Fill, ScreenLength, Stroke } from '@weasel-js/paint';
 import type { FontVariantCaps, StyledRun, TextTransform } from '@weasel-js/text';
 
 /** Holds, as JSON, a run fill its span's CSS color cannot say: a gradient, a
@@ -16,6 +16,19 @@ export const STROKE_ATTR = 'data-stroke';
 /** Holds a run's glyph turn in degrees, which CSS has no per-glyph spelling for. */
 export const ROTATE_ATTR = 'data-rotate';
 
+/** A run's `{ px }` font size or letter spacing, whose CSS divides by the zoom. */
+export const FONT_SIZE_PX_ATTR = 'data-font-size-px';
+export const LETTER_SPACING_PX_ATTR = 'data-letter-spacing-px';
+
+/** The `{ px }` length `attr` holds on `el`, if it holds one. */
+function pxAttr(el: Element, attr: string): { px: number } | undefined {
+  const px = parseFloat(el.getAttribute(attr) ?? '');
+  return Number.isFinite(px) ? { px } : undefined;
+}
+
+const sameLength = (a: ScreenLength | undefined, b: ScreenLength | undefined): boolean =>
+  a === b || (typeof a === 'object' && typeof b === 'object' && a.px === b.px);
+
 export interface StyleState {
   bold: boolean;
   italic: boolean;
@@ -23,7 +36,7 @@ export interface StyleState {
   strikethrough: boolean;
   overline: boolean;
   fontWeight?: number;
-  fontSize?: number;
+  fontSize?: ScreenLength;
   fontFamily?: string;
   color?: string;
   /** `FILL_ATTR`'s value, which wins over `color`. */
@@ -31,7 +44,7 @@ export interface StyleState {
   /** `STROKE_ATTR`'s value. */
   strokeJson?: string;
   rotate?: number;
-  letterSpacing?: number;
+  letterSpacing?: ScreenLength;
   script?: 'super' | 'sub';
   baselineShift?: number;
   fontScale?: number;
@@ -136,7 +149,10 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
       next.overline ||= td.includes('overline');
     }
     // A percentage is `fontScale`; any other unit is an absolute size.
-    if (el.style.fontSize) {
+    const pxSize = pxAttr(el, FONT_SIZE_PX_ATTR);
+    if (pxSize) {
+      next.fontSize = pxSize;
+    } else if (el.style.fontSize) {
       const size = parseFloat(el.style.fontSize);
       if (Number.isFinite(size)) {
         if (el.style.fontSize.trim().endsWith('%')) next.fontScale = size / 100;
@@ -173,7 +189,10 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
       next.fillJson = undefined;
     }
     const ls = el.style.letterSpacing;
-    if (ls === 'normal') {
+    const pxSpacing = pxAttr(el, LETTER_SPACING_PX_ATTR);
+    if (pxSpacing) {
+      next.letterSpacing = pxSpacing;
+    } else if (ls === 'normal') {
       next.letterSpacing = undefined;
     } else if (ls) {
       const px = parseLetterSpacing(ls);
@@ -191,13 +210,13 @@ export function styleEquals(a: StyleState, b: StyleState): boolean {
     a.strikethrough === b.strikethrough &&
     a.overline === b.overline &&
     a.fontWeight === b.fontWeight &&
-    a.fontSize === b.fontSize &&
+    sameLength(a.fontSize, b.fontSize) &&
     a.fontFamily === b.fontFamily &&
     a.color === b.color &&
     a.fillJson === b.fillJson &&
     a.strokeJson === b.strokeJson &&
     a.rotate === b.rotate &&
-    a.letterSpacing === b.letterSpacing &&
+    sameLength(a.letterSpacing, b.letterSpacing) &&
     a.script === b.script &&
     a.baselineShift === b.baselineShift &&
     a.fontScale === b.fontScale &&
