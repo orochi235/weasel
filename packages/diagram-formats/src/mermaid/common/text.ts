@@ -57,7 +57,10 @@ export function mermaidEscaped(lines: readonly string[]): string {
   return /^`[\s\S]*`$/.test(text) ? `#96;${text.slice(1)}` : text;
 }
 
-/** Text as Mermaid quotes it: {@link mermaidEscaped}, in double quotes. */
+/** One line of text as a Mermaid string: {@link mermaidEscaped}, in double quotes. */
+export const mermaidQuoted = (text: string): string => `"${mermaidEscaped([text])}"`;
+
+/** Text as Mermaid quotes it: {@link mermaidEscaped}, in double quotes, never empty. */
 export function mermaidText(lines: readonly string[]): string {
   const text = mermaidEscaped(lines);
   return `"${text === '' ? ' ' : text}"`;

@@ -1,9 +1,8 @@
 /** A plot page holding a pie as Mermaid `pie` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { mermaidQuoted } from '../common/text';
 
-/** `s` in double quotes, a quote inside it written as Mermaid's `#quot;`. */
-const quoted = (s: string): string => `"${s.replace(/"/g, '#quot;')}"`;
 
 /** Writes `page`'s pie as Mermaid. Throws on a page holding another kind of chart. */
 export function writeMermaidPie(page: PlotPage): ExportResult {
@@ -18,7 +17,7 @@ export function writeMermaidPie(page: PlotPage): ExportResult {
     labels.add(s.label);
     const ok = Number.isFinite(s.value) && s.value >= 0;
     if (!ok) warnings.add('Mermaid holds only non-negative values; others were written as 0.');
-    lines.push(`  ${quoted(s.label)} : ${ok ? s.value : 0}`);
+    lines.push(`  ${mermaidQuoted(s.label)} : ${ok ? s.value : 0}`);
   }
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };
 }
