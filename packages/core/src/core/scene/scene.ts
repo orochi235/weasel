@@ -169,6 +169,8 @@ function buildScene<TData, TLayer extends string, TPose>(
       if (mode.open()) {
         throw new Error('Scene: cannot loadState inside another edit — it replaces the state that edit would revert to');
       }
+      // Built once aside first: a snapshot that cannot be built must not cost the document it replaces.
+      buildScene(options, json.systemLayers.map(layerFromSerialized), () => specs, json.doc);
       // Ephemeral, and every id is a new node after this.
       overrides.clearAll();
       scroll.clearAll();
