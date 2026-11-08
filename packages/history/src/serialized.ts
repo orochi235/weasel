@@ -295,7 +295,7 @@ function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undef
     pushes: se.pushes ?? 1,
     // Re-derive touchedIds from the rebuilt ops rather than trying to
     // round-trip the Set through the serialized form (Sets aren't JSON-safe).
-    touchedIds: touchedIdsFromOps(forwardOps),
+    touchedIds: touchedIdsFromOps(baseOps === forwardOps ? forwardOps : [...baseOps, ...forwardOps]),
     ...(se.selectionBefore ? { selectionBefore: [...se.selectionBefore] } : {}),
     ...(se.selectionAfter ? { selectionAfter: [...se.selectionAfter] } : {}),
   };
