@@ -17,12 +17,15 @@ function pending(over: Partial<PendingLongPress> = {}): PendingLongPress {
   };
 }
 
-function setup(opts: LongPressFeedbackOptions = {}) {
+function setup(
+  opts: LongPressFeedbackOptions = {},
+  entry = createLongPressFeedbackContribution({ reducedMotion: false, ...opts }),
+) {
   const store = createLongPressStore();
-  const entry = createLongPressFeedbackContribution({ reducedMotion: false, ...opts });
-  const layer = entry.overlay as RenderLayer<unknown>;
+  let layer!: RenderLayer<unknown>;
   const requestRedraw = vi.fn();
-  const api = { element: null, requestRedraw } as unknown as CanvasExtensionApi;
+  const registerLayer = (l: RenderLayer<unknown>) => { layer = l; return () => {}; };
+  const api = { element: null, requestRedraw, registerLayer } as unknown as CanvasExtensionApi;
   const deps = { get: ((name: string) => (name === 'longPress' ? store : undefined)) as never };
   const detach = entry.attach!(api, deps);
   const draw = (viewId: string | null = null): DrawCommand[] => layer.draw({ viewId }, VIEW, DIMS);
@@ -156,6 +159,21 @@ describe('createLongPressFeedbackContribution', () => {
         vi.unstubAllGlobals();
       }
     });
+  });
+
+  it('keeps each canvas its own press when one entry is installed on two', () => {
+    const entry = createLongPressFeedbackContribution({ reducedMotion: false, delay: 0 });
+    const a = setup({}, entry);
+    const b = setup({}, entry);
+    a.store.set(pending());
+    advance(200);
+    expect(a.draw().length).toBeGreaterThan(0);
+    expect(b.draw()).toEqual([]);
+    b.requestRedraw.mockClear();
+    b.frame();
+    expect(b.requestRedraw).not.toHaveBeenCalled();
+    b.detach();
+    expect(a.draw().length).toBeGreaterThan(0);
   });
 
   it('stops listening on detach', () => {
