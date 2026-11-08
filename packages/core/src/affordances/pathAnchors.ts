@@ -6,6 +6,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import { pathToAnchors, type AnchorSet, type PolygonPath } from '@weasel-js/geom';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import type { PathEditExtension } from 'domains/paths/pathEditExtension';
+import { ANCHOR_HIT_BASE_PX } from 'core/device/targets';
 
 /**
  * Live anchor-editing state. The thunk that returns it is called on every
@@ -69,7 +70,7 @@ export function createPathAnchorAffordances(
   getAnchorState: () => AnchorState | null,
   opts: PathAnchorAffordanceOptions = {},
 ): Affordance[] {
-  const { hitRadius = 8, cursor = 'pointer' } = opts;
+  const { hitRadius = ANCHOR_HIT_BASE_PX, cursor = 'pointer' } = opts;
 
   /** Selected polygon paths, and the one being edited, paired with their node id. */
   const editablePaths = (state: ChromeState): Array<{ id: string; path: PolygonPath }> => {

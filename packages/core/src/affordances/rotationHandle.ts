@@ -102,9 +102,9 @@ export function createRotationAffordance(
       const bind = (): AffordanceBinding => ({
         initialScratch: {
           targetId: target.id,
-          // Pivot. `rotateAction` recomputes its own union pivot for
-          // multi-selection, but the single-target case reads this.
-          fixedPoint: { x: b.x + halfW, y: b.y + halfH },
+          // `rotateAction` recomputes its own union pivot for multi-selection,
+          // but the single-target case reads this.
+          fixedPoint: pivot,
         } satisfies RotationScratch,
       });
 
