@@ -5,6 +5,7 @@
 import {
   ActionDisabledReason,
   bodyPredicate,
+  followerHome,
   type Action,
   type ActionDeps,
   type AddNodeSpec,
@@ -125,11 +126,13 @@ function beginEditing(edgeId: string, ctx: InvocationCtx, look: Pick<EditEdgeLab
   if (scene.get(labelId as never) === undefined) {
     const edge = scene.get(edgeId as never);
     if (edge === undefined) return;
-    scene.batch('Add label', () => scene.add(edgeLabelSpec(edgeId, '', {
+    const spec = edgeLabelSpec(edgeId, '', {
       layer: edge.layer,
       ...(look.style ? { style: look.style } : {}),
       ...(look.fill !== undefined ? { fill: look.fill } : {}),
-    }) as never), textEditJoin(labelId));
+    });
+    // In a paged scene, on its edge's page, else in the page run, as a connect places the edge.
+    scene.batch('Add label', () => scene.add({ ...spec, parent: followerHome(scene, spec) } as never), textEditJoin(labelId));
   }
   textEdit?.startEdit(labelId);
 }
