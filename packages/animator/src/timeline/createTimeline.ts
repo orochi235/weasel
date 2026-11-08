@@ -112,8 +112,8 @@ export function createTimeline(
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
   const onWrap = (laps: number): void => {
-    if (!held && laps > 0) events.to(opts.tracks, duration);
-    events.place(laps > 0 ? -Infinity : playhead, false);
+    const sought = !held && laps > 0 && events.to(opts.tracks, duration);
+    if (!sought) events.place(laps > 0 ? -Infinity : playhead, false);
     if (report?.watched) report.lap(lap);
   };
 
