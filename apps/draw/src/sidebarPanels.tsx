@@ -18,7 +18,7 @@ export function SelectionProperties(): ReactElement {
   const host = useSurfaceHost();
   return (
     <>
-      <AnchorFields accepts={DOCUMENT_UNITS} unit="pt" />
+      <AnchorFields accepts={DOCUMENT_UNITS} unit="px" />
       <SelectionPanel
         scene={host.scene}
         selection={host.selection}

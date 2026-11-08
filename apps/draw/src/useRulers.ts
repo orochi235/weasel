@@ -1,7 +1,7 @@
 import { createGuidesLayer, createRulers, guideSnapSource, useGuides } from '@weasel-js/guides';
 import { useMemo } from 'react';
 import type { AppCommands } from './appCommands';
-import { DOCUMENT_SCOPE } from './documentUnits';
+import { DOCUMENT_SCOPE, RULER_LENGTHS } from './documentUnits';
 import { usePref } from './prefs';
 
 /**
@@ -12,7 +12,7 @@ import { usePref } from './prefs';
 export function useRulers() {
   const [visible, setVisible] = usePref('view.rulersVisible');
   const { addGuide, removeGuide, getGuides, subscribe } = useGuides();
-  const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: DOCUMENT_SCOPE }), [addGuide, removeGuide, getGuides]);
+  const rulers = useMemo(() => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: DOCUMENT_SCOPE, lengths: RULER_LENGTHS }), [addGuide, removeGuide, getGuides]);
   const layer = useMemo(
     () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), subscribe, extent: 'full' }),
     [rulers, getGuides, subscribe],
