@@ -9,9 +9,8 @@ import { collapseRunWhitespace, preservesSpace } from './textWhitespace';
 import { fontSizeOf } from './fontSize';
 import { ownLang } from './textLang';
 import type { GradientTable } from './gradients';
-import { deriveStyle, ownProp, ownValue, resolveCurrentColor, type StyleContext } from './cascade';
-import { readProperty } from './properties';
-import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke } from './readPaint';
+import { deriveStyle, ownProp, ownValue, type StyleContext } from './cascade';
+import { readStroke, isNonScalingStroke, ownStrokeStyle, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
 const glyphCount = (text: string): number => Array.from(text).length;
@@ -120,18 +119,9 @@ function readTspanRun(
   if (variant) run.fontVariantCaps = variant;
   const lang = ownLang(el)?.trim();
   if (lang) run.lang = lang;
-  const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
-  if (fillAttr) {
-    const parsed = readProperty('fill', fillAttr);
-    if (parsed?.kind === 'none') {
-      run.fill = null;
-    } else if (parsed?.kind === 'solid') {
-      run.fill = { paint: { kind: 'solid', color: parsed.color } };
-    } else if (parsed?.kind === 'ref') {
-      const paint = gradients.get(parsed.id);
-      if (paint) run.fill = { paint };
-      else if (parsed.fallback) run.fill = { paint: { kind: 'solid', color: parsed.fallback.color } };
-    }
+  // Own attributes only, as for the stroke: an inherited fill is the node's already.
+  if (['fill', 'fill-opacity'].some((k) => { const v = ownProp(el, k); return v != null && v !== 'inherit'; })) {
+    run.fill = coreTextFill(tspanStyle, gradients, onWarn);
   }
   // Own attributes only — see `ownStrokeStyle`.
   const stroke = coreStroke(withOutlinedStroke(el, readStroke(ownStrokeStyle(el, tspanStyle), gradients, onWarn, isNonScalingStroke(el))));

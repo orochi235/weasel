@@ -18,10 +18,9 @@ import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
 import type { GradientTable } from './gradients';
 import {
-  deriveStyle, ownValue, resolveCurrentColor, styleValue, type StyleContext,
+  deriveStyle, ownValue, styleValue, type StyleContext,
 } from './cascade';
-import { readProperty } from './properties';
-import { readStroke, isNonScalingStroke, coreStroke } from './readPaint';
+import { readStroke, isNonScalingStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
 
 /** Average glyph advance as a fraction of the em. Sans-serif Latin runs
@@ -245,21 +244,7 @@ function readTextPaint(
   nonScalingStroke = false,
 ): TextPaint {
   const out: TextPaint = {};
-  const fillRaw = resolveCurrentColor(style['fill'] ?? null, style);
-  if (fillRaw) {
-    const parsed = readProperty('fill', fillRaw);
-    if (parsed?.kind === 'solid') {
-      out.fill = { paint: { kind: 'solid', color: parsed.color } };
-    } else if (parsed?.kind === 'ref') {
-      const paint = gradients.get(parsed.id);
-      if (paint) out.fill = { paint };
-      else if (parsed.fallback) {
-        out.fill = { paint: { kind: 'solid', color: parsed.fallback.color } };
-      }
-    } else if (parsed?.kind === 'none') {
-      out.fill = null;
-    }
-  }
+  if (style['fill'] != null || style['fill-opacity'] != null) out.fill = coreTextFill(style, gradients, onWarn);
   // Text strokes used to be dropped here with a warning: an SDF glyph is a
   // sampled field, with no geometry to stroke. The outline tier gave large
   // text real contours, so a stroke is now a paint like any other — and one

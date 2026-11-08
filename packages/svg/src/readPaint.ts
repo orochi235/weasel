@@ -1,7 +1,7 @@
 /** Reading an element's fill and stroke off the cascade. */
 
 import type { SvgPaint, SvgStroke } from './types';
-import type { Paint, Stroke } from '@weasel-js/core';
+import type { Fill, Paint, Stroke } from '@weasel-js/core';
 import type { GradientTable } from './gradients';
 import { ownProp, ownValue, resolveCurrentColor, styleValue, type StyleContext } from './cascade';
 import { readProperty, type InheritedPropertyName } from './properties';
@@ -136,17 +136,8 @@ export function ownStrokeStyle(el: Element, computed: StyleContext): StyleContex
  * that paints nothing, so callers can leave the field absent.
  */
 export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
-  if (!stroke) return undefined;
-  let paint: Paint;
-  if (stroke.paint.kind === 'gradient') {
-    paint = stroke.paint.paint;
-  } else if (stroke.paint.kind === 'solid') {
-    paint = stroke.paint.opacity != null
-      ? { kind: 'solid', color: stroke.paint.color, opacity: stroke.paint.opacity }
-      : { kind: 'solid', color: stroke.paint.color };
-  } else {
-    return undefined;
-  }
+  const paint = stroke && corePaint(stroke.paint);
+  if (!stroke || !paint) return undefined;
   const out: Stroke = { paint, width: stroke.width };
   if (stroke.cap) out.cap = stroke.cap;
   if (stroke.join) out.join = stroke.join;
@@ -158,4 +149,23 @@ export function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
   if (stroke.markerMid) out.markerMid = stroke.markerMid;
   if (stroke.markerEnd) out.markerEnd = stroke.markerEnd;
   return out;
+}
+
+/** An {@link SvgPaint} as the kit's `Paint`, or `null` for one that paints nothing. */
+export function corePaint(paint: SvgPaint): Paint | null {
+  if (paint.kind === 'gradient') return paint.paint;
+  if (paint.kind === 'none') return null;
+  return paint.opacity != null
+    ? { kind: 'solid', color: paint.color, opacity: paint.opacity }
+    : { kind: 'solid', color: paint.color };
+}
+
+/**
+ * The fill a `<text>` or `<tspan>` paints with, as the runs model holds it:
+ * `null` for `none`. Read off `style`, the element's computed cascade, so
+ * `fill-opacity` and a color's own alpha come with it.
+ */
+export function coreTextFill(style: StyleContext, gradients: GradientTable, onWarn: (msg: string) => void): Fill | null {
+  const paint = corePaint(readPaint(style, 'fill', '#000000', gradients, onWarn));
+  return paint ? { paint } : null;
 }
