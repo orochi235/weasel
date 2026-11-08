@@ -52,4 +52,20 @@ describe('createInsert', () => {
     expect(f.width).toBeCloseTo(Math.max(...xs) - Math.min(...xs), 9);
     expect(f.depth).toBeCloseTo(Math.max(...ys) - Math.min(...ys), 9);
   });
+
+  it('declines a rectangle reaching over the horizon, with its ends or without', () => {
+    const shallow: Viewport3d = {
+      camera: createCamera({ distance: 12, pitch: 0.05, target: { x: 0, y: 0.5, z: 0 } }),
+      width: 800,
+      height: 600,
+    };
+    const minted: Footprint[] = [];
+    const insert = createInsert({ viewport: () => shallow, mint: (f) => (minted.push(f), 'n' as NodeId) });
+    // The top two corners leave above the horizon; the bottom two reach the ground.
+    const across = { x: 300, y: 0, width: 200, height: 599 };
+    const ends = { start: { x: 300, y: 0 }, end: { x: 500, y: 599 } };
+    expect(insert.commit(across, { kind: 'rect' } as never, ends)).toBeNull();
+    expect(insert.commit(across, { kind: 'rect' } as never)).toBeNull();
+    expect(minted).toEqual([]);
+  });
 });
