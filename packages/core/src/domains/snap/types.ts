@@ -175,10 +175,9 @@ export type SnapMark<P = Point> =
 
 /** `<SceneCanvas snap>`. */
 export interface SceneCanvasSnap {
-  /** Sources ahead of the presets' `snapSources` and any `useSnapSource`.
-   *  One source per id is asked: the last listed, in the order prop,
-   *  presets, `useSnapSource` in mount order. A canvas default (`'rotation'`,
-   *  `'path-snap'`) loses to any of them. */
+  /** Sources ahead of the presets' `snapSources` and any `useSnapSource`, in
+   *  that order. Two of them sharing an id throw when a gesture begins. A
+   *  canvas default (`'rotation'`, `'path-snap'`) gives way to one with its id. */
   sources?: readonly SnapSource[];
   /** Ids of canvas defaults to leave out: `'rotation'` stops a rotate
    *  snapping to quarter turns and other nodes' angles (Shift's step is the

@@ -8,6 +8,7 @@
  */
 import { asPolygonPath, pathInWorld, rectPath, worldEditToStorage, type Path, type PolygonPath } from '@weasel-js/geom';
 import type { GesturePreviewSource } from 'canvas/gestureBounds';
+import { previewDataIn, previewPoseIn } from 'canvas/drawEnvelope';
 import { findNodeShape } from 'canvas/NodeShape';
 import { RECT_FALLBACK_PAINTER } from 'canvas/nodeShapes/rectFallbackPainter';
 import { pathFromPlane } from 'canvas/planeClips';
@@ -121,31 +122,24 @@ export function storeEditablePath(
   return { pose: stored.pose, data: { ...(data as object), path: stored.path } };
 }
 
-/** `node` as the in-flight gestures in `previews` would leave it: a handle
- *  previewing `id` contributes its pose and its data. */
+/** `node` as the in-flight gestures in `previews` would leave it: the first
+ *  pose and the first data a handle previewing `id` gives, as the drawn
+ *  preview takes them. */
 function previewedShape(
   id: string,
   node: EditableShape,
   previews: readonly GesturePreviewSource[],
 ): EditableShape {
-  let pose = node.pose;
-  let data = node.data;
-  let touched = false;
-  const kind = node.kind;
-  for (const source of previews) {
-    const previewIds = source.previewIds?.();
-    if (!previewIds) continue;
-    let owns = false;
-    for (const pid of previewIds) {
-      if (pid === id) { owns = true; break; }
-    }
-    if (!owns) continue;
-    const p = source.previewPose?.(id);
-    if (p != null && !touched) { pose = p; touched = true; }
-    const d = source.previewData?.(id);
-    if (d != null) { data = d; touched = true; }
-  }
-  return { pose, data, kind };
+  const owning = previews.filter((source) => {
+    const ids = source.previewIds?.();
+    if (ids) for (const pid of ids) if (pid === id) return true;
+    return false;
+  });
+  return {
+    pose: previewPoseIn(owning, id) ?? node.pose,
+    data: previewDataIn(owning, id) ?? node.data,
+    kind: node.kind,
+  };
 }
 
 /**

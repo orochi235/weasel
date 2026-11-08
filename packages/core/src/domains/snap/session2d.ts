@@ -49,8 +49,10 @@ export interface Session2dInputs {
 }
 
 /** A snap session over a 2D canvas: ctx points are world points. */
-export function createSession2d(inputs: Session2dInputs): SnapSession {
-  const { req, store } = inputs;
+export function createSession2d(given: Session2dInputs): SnapSession {
+  const { req, store } = given;
+  // Resolved once, so every frame hands sources the same array.
+  const inputs = { ...given, exclude: given.exclude ?? req.exclude ?? req.ids ?? [] };
   const sources = snapSourcesFor(inputs.sources, req.gesture);
   const fixed = collectAtPress(inputs);
   return {
@@ -107,7 +109,7 @@ function collectAtPress(inputs: Session2dInputs): FixedCollect {
     gesture: req.gesture,
     ...(req.ids ? { ids: req.ids } : {}),
     ...(req.parent !== undefined ? { parent: req.parent } : {}),
-    exclude: inputs.exclude ?? req.exclude ?? req.ids ?? [],
+    exclude: inputs.exclude ?? [],
     ...(inputs.drawnBox ? { drawnBox: inputs.drawnBox } : {}),
     ...(req.origin ? { origin: req.origin } : {}),
     ...(req.also ? { also: req.also } : {}),

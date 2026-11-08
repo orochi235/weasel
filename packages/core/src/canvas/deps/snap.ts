@@ -5,9 +5,8 @@
  */
 import { useDepSource } from '@weasel-js/routing/react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import type { DebugSink, WorldPoint } from '@weasel-js/routing';
+import type { DebugSink } from '@weasel-js/routing';
 import type { SnapDep } from 'interactions/actions/snapDep';
-import { ownGeometryAt } from 'domains/paths/pathSnap/pathSnapSource';
 import type { View } from 'core/viewport/view';
 import type { Scene } from 'core/scene/types';
 import type { DrawnBoxes } from 'interactions/actions/drawnBoxes';
@@ -15,7 +14,7 @@ import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { OriginProjection } from 'interactions/gestures/shared/originProjection';
 import type { SnapOutcomeStore } from 'domains/snap/outcomeStore';
 import type { SnapSourceRegistry } from 'domains/snap/registry';
-import { assertSnapSourceIds, snapSourcesFor } from 'domains/snap/gather';
+import { assertSnapSourceIds } from 'domains/snap/gather';
 import { sceneSession2d } from 'domains/snap/sceneSession2d';
 import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import type { SnapReadoutDep } from 'domains/snap/readoutDep';
@@ -77,14 +76,12 @@ export function useSnapDepSource(
   useDepSource('snap', (): SnapDep => ({
     begin: (req) => {
       const s = sessionRef.current;
-      const view = viewRef.current;
       const omit = new Set(req.omit);
       const sources = [
         ...withDefaults([...s.sources, ...(s.registry?.list() ?? [])], s.omit).filter((src) => !omit.has(src.id)),
         ...(req.sources ?? []),
       ];
       assertSnapSourceIds(sources);
-      const wantsGeometry = snapSourcesFor(sources, req.gesture).some((src) => src.roles.includes('geometry'));
       const debug = s.debug?.() ?? undefined;
       const reachPx = s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX;
       return sceneSession2d({
@@ -92,7 +89,6 @@ export function useSnapDepSource(
         scene: s.scene,
         boxes: s.boxes(),
         sources,
-        ...(wantsGeometry ? { geometryAt: (press: WorldPoint, ids: readonly string[]) => ownGeometryAt(s.scene, press, ids, view?.scale ?? { x: 1, y: 1 }, reachPx) } : {}),
         view: () => viewRef.current,
         reachPx,
         ...(s.poseDescriptor ? { poseDescriptor: s.poseDescriptor } : {}),

@@ -43,6 +43,14 @@ describe('createSnapSession2d', () => {
     expect(seen[0].drawnBox?.(a)).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
+  it('throws when two sources share an id, as a canvas does', () => {
+    const { scene } = fixture();
+    const twin = (): SnapSource => ({ id: 'twin', roles: ['pointer'], collect: () => [] });
+    expect(() => createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, sources: [twin(), twin()], gesture: 'point', press: { x: 0, y: 0 },
+    })).toThrow(/twin/);
+  });
+
   it('carries no subject box for a point gesture', () => {
     const { scene: sc } = fixture();
     const seen: SnapCollect[] = [];
@@ -70,6 +78,19 @@ describe('createSnapSession2d', () => {
     expect(back.x).toBeCloseTo(3, 9);
     expect(back.y).toBeCloseTo(7, 9);
     expect(seen[0].frameOf?.('nowhere')).toBeUndefined();
+  });
+
+  it('puts a move\'s geometry probe on the subject\'s own outline nearest the press, as a canvas does', () => {
+    const { scene, b } = fixture();
+    const seen: SnapCollect[] = [];
+    createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, gesture: 'move', press: { x: 205, y: 50 }, ids: [b],
+      sources: [{ id: 'outline', roles: ['geometry'], collect(q) { seen.push(q); return []; } }],
+    }).at({ x: 205, y: 50 }, { suspend: false, constrain: false });
+    const [probe] = seen[0].probes;
+    expect(probe.id).toBe('geometry');
+    expect(probe.at.x).toBeCloseTo(200, 9);
+    expect(probe.at.y).toBeCloseTo(50, 9);
   });
 
   it('offers a node\'s anchors, in world, only to a source listing the anchor role', () => {
