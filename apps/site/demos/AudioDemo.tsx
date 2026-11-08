@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   asNodeId,
+  effectivePose,
   PATH_L,
   PATH_M,
   SceneCanvas,
@@ -153,8 +154,10 @@ export function AudioDemo() {
     setPatternStep(step.current);
   }), [animator, kit]);
 
+  // A drag shows through pose overrides, which bump no scene version: follow them too.
+  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
   const node = scene.get(asNodeId('source'));
-  const pose = (node?.pose ?? SOURCE[0]) as Dot;
+  const pose = (node ? effectivePose(scene, node) : SOURCE[0]) as Dot;
   const center = { x: pose.x + pose.width / 2, y: pose.y + pose.height / 2 };
   const spatial = spatialize(center, LISTENER, SPATIAL);
 
