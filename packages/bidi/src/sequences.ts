@@ -9,9 +9,8 @@
  * downstream into "nearly right".
  */
 
-import type { BidiClass } from './types';
-import type { ExplicitResult } from './explicit';
-import { matchingPDI } from './paragraph';
+import { keptIndices, type ExplicitResult } from './explicit';
+import { isIsolateInitiator, matchingPDI } from './paragraph';
 
 /** Direction a boundary is treated as having, per X10. */
 export type Boundary = 'L' | 'R';
@@ -24,10 +23,6 @@ export interface IsolatingRunSequence {
   eos: Boundary;
 }
 
-function isIsolateInitiator(c: BidiClass): boolean {
-  return c === 'LRI' || c === 'RLI' || c === 'FSI';
-}
-
 /** Higher of two levels decides the boundary: odd reads right-to-left. */
 function boundaryOf(a: number, b: number): Boundary {
   return Math.max(a, b) % 2 === 1 ? 'R' : 'L';
@@ -37,8 +32,7 @@ export function buildSequences(r: ExplicitResult): IsolatingRunSequence[] {
   const { classes, levels, removed, paragraphLevel } = r;
   const n = classes.length;
 
-  const kept: number[] = [];
-  for (let i = 0; i < n; i++) if (!removed[i]) kept.push(i);
+  const kept = keptIndices(r);
   if (kept.length === 0) return [];
 
   // Match initiators to their PDIs once, over the original text — the pairing

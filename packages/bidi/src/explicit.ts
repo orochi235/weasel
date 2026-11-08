@@ -44,11 +44,6 @@ function nextEven(level: number): number {
   return level + 1 + ((level + 1) % 2 === 0 ? 0 : 1);
 }
 
-function isRemovedByX9(c: BidiClass): boolean {
-  return c === 'RLE' || c === 'LRE' || c === 'RLO' || c === 'LRO'
-    || c === 'PDF' || c === 'BN';
-}
-
 export function resolveExplicit(
   input: readonly BidiClass[],
   paragraphLevel: 0 | 1,
@@ -170,4 +165,3 @@ export function keptIndices(r: ExplicitResult): number[] {
   return out;
 }
 
-export { isRemovedByX9 };
