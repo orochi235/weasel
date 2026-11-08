@@ -176,7 +176,7 @@ export function createMarkdownRenderer(
         && open.line === line
         && open.x1 === rx
         && open.fill === fill
-        && open.size === run.font.fontSize
+        && open.size === run.lineSize
         && open.face === run.face
         && open.baselineY === baselineY
         && DECORATION_KINDS.every((k) => open.flags[k] === flags[k])
@@ -184,7 +184,8 @@ export function createMarkdownRenderer(
         open.x1 = rx + run.width;
       } else {
         flush();
-        span = { flags, fill, size: run.font.fontSize, face: run.face, baselineY, line, x0: rx, x1: rx + run.width };
+        // The run's size, not the piece's: a small-caps word is one rule.
+        span = { flags, fill, size: run.lineSize, face: run.face, baselineY, line, x0: rx, x1: rx + run.width };
       }
     });
     flush();

@@ -68,6 +68,14 @@ describe('runsToDom', () => {
     expect(domToRuns(parent)[0].fill).toEqual({ paint: { kind: 'solid', color: 'rgb(0, 128, 0)' } });
   });
 
+  it('keeps a solid fill\'s opacity through the overlay and back, still drawing its color', () => {
+    const fill = { paint: { kind: 'solid' as const, color: '#ff0000', opacity: 0.5 } };
+    runsToDom([{ text: 'a', fill }, { text: 'b' }], parent);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    expect(span.style.color).toBe('rgb(255, 0, 0)');
+    expect(domToRuns(parent)).toEqual([{ text: 'a', fill }, { text: 'b' }]);
+  });
+
   it('carries a run\'s stroke and turn through the overlay and back, and through text typed into it', () => {
     const stroke = { paint: { kind: 'solid' as const, color: '#00f' }, width: { px: 2 }, dash: [3, 1] };
     runsToDom([{ text: 'ab', stroke, rotate: 30 }, { text: 'c', rotate: 0 }, { text: 'd' }], parent);
@@ -720,6 +728,17 @@ describe('domRuns — small caps', () => {
   it("shrinks only what the run's transform leaves lowercase", () => {
     runsToDom([{ text: 'ab', fontVariantCaps: 'small-caps', textTransform: 'uppercase' }], parent);
     expect(pieces(parent.querySelector('span[data-run]')!)).toEqual([['ab', false]]);
+  });
+
+  it('capitalizes a word split across runs once, as the canvas does, before splitting the pieces', () => {
+    const base = { ...DEFAULT_TEXT_STYLE, fontVariantCaps: 'small-caps' as const, textTransform: 'capitalize' as const };
+    runsToDom([{ text: 'He' }, { text: 'llo' }], parent, base);
+    const [, second] = parent.querySelectorAll('span[data-run]');
+    expect(pieces(second)).toEqual([['llo', true]]);
+    // The node's own style, as `applyOverlayStyle` dresses the overlay in it.
+    parent.style.fontVariant = 'small-caps';
+    parent.style.textTransform = 'capitalize';
+    expect(normalizeSmallCaps(parent)).toBe(false);
   });
 
   it('reads CSS small caps on pasted markup as the run variant', () => {

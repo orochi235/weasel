@@ -119,11 +119,12 @@ export type OverlayRunBase = Pick<
 export const SMALL_CAPS_SCALE_PROPERTY = '--weasel-small-caps';
 
 /** A run's source text cut where small caps changes size, per `smallCapsText`
- *  over the text as `transform` draws it. */
+ *  over the text as `transform` draws it. `before` is the overlay's text ahead
+ *  of the run, which decides whether `capitalize` finds a word starting at it. */
 function smallCapsPieces(
-  text: string, transform: TextTransform, lang: string | undefined,
+  text: string, transform: TextTransform, lang: string | undefined, before: string,
 ): Array<{ text: string; small: boolean }> {
-  const [shown] = transformRunTexts([text], [transform], [lang]);
+  const [, shown] = transformRunTexts([before, text], ['none', transform], [lang, lang]);
   const caps = smallCapsText(shown.text, shown.srcMap, lang);
   const small = new Array<boolean>(text.length).fill(false);
   caps.small?.forEach((s, i) => {
@@ -141,9 +142,11 @@ function smallCapsPieces(
 }
 
 /** Replace `span`'s children with `text`, its small-caps letters in pieces. */
-function writeSmallCaps(span: HTMLElement, text: string, transform: TextTransform, lang: string | undefined): void {
+function writeSmallCaps(
+  span: HTMLElement, text: string, transform: TextTransform, lang: string | undefined, before: string,
+): void {
   span.replaceChildren();
-  for (const p of smallCapsPieces(text, transform, lang)) {
+  for (const p of smallCapsPieces(text, transform, lang, before)) {
     if (!p.small) { appendOverlayText(span, p.text); continue; }
     const piece = document.createElement('span');
     piece.setAttribute('data-small-caps', '');
@@ -164,6 +167,7 @@ export function runsToDom(
   base: OverlayRunBase = DEFAULT_TEXT_STYLE,
 ): void {
   parent.replaceChildren();
+  let before = '';
   for (const run of runs) {
     const span = document.createElement('span');
     span.setAttribute('data-run', '');
@@ -171,10 +175,11 @@ export function runsToDom(
     if ((run.fontVariantCaps ?? base.fontVariantCaps) === 'small-caps') {
       const scale = smallCapsScaleFor(face.fontFamily, face.fontWeight, face.fontStyle);
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
-      writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang);
+      writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang, before);
     } else {
       appendOverlayText(span, run.text);
     }
+    before += run.text;
     // CSS as well as the pieces: it is what pasted markup says, and it gives a
     // letter typed outside a piece a small cap until the next normalize.
     if (run.fontVariantCaps != null) span.style.fontVariant = run.fontVariantCaps;
@@ -192,7 +197,10 @@ export function runsToDom(
     }
     const color = solidColor(run.fill?.paint);
     if (color != null) span.style.color = color;
-    else if (run.fill !== undefined) span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
+    // CSS color says a solid paint's color but not its opacity.
+    if (run.fill !== undefined && (color == null || run.fill?.paint?.opacity !== undefined)) {
+      span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
+    }
     // Black, as an unfilled node edits in: no CSS color leaves it legible.
     if (run.fill === null) span.style.color = '#000';
     if (run.stroke !== undefined) span.setAttribute(STROKE_ATTR, JSON.stringify(run.stroke));
@@ -246,8 +254,8 @@ function sourceText(el: Element): string {
 }
 
 /** Whether `span`'s children are the pieces `writeSmallCaps` would write. */
-function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string | undefined): boolean {
-  const want = smallCapsPieces(sourceText(span), transform, lang);
+function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string | undefined, before: string): boolean {
+  const want = smallCapsPieces(sourceText(span), transform, lang, before);
   const have: Array<{ text: string; small: boolean }> = [];
   for (const n of span.childNodes) {
     let small: boolean;
@@ -272,6 +280,7 @@ function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string |
  */
 export function normalizeSmallCaps(parent: HTMLElement): boolean {
   let changed = false;
+  let before = '';
   const visit = (
     el: HTMLElement, variant: FontVariantCaps, transform: TextTransform, inherited: string | undefined,
   ): void => {
@@ -280,14 +289,15 @@ export function normalizeSmallCaps(parent: HTMLElement): boolean {
     const t = TRANSFORMS.has(tt) ? (tt as TextTransform) : transform;
     const lang = el.hasAttribute('lang') ? el.lang || undefined : inherited;
     if (el.hasAttribute('data-run')) {
+      const text = sourceText(el);
       if (v === 'small-caps') {
-        if (!piecesMatch(el, t, lang)) { writeSmallCaps(el, sourceText(el), t, lang); changed = true; }
+        if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before); changed = true; }
       } else if (el.querySelector('[data-small-caps]')) {
-        const text = sourceText(el);
         el.replaceChildren();
         appendOverlayText(el, text);
         changed = true;
       }
+      before += text;
       return;
     }
     for (const child of el.children) if (child instanceof HTMLElement) visit(child, v, t, lang);

@@ -376,6 +376,13 @@ describe('createMarkdownRenderer decorations', () => {
     expect(rects[1].h).toBeCloseTo(0.05 * size, 6);
   });
 
+  it('underlines a small-caps word as one rule at the run\'s size, as the GL tier does', () => {
+    const { ctx, rects } = makeRecordingCtx();
+    const r = createMarkdownRenderer(ctx, [{ text: 'Hello', fontVariantCaps: 'small-caps', underline: true }], 20);
+    r.renderer(ctx, '', 0, 100);
+    expect(rects).toEqual([{ x: 0, y: 102, w: 50, h: 1, fillStyle: '#FFFFFF' }]);
+  });
+
   it('finds the baseline under textBaseline top', () => {
     const { ctx, rects } = makeRecordingCtx({ textBaseline: 'top' });
     const r = createMarkdownRenderer(ctx, [{ text: 'ab', underline: true }], 20);

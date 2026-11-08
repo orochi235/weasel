@@ -43,6 +43,10 @@ export interface PositionedRun extends StyledRun {
    *  `script` already folded in, resolved once here so layout and paint
    *  cannot disagree about it. */
   font: MarkdownFont;
+  /** The size of the run it was cut from, which holds the line and sizes its
+   *  decoration rules. Differs from `font.fontSize` only on a small-caps
+   *  piece drawn at the small size. */
+  lineSize: number;
   /** Its letter spacing in px: added after each grapheme cluster. */
   tracking: number;
   /** The face that placed the run's script and places its rules. */
@@ -196,7 +200,8 @@ export function layoutMarkdown(
       const tab = run.text[p.start] === '\t' ? stopOf(p.run) : null;
       const width = tab ? tabAdvance(x, tab.stop, tab.min) : pieceWidth(p);
       positioned.push({
-        ...run, text: run.text.slice(p.start, p.end), x, width, y, font, tracking, ...(face ? { face } : {}),
+        ...run, text: run.text.slice(p.start, p.end), x, width, y, font, lineSize: runSize, tracking,
+        ...(face ? { face } : {}),
       });
       x += width;
       maxSize = Math.max(maxSize, runSize);
