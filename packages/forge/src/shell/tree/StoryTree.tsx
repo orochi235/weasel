@@ -106,7 +106,8 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
         : componentNodes(filterComponents(view === 'gallery' ? galleries : components, query)),
     [view, components, galleries, tree, query],
   );
-  const routable = useMemo(() => [...kept, ...indexEntries(kept)], [kept]);
+  // The package filter hides rows, not stories: a route to a hidden package's story still names one.
+  const routable = useMemo(() => [...index, ...indexEntries(index)], [index]);
   const routed = routable.find((entry) => entry.id === route);
   const routeAncestors = useMemo(() => ancestorsOf(routed), [routed]);
   const filtering = query.trim() !== '';

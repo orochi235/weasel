@@ -495,6 +495,15 @@ describe('StoryTree', () => {
     await mount();
     expect(document.querySelector('.fg-route-miss')?.textContent).toContain('no-such--story');
   });
+
+  it('does not call a story missing when only the package filter hides it', async () => {
+    history.replaceState(null, '', `/#/${primary.id}`);
+    await mount();
+    const packages = await screen.findByRole('group', { name: 'Packages' });
+    fireEvent.click(within(packages).getByRole('checkbox'));
+    await waitFor(() => expect(screen.queryByRole('treeitem', { name: named('Kit') })).toBeNull());
+    expect(document.querySelector('.fg-route-miss')).toBeNull();
+  });
 });
 
 describe('StoryTree galleries', () => {
