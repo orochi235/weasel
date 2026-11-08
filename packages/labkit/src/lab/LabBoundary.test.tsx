@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import type { RecordCache } from '@weasel-js/storage';
 import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
-import { type Context, useContext } from 'react';
+import { type Context, use, useContext } from 'react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraContext } from '../canvas/CameraInput';
@@ -134,7 +134,7 @@ describe('LabBoundary', () => {
     const seen: string[] = [];
     function Read() {
       for (const [name, ctx] of Object.entries(published)) {
-        if (useContext(ctx) === sentinel) seen.push(name);
+        if (use(ctx) === sentinel) seen.push(name);
       }
       return null;
     }
