@@ -77,14 +77,16 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     }
     const { engine } = audio.current;
     void engine.unlock().then(() => {
+      const a = audio.current;
+      if (a?.engine !== engine) return;
       setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
-      if (!audio.current!.bed) {
+      if (!a.bed) {
         engine.bus(BED_BUS).mute(!musicOn);
         const bed = createPatternPlayer(engine, {
           tempo: BED_TEMPO, events: bedEvents(), length: BED_STEPS, detune: bedDetune,
         });
         bed.start();
-        audio.current!.bed = bed;
+        a.bed = bed;
       }
     });
   };
@@ -170,7 +172,9 @@ export function usePlatformerAudio(animator: Animator, onBonk: () => void): Plat
     const a = audio.current;
     if (!a) return;
     a.engine.bus(BED_BUS).setGain(MUSIC_GAIN * 0.3, 60);
-    window.setTimeout(() => a.engine.bus(BED_BUS).setGain(MUSIC_GAIN, 400), 260);
+    window.setTimeout(() => {
+      if (audio.current === a) a.engine.bus(BED_BUS).setGain(MUSIC_GAIN, 400);
+    }, 260);
   };
 
   const hooks = useLatest<WorldHooks>({
