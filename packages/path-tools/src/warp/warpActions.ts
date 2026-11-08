@@ -164,8 +164,8 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             const done = current;
             current = new Map();
             live?.set(null);
-            if (reason === 'cancel') session.cancel();
-            else session.commit(() => { if (done.size > 0) commitTargets(deps, done, label); }, label);
+            if (reason === 'cancel' || done.size === 0) session.cancel();
+            else session.commit(() => commitTargets(deps, done, label), label);
           },
           params: () => settingsOfWarp(targets[0].held) as Record<string, unknown>,
           replay(params: Record<string, unknown>): void {
@@ -173,7 +173,8 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             const again = to && grabControl(deps, kind, label, scratch, settings);
             if (!to || !again) return;
             const done = shapesWith(again.targets, scratch.index, to, params as WarpSettings);
-            again.session.commit(() => { if (done.size > 0) commitTargets(deps, done, label); }, label);
+            if (done.size === 0) again.session.cancel();
+            else again.session.commit(() => commitTargets(deps, done, label), label);
           },
           previewIds: () => (current.size > 0 ? [...current.keys()] : null),
           previewPose: (id: string) => current.get(id)?.shape.pose ?? null,
@@ -220,7 +221,8 @@ export function createAddPinAction(): Action {
           const shape = storeWarp(target.node.node, held, target.toWorld);
           if (shape) next.set(target.node.id, { target, shape });
         }
-        session.commit(() => commitTargets(deps, next, 'Add Pin'), 'Add Pin');
+        if (next.size === 0) session.cancel();
+        else session.commit(() => commitTargets(deps, next, 'Add Pin'), 'Add Pin');
       },
     } satisfies ImmediateInvoker,
     enabled: (deps) => {

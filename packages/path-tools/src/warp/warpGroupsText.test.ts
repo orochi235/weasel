@@ -32,7 +32,7 @@ function dragFresh(deps: never, from: { x: number; y: number }, to: { x: number;
   });
   const ctx = (at: { x: number; y: number }) => ({ deps, world: at, drag: drag(at) }) as unknown as InvocationCtx;
   const handle = (createWarpDragAction('distort').invoker as OngoingInvoker).start(ctx(from), { params: {} });
-  handle.onMove?.(ctx(to));
+  if (to !== from) handle.onMove?.(ctx(to));
   handle.onEnd?.(ctx(to), reason);
 }
 
@@ -99,6 +99,15 @@ describe('a warp over selected text', () => {
     const { scene, deps } = textScene();
     const before = JSON.stringify(scene.toJSON());
     dragFresh(deps, { x: 200, y: 120 }, { x: 240, y: 160 }, 'cancel');
+    expect(JSON.stringify(scene.toJSON())).toBe(before);
+    expect(scene.history.undoDepth()).toBe(0);
+  });
+
+  it('leaves the text alone when the drag ends before any move', () => {
+    const { scene, deps } = textScene();
+    const before = JSON.stringify(scene.toJSON());
+    const at = { x: 200, y: 120 };
+    dragFresh(deps, at, at);
     expect(JSON.stringify(scene.toJSON())).toBe(before);
     expect(scene.history.undoDepth()).toBe(0);
   });

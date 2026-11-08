@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { pathFromD, type PolygonPath } from '@weasel-js/geom';
+import { pathFromD, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
+import { makeEditAnchorsDepForTests as makeEditAnchorsDep } from '@weasel-js/core/test-seams';
 import { extendToMeetAction } from './extendToMeet';
 
 interface StubNode { id: NodeId; kind: 'mark'; layer: string; pose: unknown; data: unknown; parent: NodeId | null }
@@ -23,7 +24,25 @@ function setup(paths: Record<string, string>, selected: string[] = [], extra: Re
   const batches: Array<{ ops: Op[]; label: string }> = [];
   const applyOps = vi.fn((ops: Op[], label: string) => { batches.push({ ops, label }); });
   const deps = { scene, selection, applyOps, ...extra } as never;
-  return { deps, batches, selection };
+  return { deps, batches, selection, nodes };
+}
+
+/** `setup` in path edit on `editing`, with `selected` anchors selected; edits land on the node's pose. */
+function inPathEdit(paths: Record<string, string>, editing: string, selected: number[]) {
+  const edits: Array<{ path: PolygonPath; label: string }> = [];
+  const holder: { nodes?: Map<string, StubNode> } = {};
+  const editAnchors = makeEditAnchorsDep({
+    editingId: editing,
+    getEditablePath: (id) => holder.nodes!.get(id)?.pose as PolygonPath,
+    applyEdit: (id, path, label) => {
+      holder.nodes!.get(id)!.pose = path;
+      edits.push({ path: path as PolygonPath, label });
+    },
+  });
+  editAnchors.setSelectedAnchors(selected);
+  const t = setup(paths, [editing], { editAnchors });
+  holder.nodes = t.nodes;
+  return { ...t, editAnchors, edits };
 }
 
 const poseOf = (op: Op) => Array.from(((op.args as { to: PolygonPath }).to).coords);
@@ -40,10 +59,21 @@ describe('extendToMeetAction', () => {
   });
 
   it('in path edit, extends only the selected end', () => {
-    const editAnchors = { editingId: 'seg', selectedAnchors: new Set([1]) };
-    const { deps, batches } = setup({ seg: 'M13 0 H17', w1: 'M10 -10 V10', w2: 'M20 -10 V10' }, ['seg'], { editAnchors });
+    const { deps, edits } = inPathEdit({ seg: 'M13 0 H17', w1: 'M10 -10 V10', w2: 'M20 -10 V10' }, 'seg', [1]);
     run(extendToMeetAction, deps);
-    expect(poseOf(batches[0].ops[0])).toEqual([13, 0, 20, 0]);
+    expect(edits.map((e) => e.label)).toEqual(['Extend to next path']);
+    expect(Array.from(edits[0].path.coords)).toEqual([13, 0, 20, 0]);
+  });
+
+  it('in path edit, keeps the selection on the end it carried on, past the anchors it added', () => {
+    const paths = { arc: 'M0 0 A50 50 0 0 1 25 6.69872981', wall: 'M-200 120 H400' };
+    const before = pathToAnchors(pathFromD(paths.arc)).anchors[0].length;
+    const { deps, edits, editAnchors } = inPathEdit(paths, 'arc', [before - 1]);
+    run(extendToMeetAction, deps);
+    expect(edits).toHaveLength(1);
+    const after = pathToAnchors(edits[0].path).anchors[0].length;
+    expect(after).toBeGreaterThan(before);
+    expect([...editAnchors.selectedAnchors]).toEqual([after - 1]);
   });
 
   it('given a click, extends only the end of the stroke nearest it', () => {

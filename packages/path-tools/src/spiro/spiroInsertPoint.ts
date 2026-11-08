@@ -65,6 +65,7 @@ function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
   let current: PolygonPath | null = null;
   const preview = pathEditPreview(dep, id, () => current && { path: current });
   if (!preview) return {};
+  const before = [...dep.selectedAnchors];
   dep.setSelectedAnchors([flat]);
   return {
     kind: 'spiro-insert-point',
@@ -74,7 +75,7 @@ function spiroInsertDrag(insert: SpiroInsertAt): OngoingHandle {
     onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
       current = null;
       if (reason === 'cancel') {
-        dep.setSelectedAnchors([]);
+        dep.setSelectedAnchors(before);
         return;
       }
       dep.applyEdit(id, control(endCtx.world.x, endCtx.world.y), 'Add spiro point');
