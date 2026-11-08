@@ -192,5 +192,5 @@ export function hexToColorLiteral(hex: string): ColorLiteral | null {
   if (!bytes) return null;
   const [r, g, b, a] = bytes.map((v) => v / 255);
   const coords = [r, g, b];
-  return hex.length === 9 ? { space: 'srgb', coords, alpha: a } : { space: 'srgb', coords };
+  return a < 1 ? { space: 'srgb', coords, alpha: a } : { space: 'srgb', coords };
 }
