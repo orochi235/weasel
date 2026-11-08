@@ -286,6 +286,20 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     expect(h.textCommits).toEqual([{ id: 'a', text: 'one\n' }]);
   });
 
+  for (const [text, caret, want] of [['ab', 2, 'abx\n'], ['ab\n', 3, 'ab\nx\n'], ['ab', 1, 'ax\nb']] as const) {
+    it(`keeps the line break a paste of "x\\n" at ${caret} into ${JSON.stringify(text)} brings`, () => {
+      const h = makeHarness({ a: text });
+      const { result } = renderHook(() => useTextEdit(h.opts));
+      act(() => result.current.startEdit('a', { caret }));
+      const overlay = getOverlay(h.container)!;
+      const ev = new InputEvent('beforeinput', { inputType: 'insertFromPaste', cancelable: true, bubbles: true });
+      Object.defineProperty(ev, 'dataTransfer', { value: { getData: (t: string) => (t === 'text/plain' ? 'x\n' : '') } });
+      act(() => { overlay.dispatchEvent(ev); });
+      act(() => result.current.commit());
+      expect(h.commits).toEqual([{ id: 'a', text: want }]);
+    });
+  }
+
   it('keeps a newline the user actually typed', () => {
     const h = makeRichHarness({ a: { text: 'a\nb', runs: [{ text: 'a\nb' }] } });
     const { result } = renderHook(() => useTextEdit(h.opts));

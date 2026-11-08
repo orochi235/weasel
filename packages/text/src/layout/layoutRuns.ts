@@ -13,8 +13,9 @@
  * Word wrap is applied when `maxWidth` is finite, at UAX #14 break
  * opportunities. Forced line breaks are emitted at UAX #14's hard breaks, none
  * of which lays out a cell. Every run on a line shares one baseline, sunk to
- * clear whichever run reaches highest above it; line height is
- * `max(fontSize * lineHeight)` across the line. A face that states its ascent
+ * clear whichever run reaches highest above it, and the line reaches down to
+ * clear whichever reaches lowest below it: `fontSize * lineHeight` tall when
+ * the line holds one face. A face that states its ascent
  * and descent sits in its line the way CSS sets it — half the leading above the
  * ascent, negative when the face is taller than the line, so its glyphs overflow
  * the box rather than growing it. A run a relative size shrank

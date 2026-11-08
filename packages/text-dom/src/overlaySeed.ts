@@ -20,6 +20,10 @@ const endsInBreak = (text: string): boolean =>
 export interface CaretHolder {
   /** Call after anything that edits the overlay's text. */
   edited(overlay: HTMLElement): void;
+  /** Call after the overlay's runs were rewritten with the caret at `caret`:
+   *  one left after a trailing break gets a holder, which no browser adds to
+   *  text it did not type. */
+  wrote(overlay: HTMLElement, caret: number): void;
   /** `runs` as read from the overlay, without the holder. */
   trim(runs: StyledRun[]): StyledRun[];
 }
@@ -46,6 +50,12 @@ export function seedOverlay(
   return {
     edited(el) {
       if (ownBreak && !endsInBreak(runsToPlainText(domToRuns(el)))) ownBreak = false;
+    },
+    wrote(el, caret) {
+      const shown = runsToPlainText(domToRuns(el));
+      if (caret !== shown.length || !endsInBreak(shown)) return;
+      ownBreak = false;
+      appendOverlayText(el.lastElementChild ?? el, '\n');
     },
     trim: (read) => (ownBreak ? read : trimCaretHolder(read)),
   };

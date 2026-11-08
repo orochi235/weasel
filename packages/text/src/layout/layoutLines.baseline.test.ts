@@ -268,6 +268,25 @@ describe('layoutRuns — baseline from the face ascent and descent', () => {
     expect(new Set(out.groups.flatMap((g) => g.quads).map((q) => q.baselineY)).size).toBe(1);
   });
 
+  it('grows a line of two faces to hold the one reaching highest and the one reaching lowest', async () => {
+    // CSS's line box runs from the highest inline box's top to the lowest
+    // one's bottom, each a half-leading around its own ascent and descent.
+    await registerAtlas('high', { ascent: 0.9, descent: 0.1 });
+    await registerAtlas('low', { ascent: 0.7, descent: 0.3 });
+    const opts = { ...OPTS, lineHeight: 1 };
+    const out = layoutAndPaint([
+      { ...RUN_PLAIN('A'), fontFamily: 'high' },
+      { ...RUN_PLAIN('B\nC'), fontFamily: 'low' },
+    ], opts);
+    const above = 32 * cssBaseline(1, 0.9, 0.1);
+    const below = 32 - 32 * cssBaseline(1, 0.7, 0.3);
+    expect(out.lines[0].baselineY).toBeCloseTo(above, 6);
+    expect(out.lines[0].y1 - out.lines[0].y0).toBeCloseTo(above + below, 6);
+    expect(out.lines[1].y0).toBeCloseTo(above + below, 6);
+    // A line of one face keeps the line box its line height gives it.
+    expect(out.lines[1].y1 - out.lines[1].y0).toBeCloseTo(32, 6);
+  });
+
   it('puts an outline face on the same baseline as an atlas stating the same metrics', async () => {
     await registerAtlas('stated', { ascent: 0.9, descent: 0.2 });
     registerFontOutlines('outlined', {}, new ArrayBuffer(4), {

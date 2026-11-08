@@ -57,6 +57,12 @@ export interface TextEditScreenPose {
    */
   zoom?: number;
   /**
+   * The view scale a run's `{ px }` `fontSize` or `letterSpacing` resolves
+   * against, as the canvas draws the text: `1` where it lays a `{ px }` size
+   * out as that many world units, as `kit:text` does. Default `zoom`.
+   */
+  pxScale?: number;
+  /**
    * The frame the text is drawn in, when its box is turned or skewed: the
    * linear part `[a, b, c, d]` (`x' = a·x + c·y`, `y' = b·x + d·y`) applied
    * about the box's center. `x`, `y`, `width`, and `height` stay those of

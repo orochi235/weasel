@@ -139,3 +139,20 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     expect(h.runCommits[0].runs).toEqual([{ text: 'ab' }, { text: 'c', fontWeight: 400 }]);
   });
 });
+
+describe('useTextEdit — pending style through an input method', () => {
+  it('styles what a composition commits, though its caret moved while composing', async () => {
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await placeCaretAndSettle(overlay, 2);
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
+    act(() => { overlay.dispatchEvent(new CompositionEvent('compositionstart', { data: '' })); });
+    (overlay.querySelector('[data-run]')!.firstChild as Text).appendData('かな');
+    await placeCaretAndSettle(overlay, 4);
+    act(() => { overlay.dispatchEvent(new CompositionEvent('compositionend', { data: 'かな' })); });
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'ab' }, { text: 'かな', bold: true }]);
+  });
+});

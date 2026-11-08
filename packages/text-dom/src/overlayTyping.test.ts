@@ -68,6 +68,28 @@ describe('typingHandlers', () => {
     expect(host.onEdited).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the styling of the run an armed style types into', () => {
+    const { overlay, onBeforeInput } = mount({ bold: true });
+    runsToDom([{ text: 'ab', italic: true, fontSize: 30 }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 2);
+    onBeforeInput(insertText('X'));
+    expect(domToRuns(overlay)).toEqual([
+      { text: 'ab', italic: true, fontSize: 30 },
+      { text: 'X', italic: true, fontSize: 30, bold: true },
+    ]);
+  });
+
+  it('takes off a flag an armed false names, keeping the rest of the run', () => {
+    const { overlay, onBeforeInput } = mount({ italic: false });
+    runsToDom([{ text: 'ab', italic: true, underline: true }], overlay);
+    caretAt(overlay.firstChild!.firstChild!, 2);
+    onBeforeInput(insertText('X'));
+    expect(domToRuns(overlay)).toEqual([
+      { text: 'ab', italic: true, underline: true },
+      { text: 'X', underline: true },
+    ]);
+  });
+
   // The double-space period and a text replacement arrive as `insertText`
   // over a range that is not the caret.
   it('leaves input that names its own range to the browser, an armed style or not', () => {
@@ -88,6 +110,49 @@ describe('typingHandlers', () => {
     onInput(new InputEvent('input', { inputType: 'insertText', data: 'x' }));
     expect(host.onEdited).toHaveBeenCalledTimes(1);
     overlay.remove();
+  });
+});
+
+/** A composition the browser types into the text node holding the caret, as an IME does. */
+function compose(
+  handlers: ReturnType<typeof mount>, node: Text, offset: number, data: string,
+): void {
+  caretAt(node, offset);
+  handlers.onCompositionStart();
+  node.insertData(offset, data);
+  caretAt(node, offset + data.length);
+  handlers.onInput(new InputEvent('input', { inputType: 'insertCompositionText', data, isComposing: true }));
+  handlers.onCompositionEnd();
+}
+
+describe('typingHandlers: a composition', () => {
+  beforeEach(() => { document.body.innerHTML = ''; });
+
+  it('gives an armed style to the text an input method commits', () => {
+    const h = mount({ bold: true });
+    runsToDom([{ text: 'ab', italic: true }], h.overlay);
+    compose(h, h.overlay.firstChild!.firstChild as Text, 2, 'かな');
+    expect(domToRuns(h.overlay)).toEqual([
+      { text: 'ab', italic: true },
+      { text: 'かな', italic: true, bold: true },
+    ]);
+    expect(h.host.onWritten).toHaveBeenCalledWith(4);
+  });
+
+  it('leaves a composition with nothing armed as the browser typed it', () => {
+    const h = mount();
+    runsToDom([{ text: 'ab', italic: true }], h.overlay);
+    compose(h, h.overlay.firstChild!.firstChild as Text, 1, 'か');
+    expect(domToRuns(h.overlay)).toEqual([{ text: 'aかb', italic: true }]);
+    expect(h.host.onWritten).not.toHaveBeenCalled();
+  });
+
+  it('puts small-caps letters in their pieces once the composition ends', () => {
+    const h = mount();
+    runsToDom([{ text: 'A', fontVariantCaps: 'small-caps' }], h.overlay);
+    const text = h.overlay.firstChild!.firstChild as Text;
+    compose(h, text, 1, 'b');
+    expect(h.overlay.querySelector('[data-small-caps]')?.textContent).toBe('b');
   });
 });
 
