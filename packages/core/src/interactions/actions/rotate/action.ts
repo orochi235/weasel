@@ -39,7 +39,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
       const subject = [...(ctx.deps.selection?.get() ?? [])] as string[];
       const hold = session.scene.overrides.hold();
       const preview = transformPreview(ctx.deps, session.scene, () => frame.previews);
-      let frame: RotateFrame = { delta: 0, previews: new Map() };
+      let frame: RotateFrame = { swept: 0, delta: 0, previews: new Map() };
       let pointer = ctx.world;
       session.lifecycle.start(session.gestureCtx.draggedIds);
       return {
@@ -50,7 +50,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         },
         onMove(moveCtx: InvocationCtx): void {
           pointer = moveCtx.world;
-          frame = nextFrame(session, readers, moveCtx);
+          frame = nextFrame(session, readers, moveCtx, frame.swept);
           hold.set(preview.poses());
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

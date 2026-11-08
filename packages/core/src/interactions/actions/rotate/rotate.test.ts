@@ -178,6 +178,23 @@ describe('rotateAction descriptor', () => {
     expect(scene.batchLog[0].label).toBe('Rotate');
   });
 
+  it('turns continuously as the pointer crosses the left of the pivot', () => {
+    const invoker = getOngoingInvoker(rotateAction);
+    // Center (125, 75); the pointer starts above it and swings left, past
+    // the point where atan2 wraps from -π to π.
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      world: { x: 125, y: 65 },
+      sceneNodes: { a: { pose: { x: 100, y: 50, width: 50, height: 50, rotation: 0 } } },
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    const at = (deg: number) => ({ x: 125 + 10 * Math.cos(deg * Math.PI / 180), y: 75 + 10 * Math.sin(deg * Math.PI / 180) });
+    handle.onMove!({ ...(ctx as InvocationCtx), world: at(-135) });
+    handle.onMove!({ ...(ctx as InvocationCtx), world: at(170) });
+    handle.onEnd!({ ...(ctx as InvocationCtx), world: at(170) }, 'commit');
+    expect((scene.poses.get('a') as { rotation: number }).rotation).toBeCloseTo(-100 * Math.PI / 180);
+  });
+
   it('onEnd("commit") is a no-op when delta is zero', () => {
     const invoker = getOngoingInvoker(rotateAction);
     // Pointer starts directly right — no movement.
