@@ -1,5 +1,5 @@
 /** The contextmenu channel: a right-click. */
-import type { DispatchCore } from '../dispatchCore';
+import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { underPointer } from '../underPointer';
 
@@ -15,7 +15,11 @@ export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boole
   const onContextMenu = (e: MouseEvent) => {
     // Suppress native menu so tools/actions own the right-click UX.
     e.preventDefault();
-    if (takeNativeHold()) return;
+    if (eventTaken(e)) return;
+    if (takeNativeHold()) {
+      takeEvent(e);
+      return;
+    }
     // The keyboard ContextMenu key sends this with no press before it, and
     // the menu's rows resolve through the active scope.
     core.activate(e);
@@ -32,7 +36,7 @@ export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boole
       clientY: e.clientY,
       ...underPointer(target(), e, w),
     };
-    dispatch(ev);
+    if (dispatch(ev) === 'handled') takeEvent(e);
   };
 
   return onContextMenu;

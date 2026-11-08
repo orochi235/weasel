@@ -89,18 +89,43 @@ export interface DispatchCoreSources {
 
 // Every element a dispatcher listens on, counted, so a press finds the innermost surface it landed in.
 const SURFACES = new WeakMap<Element, number>();
+// Those of them whose dispatcher runs pointer gestures.
+const POINTER_SURFACES = new WeakMap<Element, number>();
 // Events a dispatcher has activated for, so a second one on the same surface leaves them.
 const CLAIMED = new WeakSet<Event>();
 
-/** Count `el` as a dispatcher's surface until the returned release runs. */
-export function holdSurface(el: Element): () => void {
-  SURFACES.set(el, (SURFACES.get(el) ?? 0) + 1);
+function counted(map: WeakMap<Element, number>, el: Element): () => void {
+  map.set(el, (map.get(el) ?? 0) + 1);
   return () => {
-    const n = (SURFACES.get(el) ?? 1) - 1;
-    if (n > 0) SURFACES.set(el, n);
-    else SURFACES.delete(el);
+    const n = (map.get(el) ?? 1) - 1;
+    if (n > 0) map.set(el, n);
+    else map.delete(el);
   };
 }
+
+/** Count `el` as a dispatcher's surface until the returned release runs, and as one running pointer gestures with `pointer`. */
+export function holdSurface(el: Element, pointer: boolean): () => void {
+  const release = counted(SURFACES, el);
+  const releasePointer = pointer ? counted(POINTER_SURFACES, el) : null;
+  return () => { release(); releasePointer?.(); };
+}
+
+/** Whether a press on `target` went down in a surface nested inside `surface` that runs pointer gestures of its own. */
+export function pressedNestedIn(surface: Element, target: EventTarget | null): boolean {
+  for (let el = target instanceof Element ? target : null; el !== null && el !== surface; el = el.parentElement) {
+    if (POINTER_SURFACES.has(el)) return true;
+  }
+  return false;
+}
+
+// Events a dispatcher's binding handled, so a surface it bubbles on to leaves them.
+const TAKEN = new WeakSet<Event>();
+
+/** Note that a binding handled `event`. */
+export function takeEvent(event: Event): void { TAKEN.add(event); }
+
+/** Whether a binding on some dispatcher already handled `event`. */
+export function eventTaken(event: Event): boolean { return TAKEN.has(event); }
 
 /** Whether `event` landed in another dispatcher's surface nested inside `surface`. */
 export function landedNestedIn(surface: Element | null, event: Event): boolean {
