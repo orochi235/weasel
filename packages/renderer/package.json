@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/renderer",
   "version": "1.17.3",
-  "description": "A WebGL2 renderer for draw commands: batched path fills and strokes, MSDF and outline text, images and sprites, gradients, patterns, registered shader programs, and full-screen effects. No scene graph, no React.",
+  "description": "A WebGL 2 or WebGPU renderer for draw commands: batched path fills and strokes, MSDF and outline text, images and sprites, gradients, patterns, registered shader programs, and full-screen effects. No scene graph, no React.",
   "weasel": {
     "tier": "base",
     "needs": ["webgl2"]

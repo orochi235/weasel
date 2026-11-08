@@ -95,7 +95,18 @@ function layoutOf(t: WgslType, structs: Map<string, WgslStruct>): Layout {
   }
 }
 
-function parseType(src: string, structs: Map<string, WgslStruct>, consts: Map<string, number>): WgslType {
+/** A WGSL integer literal, `4`, `4u` or `4i`, as a number; `undefined` for anything else. */
+function intLiteral(s: string): number | undefined {
+  return /^\d+[iu]?$/.test(s) ? parseInt(s, 10) : undefined;
+}
+
+/** Structs the module declares that no uniform can hold — a `bool` member, a runtime-sized array — by the
+ *  error laying one out raised. A helper or IO struct may be one; only a uniform naming it is refused. */
+type Unlaid = ReadonlyMap<string, Error>;
+
+function parseType(
+  src: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
+): WgslType {
   const s = src.replace(/\s+/g, '');
   if (SCALARS[s]) return { kind: 'scalar', scalar: SCALARS[s] };
   let m = /^vec([234])([fiu])$/.exec(s);
@@ -108,17 +119,19 @@ function parseType(src: string, structs: Map<string, WgslStruct>, consts: Map<st
   if (m) {
     const parts = splitTop(m[1]);
     if (parts.length !== 2) throw new Error(`WGSL: a uniform array needs a fixed size: ${src}`);
-    const element = parseType(parts[0], structs, consts);
-    const count = /^\d+u?$/.test(parts[1]) ? parseInt(parts[1], 10) : consts.get(parts[1]);
+    const element = parseType(parts[0], structs, consts, unlaid);
+    const count = intLiteral(parts[1]) ?? consts.get(parts[1]);
     if (count === undefined) throw new Error(`WGSL: unknown array size ${parts[1]}`);
     const el = layoutOf(element, structs);
     return { kind: 'array', element, count, stride: roundUp(el.align, el.size) };
   }
   if (structs.has(s)) return { kind: 'struct', name: s };
-  throw new Error(`WGSL: unsupported type ${src}`);
+  throw unlaid.get(s) ?? new Error(`WGSL: unsupported type ${src.trim()}`);
 }
 
-function parseStruct(name: string, body: string, structs: Map<string, WgslStruct>, consts: Map<string, number>): WgslStruct {
+function parseStruct(
+  name: string, body: string, structs: Map<string, WgslStruct>, consts: Map<string, number>, unlaid: Unlaid,
+): WgslStruct {
   const members: WgslMember[] = [];
   let offset = 0;
   let align = 1;
@@ -136,7 +149,7 @@ function parseStruct(name: string, body: string, structs: Map<string, WgslStruct
     const colon = decl.indexOf(':');
     if (colon < 0) continue;
     const memberName = decl.slice(0, colon).trim();
-    const type = parseType(decl.slice(colon + 1), structs, consts);
+    const type = parseType(decl.slice(colon + 1), structs, consts, unlaid);
     const lay = layoutOf(type, structs);
     const memberAlign = alignAttr ?? lay.align;
     const size = sizeAttr ?? lay.size;
@@ -188,13 +201,18 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
   const src = stripComments(source);
   const structs = new Map<string, WgslStruct>();
   const consts = new Map<string, number>();
+  const unlaid = new Map<string, Error>();
   const bindings: WgslBinding[] = [];
-  const token = /\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(\d+)u?\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);/g;
+  const token = /\bconst\s+(\w+)\s*(?::\s*\w+\s*)?=\s*(\d+)[iu]?\s*;|\bstruct\s+(\w+)\s*\{([^}]*)\}|((?:@\w+(?:\([^)]*\))?\s*)+)var(?:<([^>]*)>)?\s+(\w+)\s*:\s*([^;]+);/g;
   for (let m = token.exec(src); m; m = token.exec(src)) {
     if (m[1]) {
       consts.set(m[1], parseInt(m[2], 10));
     } else if (m[3]) {
-      structs.set(m[3], parseStruct(m[3], m[4], structs, consts));
+      try {
+        structs.set(m[3], parseStruct(m[3], m[4], structs, consts, unlaid));
+      } catch (e) {
+        unlaid.set(m[3], e as Error);
+      }
     } else {
       const attrs = m[5];
       const group = /@group\((\d+)\)/.exec(attrs);
@@ -202,6 +220,7 @@ export function reflectWgsl(source: string, target: WgslTarget): WgslReflection 
       if (!group || !binding) continue;
       const space = (m[6] ?? '').split(',')[0].trim();
       const type = m[8].trim();
+      if (space === 'uniform' && unlaid.has(type)) throw unlaid.get(type)!;
       const kind: WgslBindingKind = space === 'uniform' ? 'uniform'
         : space === 'storage' ? 'storage'
         : /^sampler/.test(type) ? 'sampler'
