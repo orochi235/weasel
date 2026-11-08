@@ -192,7 +192,10 @@ export function runsToDom(
     }
     const color = solidColor(run.fill?.paint);
     if (color != null) span.style.color = color;
-    else if (run.fill !== undefined) span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
+    // CSS color says a solid paint's color but not its opacity.
+    if (run.fill !== undefined && (color == null || run.fill?.paint?.opacity !== undefined)) {
+      span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
+    }
     // Black, as an unfilled node edits in: no CSS color leaves it legible.
     if (run.fill === null) span.style.color = '#000';
     if (run.stroke !== undefined) span.setAttribute(STROKE_ATTR, JSON.stringify(run.stroke));

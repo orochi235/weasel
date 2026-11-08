@@ -68,6 +68,14 @@ describe('runsToDom', () => {
     expect(domToRuns(parent)[0].fill).toEqual({ paint: { kind: 'solid', color: 'rgb(0, 128, 0)' } });
   });
 
+  it('keeps a solid fill\'s opacity through the overlay and back, still drawing its color', () => {
+    const fill = { paint: { kind: 'solid' as const, color: '#ff0000', opacity: 0.5 } };
+    runsToDom([{ text: 'a', fill }, { text: 'b' }], parent);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    expect(span.style.color).toBe('rgb(255, 0, 0)');
+    expect(domToRuns(parent)).toEqual([{ text: 'a', fill }, { text: 'b' }]);
+  });
+
   it('carries a run\'s stroke and turn through the overlay and back, and through text typed into it', () => {
     const stroke = { paint: { kind: 'solid' as const, color: '#00f' }, width: { px: 2 }, dash: [3, 1] };
     runsToDom([{ text: 'ab', stroke, rotate: 30 }, { text: 'c', rotate: 0 }, { text: 'd' }], parent);
