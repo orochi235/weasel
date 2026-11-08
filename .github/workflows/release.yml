@@ -1,13 +1,9 @@
 name: Release
 
+# Dispatched by hand after the version commit lands on `main` (docs/releasing.md).
+# There is no push trigger: one ran on every changeset push and queued the
+# release behind runs that only refreshed a version PR (2026-11-08).
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.changeset/*.md'
-      - '.github/workflows/release.yml'
-  # The push trigger is path-filtered, so a fix that touches only a package's
-  # manifest can't retrigger a publish. Manual dispatch covers that case.
   workflow_dispatch:
 
 concurrency:
@@ -15,7 +11,6 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: write
   id-token: write
 
 jobs:

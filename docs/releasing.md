@@ -6,21 +6,20 @@ them all to the same number whether or not they changed.
 
 ## The normal path
 
-1. **Write a changeset with the change.** `npx changeset` — pick the packages,
+1. **Write a changeset with the change.** `npx changeset`: pick the packages,
    pick a bump, write the prose. The prose is the changelog; it is read by
    people deciding whether to upgrade, so describe what changed and why it
    mattered, not which files moved.
-2. **Push to `main`.** The Release workflow opens (or updates) a
-   **"chore: version packages"** PR. That PR is what `changeset version`
-   produces: bumped manifests, consumed changesets, rewritten `CHANGELOG.md`s.
-3. **Review and merge that PR.** Merging it publishes to npm and pushes the
-   `@weasel-js/<pkg>@<version>` tags. Nothing publishes until then.
+2. **Version on `main`.** `npm run version-packages` bumps every manifest,
+   consumes the changesets and rewrites the `CHANGELOG.md`s. Read the changelog
+   diff, commit it as `chore: version packages`, and push.
+3. **Dispatch the release.** `gh workflow run release.yml -R orochi235/weasel`.
+   With no changesets left, the workflow publishes to npm, pushes the
+   `@weasel-js/<pkg>@<version>` tags, writes the GitHub releases and checks the
+   registry. Nothing else starts it, so it never queues behind another run.
 
-> **Do not run `changeset version` locally and push it.** That is a second,
-> conflicting flow: it makes the version bump directly on `main`, so the action
-> finds nothing to version and jumps straight to publishing. It works, but it
-> skips the review checkpoint on the changelog and leaves the git tags unpushed
-> (the action pushes them; a local run does not).
+Versioning moved off the workflow on 2026-11-08: it used to open a
+"chore: version packages" PR, and every changeset push started a run to refresh it.
 
 ## Authentication
 

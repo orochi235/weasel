@@ -12,7 +12,7 @@
 // invisible to every read (npm/cli#9889), for as long as 55 minutes.
 //
 // Not a pre-publish gate and not a CI check: between `chore: version packages`
-// merging and the publish finishing, the manifests legitimately hold versions
+// landing and the publish finishing, the manifests legitimately hold versions
 // the registry has never seen.
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 import { hasVersion, registryBase } from './lib/registry.mjs';
