@@ -14,8 +14,8 @@ const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ sys
 
 function FileCommands() {
   useFileCommands({
-    scene, filename: '', paperSize: 'letter', page: null, backgroundColor: '#ffffff',
-    setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn(), setBackgroundColor: vi.fn(),
+    scene, filename: '', paperSize: 'letter', page: null,
+    setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn(),
   });
   return null;
 }

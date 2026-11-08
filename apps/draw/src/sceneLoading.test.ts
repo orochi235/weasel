@@ -22,6 +22,13 @@ describe('draw document values', () => {
     save({ version: 2, nodes: [], doc: { 'core:pages': { pages: [{ id: 'page-1', ...LETTER }] }, units: 'mm' } });
     expect(loadInitialDoc()).toEqual({ units: 'mm' });
   });
+
+  it('takes in a background saved beside the scene where the scene names none', () => {
+    localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'old.svg', backgroundColor: '#ffcc00' }));
+    expect(loadInitialDoc()).toEqual({ 'draw:background': '#ffcc00' });
+    save({ version: 2, nodes: [], doc: { 'draw:background': '#112233' } });
+    expect(loadInitialDoc()).toEqual({ 'draw:background': '#112233' });
+  });
 });
 
 describe('draw pages', () => {

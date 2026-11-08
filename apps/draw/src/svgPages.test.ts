@@ -4,6 +4,7 @@ import {
 } from '@weasel-js/core';
 import { parseSvg, type SvgGroupNode } from '@weasel-js/svg';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
+import { backgroundOf } from './docBackground';
 import { openSvgText } from './openSvg';
 import { pageToSvgString, sceneToSvgString } from './svgExport';
 import { SWILL_NAMESPACES } from './svgInterop';
@@ -50,7 +51,8 @@ describe('saving a drawing of several pages', () => {
     expect(parseSvg(svg).viewBox).toEqual({ x: 0, y: 0, width: 816 + 40 + 794, height: 1123 });
 
     const opened = emptyScene();
-    expect(openSvgText(opened, svg, 'a.svg').backgroundColor).toBe('#ffffcc');
+    openSvgText(opened, svg, 'a.svg');
+    expect(backgroundOf(opened)).toBe('#ffffcc');
     expect(pagesOf(opened)?.pages).toEqual(PAGES);
   });
 

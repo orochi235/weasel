@@ -67,8 +67,8 @@ function Actions({ selected, compound, children }: { selected: number; compound:
   useCommand(EDITOR_ACTIONS.preferences, label, noop, { ...preferences, keys: EDITOR_PREFERENCES_KEY });
   useDebugCommands();
   useFileCommands({
-    scene: storyScene, filename: 'story', paperSize: 'letter', backgroundColor: '#ffffff',
-    setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null, setBackgroundColor: noop,
+    scene: storyScene, filename: 'story', paperSize: 'letter',
+    setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null,
   });
   return <>{children}</>;
 }

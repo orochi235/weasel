@@ -13,7 +13,8 @@ import {
   strokeOf
 } from '@weasel-js/core';
 import { docFromSnapshot, readStored, snapshotRebuildsTree } from '@weasel-js/editor';
-import { loadDoc, PAPER_PRESETS } from './docPersistence';
+import { BACKGROUND_KEY } from './docBackground';
+import { DEFAULT_BG_COLOR, loadDoc, PAPER_PRESETS } from './docPersistence';
 import { DRAW_LAYERS, DRAW_REGISTRY, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 import { onePage } from './pages/drawPages';
 import { nodeSpecsFromSnapshot, reviveSnapshot } from './persistence';
@@ -45,9 +46,14 @@ export function loadInitial(): DrawSpec[] {
   });
 }
 
-/** The persisted scene's document values, or `undefined` for none. Its pages are nodes, not among them. */
+/** The persisted scene's document values, or `undefined` for none. Its pages are nodes, not among them. A
+ *  background saved beside the scene, as one was before it was the scene's, is taken in where the scene
+ *  names none. */
 export function loadInitialDoc(): SerializedDoc | undefined {
-  return readStored(LS_KEY, (raw) => docFromSnapshot(savedScene(raw)), () => undefined);
+  const saved = readStored(LS_KEY, (raw) => docFromSnapshot(savedScene(raw)), () => undefined);
+  const legacy = loadDoc().backgroundColor;
+  if (saved?.[BACKGROUND_KEY] !== undefined || legacy === DEFAULT_BG_COLOR) return saved;
+  return { ...saved, [BACKGROUND_KEY]: legacy };
 }
 
 /** Whether the last {@link loadInitial} rebuilt a drawing saved without its pages as nodes, or found none it
