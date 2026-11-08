@@ -201,6 +201,21 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 
+  it('a pointermove that stays where it pressed is not a move', () => {
+    // Chrome sends one when the layout shifts under a still pointer.
+    const onEnd = vi.fn();
+    const { result } = renderHook(() =>
+      useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }),
+    );
+    const target = mount();
+    result.current.onPointerDown(press(target, 5, 5));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 5, clientY: 5 }));
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 5, clientY: 5 }));
+    expect(onEnd.mock.calls[0][0]).toMatchObject({ moved: false });
+
+    document.body.removeChild(target);
+  });
+
   it('ignores a second pointer arriving mid-drag', () => {
     const onMove = vi.fn();
     const onEnd = vi.fn();

@@ -32,8 +32,8 @@ export function translateSelection(
   const ops = moveNodesOps(scene, selection.get() as readonly string[], { dx, dy }, { poseDescriptor: d, geometryProjection }, label);
   if (ops.length === 0) return false;
 
-  if (applyOps) applyOps(ops, label);
-  else scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
+  if (!applyOps) return scene.applyBatch(ops, label, defaultCommitAdapter(scene, selection.adapterMethods));
+  applyOps(ops, label);
   return true;
 }
 

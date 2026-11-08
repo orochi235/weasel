@@ -71,6 +71,9 @@ export interface RotateSession {
 
 /** What one `onMove` produced. Replaced, not mutated, by the next. */
 export interface RotateFrame {
+  /** Radians the pointer has swept about the pivot since press, unwrapped
+   *  across atan2's ±π seam so it never jumps a whole turn. */
+  readonly swept: number;
   /** Radians turned since press, as the behaviors shaped it. */
   readonly delta: number;
   /** Stored-frame pose of every rotated id; empty at a zero delta. */

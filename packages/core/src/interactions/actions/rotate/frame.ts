@@ -1,6 +1,7 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf } from '../pointerState';
 import type { NodeId } from 'core/scene/types';
+import { wrapAngle } from '@weasel-js/geom';
 import { snapMods } from 'domains/snap/roles';
 import type { GestureReaders } from '../../gestures/shared/screenTolerance';
 import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestures/types';
@@ -99,15 +100,18 @@ export function storedPreviews(
   return previews;
 }
 
-/** One move's delta and previews: the pointer's angle since press as the
+/** One move's delta and previews: the pointer's angle since press, continued
+ *  from the last frame's `prevSwept`, as the
  *  snap session and then the behaviors shaped it, and every rotated id's stored pose under it. */
-export function nextFrame(session: RotateSession, readers: GestureReaders, moveCtx: InvocationCtx): RotateFrame {
+export function nextFrame(
+  session: RotateSession, readers: GestureReaders, moveCtx: InvocationCtx, prevSwept: number,
+): RotateFrame {
   const { pivot } = session.turn;
   const pointerAngle = Math.atan2(moveCtx.world.y - pivot.y, moveCtx.world.x - pivot.x);
-  const raw = pointerAngle - session.startPointerAngle;
+  const raw = prevSwept + wrapAngle(pointerAngle - session.startPointerAngle - prevSwept);
   const snapped = session.snap.angle(session.theta0 + raw, snapMods(moveCtx)).theta - session.theta0;
   const delta = session.behaviors.length > 0
     ? shapeDelta(session.turn, session.behaviors, session.gestureCtx, readers, moveCtx, snapped)
     : snapped;
-  return { delta, previews: storedPreviews(session, delta) };
+  return { swept: raw, delta, previews: storedPreviews(session, delta) };
 }

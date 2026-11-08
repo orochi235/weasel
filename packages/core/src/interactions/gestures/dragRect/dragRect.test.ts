@@ -133,6 +133,16 @@ describe('useDragRect', () => {
     expect(result.current.isActive).toBe(false);
   });
 
+  it('cancel clears the overlay even when onCancel throws', () => {
+    const { result } = renderHook(() => useDragRect({ onCancel: () => { throw new Error('boom'); } }));
+    act(() => result.current.start(0, 0, NO_MODS));
+    act(() => { result.current.move(10, 10, NO_MODS); });
+    expect(() => act(() => result.current.cancel())).toThrow('boom');
+    act(() => {});
+    expect(result.current.overlay).toBeNull();
+    expect(result.current.isActive).toBe(false);
+  });
+
   it('cancel with no active gesture is a no-op', () => {
     const onCancel = vi.fn();
     const onGestureEnd = vi.fn();

@@ -8,7 +8,8 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import { moveAction } from './move/action';
 import { nudgeRightAction } from './defaults/nudge';
 import { alignRightAction } from './align/action';
-import type { TransformFollower } from './transformFinish';
+import { commitTransformOps, type TransformFollower } from './transformFinish';
+import { createInsertOp } from 'core/ops/create';
 
 const box = (x: number, y: number): RectPose => ({ x, y, width: 10, height: 10 });
 
@@ -144,5 +145,14 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     const refuse: TransformFollower = { finish: () => null, preview: () => [] };
     drag({ ...deps, transformFollowers: [first, refuse] } as unknown as ActionDeps);
     expect(scene.get(a)!.pose).toEqual(box(0, 0));
+  });
+
+  it('reports no commit when the scene refuses the batch', () => {
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = scene.add({ kind: 'group', layer: 'main', data: {}, pose: box(0, 0) });
+    scene.setArrivalHandler(() => null);
+    const op = createInsertOp({ node: { id: 'n', kind: 'mark', layer: 'main', parent: g, data: {}, pose: box(0, 0) }, label: 'Add' });
+    expect(commitTransformOps({ scene } as unknown as ActionDeps, [op], 'Add')).toBe(false);
+    expect(scene.childrenOf(g)).toEqual([]);
   });
 });

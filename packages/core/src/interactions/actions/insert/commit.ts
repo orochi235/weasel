@@ -19,13 +19,19 @@ export function enterInsertedText(textEdit: TextEditDep | undefined, id: string 
   if (id !== null && shapeKindInfo(kind)?.text) textEdit?.startEdit(id, { caret: 0 });
 }
 
+/** Put back the selection the press cleared, for a draw that ends without
+ *  committing. */
+export function restoreSelection(session: Pick<InsertSession, 'priorSelection' | 'selection'>): void {
+  if (session.priorSelection.length > 0) session.selection?.set([...session.priorSelection]);
+}
+
 /** Cancel the insert: tell the behaviors, and put the selection the draw
  *  cleared back. */
 export function cancelInsert(
   session: Pick<InsertSession, 'behaviors' | 'gestureCtx' | 'priorSelection' | 'selection'>,
 ): void {
   runBehaviorCancel(session.behaviors, session.gestureCtx);
-  if (session.priorSelection.length > 0) session.selection?.set([...session.priorSelection]);
+  restoreSelection(session);
 }
 
 /** Commit the insert. Returns whether it committed: a behavior's ops reached

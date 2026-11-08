@@ -345,6 +345,31 @@ describe('useDragHandle', () => {
     document.body.removeChild(source);
   });
 
+  it('a second pointer pressed and lifted mid-drag leaves the drag to unmount cleanly', () => {
+    const source = document.createElement('div');
+    Object.defineProperty(source, 'getBoundingClientRect', {
+      value: () => ({ width: 20, height: 20, x: 0, y: 0, left: 0, top: 0, right: 20, bottom: 20, toJSON() {} }),
+    });
+    document.body.appendChild(source);
+    const { result, unmount } = renderHook(() =>
+      useDragHandle(() => ({ kind: 'item', ids: ['x'] })),
+    );
+    const before = document.body.children.length;
+    const press = (pointerId: number) => result.current.onPointerDown({
+      pointerType: 'touch', button: 0, pointerId, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+    press(1);
+    firePointer('pointermove', { pointerId: 1, pointerType: 'touch', clientX: 30, clientY: 0 });
+    expect(document.body.children.length).toBe(before + 1);
+    press(2);
+    firePointer('pointerup', { pointerId: 2, pointerType: 'touch', clientX: 0, clientY: 0 });
+
+    unmount();
+    expect(document.body.children.length).toBe(before);
+    document.body.removeChild(source);
+  });
+
   it('a second pointer does not drive or end the drag', () => {
     const getPayload = vi.fn(() => ({ kind: 'item', ids: ['x'] }));
     const { result } = renderHook(() => useDragHandle(getPayload));

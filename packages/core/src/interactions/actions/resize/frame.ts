@@ -180,6 +180,8 @@ export function nextFrame(session: ResizeSession, readers: GestureReaders, moveC
   const { previews: boxed, proposed, lone } = posesInBox(session, constrained);
   // The output grid is the invariant, so it shapes the poses after the snap and the constraints.
   const previews = new Map([...boxed].map(([id, pose]) => [id, quantizedPreview(session.scene, id, pose, box.anchor)]));
-  if (lone) gctx.current = new Map<string, Bounds>([[lone.id as string, outsetBox(boundsForRules(lone.g, lone.world), box.extents)]]);
+  const key = gctx.draggedIds[0]!;
+  const ruled = lone ? boundsForRules(lone.g, lone.world) : proposed;
+  gctx.current = new Map<string, Bounds>([[key, outsetBox(ruled, box.extents)]]);
   return { previews: holdInPlace(previews, session.held, session.poseFrame), proposed };
 }

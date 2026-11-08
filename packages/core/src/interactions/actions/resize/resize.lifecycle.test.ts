@@ -106,3 +106,36 @@ describe('resizeAction — lifecycle via the resizePolicy dep', () => {
     expect(s.scene.get(s.a)!.pose).toEqual(marker);
   });
 });
+
+describe('resizeAction — the box a constraint reads', () => {
+  it('ctx.current holds the resized box at onEnd for a multi-selection', () => {
+    const scene = createScene<{ kind: string }, 'main', Pose>({
+      systemLayers: [{ id: 'main', visible: true, locked: false }],
+    });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 40, height: 40 }, data: { kind: 'rect' } });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: { x: 60, y: 60, width: 40, height: 40 }, data: { kind: 'rect' } });
+    let seen: unknown;
+    const constraint = { onEnd: (ctx: { current: Map<string, unknown> }) => { seen = ctx.current.get(a as string); } };
+    const base = {
+      world: { x: 100, y: 100 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: {
+        selection: { get: () => [a, b] as NodeId[] },
+        scene,
+        resizePolicy: { constraints: [constraint], expandIds: (ids: string[]) => ids },
+      },
+      drag: {
+        start: { x: 100, y: 100 },
+        current: { x: 100, y: 100 },
+        delta: { x: 0, y: 0 },
+        affordance: { kind: 'handle:bottom-right', anchor: { x: 'min', y: 'min' } },
+      },
+    } as unknown as InvocationCtx;
+    const grown = { ...base, drag: { ...base.drag!, current: { x: 150, y: 150 }, delta: { x: 50, y: 50 } } } as InvocationCtx;
+    const handle = invoker().start(base, undefined);
+    handle.onMove?.(grown);
+    handle.onEnd?.(grown, 'commit');
+    expect(seen).toEqual({ x: 0, y: 0, width: 150, height: 150 });
+  });
+});

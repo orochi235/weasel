@@ -87,6 +87,19 @@ describe('cloneAction on a container', () => {
     expect(handle.previewPose!(G as string)).toEqual({ x: 100, y: 0, width: 60, height: 20 });
   });
 
+  it('reports no commit when the container refuses the copy', () => {
+    const scene = makeScene();
+    scene.setArrivalHandler(() => null);
+    let settled: boolean | undefined;
+    const invoker = cloneAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(ctxAt(scene, [A], 0), { behaviors: [{ onSettled: (_c: unknown, committed: boolean) => { settled = committed; } }] } as never);
+    handle.onMove!(ctxAt(scene, [A], 100));
+    handle.onEnd!(ctxAt(scene, [A], 100), 'commit');
+    expect(copiesIn(scene)).toHaveLength(0);
+    expect(settled).toBe(false);
+  });
+
   it('undoes as one step', () => {
     const scene = makeScene();
     cloneBy(scene, [G], 100);

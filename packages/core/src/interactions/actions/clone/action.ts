@@ -64,16 +64,15 @@ function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unkn
  *  which become the selection. Returns whether anything was committed. */
 function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection: SelectionApi): boolean {
   const { dx, dy } = scratch.currentDelta;
-  const apply = (ops: Op[]): void => {
-    if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
-    else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selectionMethods(selection)));
+  // False when a container refused the copies: the scene reverted them.
+  const apply = (ops: Op[]): boolean => {
+    if (!scratch.applyOps) return scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selectionMethods(selection)));
+    scratch.applyOps(ops, 'Clone');
+    return true;
   };
   const answer = behaviors.end(scratch.currentDelta);
   if (answer === null) return false;
-  if (answer !== undefined) {
-    if (answer.length > 0) apply(answer);
-    return true;
-  }
+  if (answer !== undefined) return answer.length === 0 || apply(answer);
   const { ops, copies } = copySelection(
     scratch.scene,
     scratch.ids,
@@ -81,8 +80,7 @@ function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection
     'Clone',
   );
   if (ops.length === 0) return false;
-  apply([...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })]);
-  return true;
+  return apply([...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })]);
 }
 
 /**
