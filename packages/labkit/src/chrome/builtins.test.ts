@@ -26,6 +26,9 @@ const ctx: TrialChromeContext = {
   hasLoupe: false,
   loupeOn: false,
   toggleLoupe: () => {},
+  dropperOn: false,
+  toggleDropper: () => {},
+  pickedColor: null,
   canExpand: false,
   expanded: false,
   toggleExpanded: () => {},
@@ -104,6 +107,16 @@ describe('builtinContributions', () => {
     const on = builtinContributions(bare, { ...ctx, hasLoupe: true, loupeOn: true });
     expect(off.find((c) => c.id === 'loupe')?.item).toMatchObject({ pressed: false });
     expect(on.find((c) => c.id === 'loupe')?.item).toMatchObject({ pressed: true });
+  });
+
+  it('offers the eyedropper beside the loupe, and one readout that copies the color picked', () => {
+    expect(ids(bare)).not.toContain('eyedropper');
+    const on = builtinContributions(bare, { ...ctx, hasLoupe: true, dropperOn: true, pickedColor: '#12ab34' });
+    expect(on.find((c) => c.id === 'eyedropper')?.item).toMatchObject({ pressed: true });
+    const readout = on.find((c) => c.id === 'picked-color');
+    expect(readout?.item).toMatchObject({ label: '#12ab34', showLabel: true, disabled: false });
+    const none = builtinContributions(bare, { ...ctx, hasLoupe: true });
+    expect(none.find((c) => c.id === 'picked-color')?.item).toMatchObject({ disabled: true });
   });
 
   it('puts zoom controls in the viewport region, not the toolbar', () => {

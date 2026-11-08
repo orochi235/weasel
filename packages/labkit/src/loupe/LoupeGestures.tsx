@@ -4,10 +4,11 @@
  * and the wheel route the way every other weasel binding does.
  *
  * Of the dispatcher's element channels only `hover` and `wheel` are wanted
- * here. `pointer` would open a gesture on every press and capture the pointer,
- * taking clicks from the content under the lens; `contextMenu` suppresses the
- * native menu unconditionally and `ingest` makes the host a file-drop target,
- * none of which a lab asked for by turning a magnifier on.
+ * here, and `pointer` only while the eyedropper is on, which wants the click.
+ * Otherwise `pointer` would open a gesture on every press and capture the
+ * pointer, taking clicks from the content under the lens; `contextMenu`
+ * suppresses the native menu unconditionally and `ingest` makes the host a
+ * file-drop target, none of which a lab asked for by turning a magnifier on.
  */
 import {
   type ActionsRegistry,
@@ -27,16 +28,20 @@ export interface LoupeGesturesProps {
   input: LoupeInputApi;
   /** `KeyboardEvent.key` for hold-to-peek, or `null` for no peek binding. */
   peekKey: string | null;
+  /** Whether the eyedropper is on, so a press on the host is the loupe's to take. */
+  dropping?: boolean;
 }
 
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 
 const CHANNELS = { pointer: false, hover: true, contextMenu: false, ingest: false } as const;
+const DROPPING_CHANNELS = { ...CHANNELS, pointer: true } as const;
 
 function LoupeDispatch({
   hostRef,
   input,
   peekKey,
+  dropping,
   registry,
   ownDispatcher,
 }: LoupeGesturesProps & { registry: ActionsRegistry; ownDispatcher: boolean }) {
@@ -53,7 +58,7 @@ function LoupeDispatch({
     canvasRef: hostRef,
     actions: registry,
     entriesById: NO_TOOLS,
-    channels: CHANNELS,
+    channels: dropping ? DROPPING_CHANNELS : CHANNELS,
     enabled: ownDispatcher,
   });
 

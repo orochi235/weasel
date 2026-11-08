@@ -176,6 +176,12 @@ export interface TrialChromeContext extends ToolSlotContext, SidebarSlotContext 
   /** Whether the trial's loupe is turned on. */
   loupeOn: boolean;
   toggleLoupe: () => void;
+  /** Whether the eyedropper is on, offered beside the loupe toggle: a click on
+   *  the stage picks the color under it, and one inside a lens what it shows. */
+  dropperOn: boolean;
+  toggleDropper: () => void;
+  /** The color last picked, by the eyedropper or inside a lens; `null` before one. */
+  pickedColor: string | null;
 
   /** Whether the trial sits in a `<Lightbox>` — every `<Workspace>` tile does
    *  unless the workspace turned it off. The expand toggle is offered only

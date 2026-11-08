@@ -253,6 +253,8 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
     enabled: enabled ?? loupeSwitch?.on ?? false,
     sample,
     subscribeResample,
+    dropping: loupeSwitch?.dropper,
+    onPick: loupeSwitch?.pick,
   });
   // A captured source copies frames only while someone is reading them. Taken
   // after `useLoupe` has subscribed, so the frame a first reader's redraw
@@ -269,7 +271,7 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
   // dispatcher; outside one, `<CameraScope>` gives them an isolated scope.
   const gestures = (
     <CameraScope>
-      <LoupeGestures hostRef={host} input={loupe.input} peekKey={options.peekKey ?? null} />
+      <LoupeGestures hostRef={host} input={loupe.input} peekKey={options.peekKey ?? null} dropping={loupeSwitch?.dropper} />
     </CameraScope>
   );
 

@@ -35,10 +35,26 @@ import { useTrialKeys } from './useTrialKeys';
 import { useTrialPanels } from './useTrialPanels';
 import { useTrialWrites } from './useTrialWrites';
 
-/** The trial's loupe as its chrome sees it: a switch and its position. */
+/** The trial's loupe as its chrome sees it: its switch, the eyedropper's, and
+ *  the color last picked through either. */
 export interface LoupeBindings {
   on: boolean;
   toggle: () => void;
+  dropper: boolean;
+  toggleDropper: () => void;
+  picked: string | null;
+}
+
+/** The chrome context's loupe fields, from the trial's bindings: all off while no lens is mounted. */
+function loupeChrome(loupe: LoupeBindings | undefined) {
+  return {
+    hasLoupe: loupe != null,
+    loupeOn: loupe?.on ?? false,
+    toggleLoupe: loupe?.toggle ?? NO_OP,
+    dropperOn: loupe?.dropper ?? false,
+    toggleDropper: loupe?.toggleDropper ?? NO_OP,
+    pickedColor: loupe?.picked ?? null,
+  };
 }
 
 /** The trial's undo history as its chrome sees it. */
@@ -173,9 +189,7 @@ export function TrialChrome({
       canRedo: undoBindings?.canRedo ?? false,
       undo: undoBindings?.undo ?? NO_OP,
       redo: undoBindings?.redo ?? NO_OP,
-      hasLoupe: loupe != null,
-      loupeOn: loupe?.on ?? false,
-      toggleLoupe: loupe?.toggle ?? NO_OP,
+      ...loupeChrome(loupe),
       canExpand: lightbox != null,
       expanded: lightbox?.expanded ?? false,
       toggleExpanded: lightbox?.toggle ?? NO_OP,

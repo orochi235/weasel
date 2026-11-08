@@ -1,7 +1,8 @@
 /**
  * The loupe's bindable interactions, as `Action` descriptors the gesture
  * dispatcher routes: aim at the pointer, pressed or not, and put the lens away
- * when it leaves; hold a key to peek; walk the magnification with the wheel.
+ * when it leaves; hold a key to peek; walk the magnification with the wheel;
+ * and, while the eyedropper is on, pick the color under a click.
  *
  * Free of React so the routing can be tested without a DOM.
  */
@@ -15,6 +16,8 @@ export const LOUPE_MAGNIFY_ID = 'loupe.magnify';
 export const LOUPE_AIM_ID = 'loupe.aim';
 /** Canonical id of the action that learns the pointer has left the host. */
 export const LOUPE_LEAVE_ID = 'loupe.leave';
+/** Canonical id of the eyedropper's click. */
+export const LOUPE_PICK_ID = 'loupe.pick';
 
 /** Every modifier optional: the lens follows the pointer with any held, the
  *  peek key among them. */
@@ -45,6 +48,12 @@ export interface LoupeInputApi {
   aimAt: (clientX: number, clientY: number) => void;
   /** The pointer has left the host. */
   leave: () => void;
+  /** Whether the eyedropper is on. `loupe.pick` declines while it is not, and
+   *  the click goes to whatever else binds it. */
+  dropping: () => boolean;
+  /** Pick the color at the pointer: what a lens shows there, when it is over
+   *  one, and the host's own pixels otherwise. */
+  pickAtPointer: () => void;
 }
 
 /**
@@ -117,7 +126,25 @@ export function createLoupeActions(
     },
   };
 
-  if (peekKey === null) return [aim, leave, magnify];
+  // Hotkey scope, so while the eyedropper is on a click picks rather than
+  // reaching the trial's active tool. It reads the pointer the hover last
+  // reported, which is the host's own px; a click carries only world points.
+  const pick: Action = {
+    id: LOUPE_PICK_ID,
+    label: 'Pick color (eyedropper)',
+    group: 'loupe',
+    scope: 'hotkey',
+    defaultBinding: [{ spec: { kind: 'click', mods: ANY_MODS }, opts: { id: `${LOUPE_PICK_ID}.click` } }],
+    enabled: () => (input.dropping() ? true : 'not-applicable'),
+    invoker: {
+      timing: 'immediate',
+      run() {
+        input.pickAtPointer();
+      },
+    },
+  };
+
+  if (peekKey === null) return [aim, leave, magnify, pick];
 
   const peek: Action = {
     id: LOUPE_PEEK_ID,
@@ -138,5 +165,5 @@ export function createLoupeActions(
       },
     },
   };
-  return [aim, leave, peek, magnify];
+  return [aim, leave, peek, magnify, pick];
 }
