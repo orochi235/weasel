@@ -200,7 +200,7 @@ export function StackedOverlayPanel({
           );
         })}
       </svg>
-      <OverlayLabel title="Live overlay" subtitle="all four stacked at 60% opacity" />
+      <OverlayLabel title="Live overlay" subtitle="all four stacked at 50% opacity" />
     </div>
   );
 }
