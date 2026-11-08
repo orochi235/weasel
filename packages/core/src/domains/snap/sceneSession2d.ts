@@ -9,7 +9,7 @@ import type { DrawnBoxes, DrawnBoxesSource } from 'interactions/actions/drawnBox
 import { inkBoxes } from 'canvas/inkBoxes';
 import type { SnapBegin, SnapConstrain, SnapGeometry, SnapResizeBox, SnapSession } from 'interactions/actions/snapDep';
 import { ownGeometryAt } from 'domains/paths/pathSnap/pathSnapSource';
-import { snapSourcesFor } from './gather';
+import { assertSnapSourceIds, snapSourcesFor } from './gather';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
 import { buildProbes, subjectOf } from './probes2d';
 import { sceneProbeReads, sceneRotations, sceneSnapFrames, withSubtrees } from './sceneReads';
@@ -131,9 +131,10 @@ export interface SnapSession2dOptions {
  * One gesture's snapping over a scene, for a host without `<SceneCanvas>`:
  * the session a canvas's `snap` dep begins, built from the same probes and
  * drawn boxes. Call `at` with each world point the gesture reaches, and
- * `end` when it lets go.
+ * `end` when it lets go. Throws if two of `sources` share an id, as a canvas does.
  */
 export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
+  assertSnapSourceIds(opts.sources);
   const view = opts.view;
   const req: SnapBegin = {
     gesture: opts.gesture,

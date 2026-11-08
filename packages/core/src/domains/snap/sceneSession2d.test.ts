@@ -43,6 +43,14 @@ describe('createSnapSession2d', () => {
     expect(seen[0].drawnBox?.(a)).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
+  it('throws when two sources share an id, as a canvas does', () => {
+    const { scene } = fixture();
+    const twin = (): SnapSource => ({ id: 'twin', roles: ['pointer'], collect: () => [] });
+    expect(() => createSnapSession2d({
+      scene, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, sources: [twin(), twin()], gesture: 'point', press: { x: 0, y: 0 },
+    })).toThrow(/twin/);
+  });
+
   it('carries no subject box for a point gesture', () => {
     const { scene: sc } = fixture();
     const seen: SnapCollect[] = [];
