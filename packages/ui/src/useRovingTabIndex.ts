@@ -1,4 +1,4 @@
-import { rovingKey } from '@weasel-js/ui-logic';
+import { gridLayout, rovingGridTarget, rovingKey, type LastRow } from '@weasel-js/ui-logic';
 import {
   useCallback,
   useEffect,
@@ -26,11 +26,11 @@ export type UseRovingTabIndexOptions = {
   /** Defaults to `'both'`. Ignored when `columns` is set. */
   orientation?: RovingOrientation;
   /** Lays the items out as a grid this many across: Left and Right step through them in reading
-   *  order, and Up and Down move a row, keeping the column. See {@link rovingGridTarget}. */
+   *  order, and Up and Down move a row, keeping the column, by ui-logic's `rovingGridTarget`. */
   columns?: number;
   /** With `columns`, where a last row shorter than `columns` sits, so Up and Down land on the item
    *  drawn under this one. Default `'start'`. See {@link tiling}. */
-  lastRow?: 'start' | 'center' | 'end' | 'fill';
+  lastRow?: LastRow;
   /** With `columns`, the elements whose items each start on a row of their own — a toolbar whose
    *  groups are each a grid. Items under none of them count as one group. */
   groupSelector?: string;
@@ -82,72 +82,6 @@ export function rovingTarget(
 ): number | null {
   const step = rovingKey(enabled, current, pressed, { canStop: isStop, orientation, dir });
   return step.handled ? step.at : null;
-}
-
-/** How a grid's rows sit for {@link rovingGridTarget}. */
-export interface RovingGridLayout {
-  dir?: RovingDirection;
-  /** How many columns in each row's first item sits, by row: a short row centered in an even gap sits a half
-   *  column in. Omitted rows start at column 0. */
-  offsets?: readonly number[];
-  /** How many columns wide each row's items are, by row: a stretched last row's are wider than one. Omitted
-   *  rows' items are one column wide. */
-  widths?: readonly number[];
-}
-
-/** Where one row sits: how far in its first item starts and how wide each item is, in columns. */
-interface RowSpan { offset: number; width: number }
-
-/** Which item of `row`, laid out as `at`, sits under the column span `lo`–`hi`: the one covering most of it,
- *  and of two covering it equally the later going down and the earlier going up, so Down then Up comes back.
- *  Under none, the nearest end. */
-function itemUnder(row: readonly number[], at: RowSpan, lo: number, hi: number, down: boolean): number | undefined {
-  let best = -1;
-  let most = 0;
-  for (let j = 0; j < row.length; j++) {
-    const start = at.offset + j * at.width;
-    const cover = Math.min(hi, start + at.width) - Math.max(lo, start);
-    if (cover > most + 1e-9 || (down && cover > 0 && Math.abs(cover - most) <= 1e-9)) {
-      best = j;
-      most = cover;
-    }
-  }
-  if (best >= 0) return row[best];
-  const nearest = Math.round(((lo + hi) / 2 - at.offset) / at.width - 0.5);
-  return row[Math.min(row.length - 1, Math.max(0, nearest))];
-}
-
-/** Where `key` takes focus from `current` in a grid whose `rows` list item indices in reading
- *  order, or null if it does not move it. Left, Right, Home and End behave as {@link rovingTarget}
- *  with `'horizontal'` and the layout's `dir`. Up and Down move to the item under this one in the next row, by
- *  where each row sits (`layout.offsets`), or to that row's nearest end when none is under it; they pass over
- *  rows where that item is disabled, and stop at the first and last rows. */
-export function rovingGridTarget(
-  current: number,
-  key: string,
-  enabled: readonly boolean[],
-  rows: readonly (readonly number[])[],
-  layout: RovingGridLayout = {},
-): number | null {
-  const step = key === 'ArrowDown' ? 1 : key === 'ArrowUp' ? -1 : 0;
-  if (step === 0) return rovingTarget(current, key, enabled, 'horizontal', layout.dir);
-  const r = rows.findIndex((row) => row.includes(current));
-  if (r < 0) return null;
-  const at = (row: number): RowSpan => ({ offset: layout.offsets?.[row] ?? 0, width: layout.widths?.[row] ?? 1 });
-  const here = at(r);
-  const lo = here.offset + rows[r].indexOf(current) * here.width;
-  for (let rr = r + step; rr >= 0 && rr < rows.length; rr += step) {
-    const i = itemUnder(rows[rr], at(rr), lo, lo + here.width, step > 0);
-    if (i !== undefined && enabled[i]) return i;
-  }
-  return null;
-}
-
-/** How far in, in columns, a row of `length` items sits in a grid `columns` across, aligned `align`. A
- *  stretched (`'fill'`) row starts at the start. */
-export function rowOffset(length: number, columns: number, align: 'start' | 'center' | 'end' | 'fill' = 'start'): number {
-  const gap = Math.max(0, columns - length);
-  return align === 'center' ? gap / 2 : align === 'end' ? gap : 0;
 }
 
 /** `items` split into rows `columns` long, a new row starting wherever the group changes. */
@@ -306,12 +240,8 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
       const dir = latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];
       // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.
-      const { lastRow } = latest.current;
-      const short = (row: readonly number[]): boolean => row.length < columns!;
-      const offsets = rows.map((row) => (short(row) ? rowOffset(row.length, columns!, lastRow) : 0));
-      const widths = rows.map((row) => (short(row) && lastRow === 'fill' ? columns! / row.length : 1));
       const next = columns
-        ? rovingGridTarget(current, e.key, enabled, rows, { dir, offsets, widths })
+        ? rovingGridTarget(current, e.key, enabled, rows, { dir, ...gridLayout(rows, columns, latest.current.lastRow) })
         : rovingTarget(current, e.key, enabled, orientation, dir);
       if (next === null || next === current) return;
       e.preventDefault();

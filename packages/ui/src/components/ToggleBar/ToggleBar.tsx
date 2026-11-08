@@ -1,8 +1,10 @@
-import { useRef, type ReactElement, type ReactNode } from 'react';
-import { SWEEP_INDEX_ATTR, ToggleSweep, type ToggleBarSweep } from './ToggleSweep';
+import { type ReactElement, type ReactNode } from 'react';
+import { selection, type MultipleSelection, type SingleSelection } from '@weasel-js/ui-logic';
+import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from '../segmentSweep';
 import s from '../segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps, type SegmentState } from '../segmentedRow';
+import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
+import { selectionRoving } from '../../selectionRoving';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import { FitScope, useFitScope } from '../FitLabel/FitLabel';
@@ -41,31 +43,12 @@ export type ToggleBarCommonProps = SegmentedGridProps & {
 };
 
 /**
- * Props for {@link ToggleBar}, discriminated on `mode`. Single mode is
- * controlled by one value or `null`; multiple mode by an array, and only it
- * accepts `mixedValues`.
+ * Props for {@link ToggleBar}, discriminated on `mode`: one value or `null` (`'single'`, the default), or a list of
+ * them (`'multiple'`). Either takes `mixedValues`; see {@link SingleSelection} and {@link MultipleSelection}.
  */
 export type ToggleBarProps<V extends string | number = string> =
-  | (ToggleBarCommonProps & {
-      mode?: 'single';
-      items: readonly ToggleBarItem<V>[];
-      value: V | null;
-      onChange: (next: V | null) => void;
-      allowDeselect?: boolean;
-    })
-  | (ToggleBarCommonProps & {
-      mode: 'multiple';
-      items: readonly ToggleBarItem<V>[];
-      value: readonly V[];
-      /**
-       * Values that are neither on nor off — the sources this bar
-       * aggregates disagree (a text range that is bold in part of it, a
-       * multi-selection whose nodes differ). Rendered `aria-pressed="mixed"`.
-       * `value` wins where the two lists overlap. Clicking a mixed segment
-       * turns it fully on.
-       */
-      mixedValues?: readonly V[];
-      onChange: (next: V[]) => void;
+  | (ToggleBarCommonProps & { items: readonly ToggleBarItem<V>[] } & SingleSelection<V>)
+  | (ToggleBarCommonProps & { items: readonly ToggleBarItem<V>[] } & MultipleSelection<V> & {
       /**
        * Let a drag across the segments toggle every one it reaches: the press
        * decides on or off (on, unless the pressed segment is on) and each
@@ -74,16 +57,8 @@ export type ToggleBarProps<V extends string | number = string> =
        * from any segment; a function decides per press. A segment that runs
        * a drag of its own takes the press instead.
        */
-      sweep?: ToggleBarSweep<NoInfer<V>>;
+      sweep?: SegmentSweep<NoInfer<V>>;
     });
-
-/** Each value's segment state under `props`: on where `value` holds it, mixed where only `mixedValues` does (multiple
- *  mode alone takes it), else off. */
-function segmentStates<V extends string | number>(props: ToggleBarProps<V>): (value: V) => SegmentState {
-  if (props.mode !== 'multiple') return (value) => (props.value === value ? 'on' : 'off');
-  const { value: on, mixedValues: mixed } = props;
-  return (value) => (on.includes(value) ? 'on' : mixed?.includes(value) ? 'mixed' : 'off');
-}
 
 /**
  * Segmented control for choosing among a fixed set of values — one of them
@@ -91,56 +66,30 @@ function segmentStates<V extends string | number>(props: ToggleBarProps<V>): (va
  *
  * Single mode ignores a click on the already-selected segment unless
  * `allowDeselect` is set, and its arrow keys move the selection with the
- * focus, as a radio group's do. In multiple mode the arrow keys only move
- * focus; Space and Enter flip the focused segment.
+ * focus, as a radio group's do; `followsFocus: false` makes its segments
+ * toggle buttons whose arrows only move focus, the way multiple mode's do,
+ * with Space and Enter pressing the focused segment. Selection is ui-logic's
+ * `selection` model.
  */
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant, orientation } = props;
-  const mode = props.mode ?? 'single';
+  const values = items.map((it) => it.value);
+  const model = selection<V>(props, values);
+  const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;
+  // Radios choose as the arrows move; segments that only take focus are toggle buttons.
+  const radios = model.mode === 'single' && model.followsFocus;
+  const sweep = props.mode === 'multiple' ? props.sweep : undefined;
+  const guard = useSweepGuard();
 
-  const stateOf = segmentStates(props);
-  const sweep = mode === 'multiple' ? (props as { sweep?: ToggleBarSweep<V> }).sweep : undefined;
-  // Set as a sweep ends and cleared before the next task: the click its release makes is not a toggle.
-  const justSwept = useRef(false);
-  const swept = (): void => {
-    justSwept.current = true;
-    setTimeout(() => { justSwept.current = false; }, 0);
+  const press = (i: number) => () => {
+    if (usable(i) && !guard.sweeping()) model.press(i);
   };
-
-  const handleClick = (index: number) => () => {
-    const item = items[index];
-    if (item.disabled || justSwept.current) return;
-    if (mode === 'multiple') {
-      const current = props.value as readonly V[];
-      const next = current.includes(item.value)
-        ? current.filter(v => v !== item.value)
-        : [...current, item.value];
-      (props.onChange as (n: V[]) => void)(next);
-    } else {
-      const current = props.value as V | null;
-      if (current === item.value) {
-        if ((props as { allowDeselect?: boolean }).allowDeselect) {
-          (props.onChange as (n: V | null) => void)(null);
-        }
-        return;
-      }
-      (props.onChange as (n: V | null) => void)(item.value);
-    }
-  };
-
-  const selectedIndex = mode === 'single'
-    ? items.findIndex(it => it.value === (props.value as V | null))
-    : -1;
 
   const tiles = segmentedTiling(props);
   const roving = useRovingTabIndex({
     itemSelector: `.${s.segment}`,
     ...(tiles ? tilingRoving(tiles) : {}),
-    tabStopIndex: selectedIndex >= 0 ? selectedIndex : undefined,
-    onNavigate: mode === 'single'
-      ? (index) => (props.onChange as (n: V | null) => void)(items[index].value)
-      : undefined,
-    onActivate: mode === 'multiple' ? (index) => handleClick(index)() : undefined,
+    ...selectionRoving(model, items.length, usable),
   });
 
   // Segment labels drawn as `FitLabel`s shorten together when the bar is
@@ -150,7 +99,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   const row = (
     <SegmentedRow
       roving={roving}
-      role={mode === 'multiple' ? 'group' : 'radiogroup'}
+      role={radios ? 'radiogroup' : 'group'}
       ariaLabel={ariaLabel}
       className={className}
       tiling={tiles}
@@ -160,9 +109,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
       orientation={orientation}
       wrap={(segments) => <FitScope value={fit}>{segments}</FitScope>}
       segments={items.map((item, i) => {
-        const state = stateOf(item.value);
-        const selected = state === 'on';
-        const mixed = state === 'mixed';
+        const state = model.stateOf(i);
         return {
           key: String(item.value),
           state,
@@ -170,15 +117,15 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
             <SegmentTooltip content={segmentTooltipContent(item)} disabled={item.disabled} disabledReason={item.disabledReason}>
               <button
                 type="button"
-                role={mode === 'multiple' ? undefined : 'radio'}
-                aria-checked={mode === 'multiple' ? undefined : selected}
-                aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
+                role={radios ? 'radio' : undefined}
+                aria-checked={radios ? state === 'on' : undefined}
+                aria-pressed={radios ? undefined : state === 'mixed' ? 'mixed' : state === 'on'}
                 aria-label={item.ariaLabel}
                 disabled={item.disabled}
                 className={segmentClassName(state, place)}
                 {...segmentPlaceProps(place)}
                 {...(sweep ? { [SWEEP_INDEX_ATTR]: i } : {})}
-                onClick={handleClick(i)}
+                onClick={press(i)}
               >
                 {item.label}
               </button>
@@ -192,16 +139,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   return (
     <>
       {row}
-      <ToggleSweep
-        rootRef={roving.rootRef}
-        values={items.map((it) => it.value)}
-        sweepable={(i) => items[i] !== undefined && !items[i].disabled}
-        stateOf={(i) => stateOf(items[i]!.value)}
-        value={props.value as readonly V[]}
-        onChange={props.onChange as (next: V[]) => void}
-        sweep={sweep}
-        swept={swept}
-      />
+      <SegmentSweeper rootRef={roving.rootRef} values={values} sweepable={usable} model={model} sweep={sweep} swept={guard.swept} />
     </>
   );
 }

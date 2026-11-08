@@ -614,11 +614,13 @@ drag on only on purpose: an empty handle from `start`, or `'pass'` from
 `onMove`, offers it to the next candidate in rank order.
 
 A **sweep** (`sweepAction`) is that rule set put to use: an action on a
-modifier-free `drag` at the ambient tier, the lowest rank a drag binding holds,
-that sets each item of its surface the pointer crosses. Any drag naming a
-target or a modifier outranks it, an item's own drag takes the press first,
-and its `begin` returning `null` hands the drag on. `ToggleBar`'s `sweep` prop
-mounts one on the bar's row.
+`drag` taking any modifiers (`SWEEP_BINDING`) at the ambient tier, the lowest
+rank a drag binding holds, that sets each item of its surface the pointer
+crosses. Any drag naming a target or a modifier outranks it, an item's own
+drag takes the press first, and its `begin` returning `null` hands the drag
+on. The `sweep` prop of `ToggleBar` and `OptionsBar` mounts one on the bar's
+row, setting segments through the bar's selection model (ui-logic's
+`selection`).
 
 **A focused HUD widget hears a key before the canvas's key bindings do.** The
 dispatcher listens for keys on `window`; `@weasel-js/hud` listens on the canvas

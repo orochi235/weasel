@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { ToggleBar } from './ToggleBar';
-import type { ToggleBarSweep } from './ToggleSweep';
+import type { SegmentSweep } from '../segmentSweep';
 
 const ITEMS = [
   { value: 'a', label: 'A' },
@@ -14,7 +14,7 @@ const ITEMS = [
 
 afterEach(() => { delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
 
-function Bar({ initial = [], sweep = true, seen }: { initial?: string[]; sweep?: ToggleBarSweep<string>; seen: string[][] }) {
+function Bar({ initial = [], sweep = true, seen }: { initial?: string[]; sweep?: SegmentSweep<string>; seen: string[][] }) {
   const [value, setValue] = useState<string[]>(initial);
   return (
     <ToggleBar

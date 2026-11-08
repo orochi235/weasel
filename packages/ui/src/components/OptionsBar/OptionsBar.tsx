@@ -1,21 +1,22 @@
 import { type ReactElement, type ReactNode } from 'react';
+import { selectionOfEach, type OwnSelection } from '@weasel-js/ui-logic';
+import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from '../segmentSweep';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { selectionRoving } from '../../selectionRoving';
 
 /**
  * One segment of an {@link OptionsBar}. Unlike `ToggleBar`, each item carries
  * its own selected state and its own `onChange`.
  */
-export type OptionsBarItem<V extends string | number = string> = {
+export type OptionsBarItem<V extends string | number = string> = OwnSelection & {
   value: V;
   label?: ReactNode;
   ariaLabel?: string;
   disabled?: boolean;
-  selected: boolean;
-  onChange: (next: boolean) => void;
 };
 
 /** Segment height and type scale for an {@link OptionsBar}. */
@@ -35,6 +36,10 @@ export type OptionsBarProps<V extends string | number = string> = SegmentedGridP
   /** Visual variant. `minimal` strips the pill track and glass treatment;
    *  selection becomes a flat accent. For dense diagnostic surfaces. */
   variant?: OptionsBarVariant;
+  /** Let a drag across the segments set every one it reaches to what the press set the pressed one to, calling
+   *  each one's `onChange` as it changes. Escape or a lost pointer puts them back. `true` sweeps from any
+   *  segment; a function decides per press. */
+  sweep?: SegmentSweep<NoInfer<V>>;
 };
 
 /**
@@ -45,16 +50,22 @@ export type OptionsBarProps<V extends string | number = string> = SegmentedGridP
 export function OptionsBar<V extends string | number = string>(props: OptionsBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
 
-  const toggle = (index: number) => {
-    const item = items[index];
-    if (item.disabled) return;
-    item.onChange(!item.selected);
+  const model = selectionOfEach(items);
+  const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;
+  const { sweep } = props;
+  const guard = useSweepGuard();
+  const toggle = (i: number) => {
+    if (usable(i) && !guard.sweeping()) model.press(i);
   };
 
   const tiles = segmentedTiling(props);
-  const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, ...(tiles ? tilingRoving(tiles) : {}), onActivate: toggle });
+  const roving = useRovingTabIndex({
+    itemSelector: `.${s.segment}`,
+    ...(tiles ? tilingRoving(tiles) : {}),
+    ...selectionRoving(model, items.length, usable),
+  });
 
-  return (
+  const row = (
     <SegmentedRow
       roving={roving}
       role="group"
@@ -65,7 +76,7 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
       size={size}
       variant={variant}
       segments={items.map((item, i) => {
-        const state = item.selected ? ('on' as const) : ('off' as const);
+        const state = model.stateOf(i);
         return {
           key: String(item.value),
           state,
@@ -77,6 +88,7 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
               disabled={item.disabled}
               className={segmentClassName(state, place)}
               {...segmentPlaceProps(place)}
+              {...(sweep ? { [SWEEP_INDEX_ATTR]: i } : {})}
               onClick={() => toggle(i)}
             >
               {item.label}
@@ -85,5 +97,12 @@ export function OptionsBar<V extends string | number = string>(props: OptionsBar
         };
       })}
     />
+  );
+  if (!sweep) return row;
+  return (
+    <>
+      {row}
+      <SegmentSweeper rootRef={roving.rootRef} values={items.map((it) => it.value)} sweepable={usable} model={model} sweep={sweep} swept={guard.swept} />
+    </>
   );
 }

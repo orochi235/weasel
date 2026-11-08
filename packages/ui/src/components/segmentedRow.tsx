@@ -5,10 +5,11 @@ import { useOrientation, type Orientation } from './orientation';
 import { SegmentsAlong } from './segmentsAlong';
 import type { SegmentedSize, SegmentedVariant } from './segmentedVariant';
 import s from './segmentedControl.module.css';
-import { tiling, type LastRow, type Tiling } from '../tiling';
+import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-logic';
+import { tiling } from '../tiling';
 
 /** Whether a segment is on, off, or mixed: its sources disagree. */
-export type SegmentState = 'off' | 'on' | 'mixed';
+export type SegmentState = SelectState;
 
 /** Where a segment of a curved row goes, and how it marks its state there. */
 export interface SegmentPlace {

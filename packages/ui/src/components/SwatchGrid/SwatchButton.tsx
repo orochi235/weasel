@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
-import { inlineDirection, rovingGridTarget, rovingTarget } from '../../useRovingTabIndex';
+import { rovingGridTarget } from '@weasel-js/ui-logic';
+import { inlineDirection, rovingTarget } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { SwatchGridOption } from './SwatchGrid';
 import s from './SwatchGrid.module.css';
