@@ -452,6 +452,18 @@ describe('two fingers', () => {
   });
 });
 
+describe('a release of a pointer that was never pressed', () => {
+  it('leaves a multitouch gesture of the held fingers running', () => {
+    const h = harness({ inFlight: () => [2] });
+    h.down(1, 0, { pointerType: 'touch' });
+    h.down(2, 40, { pointerType: 'touch' });
+    h.recognizer.release(h.at(9, 200));
+    expect(h.kinds().slice(2)).toEqual(['pointerup']);
+    h.recognizer.release(h.at(2, 40));
+    expect(h.kinds().slice(3)).toEqual(['multitouch', 'multitouchtap', 'pointerup']);
+  });
+});
+
 describe('a multitouch tap', () => {
   const touch = { pointerType: 'touch' };
   const twoDown = (h: ReturnType<typeof harness>): void => {
