@@ -19,7 +19,7 @@ import {
   type SolidPaint,
   type Stroke,
 } from '@weasel-js/paint';
-import { getAlpha01 } from './color';
+import { getAlpha01, toHex8 } from './color';
 
 /** Default fill paint for shapes and the fill action — opaque white. */
 export const DEFAULT_FILL_COLOR = '#ffffffff';
@@ -65,9 +65,16 @@ export const GHOST_STROKE: string = cycleFill(0);
  * two in the renderer.
  */
 export function solid(color: string): SolidPaint {
-  const a = getAlpha01(color);
-  const rgb = color.length === 9 && color.startsWith('#') ? color.slice(0, 7) : color;
+  if (!hasHexAlpha(color)) return { color };
+  const hex8 = toHex8(color);
+  const a = getAlpha01(hex8);
+  const rgb = hex8.slice(0, 7);
   return a === 1 ? { color: rgb } : { color: rgb, opacity: a };
+}
+
+/** Whether `color` is a hex color with an alpha channel: `#rgba` or `#rrggbbaa`. */
+function hasHexAlpha(color: string): boolean {
+  return color.startsWith('#') && (color.length === 5 || color.length === 9) && toHex8(color).length === 9;
 }
 
 /** A solid stroke of `color` at `width` world units. Authoring shorthand for
@@ -107,8 +114,7 @@ export function paintWithAlpha(paint: Paint, alpha01: number): Paint {
  */
 export function paintWithColor(paint: Paint | undefined, color: string): Paint {
   const next = solid(color);
-  const explicitAlpha = color.length === 9 && color.startsWith('#');
-  if (explicitAlpha || paint === undefined) return next;
+  if (hasHexAlpha(color) || paint === undefined) return next;
   const alpha = paintAlpha(paint);
   return alpha === 1 ? next : { ...next, opacity: alpha };
 }
