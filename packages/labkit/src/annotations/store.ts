@@ -357,12 +357,9 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const frac = fracPatch ?? (points ? boundsOf(points) : null);
       const bounds = roundFrac(frac ?? worldToFrac(found.node.pose as MarkPose, content));
       const shape = points ? shapeFor(found.node.data.kind, points, bounds) : undefined;
+      const data = { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) };
       found.scene.batch('update mark', () => {
-        if (Object.keys(meaning).length > 0 || shape) {
-          found.scene.update(nid, {
-            data: { ...found.node.data, ...meaning, ...(shape ? { shape } : {}) },
-          });
-        }
+        if (Object.keys(meaning).length > 0 || shape) found.scene.update(nid, { data });
         if (frac) found.scene.setPose(nid, fracToWorld(bounds, content));
       });
     },
