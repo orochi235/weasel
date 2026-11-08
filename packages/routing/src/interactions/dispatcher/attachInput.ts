@@ -125,11 +125,7 @@ export function attachInput(
       hover.moved(e);
     });
   }
-  if (channels.wheel) {
-    const wheel = wheelInput(core, pinch.live);
-    listeners.on(canvas, 'wheel', wheel.capture, { passive: false, capture: true });
-    listeners.on(canvas, 'wheel', wheel.bubble, { passive: false });
-  }
+  if (channels.wheel) listenWheel(listeners, canvas, wheelInput(core, pinch.live));
   if (channels.pinch) {
     listeners.on(canvas, 'gesturestart', pinch.onGestureStart);
     listeners.on(canvas, 'gesturechange', pinch.onGestureChange);
@@ -166,6 +162,12 @@ export function attachInput(
     for (const d of src.dispatchers()) d.cancelAll('cancel');
     src.context().keymaps?.closeAll();
   };
+}
+
+/** Listen for the wheel in the capture phase, for one that landed here, and in the bubble phase, for one that landed in a nested surface. */
+function listenWheel(listeners: ListenerSet, canvas: HTMLElement | null, wheel: ReturnType<typeof wheelInput>): void {
+  listeners.on(canvas, 'wheel', wheel.capture, { passive: false, capture: true });
+  listeners.on(canvas, 'wheel', wheel.bubble, { passive: false });
 }
 
 /** Keep `core`'s pointer-over flag, pressing held keys as the pointer arrives and releasing them as it leaves. */

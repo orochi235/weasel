@@ -30,7 +30,7 @@ function WheelOn({ surface, run, kind }: { surface: RefObject<HTMLElement | null
     label: kind,
     defaultBinding: { kind },
     invoker: { timing: 'immediate', run: () => run() },
-  } satisfies Action) : undefined), [registry, run]);
+  } satisfies Action) : undefined), [registry, run, kind]);
   useGestureDispatcher({ canvasRef: surface, actions: registry, entriesById: NO_ENTRIES });
   return null;
 }

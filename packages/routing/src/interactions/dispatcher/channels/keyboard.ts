@@ -30,6 +30,17 @@ function keystrokeEvents(e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boo
   };
 }
 
+type Mods = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
+const NO_MODS: Mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+
+/** The `key-held` up event releasing `down`, with the modifiers of `mods`. */
+function releaseOf(down: HeldKey, mods: Mods): InputEvent {
+  return {
+    kind: 'key-held', key: down.key, ...(down.code !== undefined ? { code: down.code } : {}), phase: 'up',
+    altKey: mods.altKey, ctrlKey: mods.ctrlKey, metaKey: mods.metaKey, shiftKey: mods.shiftKey,
+  };
+}
+
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
 
@@ -130,18 +141,8 @@ export function keyboardInput(core: DispatchCore): {
     keymaps.up(e, physical);
     const down = heldKeys.get(physical);
     if (down === undefined) return;
-    const ev: InputEvent = {
-      kind: 'key-held',
-      key: down.key,
-      ...(down.code !== undefined ? { code: down.code } : {}),
-      phase: 'up',
-      altKey: e.altKey,
-      ctrlKey: e.ctrlKey,
-      metaKey: e.metaKey,
-      shiftKey: e.shiftKey,
-    };
     heldKeys.delete(physical);
-    dispatch(ev, down.on);
+    dispatch(releaseOf(down, e), down.on);
   };
 
   const releaseAll = (): void => {
@@ -149,19 +150,7 @@ export function keyboardInput(core: DispatchCore): {
     keymaps.clear();
     const releasing = [...heldKeys.values()];
     heldKeys.clear();
-    for (const { key, code, on } of releasing) {
-      const ev: InputEvent = {
-        kind: 'key-held',
-        key,
-        ...(code !== undefined ? { code } : {}),
-        phase: 'up',
-        altKey: false,
-        ctrlKey: false,
-        metaKey: false,
-        shiftKey: false,
-      };
-      dispatch(ev, on);
-    }
+    for (const down of releasing) dispatch(releaseOf(down, NO_MODS), down.on);
   };
 
   return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
