@@ -21,6 +21,7 @@ import { MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { titleStandIn } from './componentOf.ts';
 import { warnWhenWatchIsSilent } from './watchProbe.ts';
 import { watchRecovery } from './watchRecovery.ts';
+import { settledWatch } from './watchSettle.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
 /** Options for the `forge` vite plugin. */
@@ -300,7 +301,10 @@ export function forge(options: ForgeOptions): Plugin[] {
           ...ownEntries(['shell', 'frame']),
         ];
         const optimizeDeps = { entries };
-        if (command !== 'build') return { optimizeDeps };
+        if (command !== 'build') {
+          const watch = settledWatch(config.server?.watch);
+          return { optimizeDeps, ...(watch ? { server: { watch } } : {}) };
+        }
         return { optimizeDeps, build: { rolldownOptions: { input: writePages(at, shellUnder(at).title) } } };
       },
       generateBundle: {
