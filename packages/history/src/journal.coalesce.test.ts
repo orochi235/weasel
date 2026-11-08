@@ -80,3 +80,19 @@ describe('Journal.commit after coalescing', () => {
     expect(box.v).toBe(2);
   });
 });
+
+describe('BeginJournalOptions.coalesceWindowMs', () => {
+  it('takes a function, as the parent history does, and reads it at each push', () => {
+    const { parent, tick } = open(0);
+    let window = 0;
+    const j = parent.beginJournal({ label: 'session', coalesceWindowMs: () => window });
+    j.applyBatch([setOp(0, 1)], 'set');
+    tick(10);
+    j.applyBatch([setOp(1, 2)], 'set');
+    expect(j.entries().undo).toHaveLength(2);
+    window = 500;
+    tick(10);
+    j.applyBatch([setOp(2, 3)], 'set');
+    expect(j.entries().undo).toHaveLength(2);
+  });
+});

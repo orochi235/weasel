@@ -44,7 +44,7 @@ export interface BeginJournalOptions {
   targetId?: string;
   /** Coalesce window for the journal's own entries, as
    *  `CreateHistoryOptions.coalesceWindowMs`. Defaults to the parent's. */
-  coalesceWindowMs?: number;
+  coalesceWindowMs?: CreateHistoryOptions['coalesceWindowMs'];
 }
 
 /**
