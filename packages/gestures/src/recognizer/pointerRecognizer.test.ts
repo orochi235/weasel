@@ -195,6 +195,26 @@ describe('a double click', () => {
     expect(h.kinds()).not.toContain('doubleclick');
   });
 
+  it('is broken off by a press a long-press spent between the clicks', () => {
+    const h = harness({ handles: ['longpress'], more: { longPressMs: () => 200 } });
+    h.click(0);
+    h.down(1, 0, { pointerType: 'touch' });
+    h.clock.advance(200);
+    h.recognizer.release(h.at(1, 0));
+    h.click(0);
+    expect(h.kinds()).toContain('longpress');
+    expect(h.kinds()).not.toContain('doubleclick');
+  });
+
+  it('is broken off by a canceled press between the clicks', () => {
+    const h = harness();
+    h.click(0);
+    h.down(1, 0);
+    h.recognizer.cancel(1);
+    h.click(0);
+    expect(h.kinds()).not.toContain('doubleclick');
+  });
+
   it('starts over afterwards, so a third click composes nothing', () => {
     const h = harness();
     h.click();

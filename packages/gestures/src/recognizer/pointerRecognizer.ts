@@ -115,14 +115,17 @@ function heldGeometry(held: ReadonlyMap<number, Held>, toSurface: (client: Point
 }
 
 /** A hold that lasted: a long-press, or the contextmenu it falls back to. */
-function fireLongPress(rec: Held | undefined, sink: RecognizerSink, observer: RecognizerObserver): void {
+function fireLongPress(
+  rec: Held | undefined, sink: RecognizerSink, observer: RecognizerObserver, clicks: ClickMemory,
+): void {
   if (!rec) return;
   const evs = longPressEvents(rec.down);
   let result = sink.dispatch(evs.longpress);
   if (result === 'unhandled') result = sink.dispatch(evs.contextmenu);
   if (result === 'unhandled') return;
-  // The press is spent: its release must not click, nor a later move open a drag.
-  rec.buffered = null;
+  // The press is spent: its release must not click, nor a later move open a
+  // drag, nor the next click count as a second one.
+  rec.buffered = clicks.last = null;
   if (rec.holdType) observer.longPress?.(rec.holdType);
 }
 
@@ -184,7 +187,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         rec.holdType = s.pointerType;
         hold.arm(
           { pointerId: s.pointerId, pointerType: s.pointerType, press: rec.down, startedAt: clock.now(), duration: longPressMs() },
-          () => { fireLongPress(held.get(s.pointerId), sink, observer); },
+          () => { fireLongPress(held.get(s.pointerId), sink, observer, clicks); },
         );
       }
       if (held.size >= 2) claimForMultiTouch(s);
@@ -238,6 +241,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       const before = held.size;
       held.delete(pointerId);
       hold.cancel(pointerId);
+      clicks.last = null;
       // A cancel carries no modifiers of its own, so these are the press's.
       if (before >= 2) sink.dispatch(multiTouchEvent(before, rec.down, { end: 'cancel' }));
       touches.abandon();
@@ -251,7 +255,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         holding = true;
         if (!hold.pendingFor(id)) continue;
         hold.cancel(id);
-        fireLongPress(rec, sink, observer);
+        fireLongPress(rec, sink, observer, clicks);
       }
       return holding;
     },
