@@ -31,11 +31,21 @@ describe('createSceneJournals', () => {
     expect(sj.opened()).toEqual([]);
   });
 
-  it('forgets a suspended journal inside one that committed', () => {
+  it('forgets a suspended journal inside one that cancelled', () => {
     const sj = journals();
     const outer = sj.begin({ label: 'outer' });
     sj.begin({ label: 'inner' }).suspend();
-    outer.commit('Outer');
+    outer.cancel();
     expect(sj.opened()).toEqual([]);
+  });
+
+  it('resumes a suspended journal inside an active one', () => {
+    const sj = journals();
+    const outer = sj.begin({ label: 'outer' });
+    const inner = sj.begin({ label: 'inner' });
+    inner.suspend();
+    expect(sj.innermost()).toBe(outer);
+    sj.resume(inner);
+    expect(sj.innermost()).toBe(inner);
   });
 });

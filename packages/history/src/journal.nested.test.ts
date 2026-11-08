@@ -80,4 +80,43 @@ describe('a journal inside a journal', () => {
     outer.commit('done');
     expect(() => outer.beginJournal({ label: 'inner' })).toThrow(/not active/);
   });
+
+  it('cancels a suspended journal inside it along with its own entries', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    outer.applyBatch([pushOp(1)], 'one');
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyBatch([pushOp(2)], 'two');
+    inner.suspend();
+    outer.cancel();
+    expect(adapter.values).toEqual([]);
+    expect(() => h.resumeJournal(inner)).toThrow(/opened inside is not active/);
+  });
+
+  it('refuses to commit while a journal inside it is suspended', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyBatch([pushOp(2)], 'two');
+    inner.suspend();
+    expect(() => outer.commit('Outer')).toThrow(/still active or suspended/);
+  });
+
+  it('resumes a suspended journal inside an active one', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyBatch([pushOp(2)], 'two');
+    inner.suspend();
+    outer.applyBatch([pushOp(3)], 'three');
+    h.resumeJournal(inner);
+    expect(inner.isActive()).toBe(true);
+    expect(() => outer.beginJournal({ label: 'again' })).toThrow(/already active/);
+    inner.commit('Inner');
+    expect(outer.entries().undo.map((e) => e.label)).toEqual(['three', 'Inner']);
+    expect(h.activeJournal()).toBe(outer);
+  });
 });

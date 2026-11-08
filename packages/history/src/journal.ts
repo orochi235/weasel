@@ -3,6 +3,13 @@ import type { Op } from './op';
 import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry, type HistoryStep } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();
+/** A journal opened inside another, to the one it was opened in. */
+const ENCLOSING = new WeakMap<Journal, Journal>();
+
+/** The journal `j` was opened inside, if any. Not part of the public API. */
+export function _enclosingJournalInternal(j: Journal): Journal | undefined {
+  return ENCLOSING.get(j);
+}
 
 /** Called by `history.resumeJournal`. Not part of the public API. */
 export function _resumeJournalInternal(j: Journal): void {
@@ -66,9 +73,9 @@ export interface Journal {
   subscribe(listener: () => void): () => void;
 
   // Lifecycle
-  /** Throws while a journal opened inside this one is still active. */
+  /** Throws while a journal opened inside this one is still active or suspended. */
   commit(label: string): void;
-  /** Cancels a journal still active inside this one first. */
+  /** Cancels every journal still open inside this one first, suspended ones included. */
   cancel(): void;
   suspend(): void;
   isActive(): boolean;
@@ -104,6 +111,9 @@ export function createJournalInternal(
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
+  /** Journals opened inside this one; each leaves `RESUMERS` when it closes. */
+  const children: Journal[] = [];
+  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
 
   const journal: Journal = {
     targetId,
@@ -136,14 +146,17 @@ export function createJournalInternal(
     observe: (listener) => inner.observe(listener),
     beginJournal(nested: BeginJournalOptions): Journal {
       if (state !== 'active') throw new Error('Journal is not active');
-      return inner.beginJournal(nested);
+      const child = inner.beginJournal(nested);
+      ENCLOSING.set(child, journal);
+      children.push(child);
+      return child;
     },
     getVersion: () => version,
     subscribe: changed.subscribe,
     commit(label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
       // Its ops are applied but recorded nowhere this commit reads.
-      if (inner.activeJournal?.()) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
+      if (openChildren().length > 0) throw new Error('A journal inside this one is still active or suspended — commit or cancel it first');
       // Coalescing splits an entry in two: the forward half is the latest
       // push, the base half the first, and undo inverts the base.
       const { forwardOps, baseOps } = _journalAccessInternal(inner).appliedOps();
@@ -157,7 +170,10 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      inner.activeJournal?.()?.cancel();
+      for (const child of openChildren().reverse()) {
+        if (!child.isActive()) RESUMERS.get(child)!();
+        child.cancel();
+      }
       inner.goto(0);
       state = 'closed';
       RESUMERS.delete(journal);
