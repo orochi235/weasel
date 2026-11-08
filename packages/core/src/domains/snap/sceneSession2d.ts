@@ -46,6 +46,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
     ...(i.anchors ? { anchors: i.anchors } : {}),
   });
   const subject = subjectOf(i.req, reads);
+  const excluded = i.req.exclude ?? i.req.ids;
   return createSession2d({
     req: i.req,
     sources: i.sources,
@@ -56,7 +57,7 @@ export function sceneSession2d(i: SceneSessionInputs): SnapSession {
       const pose = reads.pose(id);
       return pose === undefined ? undefined : reads.drawnBox(id, pose);
     },
-    ...(i.req.ids ? { exclude: withSubtrees(i.scene, i.req.ids) } : {}),
+    ...(excluded ? { exclude: withSubtrees(i.scene, excluded) } : {}),
     view: i.view,
     reachPx: i.reachPx,
     scene: i.scene,
@@ -76,8 +77,10 @@ export interface SnapSession2dOptions {
   gesture: SnapGesture;
   /** World coords. */
   press: WorldPoint;
-  /** The subject, whose geometry offers no targets. */
+  /** The subject, whose geometry offers no targets unless `exclude` says otherwise. */
   ids?: readonly string[];
+  /** The nodes that offer no targets. Default `ids`. */
+  exclude?: readonly string[];
   /** The container a subject not yet in the scene lands in. */
   parent?: string;
   /** Point gestures: the previous anchor, a line's start. */
@@ -128,6 +131,7 @@ export function createSnapSession2d(opts: SnapSession2dOptions): SnapSession {
     gesture: opts.gesture,
     press: opts.press,
     ...(opts.ids ? { ids: opts.ids } : {}),
+    ...(opts.exclude ? { exclude: opts.exclude } : {}),
     ...(opts.parent !== undefined ? { parent: opts.parent } : {}),
     ...(opts.origin ? { origin: opts.origin } : {}),
     ...(opts.constrain ? { constrain: opts.constrain } : {}),
