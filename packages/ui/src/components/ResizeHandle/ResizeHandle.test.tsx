@@ -164,6 +164,14 @@ describe('ResizeHandle', () => {
     expect(onInput).toHaveBeenLastCalledWith(600);
   });
 
+  it('gives Home the smallest pane and End the largest when inverted too', () => {
+    const { handle, onInput } = setup({ invert: true });
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(onInput).toHaveBeenLastCalledWith(200);
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(onInput).toHaveBeenLastCalledWith(600);
+  });
+
   it('ends the drag when the release lands off the handle', () => {
     // The whole point of the session: pointerup on the document, not the
     // element, is what a real drag that leaves the handle delivers.
