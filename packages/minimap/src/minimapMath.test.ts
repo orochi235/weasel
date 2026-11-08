@@ -164,6 +164,33 @@ describe('computeFitView — fit="scene"', () => {
   });
 });
 
+describe('computeFitView — copies and hidden nodes', () => {
+  const center = (view: View, dims: { width: number; height: number }) => ({
+    x: view.x + dims.width / (2 * view.scale.x), y: view.y + dims.height / (2 * view.scale.y),
+  });
+
+  it('frames every copy a group draws, as zoom to fit does', () => {
+    const scene = makeScene();
+    const g = scene.add({
+      kind: 'group', layer: 'bg', pose: { x: 0, y: 0, width: 0, height: 0 }, data: { label: 'g' },
+      copiesFromPose: () => [[1, 0, 0, 1, 90, 0]],
+    });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' }, parent: g });
+    const dims = { width: 200, height: 200 };
+    const view = computeFitView(scene, dims, 'scene', identityPoseBounds);
+    expect(view.scale.x).toBeCloseTo(184 / 100, 6);
+    expect(center(view, dims).x).toBeCloseTo(50, 6);
+  });
+
+  it('leaves out a node the canvas does not draw', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'a' } });
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 990, y: 0, width: 10, height: 10 }, data: { label: 'b' }, hidden: true });
+    const view = computeFitView(scene, { width: 200, height: 200 }, 'scene', identityPoseBounds);
+    expect(view.scale.x).toBeCloseTo(184 / 10, 6);
+  });
+});
+
 describe('computeFitView — fit={kind:"world", rect}', () => {
   it('landscape rect (wider than dims) picks the x-axis fit', () => {
     const scene = makeScene();
