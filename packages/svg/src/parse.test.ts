@@ -406,6 +406,13 @@ describe('values read through the property table', () => {
     expect(p.opacity).toBe(0.5);
     expect(p.fill).toMatchObject({ opacity: 0.25 });
   });
+  it('multiplies a color\'s own alpha by fill-opacity and stroke-opacity', () => {
+    const p = parse('<rect width="1" height="1" fill="rgba(255,0,0,0.5)" fill-opacity="0.5"'
+      + ' stroke="url(#none) rgba(0,0,255,0.5)" stroke-opacity="0.4"/>').nodes[0] as SvgPathNode;
+    expect(p.fill).toEqual({ kind: 'solid', color: '#ff0000', opacity: 0.25 });
+    expect(p.stroke?.paint).toEqual({ kind: 'solid', color: '#0000ff', opacity: 0.2 });
+    expect(p.stroke?.opacity).toBe(0.2);
+  });
   it('resolves a percentage font-size on <text> against the parent\'s', () => {
     const lone = parse('<text font-size="150%">hi</text>');
     expect(lone.nodes[0]).toMatchObject({ style: { fontSize: 24 } });

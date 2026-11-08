@@ -36,7 +36,7 @@ export function readPaint(
       // behavior rather than a recovery — nothing to warn about.
       if (parsed.fallback) {
         const flat: SvgPaint = { kind: 'solid', color: parsed.fallback.color };
-        const a = opacity ?? (parsed.fallback.alpha < 1 ? parsed.fallback.alpha : undefined);
+        const a = paintAlpha(opacity, parsed.fallback.alpha);
         if (a != null) (flat as { opacity?: number }).opacity = a;
         return flat;
       }
@@ -46,9 +46,15 @@ export function readPaint(
     return { kind: 'gradient', paint: opacity != null ? { ...paint, opacity } : paint };
   }
   const out: SvgPaint = { kind: 'solid', color: parsed.color };
-  const a = opacity ?? (parsed.alpha < 1 ? parsed.alpha : undefined);
+  const a = paintAlpha(opacity, parsed.alpha);
   if (a != null) (out as { opacity?: number }).opacity = a;
   return out;
+}
+
+/** A color's own alpha under `fill-opacity` / `stroke-opacity`: SVG multiplies them. */
+function paintAlpha(opacity: number | undefined | null, alpha: number): number | undefined {
+  if (opacity != null) return opacity * alpha;
+  return alpha < 1 ? alpha : undefined;
 }
 
 export function readStroke(
@@ -64,8 +70,10 @@ export function readStroke(
   if (paint.kind === 'none') return undefined;
   const n = styleValue(style, 'stroke-width', onWarn) ?? 1;
   const stroke: SvgStroke = { paint, width: nonScaling ? { px: n } : n };
-  const opacity = styleValue(style, 'stroke-opacity', onWarn);
-  if (opacity != null) stroke.opacity = opacity;
+  // The paint already carries `stroke-opacity`, times a color's own alpha.
+  if (styleValue(style, 'stroke-opacity', onWarn) != null) {
+    stroke.opacity = paint.kind === 'solid' ? paint.opacity : paint.paint.opacity;
+  }
   const cap = styleValue(style, 'stroke-linecap', onWarn);
   if (cap) stroke.cap = cap;
   const join = styleValue(style, 'stroke-linejoin', onWarn);
