@@ -14,6 +14,7 @@ import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
 import { keyboardInput } from './channels/keyboard';
+import { joinSurface } from './channels/keyPeers';
 import { listenerSet, type ListenerSet } from './channels/listeners';
 import { pointerInput, type PointerInput, type PointerInputOptions } from './channels/pointer';
 import { webkitPinchInput } from './channels/webkitPinch';
@@ -95,6 +96,7 @@ export function attachInput(
     listeners.on(window, 'keydown', keys.onKeyDown, keyCapture);
     listeners.on(window, 'keyup', keys.onKeyUp, keyCapture);
   }
+  const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
   listeners.on(window, 'blur', onWindowBlur);
   // Ahead of the pointer channel's own listener, and whether or not that
   // channel is on: a press with any button makes this the scope chrome and
@@ -148,6 +150,7 @@ export function attachInput(
     if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
     releaseSurface?.();
+    leaveKeyPeers?.();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     ingest.endPreview();

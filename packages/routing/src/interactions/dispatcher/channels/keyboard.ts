@@ -4,6 +4,7 @@ import type { DispatchCore } from '../dispatchCore';
 import type { KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
+import { passOn, type TakeKey } from './keyPeers';
 import { inModalOver } from './modal';
 import { followPointer, type HeldKey } from './overKeys';
 
@@ -35,6 +36,8 @@ const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.clo
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
   onKeyUp: (e: KeyboardEvent) => void;
+  /** A keystroke the dispatcher holding the keys on this surface declined: handle it as though this one held them. */
+  take: TakeKey;
   /** End every held key, as a window that lost focus must: it never delivers the keyup. */
   releaseAll: () => void;
   /** The pointer came over the canvas: press the keys already held for its `over` bindings. */
@@ -53,17 +56,28 @@ export function keyboardInput(core: DispatchCore): {
   const keymaps = keymapKeys(core.keymaps);
   const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
+  // Keystrokes already offered here by a peer on the surface, which this channel's own listener leaves.
+  const taken = new WeakSet<Event>();
 
   const onKeyDown = (e: KeyboardEvent) => {
     // Before the filters: a key another surface took is still down.
     downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e) });
     if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
-    if (inModalOver(e.target, core.canvas)) return;
+    if (inModalOver(e.target, core.canvas) || taken.has(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
     const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };
     if (!reach.held && !reach.over) return;
+    consider(e, reach);
+    if (reach.held && core.canvas) passOn(core.canvas, take, e);
+  };
 
+  const take: TakeKey = (e) => {
+    taken.add(e);
+    consider(e, { held: true, over: core.pointerOver() });
+  };
+
+  const consider = (e: KeyboardEvent, reach: KeyReach): void => {
     // Autorepeat for a key that's already engaged a key-held binding is
     // suppressed entirely — no dispatch (no trace flood) and the
     // browser default is blocked. Holding Space-for-hand otherwise
@@ -150,5 +164,5 @@ export function keyboardInput(core: DispatchCore): {
     }
   };
 
-  return { onKeyDown, onKeyUp, releaseAll, ...followPointer(core, downKeys, heldKeys) };
+  return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
 }

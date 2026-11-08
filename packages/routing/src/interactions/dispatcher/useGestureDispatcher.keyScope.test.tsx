@@ -73,6 +73,29 @@ function SharedSurface({ outer, inner }: { outer: () => void; inner: () => void 
   );
 }
 
+/** A canvas dispatching on the registry above it, which binds nothing of its own. */
+function BareCanvas({ name }: { name: string }): ReactNode {
+  const registry = useActionsRegistry()!;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useGestureDispatcher({ canvasRef, actions: registry, entriesById: NO_ENTRIES });
+  return <canvas ref={canvasRef} data-name={name} />;
+}
+
+/** A dispatcher on `surface` binding `key` to `run`, under the id `id`. */
+function KeyOnSurface({ surface, id, keyName, run }: {
+  surface: RefObject<HTMLDivElement | null>; id: string; keyName: string; run: () => void;
+}): null {
+  const registry = useActionsRegistry()!;
+  useEffect(() => registry.register({
+    id,
+    label: id,
+    defaultBinding: { kind: 'key', key: keyName },
+    invoker: { timing: 'immediate', run: () => run() },
+  } satisfies Action), [registry, id, keyName, run]);
+  useGestureDispatcher({ canvasRef: surface, actions: registry, entriesById: NO_ENTRIES });
+  return null;
+}
+
 /** A canvas whose `over` binding peeks while Alt is held, as a loupe's does. */
 function PeekCanvas({ name, peeking }: { name: string; peeking: (on: boolean) => void }): ReactNode {
   const registry = useActionsRegistry()!;
@@ -183,6 +206,38 @@ describe('a key that reaches the page', () => {
     act(() => { shared.dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
     press();
     expect([outer.mock.calls.length, inner.mock.calls.length]).toEqual([0, 2]);
+  });
+
+  it('fires once when two canvases on one registry hear it, on the one last pressed in', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} /><BareCanvas name="b" /></InputScope></Root>);
+    giveKeys(canvas('b'));
+    press();
+    giveKeys(canvas('a'));
+    press();
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls through to the other dispatcher on the surface when no binding in the active scope takes it', () => {
+    const inner = vi.fn();
+    const outer = vi.fn();
+    const outerQ = vi.fn();
+    function Pane(): ReactNode {
+      const surfaceRef = useRef<HTMLDivElement | null>(null);
+      return (
+        <div ref={surfaceRef} data-name="pane">
+          <Root><KeyOnSurface surface={surfaceRef} id="inner.q" keyName="q" run={inner} /></Root>
+          <KeyOnSurface surface={surfaceRef} id="outer.m" keyName="m" run={outer} />
+          <KeyOnSurface surface={surfaceRef} id="outer.q" keyName="q" run={outerQ} />
+        </div>
+      );
+    }
+    render(<Root><Pane /></Root>);
+    const pane = document.querySelector('[data-name="pane"]')!;
+    act(() => { pane.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    press();
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', cancelable: true })); });
+    expect([inner.mock.calls.length, outerQ.mock.calls.length, outer.mock.calls.length]).toEqual([1, 0, 1]);
   });
 
   it('goes to a canvas that claims the keys on mount', () => {
