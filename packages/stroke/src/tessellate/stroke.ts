@@ -1,6 +1,6 @@
 import { remapPerAnchor, resolveCornersWithSources, type Path, type RectPath } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
-import { alignedStrokeRect, resolveScreenLength } from '@weasel-js/paint';
+import { alignedStrokeRect, alignedStrokeRectHolds, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
@@ -59,8 +59,8 @@ export function resolveStrokeWidth(width: ScreenLength, scale: number): number {
  *   - cap: 'butt' | 'round' | 'square'
  *   - join: 'miter' | 'round' | 'bevel'
  *   - center alignment directly; RectPath inner/outer alignment via a
- *     pre-shifted rect; PolygonPath inner/outer alignment via stencil at the
- *     renderer level
+ *     pre-shifted rect; any other inner/outer alignment (`ribbonAligns` says
+ *     which) as a centered ribbon the caller cuts to its side
  *   - dash splitting
  */
 export function tessellateStroke(
@@ -129,7 +129,7 @@ export function strokePolylines(
   // clipping at the renderer level (not here).
   const rectInMetric = metric && path.kind === 'rect' ? rectIntoMetric(path, metric) : null;
   let workingPath: Path = rectInMetric ?? path;
-  if (workingPath.kind === 'rect' && align !== 'center') {
+  if (workingPath.kind === 'rect' && align !== 'center' && alignedStrokeRectHolds(workingPath, align, width)) {
     workingPath = { kind: 'rect', ...alignedStrokeRect(workingPath, align, width) };
   }
 
@@ -147,6 +147,21 @@ export function strokePolylines(
       : (ux, uy) => worldWidthInMetricAlongWorld(metric, ux, uy);
   for (const pl of polylines) populateWidths(pl, vertexWidths, stroke.nib, width, scale);
   return { polylines, rectInMetric };
+}
+
+/**
+ * Whether the ribbon {@link tessellateStroke} builds for `stroke` on `path` is
+ * already on its `align` side: centered strokes, and a rect's inner or outer
+ * one, built from the rect shifted by half the width (in `metric`'s space,
+ * where one is given) while {@link alignedStrokeRectHolds}. Anything else gets
+ * a centered ribbon, which the caller cuts to its side of the path.
+ */
+export function ribbonAligns(path: Path, stroke: Stroke, metric?: StrokeMetric): boolean {
+  const align = stroke.align ?? 'center';
+  if (align === 'center') return true;
+  if (path.kind !== 'rect') return false;
+  const rect = metric ? rectIntoMetric(path, metric) : path;
+  return rect !== null && alignedStrokeRectHolds(rect, align, ribbonStyle(stroke).width);
 }
 
 /** What `out` holds, as a mesh placed where `path`'s own vertices are. */

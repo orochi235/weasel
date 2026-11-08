@@ -30,6 +30,7 @@ export type {
   Region,
   ScreenLength,
 } from './paint';
+export { alignedStrokeRect, alignedStrokeRectHolds } from './alignedStrokeRect';
 export {
   TILE_KINDS,
   isImagePatternPaint,
@@ -57,7 +58,6 @@ export {
 export { scaleVertexWidth, vertexHalfWidths, vertexWidthFromSides, widestHalfWidth } from './vertexWidth';
 export type { HalfWidths, VertexWidth, VertexWidthSides } from './vertexWidth';
 export {
-  alignedStrokeRect,
   resolveScreenLength,
   STROKE_DASH_RATIOS,
   dashForStrokeStyle,

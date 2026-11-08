@@ -50,6 +50,11 @@ function nextDistinct(pl: Polyline, i: number, n: number): number {
   for (let k = i + 1; k < n; k++) if (dir(pl, i, k)) return k;
   return -1;
 }
+/** The first index from 0 whose point differs from `i`'s, for a closed polyline wrapping past its end. */
+function nextDistinctFromStart(pl: Polyline, i: number): number {
+  for (let k = 0; k < i; k++) if (dir(pl, i, k)) return k;
+  return -1;
+}
 function prevDistinct(pl: Polyline, i: number): number {
   for (let k = i - 1; k >= 0; k--) if (dir(pl, k, i)) return k;
   return -1;
@@ -59,7 +64,7 @@ function prevDistinct(pl: Polyline, i: number): number {
  * Where each requested marker sits on `pl` and the angle it points at.
  * Mid sites fall only on authored vertices, never on flattened curve samples,
  * and need the polyline to carry anchor data; without it no mid sites are returned.
- * `pl`'s first and last points are never mid sites, so a trimmed run's ends are ends.
+ * `pl`'s first point is never a mid site, nor an open `pl`'s last, so a trimmed run's ends are ends.
  * `fromClosed` marks an open run cut from a closed subpath, which takes no start or end site.
  * A head the line stops `insets` short of is seated on the shortened line: its back on the
  * line's cut end and its axis along the line there, so a curving shaft enters the back of the
@@ -92,11 +97,14 @@ export function markerSites(
   if (want.mid) {
     const A = pl.anchorA, B = pl.anchorB, T = pl.anchorT;
     if (A && B && T) {
-      for (let i = 1; i < n - 1; i++) {
+      // A closed polyline's last point turns back to its first, so it is a mid site too.
+      const lastMid = pl.closed ? n - 1 : n - 2;
+      for (let i = 1; i <= lastMid; i++) {
         // An authored anchor, not a flattened curve sample.
         if (A[i] !== B[i] || T[i] !== 0) continue;
         const p = prevDistinct(pl, i);
-        const q = nextDistinct(pl, i, n);
+        let q = nextDistinct(pl, i, n);
+        if (q < 0 && pl.closed) q = nextDistinctFromStart(pl, i);
         if (p < 0 || q < 0) continue;
         const inDir = dir(pl, p, i)!;
         const outDir = dir(pl, i, q)!;

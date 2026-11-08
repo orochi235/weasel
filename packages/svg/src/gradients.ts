@@ -10,9 +10,8 @@ import { getPaintKind, getMarker, isPatternPaint, isTileKind } from '@weasel-js/
 import type {
   Paint, GradStop, PaintUnits, MarkerRef, Path,
 } from '@weasel-js/core';
-import { parseRatio, readStops } from './gradientStops';
+import { parseRatio, readStops, stopsXml } from './gradientStops';
 import { trimNumber } from './transform';
-import { escapeAttr } from './xmlEscape';
 import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
@@ -470,7 +469,7 @@ function gradientUnitsAttr(units: PaintUnits | undefined): string {
 
 function gradientXml(id: string, paint: Paint): string {
   if (paint.kind === 'linear-gradient') {
-    const stops = paint.stops.map(stopXml).join('');
+    const stops = stopsXml(paint.stops, paint.interpolate);
     return (
       `<linearGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `x1="${trimNumber(paint.from.x)}" y1="${trimNumber(paint.from.y)}" ` +
@@ -479,7 +478,7 @@ function gradientXml(id: string, paint: Paint): string {
     );
   }
   if (paint.kind === 'conic-gradient') {
-    const stops = paint.stops.map(stopXml).join('');
+    const stops = stopsXml(paint.stops, paint.interpolate);
     const P = WEASEL_NS_PREFIX;
     return (
       `<${P}:conicGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
@@ -489,7 +488,7 @@ function gradientXml(id: string, paint: Paint): string {
     );
   }
   if (paint.kind === 'radial-gradient') {
-    const stops = paint.stops.map(stopXml).join('');
+    const stops = stopsXml(paint.stops, paint.interpolate);
     return (
       `<radialGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `cx="${trimNumber(paint.center.x)}" cy="${trimNumber(paint.center.y)}" ` +
@@ -512,14 +511,4 @@ function paintFallback(paint: Paint): string {
   // packed alpha comes off rather than riding out as an 8-digit hex.
   const packed = /^#([0-9a-f]{6})[0-9a-f]{2}$/i.exec(color);
   return packed ? `#${packed[1].toLowerCase()}` : color;
-}
-
-function stopXml(s: GradStop): string {
-  // Detect packed-alpha hex (#rrggbbaa) and split out stop-opacity.
-  const m = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(s.color);
-  if (m) {
-    const alpha = parseInt(m[2], 16) / 255;
-    return `<stop offset="${trimNumber(s.offset)}" stop-color="#${m[1].toLowerCase()}" stop-opacity="${trimNumber(alpha)}"/>`;
-  }
-  return `<stop offset="${trimNumber(s.offset)}" stop-color="${escapeAttr(s.color)}"/>`;
 }

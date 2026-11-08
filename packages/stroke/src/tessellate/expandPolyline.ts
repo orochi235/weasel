@@ -41,7 +41,8 @@ export function expandPolyline(pl: Polyline & { tangent?: readonly [number, numb
   const pts = pl.points;
   const ptCount = pts.length / 2;
   const segCount = ptCount - 1;
-  if (segCount < 1) return;
+  // A lone moveto is never stroked; a closed one is a zero-length subpath, as `M5 5Z` is.
+  if (segCount < 1 && !(pl.closed && ptCount === 1)) return;
 
   // Anchor params per polyline point (set by extractPolylines; splitForDash
   // re-derives them on dash boundaries). Default to A=B=0,t=0 if missing.
@@ -77,7 +78,7 @@ export function expandPolyline(pl: Polyline & { tangent?: readonly [number, numb
     }
   }
   if (segs.length === 0) {
-    if (!pl.closed && style.cap !== 'butt') emitDot(pl, style.cap, pos(0), neg(0), plA[0], plB[0], plT[0], out, at);
+    if (style.cap !== 'butt') emitDot(pl, style.cap, pos(0), neg(0), plA[0], plB[0], plT[0], out, at);
     return;
   }
 
@@ -180,7 +181,7 @@ function ownVertices(out: RibbonOut, mark: Mark, s: number, copy = true): void {
 }
 
 /**
- * The caps of an open polyline that never leaves its first point, which SVG
+ * The caps of a polyline that never leaves its first point, open or closed, which SVG
  * strokes for a round or square cap: a disc, or a square turned to `tangent`,
  * the direction of the line a zero-length dash was cut from, or else the x axis.
  */

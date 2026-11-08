@@ -71,6 +71,20 @@ describe('markerSites', () => {
     expect(sites.some((s) => s.role === 'start' || s.role === 'end')).toBe(false);
   });
 
+  it('puts a mid marker on every vertex of a closed subpath but its first, the last included', () => {
+    const square: Polyline = {
+      points: [0, 0, 10, 0, 10, 10, 0, 10],
+      closed: true,
+      anchorA: new Uint32Array([0, 1, 2, 3]),
+      anchorB: new Uint32Array([0, 1, 2, 3]),
+      anchorT: new Float32Array([0, 0, 0, 0]),
+    };
+    const mids = markerSites(square, { start: false, mid: true, end: false });
+    expect(mids.map((s) => [s.x, s.y])).toEqual([[10, 0], [10, 10], [0, 10]]);
+    // The last vertex turns from going -x to going -y, back to the start.
+    expect(mids[2].angle).toBeCloseTo(-3 * Math.PI / 4, 6);
+  });
+
   it('returns nothing when no marker was asked for', () => {
     expect(markerSites(bent(), { start: false, mid: false, end: false })).toEqual([]);
   });
