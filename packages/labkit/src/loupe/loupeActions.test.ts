@@ -1,6 +1,12 @@
 import { heldKeySpec } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { createLoupeActions, LOUPE_AIM_ID, LOUPE_LEAVE_ID, LOUPE_PEEK_ID, LOUPE_PICK_ID } from './loupeActions';
+import {
+  createLoupeActions,
+  LOUPE_AIM_ID,
+  LOUPE_LEAVE_ID,
+  LOUPE_PEEK_ID,
+  LOUPE_PICK_ID,
+} from './loupeActions';
 
 const input = {
   shown: () => false,
@@ -72,8 +78,16 @@ describe('the eyedropper click', () => {
   it('picks at the pointer while the eyedropper is on, and declines while it is off', () => {
     let on = false;
     let picks = 0;
-    const pick = createLoupeActions({ ...input, dropping: () => on, pickAtPointer: () => { picks++; } }, null)
-      .find((a) => a.id === LOUPE_PICK_ID)!;
+    const pick = createLoupeActions(
+      {
+        ...input,
+        dropping: () => on,
+        pickAtPointer: () => {
+          picks++;
+        },
+      },
+      null,
+    ).find((a) => a.id === LOUPE_PICK_ID)!;
     expect(specOf(LOUPE_PICK_ID)).toEqual({ kind: 'click', mods: ANY_MODS });
     expect(pick.enabled?.({} as never)).toBe('not-applicable');
     on = true;

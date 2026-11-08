@@ -30,7 +30,10 @@ export function useLoupeSwitch(): { loupeSwitch: LoupeSwitch; loupeBindings?: Lo
     setLenses((n) => n + 1);
     return () => setLenses((n) => n - 1);
   }, []);
-  const loupeSwitch = useMemo(() => ({ on, mount, dropper, pick: setPicked }), [on, mount, dropper]);
+  const loupeSwitch = useMemo(
+    () => ({ on, mount, dropper, pick: setPicked }),
+    [on, mount, dropper],
+  );
   if (lenses === 0) return { loupeSwitch };
   return {
     loupeSwitch,

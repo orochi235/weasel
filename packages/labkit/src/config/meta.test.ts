@@ -8,9 +8,12 @@ import { prefsFromConfig } from './toPrefs';
 const leafAt = (r: ReturnType<typeof resolveConfigSchema>, k: string) =>
   r.group.children[k] as unknown as Record<string, unknown>;
 
-describe('a field\'s meta', () => {
+describe("a field's meta", () => {
   it('rides the resolved leaf, merged across calls', () => {
-    const r = resolveConfigSchema(f.schema({ size: f.number(1).meta({ prefsOnly: true }).meta({ owner: 'engine' }) }), []);
+    const r = resolveConfigSchema(
+      f.schema({ size: f.number(1).meta({ prefsOnly: true }).meta({ owner: 'engine' }) }),
+      [],
+    );
     expect(leafAt(r, 'size').meta).toEqual({ prefsOnly: true, owner: 'engine' });
   });
 
@@ -21,13 +24,19 @@ describe('a field\'s meta', () => {
   });
 
   it('survives a round trip through prefs', () => {
-    const resolved = resolveConfigSchema(f.schema({ size: f.number(1).meta({ prefsOnly: true }) }), []);
+    const resolved = resolveConfigSchema(
+      f.schema({ size: f.number(1).meta({ prefsOnly: true }) }),
+      [],
+    );
     const again = resolveConfigSchema(configFromPrefs(prefsFromConfig(resolved)), []);
     expect(leafAt(again, 'size').meta).toEqual({ prefsOnly: true });
   });
 
   it('is not something a settings search matches', () => {
-    const resolved = resolveConfigSchema(f.schema({ size: f.number(1).meta({ prefsOnly: 'prefsOnly' }) }), []);
+    const resolved = resolveConfigSchema(
+      f.schema({ size: f.number(1).meta({ prefsOnly: 'prefsOnly' }) }),
+      [],
+    );
     expect(filterPrefSubtree(resolved.group, 'prefsOnly')).toBeNull();
   });
 });

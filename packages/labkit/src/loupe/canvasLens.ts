@@ -1,4 +1,10 @@
-import { canvasPixelSource, type LoupePoint, type LoupeSize, loupeExtent, type PixelSource } from '@weasel-js/loupe';
+import {
+  canvasPixelSource,
+  type LoupePoint,
+  type LoupeSize,
+  loupeExtent,
+  type PixelSource,
+} from '@weasel-js/loupe';
 import { centerOn } from '../canvas/camera';
 import { screenToWorld } from '../canvas/canvasCoords';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';

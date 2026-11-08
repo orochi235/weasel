@@ -111,7 +111,12 @@ describe('builtinContributions', () => {
 
   it('offers the eyedropper beside the loupe, and one readout that copies the color picked', () => {
     expect(ids(bare)).not.toContain('eyedropper');
-    const on = builtinContributions(bare, { ...ctx, hasLoupe: true, dropperOn: true, pickedColor: '#12ab34' });
+    const on = builtinContributions(bare, {
+      ...ctx,
+      hasLoupe: true,
+      dropperOn: true,
+      pickedColor: '#12ab34',
+    });
     expect(on.find((c) => c.id === 'eyedropper')?.item).toMatchObject({ pressed: true });
     const readout = on.find((c) => c.id === 'picked-color');
     expect(readout?.item).toMatchObject({ label: '#12ab34', showLabel: true, disabled: false });

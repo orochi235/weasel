@@ -65,7 +65,10 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
 
 /** Whether a host point falls inside the lens's box. */
 function insideLens(lens: LoupeLens, p: LoupePoint): boolean {
-  return Math.abs(p.x - lens.center.x) <= lens.width / 2 && Math.abs(p.y - lens.center.y) <= lens.height / 2;
+  return (
+    Math.abs(p.x - lens.center.x) <= lens.width / 2 &&
+    Math.abs(p.y - lens.center.y) <= lens.height / 2
+  );
 }
 
 /** The box the lens is drawn in and what it shows: where the host's `place` puts it, asked only while the lens
@@ -75,10 +78,19 @@ function lensOf(
   model: LoupeModel,
   visible: boolean,
 ): LoupeLens {
-  const placed = visible ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null) : null;
+  const placed = visible
+    ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null)
+    : null;
   if (!placed) {
     const { aim, factor } = model;
-    return { center: aim, shows: aim, width: options.diameter, height: options.diameter, factor, shape: options.shape };
+    return {
+      center: aim,
+      shows: aim,
+      width: options.diameter,
+      height: options.diameter,
+      factor,
+      shape: options.shape,
+    };
   }
   return {
     center: placed.center,

@@ -234,9 +234,12 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
           const src = resolveLoupeSource(input);
           return src ? [canvasPixelSource(src, () => sourceBoxIn(src, host.current))] : [];
         })
-      : surface && createSampler(() => stackSources(surface.layers, surface.canvases.current, surface.size));
+      : surface &&
+        createSampler(() => stackSources(surface.layers, surface.canvases.current, surface.size));
     // Every source here is a canvas read at once, so the answer never waits.
-    return sampler ? (p: { x: number; y: number }) => sampler.sample(p) as string | null : undefined;
+    return sampler
+      ? (p: { x: number; y: number }) => sampler.sample(p) as string | null
+      : undefined;
   }, [surface, options.source, host]);
 
   // Keyed on the resolved source, not the prop: an inline getter is re-made
@@ -271,7 +274,12 @@ export function TrialLoupe<TData = unknown, TLayer extends string = string, TPos
   // dispatcher; outside one, `<CameraScope>` gives them an isolated scope.
   const gestures = (
     <CameraScope>
-      <LoupeGestures hostRef={host} input={loupe.input} peekKey={options.peekKey ?? null} dropping={loupeSwitch?.dropper} />
+      <LoupeGestures
+        hostRef={host}
+        input={loupe.input}
+        peekKey={options.peekKey ?? null}
+        dropping={loupeSwitch?.dropper}
+      />
     </CameraScope>
   );
 

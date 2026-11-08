@@ -79,11 +79,16 @@ function fakeCanvas(pixel: Rgba): HTMLCanvasElement {
 
 class Probe {
   last: Rgba = [0, 0, 0, 0];
-  constructor(public width: number, public height: number) {}
+  constructor(
+    public width: number,
+    public height: number,
+  ) {}
   getContext() {
     return {
       globalCompositeOperation: 'source-over',
-      drawImage: (from: { pixel: Rgba }) => { this.last = from.pixel; },
+      drawImage: (from: { pixel: Rgba }) => {
+        this.last = from.pixel;
+      },
       getImageData: () => ({ data: Uint8ClampedArray.from(this.last) }),
     };
   }
@@ -96,29 +101,44 @@ describe('stackSources', () => {
   const layers = (ids: string[]): CanvasLayerDescriptor[] =>
     ids.map((id) => ({ id, visible: true, render: vi.fn() }));
   const size = { width: 100, height: 100 };
-  const sampleAt = (stack: CanvasLayerDescriptor[], canvases: Map<string, HTMLCanvasElement>, x = 5, y = 5) =>
-    createSampler(stackSources(stack, canvases, size)).sample({ x, y });
+  const sampleAt = (
+    stack: CanvasLayerDescriptor[],
+    canvases: Map<string, HTMLCanvasElement>,
+    x = 5,
+    y = 5,
+  ) => createSampler(stackSources(stack, canvases, size)).sample({ x, y });
 
   it('reports the topmost layer with something opaque there', () => {
-    const canvases = new Map([['under', fakeCanvas([0, 0, 255, 255])], ['over', fakeCanvas([255, 0, 0, 255])]]);
+    const canvases = new Map([
+      ['under', fakeCanvas([0, 0, 255, 255])],
+      ['over', fakeCanvas([255, 0, 0, 255])],
+    ]);
     expect(sampleAt(layers(['under', 'over']), canvases)).toBe('#ff0000');
   });
 
   it('composites a translucent layer onto the one below', () => {
-    const canvases = new Map([['under', fakeCanvas([0, 0, 255, 255])], ['over', fakeCanvas([255, 0, 0, 128])]]);
+    const canvases = new Map([
+      ['under', fakeCanvas([0, 0, 255, 255])],
+      ['over', fakeCanvas([255, 0, 0, 128])],
+    ]);
     expect(sampleAt(layers(['under', 'over']), canvases)).toBe('#80007f');
   });
 
   it('skips a hidden layer even when it has pixels', () => {
     const stack = layers(['under', 'over']);
     stack[1].visible = false;
-    const canvases = new Map([['under', fakeCanvas([0, 0, 255, 255])], ['over', fakeCanvas([255, 0, 0, 255])]]);
+    const canvases = new Map([
+      ['under', fakeCanvas([0, 0, 255, 255])],
+      ['over', fakeCanvas([255, 0, 0, 255])],
+    ]);
     expect(sampleAt(stack, canvases)).toBe('#0000ff');
   });
 
   it('says nothing rather than black when every layer is transparent, or off the backing store', () => {
     expect(sampleAt(layers(['only']), new Map([['only', fakeCanvas([0, 0, 0, 0])]]))).toBeNull();
-    expect(sampleAt(layers(['only']), new Map([['only', fakeCanvas([255, 0, 0, 255])]]), 400)).toBeNull();
+    expect(
+      sampleAt(layers(['only']), new Map([['only', fakeCanvas([255, 0, 0, 255])]]), 400),
+    ).toBeNull();
   });
 });
 

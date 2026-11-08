@@ -20,13 +20,23 @@ function loupeContributions(ctx: TrialChromeContext): TrialContribution[] {
       id: 'loupe',
       region: 'toolbar',
       group: 'view',
-      item: { icon: icon('ui:loupe'), label: 'Loupe', pressed: ctx.loupeOn, onActivate: ctx.toggleLoupe },
+      item: {
+        icon: icon('ui:loupe'),
+        label: 'Loupe',
+        pressed: ctx.loupeOn,
+        onActivate: ctx.toggleLoupe,
+      },
     },
     {
       id: 'eyedropper',
       region: 'toolbar',
       group: 'view',
-      item: { icon: icon('core:eyedropper'), label: 'Eyedropper', pressed: ctx.dropperOn, onActivate: ctx.toggleDropper },
+      item: {
+        icon: icon('core:eyedropper'),
+        label: 'Eyedropper',
+        pressed: ctx.dropperOn,
+        onActivate: ctx.toggleDropper,
+      },
     },
     pickedColorReadout(ctx.pickedColor),
   ];

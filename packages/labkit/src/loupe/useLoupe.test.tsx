@@ -33,7 +33,15 @@ interface HarnessProps {
  *
  *  Mounts `<LoupeGestures>` the way `<TrialLoupe>` does, so the key and wheel
  *  cases below exercise the real dispatcher route rather than a stand-in. */
-function Harness({ enabled = true, seen, sample, hostWheel, dropping, onPick, ...rest }: HarnessProps) {
+function Harness({
+  enabled = true,
+  seen,
+  sample,
+  hostWheel,
+  dropping,
+  onPick,
+  ...rest
+}: HarnessProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const options = resolveLoupe(rest);
   const loupe = useLoupe({
@@ -514,7 +522,15 @@ describe('useLoupe: the eyedropper', () => {
     const onPick = vi.fn();
     let loupe!: LoupeState;
     render(
-      <Harness enabled={false} dropping onPick={onPick} sample={(p) => `#0000${p.x.toString(16).padStart(2, '0')}`} seen={(l) => { loupe = l; }} />,
+      <Harness
+        enabled={false}
+        dropping
+        onPick={onPick}
+        sample={(p) => `#0000${p.x.toString(16).padStart(2, '0')}`}
+        seen={(l) => {
+          loupe = l;
+        }}
+      />,
     );
     expect(loupe.input.dropping()).toBe(true);
     move(40, 25);
@@ -524,11 +540,29 @@ describe('useLoupe: the eyedropper', () => {
 
   it('picks what a lens shows at a click inside it', () => {
     const onPick = vi.fn();
-    const sample = vi.fn((p: { x: number; y: number }) => `#${p.x.toString(16).padStart(2, '0')}0000`);
+    const sample = vi.fn(
+      (p: { x: number; y: number }) => `#${p.x.toString(16).padStart(2, '0')}0000`,
+    );
     let loupe!: LoupeState;
     // A lens parked away from what it shows, at 2x.
-    const place = () => ({ center: { x: 300, y: 300 }, shows: { x: 40, y: 25 }, width: 100, height: 100, factor: 2 });
-    render(<Harness dropping onPick={onPick} sample={sample} place={place} seen={(l) => { loupe = l; }} />);
+    const place = () => ({
+      center: { x: 300, y: 300 },
+      shows: { x: 40, y: 25 },
+      width: 100,
+      height: 100,
+      factor: 2,
+    });
+    render(
+      <Harness
+        dropping
+        onPick={onPick}
+        sample={sample}
+        place={place}
+        seen={(l) => {
+          loupe = l;
+        }}
+      />,
+    );
     move(40, 25);
     // 20 px right of the lens's middle at 2x is 10 px right of what it shows.
     move(320, 300);
@@ -538,7 +572,13 @@ describe('useLoupe: the eyedropper', () => {
 
   it('reports the eyedropper off when it is', () => {
     let loupe!: LoupeState;
-    render(<Harness seen={(l) => { loupe = l; }} />);
+    render(
+      <Harness
+        seen={(l) => {
+          loupe = l;
+        }}
+      />,
+    );
     expect(loupe.input.dropping()).toBe(false);
   });
 });

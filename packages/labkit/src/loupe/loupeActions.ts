@@ -134,7 +134,9 @@ export function createLoupeActions(
     label: 'Pick color (eyedropper)',
     group: 'loupe',
     scope: 'hotkey',
-    defaultBinding: [{ spec: { kind: 'click', mods: ANY_MODS }, opts: { id: `${LOUPE_PICK_ID}.click` } }],
+    defaultBinding: [
+      { spec: { kind: 'click', mods: ANY_MODS }, opts: { id: `${LOUPE_PICK_ID}.click` } },
+    ],
     enabled: () => (input.dropping() ? true : 'not-applicable'),
     invoker: {
       timing: 'immediate',
