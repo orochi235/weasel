@@ -1,3 +1,4 @@
+import { tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 
@@ -40,8 +41,7 @@ function intervalFor(span: number, count: number): Interval {
   let best = INTERVALS[0]!;
   for (const i of INTERVALS) if (Math.abs(Math.log(spanOf(i) / target)) < Math.abs(Math.log(spanOf(best) / target))) best = i;
   if (best.unit === 'year' && target > 12 * MONTH_MS) {
-    const years = 10 ** Math.floor(Math.log10(target / (12 * MONTH_MS)));
-    return { months: 12 * years, unit: 'year' };
+    return { months: 12 * tickStep(0, target / (12 * MONTH_MS), 1), unit: 'year' };
   }
   return best;
 }
