@@ -26,7 +26,8 @@ export function planKey(
   if (r.handled) {
     return { stack: r.stack, typed: r.stack !== stack ? EMPTY_TYPEAHEAD : typed, effect: r.effect };
   }
-  if (key.length !== 1 || key === ' ') return null;
+  // One character, counted as `accessLetter` counts it: by code point.
+  if ([...key].length !== 1 || key === ' ') return null;
   const level = stack.length - 1;
   const rows = entriesAt(root, stack, level);
   const letter = accessMatch(rows, key);

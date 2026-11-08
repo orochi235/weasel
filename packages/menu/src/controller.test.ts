@@ -303,6 +303,13 @@ describe('access letters and edges', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('access letter outside the Basic Multilingual Plane runs its item, as accessLetter reads it', () => {
+    const spy = vi.fn();
+    const { c } = make([{ kind: 'item', key: 'fire', label: 'Fire', access: '🔥', run: spy }]);
+    expect(c.key('🔥')).toBe(true);
+    expect(spy).toHaveBeenCalledOnce();
+  });
+
   it('access letter opens its submenu with the first row highlighted', () => {
     const { c } = make([
       { kind: 'item', key: 'a', label: 'A', run },
