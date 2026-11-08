@@ -24,24 +24,20 @@ discipline:
 ## The second job: eligibility
 
 The `Rule` grammar outgrew chrome. It's now how the kit expresses **any**
-"is this allowed right now" question:
+"is this allowed right now" question: the dispatcher filters gesture candidates
+through `evaluate(action.eligible, ruleCtx)` before matching
+(`@weasel-js/routing`'s `interactions/dispatcher/ranking.ts`), and
+`Action.eligible` takes a `Rule` or a `Condition`.
 
-- `interactions/dispatcher/dispatcher.ts` filters gesture candidates through
-  `evaluate(action.eligible, ruleCtx)` before matching.
-- `interactions/actions/registry.tsx` types `Action.eligible` as
-  `Rule | Condition`.
-
-That's why `RuleCtx` lives here and carries `mode` / `allowedCapabilities`
-alongside the chrome-shaped fields — the grammar is shared, so the context is
-too. If you're reaching for this directory because of `eligible`, you're in
-the right place despite the name.
+So the grammar and `RuleCtx`, which carries `mode` / `allowedCapabilities`
+beside the chrome-shaped fields, live in `@weasel-js/routing`
+(`eligibility/rule.ts`, `eligibility/ruleCtx.ts`); this directory re-exports
+them and keeps what is chrome's own.
 
 ## Files
 
 | File | Role |
 | --- | --- |
-| `rule.ts` | The grammar: `Selector` leaves, `all`/`any`/`not`/`when` nodes, type guards, and `evaluate()`. The whole language is ~130 lines. |
-| `ruleCtx.ts` | `RuleCtx` — the live per-frame state rules read. Built once per frame and discarded. |
 | `conditions.ts` | Fluent atoms (`focused`, `selectionAtLeast(1)`, `modeNot('path-edit')`, …) that compile to `Rule` trees, plus `and`/`or`/`not` and the `when` escape hatch. |
 | `defaults.ts` | The kit's shipped rules table. Written as literal trees so each rule's inputs are visible at a glance. |
 | `resolve.ts` | Merges consumer rules over defaults and closes over ctx → `(id) => boolean`. |
@@ -61,13 +57,13 @@ normalizes at lookup time.
   all: [
     { selection: { atLeast: 1 } },
     { not: { gesturing: true } },
-    { mode: { not: 'path-edit' } },
+    { capability: 'transforms-selection' },
     { resizable: true },
   ],
 }
 
 // Fluent — compiles to the same tree.
-selectionAtLeast(1).andNot(gesturing).and(modeNot('path-edit')).and(resizable)
+selectionAtLeast(1).andNot(gesturing).and(capabilityIs('transforms-selection')).and(resizable)
 ```
 
 **Chains are strict left-to-right with no boolean precedence.**
