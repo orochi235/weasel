@@ -62,7 +62,7 @@ describe('createDeleteOp', () => {
     op.apply(adapter as never);
     op.invert().apply(adapter as never);
     expect(adapter.getNode('a')).toEqual({ id: 'a', value: 7, parent: null });
-    expect(rebuildOp('delete', JSON.parse(JSON.stringify(op.args))).invert().args).toMatchObject({
+    expect(rebuildOp('delete', JSON.parse(JSON.stringify(op.args)))!.invert().args).toMatchObject({
       node: { id: 'a', value: 7, parent: null },
     });
   });

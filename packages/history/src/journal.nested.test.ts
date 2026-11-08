@@ -117,6 +117,6 @@ describe('a journal inside a journal', () => {
     expect(() => outer.beginJournal({ label: 'again' })).toThrow(/already active/);
     inner.commit('Inner');
     expect(outer.entries().undo.map((e) => e.label)).toEqual(['three', 'Inner']);
-    expect(h.activeJournal()).toBe(outer);
+    expect(h.activeJournal?.()).toBe(outer);
   });
 });

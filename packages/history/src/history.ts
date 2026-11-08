@@ -1,9 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
 import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
-import {
-  createJournalInternal, _enclosingJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions,
-} from './journal';
+import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
 import {
   rebuilt, snapshot, touchedIdsFromOps,
   type Entry, type HistoryLogger, type SerializedHistory,
@@ -27,8 +25,6 @@ interface JournalAccess {
 }
 
 const JOURNAL_ACCESS = new WeakMap<History, JournalAccess>();
-/** Each journal to the history whose `beginJournal` opened it. */
-const OPENED_BY = new WeakMap<Journal, History>();
 
 /** Called by `Journal.commit`. Not part of the public API. */
 export function _journalAccessInternal(history: History): JournalAccess {
@@ -405,9 +401,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     currentEntryId: () => nextEntryId,
     beginJournal(opts: BeginJournalOptions): Journal {
-      if (activeJournal !== null && activeJournal.isActive()) {
-        throw new Error('A journal is already active — commit, cancel, or suspend it first');
-      }
+      refuseWhileActive(activeJournal);
       // `adapter` is the closure-captured adapter passed to createHistory.
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
@@ -416,21 +410,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         ...(selection ? { selection } : {}),
       });
       activeJournal = j;
-      OPENED_BY.set(j, history);
       return j;
     },
     activeJournal: () => (activeJournal?.isActive() ? activeJournal : null),
     resumeJournal(journal: Journal): void {
-      const owner = OPENED_BY.get(journal);
-      if (owner !== undefined && owner !== history) {
-        if (_enclosingJournalInternal(journal)?.isActive() === false) {
-          throw new Error('The journal this one was opened inside is not active');
-        }
-        return owner.resumeJournal(journal);
-      }
-      if (activeJournal !== null && activeJournal !== journal && activeJournal.isActive()) {
-        throw new Error('A journal is already active — commit, cancel, or suspend it first');
-      }
+      if (_resumedByOwnerInternal(journal, history)) return;
+      refuseWhileActive(activeJournal, journal);
       _resumeJournalInternal(journal);
       activeJournal = journal;
     },

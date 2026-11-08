@@ -6,9 +6,24 @@ const RESUMERS = new WeakMap<Journal, () => void>();
 /** A journal opened inside another, to the one it was opened in. */
 const ENCLOSING = new WeakMap<Journal, Journal>();
 
-/** The journal `j` was opened inside, if any. Not part of the public API. */
-export function _enclosingJournalInternal(j: Journal): Journal | undefined {
-  return ENCLOSING.get(j);
+/** Throw when a journal other than `except` is active on a history. Not part of the public API. */
+export function _refuseWhileActiveInternal(active: Journal | null, except?: Journal): void {
+  if (active !== null && active !== except && active.isActive()) {
+    throw new Error('A journal is already active — commit, cancel, or suspend it first');
+  }
+}
+
+/** A journal opened inside another, to the history that journal records into. */
+const OWNER = new WeakMap<Journal, History>();
+
+/** Resume `j` through the history it was opened on when that is not `by`, and say whether it did.
+ *  Not part of the public API. */
+export function _resumedByOwnerInternal(j: Journal, by: History): boolean {
+  const owner = OWNER.get(j);
+  if (owner === undefined || owner === by) return false;
+  if (!ENCLOSING.get(j)!.isActive()) throw new Error('The journal this one was opened inside is not active');
+  owner.resumeJournal(j);
+  return true;
 }
 
 /** Called by `history.resumeJournal`. Not part of the public API. */
@@ -148,6 +163,7 @@ export function createJournalInternal(
       if (state !== 'active') throw new Error('Journal is not active');
       const child = inner.beginJournal(nested);
       ENCLOSING.set(child, journal);
+      OWNER.set(child, inner);
       children.push(child);
       return child;
     },
