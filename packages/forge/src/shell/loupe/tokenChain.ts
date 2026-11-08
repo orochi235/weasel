@@ -1,7 +1,7 @@
 import { parseColor } from '@weasel-js/core';
 import { type LoupePoint, probeUnderLens } from '@weasel-js/labkit/loupe';
 import { compareSpecificity, type Specificity, specificity, splitTopLevel } from '@weasel-js/svg';
-import { cssRulesOf, varRefs } from '../../frame/cssVarUse';
+import { cssRulesOf, sheetsOf, varRefs } from '../../frame/cssVarUse';
 
 /** A color an element shows, and the property it shows it through. */
 export interface ColorAt {
@@ -87,10 +87,14 @@ interface Rule {
   readonly style: CSSStyleDeclaration;
 }
 
+/** Whether a media list, a sheet's own or a rule's, holds where `doc` is shown. An empty or absent one holds. */
+function mediaHolds(media: MediaList | null | undefined, doc: Document): boolean {
+  return !media?.mediaText || !doc.defaultView || doc.defaultView.matchMedia(media.mediaText).matches;
+}
+
 /** Whether a grouping rule's condition holds where `doc` is shown. `@container` and `@layer` are taken as holding. */
 function applies(rule: CSSRule, doc: Document): boolean {
-  const media = (rule as CSSRule & { media?: MediaList }).media;
-  if (media && media.mediaText && doc.defaultView && !doc.defaultView.matchMedia(media.mediaText).matches) return false;
+  if (!mediaHolds((rule as CSSRule & { media?: MediaList }).media, doc)) return false;
   if (typeof CSSSupportsRule !== 'undefined' && rule instanceof CSSSupportsRule) return CSS.supports(rule.conditionText);
   return true;
 }
@@ -124,11 +128,11 @@ function collect(rules: CSSRuleList, doc: Document, into: Rule[], parent?: strin
   }
 }
 
-/** Every style rule `doc` applies, in source order: its sheets, then its adopted sheets, which come after them all. */
+/** Every style rule `doc` applies, in source order. */
 function rulesOf(doc: Document): Rule[] {
   const out: Rule[] = [];
-  for (const sheet of [...Array.from(doc.styleSheets), ...(doc.adoptedStyleSheets ?? [])]) {
-    if (sheet.disabled) continue;
+  for (const sheet of sheetsOf(doc)) {
+    if (!mediaHolds(sheet.media, doc)) continue;
     const rules = cssRulesOf(sheet);
     if (rules) collect(rules, doc, out);
   }
