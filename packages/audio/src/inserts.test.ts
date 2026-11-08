@@ -310,4 +310,12 @@ describe('insert chain transitions', () => {
     h.graph.dispose();
     expect(h.timers.size).toBe(0);
   });
+
+  it('refuses an effect once disposed, and still settles', async () => {
+    const h = harness();
+    h.graph.dispose();
+    expect(() => h.chain.add(h.fx('A'))).toThrow(/disposed/);
+    expect(h.chain.slots()).toEqual([]);
+    await expect(h.chain.settled()).resolves.toBeUndefined();
+  });
 });
