@@ -63,8 +63,9 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
   const script = options.pageScript ?? defaultPageScript();
   const browser = options.browser
     ?? await (await import('playwright-core')).chromium.launch({ headless: true, ...options.launch });
+  let context: BrowserContext | null = null;
   try {
-    const context = await browser.newContext({ deviceScaleFactor: 1 });
+    context = await browser.newContext({ deviceScaleFactor: 1 });
     const page = await context.newPage();
     await page.addScriptTag({ content: script });
     const ready = await page.evaluate((key) => key in globalThis, PAGE_GLOBAL);
@@ -72,6 +73,7 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
     return { browser, context, page };
   } catch (err) {
     if (!options.browser) await browser.close();
+    else await context?.close();
     throw err;
   }
 }
