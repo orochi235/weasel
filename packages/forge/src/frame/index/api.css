@@ -118,3 +118,28 @@
 .fg-index-api__inherited {
   margin-top: var(--wzl-space-8);
 }
+
+/* A type name whose definition shows on hover and on focus. */
+.fg-index-api__defined {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: help;
+}
+
+/* The tooltip portals out of the panel, so it styles its code itself. */
+.fg-index-api__tip {
+  max-width: min(64ch, 90vw);
+  text-align: start;
+}
+
+.fg-index-api__tip-summary {
+  margin: 0 0 var(--wzl-space-2);
+}
+
+.fg-index-api__tip-def {
+  margin: 0;
+  font-family: var(--wzl-font-mono);
+  font-size: var(--wzl-font-size-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

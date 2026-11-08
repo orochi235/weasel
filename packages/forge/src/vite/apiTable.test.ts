@@ -42,6 +42,7 @@ export interface ChartHandle {
   readonly width: number;
   label: string;
 }
+/** How heavy a stroke is. */
 type Weight = 'thin' | 'bold';
 export interface ChartProps {
   /** Shown beside
@@ -113,6 +114,18 @@ export const Input = (_props: InputProps) => null;
 
   it('writes a type as its declaration spells it', () => {
     expect(prop(api('chart'), 'weight')?.type).toBe('Weight');
+  });
+
+  it('defines the project types a prop or ref member names, comments and export dropped', () => {
+    const types = api('chart')?.types;
+    expect(types?.Weight).toEqual({ text: "type Weight = 'thin' | 'bold';", description: 'How heavy a stroke is.' });
+    expect(types?.Point?.text).toMatch(/^interface Point \{\s+x: number;\s+y: number;\s+\}$/);
+    expect(types?.ChartHandle?.text).not.toContain('Maps a plot point');
+    expect(Object.keys(types ?? {}).sort()).toEqual(['ChartHandle', 'Point', 'Weight']);
+  });
+
+  it('defines no type from a skipped package', () => {
+    expect(api('wrapped')?.types).toBeUndefined();
   });
 
   it('reads a default from destructuring, else from @default', () => {

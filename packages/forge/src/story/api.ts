@@ -34,8 +34,18 @@ export interface ApiRef {
   members: ApiMember[];
 }
 
+/** A type the project declares, named in a prop's or member's type: what a reader hovering the name sees. */
+export interface ApiTypeDef {
+  /** The declaration as written, comments and `export` dropped. */
+  text: string;
+  /** Its doc summary. */
+  description?: string;
+}
+
 export interface ApiTable {
   props: ApiProp[];
   inherited: ApiInherited[];
   ref: ApiRef | null;
+  /** The definitions of the project's own types named in `props` and `ref`, by name. */
+  types?: Record<string, ApiTypeDef>;
 }

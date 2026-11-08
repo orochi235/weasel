@@ -1,5 +1,6 @@
 import type ts from 'typescript';
-import type { ApiInherited, ApiMember, ApiProp, ApiRef, ApiTable } from '../story/api.ts';
+import type { ApiInherited, ApiMember, ApiProp, ApiRef, ApiTable, ApiTypeDef } from '../story/api.ts';
+import { addTypeDef, addTypeDefs } from './typeDefs.ts';
 
 /** What reading one story file's component API needs. */
 export interface ApiReading {
@@ -29,9 +30,12 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
   const listed: ApiProp[] = [];
   const inherited = new Map<string, number>();
   let ref: ApiRef | null = null;
+  const defs = new Map<string, ApiTypeDef>();
+  const define = (symbol: ts.Symbol, text: string) =>
+    addTypeDefs(reading, symbol.getDeclarations()?.[0] ?? reading.at, text, defs);
   for (const prop of props ? checker.getPropertiesOfType(checker.getApparentType(props)) : []) {
     const name = prop.getName();
-    if (name === 'ref') ref = refOf(reading, prop, record);
+    if (name === 'ref') ref = refOf(reading, prop, record, define, (symbol) => addTypeDef(reading, symbol, defs));
     if (RESERVED.has(name)) continue;
     const files = filesOf(prop);
     if (files.length > 0 && files.every(reading.skipped)) {
@@ -39,13 +43,16 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
       inherited.set(from, (inherited.get(from) ?? 0) + 1);
       continue;
     }
-    listed.push(propEntry(reading, prop, defaults.get(name)));
+    const entry = propEntry(reading, prop, defaults.get(name));
+    listed.push(entry);
+    define(prop, entry.type);
     record(prop);
   }
   return {
     props: listed,
     inherited: [...inherited].map(([from, count]): ApiInherited => ({ from, count })),
     ref,
+    ...(defs.size === 0 ? {} : { types: Object.fromEntries(defs) }),
     sources: [...sources],
   };
 }
@@ -107,7 +114,13 @@ function containerName(tsm: typeof ts, prop: ts.Symbol): string | undefined {
 }
 
 /** What `ref` holds: the type of `current` on the ref object it accepts. */
-function refOf(reading: ApiReading, prop: ts.Symbol, record: (symbol: ts.Symbol) => void): ApiRef | null {
+function refOf(
+  reading: ApiReading,
+  prop: ts.Symbol,
+  record: (symbol: ts.Symbol) => void,
+  define: (symbol: ts.Symbol, text: string) => void,
+  defineType: (symbol: ts.Symbol) => void,
+): ApiRef | null {
   const { tsm, checker, at } = reading;
   const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(prop, at));
   for (const part of type.isUnion() ? type.types : [type]) {
@@ -115,13 +128,17 @@ function refOf(reading: ApiReading, prop: ts.Symbol, record: (symbol: ts.Symbol)
     if (!current) continue;
     const held = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(current, at));
     const name = checker.typeToString(held, undefined, tsm.TypeFormatFlags.NoTruncation);
+    const named = held.aliasSymbol ?? held.getSymbol();
+    if (named) defineType(named);
     const declared = (held.getSymbol() ?? held.aliasSymbol)?.getDeclarations() ?? [];
     if (declared.length > 0 && declared.every((d) => reading.platform(d.getSourceFile().fileName))) {
       return { type: name, members: [] };
     }
     const members = checker.getPropertiesOfType(held).map((member) => {
       record(member);
-      return memberEntry(reading, member);
+      const entry = memberEntry(reading, member);
+      define(member, entry.signature);
+      return entry;
     });
     return { type: name, members };
   }
