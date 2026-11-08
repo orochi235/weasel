@@ -19,6 +19,13 @@ const DESCRIPTORS: Array<[string, PoseDescriptor<never>]> = [
 ];
 
 describe.each(DESCRIPTORS)('%s', (_name, descriptor) => {
+  it('lerps the rotation the short way round, as its axes do', () => {
+    const lerp = descriptor.lerp as unknown as (a: object, b: object, t: number) => { rotation?: number };
+    const a = { x: 0, y: 0, width: 10, height: 10, rotation: 0.2 };
+    expect(lerp(a, { ...a, rotation: 0.6 }, 0.5).rotation).toBeCloseTo(0.4);
+    expect(lerp(a, { ...a, rotation: 2 * Math.PI - 0.2 }, 0.5).rotation).toBeCloseTo(0);
+  });
+
   it('reads back the rotation it writes', () => {
     expect(descriptor.withRotation).toBeDefined();
     expect(descriptor.getRotation).toBeDefined();

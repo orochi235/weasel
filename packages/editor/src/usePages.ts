@@ -1,5 +1,5 @@
 import {
-  addPage, adjacentPage, fitViewToPage, movePage, nextPageId, pageInView, pagesOf, placedPagesOf, removePage,
+  HOME_VIEW, addPage, adjacentPage, fitViewToPage, movePage, nextPageId, pageInView, pagesOf, placedPagesOf, removePage,
   renamePage, resizePage, useLatest, type PlacedPage, type Scene, type View,
 } from '@weasel-js/core';
 import { useMemo, useState, useSyncExternalStore } from 'react';
@@ -98,7 +98,7 @@ export function usePages<TData, TLayer extends string, TPose>(
     const show = (page: PlacedPage | null | undefined) => {
       const { view: v, dims: d, setView: set } = latest.current;
       if (!page || d.width <= 0 || d.height <= 0) return;
-      sendView(set, fitViewToPage(page, d, v, { padding }));
+      sendView(set, fitViewToPage(page, d, v, { padding }) ?? HOME_VIEW);
     };
     const goTo = (id: string) => show(placedPagesOf(scene).find((p) => p.id === id));
     return {

@@ -617,7 +617,7 @@ directly. Several expose more than the root does, `/state` most of all.
 | `/controls` | `<ControlPanel>` and the config field types |
 | `/canvas` | `<CanvasStack>`, `<Stage>`, `<Orbit>`, `<CameraInput>`, coordinate helpers |
 | `/layers` | `<LayerList>` from `@weasel-js/ui`, and the layers capability types |
-| `/loupe` | `<TrialLoupe>`, the magnifier an instrument mounts in its content; the trial offers a Loupe toggle while one is mounted. Not in the root barrel |
+| `/loupe` | `<TrialLoupe>`, the magnifier an instrument mounts in its content; the trial offers a Loupe toggle while one is mounted. `labLoupe`, lab chrome giving any lab lenses (`<Lab labChrome={[labLoupe]} />`, Alt+L then L). Not in the root barrel |
 | `/overview` | `<TrialOverview>`, a floating panel showing a trial's whole content. Not in the root barrel |
 | `/surface` | Tiled surface hooks for your own renderer |
 | `/job` | `useJob` and the job capability types |

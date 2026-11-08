@@ -5,8 +5,9 @@
  * The projects each own an include glob, so a test file in a directory no glob
  * reaches is collected by nobody: it does not run, and nothing says so.
  *
- * CI names its projects on its own `vitest run` lines, so those are held to
- * the same list: a project `npm test` runs and CI does not is a failure here.
+ * CI names its projects on its own `vitest run` lines, and the fleet on the
+ * `run:` line of `.onto/tests`, so both are held to the same list: a project
+ * `npm test` runs and either leaves out is a failure here.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -81,6 +82,12 @@ const projectsInCi = () => {
   return names;
 };
 
+/** Projects a fleet run starts: the `run:` line of `.onto/tests`, which `onto test` runs in place of `npm test`. */
+const projectsOnFleet = () => {
+  const run = /^run:\s*(.+)$/m.exec(readFileSync(new URL('../.onto/tests', import.meta.url), 'utf8'))?.[1] ?? '';
+  return new Set([...run.matchAll(/--project=([\w-]+)/g)].map((m) => m[1]));
+};
+
 const projects = projectsInTestScript();
 const inCi = projectsInCi();
 const notInCi = projects.filter((p) => !inCi.has(p));
@@ -88,6 +95,15 @@ if (notInCi.length > 0) {
   console.error(
     `check:test-projects — ${notInCi.length} project(s) \`npm test\` runs that .github/workflows/ci.yml does not: ` +
       `${notInCi.join(', ')}.\nAdd each to a \`vitest run\` step there.`,
+  );
+  process.exit(1);
+}
+const onFleet = projectsOnFleet();
+const notOnFleet = [...projects, 'gate'].filter((p) => !onFleet.has(p));
+if (notOnFleet.length > 0) {
+  console.error(
+    `check:test-projects — ${notOnFleet.length} project(s) a fleet run leaves out: ${notOnFleet.join(', ')}.\n` +
+      "Add each to the `run:` line of .onto/tests, which names `npm test`'s projects plus `gate`.",
   );
   process.exit(1);
 }

@@ -41,6 +41,8 @@ const CSS_UNITS: Readonly<Record<string, string>> = {
 };
 
 const IDENT = /^-?[A-Za-z_][\w-]*$/;
+/** Text no CSS color holds, which would end a declaration, a block, or the rest of the sheet. */
+const UNSAFE_COLOR = /[;{}'"\\\n\r\f]|\/\*/;
 const quoted = (text: string): string => `'${text.replace(/[\\']/g, '\\$&').replace(/\r\n|[\n\r\f]/g, '\\a ')}'`;
 
 /** What a value of a built-in kind is written as, `null` for one with no CSS form. */
@@ -57,7 +59,7 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
     case 'boolean':
       return typeof value === 'boolean' ? (value ? '1' : '0') : null;
     case 'color':
-      return typeof value === 'string' && value !== '' ? value : null;
+      return typeof value === 'string' && value !== '' && !UNSAFE_COLOR.test(value) ? value : null;
     case 'enum':
       if (typeof value !== 'string' || (leaf as PrefEnum).encoding) return null;
       return IDENT.test(value) ? value : quoted(value);
@@ -107,7 +109,8 @@ function toldApart(held: unknown, optionsOf: (selector: string) => readonly stri
  * rule of the page's own wins. Blocks naming more selectors come later.
  *
  * A number is written in its display unit where the unit's suffix is a CSS
- * unit, and bare otherwise; a boolean as `1` or `0`; a color as it is held; an
+ * unit, and bare otherwise; a boolean as `1` or `0`; a color as it is held, unless its
+ * text could end its rule; an
  * enum's option as an identifier; a string quoted. A leaf of any other kind is
  * left out unless `value` writes it.
  */

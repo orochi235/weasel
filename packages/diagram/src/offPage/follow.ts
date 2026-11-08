@@ -6,6 +6,7 @@ import {
   ActionDisabledReason,
   bodyPredicate,
   fitViewToPage,
+  resetView,
   placedPagesOf,
   type Action,
   type ActionDeps,
@@ -63,7 +64,8 @@ function followDefault(target: OffPageTarget, ctx: InvocationCtx, padding: numbe
   const page = placedPagesOf(scene).find((p) => p.id === target.page);
   const size = view?.hostSize?.();
   if (page === undefined || view === undefined || size == null) return;
-  view.set(fitViewToPage(page, size, view.get(), { padding }));
+  const to = fitViewToPage(page, size, view.get(), { padding }) ?? resetView(view);
+  if (to) view.set(to);
 }
 
 /**

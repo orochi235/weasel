@@ -35,7 +35,8 @@ const DENSITIES = ['compact', 'comfortable', 'roomy'];
 
 /** Themes `root` from the Theme and Density globals, at `mode`; a value nothing is registered under takes the default. */
 export function applyTrialTheme(root: HTMLElement, globals: StoryContext['globals'], mode: 'light' | 'dark'): void {
-  const theme = THEMES[String(globals.theme)] ?? THEMES[DEFAULT_THEME]!;
+  const named = String(globals.theme);
+  const theme = Object.hasOwn(THEMES, named) ? THEMES[named]! : THEMES[DEFAULT_THEME]!;
   const density = typeof globals.density === 'string' && DENSITIES.includes(globals.density) ? globals.density : 'comfortable';
   applyTheme(root, theme, { mode, density });
 }

@@ -43,8 +43,6 @@ export interface ToolbarProps {
   page: PlacedPage | null;
   filename: string;
   setFilename: (name: string) => void;
-  backgroundColor: string;
-  setBackgroundColor: (color: string) => void;
   /** The menu bar, drawn first in the row. */
   menus?: ReactNode;
 }
@@ -52,7 +50,7 @@ export interface ToolbarProps {
 export function Toolbar({
   scene, selection,
   paperSize, showFirstPage, leaveMode, page,
-  filename, setFilename, backgroundColor, setBackgroundColor, menus,
+  filename, setFilename, menus,
 }: ToolbarProps): ReactElement {
   // A paste lands where a draw would: in the entered group, say.
   const deps = useOptionalDepRegistry();
@@ -107,7 +105,7 @@ export function Toolbar({
   }), [clipboard]);
   useDepSource('clipboard', () => clipboardDep);
   useDebugCommands();
-  useFileCommands({ scene, filename, paperSize, page, backgroundColor, setFilename, setBackgroundColor, showFirstPage, leaveMode });
+  useFileCommands({ scene, filename, paperSize, page, setFilename, showFirstPage, leaveMode });
 
   return (
     <>

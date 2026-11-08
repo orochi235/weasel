@@ -186,6 +186,19 @@ describe('useViewAnimation', () => {
     expect(current().y).toBeCloseTo(0, 10);
   });
 
+  it('animateToBounds reports nothing to fit for bounds with no extent, and moves nothing', () => {
+    const clock = makeClock();
+    const { channel, current } = makeChannel(HOME);
+    const { result } = mount(channel, clock);
+    let fitted = true;
+    act(() => {
+      fitted = result.current.animateToBounds({ x: 5, y: 5, width: 0, height: 0 }, { width: 400, height: 200 });
+    });
+    expect(fitted).toBe(false);
+    expect(result.current.isAnimating()).toBe(false);
+    expect(current()).toEqual(HOME);
+  });
+
   it('does not strand a second runner sharing one animator', () => {
     const clock = makeClock();
     const a = makeChannel(HOME);

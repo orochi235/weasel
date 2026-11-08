@@ -32,6 +32,17 @@ describe('sceneNodeClientRect', () => {
     expect(rect).toEqual({ x: 30, y: 120, width: 5, height: 18 });
   });
 
+  it('gives a positive rect at the box\'s screen top-left under a flipped (y-up) view', () => {
+    const rect = sceneNodeClientRect({
+      id: 'a',
+      getWorldBounds,
+      view: { x: 0, y: 100, scale: { x: 1, y: -2 } },
+      canvas: fakeCanvas(0, 0),
+    });
+    // world y 46 (the box's top edge in y-up) lands at (46 - 100) * -2 = 108; y 40 at 120.
+    expect(rect).toEqual({ x: 30, y: 108, width: 5, height: 12 });
+  });
+
   it('returns null for an unknown id', () => {
     const rect = sceneNodeClientRect({
       id: 'nope',

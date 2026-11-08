@@ -91,4 +91,11 @@ describe('resamplePath', () => {
     expect(out.fillRule).toBe('evenodd');
     expect(Array.from(out.coords)).toEqual(Array.from(src.coords));
   });
+
+  it('reads a count that is not a finite number as no count', () => {
+    const src = polygon(WAVE);
+    const plain = Array.from(resamplePath(src).coords);
+    expect(Array.from(resamplePath(src, { count: NaN }).coords)).toEqual(plain);
+    expect(Array.from(resamplePath(src, { count: Infinity }).coords)).toEqual(plain);
+  });
 });

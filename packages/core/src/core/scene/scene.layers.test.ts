@@ -117,6 +117,19 @@ describe('user-layer mutations', () => {
     expect(fx().kind === 'user' && (fx() as { name: string }).name).toBe('Effects');
   });
 
+  it('records nothing for a layer edit that changes nothing', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    scene.history.clear();
+    const before = scene.getVersion();
+    scene.setLayerVisible('fx', true);
+    scene.setLayerLocked('fx', false);
+    scene.setLayerParallax('fx', undefined);
+    scene.renameLayer('fx', 'Effects');
+    expect(scene.canUndo()).toBe(false);
+    expect(scene.getVersion()).toBe(before);
+  });
+
   it('renameLayer throws on a system layer', () => {
     const scene = createScene<{ v: number }, 'base', { x: number }>(baseOpts());
     expect(() => scene.renameLayer('base', 'nope')).toThrow(/system/);

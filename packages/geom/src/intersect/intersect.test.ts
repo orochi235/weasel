@@ -26,6 +26,14 @@ describe('intersectSegments', () => {
     expect(intersectSegments([P(0, 0), P(10, 0)], [P(12, 0), P(15, 0)])).toEqual([]);
   });
 
+  it('reports the overlap of collinear lines whose points only round onto one line', () => {
+    const a = [P(17.305192039509542, 3.5068108953569044), P(24.697555959615823, 30.407665370937323)];
+    const b = [P(19.522901215541427, 11.57706723803103), P(29.872210703690218, 49.23826350384362)];
+    const hits = intersectSegments(a, b);
+    expect(hits.map((h) => h.ta)).toEqual([expect.closeTo(0.3, 9), 1]);
+    expect(hits.map((h) => h.tb)).toEqual([0, expect.closeTo(0.5, 9)]);
+  });
+
   it('crosses a line and a cubic at a point on both', () => {
     const cubic = [P(0, 0), P(0, 20), P(20, 20), P(20, 0)];
     const hits = intersectSegments([P(-5, 10), P(25, 10)], cubic);

@@ -36,7 +36,7 @@ export interface SceneCanvasViewport {
    *  axis (`axis: 'x'`). */
   zoom?: boolean | ViewportZoomOptions;
   /** Callback invoked by Cmd-0 (`viewport.zoom` action's `reset` branch).
-   *  When supplied, replaces the default reset-to-identity behavior —
+   *  When supplied, replaces the default reset to `HOME_VIEW` —
    *  consumers typically refit the document page into the workspace via
    *  `fitViewToBounds`. Return the target `View` to let the kit animate
    *  there when `animatedZoom` is on; return nothing to dispatch it

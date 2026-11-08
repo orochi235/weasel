@@ -51,8 +51,6 @@ const APP_OPTION = { value: FOLLOW_APP, label: 'App' } as const;
 
 const isRecord = isPlainObject;
 
-export const isGlobalsPath = (path: string): boolean => path === GLOBALS_KEY || path.startsWith(`${GLOBALS_KEY}.`);
-
 /** The config key forge once kept a paused playhead under; a saved config may still hold it, so a story never sees it. */
 export const PLAYHEAD_KEY = '$playhead';
 

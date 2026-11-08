@@ -61,15 +61,27 @@ export function usePointerStylus(
           ? target
           : target.current ?? window;
 
+    let trailing: ReturnType<typeof setTimeout> | undefined;
+    const commit = (sample: StylusData, now: number) => {
+      clearTimeout(trailing);
+      trailing = undefined;
+      lastCommit.current = now;
+      setState((prev) => ({ ...sample, hovering: prev.hovering }));
+    };
     const onMove = (raw: Event) => {
       const e = raw as PointerEvent;
       const { maxFps, stylusOnly } = optsRef.current;
       if (stylusOnly && e.pointerType !== 'pen') return;
       const now = performance.now();
       const minGap = maxFps > 0 && Number.isFinite(maxFps) ? 1000 / maxFps : 0;
-      if (minGap > 0 && now - lastCommit.current < minGap) return;
-      lastCommit.current = now;
-      setState((prev) => ({ ...getStylusData(e), hovering: prev.hovering }));
+      const sample = getStylusData(e);
+      const wait = minGap - (now - lastCommit.current);
+      if (minGap > 0 && wait > 0) {
+        clearTimeout(trailing);
+        trailing = setTimeout(() => commit(sample, performance.now()), wait);
+        return;
+      }
+      commit(sample, now);
     };
     const onEnter = (raw: Event) => {
       const e = raw as PointerEvent;
@@ -89,6 +101,7 @@ export function usePointerStylus(
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerenter', onEnter);
       el.removeEventListener('pointerleave', onLeave);
+      clearTimeout(trailing);
     };
   }, [target, optsRef]);
 

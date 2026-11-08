@@ -60,6 +60,7 @@ export function fitDiagram(
     ...(fit.anchor !== undefined ? { anchor: fit.anchor } : {}),
     padding: fit.padding ?? DEFAULT_FIT_PADDING,
   });
+  if (view === null) return undefined;
   // Clamped here as the canvas would clamp it, so the view the canvas holds is the fit itself, and
   // a later fit still sees the view as untouched.
   return fit.bounds === undefined ? view : clampView(view, fit.bounds, size);

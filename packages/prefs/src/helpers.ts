@@ -13,7 +13,8 @@ import { resolvePrefUnit } from './unit';
  * slider's track, a step of 1 — is a display-space number already. `min` and
  * `max` are points, so they convert the way the value does; `step` is a
  * distance, and a unit with an offset maps zero somewhere else, so converting
- * it as a point would scale it wrong; `stops` are points. A decreasing
+ * it as a point would scale it wrong; under a unit's `precision` it is rounded
+ * up to the smallest step that changes the shown value; `stops` are points. A decreasing
  * conversion swaps which end is the lower one, and which end is `endless`.
  */
 export function prefDisplayBounds(
@@ -21,14 +22,12 @@ export function prefDisplayBounds(
 ): { min?: number; max?: number; step: number; endless?: Endless; stops?: readonly number[] } {
   const ends = p.endless === undefined ? {} : { endless: p.endless };
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
-  const { toDisplay } = resolvePrefUnit(p.unit);
+  const { toDisplay, toDisplayExact, precision } = resolvePrefUnit(p.unit);
   const backward = toDisplay(1) < toDisplay(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
   const flipped = lo !== undefined && hi !== undefined && lo > hi;
-  const step = p.step === undefined
-    ? 1
-    : Math.abs(toDisplay(p.step) - toDisplay(0)) || p.step;
+  const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), precision);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
   const stops = p.stops?.map(toDisplay);
@@ -39,6 +38,15 @@ export function prefDisplayBounds(
     ...(endless === undefined ? {} : { endless }),
     ...(stops ? { stops } : {}),
   };
+}
+
+/** `exact` rounded up to a whole number of the places `precision` shows, so a step always changes what is shown. */
+function displayStep(exact: number, precision: number | undefined): number {
+  if (precision === undefined) return exact;
+  const quantum = 10 ** -precision;
+  // The quotient is rounded first so binary dust (1.1 / 0.1 = 11.000000000000002) does not ceil a step up.
+  const quanta = Math.max(1, Math.ceil(Number((exact / quantum).toFixed(9))));
+  return Number((quanta * quantum).toFixed(precision));
 }
 
 /** Distinguishes a leaf from a group or a section while walking a schema tree. */

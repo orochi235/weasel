@@ -4,7 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { IDENTITY_POSE_COMPOSITION, fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
+import { IDENTITY_POSE_COMPOSITION, fitViewToBounds as fitOrNull, viewToTransform, type RectPose } from '@weasel-js/core';
+
 import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import {
   AT_COLOR, EFFECT_MIN_SCALE, IMAGE_STAGE_TYPES, editorScene, mainChain, previewRowId, setLookRoute, stageFromType, wireEnds,
@@ -17,6 +18,9 @@ import { makeChoose } from '../testing/choose';
 import { canvasSettled, mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
+
+/** These cases all have something to fit. */
+const fitViewToBounds = (...args: Parameters<typeof fitOrNull>) => fitOrNull(...args)!;
 
 registerCanvasFont('sans-serif');
 

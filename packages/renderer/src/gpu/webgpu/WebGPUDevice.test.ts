@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GpuGeometry, GpuProgram } from '../types';
 import { WebGPUDevice } from './WebGPUDevice';
+import type { WgpuProgram } from './wgpuProgram';
 import { KIT_WGSL } from './wgsl/kitPrograms';
 import { WeaselRenderer } from '../../WeaselRenderer';
 import { fakeGpuDevice } from '../../testing/fakeGpuDevice';
@@ -61,5 +62,23 @@ describe('a WebGPU device reading back across a device loss', () => {
     await expect(gpu.readIds(target, { x: 0, y: 0, width: 2, height: 2 })).resolves.toEqual(new Uint8Array(16));
     await expect(gpu.readCanvas({ x: 0, y: 0, width: 2, height: 2 })).resolves.toEqual(new Uint8Array(16));
     expect(fake.buffers.slice(before).filter((b) => !b.destroyed)).toEqual([]);
+  });
+});
+
+describe('a WGSL program written by array slot', () => {
+  it('takes a write to one slot by its GLSL name, as a GL program does', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl: [
+      'struct U { u_ripples: array<vec4f, 3> }',
+      '@group(1) @binding(0) var<uniform> u: U;',
+      '@vertex fn vs(@location(0) a_position: vec2f) -> @builtin(position) vec4f { return vec4f(a_position, 0.0, 1.0); }',
+      '@fragment fn fs() -> @location(0) vec4f { return u.u_ripples[2]; }',
+    ].join('\n') }) as WgpuProgram;
+    expect(program.has('u_ripples[2]')).toBe(true);
+    program.set('u_ripples[2]', 'vec4', [1, 2, 3, 4]);
+    const mirror = new Uint8Array(program.uploadBytes(0, 256));
+    program.upload(mirror, 0, 0, 256);
+    expect(Array.from(new Float32Array(mirror.buffer, 32, 4))).toEqual([1, 2, 3, 4]);
   });
 });

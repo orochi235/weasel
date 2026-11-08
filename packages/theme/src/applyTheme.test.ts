@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
 import { defineTheme, weaselTheme } from './theme';
 
@@ -23,6 +23,31 @@ describe('applyTheme', () => {
     applyTheme(el, weaselTheme, { mode: 'light' });
     expect(el.getAttribute('data-wzl-theme')).toBe('weasel');
     expect(el.getAttribute('data-wzl-mode')).toBe('light');
+  });
+
+  it('leaves out a token value that would end its declaration or rule, and warns once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const hostile = defineTheme({
+      name: 'hostile',
+      pins: {
+        'font-ui': 'serif; } * { color: red',
+        'font-mono': "'Courier New, monospace",
+        'font-body': "'A;{}' , serif",
+      },
+    });
+    const warned = () => warn.mock.calls.map(([m]) => String(m)).filter((m) => m.includes('"hostile"'));
+    applyTheme(document.createElement('div'), hostile, { mode: 'dark' });
+    const once = warned();
+    applyTheme(document.createElement('div'), hostile, { mode: 'dark' });
+    const css = readSheetText();
+    expect(css).not.toContain('color: red');
+    expect(css).not.toContain('--wzl-font-ui:');
+    expect(css).not.toContain('--wzl-font-mono:');
+    expect(css).toMatch(/--wzl-font-body: *['"]A;{}['"] *, *serif/);
+    expect(once.some((m) => m.includes('--wzl-font-ui,'))).toBe(true);
+    expect(once.some((m) => m.includes('--wzl-font-mono,'))).toBe(true);
+    expect(warned()).toEqual(once);
+    warn.mockRestore();
   });
 
   it('writes no inline custom properties', () => {

@@ -38,32 +38,35 @@ export interface FitViewToBoundsOptions {
  * Compute the target {@link View} that fits `bounds` (world space) inside
  * `viewportDims` (CSS px). The bounds are centered in the viewport with
  * uniform padding on all sides; the resulting scale is clamped to the
- * configured min/max.
+ * configured min/max. Bounds with no width or no height, a lone line, are
+ * fitted along the axis they have, at that axis's scale.
  *
- * Empty / zero-sized bounds or viewports cannot be fit — in that case this
- * returns `currentView` unchanged and logs a `console.warn`.
+ * `null` when there is nothing to fit: bounds with no extent on either axis,
+ * or not finite. The caller that owns the viewport resolves that to the view
+ * Cmd-0 gives (`resetView`). A viewport with no area cannot be fit into, and
+ * returns `currentView` unchanged with a `console.warn`.
  */
 export function fitViewToBounds(
   bounds: Bounds,
   viewportDims: ViewportDims,
   currentView: View,
   opts: FitViewToBoundsOptions = {},
-): View {
+): View | null {
   const { padding = 16, maxScale = DEFAULT_MAX_ZOOM, minScale = DEFAULT_MIN_ZOOM } = opts;
 
-  if (bounds.width <= 0 || bounds.height <= 0) {
-    console.warn('[weasel] fitViewToBounds: bounds has zero or negative area; returning currentView unchanged.', bounds);
-    return currentView;
-  }
+  if (!hasExtent(bounds)) return null;
   if (viewportDims.width <= 0 || viewportDims.height <= 0) {
     console.warn('[weasel] fitViewToBounds: viewport has zero or negative area; returning currentView unchanged.', viewportDims);
     return currentView;
   }
 
+  const width = Math.max(0, bounds.width);
+  const height = Math.max(0, bounds.height);
   const availW = Math.max(1, viewportDims.width - padding * 2);
   const availH = Math.max(1, viewportDims.height - padding * 2);
-  const sx = availW / bounds.width;
-  const sy = availH / bounds.height;
+  // An axis with no extent takes the other's scale.
+  const sx = width > 0 ? availW / width : availH / height;
+  const sy = height > 0 ? availH / height : sx;
 
   let rawX: number;
   let rawY: number;
@@ -99,8 +102,16 @@ export function fitViewToBounds(
       ? (scale < 0 ? start + size : start) - padding / scale
       : start + size / 2 - viewport / (2 * scale);
   return {
-    x: place(bounds.x, bounds.width, availW, viewportDims.width, scaleX),
-    y: place(bounds.y, bounds.height, availH, viewportDims.height, scaleY),
+    x: place(bounds.x, width, availW, viewportDims.width, scaleX),
+    y: place(bounds.y, height, availH, viewportDims.height, scaleY),
     scale: { x: scaleX, y: scaleY },
   };
+}
+
+/** Whether `bounds` holds something to fit: finite, with extent on at least one axis. The one
+ *  rule for an empty fit, which {@link fitViewToBounds} and `fitZoom` both answer by. */
+export function hasExtent(bounds: { x?: number; y?: number; width: number; height: number }): boolean {
+  const { x = 0, y = 0, width, height } = bounds;
+  if (![x, y, width, height].every(Number.isFinite)) return false;
+  return width > 0 || height > 0;
 }

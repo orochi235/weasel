@@ -207,3 +207,30 @@
   max-width: 100%;
   margin-inline-start: auto;
 }
+
+// A clone source's copy of the DOM under the reticle, at its own size and scaled
+// about its corner so the reticle's point lands on the interior's center.
+.lk-lens-copy {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--lk-copy-w);
+  height: var(--lk-copy-h);
+  transform: translate(var(--lk-copy-x), var(--lk-copy-y)) scale(var(--lk-copy-k));
+  transform-origin: 0 0;
+  background: var(--wzl-surface);
+  pointer-events: none;
+
+  > * {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// The Loupe keymap's hint, above the lens layer in the lab body's corner.
+.lk-lab-loupe-hint {
+  position: absolute;
+  left: var(--wzl-space-8);
+  bottom: var(--wzl-space-8);
+  z-index: 4;
+}

@@ -157,6 +157,17 @@ describe('the annotation store', () => {
     expect(fn.mock.calls.length).toBe(before);
   });
 
+  it('makes one update that moves a mark and retitles it one undo step and one notice', () => {
+    const store = makeStore();
+    const id = store.add(RING);
+    const fn = vi.fn();
+    store.subscribe(fn);
+    store.update(id, { title: 'moved', frac: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } });
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(store.undo()).toBe(true);
+    expect(store.get(id)).toMatchObject({ title: RING.title, frac: RING.frac });
+  });
+
   // What the overlay's canvas does to a selection is `scene.setSelection` —
   // weasel binds `useSelection` to the scene it is handed, so the selection is
   // scene state, not React state, and these exercise the real write. What they

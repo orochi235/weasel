@@ -82,13 +82,6 @@ const firstBuild = (steps) => {
   return at < 0 ? steps.length : at;
 };
 
-/** The typecheck, lint, `check:*` and `audit:*` steps above the first build, each as the arguments after `npm run`. */
-export const sourceChecks = (steps) =>
-  steps.slice(0, firstBuild(steps)).flatMap((step) => {
-    const command = CHECK.exec(step.run)?.[1];
-    return command ? [command.split(/\s+/)] : [];
-  });
-
 /**
  * `steps`, refusing a step condition or a `${{ }}` in a command: evaluating either off CI would be a
  * guess, which either skips a step CI runs or runs one it skips.
@@ -101,6 +94,17 @@ const offCi = (steps) => {
   }
   return steps;
 };
+
+/**
+ * The typecheck, lint, `check:*` and `audit:*` steps above the first build, each as the arguments after
+ * `npm run`. The gate runs a check bare, so one with a condition or an env of its own is refused.
+ */
+export const sourceChecks = (steps) =>
+  offCi(steps.slice(0, firstBuild(steps)).filter((step) => CHECK.test(step.run))).map((step) => {
+    const env = Object.keys(step.env ?? {});
+    if (env.length) throw new Error(`ci.yml: the gate runs "${step.run}" without its env (${env.join(', ')})`);
+    return CHECK.exec(step.run)[1].split(/\s+/);
+  });
 
 /** The first build and every step after it. */
 export const builtSteps = (steps) => offCi(steps.slice(firstBuild(steps)));

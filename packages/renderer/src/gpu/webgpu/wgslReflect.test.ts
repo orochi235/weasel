@@ -79,6 +79,28 @@ describe('uniform layout with and without uniform_buffer_standard_layout', () =>
   it('holds no struct to the uniform rules that no uniform binds', () => {
     expect(() => reflectWgsl('struct In { a: f32 } struct S { x: f32, inner: In }', STRICT)).not.toThrow();
   });
+
+  it('reads past a struct no uniform binds whose members a uniform cannot hold', () => {
+    const src = `
+struct Hit { t: f32, ok: bool }
+struct FragIn { @builtin(position) pos: vec4f, @builtin(front_facing) front: bool }
+struct Rays { n: u32, dirs: array<vec2f> }
+struct U { a: f32 }
+@group(1) @binding(0) var<uniform> u: U;`;
+    const r = reflectWgsl(src, STANDARD);
+    expect(r.structs.get('U')!.size).toBe(4);
+    expect(r.bindings).toEqual([{ group: 1, binding: 0, name: 'u', kind: 'uniform', struct: 'U' }]);
+  });
+
+  it('still refuses a uniform struct holding one, naming the type', () => {
+    const src = 'struct Hit { t: f32, ok: bool } struct U { h: Hit } @group(1) @binding(0) var<uniform> u: U;';
+    expect(() => reflectWgsl(src, STANDARD)).toThrow(/unsupported type bool/);
+  });
+
+  it('reads an i-suffixed literal as an array size and a const', () => {
+    const src = 'const N = 3i; struct U { a: array<vec4f, 2i>, b: array<vec4f, N> } @group(1) @binding(0) var<uniform> u: U;';
+    expect(reflectWgsl(src, STANDARD).structs.get('U')!.members.map((m) => m.offset)).toEqual([0, 32]);
+  });
 });
 
 describe('createUniformBlock', () => {

@@ -12,6 +12,11 @@ describe('resolveTokens', () => {
     expect(out.text).toBe('#e6e7e9');
   });
 
+  it('resolves a token named like an Object.prototype member, and refuses a reference to one undefined', () => {
+    expect(resolveTokens({ constructor: t('#112233'), fg: t('{color.constructor}') }).fg).toBe('#112233');
+    expect(() => resolveTokens({ fg: t('{color.toString}') })).toThrow(/not defined/);
+  });
+
   it('applies the alpha extension against the resolved target', () => {
     const out = resolveTokens({ 'gray-100': t('#e6e7e9'), fg: t('{color.gray-100}'), line: t('{color.fg}', { alpha: 0.2 }) });
     expect(out.line).toBe('rgba(230, 231, 233, 0.2)');

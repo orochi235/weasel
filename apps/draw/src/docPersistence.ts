@@ -7,15 +7,17 @@ export const DOC_KEY = 'weaseldraw:doc-v1';
 export const DEFAULT_FILENAME = 'untitled.svg';
 export const DEFAULT_BG_COLOR = '#ffffff';
 
-/** Document-level state kept beside the scene, under its own key. The pages are the scene's. */
+/** Document-level state kept beside the scene, under its own key, and out of its history. The pages
+ *  and the background are the scene's. */
 export interface PersistedDoc {
   filename: string;
-  backgroundColor: string;
 }
 
-/** A {@link PersistedDoc} as read back: `paperSize` is the page size a document saved before
- *  draw had pages kept here, and Letter for one that kept none. */
+/** A {@link PersistedDoc} as read back. `paperSize` is the page size a document saved before draw had
+ *  pages kept here, and Letter for one that kept none; `backgroundColor` the background one saved
+ *  before the background was the scene's kept here, and white for one that kept none. */
 export interface LoadedDoc extends PersistedDoc {
+  backgroundColor: string;
   paperSize: PaperSizeKey;
 }
 

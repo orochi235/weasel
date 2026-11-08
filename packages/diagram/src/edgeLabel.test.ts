@@ -7,6 +7,7 @@ import {
 import { seqMeasure } from './sequence/metrics';
 import { LABEL_DERIVE_POSE } from './label';
 import { diagramScene } from './fromData';
+import { pagedScene } from './offPage/pagedFixture';
 
 interface Rect { x: number; y: number; width: number; height: number }
 type Sc = Scene<unknown, 'main', Rect>;
@@ -81,6 +82,21 @@ describe('editEdgeLabelAction', () => {
     expect(startEdit).toHaveBeenCalledWith('e1/label');
     expect(scene.undo()).toBe(true);
     expect(scene.renderOrderNodes()).toHaveLength(before);
+  });
+
+  it("puts a new label on its edge's page in a paged scene, as a connect puts the edge", () => {
+    const scene = pagedScene([
+      { id: 'a', kind: 'mark', layer: 'main', pose: { x: 250, y: 10, width: 40, height: 20 }, data: { diagram: {} } },
+      { id: 'b', kind: 'mark', layer: 'main', pose: { x: 380, y: 60, width: 40, height: 20 }, data: { diagram: {} } },
+      {
+        id: 'e1', kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 },
+        data: { diagram: { from: {}, to: {}, router: 'straight' } },
+        dependsOn: ['a', 'b'], derivePath: EDGE_DERIVE_PATH,
+      },
+    ]);
+    const edgeParent = scene.get('e1' as never)!.parent;
+    runOn(editEdgeLabelAction(), depsOf(scene as never, { textEdit: { startEdit: vi.fn() } }));
+    expect(scene.get('e1/label' as never)!.parent).toBe(edgeParent);
   });
 
   it('sets a new label in the style and color it is given', () => {

@@ -15,6 +15,7 @@
  */
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { cpus } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,6 +27,8 @@ export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const DEVICES = ['webgl2', 'webaudio'];
 
 const run = promisify(execFile);
+// The `typescript` the import above resolved, wherever it is installed: a worktree has no node_modules/.bin of its own.
+const TSC = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const cache = join(repoRoot, 'node_modules/.cache/package-traits');
 
 export function readManifests(root = repoRoot) {
@@ -87,11 +90,15 @@ async function probe(spec, paths, hashOf) {
   );
   let out;
   try {
-    out = (await run(join(repoRoot, 'node_modules/.bin/tsc'), ['-p', config, '--listFiles'], { cwd: repoRoot, maxBuffer: 1 << 26 })).stdout;
+    out = (await run(process.execPath, [TSC, '-p', config, '--listFiles'], { cwd: repoRoot, maxBuffer: 1 << 26 })).stdout;
   } catch (e) {
-    out = String(e.stdout);
+    // tsc exits 1 or 2 on type errors, which is the DOM answer; anything else means it never checked.
+    if (typeof e.code !== 'number' || e.signal) throw new Error(`${spec}: tsc did not run (${e.signal ?? e.code}): ${e.stderr || e.message}`);
+    out = e.stdout;
   }
   const lines = out.split('\n');
+  const listed = entry.replace(/^\.\//, '');
+  if (!lines.some((l) => l.endsWith(`/${listed}`))) throw new Error(`${spec}: tsc never listed ${listed}, so it checked nothing:\n${out}`);
   if (lines.some((l) => l.endsWith('/lib.dom.d.ts'))) {
     throw new Error(`${spec}: lib.dom.d.ts was pulled in by a \`/// <reference lib="dom" />\` in some dependency's types; stub that module in package-traits.mjs`);
   }

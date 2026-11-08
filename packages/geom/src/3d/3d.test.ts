@@ -239,6 +239,12 @@ describe('intersectRayAabb', () => {
   it('survives an axis-parallel ray that never enters a slab', () => {
     expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, min, max)).toBeNull();
   });
+
+  it('misses with a ray that is not a number anywhere, as intersectRayPlane does', () => {
+    const far = { x: 50, y: 50, z: 50 };
+    expect(intersectRayAabb({ origin: far, direction: { x: NaN, y: NaN, z: NaN } }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: NaN, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max)).toBeNull();
+  });
 });
 
 describe('intersectRayPlane', () => {

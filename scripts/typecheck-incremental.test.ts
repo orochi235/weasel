@@ -4,15 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { tscArgv } from './lib/tsc.mjs';
 
-const TSC = join(import.meta.dirname, '../node_modules/.bin/tsc');
 const run = promisify(execFile);
 
 let dir: string;
 const put = (name: string, text: string) => writeFileSync(join(dir, name), text);
 const tsc = async () => {
   try {
-    await run(TSC, ['--noEmit', '-p', dir], { encoding: 'utf8' });
+    await run(process.execPath, tscArgv(['--noEmit', '-p', dir]), { encoding: 'utf8' });
     return { code: 0, out: '' };
   } catch (error) {
     const { code, stdout } = error as { code: number; stdout: string };

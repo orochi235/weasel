@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   SceneCanvas,
   useScene,
+  HOME_VIEW,
   fitViewToBounds,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -67,7 +68,7 @@ export function PerAxisZoomDemo() {
           selectedKey={mode}
           onSelectionChange={setMode}
         />
-        <Button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, size, view, { mode }))}>Fit</Button>
+        <Button onClick={() => setView(fitViewToBounds(IMAGE_BOUNDS, size, view, { mode }) ?? HOME_VIEW)}>Fit</Button>
         <Button onClick={() => setView({ x: -100, y: -100, scale: { x: 1, y: 1 } })}>Reset</Button>
       </div>
       <span style={{ fontSize: 12, color: '#888' }}>

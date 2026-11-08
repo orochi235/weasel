@@ -44,6 +44,10 @@ export interface RecordedEvent {
   button?: number;
   buttons?: number;
   key?: string;
+  /** `KeyboardEvent.code`, the physical key; a binding may match it where `key` differs (Option+0 on macOS). */
+  code?: string;
+  /** Set on an auto-repeated keydown; omitted otherwise. */
+  repeat?: boolean;
   deltaX?: number;
   deltaY?: number;
   /** Modifier bitmask: `MOD_ALT | MOD_CTRL | MOD_META | MOD_SHIFT`. Omitted when no
@@ -243,6 +247,8 @@ export function createRecorder(opts: {
       type,
       t: now(),
       key: ke.key,
+      ...(ke.code ? { code: ke.code } : {}),
+      ...(ke.repeat ? { repeat: true } : {}),
       ...modifiers(ke),
       target: classifyTarget(ke.target),
     });

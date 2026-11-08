@@ -89,6 +89,20 @@ describe('tokenChain', () => {
     ]);
   });
 
+  it('leaves out a sheet whose own media list holds nowhere', () => {
+    const root = story();
+    const sheet = document.createElement('style');
+    sheet.media = '(max-width: 1px)';
+    sheet.textContent = '.fg-tc-root { --wzl-bg: red; }';
+    document.head.append(sheet);
+    try {
+      const chain = tokenChain(boxColor(root));
+      expect(chain.map((l) => l.declared)).toEqual(['var(--wzl-bg)', 'var(--wzl-gray-50)', '#f5f5f6']);
+    } finally {
+      sheet.remove();
+    }
+  });
+
   it('finds no color where nothing inside the host is under the point', () => {
     const root = story();
     expect(colorAt({ x: 5, y: 5 }, root)).toBeNull();

@@ -24,14 +24,18 @@ export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): Rec
   let maxX = -Infinity;
   let maxY = -Infinity;
   let any = false;
-  for (const p of poses) {
+  for (const { x, y, width, height } of poses) {
     any = true;
-    if (p.x < minX) minX = p.x;
-    if (p.y < minY) minY = p.y;
-    const right = p.x + p.width;
-    const bottom = p.y + p.height;
-    if (right > maxX) maxX = right;
-    if (bottom > maxY) maxY = bottom;
+    const x2 = x + width;
+    const y2 = y + height;
+    if (x < minX) minX = x;
+    if (x2 < minX) minX = x2;
+    if (x > maxX) maxX = x;
+    if (x2 > maxX) maxX = x2;
+    if (y < minY) minY = y;
+    if (y2 < minY) minY = y2;
+    if (y > maxY) maxY = y;
+    if (y2 > maxY) maxY = y2;
   }
   if (!any) return null;
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };

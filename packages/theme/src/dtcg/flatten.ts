@@ -38,7 +38,7 @@ export function flattenTokens(doc: Record<string, unknown>): FlatTokens {
         throw new Error(`Token "${leaf}" has no $type and its group "${groupName}" declares none`);
       }
       if (!isSafeTokenName(leaf)) throw new Error(unsafeTokenName(leaf));
-      if (leaf in out) {
+      if (Object.hasOwn(out, leaf)) {
         throw new Error(`Duplicate token name "${leaf}" — leaf keys must be unique across type groups`);
       }
 

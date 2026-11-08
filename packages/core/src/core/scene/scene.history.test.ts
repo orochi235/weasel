@@ -22,6 +22,21 @@ describe('mutations are auto-undoable', () => {
     expect(s.get(id)?.pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
   });
 
+  it('records nothing for an update or setPose that leaves the node as it was', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.history.clear();
+    const before = s.getVersion();
+    let notified = 0;
+    const off = s.subscribe(() => { notified++; });
+    s.setPose(id, { ...POSE });
+    s.update(id, { data: { label: 'a' } });
+    off();
+    expect(s.canUndo()).toBe(false);
+    expect(s.getVersion()).toBe(before);
+    expect(notified).toBe(0);
+  });
+
   it('setLayerVisible / setLayerLocked round-trip', () => {
     const s = makeScene();
     s.setLayerVisible('structures', false);

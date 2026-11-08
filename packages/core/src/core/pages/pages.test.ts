@@ -113,7 +113,7 @@ describe('pagesLayer', () => {
 describe('fitViewToPage', () => {
   it('fits the view to one placed page', () => {
     const [, b] = layoutPages([A, B], { gap: 10 });
-    const view = fitViewToPage(b!, { width: 300, height: 100 }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 0 });
+    const view = fitViewToPage(b!, { width: 300, height: 100 }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 0 })!;
     expect(view.scale).toEqual({ x: 1, y: 1 });
     expect([view.x, view.y]).toEqual([110, 0]);
   });

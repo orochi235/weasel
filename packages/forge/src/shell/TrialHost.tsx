@@ -14,11 +14,11 @@ import {
 } from 'react';
 import { auditElement } from '../frame/a11y';
 import { createA11yHighlighter } from '../frame/a11yHighlight';
-import { scanCssVars } from '../frame/cssVars';
+import { watchCssVars } from '../frame/cssVarsWatch';
 import type { FrameSetup } from '../frame/FrameController';
 import { useNearViewport } from '@weasel-js/react';
 import { IN_VIEW_MARGIN } from './inViewMargin';
-import type { CssVarReport, Globals, Layout, ToFrame } from '../protocol/messages';
+import type { Globals, Layout, ToFrame } from '../protocol/messages';
 import { useCssOverrides } from './cssVars/overrides';
 import { effectiveGlobals, GLOBALS_KEY } from './globals';
 import { useHostConditions } from './hostConditions';
@@ -46,8 +46,6 @@ export interface TrialHostProps {
    */
   copy?: { id: string; globals: Globals };
 }
-
-const VARS_SETTLE_MS = 100;
 
 /**
  * The workshop is itself a lab; below the boundary a story sees no lab, trial or theme above it, as in a document of
@@ -97,38 +95,17 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     const overrides = overridesRef.current;
     if (!host || !overrides || copy) return;
     const doc = host.ownerDocument;
-    let lastVars: CssVarReport[] | null = null;
-    let reported: string | null = null;
-    const publish = (vars: CssVarReport[]) => {
-      lastVars = vars;
-      const key = JSON.stringify(vars);
-      if (key === reported) return;
-      reported = key;
-      if (trialId) frames?.report(trialId, vars);
-    };
-    const scan = () => publish(scanCssVars(doc, overrides.has, host));
-    let settleTimer: ReturnType<typeof setTimeout> | undefined;
-    const ownMutation = (record: MutationRecord) =>
-      overrides.owns(record.target) ||
-      (record.type === 'childList' &&
-        [...record.addedNodes, ...record.removedNodes].length > 0 &&
-        [...record.addedNodes, ...record.removedNodes].every(overrides.owns));
-    const mutations =
-      typeof MutationObserver === 'undefined'
-        ? null
-        : new MutationObserver((records) => {
-            if (records.every(ownMutation)) return;
-            clearTimeout(settleTimer);
-            settleTimer = setTimeout(scan, VARS_SETTLE_MS);
-          });
-    mutations?.observe(host, { subtree: true, childList: true, characterData: true, attributes: true });
+    const vars = watchCssVars(doc, overrides, (report) => trialId && frames?.report(trialId, report), {
+      under: host,
+      root: host,
+    });
 
     const highlighter = createA11yHighlighter(doc);
     const send = (msg: ToFrame) => {
       if (msg.type === 'a11y.highlight') highlighter.show(msg.targets);
       if (msg.type !== 'vars.set') return;
       overrides.set(msg.name, msg.value);
-      if (lastVars?.some((v) => v.name === msg.name)) scan();
+      vars.revise(msg.name);
     };
     const audit = async () => {
       await rendered.promise;
@@ -141,8 +118,7 @@ export function TrialHost({ layout, setup, config, children, hostRef, onRendered
     return () => {
       disconnect();
       highlighter.dispose();
-      mutations?.disconnect();
-      clearTimeout(settleTimer);
+      vars.dispose();
     };
   }, [host, hostId, trialId, frames, copy, overridesRef, rendered]);
 

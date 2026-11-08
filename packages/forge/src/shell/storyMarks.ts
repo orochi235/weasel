@@ -1,20 +1,15 @@
 import type { AnnotationsCapability, CaptureSource, ContentWindow } from '@weasel-js/labkit';
+import { cssRulesOf, sheetsOf } from '../frame/cssVarUse';
 import { scanCssVars } from '../frame/cssVars';
 import type { StoryHosts } from './storyHosts';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-/** Every rule the document can read. A cross-origin sheet refuses, and is skipped. */
+/** Every rule the document can read, its adopted sheets' included. A cross-origin sheet refuses, and is skipped. */
 function documentCss(doc: Document): string {
-  const out: string[] = [];
-  for (const sheet of Array.from(doc.styleSheets)) {
-    try {
-      for (const rule of Array.from(sheet.cssRules)) out.push(rule.cssText);
-    } catch {
-      // A cross-origin sheet refuses to be read.
-    }
-  }
-  return out.join('\n');
+  return sheetsOf(doc)
+    .flatMap((sheet) => Array.from(cssRulesOf(sheet) ?? [], (rule) => rule.cssText))
+    .join('\n');
 }
 
 /** Where a story host's content is: the box its scroller scrolls, and the part of that the host shows. */

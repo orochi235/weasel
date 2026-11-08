@@ -19,6 +19,7 @@ import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCo
 import { importSvgFile, openSvgFile } from './openSvg';
 import { contentRoots } from '@weasel-js/core';
 import { exportPageSvgFile, saveSvgFile } from './saveSvg';
+import { backgroundOf, setBackground } from './docBackground';
 import { withIcons } from './testIcons';
 import { drawScene } from './testScenes';
 
@@ -54,10 +55,8 @@ function setup() {
     filename: 'a',
     paperSize: 'letter',
     page: placedPagesOf(scene)[1]!,
-    backgroundColor: '#ffffff',
     setFilename: vi.fn(),
     showFirstPage: vi.fn(), leaveMode: vi.fn(),
-    setBackgroundColor: vi.fn(),
   };
   let registry: ActionsRegistry | null = null;
   function Probe({ t }: { t: FileCommandsTarget }) {
@@ -94,9 +93,22 @@ describe('useFileCommands', () => {
     expect(contentRoots(scene)).toEqual([]);
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 794, height: 1123 }]);
     expect(target.showFirstPage).toHaveBeenCalledOnce();
+    expect(target.setFilename).toHaveBeenCalledWith('untitled.svg');
     act(() => { scene.undo(); });
     expect(contentRoots(scene)).toHaveLength(2);
     expect(pagesOf(scene)?.pages.map((p) => p.id)).toEqual(['page-1', 'page-2']);
+  });
+
+  it('New resets the background in its own entry: undo puts the old one back and leaves the filename', () => {
+    const { registry, scene, target } = setup();
+    setBackground(scene, '#336699');
+    act(() => { registry.trigger('file.new', { size: 'a4' }); });
+    expect(backgroundOf(scene)).toBe('#ffffff');
+    expect(target.setFilename).toHaveBeenCalledExactlyOnceWith('untitled.svg');
+    act(() => { scene.undo(); });
+    expect(backgroundOf(scene)).toBe('#336699');
+    expect(contentRoots(scene)).toHaveLength(2);
+    expect(target.setFilename).toHaveBeenCalledOnce();
   });
 
   it('New with no size empties the document to one page of the shown paper size', () => {
@@ -121,11 +133,12 @@ describe('useFileCommands', () => {
     expect(importSvgFile).toHaveBeenCalledWith(scene);
   });
 
-  it('Save writes the latest filename and background', () => {
+  it("Save writes the latest filename and the document's background", () => {
     const { registry, scene, target, rerender } = setup();
     rerender({ ...target, filename: 'b' });
+    setBackground(scene, '#336699');
     act(() => { registry.trigger('file.save'); });
-    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', backgroundColor: '#ffffff' });
+    expect(saveSvgFile).toHaveBeenCalledWith(scene, { filename: 'b', backgroundColor: '#336699' });
   });
 
   it('Export Page writes the page in view, and nothing with none', () => {
@@ -158,7 +171,7 @@ describe('useFileCommands', () => {
   it('finds the paper sizes in the command palette by typing "new"', () => {
     Element.prototype.scrollIntoView = () => {};
     const scene = seededScene();
-    const target = { scene, filename: 'a', paperSize: 'letter', page: null, backgroundColor: '#fff', setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn(), setBackgroundColor: vi.fn() } as FileCommandsTarget;
+    const target = { scene, filename: 'a', paperSize: 'letter', page: null, setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn() } as FileCommandsTarget;
     // The palette snapshots the registry when it opens, so open it after the commands register.
     function Host() {
       useFileCommands(target);

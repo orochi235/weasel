@@ -5,6 +5,7 @@
 import type { LayoutStrategy } from '../../layout/types';
 import type { ArrivalWindow } from './arrivalWindow';
 import { sameDependsOn } from './dependents';
+import { sameValue } from './sameValue';
 import { foundHiddenRetargeted } from './pathEffects/foundHidden';
 import type { SetLayoutPayload } from './kitOps';
 import type { createLayerStack } from './layerStack';
@@ -47,12 +48,14 @@ export function createFieldEdits<TData, TLayer extends string, TPose>(
     update(id, patch) {
       const node = requireNode(id);
       refuse(id, 'update');
+      if (sameValue(node.data, patch.data)) return;
       record('kit:setData', { id, from: node.data, to: patch.data }, 'update');
     },
 
     setPose(id, pose) {
       const node = requireNode(id);
       refuse(id, 'set the pose of');
+      if (sameValue(node.pose, pose)) return;
       const resizes = node.layout !== undefined && resized(layoutFrame, id, node.pose, pose);
       // A container with a layout owns where its children go, however one is moved.
       const parent = node.parent === null ? undefined : requireNode(node.parent);

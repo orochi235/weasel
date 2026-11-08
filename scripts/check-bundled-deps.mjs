@@ -25,11 +25,14 @@ function* maps(dir) {
 const root = process.argv[2] ?? repoRoot;
 
 const found = [];
+// A package with no sourcemap to read would pass on nothing: unbuilt, or built with its maps turned off.
+const unread = [];
 for (const { dir, manifest } of publishableWorkspaces(root)) {
   const dist = join(dir, 'dist');
-  if (!existsSync(dist)) continue;
+  const read = existsSync(dist) ? [...maps(dist)] : [];
+  if (read.length === 0) unread.push(`  ${manifest.name} (${relative(root, dist)})`);
   const declared = new Set([...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.peerDependencies ?? {})]);
-  for (const map of maps(dist)) {
+  for (const map of read) {
     const inlined = new Set();
     for (const source of JSON.parse(readFileSync(map, 'utf8')).sources ?? []) {
       const dep = VENDORED.exec(source)?.[1];
@@ -39,6 +42,12 @@ for (const { dir, manifest } of publishableWorkspaces(root)) {
   }
 }
 
+if (unread.length > 0) {
+  console.error('check:bundled-deps — no .js.map to read, so nothing says what these builds took in:');
+  console.error(unread.join('\n'));
+  console.error('\nBuild first, and keep `sourcemap: true` in the package\'s build config.');
+  process.exit(1);
+}
 if (found.length > 0) {
   console.error('check:bundled-deps — a build carries its own copy of a dependency it declares:');
   console.error(found.join('\n'));

@@ -31,9 +31,10 @@ interface PageBucket {
   sequence?: SequenceData;
 }
 
-/** One page around everything, for a scene with no page list. */
+/** One page around everything, for a scene with no page list. A connector is left out: it is stored as an empty box
+ *  at the origin, and draws between what it joins. */
 function contentPage(scene: AnyScene): PlacedPage {
-  const boxes = scene.roots.map((id) => scene.get(id as never)!.pose as RectPose);
+  const boxes = scene.roots.map((id) => scene.get(id as never)!).filter((n) => kindOf(n) !== 'edge').map((n) => n.pose as RectPose);
   const x = boxes.length === 0 ? 0 : Math.min(...boxes.map((b) => b.x));
   const y = boxes.length === 0 ? 0 : Math.min(...boxes.map((b) => b.y));
   const width = boxes.length === 0 ? 0 : Math.max(...boxes.map((b) => b.x + b.width)) - x;

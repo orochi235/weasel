@@ -11,6 +11,11 @@ describe('flattenTokens', () => {
     });
   });
 
+  it('takes a token named like an Object.prototype member as any other', () => {
+    const out = flattenTokens({ color: { $type: 'color', constructor: { $value: '#112233' } } });
+    expect(Object.hasOwn(out, 'constructor')).toBe(true);
+  });
+
   it('carries $description and the alpha extension through', () => {
     const out = flattenTokens({
       color: {

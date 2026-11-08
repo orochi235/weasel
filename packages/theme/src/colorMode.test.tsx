@@ -125,6 +125,18 @@ describe('useColorModePreference', () => {
     expect(result.current.mode).toBe('dark');
   });
 
+  it('reads the new slot when storageKey changes', () => {
+    fakeSystem(true);
+    storage.setItem('doc-a', 'dark');
+    storage.setItem('doc-b', 'light');
+    const { result, rerender } = renderHook(({ k }) => useColorModePreference({ storageKey: k }), {
+      initialProps: { k: 'doc-a' },
+    });
+    expect(result.current.preference).toBe('dark');
+    rerender({ k: 'doc-b' });
+    expect(result.current.preference).toBe('light');
+  });
+
   it('reads and writes a storage the caller supplies', () => {
     fakeSystem(true);
     const own = memoryStorage();

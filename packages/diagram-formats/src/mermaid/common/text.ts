@@ -1,5 +1,6 @@
 /** Mermaid text and ids, read and written alike by every diagram kind. */
 import { markupLines } from '../../graphRead';
+import { freshId } from '@weasel-js/registry';
 
 /** Mermaid's text: markdown string quotes and bold dropped, entities and `<br>` read. */
 export function textLines(text: string): string[] {
@@ -40,8 +41,7 @@ export function mermaidIds(ids: readonly string[], { unicode = false } = {}): Ma
     let base = id.replace(chars.other, '_').replace(/^_+(?=[\p{L}\p{N}_])|(?<=[\p{L}\p{N}_])_+$/gu, '') || 'n';
     if (/^\d/.test(base)) base = `n${base}`;
     if (!valid(base)) base = `${base}_`;
-    let pick = base;
-    for (let n = 2; taken.has(pick); n++) pick = `${base}_${n}`;
+    const pick = freshId(base, taken, { from: 2, sep: '_', bare: true });
     taken.add(pick);
     out.set(id, pick);
   }

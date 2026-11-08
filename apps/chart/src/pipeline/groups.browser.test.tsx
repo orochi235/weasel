@@ -5,7 +5,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { fitViewToBounds, viewToTransform, type RectPose } from '@weasel-js/core';
+import { fitViewToBounds as fitOrNull, viewToTransform, type RectPose } from '@weasel-js/core';
+
 import { diagramGroupOf, diagramScene, isBodyOrRegion } from '@weasel-js/diagram';
 import { EFFECT_MIN_SCALE, editorScene, type EffectDoc, type EffectGroup } from '@weasel-js/diagram/effect';
 import { registerCanvasFont } from '@weasel-js/font';
@@ -14,6 +15,9 @@ import '@weasel-js/theme/tokens.css';
 import { makeChoose } from '../testing/choose';
 import { canvasSettled, mountChartApp, unmountChartApp } from '../testing/mountChartApp';
 import { PIPELINE_STORAGE_KEY } from './usePipelineDoc';
+
+/** These cases all have something to fit. */
+const fitViewToBounds = (...args: Parameters<typeof fitOrNull>) => fitOrNull(...args)!;
 
 registerCanvasFont('sans-serif');
 

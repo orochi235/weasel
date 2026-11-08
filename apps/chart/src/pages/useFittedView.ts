@@ -1,9 +1,8 @@
-import { fitViewToBounds, placedPagesOf, type View } from '@weasel-js/core';
+import { HOME_VIEW, fitViewToBounds, placedPagesOf, type View } from '@weasel-js/core';
 import { useCallback, useMemo, useState } from 'react';
 import { CHART_PAGE, type ChartScene } from '../chartDocument';
 import { PAGE_FIT_PADDING } from './useChartPages';
 
-const NO_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const FALLBACK_PAGE = { id: null, x: 0, y: 0, ...CHART_PAGE };
 
 export interface FittedView {
@@ -27,7 +26,9 @@ export function useFittedView(scene: ChartScene, dims: { width: number; height: 
   const { x, y, width, height } = page;
   const { width: w, height: h } = dims;
   const fit = useMemo(
-    () => (w > 0 && h > 0 ? fitViewToBounds({ x, y, width, height }, { width: w, height: h }, NO_VIEW, { padding: PAGE_FIT_PADDING }) : NO_VIEW),
+    () => (w > 0 && h > 0
+      ? fitViewToBounds({ x, y, width, height }, { width: w, height: h }, HOME_VIEW, { padding: PAGE_FIT_PADDING }) ?? HOME_VIEW
+      : HOME_VIEW),
     [x, y, width, height, w, h],
   );
   const fitTo = useCallback((id: string | null) => {

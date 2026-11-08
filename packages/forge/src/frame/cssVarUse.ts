@@ -63,6 +63,11 @@ function walk(rules: CSSRuleList, root: Element, defs: Map<string, Set<string>>,
   }
 }
 
+/** Every enabled sheet styling `doc`: its own, then its adopted ones, which come after them all and hold a theme's tokens. */
+export function sheetsOf(doc: Document): CSSStyleSheet[] {
+  return [...Array.from(doc.styleSheets), ...(doc.adoptedStyleSheets ?? [])].filter((sheet) => !sheet.disabled);
+}
+
 export function cssRulesOf(sheet: CSSStyleSheet): CSSRuleList | null {
   try {
     return sheet.cssRules;
@@ -80,7 +85,7 @@ export function cssRulesOf(sheet: CSSStyleSheet): CSSRuleList | null {
 export function usedCssVars(doc: Document, root: Element): Set<string> {
   const defs = new Map<string, Set<string>>();
   const seeds = new Set<string>();
-  for (const sheet of Array.from(doc.styleSheets)) {
+  for (const sheet of sheetsOf(doc)) {
     const rules = cssRulesOf(sheet);
     if (rules) walk(rules, root, defs, seeds);
   }

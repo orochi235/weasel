@@ -135,6 +135,8 @@ export function splitForDash(pl: MeasuredPolyline, pattern: readonly number[], p
   let into = dashPhase(dash, phase);
   if (into > 0) {
     while (into >= dash[dashIdx]) {
+      // A zero-length dash the phase lands exactly on is due at the first point, as it would be mid-line.
+      if (into === 0 && dash[dashIdx] === 0 && onPhase) break;
       into -= dash[dashIdx];
       dashIdx = (dashIdx + 1) % dash.length;
       onPhase = !onPhase;

@@ -4,6 +4,7 @@
  * its text wrapped into label rows and its metadata as `field` rows.
  */
 import type { DataContainer, DataNode, Row } from '@weasel-js/diagram';
+import { freshId } from '@weasel-js/registry';
 import type { ImportResult } from '../../document';
 import { Warnings, decodeEntities, graphPage } from '../../graphRead';
 import { PAGE_MARGIN } from '../../pageLayout';
@@ -58,8 +59,7 @@ export function readKanban(text: string): ImportResult {
     if (c.meta.length > 0) warnings.add('Mermaid kanban column metadata was dropped.');
     return { id: lane, label: decodeEntities(c.text, true), size: COLUMN_WIDTH, ...(members.length > 0 ? { members } : {}) };
   });
-  let board = BOARD_ID;
-  for (let n = 2; ids.has(board); n++) board = `${BOARD_ID}-${n}`;
+  const board = freshId(BOARD_ID, ids, { from: 2, bare: true });
   const tallest = Math.max(0, ...columns.map((c) => c.cards.reduce((h, card) => h + (wrapped(card.text, CARD_WRAP).length + card.meta.length) * ROW + 16 + GAP, 0)));
   const name = pageNameOf(source, warnings);
   const pool: DataContainer = {

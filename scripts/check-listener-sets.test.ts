@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listenerSetLines, offendingLines } from './check-listener-sets.mjs';
+import { listenerSetLines } from './check-listener-sets.mjs';
 
 describe('listenerSetLines', () => {
   it('catches a set of no-argument listeners', () => {
@@ -33,19 +33,5 @@ describe('listenerSetLines', () => {
       'const listeners = createEmitter();',
     ].join('\n');
     expect(listenerSetLines(source)).toEqual([]);
-  });
-});
-
-describe('offendingLines', () => {
-  it('reports every use in a file that is not allowlisted', () => {
-    expect(offendingLines([3, 9])).toEqual([3, 9]);
-  });
-
-  it('lets an allowlisted file keep the uses its entry covers', () => {
-    expect(offendingLines([3], 1)).toEqual([]);
-  });
-
-  it('reports an allowlisted file that gained a use', () => {
-    expect(offendingLines([3, 9], 1)).toEqual([3, 9]);
   });
 });

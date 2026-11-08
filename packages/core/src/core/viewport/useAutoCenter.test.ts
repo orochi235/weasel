@@ -5,7 +5,7 @@ import { computeFitViewport as computeFitViewportFromEntry } from '../../index';
 
 describe('computeFitViewport is reachable from the public entry', () => {
   it('centers content in a viewport', () => {
-    const fit = computeFitViewportFromEntry(200, 100, 100, 100);
+    const fit = computeFitViewportFromEntry(200, 100, 100, 100)!;
     expect(fit.zoom).toBeCloseTo(0.85);
     expect(fit.panX).toBeCloseTo(57.5);
     expect(fit.panY).toBeCloseTo(7.5);
@@ -16,7 +16,7 @@ describe('computeFitViewport', () => {
   it('fits content with default padRatio 0.85, centered', () => {
     // viewport 200x200, content 10x10 -> avail 170 -> zoom 17 -> contentPx 170
     // pan = (200 - 170) / 2 = 15
-    const r = computeFitViewport(200, 200, 10, 10);
+    const r = computeFitViewport(200, 200, 10, 10)!;
     expect(r.zoom).toBe(17);
     expect(r.panX).toBe(15);
     expect(r.panY).toBe(15);
@@ -24,7 +24,7 @@ describe('computeFitViewport', () => {
 
   it('uses custom padRatio', () => {
     // 100x100, padRatio 0.5 -> avail 50; content 10x10 -> zoom 5; pan = (100-50)/2 = 25
-    const r = computeFitViewport(100, 100, 10, 10, 0.5);
+    const r = computeFitViewport(100, 100, 10, 10, 0.5)!;
     expect(r.zoom).toBe(5);
     expect(r.panX).toBe(25);
     expect(r.panY).toBe(25);
@@ -33,14 +33,34 @@ describe('computeFitViewport', () => {
   it('handles non-square content (uses smaller axis ratio)', () => {
     // 100x100, padRatio 1, content 20x10 -> zoom = min(5, 10) = 5
     // contentPx = 100 x 50 -> panX 0, panY 25
-    const r = computeFitViewport(100, 100, 20, 10, 1);
+    const r = computeFitViewport(100, 100, 20, 10, 1)!;
     expect(r.zoom).toBe(5);
     expect(r.panX).toBe(0);
     expect(r.panY).toBe(25);
   });
 });
 
+describe('computeFitViewport with no content', () => {
+  it('reports nothing to fit', () => {
+    expect(computeFitViewport(200, 200, 0, 0)).toBeNull();
+  });
+});
+
 describe('useAutoCenter', () => {
+  it('leaves the initial view while there is no content, and centers once there is', () => {
+    const setZoom = vi.fn();
+    const setPan = vi.fn();
+    const { rerender } = renderHook(
+      ({ c }: { c: number }) => useAutoCenter(200, 200, c, c, setZoom, setPan),
+      { initialProps: { c: 0 } },
+    );
+    expect(setZoom).not.toHaveBeenCalled();
+    expect(setPan).not.toHaveBeenCalled();
+    rerender({ c: 10 });
+    expect(setZoom).toHaveBeenCalledWith(17);
+    expect(setPan).toHaveBeenCalledWith(15, 15);
+  });
+
   it('does nothing while viewport is zero-sized', () => {
     const setZoom = vi.fn();
     const setPan = vi.fn();

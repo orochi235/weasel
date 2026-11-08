@@ -146,16 +146,19 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
   return {
     setLayerVisible(layer, visible) {
       const rec = layers[requireLayerIndex(layer)];
+      if (rec.visible === visible) return;
       record('kit:setLayerVisible', { layer, from: rec.visible, to: visible }, 'setLayerVisible');
     },
 
     setLayerLocked(layer, locked) {
       const rec = layers[requireLayerIndex(layer)];
+      if (rec.locked === locked) return;
       record('kit:setLayerLocked', { layer, from: rec.locked, to: locked }, 'setLayerLocked');
     },
 
     setLayerParallax(layer, parallax) {
       const rec = layers[requireLayerIndex(layer)];
+      if (rec.parallax === parallax) return;
       record('kit:setLayerParallax', { layer, from: rec.parallax, to: parallax }, 'setLayerParallax');
     },
 
@@ -190,6 +193,7 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
 
     renameLayer(layer, name) {
       const rec = userLayer(layer, 'rename');
+      if (rec.name === name) return;
       record('kit:renameLayer', { layer, from: rec.name, to: name }, 'renameLayer');
     },
 

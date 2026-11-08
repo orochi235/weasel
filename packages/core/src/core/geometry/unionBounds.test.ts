@@ -30,6 +30,10 @@ describe('unionBounds', () => {
     ]);
     expect(out).toEqual({ x: -10, y: -20, width: 20, height: 30 });
   });
+
+  it('folds a box a resize turned inside out by the span it covers', () => {
+    expect(unionBounds([{ x: 10, y: 10, width: -4, height: -6 }])).toEqual({ x: 6, y: 4, width: 4, height: 6 });
+  });
 });
 
 describe('axisAlignedBounds', () => {

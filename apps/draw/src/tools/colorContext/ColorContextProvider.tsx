@@ -50,6 +50,18 @@ interface Paints {
   stroke: ActivePaint;
 }
 
+type PaintSlot = keyof Paints;
+
+/**
+ * `color` as the `slot` swatch takes it from a picker, normalized to `#rrggbbaa`: a 6-digit color
+ * keeps the alpha `paint` already has, since the native picker has none, and an 8-digit one wins
+ * outright.
+ */
+export function colorKeepingAlpha(slot: PaintSlot, paint: ActivePaint, color: string): string {
+  if (color.length === 9) return color;
+  return mergeAlphaFromPrev(color, solidColorOf(paint) ?? (slot === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR));
+}
+
 // ---------------------------------------------------------------------------
 // Context
 // ---------------------------------------------------------------------------
@@ -91,33 +103,12 @@ export function ColorContextProvider({
     else setPaints((cur) => ({ ...cur, stroke: p }));
   }, [focusedRef]);
 
-  // Normalize incoming color strings to `#rrggbbaa`. 6-char inputs
-  // inherit the previous swatch's alpha (the native picker round-trip)
-  // — 8-char inputs win outright.
-  const setFillColor = useCallback((color: string) => {
-    setPaints((cur) => {
-      const prev = solidColorOf(cur.fill) ?? DEFAULT_FILL_COLOR;
-      return { ...cur, fill: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
-    });
+  const setSlotColor = useCallback((slot: PaintSlot, color: string) => {
+    setPaints((cur) => ({ ...cur, [slot]: { kind: 'solid', color: colorKeepingAlpha(slot, cur[slot], color) } }));
   }, []);
-  const setStrokeColor = useCallback((color: string) => {
-    setPaints((cur) => {
-      const prev = solidColorOf(cur.stroke) ?? DEFAULT_STROKE_COLOR;
-      return { ...cur, stroke: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
-    });
-  }, []);
-  const setFocusedColor = useCallback((color: string) => {
-    setPaints((cur) => {
-      const which = focusedRef.current;
-      if (which === 'fill') {
-        const prev = solidColorOf(cur.fill) ?? DEFAULT_FILL_COLOR;
-        return { ...cur, fill: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
-      } else {
-        const prev = solidColorOf(cur.stroke) ?? DEFAULT_STROKE_COLOR;
-        return { ...cur, stroke: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
-      }
-    });
-  }, [focusedRef]);
+  const setFillColor = useCallback((color: string) => setSlotColor('fill', color), [setSlotColor]);
+  const setStrokeColor = useCallback((color: string) => setSlotColor('stroke', color), [setSlotColor]);
+  const setFocusedColor = useCallback((color: string) => setSlotColor(focusedRef.current, color), [setSlotColor, focusedRef]);
 
   const focusedPaint = focused === 'fill' ? fill : stroke;
   const focusedColor = solidColorOf(focusedPaint);

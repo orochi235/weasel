@@ -10,7 +10,7 @@ const DIMS = { width: 400, height: 400 };
 // Shows world y 90–490: the bottom 10 of A, the gap, and the top 90 of B.
 const BETWEEN: View = { x: 0, y: 90, scale: { x: 1, y: 1 } };
 const pages = { placed: [A, B] };
-const fit = (page: PlacedPage, from: View) => fitViewToPage(page, DIMS, from, { padding: 24 });
+const fit = (page: PlacedPage, from: View) => fitViewToPage(page, DIMS, from, { padding: 24 })!;
 
 const pointer = (type: string, pointerId: number) => {
   act(() => { window.dispatchEvent(Object.assign(new Event(type), { pointerId })); });
@@ -135,7 +135,7 @@ describe('usePageSettle', () => {
     expect(setView).not.toHaveBeenCalled();
     rerender({ view: fitted, dims: small });
     vi.advanceTimersByTime(150);
-    expect(setView).toHaveBeenCalledWith(fitViewToPage(A, small, fitted, { padding: 24 }));
+    expect(setView).toHaveBeenCalledWith(fitViewToPage(A, small, fitted, { padding: 24 })!);
 
     setView.mockClear();
     const zoomed = { ...fitted, scale: { x: fitted.scale.x * 2, y: fitted.scale.y * 2 } };

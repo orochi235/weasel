@@ -2,6 +2,7 @@
 
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
+import { nearlyParallel } from '../scalar';
 
 /** One crossing of segments `a` and `b`: the parameter on each, and the point. */
 export interface SegmentCrossing {
@@ -132,8 +133,10 @@ function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
  */
 export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): SegmentCrossing[] {
   if (a.length === 2 && b.length === 2) {
+    const [p0, p1] = a, [q0, q1] = b;
+    if (nearlyParallel(p1.x - p0.x, p1.y - p0.y, q1.x - q0.x, q1.y - q0.y)) return collinearOverlap(p0, p1, q0, q1);
     const uv = chordCross(a[0], a[1], b[0], b[1], 1e-12);
-    if (!uv) return collinearOverlap(a[0], a[1], b[0], b[1]);
+    if (!uv) return [];
     const ta = Math.min(1, Math.max(0, uv[0]));
     const tb = Math.min(1, Math.max(0, uv[1]));
     const p = evalSeg(a, ta);

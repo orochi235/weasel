@@ -1,5 +1,5 @@
 import {
-  asNodeId, fitViewToBounds, quantizeSize,
+  HOME_VIEW, asNodeId, fitViewToBounds, quantizeSize,
   type Fill, type QuantizeRule, type RectPose, type SceneNode, type View, type ViewportDims,
 } from '@weasel-js/core';
 import { alignToGrid, pathFromD, snapToPitch, type OutputGrid, type Path, type Rect } from '@weasel-js/geom';
@@ -27,7 +27,7 @@ export function outputGrid(dpi: number): OutputGrid {
 
 /** The whole page in a canvas of `dims`. */
 export function fitPage(dims: ViewportDims): View {
-  return fitViewToBounds({ x: 0, y: 0, ...PAGE }, dims, { x: 0, y: 0, scale: { x: 1, y: 1 } });
+  return fitViewToBounds({ x: 0, y: 0, ...PAGE }, dims, HOME_VIEW) ?? HOME_VIEW;
 }
 
 /** Device pixels per dot that `wholeDots` opens at. */

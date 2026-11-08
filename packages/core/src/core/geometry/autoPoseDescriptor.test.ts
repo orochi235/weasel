@@ -103,6 +103,14 @@ describe('AUTO fromBounds / withRotation', () => {
     expect(AUTO_POSE_DESCRIPTOR.withRotation!(path, 1)).toBe(path);
   });
 
+  it('lerps a rect pose and a Path pose, each through its own descriptor', () => {
+    const lerp = AUTO_POSE_DESCRIPTOR.lerp!;
+    expect(lerp({ x: 0, y: 0, width: 10, height: 10 }, { x: 10, y: 20, width: 30, height: 10 }, 0.5))
+      .toEqual({ x: 5, y: 10, width: 20, height: 10 });
+    expect(lerp({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect', x: 10, y: 0, width: 10, height: 30 }, 0.5))
+      .toEqual({ kind: 'rect', x: 5, y: 0, width: 10, height: 20 });
+  });
+
   it('pathPoseDescriptor.fromBounds returns a rect Path', () => {
     expect(pathPoseDescriptor.fromBounds(box, { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }))
       .toEqual({ kind: 'rect', ...box });

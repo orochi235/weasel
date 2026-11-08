@@ -47,6 +47,20 @@ describe('loadDTCG', () => {
     });
   });
 
+  it('leaves a mode without a token named like an Object.prototype member to the base', () => {
+    const theme = loadDTCG({
+      name: 'proto',
+      extends: null,
+      modes: {
+        dark: { color: { $type: 'color', constructor: { $value: '#000000' } } },
+        light: { color: { $type: 'color', surface: { $value: '#ffffff' } } },
+      },
+    });
+    expect(theme.tokens.constructor).toEqual({
+      by: 'mode', dark: { type: 'color', value: '#000000', alpha: undefined, description: undefined },
+    });
+  });
+
   it('ignores an extension namespace it does not own', () => {
     const doc = { name: 'x', extends: null, primitives: { dimension: { $type: 'dimension', gap: { $value: '4px' } } } };
     const theme = loadDTCG({ ...doc, $extensions: { 'com.example.other': { anything: true } } });

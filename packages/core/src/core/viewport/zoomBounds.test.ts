@@ -78,7 +78,7 @@ describe('zoom producers stay inside the invariant', () => {
   });
 
   it('fitViewToBounds with an unbounded maxScale over bounds too thin to measure', () => {
-    const v = fitViewToBounds({ x: 0, y: 0, width: Number.MIN_VALUE, height: Number.MIN_VALUE }, { width: 100, height: 100 }, HOME, { maxScale: Infinity });
+    const v = fitViewToBounds({ x: 0, y: 0, width: Number.MIN_VALUE, height: Number.MIN_VALUE }, { width: 100, height: 100 }, HOME, { maxScale: Infinity })!;
     expect(finitePositive(v.scale.x)).toBe(true);
     expect(Number.isFinite(v.x)).toBe(true);
   });

@@ -24,6 +24,10 @@ interface Layer {
 
 const isRecord = isPlainObject;
 
+/** `record`'s own `key`, never one it inherits: a token may be named `constructor`. */
+const own = <T>(record: Readonly<Record<string, T>> | undefined, key: string): T | undefined =>
+  (record !== undefined && Object.hasOwn(record, key) ? record[key] : undefined);
+
 function readLayer(src: { primitives?: unknown; modes?: unknown }): Layer {
   const modes = isRecord(src.modes) ? src.modes : {};
   return {
@@ -75,10 +79,10 @@ export function loadDTCG(doc: DtcgDocument): Theme {
 
   /** A token's value within one layer: varying by mode if any mode names it. */
   const tokenIn = (layer: Layer, name: string): Varying<RawToken> | undefined => {
-    if (!modeNames.some((m) => layer.modes[m]?.[name])) return layer.primitives[name];
+    if (!modeNames.some((m) => own(own(layer.modes, m), name))) return own(layer.primitives, name);
     const branch: Record<string, unknown> = { by: 'mode' };
     for (const m of modeNames) {
-      const t = layer.modes[m]?.[name] ?? layer.primitives[name];
+      const t = own(own(layer.modes, m), name) ?? own(layer.primitives, name);
       if (t) branch[m] = t;
     }
     return branch as Varying<RawToken>;
@@ -122,7 +126,7 @@ export function loadDTCG(doc: DtcgDocument): Theme {
   const names = new Set([...Object.keys(plain.primitives), ...modeNames.flatMap((m) => Object.keys(plain.modes[m] ?? {}))]);
   for (const name of Object.keys(ext?.varies ?? {})) names.add(name);
   for (const name of names) {
-    const vary = (ext?.varies[name] ?? []).filter((a) => a in all);
+    const vary = (own(ext?.varies, name) ?? []).filter((a) => Object.hasOwn(all, a));
     const v = vary.length > 0 ? nest(name, vary, {}) : tokenIn(plain, name);
     if (v !== undefined) tokens[name] = v;
   }

@@ -7,7 +7,7 @@ import type { RectPose } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import { deepEqual } from '@weasel-js/registry';
 import {
-  DEFAULT_PORTS, EDGE_STROKE_WIDTH, HEADER_PAD, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
+  DEFAULT_PORTS, EDGE_STROKE_WIDTH, HEADER_PAD, groupLabelIdOf, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramContainerOf, diagramEdgeOf, layoutOwnsPort,
   layoutOwnsRoute, poolAxisOf, sequencePartOf, sequenceRootOf, titleIdOf, type DataContainer, type DataEdge, type DataGroup, type DataLane, type DataNode, type DiagramLabel,
   type DiagramRouter, type DiagramTheme, type EdgeStyle, type NodeStyle, type BodyDivider, type BodyLayout, type HeaderBand, type Row,
 } from '@weasel-js/diagram';
@@ -277,7 +277,7 @@ export function readGroup(scene: ReadScene, node: ReadNode): DataGroup {
   });
   return {
     id: node.id, members,
-    ...optional('label', textOf(scene, `${node.id}/label`)),
+    ...optional('label', textOf(scene, groupLabelIdOf(node.id))),
     ...optional('reorder', group.reorder),
   };
 }

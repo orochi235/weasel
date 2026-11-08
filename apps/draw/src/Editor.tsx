@@ -92,7 +92,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
     const first = placedPagesOf(scene)[0];
     if (first) goTo(first.id);
   }, [scene, goTo]);
-  const doc = useDocumentState(pages, selection.current.length > 0);
+  const doc = useDocumentState(scene, pages, selection.current.length > 0);
   // Measurements are nodes on the annotation layer; this is which one is picked.
   const [measurements] = useState(() => createMeasurements({ layer: ANNOTATION_LAYER }));
 
@@ -141,8 +141,6 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                 page={pages.shown}
                 filename={doc.filename}
                 setFilename={doc.setFilename}
-                backgroundColor={doc.backgroundColor}
-                setBackgroundColor={doc.setBackgroundColor}
               />
             )}
           >

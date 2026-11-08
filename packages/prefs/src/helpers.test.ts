@@ -194,6 +194,17 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([100, 96]);
   });
 
+  it('widens a step to the smallest one the shown precision can display, never below the declared step', () => {
+    const num = (step: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 0, step, unit });
+    const cm = { scale: 10, suffix: 'cm', precision: 0 };
+    expect(prefDisplayBounds(num(1, cm)).step).toBe(1);
+    expect(prefDisplayBounds(num(2, cm)).step).toBe(1);
+    expect(prefDisplayBounds(num(0.5, { scale: 96, suffix: 'in', precision: 2 })).step).toBe(0.01);
+    expect(prefDisplayBounds(num(0.15, { scale: 1, precision: 1 })).step).toBe(0.2);
+    expect(prefDisplayBounds(num(1.1, { scale: 1, precision: 1 })).step).toBe(1.1);
+    expect(prefDisplayBounds(num(1, { scale: 3 })).step).toBeCloseTo(1 / 3, 12);
+  });
+
   it('carries stops through unchanged without a unit', () => {
     const leaf: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0, min: -1, max: 1, stops: [0] };
     expect(prefDisplayBounds(leaf)).toEqual({ min: -1, max: 1, step: 1, stops: [0] });

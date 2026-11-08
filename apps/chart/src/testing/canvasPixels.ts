@@ -1,4 +1,4 @@
-import { fitViewToBounds, viewWorldToScreen } from '@weasel-js/core';
+import { HOME_VIEW, fitViewToBounds, viewWorldToScreen } from '@weasel-js/core';
 import { CHART_PAGE } from '../chartDocument';
 import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
 
@@ -6,7 +6,7 @@ import { canvasGl } from '@weasel-js/core/testing/canvasPixels';
  *  rounds to a step. */
 export function at(host: HTMLElement, x: number, y: number): { x: number; y: number } {
   const box = host.getBoundingClientRect();
-  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { padding: 24 });
+  const view = fitViewToBounds({ x: 0, y: 0, ...CHART_PAGE }, box, HOME_VIEW, { padding: 24 }) ?? HOME_VIEW;
   const p = viewWorldToScreen(view, { x, y });
   return { x: box.left + p.x, y: box.top + p.y };
 }

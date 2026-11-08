@@ -1,27 +1,23 @@
 import './loupe.css';
-import { effectivePose, type Op, type PoseHold, type RectPose, sceneToAdapter, useLatest, useVisibleRaf } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { useLabContext } from '@weasel-js/labkit';
 import {
-  addLensOps,
-  BODY_SIZE,
+  createLensApi,
   createLensScene,
   LensActions,
-  type LensActionApi,
   type LensDescribeContext,
   LensOverlay,
-  type LensScene,
-  type LensSourceKind,
   type LensSources,
-  lensesOf,
-  lensIdsOf,
   type LoupePoint,
-  MAX_LENSES,
+  lensClient,
   resolveSource,
-  reticleAt,
   settingsOf,
+  useFrameSchedule,
+  useLensFocus,
+  useLensRemeasure,
 } from '@weasel-js/labkit/loupe';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
-import { type RefObject, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import type { GlobalDeclarations } from '../globals';
 import { StoryGlobalsContext } from '../StoryGlobalsContext';
 import { CompareMenu, type CompareMenuRequest, compareChoices } from './CompareMenu';
@@ -39,162 +35,7 @@ export interface ForgeLoupeProps {
   modeGlobal: string;
 }
 
-/** Each new lens's body sits this far further along than the last, so lenses added in a row do not stack. */
-const STAGGER = 24;
 const OPPOSITE: ForgeComparison = { kind: 'opposite-mode' };
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), Math.max(lo, hi));
-
-/** A new body beside its reticle, in lab-body px, flipped left where the right has no room. */
-function bodyBeside(reticle: LoupePoint, box: DOMRect, n: number): LoupePoint {
-  const half = BODY_SIZE / 2;
-  const gap = BODY_SIZE * 0.75 + STAGGER * n;
-  const x = reticle.x + gap + half > box.width ? reticle.x - gap : reticle.x + gap;
-  return { x: clamp(x, half, box.width - half), y: clamp(reticle.y + STAGGER * n, half, box.height - half) };
-}
-
-/** A lens's reticle and body centers in client px, from the scene's lab-body px. */
-function lensClient(
-  scene: LensScene<ForgeComparison>,
-  lensId: string,
-  body: HTMLElement | null,
-): { reticle: LoupePoint; body: LoupePoint } | null {
-  const ids = lensIdsOf(scene, `${lensId}:body`);
-  const reticle = ids ? scene.get(ids.reticle) : undefined;
-  const lens = ids ? scene.get(ids.body) : undefined;
-  if (!body || !reticle || !lens) return null;
-  const box = body.getBoundingClientRect();
-  const center = (p: RectPose) => ({ x: box.left + p.x + p.width / 2, y: box.top + p.y + p.height / 2 });
-  return { reticle: center(effectivePose(scene, reticle)), body: center(effectivePose(scene, lens)) };
-}
-
-/**
- * The lens the lens actions act on, held in a ref so a chrome toggle's focus lands before its action reads it.
- * `LensOverlay` reports through `onFocusLens` both the chrome's focus and every selection the lens canvas makes.
- */
-export function useLensFocus() {
-  const focus = useRef<string | null>(null);
-  const onFocusLens = useCallback((lensId: string | null) => {
-    focus.current = lensId;
-  }, []);
-  return { focus, onFocusLens };
-}
-
-/** The lens API the actions drive, in client px at its edges and lab-body px in the scene. */
-export function createApi(
-  scene: LensScene<ForgeComparison>,
-  refs: {
-    body: RefObject<HTMLElement | null>;
-    pointer: RefObject<LoupePoint | null>;
-    focus: RefObject<string | null>;
-    sources: RefObject<LensSources<ForgeComparison>>;
-    /** Opens the compare menu on a lens. */
-    compare?: RefObject<((lensId: string) => void) | null>;
-  },
-): LensActionApi<ForgeComparison> {
-  let next = 0;
-  const holds = new Map<string, PoseHold<RectPose>>();
-  const release = (lensId: string) => {
-    holds.get(lensId)?.drop();
-    holds.delete(lensId);
-  };
-  // An undo, a redo or a write from outside the actions can also take a lens out of Follow.
-  scene.subscribe(() => {
-    for (const lensId of [...holds.keys()]) if (settingsOf(scene, lensId)?.aim !== 'follow') release(lensId);
-  });
-  const toBody = (client: LoupePoint, box: DOMRect) => ({ x: client.x - box.left, y: client.y - box.top });
-  const apply = (ops: readonly Op[]) => {
-    if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
-  };
-  const current = () => {
-    const focused = refs.focus.current;
-    if (focused !== null && settingsOf(scene, focused)) return focused;
-    return lensesOf(scene).at(-1)?.lensId ?? null;
-  };
-  return {
-    scene,
-    current,
-    apply,
-    add(at) {
-      const body = refs.body.current;
-      const count = lensesOf(scene).length;
-      if (!body || count >= MAX_LENSES) return null;
-      const box = body.getBoundingClientRect();
-      const client = at ?? refs.pointer.current ?? { x: box.left + box.width / 2, y: box.top + box.height / 2 };
-      const reticle = toBody(client, box);
-      const lensId = `lens-${next++}`;
-      apply(addLensOps(scene, lensId, { body: bodyBeside(reticle, box, count), reticle }));
-      refs.focus.current = lensId;
-      return lensId;
-    },
-    follow(client) {
-      const lensId = current();
-      const body = refs.body.current;
-      if (lensId === null || !body) return;
-      const pose = reticleAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
-      if (pose === null) return;
-      const hold = holds.get(lensId) ?? scene.overrides.hold();
-      holds.set(lensId, hold);
-      hold.set([[`${lensId}:reticle` as never, pose]]);
-    },
-    unfollow: release,
-    sourceAvailable: (kind: LensSourceKind) => refs.sources.current[kind]?.status() ?? 'not provided',
-    openCompareMenu: (lensId) => refs.compare?.current?.(lensId),
-  };
-}
-
-/** A source whose attached lenses can be told to look again at what lies under them. */
-interface Remeasurable {
-  remeasure(): void;
-}
-
-/** Has each source look again whenever what lies under a lens can change without a reticle moving. */
-export function useRemeasure(sources: readonly Remeasurable[], body: HTMLElement | null, rerender: () => void) {
-  const { trials, mode } = useLabContext();
-  const labValues = useContext(StoryGlobalsContext);
-  useEffect(() => {
-    for (const source of sources) source.remeasure();
-  }, [sources, trials, mode, labValues]);
-  useEffect(() => {
-    if (sources.length === 0 || !body) return;
-    const remeasure = () => {
-      for (const source of sources) source.remeasure();
-    };
-    // A resize can move the lab body, and with it every reticle's client point, which only a render recomputes.
-    const resize = () => {
-      rerender();
-      remeasure();
-    };
-    body.addEventListener('scroll', remeasure, { capture: true, passive: true });
-    window.addEventListener('resize', resize);
-    // A host takes no pointer while `data-pending`, so a hit test skips it; a new story's host is only found once that
-    // attribute goes, after the trials have already changed.
-    const unveiled = typeof MutationObserver === 'undefined' ? null : new MutationObserver(remeasure);
-    unveiled?.observe(body, { subtree: true, attributes: true, attributeFilter: ['data-pending'] });
-    return () => {
-      body.removeEventListener('scroll', remeasure, { capture: true });
-      window.removeEventListener('resize', resize);
-      unveiled?.disconnect();
-    };
-  }, [sources, body, rerender]);
-}
-
-/** Runs the last function handed to it on the next visible frame, once however many arrive before then. */
-function useFrameSchedule(): (run: () => void) => void {
-  const next = useRef<(() => void) | null>(null);
-  const frame = useVisibleRaf(() => {
-    const run = next.current;
-    next.current = null;
-    run?.();
-  });
-  return useCallback(
-    (run: () => void) => {
-      next.current = run;
-      frame.request();
-    },
-    [frame],
-  );
-}
 
 /**
  * The workshop's lenses: the lens canvas over the lab, its actions in the Loupe keymap, the hint for that keymap, a
@@ -245,7 +86,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
     const choices = compareChoices(declarations, schema);
     setMenu((last) => ({ seq: (last?.seq ?? 0) + 1, client: at.body, lensId, pixels, choices }));
   });
-  const [api] = useState(() => createApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef, compare }));
+  const [api] = useState(() => createLensApi(scene, { body: bodyRef, pointer, focus, sources: sourcesRef, compare }));
   // Named against the trial under the reticle, whose pins the lens renders under.
   const describe = useCallback(
     (c: ForgeComparison, at: LensDescribeContext) => {
@@ -258,7 +99,7 @@ export function ForgeLoupe({ declarations, modeGlobal }: ForgeLoupeProps) {
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   // A Follow reticle moves through the scene's overrides, which bump no version; the lenses re-read it on a render.
   useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
-  useRemeasure(remeasured, body, rerender);
+  useLensRemeasure(remeasured, body, rerender, labValues);
 
   useEffect(() => {
     if (!body) return;

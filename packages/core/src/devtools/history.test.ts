@@ -44,7 +44,7 @@ describe('recordHistory', () => {
     const id = t.add('a');
     const many = HISTORY_RECORD_LIMITS.ops + 5;
     t.scene.batch('wiggle', () => {
-      for (let i = 0; i < many; i++) t.scene.setPose(id as NodeId, { x: i, y: 0, width: 1, height: 1 });
+      for (let i = 0; i < many; i++) t.scene.setPose(id as NodeId, { x: i + 1, y: 0, width: 1, height: 1 });
     });
     const last = t.ring.since(0).entries.at(-1)!;
     expect(last.entries[0]!.ops).toHaveLength(HISTORY_RECORD_LIMITS.ops);

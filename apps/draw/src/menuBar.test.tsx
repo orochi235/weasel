@@ -55,8 +55,8 @@ function setup() {
   let tools: ToolsApi | null = null;
   function Probe() {
     useFileCommands({
-      scene, filename: 'a', paperSize: 'letter', page: null, backgroundColor: '#ffffff',
-      setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn(), setBackgroundColor: vi.fn(),
+      scene, filename: 'a', paperSize: 'letter', page: null,
+      setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn(),
     });
     registry = useActionsRegistry();
     return null;
