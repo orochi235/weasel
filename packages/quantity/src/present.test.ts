@@ -298,6 +298,11 @@ describe('nearestFraction', () => {
     expect(nearestFraction(1 / 45, 64)).toEqual([1, 45]);
     expect(nearestFraction(-0.3333333, 64)).toEqual([-1, 3]);
   });
+
+  it('reads a cap under one as one, the least any fraction carries', () => {
+    expect(nearestFraction(0.4, 0)).toEqual([0, 1]);
+    expect(nearestFraction(2.6, 0.5)).toEqual([3, 1]);
+  });
 });
 
 describe('registerDisplayKind', () => {
