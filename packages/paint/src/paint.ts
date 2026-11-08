@@ -240,6 +240,19 @@ export interface StrokeNib {
 }
 
 /**
+ * Whether {@link alignedStrokeRect} draws `align` on `rect`: always, but for an
+ * inner stroke at least as wide as the rect's narrower side, which covers the
+ * whole rect where the shifted rect would turn inside out and draw outside it.
+ */
+export function alignedStrokeRectHolds(
+  rect: { width: number; height: number },
+  align: StrokeAlign,
+  width = 1,
+): boolean {
+  return align !== 'inner' || width < Math.min(Math.abs(rect.width), Math.abs(rect.height));
+}
+
+/**
  * Inflate (positive) or deflate (negative) a rect to honor `align` when
  * stroking it: the returned rect's center-aligned stroke coincides with the
  * requested inner/outer-aligned stroke of the original. `width` is the

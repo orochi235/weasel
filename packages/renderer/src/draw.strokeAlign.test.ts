@@ -101,4 +101,12 @@ describe('renderer — inner/outer stroke alignment', () => {
     frame();
     expect(frame()).toEqual({ created: 0, deleted: 0 });
   });
+
+  it('cuts an inner stroke that overfills a rect from the doubled ribbon, as it does a polygon', () => {
+    recorder.reset();
+    const rect = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 20 };
+    r.render([{ kind: 'path', path: rect, stroke: { width: 16, align: 'inner', paint } } as DrawCommand]);
+    // The rect's centered ribbon at twice the width, 16 past each edge: what the stencil cuts to the rect.
+    expect(ribbonHeight(recorder)).toBeCloseTo(20 + 32, 3);
+  });
 });

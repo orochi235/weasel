@@ -58,6 +58,7 @@ export { scaleVertexWidth, vertexHalfWidths, vertexWidthFromSides, widestHalfWid
 export type { HalfWidths, VertexWidth, VertexWidthSides } from './vertexWidth';
 export {
   alignedStrokeRect,
+  alignedStrokeRectHolds,
   resolveScreenLength,
   STROKE_DASH_RATIOS,
   dashForStrokeStyle,

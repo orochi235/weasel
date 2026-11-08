@@ -6,7 +6,7 @@ import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { resolveStrokeWidth } from '@weasel-js/stroke';
 import { strokeMesh } from '../cache/strokeMeshCache';
 import { resolveStrokeLengths, type StrokedPathCommand } from '../strokeLengths';
-import { metricKeepsRects, type StrokeSpaces } from '@weasel-js/stroke';
+import { ribbonAligns, type StrokeSpaces } from '@weasel-js/stroke';
 import { cachedMarkerHeads } from '../cache/markerCommandCache';
 import { withCornersResolved } from './cornersResolved';
 import type { DrawContext } from './drawContext';
@@ -118,15 +118,16 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
   const align = stroke.align ?? 'center';
   const metric = spaces.ribbon?.metric;
   // A rect the metric turns is no longer a rect in the space its ribbon is
-  // built in, so it aligns through the stencil like any polygon.
-  const stenciled = cmd.path.kind === 'polygon' || (metric !== undefined && !metricKeepsRects(metric));
-  const cut = stenciled && align !== 'center' ? cutAlignedRibbon(ctx, cmd, align, spaces) : null;
+  // built in, and one an inner stroke overfills has no shifted rect, so each
+  // is cut to its side like any polygon.
+  const sided = align !== 'center' && !ribbonAligns(cmd.path, stroke, metric) ? align : null;
+  const cut = sided ? cutAlignedRibbon(ctx, cmd, sided, spaces) : null;
   if (cut !== null) {
     drawRibbon(ctx, cmd, cut);
-  } else if (stenciled && align !== 'center') {
+  } else if (sided) {
     flushForOwnDraw(ctx);
     atMeshOrigin(ctx, cmd.path.kind === 'polygon' ? cmd.path.origin : undefined,
-      () => drawPathStrokeStenciled(ctx, cmd, align, spaces));
+      () => drawPathStrokeStenciled(ctx, cmd, sided, spaces));
   } else {
     drawPathStrokeUnclipped(ctx, cmd, spaces);
   }

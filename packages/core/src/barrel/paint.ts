@@ -17,6 +17,7 @@ export {
 // ─── Paint types: Paint, Stroke, gradients ──────────────────────────────
 export {
   alignedStrokeRect,
+  alignedStrokeRectHolds,
   composePatternTransform,
   contrastLineColor,
   contrastRatio,
