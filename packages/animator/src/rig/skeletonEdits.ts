@@ -81,7 +81,7 @@ export function removeJoint(skeleton: Skeleton, name: string): { skeleton: Skele
 
 /** `skin` without the weights of `joints`; the same object when it weighs none of them. */
 export function dropSkinJoints(skin: Skin, joints: readonly string[]): Skin {
-  if (!joints.some((j) => j in skin)) return skin;
+  if (!joints.some((j) => Object.hasOwn(skin, j))) return skin;
   const out: Record<string, readonly number[]> = {};
   for (const j in skin) if (!joints.includes(j)) out[j] = skin[j];
   return out;

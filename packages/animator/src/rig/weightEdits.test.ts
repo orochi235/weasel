@@ -12,6 +12,11 @@ describe('setWeights', () => {
     expect(skin.a).toEqual([0.5, 1]);
   });
 
+  it('weighs a joint named like an Object.prototype member as its own', () => {
+    const next = setWeights({ a: [1] }, 1, 'constructor', new Map([[0, 0.5]]));
+    expect(round(next)).toEqual({ a: [0.5], constructor: [0.5] });
+  });
+
   it('adds a joint the skin did not weigh, with arrays as long as the path has points', () => {
     const next = setWeights({ a: [1] }, 3, 'b', new Map([[2, 1], [0, 0.25]]));
     expect(round(next)).toEqual({ a: [0.75, 0, 0], b: [0.25, 0, 1] });

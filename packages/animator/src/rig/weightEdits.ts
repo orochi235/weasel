@@ -15,7 +15,8 @@ export function setWeights(
 ): Skin {
   const next: Record<string, number[]> = {};
   for (const name in skin) next[name] = Array.from({ length: count }, (_, i) => skin[name][i] ?? 0);
-  const own = (next[joint] ??= new Array<number>(count).fill(0));
+  if (!Object.hasOwn(next, joint)) next[joint] = new Array<number>(count).fill(0);
+  const own = next[joint];
   for (const [i, raw] of weights) {
     if (i < 0 || i >= count) continue;
     const w = Math.min(1, Math.max(0, raw));
