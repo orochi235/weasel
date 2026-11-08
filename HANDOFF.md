@@ -18,16 +18,13 @@ For the session picking this up: what is in flight and what has no other home. O
   paint, text, diagram-formats, plot, theme, prefs, quantity, storage, audio) and `select`'s `'single'` intent are on
   `main` at f36edd14a and pushed. Its batch ran `test:fleet` green at 479c893d1 (4142 files) and `test:fleet:postbuild`
   green there; the merge adds only HANDOFF. Round three (nine
-  branches) is merged on `batch/2026-11-07i` (`.worktrees/batch-2026-11-07i`). Its full fleet run at 9a7aff0c2 failed one
-  test, `SceneViewCanvas.test.tsx`'s scrolled-out-of-view case, whose IntersectionObserver stub sent entries with no
-  `target` after `useVisibleRaf` began reading only its own element's; 436a22d1e fixes the stub, and its full rerun was
-  in flight (log `fleet-batch-2026-11-07i-2.log` in that session's scratchpad). Postbuild passed at 9a7aff0c2. Green,
-  `main` merges the batch.
+  branches, 43 fixes) is on `main` at 184b4c0a7, unpushed: its full fleet run passed at 436a22d1e (35567 tests) and
+  postbuild at 9a7aff0c2, the commit before a test-only fix; the merge adds only HANDOFF and a doc correction.
 - Round four (2026-11-07 night) branched from 6efccfc46, one agent per `.worktrees/audit4-<area>`. Done, not yet
   batched: `path-tools-b` (4 fixes, retires the warp P3), `gestures` (4), `kernel3d` (3), and `invert` (from 9a7aff0c2:
   2D and 3D `invert` share one condition-number rule, refusing liberally as ruled; retires the P3). Stopped at the
-  account's weekly limit mid-work, their commits so far kept: `fixups`, `core-scene`, `animator`, `site`, `text-b`,
-  `svg-b`. Resume each by messaging its agent once the limit resets, or start a fresh agent on the worktree with
+  account's weekly limit mid-work, their commits so far kept, and resumed at 9pm: `fixups`, `core-scene`, `animator`,
+  `site`, `text-b`, `svg-b`. If one stops again, resume it by messaging its agent once the limit resets, or start a fresh agent on the worktree with
   the brief (that session's scratchpad `audit4-brief.md`; its text is reproducible from round three's commits) and
   `git log 6efccfc46..` as what is already done. `fixups` takes: theme editor copy timers, draw's Paper select showing
   "Custom" on an unnamed size, labkit's `watch3d` double unsubscribe and `PresentationState.time` doc, diagram labels
