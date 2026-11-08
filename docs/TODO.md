@@ -286,12 +286,6 @@ Owner tags, after the priority (2026-10-26):
   `packages/core/src/domains/paths/pathSnap/`).
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
-- **(P3) [maintainer] Decide whether `serializeSvg`'s default `viewBox` boxes geometry or ink.**
-  With no `viewBox` passed, `computeBounds` (`packages/svg/src/serializeBounds.ts`) boxes path
-  geometry only, so a stroked shape at the box's edge loses the outer half of its stroke and any
-  marker heads past it; its docstring says "everything the tree draws". Ink means taking each
-  stroke through core's `strokedBounds`, and moves every written `viewBox` that has a stroke at its
-  edge. Closes when the default is picked and the docstring and code agree.
 
 ## Text
 
