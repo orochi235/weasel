@@ -59,7 +59,12 @@ export function rewriteIconCalls(
     }
     if (node.type !== 'ImportDeclaration' || node.importKind === 'type' || !ICONS_GEN.test(node.source.value)) continue;
     const namespace = namespaceOf(node.source.value);
-    if (!namespace) continue;
+    if (!namespace) {
+      if (node.specifiers.some((e) => e.type === 'ImportSpecifier' && e.importKind !== 'type' && nameOf(e.imported) === 'icon')) {
+        warn?.(`${id}: icon is imported from '${node.source.value}', which names no icons.gen module this build can read a namespace from, so its calls are not rewritten`);
+      }
+      continue;
+    }
     for (const spec of node.specifiers) {
       if (spec.type === 'ImportNamespaceSpecifier') unfollowed('namespace import');
       if (spec.type === 'ImportDefaultSpecifier') unfollowed('default import');
