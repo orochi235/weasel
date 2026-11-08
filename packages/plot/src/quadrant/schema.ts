@@ -3,8 +3,8 @@ import { numberOf, textOf, titleField } from '../editing/schemaKit';
 import type { PlotColumn, PlotField, PlotSchema } from '../editing/schemaTypes';
 import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './edit';
 import {
-  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassNames, removeQuadrantClass,
-  removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
+  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassEntries, quadrantClassNames,
+  removeQuadrantClass, removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
 } from './structure';
 import type { QuadrantData, QuadrantPointStyle } from './types';
 
@@ -95,7 +95,7 @@ export const quadrantSchema: PlotSchema<QuadrantData> = {
             return /^\w+$/.test(name) && !quadrantClassNames(d).includes(name) ? renameQuadrantClass(d, r, name) : d;
           },
         },
-        ...styleColumns((d, r) => Object.values(d.classes ?? {})[r], (d, r, key, v) => setQuadrantClassStyle(d, r, key, v as never)),
+        ...styleColumns((d, r) => quadrantClassEntries(d)[r]?.[1], (d, r, key, v) => setQuadrantClassStyle(d, r, key, v as never)),
       ],
       insert: (d, _, at) => insertQuadrantClass(d, at),
       remove: (d, _, r) => removeQuadrantClass(d, r),
