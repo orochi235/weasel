@@ -11,6 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { boundsOfPath } from '@weasel-js/core';
 import { parseSvg } from './index';
 import type { SvgPathNode, SvgTextNode } from './types';
 
@@ -450,5 +451,13 @@ describe('<rect> corner radii', () => {
 
   it('reads a negative radius as auto', () => {
     expect(corner('rx="-3" ry="6"')).toEqual({ kind: 'polygon', first: [6, 0, 100, 6] });
+  });
+});
+
+describe('<ellipse> radii', () => {
+  it('gives an absent radius the value of the other', () => {
+    const { nodes } = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><ellipse cx="0" cy="0" rx="10"/></svg>');
+    const b = boundsOfPath((nodes[0] as SvgPathNode).path);
+    expect([b.width, b.height]).toEqual([20, 20]);
   });
 });

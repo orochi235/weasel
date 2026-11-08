@@ -20,21 +20,27 @@ import { IDENTITY_MATRIX } from './types';
 /** Magic constant: cubic Bezier control offset for a quarter-circle of radius 1. */
 const KAPPA = (4 * (Math.sqrt(2) - 1)) / 3;
 
+/** A `<rect>` or `<ellipse>` radius pair with SVG 2's `auto` resolved: a radius
+ *  missing, negative or not a number takes the other's value, or 0. */
+export function autoRadii(rx: number, ry: number): [number, number] {
+  const given = (r: number): number | null => (Number.isFinite(r) && r >= 0 ? r : null);
+  const x = given(rx);
+  const y = given(ry);
+  return [x ?? y ?? 0, y ?? x ?? 0];
+}
+
 /**
- * `<rect x y width height rx ry>` → Path. A radius that is missing, negative
- * or not a number is `auto` and takes the other's value, as SVG 2 has it; each
- * is then clamped to half its own side. No radius left gives a `RectPath`.
+ * `<rect x y width height rx ry>` → Path. The radii go through `autoRadii`,
+ * then each is clamped to half its own side. No radius left gives a `RectPath`.
  */
 export function rectElementToPath(
   x: number, y: number, width: number, height: number,
   rx: number, ry: number,
   m: Matrix = IDENTITY_MATRIX,
 ): Path {
-  const given = (r: number): number | null => (Number.isFinite(r) && r >= 0 ? r : null);
-  const rxGiven = given(rx);
-  const ryGiven = given(ry);
-  const ax = Math.min(rxGiven ?? ryGiven ?? 0, width / 2);
-  const ay = Math.min(ryGiven ?? rxGiven ?? 0, height / 2);
+  const [autoX, autoY] = autoRadii(rx, ry);
+  const ax = Math.min(autoX, width / 2);
+  const ay = Math.min(autoY, height / 2);
   if (!(ax > 0 && ay > 0)) {
     return transformPath({ kind: 'rect', x, y, width, height }, m);
   }

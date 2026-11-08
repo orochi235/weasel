@@ -4,7 +4,7 @@ import {
   type Path, type PolygonPath, PATH_L, PATH_M, PATH_Z, pathFromD, transformPath,
 } from '@weasel-js/core';
 import {
-  rectElementToPath, circleToPath, ellipseToPath, lineToPath, parsePoints, polylineToPath,
+  autoRadii, rectElementToPath, circleToPath, ellipseToPath, lineToPath, parsePoints, polylineToPath,
   polygonToPath,
 } from './shapes';
 import { hasOpenSubpath, worldCoords } from '@weasel-js/geom';
@@ -32,12 +32,15 @@ export function lowerLeaf(
   const x = (name: string): number => readLength(el, name, 'x', 0, onWarn);
   const y = (name: string): number => readLength(el, name, 'y', 0, onWarn);
   const r = (name: string): number => readLength(el, name, 'other', 0, onWarn);
+  const radius = (name: string, axis: 'x' | 'y'): number => readLength(el, name, axis, NaN, onWarn);
   if (tag === 'rect') {
-    const radius = (name: string, axis: 'x' | 'y'): number => readLength(el, name, axis, NaN, onWarn);
     return rectElementToPath(x('x'), y('y'), x('width'), y('height'), radius('rx', 'x'), radius('ry', 'y'), m);
   }
   if (tag === 'circle') return circleToPath(x('cx'), y('cy'), r('r'), m);
-  if (tag === 'ellipse') return ellipseToPath(x('cx'), y('cy'), x('rx'), y('ry'), m);
+  if (tag === 'ellipse') {
+    const [rx, ry] = autoRadii(radius('rx', 'x'), radius('ry', 'y'));
+    return ellipseToPath(x('cx'), y('cy'), rx, ry, m);
+  }
   if (tag === 'line') return lineToPath(x('x1'), y('y1'), x('x2'), y('y2'), m);
   if (tag === 'polyline') return svgFilled(polylineToPath(parsePoints(el.getAttribute('points') ?? ''), m));
   if (tag === 'polygon') return polygonToPath(parsePoints(el.getAttribute('points') ?? ''), m);
