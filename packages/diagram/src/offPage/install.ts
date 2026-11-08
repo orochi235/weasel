@@ -127,7 +127,7 @@ export function offPageOps<TPose>(
   for (const node of sc.renderOrderNodes()) {
     const trait = diagramEdgeOf(node);
     if (trait === null) continue;
-    if (wanted !== null && !wanted.has(node.id)) {
+    if ((wanted !== null && !wanted.has(node.id)) || sc.isLocked(node.id as never)) {
       if (trait.offPage !== undefined) used.push(trait.offPage.ref);
       continue;
     }

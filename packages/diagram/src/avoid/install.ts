@@ -47,13 +47,13 @@ function withRoute(data: unknown, edge: DiagramEdge, route: readonly Vec2[] | nu
   return { ...(data as Record<string, unknown>), diagram: route === null ? rest : { ...rest, route } };
 }
 
-/** The data writes that store `routes` on their edges, skipping any unchanged. */
+/** The data writes that store `routes` on their edges, skipping any unchanged or locked. */
 export function routeDataOps(scene: Scene<unknown, string, unknown>, routes: AvoidRoutes): Op[] {
   const ops: Op[] = [];
   for (const [id, route] of routes) {
     const node = scene.get(id as never);
     const edge = node === undefined ? null : diagramEdgeOf(node);
-    if (node === undefined || edge === null) continue;
+    if (node === undefined || edge === null || scene.isLocked(id as never)) continue;
     const had = edge.route;
     if (route === null ? had === undefined : had !== undefined && samePoints(had, route)) continue;
     ops.push(createSetDataOp({ id, from: node.data, to: withRoute(node.data, edge, route), label: 'Route' }));
