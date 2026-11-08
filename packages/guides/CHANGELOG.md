@@ -1,5 +1,58 @@
 # @weasel-js/guides
 
+## 1.17.4
+
+### Patch Changes
+
+- e63dd06: Fix gaps in guides' grid, guide and layout helpers, and correct hud docs.
+  
+  - `createGuidesLayer` now dashes guide lines with its `dash` option, which it used to accept and ignore.
+  - `pointToGridCell` reads a region with no frame through `origin`, as `gridSnapSource` snaps it, instead of from world zero.
+  - `useGridCellHover` clears its cell when disabled mid-hover, so a highlight layer no longer keeps drawing the last cell.
+  - `snapPoint`'s grid pattern offers no points for a zero `gridSpacing` instead of never returning.
+  - `TextOptions` no longer claims a text widget's bounds follow from its string: they are `fontSize` tall and 0 wide.
+- 56e54c0: Fix three gaps in guides, menus and the HUD menu.
+  
+  - Moving a placed guide off the rulers now snaps to the edges and centers of the top-level nodes, as placing a new one does. `alignmentSnapSource` took the guide's id as a node whose siblings to measure, and found none.
+  - A menu access letter, or a typeahead key, outside the Basic Multilingual Plane (an emoji) is now read as one character.
+  - A HUD menu's color picker checks the swatch the color holds at its current alpha, so the swatch just chosen shows checked after the alpha has changed.
+  
+  A list's typeahead counts a typed key by code point, as menus now do, so an emoji types and a repeated one cycles; `isOneChar` from `@weasel-js/ui-logic` is the one rule both use.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [d83476e]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/quantity@1.17.4
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

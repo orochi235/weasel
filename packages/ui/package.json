@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/ui",
-  "version": "1.17.3",
+  "version": "1.17.4",
   "description": "UI chrome primitives for weasel apps (properties panel, etc.)",
   "weasel": {
     "tier": "other"
@@ -65,26 +65,26 @@
     "table": "./dist/icons.table.json"
   },
   "dependencies": {
-    "@weasel-js/clock": "1.17.3",
-    "@weasel-js/font": "1.17.3",
-    "@weasel-js/geom": "1.17.3",
-    "@weasel-js/gestures": "1.17.3",
-    "@weasel-js/guides": "1.17.3",
-    "@weasel-js/history": "1.17.3",
-    "@weasel-js/ui-logic": "1.17.3",
-    "@weasel-js/icons": "1.17.3",
-    "@weasel-js/menu": "1.17.3",
-    "@weasel-js/modes": "1.17.3",
-    "@weasel-js/paint": "1.17.3",
-    "@weasel-js/plot": "1.17.3",
-    "@weasel-js/prefs": "1.17.3",
-    "@weasel-js/quantity": "1.17.3",
-    "@weasel-js/react": "1.17.3",
-    "@weasel-js/registry": "1.17.3",
-    "@weasel-js/select": "1.17.3",
-    "@weasel-js/svg": "1.17.3",
-    "@weasel-js/text": "1.17.3",
-    "@weasel-js/theme": "1.17.3",
+    "@weasel-js/clock": "1.17.4",
+    "@weasel-js/font": "1.17.4",
+    "@weasel-js/geom": "1.17.4",
+    "@weasel-js/gestures": "1.17.4",
+    "@weasel-js/guides": "1.17.4",
+    "@weasel-js/history": "1.17.4",
+    "@weasel-js/ui-logic": "1.17.4",
+    "@weasel-js/icons": "1.17.4",
+    "@weasel-js/menu": "1.17.4",
+    "@weasel-js/modes": "1.17.4",
+    "@weasel-js/paint": "1.17.4",
+    "@weasel-js/plot": "1.17.4",
+    "@weasel-js/prefs": "1.17.4",
+    "@weasel-js/quantity": "1.17.4",
+    "@weasel-js/react": "1.17.4",
+    "@weasel-js/registry": "1.17.4",
+    "@weasel-js/select": "1.17.4",
+    "@weasel-js/svg": "1.17.4",
+    "@weasel-js/text": "1.17.4",
+    "@weasel-js/theme": "1.17.4",
     "prism-react-renderer": "^2.4.1",
     "react-aria": "3.53.1",
     "react-aria-components": "1.22.1",
@@ -93,8 +93,8 @@
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18",
-    "@weasel-js/animator": "1.17.3",
-    "@weasel-js/core": "1.17.3"
+    "@weasel-js/animator": "1.17.4",
+    "@weasel-js/core": "1.17.4"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -122,7 +122,7 @@
     "provenance": true
   },
   "devDependencies": {
-    "@weasel-js/bidi": "1.17.3",
-    "@weasel-js/cursor": "1.17.3"
+    "@weasel-js/bidi": "1.17.4",
+    "@weasel-js/cursor": "1.17.4"
   }
 }

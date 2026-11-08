@@ -1,5 +1,97 @@
 # @weasel-js/hud
 
+## 1.17.4
+
+### Patch Changes
+
+- e63dd06: Fix gaps in guides' grid, guide and layout helpers, and correct hud docs.
+  
+  - `createGuidesLayer` now dashes guide lines with its `dash` option, which it used to accept and ignore.
+  - `pointToGridCell` reads a region with no frame through `origin`, as `gridSnapSource` snaps it, instead of from world zero.
+  - `useGridCellHover` clears its cell when disabled mid-hover, so a highlight layer no longer keeps drawing the last cell.
+  - `snapPoint`'s grid pattern offers no points for a zero `gridSpacing` instead of never returning.
+  - `TextOptions` no longer claims a text widget's bounds follow from its string: they are `fontSize` tall and 0 wide.
+- 56e54c0: Fix three gaps in guides, menus and the HUD menu.
+  
+  - Moving a placed guide off the rulers now snaps to the edges and centers of the top-level nodes, as placing a new one does. `alignmentSnapSource` took the guide's id as a node whose siblings to measure, and found none.
+  - A menu access letter, or a typeahead key, outside the Basic Multilingual Plane (an emoji) is now read as one character.
+  - A HUD menu's color picker checks the swatch the color holds at its current alpha, so the swatch just chosen shows checked after the alpha has changed.
+  
+  A list's typeahead counts a typed key by code point, as menus now do, so an emoji types and a repeated one cycles; `isOneChar` from `@weasel-js/ui-logic` is the one rule both use.
+- 2455bb4: An eyedropper that samples exactly, as the loupe's complement.
+  
+  `@weasel-js/loupe`: `createSampler` reads an ordered stack of pixel sources and composites translucent
+  layers source-over to the color a viewer sees, answering with a promise when a source does.
+  `createEyedropperModel` sits beside `createLoupeModel`: `hover`, `pick` and `color`, and given a loupe,
+  `hover` aims it. Breaking: `pixelHex` and `sourcePixel` are gone, folded into the sampler
+  (`canvasPixelSource`, and `rgbaHex` in `@weasel-js/paint`), and `CanvasSource.sample` is now `pixel`,
+  answering RGBA bytes rather than a hex.
+  
+  `@weasel-js/core`: a `colorAt` dep (screen point to color), which `<SceneCanvas>` sources by redrawing
+  its document layers offscreen around the point — never the selection handles or other chrome over
+  them. `sampleLayers` names those layers. `useEyedropperTool` samples pixels through it when given no
+  `colorOf`, which is now optional. The canvas readback hud's loupe used (`createCanvasReader`,
+  `readGl`, `regionOnCanvas`, `regionAround`) moves to core, beside `createLayerSampler`,
+  `planLayerSample` and `RasterSession.renderCommands`.
+  
+  `@weasel-js/hud`: `createLoupe` in vector mode with a `source` reports the color of those layers, not
+  the presented canvas.
+  
+  `@weasel-js/labkit`: `sampleStack` is replaced by `stackSources` over the engine sampler, which reads
+  WebGL layers and composites translucent ones. A trial offers an Eyedropper toggle beside its loupe
+  toggle, and one readout of the color picked whose press copies it.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [5c6d898]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [7e83b0f]
+- Updated dependencies [12c538a]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [d83476e]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [56e54c0]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [229d0e7]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [69988f1]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.17.4
+  - @weasel-js/paint@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/font@1.17.4
+  - @weasel-js/theme@1.17.4
+  - @weasel-js/gestures@1.17.4
+  - @weasel-js/icons@1.17.4
+  - @weasel-js/registry@1.17.4
+  - @weasel-js/ui-logic@1.17.4
+  - @weasel-js/loupe@1.17.4
+  - @weasel-js/menu@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

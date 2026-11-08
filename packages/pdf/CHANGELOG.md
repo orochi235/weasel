@@ -1,5 +1,41 @@
 # @weasel-js/pdf
 
+## 1.17.4
+
+### Patch Changes
+
+- b7ef242: Fix SVG import and PDF path output found in an audit.
+  
+  - `writePdf` places a path measured from an origin (far from 0) at its own coordinates instead of offset by the origin.
+  - `parseSvg` reads `<rect>` `rx`/`ry` as SVG 2 does: a missing or negative radius takes the other's value, the two stay independent, each is clamped to half its own side, and either one at 0 gives square corners.
+  - `parseSvg` gives an `<ellipse>` radius left out the other's value.
+  - `pathFromD` reads a form feed between arc arguments as whitespace.
+  - `parseSvg` multiplies a color's own alpha by `fill-opacity` / `stroke-opacity` rather than replacing it.
+  - `parseSvg` reads `fill-opacity` and a color's alpha on `<text>` and `<tspan>`, and `serializeSvg` writes a run's fill opacity.
+  - `serializeSvg`'s default `viewBox` boxes each path's stroke and marker heads, not just its geometry, so a stroked shape at the edge keeps the outer half of its stroke. Core exports `strokedBounds`, the box a stroke covers along a path, which it measures with.
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [d83476e]
+- Updated dependencies [89b2c65]
+- Updated dependencies [d025e1b]
+- Updated dependencies [c675905]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+  - @weasel-js/stroke@1.17.4
+  - @weasel-js/paint@1.17.4
+  - @weasel-js/renderer@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/font@1.17.4
+  - @weasel-js/text@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,38 @@
 # @weasel-js/stroke
 
+## 1.17.4
+
+### Patch Changes
+
+- fe6a382: Stroke, paint and alignment fixes:
+  
+  - A closed zero-length subpath (`M5 5Z`, `M5 5L5 5Z`) draws its round or square cap as a dot, as SVG strokes it.
+  - A closed subpath's last vertex takes a mid marker.
+  - An inner stroke at least as wide as a rect's narrower side fills the rect, as it does the same polygon, instead of turning the rect inside out and drawing outside it. `ribbonAligns` (stroke) and `alignedStrokeRectHolds` (paint) say when a rect's aligned ribbon is built in place.
+  - An upright selection outline and the selection handles' outlines are aligned once; they were shifted for `align` and then shifted again by the renderer.
+  - SVG export writes gradient stops in offset order, and a stop past 0..1 as the color the ramp has there, so the file reads back as the gradient the kit paints.
+  - Interpolating two gradients pairs their stops by offset, not by list position.
+- 89b2c65: Fixes from a second audit of the geometry kernel and stroking, on degenerate input:
+  
+  - `intersectSegments` reports where two collinear lines overlap when their points only round onto one line; it reported one crossing at an arbitrary place along them about a third of the time. A cut that doubles back along its own line no longer closes a degenerate loop when splitting a path.
+  - `intersectRayAabb` and `Bvh.raycast` miss every box along a ray with a NaN component, as `intersectRayPlane` does; they hit every box at t = 0.
+  - A length table measures a straight segment with a non-finite point as no distance, as it already measured such a curve; one bad point made the whole path's length NaN.
+  - `resamplePath` reads a count that is not a finite number as no count; NaN dropped every anchor after the first, and Infinity never finished.
+  - A dash offset that lands exactly on a zero-length dash draws its dot at the line's start, as the dash does anywhere else along the line.
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [206b78d]
+- Updated dependencies [a78c393]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [d83476e]
+- Updated dependencies [89b2c65]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+  - @weasel-js/paint@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

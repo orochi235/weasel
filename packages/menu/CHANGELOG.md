@@ -1,5 +1,29 @@
 # @weasel-js/menu
 
+## 1.17.4
+
+### Patch Changes
+
+- 12c538a: The select tool reads a `'single'` press as a replace rather than as an extend-click, so `extendClickLocked` no longer refuses one. `beginJournal`'s `coalesceWindowMs` takes a function, as `createHistory`'s does. A menu arrow key that leaves the highlight where it was no longer notifies subscribers or clears the typeahead buffer.
+- 56e54c0: Fix three gaps in guides, menus and the HUD menu.
+  
+  - Moving a placed guide off the rulers now snaps to the edges and centers of the top-level nodes, as placing a new one does. `alignmentSnapSource` took the guide's id as a node whose siblings to measure, and found none.
+  - A menu access letter, or a typeahead key, outside the Basic Multilingual Plane (an emoji) is now read as one character.
+  - A HUD menu's color picker checks the swatch the color holds at its current alpha, so the swatch just chosen shows checked after the alpha has changed.
+  
+  A list's typeahead counts a typed key by code point, as menus now do, so an emoji types and a repeated one cycles; `isOneChar` from `@weasel-js/ui-logic` is the one rule both use.
+- Updated dependencies [26e836e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [d83476e]
+- Updated dependencies [56e54c0]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [a287c54]
+  - @weasel-js/quantity@1.17.4
+  - @weasel-js/registry@1.17.4
+  - @weasel-js/ui-logic@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @weasel-js/react
 
+## 1.17.4
+
+### Patch Changes
+
+- b4163e6: Fix visibility gating, a leaked browser context and screen-space tiling.
+  
+  - `useVisibleRaf` reads the newest of the reports an `IntersectionObserver` delivers together for its target, so an element that entered and left the viewport between two callbacks no longer reads as visible, and a report still queued for a replaced target no longer gates the new one.
+  - `useVisibleRaf` runs a request it held while suspended as soon as `dangerouslyRunWhenHidden` is set, instead of waiting for the document to show again.
+  - A node raster host given a `browser` closes the context it opened there when the page script fails to start.
+  - `createTiledLayer` draws its `space: 'screen'` sources in screen space, rather than scaled by the zoom and moved by the pan.
+- e3ce292: Follow a lab tile that moves with nothing resizing
+  
+  - A lab's surface re-measures a tile that moves while neither it nor the surface changes size, such as when a sibling beside it settles. An annotation's input box and marks used to stay where the tile was first measured.
+  - `watchElementMove(element, onMove)` is exported from `@weasel-js/react`. It calls `onMove` when an element's box moves in the viewport for a reason no event reports. It moved there from core, which exported it only for tests.
+- Updated dependencies [b93c1dd]
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

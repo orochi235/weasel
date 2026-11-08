@@ -1,5 +1,22 @@
 # @weasel-js/dither
 
+## 1.17.4
+
+### Patch Changes
+
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [89b2c65]
+- Updated dependencies [d025e1b]
+  - @weasel-js/renderer@1.17.4
+  - @weasel-js/geom@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

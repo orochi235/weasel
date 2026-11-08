@@ -1,5 +1,45 @@
 # @weasel-js/headless
 
+## 1.17.4
+
+### Patch Changes
+
+- b4163e6: Fix visibility gating, a leaked browser context and screen-space tiling.
+  
+  - `useVisibleRaf` reads the newest of the reports an `IntersectionObserver` delivers together for its target, so an element that entered and left the viewport between two callbacks no longer reads as visible, and a report still queued for a replaced target no longer gates the new one.
+  - `useVisibleRaf` runs a request it held while suspended as soon as `dangerouslyRunWhenHidden` is set, instead of waiting for the document to show again.
+  - A node raster host given a `browser` closes the context it opened there when the page script fails to start.
+  - `createTiledLayer` draws its `space: 'screen'` sources in screen space, rather than scaled by the zoom and moved by the pan.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [2455bb4]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+  - @weasel-js/core@1.17.4
+  - @weasel-js/geom@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @weasel-js/history
 
+## 1.17.4
+
+### Patch Changes
+
+- c02f028: Fix scene and history edge cases found in a fourth audit pass:
+  
+  - Canceling a journal also cancels a suspended journal opened inside it, committing one refuses while such a journal is open, and `resumeJournal` resumes a nested journal inside its active parent.
+  - Undoing a delete restores the node as it was when removed, not the copy the op was built from.
+  - `jumpToHistoryIndex` with a fractional or NaN index returns `false` and notifies no one.
+  - `loadState` with a snapshot that cannot be built throws without wiping the current document or its history.
+  - A coalesced history entry keeps every id it touched across `serialize` and `restore`.
+  - Undo and redo skip a hide or lock of a node an untracked edit removed, instead of throwing.
+- 12c538a: The select tool reads a `'single'` press as a replace rather than as an extend-click, so `extendClickLocked` no longer refuses one. `beginJournal`'s `coalesceWindowMs` takes a function, as `createHistory`'s does. A menu arrow key that leaves the highlight where it was no longer notifies subscribers or clears the typeahead buffer.
+- Updated dependencies [b93c1dd]
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

@@ -1,5 +1,51 @@
 # @weasel-js/devtools
 
+## 1.17.4
+
+### Patch Changes
+
+- 77b08d9: - The History and Dispatch tabs key each row by its place in the canvas's ring, so a row you opened stays the one open: it no longer jumps to a neighbor once the panel's 200-row buffer starts dropping old rows, or lands on a new row after Clear.
+  - Flipping the History tab's checkpoints switch while a read is in flight no longer drops the steps that read brought back.
+  - An age a hair under a second or a minute reads `1.0s` or `1m00s`, not `1000ms` or `60.0s`.
+  - `DevtoolsPanel` opens its first shown tab when `defaultTab`, or the tab open before `tabs` changed, is not among `tabs`; it used to show no tab at all.
+  - `TraceRead` carries the trace's `cursor` after its entries, as `DevtoolsHistorySlice` does.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [0720167]
+- Updated dependencies [c148384]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [1ba75a2]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [98b212a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [bf18471]
+- Updated dependencies [2455bb4]
+- Updated dependencies [479c893]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.17.4
+  - @weasel-js/ui@1.17.4
+  - @weasel-js/react@1.17.4
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

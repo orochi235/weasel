@@ -1,5 +1,135 @@
 # @weasel-js/ui
 
+## 1.17.4
+
+### Patch Changes
+
+- 0720167: Fix interaction bugs across ui's inputs, menus, lists and panels:
+  
+  - An action's settings popover stays shut when the action is disabled and enabled again, instead of reopening by itself.
+  - An action's settings form gets the values its `read` returns, `Infinity` and `undefined` included, instead of a JSON round trip of them.
+  - A `Dialog` in a contained portal honors `shouldCloseOnInteractOutside`.
+  - A command palette row runs on a primary press only, not a right or middle click.
+  - `ComboBox` reports no option `onCommit` when a blur or Enter only restores a controlled selection's text.
+  - A slider region drag moves as far as its room allows, not only by its own width.
+  - A track press with `move-nearest` moves the thumb nearest on screen, not nearest in value, under a log or even-spaced scale.
+  - `DetentSlider` offers a detent again after the consumer declines it.
+  - A `CurveEditor` anchor hidden by `hideNonInteractive` no longer takes presses meant for the curve.
+  - A property slider's readout writes nothing when focused and left as it showed, and a slider with no value stays reachable by keyboard.
+  - A selection panel draft that never committed no longer undoes a later change to the node.
+  - `useHeldKeys` lets go of held keys when focus leaves an element target.
+  - The selection panel names the paint nodes inherit from containers whose paints are equal but separate objects.
+  - `TokenField` swallows a comma typed into an empty field rather than adding a `,` token.
+  - `ItemList`'s `overlay` no longer counts as a row in a reorder drag.
+  - `useSceneLayerList` places a top-level drop correctly past annotation rows and annotation nodes.
+  - `Timeline` keeps focus on the selected key after Delete removes the focused one.
+  - `LayerList` range selection includes cards between the two ends.
+  - A `Toolbar` turned from roving to not roving gives every button its tab order back.
+  - A `MenuBar` menu that closes because its title turned disabled hands focus back instead of dropping it to the page.
+- 1ba75a2: UI fixes from an audit:
+  
+  - `Plot2D`'s pointer coordinates (`onPointerDown`, `clientToPlot`, `clientToModel`) map through the size the plot is drawn at, so a plot scaled by CSS no longer reports points off from the pointer.
+  - `Timeline` keeps its own key selection and zoom when given only `onSelect` or `onWindowChange` to listen with; either used to replace the internal state, so selecting and zooming did nothing.
+  - Delete or Backspace on a `Timeline` key removes that key, not whichever key was selected, and on an event mark removes nothing.
+  - `ResizeHandle`'s Home and End give the pane its smallest and largest size with `invert` too; inverted, they were swapped.
+- 98b212a: The Timeline's lanes show where a nested timeline stops playing: a row inside one shades the stretch past the soonest declared duration around it, and dims the keys and events there, which never play. `LaneRow` carries that time as `end`.
+- bf18471: A `ToolbarDock` reads its stored layout's docks and floating bars by own key, so a dock or bar
+  named like an `Object.prototype` member (`constructor`, `toString`) resolves instead of throwing.
+  A disabled action's reason is worded through one lookup everywhere it shows, read the same way.
+  `DataGrid` sorts `NaN` last with the nullish values, rather than scrambling the numbers around
+  it. A `useRovingTabIndex` container whose ref attaches after mount, as a `Toolbar` turned
+  `roving` does, now tracks focus and disabled items. `ActionSettingsPopover`,
+  `ActionSettingsDialog` and `useActionSettings` are exported from the package root as well.
+- 479c893: `select()` takes a `'single'` intent, which selects the pressed id alone, and `SelectContext.eligible` is replaced by `forceSingle`, with the opposite sense: an id it holds is selected only alone. Any press on such an id resolves to `'single'`, a Shift-click included, where a range used to skip the pressed id and, with nothing else eligible, change nothing. `rangeOf`'s fourth argument takes the same `forceSingle` test. This is a breaking rename for a caller passing `eligible`. `LayerList` selects a fixed row alone on Shift-click, and Shift+arrows still pass over one.
+- 8c39a05: Add `selection` and `selectionOfEach` to `@weasel-js/ui-logic`: which of a run of items are on, as one value, a list of them, or a boolean each item owns. The model gives each item's state (`on`, `off`, `mixed`), what a press does, and an `edit` that sets several in a row and can be reverted; `sweepFrom` is a sweep's run over it, `selectionKeys` says what the keyboard does with it, and `@weasel-js/ui`'s `selectionRoving` hands that to `useRovingTabIndex`. `ToggleBar` and `OptionsBar` run on it.
+  
+  `ToggleBar`'s single mode takes `mixedValues` and `followsFocus`. With `followsFocus: false` its segments are toggle buttons whose arrows move focus without choosing, so a clearable enum's toggle in a property panel is a single-mode bar rather than a multiple-mode one held to one value.
+- b470ff1: Add `<Sequence>`: one component repeated over the steps of a parameter
+  
+  - `Sweep` (ui-logic) is a parameter's domain, apart from how it is walked: `at(u)` reads it as a scrubber does, one value from 0 to 1 along it, and `walk()` reads every step at once. `range` (by `step`, or `count` samples), `values`, `frames` (a clock's run, `every` ms apart, one pass or `passes: 'all'`) and `until` (stop before the first step a predicate accepts) build one; `stepsOf` takes up to a cap from one that never ends.
+  - `<Sequence sweep>` (ui) renders its child once per step, captioned with the sweep's label, wrapped or as one scrolling strip. Given `across`, a second sweep, it lays out every pairing as a grid with its rows and columns labeled. Each cell is live. This is new API.
+  - `<HeldClock spec at>` (labkit) gives what renders inside a clock of its own, paused at `at`, which `useTrialClock` and `useClockFrame` read in place of the trial's; a clock that is not seekable is run there `step` ms a frame. `<ClockFrames spec every>` is a `<Sequence>` of a clock's frames, each under one.
+  - `fieldSweep(node)` (labkit) walks the values a config field's control offers: a number's stops or its range by its step, an enum's options, a boolean's off and on.
+  - forge's `usePlayhead` and `useTimeline` read the clock of a `<HeldClock>` around them ahead of the story's own (labkit's `useHeldClock`), so a story's clock-driven component shows the held moment in each frame of a `<ClockFrames>`.
+  - forge's API panel lists required props first, then every prop by name; their `required` badge takes the secondary accent, and badges there read in the body font rather than the code font.
+- a1f2242: Add `sweepAction`: an action bound to a drag that sets each item of a surface the pointer crosses, and a `sweep` prop on `ToggleBar` (multiple mode) and `OptionsBar`, which sets every segment a drag reaches to what the press set the pressed one to. `sweep` takes `true` or a function that decides per press (`SegmentSweep`).
+  
+  `useGestureDispatcher` takes `controls: 'take'`, for a surface whose buttons are its items: presses on them are dispatched, and the pointer is captured only once a press becomes a drag, so a click still reaches the button. A dispatcher now gives up a press that an element inside it opened its own pointer session for, so an item's drag beats its surface's gesture. A `PointerSession` gains `capture()`.
+- a287c54: Add `tileGrid` to `@weasel-js/ui-logic`: a run of same-size items laid out as a grid `columns` across, with a short last row at its start, centered, at its end, or stretched across the row (`lastRow: 'fill'`), giving its tracks, each item's span, and which of the grid's outer corners each item sits on. `@weasel-js/ui`'s `tiling` draws it as a CSS grid: the container's class and style and each item's attributes, among them `data-tile-corners`; `tilingRoving` gives the matching `useRovingTabIndex` options. `SwatchGrid` and `ToolGroup` now lay out through it.
+  
+  `ToggleBar`, `ButtonBar` and `OptionsBar` take `columns` and `lastRow`, wrapping their segments into a grid in one well rounded at its outer corners. A sweep runs across the rows.
+  
+  `rovingGridTarget` moves from `@weasel-js/ui` to `@weasel-js/ui-logic`, beside `rowOffset`, `gridLayout`, and `tileKey` (the same for a run tiled by a spec, which `SwatchGrid` now walks by), and takes a layout (`{ dir, offsets, widths }`) in place of its `dir` argument: Up and Down move to the item drawn under the focused one in a row that sits off the start or is stretched, the later of two half-covering it going down and the earlier going up. `useRovingTabIndex` takes `lastRow`. A Down or Up with no item beneath now lands on that row's nearest item in `SwatchGrid` too, as it already did in every other roving grid, where before it stayed put.
+- Updated dependencies [4161bcd]
+- Updated dependencies [7d409c8]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [c148384]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [5c6d898]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [f148cf9]
+- Updated dependencies [082fa2f]
+- Updated dependencies [6cd51e2]
+- Updated dependencies [e63dd06]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [d83476e]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [89b2c65]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [56e54c0]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [229d0e7]
+- Updated dependencies [c675905]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [bdb314c]
+- Updated dependencies [69988f1]
+- Updated dependencies [479c893]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.17.4
+  - @weasel-js/plot@1.17.4
+  - @weasel-js/paint@1.17.4
+  - @weasel-js/svg@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/font@1.17.4
+  - @weasel-js/text@1.17.4
+  - @weasel-js/prefs@1.17.4
+  - @weasel-js/quantity@1.17.4
+  - @weasel-js/theme@1.17.4
+  - @weasel-js/react@1.17.4
+  - @weasel-js/animator@1.17.4
+  - @weasel-js/history@1.17.4
+  - @weasel-js/gestures@1.17.4
+  - @weasel-js/clock@1.17.4
+  - @weasel-js/guides@1.17.4
+  - @weasel-js/icons@1.17.4
+  - @weasel-js/registry@1.17.4
+  - @weasel-js/ui-logic@1.17.4
+  - @weasel-js/menu@1.17.4
+  - @weasel-js/select@1.17.4
+  - @weasel-js/modes@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

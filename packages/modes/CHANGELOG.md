@@ -1,5 +1,12 @@
 # @weasel-js/modes
 
+## 1.17.4
+
+### Patch Changes
+
+- Updated dependencies [b93c1dd]
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

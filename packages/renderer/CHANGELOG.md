@@ -1,5 +1,65 @@
 # @weasel-js/renderer
 
+## 1.17.4
+
+### Patch Changes
+
+- fe6a382: Stroke, paint and alignment fixes:
+  
+  - A closed zero-length subpath (`M5 5Z`, `M5 5L5 5Z`) draws its round or square cap as a dot, as SVG strokes it.
+  - A closed subpath's last vertex takes a mid marker.
+  - An inner stroke at least as wide as a rect's narrower side fills the rect, as it does the same polygon, instead of turning the rect inside out and drawing outside it. `ribbonAligns` (stroke) and `alignedStrokeRectHolds` (paint) say when a rect's aligned ribbon is built in place.
+  - An upright selection outline and the selection handles' outlines are aligned once; they were shifted for `align` and then shifted again by the renderer.
+  - SVG export writes gradient stops in offset order, and a stop past 0..1 as the color the ramp has there, so the file reads back as the gradient the kit paints.
+  - Interpolating two gradients pairs their stops by offset, not by list position.
+- c7e8680: Text fixes from an audit:
+  
+  - An outline face registered again while its first file was still loading no longer builds the DOM face from the old file's bytes.
+  - Registering a bidi engine or shaper (`registerBidi`, `registerShaper`) after text was first drawn now lays that text out again in its picking silhouette, in `textClusters` and in retained layers; it used to keep the order and widths from before. New `textEngineGeneration()` counts those registrations.
+  - `runsToMarkdown` writes markers only where a flag changes, so two adjacent italic (or bold) runs no longer come back from `markdownToRuns` as bold (or plain).
+  - The text edit overlay keeps a run's screen-pixel `fontSize` and `letterSpacing` (`{ px }`): it showed the run at the node's size and dropped the override on commit.
+- e405e70: Renderer fixes from an audit:
+  
+  - A tensor mesh patch's four interior points are read in PDF's order (p11 p12 p22 p21), so the second sits beside corner 1 and the fourth beside corner 3; the two were swapped, which twisted any tensor patch whose interior was not symmetric, and `meshHandles` dragged the wrong interior point with corners 1 and 3. A sixteen-point patch authored against the old reading draws differently: swap its points 13 and 15 to keep its shape.
+  - Cached marker heads are placed again when a stroke's `vertexWidths` change how finely its curve is flattened; a head on a curve could keep the position and angle of the previous widths.
+  - After a WebGL context restore, a custom program that fails to compile again is dropped rather than drawn with the lost context's program, and a program whose compile failed while the context was being lost is compiled again.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- d025e1b: Renderer fixes from an audit:
+  
+  - A WebGPU renderer now compiles a WGSL program that declares a struct no uniform could hold, such as a helper struct with a `bool` member, a fragment input with `@builtin(front_facing)`, or a struct ending in a runtime-sized array. Laying the struct out used to throw, and the program drew nothing. A uniform that binds such a struct is still refused, and the error names the type.
+  - WGSL array sizes and `const`s written with an `i` suffix (`array<vec4f, 2i>`, `const N = 3i;`) are now read. They used to throw `unknown array size`.
+  - A WebGPU program now takes a write to one slot of an array uniform by its slot name (`u_ripples[2]`), as a WebGL program does. Such a write used to be dropped with a "uniform not found" warning.
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [206b78d]
+- Updated dependencies [a78c393]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [d83476e]
+- Updated dependencies [89b2c65]
+- Updated dependencies [c675905]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+  - @weasel-js/stroke@1.17.4
+  - @weasel-js/paint@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/font@1.17.4
+  - @weasel-js/text@1.17.4
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

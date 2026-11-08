@@ -1,5 +1,92 @@
 # @weasel-js/forge
 
+## 1.17.4
+
+### Patch Changes
+
+- 1a61325: Show a type's definition on hover in forge's API panel
+  
+  - A name in a prop's, ref's or ref member's type that the project itself declares as an interface, type alias or enum is underlined, and shows its doc summary and its declaration (comments and `export` dropped, past 20 lines cut short with a count) on hover and on keyboard focus. Types from React, TypeScript's libraries and skipped packages are left as text.
+  - The `required` badge takes `--wzl-secondary-fg`, the secondary color meant for text, in place of `--wzl-secondary`, which failed color contrast on a light theme.
+- 2ecec23: A CSF arg whose argType names the `color` control now gets a color picker, as one whose name matches `controls.matchers.color` already did.
+  A conditional control's `if: { eq }` and `if: { neq }` now compare an array or object arg by value, as Storybook does, rather than never matching.
+  The story index reads a story's `name` or `storyName` written as a template literal or a top-level const, so the sidebar shows the name the story renders with.
+  The sidebar no longer says "No story" for a routed story that the package filter only hides.
+  A workshop trial's state is seeded from the story's config without the `$globals` pins, as the story's own trial seeds it.
+  forge's vite plugin waits for a write to settle before reporting it off macOS, so a second quick save on Linux is no longer served as the first.
+- 48eecfa: A Follow lens's reticle takes the size of the patch a new zoom or a resized body shows the next time it moves, rather than keeping the size it had when it started following.
+  An annotation `update` that moves a mark and changes its fields is one undo step and one notice to subscribers.
+  The CSS vars panel, its "used" marks and a story capture read a document's adopted stylesheets, where a theme writes its tokens, as the loupe's token chain already did.
+  The loupe's token chain leaves out a stylesheet whose own `media` list does not hold.
+  A story running in a frame can no longer write a config key forge keeps for itself, such as `$playhead`; one rendered in the page already could not.
+  An in-page story's CSS vars report answers an override the way a framed story's does, without rescanning the document.
+- d2d8753: Any lab can have lenses: `<Lab labChrome={[labLoupe]} />` from `@weasel-js/labkit/loupe` mounts the lens canvas
+  over the lab body and the Loupe keymap (Alt+L, then L adds a lens). Each lens shows a copy of the trial under its
+  reticle, from the new `createCloneSource`, so SVG and text stay sharp at any factor. The lens API forge's workshop
+  used — `createLensApi`, `useLensFocus`, `lensClient`, `useLensRemeasure` — moved into labkit, and forge now uses it
+  from there.
+- b470ff1: Add `<Sequence>`: one component repeated over the steps of a parameter
+  
+  - `Sweep` (ui-logic) is a parameter's domain, apart from how it is walked: `at(u)` reads it as a scrubber does, one value from 0 to 1 along it, and `walk()` reads every step at once. `range` (by `step`, or `count` samples), `values`, `frames` (a clock's run, `every` ms apart, one pass or `passes: 'all'`) and `until` (stop before the first step a predicate accepts) build one; `stepsOf` takes up to a cap from one that never ends.
+  - `<Sequence sweep>` (ui) renders its child once per step, captioned with the sweep's label, wrapped or as one scrolling strip. Given `across`, a second sweep, it lays out every pairing as a grid with its rows and columns labeled. Each cell is live. This is new API.
+  - `<HeldClock spec at>` (labkit) gives what renders inside a clock of its own, paused at `at`, which `useTrialClock` and `useClockFrame` read in place of the trial's; a clock that is not seekable is run there `step` ms a frame. `<ClockFrames spec every>` is a `<Sequence>` of a clock's frames, each under one.
+  - `fieldSweep(node)` (labkit) walks the values a config field's control offers: a number's stops or its range by its step, an enum's options, a boolean's off and on.
+  - forge's `usePlayhead` and `useTimeline` read the clock of a `<HeldClock>` around them ahead of the story's own (labkit's `useHeldClock`), so a story's clock-driven component shows the held moment in each frame of a `<ClockFrames>`.
+  - forge's API panel lists required props first, then every prop by name; their `required` badge takes the secondary accent, and badges there read in the body font rather than the code font.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [0720167]
+- Updated dependencies [c148384]
+- Updated dependencies [3c434f1]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [1ba75a2]
+- Updated dependencies [c02f028]
+- Updated dependencies [0f72734]
+- Updated dependencies [98b212a]
+- Updated dependencies [f148cf9]
+- Updated dependencies [082fa2f]
+- Updated dependencies [6cd51e2]
+- Updated dependencies [324322e]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [12c538a]
+- Updated dependencies [14aa7a8]
+- Updated dependencies [b53a3ef]
+- Updated dependencies [67d207f]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [b616cad]
+- Updated dependencies [48eecfa]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [27d8adb]
+- Updated dependencies [02eb957]
+- Updated dependencies [5dbf225]
+- Updated dependencies [bf18471]
+- Updated dependencies [2455bb4]
+- Updated dependencies [d2d8753]
+- Updated dependencies [bdb314c]
+- Updated dependencies [d77f2e2]
+- Updated dependencies [4fc36e9]
+- Updated dependencies [dad1aae]
+- Updated dependencies [479c893]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/core@1.17.4
+  - @weasel-js/svg@1.17.4
+  - @weasel-js/prefs@1.17.4
+  - @weasel-js/theme@1.17.4
+  - @weasel-js/ui@1.17.4
+  - @weasel-js/labkit@1.17.4
+  - @weasel-js/react@1.17.4
+  - @weasel-js/clock@1.17.4
+  - @weasel-js/icons@1.17.4
+  - @weasel-js/registry@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes

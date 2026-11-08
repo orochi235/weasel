@@ -1,5 +1,52 @@
 # @weasel-js/geom
 
+## 1.17.4
+
+### Patch Changes
+
+- b7ef242: Fix SVG import and PDF path output found in an audit.
+  
+  - `writePdf` places a path measured from an origin (far from 0) at its own coordinates instead of offset by the origin.
+  - `parseSvg` reads `<rect>` `rx`/`ry` as SVG 2 does: a missing or negative radius takes the other's value, the two stay independent, each is clamped to half its own side, and either one at 0 gives square corners.
+  - `parseSvg` gives an `<ellipse>` radius left out the other's value.
+  - `pathFromD` reads a form feed between arc arguments as whitespace.
+  - `parseSvg` multiplies a color's own alpha by `fill-opacity` / `stroke-opacity` rather than replacing it.
+  - `parseSvg` reads `fill-opacity` and a color's alpha on `<text>` and `<tspan>`, and `serializeSvg` writes a run's fill opacity.
+  - `serializeSvg`'s default `viewBox` boxes each path's stroke and marker heads, not just its geometry, so a stroked shape at the edge keeps the outer half of its stroke. Core exports `strokedBounds`, the box a stroke covers along a path, which it measures with.
+- 206b78d: Fix geometry edge cases found in a third audit pass:
+  
+  - `pathFromD` draws an SVG arc whose radii are too large or too small to square in floating point (1e80, 1e-170), where it used to drop the arc.
+  - `intersectSegments` reports where two collinear lines overlap or touch end to end, as it already did for curves; `pathCrossings` and the snap and trim built on it see those touches.
+  - `cubicCurvatureAt` judges whether a cubic has lost its direction against the curve's own size, so a small curve no longer reads as straight.
+  - `schneiderFit` and `fitCubicWithTangents` scale their handle and Newton guards to the curve, so a small curve fits the same handles as a large one.
+  - `pathSignedArea` measures corner shapes as drawn, as bounds, hit tests and tessellation already did.
+  - `splitSubpaths` cuts where a drawing command after `Z` opens a subpath without an `M`, writing the `M` it implies, so `splitByClosure` no longer files the closed subpath before it as open.
+  - `@weasel-js/geom/3d`'s `normalize` keeps the direction of a vector whose squared length under- or overflows.
+  - `bendAlongPath` keeps a sharp corner of its spine sharp, rather than blending the heading across it. Shapes bent along a spine with corners change.
+- a78c393: - A nested timeline's `duration` now ends it: its events past that time no longer fire or book, and its sampled tracks hold where they stand at it, as a root timeline does at its own.
+  - A timeline seeked from inside an event's handler goes on from where the seek landed: the rest of the span the frame crossed no longer fires, the events after the seek fire on the replay, and a seek from the last edge no longer calls `onDone` early or skips it at the end of the replayed pass.
+  - `TimelineHandle.seek` throws a `RangeError` on NaN or an infinite time, which used to leave the timeline stuck.
+  - `easeInSine` and `easeInBack` now return exactly 1 at t=1, and `easeOutBack` exactly 0 at t=0, so a tween with a discrete `interpolate` lands on `to`.
+- cfe8a8a: geom's 2D `invert` and `@weasel-js/geom/3d`'s `invert` refuse the same matrices: one too ill-conditioned to invert meaningfully, its condition number (the 1-norm of the matrix times that of its inverse) at or past 1e12, judged on the linear part, so translation never counts. One rule inside geom decides it for both. The 3D `invert` used to accept a matrix as uneven as `scale(1e6, 1e-7, 1)` and a projection with a 1e-12 near plane, and now refuses both; every camera kernel3d builds still inverts.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- 89b2c65: Fixes from a second audit of the geometry kernel and stroking, on degenerate input:
+  
+  - `intersectSegments` reports where two collinear lines overlap when their points only round onto one line; it reported one crossing at an arbitrary place along them about a third of the time. A cut that doubles back along its own line no longer closes a degenerate loop when splitting a path.
+  - `intersectRayAabb` and `Bvh.raycast` miss every box along a ray with a NaN component, as `intersectRayPlane` does; they hit every box at t = 0.
+  - A length table measures a straight segment with a non-finite point as no distance, as it already measured such a curve; one bad point made the whole path's length NaN.
+  - `resamplePath` reads a count that is not a finite number as no count; NaN dropped every anchor after the first, and Infinity never finished.
+  - A dash offset that lands exactly on a zero-length dash draws its dot at the line's start, as the dash does anywhere else along the line.
+
 ## 1.17.3
 
 ### Patch Changes

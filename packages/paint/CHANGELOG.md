@@ -1,5 +1,68 @@
 # @weasel-js/paint
 
+## 1.17.4
+
+### Patch Changes
+
+- fe6a382: Stroke, paint and alignment fixes:
+  
+  - A closed zero-length subpath (`M5 5Z`, `M5 5L5 5Z`) draws its round or square cap as a dot, as SVG strokes it.
+  - A closed subpath's last vertex takes a mid marker.
+  - An inner stroke at least as wide as a rect's narrower side fills the rect, as it does the same polygon, instead of turning the rect inside out and drawing outside it. `ribbonAligns` (stroke) and `alignedStrokeRectHolds` (paint) say when a rect's aligned ribbon is built in place.
+  - An upright selection outline and the selection handles' outlines are aligned once; they were shifted for `align` and then shifted again by the renderer.
+  - SVG export writes gradient stops in offset order, and a stop past 0..1 as the color the ramp has there, so the file reads back as the gradient the kit paints.
+  - Interpolating two gradients pairs their stops by offset, not by list position.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- d83476e: Fix edge cases in quantity formatting, color parsing and paint keys, and in `.lbx` output.
+  
+  - A `compact` value that shows as `1.00K` (999.6, say) is now spoken `1 thousand`, not `1.00K`.
+  - `nearestFraction` reads a denominator cap under 1 as 1 instead of returning a fraction over 0.
+  - `parseColor` throws on an empty or non-decimal channel: `rgb(255, 0, 0,)` used to parse as transparent red, `rgb(1 2 3 / foo)` as opaque, and `rgb(0x10, 0, 0)` as hex.
+  - `paintKey` gives two solids one key when their colors are the same color spelled differently (`#fff`, `#FFFFFF`, `white`).
+  - `sampleGradientStops` reads a NaN position as the first stop instead of writing `#NaNNaNNaNNaN`, and answers an empty stop list in hex (`#00000000`) like every other answer.
+  - `hexToColorLiteral` leaves `alpha` off a fully opaque `#rrggbbaa`, as `cssColorLiteral` does.
+  - `writeLbx` frames a rect drawn with a negative width or height where it lies, and writes a cut position given twice only once.
+- 1e0adbb: Fix lookups, hue interpolation and bus ramps in quantity, paint and audio.
+  
+  - A unit, display kind or spoken unit named for an `Object.prototype` member (`toString`, `constructor`) reads as unknown: `unitScale` throws, the display falls back to `decimal`, and the unit is spoken by its name, instead of picking up the inherited function.
+  - `snapToStep` and spin keys keep every decimal of a step written in e-notation: a step of `1.5e-7` now snaps to multiples of it rather than of `1e-7`.
+  - `lerpHueDeg` keeps the sign of a half turn, as CSS's hue fixup and `lerpOklch` do: 180° to 0° under `shorter` now passes 90°, not 270°. This changes theme ramps between exactly opposite hues.
+  - `parseColor('constructor')` and the other `Object.prototype` names throw as unrecognized colors, and `cssColorNotation` answers `null` for such a space instead of throwing a `TypeError`.
+  - `paintKey` folds a solid's `opacity` into its color's alpha, so `rgba(255, 0, 0, 0.5)` and `#f00` at opacity 0.5 share a key, as they draw the same.
+  - Changing one bus's gain, mute or solo no longer cuts another bus's gain ramp short: only faders whose value changed are written.
+- 2455bb4: An eyedropper that samples exactly, as the loupe's complement.
+  
+  `@weasel-js/loupe`: `createSampler` reads an ordered stack of pixel sources and composites translucent
+  layers source-over to the color a viewer sees, answering with a promise when a source does.
+  `createEyedropperModel` sits beside `createLoupeModel`: `hover`, `pick` and `color`, and given a loupe,
+  `hover` aims it. Breaking: `pixelHex` and `sourcePixel` are gone, folded into the sampler
+  (`canvasPixelSource`, and `rgbaHex` in `@weasel-js/paint`), and `CanvasSource.sample` is now `pixel`,
+  answering RGBA bytes rather than a hex.
+  
+  `@weasel-js/core`: a `colorAt` dep (screen point to color), which `<SceneCanvas>` sources by redrawing
+  its document layers offscreen around the point — never the selection handles or other chrome over
+  them. `sampleLayers` names those layers. `useEyedropperTool` samples pixels through it when given no
+  `colorOf`, which is now optional. The canvas readback hud's loupe used (`createCanvasReader`,
+  `readGl`, `regionOnCanvas`, `regionAround`) moves to core, beside `createLayerSampler`,
+  `planLayerSample` and `RasterSession.renderCommands`.
+  
+  `@weasel-js/hud`: `createLoupe` in vector mode with a `source` reports the color of those layers, not
+  the presented canvas.
+  
+  `@weasel-js/labkit`: `sampleStack` is replaced by `stackSources` over the engine sampler, which reads
+  WebGL layers and composites translucent ones. A trial offers an Eyedropper toggle beside its loupe
+  toggle, and one readout of the color picked whose press copies it.
+
 ## 1.17.3
 
 No changes in this release.

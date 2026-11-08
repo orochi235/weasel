@@ -1,5 +1,33 @@
 # @weasel-js/quantity
 
+## 1.17.4
+
+### Patch Changes
+
+- 26e836e: Fix rounding, token-reading and CSS-escaping bugs in prefs, quantity and theme
+  
+  - A linear pref unit's shown value now rounds a negative half away from zero, as its formatted text does: `-0.125` at two places shows `−0.13` in the field, not `−0.12`.
+  - The `ordinal`, `roman` and `integer` kinds round a half away from zero, as the numbers they show do: `-2.5` reads `−3rd`, not `−2nd`, and typing `-2.5` into an integer field reads as −3.
+  - `tokenPx` reads a bare `0` as 0px instead of throwing, so a theme that sets a radius to `0` no longer breaks the HUD's panel drawing.
+  - `prefsCss` escapes line breaks in the strings it writes; a string pref that held one used to lose its declaration.
+- d83476e: Fix edge cases in quantity formatting, color parsing and paint keys, and in `.lbx` output.
+  
+  - A `compact` value that shows as `1.00K` (999.6, say) is now spoken `1 thousand`, not `1.00K`.
+  - `nearestFraction` reads a denominator cap under 1 as 1 instead of returning a fraction over 0.
+  - `parseColor` throws on an empty or non-decimal channel: `rgb(255, 0, 0,)` used to parse as transparent red, `rgb(1 2 3 / foo)` as opaque, and `rgb(0x10, 0, 0)` as hex.
+  - `paintKey` gives two solids one key when their colors are the same color spelled differently (`#fff`, `#FFFFFF`, `white`).
+  - `sampleGradientStops` reads a NaN position as the first stop instead of writing `#NaNNaNNaNNaN`, and answers an empty stop list in hex (`#00000000`) like every other answer.
+  - `hexToColorLiteral` leaves `alpha` off a fully opaque `#rrggbbaa`, as `cssColorLiteral` does.
+  - `writeLbx` frames a rect drawn with a negative width or height where it lies, and writes a cut position given twice only once.
+- 1e0adbb: Fix lookups, hue interpolation and bus ramps in quantity, paint and audio.
+  
+  - A unit, display kind or spoken unit named for an `Object.prototype` member (`toString`, `constructor`) reads as unknown: `unitScale` throws, the display falls back to `decimal`, and the unit is spoken by its name, instead of picking up the inherited function.
+  - `snapToStep` and spin keys keep every decimal of a step written in e-notation: a step of `1.5e-7` now snaps to multiples of it rather than of `1e-7`.
+  - `lerpHueDeg` keeps the sign of a half turn, as CSS's hue fixup and `lerpOklch` do: 180° to 0° under `shorter` now passes 90°, not 270°. This changes theme ramps between exactly opposite hues.
+  - `parseColor('constructor')` and the other `Object.prototype` names throw as unrecognized colors, and `cssColorNotation` answers `null` for such a space instead of throwing a `TypeError`.
+  - `paintKey` folds a solid's `opacity` into its color's alpha, so `rgba(255, 0, 0, 0.5)` and `#f00` at opacity 0.5 share a key, as they draw the same.
+  - Changing one bus's gain, mute or solo no longer cuts another bus's gain ramp short: only faders whose value changed are written.
+
 ## 1.17.3
 
 No changes in this release.

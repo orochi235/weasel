@@ -1,5 +1,220 @@
 # Changelog
 
+## 1.17.4
+
+### Patch Changes
+
+- 4161bcd: Fixes from an audit of core's canvas, tools and input:
+  
+  - A paste that lands in a container or on a page puts the members of a pasted envelope group where they were drawn; they were stored in world coordinates under the container's frame and landed offset by it.
+  - An Alt-drag clone snaps to its own source, which stays where it was. `SnapBegin` takes `exclude`, the nodes that offer no targets, which defaults to `ids`.
+  - A Shift-drag on empty canvas marquees and adds what it takes to the selection; the select tool's marquee forbade Shift, so it did nothing.
+  - A drag started with a modifier already held now starts: every shape tool (rect, ellipse, line, polygon, star, text, sticky, image, pencil, diagram stencils) with Shift, Alt or Ctrl; move, resize, rotate, clone and measure with Shift or Ctrl; anchor and handle drags, the anchor marquee, balance grips and diagram waypoints with the keys their roles read. Their bindings left those keys out, which the matcher reads as forbidden. `roleMods(roles)` builds a binding's `mods` from an action's modifier roles, and `INSERT_DRAG_MODS` is the insert drag's.
+- fe6a382: Stroke, paint and alignment fixes:
+  
+  - A closed zero-length subpath (`M5 5Z`, `M5 5L5 5Z`) draws its round or square cap as a dot, as SVG strokes it.
+  - A closed subpath's last vertex takes a mid marker.
+  - An inner stroke at least as wide as a rect's narrower side fills the rect, as it does the same polygon, instead of turning the rect inside out and drawing outside it. `ribbonAligns` (stroke) and `alignedStrokeRectHolds` (paint) say when a rect's aligned ribbon is built in place.
+  - An upright selection outline and the selection handles' outlines are aligned once; they were shifted for `align` and then shifted again by the renderer.
+  - SVG export writes gradient stops in offset order, and a stop past 0..1 as the color the ramp has there, so the file reads back as the gradient the kit paints.
+  - Interpolating two gradients pairs their stops by offset, not by list position.
+- b7ef242: Fix SVG import and PDF path output found in an audit.
+  
+  - `writePdf` places a path measured from an origin (far from 0) at its own coordinates instead of offset by the origin.
+  - `parseSvg` reads `<rect>` `rx`/`ry` as SVG 2 does: a missing or negative radius takes the other's value, the two stay independent, each is clamped to half its own side, and either one at 0 gives square corners.
+  - `parseSvg` gives an `<ellipse>` radius left out the other's value.
+  - `pathFromD` reads a form feed between arc arguments as whitespace.
+  - `parseSvg` multiplies a color's own alpha by `fill-opacity` / `stroke-opacity` rather than replacing it.
+  - `parseSvg` reads `fill-opacity` and a color's alpha on `<text>` and `<tspan>`, and `serializeSvg` writes a run's fill opacity.
+  - `serializeSvg`'s default `viewBox` boxes each path's stroke and marker heads, not just its geometry, so a stroked shape at the edge keeps the outer half of its stroke. Core exports `strokedBounds`, the box a stroke covers along a path, which it measures with.
+- c7e8680: Text fixes from an audit:
+  
+  - An outline face registered again while its first file was still loading no longer builds the DOM face from the old file's bytes.
+  - Registering a bidi engine or shaper (`registerBidi`, `registerShaper`) after text was first drawn now lays that text out again in its picking silhouette, in `textClusters` and in retained layers; it used to keep the order and widths from before. New `textEngineGeneration()` counts those registrations.
+  - `runsToMarkdown` writes markers only where a flag changes, so two adjacent italic (or bold) runs no longer come back from `markdownToRuns` as bold (or plain).
+  - The text edit overlay keeps a run's screen-pixel `fontSize` and `letterSpacing` (`{ px }`): it showed the run at the node's size and dropped the override on commit.
+- c148384: Fix four bugs in core's domains and helpers:
+  
+  - The picked measurement's end handles follow the end while it is dragged, rather than staying where the end was.
+  - A selection outline on a flipped view (a y-up camera) is padded outward, not inset.
+  - `createTextLayer` resolves a `{ px }` font size by the view scale's magnitude, so a flipped view no longer draws it at the wrong size or with a negative one.
+  - `solid` and `paintWithColor` move a `#rgba` color's alpha to `opacity`, as they already did for `#rrggbbaa`.
+- e405e70: Renderer fixes from an audit:
+  
+  - A tensor mesh patch's four interior points are read in PDF's order (p11 p12 p22 p21), so the second sits beside corner 1 and the fourth beside corner 3; the two were swapped, which twisted any tensor patch whose interior was not symmetric, and `meshHandles` dragged the wrong interior point with corners 1 and 3. A sixteen-point patch authored against the old reading draws differently: swap its points 13 and 15 to keep its shape.
+  - Cached marker heads are placed again when a stroke's `vertexWidths` change how finely its curve is flattened; a head on a curve could keep the position and angle of the previous widths.
+  - After a WebGL context restore, a custom program that fails to compile again is dropped rather than drawn with the lost context's program, and a program whose compile failed while the context was being lost is compiled again.
+- c02f028: Fix scene and history edge cases found in a fourth audit pass:
+  
+  - Canceling a journal also cancels a suspended journal opened inside it, committing one refuses while such a journal is open, and `resumeJournal` resumes a nested journal inside its active parent.
+  - Undoing a delete restores the node as it was when removed, not the copy the op was built from.
+  - `jumpToHistoryIndex` with a fractional or NaN index returns `false` and notifies no one.
+  - `loadState` with a snapshot that cannot be built throws without wiping the current document or its history.
+  - A coalesced history entry keeps every id it touched across `serialize` and `restore`.
+  - Undo and redo skip a hide or lock of a node an untracked edit removed, instead of throwing.
+- 0f72734: Fixes left from the third audit round:
+  
+  - labkit: calling a `watch3d` unsubscribe a second time does nothing; it could delete a listener set registered later for the same trial.
+  - labkit: `PresentationState.time` and `labkit:seek`'s `time` are documented as what they are, shown time: the clock's `origin` plus the time into the pass.
+  - diagram: adding an edge label with the default double-click edit and committing its first text are one undo entry, so an undo after typing takes the label away instead of leaving it empty and invisible. `dropEmptyEdgeLabel` removes an emptied new label within that entry.
+  - core: `textEditJoin(id)` gives a batch that makes a node for a text edit the options that let the edit's commit join its undo entry. `useSceneTextEdit` ends that run when the edit ends, so a later edit of the node stays its own entry.
+- 082fa2f: Fix text editing and mixed-face line heights
+  
+  - A character typed under an armed style (Cmd+B at a collapsed caret) keeps the styling of the run it is typed into.
+  - Text committed through an input method takes the armed style, and small-caps letters it typed are re-split once the composition ends.
+  - A paste that ends the text with a line break keeps that break on commit.
+  - A line holding two faces grows to clear the lower one's descent, as CSS does, so canvas lines no longer overlap or sit closer than the edit overlay's.
+  - The scene edit overlay sizes `{ px }` font sizes and letter spacing as `kit:text` draws them, at any zoom. `TextEditScreenPose` takes a new `pxScale`.
+- 324322e: Fixes from an audit of core's interactions:
+  
+  - A rotate drag whose pointer swings past the left of the pivot keeps turning the way it was going; the turn jumped a whole circle there, so a 100° counterclockwise drag committed 260°.
+  - A resize of a multi-selection or group updates `ctx.current` as it goes, so a constraint's `onEnd` reads the box the drag left rather than the one it started from.
+  - An insert whose release commits nothing — a behavior aborted it, or the drag ended too small to draw — puts back the selection its press cleared, as a cancel already did.
+  - A second finger pressed on a `useDragHandle` handle mid-drag is ignored; it used to orphan the first drag, so unmounting left its ghost in the page and blocked every later drag.
+  - `useDragGesture`, `useDragRect` and `useDragRadial` close the gesture and clear the overlay when an `onCancel` throws.
+  - `useHandleDrag` reports `moved: false` for a pointermove that never left the press point.
+  - An Alt-drag clone, a nudge and `commitOps` report nothing committed when the scene's arrival handler refuses the batch; a refused clone told its behaviors it committed and recorded a duplicate for transform-again.
+  - An insert preview on a parallax layer draws its quantized landing box and its container copies where the shape will land.
+- b93c1dd: Fixes from an audit of ui-logic, editor and the icon packages, and one definition each for decisions several packages answered separately:
+  
+  - The icons plugin reads the namespace of an `icons.gen` compiled to JavaScript, so its `icon()` calls are rewritten as a TypeScript one's are.
+  - Releasing an icon table a second time no longer bumps the registry's version and notifies its subscribers.
+  - `envPx` reads a token set to a bare `0` as 0px, as CSS does, instead of using its fallback or throwing.
+  - New in geom: `trimNumber(n, places = 6)`, which pathToD, svg and the renderer's mesh writer now share. The mesh writer kept four decimal places where its comment said it matched svg's six; it now writes six.
+  - New in geom: `rectBetween(ax, ay, bx, by)`, the rect two corners span, used by core's drag rect, marquee, area select, anchor marquee, insert extent, measurement and parallax, and by diagram's segment boxes.
+  - New in registry: `freshId(base, taken, opts)`, the first free numbered id, used by core's `nextPageId`, diagram's stage, wire, group and sequence ids, and labkit's snapshot names.
+  - paint exports `byteHex` and `lerpHueDeg`. core's `withAlpha01` and p-touch's lbx colors write hex through the first. theme's ramps blend hues through the second, so two anchors exactly opposite now blend the positive way round, as CSS's `shorter` does, where before they went the negative way.
+  - gestures' `matchKey` takes a readonly key list, and routing's key bindings match through it.
+  - ui-logic's `clampTo` is now geom's `clamp` under another name, and is deprecated.
+- 12c538a: The select tool reads a `'single'` press as a replace rather than as an extend-click, so `extendClickLocked` no longer refuses one. `beginJournal`'s `coalesceWindowMs` takes a function, as `createHistory`'s does. A menu arrow key that leaves the highlight where it was no longer notifies subscribers or clears the typeahead buffer.
+- 14aa7a8: `rig.pose()` commits through the rig's target, so a pose given while an animation from before a change of joints is still running shows as given rather than with that animation's travel so far added to it.
+  A `useRig` or `useRigNode` that unmounts while an animation on its target is still running no longer has that animation put its pose overrides back.
+  `animateLifecycle` over an adapter without pose targets removes a node at the pose it had before its exit animation, so undoing the removal brings it back where it was rather than at the exit pose.
+  A resize handle's cursor points along the axis the handle drags as it is drawn on screen: on the other diagonal for a mirrored target, and turned by a view that scales x and y differently.
+- b53a3ef: Fix edge cases in core's feature domains found in a sixth audit pass:
+  
+  - A long-press feedback entry installed on more than one canvas keeps each canvas's own press; before, the last canvas attached took over the ring and detaching any canvas blanked it on all of them.
+  - `usePoseRun` no longer commits a node a gesture took after the run's last frame when `stop()` lands.
+  - `workspaceTintLayer` keeps the mode's gradient when the page is scrolled out of the viewport, instead of switching to a solid wash.
+  - `composeSelectionPose` applies a leaf's resize overlay when it resolves a container's union over that leaf.
+  - The `resizable` chrome condition is exported from `@weasel-js/core`, beside the other chrome-caps atoms.
+- 67d207f: Fixes from an audit of core's path edit, path effects and snapping:
+  
+  - A drawn line's or a measurement's start that snapped to an anchor shows the anchor's mark until the end moves; it was dropped at once.
+  - `createSnapSession2d` puts a move's `geometry` probe on the subject's outline nearest the press, as a canvas's `snap` dep does; it sat at the press. It also throws when two sources share an id, as the canvas does.
+  - Path edit's anchor overlay takes a previewed pose and previewed data each from the first in-flight handle that gives one, as the drawn preview does. It kept the last handle's data, and a handle previewing only data hid a later handle's pose.
+  - A snap session hands sources one `exclude` array for the whole gesture, so `rotationSnapSource` reads other nodes' angles once per gesture again when the subject has no ids.
+- bdf1a62: `getAlpha01` reads the alpha of a `#rgba` color too, where it used to answer 1, so `mergeAlphaFromPrev` keeps a short-form color's alpha.
+  The debug overlay's `ids` feature labels nodes on its own; before, it drew nothing unless `bounds` was on as well.
+  A devtools panel no longer misses a change made while the page was sending it the previous change notice.
+  `usePublishPointer` clears the pointer when a press that left the element is canceled outside it, as it already did when one was released there.
+  `@weasel-js/core` exports the types its own hooks and defaults are written in: `IconRegistry`, `IconGlyph`, `IconEntry`, `IconVariantState`, `IconVariantLoader`, `Palette` and `PaletteEntry`.
+- b616cad: Fixes from a second audit of core's scene, viewport, selection and geometry:
+  
+  - `usePointerStylus` commits the last sample its throttle held back once the gap has passed, so a pen that comes to rest inside the gap no longer leaves the state on an older sample.
+  - `unionBounds` folds a box with a negative width or height by the span it covers, as `unionAABB` does.
+  - `sceneNodeClientRect` returns a positive rect at the box's screen top-left under a flipped (y-up) view.
+  - `RECT_POSE_DESCRIPTOR.lerp` (and `ROTATED_POSE_DESCRIPTOR.lerp`) interpolates `rotation` the short way round, as the descriptor's `axes` do; it carried the start angle through and jumped at the end.
+  - `AUTO_POSE_DESCRIPTOR` has a `lerp`, dispatching to the rect or Path descriptor, so `tweenPose` and `springPose` no longer throw on the default descriptor.
+  - `setLayerVisible`, `setLayerLocked`, `setLayerParallax` and `renameLayer` record no undo entry and leave the version alone when handed the value the layer already has.
+  - A fit with nothing to fit lands on the view Cmd-0 gives. `HOME_VIEW` and `resetView` define that view once: the canvas's `viewport.recenter`, else `HOME_VIEW`, the world origin at 100%. `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` now return `null` for content with no extent on either axis (`hasExtent`), with no warning and no fall to `ZOOM_FLOOR`; `fitViewToBounds` no longer hands back the current view for it. This is a breaking change to those return types. `viewport.zoom`'s Fit Content, the off-page follow and the editor's page fits resolve `null` to the reset view, `useAutoCenter` waits for content before it centers, and `ViewAnimationApi.animateToBounds` returns `false` without moving. `fitViewToBounds` fits a lone line along the axis it has; Fit Content no longer centers a lone point at the current zoom, and goes to the reset view instead.
+  - `scene.update` and `scene.setPose` record no undo entry, leave the version alone and notify no one when handed the data or pose the node already has, compared by structure as the declared-field setters compare. A drag whose pointer holds still for a frame still lands as one undo entry.
+- 27d8adb: Fix canvas bugs found in audit round eight. A configured `viewport.pinchZoom` keeps its clamp after the canvas's actions change. A departing node glides out through its parallax plane, and not at all from a hidden layer. `edgePan.zone: 0` no longer sends the view NaN. Content bounds are recomputed when the bounds source changes. Pixel picks pass over locked and unpickable nodes, and a bare adapter's picks skip hidden subtrees and consumed children and honor locks. Picking reads a container's inherited paint as it is shown. A stroked node's drawn box follows an inherited stroke's changes. The render worker answers id reads and snapshots when it never starts, refuses animation params it cannot clone at `play`, and its `SceneViewCanvas` repaints on a pixel-ratio change and after a lost context comes back. Clipboard pastes, kit requirements, worker animation programs, marker icons and data previews no longer read keys from `Object.prototype`.
+- 02eb957: `usePages().add` puts a new page after the page shown, so a view sitting between pages adds after the one it was last on rather than at the end. It takes an optional `make`, which adds a page of its own at the place and size `add` picked and answers its id. `snapToContainer` no longer offers a drop into a dragged node or one of its descendants, which the scene refused by throwing. Deserialization reads a registry key, and `isLayerVisible` a layer's visibility, only as an own property, so a key or layer id like `toString` no longer resolves through the object's prototype.
+- 5dbf225: Fixes from an audit of core's interactions:
+  
+  - Group puts the new group where its frontmost member stood, and keeps its members' stacking whatever order they were selected in. It used to raise the group over every sibling, so content that stacked above the members ended up under them.
+  - A nudge, Transform Again or Move By that a transform follower refuses is no longer recorded for Transform Again, and neither is a duplicate the scene refuses.
+  - A click-to-place that places nothing puts back the selection it cleared, as a drawn insert does.
+  - `useHandleDrag` ignores a right or middle mouse press, so a right click on a gradient handle no longer drags it.
+  - A marquee or lasso dep's `targetOf` is called with the hit id alone.
+- 2455bb4: An eyedropper that samples exactly, as the loupe's complement.
+  
+  `@weasel-js/loupe`: `createSampler` reads an ordered stack of pixel sources and composites translucent
+  layers source-over to the color a viewer sees, answering with a promise when a source does.
+  `createEyedropperModel` sits beside `createLoupeModel`: `hover`, `pick` and `color`, and given a loupe,
+  `hover` aims it. Breaking: `pixelHex` and `sourcePixel` are gone, folded into the sampler
+  (`canvasPixelSource`, and `rgbaHex` in `@weasel-js/paint`), and `CanvasSource.sample` is now `pixel`,
+  answering RGBA bytes rather than a hex.
+  
+  `@weasel-js/core`: a `colorAt` dep (screen point to color), which `<SceneCanvas>` sources by redrawing
+  its document layers offscreen around the point — never the selection handles or other chrome over
+  them. `sampleLayers` names those layers. `useEyedropperTool` samples pixels through it when given no
+  `colorOf`, which is now optional. The canvas readback hud's loupe used (`createCanvasReader`,
+  `readGl`, `regionOnCanvas`, `regionAround`) moves to core, beside `createLayerSampler`,
+  `planLayerSample` and `RasterSession.renderCommands`.
+  
+  `@weasel-js/hud`: `createLoupe` in vector mode with a `source` reports the color of those layers, not
+  the presented canvas.
+  
+  `@weasel-js/labkit`: `sampleStack` is replaced by `stackSources` over the engine sampler, which reads
+  WebGL layers and composites translucent ones. A trial offers an Eyedropper toggle beside its loupe
+  toggle, and one readout of the color picked whose press copies it.
+- e3ce292: Follow a lab tile that moves with nothing resizing
+  
+  - A lab's surface re-measures a tile that moves while neither it nor the surface changes size, such as when a sibling beside it settles. An annotation's input box and marks used to stay where the tile was first measured.
+  - `watchElementMove(element, onMove)` is exported from `@weasel-js/react`. It calls `onMove` when an element's box moves in the viewport for a reason no event reports. It moved there from core, which exported it only for tests.
+- a1f2242: Add `sweepAction`: an action bound to a drag that sets each item of a surface the pointer crosses, and a `sweep` prop on `ToggleBar` (multiple mode) and `OptionsBar`, which sets every segment a drag reaches to what the press set the pressed one to. `sweep` takes `true` or a function that decides per press (`SegmentSweep`).
+  
+  `useGestureDispatcher` takes `controls: 'take'`, for a surface whose buttons are its items: presses on them are dispatched, and the pointer is captured only once a press becomes a drag, so a click still reaches the button. A dispatcher now gives up a press that an element inside it opened its own pointer session for, so an item's drag beats its surface's gesture. A `PointerSession` gains `capture()`.
+- Updated dependencies [4161bcd]
+- Updated dependencies [fe6a382]
+- Updated dependencies [26f3d8f]
+- Updated dependencies [b7ef242]
+- Updated dependencies [c7e8680]
+- Updated dependencies [26e836e]
+- Updated dependencies [206b78d]
+- Updated dependencies [b4163e6]
+- Updated dependencies [e405e70]
+- Updated dependencies [a78c393]
+- Updated dependencies [c02f028]
+- Updated dependencies [5c6d898]
+- Updated dependencies [cfe8a8a]
+- Updated dependencies [082fa2f]
+- Updated dependencies [b93c1dd]
+- Updated dependencies [7e83b0f]
+- Updated dependencies [12c538a]
+- Updated dependencies [5f9b5d0]
+- Updated dependencies [d83476e]
+- Updated dependencies [bdf1a62]
+- Updated dependencies [89b2c65]
+- Updated dependencies [d025e1b]
+- Updated dependencies [9b7e5c7]
+- Updated dependencies [56e54c0]
+- Updated dependencies [229d0e7]
+- Updated dependencies [c675905]
+- Updated dependencies [1e0adbb]
+- Updated dependencies [2455bb4]
+- Updated dependencies [bdb314c]
+- Updated dependencies [69988f1]
+- Updated dependencies [479c893]
+- Updated dependencies [8c39a05]
+- Updated dependencies [b470ff1]
+- Updated dependencies [e3ce292]
+- Updated dependencies [a1f2242]
+- Updated dependencies [a287c54]
+  - @weasel-js/routing@1.17.4
+  - @weasel-js/stroke@1.17.4
+  - @weasel-js/paint@1.17.4
+  - @weasel-js/renderer@1.17.4
+  - @weasel-js/geom@1.17.4
+  - @weasel-js/font@1.17.4
+  - @weasel-js/text@1.17.4
+  - @weasel-js/text-dom@1.17.4
+  - @weasel-js/prefs@1.17.4
+  - @weasel-js/quantity@1.17.4
+  - @weasel-js/react@1.17.4
+  - @weasel-js/animator@1.17.4
+  - @weasel-js/history@1.17.4
+  - @weasel-js/gestures@1.17.4
+  - @weasel-js/icons@1.17.4
+  - @weasel-js/registry@1.17.4
+  - @weasel-js/ui-logic@1.17.4
+  - @weasel-js/simulation@1.17.4
+  - @weasel-js/select@1.17.4
+  - @weasel-js/cursor@1.17.4
+  - @weasel-js/modes@1.17.4
+
 ## 1.17.3
 
 ### Patch Changes
