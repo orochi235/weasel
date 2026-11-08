@@ -3,11 +3,11 @@
  * and does for it what needs a DOM — sessions, timers, haptics.
  */
 import {
-  createPointerRecognizer, isInControlWithin, longPressEvents, stylusOf,
+  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, stylusOf,
   type ClickMemory, type HeldPress, type PointerSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
-import { openPointerSession, type PointerSession } from '../../pointerSession';
+import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
 import { pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
 import { multiTouchGestureId } from '../dispatcher';
 import { LONG_PRESS_HAPTIC_MS, type LongPressOptions } from '../longPressState';
@@ -26,6 +26,8 @@ export interface PointerInputOptions {
   /** Outlives this listener set: a re-bind between two clicks must not drop the double click. */
   clicks: ClickMemory;
   hover: Pick<HoverCursorInput, 'moved' | 'released'>;
+  /** See `UseGestureDispatcherOptions.controls`. */
+  controls(): 'leave' | 'take';
 }
 
 export interface PointerInput {
@@ -144,7 +146,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   const { canvas, routeAt, routeDown, routeRelease, toWorld, target } = core;
   const sessions = new Map<number, PointerSession>();
   const lastSample = new Map<number, PointerSample>();
-  const drop = (id: number): void => { sessions.delete(id); lastSample.delete(id); };
+  const drop = (id: number): void => { sessions.delete(id); lastSample.delete(id); uncaptured.delete(id); };
   // A double click this dispatcher acted on is spent: the browser's own
   // `dblclick` that follows is marked handled, so a container that opens or
   // toggles on double-click leaves it alone.
@@ -178,7 +180,21 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     },
   });
 
+  // Presses on a control this surface takes, still uncaptured so the control's click survives.
+  const uncaptured = new Map<number, PointerSample>();
+
   const onMove = (e: PointerEvent): void => {
+    const session = sessions.get(e.pointerId);
+    // An item inside this surface opened a drag of its own for this pointer; that drag wins.
+    if (session && canvas && heldWithin(e.pointerId, canvas, session)) {
+      session.cancel();
+      return;
+    }
+    const press = uncaptured.get(e.pointerId);
+    if (session && press && pastDragThreshold(press, e, opts.kitSettings().get('gestures.dragPx'))) {
+      uncaptured.delete(e.pointerId);
+      session.capture();
+    }
     routeAt(e.pointerId, e.clientX, e.clientY);
     const sample = sampleOf(e);
     if (sessions.has(e.pointerId)) lastSample.set(e.pointerId, sample);
@@ -186,7 +202,12 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     opts.hover.moved(e);
   };
 
-  const onUp = (e: PointerEvent): void => {
+  const onUp = (e: PointerEvent, session: PointerSession | undefined): void => {
+    // Released before it moved, and the item's own session took the press: it clicks, not this surface.
+    if (session && canvas && heldWithin(e.pointerId, canvas, session)) {
+      onCancel(e.pointerId);
+      return;
+    }
     routeAt(e.pointerId, e.clientX, e.clientY);
     drop(e.pointerId);
     const { doubleClick } = recognizer.release(sampleOf(e));
@@ -218,8 +239,10 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       if ((e.button ?? 0) !== 0) return;
       if (!canvas) return;
       // A button or field laid over the canvas handles its own press: opening a
-      // session here would capture the pointer and retarget its click.
-      if (isInControlWithin(e.target, canvas)) return;
+      // session here would capture the pointer and retarget its click. A surface
+      // that takes its controls captures only once the press becomes a drag.
+      const onControl = isInControlWithin(e.target, canvas);
+      if (onControl && opts.controls() === 'leave') return;
       // A surface nested inside this one runs its own gestures for a press in it.
       if (pressedNestedIn(canvas, e.target)) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
@@ -230,10 +253,12 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       // pointer one is already open for cancels that stale gesture before this
       // handler runs: its `pointerdown` listener is on the document, in the
       // capture phase, ahead of this one on the canvas.
-      sessions.set(e.pointerId, openPointerSession(canvas, e, {
-        onMove, onEnd: onUp, onCancel: () => { onCancel(e.pointerId); },
-      }));
+      const session = openPointerSession(canvas, e, {
+        onMove, onEnd: (up) => { onUp(up, session); }, onCancel: () => { onCancel(e.pointerId); },
+      }, { capture: !onControl });
+      sessions.set(e.pointerId, session);
       const sample = lastSample.set(e.pointerId, sampleOf(e)).get(e.pointerId)!;
+      if (onControl) uncaptured.set(e.pointerId, sample);
       recognizer.press({ ...sample, x: w.x, y: w.y, pointerType: e.pointerType, ...where });
     },
     onHoverMove(e) {

@@ -68,6 +68,24 @@ export interface PointerSession {
   readonly active: boolean;
   /** End the session now, reporting `'aborted'`. Idempotent. */
   cancel: () => void;
+  /** Capture the pointer to the origin now, for a session opened with `capture: false` that
+   *  leaves its press's click alone until it turns into a drag. Released at teardown. */
+  capture: () => void;
+}
+
+// Every session still open, so a surface can tell when something inside it has taken its pointer.
+const OPEN = new Map<PointerSession, Element>();
+
+/**
+ * Whether a session other than `self` follows `pointerId` from an element
+ * inside `surface`: an item in the surface running a drag of its own. A
+ * surface that yields to it is how an item's drag preempts the surface's.
+ */
+export function heldWithin(pointerId: number, surface: Element, self: PointerSession): boolean {
+  for (const [session, origin] of OPEN) {
+    if (session !== self && session.pointerId === pointerId && origin !== surface && surface.contains(origin)) return true;
+  }
+  return false;
 }
 
 /**
@@ -91,15 +109,17 @@ export function openPointerSession(
   const doc = origin.ownerDocument ?? document;
   const buttonsReported = reportsButtons(down);
   let active = true;
+  let captured = opts.capture !== false;
 
   const teardown = () => {
     active = false;
+    OPEN.delete(session);
     doc.removeEventListener('pointermove', onMove, true);
     doc.removeEventListener('pointerup', onUp, true);
     doc.removeEventListener('pointercancel', onPointerCancel, true);
     doc.removeEventListener('pointerdown', onRepress, true);
     origin.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
-    if (opts.capture !== false) {
+    if (captured) {
       try { origin.releasePointerCapture?.(pointerId); } catch { /* already gone */ }
     }
   };
@@ -146,11 +166,13 @@ export function openPointerSession(
     if (!origin.isConnected) abort('lostcapture');
   }
 
-  if (opts.capture !== false) {
-    // Best-effort: a detached element throws, and jsdom's implementation
-    // records the call and does nothing. Neither is a reason to fail the drag.
+  // Best-effort: a detached element throws, and jsdom's implementation
+  // records the call and does nothing. Neither is a reason to fail the drag.
+  const capture = () => {
+    captured = true;
     try { origin.setPointerCapture?.(pointerId); } catch { /* uncaptured is fine */ }
-  }
+  };
+  if (captured) capture();
   // Capture phase, so a consumer's own stopPropagation cannot strand a session.
   doc.addEventListener('pointermove', onMove, true);
   doc.addEventListener('pointerup', onUp, true);
@@ -158,9 +180,12 @@ export function openPointerSession(
   doc.addEventListener('pointerdown', onRepress, true);
   origin.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
 
-  return {
+  const session: PointerSession = {
     pointerId,
     get active() { return active; },
     cancel: () => abort('aborted'),
+    capture: () => { if (active && !captured) capture(); },
   };
+  OPEN.set(session, origin);
+  return session;
 }

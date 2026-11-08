@@ -180,6 +180,8 @@ export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export { startCarry } from './interactions/carry';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from './interactions/carry';
+export { sweepAction, SWEEP_BINDING } from './interactions/sweep';
+export type { SweepItem, SweepOptions, SweepPress, SweepRun } from './interactions/sweep';
 export type {
   PointerSession, PointerSessionOptions, PointerSessionCallbacks, PointerSessionCancelReason,
 } from './interactions/pointerSession';

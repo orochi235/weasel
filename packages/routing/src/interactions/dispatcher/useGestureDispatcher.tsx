@@ -30,7 +30,7 @@ export type {
  * mounted inside `<SceneCanvas>`'s providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope', yieldKeys = false } = opts;
+  const { canvasRef, actions, entriesById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, trace: traceOpt, clientToWorld, clientToLocal, requestRedraw, paintedCursor, cursorSink, getRuleCtx, onClick, onDoubleClick, views, channels, longPress, claimKeys = false, hears = 'scope', yieldKeys = false, controls = 'leave' } = opts;
   // Read out as booleans, not the object: the attach effect depends on
   // them, and an inline `channels={{...}}` would re-bind every listener on
   // every render.
@@ -98,6 +98,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
   const kitSettingsRef = useLatest(kitSettings);
+  const controlsRef = useLatest(controls);
 
   // Held here rather than in the effect: a re-bind of the listeners between
   // two clicks would otherwise drop the double click.
@@ -134,6 +135,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       onClick: () => onClickRef.current,
       onDoubleClick: () => onDoubleClickRef.current,
       clicks: clicksRef.current,
+      controls: () => controlsRef.current,
       yieldKeys,
     }, {
       keyboard,

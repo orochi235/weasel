@@ -134,6 +134,15 @@ export interface UseGestureDispatcherOptions {
   /** Every entry in play, keyed by id: tools and any other contribution
    *  whose bindings this dispatcher routes. */
   entriesById: ReadonlyMap<string, Contribution<unknown>>;
+  /**
+   * What a press on a control inside the element (a button, a checkbox, a
+   * field) does. `'leave'` (default) leaves it to the control: nothing here
+   * hears it. `'take'` dispatches it like any other press, for a surface
+   * whose controls are its items (a row of toggles a drag runs across), and
+   * captures the pointer only once the press becomes a drag, so a press
+   * released in place still clicks the control.
+   */
+  controls?: 'leave' | 'take';
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /** Handed the held pointers when the listeners attach, and `null` when they detach. */

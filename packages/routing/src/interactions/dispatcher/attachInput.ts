@@ -23,7 +23,7 @@ import { wheelInput } from './channels/wheel';
 /** What a listener set reads. Each thunk answers for the hook's latest render. */
 export interface InputSources
   extends Pick<DispatchCoreSources, 'root' | 'views' | 'clientToLocal' | 'context' | 'actions' | 'yieldKeys'>,
-    Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks'> {
+    Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks' | 'controls'> {
   /** Every live dispatcher — what a cancel-everything has to reach. */
   dispatchers(): Dispatcher[];
   heldPointer(): ((feed: HeldPointerFeed | null) => void) | undefined;
@@ -78,6 +78,7 @@ export function attachInput(
     onDoubleClick: src.onDoubleClick,
     clicks: src.clicks,
     hover,
+    controls: src.controls,
   });
 
   // A window that loses focus never delivers the keyup, so without this every
