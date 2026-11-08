@@ -45,8 +45,9 @@ export interface ViewAnimationApi {
   /** Glide from the live view to `to`. A thunk receives the pending target when
    *  one is in flight, so successive discrete steps compound. */
   animate(to: View | ((base: View) => View), opts?: ViewAnimationOptions): void;
-  /** `fitViewToBounds` composed with `animate`. */
-  animateToBounds(bounds: Bounds, dims: ViewportDims, opts?: AnimateToBoundsOptions): void;
+  /** `fitViewToBounds` composed with `animate`. `false`, and nothing moves, when there is nothing
+   *  to fit; the caller that owns the viewport resolves that to the view Cmd-0 gives. */
+  animateToBounds(bounds: Bounds, dims: ViewportDims, opts?: AnimateToBoundsOptions): boolean;
   /** Cancel. The view stays where it is — no jump to the target. */
   stop(): void;
   isAnimating(): boolean;
@@ -192,8 +193,9 @@ function createViewAnimation(
     animateToBounds: (bounds, dims, opts = {}) => {
       const current = viewRef.current.get();
       const fitted = fitViewToBounds(bounds, dims, current, opts);
-      if (fitted === current) return; // helper bailed (zero-area bounds/viewport)
-      animate(fitted, opts);
+      if (fitted === null) return false;
+      if (fitted !== current) animate(fitted, opts); // `current` back: a viewport with no area
+      return true;
     },
     stop,
     isAnimating,

@@ -17,6 +17,18 @@ describe('fitZoom', () => {
     expect(fitZoom(10, 10, 100, 100, { min: 0.5 })).toBe(0.5);
   });
 
+  it('fits along the one axis content has', () => {
+    expect(fitZoom(400, 100, 0, 10)).toBe(10);
+    expect(fitZoom(400, 100, 10, 0)).toBe(40);
+  });
+
+  it('reports nothing to fit for content with no extent', () => {
+    expect(fitZoom(400, 100, 0, 0)).toBeNull();
+    expect(fitZoom(400, 100, -1, -1)).toBeNull();
+    expect(fitZoom(400, 100, NaN, 10)).toBeNull();
+    expect(fitToBounds(400, 100, 0, 0)).toBeNull();
+  });
+
   it('returns raw ratio when within clamp range', () => {
     expect(fitZoom(100, 100, 10, 10, { min: 1, max: 100 })).toBe(10);
   });
