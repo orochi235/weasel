@@ -41,8 +41,9 @@ export function typeOf(outline: Outline | undefined): string | null {
 /** Mermaid's text as plain text: `<br>` a line break, entities read. */
 export const plainText = (text: string): string => markupLines(text.trim(), true).join('\n');
 
-const ENTITIES: Readonly<Record<string, string>> = { '#': '#35;', ';': '#59;', '<': '#lt;', '>': '#gt;' };
+const ENTITIES: Readonly<Record<string, string>> = { '#': '#35;', ';': '#59;', '<': '#lt;', '>': '#gt;', '&': '#38;' };
 
-/** Text as Mermaid writes it in a sequence: line breaks as `<br>`, and what it reads as syntax as entities. */
+/** Text as Mermaid writes it in a sequence: line breaks as `<br>`, and what it reads as syntax as entities. An `&` is
+ *  one only before a `#`, which `#35;` would otherwise turn into an HTML reference. */
 export const mermaidSeqText = (text: string): string =>
-  text.split('\n').map((l) => l.replace(/[#;<>]/g, (c) => ENTITIES[c]!)).join('<br>');
+  text.split('\n').map((l) => l.replace(/[#;<>]|&(?=#)/g, (c) => ENTITIES[c]!)).join('<br>');

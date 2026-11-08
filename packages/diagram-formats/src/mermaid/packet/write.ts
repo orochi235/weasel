@@ -1,9 +1,8 @@
 /** A plot page holding a packet diagram as Mermaid `packet-beta` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { mermaidQuoted } from '../common/text';
 
-/** `s` in double quotes, a quote inside it written as Mermaid's `#quot;`. */
-const quoted = (s: string): string => `"${s.replace(/"/g, '#quot;')}"`;
 
 const range = (start: number, end: number): string => (start === end ? `${start}` : `${start}-${end}`);
 
@@ -25,7 +24,7 @@ export function writeMermaidPacket(page: PlotPage): ExportResult {
     }
     if (f.start > after + 1) lines.push(`  ${range(after + 1, f.start - 1)}: ""`);
     const bits = f.relative ? `+${f.end - f.start + 1}` : range(f.start, f.end);
-    lines.push(`  ${bits}: ${quoted(f.label)}`);
+    lines.push(`  ${bits}: ${mermaidQuoted(f.label)}`);
     after = f.end;
   }
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

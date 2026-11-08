@@ -1,4 +1,5 @@
 /** A Mermaid xychart's text as statements, each with the line it came from. */
+import { decodeEntities } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { frontTitle } from '../common/header';
 
@@ -24,8 +25,8 @@ const FORMAT = 'Mermaid';
 const HEADER = /^xychart(?:-beta)?(?:\s+(horizontal|vertical))?\s*$/;
 const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 
-/** A quoted string's text, with Mermaid's `#quot;` entity read back as a quote. */
-export const unquote = (s: string): string => s.slice(1, -1).replace(/#quot;/g, '"');
+/** A quoted string's text, its Mermaid and HTML references read, as `mermaidQuoted` writes them. */
+export const unquote = (s: string): string => decodeEntities(s.slice(1, -1), true);
 
 /** Splits `list` (what lies between the brackets) on commas outside quotes. */
 function listItems(list: string): string[] {

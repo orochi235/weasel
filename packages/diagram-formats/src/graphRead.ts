@@ -35,9 +35,10 @@ const NAMED:Readonly<Record<string, string>> = { amp: '&', lt: '<', gt: '>', quo
 /** `text` with its `&name;` and `&#n;` references read; Mermaid's `#name;` and `#n;` too when `hash` is set. A number
  *  past the last code point is left as written. */
 export function decodeEntities(text: string, hash = false): string {
-  const re = hash ? /[&#](#x[\da-f]+|#\d+|x[\da-f]+(?=;)|\d+|[a-z]+);/gi : /&(#x[\da-f]+|#\d+|[a-z]+);/gi;
+  const re = hash ? /&(#x[\da-f]+|#\d+|[a-z]+);|#(x[\da-f]+|\d+|[a-z]+);/gi : /&(#x[\da-f]+|#\d+|[a-z]+);/gi;
   const char = (code: number, whole: string) => (code <= 0x10ffff ? String.fromCodePoint(code) : whole);
-  return text.replace(re, (whole, ref: string) => {
+  return text.replace(re, (whole, amp: string | undefined, mermaid: string | undefined) => {
+    const ref = amp ?? mermaid!;
     const code = /^#?x([\da-f]+)$/i.exec(ref)?.[1];
     if (code !== undefined) return char(parseInt(code, 16), whole);
     const num = /^#?(\d+)$/.exec(ref)?.[1];

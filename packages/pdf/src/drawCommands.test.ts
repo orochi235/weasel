@@ -47,6 +47,16 @@ describe('writeCommands', () => {
     expect(content).toContain('\nf*\n');
   });
 
+  it('writes no fill for a path whose fill covers nothing, and an empty clip for its clip', async () => {
+    const open: Path = { ...mixed, commands: Uint8Array.from([PATH_M, PATH_L, PATH_L]), coords: Float32Array.from([0, 0, 10, 0, 10, 10]) };
+    const { content } = await render([
+      { kind: 'path', path: open, fill: { paint: { color: '#f00' } } },
+      { kind: 'group', clip: open, children: [{ kind: 'path', path: rect, fill: { paint: { color: '#00f' } } }] },
+    ]);
+    expect(content).not.toContain('1 0 0 rg');
+    expect(content).toContain('0 0 0 0 re\nW\nn\n');
+  });
+
   it('nests a group as q cm … Q and multiplies alpha into an ExtGState', async () => {
     const { s, content } = await render([
       {

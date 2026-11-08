@@ -18,6 +18,8 @@ describe('text', () => {
     expect(decodeEntities('&lt;a&gt; &amp; &#65;&#x42; &bogus;')).toBe('<a> & AB &bogus;');
     expect(decodeEntities('#quot;hi#quot; #35; #9829;', true)).toBe('"hi" # ♥');
     expect(decodeEntities('#quot;', false)).toBe('#quot;');
+    // `&` opens only an HTML reference, `#` only Mermaid's: `&65;` and `&x41;` are neither, `##65;` is a `#` then `#65;`.
+    expect(decodeEntities('&65; &x41; ##65; &#65;', true)).toBe('&65; &x41; #A A');
     expect(decodeEntities('&#1114112; &#x110000; &#1114111;')).toBe('&#1114112; &#x110000; \u{10ffff}');
   });
 

@@ -8,7 +8,7 @@ import type { Animator } from '@weasel-js/animator';
 export interface BindOptions<TData, TPose> {
   /** Stable id derivation per datum — the binding diffs old vs new state by this key. `join()` throws on two data sharing one. */
   key: (d: TData, i: number) => string;
-  /** Which scene layer new leaves enter on. Defaults to the scene's first system layer. */
+  /** Which scene layer the binding enters, updates and exits leaves on. Defaults to the first of `scene.layers`, user or system. */
   layer?: string;
   /** Animator used by `.transition()` chains. Optional — only required if a
    *  transition is actually spawned. Calling `.transition()` without it throws. */
