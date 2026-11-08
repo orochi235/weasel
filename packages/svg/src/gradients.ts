@@ -16,6 +16,7 @@ import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
 import { serializePathD } from './path-serializer';
+import { SUPPORTED_LEAF_TAGS } from './lowerLeaf';
 import { defUsesPrivateNamespace, markerDefOf, markerDefXml, type MarkerDef } from './markerDefs';
 
 /** Collected gradient definitions, keyed by element id. */
@@ -119,6 +120,9 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
   return out;
 }
 
+/** What a `<use>` can draw from `<defs>`, besides a basic shape. */
+const USE_TARGETS = new Set(['g', 'symbol', 'text', 'image', 'use', 'a', 'switch', 'svg']);
+
 /** Paint servers, `<marker>`, `<clipPath>` and `<style>` aside, a `<defs>` child is
  *  something this package does not model (a `<use>` template, a `<filter>`).
  *  Say so once here. */
@@ -131,7 +135,7 @@ function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void)
       const child = root.children[i];
       const tag = child.tagName.toLowerCase();
       if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag))) continue;
-      if (tag === 'pattern' || tag === 'marker' || tag === 'clippath' || tag === 'style') continue;
+      if (tag === 'pattern' || tag === 'marker' || tag === 'clippath' || tag === 'style' || USE_TARGETS.has(tag) || SUPPORTED_LEAF_TAGS.has(tag)) continue;
       onWarn(`unsupported <defs> child: <${child.tagName}>`);
     }
   }

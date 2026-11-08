@@ -36,6 +36,7 @@ import { ingestMarkers } from './readMarkers';
 import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
 import { booleanAttrOf } from './booleanGroup';
 import { conditionsHold, drawnChildren } from './conditional';
+import { parseUse } from './use';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
@@ -254,6 +255,7 @@ function parseElement(
       return image;
     }
   }
+  if (tag === 'use') return parseUse(el, ctm, style, (t, m, s) => parseElement(t, m, s, from, gradients, clips, onWarn, uriToPrefix, keepHidden), onWarn);
   if (tag === 'g' || tag === 'a' || tag === 'switch') return parseGroup(el, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const clipRaw = ownProp(el, 'clip-path');
   if (clipRaw != null && readProperty('clip-path', clipRaw) !== 'none') {
