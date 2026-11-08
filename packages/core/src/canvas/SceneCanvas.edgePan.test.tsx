@@ -84,6 +84,22 @@ describe('SceneCanvas edge panning', () => {
     expect(x()).toBeCloseTo(55);
   });
 
+  it('with no zone, scrolls only past the edge and holds on it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { fire, view } = mount({ edgePan: { zone: 0, speed: 1000 } });
+    fire('pointerdown', 25, 25);
+    fire('pointermove', 210, 25);
+    await frames(6);
+    const scrolled = view().x;
+    expect(scrolled).toBeGreaterThan(0);
+    fire('pointermove', 200, 25);
+    await frames(4);
+    expect(view().x).toBe(scrolled);
+    fire('pointerup', 200, 25);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('does nothing with edgePan off', async () => {
     const { fire, x, view } = mount({ edgePan: false });
     fire('pointerdown', 25, 25);
