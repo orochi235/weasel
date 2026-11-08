@@ -321,6 +321,20 @@ describe('unregisterCanvasFont', () => {
     expect(getDynamicFace('Futura', 400, 'normal')).not.toBe(face);
     expect(_getPagesForTests().length).toBe(1);
   });
+
+  it('does not bake a glyph of the family that was still waiting', () => {
+    vi.useFakeTimers();
+    try {
+      registerCanvasFont('Futura');
+      resetBakeBudget(0);
+      getDynamicFace('Futura', 400, 'normal').requestGlyph(65);
+      unregisterCanvasFont('Futura');
+      vi.runAllTimers();
+      expect(_getPagesForTests()).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('bake budget and overflow queue', () => {
