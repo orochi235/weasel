@@ -48,7 +48,7 @@ function sized(el: HTMLCanvasElement): HTMLCanvasElement {
 /** Spread two fingers 100px → 200px on `canvas`: one clean factor of 2. */
 function pinch(canvas: HTMLCanvasElement, emitted: View[]): View[] {
   const fire = (type: string, pointerId: number, clientX: number, clientY: number) => {
-    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId, clientX, clientY }));
+    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId, pointerType: 'touch', clientX, clientY }));
   };
   act(() => {
     fire('pointerdown', 1, 100, 100);
