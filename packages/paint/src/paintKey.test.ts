@@ -29,6 +29,10 @@ describe('paintKey', () => {
     expect(paintKey({ color: '#abc' })).not.toBe(paintKey({ color: '#abc', opacity: 0.5 }));
   });
 
+  it("keys a solid by its color's alpha and its opacity together, which is what draws", () => {
+    expect(paintKey({ color: 'rgba(255, 0, 0, 0.5)' })).toBe(paintKey({ color: '#f00', opacity: 0.5 }));
+  });
+
   it('keys two spellings of one solid color as one', () => {
     expect(paintKey({ color: '#fff' })).toBe(paintKey({ color: '#FFFFFF' }));
     expect(paintKey({ color: 'white' })).toBe(paintKey({ color: 'rgb(255 255 255)' }));
