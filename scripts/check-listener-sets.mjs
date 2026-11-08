@@ -15,6 +15,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { judgeUses, matchLines, sourceFiles } from './lib/allowlisted-uses.mjs';
 
 /** Paths that may build a `Set` of functions, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
@@ -36,40 +37,13 @@ const isSource = (name) =>
   !name.endsWith('.d.ts') &&
   name !== 'test-setup.ts';
 
-function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
-    if (SKIP_DIRS.has(entry)) continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) yield* walk(full);
-    else if (isSource(entry)) yield full;
-  }
-}
-
-/** `source` with its comments blanked, line breaks kept. A `//` after a `:` is taken for a URL. */
-const withoutComments = (source) =>
-  source
-    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
-    .replace(/(?<!:)\/\/.*$/gm, '');
-
 /**
  * The 1-based lines of `source` that build a `Set` of functions outside a comment: a function type
  * (`new Set<() => void>()`, `new Set<(m: M) => void>`) or a type named for one (`new Set<Listener>()`,
  * `new Set<ChangeSubscriber>`).
  */
-export function listenerSetLines(source) {
-  const lines = new Set();
-  const clean = withoutComments(source);
-  const pattern = /\bnew\s+Set\s*<\s*(?:\([^<>]*?\)\s*=>|(?:[A-Z]\w*)?(?:Listener|Subscriber)\s*>)/g;
-  for (const match of clean.matchAll(pattern)) {
-    lines.add(clean.slice(0, match.index).split('\n').length);
-  }
-  return [...lines];
-}
-
-/** `lines` when a file has more uses than its allowlist entry covers, else none. */
-export function offendingLines(lines, allowedUses = 0) {
-  return lines.length > allowedUses ? lines : [];
-}
+export const listenerSetLines = (source) =>
+  matchLines(source, /\bnew\s+Set\s*<\s*(?:\([^<>]*?\)\s*=>|(?:[A-Z]\w*)?(?:Listener|Subscriber)\s*>)/g);
 
 /** Each kit package's `src` and each app, under `root`. */
 function sourceRoots(root) {
@@ -90,16 +64,14 @@ function sourceRoots(root) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-  const offenders = [];
+  const found = new Map();
   for (const dir of sourceRoots(ROOT)) {
-    for (const file of walk(dir)) {
-      const rel = relative(ROOT, file);
-      const entry = ALLOWED.get(rel);
-      const allowedUses = entry === undefined ? 0 : Array.isArray(entry) ? entry[1] : 1;
-      const lines = offendingLines(listenerSetLines(readFileSync(file, 'utf8')), allowedUses);
-      for (const line of lines) offenders.push(`${rel}:${line}`);
+    for (const file of sourceFiles(dir, { skip: SKIP_DIRS, keep: isSource })) {
+      const lines = listenerSetLines(readFileSync(file, 'utf8'));
+      if (lines.length) found.set(relative(ROOT, file), lines);
     }
   }
+  const { offenders, stale } = judgeUses(found, ALLOWED);
 
   if (offenders.length > 0) {
     console.error(
@@ -110,6 +82,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         'A set of functions that are not subscribers goes on the allowlist in\n' +
         'scripts/check-listener-sets.mjs, saying why. A file listed there is on it\n' +
         'for fewer uses than it has.',
+    );
+    process.exit(1);
+  }
+  if (stale.length > 0) {
+    console.error(
+      `check:listener-sets — allowlist entries covering sets their files no longer build:\n` +
+        stale.map((s) => `  ${s}`).join('\n') +
+        '\n\nLower or remove each entry in scripts/check-listener-sets.mjs, so a new listener set cannot take its place.',
     );
     process.exit(1);
   }

@@ -12,6 +12,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { judgeUses, matchLines, sourceFiles } from './lib/allowlisted-uses.mjs';
 
 /** Paths that may name `requestAnimationFrame` or `setInterval`, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
@@ -37,45 +38,18 @@ const isSource = (name) =>
   !name.endsWith('.d.ts') &&
   name !== 'test-setup.ts';
 
-function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
-    if (SKIP_DIRS.has(entry)) continue;
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) yield* walk(full);
-    else if (isSource(entry)) yield full;
-  }
-}
-
-/** `source` with its comments blanked, line breaks kept. A `//` after a `:` is taken for a URL. */
-const withoutComments = (source) =>
-  source
-    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
-    .replace(/(?<!:)\/\/.*$/gm, '');
-
 /**
  * The 1-based lines of `source` that name `requestAnimationFrame` or `setInterval` outside a comment. Any use
  * counts, not only a call: an alias or a `.bind` is a loop one step removed, and a call can put its `(` on the
  * next line.
  */
-export function frameLoopLines(source) {
-  const lines = new Set();
-  const clean = withoutComments(source);
-  for (const match of clean.matchAll(/\b(?:requestAnimationFrame|setInterval)\b/g)) {
-    lines.add(clean.slice(0, match.index).split('\n').length);
-  }
-  return [...lines];
-}
-
-/** `lines` when a file has more uses than its allowlist entry covers, else none. */
-export function offendingLines(lines, allowedUses = 0) {
-  return lines.length > allowedUses ? lines : [];
-}
+export const frameLoopLines = (source) => matchLines(source, /\b(?:requestAnimationFrame|setInterval)\b/g);
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
   const PACKAGES = join(ROOT, 'packages');
 
-  const offenders = [];
+  const found = new Map();
   for (const pkg of readdirSync(PACKAGES)) {
     const src = join(PACKAGES, pkg, 'src');
     try {
@@ -83,14 +57,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } catch {
       continue;
     }
-    for (const file of walk(src)) {
-      const rel = relative(ROOT, file);
-      const entry = ALLOWED.get(rel);
-      const allowedUses = entry === undefined ? 0 : Array.isArray(entry) ? entry[1] : 1;
-      const lines = offendingLines(frameLoopLines(readFileSync(file, 'utf8')), allowedUses);
-      for (const line of lines) offenders.push(`${rel}:${line}`);
+    for (const file of sourceFiles(src, { skip: SKIP_DIRS, keep: isSource })) {
+      const lines = frameLoopLines(readFileSync(file, 'utf8'));
+      if (lines.length) found.set(relative(ROOT, file), lines);
     }
   }
+  const { offenders, stale } = judgeUses(found, ALLOWED);
 
   if (offenders.length > 0) {
     console.error(
@@ -100,6 +72,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         'measures elapsed time also needs `onResume` to rebase its clock.\n' +
         'A file listed here is on the allowlist for fewer uses than it has.\n' +
         'See docs/proposals/2026-08-26-loops-stop-when-unseen.md.',
+    );
+    process.exit(1);
+  }
+  if (stale.length > 0) {
+    console.error(
+      `check:frame-loops — allowlist entries covering uses their files no longer have:\n` +
+        stale.map((s) => `  ${s}`).join('\n') +
+        '\n\nLower or remove each entry in scripts/check-frame-loops.mjs, so a new bare use cannot take its place.',
     );
     process.exit(1);
   }
