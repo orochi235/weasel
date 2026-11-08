@@ -308,35 +308,29 @@ function arcToCubics(
   const x1p = cosPhi * dx + sinPhi * dy;
   const y1p = -sinPhi * dx + cosPhi * dy;
 
-  // Correct radii if they're too small.
-  let rxs = rx * rx;
-  let rys = ry * ry;
-  const x1ps = x1p * x1p;
-  const y1ps = y1p * y1p;
-  const lambda = x1ps / rxs + y1ps / rys;
+  // Solved on the unit circle (x1', y1' divided by the radii) so no radius is
+  // squared: a squared radius overflows or underflows long before the arc does.
+  let ux = x1p / rx;
+  let uy = y1p / ry;
+  const reach = Math.hypot(ux, uy);
   let rxFixed = rx;
   let ryFixed = ry;
-  if (lambda > 1) {
-    const sqrtLambda = Math.sqrt(lambda);
-    rxFixed = sqrtLambda * rx;
-    ryFixed = sqrtLambda * ry;
-    rxs = rxFixed * rxFixed;
-    rys = ryFixed * ryFixed;
+  if (reach > 1) {
+    // Radii too small for the chord grow until they span it.
+    rxFixed = reach * rx;
+    ryFixed = reach * ry;
+    ux /= reach;
+    uy /= reach;
   }
 
   // Step 2: center (cx', cy') in the rotated frame.
   const sign = largeArc === sweep ? -1 : 1;
-  const num = rxs * rys - rxs * y1ps - rys * x1ps;
-  const den = rxs * y1ps + rys * x1ps;
-  const factor = sign * Math.sqrt(Math.max(0, num / den));
-  const cxp = (factor * (rxFixed * y1p)) / ryFixed;
-  const cyp = (factor * -(ryFixed * x1p)) / rxFixed;
+  const u2 = ux * ux + uy * uy;
+  const factor = sign * Math.sqrt(Math.max(0, (1 - u2) / u2));
+  const cux = factor * uy;
+  const cuy = -factor * ux;
 
-  // Step 3: un-rotate the center back to user coords.
-  const cx = cosPhi * cxp - sinPhi * cyp + (x1 + x2) / 2;
-  const cy = sinPhi * cxp + cosPhi * cyp + (y1 + y2) / 2;
-
-  // Step 4: start and sweep angles.
+  // Step 3: start and sweep angles.
   const angle = (ux: number, uy: number, vx: number, vy: number): number => {
     const dot = ux * vx + uy * vy;
     const len = Math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy));
@@ -344,17 +338,12 @@ function arcToCubics(
     if (ux * vy - uy * vx < 0) a = -a;
     return a;
   };
-  const theta1 = angle(1, 0, (x1p - cxp) / rxFixed, (y1p - cyp) / ryFixed);
-  let dTheta = angle(
-    (x1p - cxp) / rxFixed,
-    (y1p - cyp) / ryFixed,
-    (-x1p - cxp) / rxFixed,
-    (-y1p - cyp) / ryFixed,
-  );
+  const theta1 = angle(1, 0, ux - cux, uy - cuy);
+  let dTheta = angle(ux - cux, uy - cuy, -ux - cux, -uy - cuy);
   if (!sweep && dTheta > 0) dTheta -= 2 * Math.PI;
   else if (sweep && dTheta < 0) dTheta += 2 * Math.PI;
 
-  // Step 5: split into ≤ 90° segments; emit a cubic per segment.
+  // Step 4: split into ≤ 90° segments; emit a cubic per segment.
   const segCount = Math.max(1, Math.ceil(Math.abs(dTheta) / (Math.PI / 2)));
   const segAngle = dTheta / segCount;
   // Magic constant: cubic bezier handle length to approximate a circular
@@ -367,11 +356,17 @@ function arcToCubics(
   let prevDy = Math.cos(theta1) * ryFixed;
 
   for (let i = 1; i <= segCount; i++) {
-    const theta = theta1 + i * segAngle;
+    const half = (i * segAngle) / 2;
+    const theta = theta1 + 2 * half;
     const cosT = Math.cos(theta);
     const sinT = Math.sin(theta);
-    const px = cosPhi * (cosT * rxFixed) - sinPhi * (sinT * ryFixed) + cx;
-    const py = sinPhi * (cosT * rxFixed) + cosPhi * (sinT * ryFixed) + cy;
+    // Offset from the start rather than from the center: a near-flat arc's
+    // center lies a radius away, and the subtraction back loses the arc.
+    const ox = -2 * Math.sin(theta1 + half) * Math.sin(half) * rxFixed;
+    const oy = 2 * Math.cos(theta1 + half) * Math.sin(half) * ryFixed;
+    const last = i === segCount;
+    const px = last ? x2 : x1 + cosPhi * ox - sinPhi * oy;
+    const py = last ? y2 : y1 + sinPhi * ox + cosPhi * oy;
     const dxNew = -sinT * rxFixed;
     const dyNew = cosT * ryFixed;
     const c1x = prevX + cosPhi * (t * prevDx) - sinPhi * (t * prevDy);

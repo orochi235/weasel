@@ -79,4 +79,18 @@ describe('pathFromD', () => {
   it('reads an arc whose arguments a form feed separates, as SVG whitespace allows', () => {
     expect(dump('M0 0 A5\f5\f0\f0\f1\f10\f0').commands).toEqual(dump('M0 0 A5 5 0 0 1 10 0').commands);
   });
+
+  it('draws an arc whose radii square out of float range, too large or too small', () => {
+    for (const d of ['M0 0 A1e80 1e80 0 0 1 20 0', 'M0 0 A1e-170 1e-170 0 0 1 20 0']) {
+      const r = dump(d);
+      expect(r.commands.length, d).toBeGreaterThan(1);
+      expect(r.coords.every(Number.isFinite), d).toBe(true);
+      const [ex, ey] = r.coords.slice(-2);
+      expect(ex, d).toBeCloseTo(20, 4);
+      expect(ey, d).toBeCloseTo(0, 4);
+    }
+    // A radius too small for its chord scales up to the half-circle on that chord.
+    const tiny = dump('M0 0 A1e-170 1e-170 0 0 1 20 0').coords;
+    expect(Math.min(...tiny.filter((_, i) => i % 2 === 1))).toBeCloseTo(-10, 4);
+  });
 });
