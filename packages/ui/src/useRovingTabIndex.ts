@@ -119,6 +119,43 @@ function gridRows(items: readonly HTMLElement[], columns: number, groupSelector?
   return rows;
 }
 
+/** Keeps `root`'s tab stop on the focused item, and placed again as its children change; returns the teardown. */
+function listen(
+  root: HTMLElement,
+  items: () => HTMLElement[],
+  place: (focused: HTMLElement | null) => void,
+  focusedItem: () => HTMLElement | null,
+  last: { current: HTMLElement | null },
+): () => void {
+  // Children can change without this component rendering — arbitrary
+  // children re-render on their own, and `disabled` moves an item out of the
+  // navigable set without touching the child list.
+  const mo = new MutationObserver(() => place(focusedItem()));
+  mo.observe(root, {
+    childList: true,
+    subtree: true,
+    attributeFilter: ['disabled', 'aria-disabled'],
+  });
+  const onFocusIn = (e: FocusEvent) => {
+    const target = e.target as HTMLElement;
+    if (!items().includes(target)) return;
+    last.current = target;
+    place(target);
+  };
+  const onFocusOut = (e: FocusEvent) => {
+    const next = e.relatedTarget as Node | null;
+    if (next && root.contains(next)) return;
+    place(null);
+  };
+  root.addEventListener('focusin', onFocusIn);
+  root.addEventListener('focusout', onFocusOut);
+  return () => {
+    mo.disconnect();
+    root.removeEventListener('focusin', onFocusIn);
+    root.removeEventListener('focusout', onFocusOut);
+  };
+}
+
 /**
  * The APG roving-tabindex contract for a container of items: exactly one item
  * is in the tab order, and the arrow keys move focus among the rest, skipping
@@ -203,37 +240,10 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
     if (rootRef.current !== listened) setListened(rootRef.current);
   });
 
-  useEffect(() => {
-    const root = listened;
-    if (!root) return;
-    // Children can change without this component rendering — arbitrary
-    // children re-render on their own, and `disabled` moves an item out of the
-    // navigable set without touching the child list.
-    const mo = new MutationObserver(() => place(focusedItem()));
-    mo.observe(root, {
-      childList: true,
-      subtree: true,
-      attributeFilter: ['disabled', 'aria-disabled'],
-    });
-    const onFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (!items().includes(target)) return;
-      last.current = target;
-      place(target);
-    };
-    const onFocusOut = (e: FocusEvent) => {
-      const next = e.relatedTarget as Node | null;
-      if (next && root.contains(next)) return;
-      place(null);
-    };
-    root.addEventListener('focusin', onFocusIn);
-    root.addEventListener('focusout', onFocusOut);
-    return () => {
-      mo.disconnect();
-      root.removeEventListener('focusin', onFocusIn);
-      root.removeEventListener('focusout', onFocusOut);
-    };
-  }, [listened, items, place, focusedItem]);
+  useEffect(
+    () => (listened ? listen(listened, items, place, focusedItem, last) : undefined),
+    [listened, items, place, focusedItem],
+  );
 
   const onKeyDown = useCallback(
     (e: ReactKeyboardEvent<T>) => {
