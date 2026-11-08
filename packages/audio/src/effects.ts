@@ -132,11 +132,18 @@ const checkFeedback = (value: number): number => {
   return value;
 };
 
+const checkTime = (ms: number, maxTime: number): number => {
+  if (!(ms >= 0 && ms <= maxTime)) {
+    throw new RangeError(`@weasel-js/audio: delay time ${ms} is outside 0..${maxTime} ms`);
+  }
+  return ms;
+};
+
 /** A feedback delay with a wet/dry mix. Ramping `setTime` bends the pitch of
  *  the repeats while it moves, as a tape delay does. */
 export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOptions = {}): DelayEffect {
-  const time = opts.time ?? 250;
-  const maxTime = opts.maxTime ?? Math.max(1000, time);
+  const maxTime = opts.maxTime ?? Math.max(1000, opts.time ?? 250);
+  const time = checkTime(opts.time ?? 250, maxTime);
   let fb = checkFeedback(opts.feedback ?? 0.35);
   const delay = ctx.createDelay(maxTime / 1000);
   const loop = ctx.createGain();
@@ -148,10 +155,7 @@ export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOption
   return {
     input: m.input, output: m.output, delay, mix: m.mix, setMix: m.setMix,
     setTime(ms, rampMs) {
-      if (!(ms >= 0 && ms <= maxTime)) {
-        throw new RangeError(`@weasel-js/audio: delay time ${ms} is outside 0..${maxTime} ms`);
-      }
-      writeParam(ctx, delay.delayTime, ms / 1000, rampMs);
+      writeParam(ctx, delay.delayTime, checkTime(ms, maxTime) / 1000, rampMs);
     },
     feedback: () => fb,
     setFeedback(value, rampMs) {
