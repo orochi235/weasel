@@ -393,6 +393,7 @@ export function useTextEdit(
       base: () => baseRef.current,
       lastRange: () => selectionRef.current,
       onWritten: (caret) => {
+        holderRef.current?.wrote(overlay, caret);
         dropPending();
         publishRange(overlay, { start: caret, end: caret });
       },
