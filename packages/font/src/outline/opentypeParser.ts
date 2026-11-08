@@ -19,10 +19,14 @@ type OpenType = typeof import('opentype.js');
 
 let modulePromise: Promise<OpenType> | null = null;
 
-/** Load (once) and cache the parser module. */
+/** Load (once) and cache the parser module. An import that fails is
+ *  dropped, so the next face to load imports it again. */
 function loadOpenType(): Promise<OpenType> {
-  modulePromise ??= import('opentype.js');
-  return modulePromise;
+  if (modulePromise) return modulePromise;
+  const load = import('opentype.js');
+  load.catch(() => { if (modulePromise === load) modulePromise = null; });
+  modulePromise = load;
+  return load;
 }
 
 /**
