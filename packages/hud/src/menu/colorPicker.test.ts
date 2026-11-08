@@ -56,6 +56,12 @@ describe('withColorPickers', () => {
     hex.set('#fff');
     expect(c.setColor).toHaveBeenCalledWith(row, '#ffffff80');
   });
+
+  it('checks the swatch the color holds at its current alpha, not the one it opened with', () => {
+    const row = { ...fill('#000000ff'), alpha: true };
+    const picker = withColorPickers([row], ['#000000', '#1e88e5'], () => ctrl('#1e88e580')).entries[0] as SubmenuEntry;
+    expect(picker.entries.slice(0, 2).map((e) => (e as MenuItemEntry).checked)).toEqual([false, true]);
+  });
 });
 
 const keydown = (key: string): HudKeyEvent => ({
