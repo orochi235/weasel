@@ -169,8 +169,11 @@ export function watch3d(trialId: string, found: (how: string) => void): () => vo
   const set = byTrial.get(trialId) ?? new Set();
   byTrial.set(trialId, set);
   set.add(found);
+  let stopped = false;
   return () => {
+    if (stopped) return;
+    stopped = true;
     set.delete(found);
-    if (set.size === 0) byTrial.delete(trialId);
+    if (set.size === 0 && byTrial.get(trialId) === set) byTrial.delete(trialId);
   };
 }
