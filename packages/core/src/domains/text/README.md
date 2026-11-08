@@ -91,13 +91,10 @@ box from swallowing clicks on whatever is behind it.
 > baseline there — the canvas-2D `fillText` convention — puts the text about
 > an em too low and hands `verticalAlign` the wrong box.
 
-## Subdirectories
+## Where the rest lives
 
-| Dir | Role |
-| --- | --- |
-| `runs/` | `rangeStyle` / `flagRange` — the caret-range patch algebra, which serves the editor. |
-
-`layoutRuns` — the runs-aware glyph layout, and the only glyph walk in the
+`rangeStyle` / `flagRange`, the caret-range patch algebra that serves the
+editor, are `@weasel-js/text`'s `runs/`. `layoutRuns` — the runs-aware glyph layout, and the only glyph walk in the
 kit — is `@weasel-js/text`'s `layout/`. The atlas itself (`FontAtlas`,
 `registerFont`) and runtime rasterization are in `@weasel-js/font`.
 
@@ -135,6 +132,6 @@ a zoom other than 1.
   `LayoutResult`).
 - `renderLabel.ts` (in `@weasel-js/text`) — the small pill-with-text used for chrome labels, with a
   pluggable `TextRenderer`. Unrelated to scene text nodes.
-- `textCommand.ts` — the draw-command builders. `textCommandFromPose` is the
+- `textCommand.ts` (in `@weasel-js/renderer`) — the draw-command builders. `textCommandFromPose` is the
   one for a text node; `textCommand` / `textCommandFromRuns` serve text with
   no pose (HUD labels, debug overlays).
