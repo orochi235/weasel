@@ -208,11 +208,7 @@ export type {
   ViewAnimationOptions,
   ViewChannel,
 } from '../core/viewport/useViewAnimation';
-export type {
-  UseHandToolOptions,
-  InertiaConfig as HandToolInertiaConfig,
-} from '../tools/builtin/hand/useHandTool';
-// UseWheelPanToolOptions and WheelPanInertiaConfig removed (useWheelPanTool dissolved).
+export type { UseHandToolOptions } from '../tools/builtin/hand/useHandTool';
 export type { SelectAdapter } from '../tools/builtin/select/useSelectTool';
 export type { PolygonPoint } from '../tools/builtin/polygon/usePolygonTool';
 export type { StarPoint } from '../tools/builtin/star/useStarTool';
