@@ -61,6 +61,10 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-08, eyedropper arc: labkit's Eyedropper toggle and picked-color readout in a trial's toolbar
+  (and that a click on the stage picks while it is on); draw's eyedropper on `I` in the tool palette, its
+  cursor, and that a pick sets the focused fill or stroke.
+
 - 2026-11-07 night, audit round five: theme-editor's palette lab anchor rows (kit `ColorField`/`NumberField`) and
   preset buttons (kit glyphs); guides drawn with `dash`; devtools rows keeping their place as the buffer drops entries.
 - 2026-11-07 night, audit rounds three and four: draw's rulers reading CSS px at 96 to the inch with point and inch
