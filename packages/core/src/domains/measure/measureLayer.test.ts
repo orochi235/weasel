@@ -29,7 +29,7 @@ describe('measurementsLayer', () => {
       data: () => ({ measure: { start: { x: 0, y: 0 }, end: { x: 40, y: 30 } } }),
     });
     const layer = measurementsLayer(any, ms);
-    const cmds = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 }) as DrawCommand[];
+    const cmds = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 }) as DrawCommand[];
     const centers = handleCenters(cmds);
     expect(centers).toHaveLength(2);
     expect(centers[1]!.x).toBeCloseTo(40, 3);
