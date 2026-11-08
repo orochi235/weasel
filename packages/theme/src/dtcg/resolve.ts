@@ -25,10 +25,9 @@ export function resolveTokens(tokens: FlatTokens): ResolvedTokenMap {
   const inProgress = new Set<string>();
 
   const resolveOne = (name: string): string => {
-    const cached = out[name];
-    if (cached !== undefined) return cached;
+    if (Object.hasOwn(out, name)) return out[name]!;
 
-    const token = tokens[name];
+    const token = Object.hasOwn(tokens, name) ? tokens[name] : undefined;
     if (!token) throw new Error(`Unknown token "${name}"`);
 
     if (inProgress.has(name)) {
@@ -40,7 +39,7 @@ export function resolveTokens(tokens: FlatTokens): ResolvedTokenMap {
     let value: string;
     if (target === null) {
       value = serializeTokenValue(token.type, token.value);
-    } else if (!tokens[target]) {
+    } else if (!Object.hasOwn(tokens, target)) {
       throw new Error(`Token "${name}" references "${target}", which is not defined`);
     } else {
       value = resolveOne(target);
