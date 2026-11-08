@@ -138,6 +138,11 @@ describe('affine units', () => {
   it('throws on a unit the system does not carry', () => {
     expect(() => unitScale(METRIC_MM, 'mi')).toThrow(/unknown unit 'mi'/);
   });
+
+  it('throws on a unit named for an Object.prototype member', () => {
+    expect(() => unitScale(METRIC_MM, 'toString')).toThrow(/unknown unit 'toString'/);
+    expect(() => resolveUnit({ value: 1, unit: 'constructor' }, METRIC_MM)).toThrow(/unknown unit/);
+  });
 });
 
 const SECONDS: UnitSystem = { base: 'ms', units: { ms: 1, s: 1000 } };

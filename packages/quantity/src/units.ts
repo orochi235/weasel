@@ -42,7 +42,7 @@ export interface UnitSystem {
  * does not carry the unit.
  */
 export function unitScale(unitSystem: UnitSystem, unit: Unit): Required<UnitScale> {
-  const entry = unitSystem.units[unit];
+  const entry = Object.hasOwn(unitSystem.units, unit) ? unitSystem.units[unit] : undefined;
   if (entry === undefined) {
     const known = Object.keys(unitSystem.units).join(', ') || '(none)';
     throw new Error(
