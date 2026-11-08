@@ -308,6 +308,15 @@ describe('argsToSchema', () => {
       expect(at({ neq: 'b' }, { mode: 'b' })).toBe(false);
     });
 
+    it('compares eq and neq as data, as Storybook does, so an array or object can match', () => {
+      const at = (condition: Record<string, unknown>, config: Record<string, unknown>) =>
+        shownWhen({ gridDivisions: { control: 'number', if: { arg: 'mode', ...condition } } }, 'gridDivisions', config);
+      expect(at({ eq: [1, 2] }, { mode: [1, 2] })).toBe(true);
+      expect(at({ eq: { a: 1 } }, { mode: { a: 1 } })).toBe(true);
+      expect(at({ neq: [1, 2] }, { mode: [1, 2] })).toBe(false);
+      expect(at({ eq: [1, 2] }, { mode: [2, 1] })).toBe(false);
+    });
+
     it('ignores a condition on a global, which a story’s config does not hold', () => {
       const node = argsToSchema(args, { gridDivisions: { control: 'number', if: { global: 'theme', eq: 'dark' } } }).nodes
         .gridDivisions as ConfigNode<unknown>;
