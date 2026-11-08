@@ -5,7 +5,7 @@ import { EDGE_DERIVE_PATH } from './edge';
 import type { MeasureRowText } from './body';
 import type { DataEdge, DiagramSceneOptions, DiagramSpec } from './dataTypes';
 import { ownEdgeStyle, withColors } from './dataColors';
-import { END_LABEL_PLACEMENT, edgeLabelSpec, endLabelIdOf, labelSize, labelStyleOf } from './edgeLabel';
+import { END_LABEL_PLACEMENT, edgeLabelIdOf, edgeLabelSpec, endLabelIdOf, labelSize, labelStyleOf } from './edgeLabel';
 import { labelCenter } from './label';
 import type { DiagramLabel } from './labelTrait';
 import type { LayeredRoute } from './route';
@@ -52,7 +52,7 @@ export function wireLabels(edges: readonly DataEdge[], ctx: EdgeSpecContext): Wi
       ? labelCenter(polylineFromPoints([...route.waypoints]), placement, size)
       : null;
     out.push({
-      id: `${id}/label`,
+      id: edgeLabelIdOf(id),
       from: e.from,
       to: e.to,
       at: center === null ? null : { x: center.x - size.width / 2, y: center.y - size.height / 2, ...size },

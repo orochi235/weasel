@@ -163,7 +163,7 @@ export type {
   GraphSource,
 } from './graph';
 export {
-  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
+  EDIT_EDGE_LABEL_ACTION_ID, END_LABEL_PLACEMENT, dropEmptyEdgeLabel, edgeLabelIdOf, edgeLabelSpec, editEdgeLabelAction, editEdgeLabelBinding, endLabelIdOf, labelSize,
 } from './edgeLabel';
 export type { EdgeLabelOptions, EditEdgeLabelOptions } from './edgeLabel';
 export {
@@ -216,6 +216,7 @@ export {
   diagramGroupOf,
   groupDerivePose,
 } from './group';
+export { groupLabelIdOf } from './dataGroups';
 export type { DiagramAnchor, DiagramDerivePose, GroupPoseOptions } from './group';
 export { DEFAULT_GROUP_STYLE, DEFAULT_NODE_STYLE, diagramScene, edgeIdOf } from './fromData';
 export { DEFAULT_LANE_SIZE, DEFAULT_POOL_ACROSS, EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH } from './dataTypes';

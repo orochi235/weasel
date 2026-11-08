@@ -1,6 +1,7 @@
 /** One page of a document as a draw-style `<diagram>`: its shapes, regions, and groups as nested cells, then its edges. */
 import { IDENTITY_POSE_COMPOSITION, pageName } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { freshId } from '@weasel-js/registry';
 import {
   diagramScene, type ContainerHeader, type DataContainer, type DiagramData, type DiagramTheme,
 } from '@weasel-js/diagram';
@@ -62,13 +63,6 @@ const union = (boxes: readonly Box[]): Box | undefined => {
   };
 };
 
-/** An id no item on the page has, for the root and layer cells every graph model has. */
-function freeId(want: string, taken: ReadonlySet<string>): string {
-  let id = want;
-  for (let n = 2; taken.has(id); n++) id = `${want}-${n}`;
-  return id;
-}
-
 const regionLabel = (c: { label?: string }): string => c.label ?? '';
 
 function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string) => ContainerHeader | undefined, warn: Warn): Vertex[] {
@@ -119,8 +113,9 @@ export function writePage(page: GraphPage, index: number, theme: DiagramTheme, w
     }
     return boxes.get(v.id);
   };
-  const root = freeId('0', ids);
-  const layer = freeId('1', new Set([...ids, root]));
+  // Ids no item on the page has, for the root and layer cells every graph model has.
+  const root = freshId('0', ids, { from: 2, bare: true });
+  const layer = freshId('1', new Set([...ids, root]), { from: 2, bare: true });
   let cells = '';
   const emit = (holder: string | undefined, holderCell: string, origin: Vec2): void => {
     for (const v of children.get(holder) ?? []) {

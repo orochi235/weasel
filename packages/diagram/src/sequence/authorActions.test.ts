@@ -4,6 +4,7 @@ import { withDiagramRegistry } from '../edge';
 import { createAddMarkAction, createAddNoteAction, createAddParticipantAction } from './authorActions';
 import { createDrawMessageAction, createDrawNoteAction } from './authorDrags';
 import { findStep } from './edit';
+import { pagedScene } from '../offPage/pagedFixture';
 import { SEQ_FIXTURE as data } from './fixture';
 import { placedSequences } from './layer';
 import { createSequenceDeleteAction, selectSequencePartAction } from './select';
@@ -62,6 +63,15 @@ describe('the Participant action', () => {
     expect(fresh.origin.x + fresh.geometry.columns[0]!.x).toBeCloseTo(2000, 0);
     scene.undo();
     expect(placedSequences(scene as never)).toHaveLength(1);
+  });
+
+  it('starts a sequence in a paged scene on the page under the click, where the click put it', () => {
+    const scene = pagedScene([]);
+    run(createAddParticipantAction(), { scene }, { world: { x: 300, y: 20 } });
+    const root = scene.renderOrderNodes().find((n) => sequenceRootOf(n) !== null)!;
+    expect(root.parent).toBe('p2');
+    const fresh = placedSequences(scene as never)[0]!;
+    expect(fresh.origin.x + fresh.geometry.columns[0]!.x).toBeCloseTo(300, 0);
   });
 
   it('passes a click off every sequence when a host commit has no start', () => {

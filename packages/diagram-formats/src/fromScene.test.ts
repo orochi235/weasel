@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  composeWorldPose, moveAction, scenePoseAdapter, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose,
+  composeWorldPose, createScene, moveAction, scenePoseAdapter, type InvocationCtx, type OngoingHandle, type OngoingInvoker, type RectPose,
 } from '@weasel-js/core';
-import { offPageOps, setDiagramColor, type DataEdge, type DataNode } from '@weasel-js/diagram';
+import { diagramScene, offPageOps, setDiagramColor, withDiagramRegistry, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { documentFromScene } from './fromScene';
 import { documentSpecs } from './toScene';
 import { DOC_DATA, MEASURE, docScene, drawnScene, type DocScene } from './testing/docScene';
@@ -41,6 +41,18 @@ describe('documentFromScene', () => {
       { id: 'p2', name: 'Second', width: 1000, height: 700 },
     ]);
     expect(doc.theme).toBe('night');
+  });
+
+  it('reads a scene with no pages as one page around its shapes, not around the origin its connectors are stored at', () => {
+    const scene = createScene<unknown, string, RectPose>({ systemLayers: [{ id: 'main' }], registry: withDiagramRegistry() });
+    const specs = diagramScene({
+      nodes: [{ id: 'a', at: { x: 500, y: 400 }, width: 60, height: 30 }, { id: 'b', at: { x: 800, y: 400 }, width: 60, height: 30 }],
+      edges: [{ id: 'e', from: 'a', to: 'b' }],
+    }, { layout: 'none' });
+    for (const spec of specs) scene.add(spec as never);
+    const page = asGraph(documentFromScene(scene).pages[0]!);
+    expect({ width: page.width, height: page.height }).toEqual({ width: 360, height: 30 });
+    expect(page.data.nodes.map((n) => n.at)).toEqual([{ x: 0, y: 0 }, { x: 300, y: 0 }]);
   });
 
   it('puts each shape on the page it sits on, at its place on that page', () => {

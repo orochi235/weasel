@@ -2,7 +2,7 @@
  * Writing a sequence edit into a scene: the root's data replaced and its parts
  * built again, as one undo entry.
  */
-import { composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
+import { addOnPages, composeWorldPose, scenePoseAdapter, type InvocationCtx, type RectPose, type Scene } from '@weasel-js/core';
 import type { MeasureRowText } from '../body';
 import { diagramThemeOf } from '../theme/resolve';
 import type { DiagramTheme } from '../theme/types';
@@ -52,7 +52,8 @@ export function commitSequence(scene: AnyScene, id: string, data: SequenceData, 
 
 /**
  * Adds a new sequence root drawing `data` with its top-left corner at `at`,
- * as one undo entry under `label`, and returns its id. On `layer`, default
+ * as one undo entry under `label`, and returns its id. In a paged scene it goes
+ * on the page holding it, where it stands (`addOnPages`). On `layer`, default
  * the scene's first.
  */
 export function startSequence(
@@ -64,9 +65,7 @@ export function startSequence(
     id, at, theme: opts.theme ?? diagramThemeOf(scene), layer, composition: scene.composition as never,
     ...(opts.measure ? { measure: opts.measure } : {}),
   });
-  scene.batch(label, () => {
-    for (const spec of specs) scene.add(spec as never);
-  });
+  scene.batch(label, () => { addOnPages(scene, specs as never); });
   return id;
 }
 

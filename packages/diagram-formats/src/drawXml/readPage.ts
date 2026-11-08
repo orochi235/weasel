@@ -1,5 +1,6 @@
 /** One draw-style graph model as a {@link DocumentPage}. */
 import type { Vec2 } from '@weasel-js/core/math';
+import { freshId } from '@weasel-js/registry';
 import type { DataContainer, DataEdge, DataGroup, DataLane, DataNode, DiagramData } from '@weasel-js/diagram';
 import type { DocumentPage } from '../document';
 import { PAGE_MARGIN } from '../pageLayout';
@@ -21,8 +22,7 @@ const optional = <K extends string, V>(key: K, value: V | undefined): { [P in K]
 
 /** A unique id for `cellId`: itself, else prefixed with its page's, else numbered. */
 function claim(ids: IdSpace, cellId: string, pageId: string): string {
-  let id = ids.has(cellId) ? `${pageId}:${cellId}` : cellId;
-  for (let n = 2; ids.has(id); n++) id = `${pageId}:${cellId}-${n}`;
+  const id = ids.has(cellId) ? freshId(`${pageId}:${cellId}`, ids, { from: 2, bare: true }) : cellId;
   ids.add(id);
   return id;
 }

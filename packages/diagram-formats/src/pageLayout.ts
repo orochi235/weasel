@@ -6,7 +6,7 @@
 import { IDENTITY_POSE_COMPOSITION } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import {
-  LAYOUTS, diagramScene, edgeIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
+  LAYOUTS, diagramScene, edgeIdOf, edgeLabelIdOf, type DataContainer, type DataEdge, type DiagramEdge, type DiagramLabel, type DiagramSpec,
   type DiagramTheme, type MeasureRowText,
 } from '@weasel-js/diagram';
 import type { GraphPage } from './document';
@@ -32,7 +32,7 @@ function laidEdge(e: DataEdge, specs: ReadonlyMap<string, DiagramSpec>): DataEdg
   if (trait === undefined) return e;
   const from = e.fromPort === undefined ? trait.from.laidOut : undefined;
   const to = e.toPort === undefined ? trait.to.laidOut : undefined;
-  const label = (specs.get(`${id}/label`)?.data.diagram as { label?: DiagramLabel } | undefined)?.label;
+  const label = (specs.get(edgeLabelIdOf(id))?.data.diagram as { label?: DiagramLabel } | undefined)?.label;
   const follows = e.labelPlacement === undefined || e.labelPlacement.at === 'mid';
   return {
     ...e,

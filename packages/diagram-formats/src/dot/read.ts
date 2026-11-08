@@ -6,6 +6,7 @@
  */
 import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, NodeStyle } from '@weasel-js/diagram';
+import { freshId } from '@weasel-js/registry';
 import { checkedColor } from '../colorCheck';
 import type { ImportResult } from '../document';
 import { Membership, Warnings, graphPage } from '../graphRead';
@@ -247,13 +248,14 @@ function readCluster(r: DotReader, id: string, attrs: Attrs, ids: ReadonlyMap<st
   };
 }
 
-/** Container ids for clusters: the name less its `cluster` prefix, where that is free. */
+/** Container ids for clusters: the name less its `cluster` prefix, where that is free, else the whole name, else that
+ *  with the first free suffix. */
 function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unknown>): Map<string, string> {
   const taken = new Set([...nodes.keys()]);
   const out = new Map<string, string>();
   for (const id of clusters) {
     const short = id.replace(/^cluster_?/, '');
-    const pick = short !== '' && !taken.has(short) && !out.has(short) ? short : id;
+    const pick = short !== '' && !taken.has(short) ? short : freshId(id, taken, { bare: true });
     taken.add(pick);
     out.set(id, pick);
   }

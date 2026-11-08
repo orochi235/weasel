@@ -3,6 +3,7 @@
  * clusters' membership, its edges' ids, and the one page it reads into.
  */
 import type { DataContainer, DataEdge, DataNode, LayoutDirection } from '@weasel-js/diagram';
+import { freshId } from '@weasel-js/registry';
 import type { GraphPage } from './document';
 import { PAGE_MARGIN } from './pageLayout';
 
@@ -104,9 +105,7 @@ export function withEdgeIds(edges: readonly DataEdge[], taken: Iterable<string>)
   }
   return edges.map((e) => {
     if (own.has(e)) return e;
-    const base = `${e.from}-${e.to}`;
-    let id = base;
-    for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+    const id = freshId(`${e.from}-${e.to}`, used, { from: 2, bare: true });
     used.add(id);
     return { ...e, id };
   });
