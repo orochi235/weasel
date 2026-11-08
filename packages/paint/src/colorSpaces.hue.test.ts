@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lerpOklch } from './colorSpaces';
+import { lerpHueDeg, lerpOklch } from './colorSpaces';
 
 const PI = Math.PI;
 const TWO_PI = 2 * PI;
@@ -45,4 +45,12 @@ describe('lerpOklch hue', () => {
     expect(hueAt(0, Number.NaN, 0.5)).toBeNaN();
     expect(performance.now() - start).toBeLessThan(100);
   }, 1000);
+});
+
+describe('lerpHueDeg', () => {
+  it('takes the shorter arc across 0, and the positive way between opposite hues', () => {
+    expect(lerpHueDeg(350, 10, 0.5)).toBeCloseTo(0);
+    expect(lerpHueDeg(0, 180, 0.5)).toBeCloseTo(90);
+    expect(lerpHueDeg(180, 0, 0.5)).toBeCloseTo(270);
+  });
 });

@@ -85,6 +85,7 @@ export {
   srgbToHsl,
   hslToSrgb,
   interpolateSrgb,
+  lerpHueDeg,
   type ColorInterpolationSpace,
   type HueInterpolation,
   type ColorSpace,
