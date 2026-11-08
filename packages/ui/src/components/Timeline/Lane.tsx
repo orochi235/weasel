@@ -118,17 +118,7 @@ export function Lane(props: LaneProps): ReactElement {
     }, { capture: false });
   };
 
-  // A keyboard move can re-sort the key to another index, and a delete selects another; focus follows it there.
-  const keyEls = useRef<(HTMLDivElement | null)[]>([]);
-  const refocus = useRef(false);
-  useEffect(() => {
-    if (!refocus.current) return;
-    refocus.current = false;
-    // Not from wherever focus went since: a key that asked for this may have changed nothing.
-    const at = document.activeElement;
-    if (at !== null && at !== document.body && !keyEls.current.includes(at as HTMLDivElement)) return;
-    if (selection !== null) keyEls.current[selection]?.focus();
-  });
+  const { keyEls, refocus } = useFocusFollowsKey(selection);
 
   const onKeyDown = (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     const dx = arrowMove(e.key, e.shiftKey)?.dx ?? 0;
@@ -247,4 +237,20 @@ export function Lane(props: LaneProps): ReactElement {
       </div>
     </div>
   );
+}
+
+/** A keyboard move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows
+ *  the selected key there once the lane renders. */
+function useFocusFollowsKey(selection: number | null) {
+  const keyEls = useRef<(HTMLDivElement | null)[]>([]);
+  const refocus = useRef(false);
+  useEffect(() => {
+    if (!refocus.current) return;
+    refocus.current = false;
+    // Not from wherever focus went since: a key that asked for this may have changed nothing.
+    const at = document.activeElement;
+    if (at !== null && at !== document.body && !keyEls.current.includes(at as HTMLDivElement)) return;
+    if (selection !== null) keyEls.current[selection]?.focus();
+  });
+  return { keyEls, refocus };
 }

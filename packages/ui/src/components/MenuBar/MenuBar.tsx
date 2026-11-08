@@ -1,4 +1,4 @@
-import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useLatest, type OpenMenu } from '@weasel-js/core';
 import type { PrefGroup } from '@weasel-js/prefs';
@@ -56,7 +56,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
   const [active, setActive] = useState<string | null>(null);
   const seq = useRef(0);
   const openedNow = useLatest(opened);
-  const focus = useMenuBarFocus(bar);
+  const focus = useMenuBarFocus(bar, opened !== null);
   const idBase = useId();
   const titleId = (key: string) => `${idBase}-${key}`;
   const { anchor, target } = useMenuPortal();
@@ -85,13 +85,6 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
 
   // A title that can no longer open takes its menu with it; set during render so the stranded menu never commits.
   if (opened !== null && (disabled.has(opened.key) || !menus.some((m) => m.key === opened.key))) setOpened(null);
-  // A menu gone with focus inside it, and so on the page, hands focus back as leaving the bar does.
-  const wasOpen = useRef(false);
-  useLayoutEffect(() => {
-    const was = wasOpen.current;
-    wasOpen.current = opened !== null;
-    if (was && opened === null && (document.activeElement === null || document.activeElement === document.body)) focus.leave(null);
-  });
 
   const inside = useCallback(
     (t: EventTarget | null) => t instanceof Node && [...buttons.current.values()].some((b) => b.contains(t)),

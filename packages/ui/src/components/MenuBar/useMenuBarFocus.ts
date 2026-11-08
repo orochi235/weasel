@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef, type FocusEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, type FocusEvent } from 'react';
 
 /**
  * Where focus goes as a menu bar is entered and left. What had focus before the bar is remembered when a title
  * takes focus from outside or a menu opens with focus outside, and is given back when the bar is left: on Escape
  * from a title with no menu open, and when a menu closes any way but Escape, which lands on its title instead.
+ * `open` says a menu is open, so one gone with focus inside it, closed by no `close`, still hands focus back.
  */
-export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
+export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }, open: boolean) {
   const returnTo = useRef<HTMLElement | null>(null);
   // True only while an Escape keydown is being handled; read when a menu closes.
   const escaped = useRef(false);
@@ -26,7 +27,9 @@ export function useMenuBarFocus(bar: { readonly current: HTMLElement | null }) {
   }, []);
 
   // Reads only refs, so it is built once and its functions are stable.
-  return useMemo(() => focusMoves(bar, returnTo, escaped), [bar]);
+  const moves = useMemo(() => focusMoves(bar, returnTo, escaped), [bar]);
+  useFocusBackOnClose(open, moves.leave);
+  return moves;
 }
 
 function focusMoves(
@@ -67,4 +70,16 @@ function focusMoves(
       else leave(el instanceof HTMLElement ? el : null);
     },
   };
+}
+
+/** A menu gone with focus inside it, which leaves focus on the page, hands it back as leaving the bar does: for a
+ *  menu closed by its title turning disabled or hidden, which no `close` saw. */
+function useFocusBackOnClose(open: boolean, leave: (from: HTMLElement | null) => void): void {
+  const wasOpen = useRef(false);
+  useLayoutEffect(() => {
+    const was = wasOpen.current;
+    wasOpen.current = open;
+    const at = document.activeElement;
+    if (was && !open && (at === null || at === document.body)) leave(null);
+  });
 }

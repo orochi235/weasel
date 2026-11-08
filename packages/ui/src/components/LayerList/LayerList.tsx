@@ -18,40 +18,9 @@ import { PropertyGroup, PropertyList } from '../Properties';
 import s from './LayerList.module.css';
 import type { LayerListItem, LayerListProps, LayerMove } from './layerListProps';
 import { Controls, Handle, Row, rowContextMenu } from './LayerRow';
+import { anyNested, collectCollapsed, showingIds } from './layerTree';
 export type { LayerListItem, LayerListProps, LayerMove };
-
-/** Returns `items` with `move` applied, for a consumer that holds the tree as state. */
-export function moveLayers(items: LayerListItem[], move: LayerMove): LayerListItem[] {
-  if (move.parentId === null) return reorder(items, move);
-  return items.map((item) => {
-    if (item.id === move.parentId) return { ...item, children: reorder(item.children ?? [], move) };
-    return item.children ? { ...item, children: moveLayers(item.children, move) } : item;
-  });
-}
-
-function reorder(siblings: LayerListItem[], { ids, index }: LayerMove): LayerListItem[] {
-  const moving = new Set(ids);
-  const kept = siblings.filter((it) => !moving.has(it.id));
-  const moved = siblings.filter((it) => moving.has(it.id));
-  const at = Math.max(0, Math.min(kept.length, index));
-  return [...kept.slice(0, at), ...moved, ...kept.slice(at)];
-}
-
-function collectCollapsed(
-  items: LayerListItem[],
-  isCollapsed: (item: LayerListItem) => boolean,
-  into = new Set<string>(),
-): Set<string> {
-  for (const item of items) {
-    if (isCollapsed(item)) into.add(item.id);
-    if (item.children) collectCollapsed(item.children, isCollapsed, into);
-  }
-  return into;
-}
-
-function anyNested(items: LayerListItem[]): boolean {
-  return items.some((it) => (it.children?.length ?? 0) > 0);
-}
+export { moveLayers } from './layerTree';
 
 /** What every level of the tree reads from the list. */
 export interface Shared {
@@ -140,17 +109,14 @@ export function LayerList(props: LayerListProps) {
   // The rows the arrow keys walk: open branches only, and not cards, whose
   // heads are their own controls.
   const visible: VisibleRow[] = [];
-  // Every layer showing, cards too, in drawn order: what a range selects across.
-  const shown: string[] = [];
   const walk = (list: LayerListItem[], parentId: string | null, level: number) => {
     for (const item of list) {
-      shown.push(item.id);
       if (!hasBody(bodies.get(item.id))) visible.push({ item, parentId, level });
       if (item.children?.length && !collapsed.has(item.id)) walk(item.children, item.id, level + 1);
     }
   };
   walk(items, null, 1);
-  const order = useLatest(shown);
+  const order = useLatest(showingIds(items, collapsed));
 
   const byId = new Map(visible.map((v) => [v.item.id, v]));
   const nudgers = useRef(new Map<string | null, (id: string, delta: -1 | 1) => boolean>()).current;
