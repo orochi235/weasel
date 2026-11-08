@@ -36,6 +36,21 @@ describe('Scene — replaying an entry whose node an untracked edit took', () =>
     expect(scene.get(B)!.pose.x).toBe(0);
   });
 
+  it('walks past a hide and a lock of the node', () => {
+    const { scene, add, depths } = makeScene();
+    add('a');
+    scene.setHidden(A, true);
+    scene.setLocked(A, true);
+    scene.untracked(() => scene.unlocked(() => scene.remove(A)));
+
+    expect(scene.undo()).toBe(true);
+    expect(scene.undo()).toBe(true);
+    expect(depths()).toEqual([1, 2]);
+    expect(scene.redo()).toBe(true);
+    expect(scene.redo()).toBe(true);
+    expect(depths()).toEqual([3, 0]);
+  });
+
   it('applies the rest of an entry that also names a live node', () => {
     const { scene, add } = makeScene();
     add('a');
