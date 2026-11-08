@@ -75,4 +75,8 @@ describe('pathFromD', () => {
     expect(warnings[0]).toMatch(/unknown path command: K/);
     expect(Array.from(r.commands)).toEqual([PATH_M, PATH_L]);
   });
+
+  it('reads an arc whose arguments a form feed separates, as SVG whitespace allows', () => {
+    expect(dump('M0 0 A5\f5\f0\f0\f1\f10\f0').commands).toEqual(dump('M0 0 A5 5 0 0 1 10 0').commands);
+  });
 });
