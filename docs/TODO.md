@@ -556,18 +556,6 @@ only story runner in the repo.
   richer source where a build has made one. Ruled (2026-11-07): the last, with forge's reader as the fallback.
   Closes when the panel reads typedoc's JSON when present.
 
-- **(P3) [agent] forge's vite plugin should wait for writes to settle off macOS, as the repo's own dev servers do.**
-  On Linux, chokidar drops a `change` within 50 ms of the last one it reported, so a second quick save can leave a
-  server serving the first text until the next save. Every dev server here (and vitest's watcher) off macOS now waits for
-  the write to settle through `devWatch` in `scripts/vite-watch.ts`, which ends it (2026-10-30); macOS skips the
-  wait, which the measurements below show it does not need (ruled 2026-10-30). A consumer's server
-  that adds only `forge()` does not, and `replacedFile.test.ts`, which runs such a server, still rewrites until
-  served. Measured with `node scripts/watch-settle.mjs` (`--linux` on studio for Docker), 2026-10-30: Linux
-  stale 16/16 without, 0/16 with, and save-to-served median 16 → 62 ms; macOS stale 0/48 either way, since
-  fsevents reports a path's next change about 100 ms after its last, and median 113 → 115 ms (p90 118 → 148).
-  Ruled (2026-11-07): it should. Closes when `forge()` waits off macOS and `replacedFile.test.ts` no longer
-  rewrites until served.
-
 - **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop

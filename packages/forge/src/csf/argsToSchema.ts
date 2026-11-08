@@ -1,6 +1,7 @@
 import { type ConfigNode, type ConfigSchema, type ConfigShape, f, ObjectNode, UnionNode } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { iconFromData } from '@weasel-js/ui/components/Icon';
+import { sameKnob } from '../route/url';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
@@ -189,6 +190,8 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'text':
     case 'textarea':
       return f.string(def());
+    case 'color':
+      return f.color(def());
     case 'select':
     case 'radio':
     case 'inline-radio':
@@ -218,8 +221,8 @@ function conditionOf(condition: ArgCondition): ((config: Record<string, unknown>
   return (config) => {
     const value = config[arg];
     if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
-    if ('eq' in condition) return Object.is(value, condition.eq);
-    if ('neq' in condition) return !Object.is(value, condition.neq);
+    if ('eq' in condition) return sameKnob(value, condition.eq);
+    if ('neq' in condition) return !sameKnob(value, condition.neq);
     return Boolean(value) === (condition.truthy ?? true);
   };
 }

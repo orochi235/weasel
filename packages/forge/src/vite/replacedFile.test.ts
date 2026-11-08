@@ -41,6 +41,11 @@ describe('a forge dev server, when an editor replaces a file whole', () => {
       optimizeDeps: { noDiscovery: true },
       logLevel: 'silent',
     });
+    // A write before the watcher's first scan ends goes unseen; `ready` may already have fired.
+    await new Promise<void>((done) => {
+      server.watcher.once('ready', () => done());
+      setTimeout(done, 3000).unref();
+    });
   });
 
   afterAll(async () => {
@@ -49,19 +54,14 @@ describe('a forge dev server, when an editor replaces a file whole', () => {
   });
 
   /**
-   * Replaces `file` with each text in turn, rewriting it until `url` serves that text. One write is not enough: a
-   * write before the watcher's first scan ends goes unseen, and chokidar drops a change that lands within 50 ms of
-   * the last one it reported. A replacement that cost the path its watch leaves every later text unserved however
-   * often it is rewritten.
+   * Replaces `file` with each text in turn, once, and waits for `url` to serve it. forge waits for a write to settle
+   * off macOS, so a change chokidar would otherwise drop is still reported. A replacement that cost the path its
+   * watch leaves every later text unserved.
    */
   const follows = async (file: string, url: string, texts: string[]) => {
     for (const text of texts) {
-      await expect
-        .poll(() => {
-          replace(file, text);
-          return served(url);
-        }, FOLLOWS)
-        .toContain(text.trim());
+      replace(file, text);
+      await expect.poll(() => served(url), FOLLOWS).toContain(text.trim());
     }
   };
 
