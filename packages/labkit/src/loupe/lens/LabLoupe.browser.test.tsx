@@ -54,7 +54,9 @@ test('a lab with labLoupe opens a lens on Alt+L, L that shows a copy of the tria
     return el as Element;
   });
   const box = art.getBoundingClientRect();
-  await userEvent.hover(art, { position: { x: box.width / 2, y: box.height / 2 } });
+  const text = art.querySelector('.lk-loupe-test-probe') as Element;
+  const at = text.getBoundingClientRect();
+  await userEvent.hover(text, { position: { x: at.width / 2, y: at.height / 2 } });
   await userEvent.keyboard('{Alt>}l{/Alt}l');
   await waitFor(() => {
     const copy = document.querySelector('.lk-lens-copy');

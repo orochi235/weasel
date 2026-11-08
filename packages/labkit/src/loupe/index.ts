@@ -86,6 +86,7 @@ export {
 export { readBitmap } from './lens/pixelGrid';
 export type { LensProbe } from './lens/probeUnderLens';
 export { probeUnderLens } from './lens/probeUnderLens';
+export { useFrameSchedule } from './lens/useFrameSchedule';
 export type { Remeasurable } from './lens/useLensRemeasure';
 export { useLensRemeasure } from './lens/useLensRemeasure';
 export type { LoupeInputApi } from './loupeActions';

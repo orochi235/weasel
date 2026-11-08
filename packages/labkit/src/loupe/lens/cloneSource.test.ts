@@ -26,16 +26,26 @@ function setup(inner = '<p class="probe">hello</p>') {
   return { root, slot };
 }
 
-const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+/** The frames a source has asked for, run by hand. */
+let frames: Array<() => void> = [];
+const onFrame = (run: () => void) => {
+  frames.push(run);
+};
+const frame = () => {
+  const due = frames;
+  frames = [];
+  for (const run of due) run();
+};
 
 afterEach(() => {
+  frames = [];
   document.body.replaceChildren();
 });
 
 describe('a clone source', () => {
   it('copies the trial body under the reticle into the slot', () => {
     const { slot } = setup();
-    createCloneSource<null>().attach(slot, request());
+    createCloneSource<null>({ onFrame }).attach(slot, request());
     const copy = slot.querySelector('.lk-lens-copy');
     expect(copy?.hasAttribute('data-lk-copy')).toBe(true);
     expect(copy?.querySelector('.lk-trial__body .probe')?.textContent).toBe('hello');
@@ -43,7 +53,7 @@ describe('a clone source', () => {
 
   it('puts the reticle’s point at the interior’s center, scaled by the factor', () => {
     const { slot } = setup();
-    createCloneSource<null>().attach(slot, request());
+    createCloneSource<null>({ onFrame }).attach(slot, request());
     const copy = slot.querySelector<HTMLElement>('.lk-lens-copy');
     // The reticle sits 20, 10 into the body; × 4 is 80, 40, and the interior's center is 50, 40.
     expect(copy?.style.getPropertyValue('--lk-copy-x')).toBe('-30px');
@@ -54,7 +64,7 @@ describe('a clone source', () => {
 
   it('follows a new request to a new aim and factor', () => {
     const { slot } = setup();
-    const handle = createCloneSource<null>().attach(slot, request());
+    const handle = createCloneSource<null>({ onFrame }).attach(slot, request());
     handle.update(request({ reticle: { x: 60, y: 20 }, factor: 2 }));
     const copy = slot.querySelector<HTMLElement>('.lk-lens-copy');
     expect(copy?.style.getPropertyValue('--lk-copy-x')).toBe('-50px');
@@ -63,10 +73,10 @@ describe('a clone source', () => {
 
   it('copies again on the frame after the trial changes', async () => {
     const { root, slot } = setup();
-    createCloneSource<null>().attach(slot, request());
+    createCloneSource<null>({ onFrame }).attach(slot, request());
     (root.querySelector('.probe') as HTMLElement).textContent = 'changed';
     await Promise.resolve();
-    await frame();
+    frame();
     expect(slot.querySelector('.lk-lens-copy .probe')?.textContent).toBe('changed');
   });
 
@@ -76,18 +86,28 @@ describe('a clone source', () => {
     other.setAttribute('data-lk-copy', '');
     other.innerHTML = '<div class="lk-trial__body"><span></span></div>';
     document.elementsFromPoint = vi.fn(() => [other.querySelector('span') as Element]);
-    createCloneSource<null>().attach(slot, request());
+    createCloneSource<null>({ onFrame }).attach(slot, request());
     expect(slot.querySelector('.lk-lens-copy')?.childElementCount).toBe(0);
+  });
+
+  it('asks for no frame once its copy is current and holds no canvas', async () => {
+    const { root, slot } = setup();
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    frame();
+    expect(frames).toHaveLength(0);
+    (root.querySelector('.probe') as HTMLElement).textContent = 'changed';
+    await Promise.resolve();
+    expect(frames).toHaveLength(1);
   });
 
   it('takes its copy out of the slot on detach', () => {
     const { slot } = setup();
-    createCloneSource<null>().attach(slot, request()).detach();
+    createCloneSource<null>({ onFrame }).attach(slot, request()).detach();
     expect(slot.querySelector('.lk-lens-copy')).toBeNull();
   });
 
   it('is always available, as Live', () => {
-    const source = createCloneSource<null>();
+    const source = createCloneSource<null>({ onFrame });
     expect(source.status()).toBe(true);
     expect(source.kind).toBe('live');
     expect(source.label(request())).toBe('Live');
