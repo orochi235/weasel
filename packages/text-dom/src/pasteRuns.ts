@@ -10,7 +10,7 @@
  * text takes them from where it lands.
  */
 
-import type { StyledRun } from '@weasel-js/text';
+import { isBoldWeight, type StyledRun } from '@weasel-js/text';
 import { EMPTY_STYLE, styleStateFromElement, toRun, type StyleState } from './runStyle';
 
 /** Elements whose contents are not text a reader sees. */
@@ -35,11 +35,11 @@ function keepsSpace(el: HTMLElement, inherited: boolean): boolean {
   return /^(pre|pre-wrap|break-spaces|preserve)\b/.test(ws);
 }
 
-/** The run fields a paste keeps. A weight of 600 or more reads as bold. */
+/** The run fields a paste keeps. A weight that reads as bold anywhere else reads as bold here. */
 function emphasis(text: string, style: StyleState): StyledRun {
   const read = toRun(text, style);
   const run: StyledRun = { text };
-  if (read.bold || (read.fontWeight ?? 0) >= 600) run.bold = true;
+  if (read.bold || (read.fontWeight !== undefined && isBoldWeight(read.fontWeight))) run.bold = true;
   for (const key of ['italic', 'underline', 'strikethrough', 'overline'] as const) if (read[key]) run[key] = true;
   if (read.script) run.script = read.script;
   return run;
