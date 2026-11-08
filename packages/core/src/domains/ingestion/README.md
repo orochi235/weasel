@@ -29,9 +29,10 @@ the same `IngestItem`. Handlers never branch on where content came from.
 | `kitImageHandler` | Raster images. |
 | `kitTextHandler` | Plain text, as a text node sized to the string. Passes over strings that arrive beside a file, which describe it. |
 
-Registration order matters: the kit's JSON handler is what makes an internal
-copy/paste preserve everything rather than degrading to an image, so it must get
-first refusal on clipboard content that also carries an image flavor.
+Priority decides who is asked first, not registration order: the kit's JSON
+handler (-50) is what makes an internal copy/paste preserve everything rather
+than degrading to an image, so it sits above the SVG (-90), image (-100) and
+text (-110) handlers, and every consumer handler (default 0) sits above them all.
 
 A drag still in flight shows its MIMEs and no contents, so the canvas cannot put
 it to a predicate `match`. It asks `couldClaim` instead, which reads globs and a

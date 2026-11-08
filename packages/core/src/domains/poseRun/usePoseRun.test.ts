@@ -215,6 +215,16 @@ describe('a node another gesture owns', () => {
     expect(scene.get(b)!.pose).toEqual(box(77, 0));
   });
 
+  it('is not committed when a gesture takes it after the run\'s last frame', () => {
+    const { scene, a, b, clock, run } = pinnedSetup();
+    act(() => { run().start(); });
+    act(() => { clock.frames(1); });
+    act(() => { scene.overrides.set(a, { pose: box(5, 5) }); });
+    act(() => { run().stop(); });
+    expect(scene.get(a)!.pose).toEqual(box(0, 0));
+    expect(scene.get(b)!.pose).toEqual(box(77, 0));
+  });
+
   it('takes the node over once the gesture lets go', () => {
     const { scene, a, clock, run, drawnAt } = pinnedSetup();
     scene.overrides.set(a, { pose: box(5, 5) });

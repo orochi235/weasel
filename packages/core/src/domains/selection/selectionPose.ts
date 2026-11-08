@@ -126,7 +126,7 @@ export function composeSelectionPose<TPose>(
       for (const leafId of leaves) {
         const pose = moveOverlay?.poses.get(leafId)
           ?? containerResizeLeafPoses?.get(leafId)
-          ?? getStoredPose(leafId);
+          ?? resolveLeaf(leafId);
         leafBounds.push(boxes.aabb(leafId, pose, scale));
       }
       const u = unionAABB(leafBounds);

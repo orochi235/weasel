@@ -101,6 +101,13 @@ describe('workspaceTintLayer', () => {
     expect(cmds[0]!.path).toMatchObject({ x: 0, y: 0, width: 200, height: 100 });
   });
 
+  it('keeps the mode\'s gradient when the page is scrolled out of the viewport', () => {
+    const registry = createModeRegistry({ modes: MODES, initial: 'rise' });
+    const off = workspaceTintLayer({ registry, page: () => ({ x: 500, y: 500, width: 10, height: 10 }) });
+    const none = workspaceTintLayer({ registry });
+    expect(draw(off)).toEqual(draw(none));
+  });
+
   it('is a screen-space layer that follows the registry', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
     const layer = workspaceTintLayer({ registry });

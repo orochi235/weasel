@@ -102,9 +102,11 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     let moved = 0;
     try {
       if (previews.current.size > 0 || also !== undefined) {
+        // A gesture may have taken a node since the last frame filtered its pins.
+        const pinned = held.current?.scene === scene ? held.current.hold.others() : null;
         scene.batch(optsRef.current.label ?? 'Layout', () => {
           for (const [id, pose] of previews.current) {
-            if (scene.get(id) === undefined || scene.isLocked(id)) continue;
+            if (scene.get(id) === undefined || scene.isLocked(id) || pinned?.has(id)) continue;
             scene.setPose(id, pose);
             moved++;
           }

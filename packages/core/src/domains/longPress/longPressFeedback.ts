@@ -42,6 +42,11 @@ const TRACK_OPACITY = 0.3;
 
 const nowMs = (): number => performance.now();
 
+interface Look {
+  color: string;
+  reduced: boolean;
+}
+
 /** An open arc from 12 o'clock, clockwise on a y-down screen, through `t` of a turn. */
 function arcPath(cx: number, cy: number, r: number, t: number): Path {
   const n = Math.max(1, Math.ceil(RING_SEGMENTS * t));
@@ -73,44 +78,41 @@ export function createLongPressFeedbackContribution(
   const width = opts.width ?? 3;
   const delay = opts.delay ?? 120;
 
-  let state: LongPressState | undefined;
-  let color = '';
-  let reduced = false;
+  /** How each attached canvas draws its press, read when the press starts.
+   *  Keyed by the canvas's store: one entry may be installed on several. */
+  const looks = new Map<LongPressState, Look>();
 
-  const showing = (): boolean => {
-    const p = state?.get();
-    return !!p && p.armed;
-  };
-
-  const layer: RenderLayer<unknown> = {
+  const ringLayer = (store: LongPressState, look: Look): RenderLayer<unknown> => ({
     id,
     label: 'Long-press feedback',
     space: 'screen',
     draw: (data): DrawCommand[] => {
-      const p = state?.get();
+      const p = store.get();
       // Screen space is the whole canvas, so the root pass draws the ring
       // wherever the press routed; a view pass drawing it too would double it.
-      if (!state || !p || !p.armed || viewIdOf(data) !== null) return [];
+      if (!p || !p.armed || viewIdOf(data) !== null) return [];
       const now = nowMs();
       if (now - p.startedAt < delay) return [];
       const { x, y } = p.local;
       const stroke = (opacity?: number) => ({
-        paint: { color, ...(opacity !== undefined ? { opacity } : {}) },
+        paint: { color: look.color, ...(opacity !== undefined ? { opacity } : {}) },
         width: { px: width },
         cap: 'round' as const,
       });
-      if (reduced) return [{ kind: 'path', path: circlePath(x, y, radius), stroke: stroke() }];
+      if (look.reduced) return [{ kind: 'path', path: circlePath(x, y, radius), stroke: stroke() }];
       return [
         { kind: 'path', path: circlePath(x, y, radius), stroke: stroke(TRACK_OPACITY) },
-        { kind: 'path', path: arcPath(x, y, radius, state.progress(now)), stroke: stroke() },
+        { kind: 'path', path: arcPath(x, y, radius, store.progress(now)), stroke: stroke() },
       ];
     },
-  };
+  });
 
   const attach = (api: CanvasExtensionApi, deps: ContributionDepReader): (() => void) => {
     const store = deps.get('longPress');
     if (!store) return () => {};
-    state = store;
+    const look: Look = { color: '', reduced: false };
+    looks.set(store, look);
+    const offLayer = api.registerLayer(ringLayer(store, look));
     let appear: ReturnType<typeof setTimeout> | undefined;
 
     const onChange = (): void => {
@@ -118,13 +120,13 @@ export function createLongPressFeedbackContribution(
       appear = undefined;
       const p = store.get();
       if (p?.armed) {
-        color = typeof opts.color === 'function' ? opts.color() : (opts.color ?? accentColorOf(api.element));
-        reduced = opts.reducedMotion === 'auto' || opts.reducedMotion === undefined
+        look.color = typeof opts.color === 'function' ? opts.color() : (opts.color ?? accentColorOf(api.element));
+        look.reduced = opts.reducedMotion === 'auto' || opts.reducedMotion === undefined
           ? prefersReducedMotion()
           : opts.reducedMotion;
         // A static ring changes once, when it appears; nothing needs frames.
         const wait = delay - (nowMs() - p.startedAt);
-        if (reduced && wait > 0) appear = setTimeout(() => { api.requestRedraw(); }, wait);
+        if (look.reduced && wait > 0) appear = setTimeout(() => { api.requestRedraw(); }, wait);
       }
       api.requestRedraw();
     };
@@ -134,7 +136,8 @@ export function createLongPressFeedbackContribution(
     return () => {
       offStore();
       clearTimeout(appear);
-      state = undefined;
+      looks.delete(store);
+      offLayer();
       api.requestRedraw();
     };
   };
@@ -142,11 +145,12 @@ export function createLongPressFeedbackContribution(
   return {
     id,
     eligibility: { always: true },
-    overlay: layer,
     attach,
     // The filling ring asks for the next frame from each painted one while it shows.
     afterPaint: (ctx) => {
-      if (!reduced && showing()) ctx.requestFrame();
+      const store = ctx.deps.get('longPress');
+      const look = store && looks.get(store);
+      if (look && !look.reduced && store.get()?.armed) ctx.requestFrame();
     },
   };
 }

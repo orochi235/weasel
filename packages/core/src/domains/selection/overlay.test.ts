@@ -198,6 +198,17 @@ describe('composeSelectionPose with containers', () => {
     });
     expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 70, height: 70 });
   });
+
+  it('resize overlay on one leaf: a container over it unions the leaf as resized', () => {
+    const { getChildren, isContainer } = makeContainerTree({ g1: ['a', 'b'] });
+    const resolve = composeSelectionPose<Pose>({
+      resizeOverlay: { id: 'a', currentPose: { x: 0, y: 0, width: 100, height: 100 } },
+      getStoredPose,
+      getChildren,
+      isContainer,
+    });
+    expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
 });
 
 describe('createSelectionOverlayLayer', () => {

@@ -94,6 +94,7 @@ export {
   focused,
   gesturing,
   editingAnchors,
+  resizable,
   actionIs,
   selectionEmpty,
   selectionIs,
