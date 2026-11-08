@@ -150,6 +150,24 @@ describe('Timeline', () => {
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
   });
 
+  it('still zooms its own window when onWindowChange only observes', () => {
+    const onWindowChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onWindowChange={onWindowChange} />);
+    fireEvent.wheel(screen.getByTestId('timeline-ruler'), { ctrlKey: true, deltaY: -Math.log(2) / 0.0015, clientX: 0 });
+    expect(onWindowChange).toHaveBeenCalledWith({ from: 0, to: 500 });
+    expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
+  });
+
+  it('still selects a key itself when onSelect only observes', () => {
+    const onSelect = vi.fn();
+    const editor = () => <span data-testid="key-editor" />;
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onSelect={onSelect} renderKeyEditor={editor} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    expect(onSelect).toHaveBeenLastCalledWith({ trackPath: [0], keyIndex: 1 });
+    expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+  });
+
   it('keeps focus on a key that an arrow key moves past its neighbor', () => {
     function Host() {
       const [value, setValue] = useState<Track[]>(() => [
@@ -184,6 +202,34 @@ describe('Timeline', () => {
       expect(selected).toBeDefined();
       expect(document.activeElement).toBe(selected);
     }
+  });
+
+  it('deletes the key Delete is pressed on, not another one selected', () => {
+    const onChange = vi.fn();
+    const three = [
+      { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }, { t: 200, value: 2 }], onTick: () => {} },
+    ] as Track[];
+    renderWithIcons(<Timeline {...base} tracks={three} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 0 });
+    onChange.mockClear();
+    const key = screen.getAllByTestId('timeline-key')[2]!;
+    key.focus();
+    fireEvent.keyDown(key, { key: 'Delete' });
+    const next = onChange.mock.calls[0][0] as Track[];
+    expect((next[0] as SampledTrack<number>).keys.map((k) => k.t)).toEqual([0, 100]);
+  });
+
+  it('deletes nothing for Delete on an event mark while a key elsewhere is selected', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    onChange.mockClear();
+    const mark = screen.getByTestId('timeline-event');
+    mark.focus();
+    fireEvent.keyDown(mark, { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('deletes the selected key on Delete', () => {
