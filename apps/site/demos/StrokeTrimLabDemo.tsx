@@ -24,7 +24,7 @@ import {
 } from '@weasel-js/labkit';
 import { dashForStrokeStyle } from '@weasel-js/paint';
 import { Button } from '@weasel-js/ui/components/Button';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import s from './StrokeTrimLabDemo.module.css';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -121,9 +121,14 @@ function SvgExport({ scene, version }: { scene: PageExportScene; version: string
 function PdfExport({ scene }: { scene: PageExportScene }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+  const live = useRef(false);
+  useEffect(() => {
+    live.current = true;
+    return () => { live.current = false; };
+  }, []);
   const write = async () => {
     const { blob } = await exportPagesPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
-    setUrl(URL.createObjectURL(blob));
+    if (live.current) setUrl(URL.createObjectURL(blob));
   };
   return (
     <div className={s.buttons}>
