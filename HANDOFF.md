@@ -18,6 +18,12 @@ For the session picking this up: what is in flight and what has no other home. O
   pushed), round three (43) and round four (53), with `select`'s `'single'` intent and one shared condition-number rule
   for geom's 2D and 3D `invert`. `main` is at 83b654fef, the round-four batch that ran `test:fleet` (4167 files,
   35672 tests) and postbuild green; rounds three and four are unpushed.
+- Round five (2026-11-07 night, 72 fixes across nine lanes: hud and guides, audio and clock, the type packages, quantity
+  and paint, history through cursor, the small packages, the secondary apps and devtools, core's interactions, and a
+  sweep folding duplicated helpers into geom, paint and registry) is on `main` at f3b6313ff, through `batch/2026-11-07k`
+  (`test:fleet`, a full run since ci.yml changed: 4175 files, 35733 tests; postbuild green). Unpushed. Its open
+  questions are under "Audit round five" in `docs/unruled.md`. `check:forge-stories` moved after ci.yml's first
+  build: the fleet's test tree keeps a stale `dist`, which forge's vite config reads.
 - Open from round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
   (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
@@ -52,6 +58,8 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-07 night, audit round five: theme-editor's palette lab anchor rows (kit `ColorField`/`NumberField`) and
+  preset buttons (kit glyphs); guides drawn with `dash`; devtools rows keeping their place as the buffer drops entries.
 - 2026-11-07 night, audit rounds three and four: draw's rulers reading CSS px at 96 to the inch with point and inch
   steps; the Timeline shading a nested timeline's lanes past its declared duration and dimming the keys there; text
   typed through an input method taking an armed style; a line of mixed faces clearing the deepest descent, against the
