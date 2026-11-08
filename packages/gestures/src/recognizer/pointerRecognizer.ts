@@ -213,26 +213,24 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
 
     release(s) {
       const rec = held.get(s.pointerId);
-      // A pointer never pressed here takes no part in what the held ones are doing.
-      if (!rec) {
-        sink.dispatch(pointerUpEvent(s, world(s)));
-        return {};
-      }
-      hold.cancel(s.pointerId);
       const before = held.size;
-      held.delete(s.pointerId);
-      // Any finger lifting ends the multitouch gesture the hand was making.
-      if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
-      touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
-      if (before >= 2 && held.size < 2) {
-        const fingers = touches.finish(happenedAt(s), longPressMs());
-        if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
+      // A pointer never pressed here takes no part in what the held ones are doing.
+      if (rec) {
+        hold.cancel(s.pointerId);
+        held.delete(s.pointerId);
+        // Any finger lifting ends the multitouch gesture the hand was making.
+        if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
+        touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
+        if (before >= 2 && held.size < 2) {
+          const fingers = touches.finish(happenedAt(s), longPressMs());
+          if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
+        }
       }
       sink.dispatch(pointerUpEvent(s, world(s)));
       // A press still buffered never crossed the drag threshold, and nothing
       // else spent it. Without this, a tool binding `click` but not `drag`
       // would click on the release of a drag clear across the canvas.
-      if (!rec.buffered) return {};
+      if (!rec?.buffered) return {};
       const at = world(s);
       const up = {
         target: s.target, clientX: s.clientX, clientY: s.clientY, world: { x: at.x, y: at.y }, ...modifiersOf(s),
