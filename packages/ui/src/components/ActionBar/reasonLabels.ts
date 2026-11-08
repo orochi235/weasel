@@ -9,3 +9,8 @@ export const DEFAULT_REASON_LABELS: Readonly<Record<string, string>> = {
   [ActionDisabledReason.NotApplicable]: 'Not applicable here',
   [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
 };
+
+/** What `labels` says for `reason`, else the reason itself. */
+export function reasonLabel(reason: string, labels: Readonly<Record<string, string>> = DEFAULT_REASON_LABELS): string {
+  return Object.hasOwn(labels, reason) ? labels[reason]! : reason;
+}
