@@ -146,6 +146,7 @@ describe('keySpecFromKey — named keys', () => {
   it('passes unknown multi-character keys through unchanged', () => {
     expect(keySpecFromKey('F1', { platform: 'macos' })).toEqual({ label: 'F1' });
     expect(keySpecFromKey('NumLock', { platform: 'windows' })).toEqual({ label: 'NumLock' });
+    expect(keySpecFromKey('constructor', { platform: 'macos', labels: {} })).toEqual({ label: 'constructor' });
   });
 
   it('forwards the optional flag', () => {

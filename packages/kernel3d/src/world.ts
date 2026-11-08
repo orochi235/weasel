@@ -120,6 +120,15 @@ export function withDescendants<TData, TLayer extends string>(
   return out;
 }
 
+/** Whether a BVH can hold `box`: finite, and no side inverted. */
+export function boxIndexable({ min, max }: Aabb): boolean {
+  return (
+    Number.isFinite(min.x) && Number.isFinite(min.y) && Number.isFinite(min.z) &&
+    Number.isFinite(max.x) && Number.isFinite(max.y) && Number.isFinite(max.z) &&
+    min.x <= max.x && min.y <= max.y && min.z <= max.z
+  );
+}
+
 /** A box with no extent at `p`. */
 export function pointBox(p: Vec3): Aabb {
   return { min: p, max: p };

@@ -28,5 +28,6 @@ describe('keySpecFromCode', () => {
   it('takes a label by code before the tables', () => {
     expect(keySpecFromCode('KeyZ', { labels: { KeyZ: 'Y' } })).toEqual({ label: 'Y' });
     expect(keySpecFromCode('ShiftLeft', { platform: 'macos', labels: { shift: 'Umschalt' } })).toEqual({ label: 'Umschalt' });
+    expect(keySpecFromCode('constructor', { platform: 'macos', labels: {} })).toEqual({ label: 'constructor' });
   });
 });

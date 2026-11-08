@@ -78,5 +78,6 @@ describe('dropSkinJoints', () => {
     const skin = { hip: [1, 0], knee: [0, 1], foot: [0, 0] };
     expect(dropSkinJoints(skin, ['knee', 'foot'])).toEqual({ hip: [1, 0] });
     expect(dropSkinJoints(skin, ['elbow'])).toBe(skin);
+    expect(dropSkinJoints(skin, ['toString'])).toBe(skin);
   });
 });

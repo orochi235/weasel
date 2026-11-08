@@ -212,16 +212,19 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
     },
 
     release(s) {
-      hold.cancel(s.pointerId);
-      const before = held.size;
       const rec = held.get(s.pointerId);
-      held.delete(s.pointerId);
-      // Any finger lifting ends the multitouch gesture the hand was making.
-      if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
-      touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
-      if (before >= 2 && held.size < 2) {
-        const fingers = touches.finish(happenedAt(s), longPressMs());
-        if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
+      const before = held.size;
+      // A pointer never pressed here takes no part in what the held ones are doing.
+      if (rec) {
+        hold.cancel(s.pointerId);
+        held.delete(s.pointerId);
+        // Any finger lifting ends the multitouch gesture the hand was making.
+        if (before >= 2) sink.dispatch(multiTouchEvent(before, s, { end: 'commit' }));
+        touches.moved(s.pointerId, { x: s.clientX, y: s.clientY });
+        if (before >= 2 && held.size < 2) {
+          const fingers = touches.finish(happenedAt(s), longPressMs());
+          if (fingers !== null) sink.dispatch({ kind: 'multitouchtap', fingers, ...modifiersOf(s) });
+        }
       }
       sink.dispatch(pointerUpEvent(s, world(s)));
       // A press still buffered never crossed the drag threshold, and nothing

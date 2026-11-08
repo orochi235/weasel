@@ -26,7 +26,7 @@ export interface CycleHandle {
 
 /** Register a function override that phase-rotates the base color array
  *  along the path index. Returns a handle whose `cancel()` removes the
- *  override.
+ *  override, unless another has been set on the same node and channel since.
  *
  *  The override computes its value purely from `performance.now()`, so
  *  there's no per-frame progress to register with the animator's tick
@@ -79,9 +79,13 @@ export function cycleVertexColors(
   // loop running until cancel().
   const releaseKeepAlive = animator.keepAlive();
 
+  let canceled = false;
   return {
     cancel(): void {
-      animator.colorOverrides.clear(id, channel);
+      if (canceled) return;
+      canceled = true;
+      // An override set over the cycle since is someone else's to clear.
+      if (animator.colorOverrides.get(id, channel) === override) animator.colorOverrides.clear(id, channel);
       releaseKeepAlive();
     },
   };
