@@ -38,7 +38,7 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
     if (held && held.owner !== table.owner) {
       fail(ctx, `the icon namespace "${table.namespace}" is claimed by both ${held.owner} and ${table.owner}`);
     }
-    if (table.namespace in variants) {
+    if (Object.hasOwn(variants, table.namespace)) {
       fail(ctx, `the custom icon variant "${table.namespace}" has the name of ${table.owner}'s icon namespace`);
     }
     tables.set(table.namespace, held ? { ...table, icons: { ...held.icons, ...table.icons } } : table);
@@ -71,7 +71,7 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
       const all = [...tables.values()];
       if (variant === USED) return dev ? all : subset(all, (ns, name) => refs.has(`${ns}:${name}`));
       if (variant === 'all') return all;
-      const custom = variants[variant];
+      const custom = Object.hasOwn(variants, variant) ? variants[variant] : undefined;
       if (custom) return subset(all, admits(custom));
       const own = tables.get(variant);
       if (!own) fail(ctx, `virtual:weasel-icons/${variant} names no custom variant and no icon namespace in this build`);
