@@ -146,3 +146,9 @@ describe('equalizeHandlesAction', () => {
     expect(b.inHandle!.y).toBeCloseTo(30 * k, 4);
   });
 });
+
+describe('balanceHandles binding', () => {
+  it('lets the handle locks\' keys be held as its drag starts', () => {
+    expect(balanceHandlesAction.defaultBinding![0]!.spec.mods).toEqual({ shift: 'optional', meta: 'optional', ctrl: 'optional' });
+  });
+});

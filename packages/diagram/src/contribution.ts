@@ -13,6 +13,8 @@
  */
 import {
   ActionDisabledReason,
+  roleMods,
+  SNAP_ROLES,
   type Action,
   type Contribution,
   type CursorSpec,
@@ -115,7 +117,7 @@ export function diagramWaypoints<TPose>(
         grabPortAction(GRAB_WAYPOINT_ACTION_ID),
       ],
       bindings: [
-        { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-waypoints.drag' } },
+        { spec: { kind: 'drag', target, mods: roleMods(SNAP_ROLES) }, actionId, opts: { id: 'weasel-diagram-waypoints.drag' } },
         { spec: { kind: 'doubleClick', target }, actionId: REMOVE_WAYPOINT_ACTION_ID, opts: { id: 'weasel-diagram-waypoints.doubleClick' } },
         ...grabPortBindings(GRAB_WAYPOINT_ACTION_ID, WAYPOINT_AFFORDANCE_KIND),
       ],
