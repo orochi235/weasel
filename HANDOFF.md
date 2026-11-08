@@ -17,13 +17,24 @@ For the session picking this up: what is in flight and what has no other home. O
 - The second bug-audit round (2026-11-07 evening, 66 fixes across routing, ui, core, svg, pdf, path-tools, stroke,
   paint, text, diagram-formats, plot, theme, prefs, quantity, storage, audio) and `select`'s `'single'` intent are on
   `main` at f36edd14a and pushed. Its batch ran `test:fleet` green at 479c893d1 (4142 files) and `test:fleet:postbuild`
-  green there; the merge adds only HANDOFF. A third round's
-  eight finished branches are merged on `batch/2026-11-07i` (`.worktrees/batch-2026-11-07i`, at 6efccfc46); `audit3-geom`
-  joins it when it finishes, and the batch then takes a full fleet run (forge changed `scripts/vite-watch.ts`). A fourth
-  round runs on top of 6efccfc46, one agent each in `.worktrees/audit4-<area>` (core-scene, animator, gestures, svg-b,
-  text-b, site, kernel3d, path-tools-b, fixups); `fixups` takes the small bugs the third round left: theme editor copy
-  timers, draw's Paper select on a custom page, labkit's `watch3d` double unsubscribe and `PresentationState.time` doc,
-  and diagram labels taking two undo entries.
+  green there; the merge adds only HANDOFF. Round three (nine
+  branches) is merged on `batch/2026-11-07i` (`.worktrees/batch-2026-11-07i`). Its full fleet run at 9a7aff0c2 failed one
+  test, `SceneViewCanvas.test.tsx`'s scrolled-out-of-view case, whose IntersectionObserver stub sent entries with no
+  `target` after `useVisibleRaf` began reading only its own element's; 436a22d1e fixes the stub, and its full rerun was
+  in flight (log `fleet-batch-2026-11-07i-2.log` in that session's scratchpad). Postbuild passed at 9a7aff0c2. Green,
+  `main` merges the batch.
+- Round four (2026-11-07 night) branched from 6efccfc46, one agent per `.worktrees/audit4-<area>`. Done, not yet
+  batched: `path-tools-b` (4 fixes, retires the warp P3), `gestures` (4), `kernel3d` (3), and `invert` (from 9a7aff0c2:
+  2D and 3D `invert` share one condition-number rule, refusing liberally as ruled; retires the P3). Stopped at the
+  account's weekly limit mid-work, their commits so far kept: `fixups`, `core-scene`, `animator`, `site`, `text-b`,
+  `svg-b`. Resume each by messaging its agent once the limit resets, or start a fresh agent on the worktree with
+  the brief (that session's scratchpad `audit4-brief.md`; its text is reproducible from round three's commits) and
+  `git log 6efccfc46..` as what is already done. `fixups` takes: theme editor copy timers, draw's Paper select showing
+  "Custom" on an unnamed size, labkit's `watch3d` double unsubscribe and `PresentationState.time` doc, diagram labels
+  taking two undo entries.
+- Left open by round four: kernel3d's design doc still says `unionOfChildren` produces garbage in 3D, which
+  `kitRegistry.ts` no longer does; a pen or mouse held while a finger touches counts as a multitouch finger
+  (`pointerRecognizer.ts` says intended), Mike's call.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
 - Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
   new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
