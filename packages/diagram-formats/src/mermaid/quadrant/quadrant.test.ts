@@ -94,6 +94,11 @@ describe('writing a Mermaid quadrant chart', () => {
     ].join('\n'));
   });
 
+  it('writes classes back in the order it read them, a name made of digits included', () => {
+    const text = 'quadrantChart\n  A:::9: [0.5, 0.5]\n  classDef hot color: #ff0000\n  classDef 9 radius: 4\n';
+    expect(writeMermaidQuadrant(plotOf(text)).text).toBe(text);
+  });
+
   it('warns on what Mermaid cannot hold, and throws on another kind of chart', () => {
     const page: PlotPage = {
       kind: 'plot', id: 'p', width: 1, height: 1,

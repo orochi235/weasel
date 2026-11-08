@@ -46,4 +46,18 @@ describe('quadrant structure', () => {
     expect(removeQuadrantClass(removeQuadrantClass(d, 0), 0).classes).toBeUndefined();
     compiles(d);
   });
+
+  it('keeps classes in order when a name is all digits, which an object would sort first', () => {
+    let d: QuadrantData = { kind: 'quadrant', points: [{ name: 'p', x: 0, y: 0, className: '7' }], classes: { hot: { color: '#f00' } } };
+    d = insertQuadrantClass(d, 1, '7');
+    expect(quadrantClassNames(d)).toEqual(['hot', '7']);
+    expect(quadrantClassNames(moveQuadrantClass(d, 1, 0))).toEqual(['7', 'hot']);
+    expect(quadrantClassNames(renameQuadrantClass(d, 0, '2'))).toEqual(['2', '7']);
+    expect(quadrantClassNames(renameQuadrantClass(d, 1, 'cold'))).toEqual(['hot', 'cold']);
+    expect(renameQuadrantClass(d, 1, 'cold').classOrder).toBeUndefined();
+    expect(setQuadrantClassStyle(d, 1, 'radius', 4).classes!['7']).toEqual({ radius: 4 });
+    expect(quadrantClassNames(removeQuadrantClass(d, 0))).toEqual(['7']);
+    expect(quadrantClassNames({ ...d, classOrder: ['gone', '7'] })).toEqual(['7', 'hot']);
+    compiles(d);
+  });
 });

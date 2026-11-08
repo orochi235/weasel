@@ -20,7 +20,8 @@ export const radarEditor: PlotEditor<RadarData> = {
     const which = curveAxis(trait.datum);
     if (which === null) return null;
     const { layout } = compileRadar(data, size, theme, measure);
-    return (at) => setRadarValue(data, which.curve, which.axis, radarValueAt(layout, which.axis, at));
+    // With no `max`, the rim is the largest value, so a drag past it raises the value rather than stopping there.
+    return (at) => setRadarValue(data, which.curve, which.axis, radarValueAt(layout, which.axis, at, data.max === undefined));
   },
   text(data, datum, text) {
     if (datum.edit === 'title') return withTitle(data, text);
