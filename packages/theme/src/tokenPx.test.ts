@@ -17,7 +17,7 @@ describe('tokenPx', () => {
   });
 
   it('reads a bare 0 as 0px, as CSS does', () => {
-    expect(tokenPx('--wzl-titlebar-inset')).toBe(0);
+    expect(tokenPx('--wzl-panel-title-inset')).toBe(0);
     expect(tokenPx('--wzl-radius-md', { '--wzl-radius-md': '0' } as never)).toBe(0);
     expect(() => tokenPx('--wzl-handle-size', { '--wzl-handle-size': '3' } as never)).toThrow(/not a px length/);
   });
