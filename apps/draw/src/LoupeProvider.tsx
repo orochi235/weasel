@@ -92,7 +92,7 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
   source: RenderLayer<unknown>[];
   settings: LoupeSettings;
   state: LoupeState;
-  onColor: (hex: string) => void;
+  onColor: (hex: string | null) => void;
 }) {
   const hud = useHud(canvasRef, { font: 'sans-serif' });
   const pickColor = usePickColor();

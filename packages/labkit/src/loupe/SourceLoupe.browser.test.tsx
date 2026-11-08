@@ -38,7 +38,7 @@ function drawBands(gl: WebGLRenderingContext): void {
 interface SceneProps {
   /** Whether the drawing code calls `capture()` after it draws. */
   captures: boolean;
-  onColorChange?: (hex: string) => void;
+  onColorChange?: (hex: string | null) => void;
   /** Handed the context, and a way to redraw the whole canvas one color — a
    *  frame that changes what is under a lens that has not moved. */
   onReady?: (gl: WebGLRenderingContext, fill: (rgb: [number, number, number]) => void) => void;
@@ -153,7 +153,7 @@ test('without capture the lens has nothing to show', async () => {
 });
 
 test('reports the captured color on the first aim', async () => {
-  const colors: string[] = [];
+  const colors: (string | null)[] = [];
   const { container } = render(<Scene captures onColorChange={(c) => colors.push(c)} />);
   await frames(3);
   aim(container, 80, 25);
@@ -163,7 +163,7 @@ test('reports the captured color on the first aim', async () => {
 });
 
 test('a still aim follows the canvas as it redraws', async () => {
-  const colors: string[] = [];
+  const colors: (string | null)[] = [];
   let fill: ((rgb: [number, number, number]) => void) | undefined;
   const { container } = render(
     <Scene captures onColorChange={(c) => colors.push(c)} onReady={(_, f) => (fill = f)} />,

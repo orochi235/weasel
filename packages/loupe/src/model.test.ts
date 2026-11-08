@@ -112,14 +112,19 @@ describe('loupe model: color', () => {
     expect(loupe.color).toBe('#00ff00');
   });
 
-  it('keeps the last color when the surface cannot answer', () => {
+  it('reports no color over a point where nothing is drawn, as a pick there takes none', () => {
+    const onColorChange = vi.fn();
     let hex: string | null = '#abcdef';
     const { surface } = stubSurface({ sample: () => hex });
-    const loupe = createLoupeModel({ surface });
+    const loupe = createLoupeModel({ surface, onColorChange });
     loupe.aimAt({ x: 1, y: 1 });
     hex = null;
     loupe.aimAt({ x: 2, y: 2 });
-    expect(loupe.color).toBe('#abcdef');
+    expect(loupe.color).toBeNull();
+    expect(loupe.pick()).toBeNull();
+    expect(onColorChange.mock.calls).toEqual([['#abcdef'], [null]]);
+    loupe.aimAt({ x: 3, y: 3 });
+    expect(onColorChange).toHaveBeenCalledTimes(2);
   });
 
   it('samples a surface whose pixels land later on the frame after the aim', () => {
