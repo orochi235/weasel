@@ -27,8 +27,8 @@ function tensor(): MeshPatch {
     ...square(),
     points: [
       ...square().points,
-      { x: 1 / 3, y: 1 / 3 }, { x: 1 / 3, y: 2 / 3 },
-      { x: 2 / 3, y: 2 / 3 }, { x: 2 / 3, y: 1 / 3 },
+      { x: 1 / 3, y: 1 / 3 }, { x: 2 / 3, y: 1 / 3 },
+      { x: 2 / 3, y: 2 / 3 }, { x: 1 / 3, y: 2 / 3 },
     ],
   };
 }
@@ -99,13 +99,12 @@ describe('moveMeshHandle', () => {
   });
 
   it('carries the interior point nearest the corner in a tensor patch', () => {
-    // Corner 1 is (1,0); its interior neighbor is the fourth trailing point,
-    // not the second — the net's interior is read in PDF's transposed order.
+    // Corner 1 is (1,0); its interior neighbor is the second trailing point, p12.
     const m = mesh(tensor());
     const next = moveMeshHandle(m, handleAt(meshHandles(m), 'corner', 1, 0), { x: 2, y: 0 });
     const p = next.patches[0].points;
-    expect(p[15]).toEqual({ x: 2 / 3 + 1, y: 1 / 3 });
-    expect(p[13]).toEqual(tensor().points[13]);
+    expect(p[13]).toEqual({ x: 2 / 3 + 1, y: 1 / 3 });
+    expect(p[15]).toEqual(tensor().points[15]);
   });
 
   it('moves a shared corner in every patch so the mesh does not tear', () => {
@@ -160,7 +159,7 @@ describe('meshGuides', () => {
     // Two edge controls and one interior point per corner.
     expect(arms).toHaveLength(12);
     const p = tensor().points;
-    expect(arms).toContainEqual([p[3], p[15]]);
-    expect(arms).toContainEqual([p[9], p[13]]);
+    expect(arms).toContainEqual([p[3], p[13]]);
+    expect(arms).toContainEqual([p[9], p[15]]);
   });
 });

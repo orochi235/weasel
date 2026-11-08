@@ -30,8 +30,8 @@ function squareTensor(): MeshPatch {
     ...coons,
     points: [
       ...coons.points,
-      { x: 1 / 3, y: 1 / 3 }, { x: 1 / 3, y: 2 / 3 },
-      { x: 2 / 3, y: 2 / 3 }, { x: 2 / 3, y: 1 / 3 },
+      { x: 1 / 3, y: 1 / 3 }, { x: 2 / 3, y: 1 / 3 },
+      { x: 2 / 3, y: 2 / 3 }, { x: 1 / 3, y: 2 / 3 },
     ],
   };
 }
@@ -88,6 +88,33 @@ describe('evalPatch', () => {
       const b = evalPatch(tensor, u, v);
       expect(b.x).toBeCloseTo(a.x, 6);
       expect(b.y).toBeCloseTo(a.y, 6);
+    }
+  });
+
+  // PDF reads the sixteen points as p00 p01 p02 p03 p13 p23 p33 p32 p31 p30
+  // p20 p10 p11 p12 p22 p21, and a tensor patch whose interior is the one
+  // PDF derives from a Coons patch's boundary draws that Coons patch.
+  it('reads the interior points in PDF\'s order', () => {
+    const coons: MeshPatch = {
+      ...squarePatch(),
+      points: squarePatch().points.map((pt, i) => ({ x: pt.x + [0, 0.2, -0.1, 0, 0.3, 0, 0, 0.1, 0, 0, -0.2, 0.4][i], y: pt.y + [0, -0.3, 0.1, 0.2, 0, 0.5, 0, 0, -0.2, 0, 0, 0.1][i] })),
+    };
+    const order = ['00', '01', '02', '03', '13', '23', '33', '32', '31', '30', '20', '10'];
+    const P = (i: number, j: number): MeshPoint => coons.points[order.indexOf(`${i}${j}`)];
+    // Coons-equivalent interior point (i, j), from the corner it sits beside.
+    const interior = (i: number, j: number): MeshPoint => {
+      const r = (k: number) => (i === 1 ? k : 3 - k), c = (k: number) => (j === 1 ? k : 3 - k);
+      const q = (a: number, b: number) => P(r(a), c(b));
+      const f = (k: 'x' | 'y') => (-4 * q(0, 0)[k] + 6 * (q(0, 1)[k] + q(1, 0)[k]) - 2 * (q(0, 3)[k] + q(3, 0)[k])
+        + 3 * (q(3, 1)[k] + q(1, 3)[k]) - q(3, 3)[k]) / 9;
+      return { x: f('x'), y: f('y') };
+    };
+    const tensor: MeshPatch = { ...coons, points: [...coons.points, interior(1, 1), interior(1, 2), interior(2, 2), interior(2, 1)] };
+    for (const [u, v] of [[0.3, 0.2], [0.5, 0.5], [0.8, 0.1], [0.15, 0.9]] as const) {
+      const a = evalPatch(coons, u, v);
+      const b = evalPatch(tensor, u, v);
+      expect(b.x).toBeCloseTo(a.x, 9);
+      expect(b.y).toBeCloseTo(a.y, 9);
     }
   });
 
