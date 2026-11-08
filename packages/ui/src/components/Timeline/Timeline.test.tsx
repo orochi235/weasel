@@ -150,6 +150,24 @@ describe('Timeline', () => {
     expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
   });
 
+  it('still zooms its own window when onWindowChange only observes', () => {
+    const onWindowChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onWindowChange={onWindowChange} />);
+    fireEvent.wheel(screen.getByTestId('timeline-ruler'), { ctrlKey: true, deltaY: -Math.log(2) / 0.0015, clientX: 0 });
+    expect(onWindowChange).toHaveBeenCalledWith({ from: 0, to: 500 });
+    expect(screen.getAllByTestId('timeline-key')[1].style.left).toBe('100%');
+  });
+
+  it('still selects a key itself when onSelect only observes', () => {
+    const onSelect = vi.fn();
+    const editor = () => <span data-testid="key-editor" />;
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onSelect={onSelect} renderKeyEditor={editor} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    expect(onSelect).toHaveBeenLastCalledWith({ trackPath: [0], keyIndex: 1 });
+    expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+  });
+
   it('keeps focus on a key that an arrow key moves past its neighbor', () => {
     function Host() {
       const [value, setValue] = useState<Track[]>(() => [

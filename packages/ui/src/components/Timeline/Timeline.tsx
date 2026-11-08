@@ -78,10 +78,15 @@ export function Timeline(props: TimelineProps): ReactElement {
 
   const bounds: TimeWindow = { from: 0, to: duration };
   const win = props.window ?? ownWindow ?? bounds;
-  const setWindow = props.onWindowChange
-    ?? ((w: TimeWindow): void => setOwnWindow(w.from <= 0 && w.to >= duration ? null : w));
+  const setWindow = (w: TimeWindow): void => {
+    if (props.window === undefined) setOwnWindow(w.from <= 0 && w.to >= duration ? null : w);
+    props.onWindowChange?.(w);
+  };
   const selection = props.selection !== undefined ? props.selection : ownSelection;
-  const setSelection = props.onSelect ?? setOwnSelection;
+  const setSelection = (sel: KeySelection | null): void => {
+    if (props.selection === undefined) setOwnSelection(sel);
+    props.onSelect?.(sel);
+  };
   // A key and a segment are one selection: taking either gives up the other.
   const selectKey = (sel: KeySelection | null): void => {
     setSelection(sel);
