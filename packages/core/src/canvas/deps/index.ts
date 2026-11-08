@@ -35,3 +35,4 @@ export { useLayoutDepSource } from './layout';
 export { useGeometryProjection } from './geometryProjection';
 export { useIngestionDepSource } from './ingestion';
 export { createEnteredGroup, useEnteredGroup, useEnteredGroupApiSource, type EnteredGroupApi } from './enteredGroup';
+export { useColorAtDepSource, type ColorAtSource } from './colorAt';

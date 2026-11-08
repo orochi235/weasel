@@ -50,6 +50,8 @@ export type {
 } from '../canvas/sceneViewRender';
 export type { PaintOverrides } from '../canvas/paintOverrides';
 export { renderSceneToPixels, planPixelRender, createRasterSession, warmRender } from '../canvas/renderSceneToPixels';
+export { createLayerSampler, planLayerSample } from '../canvas/layerSample';
+export type { LayerSampleArgs, LayerSamplePlan, LayerSampler } from '../canvas/layerSample';
 export { scenePickIds, type ScenePickIds } from '../canvas/scenePickIds';
 export { commandRasterizer } from '../canvas/commandRasterizer';
 export type { CommandRasterizer, RasterRect } from '../canvas/commandRasterizer';

@@ -7,7 +7,6 @@ import {
   type SourceBox,
   type SourceCanvas,
   type SourceContext,
-  sourcePixel,
   sourceRegion,
 } from '@weasel-js/loupe';
 
@@ -62,11 +61,6 @@ export function sourceBoxIn(source: CanvasSource, host: HTMLElement | null): Sou
     }
   }
   return { x: 0, y: 0, width: hostRect?.width ?? c.width, height: hostRect?.height ?? c.height };
-}
-
-/** The color a source shows at a host point, or `null` where it shows none. */
-export function sampleSource(source: CanvasSource, p: LoupePoint, box: SourceBox): string | null {
-  return source.sample(sourcePixel(p, box, source.canvas));
 }
 
 /** Enlarge the pixels of `source` around `aim` into a lens' own canvas, with

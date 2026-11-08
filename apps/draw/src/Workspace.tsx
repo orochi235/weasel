@@ -11,7 +11,9 @@ import {
   type ToolsApi,
   transformPath,
   type UseSceneTextEditReturn,
+  useEyedropperTool,
   useMeasureTool,
+  type RenderLayer,
   type View,
   workspaceTintLayer
 } from '@weasel-js/core';
@@ -37,6 +39,7 @@ import { type DocPages, TextEditDepPublisher, usePaperLayer } from '@weasel-js/e
 import { reportPasteOmissions } from './pasteOmissions';
 import { clipboardJsonReviver } from './persistence';
 import { useColorContext } from './tools/colorContext';
+import { usePickColor } from './usePickColor';
 import { DRAW_FEATURES } from './drawFeatures';
 import { LastOperation } from './ui/LastOperation';
 import { DRAW_TUNE } from './constraintKeys';
@@ -81,6 +84,8 @@ export interface WorkspaceProps {
   recenter: () => void;
   backgroundColor: string;
   onToolsCreated: (tools: ToolsApi) => void;
+  /** What the eyedropper samples: the layers the loupe re-renders, so both read the same picture. */
+  sampleLayers: readonly RenderLayer<unknown>[];
   onCanvas: (api: SceneCanvasApi | null) => void;
   openPalette: () => void;
 }
@@ -137,6 +142,9 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
+  const pickColor = usePickColor();
+  // No hotkey: Alt measures distance from the selection here.
+  const eyedropperTool = useEyedropperTool({ onPick: (hex) => { if (hex) pickColor(hex); }, hotkey: null });
   const measureEntry = useMemo(
     () => measurementsContribution(scene as never, measurements),
     [scene, measurements],
@@ -210,7 +218,8 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             routing={DRAW_NODE_ROUTING}
             selection={selection}
             defaultTools={DRAW_TOOLS}
-            tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool }}
+            tools={{ ...pathToolsTools, measure: measureTool, opacityScrub: opacityScrubTool, eyedropper: eyedropperTool }}
+            sampleLayers={props.sampleLayers}
             ingestion={DRAW_INGESTION}
             tune={DRAW_TUNE}
             insertPaint={insertPaint}

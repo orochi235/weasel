@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { createCanvasReader, readGl, regionAround } from './readback';
 
 const core = vi.hoisted(() => ({ backend: 'webgl2' as 'webgl2' | 'webgpu', reads: [] as unknown[] }));
-vi.mock('@weasel-js/core', () => ({
-  canvasPaintsWith: () => core.backend,
+vi.mock('./canvasBackend', () => ({ canvasPaintsWith: () => core.backend }));
+vi.mock('./readCanvasPixels', () => ({
   readCanvasPixels: (_c: unknown, rect: { width: number; height: number }) => {
     core.reads.push(rect);
     const bytes = new Uint8Array(rect.width * rect.height * 4);

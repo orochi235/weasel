@@ -24,3 +24,10 @@ export function hexToRgbBytes(input: string): [number, number, number] {
   if (!bytes) throw new Error(`not a hex color: "${input}"`);
   return [bytes[0], bytes[1], bytes[2]];
 }
+
+/** An RGBA pixel's bytes as `#rrggbb`, or `null` where it is fully transparent: the color a
+ *  sampler reports for what is drawn at a point. Alpha is dropped, not composited. */
+export function rgbaHex(rgba: ArrayLike<number>): string | null {
+  if (rgba[3] === 0) return null;
+  return `#${byteHex(rgba[0])}${byteHex(rgba[1])}${byteHex(rgba[2])}`;
+}

@@ -93,7 +93,7 @@ export { lerpHueDeg, type HueInterpolation } from './hue';
 export { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';
 export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
-export { byteHex, parseHexBytes, hexToRgbBytes } from './hex';
+export { byteHex, parseHexBytes, hexToRgbBytes, rgbaHex } from './hex';
 export {
   parseColor,
   parseColorToRgba255,

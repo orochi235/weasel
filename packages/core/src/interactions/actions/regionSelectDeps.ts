@@ -18,6 +18,14 @@ export type NodeAtPointDep = (
   exclude?: Iterable<NodeId>,
 ) => NodeId | null;
 
+/**
+ * The color a viewer sees at a screen point — CSS px from the top-left of the
+ * element pointer input lands on — as `#rrggbb`, or `null` where nothing is
+ * drawn. It may answer later, as a WebGPU readback does. A screen point,
+ * not a world one, so a 3D host answers it from its own camera and pixels.
+ */
+export type ColorAtDep = (point: { x: number; y: number }) => string | null | Promise<string | null>;
+
 /** What an area-selecting action needs: a way to ask what a region covers,
  *  and a way to read and replace the selection. */
 export interface AreaSelectDep {

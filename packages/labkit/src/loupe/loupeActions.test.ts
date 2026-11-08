@@ -1,6 +1,6 @@
 import { heldKeySpec } from '@weasel-js/core';
 import { describe, expect, it } from 'vitest';
-import { createLoupeActions, LOUPE_AIM_ID, LOUPE_LEAVE_ID, LOUPE_PEEK_ID } from './loupeActions';
+import { createLoupeActions, LOUPE_AIM_ID, LOUPE_LEAVE_ID, LOUPE_PEEK_ID, LOUPE_PICK_ID } from './loupeActions';
 
 const input = {
   shown: () => false,
@@ -8,6 +8,8 @@ const input = {
   magnifyBy: () => {},
   aimAt: () => {},
   leave: () => {},
+  dropping: () => false,
+  pickAtPointer: () => {},
 };
 
 const ANY_MODS = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' };
@@ -63,5 +65,21 @@ describe('the loupe aim bindings', () => {
     if (aim.invoker?.timing !== 'immediate') throw new Error('aim is not immediate');
     aim.invoker.run({} as never, { clientX: 7, clientY: 9 });
     expect(seen).toEqual([[7, 9]]);
+  });
+});
+
+describe('the eyedropper click', () => {
+  it('picks at the pointer while the eyedropper is on, and declines while it is off', () => {
+    let on = false;
+    let picks = 0;
+    const pick = createLoupeActions({ ...input, dropping: () => on, pickAtPointer: () => { picks++; } }, null)
+      .find((a) => a.id === LOUPE_PICK_ID)!;
+    expect(specOf(LOUPE_PICK_ID)).toEqual({ kind: 'click', mods: ANY_MODS });
+    expect(pick.enabled?.({} as never)).toBe('not-applicable');
+    on = true;
+    expect(pick.enabled?.({} as never)).toBe(true);
+    if (pick.invoker?.timing !== 'immediate') throw new Error('pick is not immediate');
+    pick.invoker.run({} as never, {});
+    expect(picks).toBe(1);
   });
 });

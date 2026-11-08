@@ -67,21 +67,15 @@ export interface CanvasSource {
   /** The pixels to read now: the last capture, or the canvas itself when it
    *  keeps its own. `null` while a captured source has no current frame. */
   frame(): CanvasImageSource | null;
-  /** Hex color of the backing-store pixel at `p` (device px, not CSS px), or
-   *  `null` where it is transparent, off the canvas, or there is no frame. */
-  sample(p: LoupePoint): string | null;
+  /** RGBA of the backing-store pixel at `p` (device px, not CSS px), or
+   *  `null` off the canvas or while there is no frame. Read it through
+   *  {@link canvasPixelSource} to sample it at a surface point. */
+  pixel(p: LoupePoint): Uint8ClampedArray | null;
   /** Start reading. While any reader holds the source, `capture` copies;
    *  returns the release. */
   retain(): () => void;
   /** Run `fn` after each capture lands; returns an unsubscribe. */
   subscribeFrame(fn: () => void): () => void;
-}
-
-/** An RGBA pixel's bytes as `#rrggbb`, or `null` where it is fully
- *  transparent: what a loupe reports for the color under a point. */
-export function pixelHex(rgba: ArrayLike<number>): string | null {
-  if (rgba[3] === 0) return null;
-  return `#${[rgba[0], rgba[1], rgba[2]].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
 }
 
 /** A frame read this many times with no capture behind it means the drawing
@@ -177,7 +171,7 @@ export function createCanvasSource(
       return null;
     },
 
-    sample(p) {
+    pixel(p) {
       const frame = source.frame();
       if (!frame) return null;
       const x = Math.floor(p.x);
@@ -190,7 +184,7 @@ export function createCanvasSource(
       }
       probe.globalCompositeOperation = 'copy';
       probe.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
-      return pixelHex(probe.getImageData(0, 0, 1, 1).data);
+      return probe.getImageData(0, 0, 1, 1).data;
     },
 
     retain() {
@@ -237,16 +231,4 @@ export function sourceRegion(
     sw: spanX * kx,
     sh: spanY * ky,
   };
-}
-
-/** A surface point in CSS px, as the backing-store pixel of a canvas laid
- *  over `box` that it lands on. */
-export function sourcePixel(
-  p: LoupePoint,
-  box: SourceBox,
-  backing: { width: number; height: number },
-): LoupePoint {
-  const kx = box.width > 0 ? backing.width / box.width : 1;
-  const ky = box.height > 0 ? backing.height / box.height : 1;
-  return { x: (p.x - box.x) * kx, y: (p.y - box.y) * ky };
 }

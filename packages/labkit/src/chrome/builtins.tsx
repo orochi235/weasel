@@ -13,6 +13,44 @@ import type { TrialChromeContext, TrialContribution } from './types';
 
 const ZOOM_STEP = 1.25;
 
+/** The loupe's toolbar while a lens is mounted: its toggle, the eyedropper's beside it, and the readout they share. */
+function loupeContributions(ctx: TrialChromeContext): TrialContribution[] {
+  return [
+    {
+      id: 'loupe',
+      region: 'toolbar',
+      group: 'view',
+      item: { icon: icon('ui:loupe'), label: 'Loupe', pressed: ctx.loupeOn, onActivate: ctx.toggleLoupe },
+    },
+    {
+      id: 'eyedropper',
+      region: 'toolbar',
+      group: 'view',
+      item: { icon: icon('core:eyedropper'), label: 'Eyedropper', pressed: ctx.dropperOn, onActivate: ctx.toggleDropper },
+    },
+    pickedColorReadout(ctx.pickedColor),
+  ];
+}
+
+/** The color last picked, by the eyedropper or a loupe, as one toolbar item: it reads the hex, and pressing it
+ *  copies it. */
+function pickedColorReadout(hex: string | null): TrialContribution {
+  return {
+    id: 'picked-color',
+    region: 'toolbar',
+    group: 'view',
+    item: {
+      icon: icon('core:copy'),
+      label: hex ?? 'No color picked',
+      showLabel: true,
+      disabled: hex === null,
+      onActivate: () => {
+        if (hex) void navigator.clipboard?.writeText(hex);
+      },
+    },
+  };
+}
+
 /** The property groups inside a contribution are folded under keys prefixed
  *  with that contribution's id, so a group called `marks` cannot fold the
  *  sidebar section of the same name. `ControlPanel` keys by bare label, so the
@@ -119,19 +157,7 @@ export function builtinContributions(
     });
   }
 
-  if (ctx.hasLoupe) {
-    out.push({
-      id: 'loupe',
-      region: 'toolbar',
-      group: 'view',
-      item: {
-        icon: icon('ui:loupe'),
-        label: 'Loupe',
-        pressed: ctx.loupeOn,
-        onActivate: ctx.toggleLoupe,
-      },
-    });
-  }
+  if (ctx.hasLoupe) out.push(...loupeContributions(ctx));
 
   // Zoom acts on the view of the trial, so it is a viewport control. A trial
   // holding a non-2D view reports zoom as null and gets none of this.

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCanvasSource, pixelHex, sourcePixel, sourceRegion } from './canvasSource';
+import { createCanvasSource, sourceRegion } from './canvasSource';
 
 // jsdom has no canvas to draw into, so the snapshot and probe canvases are a
 // stand-in that records what was copied. What the copied pixels look like is
@@ -143,19 +143,19 @@ describe('createCanvasSource', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
-  it('samples a backing-store pixel as hex, and nothing off the canvas', () => {
+  it('reads a backing-store pixel, and nothing off the canvas', () => {
     const s = createCanvasSource(canvas(200, 100));
-    expect(s.sample({ x: 5.7, y: 3.2 })).toBe('#0a141e');
+    expect([...s.pixel({ x: 5.7, y: 3.2 })!]).toEqual([10, 20, 30, 255]);
     expect(made[0].ctx.drawImage).toHaveBeenCalledWith(expect.anything(), 5, 3, 1, 1, 0, 0, 1, 1);
-    expect(s.sample({ x: 200, y: 0 })).toBeNull();
-    expect(s.sample({ x: -1, y: 0 })).toBeNull();
+    expect(s.pixel({ x: 200, y: 0 })).toBeNull();
+    expect(s.pixel({ x: -1, y: 0 })).toBeNull();
   });
 
   it('samples nothing at a point that is not a number', () => {
     // A browser's drawImage skips a NaN rect, so the probe would report the last pixel it held.
     const s = createCanvasSource(canvas(200, 100));
-    expect(s.sample({ x: NaN, y: 3 })).toBeNull();
-    expect(s.sample({ x: 3, y: NaN })).toBeNull();
+    expect(s.pixel({ x: NaN, y: 3 })).toBeNull();
+    expect(s.pixel({ x: 3, y: NaN })).toBeNull();
   });
 
   it('never calls getContext on the canvas it reads', () => {
@@ -164,7 +164,7 @@ describe('createCanvasSource', () => {
     (c as unknown as { getContext: typeof getContext }).getContext = getContext;
     const s = createCanvasSource(c);
     s.retain();
-    s.sample({ x: 1, y: 1 });
+    s.pixel({ x: 1, y: 1 });
     s.capture();
     expect(getContext).not.toHaveBeenCalled();
   });
@@ -174,10 +174,6 @@ describe('source geometry', () => {
   const box = { x: 10, y: 20, width: 100, height: 50 };
   const backing = { width: 200, height: 150 };
 
-  it('maps a surface point through the box to the backing store, per axis', () => {
-    expect(sourcePixel({ x: 60, y: 45 }, box, backing)).toEqual({ x: 100, y: 75 });
-  });
-
   it('copies the diameter-over-factor CSS px around the aim, in device px', () => {
     expect(sourceRegion({ x: 60, y: 45 }, 4, 40, box, backing)).toEqual({
       sx: 90,
@@ -185,12 +181,5 @@ describe('source geometry', () => {
       sw: 20,
       sh: 30,
     });
-  });
-});
-
-describe('pixelHex', () => {
-  it('formats the bytes as #rrggbb, and a fully transparent pixel as null', () => {
-    expect(pixelHex([0, 10, 255, 1])).toBe('#000aff');
-    expect(pixelHex([12, 34, 56, 0])).toBeNull();
   });
 });

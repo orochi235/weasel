@@ -1,5 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import {
+  createEyedropperModel,
   createLoupeModel,
   type LoupeMode,
   type LoupeModel,
@@ -27,6 +28,11 @@ export interface UseLoupeOptions<TData = unknown, TLayer extends string = string
    *  top of the sample every aim takes at once. Omitted, color changes only on
    *  an aim. */
   subscribeResample?: (fn: () => void) => () => void;
+  /** Whether the eyedropper is on: a click on the host picks the color under
+   *  it through `sample`, and one inside the lens what the lens shows there. */
+  dropping?: boolean;
+  /** Called with the color a pick lands on, from the eyedropper or the lens. */
+  onPick?: (hex: string) => void;
 }
 
 /** A loupe as a React view reads it. */
@@ -57,6 +63,33 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
   return over && (enabled || peeking);
 }
 
+/** Whether a host point falls inside the lens's box. */
+function insideLens(lens: LoupeLens, p: LoupePoint): boolean {
+  return Math.abs(p.x - lens.center.x) <= lens.width / 2 && Math.abs(p.y - lens.center.y) <= lens.height / 2;
+}
+
+/** The box the lens is drawn in and what it shows: where the host's `place` puts it, asked only while the lens
+ *  is up because it may measure the host's layout, and otherwise centered on the aim. */
+function lensOf(
+  options: Pick<ResolvedLoupe, 'place' | 'shape' | 'diameter'>,
+  model: LoupeModel,
+  visible: boolean,
+): LoupeLens {
+  const placed = visible ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null) : null;
+  if (!placed) {
+    const { aim, factor } = model;
+    return { center: aim, shows: aim, width: options.diameter, height: options.diameter, factor, shape: options.shape };
+  }
+  return {
+    center: placed.center,
+    shows: placed.shows ?? placed.center,
+    width: placed.width,
+    height: placed.height,
+    factor: placed.factor ?? model.factor,
+    shape: options.shape,
+  };
+}
+
 /** Walk `model`'s factor by one wheel notch of `deltaY` at `rate`. */
 function magnify(model: LoupeModel | null, deltaY: number, rate: number): void {
   if (model) model.setFactor(model.factor * Math.exp(-deltaY * rate));
@@ -76,6 +109,8 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   enabled,
   sample,
   subscribeResample,
+  dropping = false,
+  onPick,
 }: UseLoupeOptions<TData, TLayer, TPose>): LoupeState {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
@@ -87,6 +122,13 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   const enabledRef = useLatest(enabled);
   const sampleRef = useLatest(sample);
   const onColorChangeRef = useLatest(options.onColorChange);
+  const droppingRef = useLatest(dropping);
+  const onPickRef = useLatest(onPick);
+  const dropperRef = useRef<ReturnType<typeof createEyedropperModel> | null>(null);
+  dropperRef.current ??= createEyedropperModel({
+    sample: (p) => sampleRef.current?.(p) ?? null,
+    onPick: (hex) => onPickRef.current?.(hex),
+  });
 
   // Reads nothing but refs, so it is stable and an effect may depend on it.
   const shown = useCallback(
@@ -102,6 +144,7 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
       minFactor: options.minFactor,
       maxFactor: options.maxFactor,
       onColorChange: (hex) => onColorChangeRef.current?.(hex),
+      onPick: (hex) => onPickRef.current?.(hex),
       surface: {
         lens: () => {
           const { center, shows, width, height, factor } = lensRef.current;
@@ -143,13 +186,17 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   // come up under a pointer that has not moved since. Stable, because `input`
   // captures it once.
   const hostRefRef = useLatest(hostRef);
-  const aimAtPointer = useCallback((): void => {
+  const pointerOnHost = useCallback((): LoupePoint | null => {
     const host = hostRefRef.current.current;
     const p = pointerRef.current;
-    if (!host || !p) return;
+    if (!host || !p) return null;
     const rect = host.getBoundingClientRect();
-    modelRef.current?.aimAt({ x: p.clientX - rect.left, y: p.clientY - rect.top });
+    return { x: p.clientX - rect.left, y: p.clientY - rect.top };
   }, [hostRefRef]);
+  const aimAtPointer = useCallback((): void => {
+    const at = pointerOnHost();
+    if (at) modelRef.current?.aimAt(at);
+  }, [pointerOnHost]);
 
   // Turning the loupe off with the pointer still inside must put the lens away,
   // and the model only reconsiders on an aim; turning it on must open the lens
@@ -164,27 +211,7 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
   // This render's `enabled`: `enabledRef` holds the last committed one.
   const visible = lensShown(overRef.current, enabled, peekingRef.current);
 
-  // Asked only while the lens is up: a host's `place` may measure its layout.
-  const placed = visible
-    ? (options.place?.({ aim: model.aim, factor: model.factor }) ?? null)
-    : null;
-  const lens: LoupeLens = placed
-    ? {
-        center: placed.center,
-        shows: placed.shows ?? placed.center,
-        width: placed.width,
-        height: placed.height,
-        factor: placed.factor ?? model.factor,
-        shape: options.shape,
-      }
-    : {
-        center: model.aim,
-        shows: model.aim,
-        width: options.diameter,
-        height: options.diameter,
-        factor: model.factor,
-        shape: options.shape,
-      };
+  const lens = lensOf(options, model, visible);
   const lensRef = useLatest(lens);
 
   // Told on a change in value, not on every render: a host drawing into this
@@ -233,6 +260,12 @@ export function useLoupe<TData = unknown, TLayer extends string = string, TPose 
         overRef.current = false;
         pointerRef.current = null;
         bump();
+      },
+      dropping: () => droppingRef.current,
+      pickAtPointer: () => {
+        const at = pointerOnHost();
+        if (at && shown() && insideLens(lensRef.current, at)) modelRef.current?.pick(at);
+        else if (at) void dropperRef.current?.pick(at);
       },
     };
   }

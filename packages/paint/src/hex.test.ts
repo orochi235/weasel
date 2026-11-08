@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byteHex, hexToRgbBytes, parseHexBytes } from './hex';
+import { byteHex, hexToRgbBytes, parseHexBytes, rgbaHex } from './hex';
 
 describe('parseHexBytes', () => {
   it('reads six and eight digits', () => {
@@ -32,5 +32,12 @@ describe('hexToRgbBytes', () => {
 describe('byteHex', () => {
   it('writes a channel as two digits, rounded and clamped', () => {
     expect([0, 9.6, 127.4, 255, -3, 300].map(byteHex)).toEqual(['00', '0a', '7f', 'ff', '00', 'ff']);
+  });
+});
+
+describe('rgbaHex', () => {
+  it('writes the color of any pixel with alpha, and null for a transparent one', () => {
+    expect(rgbaHex([0, 10, 255, 1])).toBe('#000aff');
+    expect(rgbaHex([12, 34, 56, 0])).toBeNull();
   });
 });

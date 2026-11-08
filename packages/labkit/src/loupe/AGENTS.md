@@ -17,7 +17,7 @@ This directory binds that model to a labkit trial and draws it.
 | `types.ts` | `LoupeOptions`, and `resolveLoupe` filling in every default |
 | `useLoupe.ts` | The model over a host element, and the input its actions drive |
 | `useLensDamage.ts` | The `onLens` a loupe reports through, dirtying the tiles a hollow lens moves across |
-| `loupeActions.ts` | `loupe.aim`, `loupe.leave`, `loupe.peek` and `loupe.magnify`, as `Action` descriptors |
+| `loupeActions.ts` | `loupe.aim`, `loupe.leave`, `loupe.peek`, `loupe.magnify` and the eyedropper's `loupe.pick`, as `Action` descriptors |
 | `LoupeGestures.tsx` | Registers those, and mounts a dispatcher on the host when no camera has one there |
 | `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
 | `LoupeBubble.tsx` | The circle or square clip, positioned on the lens's center |
@@ -131,6 +131,19 @@ trial offers its Loupe toggle while any lens is mounted. `enabled` opts a lens
 out of the switch entirely. Because the lens mounts after the trial's first
 render, `loupe` is in `TRANSIENT_BUILTINS`, so suppressing it before then is
 not a typo.
+
+The same switch carries the eyedropper: an Eyedropper toggle beside the
+loupe's, and one `picked-color` readout whose press copies the hex. While it is
+on, `loupe.pick` takes a click on the host (the loupe's own dispatcher opens its
+`pointer` channel only then): inside the lens it picks what the lens shows
+(`LoupeModel.pick`), elsewhere the host's own color through
+`createEyedropperModel`. Both report to `LoupeSwitch.pick`, so the readout is
+shared. The click reads the pointer the hover last reported; a click carries
+only world points.
+
+The color under the aim, and every pick, come from `@weasel-js/loupe`'s
+`createSampler`: over the stack's layers (`stackSources`, translucent layers
+composited onto what lies beneath) or over `source`'s canvas.
 
 ## Which painter
 

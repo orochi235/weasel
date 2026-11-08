@@ -175,6 +175,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                       recenter={recenter}
                       backgroundColor={doc.backgroundColor}
                       onToolsCreated={setTools}
+                      sampleLayers={loupeSource}
                       onCanvas={attachCanvas}
                       openPalette={openPalette}
                     />
