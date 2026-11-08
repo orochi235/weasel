@@ -1,5 +1,6 @@
 import { canSpin, clampToBounds, spinKey, type SpinBounds } from '@weasel-js/quantity';
 import type { MenuNumberEntry } from './entries';
+import { createHeld } from './heldValues';
 
 /** The number rows of one open menu: what each holds now, and how it is written and stepped. */
 export interface MenuNumberValues {
@@ -18,14 +19,10 @@ export function menuNumberCanStep(e: MenuNumberEntry, value: number, dir: 1 | -1
 /** Number rows that remember what was set while the menu is open; `changed` hears each write, and nothing is
  *  written once `closed` says so. */
 export function createNumberValues(changed: () => void, closed: () => boolean): MenuNumberValues {
-  const held = new Map<MenuNumberEntry, number>();
-  const numberValue = (e: MenuNumberEntry) => (held.has(e) ? held.get(e) : e.value);
+  const { valueOf: numberValue, write } = createHeld<MenuNumberEntry, number>(changed, closed);
   const setNumber = (e: MenuNumberEntry, value: number) => {
     const next = clampToBounds(value, bounds(e));
-    if (closed() || e.disabled || Number.isNaN(next) || next === numberValue(e)) return;
-    held.set(e, next);
-    e.set(next);
-    changed();
+    if (!Number.isNaN(next)) write(e, next);
   };
   const spin = (e: MenuNumberEntry, key: string): boolean => {
     const next = spinKey(key, numberValue(e) ?? e.min ?? 0, bounds(e));
