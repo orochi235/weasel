@@ -6,12 +6,14 @@ import { underPointer } from '../underPointer';
 /** A line's height in CSS pixels, as browsers that report pixels scroll one. */
 const LINE_PX = 16;
 
-/** What one unit of `e`'s deltas is in CSS pixels. Firefox counts a mouse
- *  wheel's notches in lines, and every rate downstream is per pixel. */
-function pixelsPer(e: WheelEvent, canvas: HTMLElement | null): number {
-  if (e.deltaMode === 1) return LINE_PX;
-  if (e.deltaMode === 2) return canvas?.clientHeight || LINE_PX * 20;
-  return 1;
+/** What one unit of `e`'s deltas is in CSS pixels along each axis. Firefox
+ *  counts a mouse wheel's notches in lines, and every rate downstream is per pixel. */
+function pixelsPer(e: WheelEvent, canvas: HTMLElement | null): { x: number; y: number } {
+  if (e.deltaMode === 1) return { x: LINE_PX, y: LINE_PX };
+  if (e.deltaMode === 2) {
+    return { x: canvas?.clientWidth || LINE_PX * 20, y: canvas?.clientHeight || LINE_PX * 20 };
+  }
+  return { x: 1, y: 1 };
 }
 
 /**
@@ -43,8 +45,8 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): {
     const toPx = pixelsPer(e, core.canvas);
     const ev: InputEvent = {
       kind: 'wheel',
-      deltaX: e.deltaX * toPx,
-      deltaY: e.deltaY * toPx,
+      deltaX: e.deltaX * toPx.x,
+      deltaY: e.deltaY * toPx.y,
       clientX: local.x,
       clientY: local.y,
       x: hitPoint.x,

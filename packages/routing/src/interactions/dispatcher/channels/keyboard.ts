@@ -72,7 +72,7 @@ export function keyboardInput(core: DispatchCore): {
 
   const onKeyDown = (e: KeyboardEvent) => {
     // Before the filters: a key another surface took is still down.
-    downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e) });
+    downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey });
     if (e.defaultPrevented || isEditableTarget(e.target) || inMenu(e.target) || focusedControlOwnsKey(e)) return;
     if (inModalOver(e.target, core.canvas) || taken.has(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
@@ -127,7 +127,7 @@ export function keyboardInput(core: DispatchCore): {
     const heldResult = dispatch(heldEv, heldOn, reach);
 
     if (heldResult === 'handled') {
-      heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), on: heldOn });
+      heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey, on: heldOn });
     }
 
     const handled = keyResult === 'handled' || heldResult === 'handled';
@@ -135,14 +135,21 @@ export function keyboardInput(core: DispatchCore): {
     return handled;
   };
 
-  const onKeyUp = (e: KeyboardEvent) => {
-    const physical = physicalKey(e);
+  const keyUp = (physical: string, e: KeyboardEvent): void => {
     downKeys.delete(physical);
-    keymaps.up(e, physical);
     const down = heldKeys.get(physical);
     if (down === undefined) return;
     heldKeys.delete(physical);
     dispatch(releaseOf(down, e), down.on);
+  };
+
+  const onKeyUp = (e: KeyboardEvent) => {
+    const physical = physicalKey(e);
+    keymaps.up(e, physical);
+    keyUp(physical, e);
+    // macOS sends no keyup for a key released while Cmd is down, so Cmd's own keyup releases it.
+    if (e.key !== 'Meta') return;
+    for (const [k, down] of [...downKeys, ...heldKeys]) if (down.withCmd) keyUp(k, e);
   };
 
   const releaseAll = (): void => {

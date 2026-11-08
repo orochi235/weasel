@@ -7,6 +7,8 @@ import type { InputEvent } from '../matcher';
 export interface HeldKey {
   key: string;
   code?: string;
+  /** Cmd was down with it, so its keyup may never come: Cmd's stands in for it. */
+  withCmd: boolean;
   on: Dispatcher;
 }
 
@@ -30,7 +32,7 @@ export function followPointer(
   leave: () => void;
 } {
   const arrive = (e: PointerEvent): void => {
-    for (const [physical, { key, code }] of down) {
+    for (const [physical, { key, code, withCmd }] of down) {
       if (held.has(physical)) continue;
       core.routeAt(null, e.clientX, e.clientY);
       const on = core.dispatcherNow();
@@ -39,7 +41,7 @@ export function followPointer(
         kind: 'key-held', key, ...codeField, phase: 'down',
         altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
       };
-      if (core.dispatch(ev, on, OVER_ONLY) === 'handled') held.set(physical, { key, ...codeField, on });
+      if (core.dispatch(ev, on, OVER_ONLY) === 'handled') held.set(physical, { key, ...codeField, withCmd, on });
     }
   };
 

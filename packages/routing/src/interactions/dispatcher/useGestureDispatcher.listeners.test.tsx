@@ -161,4 +161,22 @@ describe('useGestureDispatcher', () => {
     });
     expect(seen).toEqual([48, 3]);
   });
+
+  it('turns a page of wheel into the canvas width across and its height down', () => {
+    const seen: unknown[] = [];
+    const action: Action = {
+      id: 'demo.wheelPage',
+      label: 'Demo wheel page',
+      defaultBinding: { kind: 'wheel' },
+      invoker: { timing: 'immediate', run: (_d, p) => { seen.push([p?.deltaX, p?.deltaY]); } },
+    };
+    const { container } = render(<Harness><Probe actionDef={action} /></Harness>);
+    const canvas = container.querySelector('canvas')!;
+    Object.defineProperty(canvas, 'clientWidth', { value: 300 });
+    Object.defineProperty(canvas, 'clientHeight', { value: 200 });
+    act(() => {
+      canvas.dispatchEvent(new WheelEvent('wheel', { deltaX: 1, deltaY: 1, deltaMode: 2, bubbles: true }));
+    });
+    expect(seen).toEqual([[300, 200]]);
+  });
 });
