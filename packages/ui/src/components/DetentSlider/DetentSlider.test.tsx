@@ -150,6 +150,13 @@ describe('DetentSlider keyboard', () => {
     expect(onChange).toHaveBeenLastCalledWith(4, 4);
   });
 
+  it('offers a detent again after the consumer declined it', () => {
+    const { thumb, onChange } = renderRate({ value: 1 });
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
   it('commits a keystroke, since there is no gesture to wait out', () => {
     const { thumb, onCommit } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
