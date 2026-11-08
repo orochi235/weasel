@@ -41,7 +41,7 @@ export interface BendAlongPathOptions {
  */
 export function bendAlongPath(shape: Path, spine: Path, opts: BendAlongPathOptions = {}): PolygonPath | null {
   const tolerance = Math.max(opts.tolerance ?? 0.5, 1e-3);
-  const measure = measurePath(spine, { flattenTolerance: tolerance / 4 });
+  const measure = measurePath(spine, { flattenTolerance: tolerance / 4, keepCorners: true });
   if (measure === null || measure.length === 0) return null;
   const contours = pathToCubicContours(shape);
   if (contours.length === 0) return null;

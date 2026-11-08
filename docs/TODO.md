@@ -108,11 +108,6 @@ Owner tags, after the priority (2026-10-26):
   primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
   output change. Closes when Repeat Along places through `placeAlongRun`.
 
-- **(P3) [agent] Bend Along blends its heading across a path's sharp corners.** `measurePath` has `keepCorners`, which
-  Text Along Path uses; turning it on for Bend Along changes saved documents' output, so it is the maintainer's call.
-  Ruled (2026-11-07): keep corners, and let saved output change. Closes when `bendAlongPath` measures its spine
-  with `keepCorners`.
-
 - **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
   (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
 
