@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { imeKey } from '@weasel-js/ui-logic';
 import { Button } from '@weasel-js/ui/components/Button';
+import { CloseButton } from '@weasel-js/ui/components/CloseButton';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { Input } from '@weasel-js/ui/components/Input';
+import { icon } from './icons.gen';
 import styles from './PaletteLab.module.css';
 import { BUILTIN_PRESETS, persist, toSource, type LabState, type Preset } from './presets';
 import { useFlash } from './useFlash';
@@ -56,26 +59,21 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
               iconOnly
               className={styles.presetCopy}
               tooltip="Copy as a built-in entry"
-              ariaLabel={`Copy ${p.name} as source`}
+              ariaLabel={copied === p.name ? `Copied ${p.name}` : `Copy ${p.name} as source`}
               onClick={() => {
                 void navigator.clipboard?.writeText(toSource(p));
                 flashCopied(p.name);
               }}
             >
-              {copied === p.name ? '✓' : '⧉'}
+              <Icon name={copied === p.name ? icon('ui:check') : icon('core:copy')} size={14} />
             </Button>
             {!p.builtin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
+              <CloseButton
                 className={styles.presetCopy}
                 onClick={() => remove(p.name)}
                 tooltip={`Delete ${p.name}`}
                 ariaLabel={`Delete ${p.name}`}
-              >
-                ×
-              </Button>
+              />
             )}
           </span>
         ))}
