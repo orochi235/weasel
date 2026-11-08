@@ -1,5 +1,6 @@
 export {
   ColorContextProvider,
+  colorKeepingAlpha,
   useColorContext,
   ColorContextContext,
   type ColorContextValue,

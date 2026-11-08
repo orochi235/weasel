@@ -48,7 +48,9 @@ function pickTarget(rec: RecordedEvent, canvas: HTMLCanvasElement): EventTarget 
   return canvas;
 }
 
-function buildPointerEvent(rec: RecordedEvent): PointerEvent {
+/** A recorded move leaves out the fields its press already carries; `press` supplies them. */
+function buildPointerEvent(rec: RecordedEvent, press: RecordedEvent | undefined): PointerEvent {
+  const from = rec.type === 'pointermove' && press ? press : rec;
   return new PointerEvent(rec.type, {
     bubbles: true,
     cancelable: true,
@@ -56,10 +58,10 @@ function buildPointerEvent(rec: RecordedEvent): PointerEvent {
     clientX: rec.clientX,
     clientY: rec.clientY,
     button: rec.button ?? 0,
-    buttons: rec.buttons ?? 0,
+    buttons: from.buttons ?? 0,
     ...decodeModifiers(rec),
-    pointerType: rec.pointerType ?? 'mouse',
-    pointerId: rec.pointerId ?? 1,
+    pointerType: from.pointerType ?? 'mouse',
+    pointerId: from.pointerId ?? 1,
     isPrimary: true,
   });
 }
@@ -83,17 +85,19 @@ function buildKeyboardEvent(rec: RecordedEvent): KeyboardEvent {
     cancelable: true,
     composed: true,
     key: rec.key ?? '',
+    code: rec.code ?? '',
+    repeat: rec.repeat ?? false,
     ...decodeModifiers(rec),
   });
 }
 
-function buildEvent(rec: RecordedEvent): Event {
+function buildEvent(rec: RecordedEvent, press: RecordedEvent | undefined): Event {
   switch (rec.type) {
     case 'pointerdown':
     case 'pointermove':
     case 'pointerup':
     case 'pointercancel':
-      return buildPointerEvent(rec);
+      return buildPointerEvent(rec, press);
     case 'wheel':
       return buildWheelEvent(rec);
     case 'keydown':
@@ -108,6 +112,8 @@ export async function replayRecording(rec: Recording, opts: ReplayOptions): Prom
     await opts.beforeFirstEvent();
   }
   let prevT = 0;
+  /** The press of the gesture in flight, so its moves replay held rather than as hovers. */
+  let press: RecordedEvent | undefined;
   for (let i = 0; i < rec.events.length; i++) {
     const ev = rec.events[i];
     if (i > 0) {
@@ -119,7 +125,9 @@ export async function replayRecording(rec: Recording, opts: ReplayOptions): Prom
     }
     opts.onEvent?.(ev, i);
     const target = pickTarget(ev, opts.canvas);
-    const native = buildEvent(ev);
+    const native = buildEvent(ev, press);
+    if (ev.type === 'pointerdown') press = ev;
+    else if ((ev.type === 'pointerup' || ev.type === 'pointercancel') && ev.pointerId === press?.pointerId) press = undefined;
     target.dispatchEvent(native);
     prevT = ev.t;
   }

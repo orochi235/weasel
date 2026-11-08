@@ -3,6 +3,7 @@ import {
   addOnPages, pathEffectNode, registeredPathEffects,
 } from '@weasel-js/core';
 import { parseSvg, type ParseResult } from '@weasel-js/svg';
+import { setBackground } from './docBackground';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { reportSvgWarnings } from './fileNotices';
@@ -13,10 +14,9 @@ import { parsedToDoc, pickSvgFileNamed, type SceneDraft, svgNodesToSceneDrafts, 
 
 type OnWarn = (warning: ParseResult['warnings'][number]) => void;
 
-/** The document-level state an opened file sets, beside the scene it filled. */
+/** The document-level state an opened file sets outside the scene's history. */
 export interface OpenedSvg {
   filename: string;
-  backgroundColor: string;
 }
 
 function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; drafts: SceneDraft[] } {
@@ -79,8 +79,9 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[], keepPages: b
 
 /**
  * Open an SVG file as the document: the scene's nodes are removed and the
- * file's take their place, in one undo entry. The document takes the file's
- * name and its background, or white when it has none, and the pages it
+ * file's take their place, and the background becomes the file's, or white
+ * when it has none, in one undo entry. The document takes the file's
+ * name, which undo leaves, and the pages it
  * lists; a file listing none is one page of the paper size it declares, or of
  * the document's first page's size when it declares none.
  */
@@ -96,11 +97,9 @@ export function openSvgText(
   scene.batch('Open', () => {
     replacePages(scene, pages);
     addDrafts(scene, drafts, true);
+    setBackground(scene, doc.backgroundColor ?? DEFAULT_BG_COLOR);
   });
-  return {
-    filename: fileName,
-    backgroundColor: doc.backgroundColor ?? DEFAULT_BG_COLOR,
-  };
+  return { filename: fileName };
 }
 
 /**
@@ -116,7 +115,6 @@ export function importSvgText(scene: DrawScene, text: string, onWarn: OnWarn = (
 export interface OpenSvgTarget {
   scene: DrawScene;
   setFilename(name: string): void;
-  setBackgroundColor(color: string): void;
   /** Fit the view to the document's first page, once it has been replaced. */
   showFirstPage(): void;
   /** Leave the open mode before the document is replaced, so its session closes on the old one. */
@@ -135,7 +133,6 @@ export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
   reportSvgWarnings('Opened', warnings);
   target.setFilename(opened.filename);
-  target.setBackgroundColor(opened.backgroundColor);
   target.showFirstPage();
 }
 

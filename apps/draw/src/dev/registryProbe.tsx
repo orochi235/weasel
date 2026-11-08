@@ -59,8 +59,8 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   const { label: prefsLabel, ...prefsOptions } = DRAW_PREFERENCES_COMMAND;
   useCommand(EDITOR_ACTIONS.preferences, prefsLabel, noop, { ...prefsOptions, keys: EDITOR_PREFERENCES_KEY });
   useFileCommands({
-    scene, filename: 'probe', paperSize: 'letter', backgroundColor: '#ffffff',
-    setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null, setBackgroundColor: noop,
+    scene, filename: 'probe', paperSize: 'letter',
+    setFilename: noop, showFirstPage: noop, leaveMode: noop, page: null,
   });
 
   // `onToolsCreated` fires every render because `useTools` synthesizes a new ToolsApi literal

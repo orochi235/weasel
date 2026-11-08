@@ -3,6 +3,7 @@ import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from 
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { importSvgText, openSvgFile, openSvgText } from './openSvg';
 import { contentRoots } from '@weasel-js/core';
+import { backgroundOf, setBackground } from './docBackground';
 import { drawScene } from './testScenes';
 import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
@@ -70,8 +71,22 @@ describe('openSvgText', () => {
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'page-1', width: 816, height: 1344 }]);
   });
 
-  it('resets the background to white when the file names none', () => {
-    expect(openSvgText(sceneWithOneShape(), svg(TWO), 'a.svg').backgroundColor).toBe('#ffffff');
+  it('resets the background to white when the file names none, and undo puts the old one back', () => {
+    const scene = sceneWithOneShape();
+    setBackground(scene, '#336699');
+    openSvgText(scene, svg(TWO), 'a.svg');
+    expect(backgroundOf(scene)).toBe('#ffffff');
+    scene.undo();
+    expect(backgroundOf(scene)).toBe('#336699');
+  });
+
+  it("takes the file's background in the same undo entry", () => {
+    const scene = sceneWithOneShape();
+    const file = svg(`<path wd:role="background" d="M0 0H100V100H0Z" fill="#ffcc00"/>${TWO}`);
+    openSvgText(scene, file, 'a.svg');
+    expect(backgroundOf(scene)).toBe('#ffcc00');
+    scene.undo();
+    expect(backgroundOf(scene)).toBe('#ffffff');
   });
 
   it('passes each import warning to onWarn', () => {
@@ -182,7 +197,6 @@ describe('openSvgFile', () => {
     scene,
     setFilename: vi.fn(),
     showFirstPage: vi.fn(), leaveMode: vi.fn(),
-    setBackgroundColor: vi.fn(),
   });
 
   it('replaces the document with the picked file and names it after the file', async () => {
@@ -195,7 +209,7 @@ describe('openSvgFile', () => {
     expect(contentRoots(t.scene)).toHaveLength(2);
     expect(t.setFilename).toHaveBeenCalledWith('art.svg');
     expect(pagesOf(t.scene)?.pages[0]).toMatchObject({ width: 794, height: 1123 });
-    expect(t.setBackgroundColor).toHaveBeenCalledWith('#ffffff');
+    expect(backgroundOf(t.scene)).toBe('#ffffff');
     expect(t.showFirstPage).toHaveBeenCalledOnce();
   });
 
