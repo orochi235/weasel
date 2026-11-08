@@ -730,6 +730,17 @@ describe('domRuns — small caps', () => {
     expect(pieces(parent.querySelector('span[data-run]')!)).toEqual([['ab', false]]);
   });
 
+  it('capitalizes a word split across runs once, as the canvas does, before splitting the pieces', () => {
+    const base = { ...DEFAULT_TEXT_STYLE, fontVariantCaps: 'small-caps' as const, textTransform: 'capitalize' as const };
+    runsToDom([{ text: 'He' }, { text: 'llo' }], parent, base);
+    const [, second] = parent.querySelectorAll('span[data-run]');
+    expect(pieces(second)).toEqual([['llo', true]]);
+    // The node's own style, as `applyOverlayStyle` dresses the overlay in it.
+    parent.style.fontVariant = 'small-caps';
+    parent.style.textTransform = 'capitalize';
+    expect(normalizeSmallCaps(parent)).toBe(false);
+  });
+
   it('reads CSS small caps on pasted markup as the run variant', () => {
     parent.innerHTML = '<span style="font-variant: small-caps">a</span><span>b</span>';
     expect(domToRuns(parent)).toEqual([{ text: 'a', fontVariantCaps: 'small-caps' }, { text: 'b' }]);
