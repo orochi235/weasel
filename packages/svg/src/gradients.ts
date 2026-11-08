@@ -6,13 +6,12 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import { getPaintKind, getMarker, isPatternPaint, isTileKind, sampleGradientStops } from '@weasel-js/core';
+import { getPaintKind, getMarker, isPatternPaint, isTileKind } from '@weasel-js/core';
 import type {
-  ColorSpace, Paint, GradStop, PaintUnits, MarkerRef, Path,
+  Paint, GradStop, PaintUnits, MarkerRef, Path,
 } from '@weasel-js/core';
-import { parseRatio, readStops } from './gradientStops';
+import { parseRatio, readStops, stopsXml } from './gradientStops';
 import { trimNumber } from './transform';
-import { escapeAttr } from './xmlEscape';
 import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
@@ -512,31 +511,4 @@ function paintFallback(paint: Paint): string {
   // packed alpha comes off rather than riding out as an 8-digit hex.
   const packed = /^#([0-9a-f]{6})[0-9a-f]{2}$/i.exec(color);
   return packed ? `#${packed[1].toLowerCase()}` : color;
-}
-
-/**
- * `stops` as SVG reads them back into the ramp the kit paints: in offset order, and with a
- * stop past either end replaced by the color the ramp has there, since SVG clamps an offset
- * to 0..1 and raises one below an earlier stop's.
- */
-function stopsXml(stops: readonly GradStop[], space: ColorSpace | undefined): string {
-  const sorted = [...stops].sort((a, b) => a.offset - b.offset);
-  const inside = sorted.filter((s) => s.offset >= 0 && s.offset <= 1);
-  const at = (offset: number): GradStop => ({ offset, color: sampleGradientStops(sorted, offset, space) });
-  const out = [
-    ...(sorted.length > 0 && sorted[0].offset < 0 ? [at(0)] : []),
-    ...inside,
-    ...(sorted.length > 0 && sorted[sorted.length - 1].offset > 1 ? [at(1)] : []),
-  ];
-  return out.map(stopXml).join('');
-}
-
-function stopXml(s: GradStop): string {
-  // Detect packed-alpha hex (#rrggbbaa) and split out stop-opacity.
-  const m = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(s.color);
-  if (m) {
-    const alpha = parseInt(m[2], 16) / 255;
-    return `<stop offset="${trimNumber(s.offset)}" stop-color="#${m[1].toLowerCase()}" stop-opacity="${trimNumber(alpha)}"/>`;
-  }
-  return `<stop offset="${trimNumber(s.offset)}" stop-color="${escapeAttr(s.color)}"/>`;
 }
