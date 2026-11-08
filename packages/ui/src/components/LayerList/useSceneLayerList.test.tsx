@@ -153,6 +153,17 @@ describe('useSceneLayerList — annotation layers', () => {
     expect(scene.layers.find((l) => l.id === 'notes')?.visible).toBe(true);
   });
 
+  it('reorders content at the top level past the annotation rows above it', () => {
+    const { hook, scene } = annotated({ picked: null, pick: vi.fn() });
+    scene.add({ id: asNodeId('c'), kind: 'mark', layer: 'main', pose: box, data: { name: 'c' } });
+    hook.rerender();
+    expect(ids(hook.result.current.items)).toEqual([[row, ['n2', 'n1']], 'c', 'box']);
+    // Dropped above `c`: the second top-level gap, the annotation row being the first.
+    hook.result.current.onReorder({ ids: ['box'], parentId: null, index: 1 });
+    hook.rerender();
+    expect(ids(hook.result.current.items)).toEqual([[row, ['n2', 'n1']], 'box', 'c']);
+  });
+
   it('hides the annotation layer from its row, and removes a node from its row', () => {
     const pick = vi.fn();
     const { hook, scene } = annotated({ picked: 'n1', pick });

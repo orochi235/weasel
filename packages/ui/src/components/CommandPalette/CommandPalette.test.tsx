@@ -229,6 +229,19 @@ describe('CommandPalette', () => {
     expect(palette()).toBeNull();
   });
 
+  it('runs a row on a primary press only', async () => {
+    runs.group.mockClear();
+    openPalette();
+    const row = options().find((o) => o.textContent?.includes('Group'))!;
+    fireEvent.mouseDown(row, { button: 2 });
+    fireEvent.mouseDown(row, { button: 1 });
+    await flush();
+    expect(runs.group).not.toHaveBeenCalled();
+    fireEvent.mouseDown(row, { button: 0 });
+    await flush();
+    expect(runs.group).toHaveBeenCalledOnce();
+  });
+
   it('leaves an input method\'s Enter to it', async () => {
     runs.group.mockClear();
     openPalette();

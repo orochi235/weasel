@@ -1,4 +1,4 @@
-import { useContext, type KeyboardEvent, type ReactNode } from 'react';
+import { useContext, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import {
   ComboBox as RACComboBox,
   ComboBoxStateContext,
@@ -122,6 +122,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
   } = props;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const revertingRef = useRef(false);
 
   return (
     <RACComboBox
@@ -134,7 +135,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={(k) => {
         onSelectionChange?.(k as T | null);
-        if (k !== null) onCommit?.({ source: 'option', key: k as T });
+        if (k !== null && !revertingRef.current) onCommit?.({ source: 'option', key: k as T });
       }}
       className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
@@ -143,6 +144,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       <ComboBoxFrame
         placeholder={placeholder}
         isLoading={isLoading}
+        revertingRef={revertingRef}
         onCommitText={onCommit && rest.allowsCustomValue ? (text) => onCommit({ source: 'text', text }) : undefined}
       >
         {width === 'fit' && (
@@ -188,11 +190,15 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
 function ComboBoxFrame({
   placeholder,
   isLoading,
+  revertingRef,
   onCommitText,
   children,
 }: {
   placeholder?: string;
   isLoading?: boolean;
+  /** Set while React Aria puts the selection back on a blur, or on an Enter with no option highlighted: with both
+   *  `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
+  revertingRef: RefObject<boolean>;
   onCommitText?: (text: string) => void;
   children?: ReactNode;
 }) {
@@ -204,8 +210,12 @@ function ComboBoxFrame({
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
     if (state?.isOpen && state.selectionManager.focusedKey != null) return;
+    revertingRef.current = true;
     const text = e.currentTarget.value;
     if (text !== '') onCommitText?.(text);
+  };
+  const reverted = () => {
+    revertingRef.current = false;
   };
 
   return (
@@ -213,7 +223,12 @@ function ComboBoxFrame({
       <RACInput
         placeholder={placeholder}
         aria-busy={isLoading || undefined}
-        onKeyDownCapture={onCommitText ? onKeyDownCapture : undefined}
+        onKeyDownCapture={onKeyDownCapture}
+        onKeyDown={reverted}
+        onBlurCapture={() => {
+          revertingRef.current = true;
+        }}
+        onBlur={reverted}
       />
       {children}
       <RACButton className={s.openButton} aria-label="Show options">

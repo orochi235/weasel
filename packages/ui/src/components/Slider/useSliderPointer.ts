@@ -18,13 +18,14 @@ export interface SliderPointerArgs<T extends Thumb> {
   trackRef: RefObject<HTMLDivElement | null>;
   geometry: SliderGeometry;
   valueAt: (f: number, length: number, free?: boolean) => number;
+  valueToFraction: (v: number) => number;
   onInput: (next: T[]) => void;
   drags: Pick<ReturnType<typeof useThumbDrags<T>>, 'beginThumbDrag' | 'beginShiftAllDrag'>;
 }
 
 /** The presses on a slider: a thumb, a thumb's context menu, and the bare track. */
 export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
-  const { thumbs, props, min, max, trackRef, geometry, valueAt, onInput, drags } = a;
+  const { thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput, drags } = a;
   const { onChange, constraint, step } = props;
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
@@ -75,9 +76,11 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
       return;
     }
 
+    // Nearest along the track, as the eye sees it: under a log or even-spaced scale value distance says otherwise.
+    const gap = (t: T) => Math.abs(valueToFraction(t.value) - m.g);
     let index = 0;
     for (let i = 1; i < thumbs.length; i++) {
-      if (Math.abs(thumbs[i].value - v) < Math.abs(thumbs[index].value - v)) index = i;
+      if (gap(thumbs[i]) < gap(thumbs[index])) index = i;
     }
     const next = thumbs.map(t => ({ ...t })) as T[];
     const [bLo, bHi] = resolveBounds(next[index], { thumbs: next, index }, min, max);

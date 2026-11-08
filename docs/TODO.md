@@ -369,6 +369,12 @@ Owner tags, after the priority (2026-10-26):
 ## Selection, actions & UI panels
 
 
+- **(P3) [maintainer] Should the arrow keys land on an `aria-disabled` item?** `useRovingTabIndex` skips it,
+  and `useRovingTabIndex.test.tsx` pins that. But `ToolButton`'s `ariaDisabled` promises such a button stays
+  "reachable by keyboard (roving-tabindex still applies)", and a segment with a `disabledReason` swaps `disabled`
+  for `aria-disabled` (`segmentTooltip.tsx`) so its reason can be read: in a `ToggleBar` or `ToolPalette` the
+  keyboard never gets there, so the reason is mouse-only. APG allows either for a toolbar (2026-11-07). Closes when
+  the maintainer has picked one and the hook, `ToolButton`'s doc and the test agree.
 - **(P3) [maintainer] A timeline with a nonzero `start` can read "2.50s / 2.00s".** `PlayheadReadout`
   (ui `Timeline/Transport.tsx`) shows the absolute playhead over the duration, while the scrub bar runs from
   `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to

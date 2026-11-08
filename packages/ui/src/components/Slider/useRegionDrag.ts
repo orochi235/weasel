@@ -20,8 +20,10 @@ export interface RegionDragArgs<T extends Thumb> {
 /** How far, as a fraction of the track, the two thumbs bounding region `index` can travel together. */
 function regionReach<T extends Thumb>(thumbs: readonly T[], index: number, f: readonly number[], toFraction: (v: number) => number, min: number, max: number): [number, number] {
   const [a, b] = [index - 1, index];
-  const [aLo, aHi] = resolveBounds(thumbs[a], { thumbs, index: a }, min, max).map(toFraction);
-  const [bLo, bHi] = resolveBounds(thumbs[b], { thumbs, index: b }, min, max).map(toFraction);
+  // Each thumb's bounds are read with its partner left out: the two move together, so neither stops the other.
+  const without = (i: number) => thumbs.filter((_, j) => j !== i);
+  const [aLo, aHi] = resolveBounds(thumbs[a], { thumbs: without(b), index: a }, min, max).map(toFraction);
+  const [bLo, bHi] = resolveBounds(thumbs[b], { thumbs: without(a), index: a }, min, max).map(toFraction);
   const below = index >= 2 ? f[index - 2] : 0;
   const above = index + 1 < thumbs.length ? f[index + 1] : 1;
   return [

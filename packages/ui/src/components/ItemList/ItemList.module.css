@@ -86,3 +86,8 @@
   color: var(--wzl-fg-subtle);
   font-style: italic;
 }
+
+/* Holds the overlay without boxing it, so it lays out as the container's own child. */
+.overlay {
+  display: contents;
+}

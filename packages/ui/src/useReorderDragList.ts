@@ -147,11 +147,14 @@ function screenLine(across: boolean): ReorderLine {
   };
 }
 
+/** Marks a child of a reorderable list's container that is not one of its rows, such as an overlay drawn among them. */
+export const REORDER_SKIP = 'data-reorder-skip';
+
 function rowElements(
   container: HTMLElement,
   { rowSelector, groupSelector }: Pick<UseReorderDragListOptions, 'rowSelector' | 'groupSelector'>,
 ): HTMLElement[] {
-  const children = Array.from(container.children);
+  const children = Array.from(container.children).filter((el) => !el.hasAttribute(REORDER_SKIP));
   const rows = groupSelector
     ? children.flatMap((el) => (el.matches(groupSelector) ? Array.from(el.children) : [el]))
     : children;

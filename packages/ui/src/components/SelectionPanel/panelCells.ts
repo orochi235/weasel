@@ -8,7 +8,7 @@ import type { LiveControl } from '../Prefs/commitPolicy';
 import type { EntryAt } from '../Prefs/entry';
 import type { PrefFieldChoice } from '../Prefs/schema';
 import { renderCells, type LeafCell, type RenderedCell } from './cells';
-import { MIXED, aggregateLeaf, aggregateValue, nodeLeafValue, nodeValueAt, panelLeafKey, type AnyNode, type PanelLeaf, type PanelRow } from './model';
+import { MIXED, aggregateLeaf, aggregateValue, nodeLeafValue, nodeValueAt, panelLeafKey, sharedValue, type AnyNode, type PanelLeaf, type PanelRow } from './model';
 import { leafAcross } from './nodeBounds';
 import type { PanelInherit, PropertyRenderContext, PropertyRenderer } from './renderContext';
 import { INHERIT, type InheritedPaint } from '@weasel-js/core';
@@ -43,9 +43,9 @@ function inheritOf(panelLeaf: PanelLeaf, scope: PanelCellScope): PanelInherit | 
   const field = INHERITS[panelLeaf.path];
   const { nodes, paintAbove } = scope;
   if (field === undefined || paintAbove === undefined || nodes.some((n) => n.parent == null)) return undefined;
-  const paints = nodes.map((n) => paintAbove(n)[field]?.paint ?? null);
+  const shared = sharedValue(nodes.map((n) => paintAbove(n)[field]?.paint ?? null));
   return {
-    paint: paints.every((p) => p === paints[0]) ? paints[0] : undefined,
+    paint: shared === MIXED ? undefined : (shared as PanelInherit['paint']),
     each: nodes.map((n) => nodeValueAt(n, panelLeaf.path) === INHERIT),
     set: () => scope.commit(panelLeaf, () => INHERIT),
   };

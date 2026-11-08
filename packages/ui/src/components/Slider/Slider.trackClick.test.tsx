@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import { Slider } from './Slider';
 import { stubRect } from './testing/stubRect';
+import { logScale } from '@weasel-js/plot/scales';
 
 describe('Slider track click', () => {
   const renderTrackClick = (props: Partial<Parameters<typeof Slider>[0]> = {}) => {
@@ -49,6 +50,16 @@ describe('Slider track click', () => {
     const { track, onInput } = renderTrackClick({ step: 5 });
     fireEvent.pointerDown(track, { clientX: 105, clientY: 12, button: 0 });
     expect(lastValues(onInput)).toEqual([55]);
+  });
+
+  it('moves the thumb nearest on the track, not nearest in value', () => {
+    // On a log track from 1 to 1000 a press at 60% reads about 63: 61 from the thumb at 2 by value, 437 from the
+    // one at 500, but 0.5 of the track from the first and 0.3 from the second.
+    const { track, onInput } = renderTrackClick({ min: 1, max: 1000, scale: logScale, thumbs: [{ value: 2 }, { value: 500 }] });
+    fireEvent.pointerDown(track, { clientX: 120, clientY: 12, button: 0 });
+    const [a, b] = lastValues(onInput);
+    expect(a).toBe(2);
+    expect(b).not.toBe(500);
   });
 
   it('focuses the thumb it moved, so the arrow keys carry on from there', () => {
