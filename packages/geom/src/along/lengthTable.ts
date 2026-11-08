@@ -188,7 +188,7 @@ function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
   for (let i = 1; i < c.length; i++) {
     const ctl = run.controls?.[i - 1];
     if (ctl && ctl.length > 0) {
-      // A curve whose coordinates are not finite flattens to its end point, covering no distance.
+      // A segment whose coordinates are not finite, curved or straight, covers no distance.
       const len = segmentLength(segmentCoords(p, ctl, dim, i - 1), dim);
       c[i] = c[i - 1] + (Number.isFinite(len) ? len : 0);
       continue;
@@ -197,7 +197,7 @@ function runLengths(run: LengthRun, dim: 2 | 3, base: number): Float64Array {
     const b = (i % n) * dim;
     let d2 = 0;
     for (let k = 0; k < dim; k++) d2 += (p[b + k] - p[a + k]) ** 2;
-    c[i] = c[i - 1] + Math.sqrt(d2);
+    c[i] = c[i - 1] + (Number.isFinite(d2) ? Math.sqrt(d2) : 0);
   }
   return c;
 }

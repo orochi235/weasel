@@ -34,6 +34,13 @@ describe('lengthTable', () => {
     expect(lengthAtAnchor(t, 3.5)).toBe(3.5);
   });
 
+  it('measures a segment with a non-finite point as no distance, straight or curved', () => {
+    const straight = lengthTable([anchored([0, 0, NaN, 0, 3, 0, 3, 4], false, 0)], 2);
+    expect(straight.total).toBe(4);
+    const curved = lengthTable([{ points: [0, 0, 3, 0, 3, 4], closed: false, controls: [[NaN, 0], null] }], 2);
+    expect(curved.total).toBe(4);
+  });
+
   it('pen lift covers no distance', () => {
     const t = lengthTable([anchored([0, 0, 1, 0], false, 0), anchored([5, 0, 6, 0], false, 2)], 2);
     expect(t.total).toBe(2);
