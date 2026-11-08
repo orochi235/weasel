@@ -40,7 +40,9 @@ export { composeSelectionPose, type ComposeSelectionPoseOpts } from './selection
 function projectBounds<B extends Bounds>(b: B, view: View): B {
   const t = viewToTransform(view);
   const [sx, sy] = worldToScreen(b.x, b.y, t);
-  return { ...b, x: sx, y: sy, width: b.width * view.scale.x, height: b.height * view.scale.y };
+  const w = b.width * view.scale.x;
+  const h = b.height * view.scale.y;
+  return { ...b, x: Math.min(sx, sx + w), y: Math.min(sy, sy + h), width: Math.abs(w), height: Math.abs(h) };
 }
 
 
