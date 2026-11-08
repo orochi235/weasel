@@ -37,4 +37,22 @@ describe('<SwatchPanel>', () => {
     await user.type(field, '#12');
     expect(screen.getByRole('button', { name: 'Pin' })).toBeDisabled();
   });
+
+  it.each(['LEGO', 'Copic'])('shows a %s swatch it pinned as pinned, and unpins it on a second press', async (source) => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const { rerender } = renderWithIcons(<SwatchPanel anchors={[]} onChange={onChange} count={8} />);
+    await user.click(screen.getByRole('tab', { name: new RegExp(`^${source}`) }));
+    const first = screen.getAllByRole('button', { name: /^Pin / })[0]!;
+    const label = first.getAttribute('aria-label')!.slice('Pin '.length);
+    await user.click(first);
+    const pinned = onChange.mock.calls[0]![0];
+    expect(pinned).toHaveLength(1);
+
+    rerender(<SwatchPanel anchors={pinned} onChange={onChange} count={8} />);
+    const again = screen.getByRole('button', { name: `Unpin ${label}` });
+    expect(again).toHaveAttribute('aria-pressed', 'true');
+    await user.click(again);
+    expect(onChange.mock.calls[1]![0]).toEqual([]);
+  });
 });
