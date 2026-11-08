@@ -1,7 +1,8 @@
 import { render } from '@testing-library/react';
 import type { RecordCache } from '@weasel-js/storage';
 import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
-import { type Context, use, useContext } from 'react';
+import { type Context, createElement, type ReactNode, use, useContext } from 'react';
+import { describe, expect, it } from 'vitest';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraContext } from '../canvas/CameraInput';
@@ -13,7 +14,11 @@ import { ClockRegistryContext, TrialClockContext, TrialRootContext } from '../cl
 import { LabOverContext } from '../config/over';
 import { LightboxContext } from '../lightbox/LightboxContext';
 import { LightboxLayersContext } from '../lightbox/LightboxLayers';
+import { LabStoreContext, LabStoreProvider, TrialIdContext } from '../state/context';
+import { PersistenceContext } from '../state/Persistence';
+import { createLabStore } from '../state/store';
 import { SurfaceCanvasContext, SurfaceContext } from '../surface/SurfaceContext';
+import { interstellarTheme } from '../theme/interstellar';
 import { LoupeSwitchContext } from '../trial/loupeSwitch';
 import { TrialDragContext } from '../trial/TrialDragContext';
 import { TrialHistoryContext } from '../trial/trialHistory';
@@ -21,18 +26,13 @@ import { TrialTitleContext } from '../trial/trialTitle';
 import { CameraMissingContext, OrbitViewContext } from '../trial/useOrbitView';
 import { TrialOrbitContext } from '../trial/useTrialOrbit';
 import { LabActionsContext } from './LabActions';
+import { LabBoundary } from './LabBoundary';
+import { LabCommandsContext, LabContext, type LabContextValue } from './LabContext';
+import { LabRoot } from './LabRoot';
 import { LabAmbientContext, LabEntriesContext } from './labAmbient';
 import { LabContextMenusContext } from './labContextMenus';
 import { PanelHostContext } from './panelHost';
 import { PresentationContext } from './presentation';
-import { describe, expect, it } from 'vitest';
-import { LabStoreContext, LabStoreProvider, TrialIdContext } from '../state/context';
-import { PersistenceContext } from '../state/Persistence';
-import { createLabStore } from '../state/store';
-import { interstellarTheme } from '../theme/interstellar';
-import { LabBoundary } from './LabBoundary';
-import { LabCommandsContext, LabContext, type LabContextValue } from './LabContext';
-import { LabRoot } from './LabRoot';
 
 function Probe() {
   const lab = useContext(LabContext);
@@ -138,8 +138,8 @@ describe('LabBoundary', () => {
       }
       return null;
     }
-    const tree = Object.values(published).reduceRight(
-      (inner, Ctx) => <Ctx.Provider value={sentinel}>{inner}</Ctx.Provider>,
+    const tree = Object.values(published).reduceRight<ReactNode>(
+      (inner, ctx) => createElement(ctx.Provider, { value: sentinel }, inner),
       <LabBoundary>
         <Read />
       </LabBoundary>,

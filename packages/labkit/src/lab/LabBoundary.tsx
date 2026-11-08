@@ -1,5 +1,5 @@
 import { ThemeContext } from '@weasel-js/theme/react';
-import type { Context, ReactNode } from 'react';
+import { type Context, createElement, type ReactNode } from 'react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraContext } from '../canvas/CameraInput';
@@ -21,14 +21,14 @@ import { TrialTitleContext } from '../trial/trialTitle';
 import { CameraMissingContext, OrbitViewContext } from '../trial/useOrbitView';
 import { TrialOrbitContext } from '../trial/useTrialOrbit';
 import { LabActionsContext } from './LabActions';
-import { LabAmbientContext, LabEntriesContext } from './labAmbient';
 import { LabCommandsContext, LabContext } from './LabContext';
+import { LabAmbientContext, LabEntriesContext } from './labAmbient';
 import { LabContextMenusContext } from './labContextMenus';
 import { PanelHostContext } from './panelHost';
 import { PresentationContext } from './presentation';
 
 type Absent = readonly [Context<never>, unknown];
-const absent = <T,>(ctx: Context<T>, value: T): Absent => [ctx as Context<never>, value];
+const absent = <T,>(ctx: Context<T>, value: T): Absent => [ctx as unknown as Context<never>, value];
 
 /** Each context a lab or a trial publishes, with what it reads as on a bare page. */
 const ABSENT: readonly Absent[] = [
@@ -85,7 +85,7 @@ export interface LabBoundaryProps {
  */
 export function LabBoundary({ children }: LabBoundaryProps) {
   return ABSENT.reduceRight<ReactNode>(
-    (inner, [Ctx, value]) => <Ctx.Provider value={value as never}>{inner}</Ctx.Provider>,
+    (inner, [ctx, value]) => createElement(ctx.Provider, { value: value as never }, inner),
     children,
   );
 }
