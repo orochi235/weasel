@@ -71,6 +71,15 @@ describe('compileXyChart', () => {
     expect(ranged.get('axis:category:label:0')!.data.text).toBe('0');
   });
 
+  it('numbers the rows past the last category, and gives a repeated category a band of its own', () => {
+    const short = byKey({ kind: 'xychart', x: { kind: 'band', categories: ['a', 'b'] }, series: [{ kind: 'bar', values: [1, 2, 3] }] });
+    expect(short.get('bar:0:2')).toBeDefined();
+    expect(short.get('axis:category:label:2')!.data.text).toBe('3');
+    const twice = byKey({ kind: 'xychart', x: { kind: 'band', categories: ['a', 'a'] }, series: [{ kind: 'bar', values: [1, 2] }] });
+    expect(twice.layout.slots[0]!).toBeLessThan(twice.layout.slots[1]!);
+    expect(twice.get('axis:category:label:1')!.data.text).toBe('a');
+  });
+
   it('runs categories down y and values along x when horizontal', () => {
     const { layout, get } = byKey({ ...SALES, orientation: 'horizontal' });
     const bar = get('bar:0:2')!;
