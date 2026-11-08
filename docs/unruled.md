@@ -747,3 +747,19 @@ Calls the round made:
 - A flick's coast canceled from outside (`cancelAll`, or the animator going away) over an adapter with
   `previewPoses` and no pose targets leaves its last frame as a preview and records nothing, as the code
   says it means to. Left as is: it could record where the coast stopped, or clear the preview.
+
+## Audit round seven (2026-11-08)
+
+- `fitViewToBounds`, `fitViewToPage`, `fitZoom`, `fitToBounds` and `computeFitViewport` return `null` for empty
+  content, and the viewport's owner resolves it to the reset view (Mike ruled that an empty fit goes to Cmd-0's view;
+  the `null` return type, a breaking change, is the agent's way of getting there). Fit Content on a lone point now
+  goes to the reset view rather than centering the point.
+- Cmd-0 with no `recenter` resets to `HOME_VIEW`, not to the `defaultView` a canvas opened on. Left as is.
+- A WebGPU program binds only uniforms holding a struct; `var<uniform> t: f32` fails with "no struct undefined".
+  Left as is: support it, or refuse it with a clear message.
+- Fill tessellation's `crossingParams` (`stroke/tessellate/sweep.ts`) keeps the exact-zero parallel test; edges
+  collinear only up to rounding can take the slower crossing path. Not folded into geom's `nearlyParallel`.
+- forge's CSS vars report updates only an overridden var, not the vars defined through it, now in-page as well as in
+  frames (the 2026-09-13 no-rescan choice). Left as is.
+- draw saves the background (in the scene) and the filename (its own key) on separate paths, with no guard keeping
+  them in step if one save lands without the other.
