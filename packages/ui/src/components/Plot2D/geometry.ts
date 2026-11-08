@@ -51,3 +51,15 @@ export function plotToModel(p: Point, m: ModelRange, plot: PlotSize): Point {
     y: m.yMin + yFrac * (m.yMax - m.yMin),
   };
 }
+
+/** A client point in plot space, given the plot's drawn `rect`: scaled by how its drawn size differs from `plot`'s,
+ *  which CSS can make it. A rect with no size, or none, maps unscaled from its origin. */
+export function clientToPlotPoint(
+  e: { clientX: number; clientY: number },
+  rect: { left: number; top: number; width: number; height: number } | undefined,
+  plot: PlotSize,
+): Point {
+  const sx = rect && rect.width > 0 ? plot.width / rect.width : 1;
+  const sy = rect && rect.height > 0 ? plot.height / rect.height : 1;
+  return { x: (e.clientX - (rect?.left ?? 0)) * sx, y: (e.clientY - (rect?.top ?? 0)) * sy };
+}

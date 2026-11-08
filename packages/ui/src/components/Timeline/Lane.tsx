@@ -46,6 +46,12 @@ function entryTimes(row: LaneRow): number[] {
   return [];
 }
 
+/** `px` along `el`, with `win` laid across it, as a span of ms. */
+function pxToMs(el: HTMLElement | null, win: TimeWindow, px: number): number {
+  const scale = windowScale(win, el?.getBoundingClientRect().width ?? 0);
+  return scale.invert(px) - scale.invert(0);
+}
+
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes,
@@ -70,10 +76,7 @@ export function Lane(props: LaneProps): ReactElement {
     return windowScale(win, rect.width).invert(clientX - rect.left) - row.offset;
   };
 
-  const snapPxToMs = (): number => {
-    const scale = windowScale(win, trackRef.current?.getBoundingClientRect().width ?? 0);
-    return scale.invert(snapRadiusPx) - scale.invert(0);
-  };
+  const snapPxToMs = (): number => pxToMs(trackRef.current, win, snapRadiusPx);
 
   // Only a numeric sampled row has an honest value axis to graph.
   const graph = mode === 'graph' && row.numeric;

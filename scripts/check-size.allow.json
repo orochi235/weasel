@@ -241,7 +241,7 @@
     "longestFunction": 147
   },
   "packages/ui/src/components/Plot2D/Plot2D.tsx": {
-    "longestFunction": 218
+    "longestFunction": 216
   },
   "packages/ui/src/components/PrefSchemaEditor/AssetEditor.tsx": {
     "longestFunction": 183
@@ -265,10 +265,10 @@
     "longestFunction": 133
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 192
+    "longestFunction": 190
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
-    "longestFunction": 185
+    "longestFunction": 178
   },
   "packages/ui/src/components/TokenPanel/TokenPanel.tsx": {
     "lines": 425
