@@ -65,6 +65,11 @@ export function DebugOverlayDemo() {
   const [shot, setShot] = useState<{ url: string; size: Dims } | null>(null);
   // One object URL at a time: revoke the last when a new one replaces it or the demo unmounts.
   useEffect(() => () => { if (shot) URL.revokeObjectURL(shot.url); }, [shot]);
+  const live = useRef(false);
+  useEffect(() => {
+    live.current = true;
+    return () => { live.current = false; };
+  }, []);
 
   const allOn = () =>
     setEnabled(Object.fromEntries(Object.keys(NONE).map((k) => [k, true])) as Record<DebugFeature, boolean>);
@@ -88,7 +93,8 @@ export function DebugOverlayDemo() {
     };
     await warmRender({ render: debugSnapshotArgs(args) }).catch(() => {});
     const image = renderDebugSnapshot(args);
-    setShot({ url: URL.createObjectURL(await rasterToPng(image)), size });
+    const png = await rasterToPng(image);
+    if (live.current) setShot({ url: URL.createObjectURL(png), size });
   };
 
   return (
