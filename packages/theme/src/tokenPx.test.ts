@@ -16,6 +16,12 @@ describe('tokenPx', () => {
     expect(tokenPx('--wzl-handle-size', {} as never)).toBe(9);
   });
 
+  it('reads a bare 0 as 0px, as CSS does', () => {
+    expect(tokenPx('--wzl-titlebar-inset')).toBe(0);
+    expect(tokenPx('--wzl-radius-md', { '--wzl-radius-md': '0' } as never)).toBe(0);
+    expect(() => tokenPx('--wzl-handle-size', { '--wzl-handle-size': '3' } as never)).toThrow(/not a px length/);
+  });
+
   it('refuses a token whose value is not a plain px length', () => {
     expect(() => tokenPx('--wzl-surface')).toThrow(/not a px length/);
     expect(() => tokenPx('--wzl-handle-size', { '--wzl-handle-size': '1rem' } as never)).toThrow(/not a px length/);
