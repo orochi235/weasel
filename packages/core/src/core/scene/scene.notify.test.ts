@@ -106,6 +106,18 @@ describe('Scene — what subscribers hear', () => {
     expect(heard(scene, () => scene.untracked(() => {}))).toEqual({ calls: 0, version: 0 });
   });
 
+  it('a jump to a fractional or NaN index moves nothing and says so', () => {
+    const scene = makeScene();
+    scene.setPose(A, at(1));
+    for (const index of [0.5, Number.NaN]) {
+      let moved = true;
+      expect(heard(scene, () => { moved = scene.jumpToHistoryIndex(index); })).toEqual({ calls: 0, version: 0 });
+      expect(moved).toBe(false);
+    }
+    expect(scene.jumpToHistoryIndex(-Infinity)).toBe(true);
+    expect(scene.historyIndex()).toBe(0);
+  });
+
   it('an undo with nothing to undo calls nobody', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
     expect(heard(scene, () => scene.undo())).toEqual({ calls: 0, version: 0 });
