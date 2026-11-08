@@ -264,7 +264,7 @@ export function TrialChrome({
     const offered = (id: string) => contributions.some((c) => c.id === id);
     const step = undoKeyStep(e);
     if (step) {
-      if (!offered(step)) return;
+      if (!offered(step) || !(step === 'undo' ? ctx.canUndo : ctx.canRedo)) return;
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();

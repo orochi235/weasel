@@ -37,6 +37,9 @@ export function useTrialScene<
   // The JSON this hook last saw in `state.scene`, written or loaded. Anything
   // else arriving there came from outside.
   const known = useRef(stored);
+  // Every JSON this hook wrote: two edits between a render and its effect
+  // leave that render holding the earlier one, which is not from outside.
+  const written = useRef(new WeakSet<object>());
   const latest = useLatest({ setState: ctx.setState, create });
 
   useEffect(
@@ -44,13 +47,14 @@ export function useTrialScene<
       scene.history.subscribe(() => {
         const json = scene.toJSON();
         known.current = json;
+        written.current.add(json);
         latest.current.setState((prev) => ({ ...prev, scene: json }));
       }),
     [scene, latest],
   );
 
   useEffect(() => {
-    if (stored === known.current) return;
+    if (stored === known.current || (stored && written.current.has(stored))) return;
     known.current = stored;
     scene.loadState(stored ?? latest.current.create().toJSON());
   }, [scene, stored, latest]);

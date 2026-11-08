@@ -77,10 +77,7 @@ describe('a trial config write', () => {
 
   it('records a settings change by default', async () => {
     await renderSettled(
-      <Lab
-        instruments={[{ ...counting([]), undo: undefined }]}
-        defaultInstrument="Counting"
-      />,
+      <Lab instruments={[{ ...counting([]), undo: undefined }]} defaultInstrument="Counting" />,
       { wrapper: withIcons },
     );
     fireEvent.click(screen.getByLabelText('Show grid'));

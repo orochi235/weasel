@@ -49,11 +49,11 @@ describe('lab-level chrome', () => {
       <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
       { wrapper: withIcons },
     );
-    expect(screen.getAllByLabelText(/^Trial /)).toHaveLength(1);
+    expect(screen.getAllByLabelText(/^Trial Bare/)).toHaveLength(1);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Another' }));
     });
-    expect(screen.getAllByLabelText(/^Trial /)).toHaveLength(2);
+    expect(screen.getAllByLabelText(/^Trial Bare/)).toHaveLength(2);
   });
 
   it('renders a palette contribution in the lab rail and selects it', async () => {
