@@ -72,7 +72,7 @@ export function ThemeProvider({
 }: ThemeProviderProps): React.ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const axes = themeAxes(theme);
-  const autoMode = selection?.mode === 'auto' && !('auto' in (axes.mode?.values ?? {}));
+  const autoMode = selection?.mode === 'auto' && !(Object.hasOwn(axes, 'mode') && Object.hasOwn(axes.mode!.values, 'auto'));
   const systemMode = useResolvedColorMode(autoMode ? 'auto' : 'dark');
   const given = autoMode ? { ...selection, mode: systemMode } : selection;
   const full = fullSelection(axes, given);
@@ -108,8 +108,8 @@ const warned = new Set<string>();
 function warnUnknownAxisValues(theme: Theme, axes: ReturnType<typeof themeAxes>, selection: Selection | undefined): void {
   if (!selection || !isDev()) return;
   for (const [axis, value] of Object.entries(selection)) {
-    const def = axes[axis];
-    if (!def || value in def.values) continue;
+    const def = Object.hasOwn(axes, axis) ? axes[axis] : undefined;
+    if (!def || Object.hasOwn(def.values, value)) continue;
     const key = `${theme.name}\0${axis}\0${value}`;
     if (warned.has(key)) continue;
     warned.add(key);

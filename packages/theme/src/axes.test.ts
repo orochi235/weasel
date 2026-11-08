@@ -12,6 +12,11 @@ describe('axes', () => {
     expect(fullSelection(AXES, { mode: 'light', density: 'nope' })).toEqual({ mode: 'light', density: 'comfortable' });
   });
 
+  it('reads an axis value named like an Object.prototype member as unknown', () => {
+    expect(fullSelection(AXES, { mode: 'toString', density: 'constructor' })).toEqual({ mode: 'dark', density: 'comfortable' });
+    expect(pick({ by: 'mode', dark: 1, light: 2 }, { mode: 'toString' })).toEqual({ ok: false, axis: 'mode', value: 'toString' });
+  });
+
   it('enumerates the cross product in declaration order', () => {
     expect(enumerateSelections(AXES).map((s) => selectionKey(AXES, s))).toEqual([
       'mode=dark,density=comfortable',
