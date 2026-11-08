@@ -497,15 +497,6 @@ Owner tags, after the priority (2026-10-26):
   draws an open end. Closes when the table says so and `BarField` and `MatrixEditor` take their enum control
   from `PARAMS_CONTROLS`.
 
-- **(P2) [agent] A labkit field has no public way to carry a marker of its own.** The resolved leaf
-  has a `tags` slot and keeps extra keys, but the field builder sets them only through the protected
-  `ann()`. astv marks its prefs-only fields by filling a module-level `Set` from a wrapper
-  (`prefsOnly` in astv's `packages/engine/settings/schema/split.ts`), filled when a schema module is
-  imported, so its sidebar cut is right only once some schema has been built. Tags are not the
-  answer as they stand: weasel's settings search matches them. Wanted: a public per-field slot,
-  `.meta({...})` or a `.tag()` that search can tell apart, kept on the resolved leaf. Closes when
-  labkit ships one and astv's `PREFS_ONLY` set reads it instead (filed from astv, 2026-11-08).
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) [waiting] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and

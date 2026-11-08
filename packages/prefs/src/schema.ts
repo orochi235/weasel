@@ -48,6 +48,10 @@ export interface PrefBase<K extends string, Value> {
    *  (`prefLeafTags`). Unrelated to a union leaf's `tag`, which names the
    *  field its value's variant is read from. */
   tags?: readonly string[];
+  /** The consumer's own data on this leaf, carried and never read by the kit: no search matches it and nothing
+   *  draws it. Plain data, so a schema that exports keeps it. Unlike `tags`, it is the leaf's own and does not
+   *  come down from the groups above. */
+  meta?: Readonly<Record<string, unknown>>;
   /** The letter that picks this in a menu, and with the menu bar's chord opens a top-level menu. One character; supported, never required. */
   access?: string;
   /** Hide from a host app's settings UI by default. */

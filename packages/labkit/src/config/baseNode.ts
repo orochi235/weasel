@@ -105,6 +105,12 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
     return this.ann({ scopes: [...(this.annotations.scopes ?? []), per] });
   }
 
+  /** Hang data of your own on this leaf: it rides the resolved leaf as `meta`, merged across calls, and the
+   *  kit never reads it — no settings search matches it, unlike `tags`. */
+  meta(patch: Readonly<Record<string, unknown>>): this {
+    return this.ann({ meta: { ...this.annotations.meta, ...patch } });
+  }
+
   /** Render under a named section heading. `collapsed` opens the section
    *  folded, and `layout` and `pack` lay out its rows — say each on any one of
    *  the section's leaves. */
