@@ -12,6 +12,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import { InputScope } from '../actions/inputScope';
 import type { Action } from '../actions/action';
+import type { ActionsRegistry } from '../actions/registry';
 import { heldKeySpec } from '../actions/toolOffhand';
 
 const NO_ENTRIES = new Map();
@@ -251,6 +252,34 @@ describe('a key that reaches the page', () => {
     );
     press();
     expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
+  });
+
+  it('stays with a canvas that claims the keys when the registry it dispatches on changes', () => {
+    const run = vi.fn();
+    function Claiming({ registry }: { registry: ActionsRegistry }): ReactNode {
+      const canvasRef = useRef<HTMLCanvasElement | null>(null);
+      useEffect(() => registry.register({
+        id: 'test.q', label: 'Q', defaultBinding: { kind: 'key', key: 'q' },
+        invoker: { timing: 'immediate', run: () => run() },
+      } satisfies Action), [registry]);
+      useGestureDispatcher({ canvasRef, actions: registry, entriesById: NO_ENTRIES, claimKeys: true });
+      return <canvas ref={canvasRef} />;
+    }
+    function Pick({ which }: { which: 'a' | 'b' }): ReactNode {
+      const outer = useActionsRegistry()!;
+      return (
+        <InputScope>
+          <Inner pick={(inner) => (which === 'a' ? outer : inner)} />
+        </InputScope>
+      );
+    }
+    function Inner({ pick }: { pick: (inner: ActionsRegistry) => ActionsRegistry }): ReactNode {
+      return <Claiming registry={pick(useActionsRegistry()!)} />;
+    }
+    const { rerender } = render(<Root><Pick which="a" /></Root>);
+    rerender(<Root><Pick which="b" /></Root>);
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('holds across separate roots: of two canvases with a provider each, the one last pressed in', () => {
