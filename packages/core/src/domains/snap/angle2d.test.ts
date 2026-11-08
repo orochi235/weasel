@@ -27,6 +27,20 @@ function session(req: Partial<SnapBegin>, sources: readonly SnapSource[]) {
 }
 
 describe('SnapSession.angle', () => {
+  it('hands sources one exclude array for the whole gesture, so they can cache by it', () => {
+    const seen: (readonly string[])[] = [];
+    const spy: SnapSource = { id: 'spy', roles: [], gestures: ['rotate'], collect: () => [], *angles(q) { seen.push(q.exclude); } };
+    const s = session({ ids: ['me'] }, [spy]);
+    s.angle(0.1, FREE);
+    s.angle(0.2, FREE);
+    expect(seen[0]).toEqual(['me']);
+    expect(seen[1]).toBe(seen[0]);
+    const bare = session({}, [spy]);
+    bare.angle(0.1, FREE);
+    bare.angle(0.2, FREE);
+    expect(seen[3]).toBe(seen[2]);
+  });
+
   it('reaches 8px of arc at the press radius', () => {
     // 8px at a 100px radius is about 4.6°.
     expect(session({}, [at(0)]).angle(4 * DEG, FREE).theta).toBeCloseTo(0, 9);

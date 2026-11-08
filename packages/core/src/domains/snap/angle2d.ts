@@ -71,7 +71,7 @@ function collectAngles(
     theta0,
     theta,
     ids: req.ids ?? [],
-    exclude: inputs.exclude ?? req.exclude ?? req.ids ?? [],
+    exclude: inputs.exclude ?? [],
     mods,
     ...(req.also ? { also: req.also } : {}),
     ...(inputs.scene ? { scene: inputs.scene } : {}),
