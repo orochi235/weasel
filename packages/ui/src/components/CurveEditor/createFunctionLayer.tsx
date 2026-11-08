@@ -146,7 +146,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
         {interactive && plotAnchors.map((a, i) => {
           const pinned = isPinnedEndpointAt(i, points.length, endpoints);
           const locked = points[i]?.locked === true;
-          if ((locked || pinned) && cfg.hideNonInteractive) return null;
+          if (hidden(points, i)) return null;
           const active = activeIndex === i;
           const isEndpoint = curveVisible && (i === 0 || i === points.length - 1);
           const focus = !locked && !(endpoints === 'pinned-both' && pinned)
@@ -205,10 +205,17 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     );
   }
 
+  /** Whether anchor `i` is left undrawn: a point that cannot move, under `hideNonInteractive`. */
+  function hidden(points: readonly ControlPoint[], i: number): boolean {
+    return !!cfg.hideNonInteractive && (points[i]?.locked === true || isPinnedEndpointAt(i, points.length, endpoints));
+  }
+
   // ── hit test ────────────────────────────────────────────────────────
   function hitTest(state: FunctionLayerState, plot: PlotPoint, ctx: LayerCtx) {
     if (!interactive) return null;
-    const plotAnchors = projectAnchors(state.points, ctx);
+    // An anchor that is not drawn takes no press: it lies out of every hit radius.
+    const plotAnchors = projectAnchors(state.points, ctx)
+      .map((p, i) => (hidden(state.points, i) ? { x: Infinity, y: Infinity } : p));
     const a = hitTestAnchor(plotAnchors, plot, ctx.kitSettings?.get('targets.curveAnchorSnapPx') ?? ANCHOR_SNAP_PX);
     if (a) return { kind: 'anchor' as const, payload: { index: a.index } };
     if (addPointMode === 'click-curve' && curveVisible) {
