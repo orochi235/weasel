@@ -35,19 +35,24 @@ type PinchConfig = boolean | { min?: number; max?: number };
 function mountAndPinch(
   pinchZoom: PinchConfig | undefined,
   offset: { left: number; top: number } = { left: 0, top: 0 },
+  /** Features to rerender with before the pinch, changing the canvas's standard actions. */
+  then?: readonly string[],
 ): View[] {
   const emitted: View[] = [];
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-  const { container } = render(
+  const canvasWith = (features?: readonly string[]) => (
     <SceneCanvas
       scene={scene}
       layers={{}}
       width={400}
       height={400}
+      {...(features ? { features: features as never } : {})}
       viewport={pinchZoom === undefined ? {} : { pinchZoom }}
       onViewChange={(v) => { emitted.push(v); }}
-    />,
+    />
   );
+  const { container, rerender } = render(canvasWith());
+  if (then) rerender(canvasWith(then));
   const canvas = container.querySelector('canvas');
   if (!canvas) throw new Error('SceneCanvas rendered no canvas element');
   canvas.getBoundingClientRect = () => ({
@@ -85,6 +90,11 @@ describe('SceneCanvas pinch zoom', () => {
 
   it('clamps to the max from viewport.pinchZoom', () => {
     const emitted = mountAndPinch({ min: 0.5, max: 1.5 });
+    expect(emitted.map((v) => v.scale.x)).toEqual([1.5]);
+  });
+
+  it('keeps the clamp from viewport.pinchZoom after the canvas\'s actions change', () => {
+    const emitted = mountAndPinch({ min: 0.5, max: 1.5 }, undefined, ['draw']);
     expect(emitted.map((v) => v.scale.x)).toEqual([1.5]);
   });
 

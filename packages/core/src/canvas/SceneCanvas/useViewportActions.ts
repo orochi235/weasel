@@ -37,8 +37,11 @@ export function useViewportActions(args: {
   /** `true`/`false` toggles two-finger pinch zoom; an object sets its scale
    *  clamp (see {@link PinchZoomOptions}). */
   pinchZoom: boolean | PinchZoomOptions;
+  /** Changes whenever the standard action set re-registers, which puts the
+   *  default pinch zoom back on top of a configured one. */
+  rev?: string;
 }): void {
-  const { pan, zoom, pinchZoom } = args;
+  const { pan, zoom, pinchZoom, rev } = args;
   const reg = useActionsRegistry();
   const regRef = useLatest(reg);
 
@@ -72,7 +75,7 @@ export function useViewportActions(args: {
     }
     return () => { for (const u of unregisters) u(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configs tracked via zoomKey / pinchKey
-  }, [panKey, zoomKey, pinchKey]);
+  }, [panKey, zoomKey, pinchKey, rev]);
 }
 
 /**

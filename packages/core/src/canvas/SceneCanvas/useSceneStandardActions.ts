@@ -165,6 +165,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   );
   useStandardDeps({ selection, scene, view, history: scene.history });
   useActionSet(standardActions);
+  const standardActionsKey = standardActions.map((a) => a.id).join('|');
   // A view overlays `view` with its own camera; this name it leaves alone.
   useDepSource('rootView', () => view);
   useSurfaceDepSources(canvasRef, currentViewRef);
@@ -178,6 +179,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
     pan: viewOn ? (viewport?.pan ?? true) : false,
     zoom: viewOn ? viewportZoom : false,
     pinchZoom: viewOn ? (viewport?.pinchZoom ?? true) : false,
+    rev: standardActionsKey,
   });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
@@ -230,7 +232,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
 
   // Keyed on the set too: a re-registration of it would otherwise land over
   // the overrides applied on top of it.
-  useActionsPropResolver(props.actions, standardActions.map((a) => a.id).join('|'));
+  useActionsPropResolver(props.actions, standardActionsKey);
   useActionTunings(tune);
   useBindingOverrides(props.bindingOverrides);
 }
