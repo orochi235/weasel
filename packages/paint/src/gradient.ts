@@ -41,7 +41,7 @@ export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradie
  *
  * `space` is a gradient's `interpolate`. Alpha is linear in every space —
  * only the color channels travel through OKLab or OKLCh. Returns transparent
- * black for an empty list.
+ * black for an empty list; a NaN `t` reads as the first stop.
  */
 export function sampleResolvedStops(
   stops: readonly ResolvedGradientStop[], t: number, space: ColorSpace = 'rgb',
@@ -49,7 +49,7 @@ export function sampleResolvedStops(
   if (stops.length === 0) return TRANSPARENT;
   const first = stops[0];
   const last = stops[stops.length - 1];
-  if (t <= first.offset) return first.rgba;
+  if (!(t > first.offset)) return first.rgba;
   if (t >= last.offset) return last.rgba;
 
   for (let i = 0; i < stops.length - 1; i++) {
@@ -73,12 +73,11 @@ const TRANSPARENT: readonly [number, number, number, number] = [0, 0, 0, 0];
  * sampling the GL ramp texture bakes, so an editor track and the painted
  * gradient cannot disagree.
  *
- * Returns transparent black for an empty list.
+ * Returns transparent black (`#00000000`) for an empty list.
  */
 export function sampleGradientStops(
   stops: readonly GradStop[], t: number, space: ColorSpace = 'rgb',
 ): string {
-  if (stops.length === 0) return 'rgba(0,0,0,0)';
   return rgbaToHex(sampleResolvedStops(resolveGradientStops(stops), t, space));
 }
 
