@@ -118,12 +118,10 @@ of a local box reproduces that.
 One measurement gap closed on the way: nothing had asserted that a quaternion
 pose survives `toJSON`/`sceneFromJSON`. It does.
 
-One 2D leak in `Scene` that the "all of it is dimension-neutral" audit missed:
-`kitRegistry.ts` registers `unionOfChildren` into every scene with two blind
-`as unknown as RectPose` casts, so a 3D scene carries a registry entry that
-would produce garbage if a node opted into it via `derivePoseKey`. The escape
-hatch is real — `unionOfChildrenVia(descriptor)` shadows it under the same key —
-but the default is 2D and silent.
+`kitRegistry.ts` registers `unionOfChildren` into every scene. It reads only rect poses and returns `null` for
+any other, so a 3D container that opts into it via `derivePoseKey` keeps its authored pose rather than deriving
+one; a 3D host that wants its containers to track their members registers `unionOfChildrenVia(descriptor)`,
+which shadows it under the same key.
 
 ## What "shipping tools for both" actually means
 

@@ -32,9 +32,8 @@ For the session picking this up: what is in flight and what has no other home. O
   `git log 6efccfc46..` as what is already done. `fixups` takes: theme editor copy timers, draw's Paper select showing
   "Custom" on an unnamed size, labkit's `watch3d` double unsubscribe and `PresentationState.time` doc, diagram labels
   taking two undo entries.
-- Left open by round four: kernel3d's design doc still says `unionOfChildren` produces garbage in 3D, which
-  `kitRegistry.ts` no longer does; a pen or mouse held while a finger touches counts as a multitouch finger
-  (`pointerRecognizer.ts` says intended), Mike's call.
+- Left open by round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
+  (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
 - Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
   new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
