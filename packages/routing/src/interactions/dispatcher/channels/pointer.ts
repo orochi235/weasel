@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
 import { openPointerSession, type PointerSession } from '../../pointerSession';
-import type { PointerDispatchCore } from '../dispatchCore';
+import { pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
 import { multiTouchGestureId } from '../dispatcher';
 import { LONG_PRESS_HAPTIC_MS, type LongPressOptions } from '../longPressState';
 import { underPointer } from '../underPointer';
@@ -220,6 +220,8 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       // A button or field laid over the canvas handles its own press: opening a
       // session here would capture the pointer and retarget its click.
       if (isInControlWithin(e.target, canvas)) return;
+      // A surface nested inside this one runs its own gestures for a press in it.
+      if (pressedNestedIn(canvas, e.target)) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
       const w = toWorld(e.clientX, e.clientY);
       const where = underPointer(target(), e, w);

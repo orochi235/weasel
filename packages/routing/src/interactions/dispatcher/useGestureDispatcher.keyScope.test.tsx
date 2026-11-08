@@ -12,6 +12,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import { InputScope } from '../actions/inputScope';
 import type { Action } from '../actions/action';
+import type { ActionsRegistry } from '../actions/registry';
 import { heldKeySpec } from '../actions/toolOffhand';
 
 const NO_ENTRIES = new Map();
@@ -71,6 +72,29 @@ function SharedSurface({ outer, inner }: { outer: () => void; inner: () => void 
       <OnSurface surface={surfaceRef} run={outer} />
     </div>
   );
+}
+
+/** A canvas dispatching on the registry above it, which binds nothing of its own. */
+function BareCanvas({ name }: { name: string }): ReactNode {
+  const registry = useActionsRegistry()!;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  useGestureDispatcher({ canvasRef, actions: registry, entriesById: NO_ENTRIES });
+  return <canvas ref={canvasRef} data-name={name} />;
+}
+
+/** A dispatcher on `surface` binding `key` to `run`, under the id `id`. */
+function KeyOnSurface({ surface, id, keyName, run }: {
+  surface: RefObject<HTMLDivElement | null>; id: string; keyName: string; run: () => void;
+}): null {
+  const registry = useActionsRegistry()!;
+  useEffect(() => registry.register({
+    id,
+    label: id,
+    defaultBinding: { kind: 'key', key: keyName },
+    invoker: { timing: 'immediate', run: () => run() },
+  } satisfies Action), [registry, id, keyName, run]);
+  useGestureDispatcher({ canvasRef: surface, actions: registry, entriesById: NO_ENTRIES });
+  return null;
 }
 
 /** A canvas whose `over` binding peeks while Alt is held, as a loupe's does. */
@@ -185,6 +209,38 @@ describe('a key that reaches the page', () => {
     expect([outer.mock.calls.length, inner.mock.calls.length]).toEqual([0, 2]);
   });
 
+  it('fires once when two canvases on one registry hear it, on the one last pressed in', () => {
+    const run = vi.fn();
+    render(<Root><InputScope><Canvas name="a" run={run} /><BareCanvas name="b" /></InputScope></Root>);
+    giveKeys(canvas('b'));
+    press();
+    giveKeys(canvas('a'));
+    press();
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls through to the other dispatcher on the surface when no binding in the active scope takes it', () => {
+    const inner = vi.fn();
+    const outer = vi.fn();
+    const outerQ = vi.fn();
+    function Pane(): ReactNode {
+      const surfaceRef = useRef<HTMLDivElement | null>(null);
+      return (
+        <div ref={surfaceRef} data-name="pane">
+          <Root><KeyOnSurface surface={surfaceRef} id="inner.q" keyName="q" run={inner} /></Root>
+          <KeyOnSurface surface={surfaceRef} id="outer.m" keyName="m" run={outer} />
+          <KeyOnSurface surface={surfaceRef} id="outer.q" keyName="q" run={outerQ} />
+        </div>
+      );
+    }
+    render(<Root><Pane /></Root>);
+    const pane = document.querySelector('[data-name="pane"]')!;
+    act(() => { pane.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    press();
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'm', cancelable: true })); });
+    expect([inner.mock.calls.length, outerQ.mock.calls.length, outer.mock.calls.length]).toEqual([1, 0, 1]);
+  });
+
   it('goes to a canvas that claims the keys on mount', () => {
     const a = vi.fn();
     const b = vi.fn();
@@ -196,6 +252,34 @@ describe('a key that reaches the page', () => {
     );
     press();
     expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
+  });
+
+  it('stays with a canvas that claims the keys when the registry it dispatches on changes', () => {
+    const run = vi.fn();
+    function Claiming({ registry }: { registry: ActionsRegistry }): ReactNode {
+      const canvasRef = useRef<HTMLCanvasElement | null>(null);
+      useEffect(() => registry.register({
+        id: 'test.q', label: 'Q', defaultBinding: { kind: 'key', key: 'q' },
+        invoker: { timing: 'immediate', run: () => run() },
+      } satisfies Action), [registry]);
+      useGestureDispatcher({ canvasRef, actions: registry, entriesById: NO_ENTRIES, claimKeys: true });
+      return <canvas ref={canvasRef} />;
+    }
+    function Pick({ which }: { which: 'a' | 'b' }): ReactNode {
+      const outer = useActionsRegistry()!;
+      return (
+        <InputScope>
+          <Inner pick={(inner) => (which === 'a' ? outer : inner)} />
+        </InputScope>
+      );
+    }
+    function Inner({ pick }: { pick: (inner: ActionsRegistry) => ActionsRegistry }): ReactNode {
+      return <Claiming registry={pick(useActionsRegistry()!)} />;
+    }
+    const { rerender } = render(<Root><Pick which="a" /></Root>);
+    rerender(<Root><Pick which="b" /></Root>);
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('holds across separate roots: of two canvases with a provider each, the one last pressed in', () => {

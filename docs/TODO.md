@@ -30,19 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P2) [agent] In the 3D lab, Shift+F10 and the ContextMenu key stop opening the lab's menu once the pane
-  has been clicked.** Two dispatchers share the pane: the instrument's and its trial camera's. Since 66345dc66 the
-  first to activate for a press keeps it (`dispatchCore.ts`), which is the instrument's, and keys then go only to
-  its registry, which has no `menu.context`; the camera owns that and `menuHost`. Letting a right-click activate
-  the camera again would send undo after a right-click to the camera, and would not help Shift+F10 after a
-  left-click. The decision: whether the instrument and its camera share one input scope, or whether a key no
-  binding in the active scope takes falls through to the other dispatcher on the same surface.
-  Ruled (2026-11-07): the fall-through, as a general rule for dispatchers sharing a surface.
-  The same seam, read from the code and not run (2026-11-07): two dispatchers on one registry both answer
-  `holdsKeys()` true, since the hold is per registry, so one key may fire on both; per-dispatcher holds would
-  settle that and the fall-through together. Closes when it is built, with a case in
-  `useGestureDispatcher.keyScope.test.tsx`, and a key held by one of two dispatchers on a registry fires once.
-
 - **(P3) [agent] An alt-drag clone should snap to its own source.** Clone snaps as move
   does (`move/dragSnap.ts`), and passes the dragged ids as the snap request's `ids`, which both names
   the box being snapped and hides those nodes as targets. During a clone the source stays put, so the

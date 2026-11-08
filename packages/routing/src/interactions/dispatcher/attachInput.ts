@@ -14,6 +14,7 @@ import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
 import { keyboardInput } from './channels/keyboard';
+import { joinSurface } from './channels/keyPeers';
 import { listenerSet, type ListenerSet } from './channels/listeners';
 import { pointerInput, type PointerInput, type PointerInputOptions } from './channels/pointer';
 import { webkitPinchInput } from './channels/webkitPinch';
@@ -95,6 +96,7 @@ export function attachInput(
     listeners.on(window, 'keydown', keys.onKeyDown, keyCapture);
     listeners.on(window, 'keyup', keys.onKeyUp, keyCapture);
   }
+  const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
   listeners.on(window, 'blur', onWindowBlur);
   // Ahead of the pointer channel's own listener, and whether or not that
   // channel is on: a press with any button makes this the scope chrome and
@@ -123,9 +125,7 @@ export function attachInput(
       hover.moved(e);
     });
   }
-  if (channels.wheel) {
-    listeners.on(canvas, 'wheel', wheelInput(core, pinch.live), { passive: false, capture: true });
-  }
+  if (channels.wheel) listenWheel(listeners, canvas, wheelInput(core, pinch.live));
   if (channels.pinch) {
     listeners.on(canvas, 'gesturestart', pinch.onGestureStart);
     listeners.on(canvas, 'gesturechange', pinch.onGestureChange);
@@ -142,12 +142,13 @@ export function attachInput(
     listeners.on(window, 'paste', ingest.onPaste);
   }
   const offCarry = channels.carry ? carryInput(core) : null;
-  const releaseSurface = canvas ? holdSurface(canvas) : null;
+  const releaseSurface = canvas ? holdSurface(canvas, channels.pointer) : null;
 
   return () => {
     if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
     releaseSurface?.();
+    leaveKeyPeers?.();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     ingest.endPreview();
@@ -161,6 +162,12 @@ export function attachInput(
     for (const d of src.dispatchers()) d.cancelAll('cancel');
     src.context().keymaps?.closeAll();
   };
+}
+
+/** Listen for the wheel in the capture phase, for one that landed here, and in the bubble phase, for one that landed in a nested surface. */
+function listenWheel(listeners: ListenerSet, canvas: HTMLElement | null, wheel: ReturnType<typeof wheelInput>): void {
+  listeners.on(canvas, 'wheel', wheel.capture, { passive: false, capture: true });
+  listeners.on(canvas, 'wheel', wheel.bubble, { passive: false });
 }
 
 /** Keep `core`'s pointer-over flag, pressing held keys as the pointer arrives and releasing them as it leaves. */
