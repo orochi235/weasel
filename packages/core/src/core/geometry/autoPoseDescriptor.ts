@@ -41,6 +41,9 @@ export const AUTO_POSE_DESCRIPTOR: PoseDescriptor<unknown> = {
   translate: (p, dx, dy) => isPathLike(p)
     ? pathPoseDescriptor.translate!(p, dx, dy)
     : RECT_POSE_DESCRIPTOR.translate!(p as { x: number; y: number; width: number; height: number }, dx, dy),
+  lerp: (a, b, t) => (isPathLike(a) && isPathLike(b)
+    ? pathPoseDescriptor.lerp!(a, b, t)
+    : RECT_POSE_DESCRIPTOR.lerp!(a as Bounds, b as Bounds, t)),
   axes: (p) => (isRectPose(p)
     ? RECT_POSE_DESCRIPTOR.axes!(p) as never
     : isPathLike(p) ? pathPoseDescriptor.axes!(p) as never : null),
