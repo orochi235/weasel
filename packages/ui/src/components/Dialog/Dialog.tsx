@@ -116,6 +116,7 @@ export function Dialog(props: DialogProps) {
         onOpenChange={onOpenChange}
         isDismissable={rest.isDismissable}
         isKeyboardDismissDisabled={rest.isKeyboardDismissDisabled}
+        shouldCloseOnInteractOutside={rest.shouldCloseOnInteractOutside}
         overlayClassName={s.overlay}
         modalClassName={[s.modal, className].filter(Boolean).join(' ')}
         modalProps={appearance}

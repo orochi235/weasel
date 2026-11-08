@@ -1,13 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
+import userEvent from '@testing-library/user-event';
 import { Button, DialogTrigger } from 'react-aria-components';
 import { renderWithIcons } from '../../testing/withIcons';
 import { OverlayPortalProvider } from '../../overlays/portalHost';
 import { Dialog } from './Dialog';
 
 /** A page with chrome outside a box that stands in for the viewport, the way a workshop holds one story. */
-function Page({ open, onOpenChange }: { open: boolean; onOpenChange?: (open: boolean) => void }) {
+function Page({ open, onOpenChange, keep }: { open: boolean; onOpenChange?: (open: boolean) => void; keep?: (el: Element) => boolean }) {
   const [box, setBox] = useState<HTMLDivElement | null>(null);
   return (
     <>
@@ -18,7 +19,8 @@ function Page({ open, onOpenChange }: { open: boolean; onOpenChange?: (open: boo
         </div>
         {box ? (
           <OverlayPortalProvider container={box} contained>
-            <Dialog isOpen={open} onOpenChange={onOpenChange} title="Prefs">
+            <Dialog isOpen={open} onOpenChange={onOpenChange} title="Prefs"
+              {...(keep ? { isDismissable: true, shouldCloseOnInteractOutside: keep } : {})}>
               <button type="button">inside</button>
             </Dialog>
           </OverlayPortalProvider>
@@ -53,6 +55,16 @@ describe('Dialog in a contained portal', () => {
     act(() => rerender(<Page open={false} onOpenChange={onOpenChange} />));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByTestId('story').hasAttribute('inert')).toBe(false);
+  });
+
+  it('closes on a press outside only where shouldCloseOnInteractOutside allows', async () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = renderWithIcons(<Page open keep={() => false} onOpenChange={onOpenChange} />);
+    await userEvent.click(document.querySelector('[data-contained]')!);
+    expect(onOpenChange).not.toHaveBeenCalled();
+    rerender(<Page open keep={() => true} onOpenChange={onOpenChange} />);
+    await userEvent.click(document.querySelector('[data-contained]')!);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('closes from its own close button', () => {
