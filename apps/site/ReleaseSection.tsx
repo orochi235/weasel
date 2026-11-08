@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangelogEntry, Release } from '../shared/releases';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
+import { isoDay } from './isoDay';
 
 /** Matches the `UNRELEASED` label the changelogs plugin stamps on pending
  *  changesets. */
@@ -53,7 +54,7 @@ export function ReleaseSection({
         <h3 className={`ckd-release-version ${num.numeric}`}>{release.version}</h3>
         {release.date ? (
           <time className={`ckd-release-date ${num.numeric}`} dateTime={release.date}>
-            {formatDate(release.date)}
+            {isoDay(release.date)}
           </time>
         ) : release.version === UNRELEASED ? (
           <span className="ckd-release-date">merged, not yet published</span>
@@ -127,10 +128,3 @@ function Packages({
   );
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
