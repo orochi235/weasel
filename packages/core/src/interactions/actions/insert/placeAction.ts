@@ -2,7 +2,7 @@ import type { Action, ActionDeps, ModifierState } from '@weasel-js/routing';
 import { SNAP_ROLES, snapMods } from 'domains/snap/roles';
 import type { InsertExtras } from '../depSchema';
 import { inPlane, insertLayer } from '../planeInput';
-import { enterInsertedText } from './commit';
+import { enterInsertedText, restoreSelection } from './commit';
 import { insertParent } from './parent';
 import { insertKind } from './shape';
 import { clearedSelection } from './session';
@@ -60,7 +60,11 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
       const ends = { start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true };
       const id = dep.commit(bounds, extras as InsertExtras, ends, clearedSelection(prior));
-      enterInsertedText(deps.textEdit, id === null ? null : String(id), extras.kind as string);
+      if (id === null) {
+        restoreSelection({ priorSelection: prior, selection: deps.selection });
+        return;
+      }
+      enterInsertedText(deps.textEdit, String(id), extras.kind as string);
     },
   },
   /** Like `insert`, needs no selection. */

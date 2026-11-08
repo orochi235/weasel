@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { selectionFromHits } from './hitSelection';
+import { hitTargets, selectionFromHits } from './hitSelection';
 
 describe('selectionFromHits', () => {
   it('replaces the selection with the hits', () => {
@@ -13,5 +13,12 @@ describe('selectionFromHits', () => {
   it('returns a new array either way', () => {
     const hits = ['a'];
     expect(selectionFromHits([], hits, false)).not.toBe(hits);
+  });
+});
+
+describe('hitTargets', () => {
+  it('hands targetOf only the id, so an optional second parameter keeps its default', () => {
+    const targetOf = (id: string, depth = 0) => (depth === 0 ? `${id}!` : id);
+    expect(hitTargets(['a', 'b'], targetOf)).toEqual(['a!', 'b!']);
   });
 });

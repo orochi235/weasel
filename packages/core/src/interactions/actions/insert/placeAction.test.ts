@@ -101,6 +101,13 @@ describe('placeAction', () => {
     expect(selection.get()).toEqual([]);
   });
 
+  it('puts the selection back when the insert dep places nothing', () => {
+    const insert: InsertDep = { commit: () => null };
+    const selection = makeSelection(['a']);
+    click({ kind: 'rect', size: { width: 10, height: 10 } }, { insert, selection } as never);
+    expect(selection.get()).toEqual(['a']);
+  });
+
   it('drops into the caret of a kind that carries text', () => {
     const textEdit = makeTextEditDep();
     click({ kind: 'sticky', size: { width: 40, height: 40 } }, { insert: makeInsertDep(), textEdit } as never);

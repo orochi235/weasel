@@ -16,12 +16,14 @@ import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresContent, selectedContent } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { commitOps } from '../defaultCommitAdapter';
+import { inPaintOrder, slotAbove } from '../groupSlot';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /**
  * Creates a structural `GroupNode` and reparents the current selection
- * under it as a single undoable batch, in the container `groupingSite` names.
+ * under it as a single undoable batch, in the container `groupingSite` names,
+ * in the frontmost member's place, the members keeping their stacking.
  *
  * Grouping never moves a member on screen, unless with the pasteboard off
  * the members lie wholly off every page and move onto one. The container takes the world
@@ -48,9 +50,9 @@ export const groupAction: Action & { requires: string[] } = {
       const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
       if (ids.length === 0) return;
 
-      const nodes = ids
+      const nodes = inPaintOrder(scene, ids
         .map((id) => scene.get(id as NodeId))
-        .filter((n): n is NonNullable<typeof n> => n !== undefined);
+        .filter((n): n is NonNullable<typeof n> => n !== undefined));
       if (nodes.length === 0) return;
 
       // Members must share a layer — containers live on a single layer.
@@ -78,6 +80,7 @@ export const groupAction: Action & { requires: string[] } = {
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first.
       const containerId = scene.mintId();
+      const index = slotAbove(scene, parent, nodes.at(-1)!.id);
       const ops: Op[] = [
         createInsertOp<Node<unknown, string, unknown>>({
           node: {
@@ -88,14 +91,16 @@ export const groupAction: Action & { requires: string[] } = {
             data: {} as unknown,
             parent: parent ?? null,
           } as Node<unknown, string, unknown>,
+          ...(index !== undefined ? { index } : {}),
           label: 'Group',
         }),
       ];
-      for (const node of nodes) {
+      nodes.forEach((node, i) => {
         ops.push(createReparentOp({
           id: node.id as string,
           fromParentId: (node.parent ?? null) as string | null,
           toParentId: containerId as string,
+          toIndex: i,
           label: 'Group',
         }));
         ops.push(createTransformOp<unknown>({
@@ -104,7 +109,7 @@ export const groupAction: Action & { requires: string[] } = {
           to: frame.pc.decompose(containerWorldPose, worlds.get(node.id)!),
           label: 'Group',
         }));
-      }
+      });
 
       const page = parent === null ? null : pageOfNode(scene, parent);
       ops.push(...followerMoveOps(followerMoves(scene, new Map(nodes.map((n) => [n.id as string, page]))), 'Group'));
