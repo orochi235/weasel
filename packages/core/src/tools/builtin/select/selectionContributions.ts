@@ -208,6 +208,10 @@ export function areaSelectContribution(): Contribution {
   return {
     id: AREA_SELECT_ID,
     eligibility: { always: true },
-    bindings: [{ spec: { kind: 'drag', target: { kindOf: onEmptyCanvas } }, actionId: 'areaSelect', opts: { id: 'selection.areaSelect.drag' } }],
+    bindings: [{
+      spec: { kind: 'drag', target: { kindOf: onEmptyCanvas }, mods: { shift: 'optional' } },
+      actionId: 'areaSelect',
+      opts: { id: 'selection.areaSelect.drag' },
+    }],
   };
 }
