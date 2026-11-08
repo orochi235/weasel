@@ -148,13 +148,15 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   const last = useRef<HTMLElement | null>(null);
   const latest = useRef(options);
 
-  const items = useCallback((): HTMLElement[] => {
-    const root = rootRef.current;
+  const itemsOf = useCallback((root: HTMLElement | null): HTMLElement[] => {
     if (!root) return [];
     return Array.from(root.querySelectorAll<HTMLElement>(itemSelector)).filter(
       (el) => el.parentElement?.closest(`[${ROOT_ATTR}]`) === root,
     );
   }, [itemSelector]);
+  const items = useCallback((): HTMLElement[] => itemsOf(rootRef.current), [itemsOf]);
+  // The container last placed in, so letting go of the ref gives its items their own tab order back.
+  const placedIn = useRef<HTMLElement | null>(null);
 
   // `focused` is the item focus sits on, or null when it is outside.
   const place = useCallback(
@@ -182,7 +184,14 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   // Every render, so a controlled stop or a re-rendered item set lands before paint.
   useLayoutEffect(() => {
     latest.current = options;
-    rootRef.current?.setAttribute(ROOT_ATTR, '');
+    const root = rootRef.current;
+    const was = placedIn.current;
+    if (was && was !== root) {
+      for (const el of itemsOf(was)) el.removeAttribute('tabindex');
+      was.removeAttribute(ROOT_ATTR);
+    }
+    placedIn.current = root;
+    root?.setAttribute(ROOT_ATTR, '');
     place(focusedItem());
   });
 

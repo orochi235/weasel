@@ -66,4 +66,20 @@ describe('Toolbar', () => {
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('button', { name: 'Undo' })).toHaveFocus();
   });
+
+  test('puts every button back in the tab order when roving is turned off', () => {
+    const view = threeButtons(true);
+    expect(screen.getAllByRole('button').filter((b) => b.tabIndex === -1)).toHaveLength(2);
+    view.rerender(
+      <Toolbar aria-label="Trial actions" roving={false}>
+        <Toolbar.Group aria-label="History">
+          <button type="button">Undo</button>
+          <button type="button">Redo</button>
+        </Toolbar.Group>
+        <Toolbar.Spacer />
+        <button type="button">Close</button>
+      </Toolbar>,
+    );
+    expect(screen.getAllByRole('button').every((b) => b.tabIndex === 0)).toBe(true);
+  });
 });
