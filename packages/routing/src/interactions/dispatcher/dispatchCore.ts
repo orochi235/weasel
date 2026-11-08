@@ -102,6 +102,12 @@ export function holdSurface(el: Element): () => void {
   };
 }
 
+/** Whether `event` landed in another dispatcher's surface nested inside `surface`. */
+export function landedNestedIn(surface: Element | null, event: Event): boolean {
+  const landed = innermostSurface(event.target);
+  return landed !== null && landed !== surface;
+}
+
 /** The innermost dispatcher surface holding `target`, or null. */
 function innermostSurface(target: EventTarget | null): Element | null {
   for (let el = target instanceof Element ? target : null; el !== null; el = el.parentElement) {

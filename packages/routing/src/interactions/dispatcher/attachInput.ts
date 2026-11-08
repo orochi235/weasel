@@ -126,7 +126,9 @@ export function attachInput(
     });
   }
   if (channels.wheel) {
-    listeners.on(canvas, 'wheel', wheelInput(core, pinch.live), { passive: false, capture: true });
+    const wheel = wheelInput(core, pinch.live);
+    listeners.on(canvas, 'wheel', wheel.capture, { passive: false, capture: true });
+    listeners.on(canvas, 'wheel', wheel.bubble, { passive: false });
   }
   if (channels.pinch) {
     listeners.on(canvas, 'gesturestart', pinch.onGestureStart);
