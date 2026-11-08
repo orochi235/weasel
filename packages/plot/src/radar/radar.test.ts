@@ -126,6 +126,16 @@ describe('radar edits', () => {
     expect(drag(layout.scale.point(1, 64.3)).curves[1]!.values).toEqual([50, 64, 100, 75]);
   });
 
+  it('a drag past the rim raises a value where the rim fits the largest value, and stops at a set max', () => {
+    const fitted: RadarData = { ...GRADES, max: undefined };
+    const { layout, get } = byKey(fitted);
+    const point = get('point:1:2')!;
+    const beyond = layout.scale.point(2, 120);
+    expect(radarEditor.drag(fitted, point.data.plotMark, SIZE, PLOT_THEME, measure)!(beyond).curves[1]!.values[2]).toBe(120);
+    const capped = byKey(GRADES).layout.scale.point(2, 120);
+    expect(radarEditor.drag(GRADES, point.data.plotMark, SIZE, PLOT_THEME, measure)!(capped).curves[1]!.values[2]).toBe(100);
+  });
+
   it('edits the title, axis labels and curve labels in place', () => {
     expect(radarEditor.text!(GRADES, { edit: 'title' }, 'Marks').title).toBe('Marks');
     expect(radarEditor.text!(GRADES, { edit: 'axis', axis: 1 }, 'Physics').axes[1]!.label).toBe('Physics');
