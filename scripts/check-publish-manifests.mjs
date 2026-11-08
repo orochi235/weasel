@@ -9,13 +9,11 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
 
-/** Every relative path a manifest promises a consumer can resolve. Wildcard subpaths are skipped. */
+/** Every relative path a manifest promises a consumer can resolve, a wildcard subpath's target with its `*`. */
 function advertisedPaths(manifest) {
   const found = new Set();
   const add = (value) => {
-    if (typeof value !== 'string') return;
-    if (!value.startsWith('./') && !value.startsWith('dist/')) return;
-    if (value.includes('*')) return;
+    if (typeof value !== 'string' || value.startsWith('../') || value.startsWith('/') || value.includes(':')) return;
     found.add(value.replace(/^\.\//, ''));
   };
 
@@ -65,6 +63,13 @@ function packedFiles(dir) {
   return new Set(report.files.map((f) => f.path));
 }
 
+/** Whether the tarball holds `path`, or for a wildcard target, any file the `*` can stand for. */
+const ships = (path, packed) => {
+  if (!path.includes('*')) return packed.has(path);
+  const pattern = new RegExp(`^${path.split('*').map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.+')}$`);
+  return [...packed].some((file) => pattern.test(file));
+};
+
 const failures = [];
 const fileListGaps = [];
 const packages = publishableWorkspaces();
@@ -72,7 +77,7 @@ const packages = publishableWorkspaces();
 for (const { dir, manifest } of packages) {
   const packed = packedFiles(dir);
   const promised = advertisedPaths(manifest);
-  const missing = promised.filter((p) => !packed.has(p));
+  const missing = promised.filter((p) => !ships(p, packed));
 
   // npm drops a `files` entry matching nothing instead of erroring. Directories
   // and globs are npm's to expand; single files are checkable.

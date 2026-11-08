@@ -63,6 +63,13 @@ describe('the split at the first build', () => {
     expect(sourceChecks(steps)).toEqual([['check:bumps'], ['audit:jsdoc', '--', '--quiet', '--check'], ['typecheck']]);
   });
 
+  it('refuses a check with a condition or an env of its own, which the gate would run without', () => {
+    const at = (fixture: string) => readCi(fixture).steps;
+    expect(() => sourceChecks(at(FIXTURE.replace('      - run: npm run check:bumps', "      - if: github.event_name == 'push'\n        run: npm run check:bumps")))).toThrow(/github\.event_name/);
+    expect(() => sourceChecks(at(FIXTURE.replace('      - run: npm run check:bumps', '      - run: npm run check:bumps\n        env:\n          STRICT: 1')))).toThrow(/STRICT/);
+    expect(() => sourceChecks(at(FIXTURE.replace('npm run check:bumps', 'npm run check:bumps -- ${{ env.X }}')))).toThrow(/env\.X/);
+  });
+
   it('gives the post-build job every step from the build on', () => {
     expect(builtSteps(steps.slice(0, -1)).map((step) => step.run)).toEqual([
       'npm run build',

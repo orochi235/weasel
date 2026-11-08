@@ -68,7 +68,7 @@ try {
   if (locked !== undefined) console.log(`fleet-test: the lockfile change reaches ${locked ? locked.join(', ') || 'no workspace' : 'external packages, so everything runs'}`);
   console.log(
     select
-      ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of vitest.config.ts's triggers; --full runs them all"
+      ? "fleet-test: running the tests the branch reaches, or all of them if it changes one of scripts/lib/fleet-triggers.mjs's triggers; --full runs them all"
       : 'fleet-test: running every test',
   );
   status = await ontoWhenFree(['test', '--dir', tree, '--ref', base, ...ontoArgs], {

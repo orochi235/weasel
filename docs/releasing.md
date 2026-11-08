@@ -94,10 +94,11 @@ expires partway through, run it again.
 `npm run prepublishOnly` is the full gate — typecheck, the whole test suite,
 build, manifest check, consumer smoke test. It runs only when typed: the root
 package is private, so npm never fires it as a lifecycle hook, and the release
-workflow does not call it. The release workflow runs the build and manifest check
-on every release. The manifest check guards tarball
-contents: it fails the release if any `exports`/`types` path promises a file that
-`npm pack` would not include.
+workflow does not call it. The release workflow builds, then runs `check:imports`,
+`check:bumps`, `check:lockstep` and `check:first-publish` before it publishes. It
+does not run the manifest check, which fails on any `exports`/`types` path
+promising a file `npm pack` would not include: CI and `test:fleet:postbuild` run
+it on the commit before it merges.
 
 ## Checking a publish
 
