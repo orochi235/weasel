@@ -651,8 +651,9 @@ only story runner in the repo.
 - **(P2) [agent] `AnnotationOverlay.clip.browser.test.tsx`'s "a mark is cut where its target is" fails in full
   fleet runs, with the same numbers every time.** The input box's left reads 534.3125 against the visible part's
   533.078125 (tolerance 0.5): at 98d525569 on 2026-10-28, and at 51d4a8f9f and a54066909 on 2026-11-07 (both on
-  teitou, the first changing only package manifests). It passed in the full run of e0591848d the same morning, and
-  3 of 3 alone on studio at a54066909. A steady 1.23 px is not a reflow still settling: a `waitFor` that re-read
+  teitou, the first changing only package manifests), and twice at 511a88729 on 2026-11-08, each time with the
+  browser project beside 13 jsdom workers on an 18-core node. It passed in the full run of e0591848d the same morning,
+  3 of 3 alone on studio at a54066909, and in a run of the whole browser project alone at 511a88729. A steady 1.23 px is not a reflow still settling: a `waitFor` that re-read
   both rects on every attempt failed the same way. The box takes its rect from `placement`, which only the
   surface's painter sets (`registerPainter` in `AnnotationOverlay.tsx`), so a layout shift with no frame painted
   after it leaves the box where the last frame put it (read from the code, not confirmed). Closes when the box
