@@ -171,6 +171,9 @@ export function useDragHandle(
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // A second finger would replace `live`, and its release would then clear
+    // the ref while the first drag runs on with nothing to cancel it.
+    if (live.current) return;
     const target = e.currentTarget as HTMLElement;
     if (e.target instanceof HTMLElement && e.target.closest('input, button, select, textarea')) return;
     const start = { clientX: e.clientX, clientY: e.clientY };
