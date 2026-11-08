@@ -32,6 +32,14 @@ export function clamp01(v: number): number {
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 
+/** `n` rounded to `places` decimals and written as JavaScript writes it, for a number in a file: SVG path data,
+ *  an attribute. A non-finite `n` writes `'0'`. */
+export function trimNumber(n: number, places = 6): string {
+  if (!Number.isFinite(n)) return '0';
+  const k = 10 ** places;
+  return String(Math.round(n * k) / k);
+}
+
 /** The number `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
 export function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
