@@ -23,8 +23,9 @@ handles pass, in one `RenderLayer`):
   the result is the union AABB of all transitive leaf poses, with the same
   precedence applied per leaf.
 - **`createSelectionOutlineLayer`** — the outline rect per selected id.
-- **`createSelectionHandlesLayer`** — resize-handle rects (4 corners by
-  default).
+- **`createSelectionHandlesLayer`** — resize-handle rects: the corners, and
+  the edge midpoints where the box is big enough on screen to hold them
+  (`resizeHandlesFor`).
 
 **Visibility is not decided here.** All three ask
 [`../chrome-caps`](../chrome-caps/README.md) via `isVisible('selection.outline')`,
