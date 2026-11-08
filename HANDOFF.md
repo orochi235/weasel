@@ -24,6 +24,9 @@ For the session picking this up: what is in flight and what has no other home. O
   (`test:fleet`, a full run since ci.yml changed: 4175 files, 35733 tests; postbuild green). Unpushed. Its open
   questions are under "Audit round five" in `docs/unruled.md`. `check:forge-stories` moved after ci.yml's first
   build: the fleet's test tree keeps a stale `dist`, which forge's vite config reads.
+- Round six (2026-11-08, 29 fixes in core's leftovers: snap and paths, the remaining domains, animation and
+  affordances, and the barrel and debug plumbing) is on `main` at 62133c61f through `batch/2026-11-08` (`test:fleet`
+  2541 files, postbuild green). Unpushed. Open questions are under "Audit round six" in `docs/unruled.md`.
 - Open from round four, Mike's call: a pen or mouse held while a finger touches counts as a multitouch finger
   (`pointerRecognizer.ts` says intended).
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
