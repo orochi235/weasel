@@ -30,7 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-
 - **(P3) [agent] A warp press on text that ends before any move may leave an outlines-only undo entry.**
   Read from `path-tools/src/warp/warpActions.ts` and `outlineSession.ts`, not run: the text-to-outlines
   conversion is committed at the drag's end even when no warp shape was produced. It only happens if the
