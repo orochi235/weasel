@@ -34,6 +34,11 @@ const blocksOf = (css: string): Record<string, string[]> =>
   }));
 
 describe('prefsCss', () => {
+  it('escapes a line break in a string, which a CSS string cannot hold raw', () => {
+    const store = make([['face', 'Two\nlines\r\nhere']]);
+    expect(blocksOf(prefsCss(store))[':where(:root)']).toContain(String.raw`--face: 'Two\a lines\a here';`);
+  });
+
   it('sets every leaf with a CSS form on the root, by kind, and leaves out a kind with none', () => {
     const blocks = blocksOf(prefsCss(make()));
     expect(blocks[':where(:root)']).toEqual([
