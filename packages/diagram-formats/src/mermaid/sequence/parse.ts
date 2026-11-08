@@ -4,6 +4,7 @@
  * together; `readMermaidSequence` does.
  */
 import { lineError } from '../../lineError';
+import { frontTitle } from '../common/header';
 import { ARROWS, type Arrow } from './syntax';
 
 /** Fragment keywords and the section keyword each continues with. */
@@ -92,9 +93,9 @@ function body(text: string, dropped: string[]): { lines: string[]; first: number
   const close = lines.findIndex((l, i) => i > 0 && /^---\s*$/.test(l));
   if (close < 0) throw lineError('Mermaid', 1, 'the front matter is never closed with ---');
   const front = lines.slice(1, close);
-  const raw = front.map((l) => /^title:\s*(.*)$/.exec(l)?.[1]).find((t) => t !== undefined)?.trim();
+  const raw = front.map((l) => /^title:\s*(.*)$/.exec(l)?.[1]).find((t) => t !== undefined);
   if (front.some((l) => /^(config|displayMode):/.test(l))) dropped.push('Mermaid configuration in the front matter was dropped.');
-  const title = raw === undefined ? undefined : /^(["']).*\1$/.test(raw) ? raw.slice(1, -1) : raw;
+  const title = raw === undefined ? undefined : frontTitle(raw);
   return { lines: lines.slice(close + 1), first: close + 2, ...(title !== undefined ? { title } : {}) };
 }
 
@@ -105,10 +106,20 @@ export function parseSequence(text: string): ParsedSequence {
   const stmts: SeqStmt[] = [];
   let header = false;
   let inDescr = false;
+  let inDirective = false;
   lines.forEach((raw, k) => {
     const line = first + k;
     if (inDescr) {
       inDescr = !raw.includes('}');
+      return;
+    }
+    if (inDirective) {
+      inDirective = !raw.includes('}%%');
+      return;
+    }
+    if (/^\s*%%\{/.test(raw) && !raw.includes('}%%')) {
+      dropped.push('Mermaid configuration directives were dropped.');
+      inDirective = true;
       return;
     }
     if (/^\s*accDescr\s*\{/.test(raw)) {

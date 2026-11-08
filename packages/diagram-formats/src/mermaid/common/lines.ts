@@ -55,6 +55,10 @@ export function statementsOf(text: string): MermaidSource {
       else accDescr = acc[2]!.trim();
       continue;
     }
+    if (acc !== null && acc[3]!.includes('}')) {
+      accDescr = acc[3]!.slice(0, acc[3]!.indexOf('}')).trim();
+      continue;
+    }
     if (acc !== null) {
       const lines = [acc[3]!];
       for (k++; k < raw.length && !raw[k]!.includes('}'); k++) lines.push(raw[k]!.trim());

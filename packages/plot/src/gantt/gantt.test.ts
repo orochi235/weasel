@@ -61,6 +61,13 @@ describe('gantt dates', () => {
     expect(formatHasHours('YYYY-MM-DD HH:mm')).toBe(true);
   });
 
+  it('reads and writes a year below 100 as itself, not as 1900 and some', () => {
+    const t = parseGanttDate('0050-03-01', 'YYYY-MM-DD')!;
+    expect(new Date(t).getUTCFullYear()).toBe(50);
+    expect(formatGanttDate(t, 'YYYY-MM-DD')).toBe('0050-03-01');
+    expect(strftime(t, '%j')).toBe('060');
+  });
+
   it('writes strftime axis labels', () => {
     const t = Date.UTC(2026, 1, 3, 15, 4, 9);
     expect(strftime(t, '%Y %y %m %d %e %b %B %a %A')).toBe('2026 26 02 03  3 Feb February Tue Tuesday');

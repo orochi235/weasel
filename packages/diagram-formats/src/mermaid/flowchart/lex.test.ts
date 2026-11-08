@@ -12,6 +12,14 @@ const brief = (t: MermaidToken) => {
 const lex = (text: string) => lexFlowchart(text).tokens.map(brief);
 
 describe('lexFlowchart', () => {
+  it('reads an accDescr block over several lines as one statement, keeping later lines numbered', () => {
+    const out = lexFlowchart('flowchart LR\naccDescr {\n  two\n  lines\n}\nA');
+    expect(out.tokens.map((t) => [brief(t), t.line])).toEqual([
+      ['word:flowchart', 1], ['rest:LR', 1], [';', 1], ['word:accDescr', 2], ['rest:two\nlines', 2], [';', 5], ['word:A', 6],
+    ]);
+    expect(() => lexFlowchart('flowchart LR\naccDescr {\nnever')).toThrow('Mermaid, line 2: an accDescr block is never closed');
+  });
+
   it('reads front matter, directives, and comments apart from the statements', () => {
     const out = lexFlowchart('---\ntitle: "A: b"\n---\n%%{init: {}}%%\nflowchart TD\n%% note\nA');
     expect(out.title).toBe('A: b');

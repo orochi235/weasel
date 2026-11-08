@@ -16,12 +16,19 @@ export interface FrontMatter {
   lines: number;
 }
 
+/** A front matter `title:` value as YAML reads it: a double-quoted one as a JSON string, a single-quoted one with
+ *  `''` as one quote, else as written. */
+export function frontTitle(raw: string): string {
+  const t = raw.trim();
+  return /^".*"$/.test(t) ? jsonString(t) : /^'.*'$/.test(t) ? t.slice(1, -1).replace(/''/g, "'") : t;
+}
+
 /** The front matter at the start of `text`, `length` 0 when there is none. Newlines are `\n`. */
 export function frontMatter(text: string): FrontMatter {
   const front = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/.exec(text);
   if (front === null) return { length: 0, lines: 0 };
-  const t = /^title:[ \t]*(.*)$/m.exec(front[1]!)?.[1]?.trim();
-  const title = t === undefined ? undefined : /^".*"$/.test(t) ? jsonString(t) : /^'.*'$/.test(t) ? t.slice(1, -1).replace(/''/g, "'") : t;
+  const t = /^title:[ \t]*(.*)$/m.exec(front[1]!)?.[1];
+  const title = t === undefined ? undefined : frontTitle(t);
   return {
     ...(title !== undefined ? { title } : {}),
     length: front[0].length,
