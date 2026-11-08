@@ -109,6 +109,15 @@ describe('writing a Mermaid quadrant chart', () => {
     expect(back.kind === 'quadrant' && back.points.map((p) => p.name)).toEqual(names);
   });
 
+  it('reads back a quoted name holding text that looks like a reference', () => {
+    const names = ['a: #35; b', 'c: #quot; d', 'e: &amp; <b>'];
+    const page: PlotPage = {
+      kind: 'plot', id: 'page-1', width: 600, height: 600,
+      data: { kind: 'quadrant', points: names.map((name) => ({ name, x: 0.5, y: 0.5 })) },
+    };
+    const back = plotOf(writeMermaidQuadrant(page).text).data;
+    expect(back.kind === 'quadrant' && back.points.map((p) => p.name)).toEqual(names);
+  });
 
   it('warns on what Mermaid cannot hold, and throws on another kind of chart', () => {
     const page: PlotPage = {

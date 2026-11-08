@@ -2,13 +2,14 @@
 import { quadrantClassEntries, type QuadrantAxis, type QuadrantPointStyle } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { mermaidQuoted } from '../common/text';
 
 /** A first word that would read as a statement of its own, or a comment, rather than a point. */
 const STATEMENT = /^(?:(?:title|x-axis|y-axis|quadrant-[1-4]|classDef)(?:\s|$)|%%|acc(?:Title|Descr))/;
 
-/** Text bare where Mermaid reads it back the same, else in double quotes with a quote inside written `#quot;`. */
+/** Text bare where Mermaid reads it back the same, else as {@link mermaidQuoted} writes it. */
 const text = (s: string): string =>
-  /^[^\s"].*$/.test(s) && !/[:[\]"]|-->|\s$/.test(s) && !STATEMENT.test(s) ? s : `"${s.replace(/"/g, '#quot;')}"`;
+  /^[^\s"].*$/.test(s) && !/[:[\]"]|-->|\s$/.test(s) && !STATEMENT.test(s) ? s : mermaidQuoted(s);
 
 function axisLine(name: 'x' | 'y', axis: QuadrantAxis | undefined, warnings: Warnings): string | null {
   if (axis?.low === undefined) {
