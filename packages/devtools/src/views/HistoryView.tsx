@@ -3,7 +3,7 @@
  * through its cursor whenever a notice reports one; where the history stands;
  * and, on request, every entry on its stacks.
  */
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type { DevtoolsHistoryRecord, DevtoolsHistorySlice } from '@weasel-js/core/devtools-protocol';
 import { Badge } from '@weasel-js/ui/components/Badge';
 import { Button } from '@weasel-js/ui/components/Button';
@@ -25,6 +25,9 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
   const [showStack, setShowStack] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Each read advances the follower's cursor, so the subscription outlives a switch flip: one torn down mid-read
+  // would drop what that read brought back.
+  const readNow = useRef<() => void>(() => {});
 
   useEffect(() => {
     let live = true;
@@ -38,14 +41,16 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
         setError(null);
       }, (err: Error) => { if (live) setError(err.message); });
     };
+    readNow.current = read;
     read();
     const off = client.onChanged((id, areas) => { if (id === rootId && areas.includes('history')) read(); });
     return () => { live = false; off(); };
-  }, [client, rootId, follower, showStack]);
+  }, [client, rootId, follower]);
 
   const toggleStack = (on: boolean): void => {
     follower.setCheckpoints(on);
     setShowStack(on);
+    readNow.current();
   };
 
   if (error) return <p className={s.note}>{error}</p>;

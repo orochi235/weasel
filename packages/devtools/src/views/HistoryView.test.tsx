@@ -49,4 +49,25 @@ describe('<HistoryView>', () => {
     await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('2 / 2'));
     expect(screen.queryByText('kit:second')).toBeNull();
   });
+
+  it('keeps a step read while the checkpoints switch was flipped', async () => {
+    const page = fakePage();
+    let hold: Promise<void> | null = null;
+    const request = page.client.request.bind(page.client);
+    page.client.request = (async (...args: Parameters<typeof request>) => {
+      const answer = request(...args);
+      if (hold) await hold;
+      return answer;
+    }) as typeof request;
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('0 / 0'));
+
+    let release!: () => void;
+    hold = new Promise((r) => { release = r; });
+    act(() => page.push(step('kit:held')));
+    fireEvent.click(screen.getByRole('switch', { name: 'checkpoints' }));
+    hold = null;
+    await act(async () => { release(); });
+    expect(await screen.findByRole('cell', { name: 'push' })).toBeTruthy();
+  });
 });
