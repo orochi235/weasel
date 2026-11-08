@@ -103,8 +103,9 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const whenFor = (u: number, playhead: number, scale: number, now: number): number =>
     Math.max(est! + (u - playhead) / scale, now);
 
+  /** `end` is where the nested timelines holding `track` stop, in root time. */
   const scanTrack = (
-    track: EventTrack, at: number, horizon: number, lastLap: number, now: number, scale: number,
+    track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
   ): void => {
     const lap = host.lap();
     const duration = host.duration();
@@ -115,7 +116,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const lapStart = (c.lap - lap) * duration;
       if (lapStart > horizon) break;
       const i = (c.open ? firstAtOrAfter : firstAfter)(events, c.r - at);
-      if (i >= events.length || at + events[i].t > duration) {
+      if (i >= events.length || at + events[i].t > Math.min(duration, end)) {
         if (c.lap >= lastLap) break;
         // A frame that skipped whole laps books the outgoing lap's tail and
         // nothing of the laps in between, as crossings do.
@@ -144,12 +145,13 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   };
 
   const visit = (
-    tracks: Track[], at: number, horizon: number, lastLap: number, now: number, scale: number,
+    tracks: Track[], at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
   ): void => {
     for (const track of tracks) {
-      if (track.kind === 'event') scanTrack(track, at, horizon, lastLap, now, scale);
+      if (track.kind === 'event') scanTrack(track, at, end, horizon, lastLap, now, scale);
       else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, at + track.at, horizon, lastLap, now, scale);
+        const from = at + track.at;
+        visit(track.timeline.tracks, from, Math.min(end, from + (track.timeline.duration ?? Infinity)), horizon, lastLap, now, scale);
       }
     }
   };
@@ -188,7 +190,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
 
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
-      visit(host.tracks, 0, playhead + lookahead * scale, lastLap, now, scale);
+      visit(host.tracks, 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
     },
     retract() {
       stopWhere(opts.clock.now(), () => true);

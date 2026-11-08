@@ -118,6 +118,19 @@ describe('event booking', () => {
     expect(r.whens()).toEqual([START + 1010]);
   });
 
+  it('books nothing of a nested timeline past the duration it declares', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({
+      duration: 2000,
+      tracks: [{ kind: 'timeline', at: 1000, timeline: { duration: 50, tracks: [track] } }],
+    });
+    track.events = [bookingEvent(r.log, 10), bookingEvent(r.log, 80)];
+    r.frame(0);
+    r.frame(950);
+    r.frame(1100);
+    expect(r.whens()).toEqual([START + 1010]);
+  });
+
   it('warns once when an event can book but the timeline has no clock', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const book = vi.fn();
