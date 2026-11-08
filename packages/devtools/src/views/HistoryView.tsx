@@ -11,6 +11,7 @@ import { Switch } from '@weasel-js/ui/components/Switch';
 import type { DevtoolsViewProps } from '../tabs';
 import { followHistory } from '../history';
 import { HistoryTable } from './HistoryTable';
+import { sequenced, type Sequenced } from './sequenced';
 import s from './HistoryView.module.css';
 
 /** As many steps as a canvas's own buffer holds. */
@@ -18,7 +19,7 @@ const KEEP = 200;
 
 export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement {
   const follower = useMemo(() => followHistory(client, rootId), [client, rootId]);
-  const [steps, setSteps] = useState<DevtoolsHistoryRecord[]>([]);
+  const [steps, setSteps] = useState<Sequenced<DevtoolsHistoryRecord>[]>([]);
   const [position, setPosition] = useState<DevtoolsHistorySlice['position'] | null>(null);
   const [checkpoints, setCheckpoints] = useState<DevtoolsHistorySlice['checkpoints'] | null>(null);
   const [showStack, setShowStack] = useState(false);
@@ -30,7 +31,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
     const read = (): void => {
       follower.read().then((slice) => {
         if (!live) return;
-        if (slice.entries.length) setSteps((prev) => [...prev, ...slice.entries].slice(-KEEP));
+        if (slice.entries.length) setSteps((prev) => [...prev, ...sequenced(slice.entries, slice.cursor)].slice(-KEEP));
         setPosition(slice.position);
         setCheckpoints(slice.checkpoints ?? null);
         setNow(Date.now());

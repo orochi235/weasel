@@ -166,6 +166,7 @@ describe('followTrace', () => {
     t.coords.push({ ts: 1 } as never);
     const slice = await follower.read();
     expect(slice.entries).toMatchObject([{ to: 'b' }]);
+    expect(slice.cursor).toBe(2);
     expect(slice.coords).toBeUndefined();
     follower.setCoords(true);
     t.coords.push({ ts: 2 } as never);
