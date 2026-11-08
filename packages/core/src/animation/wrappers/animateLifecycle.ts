@@ -68,14 +68,15 @@ export function animateLifecycle<
       let unwatch = (): void => {};
       const target = adapter.poseTarget?.(id, opts.geometry);
       const home = target?.committed();
+      const current = adapter.getPose(id);
       const remove = (): void => {
         if (!leaving.delete(id)) return;
         unwatch();
         // The exit pose was only for show: the node is removed as it stood, so undo restores that.
         if (target) target.commit(home as TPose);
+        else setPoseInstant(adapter, id, current);
         adapter.removeNode(id);
       };
-      const current = adapter.getPose(id);
       const handle = tweenPose(animator, adapter, {
         id,
         to: opts.exitTo(current),

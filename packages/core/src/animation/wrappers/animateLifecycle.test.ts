@@ -83,9 +83,28 @@ describe('animateLifecycle.remove', () => {
     expect(removeNode).not.toHaveBeenCalled();
     act(() => clock.advance(0));
     act(() => clock.advance(100));
-    const last = setPose.mock.calls[setPose.mock.calls.length - 1][1];
-    expect(last.width).toBeCloseTo(0, 1);
+    // The last frame shown, before the pose is put back for the removal.
+    const shown = setPose.mock.calls[setPose.mock.calls.length - 2][1];
+    expect(shown.width).toBeCloseTo(0, 1);
     expect(removeNode).toHaveBeenCalledWith('a');
+  });
+
+  it('removes the node as it stood, not at the exit pose, over an adapter without pose targets', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 20, height: 20 }]]);
+    const { base, removeNode } = makeAdapter(initial);
+    let poseAtRemoval: RectPose | undefined;
+    removeNode.mockImplementation((id: string) => { poseAtRemoval = initial.get(id); return initial.delete(id); });
+    const { result } = renderHook(() => useAnimator(clock));
+    const wrapped = animateLifecycle(base, result.current, {
+      exitTo: (p: RectPose) => ({ ...p, width: 0, height: 0 }),
+      ms: 100,
+    });
+    act(() => { wrapped.removeNode('a'); });
+    act(() => clock.advance(0));
+    act(() => clock.advance(100));
+    expect(removeNode).toHaveBeenCalledTimes(1);
+    expect(poseAtRemoval).toEqual({ x: 0, y: 0, width: 20, height: 20 });
   });
 
   it('removes the node when the exit tween is canceled', () => {
