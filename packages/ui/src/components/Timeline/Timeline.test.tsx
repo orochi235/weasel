@@ -167,6 +167,25 @@ describe('Timeline', () => {
     expect(document.activeElement).toBe(moved);
   });
 
+  it('keeps focus on the key that is selected once Delete removes the focused one', () => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }, { t: 200, value: 2 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} tracks={value} onChange={setValue} />;
+    }
+    renderWithIcons(<Host />);
+    for (const at of [2, 1]) {
+      const key = screen.getAllByTestId('timeline-key')[at]!;
+      key.focus();
+      fireEvent.keyDown(key, { key: 'Enter' });
+      fireEvent.keyDown(key, { key: 'Delete' });
+      const selected = screen.getAllByTestId('timeline-key').find((k) => k.getAttribute('aria-current') === 'true');
+      expect(selected).toBeDefined();
+      expect(document.activeElement).toBe(selected);
+    }
+  });
+
   it('deletes the selected key on Delete', () => {
     const onChange = vi.fn();
     renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
