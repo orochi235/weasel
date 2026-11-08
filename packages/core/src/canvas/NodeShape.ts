@@ -9,6 +9,7 @@
  * some other shape matches none of them, and paints through a consumer painter or not at all.
  */
 import { glyphGeneration } from '@weasel-js/font';
+import { textEngineGeneration } from '@weasel-js/text';
 import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
@@ -88,6 +89,8 @@ const PAINTER_SLOT_DERIVED = 'shape:painter:derived';
 const PAINTER_SLOT_DERIVED_NONRECT = 'shape:painter:derived:nonrect';
 const SILHOUETTE_SLOT = 'shape:silhouette';
 const TEXT_SILHOUETTE_SLOT = 'shape:silhouette:text';
+
+interface TextSilhouette { epoch: number; engines: number; path: Path | null }
 const TRIM_PICK_SLOT = 'shape:trim-pick';
 
 /** The painter that will render `node` — first match in priority order — or undefined if
@@ -146,14 +149,16 @@ export function findShapeSilhouette<TData, TPose>(
   // source answers `null` for every ordinary node, and treating that as a
   // reason to bypass would retire the memo for the whole scene.
   if (ctx?.derivedPath != null) return build();
-  // Line boxes follow font metrics, and a face landing changes those with no
-  // change to the node, so the text entry is checked against the glyph epoch.
+  // Line boxes follow font metrics and the registered layout engines, and
+  // either changes with no change to the node, so the text entry is checked
+  // against the glyph epoch and the engines it was laid out with.
   if (findNodeShape(node) === (TEXT_PAINTER as NodeShapeEntry<unknown, unknown>)) {
     const epoch = glyphGeneration();
+    const engines = textEngineGeneration();
     const held = nodeMemo(node as { data?: unknown }, TEXT_SILHOUETTE_SLOT, pose,
-      (): { epoch: number; path: Path | null } => ({ epoch, path: build() }));
-    if (held.epoch !== epoch) {
-      held.epoch = epoch;
+      (): TextSilhouette => ({ epoch, engines, path: build() }));
+    if (held.epoch !== epoch || held.engines !== engines) {
+      held.epoch = epoch; held.engines = engines;
       held.path = build();
     }
     return held.path;

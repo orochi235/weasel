@@ -3,6 +3,7 @@
  * `bidiSeam.ts`), and most callers of `layoutRuns` are kit code a consumer
  * never touches, so the consumer registers it once and every layout finds it.
  */
+import { bumpTextEngineGeneration } from './engineGeneration';
 import type { BidiResolver } from './bidiSeam';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
 import type { TextDirection } from '../textStyle';
@@ -15,8 +16,13 @@ let registered: BidiResolver | null = null;
  * none. Pass `null`, or call the function returned, to take it out again.
  */
 export function registerBidi(engine: BidiResolver | null): () => void {
+  if (registered !== engine) bumpTextEngineGeneration();
   registered = engine;
-  return () => { if (registered === engine) registered = null; };
+  return () => {
+    if (registered !== engine) return;
+    registered = null;
+    bumpTextEngineGeneration();
+  };
 }
 
 /** The engine {@link registerBidi} was last given, or null. */
