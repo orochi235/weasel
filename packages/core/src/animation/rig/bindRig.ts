@@ -222,7 +222,7 @@ export function bindRigOn<TPose>(
     skeleton,
     target,
     pose(pose, at) {
-      seat.committed = pose;
+      target.commit(pose);
       if (at) seat.root = at;
       show(target.read());
     },

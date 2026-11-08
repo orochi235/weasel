@@ -3,6 +3,8 @@ import { createCornerResizeAffordance, type CornerResizeScratch } from './corner
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import { hitAffordanceRegions, pointRegionScreenQuad, transformOf } from './hitAffordanceRegions';
 import type { ChromeState } from 'core/selection/chromeState';
+import type { View } from 'core/viewport/view';
+import type { CursorGlyphSpec } from '@weasel-js/cursor';
 import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
@@ -142,9 +144,10 @@ function stateRotated(rotation: number): ChromeState {
   };
 }
 
-const cursorOf = (state: ChromeState, tag: string) => {
+const cursorOf = (state: ChromeState, tag: string, view: View = VIEW) => {
   const r = createCornerResizeAffordance().regions(state).find((x) => x.id === `corner-${tag}`);
-  return r?.cursor;
+  const c = typeof r?.cursor === 'function' ? r.cursor({ x: 0, y: 0 }, view) : r?.cursor;
+  return c as CursorGlyphSpec | undefined;
 };
 
 describe('corner-resize cursors', () => {
@@ -170,6 +173,22 @@ describe('corner-resize cursors', () => {
     expect(cursorOf(stateRotated(Math.PI / 2), 'min-min')).toMatchObject({
       angle: Math.PI / 4 + Math.PI / 2,
     });
+  });
+
+  it('puts a mirrored target\'s corner on the diagonal it is drawn along', () => {
+    // Flipped left to right, the corner `min-min` leaves free is drawn at the bottom left: ↙.
+    const mirrored: ChromeState = {
+      ...stateWithSingle(),
+      boundsOf: () => ({ x: 100, y: 100, width: 50, height: 40, transform: [-1, 0, 0, 1] }),
+    };
+    // The glyph points both ways, so an angle is read modulo a half turn.
+    const angle = cursorOf(mirrored, 'min-min')!.angle!;
+    expect(((angle % Math.PI) + Math.PI) % Math.PI).toBeCloseTo(3 * Math.PI / 4, 9);
+  });
+
+  it('turns the diagonal by how the view stretches it', () => {
+    const c = cursorOf(stateWithSingle(), 'min-min', { x: 0, y: 0, scale: { x: 1, y: 2 } });
+    expect(c?.angle).toBeCloseTo(Math.atan2(2, 1), 9);
   });
 
   it('keeps a keyword fallback matching the unrotated diagonal', () => {

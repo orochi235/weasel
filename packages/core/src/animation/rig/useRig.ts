@@ -22,7 +22,11 @@ export function useSeatedRig<TPose>(options: BindRigOptions<TPose>, kept: RigSea
   }, [scene, skeleton, bindings, skins, restPath, apply, descriptor, kept]);
   useEffect(() => {
     seatBinding(made.seat, made.binding);
-    return () => made.binding.drop();
+    return () => {
+      // An animation still running on the target would show through a dropped binding again.
+      if (made.seat.binding === made.binding) made.seat.binding = null;
+      made.binding.drop();
+    };
   }, [made]);
   return made.rig;
 }

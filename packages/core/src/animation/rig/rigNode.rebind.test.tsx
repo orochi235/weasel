@@ -138,6 +138,19 @@ describe('useRigNode binding again', () => {
     expect(turn()).toBeCloseTo(2.5, 6);
   });
 
+  it('shows a pose given while an animation from before the change still runs', () => {
+    const { rig, animator, step, turn, rejoint } = mounted();
+    act(() => { animator.tween({ target: rig().target, to: { lower: { rotation: 1 } }, ms: 100, easing: linear }); });
+    step(0);
+    step(50);
+    rejoint();
+    step(25);
+    act(() => { rig().pose({ lower: { rotation: 0 } }); });
+    expect(turn()).toBeCloseTo(0, 6);
+    step(25);
+    expect(turn()).toBeCloseTo(0.25, 6);
+  });
+
   it('keeps the pose it was given through a change of joints', () => {
     const { rig, turn, rejoint } = mounted();
     rig().pose({ lower: { rotation: 0.3 }, upper: { x: 4 } });
