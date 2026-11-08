@@ -328,6 +328,13 @@ export function GesturesDemo() {
     else if (m === 'rect') rect.end();
     else if (m === 'radial') radial.end();
   };
+  const onPointerCancel = () => {
+    const m = modeRef.current;
+    if (m === 'drag') drag.cancel();
+    else if (m === 'click') click.cancel();
+    else if (m === 'rect') rect.cancel();
+    else if (m === 'radial') radial.cancel();
+  };
 
   const selectMode = (id: ModeId) => {
     modeRef.current = id;
@@ -358,6 +365,7 @@ export function GesturesDemo() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
         />
         {mode === 'handle' && (
           // Transparent hit-target overlaying the drawn rect; useHandleDrag
