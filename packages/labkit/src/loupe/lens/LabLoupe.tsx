@@ -17,6 +17,7 @@ import { createLensApi, useLensFocus } from './lensApi';
 import { createLensScene } from './lensScene';
 import type { LensSources } from './lensSource';
 import type { LoupePoint } from './lensTypes';
+import { useFrameSchedule } from './useFrameSchedule';
 import { useLensRemeasure } from './useLensRemeasure';
 
 /** A plain lab compares nothing, so the opposite preset clears a lens's comparison. */
@@ -33,7 +34,8 @@ export function LabLoupe() {
   const bodyRef = useRef<HTMLElement | null>(null);
   const pointer = useRef<LoupePoint | null>(null);
   const { focus, onFocusLens } = useLensFocus();
-  const [live] = useState(createCloneSource<null>);
+  const onFrame = useFrameSchedule();
+  const [live] = useState(() => createCloneSource<null>({ onFrame }));
   const sources = useMemo<LensSources<null>>(() => ({ live }), [live]);
   const sourcesRef = useLatest(sources);
   const [api] = useState(() =>

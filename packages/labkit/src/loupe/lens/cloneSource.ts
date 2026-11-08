@@ -5,6 +5,8 @@ import type { Remeasurable } from './useLensRemeasure';
 
 /** Options for {@link createCloneSource}. */
 export interface CloneSourceOptions {
+  /** Runs a function on the next visible frame, once however many arrive before then: `useFrameSchedule`'s. */
+  onFrame: (run: () => void) => void;
   /** What a lens copies: the nearest ancestor of the point under its reticle matching this. Default a trial's body. */
   root?: string;
 }
@@ -53,13 +55,14 @@ class CloneCell {
   private copy: Element | null = null;
   private readonly watch =
     typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => this.schedule());
-  private frame = 0;
   private stale = false;
 
   constructor(
     private readonly slot: HTMLElement,
     private request: LensSourceRequest<unknown>,
     private readonly selector: string,
+    /** Asks the source for a frame, on which it calls {@link frame}. */
+    private readonly want: () => void,
   ) {
     this.box.className = 'lk-lens-copy';
     this.box.setAttribute(COPY_ATTR, '');
@@ -93,7 +96,7 @@ class CloneCell {
 
   detach(): void {
     this.watch?.disconnect();
-    cancelAnimationFrame(this.frame);
+    this.copy = null;
     this.box.remove();
   }
 
@@ -120,27 +123,23 @@ class CloneCell {
     this.copy = root ? (root.cloneNode(true) as Element) : null;
     this.box.replaceChildren(...(this.copy ? [this.copy] : []));
     if (root && this.copy) copyCanvases(root, this.copy);
-    this.tick();
+    this.want();
   }
 
   /** A change under the root recopies it on the next frame, once however many arrive before then. */
   private schedule(): void {
     this.stale = true;
-    this.tick();
+    this.want();
   }
 
-  /** Keeps a frame queued while the copy is stale or holds canvases, which repaint without any DOM change. */
-  private tick(): void {
-    if (this.frame !== 0 || !this.copy) return;
-    if (!this.stale && !this.copy.querySelector('canvas')) return;
-    this.frame = requestAnimationFrame(() => {
-      this.frame = 0;
-      if (this.stale) this.recopy();
-      else if (this.root && this.copy) {
-        copyCanvases(this.root, this.copy);
-        this.tick();
-      }
-    });
+  /** Whether the next frame has work: a stale copy, or canvases, which repaint without any DOM change. */
+  wants(): boolean {
+    return this.copy !== null && (this.stale || this.copy.querySelector('canvas') !== null);
+  }
+
+  frame(): void {
+    if (this.stale) this.recopy();
+    else if (this.root && this.copy) copyCanvases(this.root, this.copy);
   }
 }
 
@@ -149,9 +148,14 @@ class CloneCell {
  * by the lens's factor. SVG and text stay sharp at any factor; a canvas is copied pixel for pixel, so it magnifies
  * blocky, and a WebGL canvas that does not preserve its drawing buffer copies blank.
  */
-export function createCloneSource<C>(options: CloneSourceOptions = {}): CloneSource<C> {
+export function createCloneSource<C>(options: CloneSourceOptions): CloneSource<C> {
   const selector = options.root ?? '.lk-trial__body';
   const cells = new Set<CloneCell>();
+  const flush = () => {
+    for (const cell of cells) if (cell.wants()) cell.frame();
+    if ([...cells].some((cell) => cell.wants())) options.onFrame(flush);
+  };
+  const want = () => options.onFrame(flush);
   return {
     kind: 'live',
     produces: 'dom',
@@ -159,7 +163,7 @@ export function createCloneSource<C>(options: CloneSourceOptions = {}): CloneSou
     status: () => true,
     subscribe: () => () => {},
     attach(slot, request): LensSourceHandle<C> {
-      const cell = new CloneCell(slot, request as LensSourceRequest<unknown>, selector);
+      const cell = new CloneCell(slot, request as LensSourceRequest<unknown>, selector, want);
       cells.add(cell);
       return {
         update: (next) => cell.update(next as LensSourceRequest<unknown>),

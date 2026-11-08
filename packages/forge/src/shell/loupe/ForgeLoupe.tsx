@@ -1,5 +1,5 @@
 import './loupe.css';
-import { useLatest, useVisibleRaf } from '@weasel-js/core';
+import { useLatest } from '@weasel-js/core';
 import { useLabContext } from '@weasel-js/labkit';
 import {
   createLensApi,
@@ -12,6 +12,7 @@ import {
   lensClient,
   resolveSource,
   settingsOf,
+  useFrameSchedule,
   useLensFocus,
   useLensRemeasure,
 } from '@weasel-js/labkit/loupe';
@@ -35,23 +36,6 @@ export interface ForgeLoupeProps {
 }
 
 const OPPOSITE: ForgeComparison = { kind: 'opposite-mode' };
-
-/** Runs the last function handed to it on the next visible frame, once however many arrive before then. */
-function useFrameSchedule(): (run: () => void) => void {
-  const next = useRef<(() => void) | null>(null);
-  const frame = useVisibleRaf(() => {
-    const run = next.current;
-    next.current = null;
-    run?.();
-  });
-  return useCallback(
-    (run: () => void) => {
-      next.current = run;
-      frame.request();
-    },
-    [frame],
-  );
-}
 
 /**
  * The workshop's lenses: the lens canvas over the lab, its actions in the Loupe keymap, the hint for that keymap, a
