@@ -28,8 +28,9 @@
   font-size: 72px;
 }
 
+/* The sidebar's overlap scaled to this wordmark's 72px: 0.28em up into it, 0.23em past its end. */
 .version {
-  margin-top: -4px;
+  margin: -20px -17px 0 0;
 }
 
 .tagline {
