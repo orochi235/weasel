@@ -44,6 +44,19 @@ describe('usedCssVars', () => {
     expect(tVars(usedCssVars(document, root))).toEqual(['--t-base', '--t-fg', '--t-ink']);
   });
 
+  it('follows a definition held in an adopted sheet, where a theme writes its tokens', () => {
+    addStyle('.t-chip { color: var(--t-fg); }');
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync('.t-page { --t-fg: var(--t-theme-ink); }');
+    // jsdom has no adoptedStyleSheets of its own.
+    Object.defineProperty(document, 'adoptedStyleSheets', { value: [sheet], configurable: true });
+    try {
+      expect(tVars(usedCssVars(document, mount('<span class="t-chip"></span>')))).toEqual(['--t-fg', '--t-theme-ink']);
+    } finally {
+      delete (document as { adoptedStyleSheets?: unknown }).adoptedStyleSheets;
+    }
+  });
+
   it('does not count what an ancestor’s own declarations read', () => {
     addStyle('.t-page { color: var(--t-page-ink); }');
     expect(tVars(usedCssVars(document, mount('<span></span>')))).toEqual([]);

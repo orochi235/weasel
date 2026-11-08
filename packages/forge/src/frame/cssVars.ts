@@ -1,18 +1,13 @@
 import type { CssVarReport } from '../protocol/messages';
-import { usedCssVars, varRefs } from './cssVarUse';
+import { cssRulesOf, sheetsOf, usedCssVars, varRefs } from './cssVarUse';
 import { isSafeOverride } from './safeOverride';
 
 const collect = (text: string, names: Set<string>) => void varRefs(text, names);
 
 /** A grouping rule's text holds its children's; an `@import` holds only its URL, so its sheet is read too. */
 function walkRules(sheet: CSSStyleSheet, names: Set<string>): void {
-  let rules: CSSRuleList;
-  try {
-    rules = sheet.cssRules;
-  } catch {
-    // A cross-origin sheet refuses to be read.
-    return;
-  }
+  const rules = cssRulesOf(sheet);
+  if (!rules) return;
   for (const rule of Array.from(rules)) {
     const imported = (rule as CSSRule & { styleSheet?: CSSStyleSheet | null }).styleSheet;
     if (imported) walkRules(imported, names);
@@ -32,7 +27,7 @@ export function scanCssVars(
 ): CssVarReport[] {
   const names = new Set<string>();
   for (const el of Array.from(doc.querySelectorAll('[style]'))) collect(el.getAttribute('style') ?? '', names);
-  for (const sheet of Array.from(doc.styleSheets)) walkRules(sheet, names);
+  for (const sheet of sheetsOf(doc)) walkRules(sheet, names);
 
   const values = resolveValues(doc, names, root);
   const used = usedCssVars(doc, root);
