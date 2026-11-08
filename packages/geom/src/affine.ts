@@ -8,7 +8,7 @@
  * column-major array (a full 3×3) laid out for `uniformMatrix3fv`. Its
  * *logical element order* is identical to ours.
  */
-import { SINGULAR_RATIO } from './scalar';
+import { invertible } from './scalar';
 
 /** `[a, b, c, d, e, f]`: `x' = a·x + c·y + e`, `y' = b·x + d·y + f`. */
 export type Affine = readonly [number, number, number, number, number, number];
@@ -49,19 +49,17 @@ export function multiply(m: Affine, n: Affine): Affine {
   ];
 }
 
-/** Inverse, or null when the matrix is singular, non-finite, or too
- *  ill-conditioned to invert meaningfully at its own scale. */
+/** Inverse, or null when the matrix is singular, non-finite, or too ill-conditioned to invert meaningfully
+ *  (`invertible`). */
 export function invert(m: Affine): Affine | null {
-  const det = m[0] * m[3] - m[1] * m[2];
-  // The determinant is an area, so it is judged against the squared column norms.
-  const norm2 = Math.max(m[0] * m[0] + m[1] * m[1], m[2] * m[2] + m[3] * m[3]);
-  // Negated so a non-finite determinant falls out as singular.
-  if (!(Math.abs(det) > SINGULAR_RATIO * norm2)) return null;
-  const id = 1 / det;
+  const id = 1 / (m[0] * m[3] - m[1] * m[2]);
   const a = m[3] * id;
   const b = -m[1] * id;
   const c = -m[2] * id;
   const d = m[0] * id;
+  // Translation never costs an inverse its precision, so only the linear part is judged.
+  const norm = Math.max(Math.abs(m[0]) + Math.abs(m[1]), Math.abs(m[2]) + Math.abs(m[3]));
+  if (!invertible(norm, Math.max(Math.abs(a) + Math.abs(b), Math.abs(c) + Math.abs(d)))) return null;
   return [a, b, c, d, -(m[4] * a + m[5] * c), -(m[4] * b + m[5] * d)];
 }
 

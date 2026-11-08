@@ -98,12 +98,6 @@ Owner tags, after the priority (2026-10-26):
   `pathNodesOf` answers world paths through the scene's frames, `reshapeOps`/`pathCopy` store back into each
   node's frame, and cutting across a framed group finds the crossing.
 
-- **(P3) [agent] 2D and 3D `invert` call different matrices singular.** geom's `invert` (`affine.ts`, and
-  `mat3.invert` through it) judges the determinant against the larger squared column norm, so `scale(1e6, 1e-7)`
-  has no inverse, and `glMat3.test.ts` pins that. `@weasel-js/geom/3d`'s `invert` (`3d/mat4.ts`) judges it against
-  the product of the column lengths, so the same axis scales in a `Mat4` invert. Which rule is wanted, refusing
-  ill-conditioned scales or only near-dependent columns, is the maintainer's call. Closes when both use one rule.
-
 - **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
   primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
   output change. Closes when Repeat Along places through `placeAlongRun`.
