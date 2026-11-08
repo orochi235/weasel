@@ -61,10 +61,13 @@ function harness(opts: {
   tolerance?: number;
   interactive?: (id: string) => boolean;
   log?: Rect[];
+  /** Fields laid over `front`. */
+  front?: { locked?: boolean; pickable?: boolean };
 }) {
   const view = opts.view ?? { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const { result } = renderHook(() => {
-    const scene = useScene<object, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial: NODES });
+    const initial = opts.front ? NODES!.map((n) => (n.id === 'front' ? { ...n, ...opts.front } : n)) : NODES;
+    const scene = useScene<object, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
     const adapter = useSceneAdapter(scene);
     const read = opts.asyncOnly ? () => null : opts.noFrame ? () => EMPTY : fakeFrame(scene, opts.paint ?? [], opts.log);
     return useSceneSelectTool({
@@ -111,6 +114,12 @@ describe("useSceneSelectTool, geometry.picking: 'pixels'", () => {
       interactive: (id) => id !== 'front',
     });
     expect(pick(50, 50)).toEqual(['back']);
+  });
+
+  it('passes over a locked node and one that is not pickable, as the shape walk does', () => {
+    const paint: [string, Rect][] = [['back', { x: 0, y: 0, width: 100, height: 100 }], ['front', { x: 0, y: 0, width: 100, height: 100 }]];
+    expect(harness({ paint, front: { locked: true } })(50, 50)).toEqual(['back']);
+    expect(harness({ paint, front: { pickable: false } })(50, 50)).toEqual(['back']);
   });
 
   it('falls back to the shape walk with no painted frame', () => {
