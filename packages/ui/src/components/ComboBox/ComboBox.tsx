@@ -122,7 +122,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
   } = props;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
-  const reverting = useRef(false);
+  const revertingRef = useRef(false);
 
   return (
     <RACComboBox
@@ -135,7 +135,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={(k) => {
         onSelectionChange?.(k as T | null);
-        if (k !== null && !reverting.current) onCommit?.({ source: 'option', key: k as T });
+        if (k !== null && !revertingRef.current) onCommit?.({ source: 'option', key: k as T });
       }}
       className={fieldRootClass({ orientation, width, fit: s.fit, className })}
     >
@@ -144,7 +144,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       <ComboBoxFrame
         placeholder={placeholder}
         isLoading={isLoading}
-        reverting={reverting}
+        revertingRef={revertingRef}
         onCommitText={onCommit && rest.allowsCustomValue ? (text) => onCommit({ source: 'text', text }) : undefined}
       >
         {width === 'fit' && (
@@ -190,7 +190,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
 function ComboBoxFrame({
   placeholder,
   isLoading,
-  reverting,
+  revertingRef,
   onCommitText,
   children,
 }: {
@@ -198,7 +198,7 @@ function ComboBoxFrame({
   isLoading?: boolean;
   /** Set while React Aria puts the selection back on a blur, or on an Enter with no option highlighted: with both
    *  `selectedKey` and `inputValue` controlled it reports that as a selection, which nobody picked. */
-  reverting: RefObject<boolean>;
+  revertingRef: RefObject<boolean>;
   onCommitText?: (text: string) => void;
   children?: ReactNode;
 }) {
@@ -210,12 +210,12 @@ function ComboBoxFrame({
   const onKeyDownCapture = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter' || imeKey(e.nativeEvent)) return;
     if (state?.isOpen && state.selectionManager.focusedKey != null) return;
-    reverting.current = true;
+    revertingRef.current = true;
     const text = e.currentTarget.value;
     if (text !== '') onCommitText?.(text);
   };
   const reverted = () => {
-    reverting.current = false;
+    revertingRef.current = false;
   };
 
   return (
@@ -226,7 +226,7 @@ function ComboBoxFrame({
         onKeyDownCapture={onKeyDownCapture}
         onKeyDown={reverted}
         onBlurCapture={() => {
-          reverting.current = true;
+          revertingRef.current = true;
         }}
         onBlur={reverted}
       />
