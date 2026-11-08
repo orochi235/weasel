@@ -737,3 +737,13 @@ Calls the round made:
 - forge's `ForgeLoupe` clamp, audio's `scoreMood` clamp, plot's `freshName` and editor's page-run id
   keep their own copies: folding each adds a dependency on geom or registry.
 - theme-editor's `#/theme` route is not in `LABS`, so it has no lab switcher. Left as is.
+
+## Audit round six (2026-11-08)
+
+- `HandToolInertiaConfig` and `ActionDisabledReasonValue` stay exported although each duplicates another
+  name (`InertiaConfig`, `ActionDisabledReason`): removing them breaks consumers in a patch release.
+- `withAlpha01(c, NaN)` writes `'#rrggbbNaN'` and `paintWithAlpha(p, NaN)` sets opacity NaN. Left as is:
+  NaN could leave the color unchanged, mean 0, or mean 1.
+- A flick's coast canceled from outside (`cancelAll`, or the animator going away) over an adapter with
+  `previewPoses` and no pose targets leaves its last frame as a preview and records nothing, as the code
+  says it means to. Left as is: it could record where the coast stopped, or clear the preview.
