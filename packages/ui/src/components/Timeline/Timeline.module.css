@@ -92,6 +92,16 @@
    pointer, so the drag reads as a move from somewhere to somewhere. */
 .key[data-dragging='true'], .eventMark[data-dragging='true'] { opacity: 0.4; }
 
+/* A nested timeline stops at its declared duration, so what sits past it never plays. */
+.afterEnd {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--wzl-surface-sunken);
+  pointer-events: none;
+}
+.key[data-past='true'], .eventMark[data-past='true'] { opacity: 0.4; }
+
 .keyGhost, .eventGhost {
   position: absolute;
   top: 50%;

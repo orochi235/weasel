@@ -169,6 +169,7 @@ export function Lane(props: LaneProps): ReactElement {
           onInsert(Math.max(0, msAt(e.clientX)));
         }}
       >
+        <AfterEnd end={row.end} win={win} />
         {graph ? (
           <LaneGraph
             keys={sampledKeys}
@@ -221,6 +222,7 @@ export function Lane(props: LaneProps): ReactElement {
                 data-testid={row.kind === 'event' ? 'timeline-event' : 'timeline-key'}
                 data-keyframe-index={i}
                 data-dragging={drag?.keyIndex === i ? 'true' : undefined}
+                data-past={t + row.offset > row.end ? 'true' : undefined}
                 className={row.kind === 'event' ? s.eventMark : s.key}
                 style={{ left: pct(t) }}
                 onPointerDown={onKeyPointerDown(i)}
@@ -228,19 +230,23 @@ export function Lane(props: LaneProps): ReactElement {
                 onKeyDown={onKeyDown(i, t)}
               />
             ))}
-            {drag ? (
-              <div
-                aria-hidden="true"
-                data-testid="timeline-key-ghost"
-                className={row.kind === 'event' ? s.eventGhost : s.keyGhost}
-                style={{ left: pct(drag.t) }}
-              />
-            ) : null}
+            {drag ? <KeyGhost event={row.kind === 'event'} left={pct(drag.t)} /> : null}
           </>
         )}
       </div>
     </div>
   );
+}
+
+/** Where a dragged key would land, drawn over the committed key it moves from. */
+function KeyGhost({ event, left }: { event: boolean; left: string }) {
+  return <div aria-hidden="true" data-testid="timeline-key-ghost" className={event ? s.eventGhost : s.keyGhost} style={{ left }} />;
+}
+
+/** The stretch of a lane past where its timelines stop playing it. */
+function AfterEnd({ end, win }: { end: number; win: TimeWindow }) {
+  if (!(end < win.to)) return null;
+  return <div aria-hidden="true" className={s.afterEnd} data-testid="timeline-after-end" style={{ left: toPercent(win, Math.max(end, win.from)), right: 0 }} />;
 }
 
 /** A keyboard move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows

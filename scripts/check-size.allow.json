@@ -265,7 +265,7 @@
     "longestFunction": 133
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 190
+    "longestFunction": 185
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
     "longestFunction": 178
