@@ -59,16 +59,17 @@ function createPartitionLayer(): CurveLayer<PartitionState> {
 
 // ─── consumer ──────────────────────────────────────────────────────
 
-function clampPointsToRange(
+/** `points` stretched from the span their ends cover onto `range`, so a seam
+ *  moved and moved back leaves them where they were. */
+function stretchPointsToRange(
   points: readonly ControlPoint[],
   range: readonly [number, number],
 ): ControlPoint[] {
   const [lo, hi] = range;
+  const from = points[0]?.x ?? lo;
+  const span = (points.at(-1)?.x ?? hi) - from;
   return points.map((p, i, arr) => {
-    let x = p.x;
-    if (i === 0) x = lo;
-    else if (i === arr.length - 1) x = hi;
-    else x = Math.max(lo, Math.min(hi, x));
+    const x = i === 0 ? lo : i === arr.length - 1 ? hi : span > 0 ? lo + ((p.x - from) / span) * (hi - lo) : lo;
     return { ...p, x };
   });
 }
@@ -98,8 +99,8 @@ export function LayeredCurveDemo() {
   // Moving the seam re-anchors both curves to it.
   const moveSeam = (next: number) => {
     setB(next);
-    setBevelState((prev) => ({ ...prev, points: clampPointsToRange(prev.points, [0, next]) }));
-    setSplineState((prev) => ({ ...prev, points: clampPointsToRange(prev.points, [next, HALF_WIDTH]) }));
+    setBevelState((prev) => ({ ...prev, points: stretchPointsToRange(prev.points, [0, next]) }));
+    setSplineState((prev) => ({ ...prev, points: stretchPointsToRange(prev.points, [next, HALF_WIDTH]) }));
     setPartitionState((prev) => prev.x === next ? prev : { x: next });
   };
 

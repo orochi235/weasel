@@ -20,4 +20,12 @@ describe('LayeredCurveDemo', () => {
     expect(anchors(container, 'bevel').at(-1)).toBe('Point 3 at 0.4, 0.78');
     expect(anchors(container, 'spline')[0]).toBe('Point 1 at 0.4, 0.78');
   });
+
+  it('gives the curves their points back when the seam returns', () => {
+    const { container } = render(<LayeredCurveDemo />);
+    const before = [anchors(container, 'bevel'), anchors(container, 'spline')];
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '0.05' } });
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '0.25' } });
+    expect([anchors(container, 'bevel'), anchors(container, 'spline')]).toEqual(before);
+  });
 });
