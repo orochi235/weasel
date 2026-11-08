@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import type { ModeMachine } from './machine';
 
 /** The id of the mode the machine is in, re-rendering when it changes. */
 export function useModeId(machine: ModeMachine): string {
-  const [id, setId] = useState(machine.registry.current().id);
-  useEffect(() => {
-    return machine.registry.subscribe(() => setId(machine.registry.current().id));
-  }, [machine]);
-  return id;
+  const { registry } = machine;
+  const subscribe = useCallback((fn: () => void) => registry.subscribe(fn), [registry]);
+  const read = useCallback(() => registry.current().id, [registry]);
+  return useSyncExternalStore(subscribe, read, read);
 }
