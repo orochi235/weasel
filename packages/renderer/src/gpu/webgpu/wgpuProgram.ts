@@ -162,8 +162,15 @@ export class WgpuProgram implements GpuProgram {
     console.error(`weasel: the GPU refused a WGSL program's pipeline, which then draws nothing: ${message}`);
   }
 
+  /** The block member `name` writes: a member, an alias of one, or one slot of an array member (`u_ripples[2]`). */
   private resolve(name: string): { slot: BlockSlot; member: string } | undefined {
-    return this.members.get(name) ?? (ALIASES[name] ? this.members.get(ALIASES[name]) : undefined);
+    const hit = this.members.get(name) ?? (ALIASES[name] ? this.members.get(ALIASES[name]) : undefined);
+    if (hit || !name.endsWith(']')) return hit;
+    const m = /^(\w+)\[(\d+)\]$/.exec(name);
+    const base = m ? this.resolve(m[1]) : undefined;
+    if (!base) return undefined;
+    const member = `${base.member}[${m![2]}]`;
+    return base.slot.block.has(member) ? { slot: base.slot, member } : undefined;
   }
 
   private textureName(name: string, index: number): string | undefined {
