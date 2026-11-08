@@ -247,6 +247,21 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(2);
   });
 
+  it('runs a held request once the escape hatch is set while hidden', () => {
+    const clock = makeClock();
+    const frame = vi.fn();
+    const loopRef = { current: null as VisibleRaf | null };
+    const view = render(<Host loopRef={loopRef} frame={frame} options={clock} />);
+    act(() => { setHidden(true); });
+    act(() => { loopRef.current!.request(); });
+    act(() => { clock.flush(); });
+    expect(frame).not.toHaveBeenCalled();
+
+    view.rerender(<Host loopRef={loopRef} frame={frame} options={{ ...clock, dangerouslyRunWhenHidden: true }} />);
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+  });
+
   it('reads the latest of several reports the observer batches together', () => {
     const clock = makeClock();
     const frame = vi.fn();

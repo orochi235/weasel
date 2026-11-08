@@ -184,6 +184,10 @@ export function useVisibleRaf(
     };
   }, [cancelRaf, syncGate, syncObserver]);
 
+  // The escape hatch changes the gate with no event to say so.
+  const runWhenHidden = options.dangerouslyRunWhenHidden === true;
+  useLayoutEffect(() => { syncGate(); }, [runWhenHidden, syncGate]);
+
   // Stable identity: `requestRedraw` and friends outlive the render that made
   // them, and consumers capture the handle.
   const handle = useMemo(() => ({ request, cancel, isVisible }), [request, cancel, isVisible]);
