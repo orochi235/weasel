@@ -94,4 +94,12 @@ describe('ToolPalette stacks', () => {
     act(() => screen.getByRole('button', { name: /rect/ }).focus());
     expect(screen.getByRole('tooltip')).toHaveTextContent('Drag out a rectangle (R)');
   });
+
+  it('gives a stacked tool\'s menu row its description', () => {
+    const described = { ...LIST[1], presentation: { label: 'rect', group: 'shape', description: 'Drag out a rectangle' } } as Tool;
+    const tools = { registry: { rect: described, ellipse: LIST[2] }, active: null, setActive: () => {} } as unknown as ToolsApi;
+    renderWithIcons(<ToolPalette tools={tools} stacks={[['rect', 'ellipse']]} />);
+    press(screen.getByRole('button', { name: /rect/ }));
+    expect(screen.getByRole('menuitem', { name: /rect/ })).toHaveAccessibleDescription(expect.stringContaining('Drag out a rectangle'));
+  });
 });

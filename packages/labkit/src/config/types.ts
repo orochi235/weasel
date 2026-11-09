@@ -39,6 +39,10 @@ export interface ConfigOption<V extends string = string> {
   short?: readonly string[];
   /** Shown but cannot be chosen: a value the control reports and cannot author. */
   disabled?: boolean;
+  /** Why it cannot be chosen, while `disabled`. */
+  disabledReason?: string;
+  /** What choosing it does: a segment's tooltip, a row's description. */
+  description?: string;
 }
 
 /** Everything a leaf can carry beyond its kind and default. A flat union of

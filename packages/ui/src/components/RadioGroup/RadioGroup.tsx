@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import {
   RadioGroup as RACRadioGroup,
   Radio as RACRadio,
@@ -45,21 +45,29 @@ export function RadioGroup(props: RadioGroupProps) {
 export type RadioProps = Omit<RACRadioProps, 'className' | 'children'> & {
   children?: ReactNode;
   className?: string;
+  /** A note after the label, and the choice's accessible description. */
+  description?: string;
+  /** Why the choice is disabled, in place of `description` while `isDisabled`. */
+  disabledReason?: string;
 };
 
 /** One choice in a {@link RadioGroup}. The label is passed as children. */
-export function Radio({ children, className, ...rest }: RadioProps) {
+export function Radio({ children, className, description, disabledReason, ...rest }: RadioProps) {
   const slot = useRunSlot(RadioSlotsContext, rest.value);
+  const noteId = useId();
+  const note = (rest.isDisabled && disabledReason) || description;
   const { className: _, style, ...at } = slot ?? {};
   return (
     <RACRadio
       {...rest}
+      {...(note ? { 'aria-describedby': noteId } : {})}
       {...at}
       className={slotClass(slot, [s.radio, className].filter(Boolean).join(' '))}
       style={slot ? { ...(typeof rest.style === 'object' ? rest.style : null), ...style } : rest.style}
     >
       <span className={s.dot} />
       {children !== undefined && <span>{children}</span>}
+      {note && <span id={noteId} aria-hidden="true" className={s.note}>{note}</span>}
     </RACRadio>
   );
 }

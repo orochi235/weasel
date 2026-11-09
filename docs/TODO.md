@@ -375,11 +375,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] An enum option's `description` and `disabledReason` reach only a toggle.** `EnumControl` hands them
-  to a `ToggleBar` segment's tooltip; its select, radio and menu forms draw neither, since `Select`'s options,
-  `Radio` and `MenuButton`'s items take no per-item tooltip or description, and a disabled list item is skipped by
-  the keyboard (2026-11-08). Closes when each of the three shows an option's description and why a disabled one
-  is disabled.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown

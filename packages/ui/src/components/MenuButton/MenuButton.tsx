@@ -19,7 +19,10 @@ export type MenuButtonItem<T extends string = string> = {
   /** The row for the page that is open: `aria-current="page"`, drawn bold. */
   isCurrent?: boolean;
   /** Makes the row a check row, ticked while true. */
-  checked?: boolean;
+  checked?: boolean;  /** What the row does, read as its hint and accessible description. */
+  description?: string;
+  /** Why the row is disabled, while `isDisabled`. */
+  disabledReason?: string;
 };
 
 /** Props for {@link MenuButton}. */
@@ -92,6 +95,8 @@ export function MenuButton<T extends string = string>({
       key: item.value,
       label: item.label,
       ...(item.isDisabled ? { disabled: true } : {}),
+      ...(item.isDisabled && item.disabledReason !== undefined ? { disabledReason: item.disabledReason } : {}),
+      ...(item.description !== undefined ? { description: item.description } : {}),
       ...(item.href !== undefined ? { href: item.href } : {}),
       ...(item.isCurrent ? { current: true } : {}),
       ...(item.checked !== undefined ? { checked: item.checked } : {}),

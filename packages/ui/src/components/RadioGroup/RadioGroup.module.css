@@ -30,6 +30,11 @@
   -webkit-user-select: none;
 }
 
+.note {
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-subtle);
+}
+
 .radio[data-disabled] {
   opacity: 0.5;
   cursor: not-allowed;

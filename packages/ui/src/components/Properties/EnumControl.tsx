@@ -38,7 +38,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
     return (
       <RadioGroup className={p.className} value={current ?? (p.onClear && !p.mixed ? UNSET : null)} isDisabled={p.disabled} onChange={choose(p)} aria-label={p.name}>
         {choices(p).map((o) => (
-          <Radio key={o.value} value={o.value} isDisabled={o.disabled}>
+          <Radio key={o.value} value={o.value} isDisabled={o.disabled} description={o.description} disabledReason={o.disabledReason}>
             {o.label}
           </Radio>
         ))}
@@ -58,7 +58,10 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         current={held !== undefined}
         isDisabled={p.disabled}
         disabledReason={p.disabledReason}
-        items={choices(p).map((o) => ({ value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, isDisabled: o.disabled }))}
+        items={choices(p).map((o) => ({
+          value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, isDisabled: o.disabled,
+          description: o.description, disabledReason: o.disabledReason,
+        }))}
         onAction={choose(p)}
       />
     );
@@ -105,6 +108,8 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         label: o.label,
         icon: o.glyph,
         isDisabled: o.disabled,
+        description: o.description,
+        disabledReason: o.disabledReason,
       }))}
       onSelectionChange={(v) => {
         dlog('property-panel', 'select', { name: p.name, value: v });
