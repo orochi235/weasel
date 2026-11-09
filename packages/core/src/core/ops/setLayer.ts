@@ -1,4 +1,5 @@
 import type { Op } from './types';
+import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
 interface SetLayerAdapter {
@@ -26,7 +27,9 @@ export function createSetLayerOp(args: SetLayerArgs): Op {
     label,
     coalesceKey,
     apply(adapter) {
+      const held = alreadyHolds(adapter, id, (node) => node.layer === to);
       (adapter as SetLayerAdapter).setLayer(id, to);
+      return held ? false : undefined;
     },
     invert() {
       return createSetLayerOp({ id, from: to, to: from, label, coalesceKey });

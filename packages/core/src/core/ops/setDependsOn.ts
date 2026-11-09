@@ -1,7 +1,10 @@
 import type { Op } from './types';
+import { sameDependsOn } from '../scene/dependents';
+import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
 type DependsOn = readonly string[] | 'children' | undefined;
+type Sources = Parameters<typeof sameDependsOn>[0];
 
 interface SetDependsOnAdapter {
   setDependsOn(id: string, dependsOn: DependsOn): void;
@@ -27,7 +30,9 @@ export function createSetDependsOnOp(args: SetDependsOnArgs): Op {
     label,
     coalesceKey,
     apply(adapter) {
+      const held = alreadyHolds(adapter, id, (node) => sameDependsOn(node.dependsOn as Sources, to as Sources));
       (adapter as SetDependsOnAdapter).setDependsOn(id, to);
+      return held ? false : undefined;
     },
     invert() {
       return createSetDependsOnOp({ id, from: to, to: from, label, coalesceKey });

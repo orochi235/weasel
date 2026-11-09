@@ -1,4 +1,6 @@
 import type { Op } from './types';
+import { sameValue } from '../scene/sameValue';
+import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
 interface TransformAdapter<TPose> {
@@ -27,14 +29,11 @@ export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
     coalesceKey,
     apply(adapter) {
       // Always call setPose so consumers that inspect op behavior (tests,
-      // overlays) see a consistent "this op writes (id, to)" signal. When
-      // from and to are structurally identical, additionally report a
-      // no-op to history so the entry can be skipped from the undo stack.
-      // setPose(id, to) is idempotent in this branch — adapters write the
-      // same pose they already had.
+      // overlays) see a consistent "this op writes (id, to)" signal, and
+      // report a no-op to history when the pose is already `to`.
+      const held = poseShallowEqual(from, to) || alreadyHolds(adapter, id, (node) => sameValue(node.pose, to));
       (adapter as TransformAdapter<TPose>).setPose(id, to);
-      if (poseShallowEqual(from, to)) return false;
-      return undefined;
+      return held ? false : undefined;
     },
     invert() {
       return createTransformOp<TPose>({ id, from: to, to: from, label, coalesceKey });
