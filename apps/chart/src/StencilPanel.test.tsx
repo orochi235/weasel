@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { createScene, type Tool, type ToolsApi } from '@weasel-js/core';
 import { CONTAINER_STENCILS, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_STENCILS, STENCIL_GROUPS, stencilTool } from '@weasel-js/diagram';
-import { toIconRef, type IconRef } from '@weasel-js/icons';
+import { toIconRef, type IconSpec } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { StencilPanel } from './StencilPanel';
@@ -66,7 +66,7 @@ describe('StencilPanel', () => {
   });
 
   it("draws each stencil's own glyph, not the unknown-tool placeholder", () => {
-    const drawn = (name: IconRef) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
+    const drawn = (name: IconSpec) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
     const placeholder = drawn(toIconRef('core:unknown')!);
     const stencils = [...FLOWCHART_STENCILS, ...CONTAINER_STENCILS];
     const glyphs = stencils.map((s) => drawn(s.icon!));
@@ -81,7 +81,7 @@ describe('StencilPanel', () => {
   });
 
   it('gives every shipped stencil a glyph of its own', () => {
-    const drawn = (name: IconRef) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
+    const drawn = (name: IconSpec) => renderWithIcons(<Icon name={name} />).container.querySelector('svg')!.innerHTML;
     const placeholder = drawn(toIconRef('core:unknown')!);
     for (const s of Object.values(STENCIL_GROUPS).flatMap((g) => g.stencils)) expect(drawn(s.icon!), s.id).not.toBe(placeholder);
   });

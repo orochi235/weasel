@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { taggedActionItems } from '@weasel-js/core';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { PrefActions, PrefGroup } from '@weasel-js/prefs';
 import { Bar } from '../Bar/Bar';
 import { BarActions } from '../Bar/BarActions';
@@ -34,7 +34,7 @@ export interface ActionBarOptions {
    * in the icon registry, as a leaf's `icon` does, and replaces the action's
    * own `icon` for this bar only.
    */
-  icons?: Record<string, IconRef>;
+  icons?: Record<string, IconSpec>;
   /**
    * Per-entry label overrides, keyed like `icons`. Drives `aria-label`, and
    * the tooltip of an action with no `description`. When omitted, the

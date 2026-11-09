@@ -5,7 +5,8 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { WeaselRenderer, type DrawCommand } from '@weasel-js/core/renderer';
-import { glyphCommands } from '@weasel-js/hud';
+import { glyphCommands, iconCommands } from '@weasel-js/hud';
+import type { IconSpec } from '@weasel-js/icons';
 
 const SIZE = 40;
 let renderer: WeaselRenderer | undefined;
@@ -42,5 +43,20 @@ describe('glyphCommands, in a real context', () => {
     expect(at(20, 8)).toBe(255);
     expect(at(20, 32)).toBe(0);
     expect(at(8, 20)).toBe(0);
+  });
+
+  it('erases the subject in a band around a mark and draws the mark over it', () => {
+    const table: Record<string, ReturnType<typeof glyph>> = {
+      'test:block': glyph('<rect x="0" y="0" width="20" height="20" fill="currentColor" stroke="none"/>'),
+      'test:plus': glyph('<path d="M10 3.5v13M3.5 10h13"/>'),
+    };
+    const spec = { name: 'test:block', mark: 'test:plus' } as unknown as IconSpec;
+    const at = paint(iconCommands({ get: (r) => table[r] }, spec, { x: 0, y: 0, size: SIZE, color: '#ff0000' }));
+    // At 40px the slot spans 21..41, so the plus crosses at (31, 31): its stroke is 1.5px either side of an arm
+    // and the band clears 4.5px either side.
+    expect(at(31, 26)).toBe(255);
+    expect(at(34, 26)).toBe(0);
+    expect(at(24, 24)).toBe(255);
+    expect(at(10, 10)).toBe(255);
   });
 });

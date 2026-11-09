@@ -52,4 +52,11 @@ describe('a name read from data', () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toContain('"neverQualified" is not qualified');
   });
+
+  it('draws a name and a mark read as { name, mark }', () => {
+    const [spec] = (JSON.parse('{ "icons": [{ "name": "ui:formPage", "mark": "ui:markAdd" }] }') as { icons: unknown[] }).icons;
+    const { container } = render(<>{resolveIcon(spec)}</>, { wrapper: withIcons });
+    expect(container.querySelector('mask')).not.toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+  });
 });

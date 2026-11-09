@@ -4,7 +4,7 @@
  * members.
  */
 import { RIGID_POSE_COMPOSITION, createInsertOp, localizeWorldPoses, scenePoseFrame, type NodeId, type Op, type PoseComposition, type RectPose, type Scene } from '@weasel-js/core';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { NodeStyle } from '../dataTypes';
 import { diagramThemeOf } from '../theme/resolve';
 import { themeWrites, type ThemedScene } from '../theme/themeWrites';
@@ -22,7 +22,7 @@ export interface ContainerStencil {
   axis?: 'x' | 'y';
   size: { width: number; height: number };
   /** The glyph a palette draws on its button. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** The title a new one is drawn with. Default `label`, and `'Pool'` for a pool. */
   title?: string;
   /** A new pool's lanes, by title, in the order they stack. Default two, `Lane 1` and `Lane 2`. */

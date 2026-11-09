@@ -71,24 +71,38 @@ an installed package's glyphs through that field.
 
 An icon that says what a press does to something (add a pref, remove a stop, lock a guide) is two
 glyphs: the **subject**, the thing acted on, and the **mark**, what happens to it. They are
-composed when drawn, never drawn as one glyph:
+composed when drawn, never drawn as one glyph. Every field that names an icon takes an
+`IconSpec` (`@weasel-js/icons`): a bare ref, or the pair.
 
-```tsx
-<Icon name={icon('core:tune')} mark={icon('ui:markAdd')} />
+```ts
+const addPref: Action = {
+  id: 'prefs.add',
+  label: 'Add pref',
+  icon: { name: icon('core:tune'), mark: icon('ui:markAdd') },
+  // …
+};
 ```
 
-`<Icon mark>` sets the mark in the lower-right slot (`ICON_SLOTS.mark` in
-`packages/ui/src/icons/layers.ts`), strokes it at the subject's weight, and cuts the subject away
-around it with a band of clearance (`inset`, same file). So:
+The same goes for a tool's `presentation.icon`, a pref's or a group's `icon`, labkit's chrome and
+tool items, a stencil's and a paint kind's. A schema loaded as JSON writes the pair as
+`{ "name": "core:tune", "mark": "ui:markAdd" }`, and the schema editor's icon field has a mark
+picker. In JSX, `<Icon name={spec} />` takes a spec, and `mark` beside it replaces the spec's.
+
+Every renderer draws the pair the same way, from `markLayers` in `@weasel-js/icons`: the mark goes
+in the lower-right slot (`ICON_SLOTS.mark`), stroked at the subject's weight, and the subject is cut
+away around it with a band of clearance. `<Icon>` cuts with an SVG mask (`inset` in
+`packages/ui/src/icons/layers.ts`), and hud's canvas menus with a `destination-out` group
+(`iconCommands`). So:
 
 - Draw the subject whole. Don't draw a plus, check or badge into it, and don't notch it to make
   room for one; the cut is computed from whichever mark sits on it.
 - The marks are the `mark-*` glyphs in `packages/ui/icons/marks.mjs`, named `ui:markAdd`,
   `ui:markLock` and so on. A mark that is missing is drawn there, to that file's rules: it is read
   at half size, so it is one gesture filling the frame, and it sets no `stroke-width`, because the
-  slot rescales it.
-- `mark` is a prop of `<Icon>` only. A field typed `IconRef` (an action's `icon`, a labkit tool's,
-  a pref's) names one glyph and cannot carry a mark yet.
+  slot rescales it. They are filed under the `Marks` group, which the mark picker lists.
+- Code that needs the refs a spec names (to list them, or to check they are registered) reads them
+  with `iconSpecRefs(spec)`, and the subject and mark apart with `iconParts(spec)`; never
+  `typeof icon === 'string'`.
 
 A hole that belongs to a single shape, such as a ring or a label knocked out of a chip, is one path
 with `fill-rule="evenodd"`. A glyph body never declares an id (`clipPath`, `mask`): ids are

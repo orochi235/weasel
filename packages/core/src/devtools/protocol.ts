@@ -113,7 +113,7 @@ export interface DevtoolsToolEntry {
   /** A switchable tool, an always-on entry, or one a `features` preset brought. */
   slot: 'tool' | 'ambient' | 'contribution';
   label: string;
-  /** The icon's qualified name. */
+  /** The icon's qualified name, and its mark's after ` + ` when it has one. */
   icon: string | null;
   group: string | null;
   shortcut: string | null;

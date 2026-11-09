@@ -4,7 +4,7 @@ import type { ContainerStencil } from '../containers/containerStencils';
 import type { StencilGroup } from '../diagramTypes/types';
 import type { Outline } from '../outline';
 import type { DiagramStencil } from '../stencil';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 
 const SMALL = { fontSize: 10 } as const;
 
@@ -14,7 +14,7 @@ interface Element {
   /** The `<<kind>>` a C4 writer reads the element's macro from: `external_system_db`. */
   kind: string;
   outline: Outline;
-  icon: IconRef;
+  icon: IconSpec;
   /** Containers and components carry one; people and systems do not. */
   technology?: string;
   width?: number;

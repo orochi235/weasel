@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
-import type { IconGlyph } from '@weasel-js/icons';
-import { glyphCommands } from './glyph';
+import type { IconGlyph, IconRef, IconSpec } from '@weasel-js/icons';
+import { glyphCommands, iconCommands } from './glyph';
 
 const glyph = (body: string): IconGlyph => ({ body, group: 'test', tags: [] });
 const at = { x: 10, y: 20, size: 16, color: '#123456' };
@@ -51,5 +51,35 @@ describe('glyphCommands', () => {
     expect(found).toHaveLength(1);
     expect(found[0]!.cmd.stroke).toBeUndefined();
     expect(found[0]!.above.at(-1)!.alpha).toBe(0.4);
+  });
+});
+
+describe('iconCommands', () => {
+  const table: Record<string, IconGlyph> = {
+    'test:page': glyph('<rect x="2" y="2" width="16" height="16"/>'),
+    'test:plus': glyph('<path d="M10 3.5v13M3.5 10h13"/>'),
+  };
+  const icons = { get: (r: string) => table[r] };
+  const spec = (name: string, mark?: string) => ({ name, mark }) as unknown as IconSpec;
+
+  it('draws a bare ref as its glyph alone', () => {
+    expect(iconCommands(icons, 'test:page' as IconRef, at)).toEqual(glyphCommands(table['test:page']!, at));
+  });
+
+  it("erases the subject under the mark in an isolated group, then draws the mark in the corner at the subject's weight", () => {
+    const [cutGroup, mark] = iconCommands(icons, spec('test:page', 'test:plus'), at);
+    expect(cutGroup).toMatchObject({ kind: 'group', isolate: true });
+    expect((cutGroup as GroupDrawCommand).children[1]).toMatchObject({ kind: 'group', composite: 'destination-out' });
+    // The slot is the frame's lower-right half from 10.5, at 16px.
+    const t = (mark as GroupDrawCommand).transform!;
+    expect([t[0], t[6], t[7]]).toEqual([0.4, 10 + 8.4, 20 + 8.4]);
+    const [{ cmd, above }] = paths([mark!]);
+    const scaled = above.reduce((k, g) => k * (g.transform?.[0] ?? 1), 1);
+    expect(Number(cmd!.stroke!.width) * scaled).toBeCloseTo(1.5 * 0.8);
+  });
+
+  it('draws the subject alone when the mark is missing, and nothing when the subject is', () => {
+    expect(iconCommands(icons, spec('test:page', 'test:none'), at)).toEqual(glyphCommands(table['test:page']!, at));
+    expect(iconCommands(icons, spec('test:none'), at)).toEqual([]);
   });
 });

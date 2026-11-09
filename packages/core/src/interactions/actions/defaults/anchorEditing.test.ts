@@ -4,6 +4,7 @@ import type { InvocationCtx, OngoingInvoker, ImmediateInvoker } from '@weasel-js
 import { makeEditAnchorsDep } from '../testUtils';
 import { areaSelectAction } from './areaSelect';
 import { icons } from '../../../icons.table';
+import type { IconSpec } from '@weasel-js/icons';
 import {
   cutPathAtAnchorAction,
   deleteAnchorsAction,
@@ -53,7 +54,7 @@ const ongoing = (a: { invoker?: unknown }) => a.invoker as OngoingInvoker;
 
 describe('nudgeAnchors', () => {
   it('draws the nudge glyph turned the way each action moves', () => {
-    const drawn = (ref: string | undefined) => icons.icons[(ref ?? '').replace(/^core:/, '')]?.body;
+    const drawn = (spec: IconSpec | string | undefined) => icons.icons[((typeof spec === 'object' ? spec.name : spec) ?? '').replace(/^core:/, '')]?.body;
     expect(drawn(nudgeAnchorsRightAction.icon)).toContain('rotate(0 10 10)');
     expect(drawn(nudgeAnchorsUpAction.icon)).toContain('rotate(-90 10 10)');
     // With no direction, it points right.

@@ -3,7 +3,7 @@
 // compose those into one registry, which `PrefsForm` renders and `openPrefs`
 // stores.
 
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { PrefAction, PrefActions } from './action';
 import type { PrefAlias } from './alias';
 import type { PrefCondition } from './condition';
@@ -82,7 +82,7 @@ export interface PrefBase<K extends string, Value> {
    *  nothing. Read where a leaf's `name` has nowhere to go — a
    *  `pair`ed row is labeled by the pair, so its fields have only the glyph
    *  to tell them apart. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** Puts this leaf and the ones it names on one row. */
   pair?: PrefPair;
   /** Shorter forms of `name`, longest first. A surface short of room for
@@ -198,7 +198,7 @@ export interface PrefEnumBase<T extends string = string>
     value: T;
     label: string;
     short?: readonly string[];
-    icon?: IconRef;
+    icon?: IconSpec;
     disabled?: boolean;
   }[];
   control?: PrefEnumControl;

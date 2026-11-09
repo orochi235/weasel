@@ -90,7 +90,7 @@ export const ATTR_RENDERERS: Record<'optional-number' | 'enum-options' | 'pair' 
   unit: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => <UnitEditor ctx={ctx} />, { group: true, wide: true }),
   // A search box and a grid of glyphs, which the control column has no room for.
   icon: Object.assign<PrefRenderer, { group: boolean; wide: boolean }>((ctx) => (
-    <IconAttrField value={typeof ctx.value === 'string' ? ctx.value : undefined} mixed={ctx.mixed} onChange={ctx.setValue} />
+    <IconAttrField value={ctx.value} mixed={ctx.mixed} onChange={ctx.setValue} />
   ), { group: true, wide: true }),
   pair: Object.assign<PrefRenderer, { group: boolean }>((ctx) => <PairEditor ctx={ctx} />, { group: true }),
   'optional-number': (ctx) => <OptionalNumber ctx={ctx} />,

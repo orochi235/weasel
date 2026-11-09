@@ -2,6 +2,7 @@ import * as Weasel from '@weasel-js/core';
 import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core';
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
+import { iconSpecRefs } from '@weasel-js/icons';
 import { ICON_GROUPS, icon } from '../icons.gen';
 import {
   type ActionEntry,
@@ -43,11 +44,11 @@ export function collectMeta(): readonly MetaEntry[] {
 function collectActionIcons(actions: readonly ActionEntry[]): IconEntry[] {
   const byGlyph = new Map<string, IconEntry & { actions: string[] }>();
   for (const item of actions.flatMap((a) => a.items ?? [])) {
-    const ref = item.icon;
-    if (ref === undefined) continue;
-    const existing = byGlyph.get(ref);
-    if (existing) existing.actions.push(item.key);
-    else byGlyph.set(ref, { kind: 'icon', id: ref, label: ref, source: 'action', actions: [item.key], ref });
+    for (const ref of iconSpecRefs(item.icon)) {
+      const existing = byGlyph.get(ref);
+      if (existing) existing.actions.push(item.key);
+      else byGlyph.set(ref, { kind: 'icon', id: ref, label: ref, source: 'action', actions: [item.key], ref });
+    }
   }
   return [...byGlyph.values()];
 }

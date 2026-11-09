@@ -2,7 +2,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import {
   DEG_TO_RAD, identity, mat3, multiply, pathFromD, rotateAboutPoint, scale, translate, type Affine, type Path,
 } from '@weasel-js/geom';
-import type { IconGlyph } from '@weasel-js/icons';
+import { ICON_FRAME, iconParts, layerMarkup, markLayers, type IconGlyph, type IconRegistry, type IconSpec } from '@weasel-js/icons';
 
 /** The attributes a glyph's elements inherit, as `<Icon>`'s root `<svg>` sets them. */
 const ROOT: Readonly<Record<string, string>> = {
@@ -142,7 +142,7 @@ function frameFor(t: Tag, parent: Readonly<Record<string, string>>): Frame {
  * presentation attributes and transforms. `defs` and what they hold are skipped, so a `clip-path`
  * pointing into them does not clip.
  */
-export function glyphCommands(glyph: IconGlyph, at: GlyphPlacement): DrawCommand[] {
+export function glyphCommands(glyph: Pick<IconGlyph, 'body'>, at: GlyphPlacement): DrawCommand[] {
   const k = at.size / 20;
   const root: Frame = {
     attrs: ROOT, children: [],
@@ -175,4 +175,33 @@ export function glyphCommands(glyph: IconGlyph, at: GlyphPlacement): DrawCommand
     else top.children.push(...cmds);
   }
   return [root.group];
+}
+
+/** Where `iconCommands` finds the glyphs a spec names. */
+export type GlyphSource = Pick<IconRegistry, 'get'>;
+
+/**
+ * The commands for an icon spec, as `<Icon>` draws it: the subject, and a mark set in its corner with the
+ * subject erased under it. Nothing when the registry lacks the subject; the subject alone when it lacks the mark.
+ */
+export function iconCommands(icons: GlyphSource, spec: IconSpec | undefined, at: GlyphPlacement): DrawCommand[] {
+  const parts = iconParts(spec);
+  const subject = parts && icons.get(parts.name);
+  if (!subject) return [];
+  const markGlyph = parts.mark ? icons.get(parts.mark) : undefined;
+  if (!markGlyph) return glyphCommands(subject, at);
+  const { box, mark, cut } = markLayers(markGlyph.body);
+  const k = at.size / ICON_FRAME;
+  const slot: GlyphPlacement = { x: at.x + box.x * k, y: at.y + box.y * k, size: box.size * k, color: at.color };
+  return [
+    {
+      kind: 'group',
+      isolate: true,
+      children: [
+        ...glyphCommands(subject, at),
+        { kind: 'group', composite: 'destination-out', children: glyphCommands({ body: layerMarkup(cut) }, slot) },
+      ],
+    },
+    ...glyphCommands({ body: layerMarkup(mark) }, slot),
+  ];
 }

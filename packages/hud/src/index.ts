@@ -35,7 +35,7 @@ export { measureLabel } from './menu/measureLabel';
 export { createMenuWidget, type MenuWidgetOptions } from './menu/menuWidget';
 export { DEFAULT_MENU_METRICS, type MenuIcons, type MenuMetrics } from './menu/drawPanel';
 export { DEFAULT_MENU_PALETTE } from './menu/colorPicker';
-export { glyphCommands, type GlyphPlacement } from './glyph';
+export { glyphCommands, iconCommands, type GlyphPlacement, type GlyphSource } from './glyph';
 export { boxShadowCommands } from './boxShadow';
 export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
 export { loupeInnerView } from '@weasel-js/loupe';

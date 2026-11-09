@@ -1,5 +1,5 @@
 import type { MarkerRef } from '@weasel-js/core';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { ContainerStencil } from '../containers/containerStencils';
 import type { SET_ROUTER_ACTION_IDS } from '../routerCommands';
 import type { DiagramStencil } from '../stencil';
@@ -28,7 +28,7 @@ export interface DiagramTypeEdge {
 export interface DiagramType {
   id: string;
   label: string;
-  icon?: IconRef;
+  icon?: IconSpec;
   /** Group ids, in Shapes-panel order, that a new chart of this type opens with. */
   groups: readonly string[];
   edge?: DiagramTypeEdge;

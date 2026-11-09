@@ -5,6 +5,7 @@
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import icons from 'virtual:weasel-icons';
+import { iconSpecRefs } from '@weasel-js/icons';
 import {
   ActionsProvider, BUILTIN_TOOL_IDS, DepRegistryProvider, SceneCanvas, createScene, useActionsRegistry,
   type ActionsRegistry, type ToolsApi,
@@ -45,12 +46,11 @@ it("registers every glyph a tool or action on draw's canvas names", () => {
 
   const named = new Map<string, string>();
   for (const tool of Object.values((tools as ToolsApi | null)!.registry)) {
-    const ref = tool.presentation?.icon;
-    if (ref) named.set(ref, `tool ${tool.id}`);
+    for (const ref of iconSpecRefs(tool.presentation?.icon)) named.set(ref, `tool ${tool.id}`);
   }
   for (const action of (registry as ActionsRegistry | null)!.list()) {
-    for (const ref of [action.icon, ...(action.variants ?? []).map((v) => v.icon)]) {
-      if (ref) named.set(ref, `action ${action.id}`);
+    for (const spec of [action.icon, ...(action.variants ?? []).map((v) => v.icon)]) {
+      for (const ref of iconSpecRefs(spec)) named.set(ref, `action ${action.id}`);
     }
   }
   expect(named.size).toBeGreaterThan(50);

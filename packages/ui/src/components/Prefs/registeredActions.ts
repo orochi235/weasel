@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { actionItems, useActionsRegistry, type Action, type ActionItem } from '@weasel-js/core';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import { resolveOrder, type PrefAction, type PrefActions, type PrefLeaf } from '@weasel-js/prefs';
 
 const NONE: readonly Action[] = Object.freeze([]);
@@ -24,7 +24,7 @@ export interface ActionsLeafOptions {
   /** Only these of them, each an action id — every variant of it — or an `id:variant` key. */
   only?: readonly string[];
   /** Glyph names by entry key, over each action's own icon. */
-  icons?: Readonly<Record<string, IconRef>>;
+  icons?: Readonly<Record<string, IconSpec>>;
   /** Labels by entry key, over each action's own label. */
   labels?: Readonly<Record<string, string>>;
 }

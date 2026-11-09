@@ -11,7 +11,7 @@ import { DEFAULT_FONT } from './edgeLabel';
 import { DEFAULT_NODE_STYLE, type DiagramSceneData, type NodeStyle } from './dataTypes';
 import { NODE_STROKE_WIDTH } from './dataTypes';
 import { asideFace, rowTextStyle } from './rowStyle';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { Outline } from './outline';
 
 /** One shape a palette offers. `size` is what a click places; `rows` default
@@ -23,7 +23,7 @@ export interface DiagramStencil {
   outline: Outline;
   size: { width: number; height: number };
   rows?: readonly Row[];
-  icon?: IconRef;
+  icon?: IconSpec;
   /** Laid over the style the body is drawn in: a BPMN end event's heavier ring. */
   style?: Partial<NodeStyle>;
   /** The theme role the body is drawn in, kept on its trait as an imported shape's is: C4's `muted` for what lies

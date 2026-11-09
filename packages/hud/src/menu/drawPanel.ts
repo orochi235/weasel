@@ -4,9 +4,9 @@ import { roundRectPath } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
-import { toIconRef, type IconRegistry } from '@weasel-js/icons';
+import { toIconSpec, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
-import { glyphCommands } from '../glyph';
+import { iconCommands } from '../glyph';
 import type { HudDrawCtx, WidgetBounds } from '../widget';
 import { colorCommands, numberCommands, swatchCommand, textCommands, typingCommands, valueRowWidth } from './valueRows';
 import { measureLabel } from './measureLabel';
@@ -149,14 +149,13 @@ export function drawPanel(
     ));
     const iconX = b.x + m.padX + m.rowHeight / 2;
     const iconY = b.y + r.y + r.h / 2;
-    const ref = e.kind !== 'color' && typeof e.icon === 'string' ? toIconRef(e.icon) : undefined;
-    const glyph = ref ? icons?.get(ref) : undefined;
+    const spec = e.kind !== 'color' ? toIconSpec(e.icon) : undefined;
     const swatch = values.swatch?.(e);
     if (swatch !== undefined) {
       const held = e.kind === 'item' && e.checked;
       out.push(swatchCommand(b, r, swatch, m, held ? fg : t['--wzl-border'], held ? 2 : 1));
     } else if (e.kind === 'item' && e.checked) out.push(check(iconX, iconY, color));
-    else if (glyph) out.push(...glyphCommands(glyph, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
+    else if (spec && icons) out.push(...iconCommands(icons, spec, { x: iconX - ICON_SIZE / 2, y: iconY - ICON_SIZE / 2, size: ICON_SIZE, color }));
     const chip = shortcutOf(e);
     if (chip) {
       out.push(textCommandFromRuns(

@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { LabMode } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import type { Globals } from '../protocol/messages';
@@ -12,7 +12,7 @@ export interface GlobalDeclaration {
   /** Another global's key: the toolbar shows this one in a popover beside that one rather than in the bar itself. */
   under?: string;
   /** The glyph on the button opening the globals declared `under` this one. Default `core:tune`. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /**
    * Whether the toolbar offers `value` given the lab's other values; every option shows when absent. `globals` is
    * resolved without any declaration's `shows`, so one `shows` cannot depend on another's outcome.

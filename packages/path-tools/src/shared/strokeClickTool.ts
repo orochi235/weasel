@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { Action, GestureBinding, ToolKeybinding } from '@weasel-js/routing';
 import { defineTool, type RenderLayer, type Tool } from '@weasel-js/core';
 
@@ -17,7 +17,7 @@ export interface StrokeClickToolOptions {
 export interface StrokeClickToolSpec {
   id: string;
   label: string;
-  icon: IconRef;
+  icon: IconSpec;
   hookName: string;
   actionId: string;
   keybinding: ToolKeybinding;

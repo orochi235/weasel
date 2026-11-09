@@ -20,6 +20,10 @@ export type QualifiedIconName = Extract<keyof IconName, string>;
 
 export { qualify, scopedIcon, splitIconRef, toIconRef } from './names';
 export type { IconRef } from './names';
+export { iconParts, iconSpecRefs, toIconSpec } from './spec';
+export type { IconComposite, IconSpec } from './spec';
+export { ICON_FRAME, ICON_SLOTS, ICON_STROKE, layerMarkup, markLayers } from './mark';
+export type { GlyphLayer, IconBox, MarkLayers } from './mark';
 export type { IconGlyph, IconTable, IconVariantLoader, IconVariantModule } from './table';
 export { createIconRegistry, IconNamespaceClaimedError } from './registry';
 export type { IconEntry, IconRegistry, IconVariantState } from './registry';

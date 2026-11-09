@@ -7,6 +7,10 @@ import type {
   DevtoolsActionEntry, DevtoolsBinding, DevtoolsRegistry, DevtoolsToolEntry,
 } from './protocol';
 import { serialize } from './serialize';
+import { iconSpecRefs, type IconSpec } from '@weasel-js/icons';
+
+/** A spec as the text the panel shows: its refs, subject first. */
+const iconText = (spec: IconSpec | undefined): string | null => iconSpecRefs(spec).join(' + ') || null;
 
 type Entry = Contribution<unknown> & { cursor?: unknown };
 
@@ -46,7 +50,7 @@ function toolOf(entry: Entry, slot: DevtoolsToolEntry['slot'], overrides: Resolv
     id: entry.id,
     slot,
     label: p?.label ?? entry.id,
-    icon: p?.icon ?? null,
+    icon: iconText(p?.icon),
     group: p?.group ?? null,
     shortcut: p?.shortcut ?? null,
     hotkey: entry.eligibility?.offhand ?? null,
@@ -67,7 +71,7 @@ function actionOf(action: Action, deps: DepRegistry | null): DevtoolsActionEntry
   return {
     id: action.id,
     label: action.label ?? action.id,
-    icon: action.icon ?? null,
+    icon: iconText(action.icon),
     group: action.group ?? null,
     tags: [...(action.tags ?? [])],
     shortcut: action.shortcut ?? null,
@@ -75,7 +79,7 @@ function actionOf(action: Action, deps: DepRegistry | null): DevtoolsActionEntry
     invoker: action.invoker?.timing ?? null,
     requires: [...(action.requires ?? [])],
     variants: (action.variants ?? []).map((v) => ({
-      key: v.key, label: v.label, icon: v.icon ?? null, params: serialize(v.params),
+      key: v.key, label: v.label, icon: iconText(v.icon), params: serialize(v.params),
     })),
     enabled: enabled.enabled ? true : (enabled.reason ?? 'disabled'),
     active: evaluateActive(action, bag) ?? null,

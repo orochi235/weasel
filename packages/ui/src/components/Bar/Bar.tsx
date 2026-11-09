@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { TrackShape } from '@weasel-js/geom';
 import { applyPrefConditions, orderPrefGroup, prefAliasTargets, prefJudge, prefLeafValue, prefReader, prefValueAtPath, type PrefAlias, type PrefAliasTargets, type PrefBarLead, type PrefEntry, type PrefGroup, type PrefOrder, type PrefSection } from '@weasel-js/prefs';
 import type { RunAlign } from '../Along/alongContext';
@@ -51,7 +51,7 @@ export interface BarProps {
    *  own `lead`, else nothing. `'icon'` shows `icon`. */
   lead?: PrefBarLead;
   /** The glyph `lead: 'icon'` starts the line with. Default: `schema`'s own `icon`. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** Draw the strip the bar sits on. Unset, the host's strip is under it. `'segmented'` is a compact strip
    *  whose buttons sit almost touching, so a run of actions reads as one control. */
   framed?: boolean | 'segmented';

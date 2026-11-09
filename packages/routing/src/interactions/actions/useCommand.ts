@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import { useLatest, useStableByContent } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
 import type { Action, ActionUnavailable, ActionVariant } from './action';
@@ -16,7 +16,7 @@ export interface CommandOptions {
   /** The gestures that run it. The `{ spec, opts: { params } }` form gives one variant its own key. */
   keys?: BoundGesture | readonly BoundGesture[];
   /** Shown beside the label. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** The registry group a bar drawing one group gathers it under. */
   group?: string;
   /** Words a palette finds it by and a tagged bar or menu gathers it under. */

@@ -16,7 +16,7 @@ import {
   type NodeRoutingEntry,
   type SceneNode,
 } from '@weasel-js/core';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import {
   isPrefLeaf,
   pairRuns,
@@ -87,7 +87,7 @@ export interface PanelSection {
   /** Drawn as a bar: what its line starts with. */
   lead?: PrefBarLead;
   /** The glyph naming it, which a bar can start its line with. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** The motif its frame is drawn in, by name, where it is drawn framed. */
   motif?: string;
   /** The key of the leaf drawn in its heading, which stays among its rows until it is drawn there. */

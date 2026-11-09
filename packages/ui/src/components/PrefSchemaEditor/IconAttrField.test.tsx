@@ -7,9 +7,10 @@ import { IconAttrField } from './IconAttrField';
 const ui: IconTable = { namespace: 'ui', owner: '@weasel-js/ui', icons: {
   close: { body: '<path d="c"/>', group: 'View', tags: [] },
   add: { body: '<path d="a"/>', group: 'Actions', tags: [] },
+  markAdd: { body: '<path d="m"/>', group: 'Marks', tags: [] },
 } };
 
-const setup = (props: { value?: string; mixed?: boolean } = {}) => {
+const setup = (props: { value?: unknown; mixed?: boolean } = {}) => {
   const onChange = vi.fn();
   const loader = vi.fn(async () => ({ default: [ui] }));
   render(
@@ -54,5 +55,24 @@ describe('IconAttrField', () => {
     const { loader } = setup({ value: 'ui:close' });
     await waitFor(() => expect(loader).toHaveBeenCalled());
     expect(screen.queryByText('Not registered')).toBeNull();
+  });
+
+  it('adds a mark chosen from the marks alone, and writes the pair', async () => {
+    const { onChange } = setup({ value: 'ui:close' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add mark' }));
+    await screen.findByRole('option', { name: 'ui:markAdd' });
+    expect(screen.queryByRole('option', { name: 'ui:add' })).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: 'ui:markAdd' }));
+    expect(onChange).toHaveBeenLastCalledWith({ name: 'ui:close', mark: 'ui:markAdd' });
+  });
+
+  it('keeps the mark when the icon changes, and drops it on its own', async () => {
+    const { onChange } = setup({ value: { name: 'ui:close', mark: 'ui:markAdd' } });
+    expect(screen.getByText('ui:close + ui:markAdd')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'No mark' }));
+    expect(onChange).toHaveBeenLastCalledWith('ui:close');
+    fireEvent.click(screen.getByRole('button', { name: 'Select icon' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'ui:add' }));
+    expect(onChange).toHaveBeenLastCalledWith({ name: 'ui:add', mark: 'ui:markAdd' });
   });
 });

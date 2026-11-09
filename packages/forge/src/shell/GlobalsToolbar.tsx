@@ -1,5 +1,5 @@
 import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { Icon } from '@weasel-js/ui/components/Icon';
@@ -81,7 +81,7 @@ function NestedGlobals({
   set,
 }: {
   label: string;
-  icon: IconRef;
+  icon: IconSpec;
   nested: readonly [string, GlobalDeclaration][];
   values: Globals;
   set: (key: string, value: string) => void;

@@ -25,7 +25,7 @@ export interface ToolPresentation {
   /** Human-readable label, distinct from the `id`. Falls back to `id`. */
   label?: string;
   /** The tool's icon, by qualified name: `icon('rect')` in the package that draws it. */
-  icon?: import('@weasel-js/icons').IconRef;
+  icon?: import('@weasel-js/icons').IconSpec;
   /** Palette grouping key. Tools sharing a group render contiguously
    *  with separators between groups. Free-form string; core's
    *  `TOOL_GROUP_ORDER` names the kit's own groups, in palette order. */

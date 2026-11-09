@@ -6,7 +6,7 @@ import { Bar, type BarProps } from '@weasel-js/ui/components/Bar';
 import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import s from './Bar.stories.module.css';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import { icon } from '../../icons.gen';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
 
@@ -17,7 +17,7 @@ const meta: Meta<typeof Bar> = {
 export default meta;
 type Story = StoryObj<typeof Bar>;
 
-const action = (name: string, key: string, glyph?: IconRef): PrefGroup['children'][string] => ({
+const action = (name: string, key: string, glyph?: IconSpec): PrefGroup['children'][string] => ({
   kind: 'action',
   name,
   description: '',

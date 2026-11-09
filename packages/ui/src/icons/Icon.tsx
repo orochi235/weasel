@@ -1,7 +1,7 @@
 import { useId, useMemo, type SVGProps } from 'react';
 import { useIconGlyph } from '@weasel-js/core';
-import type { IconGlyph, IconRef } from '@weasel-js/icons';
-import { ICON_SLOTS, inset } from './layers';
+import { iconParts, type IconGlyph, type IconRef, type IconSpec } from '@weasel-js/icons';
+import { inset } from './layers';
 import { isDev } from '@weasel-js/react';
 import { PLACEHOLDER_BODY, warnMissing } from './placeholder';
 
@@ -37,17 +37,19 @@ const SVG_BASE: SVGProps<SVGSVGElement> = {
   strokeLinejoin: 'round',
 };
 
-/** Renders the glyph the icon registry in scope holds for `name`. A name it lacks draws `core:unknown`'s
- *  placeholder in dev, warning once, and nothing in production. */
+/** Renders the glyph the icon registry in scope holds for `name`, with the mark a spec names unless `mark`
+ *  replaces it. A name it lacks draws `core:unknown`'s placeholder in dev, warning once, and nothing in production. */
 export function Icon({
-  name,
+  name: spec,
   className,
   size = 20,
   label,
   filled = false,
   fillOpacity = 0.16,
-  mark,
-}: IconProps & { name: IconRef }) {
+  mark: markProp,
+}: IconProps & { name: IconSpec }) {
+  const { name, mark: specMark } = iconParts(spec)!;
+  const mark = markProp ?? specMark;
   const glyph = useIconGlyph(name);
   const markGlyph = useIconGlyph(mark);
   const maskId = useId();
@@ -55,7 +57,7 @@ export function Icon({
   if (mark && !markGlyph) warnMissing(mark);
   const shade = filled && glyph?.fill ? glyph.fill : '';
   const body = glyph ? shade + glyph.body : PLACEHOLDER_BODY;
-  const html = markGlyph ? inset(body, markGlyph.body, ICON_SLOTS.mark, maskId) : body;
+  const html = markGlyph ? inset(body, markGlyph.body, maskId) : body;
   // React 19 rewrites innerHTML whenever this object's identity changes, and a
   // rewrite during a press removes the node pointerdown hit, so no click follows.
   const markup = useMemo(() => ({ __html: html }), [html]);

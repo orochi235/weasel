@@ -7,6 +7,7 @@ import { isFillable } from './Icon';
 import { ICON_GROUPS, icon, type UiIconName } from '../icons.gen';
 import { icons as uiIcons } from '../icons.table';
 import { renderWithIcons } from '../testing/withIcons';
+import { MARK_GROUP } from './markGroup';
 
 const NAMES = Object.keys(uiIcons.icons) as UiIconName[];
 const body = (name: string) => uiIcons.icons[name]!.body;
@@ -110,6 +111,19 @@ describe('icon set', () => {
 });
 
 describe('a marked glyph', () => {
+  it('names the marks group as the glyph definitions file it', async () => {
+    const { markGroup } = await import('../../icons/index.mjs');
+    expect(MARK_GROUP).toBe(markGroup);
+    expect(ICON_GROUPS.find((g) => g.label === MARK_GROUP)?.names).toContain('markAdd');
+  });
+
+  it('takes the mark from a spec, and a mark prop over it', () => {
+    const markD = (el: HTMLElement) => el.querySelector('svg > g:last-child path')?.getAttribute('d');
+    const spec = { name: icon('formPage'), mark: icon('markAdd') };
+    expect(markD(draw(<Icon name={spec} />).container)).toBe(body('markAdd').match(/d="([^"]+)"/)?.[1]);
+    expect(markD(draw(<Icon name={spec} mark={icon('markRemove')} />).container)).toBe(body('markRemove').match(/d="([^"]+)"/)?.[1]);
+  });
+
   it('draws the mark after the glyph, scaled into the corner at the glyph\'s own stroke weight', () => {
     const { container } = draw(<Icon name={icon('formPage')} mark={icon('markAdd')} />);
     const [glyph, mark] = [...container.querySelectorAll('svg > g')];
@@ -134,7 +148,8 @@ describe('a marked glyph', () => {
     const { container } = draw(<Icon name={icon('formPage')} mark={icon('markReset')} />);
     const cut = container.querySelector('mask > g');
     expect(cut?.getAttribute('transform')).toBe('translate(10.5 10.5) scale(0.5)');
-    expect(cut?.getAttribute('fill')).toBe('#000');
+    expect(cut?.getAttribute('fill')).toBe('currentColor');
+    expect(cut?.getAttribute('color')).toBe('#000');
     // 1.5 of stroke and 1.5 of band on each side of it, on the frame.
     expect(Number(cut?.getAttribute('stroke-width')) * 0.5).toBeCloseTo(4.5);
     const [arc, head] = [...(cut?.querySelectorAll('path') ?? [])];

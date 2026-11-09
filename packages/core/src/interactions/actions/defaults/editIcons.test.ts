@@ -9,6 +9,7 @@ import { flipAction } from '../flip/action';
 import { undoAction, redoAction } from './undoRedo';
 import { deleteAction } from './delete';
 import { icons } from '../../../icons.table';
+import { iconParts } from '@weasel-js/icons';
 
 describe('default edit-action icons', () => {
   const items = [
@@ -26,7 +27,7 @@ describe('default edit-action icons', () => {
       'flip:x', 'flip:y',
     ]);
     for (const item of items) {
-      const [ns, name] = (item.icon ?? '').split(':');
+      const [ns, name] = (iconParts(item.icon)?.name ?? '').split(':');
       expect(ns, item.key).toBe('core');
       expect(icons.icons[name!], item.key).toBeDefined();
     }

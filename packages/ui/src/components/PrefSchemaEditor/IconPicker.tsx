@@ -5,14 +5,17 @@ import { Icon } from '../../icons/Icon';
 import { groupIcons, pageIndex, stepIndex } from './iconPickerModel';
 import s from './IconPicker.module.css';
 
-/** Every registered icon, searchable, to choose one from by qualified name. `value` is the one marked chosen. */
-export function IconPicker({ value, onChange }: {
+/** Every registered icon, searchable, to choose one from by qualified name. `value` is the one marked chosen, and
+ *  `group` keeps to the glyphs filed under it. */
+export function IconPicker({ value, group, onChange }: {
   value: string | undefined;
+  group?: string;
   onChange: (next: string) => void;
 }) {
   const base = useId();
   const optionId = (ref: string) => `${base}-${ref.replace(/\W/g, '_')}`;
-  const { entries, state } = useIconVariant('all');
+  const { entries: all, state } = useIconVariant('all');
+  const entries = group === undefined ? all : all.filter((e) => e.glyph.group === group);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState<string | undefined>(undefined);
   const list = useRef<HTMLDivElement>(null);

@@ -5,6 +5,7 @@ import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icons as uiIcons } from '@weasel-js/ui/icons';
 import { ICON_GROUPS, icon } from '../icons.gen';
+import { MARK_GROUP } from './markGroup';
 import s from './icons.stories.module.css';
 
 const meta: Meta = { title: 'ui/Icons/Gallery', tags: ['gallery'] };
@@ -42,7 +43,7 @@ function Sheet({ table = uiIcons, size, proof }: { table?: IconTable; size: numb
 }
 
 const MARKED = [icon('formPage'), icon('formSection'), icon('core:tune'), icon('layers'), icon('shape:hexagon')];
-const MARKS = ICON_GROUPS.find((g) => g.label === 'Marks')?.names.map((n) => icon(n)) ?? [];
+const MARKS = ICON_GROUPS.find((g) => g.label === MARK_GROUP)?.names.map((n) => icon(n)) ?? [];
 
 function MarkedSheet({ size, proof }: { size: number; proof?: boolean }) {
   return (

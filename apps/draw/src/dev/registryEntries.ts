@@ -1,5 +1,5 @@
 /** The rows the registry inspector's tree lists, one shape per category. */
-import type { IconRef } from '@weasel-js/icons';
+import type { IconRef, IconSpec } from '@weasel-js/icons';
 import type { ShortcutInput } from '@weasel-js/gestures';
 
 /** Discriminated leaf entry. One of these per row in the tree's right pane. */
@@ -149,7 +149,7 @@ export interface ActionEntry {
   icon?: import('react').ReactNode;
   /** One entry per `ActionItem` (a variant each, or the action alone), with
    *  its icon's name — what an `<ActionBar>` draws for this action. */
-  items?: readonly { key: string; label: string; icon?: IconRef }[];
+  items?: readonly { key: string; label: string; icon?: IconSpec }[];
   /** Snapshot of `Action.enabled()` at probe time. `undefined` when the
    *  action declares no predicate (always enabled). Stale-by-design: the
    *  inspector doesn't re-evaluate on selection changes — open a fresh

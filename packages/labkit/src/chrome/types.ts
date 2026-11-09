@@ -1,4 +1,4 @@
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
@@ -14,7 +14,7 @@ export type TrialRegion = 'titlebar' | 'toolbar' | 'palette' | 'sidebar' | 'view
  *  input. `TCtx` is the chrome context its `onActivate` is handed — a trial's,
  *  or the lab's for a lab-level region. */
 export interface CommandItem<TCtx = TrialChromeContext> {
-  icon: IconRef;
+  icon: IconSpec;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
@@ -39,7 +39,7 @@ export interface ToolbarItem<TCtx = TrialChromeContext> extends CommandItem<TCtx
 /** A tool on a rail: pressing it writes the tool slot under the
  *  contribution's id, and it reads as current while the slot names it. */
 export interface ToolItem {
-  icon: IconRef;
+  icon: IconSpec;
   label: string;
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
@@ -71,7 +71,7 @@ export interface SidebarSection extends AppearanceProps {
 
 /** A control acting on the view of the trial, not on the trial. */
 export interface ViewportControl<TCtx = TrialChromeContext> {
-  icon: IconRef;
+  icon: IconSpec;
   label: string;
   disabled?: boolean;
   /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */

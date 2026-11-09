@@ -3,7 +3,7 @@
 // property, so a schema of one kind is neither assignable to nor walkable as
 // the other.
 
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { PrefCondition } from './condition';
 import type { PrefLeaf } from './schema';
 
@@ -65,7 +65,7 @@ export interface PrefGroup {
   /** Glyph naming the group, as a leaf's `icon` names the leaf. A bar drawn
    *  with `lead: 'icon'` starts its line with it; the button a bar opens the
    *  group from and its submenu row in a menu carry it beside its name. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** The name of the motif its frame is drawn in, where a form draws it framed, defined by an app's `<DefaultMotif
    *  named>` (`@weasel-js/ui`). Unset, or a name nothing defines, the form's own look. */
   motif?: string;
@@ -107,7 +107,7 @@ export interface PrefSection {
   /** As a {@link PrefGroup}'s. */
   lead?: PrefBarLead;
   /** As a {@link PrefGroup}'s. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** As a {@link PrefGroup}'s. */
   access?: string;
   /** As a {@link PrefGroup}'s. */

@@ -5,7 +5,7 @@
  * menu or toolbar renders. `Action` is both.
  */
 import type { ModifierRoles } from './modifierRoles';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { ActionDeps, Invoker } from './invoker';
 import type { ActionSettings } from './actionSettings';
@@ -49,7 +49,7 @@ export type ActionUnavailable = ActionDisabledReason | (string & {});
 export interface ActionPresentation {
   label: string;
   /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** Grouping key for palette/menu surfaces. Free-form string; the kit
    *  ships defaults for `'align'` (six edges/centers), `'distribute'`
    *  (two axes), and recommends `'pathfinder'` for boolean ops. */
@@ -94,7 +94,7 @@ export interface ActionVariant {
   key: string;
   label: string;
   /** Falls back to the action's own `icon`. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** Tags this variant carries besides its action's, which it carries too. */
   tags?: readonly string[];
   /** Passed to `trigger`, and matched against each binding's

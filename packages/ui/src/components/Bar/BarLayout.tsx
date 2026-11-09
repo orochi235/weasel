@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import { isPrefLeaf, prefAliasName, type PrefAlias, type PrefBarLead, type PrefBarOverflow, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
 import type { TrackShape } from '@weasel-js/geom';
 import { useTrackShape, type RunAlign } from '../Along/alongContext';
@@ -54,7 +54,7 @@ export type BarNode =
   | ({ kind: 'leaf' } & BarLeafNode)
   | ({ kind: 'cell' } & BarCell)
   | { kind: 'run'; path: string; nodes: readonly BarNode[] }
-  | { kind: 'opens'; path: string; name: string; icon?: IconRef; body: () => ReactNode }
+  | { kind: 'opens'; path: string; name: string; icon?: IconSpec; body: () => ReactNode }
   | { kind: 'menu'; path: string; name: string; group: PrefGroup; sources: BarMenuSources };
 
 /** A cell a surface drew for one leaf, or for several it fused into one control. */
@@ -81,7 +81,7 @@ export interface BarLayoutProps {
    *  first cell. */
   lead?: PrefBarLead;
   /** The glyph naming the bar, which `lead: 'icon'` starts its line with. */
-  icon?: IconRef;
+  icon?: IconSpec;
   /** The bar's group is disabled, and its lead dims as a heading's name does. The cells say so for themselves. */
   disabled?: boolean;
   /** Draw the strip the bar sits on, for a bar set among other things with

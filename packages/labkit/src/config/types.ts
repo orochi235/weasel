@@ -1,4 +1,4 @@
-import type { IconRef } from '@weasel-js/icons';
+import type { IconSpec } from '@weasel-js/icons';
 import type {
   PrefActionContext,
   PrefAuto,
@@ -33,7 +33,7 @@ export interface ConfigOption<V extends string = string> {
   /** A qualified icon ref (`icon('ui:gradeSuccess')`) in the registry in scope. A segmented row draws it in
    *  place of `label`, which stays the accessible name and becomes the tooltip;
    *  a select draws it beside `label`. */
-  icon?: IconRef;
+  icon?: IconSpec;
 }
 
 /** Everything a leaf can carry beyond its kind and default. A flat union of
