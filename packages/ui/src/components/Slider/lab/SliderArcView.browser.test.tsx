@@ -5,7 +5,7 @@ import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { arcShape, type Point } from '@weasel-js/geom';
 import { arcInBox } from '@weasel-js/ui/components/Along';
-import { rowRun } from '../../Along/rowRun';
+import { rowRun } from '@weasel-js/ui/testing/geometry';
 import { arcOf, SLIDER_ARC_DEFAULTS, type SliderArcConfig } from './sliderArcConfig';
 import { SliderArcView } from './SliderArcView';
 
