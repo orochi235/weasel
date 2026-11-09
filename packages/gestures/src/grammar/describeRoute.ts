@@ -19,8 +19,8 @@ export const ROUTE_TERMS = {
  *  means without duplicating prose. */
 export const ROUTE_FIELD_DEFINITIONS = {
   phases: 'Which lifecycle stage(s) a channel must be in for this route to fire. `initial` = the channel is idle; `engaged` = the channel is mid-gesture. The channel is the binding\'s own tool (`&`), any tool (`*`), or a named tool id.',
-  gesture: 'The class of input event that triggers this route — click, drag, double-tap, keyDown/keyUp, wheel, pinch, contextMenu, multiTouch, multiTouchTap, drop, or paste.',
-  arg: 'Sub-class of the gesture. Direction for wheel (up / down / *) and pinch (in / out / *), key name for keyDown / keyUp, finger count for multiTouch / multiTouchTap, MIME glob for drop / paste. Other gestures have no arg slot.',
+  gesture: 'The class of input event that triggers this route: a click, a drag, a keystroke, a wheel turn, content dropped or pasted, and so on.',
+  arg: 'Sub-class of the gesture: the direction of a wheel or pinch, the key of a keystroke, the finger count of a multitouch, the MIME globs of a drop, carry or paste, whether a hover moves or leaves. Other gestures have no arg slot.',
   target: 'Which hit-test result the gesture must land on. `*` matches any target; `empty` matches the empty canvas; otherwise the value names a specific hit-target kind.',
   modifiers: 'Modifier keys the user must hold (`+key`) or may optionally hold (`?key`) for this route to match. Unlisted modifiers must not be held.',
 } as const;

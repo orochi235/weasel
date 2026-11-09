@@ -578,7 +578,7 @@ rest are ranked best-first:
 |---|---|
 | 1 | Bindings naming the view the pointer is in, ahead of every other |
 | 2 | Scope tier: hotkey-held tool, then the active tool, then ambient bindings |
-| 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop/paste |
+| 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop, carry or paste |
 | 4 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
 | 5 | Registration order |
 
