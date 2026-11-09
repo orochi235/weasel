@@ -3,7 +3,7 @@ export type { KeymapStack, KeymapUnbound, KeymapVerdict, OpenKeymap } from './ke
 export { keymapContribution, keymapLeaderBindingId, keymapLeaderId } from './keymapContribution';
 export type { KeymapDef } from './keymapContribution';
 export { describeKeymap, keymapShortcuts } from './describeKeymap';
-export type { KeymapDescription, KeymapRow } from './describeKeymap';
+export type { DescribeKeymapOptions, KeymapDescription, KeymapRow } from './describeKeymap';
 export { captureKey } from './captureKey';
 export type { CaptureKeyOptions } from './captureKey';
 export { captureGesture } from './captureGesture';
