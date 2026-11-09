@@ -54,7 +54,11 @@ For the session picking this up: what is in flight and what has no other home. O
 - Round eleven (2026-11-09, the same lanes; about 50 fixes, plus Mike's rulings that the image cache closes what it
   drops and plot's sizes clamp) is on `main` at 5e7c5fabd through `batch/2026-11-09b` (`test:fleet` full at
   194990bac: 34268 passed, 1 failed, fixed; reruns on the tip green; postbuild green after the consumer smoke check
-  learned bare imports). Not pushed. Open questions are under "Audit round eleven" in `docs/unruled.md`.
+  learned bare imports). Pushed. Open questions are under "Audit round eleven" in `docs/unruled.md`.
+- Round twelve (2026-11-09, gestures: schema, dispatch, resolution, consumers; plus Mike's rulings on a throwing
+  deferred start and zero-width strokes, and six TODO pickups) is on `main` at 535d4001f through `batch/2026-11-09c`
+  (`test:fleet` full: 36477 passed after three test fixes; postbuild green). Not pushed. Six key choices wait on
+  Mike under "Audit round twelve" in `docs/unruled.md`.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
@@ -89,6 +93,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-09, round twelve: Cmd/Shift-click selection and the range box; a curved slider's values along its arc;
+  an empty prefs fragment's drop slot; the API panel's typedoc links and overloads; Path Edit's Enter yielding to
+  slice, pen and spiro.
 - 2026-11-09, audit round eleven: right-to-left arrows in `PageTabs`, `TokenField`, `ItemList`, the icon picker,
   `PrefsRail` and `Tree`, and a right-to-left `Tree` drag; a long letter-spaced underline on a retained surface;
   Undo order between marks and settings in a lab; packet and radar editors clamping a typed size.

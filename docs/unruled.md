@@ -877,3 +877,38 @@ Calls the round made:
   `strokeToPath` and `strokeHasInk` draw nothing. Not ruled which one changes.
 - A drag spanning containers with equal grid spacing but different corners snaps to a world-aligned lattice, which
   is neither container's grid. Left as is; `gridSnapSource`'s doc may intend it.
+
+## Audit round twelve (2026-11-09): gestures
+
+Rulings and TODO pickups that landed in the same batch are here too.
+
+- A drag whose `start`, deferred by `dragThresholdPx`, throws ends as a cancel, and `start` is not retried (Mike,
+  2026-11-09). An ongoing action on a key, click or wheel commits the handle a second firing replaces; the latest
+  stays in flight until the next firing or a cancel-all. A `start` that tears the dispatcher down has its handle
+  canceled.
+- A stroke with base width 0 draws, hits and edits as nothing, its heads and per-vertex widths included (Mike,
+  2026-11-09).
+- Cmd-click (Ctrl off macOS) toggles, Shift-click ranges, `select.deep` is Cmd+Alt-click. A range takes what a
+  plain click there could select: whole groups at the root, nothing outside an entered group, rotated nodes by their
+  drawn center, parallax layers in their own coordinates. `extend: 'shift'` keeps the old Shift-toggle with no
+  range. The `selectRange` dep carries the rule to other surfaces (diagram's edge labels).
+- Inserting a text box or sticky and typing is one undo entry; a text node inserted with text (a paste) is not
+  joined. An empty box left with Escape folds its removal into the insert's entry, which then stays on the stack
+  doing nothing.
+- forge's API panel merges typedoc's JSON (`dist/typedoc.json`) over its own reader's rows, and reads a component
+  edited since the JSON was written with its own reader alone.
+- Keys match a Latin chord by physical key only while Ctrl, Alt or Cmd is held, so single-letter tool keys don't
+  fire on a Cyrillic layout and AltGr+E (€) doesn't fire `e`. A shifted character needs `shift` in its binding.
+  Only a second finger abandons a held long-press; a touch or mouse beside a held pen does not (palm rejection).
+- A held key ends in the view that took its keydown. A carry cancels on window blur. A press on a keyboard-off
+  dispatcher leaves the keys where they are but still moves the chrome scope.
+- Mode keys (entry and leave) sit at the ambient tier, so an active tool's own key comes first. The conflict check
+  reports a hotkey-tier action shadowing a tool binding; keymap leaders and tool keys are hotkey-tier on purpose and
+  will warn when a tool binds the same key.
+- The hand pans on a drag with any modifier held. The pencil draws over shapes. kernel3d's camera actions pass input
+  on when they have no camera.
+- `describeKeymap` names pointer modifiers as the platform prints them (Cmd-click, Ctrl-click).
+- Open, not ruled: File › New's Mod+N, Free Transform's Meta+T and Meta+Escape, the eyedropper's default `alt`
+  hotkey shadowing other tools' Alt-clicks, MenuBar's Alt+F/E/V/H off a Mac, spiro and pen unable to place a point
+  with snapping suspended (Ctrl), and `TrialTransport keys` taking Space, the arrows and `r` page-wide. The
+  reserved-key tests list the browser collisions as known.
