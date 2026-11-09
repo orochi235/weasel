@@ -21,10 +21,9 @@ export const TOOLS = {
       <line x1="11" y1="7" x2="3" y2="15" stroke-linecap="round"/>
       <line x1="3" y1="15" x2="5" y2="17" stroke-linecap="round"/>
     </g>`,
-  // An open hand, after AppKit's current openHand cursor (not the older art in HIServices' cursors folder). The
-  // finger walls sit on pixel centers at a one-pixel stroke, so the fingers stay apart at 16px.
+  // An open hand, after AppKit's current openHand cursor (not the older art in HIServices' cursors folder).
   hand: `
-    <path d="M 6.875 11.27 L 6.875 4.75 A 1.25 1.25 0 0 1 9.375 4.75 L 9.375 9 L 9.375 3.55 A 1.25 1.25 0 0 1 11.875 3.55 L 11.875 9.4 L 11.875 4.65 A 1.25 1.25 0 0 1 14.375 4.65 L 14.375 9.2 L 14.375 6.35 A 1.25 1.25 0 0 1 16.875 6.35 L 16.875 13.5 C 16.875 15.8 14.4 17.3 11.25 17.3 C 9 17.3 8.1 16 7.34 15.25 L 6.34 14.25 L 3.37 11.28 A 1.25 1.25 0 0 1 5.13 9.52 Z" stroke-width="1.25" stroke-linejoin="round"/>`,
+    <path d="M 9.884 18.977 C 10.163 18.66 7.876 18.698 6.742 16.894 C 5.89 15.54 5.98 15.072 5.013 13.398 L 2.544 10.209 C 2.056 9.721 2.287 8.625 2.776 8.136 C 3.264 7.648 4.055 7.648 4.544 8.136 L 7.178 10.86 L 5.842 4.576 C 5.712 3.898 6.157 3.243 6.835 3.114 C 7.494 2.988 8.134 3.404 8.287 4.057 L 9.363 9.039 L 8.939 2.748 C 8.909 2.058 9.443 1.475 10.133 1.445 C 10.797 1.415 11.368 1.911 11.432 2.573 L 11.875 8.858 L 12.241 3.67 C 12.289 2.981 12.887 2.462 13.575 2.511 C 14.264 2.559 14.783 3.156 14.735 3.845 L 14.387 9.539 L 15.567 4.567 C 15.721 3.894 16.392 3.474 17.065 3.628 C 17.723 3.779 18.142 4.425 18.012 5.087 L 16.848 10.565 C 16.557 11.934 16.898 13.565 16.75 15.365 C 16.55 17.165 16.007 17.653 15.407 18.753" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>`,
   image: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <rect x="3" y="4" width="14" height="12" rx="1"/>
