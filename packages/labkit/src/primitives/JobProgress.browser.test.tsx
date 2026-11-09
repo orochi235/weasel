@@ -51,3 +51,14 @@ test('the indeterminate sweep never stalls or backs up while it is on the track'
     expect(frames[i].left - frames[i - 1].left, `step ${i}`).toBeGreaterThan(0.005);
   }
 });
+
+test('the count holds its width as it climbs, so the controls after it stay put', () => {
+  const at = (done: number) => ({ ...running, done, total: 120 });
+  const { container, rerender } = render(<JobProgress job={at(9)} />);
+  const cancel = () => container.querySelector('.lk-job__cancel')?.getBoundingClientRect().left;
+  const first = cancel();
+  for (const done of [10, 99, 100, 120]) {
+    rerender(<JobProgress job={at(done)} />);
+    expect(cancel(), `at ${done}`).toBeCloseTo(first ?? Number.NaN, 1);
+  }
+});

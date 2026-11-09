@@ -38,8 +38,16 @@ export function JobProgress({ job, className }: JobProgressProps) {
       </div>
 
       <span className="lk-job__count">
-        {done}
-        {determinate ? ` / ${total}` : ''}
+        <span>
+          {done}
+          {determinate ? ` / ${total}` : ''}
+        </span>
+        {/* The widest count this job reaches, unseen, holds the cell's width as the count climbs. */}
+        {determinate ? (
+          <span className="lk-job__count-sizer" aria-hidden="true">
+            {`${total} / ${total}`}
+          </span>
+        ) : null}
       </span>
 
       {failures.length > 0 && (
