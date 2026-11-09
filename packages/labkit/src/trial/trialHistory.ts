@@ -20,6 +20,13 @@ export interface TrialHistorySource {
   canRedo(): boolean;
   undo(): unknown;
   redo(): unknown;
+  /** When the step `undo` would take back was recorded, in `Date.now()`
+   *  milliseconds; `undefined` with none. With this and `redoStamp`, the
+   *  trial orders the instrument's steps against its marks by time; without,
+   *  its Undo takes back marks first. */
+  undoStamp?(): number | undefined;
+  /** When the step `redo` would make again was first recorded. */
+  redoStamp?(): number | undefined;
   /** Called whenever `canUndo` or `canRedo` may have changed. */
   subscribe(listener: () => void): () => void;
   /** Take an entry the trial records itself — a settings change — onto this

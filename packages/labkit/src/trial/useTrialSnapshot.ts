@@ -5,6 +5,7 @@ import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
+import { editStamp } from '../undo/editStamp';
 import { stateOp } from '../undo/stateOp';
 import {
   readTrialEdit,
@@ -82,7 +83,7 @@ export function useTrialSnapshot({
       }
       let history = current.history;
       if (!history) {
-        history = createHistory(null, { historyLimit: maxDepth });
+        history = createHistory(null, { historyLimit: maxDepth, now: editStamp });
         setTrialHistory(trialId, history);
       }
       history.recordEntry([recorded], event);

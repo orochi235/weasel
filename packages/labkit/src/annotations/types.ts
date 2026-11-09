@@ -268,6 +268,11 @@ export interface AnnotationsApi {
   /** Take back the most recent mark change, wherever it was made. */
   undo(): boolean;
   redo(): boolean;
+  /** When the change `undo` would take back was made, as `editStamp` stamps it; `undefined` with none. For
+   *  ordering mark changes against a trial's other undo history. */
+  undoStamp(): number | undefined;
+  /** When the change `redo` would make again was first made; `undefined` with none. */
+  redoStamp(): number | undefined;
 
   /** A target's marks as its pane paints them, in scene order: geometry in
    *  the target's content box, each with the style its status and staleness
