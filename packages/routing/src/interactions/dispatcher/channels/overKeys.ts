@@ -10,6 +10,24 @@ export interface HeldKey {
   /** Cmd was down with it, so its keyup may never come: Cmd's stands in for it. */
   withCmd: boolean;
   on: Dispatcher;
+  /** The view `on` belongs to, which its release runs in wherever the pointer is now. */
+  view: string | null;
+}
+
+/** Dispatch `ev`, a release of `down`, in the view that took the keydown. */
+export function releaseIn(
+  core: Pick<DispatchCore, 'dispatch' | 'routedView' | 'setRoutedView'>,
+  down: HeldKey,
+  ev: InputEvent,
+  reach?: KeyReach,
+): 'handled' | 'unhandled' {
+  const routed = core.routedView();
+  core.setRoutedView(down.view);
+  try {
+    return core.dispatch(ev, down.on, reach);
+  } finally {
+    core.setRoutedView(routed);
+  }
 }
 
 // Only a held key is pressed again: a `key` binding is a single press, which an
@@ -22,8 +40,8 @@ const OVER_ONLY: KeyReach = { held: false, over: true };
  * what they hold and drops it from `held`.
  */
 export function followPointer(
-  core: Pick<DispatchCore, 'dispatch' | 'dispatcherNow' | 'routeAt'>,
-  down: ReadonlyMap<string, Omit<HeldKey, 'on'>>,
+  core: Pick<DispatchCore, 'dispatch' | 'dispatcherNow' | 'routeAt' | 'routedView' | 'setRoutedView'>,
+  down: ReadonlyMap<string, Omit<HeldKey, 'on' | 'view'>>,
   held: Map<string, HeldKey>,
 ): {
   /** The pointer came over the canvas: press the keys already held for its `over` bindings. */
@@ -41,17 +59,18 @@ export function followPointer(
         kind: 'key-held', key, ...codeField, phase: 'down',
         altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
       };
-      if (core.dispatch(ev, on, OVER_ONLY) === 'handled') held.set(physical, { key, ...codeField, withCmd, on });
+      if (core.dispatch(ev, on, OVER_ONLY) === 'handled') held.set(physical, { key, ...codeField, withCmd, on, view: core.routedView() });
     }
   };
 
   const leave = (): void => {
-    for (const [physical, { key, code, on }] of [...held]) {
+    for (const [physical, down] of [...held]) {
+      const { key, code } = down;
       const ev: InputEvent = {
         kind: 'key-held', key, ...(code !== undefined ? { code } : {}), phase: 'up',
         altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
       };
-      if (core.dispatch(ev, on, OVER_ONLY) === 'handled') held.delete(physical);
+      if (releaseIn(core, down, ev, OVER_ONLY) === 'handled') held.delete(physical);
     }
   };
 
