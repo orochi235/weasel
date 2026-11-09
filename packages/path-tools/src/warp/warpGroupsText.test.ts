@@ -68,6 +68,21 @@ describe('a warp over a selected group', () => {
     expect(b?.id).toBe(a?.id);
     expect(scene.history.undoDepth()).toBe(1);
   });
+
+  it('leaves a locked or hidden path inside it as it is', () => {
+    const { scene, deps } = groupScene();
+    scene.add({
+      id: asNodeId('c'), kind: 'mark', layer: 'default', parent: asNodeId('g'),
+      pose: { x: 100, y: 0, width: 100, height: 100 }, data: { path: square(100) },
+    } as never);
+    scene.setLocked(asNodeId('a'), true);
+    scene.setHidden(asNodeId('c'), true);
+    expect(selectedWarpLeaves(deps).paths.map((n) => n.id)).toEqual(['b']);
+    dragFresh(deps, { x: 300, y: 100 }, { x: 330, y: 140 });
+    expect(heldPathWarpOf(scene.get(asNodeId('a'))!.data)).toBeNull();
+    expect(heldPathWarpOf(scene.get(asNodeId('c'))!.data)).toBeNull();
+    expect(heldPathWarpOf(scene.get(asNodeId('b'))!.data)?.warp.kind).toBe('distort');
+  });
 });
 
 describe('a warp over selected text', () => {
