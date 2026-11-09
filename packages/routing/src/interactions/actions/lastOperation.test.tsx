@@ -200,6 +200,31 @@ describe('the last operation', () => {
     expect(doc.width).toBe(16);
   });
 
+  it('leaves the operation in place, and lets go of it, when its action can no longer run', () => {
+    const { doc, history, registry, store } = setup();
+    act(() => { registry.trigger('widen', { by: 3 }); });
+    act(() => { registry.unregister('widen'); });
+    act(() => { expect(store.adjust({ by: 5 })).toBe(false); });
+    expect(doc.width).toBe(13);
+    expect(doc.selected).toEqual(['result']);
+    expect(history.undoDepth()).toBe(1);
+    expect(history.redoDepth()).toBe(0);
+    expect(store.get()).toBeNull();
+  });
+
+  it('leaves the operation in place when its action now refuses to run', () => {
+    const { doc, history, registry, store } = setup();
+    let open = true;
+    act(() => { registry.register({ ...widen(doc, history), enabled: () => (open ? true : 'not now') }); });
+    act(() => { registry.trigger('widen', { by: 3 }); });
+    open = false;
+    act(() => { expect(store.adjust({ by: 5 })).toBe(false); });
+    expect(doc.width).toBe(13);
+    expect(history.undoDepth()).toBe(1);
+    expect(history.redoDepth()).toBe(0);
+    expect(store.get()).toBeNull();
+  });
+
   it('clears on dismiss and tells its listeners', () => {
     const { registry, store } = setup();
     const heard = vi.fn();

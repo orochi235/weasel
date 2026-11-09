@@ -120,9 +120,11 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       paramsOf: (id, given) => tunedParams(this.tuningsOf(id), given),
       rerun: (id, params) => {
         const a = this.resolve(id);
-        if (a?.invoker?.timing !== 'immediate') return;
+        if (a?.invoker?.timing !== 'immediate') return false;
         const deps = depsFor(a, this.deps());
-        if (evaluateEnabled(a, deps, pointOf(params), params).enabled) a.invoker.run(deps, params);
+        if (!evaluateEnabled(a, deps, pointOf(params), params).enabled) return false;
+        a.invoker.run(deps, params);
+        return true;
       },
       keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };
