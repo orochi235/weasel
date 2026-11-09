@@ -440,6 +440,13 @@ describe('domRuns round-trip — decoration and tracking', () => {
     expect(domToRuns(parent)).toEqual(runs);
   });
 
+  it('writes a fontScale\'s percentage without float noise, and reads it back exactly', () => {
+    const runs: StyledRun[] = [{ text: 'a', fontScale: 0.07 }, { text: 'b', fontScale: 0.29 }, { text: 'c', fontScale: 1.13 }];
+    runsToDom(runs, parent);
+    expect((parent.firstElementChild as HTMLElement).style.fontSize).toBe('7%');
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
   it('round-trips a screen-pixel fontSize and letterSpacing, drawn at the overlay\'s zoom', () => {
     const runs: StyledRun[] = [
       { text: 'a', fontSize: { px: 12 } },

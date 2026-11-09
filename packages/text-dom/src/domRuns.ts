@@ -19,7 +19,7 @@ import {
 import { cssFontFamily } from '@weasel-js/font';
 import { BLOCK_TAGS } from './domOffsets';
 import {
-  cssFontVariant, EMPTY_STYLE, FILL_ATTR, FONT_SIZE_PX_ATTR, LETTER_SPACING_PX_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
+  cssFontVariant, EMPTY_STYLE, FILL_ATTR, fontScalePercent, FONT_SIZE_PX_ATTR, LETTER_SPACING_PX_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
   styleStateFromElement, toRun, TRANSFORMS, type StyleState,
 } from './runStyle';
 
@@ -190,7 +190,7 @@ export function runsToDom(
     if (run.italic) span.style.fontStyle = 'italic';
     // An absolute size wins over a relative one, as it does in `resolveRuns`.
     if (run.fontSize != null) setLength(span, 'fontSize', FONT_SIZE_PX_ATTR, run.fontSize);
-    else if (run.fontScale != null) span.style.fontSize = `${run.fontScale * 100}%`;
+    else if (run.fontScale != null) span.style.fontSize = fontScalePercent(run.fontScale);
     if (run.fontFamily != null) {
       span.style.fontFamily = cssFontFamily(run.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
       span.setAttribute('data-font-family', run.fontFamily);
