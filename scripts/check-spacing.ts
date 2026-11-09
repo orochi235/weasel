@@ -9,7 +9,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { blocks, lineAt, stripComments, walk } from './lib/cssBlocks.ts';
+import { blocks, lineAt, stripComments, varSpans, walk } from './lib/cssBlocks.ts';
 
 /** px → rung. The ladder's own values, read from the generated tokens. */
 export function ladder(css: string): Map<number, string> {
@@ -31,25 +31,6 @@ export interface Offender {
   readonly line: number;
   readonly text: string;
   readonly rung: string;
-}
-
-/** Index ranges covered by a `var()` fallback. */
-function varSpans(value: string): [number, number][] {
-  const spans: [number, number][] = [];
-  for (const m of value.matchAll(/var\(/g)) {
-    let depth = 0;
-    for (let i = m.index + 3; i < value.length; i += 1) {
-      if (value[i] === '(') depth += 1;
-      else if (value[i] === ')') {
-        depth -= 1;
-        if (depth === 0) {
-          spans.push([m.index, i]);
-          break;
-        }
-      }
-    }
-  }
-  return spans;
 }
 
 export function offenders(files: readonly { path: string; source: string }[], rungs: Map<number, string>): Offender[] {
