@@ -455,8 +455,8 @@ key; the dispatcher lays them over contribution bindings. `captureGesture` reads
 the next click, double click, drag, right click or keystroke for a binding editor,
 telling a click from a drag at the dispatcher's drag threshold, and `captureKey`
 is its keystroke-only form. `keySpecRoute` writes a captured key back as the
-route string to store, or `null` for a key the grammar cannot spell (`?`, `)`,
-`*`), whose spec is stored as it is.
+route string to store, or `null` for a key the grammar cannot spell (`*`, or `)`
+with an optional modifier), whose spec is stored as it is.
 
 ### Input scope and yoke
 

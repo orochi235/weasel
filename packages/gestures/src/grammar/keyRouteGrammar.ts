@@ -1,7 +1,7 @@
 /**
  * Mini-grammar for the `arg` slot of `keyDown` / `keyUp` routes.
  *
- *   keyRoute    = key ('?' optionalMod)*
+ *   keyRoute    = key ('?' optionalMod)*               -- a leading '?' is the '?' key
  *   optionalMod = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta'
  *
  * `?shift` means "shift may or may not be held; either fires this route."
@@ -26,8 +26,12 @@ export interface ParsedKeyRoute {
 /** Parse the `arg` slot of a `keyDown` / `keyUp` route. Throws on an empty
  *  key, an unrecognized optional modifier, or a repeated one. */
 export function parseKeyRoute(input: string): ParsedKeyRoute {
-  const [key, ...mods] = input.split('?');
+  // A leading '?' is the question-mark key; the modifiers follow it.
+  const key = input.startsWith('?') ? '?' : input.split('?')[0]!;
+  const rest = input.slice(key.length);
   if (!key) throw new Error(`invalid key route (empty key): ${input}`);
+  if (rest !== '' && !rest.startsWith('?')) throw new Error(`invalid key route (expected "?" after the key): ${input}`);
+  const mods = rest === '' ? [] : rest.slice(1).split('?');
   const seen = new Set<string>();
   for (const m of mods) {
     if (!OPTIONAL_SET.has(m)) throw new Error(`unknown optional modifier "${m}" in ${input}`);

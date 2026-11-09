@@ -93,6 +93,10 @@ describe('routeToSpec', () => {
     expect(() => spec('[*:*] keyDown(z?shift) ?shift')).toThrow(/shift/);
   });
 
+  it('rejects an empty MIME glob in a list', () => {
+    expect(() => spec('[*:*] drop(image/*|)')).toThrow(/MIME/);
+  });
+
   it('rejects routes no GestureSpec can express', () => {
     expect(() => spec('[*:*] keyUp(a)')).toThrow(/keyUp/);
     expect(() => spec('[*:*] keyDown')).toThrow(/key/);

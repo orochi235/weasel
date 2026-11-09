@@ -64,9 +64,9 @@ export function bindingSpec(input: BindingOverrideInput): GestureSpec | null {
 const MOD_ORDER: readonly (keyof ModSpec)[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** A key spec as its route string — what `bindingSpec` reads back to an
- *  equal spec — or `null` for a key the route grammar cannot spell (`?`,
- *  `)`, `*`). A spec is plain JSON, so store that one as it is. A key list is
- *  written as its first key. */
+ *  equal spec — or `null` for a key the route grammar cannot spell (`*`, or
+ *  `)` with an optional modifier). A spec is plain JSON, so store that one as
+ *  it is. A key list is written as its first key. */
 export function keySpecRoute(spec: KeySpec | KeyHeldSpec): string | null {
   const k = Array.isArray(spec.key) ? spec.key[0]! : spec.key;
   const optional = MOD_ORDER.filter((m) => spec.mods?.[m] === 'optional');

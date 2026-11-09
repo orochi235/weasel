@@ -177,6 +177,28 @@ describe('parseRoute v3', () => {
     }
   });
 
+  it('rejects an empty phase atom rather than dropping it', () => {
+    expect(() => parseRoute('[initial,] click')).toThrow(/empty phase atom/i);
+    expect(() => parseRoute('[,engaged] click')).toThrow(/empty phase atom/i);
+    expect(() => parseRoute('[initial,,engaged] click')).toThrow(/empty phase atom/i);
+  });
+
+  it('rejects an empty arg slot, which reads as no slot to some gestures and no key to others', () => {
+    expect(() => parseRoute('[initial] keyDown()')).toThrow(/empty arg/i);
+    expect(() => parseRoute('[*:*] drop()')).toThrow(/empty arg/i);
+  });
+
+  it('rejects a target that starts with a reserved sigil', () => {
+    expect(() => parseRoute('[*:*] click => *x')).toThrow(/reserved/i);
+    expect(parseRoute('[*:*] click => *').target).toBe('*');
+  });
+
+  it('closes the arg slot at a paren that ends the arg, so ")" is a key', () => {
+    expect(parseRoute('[*:*] keyDown()) +shift').arg).toBe(')');
+    expect(parseRoute('[*:*] keyDown(()').arg).toBe('(');
+    expect(parseRoute('[*:*] wheel(up) => kind:a').arg).toBe('up');
+  });
+
   it('rejects unbalanced argSlot parens', () => {
     expect(() => parseRoute('[initial] keyDown(ArrowDown')).toThrow(/unbalanced|paren/i);
   });

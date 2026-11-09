@@ -14,6 +14,13 @@ describe('parseKeyRoute', () => {
     expect(parseKeyRoute('ArrowDown?shift?alt')).toEqual({ key: 'ArrowDown', optionalMods: ['shift', 'alt'] });
   });
 
+  it('reads a leading "?" as the question-mark key', () => {
+    expect(parseKeyRoute('?')).toEqual({ key: '?', optionalMods: [] });
+    expect(parseKeyRoute('??alt')).toEqual({ key: '?', optionalMods: ['alt'] });
+    expect(formatKeyRoute({ key: '?', optionalMods: ['alt'] })).toBe('??alt');
+    expect(() => parseKeyRoute('?shift')).toThrow();
+  });
+
   it('rejects an unknown optional modifier', () => {
     expect(() => parseKeyRoute('ArrowDown?cape')).toThrow(/unknown optional modifier/i);
   });
