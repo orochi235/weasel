@@ -1,4 +1,4 @@
-import { asNodeId, type UseSceneTextEditReturn, useLatest, useSceneTextEdit } from '@weasel-js/core';
+import { asNodeId, textEditJoin, type UseSceneTextEditReturn, useLatest, useSceneTextEdit } from '@weasel-js/core';
 import { isCharacterChrome } from '@weasel-js/ui/components/CharacterOptions';
 import { useEffect, useRef } from 'react';
 import type { DrawScene } from './drawDocument';
@@ -8,14 +8,15 @@ import { enterModeOn } from './modality/enterModeOn';
 const TEXT_EDIT = 'text-edit';
 
 /** An edit that ends with no text leaves a node that paints nothing and still picks, so it is
- *  removed, as a history entry of its own. */
+ *  removed. The removal joins the edit's run, so for a box just drawn it folds into the insert's entry
+ *  and undo brings no empty node back. */
 function discardIfEmpty(scene: DrawScene, id: string): void {
   const nid = asNodeId(id);
   const node = scene.get(nid);
   if (!node || node.kind !== 'mark') return;
   const { text, runs } = node.data;
   if (text !== '' || (Array.isArray(runs) && runs.length > 0)) return;
-  scene.batch('Discard empty text', () => { scene.remove(nid); });
+  scene.batch('Discard empty text', () => { scene.remove(nid); }, textEditJoin(id));
 }
 
 const inModeOn = (machine: ModeMachine, id: string): boolean =>

@@ -34,6 +34,8 @@ import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { cycleFill, solid, strokeOf } from '../../util/paint';
 import { stickyData, type StickyStyle } from '../../tools/builtin/sticky/stickyNode';
 import { minSizeOf } from 'core/scene/minSize';
+import { shapeKindInfo } from 'core/shapeKinds';
+import { textEditJoin } from 'domains/text/sceneTextDrafts';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -255,7 +257,14 @@ export function useInsertDepSource(
         const built = build(bounds, extras, ends);
         if (built === null) return null;
         const label = `Insert ${extras.kind}`;
-        ad.applyOps([...built.ops, ...commitSelectionOps(select, built.id, label)], label);
+        const apply = () => ad.applyOps([...built.ops, ...commitSelectionOps(select, built.id, label)], label);
+        // An empty text node is made to be typed into: it opens the run its first edit's commit joins, so one
+        // undo takes the node and its text together. One arriving with text, as a paste does, stays its own entry.
+        // An adapter whose `applyOps` keeps its own history records nothing in the batch.
+        if (shapeKindInfo(extras.kind)?.text && !(extras as { text?: string }).text) {
+          sc.batch(label, apply, textEditJoin(String(built.id)));
+        }
+        else apply();
         return built.id;
       },
     };

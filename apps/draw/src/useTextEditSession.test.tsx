@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { asNodeId, createScene } from '@weasel-js/core';
+import { asNodeId, createScene, textEditJoin } from '@weasel-js/core';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { createModeMachine } from './modality/machine';
@@ -78,6 +78,41 @@ describe('useTextEditSession keeps the text-edit mode in step with the edit', ()
     const { scene, edit } = session({ t: '' });
     act(() => edit().startEdit('t'));
     act(() => edit().cancelEdit());
+    expect(scene.get(asNodeId('t'))).toBeUndefined();
+  });
+});
+
+/** A real scene history under the machine, and a text box inserted as the insert dep makes one. */
+function inserted(journalSoftModes: boolean) {
+  const scene = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+  scene.add({ kind: 'mark', layer: 'default', id: asNodeId('old'), pose: { x: 0, y: 0, width: 100, height: 40 }, data: { text: 'kept' } });
+  const machine = createModeMachine({ modes: DEFAULT_MODES, history: scene.history, journalSoftModes: () => journalSoftModes });
+  scene.setActiveJournalAccessor(() => machine.getActiveJournal());
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const { result } = renderHook(() => useTextEditSession(scene, host, machine));
+  const entries = scene.historyEntries().length;
+  scene.batch('Insert text', () => {
+    scene.add({ kind: 'mark', layer: 'default', id: asNodeId('t'), pose: { x: 0, y: 50, width: 100, height: 40 }, data: { text: '' } });
+  }, textEditJoin('t'));
+  return { scene, entries, edit: () => result.current };
+}
+
+describe.each([true, false])('a text box drawn and left empty (soft modes journaled: %s)', (journaled) => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('leaves nothing for undo to bring back', () => {
+    const { scene, entries, edit } = inserted(journaled);
+    act(() => edit().startEdit('t', { caret: 0 }));
+    act(() => edit().cancelEdit());
+    expect(scene.get(asNodeId('t'))).toBeUndefined();
+    expect(scene.historyEntries().length).toBeLessThanOrEqual(entries + 1);
+    act(() => { scene.undo(); });
+    expect(scene.get(asNodeId('t'))).toBeUndefined();
+    expect(scene.get(asNodeId('old'))).toBeDefined();
+    act(() => { scene.redo(); });
     expect(scene.get(asNodeId('t'))).toBeUndefined();
   });
 });
