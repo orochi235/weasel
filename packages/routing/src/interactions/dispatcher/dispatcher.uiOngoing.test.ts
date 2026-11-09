@@ -199,3 +199,30 @@ describe('Dispatcher.beginUiOngoing', () => {
     expect(sub).toHaveBeenCalledTimes(3);
   });
 });
+
+describe('a UI handle ending', () => {
+  it('is out of flight before its onEnd runs, as a gesture is', () => {
+    let seen: number | null = null;
+    let d!: ReturnType<typeof createDispatcher>;
+    const action = makeOngoingAction('slide', { onEnd: () => { seen = d.inFlight().size; } });
+    d = createDispatcher({ getAction: (id) => (id === 'slide' ? action : undefined) });
+    d.beginUiOngoing('slide', {})!.end('commit');
+    expect(seen).toBe(0);
+    seen = null;
+    d.beginUiOngoing('slide', {});
+    d.beginUiOngoing('slide', {});
+    expect(seen).toBe(0);
+  });
+
+  it('runs onEnd once when its onEnd begins the same action again', () => {
+    const onEnd = vi.fn();
+    let d!: ReturnType<typeof createDispatcher>;
+    const action = makeOngoingAction('slide', {
+      onEnd: () => { onEnd(); if (onEnd.mock.calls.length === 1) d.beginUiOngoing('slide', {}); },
+    });
+    d = createDispatcher({ getAction: (id) => (id === 'slide' ? action : undefined) });
+    d.beginUiOngoing('slide', {})!.end('commit');
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(d.inFlight().size).toBe(1);
+  });
+});

@@ -58,7 +58,8 @@ export type ResolvedCursor =
  */
 export function resolveCursorTier(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
-  const { glyph, mark, size, worldRadius, angle = 0, fallback } = spec;
+  const { glyph, mark, size, worldRadius, fallback } = spec;
+  const angle = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
   const marked = mark === undefined ? {} : { mark };
   if (worldRadius !== undefined) {
     return { kind: 'painted', glyph, ...marked, angle, worldRadius };

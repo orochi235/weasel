@@ -22,6 +22,7 @@ export interface BakeOptions {
  * angles in the same step must be one cache entry, not two.
  */
 export function quantizeCursorAngle(angle: number): number {
+  if (!Number.isFinite(angle)) return 0;
   const i = Math.round((angle / (Math.PI * 2)) * CURSOR_ANGLE_STEPS);
   return ((i % CURSOR_ANGLE_STEPS) + CURSOR_ANGLE_STEPS) % CURSOR_ANGLE_STEPS;
 }

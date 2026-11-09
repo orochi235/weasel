@@ -29,6 +29,8 @@ export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
   const key = Array.isArray(spec.key) ? spec.key[0] : spec.key;
   if (typeof key !== 'string' || key.length === 0) return undefined;
   const mods = 'mods' in spec ? spec.mods : undefined;
+  // The matcher ignores `ctrl` and `meta` beside `mod`.
+  if (mods?.mod === undefined && (mods?.ctrl === true || mods?.meta === true)) return undefined;
   return {
     key,
     mod: mods?.mod === true,

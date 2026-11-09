@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bakeCursor } from './bake';
+import { bakeCursor, quantizeCursorAngle } from './bake';
 import type { CursorGlyph } from './types';
 
 const PENCIL: CursorGlyph = {
@@ -22,6 +22,12 @@ describe('bakeCursor', () => {
   it('rounds a fractional hotspot rather than emitting a decimal', () => {
     // 5/24*30 = 6.25 -> 6;  19/24*30 = 23.75 -> 24.
     expect(bakeCursor(PENCIL, { size: 30 })).toContain('") 6 24,');
+  });
+
+  it('draws a non-finite angle unrotated, where it wrote NaN into the hotspot', () => {
+    expect(quantizeCursorAngle(Number.NaN)).toBe(0);
+    expect(quantizeCursorAngle(Infinity)).toBe(0);
+    expect(bakeCursor(PENCIL, { size: 24, angle: Number.NaN })).toBe(bakeCursor(PENCIL, { size: 24 }));
   });
 
   it('always ends in a keyword fallback', () => {

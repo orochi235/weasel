@@ -21,8 +21,9 @@ const MODIFIERS: Record<string, keyof ModSpec> = {
 const KEY_NAMES: Record<string, string> = { space: ' ', esc: 'Escape' };
 
 function parse(shortcut: string): { key: string; mods: ModSpec } {
-  // A trailing '+' is the plus key: 'Mod++'.
-  const parts = shortcut.endsWith('++') ? [...shortcut.slice(0, -2).split('+'), '+'] : shortcut.split('+');
+  // A trailing '+' is the plus key: 'Mod++', or '+' alone.
+  const plus = shortcut === '+' || shortcut.endsWith('++');
+  const parts = plus ? [...(shortcut === '+' ? [] : shortcut.slice(0, -2).split('+')), '+'] : shortcut.split('+');
   const raw = parts.pop();
   if (!raw) throw new Error(`shortcut "${shortcut}" names no key`);
   const mods: ModSpec = {};
