@@ -40,11 +40,14 @@ export interface EditAnchorsDep {
    *  IS the polygon, `'data'` when it lives on `node.data.path` with a
    *  rect pose, or `null` when the node has no editable polygon. */
   getStorageKind(id: string): 'pose' | 'data' | null;
-  /** Returns the node's raw `pose` and `data` so storage-aware actions
-   *  can capture origin state at gesture-start and synthesize a matching
-   *  `previewPose` / `previewData` during `onMove`. Returns null when the
-   *  node is gone. */
+  /** Returns the node's `pose`, in world, and its `data`, so storage-aware
+   *  actions can capture origin state at gesture-start and synthesize a
+   *  matching `previewPose` / `previewData` during `onMove`. Returns null when
+   *  the node is gone. */
   getNodeShape(id: string): { pose: unknown; data: unknown } | null;
+  /** The pose node `id` stores for the world pose `worldPose`: different
+   *  where a container's frame holds it. Absent, the world pose is stored. */
+  storedPose?(id: string, worldPose: unknown): unknown;
   /** Commit `worldPath` as the new value for `id`, as one history entry
    *  labeled `label`: a setPose when the pose IS the polygon, a batched
    *  setPose+update when it lives on data.path. Given `origins` (from

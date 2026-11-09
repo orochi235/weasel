@@ -29,6 +29,7 @@ import { useSceneSlotLayers } from './useSceneSlotLayers';
 import { useSelectionOverlayLayer } from './useSelectionOverlayLayer';
 import { drawnBoundsScene } from '../derivedPath';
 import { useEnteredGroupFrameLayer } from 'domains/selection/enteredGroupFrame';
+import { nodeFrameOf } from 'domains/paths/nodeFrame';
 import type { EnteredGroupApi } from '../deps/enteredGroup';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from 'domains/snap/outcomeStore';
 import { createSnapReadoutLayer } from 'domains/snap/readoutLayer';
@@ -139,6 +140,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => scene.get(id as NodeId),
     planeOfNode: args.planeOfNode,
+    frameOf: (id) => nodeFrameOf(scene as never, scene.get(id as NodeId)),
   }, overlayConfig);
 
   const drawnScene = useMemo(() => drawnBoundsScene(scene), [scene]);

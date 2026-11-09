@@ -37,8 +37,8 @@ export function readWarpSettings(deps: ActionDeps): ActionSettingsState {
   const fields = new SettingsFields();
   let distorts = 0;
   let envelopes = 0;
-  for (const { node } of selectedWarpPaths(deps)) {
-    const resolved = resolvePathWarp(node);
+  for (const { shown } of selectedWarpPaths(deps)) {
+    const resolved = resolvePathWarp(shown);
     if (!resolved) continue;
     const { warp, tolerance } = resolved.held;
     if (warp.kind === 'distort') {

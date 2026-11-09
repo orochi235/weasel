@@ -57,7 +57,7 @@ export const trimPathAction: Action & { requires: string[] } = {
       const gone = result.path.commands.length === 0;
       const ops = gone
         ? [deleteNode(deps.scene as never, target.node, TRIM_LABEL)]
-        : reshapeOps(target.node, result.path, TRIM_LABEL);
+        : reshapeOps(target, result.path, TRIM_LABEL);
       commitOps(deps, ops, TRIM_LABEL, gone ? { select: (deps.selection?.get() ?? []).filter((id) => id !== target.id) } : {});
     },
   } satisfies ImmediateInvoker,

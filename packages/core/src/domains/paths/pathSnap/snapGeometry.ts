@@ -14,18 +14,18 @@ export interface NodeSnapGeometry {
 }
 
 /**
- * The geometry `node` snaps to. A painter that `snapsToBox` — text, an image
- * — gives its pose box through the pose's frame, and the box's center. Any
- * other node gives its `nodeOutline`. Null for a node with neither.
+ * The geometry `node` snaps to, posed at `pose` (its world pose). A painter
+ * that `snapsToBox` — text, an image — gives its pose box through the pose's
+ * frame, and the box's center. Any other node gives its `nodeOutline`. Null
+ * for a node with neither.
  */
-export function nodeSnapGeometry(node: Node<unknown, string, unknown>): NodeSnapGeometry | null {
-  const pose = node.pose;
+export function nodeSnapGeometry(node: Node<unknown, string, unknown>, pose: unknown = node.pose): NodeSnapGeometry | null {
   if (findNodeShape(node)?.snapsToBox && isRectPose(pose)) {
     const path = poseOutline(pose, pose);
     const c = boxCenter(path);
     return { path, points: c ? [{ kind: 'center', ...c }] : [] };
   }
-  const path = nodeOutline(node);
+  const path = nodeOutline(node, pose);
   return path ? { path, points: [] } : null;
 }
 

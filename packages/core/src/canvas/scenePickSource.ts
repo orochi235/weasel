@@ -10,7 +10,8 @@ import { isDocument } from 'core/scene/documentOf';
 import { planeMap, type ParallaxOpts, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import { resolveDerivedPath, scenePaintedPoseOf } from './derivedPath';
+import { derivedFramePose, resolveDerivedPath, scenePaintedPoseOf } from './derivedPath';
+import { effectivePose } from 'core/scene/effectivePose';
 import { indexedCandidates } from './pickIndex/scenePickIndex';
 import type { PickBroad, PickCandidate, PickSource, ViewPickGates } from './pickWalk';
 import { sceneParentsOf, sceneShownPathOf } from './scenePickReads';
@@ -75,14 +76,21 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
   const ownPoseOf = composesFrames(scene.composition) ? null
     : unoverridden || isDocument(scene) ? (node: PickCandidate<TPose>) => node.pose
     : (node: PickCandidate<TPose>) => scene.overrides.read(node.id as NodeId)?.pose ?? node.pose;
-  const poseOf = getPose
+  const paintedOf = getPose
     ? (node: PickCandidate<TPose>) => getPose(node.id)
     : ownPoseOf === null
-      ? (node: PickCandidate<TPose>) => paintedPoseOf(node as never)
+      ? (node: PickCandidate<TPose>) => paintedPoseOf(node as never) as TPose
       : (node: PickCandidate<TPose>) =>
         ((node as { derivePose?: unknown }).derivePose === undefined ? ownPoseOf(node) : paintedPoseOf(node as never));
+  // A derived path is drawn through its own frame, not the turns its containers add.
+  const poseOf = getPose || ownPoseOf !== null ? paintedOf : (node: PickCandidate<TPose>): TPose => {
+    const painted = paintedOf(node);
+    if ((node as { dependsOn?: unknown }).dependsOn === undefined) return painted;
+    if (!unoverridden && scene.overrides.read(node.id as NodeId)?.path !== undefined) return painted;
+    return derivedFramePose(painted, effectivePose(scene, node as never));
+  };
 
-  // Through `poseOf`, not the document pose: a derived node has to be tested
+  // Through `paintedOf`, not the document pose: a derived node has to be tested
   // where the renderer draws its dependencies, which is what an override says.
   const childrenOf = (id: NodeId): readonly NodeId[] => scene.childrenOf(id);
   const depOf = (id: NodeId): DerivedDep<TPose> | undefined => {
@@ -91,7 +99,7 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     const dep = asShown(stored);
     return {
       node: dep as Node<unknown, string, TPose>,
-      pose: poseOf(dep as never),
+      pose: paintedOf(dep as never),
       get path(): Path | null {
         return resolveDerivedPath(dep as never, depOf, childrenOf);
       },

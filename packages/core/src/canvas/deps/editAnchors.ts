@@ -21,6 +21,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { PointOrigin, PolygonPath } from '@weasel-js/geom';
 import { anchorDataPatch } from 'domains/paths/anchorData';
 import { classifyPathStorage, pathEditPathOf, resolveEditablePathOf } from 'domains/paths/editablePath';
+import { nodeFrameOf, shownNodeOf } from 'domains/paths/nodeFrame';
 import { representationOf } from 'domains/paths/pathRepresentation';
 import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import {
@@ -140,10 +141,10 @@ function pathAccess(
 ): Pick<
   EditAnchorsDep,
   | 'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit'
-  | 'store'
+  | 'store' | 'storedPose'
 > {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
-    const node = sc.get(id as NodeId) as EditableNode | undefined;
+    const node = shownNodeOf(sc, id) as EditableNode | undefined;
     if (!node) return [];
     const done = finishEdit(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
     if (!done) return [];
@@ -151,17 +152,16 @@ function pathAccess(
     const before = origins && !representationOf(extensions, node.data) ? resolveEditablePathOf(node) : null;
     const patch = { ...(before && origins ? anchorDataPatch(node.data, before, done.path, origins) : {}), ...done.data };
     return [
-      ...reshapeOps(id, node, done.path, label, Object.keys(patch).length > 0 ? patch : null, extensions),
+      ...reshapeOps(sc, id, done.path, label, Object.keys(patch).length > 0 ? patch : null, extensions),
       ...otherOps(sc, done.others, label, extensions),
     ];
   };
   return {
     getEditablePath(id: string): PolygonPath | null {
-      const node = sc.get(id as NodeId);
-      return pathEditPathOf(node as { pose: unknown; data: unknown }, extensions);
+      return pathEditPathOf(shownNodeOf(sc, id), extensions);
     },
     getOutlinePath(id: string): PolygonPath | null {
-      return resolveEditablePathOf(sc.get(id as NodeId) as { pose: unknown; data: unknown });
+      return resolveEditablePathOf(shownNodeOf(sc, id));
     },
     getStorageKind(id: string): 'pose' | 'data' | null {
       const node = sc.get(id as NodeId);
@@ -169,9 +169,13 @@ function pathAccess(
       return storage?.kind ?? null;
     },
     getNodeShape(id: string): { pose: unknown; data: unknown } | null {
-      const node = sc.get(id as NodeId);
+      const node = shownNodeOf(sc, id);
       if (!node) return null;
       return { pose: node.pose, data: node.data };
+    },
+    storedPose(id: string, worldPose: unknown): unknown {
+      const frame = nodeFrameOf(sc, sc.get(id as NodeId));
+      return frame ? frame.local(worldPose) : worldPose;
     },
     applyEdit(id, worldPath, label, origins, select) {
       const ops = editOps(id, worldPath, label, origins);
@@ -179,7 +183,7 @@ function pathAccess(
     },
     editOps,
     finishEdit(id: string, worldPath: unknown, origins?: readonly (PointOrigin | null)[]) {
-      const node = sc.get(id as NodeId) as EditableNode | undefined;
+      const node = shownNodeOf(sc, id) as EditableNode | undefined;
       if (!node) return { path: worldPath, others: [] };
       const done = finishEdit(extensions, node, worldPath as PolygonPath, origins, finishCtx(sc, id, extensions));
       if (!done) return null;
@@ -187,8 +191,7 @@ function pathAccess(
       return { path: done.path, others };
     },
     store(id, worldPath, label, data) {
-      const node = sc.get(id as NodeId) as EditableNode | undefined;
-      const ops = node ? reshapeOps(id, node, worldPath, label, data ?? null, extensions) : [];
+      const ops = reshapeOps(sc, id, worldPath as PolygonPath, label, data ?? null, extensions);
       if (ops.length > 0) ad.applyOps(ops, label);
     },
   };

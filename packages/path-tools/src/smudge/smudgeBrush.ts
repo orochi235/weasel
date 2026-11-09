@@ -8,12 +8,11 @@ import {
 import { pref } from '@weasel-js/prefs';
 import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
-import { commitOps, drawnAABBOf, reshapeOps, withPath, type PathNode, type SceneNode, pathOperationTags } from '@weasel-js/core';
+import { commitOps, drawnAABBOf, reshapeOps, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { smudgeTargets } from './smudgeTargets';
 import { outlineSession } from '../shared/outlineSession';
 
-type AnyNode = SceneNode<unknown, string, unknown>;
 type Point = { x: number; y: number };
 
 /** The brush's radius in screen px when no param gives one. */
@@ -100,7 +99,7 @@ function strokeFrom(deps: ActionDeps, start: Point) {
     commit(): void {
       const done = [...shapes.values()];
       shapes.clear();
-      text.commit(() => commitOps(deps, done.flatMap(({ node, path }) => reshapeOps(node.node, path, LABEL)), LABEL), LABEL);
+      text.commit(() => commitOps(deps, done.flatMap(({ node, path }) => reshapeOps(node, path, LABEL)), LABEL), LABEL);
     },
   };
 }
@@ -144,7 +143,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
       const dabs: Dab[] = [];
       const shapeOf = (id: string) => {
         const entry = live.shapes.get(id);
-        return entry ? withPath(entry.node.node as AnyNode, entry.path) : null;
+        return entry ? withPath(entry.node, entry.path) : null;
       };
       return {
         kind: 'smudge-brush',

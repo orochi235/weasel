@@ -14,8 +14,9 @@ describe('widthPointNear', () => {
     const widths: number[] = new Array(countPathAnchors(path)).fill(NaN);
     widths[widths.length - 1] = 20;
     const stroke: Stroke = { paint: { color: '#000' }, width: 4, vertexWidths: widths };
+    const node = {} as SceneNode<unknown, string, unknown>;
     const target: WidthTarget = {
-      id: 'p' as WidthTarget['id'], node: {} as SceneNode<unknown, string, unknown>, path, stroke, fallback: 4,
+      id: 'p' as WidthTarget['id'], node, shown: node, local: (pose) => pose, path, stroke, fallback: 4,
     };
     expect(widthPointNear(target, -104, -100, 2)).toBe(widths.length - 1);
   });

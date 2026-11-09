@@ -111,7 +111,7 @@ function shapesWith(targets: readonly WarpTarget[], index: number, world: Point,
     if (!back) continue;
     const [lx, ly] = applyToPoint(back, world.x, world.y);
     const moved = { ...target.held, warp: moveWarpControl(target.held.warp, index, { x: lx, y: ly }) };
-    const shape = storeWarp(target.node.node, tuned ? withWarpSettings(moved, tuned) : moved, target.toWorld);
+    const shape = storeWarp(target.node, tuned ? withWarpSettings(moved, tuned) : moved, target.toWorld);
     if (shape) out.set(target.node.id, { target, shape });
   }
   return out;
@@ -218,7 +218,7 @@ export function createAddPinAction(): Action {
           const to = { x: lx, y: ly };
           const from = unwarpPoint(pathWarpMap(warp, target.held.source), to);
           const held = { ...target.held, warp: { ...warp, pins: [...warp.pins, { from, to }] } };
-          const shape = storeWarp(target.node.node, held, target.toWorld);
+          const shape = storeWarp(target.node, held, target.toWorld);
           if (shape) next.set(target.node.id, { target, shape });
         }
         if (next.size === 0) session.cancel();
@@ -249,7 +249,7 @@ export function createRemovePinAction(): Action {
           const { warp } = target.held;
           if (target.held.id !== scratch.warpId || warp.kind !== 'puppet') continue;
           const held = { ...target.held, warp: { ...warp, pins: warp.pins.filter((_, i) => i !== scratch.index) } };
-          const shape = storeWarp(target.node.node, held, target.toWorld);
+          const shape = storeWarp(target.node, held, target.toWorld);
           if (shape) next.set(target.node.id, { target, shape });
         }
         commitTargets(deps, next, 'Remove Pin');
@@ -324,11 +324,11 @@ export const configureWarpAction: Action = {
       const settings = (params ?? {}) as WarpSettings & { kind?: WarpKind };
       const next = new Map<string, { target: WarpTarget; shape: { pose: unknown; data: unknown } }>();
       for (const node of selectedWarpPaths(deps)) {
-        const resolved = resolvePathWarp(node.node);
+        const resolved = resolvePathWarp(node.shown);
         if (!resolved || (settings.kind && resolved.held.warp.kind !== settings.kind)) continue;
         const held = withWarpSettings(resolved.held, settings);
         if (held === resolved.held) continue;
-        const shape = storeWarp(node.node, held, resolved.toWorld);
+        const shape = storeWarp(node, held, resolved.toWorld);
         if (shape) next.set(node.id, { target: { node, ...resolved, fresh: false }, shape });
       }
       commitTargets(deps, next, 'Warp Settings');

@@ -144,7 +144,8 @@ function previewedShape(
 
 /**
  * What path edit shows of node `id` right now ({@link pathEditPathOf}): following any
- * in-flight gesture in `previews`, and in the world of the camera whose
+ * in-flight gesture in `previews`, through `toWorld`, the container frame
+ * the node's stored pose sits in, and in the world of the camera whose
  * `plane` this is — a path on a parallax plane is stored in the plane's.
  */
 export function liveEditablePath(
@@ -153,9 +154,12 @@ export function liveEditablePath(
   previews: readonly GesturePreviewSource[],
   plane: PlaneMap | null,
   extensions: readonly PathEditExtension[] = [],
+  toWorld: { world(stored: unknown): unknown } | null = null,
 ): PolygonPath | null {
   if (!node) return null;
-  return pathFromPlane(pathEditPathOf(previewedShape(id, node, previews), extensions), plane);
+  const shape = previewedShape(id, node, previews);
+  const shown = toWorld ? { ...shape, pose: toWorld.world(shape.pose) } : shape;
+  return pathFromPlane(pathEditPathOf(shown, extensions), plane);
 }
 
 /** The marker of each anchor {@link liveEditablePath} shows for node `id`, as

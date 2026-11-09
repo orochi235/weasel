@@ -8,6 +8,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { liveAnchorMarkers, liveEditablePath, type EditableShape } from './editablePath';
+import { shownIn, type NodeFrame } from './nodeFrame';
 import { createPathEditingOverlayLayer } from './pathEditingOverlayLayer';
 import type { PathEditingOverlaySlotConfig } from 'canvas/layerSlots';
 import { createPathEditState, type PathEditState } from './pathEditState';
@@ -52,6 +53,9 @@ export interface PathEditOverlayInputs {
   nodeOf: (id: string) => EditableShape | null | undefined;
   /** How `view`'s world maps into the parallax plane `id` is drawn through. */
   planeOfNode: (id: string, view: View) => PlaneMap | null;
+  /** The frame the container above `id` gives its stored pose; absent or
+   *  null, the stored pose is world. */
+  frameOf?: (id: string) => NodeFrame | null;
 }
 
 /** The anchor overlay for `state`, drawn as `config` says. Rebuilt when
@@ -67,12 +71,18 @@ export function usePathEditOverlayLayer(
     ...createPathEditingOverlayLayer({
       getEditingId: () => state.getEditingId() || null,
       getPose: (id, previews, view) =>
-        liveEditablePath(id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view), state.getExtensions()),
+        liveEditablePath(
+          id, live.current.nodeOf(id), previews, live.current.planeOfNode(id, view), state.getExtensions(),
+          live.current.frameOf?.(id) ?? null,
+        ),
       getAnchorMarkers: (id, previews) => liveAnchorMarkers(id, live.current.nodeOf(id), previews, state.getExtensions()),
       getSelectedAnchors: state.getSelectedAnchors,
       getSelectedMark: state.getSelectedMark,
       getExtensions: state.getExtensions,
-      getNode: (id) => live.current.nodeOf(id) ?? null,
+      getNode: (id) => {
+        const node = live.current.nodeOf(id);
+        return node ? shownIn(live.current.frameOf?.(id) ?? null, node) : null;
+      },
       // Drawn by an action that ran in the edited path's plane.
       getMarquee: (view) => {
         const rect = state.getMarquee();

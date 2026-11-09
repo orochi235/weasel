@@ -65,7 +65,7 @@ export const resamplePathAction: Action & { requires: string[] } = {
     timing: 'immediate',
     run: (deps, params) => {
       const options = resampleOptions(params ?? {});
-      const ops = selectedPathNodes(deps).flatMap(({ node, path }) => reshapeOps(node, resamplePath(path, options), LABEL));
+      const ops = selectedPathNodes(deps).flatMap((target) => reshapeOps(target, resamplePath(target.path, options), LABEL));
       commitOps(deps, ops, LABEL);
     },
   } satisfies ImmediateInvoker,

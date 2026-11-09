@@ -25,7 +25,7 @@ import {
 import {
   heldWarpResult, rememberWarpResult, resolvePathWarp, warpFrameFor, type HeldPathWarp,
 } from './pathWarp';
-import { type PathNode, resolveEditablePathOf, type SceneNode, withPath } from '@weasel-js/core';
+import { type PathNode, resolveEditablePathOf, type SceneNode, withShownPath } from '@weasel-js/core';
 import { selectedWarpPaths, textsBox, unionBox, type WarpLeaves } from './warpSelection';
 
 type AnyNode = SceneNode<unknown, string, unknown>;
@@ -154,7 +154,7 @@ export function splitByWarp(
   const bare: PathNode[] = [];
   const groups = new Map<string, WarpTarget[]>();
   for (const node of nodes) {
-    const resolved = resolvePathWarp(node.node);
+    const resolved = resolvePathWarp(node.shown);
     if (!resolved || resolved.held.warp.kind !== kind) {
       bare.push(node);
       continue;
@@ -199,7 +199,7 @@ export function warpTargets(
   const warp = freshWarp(kind, box, settings);
   const tolerance = settings.tolerance !== undefined && settings.tolerance > 0 ? settings.tolerance : DEFAULT_WARP_TOLERANCE;
   for (const node of bare) {
-    const frame = warpFrameFor(node.node, identity());
+    const frame = warpFrameFor(node.shown, identity());
     if (!frame) continue;
     // A fresh warp's frame is world space, so its source is the path as drawn.
     out.push({ node, held: { id, source: node.path, warp, tolerance, frame }, toWorld: identity(), fresh: true });
@@ -226,17 +226,20 @@ export function withPathWarp<S extends { pose: unknown; data: unknown }>(
     tolerance: opts.tolerance ?? DEFAULT_WARP_TOLERANCE,
     frame: identity(),
   };
-  return storeWarp(shape as unknown as AnyNode, held, identity());
+  return storeWarp({ shown: shape as unknown as AnyNode, local: (pose) => pose }, held, identity());
 }
 
-/** `node` holding `held`, its geometry what `held` makes under `toWorld`. */
-export function storeWarp(node: AnyNode, held: HeldPathWarp, toWorld: Affine): { pose: unknown; data: unknown } | null {
+/** `target`'s node holding `held`, its geometry what `held` makes under
+ *  `toWorld`, stored in the node's own frame. */
+export function storeWarp(
+  target: Pick<PathNode, 'shown' | 'local'>, held: HeldPathWarp, toWorld: Affine,
+): { pose: unknown; data: unknown } | null {
   const made = heldWarpResult(held);
-  const next = withPath(node, transformPath(made, toWorld) as PolygonPath);
+  const next = withShownPath(target, transformPath(made, toWorld) as PolygonPath);
   if (!next) return null;
   const frame = warpFrameFor(next, toWorld);
   if (!frame) return null;
   const kept: HeldPathWarp = { ...held, frame };
   rememberWarpResult(kept, made);
-  return { pose: next.pose, data: { ...(next.data as object), warp: kept } };
+  return { pose: target.local(next.pose), data: { ...(next.data as object), warp: kept } };
 }
