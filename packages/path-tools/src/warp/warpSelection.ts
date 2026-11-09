@@ -7,7 +7,7 @@ import type { ActionDeps } from '@weasel-js/routing';
 import { unionRects } from '@weasel-js/geom';
 import type { WarpBox } from '@weasel-js/geom/warp';
 import {
-  type CreateOutlinesAdapter, drawnAABBOf, type NodeId, type PathNode, pathNodesOf, type Scene,
+  type CreateOutlinesAdapter, drawnAABBOf, type NodeId, type PathNode, pathNodesOf, type Scene, shownNodeOf,
 } from '@weasel-js/core';
 import { leavesOf } from '../shared/scenePaths';
 
@@ -58,7 +58,7 @@ export function unionBox(a: WarpBox | null, b: WarpBox | null): WarpBox | null {
 export function textsBox(scene: WarpScene, texts: readonly NodeId[]): WarpBox | null {
   let box: WarpBox | null = null;
   for (const id of texts) {
-    const node = scene.get(id);
+    const node = shownNodeOf(scene, id);
     if (node) box = unionBox(box, drawnAABBOf(scene, id, node.pose));
   }
   return box;

@@ -84,6 +84,14 @@ describe('a warp over selected text', () => {
     expect(freshWarpBox(scene, selectedWarpLeaves(deps), 'distort')).toMatchObject({ x: 0, y: 0, width: 200, height: 120 });
   });
 
+  it('shows its controls around text in a group where the group draws it', () => {
+    const t = outlineScene();
+    t.scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { x: 500, y: 500, width: 200, height: 120 }, data: {} });
+    t.add('t', TEXT(), { parent: asNodeId('g') });
+    t.scene.setSelection([asNodeId('t')]);
+    expect(freshWarpBox(t.scene, selectedWarpLeaves(t.deps), 'distort')).toMatchObject({ x: 500, y: 500, width: 200, height: 120 });
+  });
+
   it('converts the text to outlines and warps them, as one undo step', () => {
     const { scene, deps } = textScene();
     dragFresh(deps, { x: 200, y: 120 }, { x: 240, y: 160 });

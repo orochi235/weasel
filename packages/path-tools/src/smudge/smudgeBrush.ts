@@ -8,7 +8,7 @@ import {
 import { pref } from '@weasel-js/prefs';
 import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
 import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
-import { commitOps, drawnAABBOf, reshapeOps, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
+import { commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { smudgeTargets } from './smudgeTargets';
 import { outlineSession } from '../shared/outlineSession';
@@ -85,7 +85,7 @@ function strokeFrom(deps: ActionDeps, start: Point) {
     dab({ to, scale }: Dab, params: SmudgeBrushParams | undefined): void {
       const radius = worldRadius(scale, radiusOf(params));
       nodes.push(...text.convert((id, scene) =>
-        discMeetsBox(at, radius, drawnAABBOf(scene, id, scene.get(id)!.pose, scale ? { scale } : {}))));
+        discMeetsBox(at, radius, drawnAABBOf(scene, id, shownNodeOf(scene, id)!.pose, scale ? { scale } : {}))));
       for (const node of nodes) {
         const from = shapes.get(node.id)?.path ?? node.path;
         const next = smudgePath(from, {

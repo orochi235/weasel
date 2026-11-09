@@ -114,3 +114,15 @@ describe('smudgeBrushAction over text', () => {
     expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
   });
 });
+
+describe('smudgeBrushAction over text in a group', () => {
+  it('reaches the text where the group draws it', () => {
+    const { scene, add, deps } = setup();
+    scene.add({ id: asNodeId('g'), kind: 'group', layer: 'default', pose: { x: 500, y: 500, width: 200, height: 120 }, data: {} });
+    add('t', TEXT(), { parent: asNodeId('g') });
+    stroke(deps, 30, 60, 20);
+    expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
+    stroke(deps, 530, 560, 520);
+    expect(scene.get(asNodeId('t'))).toBeUndefined();
+  });
+});
