@@ -54,11 +54,13 @@ export function resolveLength(
   onWarn: (m: string) => void,
 ): number {
   if (raw == null) return fallback;
+  const n = lengthOf(raw, el, name, axis, onWarn);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function lengthOf(raw: string, el: Element, name: string, axis: LengthAxis, onWarn: (m: string) => void): number {
   const m = LENGTH.exec(raw);
-  if (!m) {
-    const n = parseFloat(raw);
-    return Number.isFinite(n) ? n : fallback;
-  }
+  if (!m) return parseFloat(raw);
   const n = Number(m[1]);
   const unit = m[2].toLowerCase();
   if (unit === '') return n;

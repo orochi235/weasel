@@ -198,3 +198,26 @@ describe('a font-relative length', () => {
     expect(warnings).toEqual(['<circle r="5vw"> unit "vw" is not converted; read as 5']);
   });
 });
+
+describe('a length too large to hold', () => {
+  it('reads as unset, as an unreadable length does, rather than as an infinity', () => {
+    const { nodes } = parseSvg(`<svg ${NS}><rect width="1e400" height="5"/><rect width="2" height="1e400mm"/></svg>`);
+    for (const node of nodes as SvgPathNode[]) {
+      const path = node.path as { width: number; height: number };
+      expect(Number.isFinite(path.width) && Number.isFinite(path.height)).toBe(true);
+    }
+  });
+
+  it('drops a property length too large to hold, as one it cannot read', () => {
+    const { nodes } = parseSvg(
+      `<svg ${NS}><text letter-spacing="1e400" font-size="1e400">hi</text>`
+      + `<path d="M0 0L9 0" stroke="#000" stroke-width="1e400" stroke-dasharray="1e400 2"/></svg>`,
+    );
+    const text = nodes[0] as SvgTextNode;
+    expect(text.style?.letterSpacing).toBeUndefined();
+    expect(Number.isFinite(text.style?.fontSize ?? 16)).toBe(true);
+    const stroke = (nodes[1] as SvgPathNode).stroke!;
+    expect(stroke.width).toBe(1);
+    expect(stroke.dash).toBeUndefined();
+  });
+});
