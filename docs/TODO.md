@@ -299,6 +299,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P3) [agent] `writtenBy` can change a reorder op's undo by applying it to a stand-in.**
+  `core/ops/writtenBy.ts` applies a batch to a recorder to learn what it writes; move-to-index and
+  set-child-order (`reorder/index.ts`, `setChildOrder.ts`) capture their "before" order on first
+  apply only, so one reaching `writtenBy` after an earlier op in its batch reordered the same parent
+  would undo to the stand-in's order. Only transform batches reach `writtenBy` today (2026-11-09).
+  Closes when `writtenBy` stops consuming the ops' first apply (clone or a dry-run path).
+
 - **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
   `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
