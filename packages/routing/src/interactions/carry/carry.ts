@@ -89,7 +89,7 @@ function surfaceAt(doc: Document, x: number, y: number): CarrySurface | null {
 
 /**
  * Carry `payload` from the press `down` on `origin` until the pointer is
- * released or the press is canceled. While it moves, the surface under it
+ * released, the press is canceled or the window loses focus. While it moves, the surface under it
  * hears the carry come over, move, and leave; a release over one is a drop
  * there. The press is captured to `origin` as any drag is, so nothing the
  * pointer passes over sees it as a press of its own.
@@ -122,6 +122,9 @@ export function startCarry(
   };
 
   let last: CarryPointer = down;
+  // As a dispatcher's own drags do: the release after a lost focus may never come, or come somewhere unseen.
+  const win = doc.defaultView;
+  const onBlur = (): void => { session.cancel(); };
   const session = openPointerSession(origin, down, {
     onMove: (e) => {
       last = e;
@@ -129,6 +132,7 @@ export function startCarry(
       cb.onMove?.(e);
     },
     onEnd: (e) => {
+      win?.removeEventListener('blur', onBlur);
       step(e);
       const on = over;
       over = null;
@@ -136,10 +140,13 @@ export function startCarry(
       cb.onEnd?.({ taken, event: e });
     },
     onCancel: (reason) => {
+      win?.removeEventListener('blur', onBlur);
       leave(last);
       cb.onCancel?.(reason);
     },
   });
+
+  win?.addEventListener('blur', onBlur);
 
   return {
     pointerId,

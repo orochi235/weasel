@@ -128,6 +128,21 @@ describe('useGestureDispatcher — carry channel', () => {
     expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
   });
 
+  it('a window losing focus cancels the carry, rather than reading its next move as a drop', () => {
+    const onEnd = vi.fn();
+    const onCancel = vi.fn();
+    render(<Harness><Probe actions={[{ id: 'place', label: 'Place', defaultBinding: { kind: 'carry' }, invoker: { timing: 'ongoing', start: () => ({ onEnd }) } }]} /></Harness>);
+    carryFrom(source(), { onCancel });
+    move('pointermove', 150, 150);
+    act(() => { window.dispatchEvent(new Event('blur')); });
+    expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
+    expect(onCancel).toHaveBeenCalledWith('aborted');
+    act(() => {
+      document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, bubbles: true, buttons: 0, clientX: 160, clientY: 160 }));
+    });
+    expect(onEnd).toHaveBeenCalledOnce();
+  });
+
   it('with the carry channel off the canvas is no surface', () => {
     const run = vi.fn();
     render(<Harness><Probe channels={{ carry: false }} actions={[{ id: 'place', label: 'Place', defaultBinding: { kind: 'carry' }, invoker: { timing: 'immediate', run } }]} /></Harness>);
