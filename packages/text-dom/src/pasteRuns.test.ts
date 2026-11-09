@@ -53,6 +53,7 @@ describe('htmlToRuns', () => {
     expect(htmlToRuns('<div><div><blockquote>a</blockquote></div></div>b<h2>c</h2>')).toEqual([{ text: 'a\nb\nc' }]);
     expect(htmlToRuns('a<br class="Apple-interchange-newline">')).toEqual([{ text: 'a' }]);
     expect(htmlToRuns('<table><tr><td>a </td><td></td></tr><tr><td>c</td></tr></table>')).toEqual([{ text: 'a\nc' }]);
+    expect(htmlToRuns('<table><tr>\n  <td>\n    a\n  </td>\n  <td>\n    b\n  </td>\n</tr></table>')).toEqual([{ text: 'a\tb' }]);
   });
 
   it('keeps the rules and the scripts, and reads a heavy weight as bold', () => {
