@@ -137,3 +137,73 @@ describe('rewriteIconCalls on syntax a hand lexer misreads', () => {
     expect(warnings.join()).toMatch(/bad\.ts/);
   });
 });
+
+describe('rewriteIconCalls on a local that shadows the import', () => {
+  const refs = (src: string, id = 'sh.ts') => collectIconRefs(rewriteIconCalls(src, id, ns)!.code, id).sort();
+  const head = `import { icon } from './icons.gen';\n`;
+  const kept = (src: string, call: string) => expect(rewriteIconCalls(src, 'sh.ts', ns)!.code).toContain(call);
+
+  it('leaves a call through a parameter, and rewrites the import outside it', () => {
+    const src = `${head}function f(icon) { return icon('param'); }\nconst g = (icon) => icon('arrow');\nicon('outside');\n`;
+    expect(refs(src)).toEqual(['core:outside']);
+    kept(src, `icon('param')`);
+    kept(src, `icon('arrow')`);
+  });
+
+  it('leaves a call through a local const or function, hoisted or not', () => {
+    const src = [
+      head,
+      `function f() { const icon = (s) => s; return icon('const'); }`,
+      `function g() { return icon('hoisted'); function icon(s) { return s; } }`,
+      `function h() { if (x) { var icon = id; } return icon('var'); }`,
+      `icon('outside');`,
+    ].join('\n');
+    expect(refs(src)).toEqual(['core:outside']);
+  });
+
+  it('leaves a call in a nested function that closes over the shadowing name', () => {
+    const src = `${head}function f(icon) { return () => function () { return icon('nested'); }; }\nicon('outside');\n`;
+    expect(refs(src)).toEqual(['core:outside']);
+  });
+
+  it('leaves a call only inside the block that shadows the name', () => {
+    const src = [
+      head,
+      `{ const icon = id; icon('block'); }`,
+      `if (x) { let icon = id; icon('if'); } else { icon('else'); }`,
+      `for (const icon of list) icon('forOf');`,
+      `try { } catch (icon) { icon('catch'); }`,
+      `switch (x) { case 1: let icon = id; icon('case'); }`,
+      `icon('outside');`,
+    ].join('\n');
+    expect(refs(src)).toEqual(['core:else', 'core:outside']);
+  });
+
+  it('leaves a call through a destructured binding', () => {
+    const src = [
+      head,
+      `const a = ({ icon }) => icon('object');`,
+      `const b = ([icon]) => icon('array');`,
+      `const c = ({ k: [, { icon = id }] }) => icon('deep');`,
+      `const d = (...icon) => icon('rest');`,
+      `function e() { const { k: icon } = o; return icon('renamed'); }`,
+      `icon('outside');`,
+    ].join('\n');
+    expect(refs(src)).toEqual(['core:outside']);
+  });
+
+  it('rewrites a default parameter, which the body cannot shadow', () => {
+    const src = `${head}function f(a = icon('default')) { var icon; return a; }\n`;
+    expect(refs(src)).toEqual(['core:default']);
+  });
+
+  it('tracks an aliased import by its local name', () => {
+    const src = [
+      `import { icon as i } from './icons.gen';`,
+      `const f = (i) => i('shadowed');`,
+      `const g = (icon) => i('other');`,
+      `i('outside');`,
+    ].join('\n');
+    expect(refs(src)).toEqual(['core:other', 'core:outside']);
+  });
+});

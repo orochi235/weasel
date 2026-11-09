@@ -718,9 +718,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) [agent] `weaselIcons` rewrites a local `icon` that shadows the imported one.** Its rewrite does not track
-  scope, so a parameter or local function named `icon` is rewritten as the import. Nothing in the repo does this.
-  Closes when a shadowing `icon` is left alone, with a test (found in audit round nine, 2026-11-08).
 - **(P3) [agent] jsdom 31 fails nine weasel-ui tests on how it serializes CSS.** Tried and held at 30.1.3 in the
   2026-11-07 dependency sweep (fleet run of 1002ad7a6). The failures: `theme/src/react.test.tsx` (a rule's selector
   now reads `[data-wzl-mode="light"]`, the test looks for single quotes), three in

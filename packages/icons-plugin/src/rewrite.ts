@@ -1,7 +1,7 @@
 import MagicString, { type SourceMap } from 'magic-string';
 import { qualify } from '../../icons/src/names.ts';
 import { parseModule } from './parse.ts';
-import { walk } from './walk.ts';
+import { unshadowedCalls } from './scope.ts';
 
 const ICONS_GEN = /icons\.gen(?:\.[cm]?[jt]sx?)?$/;
 const NAME = /^[^'"`\s\\]+$/;
@@ -82,16 +82,14 @@ export function rewriteIconCalls(
   if (locals.size === 0) return null;
   const s = new MagicString(code);
   let dynamic = 0;
-  walk(parsed.program, {
-    CallExpression(node) {
-      if (node.callee.type !== 'Identifier' || !locals.has(node.callee.name)) return;
-      const name = literalArg(node.arguments as unknown as Node[]);
-      if (name === undefined || !NAME.test(name)) {
-        dynamic++;
-        return;
-      }
-      s.overwrite(node.start, node.end, `/* @icon */ '${qualify(locals.get(node.callee.name)!, name)}'`);
-    },
+  unshadowedCalls(parsed.program, new Set(locals.keys()), (node) => {
+    const callee = (node.callee as Node & { name: string }).name;
+    const name = literalArg(node.arguments as Node[]);
+    if (name === undefined || !NAME.test(name)) {
+      dynamic++;
+      return;
+    }
+    s.overwrite(node.start as number, node.end as number, `/* @icon */ '${qualify(locals.get(callee)!, name)}'`);
   });
   return { code: s.toString(), map: s.generateMap({ source: id, hires: true }), dynamic };
 }
