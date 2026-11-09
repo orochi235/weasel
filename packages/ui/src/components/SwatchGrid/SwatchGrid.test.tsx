@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { act, render, screen, fireEvent, within } from '@testing-library/react';
 import { createRecentColorsStore, RecentColorsProvider } from '../RecentColors';
 import { SwatchGrid, type SwatchGridOption } from './SwatchGrid';
 
@@ -59,6 +59,22 @@ describe('SwatchGrid', () => {
     mount({ value: '#00ff00ff' });
     const stops = screen.getAllByRole('button').filter((b) => b.tabIndex === 0);
     expect(stops.map((b) => b.getAttribute('aria-label'))).toEqual(['Green']);
+  });
+
+  it('moves the tab stop with focus, so Tab leaves the palette, and puts it back on the current swatch as focus leaves', () => {
+    render(
+      <>
+        <SwatchGrid options={OPTIONS} onChange={() => {}} columns={3} value="#00ffffff" aria-label="Colors" />
+        <button type="button">after</button>
+      </>,
+    );
+    const stops = () => screen.getAllByRole('button').filter((b) => b.tabIndex === 0).map((b) => b.getAttribute('aria-label') ?? b.textContent);
+    const cyan = screen.getByRole('button', { name: 'Cyan' });
+    act(() => cyan.focus());
+    fireEvent.keyDown(cyan, { key: 'ArrowLeft' });
+    expect(stops()).toEqual(['Yellow', 'after']);
+    act(() => screen.getByRole('button', { name: 'after' }).focus());
+    expect(stops()).toEqual(['Cyan', 'after']);
   });
 
   it('moves focus by one across and by a row up and down', () => {

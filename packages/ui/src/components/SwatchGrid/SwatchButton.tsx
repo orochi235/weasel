@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent, ReactElement } from 'react';
+import { useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactElement } from 'react';
 import { tileKey, type LastRow } from '@weasel-js/ui-logic';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
@@ -56,6 +56,24 @@ export function swatchKeyDown(i: number, options: readonly SwatchGridOption[], c
   };
 }
 
+/** Which of a palette's `count` swatches holds its one tab stop: the focused one while focus is inside, so Tab
+ *  leaves the palette from wherever the arrows took it, else `current`, else the first. Each swatch reports its focus
+ *  through `focused`, and the palette's root takes `onBlur`. */
+export function useSwatchStop(current: number, count: number): {
+  stop: number;
+  focused: (i: number) => void;
+  onBlur: (e: FocusEvent<HTMLElement>) => void;
+} {
+  const [inside, setInside] = useState<number | null>(null);
+  return {
+    stop: inside !== null && inside < count ? inside : current >= 0 ? current : 0,
+    focused: setInside,
+    onBlur: (e) => {
+      if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setInside(null);
+    },
+  };
+}
+
 /** Props of {@link SwatchButton}. */
 export interface SwatchButtonProps {
   option: SwatchGridOption;
@@ -67,6 +85,7 @@ export interface SwatchButtonProps {
   apply: SwatchApply;
   /** Keys on the swatch: a palette's roving focus. Enter and Space click it without one. */
   onKeyDown?: (e: KeyboardEvent<HTMLButtonElement>) => void;
+  onFocus?: () => void;
   className?: string;
   style?: CSSProperties;
   /** Data attributes a layout reads off the swatch. */
@@ -75,7 +94,7 @@ export interface SwatchButtonProps {
 
 /** One swatch: its color over the checker, its glyph centered over that in its ink, named by its label, applying on
  *  click and to the alternate target on shift-click or right-click. */
-export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, className, style, data }: SwatchButtonProps): ReactElement {
+export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, onFocus, className, style, data }: SwatchButtonProps): ReactElement {
   const name = nameOf(o);
   const paint = {
     ...style,
@@ -100,6 +119,7 @@ export function SwatchButton({ option: o, tabStop, current, apply, onKeyDown, cl
       }}
       onContextMenu={apply.onAltChange ? (e) => { e.preventDefault(); apply.onAltChange?.(o); } : undefined}
       onKeyDown={onKeyDown}
+      onFocus={onFocus}
     >
       {o.glyph != null && <span className={s.glyph} aria-hidden="true">{o.glyph}</span>}
     </button>

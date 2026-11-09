@@ -1,7 +1,7 @@
 import { useRef, type ReactElement, type ReactNode } from 'react';
 import type { RunAlign, TrackShape } from '@weasel-js/geom';
 import { useTrackShape } from '../Along/alongContext';
-import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, type SwatchChange } from './SwatchButton';
+import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchChange } from './SwatchButton';
 import { tiling } from '../../tiling';
 import { SwatchRings } from './SwatchRings';
 import s from './SwatchGrid.module.css';
@@ -85,7 +85,7 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
-  const tabStop = current >= 0 ? current : 0;
+  const tab = useSwatchStop(current, options.length);
   const swatches = () => swatchesIn(rootRef.current);
 
   return (
@@ -95,15 +95,17 @@ function SwatchGridLine(props: SwatchGridProps): ReactElement {
       role="group"
       aria-label={props['aria-label']}
       style={tiles.style}
+      onBlur={tab.onBlur}
     >
       {options.map((o, i) => (
         <SwatchButton
           key={swatchId(o) ?? `none-${i}`}
           option={o}
-          tabStop={i === tabStop}
+          tabStop={i === tab.stop}
           current={i === current}
           apply={apply}
           onKeyDown={swatchKeyDown(i, options, columns, apply, swatches, lastRow)}
+          onFocus={() => tab.focused(i)}
           data={tiles.item(i)}
         />
       ))}

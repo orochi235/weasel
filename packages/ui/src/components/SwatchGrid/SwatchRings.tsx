@@ -4,7 +4,7 @@ import { AlongContext } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useInlineDirection } from '../Along/useRowRun';
 import { RunBand, RunEnds, useRunRow, type RunItemPlace } from '../Along/useRunRow';
-import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, type SwatchApply, type SwatchChange } from './SwatchButton';
+import { SwatchButton, swatchesIn, swatchId, swatchKeyDown, useSwatchApply, useSwatchStop, type SwatchApply, type SwatchChange } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
 import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings, type SwatchRing } from './ringPlan';
 import s from './SwatchGrid.module.css';
@@ -106,7 +106,7 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
   const root = useRef<HTMLDivElement>(null);
   const { options, value, columns, lead, empty } = group;
   const current = value === undefined ? -1 : options.findIndex((o) => swatchId(o) === value);
-  const tabStop = current >= 0 ? current : 0;
+  const tab = useSwatchStop(current, options.length);
   const swatches = () => swatchesIn(root.current);
 
   const swatch = (i: number): RingEntry => ({
@@ -115,10 +115,11 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
       <SwatchButton
         key={swatchId(options[i]!) ?? `none-${i}`}
         option={options[i]!}
-        tabStop={i === tabStop}
+        tabStop={i === tab.stop}
         current={i === current}
         apply={apply}
         onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
+        onFocus={() => tab.focused(i)}
         className={place.className}
         style={place.style}
         data={{ 'data-ring-item': String(i), 'data-clipped': place.clipped }}
@@ -135,7 +136,7 @@ function RingGroup({ group, rings, align, apply }: { group: SwatchRingGroup; rin
   });
 
   return (
-    <div ref={root} className={group.className ? `${s.ringGroup} ${group.className}` : s.ringGroup} role="group" aria-label={group.label}>
+    <div ref={root} className={group.className ? `${s.ringGroup} ${group.className}` : s.ringGroup} role="group" aria-label={group.label} onBlur={tab.onBlur}>
       {rings.map((ring, k) => {
         const lo = k * columns;
         const hi = k === rings.length - 1 ? options.length : Math.min(options.length, lo + columns);
