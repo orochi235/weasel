@@ -90,8 +90,8 @@
     "longestFunction": 281
   },
   "packages/history/src/history.ts": {
-    "lines": 438,
-    "longestFunction": 399
+    "lines": 434,
+    "longestFunction": 395
   },
   "packages/hud/src/attach.ts": {
     "longestFunction": 148

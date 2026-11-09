@@ -63,6 +63,12 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     return true;
   }
 
+  /** A stack change the scene's subscribers hear about. */
+  const stackOnly = <A extends unknown[]>(change: (...args: A) => void) => (...args: A): void => {
+    change(...args);
+    notify();
+  };
+
   /** What undo and redo step: the open journal, else the engine. */
   const stack = (): Pick<History, 'canUndo' | 'canRedo' | 'undo' | 'redo'> => env.activeJournal() ?? engine;
 
@@ -126,27 +132,11 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     redo: () => { methods.redo(); },
     goto: (n) => { methods.jumpToHistoryIndex(n); },
     // Stack-only: nothing applies, but what `canUndo()` answers changes.
-    clear() {
-      engine.clear();
-      notify();
-    },
-    recordEntry(ops, label, opts) {
-      engine.recordEntry(ops, label, opts);
-      notify();
-    },
-    prune(t) {
-      engine.prune(t);
-      notify();
-    },
-    switchBranch(id) {
-      engine.switchBranch(id);
-      notify();
-    },
-    dropRedo() {
-      if (engine.redoDepth() === 0) return;
-      engine.dropRedo();
-      notify();
-    },
+    clear: stackOnly(() => engine.clear()),
+    recordEntry: stackOnly<Parameters<History['recordEntry']>>((ops, label, opts) => engine.recordEntry(ops, label, opts)),
+    prune: stackOnly<[number]>((t) => engine.prune(t)),
+    switchBranch: stackOnly<[number]>((id) => engine.switchBranch(id)),
+    dropRedo: stackOnly(() => engine.dropRedo()),
     restore: methods.restoreHistory,
     // Reads forward to the engine, `version` included: it counts history
     // operations, where the scene's counts every mutation.
