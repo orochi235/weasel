@@ -50,6 +50,13 @@ describe('createTiledLayer', () => {
     expect(draw).not.toHaveBeenCalled();
   });
 
+  it('draws no copies panned so far that copy indices stop counting', () => {
+    const { layer, draw } = spyLayer();
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
+    expect(l.draw(undefined, { x: -1e20, y: 0, scale: { x: 1, y: 1 } }, dims)).toEqual([]);
+    expect(draw).not.toHaveBeenCalled();
+  });
+
   it('shifts the view it hands each copy, so the source culls per copy', () => {
     const { layer, draw } = spyLayer();
     const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });

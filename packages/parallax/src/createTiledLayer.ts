@@ -92,8 +92,10 @@ export function createTiledLayer<TData>(
       const ky = tiledProject(shown.y, shown.y + shown.height, p.y, b.y);
 
       const out: DrawCommand[] = [];
-      // Written so a non-finite span, which a zero view scale gives, fails it too.
-      const tiling = (kx.to - kx.from + 1) * (ky.to - ky.from + 1) <= MAX_COPIES;
+      // Written so a non-finite span, which a zero view scale gives, fails it too. Past a safe
+      // integer `i++` never moves, so a view panned that far draws no copies either.
+      const tiling = (kx.to - kx.from + 1) * (ky.to - ky.from + 1) <= MAX_COPIES
+        && [kx.from, kx.to, ky.from, ky.to].every(Number.isSafeInteger);
 
       // Layer by layer, so a later source sits above an earlier one in every copy, and a
       // layer's effects run once over all of its copies.
