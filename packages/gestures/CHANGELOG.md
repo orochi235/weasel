@@ -1,5 +1,28 @@
 # @weasel-js/gestures
 
+## 1.18.2
+
+### Patch Changes
+
+- 19c6682: Fixes to shortcut chips, tuned actions, commands, gesture and UI-driven handles, the `key()` sugar and cursor angles.
+  
+  - `keySpecShortcut` and `actionShortcuts` give a key binding that requires `ctrl` or `meta` (without `mod`) no chip, as their docs say. Before, a Ctrl+Tab binding showed in menus and palettes as a bare `Tab`; an action bound that way now falls back to its next binding's chip, or shows none.
+  - An action tuned with `params` (`ActionsRegistry.tune`, or the last-operation panel's session params) now has its `enabled` and `active` asked with those params beneath the call's, as `run`, `preview` and `cursor` already were. A trigger, menu row or palette entry no longer reads a tuned action as disabled, or not pressed, for want of a param the tuning supplies.
+  - A handle opened by `beginUiOngoing` is out of flight before its `onEnd` runs, on `end()` and when a second `begin` auto-commits it, as a gesture's is. An `onEnd` reading the dispatcher no longer sees its own handle, and one that begins the same action again no longer has `onEnd` run twice.
+  - `key('+')` is the plus key; it threw that the shortcut names no key. `'Mod++'` already read this way.
+  - A cursor spec whose `angle` is NaN or infinite draws unrotated. Before, the baked cursor's hotspot read `NaN NaN`, so the browser dropped the cursor, and the painted tier drew nothing.
+  - `useCommand` keeps its action across renders whose `keys` hold a new function in the same place, as an inline params thunk or target predicate is on every render, and the binding calls the latest one. Before, such a command was unregistered and registered again on every render.
+  - An ongoing action whose `start` throws as a gesture opens it is caught and logged, as an immediate action's `run` is: the press is spent, nothing is left in flight, and the error no longer escapes into the pointer or key listener. A `start` deferred by `dragThresholdPx`, which runs on a later move, is not covered.
+- b57c3e3: Fixes to how key bindings match, and to what the route grammar accepts, writes and describes.
+  
+  - A key spec requiring `mod` beside the other platform key now matches that chord: `{ mod, meta }` is Ctrl+Win off Apple platforms, and `{ mod, ctrl }` is Cmd+Ctrl on them. Before, the other key stayed forbidden, so the chord `captureKey` recorded for Ctrl+Win never fired.
+  - A Latin letter or digit in a chord matches when the keyboard types something else on that key: Ctrl+я on a Russian layout is Ctrl+Z, and Option+Z (Ω) or Option+E (a dead key) on a Mac is Alt+Z or Alt+E. A key pressed with no Ctrl, Alt or Cmd is still read as what it typed.
+  - A route's `Space` and `Esc` read as the keys a `KeyboardEvent` names, as `key()` and `held()` already read them, so `[initial] keyHeld(Space)` fires on the space bar. `keySpecRoute` writes the space bar as `Space`, and `describeRoute` names it.
+  - The route grammar spells the `?` and `)` keys (`keyDown(?) +shift`, `keyDown()) +shift`), so `keySpecRoute` writes a route for them.
+  - `describeRoute` reads a key route's optional modifiers (`keyDown(z?shift)`) as optional, rather than printing them as part of the key.
+  - `parseRoute` rejects an empty phase atom (`[initial,]`), an empty arg (`keyDown()`), and a target starting with a reserved sigil (`=> *x`), and `routeToSpec` rejects an empty glob in a MIME list (`drop(image/*|)`) and a key route that names a modifier the mod slot names too (`keyDown(z?shift) +shift`). Each used to be accepted silently.
+- @weasel-js/menu@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

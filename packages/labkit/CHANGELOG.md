@@ -1,5 +1,102 @@
 # @weasel-js/labkit
 
+## 1.18.2
+
+### Patch Changes
+
+- 115c920: Fixes to labkit's chrome, trial keys and settings rail, and to how action and enum prefs report their state.
+  
+  - A trial may suppress `eyedropper`, `picked-color` and `snapshot-load` before they appear. Before, naming one in `suppress` threw until a lens mounted or a snapshot was saved, as naming a typo does.
+  - `sectionTree` answers an action's `activeIf` against the config, as it does `showIf` and `enableIf`. Before, the rail form read the condition against its renested values, where nothing is at the config's paths, so the button never latched.
+  - A lab header item's command carries the item's icon, shortcut text and danger grade, so a palette or menu running it shows what the header button does.
+  - A held Mod+S saves one snapshot rather than one per key repeat.
+  - The palette keeps a group's tools together where the group first appears, as every other region does. Before, it drew them in declaration order, and `TrialTool.group` said ungrouped tools sorted last, which nothing did.
+  - `applyPrefConditions` names an action in `active` only where its `activeIf` was answered. Before, an action in a list's item whose condition reads the entry was reported active at `rows.*`, and `applyPrefEntryConditions` reported an entry's action active whenever its condition read anything but the entry.
+  - A menu drawn from an enum pref carries each option's icon, description and disabled reason onto its row, as forms and selects already do; forge's Globals menu shows them.
+- cafcb96: Fixes to what a labkit trial's undo records, and to saving its marks.
+  
+  - A config write records one undo entry when the instrument snapshots on both `config.change` and `config.change:<path>`. It recorded two, so the first Undo appeared to do nothing.
+  - Undoing a run of writes to one setting ends that run, so the next write to it within half a second is its own undo step. Before, with an instrument history mounted through `useTrialHistory` (as `<TrialSceneCanvas>` does), that write was folded into the entry just undone and could not be undone.
+  - A write to a setting of the schema a config is drawn over (`f.schema(nodes, { over })`, an `f.alias` row) is recorded on the trial's undo history, so Undo and Redo step it like any other setting.
+  - A palette drop is taken back by one Undo under the default `undo`, which never recorded it, and under `undo: { snapshotOn: ['canvas.itemAdded'] }`, which recorded it twice. `useDragDrop` now emits `'canvas.itemAdded'` before it applies the drop rather than after, so a snapshot taken on the event holds the state from before the drop.
+  - A trial's marks are saved when the page hides. A mark made less than a quarter second before a reload or a closed tab used to be lost.
+  - In a trial that both takes marks and records its settings or state, Undo takes back whichever change was made last, and Redo makes them again in the order they were first made. Marks always went first: adding a mark, then changing a setting, then pressing Undo removed the mark. `AnnotationsApi` gains `undoStamp()` and `redoStamp()`, which say when the next mark change each way was made, and a `TrialHistorySource` can give the same as optional `undoStamp` and `redoStamp`; `<TrialSceneCanvas>`'s history does. A source without them keeps the old order, marks first.
+- 0e5661d: Fixes to the canvas's Shift-click range, how selections hold their ids, per-anchor stroke data through the path commands, and `useNearViewport` in a second window.
+  
+  - A Shift-click range on `<SceneCanvas>` leaves out what a click there could not select: a node on a locked or hidden layer, and one `isPointerInteractive` rejects. The `selectRange` dep ranges the same way. Before, the range walked the adapter and took them all.
+  - The scene's selection and `createSelectionStore` hold an id they are given twice once, so a selection of one node never counts as two. A write that leaves the selection as it was tells no subscriber and keeps the array readers hold, so `useSelection` no longer re-renders on it.
+  - `useNearViewport` observes the viewport of the document its element is in, listening for that document's scrolls and its window's resizes, so an element in a popout window is measured against that window rather than the main one.
+  - Cut at Crossings cuts a stroke's per-anchor widths and colors to each piece, blending them where a cut falls between two anchors, so a piece of a tapered stroke keeps its own part of the taper. Offset Path, Simplify and a warp drop per-anchor widths and colors (the stroke's and the fill's) whose length no longer matches the path's anchors, where they used to keep the whole path's arrays.
+  - Join carries both paths' per-anchor stroke widths and colors (and fill colors) onto the joined path: a path joined by its far end has its run reversed and each width's sides traded, a merged end keeps the anchor that stays, and a path without an array fills its anchors with its own width or solid paint. `JoinPlan` gains `anchorData`, the patch laid over the kept node's data.
+  - A press on the lens labkit's loupe already has selected reports it again through `onFocusLens`, taking the focus back from a chrome toggle, now that writing an unchanged selection tells no one.
+- 707636a: Fixes to the editor's page stepping, forge's API panel, and labkit's job readout and undo across marks and settings.
+  
+  - `usePages().step` steps from the page the view is on or was last on. Before, from the gap between pages the next page was always the first and the previous one always the last. A view that has never been on a page steps to the first page either way, and `add` puts a new page after the last one there rather than after page 1. `shown` still falls back to the first page.
+  - forge's API panel escapes a quote inside a string literal type it prints from TypeDoc's JSON (an overload's signature), showing `'it\'s'` rather than `'it's'`.
+  - `<JobProgress>` sizes its count for the job's total, so the failure count and Cancel button after it stay put as the count gains digits.
+  - A new change to a trial's marks drops what its settings, state or scene history could redo, and a new change there drops what the marks could redo. Before, Redo could reapply an undone mark over a later settings change, or the reverse. A `TrialHistorySource` without `undoStamp` and the new optional `dropRedo` keeps the old behavior. `AnnotationsApi` gains `dropRedo`.
+  - `<TrialSceneCanvas>` stamps its scene's edits on the same clock as the marks, so a scene edit and a mark made in the same millisecond undo and redo in the order they were made.
+  - `History.dropRedo()` (and `scene.history.dropRedo()`) takes the redo stack away and keeps the undo stack, as a push does: a branching history keeps it as a branch, any other evicts it. `History.observe` reports it as a `'drop'` step. A `History` implemented outside weasel needs the new method.
+- d373a31: Default keys move off chords a browser or another tool takes first. Each change is breaking for anyone relying on the old key.
+  
+  - `FILE_KEYS.new`, and so `useNewCommand`'s default, is Alt+N instead of Cmd/Ctrl+N, which every browser keeps for a new window.
+  - Free Transform in `DEFAULT_MODES` is entered on Mod+Alt+T instead of Meta+T, which is a browser's new tab. Mod+Shift+T is not used either: it reopens a closed tab. It is still committed with Enter and abandoned with Escape.
+  - `useEyedropperTool` has no default hotkey. It used to engage while Alt was held, which shadowed every other tool's Alt-click; pass `hotkey: 'alt'` to keep that.
+  - `MenuBar`'s access chord (Alt, with File's F, Edit's E and so on) opens a title only while focus is on one of the bar's titles; F10 still moves focus there from anywhere. Elsewhere the chord passes on to the app's own bindings and to the browser, whose menus Alt+F, E, V and H open off a Mac.
+  - `<TrialTransport keys>` answers Space, the arrows, Home and End, R and `<` / `>` only while focus is outside a field, a control and a canvas. Before, a key pressed on a focused canvas (a trial's own) also played, scrubbed or reversed the clock.
+  - `<SceneCanvas snap={{ enabled: false }}>` turns snapping off: every gesture runs as though `snap.suspend` (Ctrl) were held, so the pen and spiro place points where they are clicked with no modifier held. `@weasel-js/editor` exports `SNAPPING_KEY`, Mod+Shift+; on the key US layouts put ; on, for an app's snapping toggle.
+- Updated dependencies [7fff1b9]
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [3528360]
+- Updated dependencies [115c920]
+- Updated dependencies [99b8ada]
+- Updated dependencies [d416d0c]
+- Updated dependencies [1549044]
+- Updated dependencies [6a72bc3]
+- Updated dependencies [0c77d00]
+- Updated dependencies [db5276d]
+- Updated dependencies [fc38c90]
+- Updated dependencies [19c6682]
+- Updated dependencies [91b9542]
+- Updated dependencies [389a7f9]
+- Updated dependencies [493a3d2]
+- Updated dependencies [7457319]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [7924629]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [be6244b]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [3b10455]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [435594a]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/theme@1.18.2
+  - @weasel-js/core@1.18.2
+  - @weasel-js/routing@1.18.2
+  - @weasel-js/ui@1.18.2
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/animator@1.18.2
+  - @weasel-js/clock@1.18.2
+  - @weasel-js/kernel3d@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/svg@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/loupe@1.18.2
+  - @weasel-js/minimap@1.18.2
+  - @weasel-js/menu@1.18.2
+  - @weasel-js/icons@1.18.2
+  - @weasel-js/storage@1.18.2
+  - @weasel-js/geom@1.18.2
+  - @weasel-js/quantity@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

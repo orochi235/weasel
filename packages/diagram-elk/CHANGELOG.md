@@ -1,5 +1,36 @@
 # @weasel-js/diagram-elk
 
+## 1.18.2
+
+### Patch Changes
+
+- 561aa05: Fixes to how the ELK adapter lays out self-loops and empty groups.
+  
+  - `elkPlan` leaves an edge from a node to itself that names at most one port to the diagram's own self-loop rule, which loops it round a corner. Before, it handed back ELK's route with the same port named at both ends, and the loop was drawn as a notch on one side.
+  - A group holding no members widens to its `minWidth` when ranks run up or down. Before, ELK read its minimum with the axes swapped, as it does only for a group that holds something, and the group grew tall instead.
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [0c77d00]
+- Updated dependencies [ea6c53b]
+- Updated dependencies [fc38c90]
+- Updated dependencies [389a7f9]
+- Updated dependencies [7457319]
+- Updated dependencies [0e5661d]
+- Updated dependencies [3d522ea]
+- Updated dependencies [707636a]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/core@1.18.2
+  - @weasel-js/diagram@1.18.2
+  - @weasel-js/geom@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

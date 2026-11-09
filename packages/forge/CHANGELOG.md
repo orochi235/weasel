@@ -1,5 +1,61 @@
 # @weasel-js/forge
 
+## 1.18.2
+
+### Patch Changes
+
+- 707636a: Fixes to the editor's page stepping, forge's API panel, and labkit's job readout and undo across marks and settings.
+  
+  - `usePages().step` steps from the page the view is on or was last on. Before, from the gap between pages the next page was always the first and the previous one always the last. A view that has never been on a page steps to the first page either way, and `add` puts a new page after the last one there rather than after page 1. `shown` still falls back to the first page.
+  - forge's API panel escapes a quote inside a string literal type it prints from TypeDoc's JSON (an overload's signature), showing `'it\'s'` rather than `'it's'`.
+  - `<JobProgress>` sizes its count for the job's total, so the failure count and Cancel button after it stay put as the count gains digits.
+  - A new change to a trial's marks drops what its settings, state or scene history could redo, and a new change there drops what the marks could redo. Before, Redo could reapply an undone mark over a later settings change, or the reverse. A `TrialHistorySource` without `undoStamp` and the new optional `dropRedo` keeps the old behavior. `AnnotationsApi` gains `dropRedo`.
+  - `<TrialSceneCanvas>` stamps its scene's edits on the same clock as the marks, so a scene edit and a mark made in the same millisecond undo and redo in the order they were made.
+  - `History.dropRedo()` (and `scene.history.dropRedo()`) takes the redo stack away and keeps the undo stack, as a push does: a branching history keeps it as a branch, any other evicts it. `History.observe` reports it as a `'drop'` step. A `History` implemented outside weasel needs the new method.
+- 42527da: An index page's API panel reads TypeDoc's JSON where a build has written one.
+  
+  - The new `typedoc` option names the JSON (default `dist/typedoc.json`, relative to the vite root) and, through `href`, the address of each export's API reference page. `false` reads none.
+  - Where TypeDoc documents the component, the panel shows its comments with `{@link}` resolved and `@remarks` and `@see` added, where a prop or ref member is inherited from, every overload of a ref method, and a link to the component's reference page.
+  - The prop list, types and defaults still come from the component's TypeScript types, so an edit shows at once. A component whose files changed after the JSON was written, or that TypeDoc does not document, is read from its types alone, as before.
+- Updated dependencies [7fff1b9]
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [3528360]
+- Updated dependencies [115c920]
+- Updated dependencies [1549044]
+- Updated dependencies [6a72bc3]
+- Updated dependencies [0c77d00]
+- Updated dependencies [cafcb96]
+- Updated dependencies [db5276d]
+- Updated dependencies [fc38c90]
+- Updated dependencies [91b9542]
+- Updated dependencies [389a7f9]
+- Updated dependencies [7457319]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [be6244b]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [435594a]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/theme@1.18.2
+  - @weasel-js/core@1.18.2
+  - @weasel-js/ui@1.18.2
+  - @weasel-js/labkit@1.18.2
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/clock@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/svg@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/icons@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

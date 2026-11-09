@@ -1,5 +1,17 @@
 # @weasel-js/menu
 
+## 1.18.2
+
+### Patch Changes
+
+- Updated dependencies [1549044]
+- Updated dependencies [91b9542]
+- Updated dependencies [b188aea]
+- Updated dependencies [be6244b]
+  - @weasel-js/ui-logic@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/quantity@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

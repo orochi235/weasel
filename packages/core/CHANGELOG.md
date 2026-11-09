@@ -1,5 +1,163 @@
 # Changelog
 
+## 1.18.2
+
+### Patch Changes
+
+- 8048831: Edits that change nothing leave no undo entry.
+  
+  - `createMoveToIndexOp` and `createSetChildOrderOp` report a no-op when the order they would write is the order the parent already has, so a layer-list drop onto a row's own slot adds no undo step.
+  - `createSetHiddenOp`, `createSetLockedOp`, `createSetLayerOp`, `createSetDataOp`, `createSetDependsOnOp` and `createTransformOp`, applied through an adapter with `getNode`, report a no-op when the node already holds what they write. Before, `applyBatch` recorded each as an undo entry that did nothing, since the scene write under it recorded nothing.
+  - `scene.move` to the parent and slot a node already has, and `scene.reorder` to the index it already has (or past the end it already sits at), record nothing.
+  - `scene.setLayerParallax` with a factor equal to the layer's own, though a different object, records nothing.
+- e4b64b6: A fix to loading a saved scene.
+  
+  - `specsFromSerialized`, and so `nodeSpecsFromSnapshot` and every loader built on it, resolves the kit's own registry keys (`core:pageRun`, `core:pageClip`, `kit:unionOfChildren`, `kit:booleanOfChildren`, `kit:clipNothing`) under the registry it is handed, as `createScene` and `sceneFromJSON` already did. Before, a snapshot loaded through it with a consumer registry lost its page run's layout and each page's clip: WeaselDraw dropped both on every reload and on its starter document, with a console warning.
+- 895ed9b: The eyedropper samples through chrome, and an exclusive claim no longer warns on a press its owner takes later.
+  
+  - The eyedropper's click consults the hit, so an exclusive chrome claim (a measurement under `measurementsContribution`, a selection handle) leaves it in contention and the active or held tool outranks the chrome's ambient binding. Before, a click on a measurement with the eyedropper active picked the measurement and sampled nothing. The dispatcher no longer reports an exclusive claim as dead at a press's eager `stage: 'press'` dispatch, where a claim owner binding only click and drag matches nothing: the press is dispatched again as the drag or click it settles into. Before, every such press logged `exclusive claim by "…" matched no binding` though the owner went on to take it.
+- 0c77d00: Fixes to transforming a selection that holds a group and something inside it, and to picking inside a turned group.
+  
+  - Align, distribute, flip, rotate, resize and Transform Again write a selected node once when a selected group's frame already carries it. Selecting a group and one of its children and aligning them used to move the child by the group's move and its own, landing it well past the edge both were aligned to; flipping or turning them did the same to the child twice. `useAlign` and `useDistribute` do the same under a composing `composition`.
+  - A node that derives only its pose (`derivePose` with no `derivePath`) inside a turned group is picked where it paints, through the group's turn, rather than by its own turn alone, which is right only for a node that derives its path.
+- fc38c90: Fixes to pattern tiles, text bounds, markdown layout and pasted tables, and the image cache closes the bitmaps it drops.
+  
+  - A `chunks` tile whose `chunkSize` is zero, negative or NaN, or whose `density` is infinite, scatters no chunks. Before, a zero size looped forever building the tile and hung the page, and a negative one threw from the canvas. A `dots` tile with a negative or NaN `radius` draws no dot rather than throwing.
+  - A text command's painted bounds reach each glyph's pen step as well as its advance, so a retained group no longer cuts off the end of an underline, strikethrough or overline that letter spacing carries past the last letter.
+  - `layoutMarkdown` measures its width without spreading every line into one call, which overflowed the stack on a text of a million lines or so.
+  - A pasted table row keeps a tab for each empty cell before a cell with text, so `a`, an empty cell and `b` paste as `a\t\tb` rather than `a\tb`.
+  - The image cache owns its bitmaps and closes each one it drops: evicted to fit its budget, released with `releaseImage`, replaced by a sharper SVG raster, or landing for a load already released. Before, it dropped them without closing them, leaving their memory until garbage collection. **A bitmap taken from the cache with `getImageBitmap` is valid only until the cache drops it**, so read it again each frame rather than keep it. A draw command still holding a closed bitmap draws nothing. Work that holds draw commands across an `await` can call the new `holdImageBitmaps()` (from `@weasel-js/renderer` and `@weasel-js/core`), which keeps what the cache drops open until the hold is released; `writePdf`, `exportPagesPdf` and `sceneToLbx` hold one themselves. A `bitmapSrc` bitmap is still its maker's and is never closed.
+- 389a7f9: Fixes to how the hand, pencil and slice tools, the 3D camera actions and the trim tool take their gestures.
+  
+  - The hand tool pans on a drag with Shift, Alt, Ctrl or Cmd held. Before, a held modifier kept its drag from matching, so the drag went to whatever sat under it: a Shift-drag on a selected node moved the node, and an Alt-drag cloned it.
+  - The pencil draws a stroke that starts over a shape, as the other insert tools do. Before, its drag matched only on empty canvas, and a drag starting on a shape moved the shape.
+  - With a slice cut pending, an Alt-drag places one more point where it is released, as a plain drag does, rather than cutting freehand on its own.
+  - `camera.orbit`, `camera.pan` and `camera.pinchDolly` hand a drag or pinch on to the next binding when the view has no `camera3d` dep. `camera.dolly` passes on a wheel or pinch it does nothing with (no camera, or a wheel that only moves sideways), and `camera.home` passes on a double click when there is no camera or no `home`. Before, each took the input and did nothing, so no other binding, and for a wheel not the page either, saw it.
+  - The trim tool clears its dashed preview of the piece under the pointer when the pointer leaves the canvas. The warp tools' option docs give Envelope's default key as Shift+F, which it is.
+- 7457319: Fix route-conflict reports, a keymap hint's modifier names, a tuned variant's shortcut chip, mode keys beating the active tool's, and the tool cursor's painted mark.
+  
+  - The route-conflict check no longer reports a held tool or an ungated hotkey action against a hotkey action gated by an `eligible` rule, which outranks them whenever its rule holds.
+  - `useContributions` now checks a keymap's own bindings, and entries held only on a key, for route conflicts; both went unchecked.
+  - A keymap hint names a pointer gesture's modifiers as the platform's keyboard prints them (`Cmd-click` on a Mac, `Ctrl-click` elsewhere) instead of `Mod-click` or `Meta-click`. `describeKeymap` takes an optional `{ platform }`.
+  - A tool's painted cursor is written again when only its mark changes.
+  - A variant's shortcut chip in a menu, palette or bar shows a key whose binding fires that variant through a tuning's params.
+  - Mode keys from `modeShortcuts` ride the ambient tier instead of the hotkey tier, so the active tool's own binding on the same key comes first: Enter finishes a slice cut (or a pen or spiro path) instead of entering Path Edit, and inside Crop instead of committing it. A tool that declines the key still lets the mode take it.
+  - The route-conflict check reports a hotkey-tier action (a tool shortcut, a keymap leader, `scope: 'hotkey'`) whose binding matches a tool's, which it outranks whenever that tool is active. `Conflict.shadows` marks such a report.
+- 0e5661d: Fixes to the canvas's Shift-click range, how selections hold their ids, per-anchor stroke data through the path commands, and `useNearViewport` in a second window.
+  
+  - A Shift-click range on `<SceneCanvas>` leaves out what a click there could not select: a node on a locked or hidden layer, and one `isPointerInteractive` rejects. The `selectRange` dep ranges the same way. Before, the range walked the adapter and took them all.
+  - The scene's selection and `createSelectionStore` hold an id they are given twice once, so a selection of one node never counts as two. A write that leaves the selection as it was tells no subscriber and keeps the array readers hold, so `useSelection` no longer re-renders on it.
+  - `useNearViewport` observes the viewport of the document its element is in, listening for that document's scrolls and its window's resizes, so an element in a popout window is measured against that window rather than the main one.
+  - Cut at Crossings cuts a stroke's per-anchor widths and colors to each piece, blending them where a cut falls between two anchors, so a piece of a tapered stroke keeps its own part of the taper. Offset Path, Simplify and a warp drop per-anchor widths and colors (the stroke's and the fill's) whose length no longer matches the path's anchors, where they used to keep the whole path's arrays.
+  - Join carries both paths' per-anchor stroke widths and colors (and fill colors) onto the joined path: a path joined by its far end has its run reversed and each width's sides traded, a merged end keeps the anchor that stays, and a path without an array fills its anchors with its own width or solid paint. `JoinPlan` gains `anchorData`, the patch laid over the kept node's data.
+  - A press on the lens labkit's loupe already has selected reports it again through `onFocusLens`, taking the focus back from a chrome toggle, now that writing an unchanged selection tells no one.
+- 707636a: Fixes to the editor's page stepping, forge's API panel, and labkit's job readout and undo across marks and settings.
+  
+  - `usePages().step` steps from the page the view is on or was last on. Before, from the gap between pages the next page was always the first and the previous one always the last. A view that has never been on a page steps to the first page either way, and `add` puts a new page after the last one there rather than after page 1. `shown` still falls back to the first page.
+  - forge's API panel escapes a quote inside a string literal type it prints from TypeDoc's JSON (an overload's signature), showing `'it\'s'` rather than `'it's'`.
+  - `<JobProgress>` sizes its count for the job's total, so the failure count and Cancel button after it stay put as the count gains digits.
+  - A new change to a trial's marks drops what its settings, state or scene history could redo, and a new change there drops what the marks could redo. Before, Redo could reapply an undone mark over a later settings change, or the reverse. A `TrialHistorySource` without `undoStamp` and the new optional `dropRedo` keeps the old behavior. `AnnotationsApi` gains `dropRedo`.
+  - `<TrialSceneCanvas>` stamps its scene's edits on the same clock as the marks, so a scene edit and a mark made in the same millisecond undo and redo in the order they were made.
+  - `History.dropRedo()` (and `scene.history.dropRedo()`) takes the redo stack away and keeps the undo stack, as a push does: a branching history keeps it as a branch, any other evicts it. `History.observe` reports it as a `'drop'` step. A `History` implemented outside weasel needs the new method.
+- 30dd2dc: Fixes to PDF texture fills, retained bounds, canvas readback, SVG lengths and runtime bitmaps, hex colors and pattern tiles.
+  
+  - `writePdf` looks a texture paint up as the renderer does, so an image paint (`{ kind: 'image', src }`) the renderer has not drawn yet, and a tile pattern evicted from its cache, export instead of being skipped. A texture paint's `width` and `height` set the tile's size in the PDF, as they do on the canvas; it used to tile at the texture's pixel size. `getTexture` and `tileExtent` are exported from `@weasel-js/renderer` for this.
+  - A path with no points and a sprites run of no sprites bound as empty, so neither stretches a retained surface, or a PDF group rasterized for its effects, to the whole buffer.
+  - `WeaselRenderer.readPixels` and `readPixelsSync` throw a `RangeError` for a rect that is not whole device pixels. Such a rect used to come back with its rows misplaced.
+  - `parseSvg` reads a length too large to hold (`width="1e400"`, `letter-spacing="1e400"`, `stroke-width="1e400"`) as unset, where it read an infinity.
+  - `byteHex`, and every hex color written through it (`rgbaToHex`, `lerpPaint`, `colorLiteralToHex`), writes a NaN channel as `00`. It used to write the letters `NaN`, which nothing parses back.
+  - A tile pattern whose `size` holds no whole pixel (0, a fraction below 1, negative, NaN, infinite) resolves no texture and draws nothing. In Chromium it used to throw out of the painter that resolved it.
+  - `serializeSvg` writes an image, or an image pattern, drawn from a `bitmapSrc` bitmap (a canvas snapshot, a video frame) as a PNG data URL, so the exported file shows it. It used to write the bitmap's runtime name, which no other document can load. Where no 2D canvas can draw the bitmap (no DOM, a closed bitmap) it keeps the name and warns. `isBitmapSrc` is exported from `@weasel-js/core` alongside `bitmapSrc`.
+- d16f1ca: Paths inside a frame-defining group are read and written where they draw.
+  
+  - Path commands (Cut at Crossings, Join, Simplify, Offset, Resample, Trim, Extend to Meet, Smudge, Warp, Girth) read a path stored inside a group in world, and store their result back in the group's frame. Before, they read it without the group's offset or turn, so Cut at Crossings found no crossing between a root path and one inside a group.
+  - Path edit draws a grouped path's anchors where the path is, and commits edits into its own frame.
+  - Path snapping and the outlines Trim and Extend stop at take a grouped node where it draws.
+  - A connector or other derived node inside a turned group is picked on the ink it paints, not turned a second time by the group's angle.
+  
+  `PathNode` gains `shown` (the node at its world pose) and `local` (a world pose as the node stores it). `withPath`, `reshapeOps` and `pathCopy` now take the `PathNode` instead of its `node`, which breaks callers that passed the node. `withShownPath`, `nodeFrameOf`, `shownIn` and `shownNodeOf` are new. The `editAnchors` dep's `getNodeShape` answers the world pose, and a new optional `storedPose` turns a world pose back into the stored one.
+- cd61bfa: The hand tool pans from wherever a drag starts.
+  
+  - A drag with the hand tool (or held Space) that starts on chrome holding an exclusive claim, such as a measurement or a selection handle, pans the view. Before, the chrome's own binding took the drag, so a hand drag starting on a measurement moved the measurement. The hand and the eyedropper now share one target that reads through chrome.
+- d373a31: Default keys move off chords a browser or another tool takes first. Each change is breaking for anyone relying on the old key.
+  
+  - `FILE_KEYS.new`, and so `useNewCommand`'s default, is Alt+N instead of Cmd/Ctrl+N, which every browser keeps for a new window.
+  - Free Transform in `DEFAULT_MODES` is entered on Mod+Alt+T instead of Meta+T, which is a browser's new tab. Mod+Shift+T is not used either: it reopens a closed tab. It is still committed with Enter and abandoned with Escape.
+  - `useEyedropperTool` has no default hotkey. It used to engage while Alt was held, which shadowed every other tool's Alt-click; pass `hotkey: 'alt'` to keep that.
+  - `MenuBar`'s access chord (Alt, with File's F, Edit's E and so on) opens a title only while focus is on one of the bar's titles; F10 still moves focus there from anywhere. Elsewhere the chord passes on to the app's own bindings and to the browser, whose menus Alt+F, E, V and H open off a Mac.
+  - `<TrialTransport keys>` answers Space, the arrows, Home and End, R and `<` / `>` only while focus is outside a field, a control and a canvas. Before, a key pressed on a focused canvas (a trial's own) also played, scrubbed or reversed the clock.
+  - `<SceneCanvas snap={{ enabled: false }}>` turns snapping off: every gesture runs as though `snap.suspend` (Ctrl) were held, so the pen and spiro place points where they are clicked with no modifier held. `@weasel-js/editor` exports `SNAPPING_KEY`, Mod+Shift+; on the key US layouts put ; on, for an app's snapping toggle.
+- 07205dd: A stroke whose width is 0 draws nothing, whatever its per-vertex widths and marker sizes, on every path.
+  
+  - The renderer draws no marker head for a stroke with no width. Before, a head given its own `size` was drawn on a line that drew nothing, where SVG and PDF export drew neither.
+  - A node's stroke with no width is no longer hit by a click or hover within its per-vertex widths or its heads (`inkReach`), where nothing is drawn.
+  - `strokeEdgeNear` answers `null` for a stroke with no width, so the Girth tool no longer finds or drags edges of a stroke that draws nothing.
+  - `inkWidth`, the tessellator's test of whether a width puts down ink, is exported from `@weasel-js/stroke`.
+  - `resolveStroke`'s docs no longer say a stroke with no width can draw through its per-vertex widths.
+- 5d2451b: Cmd-click toggles and Shift-click selects a range, by default. This changes the defaults: anyone relying on Shift-click toggling a node, or on Cmd-click picking past groups, has to move.
+  
+  - `useSelection`'s `extend` key now defaults to Cmd on Apple platforms and Ctrl elsewhere, and `range` defaults to Shift. Passing `extend: 'shift'` keeps the old behavior: Shift toggles and nothing ranges.
+  - On a canvas, a Shift-click selects every node a click there could select whose center lies in the box the last node clicked and the pressed one span, read where each is drawn (turned and framed), of any kind. A group whose center lies in the box comes whole; inside an entered group, the range stays inside it.
+  - `select.deep`, which selects the node under the pointer past every group, moves from Cmd-press to Cmd+Alt-press (Ctrl+Alt off macOS). With Shift it ranges among the nodes around the one it picked.
+  - `UseSelectToolOptions.between` sets what a range covers; `useSelectTool` defaults it to the box rule above, and `useSelectToolWith` without it walks the selection's order. `SelectionApi.applyClick` takes the range as an optional third argument, and `@weasel-js/select`'s `SelectContext` takes it as `between`, ahead of `order`.
+  - `<SceneCanvas>` sources a `selectRange` dep: the range its select tool applies, read by an action that applies a click outside the tool. A diagram's edge-label click uses it, so Shift-click on a label ranges by the same box rule instead of by paint order.
+- 800c96b: A text box or sticky note inserted and typed into is one undo entry.
+  
+  - The `insert` dep commits an empty node of a text kind (`text`, `sticky`) inside a `scene.batch` keyed with `textEditJoin(id)`, so the first edit's commit joins the insert's entry and one undo takes the node and its text together. This covers the text tool's drag and the sticky tool's drag and click. A text node inserted with its text, as a paste makes one, stays an entry of its own. An adapter whose `applyOps` keeps its own history is unaffected.
+- 8d97dd3: Two 3D views on one surface each look through their own camera.
+  
+  - `<CanvasView deps>` takes deps of the view's own, which actions dispatched inside it read in front of the surface's. A 3D host passes the `camera3d`, `nodeAtPoint` and `poseDescriptor` it built for that view's camera, so a press, a drag and an orbit in the view all use it. The view's camera, selection, `hitAt` and dispatcher stay its own.
+  - `<SceneCanvas geometry={{ pickEvery }}>` receives the view a pick is asked for as a second argument, whose new `viewId` field names it (`null` or absent for the surface). `RegionPickView` (`HitTestView`) carries the same field.
+  - An immediate action's params carry `viewId`, as `InvocationCtx` already did, and the select tool hands it to its `pickEvery` and `pickBest`.
+  - `Action.enabled` takes the view the event landed in as a fifth argument, `viewId`. `group.enter` picks through it, so a double-click in a view enters the group that view shows, and a hover in a view (`onHover`, `RuleCtx.hover`) names what that view shows.
+  - kernel3d's `ViewportSource` takes the view id it is asked for, and `createNodeAtPoint`, `createAreaSelect` and `createPoseDescriptor` take the view they serve, as does `createSnap` through its `viewId` option. The new `createPickEvery(world)` is the `geometry.pickEvery` for a 3D world, casting from the asking view's camera. A `viewport` function that took some other optional argument no longer fits `ViewportSource`.
+- Updated dependencies [895ed9b]
+- Updated dependencies [3528360]
+- Updated dependencies [115c920]
+- Updated dependencies [99b8ada]
+- Updated dependencies [348fb68]
+- Updated dependencies [d416d0c]
+- Updated dependencies [1549044]
+- Updated dependencies [db5276d]
+- Updated dependencies [fc38c90]
+- Updated dependencies [19c6682]
+- Updated dependencies [91b9542]
+- Updated dependencies [493a3d2]
+- Updated dependencies [7457319]
+- Updated dependencies [b57c3e3]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [7924629]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [be6244b]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [3b10455]
+- Updated dependencies [5d2451b]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/routing@1.18.2
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/animator@1.18.2
+  - @weasel-js/text-dom@1.18.2
+  - @weasel-js/renderer@1.18.2
+  - @weasel-js/cursor@1.18.2
+  - @weasel-js/ui-logic@1.18.2
+  - @weasel-js/text@1.18.2
+  - @weasel-js/gestures@1.18.2
+  - @weasel-js/select@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/history@1.18.2
+  - @weasel-js/paint@1.18.2
+  - @weasel-js/modes@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/stroke@1.18.2
+  - @weasel-js/simulation@1.18.2
+  - @weasel-js/font@1.18.2
+  - @weasel-js/icons@1.18.2
+  - @weasel-js/geom@1.18.2
+  - @weasel-js/quantity@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

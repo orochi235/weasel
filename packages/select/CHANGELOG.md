@@ -1,5 +1,27 @@
 # @weasel-js/select
 
+## 1.18.2
+
+### Patch Changes
+
+- 0e5661d: Fixes to the canvas's Shift-click range, how selections hold their ids, per-anchor stroke data through the path commands, and `useNearViewport` in a second window.
+  
+  - A Shift-click range on `<SceneCanvas>` leaves out what a click there could not select: a node on a locked or hidden layer, and one `isPointerInteractive` rejects. The `selectRange` dep ranges the same way. Before, the range walked the adapter and took them all.
+  - The scene's selection and `createSelectionStore` hold an id they are given twice once, so a selection of one node never counts as two. A write that leaves the selection as it was tells no subscriber and keeps the array readers hold, so `useSelection` no longer re-renders on it.
+  - `useNearViewport` observes the viewport of the document its element is in, listening for that document's scrolls and its window's resizes, so an element in a popout window is measured against that window rather than the main one.
+  - Cut at Crossings cuts a stroke's per-anchor widths and colors to each piece, blending them where a cut falls between two anchors, so a piece of a tapered stroke keeps its own part of the taper. Offset Path, Simplify and a warp drop per-anchor widths and colors (the stroke's and the fill's) whose length no longer matches the path's anchors, where they used to keep the whole path's arrays.
+  - Join carries both paths' per-anchor stroke widths and colors (and fill colors) onto the joined path: a path joined by its far end has its run reversed and each width's sides traded, a merged end keeps the anchor that stays, and a path without an array fills its anchors with its own width or solid paint. `JoinPlan` gains `anchorData`, the patch laid over the kept node's data.
+  - A press on the lens labkit's loupe already has selected reports it again through `onFocusLens`, taking the focus back from a chrome toggle, now that writing an unchanged selection tells no one.
+- 5d2451b: Cmd-click toggles and Shift-click selects a range, by default. This changes the defaults: anyone relying on Shift-click toggling a node, or on Cmd-click picking past groups, has to move.
+  
+  - `useSelection`'s `extend` key now defaults to Cmd on Apple platforms and Ctrl elsewhere, and `range` defaults to Shift. Passing `extend: 'shift'` keeps the old behavior: Shift toggles and nothing ranges.
+  - On a canvas, a Shift-click selects every node a click there could select whose center lies in the box the last node clicked and the pressed one span, read where each is drawn (turned and framed), of any kind. A group whose center lies in the box comes whole; inside an entered group, the range stays inside it.
+  - `select.deep`, which selects the node under the pointer past every group, moves from Cmd-press to Cmd+Alt-press (Ctrl+Alt off macOS). With Shift it ranges among the nodes around the one it picked.
+  - `UseSelectToolOptions.between` sets what a range covers; `useSelectTool` defaults it to the box rule above, and `useSelectToolWith` without it walks the selection's order. `SelectionApi.applyClick` takes the range as an optional third argument, and `@weasel-js/select`'s `SelectContext` takes it as `between`, ahead of `order`.
+  - `<SceneCanvas>` sources a `selectRange` dep: the range its select tool applies, read by an action that applies a click outside the tool. A diagram's edge-label click uses it, so Shift-click on a label ranges by the same box rule instead of by paint order.
+- Updated dependencies [b188aea]
+  - @weasel-js/registry@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

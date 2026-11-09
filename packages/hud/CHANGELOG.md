@@ -1,5 +1,46 @@
 # @weasel-js/hud
 
+## 1.18.2
+
+### Patch Changes
+
+- Updated dependencies [7fff1b9]
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [1549044]
+- Updated dependencies [6a72bc3]
+- Updated dependencies [0c77d00]
+- Updated dependencies [fc38c90]
+- Updated dependencies [19c6682]
+- Updated dependencies [91b9542]
+- Updated dependencies [389a7f9]
+- Updated dependencies [7457319]
+- Updated dependencies [b57c3e3]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [be6244b]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/theme@1.18.2
+  - @weasel-js/core@1.18.2
+  - @weasel-js/ui-logic@1.18.2
+  - @weasel-js/gestures@1.18.2
+  - @weasel-js/paint@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/loupe@1.18.2
+  - @weasel-js/menu@1.18.2
+  - @weasel-js/font@1.18.2
+  - @weasel-js/icons@1.18.2
+  - @weasel-js/geom@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

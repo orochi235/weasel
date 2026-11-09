@@ -1,5 +1,41 @@
 # @weasel-js/ui-logic
 
+## 1.18.2
+
+### Patch Changes
+
+- 1549044: Fixes to palette focus, Select's trigger, parametric action leaves, tiled bars and frame sweeps.
+  
+  - A `SwatchGrid` (and a palette laid on rings) moves its one tab stop to the swatch focus is on, so Tab leaves the palette from wherever the arrows took it. Before, the stop stayed on the current swatch, and Tab from a swatch before it went to that swatch instead of out of the palette. Focus leaving puts the stop back on the current swatch.
+  - A `Select` whose chosen option has a `description` (or a disabled one's `disabledReason`) shows only the option's label in its trigger. The note was drawn on a second line inside the trigger and read as part of its name.
+  - An `action` leaf naming a parametric action by its bare id draws each variant with the variant's own shortcut. The leaf's `shortcut` was shown on every variant's button, though one chord cannot fire them all.
+  - `tileGrid`'s `corners` rounds a grid of one row shorter than its `columns` only at the corners its items reach: a row at the start no longer rounds its last item's top-right corner, and a centered or end-aligned one no longer rounds its first item's left corners.
+  - `frames` walks no steps for a zero-length looping run under `passes: 'all'`, and one step for `loop: 0`, where it had stepped on past the run's end until the cap.
+  - An `EffectList` card removed while focus is in it hands focus to the remove button of the next card, else the previous one, through the same rule `useRowNavigation` lists follow. Before, focus dropped to the page.
+  - An `EffectList` given two kinds with the same label no longer logs a duplicate-key error.
+- 91b9542: Fixes to right-to-left keyboard and drag handling across ui's lists, and to `EffectList` and slider stops.
+  
+  - A `Tree` in a right-to-left context opens a branch with Left and closes it with Right, steps to its parent with Right, and moves rows in and out with Alt+Left and Alt+Right, mirrored from a left-to-right tree. A drag below a subtree's last row climbs out by how far the pointer sits from the tree's right edge, where it read the left edge and could not climb at all.
+  - An `ItemList` row's controls are walked with the arrows mirrored in a right-to-left list: Left enters them from the row and steps on across them.
+  - A `TokenField` mirrors its arrows in a right-to-left field: Right from the start of the text goes to the last chip, the arrows step between chips toward the side pressed, and Alt with them moves a chip that way.
+  - `PageTabs` moves a tab toward the arrow pressed with Alt in a right-to-left strip, where it moved it the other way.
+  - A foldable prefs rail folds and unfolds an entry with the arrows mirrored in a right-to-left rail, and the schema editor's icon picker steps along its grid with Left and Right swapped there.
+  - An `EffectList` inside another list's open card moves only its own card on Alt+Up or Alt+Down; the outer list moved its card too.
+  - Removing an `EffectList` card that holds focus, in a list without remove buttons, hands focus to the next card's number rather than dropping it to the page.
+  - A slider stop that is NaN is dropped, where it was kept and sorted the stops out of order.
+  - A `Tree` whose levels have no indent (a theme setting `--wzl-tree-indent` to 0) keeps a drop below a subtree at the last row's depth, where the pointer's x divided by that zero and sent the drop either all the way out or nowhere.
+  - ui-logic exports `arrowDir`, which says which way an arrow key steps a list of a given orientation and direction.
+- be6244b: Fixes to page tab renaming, async combo box options, keyboard focus order, sweeps and tiled grids.
+  
+  - Renaming a `PageTabs` tab and leaving its text as it was renames nothing. Before, confirming an unnamed page's field gave the page its numbered label ("Page 2") as a fixed name, which then stayed when the page moved.
+  - Enter or Escape in a `PageTabs` rename field hands focus back to the tab, where it used to drop to the page.
+  - `useAsyncOptions` reports a `load` that throws before returning a promise as a failed load (`loadError`), where `isLoading` stayed true for good.
+  - `domFocusScope`'s tab order keeps one radio per named group (the checked one, else the first) and leaves out what a closed `<details>` hides apart from its summary, as the browser's Tab does.
+  - ui-logic's `range` throws `RangeError` for a start that is not a finite number or an end that is NaN, and `frames` for a NaN or negative duration. Each used to walk NaN or endless steps, or yield a frame before 0.
+  - A tiled grid (`tileGrid`, `tileRows`, `tileKey`, `gridLayout`, and so a `SwatchGrid` or tiled bar) reads a column count below one, or NaN, as one, and a fractional one as its whole part. An arrow key in a `SwatchGrid` with `columns={0}` used to throw.
+- @weasel-js/geom@1.18.2
+  - @weasel-js/quantity@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

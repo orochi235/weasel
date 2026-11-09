@@ -1,5 +1,50 @@
 # @weasel-js/animator
 
+## 1.18.2
+
+### Patch Changes
+
+- 99b8ada: Fixes to slews, color cycles, bus gains and the node raster host found by an audit of the motion and media packages.
+  
+  - `slewToward` and `createSlew` stay finite over a step of zero time. A direction with no rate jumps to the target whatever the step, and a limited one holds over a zero, negative or NaN step. Before, an unlimited direction over `dt` 0 answered NaN, and a slew kept that NaN from then on.
+  - `cycleVertexColors` throws a `RangeError` for a `msPerCycle` that is not positive, before it installs anything. Before, 0 or NaN painted NaN colors, and a negative time turned the colors backward, which `direction: -1` does.
+  - A bus's `setGain` throws a `RangeError` for a value or ramp that is not finite, and keeps the gain it had. Before, it kept a NaN gain, and every later mute or solo on any bus rewrote it and threw from a real `AudioParam`.
+  - A voice's `setGain` refuses the same, by the same check, and keeps the level it had. Before, a NaN gain made every later `setPosition` on the voice throw.
+  - A node raster host's `render` returns pixels whose `data.buffer` holds only them. Before, a small image was a view into Node's shared `Buffer` pool.
+  - A node raster host disposed while its page is still opening rejects the render in flight as on a disposed host, rather than with the closed page's error.
+- db5276d: Fixes to audio voices and patterns, clock syncing, timeline seeks, tween durations and the node raster host.
+  
+  - A voice's `gain`, `rate`, `detune`, `pan` and `position`, given to `play`, `playNote`, `playNoise` or `stream` or set on its handle, and the position `setListener` takes, throw a `RangeError` when not finite. Before, a real AudioParam threw after the voice had kept the value, and a worklet voice mixed NaN into its whole bus. This newly throws where a non-finite value used to be accepted.
+  - `setListener` throws a `RangeError` on an option that is not finite (`refDistance`, `maxDistance`, `rolloffFactor`, `panWidth`, `right`). Before, it gave every positioned voice a NaN gain or pan.
+  - A pattern player's `start` throws on a time that is not finite before it counts itself playing. Before, it threw from the booking and was left reporting `playing()` true with nothing booked, so a later `start` did nothing.
+  - A full voice pool whose every voice scores NaN steals one, where it found no victim and threw.
+  - A clock's `sync` throws a `RangeError` on a time that is not finite. Before, one such sync left `elapsed` NaN for good.
+  - A timeline `seek` before 0 lands on 0, and one past `duration` with no laps left lands on `duration`. Before, `seek(-20)` reported `time()` as -20 and held the playhead at 0 for 20 ms before playing.
+  - `animator.tween` throws a `RangeError` on an `ms` that is NaN, for a plain tween and a target tween alike. Before, the tween started and its first frame threw out of the animator's frame, stopping every other animation on every frame after.
+  - `animator.stagger` throws a `RangeError` on a delay that is not finite, a numeric `Infinity` included, before any item starts. Before, that item never fired and the stagger never finished. A delay function is now asked for every index before the first item starts.
+  - A node raster host whose page or browser has closed opens a new one for its next render, where it failed every render after.
+- 7924629: Fixes to timeline seeks, the animator's frames, IK input, the audio scheduler and pattern player, and the node raster host.
+  
+  - A timeline seek past `duration` with laps left lands in the later lap at once: `time()` reads the time in that lap and its sampled tracks show it before the next frame. Before, `time()` read the raw time until the next frame, and a finished timeline that `setLoop` had given laps stayed past its end for good. A seek to the end samples at once too.
+  - `hostAnimator`'s `tick` and `follow` throw `RangeError` on a time or rate that is not finite. Before, one such frame left every animation's time NaN and the animator stuck mid-frame.
+  - `solveIk` throws `RangeError` on a `target`, `tip` or `pole` that is not finite, where it returned a pose with every chain joint's rotation NaN.
+  - A decay on a target with `friction: 1` throws saying a coast on a target needs friction below 1, where it threw about damping the caller never gave. `DecayOptions.friction` documents its range as (0, 1].
+  - A scheduled callback that stops and starts the audio scheduler no longer leaves two pass timers running, each firing every pass, one of them past the next `stop`.
+  - A pattern player stopped and started again from its own `onStep` plays once from the new start. Before, the step it was on also booked its next step, so two step chains ran over one count.
+  - `VoiceHandle.stop(fadeMs)` throws `RangeError` on a fade that is not finite, before touching the voice. Before, an infinite fade threw from the AudioParam and left the voice playing but marked as fading.
+  - Every audio param write refuses a value or ramp that is not finite before canceling what is scheduled, so a refused write keeps the ramp in flight. A reverb or delay's `setMix` and `setFeedback` keep their old value when the write is refused.
+  - A node raster host whose page crashed opens a new page for the next render. A crashed page stays open, so every render after it failed.
+- Updated dependencies [db5276d]
+- Updated dependencies [0e5661d]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [07205dd]
+  - @weasel-js/clock@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/paint@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/geom@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

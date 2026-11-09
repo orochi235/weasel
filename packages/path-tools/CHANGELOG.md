@@ -1,5 +1,77 @@
 # @weasel-js/path-tools
 
+## 1.18.2
+
+### Patch Changes
+
+- 7b4a182: Path tools read grouped nodes where they draw, and click tools leave locked and hidden strokes alone.
+  
+  - A constraint link tying a node inside a group is checked against that node where it draws, so a link that holds no longer reports as broken (`brokenConstraintLink`, `constraintLinkConflictsOf`) or draws its broken mark in the wrong place.
+  - The Smudge brush converts text inside a group to outlines when it passes over the text where it draws, not where the text would sit outside the group; a fresh warp over selected text in a group lays its controls around the text where it draws.
+  - Trim segment and Extend to next path, given a click, pass over a locked or hidden stroke for the one under it. Before, a click on a locked stroke tried to change it and a click over a hidden one trimmed or extended it unseen. A hidden stroke no longer cuts a trim or stops an extension.
+  - Link anchor never ties a dropped anchor to a hidden or locked path. `linkTargetAt` reads `isHidden` and `isLocked` from the scene it is given when the scene has them.
+- 389a7f9: Fixes to how the hand, pencil and slice tools, the 3D camera actions and the trim tool take their gestures.
+  
+  - The hand tool pans on a drag with Shift, Alt, Ctrl or Cmd held. Before, a held modifier kept its drag from matching, so the drag went to whatever sat under it: a Shift-drag on a selected node moved the node, and an Alt-drag cloned it.
+  - The pencil draws a stroke that starts over a shape, as the other insert tools do. Before, its drag matched only on empty canvas, and a drag starting on a shape moved the shape.
+  - With a slice cut pending, an Alt-drag places one more point where it is released, as a plain drag does, rather than cutting freehand on its own.
+  - `camera.orbit`, `camera.pan` and `camera.pinchDolly` hand a drag or pinch on to the next binding when the view has no `camera3d` dep. `camera.dolly` passes on a wheel or pinch it does nothing with (no camera, or a wheel that only moves sideways), and `camera.home` passes on a double click when there is no camera or no `home`. Before, each took the input and did nothing, so no other binding, and for a wheel not the page either, saw it.
+  - The trim tool clears its dashed preview of the piece under the pointer when the pointer leaves the canvas. The warp tools' option docs give Envelope's default key as Shift+F, which it is.
+- b4f2043: Audit round thirteen's path-tools fix.
+  
+  - A warp or smudge over a selected group leaves the locked and hidden paths inside it as they are.
+- d16f1ca: Paths inside a frame-defining group are read and written where they draw.
+  
+  - Path commands (Cut at Crossings, Join, Simplify, Offset, Resample, Trim, Extend to Meet, Smudge, Warp, Girth) read a path stored inside a group in world, and store their result back in the group's frame. Before, they read it without the group's offset or turn, so Cut at Crossings found no crossing between a root path and one inside a group.
+  - Path edit draws a grouped path's anchors where the path is, and commits edits into its own frame.
+  - Path snapping and the outlines Trim and Extend stop at take a grouped node where it draws.
+  - A connector or other derived node inside a turned group is picked on the ink it paints, not turned a second time by the group's angle.
+  
+  `PathNode` gains `shown` (the node at its world pose) and `local` (a world pose as the node stores it). `withPath`, `reshapeOps` and `pathCopy` now take the `PathNode` instead of its `node`, which breaks callers that passed the node. `withShownPath`, `nodeFrameOf`, `shownIn` and `shownNodeOf` are new. The `editAnchors` dep's `getNodeShape` answers the world pose, and a new optional `storedPose` turns a world pose back into the stored one.
+- 07205dd: A stroke whose width is 0 draws nothing, whatever its per-vertex widths and marker sizes, on every path.
+  
+  - The renderer draws no marker head for a stroke with no width. Before, a head given its own `size` was drawn on a line that drew nothing, where SVG and PDF export drew neither.
+  - A node's stroke with no width is no longer hit by a click or hover within its per-vertex widths or its heads (`inkReach`), where nothing is drawn.
+  - `strokeEdgeNear` answers `null` for a stroke with no width, so the Girth tool no longer finds or drags edges of a stroke that draws nothing.
+  - `inkWidth`, the tessellator's test of whether a width puts down ink, is exported from `@weasel-js/stroke`.
+  - `resolveStroke`'s docs no longer say a stroke with no width can draw through its per-vertex widths.
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [3528360]
+- Updated dependencies [115c920]
+- Updated dependencies [348fb68]
+- Updated dependencies [d416d0c]
+- Updated dependencies [0c77d00]
+- Updated dependencies [fc38c90]
+- Updated dependencies [19c6682]
+- Updated dependencies [389a7f9]
+- Updated dependencies [493a3d2]
+- Updated dependencies [7457319]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [3b10455]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/core@1.18.2
+  - @weasel-js/routing@1.18.2
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/renderer@1.18.2
+  - @weasel-js/cursor@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/paint@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/stroke@1.18.2
+  - @weasel-js/icons@1.18.2
+  - @weasel-js/geom@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

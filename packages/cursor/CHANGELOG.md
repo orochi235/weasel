@@ -1,5 +1,41 @@
 # @weasel-js/cursor
 
+## 1.18.2
+
+### Patch Changes
+
+- d416d0c: Fixes to press ownership, menus, tool sets and shortcuts in routing, and to cursor glyph lookup and mark placement.
+  
+  - A dispatcher leaves a press to an item inside it that opened a pointer session of its own before the dispatcher heard the press (an item listening natively rather than through React). Before, a press released in place on such an item also ran the surface's click binding.
+  - `withoutTools` keeps the sets nested in the set it cuts from, so a stack inside one (path-tools' warp stack inside `RESHAPE_TOOLS`) is still a stack. Before, it flattened every nested set into plain ids. A nested set it empties is dropped.
+  - A menu row asks `enabled` and `active` with the params its run hands `trigger`: the menu's own params and the point it opened at, as well as the variant's. Before, a row read only the variant's params, so an action judging the menu's params was shown disabled while `trigger` would run it, or the reverse.
+  - `useCommand` compares `icon` by value, so an icon with a mark written inline (`{ name, mark }`) no longer replaces the action on every render.
+  - `actionShortcuts` finds a variant's key through a binding whose `params` is a thunk.
+  - `cursorFor` and `cursorGlyph` throw on a glyph or mark named like an `Object.prototype` member (`constructor`, `toString`) instead of baking it.
+  - `placeCursorPath` (and `markedGlyph` through it) reads numbers written without a leading digit (`.5`), run together (`1.5.5`) or with an exponent (`1e-3`), and throws on a command whose numbers do not make whole points. Before, it misread the first three and dropped a trailing number.
+- 19c6682: Fixes to shortcut chips, tuned actions, commands, gesture and UI-driven handles, the `key()` sugar and cursor angles.
+  
+  - `keySpecShortcut` and `actionShortcuts` give a key binding that requires `ctrl` or `meta` (without `mod`) no chip, as their docs say. Before, a Ctrl+Tab binding showed in menus and palettes as a bare `Tab`; an action bound that way now falls back to its next binding's chip, or shows none.
+  - An action tuned with `params` (`ActionsRegistry.tune`, or the last-operation panel's session params) now has its `enabled` and `active` asked with those params beneath the call's, as `run`, `preview` and `cursor` already were. A trigger, menu row or palette entry no longer reads a tuned action as disabled, or not pressed, for want of a param the tuning supplies.
+  - A handle opened by `beginUiOngoing` is out of flight before its `onEnd` runs, on `end()` and when a second `begin` auto-commits it, as a gesture's is. An `onEnd` reading the dispatcher no longer sees its own handle, and one that begins the same action again no longer has `onEnd` run twice.
+  - `key('+')` is the plus key; it threw that the shortcut names no key. `'Mod++'` already read this way.
+  - A cursor spec whose `angle` is NaN or infinite draws unrotated. Before, the baked cursor's hotspot read `NaN NaN`, so the browser dropped the cursor, and the painted tier drew nothing.
+  - `useCommand` keeps its action across renders whose `keys` hold a new function in the same place, as an inline params thunk or target predicate is on every render, and the binding calls the latest one. Before, such a command was unregistered and registered again on every render.
+  - An ongoing action whose `start` throws as a gesture opens it is caught and logged, as an immediate action's `run` is: the press is spent, nothing is left in flight, and the error no longer escapes into the pointer or key listener. A `start` deferred by `dragThresholdPx`, which runs on a later move, is not covered.
+- b188aea: Fixes to the last operation, tunings, held previews, merged menus, tool options, scratch keys, `freshId`, cursor sizes and the scoping dim.
+  
+  - Adjusting the last operation after its action was unregistered, or while its `enabled` refuses, leaves the operation, the history and the selection as they were, and `adjust` returns `false`. Before, it undid the operation and put nothing in its place.
+  - A tuning's params reach an action that declares a `params` form as the registry lists it, so `invokedParams` names them and a variant's shortcut chip shows for a binding that fires the variant through the tuning.
+  - A held tool option that is NaN or infinite reads as its default, so the bracket keys step it again instead of leaving it NaN. An option named like an `Object.prototype` member (`toString`) reads its default.
+  - `getScratch` reads a key named like an `Object.prototype` member as unset until it is written, instead of handing back the prototype's function.
+  - A cursor glyph whose `size` or `worldRadius` is NaN, infinite, zero or negative draws at the default size, instead of baking `NaN` into its image, which the browser drops.
+  - `createScopingDim` holds `dimAlpha` to [0, 1] and reads NaN as `OUT_OF_SCOPE_ALPHA`.
+  - An action held through `holdPreview` asks its `enabled` again at the release, and runs nothing when it now refuses; the preview still comes down.
+  - `freshId` numbers from 1 when `from` is NaN or infinite. Before, a NaN `from` looped forever when `base-NaN` was taken.
+  - Two menu contributions sharing a key no longer overwrite a key already spelled `key~n`: the second takes the next free `~n`.
+- Updated dependencies [b188aea]
+  - @weasel-js/registry@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

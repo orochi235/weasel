@@ -1,5 +1,25 @@
 # @weasel-js/theme
 
+## 1.18.2
+
+### Patch Changes
+
+- 7fff1b9: applyTheme leaves out more token values that would break its stylesheet.
+  
+  - A value that opens a comment, holds a line break inside a quoted string, or ends in a backslash is now left out with a development warning, like one holding `;`, `{` or `}`. Each of these used to end its declaration or rule early, and a `/*` commented out every theme rule after it.
+- 6a72bc3: A fix to which theme values `applyTheme` writes into its shared stylesheet.
+  
+  - `applyTheme` leaves out a token value that leaves a `(` or `[` open (`var(--x`, `url(a.woff`), and warns once as it does for other values that would break the rule. Before, the open bracket ran on through every later declaration and rule in the sheet, so one bad pin unstyled every theme written after it.
+- Updated dependencies [115c920]
+- Updated dependencies [0e5661d]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [07205dd]
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/paint@1.18.2
+  - @weasel-js/registry@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

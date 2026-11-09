@@ -1,5 +1,55 @@
 # @weasel-js/kernel3d
 
+## 1.18.2
+
+### Patch Changes
+
+- 389a7f9: Fixes to how the hand, pencil and slice tools, the 3D camera actions and the trim tool take their gestures.
+  
+  - The hand tool pans on a drag with Shift, Alt, Ctrl or Cmd held. Before, a held modifier kept its drag from matching, so the drag went to whatever sat under it: a Shift-drag on a selected node moved the node, and an Alt-drag cloned it.
+  - The pencil draws a stroke that starts over a shape, as the other insert tools do. Before, its drag matched only on empty canvas, and a drag starting on a shape moved the shape.
+  - With a slice cut pending, an Alt-drag places one more point where it is released, as a plain drag does, rather than cutting freehand on its own.
+  - `camera.orbit`, `camera.pan` and `camera.pinchDolly` hand a drag or pinch on to the next binding when the view has no `camera3d` dep. `camera.dolly` passes on a wheel or pinch it does nothing with (no camera, or a wheel that only moves sideways), and `camera.home` passes on a double click when there is no camera or no `home`. Before, each took the input and did nothing, so no other binding, and for a wheel not the page either, saw it.
+  - The trim tool clears its dashed preview of the piece under the pointer when the pointer leaves the canvas. The warp tools' option docs give Envelope's default key as Shift+F, which it is.
+- 8d97dd3: Two 3D views on one surface each look through their own camera.
+  
+  - `<CanvasView deps>` takes deps of the view's own, which actions dispatched inside it read in front of the surface's. A 3D host passes the `camera3d`, `nodeAtPoint` and `poseDescriptor` it built for that view's camera, so a press, a drag and an orbit in the view all use it. The view's camera, selection, `hitAt` and dispatcher stay its own.
+  - `<SceneCanvas geometry={{ pickEvery }}>` receives the view a pick is asked for as a second argument, whose new `viewId` field names it (`null` or absent for the surface). `RegionPickView` (`HitTestView`) carries the same field.
+  - An immediate action's params carry `viewId`, as `InvocationCtx` already did, and the select tool hands it to its `pickEvery` and `pickBest`.
+  - `Action.enabled` takes the view the event landed in as a fifth argument, `viewId`. `group.enter` picks through it, so a double-click in a view enters the group that view shows, and a hover in a view (`onHover`, `RuleCtx.hover`) names what that view shows.
+  - kernel3d's `ViewportSource` takes the view id it is asked for, and `createNodeAtPoint`, `createAreaSelect` and `createPoseDescriptor` take the view they serve, as does `createSnap` through its `viewId` option. The new `createPickEvery(world)` is the `geometry.pickEvery` for a 3D world, casting from the asking view's camera. A `viewport` function that took some other optional argument no longer fits `ViewportSource`.
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [3528360]
+- Updated dependencies [115c920]
+- Updated dependencies [d416d0c]
+- Updated dependencies [0c77d00]
+- Updated dependencies [fc38c90]
+- Updated dependencies [19c6682]
+- Updated dependencies [389a7f9]
+- Updated dependencies [493a3d2]
+- Updated dependencies [7457319]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [3b10455]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/core@1.18.2
+  - @weasel-js/routing@1.18.2
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/paint@1.18.2
+  - @weasel-js/stroke@1.18.2
+  - @weasel-js/geom@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

@@ -1,5 +1,110 @@
 # @weasel-js/routing
 
+## 1.18.2
+
+### Patch Changes
+
+- 895ed9b: The eyedropper samples through chrome, and an exclusive claim no longer warns on a press its owner takes later.
+  
+  - The eyedropper's click consults the hit, so an exclusive chrome claim (a measurement under `measurementsContribution`, a selection handle) leaves it in contention and the active or held tool outranks the chrome's ambient binding. Before, a click on a measurement with the eyedropper active picked the measurement and sampled nothing. The dispatcher no longer reports an exclusive claim as dead at a press's eager `stage: 'press'` dispatch, where a claim owner binding only click and drag matches nothing: the press is dispatched again as the drag or click it settles into. Before, every such press logged `exclusive claim by "…" matched no binding` though the owner went on to take it.
+- 3528360: Disabled menu rows say why, and actions inside list entries and objects latch.
+  
+  - A menu row drawn from a pref that a condition disables carries the pref's `disabledReason`, for boolean, enum, number, color, string and action rows and for every row inside an object, list or map it draws. A field or option with a reason of its own keeps it. Before, these rows were disabled with no reason, and an action row dropped even its action's own.
+  - A prefs form and a selection panel draw an action pressed where its `activeIf` holds when the action is a field of a list's or a map's entry, or of an object. Before, only an action at the top of the form latched: the entry's `active` set from `applyPrefEntryConditions` was never read.
+- 115c920: Fixes to labkit's chrome, trial keys and settings rail, and to how action and enum prefs report their state.
+  
+  - A trial may suppress `eyedropper`, `picked-color` and `snapshot-load` before they appear. Before, naming one in `suppress` threw until a lens mounted or a snapshot was saved, as naming a typo does.
+  - `sectionTree` answers an action's `activeIf` against the config, as it does `showIf` and `enableIf`. Before, the rail form read the condition against its renested values, where nothing is at the config's paths, so the button never latched.
+  - A lab header item's command carries the item's icon, shortcut text and danger grade, so a palette or menu running it shows what the header button does.
+  - A held Mod+S saves one snapshot rather than one per key repeat.
+  - The palette keeps a group's tools together where the group first appears, as every other region does. Before, it drew them in declaration order, and `TrialTool.group` said ungrouped tools sorted last, which nothing did.
+  - `applyPrefConditions` names an action in `active` only where its `activeIf` was answered. Before, an action in a list's item whose condition reads the entry was reported active at `rows.*`, and `applyPrefEntryConditions` reported an entry's action active whenever its condition read anything but the entry.
+  - A menu drawn from an enum pref carries each option's icon, description and disabled reason onto its row, as forms and selects already do; forge's Globals menu shows them.
+- d416d0c: Fixes to press ownership, menus, tool sets and shortcuts in routing, and to cursor glyph lookup and mark placement.
+  
+  - A dispatcher leaves a press to an item inside it that opened a pointer session of its own before the dispatcher heard the press (an item listening natively rather than through React). Before, a press released in place on such an item also ran the surface's click binding.
+  - `withoutTools` keeps the sets nested in the set it cuts from, so a stack inside one (path-tools' warp stack inside `RESHAPE_TOOLS`) is still a stack. Before, it flattened every nested set into plain ids. A nested set it empties is dropped.
+  - A menu row asks `enabled` and `active` with the params its run hands `trigger`: the menu's own params and the point it opened at, as well as the variant's. Before, a row read only the variant's params, so an action judging the menu's params was shown disabled while `trigger` would run it, or the reverse.
+  - `useCommand` compares `icon` by value, so an icon with a mark written inline (`{ name, mark }`) no longer replaces the action on every render.
+  - `actionShortcuts` finds a variant's key through a binding whose `params` is a thunk.
+  - `cursorFor` and `cursorGlyph` throw on a glyph or mark named like an `Object.prototype` member (`constructor`, `toString`) instead of baking it.
+  - `placeCursorPath` (and `markedGlyph` through it) reads numbers written without a leading digit (`.5`), run together (`1.5.5`) or with an exponent (`1e-3`), and throws on a command whose numbers do not make whole points. Before, it misread the first three and dropped a trailing number.
+- 19c6682: Fixes to shortcut chips, tuned actions, commands, gesture and UI-driven handles, the `key()` sugar and cursor angles.
+  
+  - `keySpecShortcut` and `actionShortcuts` give a key binding that requires `ctrl` or `meta` (without `mod`) no chip, as their docs say. Before, a Ctrl+Tab binding showed in menus and palettes as a bare `Tab`; an action bound that way now falls back to its next binding's chip, or shows none.
+  - An action tuned with `params` (`ActionsRegistry.tune`, or the last-operation panel's session params) now has its `enabled` and `active` asked with those params beneath the call's, as `run`, `preview` and `cursor` already were. A trigger, menu row or palette entry no longer reads a tuned action as disabled, or not pressed, for want of a param the tuning supplies.
+  - A handle opened by `beginUiOngoing` is out of flight before its `onEnd` runs, on `end()` and when a second `begin` auto-commits it, as a gesture's is. An `onEnd` reading the dispatcher no longer sees its own handle, and one that begins the same action again no longer has `onEnd` run twice.
+  - `key('+')` is the plus key; it threw that the shortcut names no key. `'Mod++'` already read this way.
+  - A cursor spec whose `angle` is NaN or infinite draws unrotated. Before, the baked cursor's hotspot read `NaN NaN`, so the browser dropped the cursor, and the painted tier drew nothing.
+  - `useCommand` keeps its action across renders whose `keys` hold a new function in the same place, as an inline params thunk or target predicate is on every render, and the binding calls the latest one. Before, such a command was unregistered and registered again on every render.
+  - An ongoing action whose `start` throws as a gesture opens it is caught and logged, as an immediate action's `run` is: the press is spent, nothing is left in flight, and the error no longer escapes into the pointer or key listener. A `start` deferred by `dragThresholdPx`, which runs on a later move, is not covered.
+- 493a3d2: Fixes to how the gesture dispatcher ends held keys, carries and pointer sessions, and to which surface keeps the keys.
+  
+  - A key held over one view and released over another, or released by the window losing focus, ends its action with the context of the view that took the keydown (its `viewId` and that view's deps), not the view under the pointer.
+  - A carry (`startCarry`) is canceled when the window loses focus, as the dispatcher's own drags are. Before, its next move after focus came back, with no button held, was read as a release and dropped the carry wherever the pointer then was.
+  - A pointer session whose origin element leaves the document mid-drag cancels with `'lostcapture'` in Chrome, which sends `lostpointercapture` to the document rather than to the removed element. Before, the drag stayed live and committed on the release.
+  - A press, wheel or right-click on a dispatcher mounted with `keyboard: false` (labkit's `FollowDispatch`, a sweeping `ToggleBar` or `OptionsBar`, `TrialOverview`) no longer takes the keys from the canvas that holds them. `ActionsRegistry.activate` takes `{ keys: false }` for this.
+- 7457319: Fix route-conflict reports, a keymap hint's modifier names, a tuned variant's shortcut chip, mode keys beating the active tool's, and the tool cursor's painted mark.
+  
+  - The route-conflict check no longer reports a held tool or an ungated hotkey action against a hotkey action gated by an `eligible` rule, which outranks them whenever its rule holds.
+  - `useContributions` now checks a keymap's own bindings, and entries held only on a key, for route conflicts; both went unchecked.
+  - A keymap hint names a pointer gesture's modifiers as the platform's keyboard prints them (`Cmd-click` on a Mac, `Ctrl-click` elsewhere) instead of `Mod-click` or `Meta-click`. `describeKeymap` takes an optional `{ platform }`.
+  - A tool's painted cursor is written again when only its mark changes.
+  - A variant's shortcut chip in a menu, palette or bar shows a key whose binding fires that variant through a tuning's params.
+  - Mode keys from `modeShortcuts` ride the ambient tier instead of the hotkey tier, so the active tool's own binding on the same key comes first: Enter finishes a slice cut (or a pen or spiro path) instead of entering Path Edit, and inside Crop instead of committing it. A tool that declines the key still lets the mode take it.
+  - The route-conflict check reports a hotkey-tier action (a tool shortcut, a keymap leader, `scope: 'hotkey'`) whose binding matches a tool's, which it outranks whenever that tool is active. `Conflict.shadows` marks such a report.
+- b188aea: Fixes to the last operation, tunings, held previews, merged menus, tool options, scratch keys, `freshId`, cursor sizes and the scoping dim.
+  
+  - Adjusting the last operation after its action was unregistered, or while its `enabled` refuses, leaves the operation, the history and the selection as they were, and `adjust` returns `false`. Before, it undid the operation and put nothing in its place.
+  - A tuning's params reach an action that declares a `params` form as the registry lists it, so `invokedParams` names them and a variant's shortcut chip shows for a binding that fires the variant through the tuning.
+  - A held tool option that is NaN or infinite reads as its default, so the bracket keys step it again instead of leaving it NaN. An option named like an `Object.prototype` member (`toString`) reads its default.
+  - `getScratch` reads a key named like an `Object.prototype` member as unset until it is written, instead of handing back the prototype's function.
+  - A cursor glyph whose `size` or `worldRadius` is NaN, infinite, zero or negative draws at the default size, instead of baking `NaN` into its image, which the browser drops.
+  - `createScopingDim` holds `dimAlpha` to [0, 1] and reads NaN as `OUT_OF_SCOPE_ALPHA`.
+  - An action held through `holdPreview` asks its `enabled` again at the release, and runs nothing when it now refuses; the preview still comes down.
+  - `freshId` numbers from 1 when `from` is NaN or infinite. Before, a NaN `from` looped forever when `base-NaN` was taken.
+  - Two menu contributions sharing a key no longer overwrite a key already spelled `key~n`: the second takes the next free `~n`.
+- 3b10455: Fixes to how an ongoing action's handle is started and ended.
+  
+  - An ongoing action held back by `dragThresholdPx` whose `start` throws when the drag crosses the threshold now ends the drag: the error is logged once, nothing is left in flight, and no later move of that drag calls `start` again. Before, the error escaped into the pointer listener and every later move of the drag tried `start` again. The next press starts as usual.
+  - An ongoing action bound to an input that nothing later continues (a key, a click, a wheel, a Safari pinch) is still started on each firing, and the handle a second firing replaces is now ended with `'commit'`. Before, two presses of its key ran `start` twice and only the second handle's `onEnd` ever ran. The latest handle stays in flight until the next firing or a cancel-all, as before; bind such an action to `key-held` or a drag to give it an end of its own.
+  - A handle whose `start` tore the dispatcher down synchronously (a `flushSync` that unmounts the canvas, say) is ended with `'cancel'` as soon as `start` returns, rather than left in flight after the teardown.
+- 5d2451b: Cmd-click toggles and Shift-click selects a range, by default. This changes the defaults: anyone relying on Shift-click toggling a node, or on Cmd-click picking past groups, has to move.
+  
+  - `useSelection`'s `extend` key now defaults to Cmd on Apple platforms and Ctrl elsewhere, and `range` defaults to Shift. Passing `extend: 'shift'` keeps the old behavior: Shift toggles and nothing ranges.
+  - On a canvas, a Shift-click selects every node a click there could select whose center lies in the box the last node clicked and the pressed one span, read where each is drawn (turned and framed), of any kind. A group whose center lies in the box comes whole; inside an entered group, the range stays inside it.
+  - `select.deep`, which selects the node under the pointer past every group, moves from Cmd-press to Cmd+Alt-press (Ctrl+Alt off macOS). With Shift it ranges among the nodes around the one it picked.
+  - `UseSelectToolOptions.between` sets what a range covers; `useSelectTool` defaults it to the box rule above, and `useSelectToolWith` without it walks the selection's order. `SelectionApi.applyClick` takes the range as an optional third argument, and `@weasel-js/select`'s `SelectContext` takes it as `between`, ahead of `order`.
+  - `<SceneCanvas>` sources a `selectRange` dep: the range its select tool applies, read by an action that applies a click outside the tool. A diagram's edge-label click uses it, so Shift-click on a label ranges by the same box rule instead of by paint order.
+- 8d97dd3: Two 3D views on one surface each look through their own camera.
+  
+  - `<CanvasView deps>` takes deps of the view's own, which actions dispatched inside it read in front of the surface's. A 3D host passes the `camera3d`, `nodeAtPoint` and `poseDescriptor` it built for that view's camera, so a press, a drag and an orbit in the view all use it. The view's camera, selection, `hitAt` and dispatcher stay its own.
+  - `<SceneCanvas geometry={{ pickEvery }}>` receives the view a pick is asked for as a second argument, whose new `viewId` field names it (`null` or absent for the surface). `RegionPickView` (`HitTestView`) carries the same field.
+  - An immediate action's params carry `viewId`, as `InvocationCtx` already did, and the select tool hands it to its `pickEvery` and `pickBest`.
+  - `Action.enabled` takes the view the event landed in as a fifth argument, `viewId`. `group.enter` picks through it, so a double-click in a view enters the group that view shows, and a hover in a view (`onHover`, `RuleCtx.hover`) names what that view shows.
+  - kernel3d's `ViewportSource` takes the view id it is asked for, and `createNodeAtPoint`, `createAreaSelect` and `createPoseDescriptor` take the view they serve, as does `createSnap` through its `viewId` option. The new `createPickEvery(world)` is the `geometry.pickEvery` for a 3D world, casting from the asking view's camera. A `viewport` function that took some other optional argument no longer fits `ViewportSource`.
+- Updated dependencies [115c920]
+- Updated dependencies [d416d0c]
+- Updated dependencies [19c6682]
+- Updated dependencies [b57c3e3]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [b188aea]
+- Updated dependencies [d373a31]
+- Updated dependencies [5d2451b]
+  - @weasel-js/prefs@1.18.2
+  - @weasel-js/cursor@1.18.2
+  - @weasel-js/gestures@1.18.2
+  - @weasel-js/select@1.18.2
+  - @weasel-js/react@1.18.2
+  - @weasel-js/history@1.18.2
+  - @weasel-js/modes@1.18.2
+  - @weasel-js/registry@1.18.2
+  - @weasel-js/menu@1.18.2
+  - @weasel-js/icons@1.18.2
+  - @weasel-js/geom@1.18.2
+  - @weasel-js/quantity@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

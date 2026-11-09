@@ -1,5 +1,12 @@
 # @weasel-js/icons-plugin
 
+## 1.18.2
+
+### Patch Changes
+
+- 7a7a239: `icon()` calls through a parameter or local declaration that shadows the imported `icon` (or its alias) are no longer rewritten as icon refs; only calls that resolve to the import are.
+- @weasel-js/icons@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

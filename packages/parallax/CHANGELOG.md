@@ -1,5 +1,49 @@
 # @weasel-js/parallax
 
+## 1.18.2
+
+### Patch Changes
+
+- ea6c53b: Fixes to tiled layer stacking, ruler ticks zoomed far out, the obstacle-avoiding router's spatial index, and sizes in plot and snapPoint that hung on huge values.
+  
+  - A tiled layer draws a `space: 'screen'` source in its place among its sources. Before, every screen-space source was drawn under all the tiled ones, so a HUD listed last sat under the backdrop.
+  - `rulerTicks` lays out no ticks once labeled ones would sit under a pixel apart. Zoomed out past the longest step a unit system has (a `PIXELS` document near the zoom floor), it made hundreds of thousands to millions of ticks per ruler, every frame.
+  - The obstacle-avoiding router no longer hangs on a connector whose waypoint is infinite, and no longer walks millions of cells for one a billion units away: its spatial hash checks an item or a query spanning thousands of cells by its box instead of filing or visiting each cell.
+  - Packet charts hold bits per row to 1–128 and draw fields up to bit 4095 (512 bytes); radar charts draw 1–20 rings. The editors' inputs carry these maxima and clamp a larger value typed in, and a spec loaded from text is held to them when drawn. A huge value used to hang the chart: `bitsPerRow: 1e9` built a billion-key scale, a field to bit `1e12` cut billions of row pieces, and `ticks: 1e9` drew a billion rings. A NaN bits per row or ring count now falls back to the default (32, 5).
+  - `snapPoint({ pattern: 'grid' })` offers at most 129 × 129 points, those around the dragged child's pose, where a spacing tiny next to the container listed billions of drop targets.
+- 3d522ea: Fixes for hangs and crashes far from the origin, at a zero gap, and on Mermaid ids given twice.
+  
+  - A gantt task counted in days or weeks from a start past what a `Date` holds (a huge `x` or `X` date) is no longer walked day by day, which never ended.
+  - `rulerTicks` lays out no ticks once the view is panned so far that ticks a step apart are one number, where the tick loop never ended.
+  - `linesIn` lists no lines of a pitch that far out, where it grew an array until it threw, so a grid layer drawn there draws none.
+  - `snapPoint`'s grid pattern counts its points from 0, so a dragged pose too far out for grid indices to count offers points instead of hanging.
+  - A tiled parallax layer panned that far draws no copies, where its copy loop never ended.
+  - The avoid router checks an item or query so far out that its cell indices stop counting by its box, where the spatial hash's cell walk never ended.
+  - The avoid router files an obstacle in its visibility graph only over the search window and its points, in at most 4096 strips. An obstacle running to infinity, or spanning a vast window, ran out of memory, and a box with a NaN side left every other obstacle out of the graph.
+  - `layered` with a `nodeGap` of 0 places nodes joined by a long edge at finite positions; every node landed at NaN.
+  - A Mermaid architecture diagram naming a service, junction or group twice is refused, naming the line, as Mermaid refuses it. Before, it read into a page that could not be drawn or written.
+  - A Mermaid mind map node repeating another's id reads with a unique one (`a_2`), as Mermaid draws both. Before, the page could not be drawn or written.
+- Updated dependencies [8048831]
+- Updated dependencies [e4b64b6]
+- Updated dependencies [895ed9b]
+- Updated dependencies [0c77d00]
+- Updated dependencies [fc38c90]
+- Updated dependencies [389a7f9]
+- Updated dependencies [7457319]
+- Updated dependencies [0e5661d]
+- Updated dependencies [707636a]
+- Updated dependencies [30dd2dc]
+- Updated dependencies [b188aea]
+- Updated dependencies [d16f1ca]
+- Updated dependencies [cd61bfa]
+- Updated dependencies [d373a31]
+- Updated dependencies [07205dd]
+- Updated dependencies [5d2451b]
+- Updated dependencies [800c96b]
+- Updated dependencies [8d97dd3]
+  - @weasel-js/core@1.18.2
+  - @weasel-js/registry@1.18.2
+
 ## 1.18.1
 
 ### Patch Changes

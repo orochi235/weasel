@@ -1,5 +1,9 @@
 # @weasel-js/bidi
 
+## 1.18.2
+
+No changes in this release.
+
 ## 1.18.1
 
 ### Patch Changes
