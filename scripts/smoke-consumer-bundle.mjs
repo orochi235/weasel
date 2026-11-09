@@ -222,7 +222,7 @@ console.log(
         else if (e.name.endsWith('.js')) {
           const text = await readFile(child, 'utf8');
           for (const [, spec] of text.matchAll(
-            /^\s*(?:import|export)\b[^;'"]*?from\s*['"](@weasel-js\/[^'"]+)['"]/gm,
+            /^\s*(?:(?:import|export)\b[^;'"]*?from\s*|import\s*)['"](@weasel-js\/[^'"]+)['"]/gm,
           )) {
             externalized.add(spec.split('/').slice(0, 2).join('/'));
           }
