@@ -168,4 +168,12 @@ describe('EffectList', () => {
     expect(seen('other')).toHaveLength(1);
     expect(screen.getAllByText('Weld').length).toBeGreaterThan(1);
   });
+
+  it('sizes its kind column from two kinds that share a label without a key clash', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const twins = { ...KINDS, fuse: { label: 'Weld', color: 3 } };
+    renderWithIcons(<EffectList items={START} kinds={twins} onChange={() => {}} />);
+    expect(error.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
+    error.mockRestore();
+  });
 });

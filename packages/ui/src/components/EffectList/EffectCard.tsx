@@ -54,8 +54,8 @@ export function EffectCard({
         <Switch className={s.switch} isSelected={item.on} onChange={(on) => onPatch({ on })} aria-label={`Run ${item.name}`} />
         <span className={s.kind}>
           <KindLabel kind={kind} fallback={item.kind} />
-          {kinds.map((k) => (
-            <KindLabel key={k.label} kind={k} sizer />
+          {kinds.map((k, i) => (
+            <KindLabel key={i} kind={k} sizer />
           ))}
         </span>
         <input
