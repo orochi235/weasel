@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { changedShapeParams, composeSnippet, defaultShapeParams, shapeParamsSnippet } from './snippets';
 
 describe('composeSnippet', () => {
-  it('writes the base, its params, each effect, and the appearance props', () => {
+  it('writes the base, its params, each effect that is on, and the appearance props', () => {
     const text = composeSnippet({
       base: 'rounded-rect',
       baseParams: { erosion: 0.5, mode: 'x' },
-      labEffects: [{ id: 1, type: 'outline', params: { width: 1, color: '#ff0000', dash: '' } }],
+      labEffects: [
+        { id: 1, type: 'outline', name: 'Outline', on: true, params: { width: 1, color: '#ff0000', dash: '' } },
+        { id: 2, type: 'shadow', name: 'Shadow', on: false, params: { dx: 1 } },
+      ],
       look: 'high', tint: '#000', variant: 'solid', size: 'sm', bloat: 0, crawlOn: false, crawlSpeed: 0.2, label: 'HI',
     });
     expect(text).toBe([
