@@ -80,6 +80,25 @@ describe('clock origin, speed and declare', () => {
     h.override({ origin: -300 });
     expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([4000, 0, 1]);
   });
+  it('declare leaves a clock at the start of a pass at that start, not the end of the pass before', () => {
+    const h = createClock({ duration: 100, loop: 3 });
+    h.clock.seek(200);
+    h.declare({ duration: 100, loop: 3 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([200, 2, 0]);
+    h.declare({ duration: 200, loop: 3 });
+    expect([h.clock.elapsed, h.clock.pass, h.clock.phase]).toEqual([400, 2, 0]);
+  });
+  it('a loop raised on an ended clock leaves it at the end of its pass, as a declaration does', () => {
+    const set = createClock({ duration: 100, loop: 2 });
+    set.clock.seek(200);
+    set.clock.loop = 3;
+    const declared = createClock({ duration: 100, loop: 2 });
+    declared.clock.seek(200);
+    declared.declare({ duration: 100, loop: 3 });
+    for (const { clock } of [set, declared]) {
+      expect([clock.elapsed, clock.pass, clock.phase, clock.ended]).toEqual([200, 1, 1, false]);
+    }
+  });
   it('declare keeps the pass and the shown time within it on a looping clock', () => {
     const h = createClock({ duration: 3000, loop: true });
     h.clock.seek(4500);

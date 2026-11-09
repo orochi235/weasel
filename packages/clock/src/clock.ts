@@ -66,12 +66,12 @@ function passOf(run: Run): { pass: number; into: number } {
 }
 
 /** Places `into` ms into pass `pass` of the run, the pass clamped to the run's last and
- *  `into` to the pass; a time on a boundary stands as the end of the pass before. */
+ *  `into` to the pass; `into` at the pass's end stands as that end, not the next pass's start. */
 function placeIn(run: Run, pass: number, into: number): void {
   const last = Math.ceil(passesOf(run.loop)) - 1;
   const within = Math.min(Math.max(0, into), run.duration);
   run.elapsed = clamp(run, Math.min(pass, last) * run.duration + within);
-  run.edge = run.elapsed > 0 && run.elapsed % run.duration === 0;
+  run.edge = within > 0 && run.elapsed > 0 && run.elapsed % run.duration === 0;
 }
 
 function change(run: Run, hub: Hub): void {
@@ -231,7 +231,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
       const { pass, into } = passOf(run);
       run.loop = next;
       run.span = run.duration * passesOf(run.loop);
-      if (run.elapsed > run.span) placeIn(run, pass, into);
+      if (Number.isFinite(run.duration)) placeIn(run, pass, into);
       change(run, hub);
       hub.subs.emit();
     },
