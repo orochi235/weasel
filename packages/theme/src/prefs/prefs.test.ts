@@ -193,6 +193,18 @@ describe('themePrefsValues', () => {
   });
 });
 
+describe('themePrefsValues over a token leaf outside any group', () => {
+  it('writes its value at its own key', () => {
+    const schema: PrefGroup = {
+      name: 'Loose',
+      children: { axis: SCHEMA.children.axis!, 'font-mono': LEAVES.get('font.font-mono')! },
+    };
+    const { values } = themePrefsValues(open(schema), weaselTheme);
+    expect(values['font-mono']).toBe(resolveTheme(weaselTheme)['--wzl-font-mono']);
+    expect(Object.keys(values)).not.toContain('font-mon');
+  });
+});
+
 describe('a theme that extends another', () => {
   it('makes leaves for its own tokens and takes a pin’s type from the token it replaces', () => {
     const acme = defineTheme({ name: 'acme', pins: { 'accent-base': '#ff3366', 'acme-gap': { value: '3px', type: 'dimension' } } });
