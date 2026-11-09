@@ -7,6 +7,7 @@ import { pref } from '@weasel-js/prefs';
 import { useMemo, useState } from 'react';
 import { can } from '../menuBar';
 import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
+import { reportFailure } from '../reportFailure';
 
 export const RUN_ACTIONS = {
   run: 'pipeline.run', step: 'pipeline.step', play: 'pipeline.play', pause: 'pipeline.pause', reset: 'pipeline.reset',
@@ -74,10 +75,10 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   useCommand(RUN_ACTIONS.reset, 'Reset', () => { r.reset(); audio.runner?.reset(); });
   useCommand(RUN_ACTIONS.source, 'Choose Source Image…', () => {
     chooseImage().then((image) => { if (image !== null) setSources({ image }); })
-      .catch((err: unknown) => console.warn('weaselchart: could not read the image', err));
+      .catch(reportFailure('Could not read the image'));
   });
   useCommand(RUN_ACTIONS.audioSource, 'Choose Source Audio…', () => {
-    audio.chooseSource().catch((err: unknown) => console.warn('weaselchart: could not read the audio', err));
+    audio.chooseSource().catch(reportFailure('Could not read the audio'));
   });
   useCommand(RUN_ACTIONS.showValues, 'Show Values', () => setShowValues((v) => !v), { active: () => showValues });
   useCommand(RUN_ACTIONS.showPreviews, 'Show Previews', () => setShowPreviews((v) => !v), { active: () => showPreviews });

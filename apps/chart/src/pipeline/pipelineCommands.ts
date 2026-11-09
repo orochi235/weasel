@@ -10,6 +10,7 @@ import { LOOK_MENU } from './pipelineLook';
 import { PIPELINE_PAGE_MENU } from './pipelinePages';
 import { RUN_MENU, SHOW_MENU } from './pipelineRun';
 import { PIPELINE_FILE_EXTENSION, emptyPipeline, pipelineFromJson, type PipelineDoc } from './usePipelineDoc';
+import { reportFailure } from '../reportFailure';
 
 export const PIPELINE_ACTIONS = {
   new: 'pipeline.new', open: 'pipeline.open', save: 'pipeline.save', undo: 'pipeline.undo', redo: 'pipeline.redo',
@@ -46,7 +47,7 @@ async function openPipeline(pipeline: PipelineDoc): Promise<void> {
 export function usePipelineCommands(pipeline: PipelineDoc): void {
   useNewCommand(PIPELINE_ACTIONS.new, 'New', () => pipeline.change(emptyPipeline(), 'New pipeline'));
   useOpenCommand(PIPELINE_ACTIONS.open, 'Open…', () => {
-    openPipeline(pipeline).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
+    openPipeline(pipeline).catch(reportFailure('Could not open the file'));
   });
   useSaveCommand(PIPELINE_ACTIONS.save, 'Save', () => {
     downloadBlob(new Blob([JSON.stringify(pipeline.doc)], { type: 'application/json' }), `pipeline${PIPELINE_FILE_EXTENSION}`);

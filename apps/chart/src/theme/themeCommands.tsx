@@ -8,6 +8,7 @@ import { downloadBlob, pickFile, menuRun } from '@weasel-js/editor';
 import type { ReactElement } from 'react';
 import type { ChartScene } from '../chartDocument';
 import { applyChartTheme } from './applyChartTheme';
+import { reportFailure } from '../reportFailure';
 
 /** What a chart that names no theme is drawn in: ink on white, as charts were before themes. */
 export const CHART_DEFAULT_THEME: DiagramTheme = DIAGRAM_THEMES.paper!;
@@ -53,7 +54,7 @@ async function importTheme(scene: ChartScene): Promise<void> {
 export function ThemeCommands({ scene, onEdit }: { scene: ChartScene; onEdit: () => void }): ReactElement {
   useCommand(THEME_ACTIONS.edit, 'Edit Theme…', onEdit);
   useCommand(THEME_ACTIONS.import, 'Import Theme…', () => {
-    importTheme(scene).catch((err: unknown) => console.warn('weaselchart: could not import the theme', err));
+    importTheme(scene).catch(reportFailure('Could not import the theme'));
   });
   useCommand(THEME_ACTIONS.export, 'Export Theme…', () => {
     const theme = chartThemeOf(scene);

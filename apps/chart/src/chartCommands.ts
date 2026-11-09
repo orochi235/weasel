@@ -14,6 +14,7 @@ import { IMPORT_ACTION } from './importExport';
 import { PAGE_MENU } from './pages/pageCommands';
 import { useChartPref } from './prefs';
 import { THEME_MENU } from './theme/themeCommands';
+import { reportFailure } from './reportFailure';
 
 export const CHART_ACTIONS = {
   new: 'chart.new', open: 'chart.open', save: 'chart.save',
@@ -65,7 +66,7 @@ async function openChart(scene: ChartScene): Promise<void> {
  *  `NewChart`'s, which owns its dialog. */
 export function useChartCommands(scene: ChartScene): void {
   useOpenCommand(CHART_ACTIONS.open, 'Open…', () => {
-    openChart(scene).catch((err: unknown) => console.warn('weaselchart: could not open the file', err));
+    openChart(scene).catch(reportFailure('Could not open the file'));
   });
   useSaveCommand(CHART_ACTIONS.save, 'Save', () => {
     downloadBlob(new Blob([chartToJson(scene)], { type: 'application/json' }), `chart${CHART_FILE_EXTENSION}`);

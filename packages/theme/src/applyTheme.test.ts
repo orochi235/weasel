@@ -50,6 +50,26 @@ describe('applyTheme', () => {
     warn.mockRestore();
   });
 
+  it('leaves out a value that opens a comment, breaks a string, or escapes its own semicolon, keeping every other rule', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const hostile = [
+      ['comment', 'serif /*'],
+      ['newline', "'a\n;} * { color: red } '"],
+      ['escape', 'serif \\'],
+    ];
+    for (const [name, value] of hostile) {
+      applyTheme(document.createElement('div'), defineTheme({ name, pins: { 'font-ui': value, 'accent-base': '#ff0000' } }), { mode: 'dark' });
+    }
+    applyTheme(document.createElement('div'), defineTheme({ name: 'plain', pins: { 'accent-base': '#0000ff' } }), { mode: 'dark' });
+    const rules = [...document.adoptedStyleSheets, ...document.styleSheets].flatMap((s) => [...s.cssRules]) as CSSStyleRule[];
+    expect(rules.map((r) => /data-wzl-theme=['"]?(\w+)/.exec(r.selectorText)?.[1]).sort()).toEqual(['comment', 'escape', 'newline', 'plain']);
+    for (const rule of rules) {
+      if (!rule.selectorText.includes('plain')) expect(rule.style.getPropertyValue('--wzl-font-ui')).toBe('');
+      expect(rule.style.getPropertyValue('--wzl-accent').trim()).not.toBe('');
+    }
+    warn.mockRestore();
+  });
+
   it('writes no inline custom properties', () => {
     const el = document.createElement('div');
     applyTheme(el, weaselTheme, { mode: 'light' });
