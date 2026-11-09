@@ -24,12 +24,23 @@ function AppKeys({ run, yieldKeys }: { run: () => void; yieldKeys: boolean }) {
   return null;
 }
 
-/** A canvas dispatching on the same registry; with `keys` off it hears none, so whatever runs is the app's. */
+/** A canvas dispatching on the same registry. With `keys` off it hears none, so whatever runs is the
+ *  app's, and a press there leaves the keys alone: it holds them by `claimKeys` instead. */
 function Canvas({ keys }: { keys: boolean }) {
   const registry = useActionsRegistry() as ActionsRegistry;
   const ref = useRef<HTMLDivElement>(null);
-  useGestureDispatcher({ canvasRef: ref, actions: registry, entriesById: NO_ENTRIES, channels: CHANNELS, keyboard: keys });
+  useGestureDispatcher({
+    canvasRef: ref, actions: registry, entriesById: NO_ENTRIES, channels: CHANNELS, keyboard: keys, claimKeys: !keys,
+  });
   return <div ref={ref} data-testid="canvas" />;
+}
+
+/** A keyboard-off canvas that claims nothing. */
+function OffCanvas() {
+  const registry = useActionsRegistry() as ActionsRegistry;
+  const ref = useRef<HTMLDivElement>(null);
+  useGestureDispatcher({ canvasRef: ref, actions: registry, entriesById: NO_ENTRIES, channels: CHANNELS, keyboard: false });
+  return <div ref={ref} data-testid="off" />;
 }
 
 function mount(yieldKeys: boolean, run: () => void, canvasKeys = true) {
@@ -68,6 +79,19 @@ describe('useGestureDispatcher — yieldKeys', () => {
   it('leaves the key to that canvas, which runs it once', () => {
     const run = vi.fn();
     mount(true, run).holdKeys();
+    press();
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('a press on a canvas with its keyboard channel off does not make it hold the keys', () => {
+    const run = vi.fn();
+    render(
+      <DepRegistryProvider><ActionsProvider><ActiveToolContextProvider>
+        <AppKeys run={run} yieldKeys />
+        <OffCanvas />
+      </ActiveToolContextProvider></ActionsProvider></DepRegistryProvider>,
+    );
+    fireEvent.pointerDown(document.querySelector('[data-testid="off"]')!, { button: 0, pointerId: 1 });
     press();
     expect(run).toHaveBeenCalledTimes(1);
   });
