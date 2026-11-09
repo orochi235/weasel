@@ -84,7 +84,7 @@ function wrapParams<F extends (...args: never[]) => unknown>(fn: F | undefined, 
   const wrapped = ((...args: unknown[]) => {
     const given = [...args];
     given[at] = tunedParams([{ params }], given[at] as Record<string, unknown> | undefined);
-    return (fn as (...a: unknown[]) => unknown)(...given);
+    return (fn as unknown as (...a: unknown[]) => unknown)(...given);
   }) as unknown as F;
   FN_WRAPS.set(wrapped, { inner: fn, params });
   return wrapped;
