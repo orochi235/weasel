@@ -27,14 +27,29 @@ export const piePercent = (value: number, total: number): string => `${total > 0
 /** A slice's value as the legend shows it with `showData`. */
 export const pieValueText = (value: number): string => `[${value}]`;
 
+/** Each slice's share of the whole, 0 to 1; all zero when nothing has a value. A sum past what a number holds is
+ *  taken over the values divided by the largest, so the shares still add up to one. */
+function pieShares(data: PieData): number[] {
+  let values = data.slices.map((s) => (Number.isFinite(s.value) && s.value > 0 ? s.value : 0));
+  let total = values.reduce((a, b) => a + b, 0);
+  if (!Number.isFinite(total)) {
+    const largest = values.reduce((a, b) => Math.max(a, b), 0);
+    values = values.map((v) => v / largest);
+    total = values.reduce((a, b) => a + b, 0);
+  }
+  return values.map((v) => (total > 0 ? v / total : 0));
+}
+
 /** Each slice's start and end angle, in order clockwise from twelve o'clock; all zero when nothing has a value. */
 export function pieAngles(data: PieData): { start: number; end: number }[] {
-  const values = data.slices.map((s) => (Number.isFinite(s.value) && s.value > 0 ? s.value : 0));
-  const total = values.reduce((a, b) => a + b, 0);
+  return anglesOf(pieShares(data));
+}
+
+function anglesOf(shares: readonly number[]): { start: number; end: number }[] {
   let at = 0;
-  return values.map((v) => {
+  return shares.map((share) => {
     const start = at;
-    at += total > 0 ? (v / total) * 2 * Math.PI : 0;
+    at += share * 2 * Math.PI;
     return { start, end: at };
   });
 }
@@ -82,13 +97,13 @@ export function compilePie(
   const area = { width: Math.max(0, right - PAD), height: Math.max(0, size.height - PAD - top) };
   const center = { x: PAD + area.width / 2, y: top + area.height / 2 };
   const radius = Math.min(area.width, area.height) / 2;
-  const angles = pieAngles(data);
-  const total = data.slices.reduce((sum, s) => sum + (Number.isFinite(s.value) && s.value > 0 ? s.value : 0), 0);
-  data.slices.forEach((slice, i) => {
+  const shares = pieShares(data);
+  const angles = anglesOf(shares);
+  data.slices.forEach((_, i) => {
     const { start, end } = angles[i]!;
     if (end <= start || radius < 1) return;
     marks.push(arcMark({ key: `slice:${i}`, center, innerRadius: 0, outerRadius: radius, startAngle: start, endAngle: end, color: seriesColor(theme, i), datum: { slice: i } }));
-    const text = piePercent(slice.value, total);
+    const text = piePercent(shares[i]!, 1);
     const room = measure(text, theme.font);
     const mid = (start + end) / 2;
     const r = radius * LABEL_RADIUS;
