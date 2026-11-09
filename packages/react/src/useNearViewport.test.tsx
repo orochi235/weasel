@@ -64,3 +64,21 @@ test('turns false again once the element leaves the root', () => {
   act(() => report([{ isIntersecting: false, rootBounds: ROOT, boundingClientRect: rect(2000, 2080) }]));
   expect(near()).toBe('false');
 });
+
+test('watches the viewport of the document the element is in, as a popout window has its own', () => {
+  let root: unknown = null;
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(cb: (entries: Entry[]) => void, opts: { root?: unknown }) { report = cb; root = opts.root; }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  const other = document.implementation.createHTMLDocument('popout');
+  const container = other.createElement('div');
+  other.body.append(container);
+  render(<Probe initial={false} />, { container });
+  expect(root).toBe(other);
+});
