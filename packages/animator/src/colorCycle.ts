@@ -8,6 +8,7 @@ import { resolveInterpolator, type ColorInterpolate } from './colorInterpolate';
 export interface CycleVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
+  /** ms for the colors to come round once; positive. `direction` turns them the other way. */
   msPerCycle: number;
   direction?: 1 | -1;
   easing?: EasingSpec;
@@ -38,6 +39,9 @@ export function cycleVertexColors(
   animator: Animator,
   opts: CycleVertexColorsOptions,
 ): CycleHandle {
+  if (!(opts.msPerCycle > 0)) {
+    throw new RangeError(`cycleVertexColors: msPerCycle is a positive time, not ${opts.msPerCycle}`);
+  }
   const interp = resolveInterpolator(opts);
   const { id, channel } = opts;
   const direction = opts.direction ?? 1;
