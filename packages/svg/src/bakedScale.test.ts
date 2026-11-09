@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseSvg } from './parse';
+import { withTransformsBaked } from './bakeTransforms';
 import type { SvgGroupNode, SvgImageNode, SvgNode, SvgPathNode, SvgTextNode } from './types';
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -140,5 +141,27 @@ describe('a userSpaceOnUse gradient under a baked transform', () => {
       `${defs}<g transform="translate(100,100)"><text x="0" y="10" font-size="10" fill="url(#lin)">Hi</text></g>`,
     );
     expect(leaf.fill).toMatchObject({ paint: { from: { x: 100, y: 100 }, to: { x: 150, y: 100 } } });
+  });
+});
+
+describe('withTransformsBaked', () => {
+  it('scales a head sized in world units with the stroke, and leaves a screen-sized one', () => {
+    const [group] = withTransformsBaked([{
+      kind: 'group',
+      transform: [2, 0, 0, 2, 0, 0],
+      children: [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        fill: { kind: 'none' },
+        stroke: {
+          paint: { kind: 'solid', color: '#000000' }, width: 1,
+          markerStart: { key: 'arrow', size: 3 }, markerEnd: { key: 'arrow', size: { px: 4 } },
+        },
+      }],
+    } as SvgNode]);
+    const stroke = ((group as SvgGroupNode).children[0] as SvgPathNode).stroke!;
+    expect(stroke.width).toBe(2);
+    expect(stroke.markerStart).toEqual({ key: 'arrow', size: 6 });
+    expect(stroke.markerEnd).toEqual({ key: 'arrow', size: { px: 4 } });
   });
 });

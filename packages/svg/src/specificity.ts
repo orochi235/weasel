@@ -18,6 +18,8 @@ function identEnd(s: string, i: number): number {
 
 const LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
 const MAX_ARG_PSEUDOS = new Set(['not', 'is', 'matches', '-webkit-any', 'has']);
+/** Pseudo-classes whose `An+B of S` argument adds S's specificity to their own. */
+const NTH_PSEUDOS = new Set(['nth-child', 'nth-last-child']);
 
 /** Negative when `a` is less specific than `b`, positive when more, 0 when equal. */
 export function compareSpecificity(a: Specificity, b: Specificity): number {
@@ -69,7 +71,14 @@ export function specificity(selector: string): Specificity {
       else if (MAX_ARG_PSEUDOS.has(name) && arg != null) {
         const m = maxSpecificity(arg);
         a += m[0]; b += m[1]; c += m[2];
-      } else b++;
+      } else {
+        b++;
+        const of = arg != null && NTH_PSEUDOS.has(name) ? /\sof\s([\s\S]*)$/i.exec(arg) : null;
+        if (of) {
+          const m = maxSpecificity(of[1]);
+          a += m[0]; b += m[1]; c += m[2];
+        }
+      }
     } else if (/[a-zA-Z_\\-]/.test(ch) || ch.charCodeAt(0) > 0x7f) {
       c++;
       i = identEnd(s, i);

@@ -45,6 +45,12 @@ describe('lines of text written as positioned tspans', () => {
     expect(node.text).toBe('Line one\nLine two');
   });
 
+  it('reads a newline in text content as a space, as browsers draw it', () => {
+    expect(text('<text>Hello\nworld</text>').node.text).toBe('Hello world');
+    expect(text('<text>a<tspan font-weight="bold">\nb</tspan></text>').node.text).toBe('a b');
+    expect(text('<text>\nHello\n</text>').node.text).toBe('Hello');
+  });
+
   it('keeps one line for a tspan that only restyles or only moves sideways', () => {
     expect(text('<text>a<tspan font-weight="bold">b</tspan>c</text>').node.text).toBe('abc');
     expect(text('<text><tspan x="0">a</tspan><tspan x="30">b</tspan></text>').node.text).toBe('ab');

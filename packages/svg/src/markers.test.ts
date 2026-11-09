@@ -125,6 +125,21 @@ describe('ingesting a marker the kit has no key for', () => {
     expect(coordsOf(markers![0])).toEqual([-2, -1, 0, 0, -2, 1]);
   });
 
+  it('scales userSpaceOnUse geometry with a transform over the stroke, as a browser draws it', () => {
+    const def = '<marker id="u" markerUnits="userSpaceOnUse" refX="4" refY="2">'
+      + '<path d="M0 0 L4 2 L0 4 Z"/></marker>';
+    const { nodes, markers } = parseSvg(wrap(
+      `<defs>${def}</defs><g transform="scale(2)"><line x1="0" y1="0" x2="50" y2="0" stroke="#000"`
+      + ' stroke-width="2" marker-end="url(#u)"/></g>',
+    ));
+    let leaf = nodes[0];
+    while (leaf.kind === 'group') leaf = leaf.children[0];
+    const width = (leaf as SvgPathNode).stroke!.width as number;
+    expect(width).toBe(4);
+    // A head 4 user units long, under scale(2), is 8 long on the page: two of these widths.
+    expect(coordsOf(markers![0], width)).toEqual([-8, -4, 0, 0, -8, 4]);
+  });
+
   it('reads an outline, and context-stroke as the line\'s own paint', () => {
     const def = '<marker id="v" refX="5" refY="5" orient="auto">'
       + '<path d="M0 0 L5 5 L0 10" fill="none" stroke="context-stroke" stroke-width="1.5"/></marker>';

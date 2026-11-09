@@ -30,7 +30,9 @@ export function isIdentity(m: Matrix, eps = 1e-9): boolean {
   );
 }
 
-const NUMBER = /^[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?$/;
+/** One argument and the comma-wsp before it. SVG's number grammar lets two numbers abut where the
+ *  second cannot continue the first, as minifiers write them: `1-2` is 1, -2 and `.5.5` is .5, .5. */
+const ARG = /(\s*,\s*|\s*)([-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)/y;
 const FUNCTION = /\s*([A-Za-z]+)\s*\(([^)]*)\)\s*,?/y;
 
 /** How many arguments each function takes. */
@@ -40,10 +42,15 @@ const ARITY: Readonly<Record<string, readonly number[]>> = {
 
 /** A function's arguments, or `null` when one is not a finite number. */
 function readNumbers(args: string): number[] | null {
-  const parts = args.trim().split(/\s*,\s*|\s+/);
-  if (parts.length === 1 && parts[0] === '') return [];
-  if (!parts.every((p) => NUMBER.test(p))) return null;
-  const nums = parts.map(Number);
+  const s = args.trim();
+  const nums: number[] = [];
+  ARG.lastIndex = 0;
+  while (ARG.lastIndex < s.length) {
+    const first = ARG.lastIndex === 0;
+    const m = ARG.exec(s);
+    if (m === null || (first && m[1] !== '')) return null;
+    nums.push(Number(m[2]));
+  }
   return nums.every(Number.isFinite) ? nums : null;
 }
 

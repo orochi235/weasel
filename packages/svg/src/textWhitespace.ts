@@ -22,8 +22,10 @@ export function preservesSpace(el: Element): boolean {
 
 /**
  * Apply SVG's default whitespace handling to a `<text>` element's runs, in
- * place: newlines dropped, tabs folded to spaces, runs of spaces collapsed to
- * one, and leading / trailing space stripped across the element as a whole.
+ * place, as browsers draw it: newlines and tabs folded to spaces, runs of
+ * spaces collapsed to one, and leading / trailing space stripped across the
+ * element as a whole. SVG 1.1 drops a newline instead; Chrome, Firefox and
+ * Safari read it as a space, and the drawn document is what an import reproduces.
  *
  * Without this, importing any pretty-printed SVG drags the source file's
  * indentation into the document text — and, because the height estimate
@@ -34,7 +36,7 @@ export function collapseRunWhitespace(runs: StyledRun[]): void {
   let lastWasSpace = false;
   for (const run of runs) {
     let out = '';
-    for (const ch of run.text.replace(/\n/g, '').replace(/[\t\r]/g, ' ')) {
+    for (const ch of run.text.replace(/[\n\t\r]/g, ' ')) {
       if (ch === ' ') {
         if (atStart || lastWasSpace) continue;
         out += ' ';

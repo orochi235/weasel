@@ -116,6 +116,11 @@ describe('specificity', () => {
     expect(specificity('rect:is(.a, g .b .c)')).toEqual([0, 2, 2]);
     expect(specificity(':where(#a) rect')).toEqual([0, 0, 1]);
   });
+  it('adds the most specific selector of an :nth-child(… of S) to its own pseudo-class', () => {
+    expect(specificity(':nth-child(2n of #a, .b)')).toEqual([1, 1, 0]);
+    expect(specificity('rect:nth-last-child(odd of .a)')).toEqual([0, 2, 1]);
+    expect(specificity(':nth-child(2n+1)')).toEqual([0, 1, 0]);
+  });
 });
 
 describe('parseStylesheet', () => {
