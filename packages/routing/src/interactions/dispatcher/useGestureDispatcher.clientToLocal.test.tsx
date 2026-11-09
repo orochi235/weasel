@@ -14,7 +14,7 @@ import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { useGestureDispatcher } from './useGestureDispatcher';
 
-const PAINTED = { kind: 'painted', glyph: 'crosshairRect', angle: 0, worldRadius: 12 } as const;
+const PAINTED = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 12 } as const;
 const LEFT = 100;
 const TOP = 50;
 

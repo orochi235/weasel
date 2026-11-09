@@ -86,7 +86,7 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         keybinding: { key: 'G' },
         capabilities: ['creates-shapes'],
         hookName: 'usePolygonTool',
-        cursor: cursorFor('crosshairPolygon', { fallback: 'crosshair' }),
+        cursor: cursorFor('crosshair', { mark: 'polygon', fallback: 'crosshair' }),
         // Registered by <ToolActionsMounter>, inside the ActionsProvider —
         // see `ToolDef.actions` for why the hook can't register it itself.
         actions: [adjustSidesAction],

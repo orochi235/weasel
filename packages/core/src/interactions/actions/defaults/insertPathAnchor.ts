@@ -22,7 +22,7 @@ import { segmentUnder } from './segmentUnder';
 import { pathOperationTags } from '../pathGestureTags';
 import type { ImmediateParams } from '@weasel-js/routing';
 
-const INSERT_CURSOR: CursorSpec = { glyph: 'penPlus', fallback: 'crosshair' };
+const INSERT_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
 
 export const insertPathAnchorAction: Action & { requires: string[] } = inPlane({
   id: 'insertPathAnchor',

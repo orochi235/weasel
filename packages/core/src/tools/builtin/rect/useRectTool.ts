@@ -24,7 +24,7 @@ export function useRectTool(options: InsertToolOptions = {}): Tool {
         keybinding: { key: 'R' },
         capabilities: ['creates-shapes'],
         hookName: 'useRectTool',
-        cursor: cursorFor('crosshairRect', { fallback: 'crosshair' }),
+        cursor: cursorFor('crosshair', { mark: 'rect', fallback: 'crosshair' }),
         presentation: {
           label: 'Rectangle',
           icon: icon('rect'),

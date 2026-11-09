@@ -63,7 +63,7 @@ function writePackage({ pkg, table, groups }) {
   if (!table) return writeFileSync(join(src, 'icons.gen.ts'), emitConsumerGen(pkg.namespace));
   writeFileSync(join(src, 'icons.table.json'), JSON.stringify(table, null, 2) + '\n');
   writeFileSync(join(src, 'icons.table.ts'), emitTableModule(table));
-  writeFileSync(join(src, 'icons.gen.ts'), emitGen(table, groups));
+  writeFileSync(join(src, 'icons.gen.ts'), emitGen(table, groups, pkg.markGroup));
 }
 
 /** Read every root's definitions and build its table; with `write`, emit the generated files. */

@@ -16,7 +16,10 @@ import {
   cursorWorldSize,
   CURSOR_ANGLE_STEPS,
   GLYPHS,
+  cursorGlyph,
+  cursorVariants,
   type CursorGlyphName,
+  type CursorVariant,
 } from '@weasel-js/cursor';
 import s from './cursors.stories.module.css';
 import { DEG_TO_RAD } from '@weasel-js/geom';
@@ -24,29 +27,33 @@ import { DEG_TO_RAD } from '@weasel-js/geom';
 const meta: Meta = { title: 'ui/Cursors/Gallery', tags: ['gallery'] };
 export default meta;
 
-const NAMES = Object.keys(GLYPHS) as CursorGlyphName[];
+/** Every glyph, and every glyph with a slot carrying every mark. */
+const VARIANTS = cursorVariants();
+/** A key as a class name: `crosshair+rect` has a character no selector takes bare. */
+const cls = (v: CursorVariant) => `cur-${v.key.replace('+', '-')}`;
 /** The two the affordance layer bakes at an angle. */
 const ROTATABLE: CursorGlyphName[] = ['resize', 'rotate'];
 
 /** The `url("…")` payload of a baked cursor, for showing the asset as an image. */
-function assetOf(name: CursorGlyphName, size: number, angle = 0): string {
-  const css = bakeCursor(GLYPHS[name], { size, angle });
+function assetOf(v: CursorVariant | CursorGlyphName, size: number, angle = 0): string {
+  const { glyph, mark } = typeof v === 'string' ? { glyph: v, mark: undefined } : v;
+  const css = bakeCursor(cursorGlyph(glyph, mark), { size, angle });
   return css.slice(css.indexOf('url("') + 5, css.indexOf('") '));
 }
 
 function Sheet({ size, proof }: { size: number; proof?: boolean }) {
   return (
     <div className={proof ? `${s.sheet} ${s.proof}` : s.sheet}>
-      {NAMES.map((n) => (
-        <figure key={n} className={s.cell}>
+      {VARIANTS.map((n) => (
+        <figure key={n.key} className={s.cell}>
           <div className={s.grounds}>
             {(['white', 'dark', 'mid'] as const).map((g) => (
               <div key={g} className={`${s.ground} ${s[g]}`}>
-                <img src={assetOf(n, size)} width={size} height={size} alt={`${n} cursor`} />
+                <img src={assetOf(n, size)} width={size} height={size} alt={`${n.key} cursor`} />
               </div>
             ))}
           </div>
-          <figcaption className={s.caption}>{n}</figcaption>
+          <figcaption className={s.caption}>{n.key}</figcaption>
         </figure>
       ))}
     </div>
@@ -97,8 +104,8 @@ export const Hotspots: StoryObj = {
   render: () => {
     // Baked at runtime, so the value cannot be authored in the stylesheet.
     // One generated rule per glyph rather than an inline style per cell.
-    const css = NAMES.map(
-      (n) => `.cur-${n} { cursor: ${bakeCursor(GLYPHS[n], { fallback: 'crosshair' })}; }`,
+    const css = VARIANTS.map(
+      (n) => `.${cls(n)} { cursor: ${bakeCursor(cursorGlyph(n.glyph, n.mark), { fallback: 'crosshair' })}; }`,
     ).join('\n');
     return (
       <div className={s.wrap}>
@@ -109,8 +116,8 @@ export const Hotspots: StoryObj = {
           everywhere except here.
         </p>
         <div className={s.live}>
-          {NAMES.map((n) => (
-            <div key={n} className={`${s.liveCell} cur-${n}`}>{n}</div>
+          {VARIANTS.map((n) => (
+            <div key={n.key} className={`${s.liveCell} ${cls(n)}`}>{n.key}</div>
           ))}
         </div>
       </div>

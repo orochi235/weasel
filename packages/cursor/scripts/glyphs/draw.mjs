@@ -1,10 +1,10 @@
 // Cursor glyphs: filled silhouettes on a 24-unit box, composed so the hotspot
 // falls on the point the tool acts at. Distinct from the toolbar icon sets,
-// which are `fill: none` outlines centred in their box.
+// which are `fill: none` outlines centered in their box.
 //
 // Geometry is computed, not eyeballed — see docs/icons.md ("Drawing rules").
 
-const n = (v) => Math.round(v * 100) / 100;
+import { circle } from './lib.mjs';
 
 // ── pencil ───────────────────────────────────────────────────────────────
 // The register-proof shape, translated +2 on both axes so 1.3 units of halo
@@ -19,53 +19,25 @@ const pencil = {
 };
 
 // ── pen ──────────────────────────────────────────────────────────────────
-// A nib: two edges meeting at the tip, with a slit up the centre. The slit is
+// A nib: two edges meeting at the tip, with a slit up the center. The slit is
 // `detail` so it reads as a division rather than a second silhouette. It is
 // thin and stops short of the tip on purpose — at 1.2 wide with a round cap it
 // blew a white hole through the nib at 24px while looking correct at 11x.
+//
+// Marked (inserting an anchor is `{ glyph: 'pen', mark: 'add' }`), the nib has
+// to be the same nib, or it reads as a different tool. It runs along the
+// anti-diagonal, occupying the band 18 <= x + y <= 28 and leaving nothing on
+// the diagonal for a mark, so it moves 2 up and 2 left, dropping the band to
+// 14..24. The mark then centers on the diagonal at 17.5: its nearest tips sit
+// at x + y = 31, 4.95 clear of the nib's 24, which is 2.35 once both halos are
+// spent, and its far tips reach 21.5, inside the 22.7 the halo leaves.
 const pen = {
   box: 24,
   hotspot: [5, 19],
+  mark: { x: 17.5, y: 17.5, size: 10, shift: [-2, -2] },
   paths: [
     { role: 'ink', d: 'M 5 19 L 8.5 9.5 L 13 5 L 18 10 L 13.5 14.5 Z' },
     { role: 'detail', d: 'M 8.4 13.9 L 12.2 10.1', width: 0.9 },
-  ],
-};
-
-// ── penPlus ──────────────────────────────────────────────────────────────
-// The pen, plus a badge that says "this adds one". Inserting an anchor is the
-// pen's own act, so the nib has to be the same nib — a different drawing would
-// read as a different tool.
-//
-// The nib runs along the anti-diagonal, so it occupies the band
-// 18 <= x + y <= 28 and leaves nothing on the diagonal for a badge. Shifting
-// it 2 up and 2 left drops the band to 14..24 and buys the badge its corner;
-// the shapes set pays the same price with a short-armed crosshair.
-const PEN_SHIFT = -2;
-const shift = (d) =>
-  d.replace(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g,
-    (_, x, y) => `${n(Number(x) + PEN_SHIFT)} ${n(Number(y) + PEN_SHIFT)}`);
-
-// A filled cross, not two crossed bars: at badge size an outline is a ring of
-// single pixels around a hole, which is the shapes set's lesson.
-const plus = (cx, cy, arm, half) =>
-  [
-    [cx - half, cy - arm], [cx + half, cy - arm], [cx + half, cy - half],
-    [cx + arm, cy - half], [cx + arm, cy + half], [cx + half, cy + half],
-    [cx + half, cy + arm], [cx - half, cy + arm], [cx - half, cy + half],
-    [cx - arm, cy + half], [cx - arm, cy - half], [cx - half, cy - half],
-  ].map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${n(x)} ${n(y)}`).join(' ') + ' Z';
-
-// Centre on the diagonal at 17.5: the badge's nearest tips sit at x + y = 31,
-// 4.95 clear of the nib's 24, which is 2.35 once both halos are spent. Its far
-// tips reach 21.5, inside the 22.7 the halo leaves.
-const penPlus = {
-  box: 24,
-  hotspot: [3, 17],
-  paths: [
-    { role: 'ink', d: shift(pen.paths[0].d) },
-    { role: 'detail', d: shift(pen.paths[1].d), width: pen.paths[1].width },
-    { role: 'ink', d: plus(17.5, 17.5, 4, 1.4) },
   ],
 };
 
@@ -73,8 +45,6 @@ const penPlus = {
 // Bulb upper-right, narrow stem to a tip at lower-left. The bulb is a real
 // disc, not a squared cap: with a cap it reads as a pencil ferrule and the
 // whole glyph becomes the pencil at cursor size.
-const circle = (cx, cy, r) =>
-  `M ${n(cx)} ${n(cy - r)} A ${r} ${r} 0 1 0 ${n(cx)} ${n(cy + r)} A ${r} ${r} 0 1 0 ${n(cx)} ${n(cy - r)} Z`;
 const eyedropper = {
   box: 24,
   hotspot: [5, 19],
@@ -89,9 +59,9 @@ const eyedropper = {
 // it and a world-sized spec scales the glyph until the ring measures the
 // radius the tool asked for.
 //
-// No centre mark: geometry scales with the ring, so any mark large enough to
+// No center mark: geometry scales with the ring, so any mark large enough to
 // see on a 20px brush is a quarter of the width of a 400px one. The hotspot
-// is the centre, which is what every painting app relies on too.
+// is the center, which is what every painting app relies on too.
 //
 // Sized so the halo lands exactly on the box edge: a 1.6 ink ring carries
 // 4.2 of halo, 2.1 proud, and 12 - 2.1 is 9.9.
@@ -103,4 +73,4 @@ const brush = {
   paths: [{ role: 'stroke', d: circle(12, 12, BRUSH_R), width: 1.6 }],
 };
 
-export const DRAW = { pencil, pen, penPlus, eyedropper, brush };
+export const DRAW = { pencil, pen, eyedropper, brush };

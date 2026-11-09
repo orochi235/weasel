@@ -22,6 +22,28 @@ cursor at device scale, so it is already crisp on a retina display. `bakeCursor`
 throws above 128 CSS px rather than emitting a cursor the browser would drop
 silently.
 
+## Marks
+
+A cursor that says what a tool does is two glyphs: the one you aim with, and a
+mark in its corner naming the operation, as the shape tools' crosshairs and the
+pen's add-anchor cursor do. They are composed, never drawn as one glyph:
+
+```ts
+cursorFor('crosshair', { mark: 'rect', fallback: 'crosshair' });
+const INSERT: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
+```
+
+A glyph that can carry a mark declares a `mark` slot: where the mark's box
+lands, how large, and how far the glyph itself moves to make room (`shift`,
+hotspot included). `markedGlyph` scales the mark into the slot as an `over`
+layer, drawn after the glyph with its own halo, so the halo separates the mark
+from whatever it sits on. This is the cursor counterpart of an icon's mark
+(`docs/icons.md`, "A subject and a mark").
+
+Marks live in `scripts/glyphs/marks.mjs`, each centered in a 10-unit box, as
+filled silhouettes like every other cursor glyph. `cursorVariants()` lists every
+glyph and every glyph-and-mark pair; the proofs and the gallery draw from it.
+
 ## Authoring a glyph
 
 Geometry lives in `scripts/glyphs/` and is generated to resolved literals:

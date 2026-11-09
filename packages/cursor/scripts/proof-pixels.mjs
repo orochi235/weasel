@@ -17,7 +17,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { bakeCursor } from '../src/bake.ts';
-import { GLYPHS } from '../src/glyphs.ts';
+import { cursorGlyph, cursorVariants } from '../src/registry.ts';
 
 const SIZES = [[16, 1], [16, 2], [24, 1], [24, 2]];
 const MAG = 10;
@@ -25,8 +25,15 @@ const GROUND = process.argv[3] ?? '#ffffff';
 const dir = mkdtempSync(join(tmpdir(), 'cursor-px-'));
 
 /** The shipped asset, rasterized at `css * dpr` device pixels. */
+const VARIANTS = new Map(cursorVariants().map((v) => [v.key, v]));
+const glyphOf = (key) => {
+  const v = VARIANTS.get(key);
+  if (!v) throw new Error(`no cursor ${key}; one of ${[...VARIANTS.keys()].join(', ')}`);
+  return cursorGlyph(v.glyph, v.mark);
+};
+
 const raster = (name, css, dpr, angle) => {
-  const s = bakeCursor(GLYPHS[name], { size: css, angle });
+  const s = bakeCursor(glyphOf(name), { size: css, angle });
   const svg = decodeURIComponent(s.slice(s.indexOf('data:') + 19, s.indexOf('") ')));
   const src = join(dir, `${name}-${css}-${dpr}-${angle}.svg`);
   const png = src.replace(/\.svg$/, '.png');
@@ -40,7 +47,7 @@ const raster = (name, css, dpr, angle) => {
   return png;
 };
 
-const names = process.argv[2] ? process.argv[2].split(',') : Object.keys(GLYPHS);
+const names = process.argv[2] ? process.argv[2].split(',') : [...VARIANTS.keys()];
 // Every fourth step, so a rotated bake is checked on the grid it ships on
 // rather than only in the vector sheet.
 const ANGLES = process.env.ANGLES

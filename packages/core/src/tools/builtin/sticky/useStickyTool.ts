@@ -47,7 +47,7 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
       keybinding: { key: 'S' },
       capabilities: ['creates-text'],
       hookName: 'useStickyTool',
-      cursor: cursorFor('crosshairRect', { fallback: 'crosshair' }),
+      cursor: cursorFor('crosshair', { mark: 'rect', fallback: 'crosshair' }),
       presentation: {
         label: 'Sticky note',
         icon: icon('sticky'),

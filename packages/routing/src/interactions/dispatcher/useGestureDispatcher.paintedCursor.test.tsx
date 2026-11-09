@@ -13,8 +13,8 @@ import type { Action } from '../actions/action';
 import type { AffordanceHit } from '../actions/invoker';
 import { useGestureDispatcher } from './useGestureDispatcher';
 
-const RING = { glyph: 'crosshairRect', worldRadius: 12 } as const;
-const PAINTED_RING = { kind: 'painted', glyph: 'crosshairRect', angle: 0, worldRadius: 12 };
+const RING = { glyph: 'brush', worldRadius: 12 } as const;
+const PAINTED_RING = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 12 };
 
 function Probe({ action, painted, affordanceAt }: {
   action: Action;

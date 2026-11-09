@@ -1,6 +1,8 @@
 export { bakeCursor, quantizeCursorAngle } from './bake';
 export type { BakeOptions } from './bake';
-export { cursorFor } from './registry';
+export { cursorFor, cursorGlyph, cursorVariants } from './registry';
+export type { CursorForOptions, CursorVariant } from './registry';
+export { markedGlyph, placeCursorPath } from './mark';
 export { resolveCursor, resolveCursorTier } from './resolve';
 export type { CursorSpec, CursorGlyphSpec, ResolvedCursor } from './resolve';
 export {
@@ -10,8 +12,8 @@ export {
   cursorWorldSize,
 } from './paint';
 export type { CursorMatrix, CursorPaintOp, PaintOptions, PaintPlacement } from './paint';
-export { GLYPHS } from './glyphs';
-export type { CursorGlyphName } from './glyphs';
+export { GLYPHS, MARKS } from './glyphs';
+export type { CursorGlyphName, CursorMarkName } from './glyphs';
 export {
   CURSOR_ANGLE_STEPS,
   CURSOR_HALO,
@@ -21,7 +23,7 @@ export {
   haloFitsInBox,
   rotationFitsInBox,
 } from './types';
-export type { CursorGlyph, CursorPath } from './types';
+export type { CursorGlyph, CursorMark, CursorMarkSlot, CursorPath } from './types';
 
 // Painted-cursor store — the slot a surface's painted cursor lives in, shared
 // between whoever decides it and the layer that draws it.

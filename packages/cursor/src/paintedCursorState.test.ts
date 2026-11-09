@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createPaintedCursorState, type PaintedCursor } from './paintedCursorState';
 
-const ring: PaintedCursor = { kind: 'painted', glyph: 'crosshairRect', angle: 0, worldRadius: 10 };
+const ring: PaintedCursor = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 10 };
 
 describe('createPaintedCursorState', () => {
   it('paints the base, and an override over it', () => {

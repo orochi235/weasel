@@ -59,6 +59,7 @@ function same(a: PaintedCursor | 'none' | null, b: PaintedCursor | 'none' | null
   if (!a || !b || a === 'none' || b === 'none') return false;
   return (
     a.glyph === b.glyph &&
+    a.mark === b.mark &&
     a.angle === b.angle &&
     a.size === b.size &&
     a.worldRadius === b.worldRadius

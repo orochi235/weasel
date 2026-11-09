@@ -13,6 +13,30 @@ export interface CursorGlyph {
    * something, such as a brush ring. Defaults to the box's inscribed radius.
    */
   readonly radius?: number;
+  /** Where a mark goes, for a glyph that can carry one. */
+  readonly mark?: CursorMarkSlot;
+  readonly paths: readonly CursorPath[];
+  /**
+   * Paths drawn after `paths`, halo and all, so their halo separates them from
+   * what is under them: the mark `markedGlyph` sets in the slot.
+   */
+  readonly over?: readonly CursorPath[];
+}
+
+/** Where a glyph leaves room for a mark, in its own units. */
+export interface CursorMarkSlot {
+  /** The center the mark's box lands on, with the glyph already moved by `shift`. */
+  readonly x: number;
+  readonly y: number;
+  /** The side the mark's box is scaled to. */
+  readonly size: number;
+  /** How far the glyph moves, hotspot included, to make room when it carries a mark. */
+  readonly shift?: readonly [number, number];
+}
+
+/** A mark: paths centered in a square box of their own, which a slot scales and places. */
+export interface CursorMark {
+  readonly box: number;
   readonly paths: readonly CursorPath[];
 }
 
@@ -112,7 +136,7 @@ function walk(d: string, see: (x: number, y: number) => void): void {
 export function haloFitsInBox(glyph: CursorGlyph): boolean {
   const margin = CURSOR_HALO_WIDTH / 2;
   let ok = true;
-  for (const p of glyph.paths) {
+  for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
     walk(p.d, (x, y) => {
       for (const v of [x, y]) {
         if (v < margin || v > glyph.box - margin) ok = false;
@@ -134,7 +158,7 @@ export function rotationFitsInBox(glyph: CursorGlyph): boolean {
   const c = glyph.box / 2;
   const limit = c - CURSOR_HALO_WIDTH / 2;
   let ok = true;
-  for (const p of glyph.paths) {
+  for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
     walk(p.d, (x, y) => {
       if (Math.hypot(x - c, y - c) > limit) ok = false;
     });

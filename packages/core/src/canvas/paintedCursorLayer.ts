@@ -7,14 +7,14 @@
  * and `view.scale` is read for that.
  */
 
-import { GLYPHS } from '@weasel-js/cursor';
+import { cursorGlyph } from '@weasel-js/cursor';
 import {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
   cursorWorldSize,
 } from '@weasel-js/cursor';
-import type { CursorPaintOp } from '@weasel-js/cursor';
+import type { CursorGlyph, CursorPaintOp } from '@weasel-js/cursor';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { pathFromD, type Path } from '@weasel-js/geom';
@@ -65,8 +65,13 @@ export function createPaintedCursorLayer(state: PaintedCursorState): RenderLayer
       const frame = state.current();
       if (!frame) return [];
       const { cursor, at } = frame;
-      const glyph = GLYPHS[cursor.glyph];
-      if (!glyph) return [];
+      let glyph: CursorGlyph;
+      try {
+        glyph = cursorGlyph(cursor.glyph, cursor.mark);
+      } catch {
+        // A name the set lacks, or a mark on a glyph with no slot: draw nothing rather than throw mid-frame.
+        return [];
+      }
 
       // A world-sized glyph holds its line weight in CSS px while its geometry
       // grows — a ring at a 400px radius drawn with scaled weight is a filled

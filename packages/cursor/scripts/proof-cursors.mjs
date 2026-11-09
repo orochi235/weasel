@@ -13,7 +13,7 @@
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { bakeCursor } from '../src/bake.ts';
-import { GLYPHS } from '../src/glyphs.ts';
+import { cursorGlyph, cursorVariants } from '../src/registry.ts';
 
 const GROUNDS = [
   ['white page', '#ffffff'],
@@ -23,8 +23,15 @@ const GROUNDS = [
 const MAG = 11;
 
 /** The data URI `bakeCursor` produced, for embedding as an <image>. */
+const VARIANTS = new Map(cursorVariants().map((v) => [v.key, v]));
+const glyphOf = (key) => {
+  const v = VARIANTS.get(key);
+  if (!v) throw new Error(`no cursor ${key}; one of ${[...VARIANTS.keys()].join(', ')}`);
+  return cursorGlyph(v.glyph, v.mark);
+};
+
 const uriOf = (name, size) => {
-  const css = bakeCursor(GLYPHS[name], { size });
+  const css = bakeCursor(glyphOf(name), { size });
   return css.slice(css.indexOf('data:'), css.indexOf('") '));
 };
 
@@ -34,7 +41,7 @@ const bodyOf = (name) => {
   return svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'));
 };
 
-const names = Object.keys(GLYPHS);
+const names = [...VARIANTS.keys()];
 const CW = 24 * MAG + 150;
 const CH = 24 * MAG + 40;
 const W = 170 + GROUNDS.length * CW;

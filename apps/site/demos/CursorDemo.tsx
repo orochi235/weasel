@@ -2,29 +2,30 @@ import { useMemo, useState } from 'react';
 import { IDENTITY_POSE_COMPOSITION, SceneCanvas, defineTool, useScene } from '@weasel-js/core';
 import {
   CURSOR_MAX_CSS_PX,
-  GLYPHS,
   cursorFor,
+  cursorGlyph,
+  cursorVariants,
   resolveCursorTier,
-  type CursorGlyphName,
+  type CursorVariant,
 } from '@weasel-js/cursor';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import s from './CursorDemo.module.css';
 import { DemoStage } from './DemoStage';
 
 const W = 620, H = 300;
-const NAMES = Object.keys(GLYPHS) as CursorGlyphName[];
+const VARIANTS = cursorVariants();
 const FALLBACK = 'crosshair';
 
 /** The data URI inside a baked cursor value, to show the shipped asset as an image. */
 const assetOf = (css: string) => css.slice(css.indexOf('url("') + 5, css.indexOf('") '));
 
-function Tile({ name, selected, onSelect }: {
-  name: CursorGlyphName;
+function Tile({ variant, selected, onSelect }: {
+  variant: CursorVariant;
   selected: boolean;
-  onSelect: (name: CursorGlyphName) => void;
+  onSelect: (variant: CursorVariant) => void;
 }) {
-  const glyph = GLYPHS[name];
-  const css = cursorFor(name, { fallback: FALLBACK });
+  const glyph = cursorGlyph(variant.glyph, variant.mark);
+  const css = cursorFor(variant.glyph, { ...(variant.mark ? { mark: variant.mark } : {}), fallback: FALLBACK });
   const [hx, hy] = glyph.hotspot;
   return (
     <button
@@ -33,13 +34,13 @@ function Tile({ name, selected, onSelect }: {
       // The value is a data URI baked at runtime; no stylesheet can hold it.
       style={{ cursor: css }}
       aria-pressed={selected}
-      onClick={() => onSelect(name)}
+      onClick={() => onSelect(variant)}
     >
       <svg className={s.glyph} viewBox={`0 0 ${glyph.box} ${glyph.box}`} aria-hidden>
         <image href={assetOf(css)} width={glyph.box} height={glyph.box} />
         <circle className={s.hotspot} cx={hx} cy={hy} r={0.9} />
       </svg>
-      <span className={s.name}>{name}</span>
+      <span className={s.name}>{variant.key}</span>
       <span className={s.coords}>{hx}, {hy}</span>
     </button>
   );
@@ -52,21 +53,22 @@ function Tile({ name, selected, onSelect }: {
  * draws the glyph under the pointer instead.
  */
 export function CursorDemo() {
-  const [glyph, setGlyph] = useState<CursorGlyphName>('pencil');
+  const [variant, setVariant] = useState<CursorVariant>(VARIANTS.find((v) => v.key === 'pencil')!);
+  const { glyph, mark } = variant;
   const [size, setSize] = useState(48);
 
   const scene = useScene<unknown, 'default', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
   const tool = useMemo(
-    () => defineTool({ id: 'cursor', cursor: { glyph, size, fallback: FALLBACK } }),
-    [glyph, size],
+    () => defineTool({ id: 'cursor', cursor: { glyph, ...(mark ? { mark } : {}), size, fallback: FALLBACK } }),
+    [glyph, mark, size],
   );
   const tier = resolveCursorTier({ glyph, size }).kind;
 
   return (
     <div className={s.demo}>
       <div className={s.gallery}>
-        {NAMES.map((n) => (
-          <Tile key={n} name={n} selected={n === glyph} onSelect={setGlyph} />
+        {VARIANTS.map((v) => (
+          <Tile key={v.key} variant={v} selected={v.key === variant.key} onSelect={setVariant} />
         ))}
       </div>
 

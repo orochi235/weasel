@@ -165,7 +165,7 @@ Owner tags, after the priority (2026-10-26):
   curvature (the `mode` param, Shape in the last-operation panel after a drag, flips which, and `'eased'` makes the
   plain drag ease out of the bend as Extend to next path does, Shift then going straight); a curvature arc stops at a full turn, and a trim always
   leaves a thousandth of the subpath (`packages/geom/src/paths/lengthenPathEnd.ts`); an end is
-  pressed within 8 screen px, the cursor is `penPlus`, nothing previews where a drag will land
+  pressed within 8 screen px, the cursor is the pen with an `add` mark, nothing previews where a drag will land
   before it starts, and the end anchor is left selected after a drag
   (`packages/path-tools/src/lengthen/lengthenPath.ts`). Its toolbar glyph, `path-tools:lengthen`, has
   not been proofed large.

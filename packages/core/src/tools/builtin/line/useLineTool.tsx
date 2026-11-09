@@ -28,7 +28,7 @@ export function useLineTool(options: InsertToolOptions = {}): Tool {
         keybinding: { key: '\\' },
         capabilities: ['creates-shapes'],
         hookName: 'useLineTool',
-        cursor: cursorFor('crosshairLine', { fallback: 'crosshair' }),
+        cursor: cursorFor('crosshair', { mark: 'line', fallback: 'crosshair' }),
         presentation: {
           label: 'Line',
           group: 'shape',

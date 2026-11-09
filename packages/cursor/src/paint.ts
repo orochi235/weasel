@@ -56,15 +56,21 @@ function ink(p: CursorPath, k: number): CursorPaintOp {
   }
 }
 
-/** Every paint a glyph needs, in draw order: all halos, then all ink. */
-export function cursorPaintOps(glyph: CursorGlyph, opts: PaintOptions = {}): CursorPaintOp[] {
-  const k = opts.lineWidthScale ?? 1;
-  const out: CursorPaintOp[] = [];
-  for (const p of glyph.paths) {
+/** One layer's paints: all its halos, then all its ink. */
+function layer(paths: readonly CursorPath[], k: number, out: CursorPaintOp[]): void {
+  for (const p of paths) {
     const h = halo(p, k);
     if (h) out.push(h);
   }
-  for (const p of glyph.paths) out.push(ink(p, k));
+  for (const p of paths) out.push(ink(p, k));
+}
+
+/** Every paint a glyph needs, in draw order: its paths' halos and ink, then its `over` layer's. */
+export function cursorPaintOps(glyph: CursorGlyph, opts: PaintOptions = {}): CursorPaintOp[] {
+  const k = opts.lineWidthScale ?? 1;
+  const out: CursorPaintOp[] = [];
+  layer(glyph.paths, k, out);
+  if (glyph.over) layer(glyph.over, k, out);
   return out;
 }
 

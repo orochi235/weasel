@@ -1,21 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { GLYPHS } from './glyphs';
+import { GLYPHS, MARKS } from './glyphs';
+import { cursorGlyph } from './registry';
 import { haloFitsInBox, rotationFitsInBox } from './types';
 
-const NAMES = [
-  'pencil', 'pen', 'penPlus', 'eyedropper', 'brush',
-  'crosshairRect', 'crosshairEllipse', 'crosshairLine', 'crosshairStar', 'crosshairPolygon',
-  'resize', 'rotate',
-] as const;
+const NAMES = ['pencil', 'pen', 'eyedropper', 'brush', 'crosshair', 'resize', 'rotate'] as const;
 
-/** Glyphs with a filled silhouette. `brush` is a bare ring and `crosshairLine`
- *  is a cross plus a bar — both measure or point rather than depict, so
- *  neither has a fill to assert. */
-const SILHOUETTE = [
-  'pencil', 'pen', 'penPlus', 'eyedropper',
-  'crosshairRect', 'crosshairEllipse', 'crosshairStar', 'crosshairPolygon',
-  'resize', 'rotate',
-] as const;
+/** Glyphs with a filled silhouette. `brush` is a bare ring and `crosshair` four arms: both measure or point rather
+ *  than depict, so neither has a fill to assert. */
+const SILHOUETTE = ['pencil', 'pen', 'eyedropper', 'resize', 'rotate'] as const;
+
+/** Every glyph with a slot, with every mark: what a tool can ask for. */
+const MARKED = (Object.keys(GLYPHS) as (keyof typeof GLYPHS)[])
+  .filter((g) => 'mark' in GLYPHS[g])
+  .flatMap((g) => (Object.keys(MARKS) as (keyof typeof MARKS)[]).map((m) => [g, m] as const));
 
 /** The glyphs the affordance layer bakes at an angle. */
 const ROTATABLE = ['resize', 'rotate'] as const;
@@ -59,5 +56,23 @@ describe('GLYPHS', () => {
   it.each(ROTATABLE)('%s hotspots at the box centre, so rotation cannot move it', (name) => {
     const g = GLYPHS[name];
     expect(g.hotspot).toEqual([g.box / 2, g.box / 2]);
+  });
+
+  it('gives the crosshair and the pen a mark slot', () => {
+    expect(MARKED.map(([g]) => g)).toEqual(expect.arrayContaining(['crosshair', 'pen']));
+  });
+
+  it.each(MARKED)('%s with %s keeps its halo inside the viewBox', (glyph, mark) => {
+    expect(haloFitsInBox(cursorGlyph(glyph, mark))).toBe(true);
+  });
+
+  it.each(MARKED)('%s with %s moves its hotspot with the glyph', (glyph, mark) => {
+    const g = GLYPHS[glyph];
+    const [sx, sy] = 'mark' in g ? g.mark.shift : [0, 0];
+    expect(cursorGlyph(glyph, mark).hotspot).toEqual([g.hotspot[0] + sx, g.hotspot[1] + sy]);
+  });
+
+  it('refuses a mark on a glyph with no slot', () => {
+    expect(() => cursorGlyph('pencil', 'add')).toThrow(/no slot/);
   });
 });

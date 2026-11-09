@@ -721,6 +721,9 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
   }
 ];
 
+/** The group holding the marks: the glyphs `<Icon mark>` and an icon spec's `mark` take. */
+export const MARK_GROUP = "Marks";
+
 declare module '@weasel-js/icons' {
   interface IconName {
     'ui:clone': true;

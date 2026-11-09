@@ -84,7 +84,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
         id: 'star',
         capabilities: ['creates-shapes'],
         hookName: 'useStarTool',
-        cursor: cursorFor('crosshairStar', { fallback: 'crosshair' }),
+        cursor: cursorFor('crosshair', { mark: 'star', fallback: 'crosshair' }),
         // Registered by <ToolActionsMounter>, inside the ActionsProvider —
         // see `ToolDef.actions` for why the hook can't register it itself.
         actions: [adjustPointsAction],

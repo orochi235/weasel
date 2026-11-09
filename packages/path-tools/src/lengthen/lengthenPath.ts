@@ -33,7 +33,7 @@ export const LENGTHEN_PATH_PARAMS = pref.group(LABEL, {
   }),
 });
 
-const LENGTHEN_CURSOR: CursorSpec = { glyph: 'penPlus', fallback: 'crosshair' };
+const LENGTHEN_CURSOR: CursorSpec = { glyph: 'pen', mark: 'add', fallback: 'crosshair' };
 
 /** Screen-px reach of an end anchor, matching the anchor affordance's hit radius. */
 const END_HIT_PX = 8;

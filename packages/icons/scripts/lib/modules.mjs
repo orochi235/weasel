@@ -16,7 +16,11 @@ export const icons: IconTable = data;
 `;
 }
 
-export function emitGen(table, groups) {
+export function emitGen(table, groups, markGroup) {
+  const marks = markGroup === undefined ? '' : `
+/** The group holding the marks: the glyphs \`<Icon mark>\` and an icon spec's \`mark\` take. */
+export const MARK_GROUP = ${JSON.stringify(markGroup)};
+`;
   const names = Object.keys(table.icons);
   const P = pascal(table.namespace);
   const keys = names.map((n) => `    '${table.namespace}:${n}': true;`).join('\n');
@@ -43,7 +47,7 @@ export const icon = scopedIcon<${P}IconName>('${table.namespace}');
 
 /** This package's glyphs, in the families they were drawn in. */
 export const ICON_GROUPS: readonly { label: string; names: readonly ${P}IconName[] }[] = ${JSON.stringify(groups, null, 2)};
-
+${marks}
 ${declared}
 `;
 }

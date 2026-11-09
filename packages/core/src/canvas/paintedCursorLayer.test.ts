@@ -39,6 +39,18 @@ describe('createPaintedCursorLayer', () => {
     expect(layer.draw(null, VIEW(), DIMS)).not.toEqual([]);
   });
 
+  it('draws a mark in a slotted glyph, and nothing for a mark on a glyph with no slot', () => {
+    const state = createPaintedCursorState();
+    const layer = createPaintedCursorLayer(state);
+    state.setPointer(100, 50);
+    state.setBase({ kind: 'painted', glyph: 'crosshair', mark: 'add', angle: 0, size: 200 });
+    const marked = layer.draw(null, VIEW(), DIMS);
+    state.setBase({ kind: 'painted', glyph: 'crosshair', angle: 0, size: 200 });
+    expect(JSON.stringify(marked).length).toBeGreaterThan(JSON.stringify(layer.draw(null, VIEW(), DIMS)).length);
+    state.setBase({ kind: 'painted', glyph: 'pencil', mark: 'add', angle: 0, size: 200 });
+    expect(layer.draw(null, VIEW(), DIMS)).toEqual([]);
+  });
+
   it('is screen-space, so the glyph does not pan with the camera', () => {
     // A world-space layer would have its commands wrapped in the view
     // transform by `drawLayers` and the cursor would slide off the pointer.

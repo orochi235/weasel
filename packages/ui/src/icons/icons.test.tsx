@@ -4,10 +4,9 @@ import { icons as coreIcons } from '@weasel-js/core/icons';
 import { icons as shapeIcons } from '@weasel-js/icons/shapes';
 import { Icon } from './Icon';
 import { isFillable } from './Icon';
-import { ICON_GROUPS, icon, type UiIconName } from '../icons.gen';
+import { ICON_GROUPS, MARK_GROUP, icon, type UiIconName } from '../icons.gen';
 import { icons as uiIcons } from '../icons.table';
 import { renderWithIcons } from '../testing/withIcons';
-import { MARK_GROUP } from './markGroup';
 
 const NAMES = Object.keys(uiIcons.icons) as UiIconName[];
 const body = (name: string) => uiIcons.icons[name]!.body;
@@ -111,9 +110,7 @@ describe('icon set', () => {
 });
 
 describe('a marked glyph', () => {
-  it('names the marks group as the glyph definitions file it', async () => {
-    const { markGroup } = await import('../../icons/index.mjs');
-    expect(MARK_GROUP).toBe(markGroup);
+  it('files the marks under MARK_GROUP', () => {
     expect(ICON_GROUPS.find((g) => g.label === MARK_GROUP)?.names).toContain('markAdd');
   });
 

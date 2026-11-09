@@ -4,7 +4,7 @@ import { iconParts, toIconRef, toIconSpec, type IconSpec } from '@weasel-js/icon
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
 import { Icon } from '../../icons/Icon';
-import { MARK_GROUP } from '../../icons/markGroup';
+import { MARK_GROUP } from '../../icons.gen';
 import { MIXED_HINT } from '../mixedHint';
 import { IconPicker } from './IconPicker';
 import s from './IconAttrField.module.css';

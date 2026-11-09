@@ -22,7 +22,7 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool {
         keybinding: { key: 'E' },
         capabilities: ['creates-shapes'],
         hookName: 'useEllipseTool',
-        cursor: cursorFor('crosshairEllipse', { fallback: 'crosshair' }),
+        cursor: cursorFor('crosshair', { mark: 'ellipse', fallback: 'crosshair' }),
         presentation: {
           label: 'Ellipse',
           group: 'shape',

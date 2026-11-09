@@ -1,5 +1,5 @@
 import { cursorFor } from './registry';
-import type { CursorGlyphName } from './glyphs';
+import type { CursorGlyphName, CursorMarkName } from './glyphs';
 import { CURSOR_MAX_CSS_PX } from './types';
 
 /**
@@ -13,6 +13,8 @@ export type CursorSpec = string | CursorGlyphSpec;
 /** The glyph form of a {@link CursorSpec}. */
 export interface CursorGlyphSpec {
   readonly glyph: CursorGlyphName;
+  /** A mark set in the glyph's slot, saying what the tool does: `{ glyph: 'crosshair', mark: 'rect' }`. */
+  readonly mark?: CursorMarkName;
   /** Rendered size in CSS px. Default 24. */
   readonly size?: number;
   /**
@@ -39,6 +41,7 @@ export type ResolvedCursor =
   | {
       readonly kind: 'painted';
       readonly glyph: CursorGlyphName;
+      readonly mark?: CursorMarkName;
       readonly angle: number;
       /** CSS px, when the spec fixed one. */
       readonly size?: number;
@@ -55,16 +58,18 @@ export type ResolvedCursor =
  */
 export function resolveCursorTier(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
-  const { glyph, size, worldRadius, angle = 0, fallback } = spec;
+  const { glyph, mark, size, worldRadius, angle = 0, fallback } = spec;
+  const marked = mark === undefined ? {} : { mark };
   if (worldRadius !== undefined) {
-    return { kind: 'painted', glyph, angle, worldRadius };
+    return { kind: 'painted', glyph, ...marked, angle, worldRadius };
   }
   if (size !== undefined && size > CURSOR_MAX_CSS_PX) {
-    return { kind: 'painted', glyph, angle, size };
+    return { kind: 'painted', glyph, ...marked, angle, size };
   }
   return {
     kind: 'css',
     css: cursorFor(glyph, {
+      ...marked,
       ...(size !== undefined ? { size } : {}),
       ...(fallback !== undefined ? { fallback } : {}),
       angle,
