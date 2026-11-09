@@ -7,7 +7,7 @@ import { ActionDisabledReason, type Action } from '../interactions/actions/actio
 
 const immediate = { timing: 'immediate' as const, run: () => {} };
 const actions: Action[] = [
-  { id: 'cut', label: 'Cut', invoker: immediate, defaultBinding: { kind: 'key', key: 'x', mods: { meta: true } } },
+  { id: 'cut', label: 'Cut', invoker: immediate, defaultBinding: { kind: 'key', key: 'x', mods: { mod: true } } },
   { id: 'paste', label: 'Paste', invoker: immediate,
     enabled: (_d, at) => (at ? true : ActionDisabledReason.NotApplicable) },
   { id: 'snap', label: 'Snap', invoker: immediate, active: () => true },
