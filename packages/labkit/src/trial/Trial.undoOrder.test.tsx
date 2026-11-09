@@ -118,6 +118,43 @@ describe("a new change on one of a trial's histories", () => {
   });
 });
 
+const sized = defineInstrument({
+  name: 'Sized',
+  config: f.schema({ cell: f.number(20).range(5, 80).step(5) }),
+  initialState: () => ({}),
+  render: (ctx) => (
+    <>
+      <Pane />
+      <output aria-label="cell">{ctx.config.cell}</output>
+      <button type="button" onClick={() => ctx.setConfig('cell', ctx.config.cell + 5)}>
+        wider
+      </button>
+    </>
+  ),
+  annotations: instrument.annotations,
+});
+
+describe('a run of writes to one setting', () => {
+  it('ends at a mark made between two of them', async () => {
+    await renderSettled(<Lab instruments={[sized]} defaultInstrument="Sized" />, {
+      wrapper: withIcons,
+    });
+    const cell = () => screen.getByLabelText('cell').textContent;
+    const wider = () => fireEvent.click(screen.getByRole('button', { name: 'wider' }));
+    wider();
+    addMark();
+    wider();
+    expect(cell()).toBe('30');
+    press('Undo');
+    expect(cell()).toBe('25');
+    expect(marked()).toBe(1);
+    press('Undo');
+    expect(marked()).toBe(0);
+    press('Undo');
+    expect(cell()).toBe('20');
+  });
+});
+
 describe('trialUndoBindings', () => {
   it('steps marks first over an instrument history that cannot say when it recorded', () => {
     const marks = {

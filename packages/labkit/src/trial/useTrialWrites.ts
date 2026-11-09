@@ -9,6 +9,7 @@ import type { ResolvedConfig } from '../config/types';
 import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
+import { lastEditStamp } from '../undo/editStamp';
 import { stateOp } from '../undo/stateOp';
 import type { TrialHistorySource } from './trialHistory';
 import { type TrialSnapshot, useTrialSnapshot } from './useTrialSnapshot';
@@ -58,7 +59,7 @@ export function useTrialWrites({
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const over = useLatest(useContext(LabOverContext));
-  const lastWrite = useRef<{ path: string; at: number; version: number } | null>(null);
+  const lastWrite = useRef<{ path: string; at: number; version: string } | null>(null);
   // Undoing an entry ends the gesture that recorded it, on whichever history holds it.
   const { snapshot, stored } = useTrialSnapshot({
     store,
@@ -73,7 +74,9 @@ export function useTrialWrites({
   /** Snapshots for a write to `path`, unless it continues the gesture the last one began. */
   const recordWrite = useCallback(
     (path: string, op?: Parameters<TrialSnapshot>[1]): void => {
-      const version = (): number => stored()?.history?.getVersion() ?? -1;
+      // Any edit recorded since, on this trial's histories or its marks, ends the gesture.
+      const version = (): string =>
+        `${lastEditStamp()}:${stored()?.history?.getVersion() ?? -1}:${ownHistory()?.undoStamp?.() ?? ''}`;
       // The entry a gesture's first write recorded already holds the state
       // from before it, and reads the state to redo to when it is undone.
       const last = lastWrite.current;
@@ -85,7 +88,7 @@ export function useTrialWrites({
       if (!sameGesture && !snapshot('config.change', op)) snapshot(`config.change:${path}`, op);
       lastWrite.current = { path, at: Date.now(), version: version() };
     },
-    [stored, snapshot],
+    [stored, snapshot, ownHistory],
   );
 
   const setConfig = useCallback(
