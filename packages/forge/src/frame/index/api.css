@@ -97,6 +97,8 @@
 .fg-index-api__default,
 .fg-index-api__deprecated,
 .fg-index-api__description,
+.fg-index-api__inherited-from,
+.fg-index-api__reference,
 .fg-index-api__ref,
 .fg-index-api__note,
 .fg-index-api__inherited {
@@ -106,6 +108,7 @@
 
 .fg-index-api__default,
 .fg-index-api__description,
+.fg-index-api__inherited-from,
 .fg-index-api__inherited,
 .fg-index-api__note {
   color: var(--wzl-fg-muted);
@@ -117,6 +120,15 @@
 
 .fg-index-api__inherited {
   margin-top: var(--wzl-space-8);
+}
+
+/* A method's overloads, one to a line. */
+.fg-index-api__signature {
+  display: block;
+}
+
+.fg-index-api__reference {
+  margin: 0 0 var(--wzl-space-8);
 }
 
 /* A type name whose definition shows on hover and on focus. */

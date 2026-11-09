@@ -104,6 +104,33 @@ describe('IndexApi', () => {
     expect(entry('width').previousElementSibling).toHaveTextContent('readonly');
   });
 
+  it("links to the component's API reference page, and shows a member's overloads and where it is inherited from", () => {
+    const api: ApiTable = {
+      ...API,
+      href: 'https://example.com/#pkg/ui/reference/Chart',
+      props: [{ name: 'tone', type: 'string', required: false, inheritedFrom: 'Toned' }],
+      ref: {
+        type: 'ChartHandle',
+        members: [
+          {
+            name: 'toModel',
+            kind: 'method',
+            signature: '(pt: Point) => Point',
+            readonly: false,
+            overloads: ['(x: number, y: number) => Point'],
+            inheritedFrom: 'Mapper',
+          },
+        ],
+      },
+    };
+    render(<IndexPage env={envOf({ api })} render={null} />);
+    expect(within(panel()).getByRole('link', { name: 'API reference' }).getAttribute('href')).toBe(api.href);
+    expect(entry('tone')).toHaveTextContent('Inherited from Toned');
+    expect(entry('toModel')).toHaveTextContent('(pt: Point) => Point');
+    expect(entry('toModel')).toHaveTextContent('(x: number, y: number) => Point');
+    expect(entry('toModel')).toHaveTextContent('Inherited from Mapper');
+  });
+
   it('names a platform ref type with no member list', () => {
     render(<IndexPage env={envOf({ api: { ...API, ref: { type: 'HTMLDivElement', members: [] } } })} render={null} />);
     expect(within(panel()).getByText('HTMLDivElement')).toBeTruthy();

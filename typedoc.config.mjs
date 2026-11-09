@@ -29,8 +29,9 @@ export default {
   entryPoints: publishedPackages(),
   // Keep the order above; TypeDoc would otherwise alphabetize core into the middle.
   sortEntryPoints: false,
-  // Read by `scripts/build-reference.ts`, which splits it per package for the site's package pages.
-  json: 'dist-demo/reference/typedoc.json',
+  // Read by `scripts/build-reference.ts`, which splits it per package for the site's package pages, and by forge's
+  // index pages (its `typedoc` option's default path). Outside `dist-demo`, which deploys whole.
+  json: 'dist/typedoc.json',
   plugin: ['./typedoc/plugin.mjs'],
   categorizeByGroup: false,
   packageOptions: {

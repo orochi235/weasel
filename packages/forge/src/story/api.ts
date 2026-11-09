@@ -11,6 +11,8 @@ export interface ApiProp {
   description?: string;
   /** The `@deprecated` tag's text; empty for a bare tag. */
   deprecated?: string;
+  /** The type it is inherited from, where TypeDoc's output says. */
+  inheritedFrom?: string;
 }
 
 export interface ApiMember {
@@ -20,6 +22,10 @@ export interface ApiMember {
   signature: string;
   readonly: boolean;
   description?: string;
+  /** A method's further overloads, arrow style, where TypeDoc's output lists them. */
+  overloads?: string[];
+  /** The type it is inherited from, where TypeDoc's output says. */
+  inheritedFrom?: string;
 }
 
 /** Props declared by the platform or a skipped package, counted per declaring type rather than listed. */
@@ -48,4 +54,6 @@ export interface ApiTable {
   ref: ApiRef | null;
   /** The definitions of the project's own types named in `props` and `ref`, by name. */
   types?: Record<string, ApiTypeDef>;
+  /** The component's page in the API reference, where TypeDoc's output documents it and forge was told its address. */
+  href?: string;
 }

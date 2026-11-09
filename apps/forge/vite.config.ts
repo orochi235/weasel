@@ -14,6 +14,8 @@ import { prebundleWorkspace } from '../../scripts/vite-prebundle.ts';
 import { forgeAliases, frameConfig, frameStyles, shellConfig, skipWake, stories } from './viteShared.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 import { LAN_SERVER } from '../../scripts/vite-lan.ts';
+import { symbolRoute } from '../shared/packageRoutes.ts';
+import pkg from '../../package.json' with { type: 'json' };
 
 const repoRoot = resolve(import.meta.dirname, '../..');
 const storyTrees = stories.map((glob) => glob.split('/**')[0]!);
@@ -46,6 +48,11 @@ export default defineConfig(({ command, isPreview }) => ({
       frameStyles,
       // react-aria's DOM-level props: ids, ARIA labeling, `dir`, `lang`, `hidden`, and the like.
       propControls: { skip: (file) => /@react-types[\\/]shared[\\/]src[\\/]dom\.d\.ts$/.test(file) },
+      // `npm run build:api` writes the JSON; its first module is the package, any further one a subpath entry.
+      typedoc: {
+        href: ({ modules: [specifier, ...subpath], name }) =>
+          specifier ? `${pkg.homepage}#${symbolRoute(specifier.replace(/^@[^/]+\//, ''), subpath.join('/'), name)}` : undefined,
+      },
     }),
     localWake({ skip: skipWake }),
   ],
