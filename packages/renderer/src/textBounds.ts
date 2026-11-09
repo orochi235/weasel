@@ -15,7 +15,7 @@ export const TEXT_INK_EM = { side: 0.5, above: 1.5, below: 1 } as const;
 
 /**
  * A screen-space box enclosing every pixel `cmd` can paint under `m`: each
- * laid-out glyph's advance cell grown by {@link TEXT_INK_EM}, and by how far
+ * laid-out glyph's advance cell, or its pen step where that is longer, grown by {@link TEXT_INK_EM}, and by how far
  * its run's outline stroke reaches, turned with the glyph. `null` for text
  * that lays out no glyph, which paints nothing.
  */
@@ -27,8 +27,9 @@ export function textBox(cmd: TextDrawCommand, m: GlMat3): ScreenBox | null {
   for (const line of laid.lines) {
     for (const g of line.glyphs) {
       const em = g.fontSize, out = reach[g.run] ?? 0;
-      // The margins about the pen, turned with the glyph.
-      const l = -TEXT_INK_EM.side * em - out, r = g.advance + TEXT_INK_EM.side * em + out;
+      // The margins about the pen, turned with the glyph. A decoration rule runs to the pen's step,
+      // which letter spacing can carry past the glyph's advance.
+      const l = -TEXT_INK_EM.side * em - out, r = Math.max(g.advance, g.step) + TEXT_INK_EM.side * em + out;
       const t = -TEXT_INK_EM.above * em - out, b = TEXT_INK_EM.below * em + out;
       const [cos, sin] = glyphTurn(g.rotate);
       for (let k = 0; k < 4; k++) {
