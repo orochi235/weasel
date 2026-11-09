@@ -3,8 +3,8 @@ const heard = new WeakMap<object, Map<string, Set<() => void>>>();
 /** Hear each time trial `trialId` of the lab store `store` starts its undo afresh: a Reset,
  *  or a snapshot loaded over it. Returns the stop. */
 export function onTrialRestart(store: object, trialId: string, listener: () => void): () => void {
-  let byTrial = heard.get(store);
-  if (!byTrial) heard.set(store, (byTrial = new Map()));
+  const byTrial = heard.get(store) ?? new Map<string, Set<() => void>>();
+  heard.set(store, byTrial);
   const listeners = byTrial.get(trialId) ?? new Set();
   byTrial.set(trialId, listeners);
   listeners.add(listener);

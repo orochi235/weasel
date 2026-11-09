@@ -4,6 +4,7 @@ import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
 import type { LabStore } from '../state/store';
+import { onTrialRestart } from '../state/trialRestarts';
 import type { TrialRecord } from '../state/types';
 import { editStamp } from '../undo/editStamp';
 import { stateOp } from '../undo/stateOp';
@@ -15,7 +16,6 @@ import {
   writeTrialEdit,
 } from './trialEdit';
 import type { TrialHistorySource } from './trialHistory';
-import { onTrialRestart } from '../state/trialRestarts';
 
 /** What a trial snapshots on when its instrument names no events. */
 const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];

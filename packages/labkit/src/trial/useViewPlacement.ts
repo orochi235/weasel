@@ -108,7 +108,14 @@ export function useViewPlacement({
       measured.current = size;
       if (view != null) {
         if (!last || (last.width === size.width && last.height === size.height)) return;
-        if (!sitsAt(view, sizedInitialView(instrument, last), instrument.orbit?.limits)) return;
+        if (
+          !sitsAt(
+            view,
+            sizedInitialView(instrument, last),
+            instrument.orbit ? instrument.orbit.limits : undefined,
+          )
+        )
+          return;
       }
       const placed = sizedInitialView(instrument, size);
       if (placed) setView(placed);

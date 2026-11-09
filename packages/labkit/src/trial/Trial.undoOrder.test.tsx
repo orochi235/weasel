@@ -131,7 +131,9 @@ const sized = defineInstrument({
       </button>
     </>
   ),
-  annotations: instrument.annotations,
+  annotations: {
+    targets: () => [{ id: 'pane', ref: { current: null }, content: { w: 200, h: 100 } }],
+  },
 });
 
 describe('a run of writes to one setting', () => {

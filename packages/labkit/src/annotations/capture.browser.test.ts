@@ -14,7 +14,8 @@ import atlasUrl from '../../../../assets/fonts/inter/inter.png?url';
 /** Pixels where the mark's red ink landed on the transparent export. */
 async function inkPixels(blob: Blob): Promise<number> {
   const bitmap = await createImageBitmap(blob);
-  const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')!;
+  const ctx = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
+  if (!ctx) throw new Error('no 2d context on an OffscreenCanvas');
   ctx.drawImage(bitmap, 0, 0);
   const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
   let n = 0;

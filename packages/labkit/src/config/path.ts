@@ -36,11 +36,19 @@ export function hasConfigPath(config: unknown, path: string): boolean {
 
 /** A copy of `value` down through every array and plain record in it; any
  *  other value is shared, as the walks here treat it as a leaf. */
-export function copyTree<T>(value: T): T {
-  if (Array.isArray(value)) return value.map(copyTree) as T;
-  if (!isRecord(value)) return value;
+export function copyTree<T>(value: T, copies = new Map<object, unknown>()): T {
+  if (!Array.isArray(value) && !isRecord(value)) return value;
+  const seen = copies.get(value);
+  if (seen !== undefined) return seen as T;
+  if (Array.isArray(value)) {
+    const out: unknown[] = [];
+    copies.set(value, out);
+    for (const v of value) out.push(copyTree(v, copies));
+    return out as T;
+  }
   const out: Record<string, unknown> = {};
-  for (const [key, v] of Object.entries(value)) out[key] = copyTree(v);
+  copies.set(value, out);
+  for (const [key, v] of Object.entries(value)) out[key] = copyTree(v, copies);
   return out as T;
 }
 
