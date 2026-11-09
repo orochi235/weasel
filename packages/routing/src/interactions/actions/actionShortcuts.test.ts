@@ -42,8 +42,16 @@ describe('actionShortcuts', () => {
     expect(keySpecShortcut({ kind: 'key', key: 'q', mods: { meta: true } })).toBeUndefined();
     expect(of([
       { spec: { kind: 'key', key: 'q', mods: { ctrl: true } }, opts: {} },
-      { spec: { kind: 'key', key: 'q', mods: { mod: true, ctrl: true } }, opts: {} },
+      { spec: { kind: 'key', key: 'q', mods: { mod: true } }, opts: {} },
     ])).toEqual([{ key: 'q', mod: true, alt: false, shift: false }]);
+  });
+
+  it('gives one that requires Ctrl or Meta beside mod no chip either, as the matcher requires both', () => {
+    // Cmd+Ctrl+F on a Mac and Ctrl+Win+F elsewhere: drawn as ⌘F or Ctrl+F, the chip would name a different chord.
+    expect(keySpecShortcut({ kind: 'key', key: 'f', mods: { mod: true, ctrl: true } })).toBeUndefined();
+    expect(keySpecShortcut({ kind: 'key', key: 'f', mods: { mod: true, meta: true } })).toBeUndefined();
+    expect(keySpecShortcut({ kind: 'key', key: 'f', mods: { mod: true, ctrl: 'optional' } }))
+      .toEqual({ key: 'f', mod: true, alt: false, shift: false });
   });
 
   it('collapses bindings that an optional modifier made identical', () => {
