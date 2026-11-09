@@ -88,4 +88,26 @@ describe("an action's drag threshold", () => {
     expect(taker.onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
     expect(dispatcher.inFlight().size).toBe(0);
   });
+
+  it('ends the drag when the start it held throws, logging once and never starting again', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { handle, start, send, dispatcher } = setup(8);
+    start.mockImplementationOnce(() => { throw new Error('start failed'); });
+    send(at('pointerdown', 100));
+    expect(() => send(at('pointermove', 120))).not.toThrow();
+    expect(error).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('"probe" threw on start'), expect.any(Error));
+    expect(dispatcher.inFlight().size).toBe(0);
+    send(at('pointermove', 140));
+    send(at('pointerup', 140));
+    expect(start).toHaveBeenCalledOnce();
+    expect(handle.onEnd).not.toHaveBeenCalled();
+
+    send(at('pointerdown', 100));
+    send(at('pointermove', 120));
+    expect(start).toHaveBeenCalledTimes(2);
+    send(at('pointerup', 120));
+    expect(handle.onEnd).toHaveBeenCalledWith(expect.anything(), 'commit');
+    error.mockRestore();
+  });
 });

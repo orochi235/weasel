@@ -243,14 +243,17 @@ export function invokeAction(
     const pressCtx = ctxFor(run, event, deps, gestureId);
     const begin = () => invoker.start(pressCtx, match.binding.opts);
     const threshold = match.binding.opts?.dragThresholdPx ?? invoker.dragThresholdPx;
+    // As an immediate action's throw: the press is spent, and nothing is left in flight.
+    const threw = (err: unknown): void => {
+      console.error(`weasel dispatcher: action "${action.id}" threw on start`, err);
+    };
     let handle: OngoingHandle;
     try {
       handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
-        ? deferredStart(begin, threshold)
+        ? deferredStart(begin, threshold, (err) => { threw(err); endGesture(run, gestureId, event, 'cancel'); })
         : begin();
     } catch (err) {
-      // As an immediate action's throw: the press is spent, and nothing is in flight.
-      console.error(`weasel dispatcher: action "${action.id}" threw on start`, err);
+      threw(err);
       run.facts.drop(gestureId);
       return 'fired';
     }

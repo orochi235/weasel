@@ -6,15 +6,25 @@ import { isEmptyOngoingHandle } from './inFlightGestures';
  * screen from the press. Until then it holds the gesture and answers nothing else; past it, `start`
  * runs and every read goes to the handle it returns, beginning with the move that crossed. A `start`
  * that declines, with an empty handle, passes the drag on, as it would have fallen through at the
- * press. A release short of the threshold ends a gesture that never started.
+ * press. A release short of the threshold ends a gesture that never started. A `start` that throws is
+ * handed to `threw`, which ends the drag, and is never called again.
  */
-export function deferredStart(start: () => OngoingHandle, thresholdPx: number): OngoingHandle {
+export function deferredStart(
+  start: () => OngoingHandle, thresholdPx: number, threw: (err: unknown) => void,
+): OngoingHandle {
   let inner: OngoingHandle | null = null;
+  let failed = false;
   const onMove = (ctx: InvocationCtx): void | 'pass' => {
     if (!inner) {
       const travel = ctx.drag?.screenDelta;
-      if (!travel || Math.hypot(travel.x, travel.y) < thresholdPx) return;
-      inner = start();
+      if (failed || !travel || Math.hypot(travel.x, travel.y) < thresholdPx) return;
+      try {
+        inner = start();
+      } catch (err) {
+        failed = true;
+        threw(err);
+        return;
+      }
       if (isEmptyOngoingHandle(inner)) return 'pass';
     }
     return inner.onMove?.(ctx);
