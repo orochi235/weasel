@@ -56,18 +56,29 @@ describe('applyTheme', () => {
       ['comment', 'serif /*'],
       ['newline', "'a\n;} * { color: red } '"],
       ['escape', 'serif \\'],
+      ['paren', 'serif, var(--x'],
+      ['bracket', 'serif ['],
+      ['url', 'url(a.woff'],
     ];
     for (const [name, value] of hostile) {
       applyTheme(document.createElement('div'), defineTheme({ name, pins: { 'font-ui': value, 'accent-base': '#ff0000' } }), { mode: 'dark' });
     }
     applyTheme(document.createElement('div'), defineTheme({ name: 'plain', pins: { 'accent-base': '#0000ff' } }), { mode: 'dark' });
     const rules = [...document.adoptedStyleSheets, ...document.styleSheets].flatMap((s) => [...s.cssRules]) as CSSStyleRule[];
-    expect(rules.map((r) => /data-wzl-theme=['"]?(\w+)/.exec(r.selectorText)?.[1]).sort()).toEqual(['comment', 'escape', 'newline', 'plain']);
+    expect(rules.map((r) => /data-wzl-theme=['"]?(\w+)/.exec(r.selectorText)?.[1]).sort()).toEqual(['bracket', 'comment', 'escape', 'newline', 'paren', 'plain', 'url']);
     for (const rule of rules) {
       if (!rule.selectorText.includes('plain')) expect(rule.style.getPropertyValue('--wzl-font-ui')).toBe('');
       expect(rule.style.getPropertyValue('--wzl-accent').trim()).not.toBe('');
     }
     warn.mockRestore();
+  });
+
+  it('keeps a value whose brackets close, including a stray closer CSS ignores', () => {
+    applyTheme(document.createElement('div'), defineTheme({ name: 'closed', pins: { 'font-ui': "var(--a, [x] f(')'))" } }), { mode: 'dark' });
+    applyTheme(document.createElement('div'), defineTheme({ name: 'stray', pins: { 'font-ui': 'serif)' } }), { mode: 'dark' });
+    const css = readSheetText();
+    expect(css).toContain('--wzl-font-ui: var(--a,');
+    expect(css).toContain('--wzl-font-ui: serif)');
   });
 
   it('writes no inline custom properties', () => {

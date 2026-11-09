@@ -14,17 +14,10 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readBumps } from './lib/changeset-bumps.mjs';
 
 // From the script's own place, so a run from another directory still looks.
 const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.changeset');
-
-/** Everything above `patch` needs sign-off. */
-const GATED = ['minor', 'major'];
-
-/** `<!-- bump-approved: minor: someone — reason -->` */
-function approvalFor(text, level) {
-  return new RegExp(`<!--\\s*bump-approved:\\s*${level}\\s*:\\s*\\S+.*-->`, 'i').test(text);
-}
 
 if (!existsSync(DIR)) {
   console.log('[changeset-bumps] no .changeset directory — nothing to check.');
@@ -35,41 +28,36 @@ if (!existsSync(DIR)) {
 // has consumed it. Those still decide the version every later prerelease
 // computes, so scan both.
 const PRE_DIR = join(DIR, 'pre');
+// The files changesets itself skips (`@changesets/read`).
+const NOT_CHANGESETS = /^(readme|AGENTS|CLAUDE|GEMINI)\.md$/i;
 const mds = (dir) =>
-  existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'README.md') : [];
+  existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md') && !f.startsWith('.') && !NOT_CHANGESETS.test(f)) : [];
 const files = [
   ...mds(DIR).map((f) => ({ file: f, path: join(DIR, f), label: `.changeset/${f}` })),
   ...mds(PRE_DIR).map((f) => ({ file: f, path: join(PRE_DIR, f), label: `.changeset/pre/${f}` })),
 ];
 const offenders = [];
 const leading = [];
+const unreadable = [];
 
-for (const { file, path, label } of files) {
-  const text = readFileSync(path, 'utf8');
-  // Frontmatter is the leading `---` block; only bumps declared there count.
-  const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
-  if (!fm) continue;
-  // Changesets prints a body's first line beside the commit hash, the entry's title.
-  if (/^\s*<!--\s*bump-approved:/i.test(text.slice(fm[0].length))) leading.push(label);
+for (const { path, label } of files) {
+  let read;
+  try {
+    read = readBumps(readFileSync(path, 'utf8'));
+  } catch (e) {
+    unreadable.push(`${label}: ${String(e instanceof Error ? e.message : e).split('\n')[0]}`);
+    continue;
+  }
+  if (read.leadingMarker) leading.push(label);
+  for (const { level, pkgs } of read.approved) {
+    console.log(`[changeset-bumps] ${label}: ${level} approved — ${pkgs.join(', ')}`);
+  }
+  for (const { level, pkgs } of read.unapproved) offenders.push({ label, level, pkgs });
+}
 
-  // Changesets reads the frontmatter as YAML, so `"minor"`, `'minor'`, and
-  // `minor # why` all bump. Read each value the way YAML would, and refuse a
-  // level this guard does not know rather than let it through.
-  const byLevel = new Map();
-  for (const line of fm[1].split(/\r?\n/)) {
-    const m = /^\s*(["']?)(.+?)\1\s*:\s*(.*?)\s*$/.exec(line);
-    if (!m) continue;
-    const level = m[3].replace(/\s+#.*$/, '').replace(/^(["'])(.*)\1$/, '$2').trim().toLowerCase();
-    if (level === 'patch' || level === 'none') continue;
-    byLevel.set(level, [...(byLevel.get(level) ?? []), m[2].trim()]);
-  }
-  for (const [level, pkgs] of byLevel) {
-    if (GATED.includes(level) && approvalFor(text, level)) {
-      console.log(`[changeset-bumps] ${label}: ${level} approved — ${pkgs.join(', ')}`);
-      continue;
-    }
-    offenders.push({ label, level, pkgs });
-  }
+if (unreadable.length > 0) {
+  console.error(`\n[changeset-bumps] BLOCKED: changesets cannot read ${unreadable.length} file(s):`);
+  for (const line of unreadable) console.error(`  ${line}`);
 }
 
 if (leading.length > 0) {
@@ -99,6 +87,6 @@ if (offenders.length > 0) {
 `);
   process.exit(1);
 }
-if (leading.length > 0) process.exit(1);
+if (leading.length > 0 || unreadable.length > 0) process.exit(1);
 
 console.log(`[changeset-bumps] OK — ${files.length} changeset(s), no unapproved bumps above patch.`);

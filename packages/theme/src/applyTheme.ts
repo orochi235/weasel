@@ -7,13 +7,17 @@ import { warnThemeOnce } from './warnOnce';
 
 export { __resetThemeSheet } from './themeSheet';
 
+const CLOSER: Readonly<Record<string, string>> = { '(': ')', '[': ']' };
+
 /**
  * Whether `value` can stand as a declaration's value: no `;`, `{`, `}` or comment opener outside a
- * quoted string, no line break inside one (CSS ends the string there), no quote left open, and no
- * backslash escaping the declaration's own `;`.
+ * quoted string, no line break inside one (CSS ends the string there), no quote or bracket left
+ * open (an open `(` or `[` runs on through every later rule), and no backslash escaping the
+ * declaration's own `;`.
  */
 function declarable(value: string): boolean {
   let quote: string | null = null;
+  const open: string[] = [];
   for (let i = 0; i < value.length; i++) {
     const c = value[i];
     if (c === '\\') {
@@ -23,8 +27,10 @@ function declarable(value: string): boolean {
       else if (c === '\n' || c === '\r' || c === '\f') return false;
     } else if (c === '"' || c === "'") quote = c;
     else if (c === ';' || c === '{' || c === '}' || (c === '/' && value[i + 1] === '*')) return false;
+    else if (CLOSER[c]) open.push(CLOSER[c]);
+    else if (c === open[open.length - 1]) open.pop();
   }
-  return quote === null;
+  return quote === null && open.length === 0;
 }
 
 /** The declarations of `tokens`, less any whose value would end its declaration or rule. */

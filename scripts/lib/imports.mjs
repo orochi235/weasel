@@ -11,8 +11,9 @@ import { parseSync } from 'oxc-parser';
 export const SOURCE = /\.(ts|tsx|mts|js|mjs)$/;
 
 /** Every specifier `file` (named for its grammar) imports at run time, as written, a `?query`
- *  included, in source order. A type-only import or re-export is erased at build and is not
- *  listed. */
+ *  included, in source order. An `import type` or `export type` is erased at build and is not
+ *  listed; one whose every name is marked `type` inside the braces is not, since under the
+ *  repo's `verbatimModuleSyntax` it builds to `import {} from '…'`, which still loads the module. */
 export function importSpecifiers(source, file) {
   return specifiers(source, file, false);
 }
@@ -48,14 +49,15 @@ function parse(source, file) {
 function collect(result, source, withTypes) {
   const { staticImports, staticExports, dynamicImports } = result.module;
   const found = [];
+  const erased = (start, keyword, entries) =>
+    entries.length > 0 && entries.every((e) => e.isType) && new RegExp(`^${keyword}\\s+type\\b`).test(source.slice(start, start + 20));
   for (const { start, moduleRequest, entries } of staticImports) {
-    // An import naming nothing is kept for its side effects.
-    if (withTypes || entries.length === 0 || entries.some((e) => !e.isType)) found.push([start, moduleRequest.value]);
+    if (withTypes || !erased(start, 'import', entries)) found.push([start, moduleRequest.value]);
   }
   for (const { start, entries } of staticExports) {
     const from = entries.filter((e) => e.moduleRequest !== null);
     if (from.length === 0) continue;
-    if (withTypes || from.some((e) => !e.isType)) found.push([start, from[0].moduleRequest.value]);
+    if (withTypes || !erased(start, 'export', from)) found.push([start, from[0].moduleRequest.value]);
   }
   for (const { start, moduleRequest } of dynamicImports) {
     const value = literal(source.slice(moduleRequest.start, moduleRequest.end));

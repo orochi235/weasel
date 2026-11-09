@@ -53,9 +53,15 @@ async function pickAndImport(scene: ChartScene): Promise<void> {
 
 function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: ChartPages; format: DiagramFormat }): null {
   useCommand(FORMAT_EXPORT_ACTIONS[format.id]!, `As ${format.name}…`, () => {
-    const { blob, name, warnings } = exportChart(scene, format, pages);
-    downloadBlob(blob, name);
-    reportFileWarnings('Exported', warnings, 'chart-export-warnings');
+    let exported;
+    try {
+      exported = exportChart(scene, format, pages);
+    } catch (err) {
+      reportFailure('Could not export the chart')(err);
+      return;
+    }
+    downloadBlob(exported.blob, exported.name);
+    reportFileWarnings('Exported', exported.warnings, 'chart-export-warnings');
   }, { enabled: () => can(formatTakes(format, scenePageKinds(scene))) });
   return null;
 }

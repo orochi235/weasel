@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { parseChangesetFile } from '@changesets/parse';
 import { marked } from 'marked';
 import type { PluginOption } from 'vite';
 import type { ChangelogEntry, Release } from '../apps/shared/releases.ts';
@@ -148,29 +149,22 @@ export function readPendingChangesets(root: string): Release | null {
 }
 
 /**
- * A single `.changeset/*.md`: YAML-ish frontmatter naming the packages and
- * their bump level, then the entry prose.
+ * A single `.changeset/*.md`, read by changesets' own parser: the packages it bumps and the highest
+ * level among them, then the entry prose. Null for a file changesets cannot read, or one with no prose.
  */
 export function parseChangeset(
   text: string,
 ): { packages: string[]; level: ChangelogEntry['level']; body: string } | null {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(text.trim());
-  if (!match) return null;
-
-  const packages: string[] = [];
-  let level: ChangelogEntry['level'] = 'patch';
-  for (const line of match[1].split('\n')) {
-    const pair = /^\s*['"]?(@?[\w./-]+)['"]?\s*:\s*(major|minor|patch)\s*$/.exec(line);
-    if (!pair) continue;
-    packages.push(unscope(pair[1]));
-    if (pair[2] === 'major' || (pair[2] === 'minor' && level === 'patch')) {
-      level = pair[2] as ChangelogEntry['level'];
-    }
+  let parsed: ReturnType<typeof parseChangesetFile>;
+  try {
+    parsed = parseChangesetFile(text);
+  } catch {
+    return null;
   }
-
-  const body = match[2].trim();
-  if (!body) return null;
-  return { packages, level, body };
+  const bumps = parsed.releases.filter((r) => r.type !== 'none');
+  const level = (['major', 'minor'] as const).find((l) => bumps.some((r) => r.type === l)) ?? 'patch';
+  if (!parsed.summary) return null;
+  return { packages: bumps.map((r) => unscope(r.name)), level, body: parsed.summary };
 }
 
 /** Every line names a package version (`@weasel-js/geom@1.7.3`) and nothing else. */

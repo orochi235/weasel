@@ -227,4 +227,16 @@ describe('File › Export › As a diagram format', () => {
     const { document } = DIAGRAM_JSON.read!(await io.saved[0]!.blob.text()) as { document: DiagramDocument };
     expect(document.pages.map((p) => p.id)).toEqual(['page-1']);
   });
+
+  it('says in a toast that a chart the format cannot write could not be exported', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const write = vi.spyOn(DIAGRAM_JSON, 'write').mockImplementation(() => { throw new Error('no room for it'); });
+    mount();
+    choose('Export', 'As Diagram JSON');
+    expect(await screen.findByText('Could not export the chart')).toBeTruthy();
+    expect(screen.getByText('no room for it')).toBeTruthy();
+    expect(io.saved).toHaveLength(0);
+    write.mockRestore();
+    warn.mockRestore();
+  });
 });
