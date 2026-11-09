@@ -383,14 +383,6 @@ Owner tags, after the priority (2026-10-26):
   `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
   box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
 
-- **(P3) [agent] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
-  a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
-  the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
-  override that `segmentedRow`, `ButtonBar` and `Bar` could pass from the run; `Tabs` and `RadioGroup` take their
-  arrows from React Aria's locale. `SwatchGrid` rings already step by screen direction (`ringStep`).
-  Ruled (2026-11-07): arrows follow the screen. Closes when Right moves to the item on the screen's right along
-  a clockwise bottom arc in `ButtonBar`, `Bar`, and `segmentedRow`.
-
 - **(P3) [agent] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
   (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
   undecided (`useSliderGeometry`).

@@ -9,3 +9,12 @@ export function rowRun(shape: TrackShape, direction: 'ltr' | 'rtl' = 'ltr', opti
   const against = trackRun(shape, 0, 1, options).reversed;
   return trackRun(shape, 0, 1, { ...options, direction: against !== (direction === 'rtl') ? 'rtl' : 'ltr' });
 }
+
+/** Which way a run {@link rowRun} made reads across the screen: `'rtl'` where it ends left of its start, so the arrow
+ *  keys, which follow the screen, step it backward on Right. One that ends level with its start, a ring say, keeps the
+ *  inline direction it was made in, which is whether it runs against the shape. */
+export function screenDirection(run: TrackRun): 'ltr' | 'rtl' {
+  const dx = run.at(1).point.x - run.at(0).point.x;
+  if (Math.abs(dx) <= 1e-6 * Math.max(1, run.length)) return run.reversed ? 'rtl' : 'ltr';
+  return dx < 0 ? 'rtl' : 'ltr';
+}

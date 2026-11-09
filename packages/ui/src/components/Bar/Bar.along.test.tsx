@@ -160,6 +160,19 @@ describe('Bar along a curve', () => {
       const { a, b } = firstX({ start: 270, end: 90 }, 'rtl');
       expect(a.x).toBeGreaterThan(b.x);
     });
+
+    test('on a clockwise bottom arc Alt+Right moves an item toward the screen\'s right, ahead of the one before it', () => {
+      const onReorder = vi.fn();
+      render(
+        <Along arc={{ start: 90, end: 270 }} align="start">
+          <Bar schema={actions('a', 'b', 'c')} label="Tools" onReorder={onReorder} />
+        </Along>,
+      );
+      const b = items()[1]!;
+      const control = b.querySelector<HTMLElement>('button') ?? (b as HTMLElement);
+      fireEvent.keyDown(control, { key: 'ArrowRight', altKey: true });
+      expect(onReorder).toHaveBeenCalledWith({ '': ['b', 'a', 'c'] });
+    });
   });
 });
 

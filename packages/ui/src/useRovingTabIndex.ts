@@ -53,7 +53,9 @@ export type UseRovingTabIndexOptions = {
 /** What {@link useRovingTabIndex} returns. Attach both to the container. */
 export type RovingTabIndex<T extends HTMLElement = HTMLDivElement> = {
   rootRef: RefObject<T | null>;
-  onKeyDown: (e: ReactKeyboardEvent<T>) => void;
+  /** `dir`, given, is the way the items run across the screen, ahead of the `dir` option and the computed direction:
+   *  a row laid along a curve passes its run's. */
+  onKeyDown: (e: ReactKeyboardEvent<T>, dir?: RovingDirection) => void;
 };
 
 const DEFAULT_ITEMS = 'button, [role="button"]';
@@ -225,7 +227,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
   );
 
   const onKeyDown = useCallback(
-    (e: ReactKeyboardEvent<T>) => {
+    (e: ReactKeyboardEvent<T>, across?: RovingDirection) => {
       const found = items();
       const current = found.indexOf(e.target as HTMLElement);
       if (current < 0) return;
@@ -237,7 +239,7 @@ export function useRovingTabIndex<T extends HTMLElement = HTMLDivElement>(
         return;
       }
       const enabled = found.map(isEnabled);
-      const dir = latest.current.dir ?? inlineDirection(e.currentTarget);
+      const dir = across ?? latest.current.dir ?? inlineDirection(e.currentTarget);
       const rows = columns ? gridRows(found, columns, groupSelector) : [];
       // A row short of `columns` is the last of its group, and sits where `lastRow` puts it.
       const next = columns

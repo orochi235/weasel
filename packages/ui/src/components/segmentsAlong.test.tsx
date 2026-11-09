@@ -80,13 +80,44 @@ describe('segmented controls along a curve', () => {
     expect(lit).toEqual(['on', 'mixed']);
   });
 
-  test('the arrow keys still move the selection in reading order', () => {
+  test('the arrow keys move the selection along the run', () => {
     render(<Toggle />);
     const b = screen.getByRole('radio', { name: 'B' });
     b.focus();
     fireEvent.keyDown(b, { key: 'ArrowRight' });
     expect(screen.getByRole('radio', { name: 'C' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radiogroup').querySelector('[data-lit]')!.getAttribute('d')).not.toBe('');
+  });
+
+  describe("on a clockwise bottom arc, whose first segment sits at the right, arrows follow the screen", () => {
+    const bottom = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 90, end: 270 });
+
+    test('ToggleBar: Right selects the segment on the right', () => {
+      render(
+        <Along shape={bottom}>
+          <ToggleBar ariaLabel="Pick" items={ITEMS} value="b" onChange={() => {}} />
+        </Along>,
+      );
+      const [a, b] = ['A', 'B'].map((name) => screen.getByRole('radio', { name }));
+      expect(at(a!).x).toBeGreaterThan(at(b!).x);
+      b!.focus();
+      fireEvent.keyDown(b!, { key: 'ArrowRight' });
+      expect(a).toHaveFocus();
+      fireEvent.keyDown(a!, { key: 'ArrowLeft' });
+      expect(b).toHaveFocus();
+    });
+
+    test('ButtonBar: Right focuses the button on the right', () => {
+      render(
+        <Along shape={bottom}>
+          <ButtonBar ariaLabel="Do" items={ITEMS.map((item) => ({ ...item, onAction: () => {} }))} />
+        </Along>,
+      );
+      const [a, b] = ['A', 'B'].map((name) => screen.getByRole('button', { name }));
+      b!.focus();
+      fireEvent.keyDown(b!, { key: 'ArrowRight' });
+      expect(a).toHaveFocus();
+    });
   });
 
   test.each(['flat', 'minimal'] as const)("the %s variant draws no well and keeps each segment's own box", (variant) => {

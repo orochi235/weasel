@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { arcShape, placeAlongRun, trackRun } from '@weasel-js/geom';
-import { rowRun } from './rowRun';
+import { rowRun, screenDirection } from './rowRun';
 
 const C = { x: 100, y: 100 };
 const ARCS = {
@@ -28,4 +28,21 @@ describe('rowRun', () => {
       expect(rowRun(shape, 'rtl').at(0).point.x).toBeCloseTo(shape.at(1).point.x);
     });
   }
+});
+
+describe('screenDirection', () => {
+  test('reads right to left where the run ends left of its start, whatever its inline direction', () => {
+    expect(screenDirection(rowRun(ARCS['top, clockwise']))).toBe('ltr');
+    expect(screenDirection(rowRun(ARCS['top, counterclockwise']))).toBe('rtl');
+    expect(screenDirection(rowRun(ARCS['bottom, clockwise']))).toBe('rtl');
+    expect(screenDirection(rowRun(ARCS['bottom, counterclockwise']))).toBe('ltr');
+    expect(screenDirection(rowRun(ARCS['top, clockwise'], 'rtl'))).toBe('rtl');
+    expect(screenDirection(rowRun(ARCS['bottom, clockwise'], 'rtl'))).toBe('ltr');
+  });
+
+  test('a run that ends level with its start keeps its inline direction', () => {
+    const ring = arcShape({ center: C, radius: 100, start: 0, end: 360 });
+    expect(screenDirection(rowRun(ring))).toBe('ltr');
+    expect(screenDirection(rowRun(ring, 'rtl'))).toBe('rtl');
+  });
 });
