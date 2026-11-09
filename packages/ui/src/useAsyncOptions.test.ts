@@ -258,4 +258,15 @@ describe('useAsyncOptions', () => {
     expect(abandoned).not.toHaveBeenCalled();
     expect(committed).toHaveBeenCalledWith('re', expect.any(AbortSignal));
   });
+
+  it('reports a load that throws before returning a promise as a failed load, not one still running', async () => {
+    const load = vi.fn(() => { throw new Error('bad query'); });
+    const { result } = renderHook(() => useAsyncOptions({ load, debounceMs: 0 }));
+    await act(async () => {
+      result.current.onInputChange('re');
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    await waitFor(() => expect(result.current.loadError).toBeInstanceOf(Error));
+    expect(result.current.isLoading).toBe(false);
+  });
 });

@@ -78,7 +78,8 @@ export function useAsyncOptions<T extends OptionKey = string>({
       inFlight.current = controller;
       setIsLoading(true);
 
-      loadRef.current(inputValue, controller.signal).then(
+      // A `load` that throws before it returns a promise fails like one that rejects.
+      new Promise<ReadonlyArray<AsyncOption<T>>>((resolve) => resolve(loadRef.current(inputValue, controller.signal))).then(
         (next) => {
           if (controller.signal.aborted || mine <= applied.current) return;
           applied.current = mine;
