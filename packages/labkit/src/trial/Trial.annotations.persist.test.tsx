@@ -173,6 +173,21 @@ describe('a trial that persists its marks', () => {
     expect(marks().get(id)).toBeDefined();
   });
 
+  it('saves a mark made just before the page hides, with no timer left to run', async () => {
+    const backing = new Map<string, unknown>();
+    await mount(backing);
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    act(() => {
+      marks().add(MARK);
+    });
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    vi.clearAllTimers();
+    vi.useRealTimers();
+    await waitFor(() => expect(storedTrial(backing)?.annotations).toBeDefined());
+  });
+
   it('leaves the slot alone when the instrument owns the storage', async () => {
     const backing = new Map<string, unknown>();
     const first = await mount(backing, selfStoring);
