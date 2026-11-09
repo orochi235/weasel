@@ -76,6 +76,7 @@ export function createDispatcher(opts?: {
 
   const run: GestureRun = {
     inFlight, facts, viewId: () => routedView, isMac: () => routedIsMac, toLocal: () => routedToLocal, opened: new Map(),
+    endings: 0,
   };
   const invoking = (event: InputEvent): Attempt =>
     (match, action, deps) => invokeAction(run, event, match, action, deps);

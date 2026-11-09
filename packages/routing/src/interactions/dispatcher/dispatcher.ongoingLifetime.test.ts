@@ -29,3 +29,20 @@ describe('an ongoing action bound to a key, which no later input continues', () 
     expect(log).toEqual(['start:1', 'end:1:commit', 'start:2', 'end:2:cancel']);
   });
 });
+
+describe('an ongoing action whose start tears the dispatcher down', () => {
+  it('ends the handle it returned rather than leaving it in flight', () => {
+    const onEnd = vi.fn();
+    let d!: ReturnType<typeof createDispatcher>;
+    const start = vi.fn(() => {
+      d.cancelAll('cancel');
+      return { onMove: () => {}, onEnd };
+    });
+    const action = ongoingAction('drag', { kind: 'drag' }, start);
+    d = createDispatcher();
+    expect(d.handleInput(press, makeCtx({ actions: makeRegistry([action]) }))).toBe('handled');
+    expect(d.inFlight().size).toBe(0);
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
+  });
+});

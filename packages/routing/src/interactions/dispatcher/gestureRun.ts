@@ -29,6 +29,8 @@ export interface GestureRun {
   toLocal(): DispatcherContext['toLocal'];
   /** Each pointer drag in flight: the press that opened it, the action running it, and those that passed it on. */
   opened: Map<string, Opened>;
+  /** Advances each time every gesture is ended at once, so a `start` that tore the dispatcher down is seen. */
+  endings: number;
 }
 
 /** A pointer drag's press, its action, and the actions that handed it off. */
@@ -106,6 +108,7 @@ function endMultiTouch(run: GestureRun, event: InputEvent, reason: Reason, excep
 export function endAllGestures(run: GestureRun, reason: Reason): void {
   const stubCtx = uiInvocationCtx({});
   const ending = run.inFlight.takeAll();
+  run.endings++;
   run.facts.clear();
   run.opened.clear();
   for (const [gestureId, handle] of ending) runOnEnd(gestureId, handle, stubCtx, reason);
@@ -249,6 +252,7 @@ export function invokeAction(
     const threw = (err: unknown): void => {
       console.error(`weasel dispatcher: action "${action.id}" threw on start`, err);
     };
+    const endings = run.endings;
     let handle: OngoingHandle;
     try {
       handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
@@ -268,6 +272,11 @@ export function invokeAction(
       // A later match, still on the same event, starts from a fresh slate.
       run.facts.drop(gestureId);
       return 'empty-handle';
+    }
+    if (run.endings !== endings) {
+      // `start` tore the dispatcher down, and nothing would end what it returned.
+      runOnEnd(gestureId, handle, uiInvocationCtx({}), 'cancel');
+      return 'fired';
     }
     run.inFlight.open(gestureId, handle, match.ownerId, action, match.binding.opts?.over === true);
     if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
