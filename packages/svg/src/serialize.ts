@@ -19,6 +19,7 @@ import { attrNames, fitLeafXml, groupPaintAttrs } from './groupPaintXml';
 
 const NOTHING_PAINTED: ReadonlySet<string> = new Set();
 import { boxTransformAttr } from './placeBox';
+import { exportedHref } from './bitmapHref';
 import { computeBounds, pathBounds } from './serializeBounds';
 import { paintAttrs, strokeAttrsFor, strokePaintAsFillAttrs, type Warn } from './strokeAttrs';
 import { withTrimsDrawn } from './trimmedStroke';
@@ -158,7 +159,7 @@ function kindXml(
     const layout = layoutOf?.(node);
     return alignedTextXml(node, registry, namespaces, warn, layout) ?? textXml(node, registry, namespaces, warn, layout);
   }
-  if (node.kind === 'image') return imageXml(node, namespaces);
+  if (node.kind === 'image') return imageXml(node, namespaces, warn);
   const asDrawn = pathAsSvgDraws(node);
   const drawn = asDrawn.kind === 'path' ? withSeatedHeads(asDrawn) : asDrawn;
   return drawn.kind === 'group'
@@ -176,7 +177,7 @@ function kindXml(
  * SVG 1.1 gives the nested `<svg>` no `transform`, so the rotation, opacity,
  * and meta go on the wrapping `<g>`.
  */
-function imageXml(node: SvgImageNode, namespaces: Record<string, string>): string {
+function imageXml(node: SvgImageNode, namespaces: Record<string, string>, warn: Warn): string {
   const box = `x="${trimNumber(node.x)}" y="${trimNumber(node.y)}"`
     + ` width="${trimNumber(node.width)}" height="${trimNumber(node.height)}"`;
   const outer: string[] = [];
@@ -187,7 +188,7 @@ function imageXml(node: SvgImageNode, namespaces: Record<string, string>): strin
   if (frame) outer.push(frame);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const metaEls = metaElementsXml(node.meta, namespaces);
-  const href = `href="${escapeAttr(node.href)}"`;
+  const href = `href="${escapeAttr(exportedHref(node.href, warn))}"`;
 
   if (!node.source && !node.flipX && !node.flipY) {
     const attrs = [href, box, 'preserveAspectRatio="none"', ...outer].join(' ');
