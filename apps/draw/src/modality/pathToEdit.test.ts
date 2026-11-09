@@ -32,6 +32,12 @@ describe('pathToEdit', () => {
     expect(pathToEdit(scene(true), ['t'])).toBeNull();
   });
 
+  it('opens nothing for an effect whose hidden path is locked', () => {
+    const s = scene(true);
+    s.setLocked(asNodeId('p'), true);
+    expect(pathToEdit(s, ['fx'])).toBeNull();
+  });
+
   it('opens nothing for several selected', () => {
     expect(pathToEdit(scene(true), ['p', 'fx'])).toBeNull();
   });
