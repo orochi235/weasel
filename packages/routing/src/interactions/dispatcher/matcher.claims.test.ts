@@ -124,6 +124,21 @@ describe('an exclusive claim no binding can receive warns in dev', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('stays silent on the eager press stage, which the press’s drag or click dispatches again', () => {
+    // A claim owner binding only click and drag matches nothing at the
+    // press stage, but the press is not dropped: it settles later.
+    const ownClick: ScopedBinding = {
+      binding: { spec: { kind: 'click', target: 'affordance:layer:press-only' }, actionId: 'own.click' },
+      scope: 'ambient',
+      ownerId: 'press-only',
+    };
+    const warn = vi.fn();
+    const hit = { kind: 'layer:press-only', owner: 'press-only', strength: 'exclusive' };
+    const press = { ...dragOn(hit), stage: 'press' } as unknown as InputEvent;
+    expect(matchSorted(press, [vagueActive, ownClick], false, undefined, warn)).toEqual([]);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('warns even when a binding declares a kindOf target, if that target rejects the claim', () => {
     // The old guard checked "does any binding declare a target that consults
     // the affordance" — a syntactic question a `kindOf` predicate always

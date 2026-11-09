@@ -9,6 +9,7 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { useMeasureTool } from './useMeasureTool';
+import { useEyedropperTool } from '../eyedropper/useEyedropperTool';
 import { createMeasurements, measureIds } from 'domains/measure/measurements';
 import { measureEndsOf } from 'domains/measure/measurement';
 import { measurementsContribution } from 'domains/measure/measureContribution';
@@ -70,6 +71,7 @@ describe('measurements through <SceneCanvas>', () => {
   let selectionApi: ReturnType<typeof useSelection>;
   let scene: S;
   let ms: ReturnType<typeof createMeasurements>;
+  const onPick = vi.fn();
 
   function Probe() {
     registry = useActionsRegistry();
@@ -80,6 +82,7 @@ describe('measurements through <SceneCanvas>', () => {
     const [m] = useState(ms0);
     ms = m;
     const measure = useMeasureTool({ measurements: m });
+    const eyedropper = useEyedropperTool({ onPick, colorOf: () => '#7fb069', hotkey: null });
     const [s] = useState(() => {
       const made = createScene<{ kind?: string }, 'main' | 'notes', Pose>({
         systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
@@ -95,7 +98,7 @@ describe('measurements through <SceneCanvas>', () => {
     return (
       <SceneCanvas
         features={['draw']} scene={s} selection={selection} layers={{}} width={400} height={400}
-        tools={{ measure }} ambient={ambient} snap={snap}
+        tools={{ measure, eyedropper }} ambient={ambient} snap={snap}
       >
         <Probe />
       </SceneCanvas>
@@ -163,6 +166,23 @@ describe('measurements through <SceneCanvas>', () => {
     expect(selectionApi.get()).toEqual([box()]);
     act(() => { registry!.trigger(MEASURE_ACTION_IDS.moveBy); });
     expect(scene.get(box())!.pose).toMatchObject({ x: 360, y: 380 });
+  });
+
+  it('samples under the eyedropper a click on a measurement, which is chrome, not content', () => {
+    const canvas = mountWithTwo();
+    const picked = ms.picked.get();
+    press('i', 'KeyI');
+    act(() => { scene.add({ kind: 'mark', layer: 'main', data: { kind: 'box' }, pose: { x: 30, y: 40, width: 40, height: 40 } }); });
+    onPick.mockClear();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      click(canvas, 50, 60);
+      expect(onPick).toHaveBeenCalledExactlyOnceWith('#7fb069');
+      expect(ms.picked.get()).toBe(picked);
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('exclusive claim'));
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('measures from an existing end, which its snap source offers', () => {
