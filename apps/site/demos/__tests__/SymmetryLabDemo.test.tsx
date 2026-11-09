@@ -60,9 +60,11 @@ describe('SymmetryLabDemo', () => {
     const canvas = await mount();
     drag(canvas, [435, 275], [470, 300]);
     const { data, pose } = node(PETAL_ID);
+    // The petal is stored in the group's frame, whose origin is the group's center.
+    const origin = node(GROUP_ID).pose.y;
     const c = data.path!.coords;
     const ys: number[] = [];
-    for (let i = 1; i < c.length; i += 2) ys.push(c[i] + pose.y);
+    for (let i = 1; i < c.length; i += 2) ys.push(c[i] + pose.y + origin);
     // Mirrored across y = 240, every y has its partner at 480 - y.
     const sorted = [...ys].sort((a, b) => a - b);
     sorted.forEach((y, i) => expect(y + sorted[sorted.length - 1 - i]).toBeCloseTo(480, 3));

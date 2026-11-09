@@ -248,10 +248,20 @@ export function withDerivedPaths<TData, TLayer extends string, TPose>(
 function withoutInheritedFrame(path: Path, painted: unknown, own: unknown): Path {
   const undo = poseFrameInverseOf(painted);
   if (undo === null) return path;
-  const box = painted as { x: number; y: number; width: number; height: number };
-  const o = own as { rotation?: number; transform?: unknown } | null;
-  const redo = poseFrameOf({ x: box.x, y: box.y, width: box.width, height: box.height, rotation: o?.rotation, transform: o?.transform });
+  const redo = poseFrameOf(derivedFramePose(painted, own));
   return carryPathBy(path, redo === null ? undo : multiply(undo, redo));
+}
+
+/**
+ * The pose a derived path is drawn through, as painting draws it: the painted
+ * box turned by the node's own frame (`own`'s rotation and transform) alone,
+ * where `painted` carries its containers' turns as well. A pick testing the
+ * path against this pose finds it where it shows.
+ */
+export function derivedFramePose<TPose>(painted: TPose, own: unknown): TPose {
+  if (poseFrameInverseOf(painted) === null) return painted;
+  const o = own as { rotation?: number; transform?: unknown } | null;
+  return { ...painted, rotation: o?.rotation, transform: o?.transform };
 }
 
 const drawnScenes = new WeakMap<object, DrawnBoundsScene>();

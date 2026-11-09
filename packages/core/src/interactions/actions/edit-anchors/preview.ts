@@ -81,6 +81,11 @@ export function pathEditPreview(
     return lastFinished;
   };
   const others = () => shown()?.others ?? [];
+  // `origin` is in world; the ghost a preview hands out is what the node stores.
+  const storedFrom = (pid: string, from: EditableShape, path: PolygonPath): EditableShape | null => {
+    const next = storeEditablePath(from, path, dep.extensions);
+    return next && dep.storedPose ? { ...next, pose: dep.storedPose(pid, next.pose) } : next;
+  };
 
   // previewPose and previewData are both asked each frame; store once per path.
   let lastPath: PolygonPath | null = null;
@@ -90,7 +95,7 @@ export function pathEditPreview(
     if (!path) return null;
     if (path !== lastPath) {
       lastPath = path;
-      lastStored = storeEditablePath(origin, path, dep.extensions);
+      lastStored = storedFrom(id, origin, path);
     }
     return lastStored;
   };
@@ -105,7 +110,7 @@ export function pathEditPreview(
     const from = otherOrigins.get(pid);
     if (!from) return null;
     let hit = otherStored.get(pid);
-    if (hit?.path !== path) otherStored.set(pid, (hit = { path, stored: storeEditablePath(from, path, dep.extensions) }));
+    if (hit?.path !== path) otherStored.set(pid, (hit = { path, stored: storedFrom(pid, from, path) }));
     return hit.stored ? { from, to: hit.stored } : null;
   };
 

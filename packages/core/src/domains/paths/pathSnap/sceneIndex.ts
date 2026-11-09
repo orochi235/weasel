@@ -4,6 +4,7 @@ import {
 import type { Scene } from 'core/scene/types';
 import { isAnnotationLayer } from 'core/scene/annotation';
 import { nodeGates } from 'core/scene/nodeGates';
+import { nodeFrameOf, shownIn } from '../nodeFrame';
 import type { SnapGeometry } from 'interactions/actions/snapDep';
 import { nodeSnapGeometry } from './snapGeometry';
 
@@ -37,7 +38,7 @@ export function createSceneSnapIndexer(scene: SnapScene): (also?: SnapGeometry) 
     const extra: PathSnapTarget[] = [];
     for (const node of scene.nodes.values()) {
       if (node.kind !== 'mark' || notes.has(node.layer) || gates.hidden(node.id)) continue;
-      const g = nodeSnapGeometry(node);
+      const g = nodeSnapGeometry(node, shownIn(nodeFrameOf(scene as Scene<unknown, string, unknown>, node), node).pose);
       if (!g) continue;
       for (const p of g.points) extra.push({ ...p, paths: [paths.length] });
       ids.push(node.id);

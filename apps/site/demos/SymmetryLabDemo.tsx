@@ -66,12 +66,14 @@ const INITIAL: Partial<SymmetrySpec> = {
   kind: 'kaleidoscope', count: 6, angle: 0, cell: 'kaleidoscope', extent: { x: -320, y: -240, width: 640, height: 480 },
 };
 
+/** `box`, given in world, as a child of the group stores it: in the group's frame, whose origin is its center. */
+const inGroup = (box: RectPose): RectPose => ({ ...box, x: box.x - CENTER.x, y: box.y - CENTER.y });
+
 function pathLeaf(id: string, d: string, color: string) {
   const path = pathFromD(d);
-  const { x, y, width, height } = boundsOfPath(path);
   return {
     id: asNodeId(id), kind: 'mark' as const, layer: 'default' as const, parent: asNodeId(GROUP_ID),
-    pose: { x, y, width, height }, data: { path, fill: { paint: solid(color) } },
+    pose: inGroup(boundsOfPath(path)), data: { path, fill: { paint: solid(color) } },
   };
 }
 
@@ -85,7 +87,7 @@ function createLabScene() {
       pathLeaf(PETAL_ID, 'M350 240 C385 205 435 205 470 240 C435 275 385 275 350 240 Z', '#7fb069'),
       {
         id: asNodeId('dot'), kind: 'mark', layer: 'default', parent: asNodeId(GROUP_ID),
-        pose: dot, data: { path: ellipsePath(dot), fill: { paint: solid('#d4a574') } },
+        pose: inGroup(dot), data: { path: ellipsePath(dot), fill: { paint: solid('#d4a574') } },
       },
     ],
   });

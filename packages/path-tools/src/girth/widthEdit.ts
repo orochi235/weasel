@@ -10,14 +10,11 @@ import {
   type HalfWidths, type Stroke, type VertexWidth, vertexHalfWidths, vertexWidthFromSides,
 } from '@weasel-js/paint';
 import { resolveStrokeWidth, strokeEdgeNear, type StrokeEdgeHit, type StrokeSide } from '@weasel-js/stroke';
-import { resolveEditablePathOf, withPath, type NodeId, type Scene, type SceneNode } from '@weasel-js/core';
+import { pathNodesOf, withPath, type PathNode, type Scene, type SceneNode } from '@weasel-js/core';
 
 
 /** A stroked path node and its centerline in world space. */
-export interface WidthTarget {
-  id: NodeId;
-  node: SceneNode<unknown, string, unknown>;
-  path: PolygonPath;
+export interface WidthTarget extends PathNode {
   stroke: Stroke;
   /** The stroke's own width in world units: what an unset entry takes. */
   fallback: number;
@@ -70,8 +67,8 @@ function targetOf(scene: Scene<unknown, string, unknown>, node: SceneNode<unknow
   if (node.kind !== 'mark' || node.derivePath || node.derivePose || scene.isLocked(node.id) || scene.isHidden(node.id)) return null;
   const stroke = (node.data as { stroke?: Stroke | null } | null)?.stroke;
   if (!stroke?.paint) return null;
-  const path = resolveEditablePathOf(node);
-  return path ? { id: node.id, node, path, stroke, fallback: resolveStrokeWidth(stroke.width ?? 1, scale) } : null;
+  const [found] = pathNodesOf(scene, [node.id]);
+  return found ? { ...found, stroke, fallback: resolveStrokeWidth(stroke.width ?? 1, scale) } : null;
 }
 
 /** The topmost stroke, and its edge nearest `(x, y)`, that `accept` takes.
@@ -210,7 +207,7 @@ export function draggedWidth(grip: WidthGrip, moved: number, oneSided: boolean):
  *  when the node cannot store the geometry. All-unset widths drop the list. */
 export function storedWith(grip: WidthGrip, widths: readonly VertexWidth[]): { pose: unknown; data: unknown } | null {
   const { node, stroke } = grip.target;
-  const shaped = grip.inserted ? withPath(node, grip.path) : { pose: node.pose, data: node.data };
+  const shaped = grip.inserted ? withPath(grip.target, grip.path) : { pose: node.pose, data: node.data };
   if (!shaped) return null;
   const { vertexWidths: _old, ...rest } = stroke;
   void _old;

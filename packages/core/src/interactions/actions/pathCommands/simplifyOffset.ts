@@ -24,7 +24,7 @@ export const simplifyPathAction = livePathEdit({
   param: 'tolerance',
   initial: DEFAULT_SIMPLIFY_TOLERANCE,
   edit: ({ path }, tolerance) => simplifyPath(path, Math.max(tolerance, 0)),
-  commit: (_deps, next) => [...next.values()].flatMap(({ node, path }) => reshapeOps(node.node, path, 'Simplify')),
+  commit: (_deps, next) => [...next.values()].flatMap(({ node, path }) => reshapeOps(node, path, 'Simplify')),
 });
 
 /**
@@ -55,7 +55,7 @@ export const offsetPathAction = livePathEdit({
       .sort((a, b) => b.at - a.at);
     const ops: Op[] = [];
     for (const { node, path, at } of placed) {
-      const copy = pathCopy(scene, node.node, path);
+      const copy = pathCopy(scene, node, path);
       if (!copy) continue;
       ops.push(insertAt(copy, at < 0 || distance > 0 ? at : at + 1, 'Offset Path'));
     }

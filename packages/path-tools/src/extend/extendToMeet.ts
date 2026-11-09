@@ -156,7 +156,7 @@ export const extendToMeetAction: Action & { requires: string[] } = {
         return;
       }
       const ops: Op[] = [];
-      for (const { node, path } of plan.values()) ops.push(...reshapeOps(node.node, path, EXTEND_LABEL));
+      for (const { node, path } of plan.values()) ops.push(...reshapeOps(node, path, EXTEND_LABEL));
       commitOps(deps, ops, EXTEND_LABEL);
     },
   } satisfies ImmediateInvoker,

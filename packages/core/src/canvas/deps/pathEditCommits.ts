@@ -13,6 +13,7 @@ import type { TransformFollower, TransformPreviewNode } from 'interactions/actio
 import type { NodeId, Scene } from 'core/scene/types';
 import { sceneDependentsOf } from 'core/scene/dependents';
 import { pathEditPathOf, storeEditablePath } from 'domains/paths/editablePath';
+import { nodeFrameOf, shownIn, shownNodeOf } from 'domains/paths/nodeFrame';
 import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
 import {
   withoutGeometryBoundData, type PathEditExtension, type PathEditFinishCtx, type PathEditOther, type PathTransformFinishCtx,
@@ -33,10 +34,10 @@ export function finishCtx(sc: AnyScene, id: string, extensions: readonly PathEdi
   return {
     id,
     node(nid) {
-      const node = sc.get(nid as NodeId);
+      const node = shownNodeOf(sc, nid);
       return node ? { pose: node.pose, data: node.data, dependsOn: node.dependsOn } : null;
     },
-    path: (nid) => pathEditPathOf(sc.get(nid as NodeId) as EditableNode | undefined, extensions),
+    path: (nid) => pathEditPathOf(shownNodeOf(sc, nid) as EditableNode | undefined, extensions),
     dependents: (nid) => sceneDependentsOf(sc, nid as NodeId),
   };
 }
@@ -83,26 +84,30 @@ export function otherOps(
   extensions: readonly PathEditExtension[],
 ): Op[] {
   return [...others.values()].flatMap((o) => {
-    const node = sc.get(o.id as NodeId) as EditableNode | undefined;
+    const node = sc.get(o.id as NodeId);
     if (!node) return [];
-    if (o.remove) return [createDeleteOp({ node: sc.get(o.id as NodeId)!, label })];
-    if (o.path) return reshapeOps(o.id, node, o.path, label, o.data ?? null, extensions);
+    if (o.remove) return [createDeleteOp({ node, label })];
+    if (o.path) return reshapeOps(sc, o.id, o.path, label, o.data ?? null, extensions);
     return o.data ? [createSetDataOp({ id: o.id, from: node.data, to: { ...(node.data as object), ...o.data }, label })] : [];
   });
 }
 
-/** The ops that store `worldPath` where `node` keeps its polygon, with `patch` laid over its data. */
+/** The ops that store `worldPath` where node `id` keeps its polygon, in its
+ *  own frame, with `patch` laid over its data. */
 export function reshapeOps(
+  sc: AnyScene,
   id: string,
-  node: EditableNode,
   worldPath: PolygonPath,
   label: string,
   patch: Record<string, unknown> | null,
   extensions: readonly PathEditExtension[],
 ): Op[] {
-  const next = storeEditablePath(node, worldPath, extensions);
+  const node = sc.get(id as NodeId);
+  if (!node) return [];
+  const frame = nodeFrameOf(sc, node);
+  const next = storeEditablePath(shownIn(frame, node), worldPath, extensions);
   if (!next) return [];
-  const reshape = createTransformOp({ id, from: node.pose, to: next.pose, label });
+  const reshape = createTransformOp({ id, from: node.pose, to: frame ? frame.local(next.pose) : next.pose, label });
   // A path edited by hand is no longer what its generator or warp makes: it becomes plain geometry.
   // Its skin and constraints stay, renumbered by the caller's patch where it has one, and the
   // form it was drawn from as storing it left it.
@@ -126,13 +131,14 @@ function transformOthers(
     const node = sc.get(id as NodeId);
     if (!node) return null;
     const written = after.get(id);
-    return { pose: written?.pose ?? node.pose, data: written?.data ?? node.data, dependsOn: node.dependsOn };
+    const shape = { pose: written?.pose ?? node.pose, data: written?.data ?? node.data, dependsOn: node.dependsOn };
+    return shownIn(nodeFrameOf(sc, { ...node, ...shape }), shape);
   };
   const ctx: PathTransformFinishCtx = {
     ids: [...after.keys()],
     node: nodeAfter,
     path: (id) => pathEditPathOf(nodeAfter(id) ?? undefined, extensions),
-    before: (id) => pathEditPathOf(sc.get(id as NodeId) as EditableNode | undefined, extensions),
+    before: (id) => pathEditPathOf(shownNodeOf(sc, id) as EditableNode | undefined, extensions),
     dependents: (id) => sceneDependentsOf(sc, id as NodeId),
   };
   for (const ext of finishing) {
@@ -175,10 +181,12 @@ export function transformPreview(
   }
   const others = transformOthers(sc, extensions, after);
   return [...(others?.values() ?? [])].flatMap((o) => {
-    const node = sc.get(o.id as NodeId) as EditableNode | undefined;
-    const stored = node && o.path && !o.remove ? storeEditablePath(node, o.path, extensions) : null;
+    const node = sc.get(o.id as NodeId);
+    const frame = node ? nodeFrameOf(sc, node) : null;
+    const stored = node && o.path && !o.remove ? storeEditablePath(shownIn(frame, node), o.path, extensions) : null;
     if (!node || !stored) return [];
-    return [stored.data === node.data ? { id: o.id, pose: stored.pose } : { id: o.id, pose: stored.pose, data: stored.data }];
+    const pose = frame ? frame.local(stored.pose) : stored.pose;
+    return [stored.data === node.data ? { id: o.id, pose } : { id: o.id, pose, data: stored.data }];
   });
 }
 

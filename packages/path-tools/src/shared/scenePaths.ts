@@ -5,7 +5,7 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import { type Path, pxReach } from '@weasel-js/geom';
-import { type NodeId, nodeOutline, type PathNode, resolveEditablePathOf, type SceneNode } from '@weasel-js/core';
+import { type NodeId, nodeOutline, type PathNode, pathNodesOf, type Scene, type SceneNode, shownNodeOf } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 
@@ -39,8 +39,10 @@ export function pressOf(deps: ActionDeps, params: unknown): StrokePress | null {
   return { at, radius };
 }
 
+type OrderedScene = Pick<Scene<unknown, string, unknown>, 'get'> & { renderOrderNodes?(): readonly AnyNode[] };
+
 function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
-  const scene = deps?.scene as { renderOrderNodes?(): readonly AnyNode[] } | undefined;
+  const scene = deps?.scene as OrderedScene | undefined;
   return scene?.renderOrderNodes?.() ?? [];
 }
 
@@ -58,13 +60,8 @@ export function leavesOf(scene: { childrenOf?(id: NodeId): readonly NodeId[] }, 
 
 /** Every leaf of the scene holding an editable path, back to front. */
 export function scenePathNodes(deps: ActionDeps | undefined): PathNode[] {
-  const out: PathNode[] = [];
-  for (const node of renderOrder(deps)) {
-    if (node.kind !== 'mark') continue;
-    const path = resolveEditablePathOf(node);
-    if (path) out.push({ id: node.id as NodeId, node, path });
-  }
-  return out;
+  const scene = deps?.scene as OrderedScene | undefined;
+  return scene ? pathNodesOf(scene, renderOrder(deps).map((n) => n.id)) : [];
 }
 
 /** The drawn outline of every leaf but `id`: what a stroke is cut at or
@@ -73,7 +70,7 @@ export function strokesBesides(deps: ActionDeps | undefined, id: string): Path[]
   const out: Path[] = [];
   for (const node of renderOrder(deps)) {
     if (node.kind !== 'mark' || node.id === id) continue;
-    const outline = nodeOutline(node);
+    const outline = nodeOutline(node, shownNodeOf(deps!.scene as OrderedScene, node.id)?.pose);
     if (outline) out.push(outline);
   }
   return out;
