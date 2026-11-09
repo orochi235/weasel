@@ -3,7 +3,7 @@ import { defaultTimers, type Timers } from './audioTime';
 import { createBusGraph, type BusHandle } from './buses';
 import { createAudioGraph, disposeNow } from './graph/createAudioGraph';
 import type { AudioGraph, AudioGraphOptions } from './graph/types';
-import type { Slots, Starter, VoiceOptions } from './liveVoice';
+import type { Slots, Starter } from './liveVoice';
 import { createResumeWatch } from './resumeWatch';
 import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
@@ -257,11 +257,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     playNoise: (noise) => voices.launch(noise, synth.noise(noise)),
     stream(media, streamOpts = {}) {
       // `launch` reads numbers an untyped caller passed; check them before the earlier stream stops.
-      const common: VoiceOptions = streamOpts;
-      checkVoice(common);
+      checkVoice(streamOpts);
       const el = streams.element(media, streamOpts);
       streams.streaming.get(el)?.stop();
-      const handle = voices.launch(common, streams.starter(el, streamOpts));
+      const handle = voices.launch(streamOpts, streams.starter(el, streamOpts));
       streams.streaming.set(el, handle);
       return handle;
     },
