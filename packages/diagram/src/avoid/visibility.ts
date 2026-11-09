@@ -48,6 +48,11 @@ interface Strips {
 }
 
 const STRIP = 64;
+/** Strips a window is cut into at most: a wider one widens its strips, so an obstacle spanning it files in few. */
+const MAX_STRIPS = 4096;
+
+/** The strip `v` falls in; every value falls in the one strip of a window with no finite width. */
+const stripOf = (s: Strips, v: number): number => (Number.isFinite(s.size) ? Math.floor((v - s.start) / s.size) : 0);
 
 /** `boxes` filed by their extent across `horizontal` lines (by y for lines along x), within `[from, to]`: the
  *  window's, so an obstacle running far past it walks no strips out there. */
@@ -55,18 +60,19 @@ function strips(boxes: readonly Box[], horizontal: boolean, from: number, to: nu
   const n = boxes.length;
   const s: Strips = {
     lo: new Float64Array(n), hi: new Float64Array(n), aLo: new Float64Array(n), aHi: new Float64Array(n),
-    start: Infinity, size: STRIP, cells: [],
+    start: Infinity, size: Math.max(STRIP, (to - from) / MAX_STRIPS), cells: [],
   };
   boxes.forEach((b, i) => {
     s.lo[i] = horizontal ? b.y : b.x;
     s.hi[i] = horizontal ? b.y + b.height : b.x + b.width;
     s.aLo[i] = horizontal ? b.x : b.y;
     s.aHi[i] = horizontal ? b.x + b.width : b.y + b.height;
-    s.start = Math.min(s.start, Math.max(s.lo[i]!, from));
+    // Written so a box with a NaN side leaves the start alone, rather than every strip index NaN.
+    if (Math.max(s.lo[i]!, from) < s.start) s.start = Math.max(s.lo[i]!, from);
   });
   for (let i = 0; i < n; i++) {
-    const last = Math.floor((Math.min(s.hi[i]!, to) - s.start) / STRIP);
-    for (let k = Math.floor((Math.max(s.lo[i]!, from) - s.start) / STRIP); k <= last; k++) {
+    const last = stripOf(s, Math.min(s.hi[i]!, to));
+    for (let k = stripOf(s, Math.max(s.lo[i]!, from)); k <= last; k++) {
       (s.cells[k] ??= []).push(i);
     }
   }
@@ -77,7 +83,7 @@ function strips(boxes: readonly Box[], horizontal: boolean, from: number, to: nu
  *  an obstacle's inside or the window's edge stops it; null when the point is
  *  inside one. */
 function reach(at: number, c: number, s: Strips, lo: number, hi: number): Run | null {
-  const cell = s.cells[Math.floor((c - s.start) / STRIP)] ?? [];
+  const cell = s.cells[stripOf(s, c)] ?? [];
   for (const i of cell) {
     if (c <= s.lo[i]! + EPS || c >= s.hi[i]! - EPS) continue;
     if (s.aHi[i]! <= at + EPS) lo = Math.max(lo, s.aHi[i]!);
