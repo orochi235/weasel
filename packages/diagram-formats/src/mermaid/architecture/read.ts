@@ -55,7 +55,12 @@ class ArchReader {
   }
 
   read(stmts: readonly ArchStmt[]): void {
+    const named = new Set<string>();
     for (const s of stmts) {
+      if (s.kind !== 'edge') {
+        if (named.has(s.id)) throw lineError('Mermaid', s.line, `"${s.id}" already names a service, junction or group`);
+        named.add(s.id);
+      }
       if (s.kind === 'group') {
         this.groups.set(s.id, s.title);
         this.place(s.id, s.in);
@@ -88,7 +93,7 @@ class ArchReader {
 }
 
 /** Reads a Mermaid architecture diagram into a one-page document of `notation` `'architecture'`. Throws, naming the
- *  line, on text that is not one, or on a name no group holds. */
+ *  line, on text that is not one, on a name no group holds, or on a name given twice. */
 export function readArchitecture(text: string): ImportResult {
   const { source, stmts } = parseArchitecture(text);
   const r = new ArchReader();

@@ -60,6 +60,8 @@ describe('reading a Mermaid architecture diagram', () => {
     expect(() => parseArchitecture('architecture-beta\n  service a[A]\n  a -> b')).toThrow(/^Mermaid, line 3: cannot read "a -> b"/);
     expect(() => readArchitecture('architecture-beta\n  service a[A] in g')).toThrow('Mermaid, line 2: no group is named "g"');
     expect(() => readArchitecture('architecture-beta\n  service a[A]\n  a:R -- L:b')).toThrow('Mermaid, line 3: no service or junction is named "b"');
+    expect(() => readArchitecture('architecture-beta\n  service a[A]\n  service a[B]')).toThrow('Mermaid, line 3: "a" already names a service, junction or group');
+    expect(() => readArchitecture('architecture-beta\n  group a[A]\n  junction a')).toThrow('Mermaid, line 3: "a" already names');
   });
 });
 
