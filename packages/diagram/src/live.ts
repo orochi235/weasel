@@ -24,7 +24,7 @@ import {
   type PoseRunStep,
   type Scene,
 } from '@weasel-js/core';
-import { type EasingFn } from '@weasel-js/animator';
+import type { EasingFn } from '@weasel-js/animator';
 import { isPromise } from './footprint';
 import { buildGraph, type Graph, type GraphSource } from './graph';
 import { chain } from './chain';

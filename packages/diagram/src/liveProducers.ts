@@ -8,7 +8,7 @@ import {
   type NodeId,
   type PoseDescriptor,
 } from '@weasel-js/core';
-import { type EasingFn } from '@weasel-js/animator';
+import type { EasingFn } from '@weasel-js/animator';
 import { forceRelaxation, type ForceOptions } from './force';
 import type { Graph } from './graph';
 import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
