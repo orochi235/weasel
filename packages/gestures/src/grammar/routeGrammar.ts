@@ -7,7 +7,8 @@
  *   phaseAtom   = (channel ':')? phaseValue            -- bare phaseValue ≡ '&:phaseValue'
  *   channel     = '&' | '*' | toolId                   -- '&' = the binding's own tool
  *   phaseValue  = 'initial' | 'engaged' | '*'
- *   argSlot     = '(' argValue ')'                     -- whitespace inside parens is significant
+ *   argSlot     = '(' argValue ')'                     -- whitespace inside parens is significant;
+ *                                                      -- the slot closes at a ')' before WS, a sigil, '=' or the end
  *   targetSlot  = '=>' WS targetValue                  -- omitted slot defaults to '*' for hasTarget
  *   modSlot     = modAtom (WS modAtom)*
  *   modAtom     = sigil (modName | 'held')
@@ -136,10 +137,11 @@ export function parseRoute(input: string): ParsedRoute {
   // 3) Optional argSlot: `(...)`. Whitespace inside parens is significant.
   let arg: string | undefined;
   if (rest.startsWith('(')) {
-    const closeArg = rest.indexOf(')');
+    const closeArg = argClose(rest);
     if (closeArg < 0) throw new Error(`invalid route (unbalanced arg parens): ${input}`);
     const argRaw = rest.slice(1, closeArg);   // no trim — whitespace significant
     if (!desc.arg) throw new Error(`invalid route (${gestureName} has no arg): ${input}`);
+    if (argRaw === '') throw new Error(`invalid route (empty arg; omit the parens): ${input}`);
     if (argRaw !== '*' && desc.arg.values !== 'free' && !desc.arg.values.includes(argRaw)) {
       throw new Error(`invalid route ("${argRaw}" not in ${desc.arg.values.join('|')}): ${input}`);
     }
@@ -157,6 +159,9 @@ export function parseRoute(input: string): ParsedRoute {
     const tgtMatch = /^([^\s+?!@#$%^&]+)/.exec(rest);
     if (!tgtMatch) throw new Error(`invalid route (missing target after "=>"): ${input}`);
     target = tgtMatch[1]!;
+    if (target !== '*' && RESERVED_ID_PREFIXES.has(target[0]!)) {
+      throw new Error(`invalid route (target "${target}" starts with reserved sigil "${target[0]}"): ${input}`);
+    }
     rest = rest.slice(tgtMatch[0].length).trimStart();
   } else if (desc.hasTarget) {
     target = '*';
@@ -198,13 +203,23 @@ export function parseRoute(input: string): ParsedRoute {
   return { phases, gesture: gestureName, arg, target, modifiers, ...(held ? { held } : {}) };
 }
 
+/** The index of the `)` closing the arg slot that opens `rest`: the first one
+ *  the route could go on from, so a `)` inside the slot is the arg's own. */
+function argClose(rest: string): number {
+  for (let i = rest.indexOf(')'); i >= 0; i = rest.indexOf(')', i + 1)) {
+    const next = rest[i + 1];
+    if (next === undefined || /[\s+?=]/.test(next)) return i;
+  }
+  return -1;
+}
+
 /** The modSlot atom for a pressed button. */
 const HELD = 'held';
 
 function parsePhaseList(raw: string, input: string): readonly PhaseAtom[] {
   if (raw === '') throw new Error(`invalid route (empty phase list): ${input}`);
-  const tokens = raw.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
-  if (tokens.length === 0) throw new Error(`invalid route (empty phase list): ${input}`);
+  const tokens = raw.split(',').map((p) => p.trim());
+  if (tokens.includes('')) throw new Error(`invalid route (empty phase atom): ${input}`);
   return tokens.map((t) => parsePhaseAtom(t, input));
 }
 

@@ -455,8 +455,8 @@ key; the dispatcher lays them over contribution bindings. `captureGesture` reads
 the next click, double click, drag, right click or keystroke for a binding editor,
 telling a click from a drag at the dispatcher's drag threshold, and `captureKey`
 is its keystroke-only form. `keySpecRoute` writes a captured key back as the
-route string to store, or `null` for a key the grammar cannot spell (`?`, `)`,
-`*`), whose spec is stored as it is.
+route string to store, or `null` for a key the grammar cannot spell (`*`, or `)`
+with an optional modifier), whose spec is stored as it is.
 
 ### Input scope and yoke
 
@@ -578,7 +578,7 @@ rest are ranked best-first:
 |---|---|
 | 1 | Bindings naming the view the pointer is in, ahead of every other |
 | 2 | Scope tier: hotkey-held tool, then the active tool, then ambient bindings |
-| 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop/paste |
+| 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop, carry or paste |
 | 4 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
 | 5 | Registration order |
 

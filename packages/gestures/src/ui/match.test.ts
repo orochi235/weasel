@@ -88,6 +88,18 @@ describe('matchModifiers (strict semantics)', () => {
     expect(matchModifiers({ ...noMods, metaKey: true, ctrlKey: true }, { mod: true }, false)).toBe(false);
   });
 
+  it('mod beside the other platform key reads that key from its own field', () => {
+    const both = { ...noMods, metaKey: true, ctrlKey: true };
+    // captureKey writes Ctrl+Win as { mod, meta } off Apple, and Cmd+Ctrl as { mod, ctrl } on it.
+    expect(matchModifiers(both, { mod: true, meta: true }, false)).toBe(true);
+    expect(matchModifiers(both, { mod: true, ctrl: true }, true)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: true, meta: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: true, meta: true }, false)).toBe(false);
+    // The platform key itself is required when either field requires it.
+    expect(matchModifiers({ ...noMods, metaKey: true }, { mod: 'optional', meta: true }, true)).toBe(true);
+    expect(matchModifiers(noMods, { mod: 'optional', meta: true }, true)).toBe(false);
+  });
+
   it('explicit shift: false same as omitted', () => {
     expect(matchModifiers(noMods, { shift: false }, false)).toBe(true);
     expect(matchModifiers({ ...noMods, shiftKey: true }, { shift: false }, false)).toBe(false);
@@ -273,6 +285,22 @@ describe('matchSpec', () => {
     const held: GestureSpec = { kind: 'key-held', key: 'F13', code: ['ShiftLeft'] };
     expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftLeft', ...noMods }, held, false)).toBe(true);
     expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftRight', ...noMods }, held, false)).toBe(false);
+  });
+
+  it('a Latin letter or digit matches its key when a layout or Option types something else on it', () => {
+    const undo = { kind: 'key', key: 'z', mods: { mod: true } } as const;
+    // A Russian layout reports Ctrl+Z as Ctrl+я.
+    expect(matchSpec({ kind: 'key', key: 'я', code: 'KeyZ', ...noMods, ctrlKey: true }, undo, false)).toBe(true);
+    // Option+Z types Ω on a Mac, and Option+E is a dead key.
+    expect(matchSpec({ kind: 'key', key: 'Ω', code: 'KeyZ', ...noMods, altKey: true }, { kind: 'key', key: 'z', mods: { alt: true } }, true)).toBe(true);
+    expect(matchSpec({ kind: 'key', key: 'Dead', code: 'KeyE', ...noMods, altKey: true }, { kind: 'key', key: 'e', mods: { alt: true } }, true)).toBe(true);
+    expect(matchSpec({ kind: 'key', key: '¡', code: 'Digit1', ...noMods, altKey: true }, { kind: 'key', key: '1', mods: { alt: true } }, true)).toBe(true);
+    // A key that types a Latin letter is read by that letter, as AZERTY's A on the Q position is.
+    expect(matchSpec({ kind: 'key', key: 'a', code: 'KeyQ', ...noMods, ctrlKey: true }, { kind: 'key', key: 'q', mods: { ctrl: true } }, false)).toBe(false);
+    // Alone, or as AltGr's character with Ctrl and Alt taken off, a key is what it typed.
+    expect(matchSpec({ kind: 'key', key: '€', code: 'KeyE', ...noMods }, { kind: 'key', key: 'e' }, false)).toBe(false);
+    // A spec naming a non-Latin key is not widened.
+    expect(matchSpec({ kind: 'key', key: 'я', code: 'KeyZ', ...noMods }, { kind: 'key', key: 'ф' }, false)).toBe(false);
   });
 
   it('MultiTouchSpec matches when fingers count matches', () => {

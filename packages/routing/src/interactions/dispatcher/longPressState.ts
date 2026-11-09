@@ -37,8 +37,9 @@ export interface PendingLongPress {
 /** Read side of the pending long-press. Published as the `longPress` dep. */
 export interface LongPressState {
   /** The press being held, or `null` when none is. Cleared when the
-   *  long-press fires, and when movement, release, cancel or a second
-   *  pointer abandons it. */
+   *  long-press fires, and when movement, release, cancel or a second finger
+   *  beside a held finger abandons it. A pointer of another kind does not: a
+   *  palm resting beside a held pen leaves its hold running. */
   get(): PendingLongPress | null;
   /** How far through the hold the pending press is, 0→1, at `now`
    *  (`performance.now()` by default). 0 when nothing is pending. */

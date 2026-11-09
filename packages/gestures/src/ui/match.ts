@@ -27,9 +27,9 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
  * - Omitted or `false`: MUST NOT be held.
  * - `true`: MUST be held.
  * - `'optional'`: accepts either held or unheld.
- * - `mod` is platform-aware: matches `metaKey` on mac, `ctrlKey` elsewhere,
- *   and the *other* platform key is forbidden. Callers should not combine
- *   `mod` with `meta`/`ctrl`.
+ * - `mod` is platform-aware: it stands for `meta` on mac and `ctrl` elsewhere,
+ *   and the other key reads its own field, so `{ mod, meta }` is Ctrl+Win off
+ *   Apple. Where `mod` and that key's own field disagree, the stronger wins.
  */
 export function matchModifiers(
   e: ModifiersEvent,
@@ -46,15 +46,14 @@ export function matchModifiers(
     alt = resolveSpecValue(mods.alt);
     shift = resolveSpecValue(mods.shift);
 
-    // mod: platform-aware shorthand. Resolves to meta on mac, ctrl elsewhere.
-    // The *other* platform key stays forbidden (handled by the strict default).
+    meta = resolveSpecValue(mods.meta);
+    ctrl = resolveSpecValue(mods.ctrl);
+    // mod: the platform key, meta on mac and ctrl elsewhere, folded into that
+    // key's own field. The other key reads its own field.
     if (mods.mod !== undefined) {
       const modReq = resolveSpecValue(mods.mod);
-      if (isMac) meta = modReq;
-      else ctrl = modReq;
-    } else {
-      meta = resolveSpecValue(mods.meta);
-      ctrl = resolveSpecValue(mods.ctrl);
+      if (isMac) meta = strongest(meta, modReq);
+      else ctrl = strongest(ctrl, modReq);
     }
   }
 
@@ -64,6 +63,11 @@ export function matchModifiers(
     checkKey(meta,  e.metaKey) &&
     checkKey(shift, e.shiftKey)
   );
+}
+
+function strongest(a: KeyRequirement, b: KeyRequirement): KeyRequirement {
+  if (a === 'required' || b === 'required') return 'required';
+  return a === 'optional' || b === 'optional' ? 'optional' : 'forbidden';
 }
 
 function checkKey(req: KeyRequirement, held: boolean): boolean {
@@ -88,7 +92,19 @@ function matchKeyOrCode(
   spec: { key: string | string[]; code?: string | string[] },
 ): boolean {
   if (spec.code !== undefined && e.code !== undefined && [spec.code].flat().includes(e.code)) return true;
-  return matchKey(e.key, spec.key);
+  if (matchKey(e.key, spec.key)) return true;
+  const latin = chordTypedNoLatin(e) ? /^(?:Key|Digit)(.)$/.exec(e.code ?? '')?.[1] : undefined;
+  return latin !== undefined && matchKey(latin, spec.key);
+}
+
+/** Whether a chord typed no Latin letter or digit: a non-Latin layout's letter
+ *  under Ctrl or Cmd, Option's symbol on a Mac, or a dead key. Such a chord is
+ *  matched by the letter or digit its key bears, so Ctrl+я is Ctrl+Z. A key
+ *  pressed alone, or AltGr's character with its Ctrl and Alt taken off, is
+ *  what it typed. */
+function chordTypedNoLatin(e: { key: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }): boolean {
+  if (!e.altKey && !e.ctrlKey && !e.metaKey) return false;
+  return e.key === 'Dead' || (e.key.length === 1 && !/[\x20-\x7e]/.test(e.key));
 }
 
 /** Per-tool gesture-lifecycle state at match time. `selfChannel` is the tool

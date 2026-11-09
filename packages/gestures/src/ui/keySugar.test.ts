@@ -58,8 +58,16 @@ describe('keySpecRoute', () => {
     expect(bindingSpec(keySpecRoute(held(s))!)).toEqual(held(s));
   });
 
-  it.each(['?', ')', '*'])('gives null for %s, which a route cannot spell', (k) => {
+  it.each(['Shift+?', 'Shift+)', 'Mod+Shift+?'])('round-trips %s, a key the route grammar used to refuse', (s) => {
+    expect(bindingSpec(keySpecRoute(key(s))!)).toEqual(key(s));
+  });
+
+  it.each(['*'])('gives null for %s, which a route cannot spell', (k) => {
     expect(keySpecRoute(key(k))).toBeNull();
+  });
+
+  it('writes the space bar by name', () => {
+    expect(keySpecRoute(held('Mod+Space'))).toBe('[*:*] keyHeld(Space) +mod');
   });
 
   it('writes an optional modifier into the key slot', () => {

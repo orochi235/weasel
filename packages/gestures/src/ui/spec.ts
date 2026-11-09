@@ -88,7 +88,9 @@ export type PhaseSpec = 'initial' | 'engaged' | '*' | readonly import('../gramma
 /** Single-keystroke gesture (keydown). */
 export interface KeySpec {
   kind: 'key';
-  /** A single key, or an array of acceptable keys (case-insensitive match). */
+  /** A single key, or an array of acceptable keys (case-insensitive match).
+   *  Shift is matched like any modifier, so a character typed with it needs
+   *  `shift`: `?` on a US keyboard is `{ key: '?', mods: { shift: true } }`. */
   key: string | string[];
   /** The physical key, as `KeyboardEvent.code` (`'BracketRight'`), or several.
    *  Tried before `key`, and either matching is enough: the binding then holds

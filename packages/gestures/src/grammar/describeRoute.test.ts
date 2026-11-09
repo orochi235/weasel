@@ -9,6 +9,12 @@ describe('describeRoute — keyHeld', () => {
     );
   });
 
+  it('names the space bar whichever way the route spells it', () => {
+    expect(describeRoute(parseRoute('[initial] keyHeld( )'))).toBe(
+      'Fires when the user holds Space, while the tool is idle.',
+    );
+  });
+
   it('combines modifiers into the keyHeld phrase', () => {
     expect(describeRoute(parseRoute('[initial] keyHeld(Space) +mod'))).toBe(
       'Fires when the user holds Mod and holds Space, while the tool is idle.',
@@ -84,6 +90,13 @@ describe('describeRoute — modifiers', () => {
     expect(action('[initial] multiTouchTap(3) +shift')).toBe('the user Shift-taps with 3 fingers');
     expect(action('[*:*] drop +alt')).toBe('the user Alt-drops any content onto the canvas');
     expect(action('[*:*] paste +shift +alt')).toBe('the user holds Shift and Alt and pastes any content');
+  });
+
+  it('reads a key route\'s optional modifiers as optional, not as part of the key', () => {
+    expect(describeRoute(parseRoute('[initial] keyDown(z?shift) +mod'))).toBe(
+      'Fires when the user holds Mod and presses z, while the tool is idle (Shift optional).',
+    );
+    expect(describeRoute(parseRoute('[initial] keyDown(ArrowUp?shift?alt) ?mod'))).toContain('(Mod, Shift, and Alt optional)');
   });
 
   it('keeps optional modifiers in their own clause', () => {

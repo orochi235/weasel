@@ -36,7 +36,7 @@ describe('resolveBindingOverrides', () => {
 
   it('skips a route that does not parse, with a warning, rather than throwing', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const resolved = resolveBindingOverrides([{ bad: '[*:*] keyDown(?)', good: key('G') }]);
+    const resolved = resolveBindingOverrides([{ bad: '[*:*] keyDown(*)', good: key('G') }]);
     expect(resolved.has('bad')).toBe(false);
     expect(resolved.get('good')).toEqual(key('G'));
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('"bad"'));
