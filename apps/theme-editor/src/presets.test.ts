@@ -37,6 +37,13 @@ describe('restoring the live state', () => {
     expect(parseLive('42')).toBeNull();
   });
 
+  it('keeps only the anchors the generator can read', () => {
+    const good = { name: 'red', hue: 25, lightness: 0.6 };
+    const muted = { name: 'tan', hue: 70, lightness: 0.7, chroma: 0.05 };
+    const anchors = [good, null, 'red', { name: 'x' }, { name: 'y', hue: '25', lightness: 0.5 }, { name: 'z', hue: 25, lightness: null }, { ...muted, chroma: 'lots' }, muted];
+    expect(parseLive(JSON.stringify({ c: {}, anchors }))?.anchors).toEqual([good, muted]);
+  });
+
   it('defaults an unknown surface rather than passing it through', () => {
     const restored = parseLive(JSON.stringify({ c: {}, surfaceKey: 'chartreuse', anchors: [] }));
     expect(restored?.surfaceKey).toBe('dark');
