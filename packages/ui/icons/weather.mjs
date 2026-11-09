@@ -16,7 +16,7 @@ const flake = FLAKE_ARMS
 // ── thaw ─────────────────────────────────────────────────────────────────
 // The snowflake melted: its arms, without their Vs, shrunk to short rays clear of the center.
 const thaw = FLAKE_ARMS.map((deg) => {
-  const [a, b] = [onCircle(10, 10, 3.4, deg), onCircle(10, 10, 7, deg)];
+  const [a, b] = [onCircle(10, 10, 4.6, deg), onCircle(10, 10, 7, deg)];
   return `M${a.join(' ')}L${b.join(' ')}`;
 }).join('');
 
