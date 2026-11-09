@@ -188,6 +188,12 @@ describe('paragraphDirection', () => {
     expect(paragraphDirection(`AB\n${HEBREW}`)).toBe('ltr');
   });
 
+  it('reads past a line separator, which ends a line but not its paragraph', () => {
+    registerBidi(bidi);
+    expect(paragraphDirection(`\u2028${HEBREW}`)).toBe('rtl');
+    expect(paragraphDirection(`\u2029${HEBREW}`)).toBe('ltr');
+  });
+
   it('is ltr with no engine', () => {
     expect(paragraphDirection(HEBREW)).toBe('ltr');
   });

@@ -5,7 +5,7 @@
  */
 import { bumpTextEngineGeneration } from './engineGeneration';
 import type { BidiResolver } from './bidiSeam';
-import { isHardLineBreak } from './lineBreak/lineBreaks';
+import { isParagraphSeparator } from './bidiLines';
 import type { TextDirection } from '../textStyle';
 
 let registered: BidiResolver | null = null;
@@ -50,7 +50,7 @@ export function paragraphDirection(
   const cps: number[] = [];
   for (const ch of text) {
     const cp = ch.codePointAt(0)!;
-    if (isHardLineBreak(cp)) break;
+    if (isParagraphSeparator(cp)) break;
     cps.push(cp);
   }
   return directionOfLevel(engine.baseLevel(engine.analyze(cps, 'auto')));

@@ -1,14 +1,23 @@
 /**
  * Bidi analysis for a text with hard line breaks in it.
  *
- * UAX #9 is defined per paragraph, and a hard break ends one: embeddings and
- * overrides close there, and the next paragraph resolves its neutrals — and,
- * under `'auto'`, its direction — from its own characters. The engine's
- * `analyze` takes exactly one paragraph, so this splits the code points at the
- * breaks, analyzes each stretch, and answers a line's reorder against whichever
- * stretch the line sits in.
+ * UAX #9 is defined per paragraph, and a paragraph separator ends one:
+ * embeddings and overrides close there, and the next paragraph resolves its
+ * neutrals — and, under `'auto'`, its direction — from its own characters. The
+ * engine's `analyze` takes exactly one paragraph, so this splits the code
+ * points at the separators, analyzes each stretch, and answers a line's
+ * reorder against whichever stretch the line sits in.
  */
 import type { BidiAnalysis, BidiReordering, BidiResolver } from './bidiSeam';
+
+/**
+ * Whether `cp` ends a bidi paragraph: the hard line breaks of bidi class B,
+ * which are LF, CR, NEL and U+2029 PARAGRAPH SEPARATOR. VT, FF and U+2028
+ * LINE SEPARATOR end a line but not its paragraph.
+ */
+export function isParagraphSeparator(cp: number): boolean {
+  return cp === 0x0a || cp === 0x0d || cp === 0x85 || cp === 0x2029;
+}
 
 interface Paragraph {
   start: number;
@@ -21,14 +30,14 @@ export interface AnalyzedParagraphs {
   /** Visual order for the line `[from, to)`, as positions in the whole text. */
   reorder(from: number, to: number): BidiReordering;
   /** The level the paragraph holding position `at` reads at; 0 for a position
-   *  in none, which is a hard break or a blank line. */
+   *  in none, which is a paragraph separator or a blank line. */
   baseLevel(at: number): number;
 }
 
 /**
- * Analyze `codePoints` paragraph by paragraph. `isBreak` marks the hard breaks,
- * which belong to no paragraph. `reorder` takes one line, which must lie within
- * a single paragraph — true of any line a wrap produces.
+ * Analyze `codePoints` paragraph by paragraph. `isBreak` marks the paragraph
+ * separators, which belong to no paragraph. `reorder` takes one line, which
+ * must lie within a single paragraph — true of any line a wrap produces.
  */
 export function analyzeParagraphs(
   engine: BidiResolver,

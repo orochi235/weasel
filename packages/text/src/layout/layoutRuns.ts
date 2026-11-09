@@ -33,7 +33,7 @@
 import type { BmFont, BmFontChar, GlyphMetrics, ResolveResult } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign } from '../textStyle';
-import { analyzeParagraphs, orderLine } from './bidiLines';
+import { analyzeParagraphs, isParagraphSeparator, orderLine } from './bidiLines';
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
 import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
@@ -41,7 +41,6 @@ import { breakLines, placeLine, type LineOpts } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
 import type { BidiResolver } from './bidiSeam';
 import type { ShapedCluster } from './shaperSeam';
-import { isHardLineBreak } from './lineBreak/lineBreaks';
 
 /**
  * One advance cell: a single code point's slot on a line.
@@ -202,7 +201,7 @@ const LINE_OPTS: LineOpts = { maxWidth: 0.5, alignWidth: 0.5, lineHeight: 0.5, j
 
 // Neither closure is built inside `layoutRuns`: one that captured its locals
 // made every call allocate the scope they live in, bidi engine or not.
-const hardBreakAt = (i: number): boolean => isHardLineBreak(CPS[i]);
+const paragraphBreakAt = (i: number): boolean => isParagraphSeparator(CPS[i]);
 
 function mirrorLine(
   bidi: BidiResolver, entries: readonly Entry[], levels: readonly number[], runs: readonly ResolvedRun[],
@@ -228,7 +227,7 @@ export function layoutRuns(
   // Each paragraph is analyzed once; each line then asks for its own range,
   // because L1 resets trailing whitespace against a line's end.
   const paragraphs = bidi
-    ? analyzeParagraphs(bidi, cps, hardBreakAt, direction)
+    ? analyzeParagraphs(bidi, cps, paragraphBreakAt, direction)
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
 
