@@ -10,13 +10,15 @@ interface MarkHistory {
 }
 
 /** What steps a trial's state and settings, and when its next step each way was recorded. */
-interface Steps {
+export interface Steps {
   canUndo(): boolean;
   canRedo(): boolean;
   undo(): unknown;
   redo(): unknown;
   undoStamp(): number | undefined;
   redoStamp(): number | undefined;
+  dropRedo(): void;
+  subscribe(listener: () => void): () => void;
 }
 
 const snapshotSteps = (h: History): Steps => ({
@@ -26,6 +28,8 @@ const snapshotSteps = (h: History): Steps => ({
   redo: () => h.redo(),
   undoStamp: () => h.timestampAt(h.undoDepth() - 1),
   redoStamp: () => h.timestampAt(h.undoDepth()),
+  dropRedo: () => h.dropRedo(),
+  subscribe: (listener) => h.subscribe(listener),
 });
 
 const ownSteps = (own: TrialHistorySource): Steps => ({
@@ -35,7 +39,19 @@ const ownSteps = (own: TrialHistorySource): Steps => ({
   redo: () => own.redo(),
   undoStamp: () => own.undoStamp?.(),
   redoStamp: () => own.redoStamp?.(),
+  dropRedo: () => own.dropRedo?.(),
+  subscribe: (listener) => own.subscribe(listener),
 });
+
+/** What the trial steps beside its marks: the instrument's own history, else its snapshots of `state`. */
+export function trialSteps(
+  declaresUndo: boolean,
+  own: TrialHistorySource | null,
+  snapshots: History | undefined,
+): Steps | undefined {
+  if (!declaresUndo) return undefined;
+  return own ? ownSteps(own) : snapshots && snapshotSteps(snapshots);
+}
 
 /**
  * What the trial's Undo and Redo step: the marks, when the instrument
@@ -55,11 +71,7 @@ export function trialUndoBindings(args: {
 }): UndoBindings | undefined {
   const { declaresUndo, marks, own, snapshots } = args;
   if (!declaresUndo && !marks) return undefined;
-  const steps: Steps | undefined = !declaresUndo
-    ? undefined
-    : own
-      ? ownSteps(own)
-      : snapshots && snapshotSteps(snapshots);
+  const steps = trialSteps(declaresUndo, own, snapshots);
   /** Whether the marks take the next step `dir`, rather than `steps`. */
   const marksFirst = (dir: 'undo' | 'redo'): boolean => {
     if (!marks?.moves[dir]) return false;

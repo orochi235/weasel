@@ -85,6 +85,39 @@ describe("a trial's Undo over marks and settings", () => {
   });
 });
 
+describe("a new change on one of a trial's histories", () => {
+  const redo = () => screen.getByRole('button', { name: 'Redo' });
+
+  it('drops what the marks could redo when a setting changes', async () => {
+    await mount();
+    addMark();
+    press('Undo');
+    expect(marked()).toBe(0);
+    flip();
+    expect(redo()).toBeDisabled();
+    press('Redo');
+    expect(marked()).toBe(0);
+    // Taking the setting back leaves nothing of the mark to redo either.
+    press('Undo');
+    expect(grid()).toBeChecked();
+    press('Redo');
+    expect(grid()).not.toBeChecked();
+    expect(marked()).toBe(0);
+  });
+
+  it('drops the setting change it could redo when a mark is made', async () => {
+    await mount();
+    flip();
+    press('Undo');
+    expect(grid()).toBeChecked();
+    addMark();
+    expect(redo()).toBeDisabled();
+    press('Redo');
+    expect(grid()).toBeChecked();
+    expect(marked()).toBe(1);
+  });
+});
+
 describe('trialUndoBindings', () => {
   it('steps marks first over an instrument history that cannot say when it recorded', () => {
     const marks = {

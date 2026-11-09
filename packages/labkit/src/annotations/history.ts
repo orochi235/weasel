@@ -11,6 +11,8 @@ export interface HistoryScene {
   redo(): boolean;
   canUndo(): boolean;
   canRedo(): boolean;
+  /** Where `dropRedo` takes its redo from. A scene without one keeps its redo. */
+  history?: { dropRedo?(): void };
 }
 
 /**
@@ -99,6 +101,13 @@ export class MarkHistory {
     return this.next(this.redoable, (s) => s.canRedo(), at)?.stamp;
   }
 
+  /** Drop everything the marks could redo, as a new change elsewhere does. */
+  dropRedo(at: (t: string) => HistoryScene | undefined): void {
+    const targets = new Set(this.redoable.map((s) => s.target));
+    this.redoable = [];
+    for (const target of targets) at(target)?.history?.dropRedo?.();
+  }
+
   undo(at: (t: string) => HistoryScene | undefined): boolean {
     const step = this.next(this.undoable, (s) => s.canUndo(), at);
     const scene = step === null ? undefined : at(step.target);
@@ -121,6 +130,7 @@ export function markUndo(history: MarkHistory, at: (t: string) => HistoryScene |
     redo: () => history.redo(at),
     undoStamp: () => history.undoStamp(at),
     redoStamp: () => history.redoStamp(at),
+    dropRedo: () => history.dropRedo(at),
   };
 }
 

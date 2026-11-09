@@ -32,7 +32,8 @@ import { MissingTrial } from './MissingTrial';
 import { TrialChrome } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
 import { TrialHistoryContext, useHistoryVersion, useMountedHistory } from './trialHistory';
-import { trialUndoBindings } from './trialUndo';
+import { trialSteps, trialUndoBindings } from './trialUndo';
+import { useCrossRedo } from './useCrossRedo';
 import { useKeptMarks } from './useKeptMarks';
 import { TrialOrbitProvider } from './useOrbitView';
 import { useTrialCamera } from './useTrialCamera';
@@ -236,8 +237,14 @@ function TrialRuntime({
   // Marks are undone through weasel history, not through labkit's snapshot
   // stack — the spec's rule, and the reason a mark scene is the truth.
   const snapshots = useHistoryVersion(record.history);
+  const declaresUndo = undoCapability(instrument) != null;
+  const steps = useMemo(
+    () => trialSteps(declaresUndo, ownHistory, snapshots),
+    [declaresUndo, ownHistory, snapshots],
+  );
+  useCrossRedo(annotationsCap ? annotations : null, steps);
   const undoBindings = trialUndoBindings({
-    declaresUndo: undoCapability(instrument) != null,
+    declaresUndo,
     marks: annotationsCap ? { moves: markMoves, store: annotations } : null,
     own: ownHistory,
     snapshots,
