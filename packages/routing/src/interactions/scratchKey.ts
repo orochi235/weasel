@@ -40,7 +40,7 @@ export function getScratch<T>(
   store: ScratchStore,
   key: ScratchKey<T>,
 ): T | undefined {
-  return store[key.name] as T | undefined;
+  return (Object.hasOwn(store, key.name) ? store[key.name] : undefined) as T | undefined;
 }
 
 /** Write a value to a typed slot. Overwrites whatever was there. */
@@ -58,7 +58,7 @@ export function deleteScratch<T>(
   store: ScratchStore,
   key: ScratchKey<T>,
 ): boolean {
-  if (Object.prototype.hasOwnProperty.call(store, key.name)) {
+  if (Object.hasOwn(store, key.name)) {
     delete store[key.name];
     return true;
   }

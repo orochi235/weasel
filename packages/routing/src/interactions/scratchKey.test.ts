@@ -56,4 +56,12 @@ describe('scratchKey / getScratch / setScratch', () => {
     const KEY = scratchKey<number>('legacy.key');
     expect(getScratch(store, KEY)).toBe(99);
   });
+
+  it('reads a key named like an Object.prototype member as unset until it is written', () => {
+    const KEY = scratchKey<number>('toString');
+    const store: Record<string, unknown> = {};
+    expect(getScratch(store, KEY)).toBeUndefined();
+    setScratch(store, KEY, 3);
+    expect(getScratch(store, KEY)).toBe(3);
+  });
 });
