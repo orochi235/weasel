@@ -71,6 +71,9 @@ const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 /** How far the first coincident node is pushed, in world units. Small enough
  *  to be invisible, large enough that the repulsion term is finite. */
 const NUDGE = 0.5;
+/** The nearest repulsion reckons two bodies to be, in world units. Without a
+ *  floor, a pair a nudge apart takes a kick that throws it thousands of units off. */
+const MIN_CHARGE_DISTANCE = 10;
 
 /** Pairwise repulsion, applied to every pair once. */
 function charge(bodies: readonly ForceBody[], strength: number): SimulationForce<ForceBody> {
@@ -83,7 +86,7 @@ function charge(bodies: readonly ForceBody[], strength: number): SimulationForce
         const dy = b.y - a.y;
         const d2 = dx * dx + dy * dy;
         if (d2 === 0) continue;
-        const w = (strength * alpha) / d2;
+        const w = (strength * alpha) / Math.max(d2, MIN_CHARGE_DISTANCE * MIN_CHARGE_DISTANCE);
         a.vx! += dx * w;
         a.vy! += dy * w;
         b.vx! -= dx * w;
