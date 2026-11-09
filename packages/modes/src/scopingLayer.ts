@@ -8,7 +8,7 @@ export interface CreateScopingDimOptions {
    *  The app computes this — typically: the edited path for path-edit,
    *  empty for non-scoping modes. */
   getTargetIds: () => ReadonlySet<string>;
-  /** Alpha for out-of-scope nodes. Default {@link OUT_OF_SCOPE_ALPHA}. */
+  /** Alpha for out-of-scope nodes, held to [0, 1]. Default {@link OUT_OF_SCOPE_ALPHA}, also for NaN. */
   dimAlpha?: number;
 }
 
@@ -40,7 +40,8 @@ export interface ScopingDim extends NodeScope {
  *  to consult unconditionally. */
 export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
   const { registry } = opts;
-  const dim = opts.dimAlpha ?? OUT_OF_SCOPE_ALPHA;
+  const given = opts.dimAlpha ?? OUT_OF_SCOPE_ALPHA;
+  const dim = Number.isNaN(given) ? OUT_OF_SCOPE_ALPHA : Math.min(1, Math.max(0, given));
   const listeners = createEmitter();
   let invalidations = 0;
   return {
