@@ -34,6 +34,13 @@ describe('range', () => {
     expect(() => range({ from: 0, to: Infinity, count: 3 })).toThrow(RangeError);
   });
 
+  it('refuses a start that is not a finite number, or an end that is not a number', () => {
+    expect(() => range({ from: NaN, to: 1, step: 1 })).toThrow(RangeError);
+    expect(() => range({ from: -Infinity, to: 1, step: 1 })).toThrow(RangeError);
+    expect(() => range({ from: 0, to: NaN, step: 1 })).toThrow(RangeError);
+    expect(() => range({ from: NaN, to: 1, count: 2 })).toThrow(RangeError);
+  });
+
   it('walks an endless range as far as it is asked', () => {
     expect(stepsOf(range({ from: 0, to: Infinity, step: 2 }), 3)).toEqual({ steps: [0, 2, 4], capped: true });
   });
@@ -66,6 +73,8 @@ describe('frames', () => {
   it('walks no frames past the end of an endless loop of no length', () => {
     expect(stepsOf(frames({ duration: 0, loop: true }, { every: 10, passes: 'all' }))).toEqual({ steps: [], capped: false });
     expect(stepsOf(frames({ loop: 0 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
+    expect(() => frames({ duration: NaN }, { every: 10 })).toThrow(RangeError);
+    expect(() => frames({ duration: -100 }, { every: 10 })).toThrow(RangeError);
   });
 
   it('labels a frame with the time it shows, origin included', () => {

@@ -48,6 +48,7 @@ export type RangeSpec = {
  */
 export function range(spec: RangeSpec): Sweep<number> {
   const { from, to } = spec;
+  if (!Number.isFinite(from) || Number.isNaN(to)) throw new RangeError(`a range runs from a finite number to a number, not ${from} to ${to}`);
   const span = to - from;
   if (spec.step !== undefined) {
     const step = spec.step;
@@ -119,6 +120,7 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
   const { every } = options;
   if (!(every > 0)) throw new RangeError(`frames are a time above 0 apart, not ${every}`);
   const duration = span.duration ?? Infinity;
+  if (!(duration >= 0)) throw new RangeError(`a run lasts 0 ms or more, not ${duration}`);
   const loop = span.loop ?? false;
   const passes = loop === true ? Infinity : loop === false ? 1 : loop;
   const walked = options.passes === 'all' ? passes : 1;
