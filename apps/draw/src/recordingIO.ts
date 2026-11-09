@@ -55,9 +55,9 @@ async function pumpThrough(
     await writer.write(bytes as unknown as BufferSource);
     await writer.close();
   })();
-  const out = new Uint8Array(await new Response(stream.readable).arrayBuffer());
-  await writeAndClose;
-  return out;
+  // Both awaited together: a corrupt stream rejects each, and the write's would otherwise go unhandled.
+  const [out] = await Promise.all([new Response(stream.readable).arrayBuffer(), writeAndClose]);
+  return new Uint8Array(out);
 }
 
 /** Serialize a recording to a Blob. Returns a gzipped blob when the

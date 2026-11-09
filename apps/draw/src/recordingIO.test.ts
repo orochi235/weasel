@@ -44,6 +44,20 @@ describe('recordingIO', () => {
     expect(back).toEqual(sample);
   });
 
+  it('deserializeRecording rejects a corrupt gzip once, leaving no rejection unhandled', async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => { unhandled.push(reason); };
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      const corrupt = new Blob([new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 1, 2, 3, 4, 5, 6, 7, 8, 9])]);
+      await expect(deserializeRecording(corrupt)).rejects.toThrow();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+    }
+  });
+
   it('deserializeRecording handles a much larger payload (real-ish size)', async () => {
     const big: Recording = {
       ...sample,
