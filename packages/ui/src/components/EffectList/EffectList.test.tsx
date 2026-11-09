@@ -161,8 +161,11 @@ describe('EffectList', () => {
 
   it('draws each kind by its label, and an unknown kind by its key', () => {
     renderWithIcons(<EffectList items={[...START, { id: 'd', kind: 'other', name: 'D', on: true }]} kinds={KINDS} onChange={() => {}} />);
-    expect(screen.getAllByText('Match')).toHaveLength(2);
-    expect(screen.getByText('Weld')).toBeInTheDocument();
-    expect(screen.getByText('other')).toBeInTheDocument();
+    // Each card also carries every kind's label unseen, to size the column; those are hidden from assistive tech.
+    const seen = (text: string) => screen.getAllByText(text, { ignore: 'script, style, [aria-hidden="true"]' });
+    expect(seen('Match')).toHaveLength(2);
+    expect(seen('Weld')).toHaveLength(1);
+    expect(seen('other')).toHaveLength(1);
+    expect(screen.getAllByText('Weld').length).toBeGreaterThan(1);
   });
 });

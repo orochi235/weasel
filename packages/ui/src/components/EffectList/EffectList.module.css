@@ -74,12 +74,21 @@
 }
 
 .kind {
+  display: inline-grid;
+  color: var(--_kind);
+  font-weight: var(--wzl-font-weight-bold);
+}
+
+.kindLabel,
+.kindSizer {
+  grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
   gap: var(--wzl-space-1);
-  min-width: 3.5em;
-  color: var(--_kind);
-  font-weight: var(--wzl-font-weight-bold);
+}
+
+.kindSizer {
+  visibility: hidden;
 }
 
 .name {

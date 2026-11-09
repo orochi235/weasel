@@ -6,6 +6,9 @@ import { EffectsSection } from './EffectsSection';
 import type { LabEffect } from './snapshot';
 import { addEffect, setEffects } from './transitions';
 
+// EffectList draws every kind's label unseen in each card to size its column; only the shown one counts.
+const SEEN = { ignore: 'script, style, [aria-hidden="true"]' };
+
 function Held() {
   const [shape, setShape] = useState<{ labEffects: LabEffect[]; nextId: number }>(() => addEffect({ labEffects: [], nextId: 1 }, 'shadow'));
   return (
@@ -35,9 +38,9 @@ describe('EffectsSection', () => {
   it('retypes the open card, its kind and name following', () => {
     renderWithIcons(<Held />);
     open('Shadow');
-    expect(screen.getByText('Background')).toBeInTheDocument();
+    expect(screen.getByText('Background', SEEN)).toBeInTheDocument();
     fireEvent.change(screen.getByRole('combobox', { name: 'type' }), { target: { value: 'spikes' } });
-    expect(screen.getByText('Offset')).toBeInTheDocument();
+    expect(screen.getByText('Offset', SEEN)).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Name of card 1' })).toHaveValue('Spikes');
   });
 

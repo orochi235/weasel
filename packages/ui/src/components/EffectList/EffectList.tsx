@@ -66,6 +66,7 @@ export function EffectList<T extends EffectListItem>({
 }: EffectListProps<T>) {
   const css = useColorCss();
   const reorderItems = useMemo(() => items.map((it) => ({ id: it.id, label: it.name })), [items]);
+  const kindList = useMemo(() => Object.values(kinds), [kinds]);
   const drag = useReorderDragList({
     items: reorderItems,
     selectedIds: [],
@@ -114,6 +115,7 @@ export function EffectList<T extends EffectListItem>({
             item={item}
             index={i}
             kind={kind}
+            kinds={kindList}
             color={kind ? css(tintSource(kind.color)) : undefined}
             open={selected === item.id}
             dragging={draggedIds?.includes(item.id) ?? false}

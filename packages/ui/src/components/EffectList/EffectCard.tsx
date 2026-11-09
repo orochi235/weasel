@@ -11,6 +11,8 @@ interface EffectCardProps {
   item: EffectListItem;
   index: number;
   kind: EffectKind | undefined;
+  /** Every kind in the list, drawn unseen under this card's label so each label's column is as wide as the widest. */
+  kinds: readonly EffectKind[];
   /** The kind's color as CSS. */
   color: string | undefined;
   open: boolean;
@@ -27,7 +29,7 @@ interface EffectCardProps {
 
 /** One card of a `EffectList`: its header row, and its body when it is open. */
 export function EffectCard({
-  item, index, kind, color, open, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onDuplicate, onRemove, children,
+  item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onDuplicate, onRemove, children,
 }: EffectCardProps) {
   return (
     <div
@@ -51,8 +53,10 @@ export function EffectCard({
         />
         <Switch className={s.switch} isSelected={item.on} onChange={(on) => onPatch({ on })} aria-label={`Run ${item.name}`} />
         <span className={s.kind}>
-          {kind?.icon !== undefined && <Icon name={kind.icon} size={14} />}
-          {kind?.label ?? item.kind}
+          <KindLabel kind={kind} fallback={item.kind} />
+          {kinds.map((k) => (
+            <KindLabel key={k.label} kind={k} sizer />
+          ))}
         </span>
         <input
           type="text"
@@ -74,5 +78,14 @@ export function EffectCard({
       </div>
       {children !== undefined && children !== null && <div className={s.body}>{children}</div>}
     </div>
+  );
+}
+
+function KindLabel({ kind, fallback, sizer = false }: { kind: EffectKind | undefined; fallback?: string; sizer?: boolean }) {
+  return (
+    <span className={sizer ? s.kindSizer : s.kindLabel} aria-hidden={sizer || undefined}>
+      {kind?.icon !== undefined && <Icon name={kind.icon} size={14} />}
+      {kind?.label ?? fallback}
+    </span>
   );
 }

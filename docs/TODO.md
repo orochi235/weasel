@@ -375,10 +375,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) `EffectList` name fields start at different x when kind labels differ in width.** `.kind` has a
-  `min-width: 3.5em`, so a longer label ("Foreground", "Background" in the Badge compose lab) pushes its card's
-  name field right of its neighbors' (2026-11-08). Closes when every card's name field lines up, whatever its
-  kind's label.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
