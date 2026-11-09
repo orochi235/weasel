@@ -8,16 +8,26 @@ export interface SelectionStore<K> {
   subscribe(listener: () => void): () => void;
 }
 
-/** A {@link SelectionStore} holding the ids itself. A listener reads the new value. */
+/** A {@link SelectionStore} holding the ids itself, each once. A listener reads the new value; a set
+ *  that leaves the ids as they were tells no one and keeps the array readers hold. */
 export function createSelectionStore<K>(initial: readonly K[] = []): SelectionStore<K> {
-  let ids = initial;
+  let ids = once(initial);
   const changed = createEmitter();
   return {
     getSelection: () => ids,
     setSelection(next) {
-      ids = next;
+      const kept = once(next);
+      if (kept.length === ids.length && kept.every((id, i) => id === ids[i])) return;
+      ids = kept;
       changed.emit();
     },
     subscribe: changed.subscribe,
   };
+}
+
+/** `ids` with each id once, at its first place; `ids` itself when none repeats. */
+function once<K>(ids: readonly K[]): readonly K[] {
+  if (ids.length < 2) return ids;
+  const seen = new Set(ids);
+  return seen.size === ids.length ? ids : [...seen];
 }

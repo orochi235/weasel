@@ -6,7 +6,7 @@
  * it no longer has, are dropped.
  */
 import type { ActionDeps } from '@weasel-js/routing';
-import type { PolygonPath } from '@weasel-js/geom';
+import { countPathAnchors, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
@@ -17,6 +17,7 @@ import { resolveEditablePathOf, storeEditablePath } from 'domains/paths/editable
 import { nodeFrameOf, shownIn } from 'domains/paths/nodeFrame';
 import { withoutShapeGenerator } from 'domains/paths/shapeGenerator';
 import { withoutGeometryBoundData } from 'domains/paths/pathEditExtension';
+import { anchorDataPatch, withAnchorDataFitting } from 'domains/paths/anchorData';
 
 
 /** A selected node with an editable polygon, and that polygon in world space. */
@@ -66,10 +67,13 @@ export function pathNodesOf(
 const lastStored = new WeakMap<object, { path: PolygonPath; shape: { pose: unknown; data: unknown } | null }>();
 
 /** `target`'s node storing `worldPath` as plain geometry at its world pose:
- *  the shape `target.shown` takes. Null when it holds no editable polygon. */
+ *  the shape `target.shown` takes, less per-anchor widths and colors that no longer
+ *  line up with its anchors. Null when it holds no editable polygon. */
 export function withShownPath(target: Pick<PathNode, 'shown'>, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
   const stored = storeEditablePath(target.shown, worldPath);
-  return stored ? { pose: stored.pose, data: withoutGeometryBoundData(withoutShapeGenerator(stored.data)) } : null;
+  if (!stored) return null;
+  const data = withoutGeometryBoundData(withoutShapeGenerator(stored.data));
+  return { pose: stored.pose, data: withAnchorDataFitting(data, countPathAnchors(worldPath)) };
 }
 
 /** `target`'s node storing `worldPath` as plain geometry, in the node's own
@@ -85,10 +89,13 @@ export function withPath(target: PathNode, worldPath: PolygonPath): { pose: unkn
   return shape;
 }
 
-/** The ops that give `target` the geometry `worldPath`, labeled `label`. */
-export function reshapeOps(target: PathNode, worldPath: PolygonPath, label: string): Op[] {
+/** The ops that give `target` the geometry `worldPath`, labeled `label`, with `anchorData` (per-anchor
+ *  fields carried through the edit) laid over its data. */
+export function reshapeOps(target: PathNode, worldPath: PolygonPath, label: string, anchorData: Record<string, unknown> = {}): Op[] {
   const next = withPath(target, worldPath);
-  return next ? reshapeTo(target.node, next, label) : [];
+  if (!next) return [];
+  const data = Object.keys(anchorData).length > 0 ? { ...(next.data as object), ...anchorData } : next.data;
+  return reshapeTo(target.node, data === next.data ? next : { pose: next.pose, data }, label);
 }
 
 /** The ops taking `node` from what it is to `next`, labeled `label`. */
@@ -99,11 +106,22 @@ export function reshapeTo(node: Node<unknown, string, unknown>, next: { pose: un
   return ops;
 }
 
-/** A copy of `target`'s node under a fresh id and the same parent, holding `worldPath`. */
-export function pathCopy(scene: Scene<unknown, string, unknown>, target: PathNode, worldPath: PolygonPath): Node<unknown, string, unknown> | null {
+/** A copy of `target`'s node under a fresh id and the same parent, holding `worldPath`. With `origins`, where each
+ *  point of `worldPath` lies on `target.path` (`pieceOrigins`), its per-anchor widths and colors are cut to it. */
+export function pathCopy(
+  scene: Scene<unknown, string, unknown>,
+  target: PathNode,
+  worldPath: PolygonPath,
+  origins?: readonly (PointOrigin | null)[],
+): Node<unknown, string, unknown> | null {
   const next = withPath(target, worldPath);
   if (!next) return null;
-  return { ...target.node, id: scene.mintId(), pose: next.pose, data: next.data } as Node<unknown, string, unknown>;
+  let data = next.data;
+  if (origins) {
+    const { skin: _skinIsGeometryBound, ...carried } = anchorDataPatch(target.node.data, target.path, worldPath, origins);
+    if (Object.keys(carried).length > 0) data = { ...(next.data as object), ...carried };
+  }
+  return { ...target.node, id: scene.mintId(), pose: next.pose, data } as Node<unknown, string, unknown>;
 }
 
 /** Where `id` sits among its siblings, back to front. */

@@ -39,4 +39,20 @@ describe('createSelectionStore', () => {
     expect(error).toHaveBeenCalled();
     error.mockRestore();
   });
+
+  it('holds an id set twice once', () => {
+    const store = createSelectionStore<string>();
+    store.setSelection(['a', 'b', 'a']);
+    expect(store.getSelection()).toEqual(['a', 'b']);
+  });
+
+  it('tells nobody when a set leaves the selection as it was', () => {
+    const store = createSelectionStore(['a', 'b']);
+    const before = store.getSelection();
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.setSelection(['a', 'b']);
+    expect(listener).not.toHaveBeenCalled();
+    expect(store.getSelection()).toBe(before);
+  });
 });

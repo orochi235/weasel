@@ -12,6 +12,8 @@ export function useNearViewport(ref: RefObject<Element | null>, margin: string, 
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
+    const doc = el.ownerDocument;
+    const win = doc.defaultView;
     // A fresh observe always reports, wherever the element is.
     const recheck = () => {
       observer.unobserve(el);
@@ -22,11 +24,11 @@ export function useNearViewport(ref: RefObject<Element | null>, margin: string, 
       if (on === watching) return;
       watching = on;
       if (on) {
-        document.addEventListener('scroll', recheck, { capture: true, passive: true });
-        window.addEventListener('resize', recheck);
+        doc.addEventListener('scroll', recheck, { capture: true, passive: true });
+        win?.addEventListener('resize', recheck);
       } else {
-        document.removeEventListener('scroll', recheck, { capture: true });
-        window.removeEventListener('resize', recheck);
+        doc.removeEventListener('scroll', recheck, { capture: true });
+        win?.removeEventListener('resize', recheck);
       }
     };
     const observer = new IntersectionObserver(
@@ -43,7 +45,7 @@ export function useNearViewport(ref: RefObject<Element | null>, margin: string, 
         // While nothing of it intersects, a clip can hide every move from the observer, so ask again on each scroll.
         watch(Boolean(root) && !last.isIntersecting);
       },
-      { root: document, rootMargin: margin },
+      { root: doc, rootMargin: margin },
     );
     observer.observe(el);
     return () => {
