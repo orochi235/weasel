@@ -102,8 +102,9 @@ export interface ActionsRegistry {
   /** Make this registry's scope the one chrome above it reaches, and the one
    *  keys go to: `trigger`, `begin` and `list` on any ancestor then answer from
    *  here. A dispatcher calls it on the pointerdown and wheel that land in its
-   *  scope; moving DOM focus alone does not. */
-  activate(): void;
+   *  scope; moving DOM focus alone does not. With `keys: false` the keys stay
+   *  where they are, as a dispatcher with its keyboard channel off asks. */
+  activate(opts?: { keys?: boolean }): void;
 
   /** Whether a lookup made from the root of this registry's tree starts here.
    *  A dispatcher with no canvas to press in asks this before handling a

@@ -81,6 +81,8 @@ export interface DispatchCoreSources {
   actions(): ActionsRegistry;
   /** With no canvas: stand aside while a canvas on `actions()` itself holds the keys. */
   yieldKeys?: boolean;
+  /** Whether the keyboard channel is on; with it off, activating leaves the keys where they are. */
+  keys?: boolean;
   /** Told of the dispatcher each event is about to run on. A view's appears
    *  with no render of the hook, so this is where one is first seen. */
   uses(dispatcher: Dispatcher): void;
@@ -219,7 +221,7 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
         if (CLAIMED.has(event)) return;
         CLAIMED.add(event);
       }
-      src.actions().activate();
+      src.actions().activate({ keys: src.keys !== false });
     },
     disposed: src.disposed,
   };
