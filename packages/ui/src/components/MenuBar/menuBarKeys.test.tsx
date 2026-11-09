@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, createEvent, fireEvent, render, screen } from '@testing-library/react';
 import {
   ActionsProvider,
   ActiveToolContextProvider,
@@ -84,6 +84,7 @@ function setup({ accessChord, schema = SCHEMA }: { accessChord?: MenuAccessChord
 const rowNames = () => screen.getAllByRole('menuitem').filter((el) => el.closest('[role="menu"]')).map((el) => el.textContent);
 /** Option+F as macOS reports it: the character it types, with the physical key in `code`. */
 const altF = { key: 'ƒ', code: 'KeyF', altKey: true };
+const altE = { key: '´', code: 'KeyE', altKey: true };
 
 describe('MenuBar keys', () => {
   it('focuses the first title on F10', () => {
@@ -92,37 +93,57 @@ describe('MenuBar keys', () => {
     expect(document.activeElement).toBe(file);
   });
 
-  it('opens a title’s menu on Alt and its access letter, first row highlighted', () => {
-    setup();
-    fireEvent.keyDown(document.body, altF);
+  it('opens a title’s menu on Alt and its access letter with focus in the bar, first row highlighted', () => {
+    const { file } = setup();
+    act(() => file.focus());
+    fireEvent.keyDown(file, altF);
     const menu = screen.getByRole('menu');
     expect(rowNames()).toEqual(['New', 'Open']);
     expect(menu.getAttribute('aria-activedescendant')).toBe(screen.getByRole('menuitem', { name: 'New' }).id);
   });
 
-  it('reads only the first character of a declared letter', () => {
-    setup({ schema: { ...SCHEMA, children: { ...SCHEMA.children, file: { ...SCHEMA.children.file!, access: 'fx' } } } as PrefGroup });
+  it('leaves Alt and an access letter to the app while focus is outside the bar', () => {
+    setup();
     fireEvent.keyDown(document.body, altF);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(ran).toEqual(['app.find']);
+  });
+
+  it('leaves the chord to the browser while focus is outside the bar and the app binds nothing on it', () => {
+    setup({ accessChord: { ctrl: true, alt: true } });
+    const event = createEvent.keyDown(document.body, { ...altF, ctrlKey: true });
+    fireEvent(document.body, event);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('reads only the first character of a declared letter', () => {
+    const { file } = setup({ schema: { ...SCHEMA, children: { ...SCHEMA.children, file: { ...SCHEMA.children.file!, access: 'fx' } } } as PrefGroup });
+    act(() => file.focus());
+    fireEvent.keyDown(file, altF);
     expect(rowNames()).toEqual(['New', 'Open']);
   });
 
   it('opens nothing on Alt and a letter no title declares', () => {
-    setup();
-    fireEvent.keyDown(document.body, { key: '´', code: 'KeyE', altKey: true });
+    const { file } = setup();
+    act(() => file.focus());
+    fireEvent.keyDown(file, altE);
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('opens nothing on Ctrl+Alt and a letter under the default chord', () => {
-    setup();
-    fireEvent.keyDown(document.body, { ...altF, ctrlKey: true });
+    const { file } = setup();
+    act(() => file.focus());
+    fireEvent.keyDown(file, { ...altF, ctrlKey: true });
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('takes the chord the host gives instead of Alt', () => {
-    setup({ accessChord: { ctrl: true, alt: true } });
-    fireEvent.keyDown(document.body, altF);
+    const { file } = setup({ accessChord: { ctrl: true, alt: true } });
+    act(() => file.focus());
+    fireEvent.keyDown(file, altF);
     expect(screen.queryByRole('menu')).toBeNull();
-    fireEvent.keyDown(document.body, { ...altF, ctrlKey: true });
+    fireEvent.keyDown(file, { ...altF, ctrlKey: true });
     expect(rowNames()).toEqual(['New', 'Open']);
   });
 
@@ -139,16 +160,19 @@ describe('MenuBar keys', () => {
     expect(ran).toEqual(['edit.undo']);
   });
 
-  it('takes an access chord ahead of an app binding on the same keys', () => {
-    setup();
-    fireEvent.keyDown(document.body, altF);
+  it('takes an access chord ahead of an app binding on the same keys while focus is in the bar', () => {
+    const { file } = setup();
+    act(() => file.focus());
+    fireEvent.keyDown(file, altF);
     expect(screen.getByRole('menu')).toBeDefined();
     expect(ran).toEqual([]);
   });
 
   it('leaves a disabled title’s access chord to the app', () => {
     setup({ schema: FILE_GATED });
-    fireEvent.keyDown(document.body, altF);
+    const edit = screen.getByRole('menuitem', { name: 'Edit' });
+    act(() => edit.focus());
+    fireEvent.keyDown(edit, altF);
     expect(screen.queryByRole('menu')).toBeNull();
     expect(ran).toEqual(['app.find']);
   });

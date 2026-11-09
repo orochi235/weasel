@@ -34,7 +34,7 @@ const VERB: Record<Role | 'entry', string> = {
 };
 
 /**
- * A `ModeDefinition` shortcut chord — `'Escape'`, `'Meta+T'` — as a key spec.
+ * A `ModeDefinition` shortcut chord — `'Escape'`, `'Mod+Alt+T'` — as a key spec.
  * Modifier names are case-insensitive; the last segment is the key.
  */
 export function modeShortcutSpec(shortcut: string): KeySpec {

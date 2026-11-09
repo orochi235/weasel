@@ -38,7 +38,9 @@ export const PATH_EDIT: ModeDefinition = {
 };
 
 /** A transaction that transforms the selection: the whole session is one undo
- *  step, committed with Enter or discarded with Escape. */
+ *  step, entered with Mod+Alt+T, committed with Enter or discarded with Escape.
+ *  Not Cmd+T or Mod+Shift+T: a browser keeps those for a new tab and for
+ *  reopening a closed one. */
 export const FREE_TRANSFORM: ModeDefinition = {
   id: 'free-transform',
   label: 'Free Transform',
@@ -47,7 +49,7 @@ export const FREE_TRANSFORM: ModeDefinition = {
   allows: ['transforms-selection'],
   scoping: false,
   workspace: { tint: '#f59e0b', gradient: 'bottom-up', intensity: 0.12 },
-  entry: { shortcut: 'Meta+T' },
+  entry: { shortcut: 'Mod+Alt+T' },
   commit: { shortcut: 'Enter' },
   cancel: { shortcut: 'Escape' },
 };

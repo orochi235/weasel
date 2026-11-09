@@ -11,13 +11,6 @@ import type { Action } from '@weasel-js/routing';
 
 // The menu bar's access keys are checked beside it, in `@weasel-js/ui`.
 
-/** Collisions waiting on a choice of key, each listed under "Audit round twelve" in `docs/unruled.md`.
- *  Drop an entry once its key changes. */
-const KNOWN = [
-  'FILE_KEYS.new: {"mod":true}+n',
-  'free-transform.entry: {"meta":true}+t',
-];
-
 /** `owner: mods+key` for each of `specs` a browser takes first. */
 function reserved(owner: string, specs: readonly unknown[]): string[] {
   return specs.flatMap((spec) => {
@@ -57,7 +50,7 @@ describe('kit key bindings a browser reserves', () => {
     ]).toEqual([]);
   });
 
-  it("collides only where known in editor's command keys and the default modes' shortcuts", () => {
+  it("has no collision in editor's command keys or the default modes' shortcuts", () => {
     const editor = [
       ...Object.entries(FILE_KEYS).flatMap(([slot, spec]) => reserved(`FILE_KEYS.${slot}`, [spec])),
       ...Object.entries(DOC_CLIPBOARD_KEYS).flatMap(([slot, spec]) => reserved(`DOC_CLIPBOARD_KEYS.${slot}`, [spec])),
@@ -68,6 +61,6 @@ describe('kit key bindings a browser reserves', () => {
       const shortcut = mode[role]?.shortcut;
       return shortcut ? reserved(`${mode.id}.${role}`, [modeShortcutSpec(shortcut)]) : [];
     }));
-    expect([...editor, ...modes]).toEqual(KNOWN);
+    expect([...editor, ...modes]).toEqual([]);
   });
 });

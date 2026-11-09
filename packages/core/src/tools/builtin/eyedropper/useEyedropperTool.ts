@@ -30,7 +30,8 @@ export interface UseEyedropperToolOptions {
    *  the keybinding entirely (palette-only or hotkey-only wiring). */
   keybinding?: ToolKeybinding | null;
 
-  /** Override the default `'alt'` hotkey trigger. Pass `null` to omit. */
+  /** A modifier that engages the tool while held (`'alt'`). Default none: a held
+   *  Alt would shadow every other tool's Alt-click. `null` also means none. */
   hotkey?: HotkeyTrigger | null;
 }
 
@@ -46,8 +47,8 @@ function screenOf(deps: ActionDeps, press: WorldPoint): { x: number; y: number }
 /**
  * Eyedropper. Click to sample a color; the consumer's `onPick` callback
  * decides where it goes. Engages as a sticky active-slot tool (`I`
- * keybinding) and as a momentary hotkey-slot tool while Alt is held —
- * consumers can override either trigger to `null`.
+ * keybinding, or `null` for none), and as a momentary hotkey-slot tool only
+ * while a `hotkey` its caller names is held.
  *
  * Does not mutate the scene. Click-only; drag is unbound.
  *
@@ -96,8 +97,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
     // `null` means omit; the registry reads `undefined` as "no trigger".
     const keybinding =
       opts.keybinding === null ? undefined : (opts.keybinding ?? { key: 'I' });
-    const hotkey =
-      opts.hotkey === null ? undefined : (opts.hotkey ?? 'alt');
+    const hotkey = opts.hotkey ?? undefined;
 
     return defineTool({
       id: 'eyedropper',

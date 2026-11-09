@@ -2,10 +2,10 @@ import { useLatest } from '@weasel-js/core';
 import { type RefObject, useEffect } from 'react';
 import type { TransportControl } from './transportControl';
 
-/** A press on one of these is the control's own: Space clicks a button and
- *  the arrows move a slider. */
+/** A press on one of these is its own: Space clicks a button, the arrows move
+ *  a slider, and a canvas has bindings of its own on all of them. */
 const OWNS_KEYS =
-  'input, textarea, select, button, [role="slider"], [contenteditable=""], [contenteditable="true"]';
+  'input, textarea, select, button, canvas, [role="slider"], [contenteditable=""], [contenteditable="true"]';
 
 /** The share of a pass an arrow key moves the playhead. */
 const ARROW_STEP = 0.05;
@@ -13,7 +13,8 @@ const ARROW_STEP = 0.05;
 /**
  * Space plays and pauses, the arrows step the playhead, Home and End jump to
  * the pass's ends, R flips the direction and `<` / `>` step the speed — on the
- * document `anchor` is in, while `enabled`.
+ * document `anchor` is in, while `enabled` and while focus is outside a field,
+ * a control and a canvas.
  */
 export function useTransportKeys(
   anchor: RefObject<HTMLElement | null>,
@@ -30,7 +31,9 @@ export function useTransportKeys(
     const onKeyDown = (event: KeyboardEvent): void => {
       const { control: c } = latest.current;
       if (!c || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.target instanceof Element && event.target.closest(OWNS_KEYS)) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && target.isContentEditable) return;
+      if (target instanceof Element && target.closest(OWNS_KEYS)) return;
       const act = keyAction(event.key, c);
       if (!act) return;
       event.preventDefault();

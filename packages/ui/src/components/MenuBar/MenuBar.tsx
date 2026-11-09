@@ -32,7 +32,8 @@ export interface MenuBarProps {
   onChange?: (path: string, value: unknown) => void;
   /** Names the bar. Default `'Menu bar'`. */
   label?: string;
-  /** What is held with a title's access letter to open it. Default `{ alt: true }`. */
+  /** What is held with a title's access letter to open it, while focus is on a title. Default `{ alt: true }`.
+   *  Outside the bar the chord is left to the page and the browser, whose own menus Alt+F and the like open. */
   accessChord?: MenuAccessChord;
   className?: string;
 }
@@ -101,10 +102,7 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
     return key;
   };
 
-  const handle = useMemo((): MenuBarHandle => ({
-    focus: () => bar.current?.querySelector<HTMLElement>('[role="menuitem"][tabindex="0"]')?.focus(),
-    open: (key) => showNow.current(key, 'keyboard'),
-  }), [showNow]);
+  const handle = useMemo(() => barHandle(bar, (key) => showNow.current(key, 'keyboard')), [showNow]);
 
   const onTitleKey = (e: KeyboardEvent<HTMLButtonElement>, key: string) => {
     const to = rovingTarget(menus.findIndex((m) => m.key === key), e.key, menus.map(() => true), 'horizontal', inlineDirection(e.currentTarget));
@@ -164,4 +162,13 @@ export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', ac
       )}
     </MenuBarHandleContext.Provider>
   );
+}
+
+/** What the bar's key layer drives `bar` through. */
+function barHandle(bar: { readonly current: HTMLElement | null }, open: (key: string) => void): MenuBarHandle {
+  return {
+    focus: () => bar.current?.querySelector<HTMLElement>('[role="menuitem"][tabindex="0"]')?.focus(),
+    open,
+    hasFocus: () => bar.current?.contains(document.activeElement) ?? false,
+  };
 }

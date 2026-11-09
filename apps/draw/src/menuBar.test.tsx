@@ -166,10 +166,11 @@ describe('DRAW_MENU_BAR', () => {
   // Option+letter as macOS reports it: the typed character, with the physical key in `code`.
   it.each([
     ['File', 'ƒ', 'KeyF'], ['Edit', '´', 'KeyE'], ['Arrange', 'å', 'KeyA'], ['View', '√', 'KeyV'],
-  ])('opens %s on its Alt chord while the canvas holds keys, and changes no tool or document', (name, key, code) => {
+  ])('opens %s on its Alt chord with focus in the bar while the canvas holds keys, and changes no tool or document', (name, key, code) => {
     const t = setup();
+    act(() => { fireEvent.keyDown(document.body, { key: 'F10', code: 'F10' }); });
     const before = { active: t.tools().active, engaged: t.tools().hotkeyEngaged, order: [...t.scene.renderOrder()] };
-    act(() => { fireEvent.keyDown(document.body, { key, code, altKey: true }); });
+    act(() => { fireEvent.keyDown(document.activeElement!, { key, code, altKey: true }); });
     expect({ active: t.tools().active, engaged: t.tools().hotkeyEngaged, order: [...t.scene.renderOrder()] }).toEqual(before);
     expect(labels()).toEqual(ROWS[name as keyof typeof ROWS]);
     expect(t.commands.toggleGrid).not.toHaveBeenCalled();

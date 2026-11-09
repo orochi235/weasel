@@ -1,8 +1,10 @@
-import { useContext, useEffect, useMemo } from 'react';
+import { useCallback, useContext, useEffect, useMemo } from 'react';
 import {
   ActionsProvider,
   ActiveToolContextProvider,
+  DEFAULT_ALLOWED_CAPABILITIES,
   DepRegistryProvider,
+  buildRuleCtx,
   useActionsRegistry,
   useGestureDispatcher,
   useLatest,
@@ -23,6 +25,8 @@ const INITIAL = [{ channel: '*', phase: 'initial' }] as const;
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { contextMenu: false, ingest: false } as const;
 const NO_ELEMENT = { current: null };
+const NO_MODIFIERS = { alt: false, ctrl: false, meta: false, shift: false };
+const NO_ACTION = { kind: null, id: null };
 
 /** The physical key a letter or digit sits on, so a chord whose modifier changes the character typed still matches. */
 function codeOf(letter: string): string | undefined {
@@ -48,9 +52,10 @@ export function openBindings(titles: readonly AccessTitle[], chord: MenuAccessCh
 }
 
 /**
- * The menu bar's keys: F10 focuses it, and its chord with a title's access letter opens that title's menu. They
- * run on a dispatcher of their own in a registry of their own, listening ahead of every other, so an app binding on
- * the same keys does not fire as well and none of the app's bindings is heard twice.
+ * The menu bar's keys: F10 focuses it, and, while focus is on a title, its chord with a title's access letter opens
+ * that title's menu. They run on a dispatcher of their own in a registry of their own, listening ahead of every
+ * other, so an app binding on the same keys does not fire as well and none of the app's bindings is heard twice.
+ * Outside the bar the chord passes on, to the app and then to the browser.
  */
 export function MenuBarKeys({ titles, disabled, chord }: {
   titles: readonly { key: string; access?: string }[];
@@ -95,6 +100,8 @@ export function useMenuBarKeys(titles: readonly AccessTitle[], chord: MenuAccess
         id: 'menu.open',
         label: 'Open Menu',
         scope: 'hotkey',
+        // `focused` reads `hasFocus` below: the bar's own focus, not a canvas's.
+        eligible: { focused: true },
         defaultBinding: openBindings(pairs.map(([key, access]) => ({ key, access })), mods),
         invoker: {
           timing: 'immediate',
@@ -111,11 +118,23 @@ export function useMenuBarKeys(titles: readonly AccessTitle[], chord: MenuAccess
     return () => { for (const release of releases) release(); };
   }, [registry, actions]);
 
+  const getRuleCtx = useCallback(() => buildRuleCtx({
+    focused: barNow.current.hasFocus(),
+    selection: [],
+    multiActive: false,
+    modifiers: NO_MODIFIERS,
+    action: NO_ACTION,
+    hover: null,
+    mode: 'normal',
+    allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES,
+  }), [barNow]);
+
   useGestureDispatcher({
     canvasRef: NO_ELEMENT,
     actions: registry,
     entriesById: NO_TOOLS,
     channels: CHANNELS,
     keyboard: 'first',
+    getRuleCtx,
   });
 }

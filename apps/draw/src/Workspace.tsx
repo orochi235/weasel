@@ -143,8 +143,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
   const pickColor = usePickColor();
-  // No hotkey: Alt measures distance from the selection here.
-  const eyedropperTool = useEyedropperTool({ onPick: (hex) => { if (hex) pickColor(hex); }, hotkey: null });
+  const eyedropperTool = useEyedropperTool({ onPick: (hex) => { if (hex) pickColor(hex); } });
   const measureEntry = useMemo(
     () => measurementsContribution(scene as never, measurements),
     [scene, measurements],

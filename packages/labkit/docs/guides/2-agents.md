@@ -157,7 +157,8 @@ plays once (`loop: false`) unless declared otherwise; `start` opens it elsewhere
   holds one signed rate, so the speed and direction a pause returns to live in
   the component. Scrub and reverse appear only for a seekable clock with a
   duration, and the scrub bar spans the current pass. `keys` answers Space,
-  the arrows, Home/End, R and `<`/`>` on the document; `replay` restarts an
+  the arrows, Home/End, R and `<`/`>` on the document while focus is outside a
+  field, a control and a canvas; `replay` restarts an
   ended run after a hold until the transport is touched.
 - **One frame loop per lab** (`useClockLoop`, behind `useVisibleRaf`) syncs
   every clock that is not inert and sleeps when all are. A clock woken from

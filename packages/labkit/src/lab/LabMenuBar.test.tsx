@@ -129,7 +129,7 @@ describe('the lab’s menu bar', () => {
     expect(onActivate).toHaveBeenCalledTimes(1);
   });
 
-  it('opens a declared menu by its access letter', async () => {
+  it('opens a declared menu by its access letter, with focus in the menu bar', async () => {
     const schema = pref.group('', {
       tools: {
         ...pref.group('Tools', { add: pref.action('lab.add.Stub') }, { as: 'menu' }),
@@ -140,6 +140,11 @@ describe('the lab’s menu bar', () => {
     expect(screen.getByRole('menubar').textContent).toBe('LabToolsView');
     await act(async () => {
       fireEvent.keyDown(document.body, { key: '†', code: 'KeyT', altKey: true });
+    });
+    expect(screen.queryByRole('menu')).toBeNull();
+    act(() => title('Lab').focus());
+    await act(async () => {
+      fireEvent.keyDown(title('Lab'), { key: '†', code: 'KeyT', altKey: true });
     });
     expect(screen.getByRole('menu').getAttribute('aria-labelledby')).toBe(title('Tools').id);
   });

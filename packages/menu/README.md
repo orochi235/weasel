@@ -36,8 +36,9 @@ These are not visible in the code; each was a choice between alternatives.
   every menu can be saved as data and edited in the asset editor.
 - A menu bar is new surface. Nothing moves onto it out of the component that owns it — a trial's
   title bar, a tool palette, a header — it holds what is declared for it.
-- Access letters are supported, never required. The default chord is Alt; Chrome on Windows is said
-  to open its own menu on Alt+F, and nobody has checked it there.
+- Access letters are supported, never required. The default chord is Alt, and it opens a menu bar's
+  title only while focus is on one of its titles (2026-11-09). Elsewhere Alt+F and the like are left to
+  the page and to the browser, whose own menus they open off a Mac. F10 moves focus to the bar.
 - The `role="menubar"` element holds only the titles. Anything else at a bar's top level draws after
   them in declared order, because ARIA allows only menu items in a menubar.
 - After a row runs from a menu opened by pointer, focus returns to where it was before the bar.

@@ -27,7 +27,7 @@ function run(tool: { actions?: readonly Action[] }, deps: ActionDeps, params: Re
 }
 
 describe('useEyedropperTool', () => {
-  it('declares id, I keybinding, alt hotkey, crosshair cursor', () => {
+  it('declares id, I keybinding, no hotkey, crosshair cursor', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
     );
@@ -35,7 +35,7 @@ describe('useEyedropperTool', () => {
     expect(result.current.keybinding).toEqual({ key: 'I' });
     // hotkey lives on the ToolDef (reflection escape hatch) rather than on
     // the runtime Tool interface since Tool.hotkey was removed.
-    expect((result.current.def as any)?.hotkey).toBe('alt');
+    expect((result.current.def as any)?.hotkey).toBeUndefined();
     // `defineTool` wraps a string cursor in a resolver. jsdom draws no cursor,
     // so this checks the string handed to the host, not what renders.
     const cursor = typeof result.current.cursor === 'function'
@@ -117,11 +117,11 @@ describe('useEyedropperTool', () => {
     expect(onPick).not.toHaveBeenCalled();
   });
 
-  it('hotkey: null override removes the hotkey trigger', () => {
+  it('takes the hotkey its caller names', () => {
     const { result } = renderHook(() =>
-      useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey: null }),
+      useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey: 'alt' }),
     );
-    expect((result.current.def as any)?.hotkey).toBeUndefined();
+    expect((result.current.def as any)?.hotkey).toBe('alt');
   });
 
   it('keybinding: null override removes the keybinding', () => {

@@ -7,6 +7,7 @@ import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { createModeRegistry, DEFAULT_MODES, NORMAL, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
 import { modeShortcuts, type ModeShortcutHandlers } from '@weasel-js/routing';
+import { isApplePlatform } from '@weasel-js/gestures';
 import { SceneCanvas } from './SceneCanvas';
 import type { ToolsApi } from 'tools/overlayBinding';
 import { createScene } from 'core/scene/scene';
@@ -127,10 +128,12 @@ describe('mode shortcuts', () => {
     const enter = vi.fn();
     let ready = false;
     const t = setup('normal', { enter, canEnter: () => ready });
-    t.key('T', { metaKey: true });
+    const mac = isApplePlatform();
+    const modAltT = { code: 'KeyT', altKey: true, metaKey: mac, ctrlKey: !mac };
+    t.key('†', modAltT);
     expect(enter).not.toHaveBeenCalled();
     ready = true;
-    t.key('T', { metaKey: true });
+    t.key('†', modAltT);
     expect(enter).toHaveBeenCalledWith('free-transform');
   });
 
