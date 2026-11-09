@@ -87,6 +87,28 @@ describe('usePages', () => {
     expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1', 'page-4', 'page-2', 'page-3']);
   });
 
+  it('steps from the page last shown while the view sits off every page', () => {
+    const scene = continuous();
+    let view = VIEW;
+    const setView = (v: View) => { view = v; };
+    const { result, rerender } = renderHook(() => usePages(scene, view, DIMS, setView));
+    for (let i = 0; i < 3; i++) { act(() => result.current.add()); rerender(); }
+    act(() => result.current.goTo('page-2'));
+    rerender();
+    expect(result.current.current).toBe('page-2');
+    view = { ...view, x: view.x + 1e6 };
+    rerender();
+    expect(result.current.current).toBeNull();
+    act(() => result.current.step(1));
+    rerender();
+    expect(result.current.current).toBe('page-3');
+    view = { ...view, x: view.x + 1e6 };
+    rerender();
+    act(() => result.current.step(-1));
+    rerender();
+    expect(result.current.current).toBe('page-2');
+  });
+
   it('places a page another maker draws where its own would go', () => {
     const scene = continuous();
     const { result, rerender } = renderHook(() => usePages(scene, VIEW, DIMS, () => {}));

@@ -36,7 +36,7 @@ export interface DocPages {
   /** The current page, else the last one that was while the view is between pages, else the first. */
   shown: PlacedPage | null;
   goTo(id: string): void;
-  /** Go to the next page (`1`) or the one before (`-1`). */
+  /** Go to the page after `shown` (`1`) or the one before it (`-1`). */
   step(by: 1 | -1): void;
   /** Add a page after the one shown, the same size, and go to it. A scene without pages gets its first,
    *  and with it the page run that makes it paged. */
@@ -119,7 +119,7 @@ export function usePages<TData, TLayer extends string, TPose>(
       current,
       shown,
       goTo,
-      step: (by) => show(adjacentPage(placedPagesOf(scene), latest.current.current, by)),
+      step: (by) => show(adjacentPage(placedPagesOf(scene), latest.current.shown?.id ?? null, by)),
       add(options) {
         const pages = pagesOf(scene)?.pages ?? [];
         const at = pages.findIndex((p) => p.id === latest.current.shown?.id);
