@@ -147,14 +147,9 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
 
   return {
     api,
-    tick(t) {
-      checkFrame(t, 1);
-      pacing.outside.on = false;
-      frame.tick(t);
-    },
+    tick(t) { checkFrame(t, 1); pacing.outside.on = false; frame.tick(t); },
     follow(t, rate, wall) {
-      checkFrame(t, rate);
-      pacing.follow(rate, wall);
+      checkFrame(t, rate); pacing.follow(rate, wall);
       const moved = clock.frameT == null ? 0 : t - clock.frameT;
       const drive = moved < 0 || (moved === 0 && rate < 0) ? -1 : 1;
       if (drive !== clock.drive) table.turn(() => { clock.drive = drive; });

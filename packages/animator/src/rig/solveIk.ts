@@ -60,6 +60,15 @@ function clampAngle(v: number, limit: IkLimit | undefined): number {
   return Math.abs(wrapAngle(v - limit.min, 'min')) <= Math.abs(wrapAngle(v - limit.max, 'min')) ? limit.min : limit.max;
 }
 
+/** Throws on a target, tip or pole that is not finite: the chain would be posed NaN. */
+function checkPoints({ target, tip, pole }: SolveIkOptions): void {
+  for (const [what, p] of [['target', target], ['tip', tip], ['pole', pole]] as const) {
+    if (p && !(Number.isFinite(p.x) && Number.isFinite(p.y))) {
+      throw new RangeError(`solveIk: the ${what} is a finite point, not (${p.x}, ${p.y})`);
+    }
+  }
+}
+
 const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx;
 
 /**
@@ -78,11 +87,7 @@ const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay *
  */
 export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions): IkResult {
   const { tip, target, limits } = options;
-  for (const [what, p] of [['target', target], ['tip', tip], ['pole', options.pole]] as const) {
-    if (p && !(Number.isFinite(p.x) && Number.isFinite(p.y))) {
-      throw new RangeError(`solveIk: the ${what} is a finite point, not (${p.x}, ${p.y})`);
-    }
-  }
+  checkPoints(options);
   const maxIterations = options.iterations ?? 32;
   const tolerance = options.tolerance ?? 0.01;
 

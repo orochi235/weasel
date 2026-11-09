@@ -132,6 +132,7 @@ export function createTimeline(
     if (report?.watched) report.lap(lap);
   };
 
+  const takeLaps = (laps: number): void => { loopsLeft -= laps; lap += laps; };
   const tick = (virtualNow: number, scale?: number): boolean => {
     lastVirtual = virtualNow;
     const rate = scale ?? (base.isPaused() ? 0 : base.timeScale());
@@ -141,10 +142,8 @@ export function createTimeline(
     if (!parked) {
       playhead = virtualNow + offset;
       crossLaps(playhead, duration, loopsLeft, lap, (laps) => {
-        loopsLeft -= laps;
-        offset -= laps * duration;
-        playhead -= laps * duration;
-        lap += laps;
+        takeLaps(laps);
+        offset -= laps * duration; playhead -= laps * duration;
         onWrap(laps);
       });
     }
@@ -222,11 +221,7 @@ export function createTimeline(
       offset = t - lastVirtual;
       booker?.retract();
       playhead = t;
-      if (laps > 0) {
-        loopsLeft -= laps;
-        lap += laps;
-        if (report?.watched) report.lap(lap);
-      }
+      if (laps > 0) { takeLaps(laps); if (report?.watched) report.lap(lap); }
       events.place(t, true);
       booker?.seek();
       rearm();
