@@ -6,6 +6,7 @@ import type { GestureSpec } from '@weasel-js/gestures';
 import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from './action';
 import { actionBindings } from './binding';
+import { resolveParams } from './bindingOpts';
 
 /** One keyboard shortcut, flattened for display: the chip a menu row draws
  *  (`MenuShortcut` in `@weasel-js/menu`, `ShortcutInput` in `@weasel-js/gestures`). */
@@ -51,7 +52,7 @@ export function actionShortcuts(
   const out: ActionShortcut[] = [];
   const seen = new Set<string>();
   for (const { spec, opts } of actionBindings(action)) {
-    if (params && !paramsMatch(opts?.params, params)) continue;
+    if (params && !paramsMatch(resolveParams(opts?.params), params)) continue;
     const shortcut = keySpecShortcut(spec);
     if (!shortcut) continue;
     const token = `${shortcut.key}|${shortcut.mod}|${shortcut.alt}|${shortcut.shift}`;

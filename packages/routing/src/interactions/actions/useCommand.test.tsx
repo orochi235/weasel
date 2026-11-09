@@ -8,6 +8,7 @@ import { actionBindings } from './binding';
 import { evaluateActive, evaluateEnabled } from './actionEnabled';
 import type { ActionUnavailable, ActionVariant } from './action';
 import { useCommand, type CommandOptions } from './useCommand';
+import { toIconRef } from '@weasel-js/icons';
 
 function wrap({ children }: { children: ReactNode }) {
   return <ActionsProvider>{children}</ActionsProvider>;
@@ -61,6 +62,13 @@ describe('useCommand', () => {
     });
     const before = found();
     rerender({ label: 'A', run: () => {}, options: { keys: { kind: 'key', key: 'r' }, tags: ['x'] } });
+    expect(found()).toBe(before);
+  });
+
+  it('does not re-register for an inline icon with a mark, equal by value', () => {
+    const { found, rerender } = mount({ label: 'A', run: () => {}, options: { icon: { name: toIconRef('ui:layers')!, mark: toIconRef('ui:markAdd')! } } });
+    const before = found();
+    rerender({ label: 'A', run: () => {}, options: { icon: { name: toIconRef('ui:layers')!, mark: toIconRef('ui:markAdd')! } } });
     expect(found()).toBe(before);
   });
 

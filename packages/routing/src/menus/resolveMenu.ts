@@ -66,8 +66,8 @@ const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
-  const point = ctx.at ? { world: ctx.at } : {};
-  const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at, it.params);
+  const params = { ...ctx.params, ...it.params, ...(ctx.at ? { world: ctx.at } : {}) };
+  const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
   if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
   return {
@@ -80,8 +80,8 @@ function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boole
     shortcut: actionShortcuts(it.action, it.params)[0],
     disabled: off || !enabled,
     ...why,
-    checked: evaluateActive(it.action, deps, it.params),
-    run: () => { ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...point }); },
+    checked: evaluateActive(it.action, deps, params),
+    run: () => { ctx.src.trigger(it.action.id, params); },
   };
 }
 

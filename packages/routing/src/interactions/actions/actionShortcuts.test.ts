@@ -78,4 +78,15 @@ describe('actionShortcuts with params', () => {
     expect(actionShortcuts(reorder, { distance: 'extreme' }))
       .toEqual([{ key: ']', mod: true, alt: false, shift: true }]);
   });
+
+  it('reads params a binding gives as a thunk', () => {
+    const flip = {
+      ...base,
+      defaultBinding: [
+        { spec: { kind: 'key', key: 'h', mods: { shift: true } }, opts: { params: () => ({ axis: 'x' }) } },
+        { spec: { kind: 'key', key: 'v', mods: { shift: true } }, opts: { params: () => ({ axis: 'y' }) } },
+      ],
+    } as unknown as Action;
+    expect(actionShortcuts(flip, { axis: 'y' })).toEqual([{ key: 'v', mod: false, alt: false, shift: true }]);
+  });
 });

@@ -50,10 +50,23 @@ export function toolIdsOf<TId extends string>(entries: readonly ToolEntry<TId>[]
   return out;
 }
 
-/** `set` less every id `omit` names, sets opened. Keeps `set`'s id with a `-without` suffix, and its `stack`. */
+/** `set` less every id `omit` names. Keeps `set`'s id with a `-without` suffix, its `stack`, and the sets inside
+ *  it, each less the same ids and dropped once empty, so a stack nested in `set` is still one. */
 export function withoutTools<TId extends string>(set: ToolSet<TId>, ...omit: readonly ToolEntry<TId>[]): ToolSet<TId> {
   const gone = new Set<string>(toolIdsOf(omit));
-  return toolSet(`${set.id}-without`, toolIdsOf([set]).filter((id) => !gone.has(id)), { stack: set.stack });
+  const cut = (inner: ToolSet<TId>): ToolSet<TId> | null => {
+    const members: ToolEntry<TId>[] = [];
+    for (const m of inner.members) {
+      const kept = isToolSet(m) ? cut(m) : gone.has(m) ? null : m;
+      if (kept !== null) members.push(kept);
+    }
+    if (members.length === 0) return null;
+    return members.every((m, i) => m === inner.members[i]) && members.length === inner.members.length
+      ? inner
+      : toolSet(`${inner.id}-without`, members, { stack: inner.stack });
+  };
+  const kept = cut(set);
+  return toolSet(`${set.id}-without`, kept?.members ?? [], { stack: set.stack });
 }
 
 /** The ids of each set `entries` hold, at any depth, that is marked `stack`, sets inside it opened: the

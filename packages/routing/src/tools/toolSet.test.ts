@@ -36,5 +36,16 @@ describe('tool sets', () => {
     expect(withoutTools(warps, 'envelope').stack).toBe(true);
     expect('stack' in withoutTools(shapes, 'rect')).toBe(false);
   });
-});
 
+  it('keeps a stack nested in the set withoutTools cuts from, and drops a nested set it empties', () => {
+    const warps = toolSet('warp', ['distort', 'envelope'], { stack: true });
+    const reshape = toolSet('reshape', ['girth', 'trim', warps]);
+    const cut = withoutTools(reshape, 'girth');
+    expect(toolStacksOf([cut])).toEqual([['distort', 'envelope']]);
+    expect(toolIdsOf([cut])).toEqual(['trim', 'distort', 'envelope']);
+    expect(toolStacksOf([withoutTools(reshape, 'envelope')])).toEqual([['distort']]);
+    const emptied = withoutTools(reshape, warps);
+    expect(toolStacksOf([emptied])).toEqual([]);
+    expect(emptied.members).toEqual(['girth', 'trim']);
+  });
+});

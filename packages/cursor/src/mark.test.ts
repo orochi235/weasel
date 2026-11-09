@@ -21,6 +21,15 @@ describe('placeCursorPath', () => {
   it('refuses a command it would misplace', () => {
     expect(() => placeCursorPath('M 0 0 l 1 1', 1, 0, 0)).toThrow(/'l'/);
   });
+
+  it('reads numbers written without a leading digit or with an exponent', () => {
+    expect(placeCursorPath('M.5 1.5.5 2L1e1 -2', 2, 0, 0)).toBe('M 1 3 1 4 L 20 -4');
+  });
+
+  it('refuses numbers it cannot read as whole points, rather than drop or merge one', () => {
+    expect(() => placeCursorPath('M 1 2 3', 1, 0, 0)).toThrow(/3 numbers/);
+    expect(() => placeCursorPath('M 0 0 A 5 5 0 015 5', 1, 0, 0)).toThrow(/'A'/);
+  });
 });
 
 describe('markedGlyph', () => {
