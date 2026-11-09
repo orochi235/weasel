@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { rgbaToHex } from './color';
 import { byteHex, hexToRgbBytes, parseHexBytes, rgbaHex } from './hex';
 
 describe('parseHexBytes', () => {
@@ -32,6 +33,11 @@ describe('hexToRgbBytes', () => {
 describe('byteHex', () => {
   it('writes a channel as two digits, rounded and clamped', () => {
     expect([0, 9.6, 127.4, 255, -3, 300].map(byteHex)).toEqual(['00', '0a', '7f', 'ff', '00', 'ff']);
+  });
+
+  it('writes a NaN channel as 00, so a color written from one stays a color', () => {
+    expect(byteHex(NaN)).toBe('00');
+    expect(parseHexBytes(rgbaToHex([NaN, 0.5, 1, NaN]))).toEqual([0, 128, 255, 0]);
   });
 });
 
