@@ -69,6 +69,14 @@ describe('resolveDrop — tree', () => {
     });
   });
 
+  it('keeps the row\'s own depth below a subtree when the indent is not a positive width', () => {
+    for (const width of [0, -16, NaN]) {
+      for (const x of [-50, 2, 40]) {
+        expect(resolveDrop(tree, { x, y: 55 }, { originX: 0, indent: width }).target).toEqual({ parentId: 'g', index: 2 });
+      }
+    }
+  });
+
   it('drops into a collapsed branch at the end of its children', () => {
     const collapsed = rows([
       { id: 'g', parentId: null, level: 1, index: 0, branch: true, expanded: false, childCount: 3 },

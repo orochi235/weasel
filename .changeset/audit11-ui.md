@@ -13,4 +13,5 @@ Fixes to right-to-left keyboard and drag handling across ui's lists, and to `Eff
 - An `EffectList` inside another list's open card moves only its own card on Alt+Up or Alt+Down; the outer list moved its card too.
 - Removing an `EffectList` card that holds focus, in a list without remove buttons, hands focus to the next card's number rather than dropping it to the page.
 - A slider stop that is NaN is dropped, where it was kept and sorted the stops out of order.
+- A `Tree` whose levels have no indent (a theme setting `--wzl-tree-indent` to 0) keeps a drop below a subtree at the last row's depth, where the pointer's x divided by that zero and sent the drop either all the way out or nowhere.
 - ui-logic exports `arrowDir`, which says which way an arrow key steps a list of a given orientation and direction.
