@@ -56,6 +56,11 @@ describe('htmlToRuns', () => {
     expect(htmlToRuns('<table><tr>\n  <td>\n    a\n  </td>\n  <td>\n    b\n  </td>\n</tr></table>')).toEqual([{ text: 'a\tb' }]);
   });
 
+  it('keeps a column for each empty cell before a cell with text', () => {
+    expect(htmlToRuns('<table><tr><td>a</td><td></td><td>b</td></tr></table>')).toEqual([{ text: 'a\t\tb' }]);
+    expect(htmlToRuns('<table><tr><td></td><td> </td><td>c</td></tr></table>')).toEqual([{ text: '\t\tc' }]);
+  });
+
   it('keeps the rules and the scripts, and reads a heavy weight as bold', () => {
     expect(htmlToRuns(
       '<u>u</u><s>s</s><span style="text-decoration: overline">o</span><sup>2</sup><sub>3</sub><span style="font-weight: 600">w</span>',

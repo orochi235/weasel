@@ -53,16 +53,16 @@ function emphasis(text: string, style: StyleState): StyledRun {
 export function htmlToRuns(html: string): StyledRun[] {
   const body = new DOMParser().parseFromString(html, 'text/html').body;
   const runs: StyledRun[] = [];
-  /** What has to precede the next text: a line break a block boundary asked for, a tab between cells. */
-  let gap = { line: false, tab: false };
+  /** What has to precede the next text: a line break a block boundary asked for, a tab per cell boundary. */
+  let gap = { line: false, tabs: 0 };
   /** Whether the current line has text on it, and whether that text ends in a collapsed space. */
   let onLine = false;
   let spaced = false;
 
   const write = (text: string, style: StyleState): void => {
-    const lead = (gap.line && runs.length > 0 ? '\n' : '') + (gap.tab ? '\t' : '');
+    const lead = (gap.line && runs.length > 0 ? '\n' : '') + '\t'.repeat(gap.tabs);
     runs.push(emphasis(lead + text, style));
-    gap = { line: false, tab: false };
+    gap = { line: false, tabs: 0 };
     onLine = true;
     spaced = false;
   };
@@ -74,7 +74,7 @@ export function htmlToRuns(html: string): StyledRun[] {
   };
   const boundary = (): void => {
     trimSpace();
-    gap = { line: gap.line || onLine, tab: false };
+    gap = { line: gap.line || onLine, tabs: 0 };
     onLine = false;
   };
 
@@ -85,7 +85,7 @@ export function htmlToRuns(html: string): StyledRun[] {
       data.split(/[ \t\n\f]+/).forEach((word, i) => {
         // The space goes in with the text node that held it, as a browser draws it.
         // A cell's text opens after its tab, as a line's does after its start.
-        if (i > 0 && onLine && !spaced && !gap.tab) { write(' ', style); spaced = true; }
+        if (i > 0 && onLine && !spaced && gap.tabs === 0) { write(' ', style); spaced = true; }
         if (word.length > 0) write(word, style);
       });
       return;
@@ -101,7 +101,7 @@ export function htmlToRuns(html: string): StyledRun[] {
     }
     const block = BLOCKS.has(node.tagName);
     if (block) boundary();
-    if (CELLS.has(node.tagName) && node.previousElementSibling !== null) { trimSpace(); gap.tab = true; }
+    if (CELLS.has(node.tagName) && node.previousElementSibling !== null) { trimSpace(); gap.tabs += 1; }
     const next = styleStateFromElement(node, style);
     const keeps = keepsSpace(node, keep);
     for (const child of node.childNodes) visit(child, next, keeps);
