@@ -1,5 +1,93 @@
 # @weasel-js/ui
 
+## 1.18.1
+
+### Patch Changes
+
+- 7a33153: Describe and grade actions in data, and give each variant its own state
+  
+  - An action takes a `description`, which a toolbar button reads as its tooltip, and a menu row and a palette row as their hint, and a `grade` (`'danger'` for one that destroys something), which a menu row and a palette row draw in their grade's color and a toolbar button shows while pointed at. A variant may set its own of either, and its own `shortcut` text; each falls back to the action's. `ActionItem` carries all three, resolved.
+  - `enabled` is handed the params a run would get as its fourth argument, and `active` as its second, so the variants of one action can each be pressed or unavailable on their own: align left pressed while right is not, Bring Forward unavailable at the top of the stack. Bars, menus and the command palette ask once per variant, and the dispatcher hands the gate a binding's `opts.params`, so a key for one variant runs only when that variant can. An action that ignores the new argument behaves as before.
+  - `useCommand` takes `shortcut`, `preview`, `settings`, `description` and `grade`, and hands its `enabled` and `active` the params asked about. `CommandSettings` is an `ActionSettings` whose `read` takes no deps.
+  - `@weasel-js/menu`: an item and a submenu row take `description` and `grade` (`MenuGrade`, the theme's `Grade`), and a submenu, number, color and text row take `disabledReason`. ui's menu rows show a reason or a description in their tip and as their accessible description; hud's canvas menus draw a graded row's label in its color and describe a row to assistive tech the same way. `HudAccessibleNode` takes a `description`, mirrored as `aria-description`.
+  - `BarActionButton` takes a `grade`, and `useLeafAction` answers a `description` (the leaf's, else the action's) and a `grade`.
+- a8da60f: Add `EffectList`: an ordered list of effects or operations that run top to bottom, each drawn as a card in its kind's color. A card is dragged by its number, or moved with Alt+Up and Alt+Down from anywhere in it, and a press on the number that does not drag opens or closes it. Each card switches on and off, is renamed in place, and can be duplicated and removed, and only the open card shows the body `renderBody` draws. A card's switch fills with its kind's color when on. A kind's `color` is a tint index or a color source, like any other color a kit component takes.
+- 112f6bb: Name an icon with a mark in data
+  
+  - Every field that names an icon takes an `IconSpec`: a ref, or `{ name, mark }` for a subject with a mark set in its corner. That covers an action's and a variant's `icon`, a tool's `presentation.icon`, `useCommand`'s, a pref's and a group's, labkit's chrome, tool and builder items, path-tools' stroke-click tools, diagram stencils and types, forge globals, paint kinds, `SelectionPanel` sections, and `Bar`'s and `ActionBar`'s icons. A bare ref still works everywhere one did.
+  - `@weasel-js/icons` exports `IconSpec`, `iconParts`, `iconSpecRefs` and `toIconSpec`, which reads a spec from JSON. It also exports `markLayers`, `ICON_SLOTS`, `ICON_FRAME` and `ICON_STROKE`, the slot geometry `<Icon mark>` used to keep in ui, so every renderer sets a mark the same way.
+  - `<Icon name>` takes a spec, and its `mark` prop replaces the spec's. `resolveIcon` and `actionIcon` draw a spec's mark.
+  - hud's canvas menus draw a row's mark, cutting the subject around it. `iconCommands(icons, spec, at)` is exported beside `glyphCommands`.
+  - The schema editor's icon field picks a mark from the `Marks` group and writes `{ name, mark }`.
+  - Code reading a field that was `IconRef` and is now `IconSpec` should read its refs with `iconSpecRefs` rather than assume a string. The devtools snapshot writes a spec's icon as `name + mark`.
+  - The boolean crop glyph no longer uses a `clipPath`, which hud's canvas renderer skipped, drawing the whole disc filled.
+- 89e4422: Say in labkit's declarative chrome and builder what its components already draw
+  
+  - Chrome commands, rail tools, viewport controls and a lab's `tools` take `disabledReason`, which every region reads in the item's tooltip while it stays focusable. The close button reads "Close trial", with "It is the last trial" as its reason, where its label used to carry the reason.
+  - A viewport control takes `shortcut`, `pressed` and `danger`.
+  - The title bar honors an item's `pressed` and `showLabel`, as the toolbar does. The expand toggle keeps one icon and label and reads as held down while the trial is expanded.
+  - A rail command reads as current while it is `pressed`.
+  - A toolbar or lab header item can be `{ kind: 'menu', label, icon?, entries }`, whose `entries` are `@weasel-js/menu` entries, or a function of the chrome context called each time the menu opens. The "Load snapshot" button is one, where it used the `render` escape. A header menu registers no lab command.
+  - An instrument's `TrialTool` takes `disabled` and `disabledReason`.
+  - A builder leaf takes `.icon()` and `.short()`, a group `.icon()` and `.lead()`, and a `.labels()` option `short` and `disabled`, all carried onto the prefs they resolve to, so `f.boolean()` can draw a glyph in a bar and a bar can lead with its group's icon. `prefsFromConfig` and `f.prefs` keep a group's icon and lead.
+  - ui's `Toolbar.Button` takes `disabledReason`, and `MenuButton` takes `entries` in place of `items`.
+- 3677316: Show an option's description, and why it is disabled, in every form an enum draws
+  
+  - A pref enum option's `description` and `disabledReason` now reach its select, radio and menu forms, not only its toggle. `Radio` takes `description` and `disabledReason`, drawn after its label and read as its accessible description, and `MenuButton`'s `items` take the same two fields.
+  - labkit's `ConfigOption` takes `description` and `disabledReason`, so `f.enum` options and forge's global pins carry them.
+  - A tool stack's menu row reads its tool's `description` as its hint.
+- 4dd9285: Grade, shortcut and pressed state for an action pref, and why a pref is disabled
+  
+  - An `action` leaf takes `grade` (`'danger'` draws a "Clear all" red), `shortcut`, the keys shown in its tooltip and a menu's row, and `activeIf`, a condition that draws its button pressed while it holds. All three are plain data, so they survive JSON. On a leaf naming a registered `action`, `shortcut` and `activeIf` are drawn over the action's own; on a leaf with only `run`, they are all it has. `PrefGrade` is exported, the same values as theme's `Grade`.
+  - `applyPrefConditions` and `applyPrefEntryConditions` return `active`, the paths of the actions whose `activeIf` holds, and `checkPrefConditions` checks `activeIf` as it checks `showIf` and `enableIf`. `PREF_CONDITION_FIELDS` names all three, and `PrefConditionField` includes `activeIf`.
+  - Every leaf takes `disabledReason`, read in its tooltip while it is disabled. An enum option, now exported as `PrefEnumOption`, takes `description`, its tooltip, and `disabledReason`.
+  - `PrefsForm`, `Bar`, `SelectionPanel` and labkit's `ControlPanel` draw all of these. A row's help reads the reason after the description, an action's button and a segment keep a tooltip saying it, and a selection panel latches an action only while its `activeIf` holds for every node selected. `useLeafAction` takes the latch as a fourth argument and returns `grade`.
+  - `PropertyRow` and `PropertyHelp` take `disabledReason`, as does every field (`PropertyField`, `PropertyControl`); a `PropertyOption` takes `description` and `disabledReason`, which a toggle's segments draw and a select, radio group or menu does not yet. `BarActionButton` takes `grade`.
+  - The schema editor offers Why disabled on every leaf with a control, Grade, Shortcut and Pressed if on an action, and Description, Disabled and Why disabled on each enum option.
+- 217e52c: Add five glyphs to ui's icon set, in a new "Weather" group, as two choices of a freeze and thaw pair:
+  
+  - `ui:snowflake`, a six-armed snowflake, and `ui:thaw`, the same six arms melted to short rays around an empty center.
+  - `ui:droplet`, a solid water droplet with a highlight, drawn heavy so it reads apart from the outlined `ui:drop`.
+  - `ui:icicles`, icicles of uneven lengths hanging from an eave, and `ui:melt`, the two big ones melted to stubs with drops falling from them. Both take `filled`.
+- 860ab3b: Describe tools and stack tool sets in data, and give forge's global options icons, descriptions and disabled states
+  
+  - `ToolPresentation.description` says what a tool does. `ToolPalette` reads it in a tool's tooltip in place of the label, the shortcut after it, for a lone button and for a stack's face; `ToolButton` takes `description` for the same. `StrokeClickToolSpec`, `DiagramStencil` and `ContainerStencil` carry one into the tools they build.
+  - A tool set can be a stack: `toolSet(id, members, { stack: true })`. `ToolPalette` gives each stacked set inside its `include` one button, and its `stacks` takes sets beside id lists; given, `stacks` replaces the stacks `include` would give. `toolStacksOf(entries)` lists them. `withoutTools` keeps a set's `stack`. `WARP_TOOLS` is now a stack, so a palette including it shows the three warps on one button.
+  - `Select` options and `SelectItem` take `description`, a line under the label in the list, and `disabledReason`, read in its place while the option is disabled. Both become the row's accessible description.
+  - forge's `GlobalDeclaration` options are `GlobalOption`s, which add `icon`, `disabled`, `disabledReason` and `description`; the globals toolbar draws all four. A lab value naming a disabled option falls back to the nearest enabled one, as one `shows` hides does.
+- Updated dependencies [7a33153]
+- Updated dependencies [dd5b82a]
+- Updated dependencies [791ba1c]
+- Updated dependencies [f2a1845]
+- Updated dependencies [c9fb4d6]
+- Updated dependencies [7537af5]
+- Updated dependencies [f4d2261]
+- Updated dependencies [112f6bb]
+- Updated dependencies [4dd9285]
+- Updated dependencies [860ab3b]
+  - @weasel-js/menu@1.18.1
+  - @weasel-js/core@1.18.1
+  - @weasel-js/svg@1.18.1
+  - @weasel-js/plot@1.18.1
+  - @weasel-js/font@1.18.1
+  - @weasel-js/icons@1.18.1
+  - @weasel-js/prefs@1.18.1
+  - @weasel-js/gestures@1.18.1
+  - @weasel-js/guides@1.18.1
+  - @weasel-js/text@1.18.1
+  - @weasel-js/theme@1.18.1
+  - @weasel-js/animator@1.18.1
+  - @weasel-js/clock@1.18.1
+  - @weasel-js/geom@1.18.1
+  - @weasel-js/history@1.18.1
+  - @weasel-js/modes@1.18.1
+  - @weasel-js/paint@1.18.1
+  - @weasel-js/quantity@1.18.1
+  - @weasel-js/react@1.18.1
+  - @weasel-js/registry@1.18.1
+  - @weasel-js/select@1.18.1
+  - @weasel-js/ui-logic@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # @weasel-js/text
 
+## 1.18.1
+
+### Patch Changes
+
+- Updated dependencies [c9fb4d6]
+  - @weasel-js/font@1.18.1
+  - @weasel-js/geom@1.18.1
+  - @weasel-js/paint@1.18.1
+  - @weasel-js/registry@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

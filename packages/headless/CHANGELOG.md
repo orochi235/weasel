@@ -1,5 +1,18 @@
 # @weasel-js/headless
 
+## 1.18.1
+
+### Patch Changes
+
+- Updated dependencies [7a33153]
+- Updated dependencies [f2a1845]
+- Updated dependencies [7537af5]
+- Updated dependencies [f4d2261]
+- Updated dependencies [112f6bb]
+- Updated dependencies [860ab3b]
+  - @weasel-js/core@1.18.1
+  - @weasel-js/geom@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

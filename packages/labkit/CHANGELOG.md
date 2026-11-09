@@ -1,5 +1,80 @@
 # @weasel-js/labkit
 
+## 1.18.1
+
+### Patch Changes
+
+- 21957cc: Fixes from a bug audit of the storage, loupe, P-touch, hud and labkit packages.
+  
+  - `createIndexedDbAdapter` now creates its `store` in a database that already exists without it, by upgrading the database one version, so two adapters can keep separate stores in one database (the default `'weasel'` included). It also opens a database some other code has taken past version 1, which used to fail with a `VersionError` and leave every read and write rejected. The upgrade waits, as any IndexedDB upgrade does, until other connections to the database close; this adapter's own connections close for it.
+  - A captured `CanvasSource` read after its canvas grew answers `null` for a point past the last captured frame, instead of the pixel the previous read left behind.
+  - `writeLbx` and `sceneToLbx` place `lbxObjects` inside a rect clip whose width or height is negative, which they used to skip as cut by the clip.
+  - A loupe aimed where nothing is drawn now reports no color: `color` becomes `null` and `onColorChange` is called with `null`, where it used to keep showing the last color it read. Its readout then matches what an eyedropper click there takes, which is nothing. Breaking for TypeScript callers: `onColorChange` is typed `(hex: string | null) => void` on `createLoupeModel`, hud's `createLoupe` and `LoupeEvents`, and labkit's loupe options, so a handler typed for `string` alone needs widening.
+- 112f6bb: Name an icon with a mark in data
+  
+  - Every field that names an icon takes an `IconSpec`: a ref, or `{ name, mark }` for a subject with a mark set in its corner. That covers an action's and a variant's `icon`, a tool's `presentation.icon`, `useCommand`'s, a pref's and a group's, labkit's chrome, tool and builder items, path-tools' stroke-click tools, diagram stencils and types, forge globals, paint kinds, `SelectionPanel` sections, and `Bar`'s and `ActionBar`'s icons. A bare ref still works everywhere one did.
+  - `@weasel-js/icons` exports `IconSpec`, `iconParts`, `iconSpecRefs` and `toIconSpec`, which reads a spec from JSON. It also exports `markLayers`, `ICON_SLOTS`, `ICON_FRAME` and `ICON_STROKE`, the slot geometry `<Icon mark>` used to keep in ui, so every renderer sets a mark the same way.
+  - `<Icon name>` takes a spec, and its `mark` prop replaces the spec's. `resolveIcon` and `actionIcon` draw a spec's mark.
+  - hud's canvas menus draw a row's mark, cutting the subject around it. `iconCommands(icons, spec, at)` is exported beside `glyphCommands`.
+  - The schema editor's icon field picks a mark from the `Marks` group and writes `{ name, mark }`.
+  - Code reading a field that was `IconRef` and is now `IconSpec` should read its refs with `iconSpecRefs` rather than assume a string. The devtools snapshot writes a spec's icon as `name + mark`.
+  - The boolean crop glyph no longer uses a `clipPath`, which hud's canvas renderer skipped, drawing the whole disc filled.
+- 89e4422: Say in labkit's declarative chrome and builder what its components already draw
+  
+  - Chrome commands, rail tools, viewport controls and a lab's `tools` take `disabledReason`, which every region reads in the item's tooltip while it stays focusable. The close button reads "Close trial", with "It is the last trial" as its reason, where its label used to carry the reason.
+  - A viewport control takes `shortcut`, `pressed` and `danger`.
+  - The title bar honors an item's `pressed` and `showLabel`, as the toolbar does. The expand toggle keeps one icon and label and reads as held down while the trial is expanded.
+  - A rail command reads as current while it is `pressed`.
+  - A toolbar or lab header item can be `{ kind: 'menu', label, icon?, entries }`, whose `entries` are `@weasel-js/menu` entries, or a function of the chrome context called each time the menu opens. The "Load snapshot" button is one, where it used the `render` escape. A header menu registers no lab command.
+  - An instrument's `TrialTool` takes `disabled` and `disabledReason`.
+  - A builder leaf takes `.icon()` and `.short()`, a group `.icon()` and `.lead()`, and a `.labels()` option `short` and `disabled`, all carried onto the prefs they resolve to, so `f.boolean()` can draw a glyph in a bar and a bar can lead with its group's icon. `prefsFromConfig` and `f.prefs` keep a group's icon and lead.
+  - ui's `Toolbar.Button` takes `disabledReason`, and `MenuButton` takes `entries` in place of `items`.
+- 9ceda23: Add `start` to a chrome contribution: one marked `start` comes ahead of every contribution not marked so, the built-ins included, so an instrument's own sidebar section can sit above Settings.
+- 3677316: Show an option's description, and why it is disabled, in every form an enum draws
+  
+  - A pref enum option's `description` and `disabledReason` now reach its select, radio and menu forms, not only its toggle. `Radio` takes `description` and `disabledReason`, drawn after its label and read as its accessible description, and `MenuButton`'s `items` take the same two fields.
+  - labkit's `ConfigOption` takes `description` and `disabledReason`, so `f.enum` options and forge's global pins carry them.
+  - A tool stack's menu row reads its tool's `description` as its hint.
+- 4dd9285: Grade, shortcut and pressed state for an action pref, and why a pref is disabled
+  
+  - An `action` leaf takes `grade` (`'danger'` draws a "Clear all" red), `shortcut`, the keys shown in its tooltip and a menu's row, and `activeIf`, a condition that draws its button pressed while it holds. All three are plain data, so they survive JSON. On a leaf naming a registered `action`, `shortcut` and `activeIf` are drawn over the action's own; on a leaf with only `run`, they are all it has. `PrefGrade` is exported, the same values as theme's `Grade`.
+  - `applyPrefConditions` and `applyPrefEntryConditions` return `active`, the paths of the actions whose `activeIf` holds, and `checkPrefConditions` checks `activeIf` as it checks `showIf` and `enableIf`. `PREF_CONDITION_FIELDS` names all three, and `PrefConditionField` includes `activeIf`.
+  - Every leaf takes `disabledReason`, read in its tooltip while it is disabled. An enum option, now exported as `PrefEnumOption`, takes `description`, its tooltip, and `disabledReason`.
+  - `PrefsForm`, `Bar`, `SelectionPanel` and labkit's `ControlPanel` draw all of these. A row's help reads the reason after the description, an action's button and a segment keep a tooltip saying it, and a selection panel latches an action only while its `activeIf` holds for every node selected. `useLeafAction` takes the latch as a fourth argument and returns `grade`.
+  - `PropertyRow` and `PropertyHelp` take `disabledReason`, as does every field (`PropertyField`, `PropertyControl`); a `PropertyOption` takes `description` and `disabledReason`, which a toggle's segments draw and a select, radio group or menu does not yet. `BarActionButton` takes `grade`.
+  - The schema editor offers Why disabled on every leaf with a control, Grade, Shortcut and Pressed if on an action, and Description, Disabled and Why disabled on each enum option.
+- Updated dependencies [7a33153]
+- Updated dependencies [dd5b82a]
+- Updated dependencies [f2a1845]
+- Updated dependencies [21957cc]
+- Updated dependencies [7537af5]
+- Updated dependencies [a8da60f]
+- Updated dependencies [f4d2261]
+- Updated dependencies [112f6bb]
+- Updated dependencies [89e4422]
+- Updated dependencies [3677316]
+- Updated dependencies [4dd9285]
+- Updated dependencies [217e52c]
+- Updated dependencies [860ab3b]
+  - @weasel-js/menu@1.18.1
+  - @weasel-js/routing@1.18.1
+  - @weasel-js/core@1.18.1
+  - @weasel-js/ui@1.18.1
+  - @weasel-js/svg@1.18.1
+  - @weasel-js/minimap@1.18.1
+  - @weasel-js/storage@1.18.1
+  - @weasel-js/loupe@1.18.1
+  - @weasel-js/icons@1.18.1
+  - @weasel-js/prefs@1.18.1
+  - @weasel-js/kernel3d@1.18.1
+  - @weasel-js/theme@1.18.1
+  - @weasel-js/animator@1.18.1
+  - @weasel-js/clock@1.18.1
+  - @weasel-js/geom@1.18.1
+  - @weasel-js/quantity@1.18.1
+  - @weasel-js/react@1.18.1
+  - @weasel-js/registry@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

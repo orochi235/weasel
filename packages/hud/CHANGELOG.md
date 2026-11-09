@@ -1,5 +1,51 @@
 # @weasel-js/hud
 
+## 1.18.1
+
+### Patch Changes
+
+- 7a33153: Describe and grade actions in data, and give each variant its own state
+  
+  - An action takes a `description`, which a toolbar button reads as its tooltip, and a menu row and a palette row as their hint, and a `grade` (`'danger'` for one that destroys something), which a menu row and a palette row draw in their grade's color and a toolbar button shows while pointed at. A variant may set its own of either, and its own `shortcut` text; each falls back to the action's. `ActionItem` carries all three, resolved.
+  - `enabled` is handed the params a run would get as its fourth argument, and `active` as its second, so the variants of one action can each be pressed or unavailable on their own: align left pressed while right is not, Bring Forward unavailable at the top of the stack. Bars, menus and the command palette ask once per variant, and the dispatcher hands the gate a binding's `opts.params`, so a key for one variant runs only when that variant can. An action that ignores the new argument behaves as before.
+  - `useCommand` takes `shortcut`, `preview`, `settings`, `description` and `grade`, and hands its `enabled` and `active` the params asked about. `CommandSettings` is an `ActionSettings` whose `read` takes no deps.
+  - `@weasel-js/menu`: an item and a submenu row take `description` and `grade` (`MenuGrade`, the theme's `Grade`), and a submenu, number, color and text row take `disabledReason`. ui's menu rows show a reason or a description in their tip and as their accessible description; hud's canvas menus draw a graded row's label in its color and describe a row to assistive tech the same way. `HudAccessibleNode` takes a `description`, mirrored as `aria-description`.
+  - `BarActionButton` takes a `grade`, and `useLeafAction` answers a `description` (the leaf's, else the action's) and a `grade`.
+- 21957cc: Fixes from a bug audit of the storage, loupe, P-touch, hud and labkit packages.
+  
+  - `createIndexedDbAdapter` now creates its `store` in a database that already exists without it, by upgrading the database one version, so two adapters can keep separate stores in one database (the default `'weasel'` included). It also opens a database some other code has taken past version 1, which used to fail with a `VersionError` and leave every read and write rejected. The upgrade waits, as any IndexedDB upgrade does, until other connections to the database close; this adapter's own connections close for it.
+  - A captured `CanvasSource` read after its canvas grew answers `null` for a point past the last captured frame, instead of the pixel the previous read left behind.
+  - `writeLbx` and `sceneToLbx` place `lbxObjects` inside a rect clip whose width or height is negative, which they used to skip as cut by the clip.
+  - A loupe aimed where nothing is drawn now reports no color: `color` becomes `null` and `onColorChange` is called with `null`, where it used to keep showing the last color it read. Its readout then matches what an eyedropper click there takes, which is nothing. Breaking for TypeScript callers: `onColorChange` is typed `(hex: string | null) => void` on `createLoupeModel`, hud's `createLoupe` and `LoupeEvents`, and labkit's loupe options, so a handler typed for `string` alone needs widening.
+- 112f6bb: Name an icon with a mark in data
+  
+  - Every field that names an icon takes an `IconSpec`: a ref, or `{ name, mark }` for a subject with a mark set in its corner. That covers an action's and a variant's `icon`, a tool's `presentation.icon`, `useCommand`'s, a pref's and a group's, labkit's chrome, tool and builder items, path-tools' stroke-click tools, diagram stencils and types, forge globals, paint kinds, `SelectionPanel` sections, and `Bar`'s and `ActionBar`'s icons. A bare ref still works everywhere one did.
+  - `@weasel-js/icons` exports `IconSpec`, `iconParts`, `iconSpecRefs` and `toIconSpec`, which reads a spec from JSON. It also exports `markLayers`, `ICON_SLOTS`, `ICON_FRAME` and `ICON_STROKE`, the slot geometry `<Icon mark>` used to keep in ui, so every renderer sets a mark the same way.
+  - `<Icon name>` takes a spec, and its `mark` prop replaces the spec's. `resolveIcon` and `actionIcon` draw a spec's mark.
+  - hud's canvas menus draw a row's mark, cutting the subject around it. `iconCommands(icons, spec, at)` is exported beside `glyphCommands`.
+  - The schema editor's icon field picks a mark from the `Marks` group and writes `{ name, mark }`.
+  - Code reading a field that was `IconRef` and is now `IconSpec` should read its refs with `iconSpecRefs` rather than assume a string. The devtools snapshot writes a spec's icon as `name + mark`.
+  - The boolean crop glyph no longer uses a `clipPath`, which hud's canvas renderer skipped, drawing the whole disc filled.
+- Updated dependencies [7a33153]
+- Updated dependencies [f2a1845]
+- Updated dependencies [21957cc]
+- Updated dependencies [c9fb4d6]
+- Updated dependencies [7537af5]
+- Updated dependencies [f4d2261]
+- Updated dependencies [112f6bb]
+- Updated dependencies [860ab3b]
+  - @weasel-js/menu@1.18.1
+  - @weasel-js/core@1.18.1
+  - @weasel-js/loupe@1.18.1
+  - @weasel-js/font@1.18.1
+  - @weasel-js/icons@1.18.1
+  - @weasel-js/gestures@1.18.1
+  - @weasel-js/theme@1.18.1
+  - @weasel-js/geom@1.18.1
+  - @weasel-js/paint@1.18.1
+  - @weasel-js/registry@1.18.1
+  - @weasel-js/ui-logic@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

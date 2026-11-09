@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/symmetry",
-  "version": "1.18.0",
+  "version": "1.18.1",
   "description": "Live symmetry groups for weasel: a container whose mirrored, rotated and repeated copies are drawn from its real children, so every edit reaches every copy.",
   "weasel": {
     "tier": "plugin"
@@ -40,11 +40,11 @@
     "build": "tsup"
   },
   "dependencies": {
-    "@weasel-js/registry": "1.18.0"
+    "@weasel-js/registry": "1.18.1"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.18.0",
-    "@weasel-js/geom": "1.18.0"
+    "@weasel-js/core": "1.18.1",
+    "@weasel-js/geom": "1.18.1"
   },
   "publishConfig": {
     "access": "public",
