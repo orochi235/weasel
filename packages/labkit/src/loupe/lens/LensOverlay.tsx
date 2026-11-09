@@ -12,7 +12,6 @@ import {
   viewWorldToScreen,
   WeaselProvider,
 } from '@weasel-js/core';
-import { useLatest } from '@weasel-js/react';
 import {
   type CSSProperties,
   type ReactNode,
@@ -30,12 +29,13 @@ import { LensChrome } from './LensChrome';
 import { LensSlot } from './LensSlot';
 import { LensZoom } from './LensZoom';
 import { HANDLE_SLOP, hitBoxesOf, interiorOf, type LensHitBox } from './lensHitBoxes';
-import { applyLensOps, lensClosure, lensesOf, lensIdsOf, settingsOf } from './lensScene';
+import { applyLensOps, lensClosure, lensesOf, settingsOf } from './lensScene';
 import { RIM_PX } from './lensShapes';
 import type { LensDescribeContext, LensSlotProps, LensSources } from './lensSource';
 import type { LensIds, LensNodeData, LensScene, LoupePoint } from './lensTypes';
 import { reticleFollower } from './reticleFollower';
 import { ScopeOf } from './ScopeOf';
+import { useFocusReports } from './useFocusReports';
 import { useLensShapes } from './useLensShapes';
 import { useWheelPassThrough } from './useWheelPassThrough';
 
@@ -214,47 +214,6 @@ function ReticleFollower<C>({ scene }: { scene: LensScene<C> }) {
  * which claims a press on a split lens's seam so the drag reaches `loupe.seam`
  * rather than the body's move, and the `delete` and `loupe.seam` actions.
  */
-/**
- * Reports the lens each new selection focuses, and the selected lens again on a press on a lens that leaves the
- * selection as it was, so a press takes the focus back from a chrome toggle. The press half runs around the
- * dispatcher's own: `start` in the capture phase, before the press picks, and `end` after it.
- */
-function useFocusReports<C>(
-  scene: LensScene<C>,
-  onFocusLens: ((id: string | null) => void) | undefined,
-) {
-  const focusRef = useLatest(onFocusLens);
-  const press = useRef({ on: false, reported: false });
-  const report = useCallback(() => {
-    const first = scene.getSelection()[0];
-    focusRef.current?.(first === undefined ? null : (lensIdsOf(scene, first)?.lensId ?? null));
-  }, [scene, focusRef]);
-  useEffect(() => {
-    let last = scene.getSelection();
-    return scene.subscribe(() => {
-      const next = scene.getSelection();
-      if (next === last) return;
-      last = next;
-      press.current.reported = true;
-      report();
-    });
-  }, [scene, report]);
-  return useMemo(
-    () => ({
-      start: () => {
-        press.current = { on: true, reported: false };
-      },
-      end: (e: { target: EventTarget | null }) => {
-        const { on, reported } = press.current;
-        press.current = { on: false, reported: false };
-        const hit = e.target instanceof Element && e.target.closest('.lk-lens-hit');
-        if (on && !reported && hit && scene.getSelection().length > 0) report();
-      },
-    }),
-    [scene, report],
-  );
-}
-
 function useLensCanvas<C>(scene: LensScene<C>) {
   const sceneCanvas = useRef<SceneCanvasApi | null>(null);
   const redraw = useCallback(() => sceneCanvas.current?.requestRedraw(), []);
