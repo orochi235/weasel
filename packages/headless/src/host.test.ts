@@ -66,4 +66,37 @@ describe('node raster host', () => {
     await disposing;
     expect(page.evaluate).toHaveBeenCalledTimes(1);
   });
+
+  it('opens a new page for the next render once the one it had has closed', async () => {
+    let pages = 0;
+    const closeContext = vi.fn(async () => {});
+    const browser = {
+      close: vi.fn(async () => {}),
+      isConnected: () => true,
+      newContext: async () => {
+        const n = ++pages;
+        let closed = false;
+        let evaluated = 0;
+        return {
+          close: closeContext,
+          newPage: async () => ({
+            addScriptTag: async () => {},
+            isClosed: () => closed,
+            evaluate: async () => {
+              if (evaluated++ === 0) return true;
+              if (n === 1) { closed = true; throw new Error('Target page, context or browser has been closed'); }
+              return { width: 1, height: 1, base64: Buffer.from([9, 9, 9, 9]).toString('base64') };
+            },
+          }),
+        };
+      },
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/closed/);
+    const image = await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
+    expect(Array.from(image.data)).toEqual([9, 9, 9, 9]);
+    expect(pages).toBe(2);
+    expect(closeContext).toHaveBeenCalledTimes(1);
+    await host.dispose();
+  });
 });

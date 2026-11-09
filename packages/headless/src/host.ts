@@ -93,17 +93,33 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
       opening = null;
       throw err;
     });
-    const { page } = await opening;
+    const pending = opening;
+    const opened = await pending;
     // Disposed while the page opened: the dispose closes it, and this render would fail as a closed page.
     if (disposed) throw new Error('node raster host: render on a disposed host');
     const { scene, screen, ...rest } = args;
     const req: PageRequest = {
       ...rest, scene: sceneToWire(scene), format, ...(screen ? { screen: Array.from(screen) } : {}),
     };
-    return page.evaluate(
-      ([key, r]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).render(r),
-      [PAGE_GLOBAL, req] as const,
-    );
+    try {
+      return await opened.page.evaluate(
+        ([key, r]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).render(r),
+        [PAGE_GLOBAL, req] as const,
+      );
+    } catch (err) {
+      // A page or browser gone for good: the next render opens another rather than failing on it too.
+      if (opening === pending && (opened.page.isClosed() || !opened.browser.isConnected())) {
+        opening = null;
+        void close(opened).catch(() => undefined);
+      }
+      throw err;
+    }
+  }
+
+  /** Close what `open` opened: the context in a caller's browser, or the browser the host launched. */
+  async function close(opened: Open): Promise<void> {
+    if (options.browser) await opened.context.close();
+    else await opened.browser.close();
   }
 
   async function dispose(): Promise<void> {
@@ -113,9 +129,7 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
     opening = null;
     if (!pending) return;
     const opened = await pending.catch(() => null);
-    if (!opened) return;
-    if (options.browser) await opened.context.close();
-    else await opened.browser.close();
+    if (opened) await close(opened);
   }
 
   return {
