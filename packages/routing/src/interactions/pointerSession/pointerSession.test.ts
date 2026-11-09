@@ -79,6 +79,16 @@ describe('openPointerSession', () => {
     expect(s.active).toBe(false);
   });
 
+  it('cancels when capture lost with the origin is reported to the document', () => {
+    const onCancel = vi.fn();
+    const target = el();
+    const s = openPointerSession(target, down(), { onCancel });
+    target.remove();
+    document.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId: 1 }));
+    expect(onCancel).toHaveBeenCalledWith('lostcapture');
+    expect(s.active).toBe(false);
+  });
+
   it('keeps tracking when capture is lost but the origin is still there', () => {
     // Chrome releases capture implicitly a beat before it delivers pointerup.
     // Cancelling on that threw away a release already on its way — and the

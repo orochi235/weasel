@@ -119,6 +119,7 @@ export function openPointerSession(
     doc.removeEventListener('pointercancel', onPointerCancel, true);
     doc.removeEventListener('pointerdown', onRepress, true);
     origin.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
+    doc.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);
     if (captured) {
       try { origin.releasePointerCapture?.(pointerId); } catch { /* already gone */ }
     }
@@ -178,7 +179,9 @@ export function openPointerSession(
   doc.addEventListener('pointerup', onUp, true);
   doc.addEventListener('pointercancel', onPointerCancel, true);
   doc.addEventListener('pointerdown', onRepress, true);
+  // Chrome sends it to the document, not the origin, once the origin has left it.
   origin.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
+  doc.addEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);
 
   const session: PointerSession = {
     pointerId,
