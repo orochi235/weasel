@@ -48,7 +48,9 @@ export function typeText(type: TdType | undefined): string {
 }
 
 function literalText(value: unknown): string {
-  if (typeof value === 'string') return JSON.stringify(value).replace(/^"|"$/g, "'");
+  if (typeof value === 'string') {
+    return `'${JSON.stringify(value).slice(1, -1).replace(/\\"/g, '"').replace(/'/g, "\\'")}'`;
+  }
   if (value && typeof value === 'object' && 'value' in value) {
     const big = value as { negative?: boolean; value: string };
     return `${big.negative ? '-' : ''}${big.value}n`;

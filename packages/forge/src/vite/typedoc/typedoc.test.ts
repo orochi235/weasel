@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ReadApi } from '../apiTable';
 import { readTypedoc, type TypedocHref, typedocSource, withTypedoc } from './index';
+import { typeText } from './print';
 
 const FIXTURE = join(import.meta.dirname, 'fixture.json');
 const project: unknown = JSON.parse(readFileSync(FIXTURE, 'utf8'));
@@ -141,5 +142,12 @@ describe('typedocSource', () => {
     writeFileSync(file, '{ not json');
     utimesSync(file, new Date(), new Date(Date.now() + 5000));
     expect(source.docs()).toBeNull();
+  });
+});
+
+describe('typeText', () => {
+  it('quotes a string literal holding quotes as TypeScript would read it back', () => {
+    expect(typeText({ type: 'literal', value: "it's" })).toBe("'it\\'s'");
+    expect(typeText({ type: 'literal', value: 'say "hi"' })).toBe(`'say "hi"'`);
   });
 });
