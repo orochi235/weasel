@@ -66,11 +66,15 @@ export function cellsOf(model: Element): RawCell[] {
   return out;
 }
 
-/** A cell's geometry. A missing one is an empty box at the origin. */
+/** A cell's geometry. A missing one is an empty box at the origin. A negative width or height
+ *  reaches back from `x` or `y`, as a draw app renders it, so it reads as that box. */
 export function geometryOf(cell: RawCell): CellGeometry {
   const g = cell.geometry;
+  const width = numberAttr(g, 'width');
+  const height = numberAttr(g, 'height');
   return {
-    x: numberAttr(g, 'x'), y: numberAttr(g, 'y'), width: numberAttr(g, 'width'), height: numberAttr(g, 'height'),
+    x: numberAttr(g, 'x') + Math.min(0, width), y: numberAttr(g, 'y') + Math.min(0, height),
+    width: Math.abs(width), height: Math.abs(height),
     relative: g?.getAttribute('relative') === '1',
   };
 }
