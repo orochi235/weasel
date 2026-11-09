@@ -58,6 +58,13 @@ describe('reading a Mermaid packet diagram', () => {
 });
 
 describe('writing a Mermaid packet diagram', () => {
+  it('reads back a label holding Mermaid escapes as written', () => {
+    const label = 'say #quot;hi#quot; "there" <b>#35; &amp; `x`';
+    const page: PlotPage = { kind: 'plot', id: 'page-1', width: 800, height: 400, data: { kind: 'packet', fields: [{ start: 0, end: 7, label }] } };
+    const back = plotOf(writeMermaidPacket(page).text).data;
+    expect(back.kind === 'packet' && back.fields[0]!.label).toBe(label);
+  });
+
   it('round-trips each fixture', () => {
     for (const name of ['tcp.mmd', 'udp.mmd']) {
       const page = plotOf(fixture(name));

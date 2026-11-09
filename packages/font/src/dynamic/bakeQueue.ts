@@ -18,7 +18,7 @@ export const SDF_CUTOFF = 0.5;
 /** How many glyphs the dynamic atlas will rasterize synchronously before
  *  deferring the rest to a later flush. Caps the frame cost of text that
  *  suddenly needs many new glyphs; the leftovers arrive a tick later and
- *  notify through `onGlyphReady`. */
+ *  notify through `subscribeGlyphReady`. */
 export const DEFAULT_BAKE_BUDGET = 16;
 
 type Raster = RasterizedGlyph | RasterizedColorGlyph;

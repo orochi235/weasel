@@ -95,8 +95,9 @@ function insideClips(objects: readonly LabelObject[], clips: readonly Clip[]): b
   return clips.every(({ path, transform }) => {
     const map = path.kind === 'rect' ? axisMap(transform) : undefined;
     if (!map || path.kind !== 'rect') return false;
-    const x0 = path.x * map.sx + map.tx, y0 = path.y * map.sy + map.ty;
-    const x1 = x0 + path.width * map.sx, y1 = y0 + path.height * map.sy;
+    const x0 = Math.min(path.x, path.x + path.width) * map.sx + map.tx;
+    const y0 = Math.min(path.y, path.y + path.height) * map.sy + map.ty;
+    const x1 = x0 + Math.abs(path.width) * map.sx, y1 = y0 + Math.abs(path.height) * map.sy;
     return objects.every(({ position: p }) =>
       p.x >= x0 - CLIP_EPS && p.y >= y0 - CLIP_EPS && p.x + p.width <= x1 + CLIP_EPS && p.y + p.height <= y1 + CLIP_EPS);
   });

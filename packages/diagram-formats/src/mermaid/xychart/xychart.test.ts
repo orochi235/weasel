@@ -67,6 +67,16 @@ describe('reading a Mermaid xychart', () => {
 });
 
 describe('writing a Mermaid xychart', () => {
+  it('reads back text holding Mermaid escapes as written', () => {
+    const text = 'say #quot;hi#quot; "there" <b>#35; &amp; `x`';
+    const page: PlotPage = { kind: 'plot', id: 'page-1', width: 800, height: 400, data: {
+      kind: 'xychart', title: text,
+      x: { kind: 'band', title: text, categories: [text, 'b'] }, y: { title: text },
+      series: [{ kind: 'bar', name: text, values: [1, 2] }],
+    } };
+    expect(plotOf(writeMermaidXychart(page).text).data).toEqual(page.data);
+  });
+
   it('round-trips each fixture', () => {
     for (const name of ['sales.mmd', 'range.mmd']) {
       const page = plotOf(fixture(name));

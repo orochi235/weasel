@@ -26,8 +26,9 @@ export interface PolarScale {
   radiusAt(value: number): number;
   /** Where `value` sits on axis `i`. */
   point(i: number, value: number): PlotPoint;
-  /** The value of the point on axis `i` nearest `at`, clamped to the domain. */
-  valueAt(i: number, at: PlotPoint): number;
+  /** The value of the point on axis `i` nearest `at`, clamped to the domain; with `open`, a point past the rim reads
+   *  past the domain's outer end, and only the inner end clamps. */
+  valueAt(i: number, at: PlotPoint, open?: boolean): number;
   /** The distance between ticks when about `count` are asked for. */
   tickStep(count?: number): number;
   /** Round values across the domain, about `count` of them. */
@@ -62,10 +63,12 @@ export function polarScale(opts: PolarScaleOptions): PolarScale {
       const a = angle(i);
       return { x: center.x + r * Math.sin(a), y: center.y - r * Math.cos(a) };
     },
-    valueAt(i, at) {
+    valueAt(i, at, open = false) {
       const a = angle(i);
       const along = (at.x - center.x) * Math.sin(a) - (at.y - center.y) * Math.cos(a);
-      return Math.min(hi, Math.max(lo, linear.invert(along)));
+      const v = linear.invert(along);
+      if (!open) return Math.min(hi, Math.max(lo, v));
+      return domain[0] <= domain[1] ? Math.max(domain[0], v) : Math.min(domain[0], v);
     },
     tickStep: linear.tickStep,
     ticks: linear.ticks,

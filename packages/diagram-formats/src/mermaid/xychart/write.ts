@@ -1,14 +1,13 @@
 /** A plot page holding an xychart as Mermaid `xychart-beta` text. */
 import type { XyChartData } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
+import { mermaidQuoted } from '../common/text';
 
-/** `s` quoted, a quote inside it written as Mermaid's `#quot;`. */
-const quoted = (s: string): string => `"${s.replace(/"/g, '#quot;')}"`;
 
 /** A category bare where Mermaid reads it back the same, else quoted. */
-const category = (s: string): string => (/^[\w.-]+$/.test(s) ? s : quoted(s));
+const category = (s: string): string => (/^[\w.-]+$/.test(s) ? s : mermaidQuoted(s));
 
-const titled = (title: string | undefined): string => (title !== undefined ? ` ${quoted(title)}` : '');
+const titled = (title: string | undefined): string => (title !== undefined ? ` ${mermaidQuoted(title)}` : '');
 
 function xAxisLine(x: NonNullable<XyChartData['x']>): string | null {
   if (x.kind === 'range') return `x-axis${titled(x.title)} ${x.min} --> ${x.max}`;
@@ -32,7 +31,7 @@ export function writeMermaidXychart(page: PlotPage): ExportResult {
     if (!warnings.includes(m)) warnings.push(m);
   };
   const lines = [data.orientation === 'horizontal' ? 'xychart-beta horizontal' : 'xychart-beta'];
-  if (data.title !== undefined) lines.push(`  title ${quoted(data.title)}`);
+  if (data.title !== undefined) lines.push(`  title ${mermaidQuoted(data.title)}`);
   const x = data.x && xAxisLine(data.x);
   if (x) lines.push(`  ${x}`);
   const y = data.y && yAxisLine(data.y, warn);

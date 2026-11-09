@@ -13,8 +13,8 @@ export interface LoupeSettings {
 
 /** What the lens reports back. */
 export interface LoupeEvents {
-  /** The hex under the aim point, read off the framebuffer. */
-  onColorChange(hex: string): void;
+  /** The hex under the aim point, read off the framebuffer; `null` where nothing is drawn. */
+  onColorChange(hex: string | null): void;
   /** Called with the hex a click inside the lens picked. */
   onPick?(hex: string): void;
   /** The lens was closed from its own chrome. */

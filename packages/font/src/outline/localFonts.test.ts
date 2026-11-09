@@ -39,6 +39,16 @@ describe('parseFontStyle', () => {
     expect(parseFontStyle('Condensed Extra_Black').weight).toBe(950);
   });
 
+  it('reads a lone Demi as semibold, and a numbered W weight by its number', () => {
+    // Franklin Gothic Demi; Hiragino Sans, a macOS system family, names its faces W0 to W9.
+    expect(parseFontStyle('Demi').weight).toBe(600);
+    expect(parseFontStyle('Demi Italic')).toEqual({ weight: 600, style: 'italic' });
+    expect(parseFontStyle('DemiLight').weight).toBe(350);
+    expect(parseFontStyle('W3').weight).toBe(300);
+    expect(parseFontStyle('W6').weight).toBe(600);
+    expect(parseFontStyle('W9').weight).toBe(900);
+  });
+
   it('reads italic and oblique as the same slant', () => {
     expect(parseFontStyle('Italic')).toEqual({ weight: 400, style: 'italic' });
     expect(parseFontStyle('Bold Italic')).toEqual({ weight: 700, style: 'italic' });

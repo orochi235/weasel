@@ -213,6 +213,22 @@ describe('outline registry', () => {
       expect(glyphOutline('Two', 400, 'normal', 65))
         .toBe('M0 0L1 0L1-1ZM0.2-0.2L0.8-0.2L0.8-0.8Z');
     });
+
+    // A `Z` moves the pen back to its contour's start, so one written before a
+    // relative `m` would move every contour after it.
+    it('leaves open a contour a relative move continues from', async () => {
+      const relative: OutlineParser = () => ({
+        unitsPerEm: 1000,
+        ascender: 0.8,
+        advanceOf: () => 0.6,
+        kernOf: () => 0,
+        glyphD: (cp) => (cp === 65 ? 'M0 0L1 0L1-1m-0.8 0.8l0.6 0l0-0.6' : null),
+      });
+      registerFontOutlines('Rel', {}, new ArrayBuffer(4), { parser: relative });
+      glyphOutline('Rel', 400, 'normal', 65);
+      await settle();
+      expect(glyphOutline('Rel', 400, 'normal', 65)).toBe('M0 0L1 0L1-1m-0.8 0.8l0.6 0l0-0.6Z');
+    });
   });
 
   it('enumerates registered faces in a stable order', () => {

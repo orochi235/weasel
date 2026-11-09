@@ -71,6 +71,15 @@ describe('compileXyChart', () => {
     expect(ranged.get('axis:category:label:0')!.data.text).toBe('0');
   });
 
+  it('numbers the rows past the last category, and gives a repeated category a band of its own', () => {
+    const short = byKey({ kind: 'xychart', x: { kind: 'band', categories: ['a', 'b'] }, series: [{ kind: 'bar', values: [1, 2, 3] }] });
+    expect(short.get('bar:0:2')).toBeDefined();
+    expect(short.get('axis:category:label:2')!.data.text).toBe('3');
+    const twice = byKey({ kind: 'xychart', x: { kind: 'band', categories: ['a', 'a'] }, series: [{ kind: 'bar', values: [1, 2] }] });
+    expect(twice.layout.slots[0]!).toBeLessThan(twice.layout.slots[1]!);
+    expect(twice.get('axis:category:label:1')!.data.text).toBe('a');
+  });
+
   it('runs categories down y and values along x when horizontal', () => {
     const { layout, get } = byKey({ ...SALES, orientation: 'horizontal' });
     const bar = get('bar:0:2')!;
@@ -100,6 +109,20 @@ describe('xychart edits', () => {
     const { layout } = byKey(SALES);
     expect(xyValueAt(layout, { x: 0, y: layout.value.map(42.3) })).toBe(42);
     expect(xyValueAt(layout, { x: 0, y: layout.value.map(57.8) })).toBe(58);
+  });
+
+  it('the editor puts a bar\'s handle on its value end when the bar runs down from the baseline', () => {
+    for (const data of [
+      { ...SALES, y: { min: 30, max: 100 } },
+      { ...SALES, y: { min: 100, max: 0 } },
+      { ...SALES, orientation: 'horizontal' as const, y: { min: 100, max: 0 } },
+    ]) {
+      const { layout, get } = byKey(data);
+      const bar = get('bar:0:0')!;
+      const handle = handlesOf(xyEditor.handle(data, { trait: bar.data.plotMark, pose: bar.pose }))[0]!;
+      const end = layout.value.map(20);
+      expect(data.orientation === 'horizontal' ? handle.at.x : handle.at.y).toBeCloseTo(end);
+    }
   });
 
   it('the editor puts a handle on a bar\'s end and on each point, and a drag proposes the value under the pointer', () => {

@@ -51,8 +51,9 @@ export interface LoupeBaseOptions {
    *  Vector mode with a `source` samples exactly: the source layers drawn
    *  again at the aim, at the canvas's own view and pixel ratio, so nothing
    *  painted over them answers. Otherwise — pixel mode, or a lens over the
-   *  canvas's whole stack — it reads the framebuffer, chrome and all. */
-  onColorChange?: (hex: string) => void;
+   *  canvas's whole stack — it reads the framebuffer, chrome and all. `null`
+   *  where nothing is drawn under the aim. */
+  onColorChange?: (hex: string | null) => void;
   /** Fired when a click inside the lens picks a color — an eyedropper on the
    *  magnified surface. Where the color goes is the consumer's: the loupe
    *  reports the pick and nothing else. An `interactive` lens gives its clicks

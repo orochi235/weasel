@@ -1,5 +1,5 @@
 /** The Scene tab: a root's node tree beside the node picked in it. */
-import { useRef, useState, type PointerEvent, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react';
 import type { DevtoolsNodeSummary } from '@weasel-js/core/devtools-protocol';
 import { Tree, type TreeNode } from '@weasel-js/ui/components/Tree';
 import type { DevtoolsViewProps } from '../tabs';
@@ -45,6 +45,10 @@ export function SceneView({ client, rootId }: DevtoolsViewProps): ReactElement {
     hovered.current = id;
     client.request(rootId, { type: 'highlight', ids: id ? [id] : [] }).catch(() => {});
   };
+  // A tab switched from the keyboard unmounts the tree under a resting pointer, and no pointerleave follows.
+  useEffect(() => () => {
+    if (hovered.current !== null) client.request(rootId, { type: 'highlight', ids: [] }).catch(() => {});
+  }, [client, rootId]);
   const onPointerOver = (e: PointerEvent<HTMLDivElement>): void => {
     const row = (e.target as Element).closest('[role="treeitem"]');
     highlight(row?.querySelector('[data-node-id]')?.getAttribute('data-node-id') ?? null);

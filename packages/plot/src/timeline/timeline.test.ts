@@ -99,6 +99,8 @@ describe('timeline edits', () => {
     const within = moveTimelinePeriod(HISTORY, 1, 2);
     expect(within.sections[1]!.periods.map((p) => p.label)).toEqual(['2005', '2004']);
     expect(moveTimelinePeriod(HISTORY, 2, 2)).toBe(HISTORY);
+    const withEmpty: TimelineData = { ...HISTORY, sections: [...HISTORY.sections, { name: 'Next', periods: [] }] };
+    expect(moveTimelinePeriod(withEmpty, 1, 2).sections.map((s) => s.name)).toEqual([undefined, 'Rise', 'Later', 'Next']);
     expect(() => moveTimelinePeriod(HISTORY, 0, 4)).toThrow(/no period 4/);
   });
 });

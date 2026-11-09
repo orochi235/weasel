@@ -61,6 +61,7 @@ export { inheritedPaintIn, paintAbove, withInheritedPaintBounds, withInheritedPa
 export { inheritedPaintOf, inheritsPaint, withInheritedPaint } from '../core/scene/inheritedPaint';
 export type { DrawnBoundsOptions, DrawnBoundsScene } from '../canvas/drawnBounds';
 export { drawnBoundsScene } from '../canvas/derivedPath';
+export { sceneContentBounds } from '../canvas/contentBounds';
 export type { InkExtents } from '../core/geometry/inkExtents';
 export {
   bitmapSrc,

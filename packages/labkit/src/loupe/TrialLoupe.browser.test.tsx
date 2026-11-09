@@ -39,7 +39,7 @@ function SourceScene({
   enabled?: boolean;
   /** Mount inside `.lk-root`, under the lab's own resets. */
   lab?: boolean;
-  onColorChange?: (hex: string) => void;
+  onColorChange?: (hex: string | null) => void;
   shape?: LoupeOptions['shape'];
   place?: LoupeOptions['place'];
 }) {
@@ -146,7 +146,7 @@ function lensMiddle(container: HTMLElement): number[] {
 }
 
 test('a source lens peeked over a still pointer opens under it, with no press first', async () => {
-  const colors: string[] = [];
+  const colors: (string | null)[] = [];
   const { container } = render(
     <SourceScene enabled={false} onColorChange={(c) => colors.push(c)} />,
   );
@@ -241,7 +241,7 @@ for (const lab of [false, true]) {
 }
 
 test('a placed square lens is drawn at its center, shows the point it names, and reports the aim', async () => {
-  const colors: string[] = [];
+  const colors: (string | null)[] = [];
   // Drawn in the host's middle, showing the middle of the blue band (50–75)
   // at 2x: 30 page px across, so its edges reach the green and white bands.
   const place = () => ({

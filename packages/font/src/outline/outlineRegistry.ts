@@ -182,6 +182,7 @@ export function listFontOutlines(): readonly OutlineFaceInfo[] {
  * the outline: a fill closes the contour implicitly, while a stroke leaves the
  * closing edge unpainted, with a cap at each loose end. Normalized here rather
  * than in one parser so it covers every consumer-supplied `OutlineParser`.
+ * A contour a relative `m` continues from stays as written.
  */
 export function closeContours(d: string): string {
   let out = '';
@@ -189,15 +190,17 @@ export function closeContours(d: string): string {
   for (let i = 1; i < d.length; i++) {
     const c = d[i];
     if (c !== 'M' && c !== 'm') continue;
-    out += closeOne(d.slice(start, i));
+    // A `Z` returns the pen to the contour's start, which a relative `m` is
+    // then measured from: closing here would move every contour after it.
+    out += closeOne(d.slice(start, i), c === 'M');
     start = i;
   }
-  return out + closeOne(d.slice(start));
+  return out + closeOne(d.slice(start), true);
 }
 
-function closeOne(contour: string): string {
+function closeOne(contour: string, close: boolean): string {
   const trimmed = contour.trimEnd();
-  if (trimmed.length === 0) return '';
+  if (trimmed.length === 0 || !close) return trimmed;
   const last = trimmed[trimmed.length - 1];
   return last === 'Z' || last === 'z' ? trimmed : `${trimmed}Z`;
 }

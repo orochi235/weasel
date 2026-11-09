@@ -154,9 +154,13 @@ export function symmetryGuideLayer(source: SymmetryGuideSource, style: SymmetryG
         }
       }
       if (spec.kind === 'wallpaper') out.push(...latticeGuide(spec, center, view, faint));
-      for (const h of guideHandles(spec, center, view, knob, contentReach, hitR)) {
+      const handles = guideHandles(spec, center, view, knob, contentReach, hitR);
+      for (const h of handles) {
         if (h.handle === 'angle') out.push(line({ x: cx, y: cy }, h.at, color));
         if (h.handle === 'step' || h.handle === 'row') out.push(line({ x: cx, y: cy }, h.at, faint));
+      }
+      // Bottommost first, so the handle a press takes is the one drawn on top.
+      for (const h of [...handles].reverse()) {
         out.push({
           kind: 'path',
           path: dot(h.at, h.handle === 'center' ? r + 1 : r),

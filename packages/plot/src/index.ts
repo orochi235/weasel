@@ -95,8 +95,8 @@ export {
 } from './timeline/structure';
 export { insertPieSlice, movePieSlice, removePieSlice, setPieShowData } from './pie/structure';
 export {
-  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassNames, removeQuadrantClass,
-  removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
+  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassEntries, quadrantClassNames,
+  quadrantClassesOf, removeQuadrantClass, removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
 } from './quadrant/structure';
 export {
   insertJourneySection, insertJourneyTask, moveJourneySection, moveJourneyTask, removeJourneySection, removeJourneyTask, setJourneyActors,

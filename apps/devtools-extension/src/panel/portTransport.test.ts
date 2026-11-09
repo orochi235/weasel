@@ -74,6 +74,15 @@ describe('the panel’s port transport', () => {
     expect(backgrounds[1]!.received).toEqual([{ inspect: 9 }]);
   });
 
+  it('refuses a request it has no port to send on, rather than leave it unanswered', () => {
+    const { transport } = setup();
+    const heard: unknown[] = [];
+    transport.onMessage((m) => heard.push(m));
+    transport.close();
+    transport.send({ type: 'get-state', protocol: PROTOCOL, requestId: 4, rootId: 'root-1' });
+    expect(heard).toEqual([{ type: 'error', protocol: PROTOCOL, requestId: 4, message: 'weasel devtools: the panel is disconnected from the page' }]);
+  });
+
   it('stays closed once closed', () => {
     const { transport, backgrounds } = setup();
     transport.close();

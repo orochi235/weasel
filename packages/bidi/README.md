@@ -3,9 +3,10 @@
 The Unicode Bidirectional Algorithm ([UAX #9](https://www.unicode.org/reports/tr9/)), as a
 standalone leaf: code points and a direction in, embedding levels and a visual order out.
 
-No fonts, no glyphs, no canvas, no DOM, and no dependencies. Nothing else in weasel depends
-on this package — a text layout that wants bidi is handed an implementation of `BidiEngine`,
-and one that isn't lays out in logical order.
+No fonts, no glyphs, no canvas, no DOM, and no dependencies. weasel's text layout does not
+depend on this package — a layout that wants bidi is handed an implementation of `BidiEngine`,
+and one that isn't lays out in logical order. `@weasel-js/text-shaping` imports it for its
+character data (`bidiClassOf`, `pairedBracket`).
 
 ```ts
 import { analyze, reorder } from '@weasel-js/bidi';

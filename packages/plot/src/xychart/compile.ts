@@ -29,10 +29,10 @@ const BAND_PADDING = 0.2;
 /** How many values the longest series holds. */
 export const xyLength = (data: XyChartData): number => Math.max(0, ...data.series.map((s) => s.values.length));
 
-/** The labels of the category bands: the axis's own, else numbers from 1, one per value of the longest series. */
+/** The labels of the category bands, one per row: the axis's own, and past its last, numbers from 1. */
 function categoriesOf(data: XyChartData): string[] {
-  if (data.x?.kind === 'band' && data.x.categories.length > 0) return [...data.x.categories];
-  return Array.from({ length: xyLength(data) }, (_, i) => String(i + 1));
+  const own = data.x?.kind === 'band' ? data.x.categories : [];
+  return Array.from({ length: Math.max(own.length, xyLength(data)) }, (_, i) => own[i] ?? String(i + 1));
 }
 
 /** The value axis's domain: its own ends, and where one is missing, the values' reach with zero in it, made round. */
@@ -55,10 +55,12 @@ function categoryAxis(data: XyChartData, range: [number, number]): { scale: Scal
     const slots = Array.from({ length: n }, (_, i) => range[0] + step * (i + 0.5));
     return { scale, slots, slotWidth: Math.abs(step) * (1 - BAND_PADDING) };
   }
+  // Banded by row, so a label written twice still gets two bands.
   const categories = categoriesOf(data);
-  const scale = bandScale({ domain: categories, range, paddingInner: BAND_PADDING });
-  const slots = Array.from({ length: n }, (_, i) => (i < categories.length ? scale.position(categories[i]!) : Number.NaN));
-  return { scale, slots, slotWidth: scale.bandwidth };
+  const bands = bandScale({ domain: categories.map((_, i) => String(i)), range, paddingInner: BAND_PADDING });
+  const scale: Scale<string> = { ...bands, format: (row) => categories[Number(row)] ?? row };
+  const slots = Array.from({ length: n }, (_, i) => bands.position(String(i)));
+  return { scale, slots, slotWidth: bands.bandwidth };
 }
 
 /** Lays out an xychart in a box of `size`: its title, axes, bars, lines and points. */

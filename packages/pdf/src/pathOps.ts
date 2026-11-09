@@ -58,8 +58,20 @@ export function pathOps(out: ContentStream, path: Path, which: 'all' | 'closed')
   }
 }
 
-/** Writes the region a fill of `path` covers, which a clip covers too, and answers whether it is even-odd. */
+/** Whether a fill of `path` covers any contour: none when it has none, or only open ones its fill leaves out.
+ *  PDF has no painting or clipping operator for no path. */
+export function fillsAnything(path: Path): boolean {
+  if (path.kind === 'rect') return true;
+  return path.commands.length > 0 && (fillsOpenSubpaths(path) || path.commands.includes(PATH_Z));
+}
+
+/** Writes the region a fill of `path` covers, which a clip covers too, and answers whether it is even-odd.
+ *  A region of nothing is written as an empty rectangle. */
 export function fillPathOps(out: ContentStream, path: Path): boolean {
+  if (!fillsAnything(path)) {
+    out.op('re', 0, 0, 0, 0);
+    return false;
+  }
   const closeOpen = path.kind === 'rect' || fillsOpenSubpaths(path);
   pathOps(out, path, closeOpen ? 'all' : 'closed');
   return path.kind === 'polygon' && path.fillRule === 'evenodd';

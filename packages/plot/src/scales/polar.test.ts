@@ -27,6 +27,8 @@ describe('polarScale', () => {
     expect(scale.valueAt(1, { x: 120, y: 140 })).toBeCloseTo(4);
     expect(scale.valueAt(0, { x: 100, y: 0 })).toBe(10);
     expect(scale.valueAt(0, { x: 100, y: 180 })).toBe(0);
+    expect(scale.valueAt(0, { x: 100, y: 0 }, true)).toBeCloseTo(20);
+    expect(scale.valueAt(0, { x: 100, y: 180 }, true)).toBe(0);
   });
 
   it('ticks and formats its domain as a linear scale does', () => {

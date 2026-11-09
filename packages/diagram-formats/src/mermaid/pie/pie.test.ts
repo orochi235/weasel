@@ -57,6 +57,13 @@ describe('reading a Mermaid pie', () => {
 });
 
 describe('writing a Mermaid pie', () => {
+  it('reads back a label holding Mermaid escapes as written', () => {
+    const label = 'say #quot;hi#quot; "there" <b>#35; &amp; `x`';
+    const page: PlotPage = { kind: 'plot', id: 'page-1', width: 640, height: 400, data: { kind: 'pie', slices: [{ label, value: 1 }] } };
+    const back = plotOf(writeMermaidPie(page).text).data;
+    expect(back.kind === 'pie' && back.slices[0]!.label).toBe(label);
+  });
+
   it('round-trips each fixture', () => {
     for (const name of ['elements.mmd', 'pets.mmd']) {
       const page = plotOf(fixture(name));

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import MagicString from 'magic-string';
 import { createUnplugin, type UnpluginInstance } from 'unplugin';
 import { libraryAnnotations } from './annotate.ts';
@@ -24,6 +25,27 @@ export interface WeaselIconsOptions {
 }
 
 const SOURCE = /\.[cm]?[jt]sx?$/;
+const GEN_SPECIFIER = /(['"])([^'"\n]*icons\.gen(?:\.[cm]?[jt]sx?)?)\1/g;
+
+/** The icons.gen file each specifier in `code` names: relative ones from disk, the rest, such as a path alias, through the bundler. */
+async function genFiles(ctx: object, code: string, file: string, id: string): Promise<Map<string, string | undefined>> {
+  const out = new Map<string, string | undefined>();
+  if (!code.includes('icons.gen')) return out;
+  type Resolve = (spec: string, importer: string) => Promise<{ id: string; external?: unknown } | null>;
+  const resolve = 'resolve' in ctx && typeof ctx.resolve === 'function' ? (ctx.resolve as Resolve) : undefined;
+  for (const m of code.matchAll(GEN_SPECIFIER)) {
+    const spec = m[2]!;
+    if (out.has(spec)) continue;
+    let gen = genFile(spec, file);
+    if (!gen && resolve && !spec.startsWith('.')) {
+      const hit = await resolve.call(ctx, spec, id).catch(() => null);
+      const path = hit && !hit.external ? hit.id.split('?')[0]! : undefined;
+      gen = path && SOURCE.test(path) && existsSync(path) ? path : undefined;
+    }
+    out.set(spec, gen);
+  }
+  return out;
+}
 
 /** The ids of every module in the build, when the bundler's context can list them. */
 function liveModules(ctx: object): Set<string> | undefined {
@@ -73,14 +95,15 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     name: 'weasel-icons',
     enforce: 'pre',
     transformInclude: (id) => !id.startsWith('\0') && SOURCE.test(id.split('?')[0]!),
-    transform(code, id) {
+    async transform(code, id) {
       const file = id.split('?')[0]!;
       const gens: string[] = [];
+      const found = await genFiles(this, code, file, id);
       const out = rewriteIconCalls(
         code,
         file,
         (spec) => {
-          const gen = genFile(spec, file);
+          const gen = found.get(spec) ?? genFile(spec, file);
           if (gen) gens.push(gen);
           return gen && namespaceIn(gen);
         },
