@@ -31,3 +31,16 @@ export function pressTarget(
   }
   return target;
 }
+
+/** Whether a press can select `id` itself with `entered` entered: it lies inside `entered`
+ *  (anywhere, when nothing is) and no group between them takes the press instead. */
+export function pressSelects(tree: PressTargetTree, id: string, entered: string | null): boolean {
+  if (pressTarget(tree, id, entered) !== id) return false;
+  if (entered === null) return true;
+  let at = tree.getParent(id);
+  for (let steps = 0; at !== null && steps < 10_000; steps++) {
+    if (at === entered) return true;
+    at = tree.getParent(at);
+  }
+  return false;
+}

@@ -31,9 +31,9 @@ function mount(extra: Partial<DiagramViewProps>) {
 const pointer = (canvas: HTMLCanvasElement, type: string, x: number, y: number) =>
   canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1 }));
 
-const click = (canvas: HTMLCanvasElement, x: number, y: number, shiftKey = false) => act(() => {
+const click = (canvas: HTMLCanvasElement, x: number, y: number, mod = false) => act(() => {
   for (const type of ['pointerdown', 'pointerup']) {
-    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1, shiftKey }));
+    canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0, buttons: 1, ctrlKey: mod }));
   }
 });
 
@@ -109,7 +109,7 @@ describe('DiagramView editing', () => {
     expect(onSelect).toHaveBeenLastCalledWith('b', ['b']);
   });
 
-  it('adds to what is picked on Shift-click under selectionMode multiple, and takes a picked one out', () => {
+  it('adds to what is picked on Ctrl-click (Cmd on a Mac) under selectionMode multiple, and takes a picked one out', () => {
     const onSelect = vi.fn();
     const { canvas } = mount({ onSelect, selectionMode: 'multiple' });
     click(canvas, 50, 20);

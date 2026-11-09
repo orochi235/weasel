@@ -100,4 +100,20 @@ describe('diagramLabelDrag', () => {
     action.invoker.run({ selection: { applyClick } } as unknown as ActionDeps, { affordance: { payload }, mods });
     expect(applyClick).toHaveBeenCalledWith('ab', mods);
   });
+
+  it("ranges the way the select tool does, through the canvas's selectRange inside the entered group", () => {
+    const { contribution } = diagramLabelDrag({ scene: createScene({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }), selected: () => [] });
+    const action = contribution.actions!.find((a) => a.id === SELECT_LABEL_EDGE_ACTION_ID)!;
+    if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    const applyClick = vi.fn();
+    const between = () => ['xy', 'ab'];
+    const at = vi.fn(() => between);
+    const mods = { alt: false, shift: true, meta: false, ctrl: false };
+    const payload = { targetId: 'ab/label', labelId: 'ab/label', edgeId: 'ab' };
+    const deps = { selection: { applyClick }, selectRange: { at }, enteredGroup: { get: () => 'lane' } };
+    action.invoker.run(deps as unknown as ActionDeps, { affordance: { payload }, mods });
+    expect(at).toHaveBeenCalledWith('lane');
+    expect(applyClick).toHaveBeenCalledWith('ab', mods, between);
+    expect((action as { requires?: string[] }).requires).toEqual(['selection', 'enteredGroup', 'selectRange']);
+  });
 });

@@ -859,8 +859,11 @@ the selection the canvas builds when it is not handed one.
 - `single` (default): a click replaces the selection with the clicked node,
   modifiers or not. It is a click rule, not a cap — a marquee, lasso,
   select-all or paste can still select several nodes.
-- `multi`: a click with the extend key (`extend`, shift by default) toggles
-  the node in or out of the selection.
+- `multi`: a click with the extend key (`extend`, Cmd by default, Ctrl off
+  macOS) toggles the node in or out of the selection, and one with the range
+  key (`range`, Shift by default) selects from the last node clicked to this
+  one. On a canvas the select tool makes that every node a click there could
+  select whose center lies in the box the two span.
 
 Several selected nodes draw one union box whose corner handles resize the set,
 whichever mode made the selection.

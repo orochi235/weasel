@@ -29,6 +29,10 @@ export interface Selection<K> {
 export interface SelectContext<K> {
   /** The sequence a range walks. A range without one replaces. */
   readonly order?: readonly K[];
+  /** The ids a range from `from` to `to` covers, where the surface decides that rather than an
+   *  order: a canvas's nodes in the box the two span. Taken ahead of `order`; a range it gives
+   *  nothing for replaces. */
+  readonly between?: (from: K, to: K) => readonly K[];
   /** Whether an id is selected only alone, a locked layer for one. A press on it is a `single` press
    *  whatever its modifiers; a range walking past it skips it, and a toggle drops it. Default: none. */
   readonly forceSingle?: (id: K) => boolean;
@@ -60,13 +64,16 @@ export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, cont
     const kept = state.ids.filter((x) => !forceSingle(x));
     return { ids: kept.includes(id) ? kept.filter((x) => x !== id) : [...kept, id], anchor: id };
   }
-  if (intent === 'range' && state.anchor !== null && context.order) {
-    const { order } = context;
-    if (order.includes(state.anchor) && order.includes(id)) {
-      return settle(state, { ids: rangeOf(order, state.anchor, id, forceSingle), anchor: state.anchor });
-    }
+  if (intent === 'range' && state.anchor !== null) {
+    const ids = rangeIn(context, state.anchor, id, forceSingle);
+    if (ids.length > 0) return settle(state, { ids, anchor: state.anchor });
   }
   return settle(state, { ids: [id], anchor: id });
+}
+
+function rangeIn<K>(context: SelectContext<K>, from: K, to: K, forceSingle: (id: K) => boolean): K[] {
+  if (context.between) return context.between(from, to).filter((id) => !forceSingle(id));
+  return context.order ? rangeOf(context.order, from, to, forceSingle) : [];
 }
 
 function settle<K>(state: Selection<K>, next: Selection<K>): Selection<K> {

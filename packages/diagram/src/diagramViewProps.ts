@@ -74,8 +74,9 @@ export interface DiagramViewProps {
    *  then needs a size of its own; a resize of the parent is a size change. */
   width?: number;
   height?: number;
-  /** `'multiple'` lets Shift-click add a node, group or edge to what is
-   *  picked, or take it out. Default `'single'`: every click picks one. */
+  /** `'multiple'` lets Cmd-click (Ctrl off macOS) add a node, group or edge to
+   *  what is picked, or take it out, and Shift-click pick a range. Default
+   *  `'single'`: every click picks one. */
   selectionMode?: 'single' | 'multiple';
   /** A participant id, a set of them, or null for none. One id under
    *  `'multiple'` agrees with a pick of several whose latest it is, so handing

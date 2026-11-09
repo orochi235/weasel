@@ -15,7 +15,7 @@ export const ARRANGE_MENU: MenuRuns = {
 export interface GroupPicks {
   stage: string | null;
   group: string | null;
-  /** Every stage and group picked, Shift-clicks included. */
+  /** Every stage and group picked, Cmd-clicks and ranges included. */
   picked: readonly string[];
   pickGroup: (id: string | null) => void;
 }

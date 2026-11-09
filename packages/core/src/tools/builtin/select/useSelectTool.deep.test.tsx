@@ -1,5 +1,5 @@
 /**
- * `select.deep`: Cmd-press selects the node under the point, past every group.
+ * `select.deep`: Cmd+Alt-press selects the node under the point, past every group.
  * Same harness shape as the groups sibling: invoke the tool's actions directly,
  * plus one dispatcher-ranking check against the tool's own bindings.
  */
@@ -58,7 +58,7 @@ function harness(
     });
   };
   return {
-    deep: (x: number, y: number, mods: Partial<Mods> = { meta: true }) => run('select.deep', x, y, mods),
+    deep: (x: number, y: number, mods: Partial<Mods> = { meta: true, alt: true }) => run('select.deep', x, y, mods),
     pick: (x: number, y: number, mods: Partial<Mods> = {}) => run('select.pick', x, y, mods),
     selection: () => [...result.current.sel.current],
     tool: () => result.current.tool,
@@ -66,7 +66,7 @@ function harness(
 }
 
 describe('select.deep', () => {
-  it('a Cmd-press on a member two groups deep selects that member', () => {
+  it('a Cmd+Alt-press on a member two groups deep selects that member', () => {
     const h = harness([
       group('outer', box(0)),
       group('inner', box(0, 0, 30, 30), 'outer'),
@@ -76,24 +76,24 @@ describe('select.deep', () => {
     expect(h.selection()).toEqual(['m']);
   });
 
-  it('a Cmd-Shift-press adds a second member', () => {
+  it('a Cmd+Alt+Shift-press ranges to a second member', () => {
     const h = harness([
       group('g', box(0)),
       mark('a', box(0, 0, 10, 10), 'g'),
       mark('b', box(20, 0, 10, 10), 'g'),
     ]);
     h.deep(5, 5);
-    h.deep(25, 5, { meta: true, shift: true });
+    h.deep(25, 5, { meta: true, alt: true, shift: true });
     expect(h.selection()).toEqual(['a', 'b']);
   });
 
-  it('a Cmd-press on the empty part of a group selects the group itself', () => {
+  it('a Cmd+Alt-press on the empty part of a group selects the group itself', () => {
     const h = harness([group('g', box(0)), mark('m', box(0, 0, 10, 10), 'g')]);
     h.deep(35, 35);
     expect(h.selection()).toEqual(['g']);
   });
 
-  it('a Cmd-press on a locked member does not select it', () => {
+  it('a Cmd+Alt-press on a locked member does not select it', () => {
     const h = harness([
       group('g', box(0, 0, 10, 10)),
       mark('m', box(0, 0, 10, 10), 'g', { locked: true }),
@@ -133,12 +133,12 @@ describe('select.deep binding', () => {
     expect(deep?.requires).toEqual(['selection']);
   });
 
-  it('wins a Cmd-press over select.pick, with or without Shift', () => {
+  it('wins a Cmd+Alt-press over select.pick, with or without Shift, and leaves a Cmd-press to it', () => {
     const tool = harness([]).tool() as unknown as { bindings: ScopedBinding['binding'][] };
     const scoped: ScopedBinding[] = tool.bindings.map((binding) => ({
       binding, scope: 'active' as const, ownerId: 'select',
     }));
-    const down = (mods: Partial<{ metaKey: boolean; shiftKey: boolean }>) => ({
+    const down = (mods: Partial<{ metaKey: boolean; altKey: boolean; shiftKey: boolean }>) => ({
       kind: 'pointerdown' as const,
       x: 0, y: 0, clientX: 0, clientY: 0,
       altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
@@ -146,8 +146,10 @@ describe('select.deep binding', () => {
       stage: 'press' as const,
       ...mods,
     });
-    expect(matchSorted(down({ metaKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.deep');
-    expect(matchSorted(down({ metaKey: true, shiftKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.deep');
+    expect(matchSorted(down({ metaKey: true, altKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.deep');
+    expect(matchSorted(down({ metaKey: true, altKey: true, shiftKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.deep');
+    expect(matchSorted(down({ metaKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.pick');
+    expect(matchSorted(down({ altKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.pick');
     expect(matchSorted(down({}), scoped, true)[0]?.binding.actionId).toBe('select.pick');
     expect(matchSorted(down({ shiftKey: true }), scoped, true)[0]?.binding.actionId).toBe('select.pick');
   });

@@ -110,6 +110,18 @@ describe('select', () => {
     expect(select(before, 'a', 'replace')).toEqual({ ids: ['a'], anchor: 'a' });
   });
 
+  it('range takes what `between` gives for the anchor and the id, ahead of the order', () => {
+    const between = (from: string, to: string) => (from === 'a' && to === 'e' ? ['a', 'c', 'e'] : []);
+    expect(select(state(['a'], 'a'), 'e', 'range', { order, between })).toEqual({ ids: ['a', 'c', 'e'], anchor: 'a' });
+  });
+
+  it('range through `between` skips forced-single ids and replaces when it gives nothing', () => {
+    const between = () => ['a', 'b', 'c'];
+    expect(select(state([], 'a'), 'c', 'range', { between, forceSingle: (id) => id === 'b' }))
+      .toEqual({ ids: ['a', 'c'], anchor: 'a' });
+    expect(select(state(['a'], 'a'), 'c', 'range', { between: () => [] })).toEqual({ ids: ['c'], anchor: 'c' });
+  });
+
   it('range replaces when there is no anchor, no order, or an end outside the order', () => {
     expect(select(state(['a']), 'c', 'range', { order })).toEqual({ ids: ['c'], anchor: 'c' });
     expect(select(state(['a'], 'a'), 'c', 'range')).toEqual({ ids: ['c'], anchor: 'c' });

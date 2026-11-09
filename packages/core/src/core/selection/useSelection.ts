@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { createSelectionStore, intentOf, select, type SelectionStore as Store } from '@weasel-js/select';
+import { createSelectionStore, intentOf, select, type SelectContext, type SelectionStore as Store } from '@weasel-js/select';
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
@@ -16,11 +17,13 @@ export type SelectionStore = Store<NodeId>;
 export interface UseSelectionOptions {
   /** Default `'single'`. */
   mode?: SelectionMode;
-  /** Default `'shift'`. Ignored in single-mode. */
+  /** The key that adds or removes the pressed id. Default Cmd on Apple platforms, Ctrl
+   *  elsewhere. Ignored in single-mode. */
   extend?: SelectionExtendKey;
   /** The key that selects everything from the last pressed id to this one,
-   *  along `order`. Absent, nothing ranges. It beats `extend` when both name
-   *  one key, so give them different keys. Ignored in single-mode. */
+   *  along `order` or what the click hands `applyClick`. Default `'shift'`,
+   *  unless `extend` is `'shift'`, which leaves nothing ranging. It beats
+   *  `extend` when both name one key. Ignored in single-mode. */
   range?: SelectionExtendKey;
   /** The sequence a range walks: a layer panel's rows, a timeline's tracks.
    *  Default is the order the `scene` paints in, back to front; with neither,
@@ -37,6 +40,15 @@ export interface UseSelectionOptions {
    *  `applyClick`) is a no-op — selection stays at whatever `initial`
    *  pinned it to. */
   lock?: boolean;
+}
+
+/** What a range press resolves against: the surface's own `between`, else the order to walk. */
+function rangeContext(
+  between: ((from: NodeId, to: NodeId) => readonly NodeId[]) | undefined,
+  walk: (() => Iterable<NodeId>) | undefined,
+): SelectContext<NodeId> {
+  if (between) return { between };
+  return walk ? { order: [...walk()] } : {};
 }
 
 /** The order a store paints its nodes in, when it is a scene and has one. */
@@ -61,7 +73,8 @@ function paintOrderOf(store: SelectionStore): (() => Iterable<NodeId>) | undefin
  * `selection.current`.
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
-  const { mode = 'single', extend = 'shift', initial = [], lock = false, scene, range, order } = opts;
+  const { mode = 'single', extend = isApplePlatform() ? 'meta' : 'ctrl', initial = [], lock = false, scene, order } = opts;
+  const range = opts.range ?? (extend === 'shift' ? undefined : 'shift');
   // Without a `scene` the hook still keeps its ids in a store, so `get()` reads one store either
   // way and a write is visible before the re-render it causes.
   const [local] = useState(() => createSelectionStore<NodeId>([...initial]));
@@ -114,7 +127,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       },
       clear() { set([]); },
       contains: (id) => get().includes(id),
-      applyClick(id, modifiers) {
+      applyClick(id, modifiers, between) {
         const { order: walk = paintOrderOf(store), lock: locked } = optsRef.current;
         if (locked) return;
         const ids = get();
@@ -123,7 +136,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
           ? anchorRef.current
           : (ids.at(-1) ?? null);
         const intent = intentOfMods(modifiers);
-        const next = select({ ids, anchor }, id, intent, intent === 'range' && walk ? { order: [...walk()] } : {});
+        const next = select({ ids, anchor }, id, intent, intent === 'range' ? rangeContext(between, walk) : {});
         anchorRef.current = next.anchor;
         set([...next.ids]);
       },

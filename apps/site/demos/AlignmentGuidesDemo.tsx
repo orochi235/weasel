@@ -36,7 +36,7 @@ export function AlignmentGuidesDemo() {
       rect('drag', { x: 240, y: 60, width: 70, height: 70 }, '#b07fd0'),
     ],
   });
-  // Multi-select so shift-clicking several rects and dragging snaps the
+  // Multi-select so Cmd-clicking several rects and dragging snaps the
   // selection's union box, not just one rect.
   const selection = useSelection({ scene, mode: 'multi' });
   const [tools, setTools] = useState<ToolsApi | null>(null);

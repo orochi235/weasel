@@ -117,6 +117,9 @@ declare module '@weasel-js/routing' {
      *  selection, not scene data and not undoable. Optional: absent means
      *  inside no group. */
     enteredGroup?: EnteredGroupApi;
+    /** What a range click covers, the way the select tool ranges, for an action that applies a
+     *  click outside it. Sourced by `<SceneCanvas>`; absent, a range walks the selection's order. */
+    selectRange?: import('tools/builtin/select/selectRange').SelectRangeDep;
     /** Current viewport — camera position + scale. */
     view: ViewApi;
     /**

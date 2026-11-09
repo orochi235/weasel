@@ -731,8 +731,8 @@ return <DiagramView specs={specs} width={360} height={600} selected={id} onSelec
 ```
 
 `onSelect(id, ids)` reports the latest pick and every id picked. With
-`selectionMode="multiple"`, Shift-click adds a node, group or edge to the pick
-or takes it out; `selected` takes one id or an array, and handing back the
+`selectionMode="multiple"`, Cmd-click (Ctrl off macOS) adds a node, group or edge
+to the pick or takes it out, and Shift-click picks everything between it and the last one clicked; `selected` takes one id or an array, and handing back the
 reported `id` leaves the rest picked.
 
 Every box is a `buildBody` body, so a data node takes the same knobs a body
@@ -1416,8 +1416,8 @@ reports, so the editor gathers them and reports one edit once the drag is done
 reporting, a microtask later.
 
 `selectedGroup` and `onSelectGroup` are the group pick, beside `selected` and
-`onSelect`, under every look. Shift-click adds a stage or group to the pick or
-takes it out, and `onSelect`'s second argument lists every stage and group
+`onSelect`, under every look. Cmd-click (Ctrl off macOS) adds a stage or group to the
+pick or takes it out, and `onSelect`'s second argument lists every stage and group
 picked, ready for `group(ids)`. The ref's `group(ids)` and `ungroup(id)` report
 `'Group'` and `'Ungroup'`, and `renameGroup(id)` opens the title field. The
 edits are plain functions too:

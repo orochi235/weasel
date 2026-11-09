@@ -245,7 +245,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * holds. Undo and redo still restore the selection each history entry
      * recorded. Default `true`.
      *
-     * Click policy (whether shift-click extends) is the selection's `mode`:
+     * Click policy (whether Cmd-click toggles and Shift-click ranges) is the selection's `mode`:
      * `useSelection({ mode: 'multi' })`, or `selectionOptions={{ mode: 'multi' }}`
      * for the selection the canvas builds itself.
      */
