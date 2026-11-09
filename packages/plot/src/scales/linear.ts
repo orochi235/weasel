@@ -1,5 +1,5 @@
 import { replacedFormat } from './replacedFormat';
-import { toFixedPlain } from './tickFormat';
+import { formatTick } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -106,7 +106,8 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
 
 /** `value` written as plainly as a grid of `step` allows: no trailing zeros, no exponent. */
 export function formatNumber(value: number, step: number): string {
-  const fixed = toFixedPlain(value, decimalsOf(step));
+  const decimals = decimalsOf(step);
+  const fixed = formatTick(value, { decimals, step });
   return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 
