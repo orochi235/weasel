@@ -9,6 +9,10 @@ describe('slider stops', () => {
     expect(usableStops(undefined, 0, 10)).toEqual([]);
   });
 
+  it('drops a NaN stop, which no thumb can rest on', () => {
+    expect(usableStops([4, NaN, 2], 0, 10)).toEqual([{ value: 2 }, { value: 4 }]);
+  });
+
   it('attracts to the nearest stop within a track fraction', () => {
     const f = (v: number) => v / 100;
     expect(attract(48, [50, 60], 0.03, f)).toBe(50);
