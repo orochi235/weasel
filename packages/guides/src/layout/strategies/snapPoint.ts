@@ -13,17 +13,29 @@ export type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
 export interface SnapPointOptions<TPose> {
   pattern: SnapPattern;
   /** Spacing for the 'grid' pattern, in world units. Default 50; one that is
-   *  not positive offers no points. */
+   *  not positive offers no points. A grid of more than 129 × 129 points
+   *  offers only the 129 × 129 around the dragged child's pose. */
   gridSpacing?: number;
   /** Tolerance for the default snap policy (nearestWithin). Default Infinity. */
   tolerance?: number;
   snap?: LayoutSnap<TPose>;
 }
 
+/** Grid points either side of the dragged pose, on each axis, that a grid too dense to list whole offers. */
+const GRID_REACH = 64;
+
+/** The grid lines `[lo, hi]` of `count + 1` (0 to `count`) that one axis offers, around `at` when there are too many. */
+function gridRange(count: number, at: number): [number, number] {
+  if (count <= 2 * GRID_REACH) return [0, count];
+  const mid = Math.min(Math.max(Math.round(at), GRID_REACH), count - GRID_REACH);
+  return [mid - GRID_REACH, mid + GRID_REACH];
+}
+
 function buildPoints(
   bounds: { x: number; y: number; width: number; height: number },
   pattern: SnapPattern,
   gridSpacing: number,
+  near: Vec2,
 ): Vec2[] {
   switch (pattern) {
     case 'corners':
@@ -45,10 +57,12 @@ function buildPoints(
     case 'grid': {
       const out: Vec2[] = [];
       if (!(gridSpacing > 0)) return out;
-      const cols = Math.floor(bounds.width / gridSpacing);
-      const rows = Math.floor(bounds.height / gridSpacing);
-      for (let j = 0; j <= rows; j++) {
-        for (let i = 0; i <= cols; i++) {
+      const [i0, i1] = gridRange(Math.floor(bounds.width / gridSpacing), (near.x - bounds.x) / gridSpacing);
+      const [j0, j1] = gridRange(Math.floor(bounds.height / gridSpacing), (near.y - bounds.y) / gridSpacing);
+      // Written so a NaN range, which a non-finite container gives, offers nothing too.
+      if (!(i1 - i0 <= 2 * GRID_REACH && j1 - j0 <= 2 * GRID_REACH)) return out;
+      for (let j = j0; j <= j1; j++) {
+        for (let i = i0; i <= i1; i++) {
           out.push({ x: bounds.x + i * gridSpacing, y: bounds.y + j * gridSpacing });
         }
       }
@@ -77,7 +91,7 @@ export function snapPoint<TPose extends Vec2>(
     },
 
     getDropTargets(container, _children, dragged) {
-      const points = buildPoints(container.bounds, opts.pattern, gridSpacing);
+      const points = buildPoints(container.bounds, opts.pattern, gridSpacing, dragged.pose);
       return points.map((p) => ({
         // Anchor the dragged child's top-left at the snap point.
         pose: { ...dragged.pose, x: p.x, y: p.y } as TPose,
