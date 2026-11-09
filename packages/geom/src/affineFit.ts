@@ -1,4 +1,5 @@
 import type { Affine } from './affine';
+import { SINGULAR_RATIO } from './scalar';
 
 /**
  * The affine map carrying the points of `from` closest to those of `to`, by
@@ -24,7 +25,8 @@ export function fitAffine(from: ArrayLike<number>, to: ArrayLike<number>): Affin
     sxu += x * u; syu += y * u; sxv += x * v; syv += y * v;
   }
   const spread = sxx + syy;
-  if (spread <= 1e-24) return null;
+  // Judged against the points' own scale, as `SINGULAR_RATIO` judges every zero: a repeated point's mean rounds.
+  if (!(spread > SINGULAR_RATIO * SINGULAR_RATIO * (spread + n * (fx * fx + fy * fy)))) return null;
   const det = sxx * syy - sxy * sxy;
   let a: number, b: number, c: number, d: number;
   if (det > 1e-12 * spread * spread) {
