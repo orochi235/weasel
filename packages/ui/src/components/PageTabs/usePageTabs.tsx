@@ -3,6 +3,7 @@ import { movedIndex, nudgeOf } from '@weasel-js/ui-logic';
 import { useCallback, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import type { Key } from 'react-aria-components';
 import { useReorderDragList, type ReorderDragHandlers, type ReorderLine } from '../../useReorderDragList';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { DragGhost } from '../DragGhost';
 import { Tab } from '../Tabs';
 import type { PageTabItem, PageTabsProps } from './PageTabs';
@@ -89,8 +90,9 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
 
   // Captured ahead of the tab list, which would take Alt+arrow as a plain arrow and move focus.
   const onKeyDownCapture = (e: KeyboardEvent) => {
-    const by = onMove ? nudgeOf(e, 'ArrowLeft', 'ArrowRight') : null;
     const tab = (e.target as Element).closest('[role="tab"]');
+    const [back, on] = tab && inlineDirection(tab) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+    const by = onMove ? nudgeOf(e, back, on) : null;
     const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
     if (by === null || at < 0 || pages[at] === undefined) return;
     e.preventDefault();
