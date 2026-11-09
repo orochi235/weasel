@@ -24,8 +24,12 @@ import { armTree, changedFiles, lockScope } from './lib/fleet-tree.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 const args = process.argv.slice(2);
-const sinceAt = args.indexOf('--since');
-const since = sinceAt < 0 ? undefined : args.splice(sinceAt, 2)[1];
+const sinceAt = args.findIndex((arg) => arg === '--since' || arg.startsWith('--since='));
+const since = sinceAt < 0 ? undefined : args[sinceAt].includes('=') ? args.splice(sinceAt, 1)[0].slice('--since='.length) : args.splice(sinceAt, 2)[1];
+if (sinceAt >= 0 && (!since || since.startsWith('-'))) {
+  console.error('fleet-test: --since needs a ref');
+  process.exit(2);
+}
 const argv = args.filter((arg) => arg !== '--full');
 const full = argv.length < args.length;
 const [first, ...rest] = argv;
