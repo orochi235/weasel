@@ -69,9 +69,11 @@ export function tileGrid(count: number, spec: Tiling): TileGrid {
     stretched: (i) => filling && i >= lastStart,
     corners: (i) => {
       const at: ('ss' | 'se' | 'es' | 'ee')[] = [];
-      if (i === 0) at.push('ss');
-      if (i === Math.min(columns, count) - 1) at.push('se');
-      if (i === lastStart && (lead === 0 || lastStart === 0)) at.push('es');
+      // A grid of one short row has that row's offset and end at its top as well.
+      const single = count < columns;
+      if (i === 0 && (lead === 0 || !single)) at.push('ss');
+      if (i === Math.min(columns, count) - 1 && (lastAtEnd || !single)) at.push('se');
+      if (i === lastStart && lead === 0) at.push('es');
       if (i === count - 1 && lastAtEnd) at.push('ee');
       return at;
     },

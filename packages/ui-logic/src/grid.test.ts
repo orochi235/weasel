@@ -32,6 +32,11 @@ describe('tileGrid', () => {
     expect(corners(5, { columns: 3 })).toEqual(['ss', '', 'se', 'es', '']);
     expect(corners(4, { columns: 3, lastRow: 'center' })).toEqual(['ss', '', 'se', '']);
     expect(corners(3, { columns: 3 })).toEqual(['ss es', '', 'se ee']);
+    // One short row is the grid's top and bottom both, so its offset and its end hold on either.
+    expect(corners(2, { columns: 3 })).toEqual(['ss es', '']);
+    expect(corners(2, { columns: 3, lastRow: 'end' })).toEqual(['', 'se ee']);
+    expect(corners(2, { columns: 4, lastRow: 'center' })).toEqual(['', '']);
+    expect(corners(2, { columns: 3, lastRow: 'fill' })).toEqual(['ss es', 'se ee']);
   });
 });
 
