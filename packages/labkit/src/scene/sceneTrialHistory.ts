@@ -8,8 +8,10 @@ const kept = new WeakMap<object, Map<number, number>>();
 
 /** The `editStamp`s kept for `scene`'s entries, one map per scene. */
 export function editStampsOf(scene: object): Map<number, number> {
-  let stamps = kept.get(scene);
-  if (!stamps) kept.set(scene, (stamps = new Map()));
+  const known = kept.get(scene);
+  if (known) return known;
+  const stamps = new Map<number, number>();
+  kept.set(scene, stamps);
   return stamps;
 }
 
