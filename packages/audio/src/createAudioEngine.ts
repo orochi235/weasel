@@ -7,7 +7,7 @@ import type { Slots, Starter } from './liveVoice';
 import { createResumeWatch } from './resumeWatch';
 import { createScheduler } from './scheduler';
 import { createSoundCache, type SoundCache, type SoundHandle } from './soundCache';
-import type { SpatialOptions, SpatialPoint } from './spatialize';
+import { checkListener, type SpatialOptions, type SpatialPoint } from './spatialize';
 import { createStreamStarters } from './streamStarter';
 import { createSynthStarters } from './synthStarters';
 import { createWorkletVoices } from './worklet/workletVoices';
@@ -19,7 +19,6 @@ import { createChainPool } from './voiceChains';
 import { createDropWarnings, type DropWarnings } from './voiceDrops';
 import { createVoicePool } from './voicePool';
 import { checkVoice, createVoices } from './voices';
-import { checkPoint } from './param';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
  *  scheduling and 2D or 3D spatialization over one `AudioContext`. Times are engine
@@ -76,6 +75,7 @@ export interface AudioEngine {
   analyser(busName?: string, opts?: AnalyserTapOptions): AnalyserTap;
   /** A graph feeding `bus`'s input (default: the first bus). Disposed with the engine. */
   graph(bus?: string): AudioGraph;
+  /** Throws a `RangeError` on a point or option that is not finite. */
   setListener(p: SpatialPoint, opts?: SpatialOptions): void;
   dispose(): void;
 }
@@ -295,7 +295,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       return patches.create(bus ?? busNames[0]);
     },
     setListener(p, o) {
-      checkPoint('listener', p);
+      checkListener(p, o);
       listener = p;
       if (o) spatialOpts = o;
       voices.respatialize();

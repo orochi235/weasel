@@ -1,3 +1,5 @@
+import { checkFinite, checkPoint } from './param';
+
 /** A world position or direction, in the consumer's own units. `z` is absent
  *  in a 2D scene and read as 0. */
 export interface SpatialPoint { x: number; y: number; z?: number }
@@ -23,6 +25,16 @@ export interface SpatialOptions {
   /** The listener's right, as a direction; its length is ignored. Default
    *  `{ x: 1, y: 0, z: 0 }`. Pan is the source's offset along it. */
   right?: SpatialPoint;
+}
+
+/** Throws a `RangeError` on a listener at a point, or with options, that are not finite. */
+export function checkListener(at: SpatialPoint, opts: SpatialOptions = {}): void {
+  checkPoint('listener', at);
+  checkFinite('listener refDistance', opts.refDistance);
+  checkFinite('listener maxDistance', opts.maxDistance);
+  checkFinite('listener rolloffFactor', opts.rolloffFactor);
+  checkFinite('listener panWidth', opts.panWidth);
+  checkPoint('listener right', opts.right);
 }
 
 /**
