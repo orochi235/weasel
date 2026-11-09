@@ -88,6 +88,18 @@ describe('matchModifiers (strict semantics)', () => {
     expect(matchModifiers({ ...noMods, metaKey: true, ctrlKey: true }, { mod: true }, false)).toBe(false);
   });
 
+  it('mod beside the other platform key reads that key from its own field', () => {
+    const both = { ...noMods, metaKey: true, ctrlKey: true };
+    // captureKey writes Ctrl+Win as { mod, meta } off Apple, and Cmd+Ctrl as { mod, ctrl } on it.
+    expect(matchModifiers(both, { mod: true, meta: true }, false)).toBe(true);
+    expect(matchModifiers(both, { mod: true, ctrl: true }, true)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: true, meta: 'optional' }, false)).toBe(true);
+    expect(matchModifiers({ ...noMods, ctrlKey: true }, { mod: true, meta: true }, false)).toBe(false);
+    // The platform key itself is required when either field requires it.
+    expect(matchModifiers({ ...noMods, metaKey: true }, { mod: 'optional', meta: true }, true)).toBe(true);
+    expect(matchModifiers(noMods, { mod: 'optional', meta: true }, true)).toBe(false);
+  });
+
   it('explicit shift: false same as omitted', () => {
     expect(matchModifiers(noMods, { shift: false }, false)).toBe(true);
     expect(matchModifiers({ ...noMods, shiftKey: true }, { shift: false }, false)).toBe(false);

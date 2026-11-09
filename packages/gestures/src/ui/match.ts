@@ -27,9 +27,9 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
  * - Omitted or `false`: MUST NOT be held.
  * - `true`: MUST be held.
  * - `'optional'`: accepts either held or unheld.
- * - `mod` is platform-aware: matches `metaKey` on mac, `ctrlKey` elsewhere,
- *   and the *other* platform key is forbidden. Callers should not combine
- *   `mod` with `meta`/`ctrl`.
+ * - `mod` is platform-aware: it stands for `meta` on mac and `ctrl` elsewhere,
+ *   and the other key reads its own field, so `{ mod, meta }` is Ctrl+Win off
+ *   Apple. Where `mod` and that key's own field disagree, the stronger wins.
  */
 export function matchModifiers(
   e: ModifiersEvent,
@@ -46,15 +46,14 @@ export function matchModifiers(
     alt = resolveSpecValue(mods.alt);
     shift = resolveSpecValue(mods.shift);
 
-    // mod: platform-aware shorthand. Resolves to meta on mac, ctrl elsewhere.
-    // The *other* platform key stays forbidden (handled by the strict default).
+    meta = resolveSpecValue(mods.meta);
+    ctrl = resolveSpecValue(mods.ctrl);
+    // mod: the platform key, meta on mac and ctrl elsewhere, folded into that
+    // key's own field. The other key reads its own field.
     if (mods.mod !== undefined) {
       const modReq = resolveSpecValue(mods.mod);
-      if (isMac) meta = modReq;
-      else ctrl = modReq;
-    } else {
-      meta = resolveSpecValue(mods.meta);
-      ctrl = resolveSpecValue(mods.ctrl);
+      if (isMac) meta = strongest(meta, modReq);
+      else ctrl = strongest(ctrl, modReq);
     }
   }
 
@@ -64,6 +63,11 @@ export function matchModifiers(
     checkKey(meta,  e.metaKey) &&
     checkKey(shift, e.shiftKey)
   );
+}
+
+function strongest(a: KeyRequirement, b: KeyRequirement): KeyRequirement {
+  if (a === 'required' || b === 'required') return 'required';
+  return a === 'optional' || b === 'optional' ? 'optional' : 'forbidden';
 }
 
 function checkKey(req: KeyRequirement, held: boolean): boolean {
