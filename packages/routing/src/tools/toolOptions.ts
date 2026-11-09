@@ -64,11 +64,12 @@ export function createToolOptionValues(): ToolOptionValues {
 }
 
 function leafOf(options: ToolOptions, option: string): PrefNumber | undefined {
-  const leaf = options.prefs.children[option] as { kind?: string } | undefined;
+  const children = options.prefs.children;
+  const leaf = (Object.hasOwn(children, option) ? children[option] : undefined) as { kind?: string } | undefined;
   return leaf?.kind === 'number' ? (leaf as PrefNumber) : undefined;
 }
 
-/** Every option's value for `toolId`: what `values` holds, else its default. */
+/** Every option's value for `toolId`: what `values` holds when it is a finite number, else its default. */
 export function toolOptionParams(
   toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
 ): Record<string, number> {
@@ -76,7 +77,8 @@ export function toolOptionParams(
   const out: Record<string, number> = {};
   for (const key of Object.keys(options.prefs.children)) {
     const leaf = leafOf(options, key);
-    const v = held[key] ?? leaf?.default;
+    const own = Object.hasOwn(held, key) ? held[key] : undefined;
+    const v = typeof own === 'number' && Number.isFinite(own) ? own : leaf?.default;
     if (typeof v === 'number') out[key] = v;
   }
   return out;
