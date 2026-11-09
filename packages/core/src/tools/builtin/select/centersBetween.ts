@@ -1,5 +1,5 @@
 import { boundsOfPath } from '@weasel-js/geom';
-import { pickWalk, type AdapterPickGates, type PickCandidate } from 'canvas/pickWalk';
+import { pickWalk, type AdapterPickGates, type PickCandidate, type PickSource } from 'canvas/pickWalk';
 import { adapterPickSource } from 'canvas/adapterPickSource';
 import { poseDescriptorForNode, visualBoundsViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -17,9 +17,18 @@ export function centersBetween<TPose>(
   descriptor: PoseDescriptor<TPose>,
   gates: AdapterPickGates = {},
 ): (from: string, to: string) => string[] {
+  return centersAmong(() => adapterPickSource(adapter, gates), descriptor);
+}
+
+/** {@link centersBetween} over any pick source, so a range passes over what that source's walk
+ *  does: a scene's locked and hidden layers among them. */
+export function centersAmong<TPose>(
+  source: () => PickSource<TPose>,
+  descriptor: PoseDescriptor<TPose>,
+): (from: string, to: string) => string[] {
   return (from, to) => {
     const boxes = new Map<string, Bounds>();
-    const ids = pickWalk<TPose>(adapterPickSource(adapter, gates), {
+    const ids = pickWalk<TPose>(source(), {
       hits: (node: PickCandidate<TPose>, pose: TPose, derived) => {
         boxes.set(node.id, derived ? boundsOfPath(derived) : visualBoundsViaDescriptor(pose, poseDescriptorForNode(descriptor, node)));
         return true;

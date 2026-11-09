@@ -12,7 +12,7 @@ import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'can
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
-import { centersBetween } from 'tools/builtin/select/centersBetween';
+import { centersAmong } from 'tools/builtin/select/centersBetween';
 import { rangeAmong, type SelectRangeDep } from 'tools/builtin/select/selectRange';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';
@@ -213,11 +213,16 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     };
   }, [scene, adapter, boundsOfProp, wiredBoundsOfPose]);
 
-  // One range for the tool and for the `selectRange` dep, walking the adapter as this view paints it.
-  const between = useMemo(() => centersBetween<TPose>(adapter, d, {
-    ...(alphaOf ? { alphaOf } : {}),
-    ...(layerIsPainted ? { layerIsPainted } : {}),
-  }), [adapter, d, alphaOf, layerIsPainted]);
+  // One range for the tool and for the `selectRange` dep, walking the scene as this view paints it and
+  // passing over what a click there passes over.
+  const between = useMemo(() => {
+    const centers = centersAmong<TPose>(() => scenePickSource<TData, TLayer, TPose>(scene, {
+      ...(alphaOf ? { alphaOf } : {}),
+      ...(layerIsPainted ? { layerIsPainted } : {}),
+    }), d);
+    if (!isPointerInteractive) return centers;
+    return (from: string, to: string) => centers(from, to).filter((id) => isPointerInteractive(id) !== false);
+  }, [scene, d, alphaOf, layerIsPainted, isPointerInteractive]);
   const selectRange = useMemo<SelectRangeDep>(() => ({ at: (level) => rangeAmong(between, adapter, level) }), [between, adapter]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
