@@ -56,6 +56,18 @@ describe('tuneAction', () => {
     expect(resolveParams(seen?.params)).toEqual({ mode: 'curvature', side: 'end' });
   });
 
+  it('judges enabled and active with the params run is handed', () => {
+    const action: Action = {
+      ...immediate(),
+      enabled: (_d, _at, _c, params) => (params?.axis === 'y' ? true : 'wrong axis'),
+      active: (_d, params) => params?.pivot === 'pointer',
+    };
+    const tuned = tuneAction(action, [{ params: { axis: 'y', pivot: 'pointer' } }]);
+    expect(tuned.enabled?.({}, undefined, undefined, undefined)).toBe(true);
+    expect(tuned.enabled?.({}, undefined, undefined, { axis: 'x' })).toBe('wrong axis');
+    expect(tuned.active?.({}, undefined)).toBe(true);
+  });
+
   it('keeps a record a record when nothing involved is a thunk', () => {
     let seen: BindingOpts | undefined;
     const ongoing: Action = {

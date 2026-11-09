@@ -72,41 +72,36 @@ function withBindings(
   return [...base, ...(added as readonly BoundGesture[]).filter((b) => !base.includes(b))];
 }
 
-const CURSOR_WRAPS = new WeakMap<object, { inner: Action['cursor']; params: ActionParams }>();
+const FN_WRAPS = new WeakMap<object, { inner: unknown; params: ActionParams }>();
 
-/** A cursor that reads params, handed the tuning's under the call's. */
-function wrapCursor(cursor: Action['cursor'], params: ActionParams): Action['cursor'] {
-  if (typeof cursor !== 'function') return cursor;
-  for (let w: Action['cursor'] = cursor; typeof w === 'function'; w = CURSOR_WRAPS.get(w)?.inner) {
-    if (CURSOR_WRAPS.get(w)?.params === params) return cursor;
+/** `fn` handed the tuning's params under the ones it is called with, in argument `at`, as `run` is. Wrapping a
+ *  function already wrapped with these params returns it as it is. */
+function wrapParams<F extends (...args: never[]) => unknown>(fn: F | undefined, params: ActionParams, at: number): F | undefined {
+  if (typeof fn !== 'function') return fn;
+  for (let w: unknown = fn; typeof w === 'function'; w = FN_WRAPS.get(w)?.inner) {
+    if (FN_WRAPS.get(w)?.params === params) return fn;
   }
-  const wrapped = (given: Record<string, unknown> | undefined) => cursor(tunedParams([{ params }], given));
-  CURSOR_WRAPS.set(wrapped, { inner: cursor, params });
-  return wrapped;
-}
-
-const PREVIEW_WRAPS = new WeakMap<object, { inner: Action['preview']; params: ActionParams }>();
-
-/** A preview handed the tuning's params under the call's, as `run` is. */
-function wrapPreview(preview: Action['preview'], params: ActionParams): Action['preview'] {
-  if (!preview) return preview;
-  for (let w: Action['preview'] = preview; w; w = PREVIEW_WRAPS.get(w)?.inner) {
-    if (PREVIEW_WRAPS.get(w)?.params === params) return preview;
-  }
-  const wrapped: NonNullable<Action['preview']> = (deps, given) => preview(deps, tunedParams([{ params }], given));
-  PREVIEW_WRAPS.set(wrapped, { inner: preview, params });
+  const wrapped = ((...args: unknown[]) => {
+    const given = [...args];
+    given[at] = tunedParams([{ params }], given[at] as Record<string, unknown> | undefined);
+    return (fn as (...a: unknown[]) => unknown)(...given);
+  }) as unknown as F;
+  FN_WRAPS.set(wrapped, { inner: fn, params });
   return wrapped;
 }
 
 function tuneOnce(action: Action, tuning: ActionTuning): Action {
   const invoker = tuning.params && action.invoker ? wrapInvoker(action.invoker, tuning.params) : action.invoker;
-  const cursor = tuning.params ? wrapCursor(action.cursor, tuning.params) : action.cursor;
-  const preview = tuning.params ? wrapPreview(action.preview, tuning.params) : action.preview;
+  const p = tuning.params;
+  const cursor = p && typeof action.cursor === 'function' ? wrapParams(action.cursor, p, 0) : action.cursor;
+  const preview = p ? wrapParams(action.preview, p, 1) : action.preview;
+  const enabled = p ? wrapParams(action.enabled, p, 3) : action.enabled;
+  const active = p ? wrapParams(action.active, p, 1) : action.active;
   const bindings = tuning.bindings?.length ? withBindings(action.defaultBinding, tuning.bindings) : null;
   const modifierRoles = tuning.roles && action.modifierRoles ? rebindRoles(action.modifierRoles, tuning.roles) : null;
   if (
     invoker === action.invoker && cursor === action.cursor && preview === action.preview &&
-    bindings === null && modifierRoles === null
+    enabled === action.enabled && active === action.active && bindings === null && modifierRoles === null
   ) {
     return action;
   }
@@ -116,6 +111,8 @@ function tuneOnce(action: Action, tuning: ActionTuning): Action {
     ...(invoker ? { invoker } : {}),
     ...(cursor ? { cursor } : {}),
     ...(preview ? { preview } : {}),
+    ...(enabled ? { enabled } : {}),
+    ...(active ? { active } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),
   };
 }
