@@ -45,6 +45,11 @@ For the session picking this up: what is in flight and what has no other home. O
   `batch/2026-11-08d` (`test:fleet` at 72a4db7fd: 36063 tests; postbuild green). It was merged over another session's
   `effect-list` and `icons-freeze` merges without a run of the combination (Mike, 2026-11-08); the two touch no file
   in common. Open questions are under "Audit round nine" in `docs/unruled.md`.
+- Round ten (2026-11-08: ui, routing/cursor/gestures, labkit/prefs/hud/forge, renderer/stroke/paint/text, diagram,
+  draw/path-tools, core/geom/select/history, kernel3d/animator/audio/headless, scripts and the secondary apps; 45
+  fixes, plus the eyedropper and hand tool reading through chrome claims) is on `main` at 8d36c5e16 through
+  `batch/2026-11-08e` (`test:fleet`: 36256 tests; postbuild green), and the hand fix at cd61bfa32 (branch run 15039
+  tests, full typecheck). Not pushed. Open questions are under "Audit round ten" in `docs/unruled.md`.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
@@ -79,6 +84,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-08, audit round ten: a thick hatch fill's tile corners (no notches past a 2.8-unit line); an ELK self-loop
+  naming one port drawn round a corner; the eyedropper picking and the hand panning over a measurement in draw;
+  draw's page clip after a reload; arrow keys then Tab leaving a `SwatchGrid` from the swatch reached.
 - 2026-11-08, sweep and tiling: a drag across `ToggleBar` (`sweep`, multiple mode) or `OptionsBar` setting each
   segment it crosses, in a real browser; a wrapped bar (`columns`) drawn as one well rounded only at its outer
   corners, and `lastRow: 'fill'` stretching the short row (ToggleBar stories `Sweep` and `Wrapped`).

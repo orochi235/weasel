@@ -313,7 +313,10 @@ Owner tags, after the priority (2026-10-26):
   commit is a separate "Edit text". `textEditJoin(id)` (`domains/text/sceneTextDrafts.ts`) is the mechanism the
   diagram's edge-label edit uses for the same case; the insert path cannot pass it because `applyOps` takes no
   batch options, and consumer adapters implement that contract. Closes when inserting text, typing and undoing
-  once leaves no node behind, for the text tool and both sticky inserts (drag and click).
+  once leaves no node behind, for the text tool and both sticky inserts (drag and click). The same split shows
+  when a text box is drawn and left empty with Escape: `discardIfEmpty` (`useTextEditSession.ts`) removes it as an
+  entry of its own, so Cmd+Z brings back an empty node that draws nothing and still takes clicks (audit round ten,
+  2026-11-08); this closes with it.
 
 ---
 

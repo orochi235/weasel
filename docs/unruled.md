@@ -804,3 +804,37 @@ Calls the round made:
 - `parseSvg` ignores a whole `transform` list that does not parse, CSS units (`10px`, `45deg`) and infinite numbers
   included.
 
+
+## Audit round ten (2026-11-08)
+
+- An op that writes what a node already holds (flags, layer, data, `dependsOn`, transform, a reorder to its own slot,
+  `scene.move` to its own place, an equal parallax factor) records nothing. The check reads through the adapter's
+  `getNode`, so an adapter without one records as before. Reparenting to the same parent still records: `scene.move`
+  appends, which can be a real reorder.
+- `move`, `reorder` and `moveLayer` with a NaN index still put the node or layer at the front. Left as is.
+- `cycleVertexColors` refuses a negative `msPerCycle`, which used to run the cycle backward (`direction: -1` does
+  that). A bus or voice `setGain` throws on a non-finite gain or ramp; a NaN `rampMs` used to mean no ramp.
+- A simulation on a clock declared seekable catches up every owed step in one frame after a long seek. Left as is; the
+  docs say to declare such a clock `seekable: false`. kernel3d's `groundHit` accepts points past the far plane, which
+  panning near the horizon needs.
+- A `miterLimit` of NaN or 0 bevels every join, where canvas ignores the value. Left as is.
+- An empty protect mask in dither makes an inert 1-pixel texture rather than an error.
+- A self-loop naming at most one port leaves ELK's route out of `ElkPlan.routes` and is drawn by the diagram's own
+  `selfLoop` rule; ELK still reserves space on the side it chose.
+- labkit's palette keeps a group's tools where the group first appears, as the other regions do, which reorders
+  palettes whose groups interleaved; no separator is drawn.
+- A pref's `disabledReason` replaces an action row's own when the pref disables it, as forms do. In `SelectionPanel` an
+  action inside a top-level object still never shows pressed: its `active` set is keyed by leaf key, not path.
+- A parametric action leaf drops its `shortcut` from each variant but keeps its `description` and `activeIf`.
+- A disabled control with a `disabledReason` stays focusable, but `useRovingTabIndex` skips `aria-disabled` items, so
+  arrows never land on one in a `ToggleBar`, `Bar` or `ToolPalette`. Not ruled: either arrows reach it (APG allows it)
+  or it stops promising to stay focusable.
+- Removing an `EffectList` card hands focus on through `useRemovedRowFocus`; removing the last drops it to the page.
+  `ListEditor` (previous entry first) and `GradientEditor` (neighboring stop) keep rules of their own.
+- gestures' `CONTROL_SELECTOR` has no `radio`, `tab`, `menuitemcheckbox`, `menuitemradio` or `slider` role. Widening it
+  changes press ownership in `ItemList`, `Tree` and the reorder lists. Left as is; nothing breaks today.
+- The eyedropper and the hand tool target `THROUGH_CHROME`, so they sample and pan through exclusive chrome claims
+  (measurements, selection handles). The hand always pans (Mike, 2026-11-08).
+- `check:size` covers `packages/*/src` only, where `check:frame-loops` covers `apps/` too. Left as is.
+- `stripComments` (`scripts/lib/cssBlocks.ts`) skips strings; a regex literal holding a quote reads the rest of its
+  line as a string, which can only raise a false alarm. weaselchart's audio Play rejection stays console-only.
