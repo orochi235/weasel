@@ -67,6 +67,34 @@ and a `"weaselIcons": { "table": "./dist/icons.table.json" }` field in `package.
 build copying the JSON into `dist`. Core, ui and path-tools show the shape. The build plugin finds
 an installed package's glyphs through that field.
 
+## A subject and a mark
+
+An icon that says what a press does to something (add a pref, remove a stop, lock a guide) is two
+glyphs: the **subject**, the thing acted on, and the **mark**, what happens to it. They are
+composed when drawn, never drawn as one glyph:
+
+```tsx
+<Icon name={icon('core:tune')} mark={icon('ui:markAdd')} />
+```
+
+`<Icon mark>` sets the mark in the lower-right slot (`ICON_SLOTS.mark` in
+`packages/ui/src/icons/layers.ts`), strokes it at the subject's weight, and cuts the subject away
+around it with a band of clearance (`inset`, same file). So:
+
+- Draw the subject whole. Don't draw a plus, check or badge into it, and don't notch it to make
+  room for one; the cut is computed from whichever mark sits on it.
+- The marks are the `mark-*` glyphs in `packages/ui/icons/marks.mjs`, named `ui:markAdd`,
+  `ui:markLock` and so on. A mark that is missing is drawn there, to that file's rules: it is read
+  at half size, so it is one gesture filling the frame, and it sets no `stroke-width`, because the
+  slot rescales it.
+- `mark` is a prop of `<Icon>` only. A field typed `IconRef` (an action's `icon`, a labkit tool's,
+  a pref's) names one glyph and cannot carry a mark yet.
+
+A hole that belongs to a single shape, such as a ring or a label knocked out of a chip, is one path
+with `fill-rule="evenodd"`. A glyph body never declares an id (`clipPath`, `mask`): ids are
+global to the page, so every copy of the glyph on screen would declare the same one. `inset` takes
+its mask's id from `useId()` for this reason.
+
 ## Drawing rules
 
 **Proof SVG icons at 10–15× their display size.** A glyph authored on a 20×20
