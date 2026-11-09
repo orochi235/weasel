@@ -20,9 +20,16 @@ function checkRate(name: string, rate: number | undefined): number {
 export function slewToward(value: number, target: number, dt: number, rates: SlewRates): number {
   const rise = checkRate('rise', rates.rise);
   const fall = checkRate('fall', rates.fall);
-  if (target > value) return Math.min(target, value + rise * dt);
-  if (target < value) return Math.max(target, value - fall * dt);
+  if (target > value) return Math.min(target, value + reach(rise, dt));
+  if (target < value) return Math.max(target, value - reach(fall, dt));
   return value;
+}
+
+/** How far `rate` moves a value in `dt` seconds. An unlimited rate jumps whatever the step, and
+ *  no time, or a step back, moves a limited one nowhere: `Infinity × 0` would answer NaN. */
+function reach(rate: number, dt: number): number {
+  if (rate === Infinity) return Infinity;
+  return dt > 0 && rate > 0 ? rate * dt : 0;
 }
 
 /** A value that follows `target` at limited rates. Both fields are writable:
