@@ -9,7 +9,7 @@ import { createHistoryReader, type HistoryReader } from './history.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
-import { propControls } from './propControls.ts';
+import { propControls, type TypedocOptions } from './propControls.ts';
 import type { PropControlsOptions } from './propTypes.ts';
 import type { CaptureEndpoint } from './capture/endpoint.ts';
 import { serveIssues } from './issues/endpoint.ts';
@@ -47,6 +47,13 @@ export interface ForgeOptions {
    * TypeScript types. Needs `typescript` installed. Default true; `propControls`' `skip` narrows it the same way.
    */
   api?: boolean;
+  /**
+   * TypeDoc's JSON, read as the richer source for each component's API where it documents the component: comments
+   * with `{@link}` and `@see` resolved, where a prop or member is inherited from, a method's overloads, and a link to
+   * the component's page. A component whose files changed after the JSON was written is read from its types alone,
+   * as is every component while there is no JSON. Default `{ json: 'dist/typedoc.json' }`; false reads none.
+   */
+  typedoc?: TypedocOptions | false;
 }
 
 const SCRIPT = /\.[cm]?[jt]sx?$/;
@@ -100,7 +107,7 @@ function coalesced<A>(run: (arg: A) => Promise<void>, onError: (err: unknown) =>
 
 /** The plugins forge serves beside its own, as its options ask. */
 function companions(options: ForgeOptions, files: () => Map<string, IndexEntry[]>): Plugin[] {
-  const { storybookShims: shims, propControls: controls, api } = options;
+  const { storybookShims: shims, propControls: controls, api, typedoc } = options;
   const storyFiles = () => [...files().keys()];
   const fallbackOf = (file: string) => {
     const title = files().get(file)?.[0]?.title;
@@ -111,7 +118,7 @@ function companions(options: ForgeOptions, files: () => Map<string, IndexEntry[]
   return [
     watchRecovery(),
     ...(shims === false ? [] : [storybookShims()]),
-    ...(readings.controls || readings.api ? [propControls(storyFiles, fallbackOf, readings, narrowed)] : []),
+    ...(readings.controls || readings.api ? [propControls(storyFiles, fallbackOf, readings, narrowed, typedoc)] : []),
   ];
 }
 

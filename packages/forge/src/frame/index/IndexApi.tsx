@@ -39,6 +39,14 @@ function Entry({
   );
 }
 
+function InheritedFrom({ from }: { from: string | undefined }) {
+  return from === undefined ? null : (
+    <p className="fg-index-api__inherited-from">
+      Inherited from <code>{from}</code>
+    </p>
+  );
+}
+
 function PropEntry({ prop, types }: { prop: ApiProp; types: Types }) {
   return (
     <Entry name={prop.name} badge={prop.required ? 'required' : undefined} loud={prop.required}>
@@ -54,6 +62,7 @@ function PropEntry({ prop, types }: { prop: ApiProp; types: Types }) {
         <p className="fg-index-api__deprecated">{prop.deprecated ? `Deprecated: ${prop.deprecated}` : 'Deprecated'}</p>
       )}
       {prop.description ? <Description text={prop.description} className="fg-index-api__description" /> : null}
+      <InheritedFrom from={prop.inheritedFrom} />
     </Entry>
   );
 }
@@ -61,10 +70,13 @@ function PropEntry({ prop, types }: { prop: ApiProp; types: Types }) {
 function MemberEntry({ member, types }: { member: ApiMember; types: Types }) {
   return (
     <Entry name={member.name} badge={member.readonly ? 'readonly' : undefined}>
-      <code className="fg-index-api__type">
-        <TypeText text={member.signature} types={types} />
-      </code>
+      {[member.signature, ...(member.overloads ?? [])].map((signature, i) => (
+        <code key={i} className="fg-index-api__type fg-index-api__signature">
+          <TypeText text={signature} types={types} />
+        </code>
+      ))}
       {member.description ? <Description text={member.description} className="fg-index-api__description" /> : null}
+      <InheritedFrom from={member.inheritedFrom} />
     </Entry>
   );
 }
@@ -102,6 +114,13 @@ function ApiBody({ api }: { api: ApiTable }) {
   const none = api.props.length === 0 && api.inherited.length === 0;
   return (
     <>
+      {api.href ? (
+        <p className="fg-index-api__reference">
+          <a href={api.href} target="_blank" rel="noreferrer">
+            API reference
+          </a>
+        </p>
+      ) : null}
       <h2 className="fg-index-api__heading">Props</h2>
       {none ? <p className="fg-index-api__note">Takes no props.</p> : null}
       {api.props.length === 0 ? null : (

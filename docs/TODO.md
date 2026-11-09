@@ -537,15 +537,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P2) [agent] Index pages' API panel reads typedoc's output where a build has made one** (2026-11-02). The panel lists a component's props and its ref handle's members from forge's
-  TypeScript reader (`apiTable` in `packages/forge/src/vite/apiTable.ts`): live in dev,
-  following edits, and available to any project that installs forge. `npm run build:api` already runs typedoc
-  over every package (`typedoc/`), which resolves `{@link}` and `@see`, overloads and inherited members, and
-  could link each entry to the API reference; but its output exists only after a build, and a consumer of forge
-  may not run typedoc at all. Not decided: keep the reader, switch to typedoc, or read typedoc's JSON as a
-  richer source where a build has made one. Ruled (2026-11-07): the last, with forge's reader as the fallback.
-  Closes when the panel reads typedoc's JSON when present.
-
 - **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
   (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
   opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop

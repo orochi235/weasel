@@ -4,6 +4,7 @@ import { API_EXPORT } from '../story/api';
 import type { ReadApi } from './apiTable';
 import { storyExports } from './propControls';
 import type { PropReader } from './propTypes';
+import type { TypedocDocs } from './typedoc';
 
 const API: ReadApi = {
   props: [{ name: 'label', type: 'string', required: true }],
@@ -29,6 +30,23 @@ describe('storyExports', () => {
     const out = storyExports(readerOf(), '/repo/chip.stories.ts', 'Chip', { controls: true, api: true }, vi.fn());
     expect(exported(out.code, API_EXPORT)).toEqual({ props: API.props, inherited: [], ref: null });
     expect(out.sources).toEqual(['/repo/ChipProps.ts', '/repo/Chip.ts']);
+  });
+
+  it("enriches the API from TypeDoc's output, which an edit to must reach the story too", () => {
+    const read: ReadApi = { ...API, component: { name: 'Chip', file: '/repo/Chip.ts' } };
+    const docs: TypedocDocs = {
+      mtime: Number.MAX_SAFE_INTEGER,
+      component: () => ({ href: 'https://example.com/#Chip', props: new Map([['label', { description: 'The text.' }]]), members: new Map() }),
+    };
+    const typedoc = { file: '/repo/dist/typedoc.json', docs: () => docs };
+    const out = storyExports(readerOf({ api: () => read }), '/repo/chip.stories.ts', 'Chip', { controls: false, api: true }, vi.fn(), typedoc);
+    expect(exported(out.code, API_EXPORT)).toEqual({
+      props: [{ name: 'label', type: 'string', required: true, description: 'The text.' }],
+      inherited: [],
+      ref: null,
+      href: 'https://example.com/#Chip',
+    });
+    expect(out.sources).toEqual(['/repo/Chip.ts', '/repo/dist/typedoc.json']);
   });
 
   it('passes the fallback name to the reader', () => {

@@ -112,6 +112,11 @@ export const Input = (_props: InputProps) => null;
     expect(table?.props.map((p) => p.name)).toEqual(['label', 'onPress', 'weight', 'count', 'size', 'loud']);
   });
 
+  it('names the component and the file it is declared in, by which TypeDoc\'s output is searched', () => {
+    expect(api('chart')?.component).toEqual({ name: 'Chart', file: at('Chart.ts') });
+    expect(api('memo')?.component).toEqual({ name: 'Memo', file: at('Chart.ts') });
+  });
+
   it('writes a type as its declaration spells it', () => {
     expect(prop(api('chart'), 'weight')?.type).toBe('Weight');
   });
@@ -170,7 +175,7 @@ export const Input = (_props: InputProps) => null;
   });
 
   it('reads a component that takes no props', () => {
-    expect(api('bare')).toEqual({ props: [], inherited: [], ref: null, sources: [] });
+    expect(api('bare')).toEqual({ props: [], inherited: [], ref: null, sources: [], component: { name: 'Bare', file: at('Chart.ts') } });
   });
 
   it('follows the fallback import for a meta with no component', () => {

@@ -14,7 +14,11 @@ export interface ApiReading {
 }
 
 /** An API as read, with the project files it is declared in, which the plugin watches and the page never sees. */
-export type ReadApi = ApiTable & { sources: string[] };
+export type ReadApi = ApiTable & {
+  sources: string[];
+  /** The component's declared name and the file it is declared in, by which TypeDoc's output is searched. */
+  component?: { name: string; file: string };
+};
 
 const RESERVED = new Set(['ref', 'key']);
 const IN_PACKAGES = /[\\/]node_modules[\\/]/;
@@ -54,7 +58,13 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
     ref,
     ...(defs.size === 0 ? {} : { types: Object.fromEntries(defs) }),
     sources: [...sources],
+    ...componentOf(reading.tsm, declaration),
   };
+}
+
+function componentOf(tsm: typeof ts, declaration: ts.Declaration | undefined): Pick<ReadApi, 'component'> {
+  const name = declaration && tsm.getNameOfDeclaration(declaration);
+  return name && tsm.isIdentifier(name) ? { component: { name: name.text, file: declaration.getSourceFile().fileName } } : {};
 }
 
 const filesOf = (symbol: ts.Symbol): string[] =>

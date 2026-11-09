@@ -2,21 +2,21 @@
  * Split TypeDoc's JSON for the workspace into one reference file per package,
  * in the shape the site's package pages draw (`apps/shared/reference.ts`).
  *
- * Reads `dist-demo/reference/typedoc.json`, which `typedoc` writes (`json` in
+ * Reads `dist/typedoc.json`, which `typedoc` writes (`json` in
  * `typedoc.config.mjs`), and writes `dist-demo/reference/<package>.json`.
- * The site fetches those; TypeDoc's own file is far larger than their sum and
- * is deleted once it has been read, so the directory holds one file per
- * published package and nothing else.
+ * The site fetches those, and the directory holds one file per published
+ * package and nothing else. TypeDoc's own file, far larger than their sum,
+ * stays outside the deployed tree for forge's index pages to read.
  *
  * Usage: `npm run build:reference`, after `typedoc`. `npm run build:api` runs both.
  */
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { JSONOutput } from 'typedoc';
 import { readProject } from './lib/reference/project.ts';
 
 const DIR = resolve(import.meta.dirname, '../dist-demo/reference');
-const INPUT = join(DIR, 'typedoc.json');
+const INPUT = resolve(import.meta.dirname, '../dist/typedoc.json');
 
 if (!existsSync(INPUT)) {
   console.error(`build-reference: ${INPUT} does not exist. Run \`npm run build:api\`, which writes it and then runs this.`);
@@ -30,6 +30,7 @@ if (references.length === 0) {
   process.exit(1);
 }
 
+mkdirSync(DIR, { recursive: true });
 const width = Math.max(...references.map((r) => r.package.length));
 const written = new Set<string>();
 references.forEach((reference, i) => {
