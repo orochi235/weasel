@@ -8,6 +8,9 @@ import { passOn, type TakeKey } from './keyPeers';
 import { inModalOver } from './modal';
 import { followPointer, releaseIn, type HeldKey } from './overKeys';
 
+/** Whether `key` is one code point: a typed character, astral ones included. */
+const oneCodePoint = (key: string): boolean => key.length === 1 || (key.length === 2 && key.codePointAt(0)! > 0xffff);
+
 /**
  * True when AltGr typed the character `e` reports. A layout that types `[` with
  * AltGr reports Ctrl and Alt held with it, which are part of the keystroke
@@ -16,7 +19,7 @@ import { followPointer, releaseIn, type HeldKey } from './overKeys';
  * Ctrl+Alt too, and that one is a chord.
  */
 function typedWithAltGraph(e: KeyboardEvent): boolean {
-  if (!e.ctrlKey || !e.altKey || e.key.length !== 1 || !e.getModifierState?.('AltGraph')) return false;
+  if (!e.ctrlKey || !e.altKey || !oneCodePoint(e.key) || !e.getModifierState?.('AltGraph')) return false;
   const base = /^(?:Key|Digit)(.)$/.exec(e.code)?.[1];
   return base === undefined || base.toLowerCase() !== e.key.toLowerCase();
 }

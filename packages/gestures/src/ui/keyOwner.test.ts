@@ -59,6 +59,8 @@ describe('focusedControlOwnsKey', () => {
     expect(focusedControlOwnsKey(keyOn(select(), 'X', { shiftKey: true }))).toBe(true);
     expect(focusedControlOwnsKey(keyOn(select(), 'ArrowDown'))).toBe(true);
     expect(focusedControlOwnsKey(keyOn(select(), 'Home'))).toBe(true);
+    expect(focusedControlOwnsKey(keyOn(select(), '\u{10428}'))).toBe(true);
+    expect(focusedControlOwnsKey(keyOn(select(), 'Escape'))).toBe(false);
   });
 
   it('gives a range its navigation keys and a radio its arrows, but no modifier chord or Delete', () => {

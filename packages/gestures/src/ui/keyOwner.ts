@@ -1,3 +1,5 @@
+import { oneCodePoint } from './oneCodePoint';
+
 /** The `<input>` types a person types text into. An unknown or missing `type` is `text`. */
 const TEXT_INPUT_TYPES = new Set([
   'text', 'search', 'email', 'url', 'tel', 'password', 'number',
@@ -47,8 +49,9 @@ function selectOwnsKey(e: KeyboardEvent): boolean {
   if (!(e.target instanceof Element) || e.target.tagName !== 'SELECT') return false;
   if (e.metaKey || e.ctrlKey || e.altKey) return false;
   // A one-character `key` is a printable character, which a select reads as type-ahead.
-  return SELECT_NAVIGATION.has(e.key) || e.key.length === 1;
+  return SELECT_NAVIGATION.has(e.key) || oneCodePoint(e.key);
 }
+
 
 /**
  * True when the key `e` reports belongs to the control it was typed on: Space

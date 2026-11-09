@@ -78,6 +78,14 @@ describe('a key typed with AltGr', () => {
     expect(e.defaultPrevented).toBe(true);
   });
 
+  it('matches one for a character outside the BMP it typed', () => {
+    const run = vi.fn();
+    const clef = '\u{1D11E}';
+    mount({ 'test.clef': { binding: { kind: 'key', key: clef }, run } });
+    press({ key: clef, code: 'Digit8', ctrlKey: true, altKey: true, modifierAltGraph: true });
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
   it('prefers a binding for the chord as reported', () => {
     const plain = vi.fn();
     const chord = vi.fn();

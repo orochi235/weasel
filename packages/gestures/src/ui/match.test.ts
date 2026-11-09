@@ -299,6 +299,8 @@ describe('matchSpec', () => {
     expect(matchSpec({ kind: 'key', key: 'a', code: 'KeyQ', ...noMods, ctrlKey: true }, { kind: 'key', key: 'q', mods: { ctrl: true } }, false)).toBe(false);
     // Alone, or as AltGr's character with Ctrl and Alt taken off, a key is what it typed.
     expect(matchSpec({ kind: 'key', key: '€', code: 'KeyE', ...noMods }, { kind: 'key', key: 'e' }, false)).toBe(false);
+    // A character outside the BMP is one character, as a Deseret layout's Ctrl+Z reports it.
+    expect(matchSpec({ kind: 'key', key: '\u{10428}', code: 'KeyZ', ...noMods, ctrlKey: true }, undo, false)).toBe(true);
     // A spec naming a non-Latin key is not widened.
     expect(matchSpec({ kind: 'key', key: 'я', code: 'KeyZ', ...noMods }, { kind: 'key', key: 'ф' }, false)).toBe(false);
   });
