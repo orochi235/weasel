@@ -8,6 +8,7 @@ import {
   anchorAtLength, lengthAtAnchor, lengthAtSegmentFraction, lengthAtSubpath, lengthTable, type LengthRun,
 } from './lengthTable';
 import { pointAtLength } from './positions';
+import { pathLengthTable } from './pathTable';
 
 /** A run whose every point is an anchor, numbered from `first`. */
 function anchored(points: number[], closed: boolean, first: number, dim = 2): LengthRun {
@@ -147,4 +148,17 @@ describe('lengthTable', () => {
     expect(anchorAtLength(t, 99)).toBe(4);
     expect(anchorAtLength(t, NaN)).toBeNaN();
   });
+
+  it('gives a curve with a retracted handle the direction it leaves and arrives in, not its chord', () => {
+    const r = Math.SQRT1_2;
+    const out = pathLengthTable(pathFromD('M0,0 C0,0 10,10 20,0'));
+    const start = pointAtLength(out, 0).tangent;
+    expect(start[0]).toBeCloseTo(r, 12);
+    expect(start[1]).toBeCloseTo(r, 12);
+    const back = pathLengthTable(pathFromD('M20,0 C10,10 0,0 0,0'));
+    const end = pointAtLength(back, back.total).tangent;
+    expect(end[0]).toBeCloseTo(-r, 5);
+    expect(end[1]).toBeCloseTo(-r, 5);
+  });
 });
+
