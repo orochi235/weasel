@@ -237,6 +237,8 @@ export function invokeAction(
       return 'misbound';
     }
     const gestureId = gestureIdFor(event);
+    // A gesture no later input continues (a key, a click, a wheel) is ended by nothing else.
+    endGesture(run, gestureId, event, 'commit');
     const roleKeys = roleKeysOf(action.modifierRoles, match.binding.opts?.roles);
     run.facts.begin(gestureId, event, roleKeys && platformRoleKeys(roleKeys, run.isMac()));
     const { invoker } = action;
