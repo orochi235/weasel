@@ -14,6 +14,14 @@ describe('parseTransform', () => {
     expect(read('matrix(1,0,0,1,5,6)').warnings).toEqual([]);
   });
 
+  it('reads arguments a minifier wrote with no separator where the sign or point starts a number', () => {
+    expect(read('translate(10-20)')).toEqual({ m: [1, 0, 0, 1, 10, -20], warnings: [] });
+    expect(read('translate(.5.5)').m).toEqual([1, 0, 0, 1, 0.5, 0.5]);
+    expect(read('matrix(1 0 0 1-5 1e1)').m).toEqual([1, 0, 0, 1, -5, 10]);
+    expect(read('translate(10,,20)').m).toEqual(IDENTITY_MATRIX);
+    expect(read('translate(,10)').m).toEqual(IDENTITY_MATRIX);
+  });
+
   it('reads nothing, or none, as the identity without a warning', () => {
     expect(read('').m).toEqual(IDENTITY_MATRIX);
     expect(read('  none ')).toEqual({ m: IDENTITY_MATRIX, warnings: [] });
