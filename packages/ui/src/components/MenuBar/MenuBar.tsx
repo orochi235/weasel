@@ -39,13 +39,13 @@ export interface MenuBarProps {
 
 type MenuTitle = Extract<Title, { kind: 'menu' }>;
 interface Opened { key: string; menu: OpenMenu; release: boolean }
-const ALT: MenuAccessChord = { alt: true };
+export const DEFAULT_ACCESS_CHORD: MenuAccessChord = { alt: true };
 
 /**
  * A bar of menus across the top of an app: a title per menu group, each opening its group as the context menu's
  * panels do, with the pointer and keyboard behavior of a desktop menu bar.
  */
-export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', accessChord = ALT, className }: MenuBarProps) {
+export function MenuBar({ schema, over, values, onChange, label = 'Menu bar', accessChord = DEFAULT_ACCESS_CHORD, className }: MenuBarProps) {
   const read = barReader(schema, values, over);
   const { titles, disabled } = shownMenuBar(schema, read, over);
   const menus = titles.filter((t): t is MenuTitle => t.kind === 'menu');
