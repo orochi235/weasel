@@ -25,7 +25,7 @@ import { startOffsetPhysics } from './offsetPhysics';
 import { startOffsetTween } from './offsetTween';
 import { startPhysics } from './physicsAnimation';
 import { timeScaleOf, type Table } from './table';
-import { startTween } from './tweenAnimation';
+import { checkTweenMs, startTween } from './tweenAnimation';
 import type { Emitter } from '@weasel-js/registry';
 
 /** What {@link createAnimatorApi} needs of the animator around it. */
@@ -116,8 +116,10 @@ export function createAnimatorApi(host: ApiHost): Animator {
     : startPhysics(ctx, o, kind));
 
   const api: Animator = {
-    tween: <T,>(o: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle =>
-      (o.target ? handOffTween(handoffs, o) ?? startOffsetTween(ctx, o) : startTween(ctx, o)),
+    tween: <T,>(o: TweenOptions<T> | TargetTweenOptions<T>): AnimationHandle => {
+      checkTweenMs(o.ms);
+      return o.target ? handOffTween(handoffs, o) ?? startOffsetTween(ctx, o) : startTween(ctx, o);
+    },
     spring: <T,>(o: SpringOptions<T> | TargetSpringOptions<T>): AnimationHandle => physics<T>(o, 'spring'),
     decay: <T,>(o: DecayOptions<T> | TargetDecayOptions<T>): AnimationHandle =>
       physics<T>(decayAsPhysics(o), 'decay'),
