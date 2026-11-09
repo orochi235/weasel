@@ -67,13 +67,14 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
     }
     case 'dots': {
       const r = spec.radius ?? 1;
-      return { size: s, shapes: [{ kind: 'circle', cx: s / 2, cy: s / 2, r, color }] };
+      return { size: s, shapes: r >= 0 ? [{ kind: 'circle', cx: s / 2, cy: s / 2, r, color }] : [] };
     }
     case 'chunks': {
       const density = spec.density ?? 0.35;
       const chunkSize = spec.chunkSize ?? 3;
       const rand = mulberry32(spec.seed ?? 42);
-      const count = Math.round((s * s * density) / (chunkSize * chunkSize));
+      const wanted = Math.round((s * s * density) / (chunkSize * chunkSize));
+      const count = chunkSize > 0 && Number.isFinite(wanted) ? wanted : 0;
       const shapes: TileShape[] = [];
       if (spec.bg !== undefined) {
         shapes.push({ kind: 'rect', x: 0, y: 0, width: s, height: s, color: spec.bg });
