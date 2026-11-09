@@ -39,6 +39,13 @@ describe('solveIk', () => {
     expect(dist(tipOf(ARM, out.pose, 'elbow'), target)).toBeLessThan(0.01);
   });
 
+  it('refuses a target, tip or pole that is not finite, which posed the chain NaN', () => {
+    const arm = { joints: ['shoulder', 'elbow'], tip: TIP };
+    expect(() => solveIk(ARM, {}, { ...arm, target: { x: Number.NaN, y: 0 } })).toThrow(RangeError);
+    expect(() => solveIk(ARM, {}, { ...arm, tip: { x: 10, y: Infinity }, target: { x: 5, y: 5 } })).toThrow(RangeError);
+    expect(() => solveIk(ARM, {}, { ...arm, target: { x: 5, y: 5 }, pole: { x: Number.NaN, y: 0 } })).toThrow(RangeError);
+  });
+
   it('converges a longer chain within the iteration cap', () => {
     const target = { x: 5, y: 25 };
     const out = solveIk(LONG, {}, { ...LONG_CHAIN, target });
