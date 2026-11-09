@@ -1,13 +1,12 @@
 import type { KeyboardEvent } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
-import { isNudgeChord } from '@weasel-js/ui-logic';
+import { arrowDir, isNudgeChord } from '@weasel-js/ui-logic';
+import { inlineDirection } from '../../useRovingTabIndex';
 import type { TreeNode } from './Tree';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, parentsOf, type KeyboardMove } from './treeMoves';
 import type { TreeDragEffect } from './useTreeDrag';
 
-const MOVE_KEYS: Record<string, KeyboardMove | undefined> = {
-  ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'out', ArrowRight: 'in',
-};
+const MOVE_KEYS: Record<string, KeyboardMove | undefined> = { ArrowUp: 'up', ArrowDown: 'down' };
 
 interface MoveKeyCtx {
   nodes: readonly TreeNode[];
@@ -23,7 +22,8 @@ interface MoveKeyCtx {
 /** Handle an Alt+arrow move on `nodeId`; returns true when the key was a move key (handled, default prevented). */
 export function handleMoveKey(e: KeyboardEvent<HTMLElement>, nodeId: string, ctx: MoveKeyCtx): boolean {
   if (!isNudgeChord(e)) return false;
-  const dir = MOVE_KEYS[e.key];
+  const across = arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) });
+  const dir = across === 1 ? 'in' : across === -1 ? 'out' : MOVE_KEYS[e.key];
   if (!dir) return false;
   e.preventDefault();
   const { nodes, canDrop } = ctx;

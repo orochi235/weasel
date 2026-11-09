@@ -345,6 +345,18 @@ describe('Tree — keyboard moves', () => {
     expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
   });
 
+  it('outdents with Alt+Right and indents with Alt+Left in a right-to-left tree', async () => {
+    const { onMove, tree } = setup();
+    tree.setAttribute('dir', 'rtl');
+    focusOn('Ex');
+    key('ArrowRight');
+    expect(onMove).toHaveBeenLastCalledWith(['x'], { parentId: null, index: 1 });
+    await frame();
+    focusOn('Zed');
+    key('ArrowLeft');
+    expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
+  });
+
   it('routes keyboard moves through canDrop', () => {
     const { onMove } = setup({ canDrop: () => false });
     focusOn('Why');
