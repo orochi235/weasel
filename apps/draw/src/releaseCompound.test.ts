@@ -32,6 +32,18 @@ describe('releaseCompoundPaths', () => {
     expect(scene.get(out[0])!.data.label).toBe('two squares');
   });
 
+  it('drops from each piece what named the compound path\'s anchors or how it was drawn', () => {
+    const { scene } = setup();
+    const id = asNodeId('compound');
+    const data = scene.get(id)!.data;
+    scene.update(id, { data: { ...data, constraints: [{ kind: 'fixed', anchors: [5] }], warp: { kind: 'held' } } as typeof data });
+    const out = releaseCompoundPaths(scene, ['compound']);
+    for (const piece of out) {
+      expect(scene.get(piece)!.data).not.toHaveProperty('constraints');
+      expect(scene.get(piece)!.data).not.toHaveProperty('warp');
+    }
+  });
+
   it('keeps a path with one subpath as it is', () => {
     const { scene, g } = setup();
     expect(releaseCompoundPaths(scene, ['below'])).toEqual([asNodeId('below')]);

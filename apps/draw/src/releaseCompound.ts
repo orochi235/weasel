@@ -1,4 +1,6 @@
-import { asNodeId, boundsOfPath, PATH_M, pathInWorld, splitSubpaths, type NodeId } from '@weasel-js/core';
+import {
+  asNodeId, boundsOfPath, PATH_M, pathInWorld, splitSubpaths, type NodeId, withoutGeometryBoundData, withoutShapeGenerator,
+} from '@weasel-js/core';
 import type { DrawScene } from './drawDocument';
 
 /** Whether any leaf among `ids` holds a polygon path with more than one subpath. */
@@ -36,6 +38,7 @@ export function releaseCompoundPaths(scene: DrawScene, ids: readonly string[]): 
       const siblings = node.parent == null ? scene.roots : scene.childrenOf(node.parent);
       const at = siblings.indexOf(nid);
       scene.remove(nid);
+      const carried = withoutGeometryBoundData(withoutShapeGenerator(node.data));
       parts.forEach((sub, i) => {
         const b = boundsOfPath(sub);
         newIds.push(scene.add({
@@ -44,7 +47,7 @@ export function releaseCompoundPaths(scene: DrawScene, ids: readonly string[]): 
           parent: node.parent,
           ...(at >= 0 ? { index: at + i } : {}),
           pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-          data: { ...node.data, path: sub },
+          data: { ...carried, path: sub },
         }));
       });
     }
