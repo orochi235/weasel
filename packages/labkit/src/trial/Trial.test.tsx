@@ -257,6 +257,17 @@ describe('<TrialChrome>', () => {
     expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
   });
 
+  it('saves one snapshot for a held Mod+S, not one per key repeat', async () => {
+    const saveSnapshot = vi.fn();
+    await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} />, { wrapper: withIcons });
+    const region = screen.getByRole('region', { name: /trial/i });
+    fireEvent.keyDown(region, { key: 's', ctrlKey: true });
+    const repeat = fireEvent.keyDown(region, { key: 's', ctrlKey: true, repeat: true });
+    expect(saveSnapshot).toHaveBeenCalledTimes(1);
+    // Still the trial's chord, so the browser's save dialog does not open mid-hold.
+    expect(repeat).toBe(false);
+  });
+
   it('leaves Mod+S to the browser once the snapshot button is suppressed', async () => {
     const saveSnapshot = vi.fn();
     await renderSettled(<ChromeHarness labOverrides={{ saveSnapshot }} suppress={['snapshot']} />, {

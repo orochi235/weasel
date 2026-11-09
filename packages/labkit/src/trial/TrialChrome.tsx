@@ -270,7 +270,7 @@ export function TrialChrome({
       else ctx.undo();
     } else if (matchesKeyBinding(e, { key: 's', mod: true }) && offered('snapshot')) {
       e.preventDefault();
-      ctx.saveSnapshot();
+      if (!e.repeat) ctx.saveSnapshot();
     }
   };
   // With focus on the page body the chords go to the lab's focused trial, the first where none was picked.
