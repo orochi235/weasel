@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { selectAllAction } from './selectAll';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
@@ -11,7 +12,7 @@ describe('selectAllAction (descriptor)', () => {
   });
 
   it('defaultBinding = { kind: "key", key: "a", mods: { mod: true } }', () => {
-    expect(selectAllAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'a', mods: { mod: true } }, opts: { id: 'selectAll.key' } }]);
+    expect(selectAllAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'a', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'selectAll.key' } }]);
   });
 
   it('invoker.timing = "immediate"', () => {

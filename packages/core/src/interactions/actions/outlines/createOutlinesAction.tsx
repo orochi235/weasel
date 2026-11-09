@@ -1,5 +1,5 @@
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { loadTextOutlines, type TextNodeSource, type TextOutlinesError } from '@weasel-js/text';
 import {
@@ -54,7 +54,7 @@ export const createOutlinesAction: Action = {
   icon: icon('createOutlines'),
   group: 'text',
   // Affinity's Convert to Curves; Illustrator's Mod+Shift+O is Chrome's bookmark manager.
-  defaultBinding: [{ spec: { kind: 'key', key: 'Enter', mods: { mod: true } }, opts: { id: 'createOutlines.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'Enter', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'createOutlines.key' } }],
   eligible: { capability: 'creates-shapes' },
   requires: ['selection', 'createOutlinesAdapter', 'notices'],
   invoker: {

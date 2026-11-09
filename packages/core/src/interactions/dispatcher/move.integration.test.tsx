@@ -10,7 +10,8 @@ import { ActiveToolContextProvider } from '@weasel-js/routing/react';
 import { useGestureDispatcher } from '@weasel-js/routing/react';
 import { moveAction } from '../actions/move/action';
 import { nudgeRightAction } from '../actions/defaults/nudge';
-import { clipboardCutAction } from '../actions/clipboard/action';
+import { clipboardCopyAction, clipboardCutAction } from '../actions/clipboard/action';
+import { selectAllAction } from '../actions/defaults/selectAll';
 import { transformAgainAction } from '../actions/transform-again/action';
 import { flipAction } from '../actions/flip/action';
 import { duplicateAction } from '../actions/defaults/duplicate';
@@ -51,12 +52,14 @@ function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasE
   return <canvas ref={canvasRef} data-testid="canvas" />;
 }
 
+let copies = 0;
+
 /** Registers live dep sources for 'scene' and 'selection'. */
 function RegisterDeps({ scene, selection }: { scene: Scene<D, L, P>; selection: SelectionApi }) {
   const registry = useDepRegistry();
   registry.register('scene', () => scene);
   registry.register('selection', () => selection);
-  registry.register('clipboard', () => ({ copy: () => {}, paste: () => {}, isEmpty: () => true }));
+  registry.register('clipboard', () => ({ copy: () => { copies++; }, paste: () => {}, isEmpty: () => true }));
   registry.register('history', () => scene.history);
   return null;
 }
@@ -66,7 +69,7 @@ function RegisterMove() {
   if (registry && !registry.list().find((a) => a.id === 'move')) {
     registry.register({ ...moveAction, enabled: () => true });
     registry.register(nudgeRightAction);
-    for (const a of [clipboardCutAction, transformAgainAction, flipAction, duplicateAction, groupAction, undoAction, reorderForwardAction]) {
+    for (const a of [selectAllAction, clipboardCopyAction, clipboardCutAction, transformAgainAction, flipAction, duplicateAction, groupAction, undoAction, reorderForwardAction]) {
       registry.register(a);
     }
   }
@@ -263,6 +266,37 @@ describe('moveAction integration via gesture dispatcher', () => {
 
     expect((scene.get(idA)!.pose as P).x).toBe(30);
     expect(scene.historyEntries().length - before).toBe(1);
+  });
+
+  it('Select All and Copy pressed mid-drag wait for the drag to end', () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const idA = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 0, y: 0, width: 50, height: 50 } });
+    const idB = scene.add({ kind: 'mark', layer: 'main', data: { kind: 'rect' }, pose: { x: 100, y: 0, width: 50, height: 50 } });
+    const selection = makeSelection([idA]);
+    const Harness = buildHarness(scene, selection);
+    const { getByTestId } = render(<Harness />);
+    const canvas = getByTestId('canvas');
+    const chord = (key: string, code: string) => {
+      for (const mod of [{ ctrlKey: true }, { metaKey: true }]) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key, code, ...mod }));
+      }
+    };
+    copies = 0;
+
+    act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0 }); });
+    act(() => { fire(canvas, 'pointermove', { clientX: 20, clientY: 0 }); });
+    act(() => { chord('c', 'KeyC'); chord('a', 'KeyA'); });
+    expect(selection.get()).toEqual([idA]);
+    expect(copies).toBe(0);
+    act(() => { fire(canvas, 'pointerup', { clientX: 20, clientY: 0 }); });
+    expect((scene.get(idA)!.pose as P).x).toBe(20);
+    expect((scene.get(idB)!.pose as P).x).toBe(100);
+
+    // With nothing in flight both keys work as usual.
+    act(() => { chord('c', 'KeyC'); });
+    expect(copies).toBe(1);
+    act(() => { chord('a', 'KeyA'); });
+    expect(selection.get()).toEqual([idA, idB]);
   });
 
   it('a cut pressed mid-drag does not delete what the drag is moving', () => {

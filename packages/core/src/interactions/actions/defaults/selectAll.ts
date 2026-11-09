@@ -1,5 +1,6 @@
 import type { NodeId } from 'core/scene/types';
 import type { Action } from '@weasel-js/routing';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { isAnnotationLayer } from 'core/scene/annotation';
 import { nodeGates } from 'core/scene/nodeGates';
 import { reachableInGroup } from 'canvas/deps/enteredGroup';
@@ -14,7 +15,7 @@ import { reachableInGroup } from 'canvas/deps/enteredGroup';
 export const selectAllAction: Action & { requires: string[] } = {
   id: 'selectAll',
   label: 'Select All',
-  defaultBinding: [{ spec: { kind: 'key', key: 'a', mods: { mod: true } }, opts: { id: 'selectAll.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'a', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'selectAll.key' } }],
   eligible: { capability: 'creates-selection' },
   requires: ['scene', 'selection', 'view', 'enteredGroup'],
   invoker: {

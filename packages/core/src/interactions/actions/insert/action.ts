@@ -103,8 +103,11 @@ export const insertAction: Action & { requires: string[] } = inPlane({
             if (reason === 'cancel') cancelInsert(session);
             else {
               trail = endCtx.drag?.points ?? frame.points;
-              committed = commitInsert(session, frame, trail, gesture.userRotation);
-              if (!committed) restoreSelection(session);
+              try {
+                committed = commitInsert(session, frame, trail, gesture.userRotation);
+              } finally {
+                if (!committed) restoreSelection(session);
+              }
             }
           } finally {
             session.snap.close();
