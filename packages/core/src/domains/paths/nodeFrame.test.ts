@@ -28,10 +28,10 @@ const box = (p: Path | null) => {
 
 describe('nodeFrameOf', () => {
   it('is null at the root and for a polygon pose', () => {
-    const scene = createScene<object, 'main', unknown>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const root = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 1, height: 1 } });
     const group = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 5, y: 5, width: 10, height: 10 } });
-    const poly = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: line(0, 0, 1, 1) });
+    const poly = scene.add({ kind: 'mark', parent: group, layer: 'main', data: {}, pose: line(0, 0, 1, 1) as unknown as RectPose });
     expect(nodeFrameOf(scene as unknown as AnyScene, scene.get(root))).toBeNull();
     expect(nodeFrameOf(scene as unknown as AnyScene, scene.get(poly))).toBeNull();
   });
