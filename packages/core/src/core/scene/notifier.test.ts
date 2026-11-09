@@ -40,7 +40,7 @@ describe('createSceneSelection', () => {
     const heard = vi.fn();
     selection.subscribe(() => { throw new Error('boom'); });
     selection.subscribe(heard);
-    expect(() => selection.set([])).not.toThrow();
+    expect(() => selection.set(['a' as never])).not.toThrow();
     expect(heard).toHaveBeenCalledTimes(1);
     expect(logged).toHaveBeenCalledTimes(1);
   });
