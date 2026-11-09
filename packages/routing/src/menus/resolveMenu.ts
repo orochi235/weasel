@@ -1,7 +1,7 @@
 import type { MenuEntry } from '@weasel-js/menu';
 import {
-  isBuiltinPref, isPrefLeaf, isPrefSection, PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefDisplayBounds, prefLeafAt,
-  prefNumberAt, prefStatusIn, prefStatusUnder, prefUnitAccepts, prefValueAtPath, resolvePrefUnit,
+  isBuiltinPref, isPrefLeaf, isPrefSection, PREF_STATUS, prefAliasedLeaf, prefAliasTarget, prefConditionHolds, prefLeafAt,
+  prefStatusIn, prefStatusUnder, prefValueAtPath,
   type PrefConditionJudge, type PrefOwner,
   type PrefAction, type PrefBoolean, type PrefColor, type PrefConditionReader, type PrefEnum, type PrefGroup,
   type PrefField, type PrefGroupAs, type PrefLeaf, type PrefList, type PrefMap, type PrefNumber, type PrefObject,
@@ -13,9 +13,9 @@ import { actionItems, type ActionItem } from '../interactions/actions/actionItem
 import { actionShortcuts } from '../interactions/actions/actionShortcuts';
 import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionEnabled';
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
-import { endlessAllows } from '@weasel-js/quantity';
 import { isDev } from '@weasel-js/react';
-import { sep, tidy } from './separators';
+import { sep, tidy, withReason } from './separators';
+import { booleanRows, colorRows, enumRows, numberRows, stringRows } from './valueRows';
 import type { MenuDef } from './types';
 import {
   fieldRows, listRows, mapRows, objectRows, paintRows, unionRows, type MenuAccess, type MenuDraw,
@@ -145,117 +145,14 @@ function actionRows(ctx: Ctx, leaf: PrefAction, key: string, off: boolean): Menu
   return items.map((it) => itemOf(ctx, it, `${key}/${it.key}`, it.label, off));
 }
 
-function siblingsOf(ctx: Ctx, path: string): Record<string, unknown> | undefined {
-  const dot = path.lastIndexOf('.');
-  const parent = dot < 0 ? undefined : ctx.src.values!(path.slice(0, dot));
-  return parent && typeof parent === 'object' ? parent as Record<string, unknown> : undefined;
-}
-
-function booleanRows(ctx: Ctx, leaf: PrefBoolean, key: string, path: string, off: boolean): MenuEntry[] {
-  const { values, onChange } = ctx.src;
-  if (!values || !onChange) return [];
-  const stored = values(path);
-  const on = leaf.encoding ? leaf.encoding.read(stored, siblingsOf(ctx, path)) : stored === true;
-  const write = (v: boolean) => (leaf.encoding ? leaf.encoding.write(v, siblingsOf(ctx, path)) : v);
-  return [{
-    kind: 'item', key, label: leaf.name, ...withAccess(leaf.access), checked: on,
-    disabled: off || leaf.readout === true,
-    run: leaf.readout ? noop : () => onChange(path, write(!on)),
-  }];
-}
-
-/** What an enum option's row says besides its label: its glyph, what it does, and why it is disabled. */
-const optionNotes = ({ icon, description, disabled, disabledReason }: PrefEnum['options'][number]) =>
-  ({ ...(icon ? { icon } : {}), ...(description ? { description } : {}), ...(disabled && disabledReason ? { disabledReason } : {}) });
-
-function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: boolean): MenuEntry[] {
-  const { values, onChange } = ctx.src;
-  if (!values || !onChange) return [];
-  const stored = values(path);
-  const current = leaf.encoding ? leaf.encoding.read(stored, siblingsOf(ctx, path)) : stored;
-  if (leaf.readout) {
-    const shown = leaf.options.find((o) => o.value === current)?.label ?? '—';
-    return [{ kind: 'item', key, label: `${leaf.name}: ${shown}`, disabled: true, run: noop }];
-  }
-  const write = (v: string) => (leaf.encoding ? leaf.encoding.write(v, siblingsOf(ctx, path)) : v);
-  return [
-    sep(`${key}/<`),
-    ...leaf.options.map((o): MenuEntry => ({
-      kind: 'item', key: `${key}/${o.value}`, label: o.label, checked: o.value === current, radio: true, ...optionNotes(o),
-      disabled: off || o.disabled === true, run: () => onChange(path, write(o.value)),
-    })),
-    sep(`${key}/>`),
-  ];
-}
-
-/** A number row, in the units the leaf shows: its value, bounds, and step convert from the stored unit, and
- *  what is set converts back. An infinity is a value only where an `endless` end stands for it. */
-function numberRows(ctx: Ctx, given: PrefNumber, key: string, path: string, off: boolean): MenuEntry[] {
-  const { values, onChange } = ctx.src;
-  if (!values || !onChange) return [];
-  const leaf = prefNumberAt(given, values);
-  const unit = leaf.unit && resolvePrefUnit(leaf.unit);
-  const stored = values(path);
-  const { min, max, step, endless } = prefDisplayBounds(leaf);
-  const disabled = off || leaf.readout === true;
-  const display = leaf.display ?? unit?.display;
-  return [{
-    kind: 'number', key, label: leaf.name, ...withAccess(leaf.access),
-    ...(leaf.icon ? { icon: leaf.icon } : {}),
-    ...(disabled ? { disabled } : {}),
-    value: typeof stored === 'number' && (Number.isFinite(stored) || endlessAllows(leaf.endless, stored))
-      ? (unit ? unit.toDisplay(stored) : stored)
-      : undefined,
-    ...(min === undefined ? {} : { min }),
-    ...(max === undefined ? {} : { max }),
-    step,
-    ...(unit?.suffix === undefined ? {} : { suffix: unit.suffix }),
-    ...(display ? { display } : {}),
-    ...(endless ? { endless } : {}),
-    ...(leaf.infinity === undefined ? {} : { infinity: leaf.infinity }),
-    ...(unit ? { accepts: prefUnitAccepts(unit) } : {}),
-    set: (shown) => onChange(path, unit ? unit.fromDisplay(shown) : shown),
-  }];
-}
-
-const textAt = (ctx: Ctx, path: string): string | undefined => {
-  const v = ctx.src.values?.(path);
-  return typeof v === 'string' && v !== '' ? v : undefined;
-};
-
-/** A color row, which writes the color unless the leaf is a readout or nothing writes it. */
-function colorRows(ctx: Ctx, leaf: PrefColor, key: string, path: string, off: boolean): MenuEntry[] {
-  const { values, onChange } = ctx.src;
-  if (!values) return [];
-  return [{
-    kind: 'color', key, label: leaf.name, ...withAccess(leaf.access),
-    ...(off ? { disabled: true } : {}),
-    value: textAt(ctx, path),
-    ...(leaf.alpha ? { alpha: true } : {}),
-    ...(leaf.readout || !onChange ? {} : { set: (color: string) => onChange(path, color) }),
-  }];
-}
-
-/** A string row is edited in place; a readout, or one nothing writes, reads as its name and value, as an enum readout does. */
-function stringRows(ctx: Ctx, leaf: PrefString, key: string, path: string, off: boolean): MenuEntry[] {
-  const { values, onChange } = ctx.src;
-  if (!values) return [];
-  if (leaf.readout || !onChange) {
-    return [{ kind: 'item', key, label: `${leaf.name}: ${textAt(ctx, path) ?? '—'}`, ...withAccess(leaf.access), disabled: true, run: noop }];
-  }
-  const stored = values(path);
-  return [{
-    kind: 'text', key, label: leaf.name, ...withAccess(leaf.access),
-    ...(leaf.icon ? { icon: leaf.icon } : {}),
-    ...(off ? { disabled: true } : {}),
-    value: typeof stored === 'string' ? stored : undefined,
-    set: (text) => onChange(path, text),
-  }];
-}
-
 /** `key` names the row; `path` is where its value lives, which differs from
  *  `key` only for a leaf reached through an alias. */
 function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: boolean): MenuEntry[] {
+  const rows = rowsOf(ctx, leaf, key, path, off);
+  return off ? withReason(rows, leaf.disabledReason) : rows;
+}
+
+function rowsOf(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: boolean): MenuEntry[] {
   switch (leaf.kind) {
     case 'action': return actionRows(ctx, leaf as PrefAction, key, off);
     case 'actions': {
@@ -264,11 +161,11 @@ function leafRows(ctx: Ctx, leaf: PrefLeaf, key: string, path: string, off: bool
         .filter((a) => a.group === group)
         .flatMap((a) => actionItems(a).map((it) => itemOf(ctx, it, `${key}/${it.key}`, it.label, off)));
     }
-    case 'boolean': return booleanRows(ctx, leaf as PrefBoolean, key, path, off);
-    case 'enum': return enumRows(ctx, leaf as PrefEnum, key, path, off);
-    case 'number': return numberRows(ctx, leaf as PrefNumber, key, path, off);
-    case 'color': return colorRows(ctx, leaf as PrefColor, key, path, off);
-    case 'string': return stringRows(ctx, leaf as PrefString, key, path, off);
+    case 'boolean': return booleanRows(ctx.src, leaf as PrefBoolean, key, path, off);
+    case 'enum': return enumRows(ctx.src, leaf as PrefEnum, key, path, off);
+    case 'number': return numberRows(ctx.src, leaf as PrefNumber, key, path, off);
+    case 'color': return colorRows(ctx.src, leaf as PrefColor, key, path, off);
+    case 'string': return stringRows(ctx.src, leaf as PrefString, key, path, off);
     case 'object': return objectRows(drawIn(ctx), leaf as PrefObject, key, path, off);
     case 'list': return listRows(drawIn(ctx), leaf as PrefList, key, path, off);
     case 'map': return mapRows(drawIn(ctx), leaf as PrefMap, key, path, off);
