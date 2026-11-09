@@ -93,6 +93,23 @@ describe('recording session', () => {
     expect(t.session.playing).toBe(false);
   });
 
+  it('reports JSON that is not a recording by what it lacks, and replays none of it', async () => {
+    const cases: Array<[string, RegExp]> = [
+      ['{}', /no version 1 marker/],
+      ['null', /no recording object/],
+      ['{"version":1,"scene":null}', /no events list/],
+      ['{"version":1,"events":[]}', /no scene/],
+    ];
+    for (const [text, why] of cases) {
+      const t = setup({ pick: async () => new Blob([text]) });
+      await t.session.play('flush');
+      expect(t.host.failed).toHaveBeenCalledWith(expect.stringMatching(why));
+      expect(t.host.restore).not.toHaveBeenCalled();
+      expect(t.session.playing).toBe(false);
+      t.detach();
+    }
+  });
+
   it('will not record while it plays, nor play while it records', async () => {
     const t = setup({ pick: vi.fn(async () => null) });
     await t.session.toggle();

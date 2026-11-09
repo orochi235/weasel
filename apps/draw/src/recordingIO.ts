@@ -81,7 +81,8 @@ export async function serializeRecording(rec: Recording): Promise<Blob> {
 /** Parse a recording Blob (or File from an `<input type="file">`) back
  *  into a `Recording`. Sniffs the gzip magic bytes; falls through to
  *  plain JSON parsing when the magic isn't present, so recordings saved
- *  before gzip rolled out still load. */
+ *  before gzip rolled out still load. Rejects a file that is not a
+ *  recording, saying what it lacks. */
 export async function deserializeRecording(blob: Blob): Promise<Recording> {
   const bytes = await blobToBytes(blob);
   const isGzipped =
@@ -93,8 +94,24 @@ export async function deserializeRecording(blob: Blob): Promise<Recording> {
       );
     }
     const decompressed = await pumpThrough(bytes, new DecompressionStream('gzip'));
-    return JSON.parse(new TextDecoder().decode(decompressed)) as Recording;
+    return asRecording(new TextDecoder().decode(decompressed));
   }
-  const text = new TextDecoder().decode(bytes);
-  return JSON.parse(text) as Recording;
+  return asRecording(new TextDecoder().decode(bytes));
+}
+
+/** `text` read as a recording, or an error naming what it lacks. */
+function asRecording(text: string): Recording {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error('This file is not a WeaselDraw recording: it is not JSON.');
+  }
+  const missing = (what: string) => new Error(`This file is not a WeaselDraw recording: it has no ${what}.`);
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) throw missing('recording object');
+  const rec = json as Partial<Record<keyof Recording, unknown>>;
+  if (rec.version !== 1) throw missing('version 1 marker');
+  if (!Array.isArray(rec.events)) throw missing('events list');
+  if (rec.scene === undefined || (rec.scene !== null && typeof rec.scene !== 'object')) throw missing('scene');
+  return json as Recording;
 }
