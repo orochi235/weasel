@@ -280,7 +280,7 @@ function FlatLayout(props: {
   ));
   return (
     <div className={[s.columnsLayout, props.className].filter(Boolean).join(' ')} data-across={props.across ? 2 : undefined}
-      {...formAttrs(drop)} {...selection}>
+      {...formAttrs(drop, props.drop != null)} {...selection}>
       {props.filterField}
       {drawn === null ? props.noMatches : list ? (
         <div className={s.rows}>{children}</div>

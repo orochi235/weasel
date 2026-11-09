@@ -372,19 +372,6 @@ Owner tags, after the priority (2026-10-26):
   `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
   box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
 
-- **(P3) [agent] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
-  a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
-  the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`
-  override that `segmentedRow`, `ButtonBar` and `Bar` could pass from the run; `Tabs` and `RadioGroup` take their
-  arrows from React Aria's locale. `SwatchGrid` rings already step by screen direction (`ringStep`).
-  Ruled (2026-11-07): arrows follow the screen. Closes when Right moves to the item on the screen's right along
-  a clockwise bottom arc in `ButtonBar`, `Bar`, and `segmentedRow`.
-
-- **(P3) [agent] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
-  (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
-  undecided (`useSliderGeometry`).
-  Ruled (2026-11-07): they follow the arc, min at the run's start. Closes when `useSliderGeometry` does.
-
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
   Closes when the maintainer has pressed Alt and Alt+F with the menu bar mounted in Chrome on Windows and
@@ -451,13 +438,6 @@ Owner tags, after the priority (2026-10-26):
   size from `size`, where both sizes drew at the `sm` font; nobody has looked at its `md`.
   Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
   done.
-
-- **(P3) [agent] An empty fragment takes no drop in the live preview.** It draws nothing
-  (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
-  only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
-  is on would give the preview somewhere to land, and would also move the rows around it.
-  Ruled (2026-11-07): it draws a row-height drop slot only while a drag is on, and the rows around it move.
-  Closes when an empty fragment takes a drop in the live preview.
 
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a

@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from '@weasel-js/prefs';
+import type { PrefDrop } from './drop';
 import { PrefsForm } from './PrefsForm';
 import { prefRailItems } from './schema';
 
@@ -66,5 +67,16 @@ describe('a fragment group', () => {
     render(<PrefsForm schema={SCHEMA} values={{}} onChange={() => {}} />);
     expect(screen.queryByText('Glued')).toBeNull();
     expect(screen.getAllByRole('checkbox')).toHaveLength(4);
+  });
+
+  it('marks the form while a drag is over it, which opens an empty fragment to a drop', () => {
+    const empty: PrefGroup = { name: 'Prefs', children: { view: { name: 'View', children: { grid: flag('Grid'), glue: { name: 'Glued', as: 'fragment', children: {} } } } } };
+    const form = (drop: PrefDrop | null) => <PrefsForm layout="rail" schema={empty} values={{}} showEmpty drop={drop} onChange={() => {}} />;
+    const { container, rerender } = render(form(null));
+    const fragment = container.querySelector('[data-pref-fragment]')!;
+    expect(fragment).toBeEmptyDOMElement();
+    expect(fragment.closest('[data-pref-drag]')).toBeNull();
+    rerender(form({ path: '', where: 'home', nodes: [flag('New')], from: [] }));
+    expect(container.querySelector('[data-pref-fragment]')!.closest('[data-pref-drag]')).not.toBeNull();
   });
 });

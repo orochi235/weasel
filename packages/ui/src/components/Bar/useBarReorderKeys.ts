@@ -4,7 +4,7 @@ import { useLatest } from '@weasel-js/react';
 import { BAR_IN, BAR_UNIT } from './barOrder';
 import { BAR_LEAD } from './useBarOverflow';
 import { containerUnits, grabbedUnit, movedInto } from './useBarReorder';
-import { inlineDirection } from '../../useRovingTabIndex';
+import { inlineDirection, type RovingDirection } from '../../useRovingTabIndex';
 import { nudgeOf } from '@weasel-js/ui-logic';
 
 /** What {@link useBarReorderKeys} reads. */
@@ -16,6 +16,9 @@ export interface BarReorderKeysArgs {
   onReorder?: (order: PrefOrder) => void;
   /** A vertical bar answers to Alt+Up and Down; any other, to Alt+Left and Right, mirrored under right-to-left. */
   vertical: boolean;
+  /** The way the bar's items run across the screen, which Left and Right follow. Default: the root's computed
+   *  `direction`. A bar laid along a curve passes its run's. */
+  dir?: RovingDirection;
   /** As on `useBarReorder`: every child key of a container, so children nothing draws keep their places. */
   keysOf?: (container: string) => readonly string[] | undefined;
 }
@@ -54,7 +57,7 @@ function nameOf(unit: HTMLElement): string {
  * text-entry field, which keeps Alt+arrow for word motion. Each move calls `onReorder` once, keeps focus on the
  * control that had it, and sets `announcement`.
  */
-export function useBarReorderKeys({ root, order, onReorder, vertical, keysOf }: BarReorderKeysArgs): BarReorderKeys {
+export function useBarReorderKeys({ root, order, onReorder, vertical, dir, keysOf }: BarReorderKeysArgs): BarReorderKeys {
   const latest = useLatest({ order, onReorder, keysOf });
   const [announcement, setAnnouncement] = useState('');
   const refocus = useRef<{ container: string; key: string } | null>(null);
@@ -82,7 +85,7 @@ export function useBarReorderKeys({ root, order, onReorder, vertical, keysOf }: 
     const el = root.current;
     const { order: was = {}, onReorder: done, keysOf: listOf } = latest.current;
     if (done === undefined || el === null) return;
-    const [backKey, onKey] = vertical ? ['ArrowUp', 'ArrowDown'] : inlineDirection(el) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+    const [backKey, onKey] = vertical ? ['ArrowUp', 'ArrowDown'] : (dir ?? inlineDirection(el)) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
     const delta = nudgeOf(e, backKey, onKey);
     if (delta === null) return;
     const back = delta < 0;

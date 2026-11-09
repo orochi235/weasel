@@ -1,5 +1,6 @@
 import { Fragment, useId, useLayoutEffect, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
 import { clamp, runStationAt, trackShapeD, type RunAlign, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { screenDirection } from './Along/rowRun';
 import { useRowRun } from './Along/useRowRun';
 import { AlongContext } from './Along/alongContext';
 import { useItemLengths, useRunGap } from './Along/useItemLengths';
@@ -55,7 +56,7 @@ export function SegmentsAlong(props: SegmentsAlongProps): ReactElement {
   const drawn = segments.map((segment, i) => <Fragment key={segment.key}>{segment.draw(place(i))}</Fragment>);
 
   return (
-    <div ref={root as RefObject<HTMLDivElement>} onKeyDown={roving.onKeyDown} {...row.rootProps} className={rootCls} role={role} aria-label={ariaLabel} style={style} data-shape={shape.kind} data-variant={variant} data-size={size}>
+    <div ref={root as RefObject<HTMLDivElement>} onKeyDown={(e) => roving.onKeyDown(e, screenDirection(run))} {...row.rootProps} className={rootCls} role={role} aria-label={ariaLabel} style={style} data-shape={shape.kind} data-variant={variant} data-size={size}>
       <RunBand row={row} shape={shape} />
       {well && segments.length > 0 && <Well run={run} pad={pad} cap={cap} states={segments.map((segment) => segment.state)} stretches={stretches} />}
       <AlongContext.Provider value={null}>{wrap ? wrap(drawn) : drawn}</AlongContext.Provider>

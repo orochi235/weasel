@@ -13,6 +13,7 @@ import { markScrollbar } from './scrollbar';
 import { splitMarks } from './SplitRow';
 import { stuckHeadingRef } from './stuckHeading';
 import s from './Prefs.module.css';
+import f from './fragment.module.css';
 
 /** Props for {@link PrefsPane}. */
 export interface PrefsPaneProps {
@@ -117,7 +118,7 @@ export function paneChildren(
       // carries the mark a hidden fragment has no box for.
       const inner = marksHidden(ctx.hidden, p) ? { ...ctx, hidden: new Set([...ctx.hidden!].filter((at) => at !== p)) } : ctx;
       out.push(
-        <div key={key} className={s.fragment} data-pref-fragment="" {...selectionAttrs(p, { selected: ctx.selected })}>
+        <div key={key} className={f.fragment} data-pref-fragment="" {...selectionAttrs(p, { selected: ctx.selected })}>
           {paneChildren(inner, Object.entries(child.children), p, depth, box)}
         </div>,
       );

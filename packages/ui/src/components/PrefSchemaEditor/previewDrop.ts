@@ -52,11 +52,12 @@ export function previewDrop(mark: Pick<PrefDrop, 'path' | 'where' | 'rail'>, nod
 }
 
 /**
- * What the form draws for a drag with nowhere to land: `nodes` as placeholders where they sit, at tree `paths`.
- * Null for nodes not in the schema yet, and under a section root, whose preview draws no drop.
+ * What the form draws for a drag with nowhere to land: `nodes` as placeholders where they sit, at tree `paths`. Nodes
+ * not in the schema yet sit nowhere, so nothing is drawn for them, but the form still learns a drag is on. Null under a
+ * section root, whose preview draws no drop.
  */
 export function heldDrop(schema: SchemaRoot, nodes: readonly SchemaNode[], paths: readonly string[]): PrefDrop | null {
-  if (paths.length === 0 || isPrefSection(schema)) return null;
+  if (isPrefSection(schema)) return null;
   return previewDrop({ path: '', where: 'home' }, nodes, paths);
 }
 

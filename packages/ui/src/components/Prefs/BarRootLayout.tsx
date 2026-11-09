@@ -25,7 +25,7 @@ export function BarRootLayout(props: {
   useDropMotion(selection.ref, props.drop !== undefined, drop, root, '');
   const drawn = useMemo(() => (drop ? withDrop(root, drop) : root), [root, drop]);
   return (
-    <div className={[s.barRoot, props.className].filter(Boolean).join(' ')} data-pref-into="" {...formAttrs(drop)} {...selection}>
+    <div className={[s.barRoot, props.className].filter(Boolean).join(' ')} data-pref-into="" {...formAttrs(drop, props.drop != null)} {...selection}>
       {props.filterField}
       <PaneBar ctx={{ ...props.ctx, drop }} group={drawn} path="" depth={0} orientation={props.orientation} />
     </div>

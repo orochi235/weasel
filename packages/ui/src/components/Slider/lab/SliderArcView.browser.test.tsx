@@ -3,8 +3,9 @@ import '@weasel-js/theme/fonts.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, test } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { arcShape, trackRun, type Point } from '@weasel-js/geom';
+import { arcShape, type Point } from '@weasel-js/geom';
 import { arcInBox } from '@weasel-js/ui/components/Along';
+import { rowRun } from '../../Along/rowRun';
 import { arcOf, SLIDER_ARC_DEFAULTS, type SliderArcConfig } from './sliderArcConfig';
 import { SliderArcView } from './SliderArcView';
 
@@ -46,7 +47,7 @@ async function press(p: Point) {
 function curvedAt(config: SliderArcConfig, box: HTMLElement, thumb: HTMLElement, g: number): Point {
   const shape = arcShape(arcInBox(arcOf(config.arc), { width: config.arc.size, height: config.arc.size }));
   const i = Math.min(0.5, thumb.offsetWidth / 2 / shape.length);
-  const { point } = trackRun(shape, i, 1 - i).at(g);
+  const { point } = rowRun(shape, 'ltr', { from: i, to: 1 - i }).at(g);
   const r = box.getBoundingClientRect();
   return { x: r.left + point.x, y: r.top + point.y };
 }

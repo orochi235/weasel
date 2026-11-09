@@ -93,7 +93,8 @@ describe('a drag over the preview', () => {
   it('holds a node of the schema where it sits while it has nowhere to land, and draws nothing for a new one', () => {
     const grid = (ROOT.children.canvas as PrefGroup).children.grid!;
     expect(heldDrop(ROOT, [grid], ['canvas.grid'])).toEqual({ path: '', where: 'home', nodes: [grid], from: ['canvas.grid'] });
-    expect(heldDrop(ROOT, [TAB], [])).toBeNull();
+    // Still a drop, so the form knows a drag is on and opens its empty fragments to it.
+    expect(heldDrop(ROOT, [TAB], [])).toEqual({ path: '', where: 'home', nodes: [TAB], from: [] });
     expect(heldDrop({ name: 'Rect', description: '', members: {} }, [grid], ['grid'])).toBeNull();
   });
 });

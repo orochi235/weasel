@@ -1,5 +1,6 @@
 import { useRef, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import type { TrackShape } from '@weasel-js/geom';
+import { screenDirection } from '../Along/rowRun';
 import { useRowRun } from '../Along/useRowRun';
 import { AlongContext, type RunAlign } from '../Along/alongContext';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
@@ -57,7 +58,7 @@ export function BarAlong(props: BarAlongProps): ReactElement {
   };
   const first = leading != null ? 1 : 0;
   const reorder = useBarReorder({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, measure: (el, p) => positionAt(along.band.current ?? el, run, p) });
-  const keys = useBarReorderKeys({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical: false });
+  const keys = useBarReorderKeys({ root, order: props.order, onReorder: props.onReorder, keysOf: props.keysOf, vertical: false, dir: screenDirection(run) });
   const onPointerDownCapture = (e: ReactPointerEvent): void => {
     reorder.onPointerDownCapture(e);
     // A press on a dock's handle moves the bar, so it does not also scroll the run.

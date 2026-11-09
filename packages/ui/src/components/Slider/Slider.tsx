@@ -18,11 +18,11 @@ export type { BoundsCtx, SliderProps, SliderRegionCtx, SliderStop, Thumb, ThumbR
  * in-flight state to buffer.
  *
  * It lies along a curve when given a `shape` or placed inside an `Along`: thumbs, ticks, stop labels and
- * readouts follow the shape, and values still run left to right after any flip. `aria-orientation` is left off
- * on a curve.
+ * readouts follow the shape, and values run along it, min at its start, so a counterclockwise arc reads as a
+ * counterclockwise dial. `aria-orientation` is left off on a curve.
  *
- * Under a computed `direction` of `rtl`, straight or curved, its values run from the right end, and ArrowRight steps
- * down and ArrowLeft up, as a native range input's do.
+ * Under a computed `direction` of `rtl`, straight or curved, its values run from the other end. ArrowRight moves a
+ * thumb right on screen: where values run right to left, it steps down and ArrowLeft up, as a native range input's do.
  *
  * A thumb's `value` may be tagged: it is placed by its amount, shown and
  * spoken through its own display where it carries one, and handed back with
