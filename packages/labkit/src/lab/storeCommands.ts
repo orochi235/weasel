@@ -10,11 +10,9 @@ import {
   cloneTrial as cloneTrialOp,
   closeTrial as closeTrialOp,
   reorderTrials as reorderTrialsOp,
-  resetTrial as resetTrialOp,
   swapTrial as swapTrialOp,
 } from '../trial/trialOps';
 import type { LabCommands } from './LabContext';
-import { announceTrialRestart } from '../trial/trialRestarts';
 import { snapshotCommands, useLoadHolds } from './snapshotCommands';
 import type { TrialLayout } from './Workspace';
 
@@ -93,24 +91,9 @@ export function useStoreCommands(
       focusedTrialId,
       focusTrial: focus,
       resetTrial: (id) => {
-        const next = resetTrialOp(store.getState().trials, id, instruments);
-        const record = next.find((w) => w.id === id);
-        if (!record) return;
-        store.setState((s) => ({
-          trials: s.trials.map((w) => {
-            if (w.id !== id) return w;
-            const { auto: _pinnedNow, history: _history, ...kept } = w;
-            const reset: TrialRecord = {
-              ...kept,
-              config: record.config,
-              state: record.state,
-              view: record.view,
-            };
-            if (record.auto) reset.auto = record.auto;
-            return reset;
-          }),
-        }));
-        announceTrialRestart(store, id);
+        const before = store.getState().trials;
+        store.getState().resetTrial(id, instruments);
+        if (store.getState().trials === before) return;
         const handle = clocks.get(id);
         // The lab's clock is every trial's on it, so resetting one leaves it.
         if (handle !== clocks.shared) handle?.reset();

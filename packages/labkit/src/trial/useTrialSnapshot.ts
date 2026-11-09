@@ -15,7 +15,7 @@ import {
   writeTrialEdit,
 } from './trialEdit';
 import type { TrialHistorySource } from './trialHistory';
-import { onTrialRestart } from './trialRestarts';
+import { onTrialRestart } from '../state/trialRestarts';
 
 /** What a trial snapshots on when its instrument names no events. */
 const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
