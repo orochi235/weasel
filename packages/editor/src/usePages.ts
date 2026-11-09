@@ -36,10 +36,12 @@ export interface DocPages {
   /** The current page, else the last one that was while the view is between pages, else the first. */
   shown: PlacedPage | null;
   goTo(id: string): void;
-  /** Go to the page after `shown` (`1`) or the one before it (`-1`). */
+  /** Go to the page after the one the view is on or was last on (`1`), or the one before it (`-1`). A view never
+   *  yet on a page is before the first: either way goes to the first page. */
   step(by: 1 | -1): void;
-  /** Add a page after the one shown, the same size, and go to it. A scene without pages gets its first,
-   *  and with it the page run that makes it paged. */
+  /** Add a page after the one the view is on or was last on, the same size, and go to it; after the last page
+   *  while the view has never been on one. A scene without pages gets its first, and with it the page run
+   *  that makes it paged. */
   add(options?: AddPageOptions): void;
   /** Delete a page and what is on it. The last page cannot go. */
   remove(id: string): void;
@@ -80,12 +82,14 @@ function samePlaced(a: readonly PlacedPage[], b: readonly PlacedPage[]): boolean
   });
 }
 
-/** The page the view was last on, held while it sits between pages. */
-function useShown(placed: readonly PlacedPage[], current: string | null): PlacedPage | null {
+/** The page the view is on or was last on, held while it sits between pages: `null` until the view has been on
+ *  one. `shown` falls back from it to the first page. */
+function useShown(placed: readonly PlacedPage[], current: string | null): { held: PlacedPage | null; shown: PlacedPage | null } {
   const [last, setLast] = useState<string | null>(null);
   if (current !== null && current !== last) setLast(current);
   const id = current ?? last;
-  return placed.find((p) => p.id === id) ?? placed[0] ?? null;
+  const held = placed.find((p) => p.id === id) ?? null;
+  return { held, shown: held ?? placed[0] ?? null };
 }
 
 /**
@@ -105,8 +109,8 @@ export function usePages<TData, TLayer extends string, TPose>(
   const scene = sceneIn as unknown as AnyScene;
   const placed = usePlaced(scene);
   const current = dims.width > 0 && dims.height > 0 ? pageInView(placed, view, dims)?.id ?? null : null;
-  const shown = useShown(placed, current);
-  const latest = useLatest({ view, dims, setView, current, shown });
+  const { held, shown } = useShown(placed, current);
+  const latest = useLatest({ view, dims, setView, held });
   const result = useMemo<DocPages>(() => {
     const show = (page: PlacedPage | null | undefined) => {
       const { view: v, dims: d, setView: set } = latest.current;
@@ -119,10 +123,14 @@ export function usePages<TData, TLayer extends string, TPose>(
       current,
       shown,
       goTo,
-      step: (by) => show(adjacentPage(placedPagesOf(scene), latest.current.shown?.id ?? null, by)),
+      step: (by) => {
+        const all = placedPagesOf(scene);
+        const from = latest.current.held;
+        show(from ? adjacentPage(all, from.id, by) : all[0]);
+      },
       add(options) {
         const pages = pagesOf(scene)?.pages ?? [];
-        const at = pages.findIndex((p) => p.id === latest.current.shown?.id);
+        const at = pages.findIndex((p) => p.id === latest.current.held?.id);
         const like = pages[at] ?? pages[pages.length - 1];
         const place: PagePlace = { index: at < 0 ? pages.length : at + 1 };
         if (like) place.size = { width: like.width, height: like.height };
