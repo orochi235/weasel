@@ -19,13 +19,14 @@ const viewAt = (_pointerId: number | null, x: number): { id: string | null } =>
   ({ id: x >= 100 ? 'panel' : null });
 const resolver = { at: viewAt, begin: viewAt, end: (): void => {} };
 
-function mount(): { root: Dispatcher; panel: Dispatcher; log: string[]; canvas: Element } {
+function mount(): { root: Dispatcher; panel: Dispatcher; log: string[]; endedIn: unknown[]; canvas: Element } {
   const log: string[] = [];
+  const endedIn: unknown[] = [];
   const hold: Action = {
     id: 'test.hold', label: 'hold', defaultBinding: { kind: 'key-held', key: 'h' },
     invoker: {
       timing: 'ongoing',
-      start: () => { log.push('start'); return { onEnd: () => { log.push('end'); } }; },
+      start: () => { log.push('start'); return { onEnd: (ctx) => { log.push('end'); endedIn.push(ctx.viewId); } }; },
     },
   };
   const root = createDispatcher();
@@ -51,7 +52,7 @@ function mount(): { root: Dispatcher; panel: Dispatcher; log: string[]; canvas: 
       </ActiveToolContextProvider>
     </DepRegistryProvider>,
   );
-  return { root, panel, log, canvas: document.querySelector('[data-testid="c"]')! };
+  return { root, panel, log, endedIn, canvas: document.querySelector('[data-testid="c"]')! };
 }
 
 const hover = (canvas: Element, x: number): void => {
@@ -78,6 +79,16 @@ describe('a key held over one view and released over another', () => {
     expect(root.inFlight().size).toBe(0);
   });
 
+  it('ends with the context of the view that took the keydown', () => {
+    const { endedIn, canvas } = mount();
+    hover(canvas, 150);
+    key('keydown');
+    hover(canvas, 50);
+    key('keyup');
+
+    expect(endedIn).toEqual(['panel']);
+  });
+
   it('ends there when the window loses focus', () => {
     const { panel, log, canvas } = mount();
     hover(canvas, 150);
@@ -88,5 +99,16 @@ describe('a key held over one view and released over another', () => {
 
     expect(log).toEqual(['start', 'end']);
     expect(panel.inFlight().size).toBe(0);
+  });
+
+  it('ends there with that view\'s context when the window loses focus', () => {
+    const { endedIn, canvas } = mount();
+    hover(canvas, 150);
+    key('keydown');
+    hover(canvas, 50);
+
+    act(() => { window.dispatchEvent(new Event('blur')); });
+
+    expect(endedIn).toEqual(['panel']);
   });
 });

@@ -6,7 +6,7 @@ import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
 import { passOn, type TakeKey } from './keyPeers';
 import { inModalOver } from './modal';
-import { followPointer, type HeldKey } from './overKeys';
+import { followPointer, releaseIn, type HeldKey } from './overKeys';
 
 /**
  * True when AltGr typed the character `e` reports. A layout that types `[` with
@@ -63,7 +63,7 @@ export function keyboardInput(core: DispatchCore): {
   // dispatcher that took the down, which hover may have routed away from.
   const heldKeys = new Map<string, HeldKey>();
   // Every key down on the page, taken or not, for `arrive` to press again.
-  const downKeys = new Map<string, Omit<HeldKey, 'on'>>();
+  const downKeys = new Map<string, Omit<HeldKey, 'on' | 'view'>>();
   const keymaps = keymapKeys(core.keymaps);
   const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
   const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
@@ -127,7 +127,7 @@ export function keyboardInput(core: DispatchCore): {
     const heldResult = dispatch(heldEv, heldOn, reach);
 
     if (heldResult === 'handled') {
-      heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey, on: heldOn });
+      heldKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey, on: heldOn, view: core.routedView() });
     }
 
     const handled = keyResult === 'handled' || heldResult === 'handled';
@@ -140,7 +140,7 @@ export function keyboardInput(core: DispatchCore): {
     const down = heldKeys.get(physical);
     if (down === undefined) return;
     heldKeys.delete(physical);
-    dispatch(releaseOf(down, e), down.on);
+    releaseIn(core, down, releaseOf(down, e));
   };
 
   const onKeyUp = (e: KeyboardEvent) => {
@@ -157,7 +157,7 @@ export function keyboardInput(core: DispatchCore): {
     keymaps.clear();
     const releasing = [...heldKeys.values()];
     heldKeys.clear();
-    for (const down of releasing) dispatch(releaseOf(down, NO_MODS), down.on);
+    for (const down of releasing) releaseIn(core, down, releaseOf(down, NO_MODS));
   };
 
   return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
