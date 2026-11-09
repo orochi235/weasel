@@ -29,9 +29,9 @@ const radarRings = (data: RadarData): number => {
 
 /** The value range a radar spans: its own ends, else 0 out to its largest value. */
 export function radarDomain(data: RadarData): [number, number] {
-  const values = data.curves.flatMap((c) => c.values).filter(Number.isFinite);
   const min = data.min ?? 0;
-  const max = data.max ?? Math.max(min, ...values);
+  let max = data.max ?? min;
+  if (data.max === undefined) for (const c of data.curves) for (const v of c.values) if (Number.isFinite(v) && v > max) max = v;
   return max === min ? [min, min + 1] : [min, max];
 }
 

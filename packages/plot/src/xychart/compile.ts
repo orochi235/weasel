@@ -37,9 +37,16 @@ function categoriesOf(data: XyChartData): string[] {
 
 /** The value axis's domain: its own ends, and where one is missing, the values' reach with zero in it, made round. */
 export function xyValueDomain(data: XyChartData): [number, number] {
-  const values = data.series.flatMap((s) => s.values).filter(Number.isFinite);
-  const lo = Math.min(0, ...values);
-  const hi = Math.max(0, ...values);
+  // A loop, not a spread: a spread of a long series overflows the call stack.
+  let lo = 0;
+  let hi = 0;
+  for (const s of data.series) {
+    for (const v of s.values) {
+      if (!Number.isFinite(v)) continue;
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+  }
   const [niceLo, niceHi] = niceDomain([lo, hi === lo ? lo + 1 : hi]);
   const min = data.y?.min ?? niceLo;
   const max = data.y?.max ?? niceHi;
