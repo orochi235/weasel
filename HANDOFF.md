@@ -40,8 +40,11 @@ For the session picking this up: what is in flight and what has no other home. O
   `I`) and labkit's `.meta()` field slot are on `main` at 9720cf0c2 through `batch/2026-11-08c` (`test:fleet` full:
   35916 tests; postbuild green). Pushed. Open questions are under "Audit round eight" in `docs/unruled.md`.
   `check:frame-loops` now covers `apps/` too (Mike, 2026-11-08), and `usePages.add` puts a page after the one shown.
-- CI's visual baselines `viewport.png` and `easings.png` will fail until recaptured with `visual-update.yml` after the
-  next push: round eight moved those demos' labels onto the kit's text alignment.
+- Round nine (2026-11-08: pdf/svg/diagram-formats/d3, plot and chart, font/text-shaping/bidi, the small packages,
+  editor/storage/loupe/p-touch and the rest, icons and devtools; 42 fixes) is on `main` at d548e497b, through
+  `batch/2026-11-08d` (`test:fleet` at 72a4db7fd: 36063 tests; postbuild green). It was merged over another session's
+  `effect-list` and `icons-freeze` merges without a run of the combination (Mike, 2026-11-08); the two touch no file
+  in common. Open questions are under "Audit round nine" in `docs/unruled.md`.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
