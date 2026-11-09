@@ -85,13 +85,13 @@ test('every dial: its caption is trackRun’s verdict, and each bar item is tipp
   }
 });
 
-test('every dial: the slider’s stops run min to max in the run’s reading order, each tipped as the run says', async () => {
+test('every dial: the slider’s stops run min to max from the arc’s start, as a row lays its items, each tipped as the run says', async () => {
   const dials = await mount();
   for (const dial of dials) {
     const at = Number(dial.dataset.sweepAt);
     const thumb = dial.querySelector<HTMLElement>('[role="slider"]')!;
     const along = dial.querySelector<HTMLElement>('[role="toolbar"]')!.parentElement!.nextElementSibling!;
-    const run = trackRun(arcIn(along, at, 64));
+    const run = rowRun(arcIn(along, at, 64));
     const ticks = [...dial.querySelectorAll('[data-slider-tick]')];
     expect(ticks, `${at}° ticks`).toHaveLength(3);
     expectReadAlong(run, along, ticks, `slider at ${at}°`, false);
