@@ -34,6 +34,16 @@ describe('specificity (tuple shape)', () => {
     } as GestureSpec)).toEqual([0, 2, 0, 1]);
   });
 
+  it('counts `mod` and the key it stands for on the platform as one key', () => {
+    const both = { kind: 'key', key: 'k', mods: { mod: true, meta: true } } as GestureSpec;
+    // Cmd on a Mac; Ctrl+Win elsewhere.
+    expect(specificity(both, true)[1]).toBe(1);
+    expect(specificity(both, false)[1]).toBe(2);
+    const ctrl = { kind: 'key', key: 'k', mods: { mod: true, ctrl: true } } as GestureSpec;
+    expect(specificity(ctrl, true)[1]).toBe(2);
+    expect(specificity(ctrl, false)[1]).toBe(1);
+  });
+
   it('bare-keyword phase desugars to a concrete `&` atom → [0, 0, 2, 1]', () => {
     expect(specificity({ kind: 'drag', phase: 'engaged' } as GestureSpec))
       .toEqual([0, 0, 2, 1]);

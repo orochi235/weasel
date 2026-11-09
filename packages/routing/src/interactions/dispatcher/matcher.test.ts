@@ -112,6 +112,16 @@ describe('matchSorted (specificity ordering)', () => {
     expect(sorted.map((m) => m.binding.actionId)).toEqual(['editAnchors', 'move']);
   });
 
+  it('ranks by the keys a spec requires on the platform, so `mod` beside `meta` is one key on a Mac', () => {
+    // Cmd+Shift+K on a Mac. `mod, meta` is Cmd alone there, so Cmd+Shift is the more specific.
+    const e: InputEvent = { kind: 'key', key: 'k', ...noMods, metaKey: true, shiftKey: true };
+    const bs: ScopedBinding[] = [
+      { binding: binding({ kind: 'key', key: 'k', mods: { mod: true, meta: true, shift: 'optional' } }, 'cmd'), scope: 'ambient', ownerId: null },
+      { binding: binding({ kind: 'key', key: 'k', mods: { meta: true, shift: true } }, 'cmdShift'), scope: 'ambient', ownerId: null },
+    ];
+    expect(matchSorted(e, bs, true).map((m) => m.binding.actionId)).toEqual(['cmdShift', 'cmd']);
+  });
+
   it('equal-specificity bindings retain registration order', () => {
     const e: InputEvent = { kind: 'pointerdown', x: 0, y: 0, ...noMods };
     const bs: ScopedBinding[] = [

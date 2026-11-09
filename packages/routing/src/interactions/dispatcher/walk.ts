@@ -101,7 +101,7 @@ export function rank(
   // order ranking them alone would: `preferContextual` only reorders within
   // a run of ties, and every tie's members sit together.
   const ordered = ruleCtx
-    ? preferContextual(sorted, (id) => actionMap.get(id), holds, view)
+    ? preferContextual(sorted, (id) => actionMap.get(id), holds, view, ctx.isMac)
     : sorted;
   return {
     ordered,
@@ -109,6 +109,7 @@ export function rank(
     ...(outcome.claimOwner !== undefined ? { claimOwner: outcome.claimOwner } : {}),
     actionMap,
     ruleCtx,
+    isMac: ctx.isMac,
     eligible: (m) => {
       const a = actionMap.get(m.binding.actionId);
       return a === undefined || holds(a);
@@ -217,7 +218,7 @@ export function verdictsOf(r: Ranking, walked: Walked, evaluateShadowed: boolean
       binding: match.binding,
       scope: match.scope,
       ownerId: match.ownerId,
-      specificity: specificity(match.binding.spec),
+      specificity: specificity(match.binding.spec, r.isMac),
       verdict,
     });
   }

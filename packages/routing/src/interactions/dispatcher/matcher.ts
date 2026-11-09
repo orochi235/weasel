@@ -127,9 +127,9 @@ function reportDeadClaim(owner: string | undefined, warn: (message: string) => v
 
 /** Sort callback: negative when `a` is MORE specific than `b`, so `a` sorts
  *  first. */
-function compareSpecificity(a: GestureSpec, b: GestureSpec): number {
-  const sa = specificity(a);
-  const sb = specificity(b);
+function compareSpecificity(a: GestureSpec, b: GestureSpec, isMac: boolean): number {
+  const sa = specificity(a, isMac);
+  const sb = specificity(b, isMac);
   for (let i = 0; i < sa.length; i++) {
     if (sa[i] !== sb[i]) return sb[i] - sa[i];
   }
@@ -213,8 +213,8 @@ export function matchSortedWithBarred(
     }
     // Stable sort by specificity descending. Identical-specificity entries
     // keep their registration order (Array.prototype.sort is stable per ES2019).
-    scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec));
-    scopeBarred.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec));
+    scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, isMac));
+    scopeBarred.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, isMac));
     out.push(...scopeMatches);
     barred.push(...scopeBarred);
   }

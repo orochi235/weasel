@@ -105,6 +105,8 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
   holds: (action: Action) => boolean,
   /** The routed view: a binding naming it is never tied with one that does not. */
   view: string | null,
+  /** Whether `mod` is Cmd, for reading specificity as the matcher ranked it. */
+  isMac: boolean,
 ): M[] {
   const out: M[] = [];
   let run: M[] = [];
@@ -122,7 +124,7 @@ export function preferContextual<M extends { binding: GestureBinding; scope: str
       head
       && (head.scope !== m.scope
         || namesView(head.binding, view) !== namesView(m.binding, view)
-        || !sameSpecificity(head.binding.spec, m.binding.spec))
+        || !sameSpecificity(head.binding.spec, m.binding.spec, isMac))
     ) flush();
     run.push(m);
   }
@@ -140,19 +142,20 @@ export function placedBy(
   cur: MatchResult,
   view: string | null,
   contextual: boolean,
+  isMac: boolean,
 ): PlacedBy {
   if (namesView(prev.binding, view) !== namesView(cur.binding, view)) return { step: 'view' };
   if (prev.scope !== cur.scope) return { step: 'tier' };
-  const sp = specificity(prev.binding.spec);
-  const sc = specificity(cur.binding.spec);
+  const sp = specificity(prev.binding.spec, isMac);
+  const sc = specificity(cur.binding.spec, isMac);
   const i = sp.findIndex((v, k) => v !== sc[k]);
   if (i >= 0) return { step: 'specificity', part: SPECIFICITY_PARTS[i]! };
   return contextual ? { step: 'context' } : { step: 'order' };
 }
 
-function sameSpecificity(a: GestureSpec, b: GestureSpec): boolean {
-  const sa = specificity(a);
-  const sb = specificity(b);
+function sameSpecificity(a: GestureSpec, b: GestureSpec, isMac: boolean): boolean {
+  const sa = specificity(a, isMac);
+  const sb = specificity(b, isMac);
   return sa.every((v, i) => v === sb[i]);
 }
 
@@ -166,6 +169,8 @@ export interface Ranking {
   claimOwner?: string;
   actionMap: Map<string, Action>;
   ruleCtx: RuleCtx | undefined;
+  /** Whether `mod` was Cmd when this ranking was made. */
+  isMac: boolean;
   /** Whether a match survives the eligibility filter. */
   eligible(m: MatchResult): boolean;
 }
