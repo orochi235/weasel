@@ -64,6 +64,16 @@ function wrapInvoker(invoker: Invoker, params: ActionParams): Invoker {
   return wrapped;
 }
 
+/** The params `action`'s invoker runs with when a binding passes `given`: each tuning wrapped around it, a later
+ *  one's over an earlier one's, and `given` over them all, as the wrapped `run` and `start` layer them. */
+export function invokedParams(action: Pick<Action, 'invoker'>, given?: Record<string, unknown>): Record<string, unknown> {
+  const tunings: ActionTuning[] = [];
+  for (let w = action.invoker, rec = w && WRAPS.get(w); rec; w = rec.inner, rec = WRAPS.get(w)) {
+    tunings.unshift({ params: rec.params });
+  }
+  return tunedParams(tunings, given);
+}
+
 function withBindings(
   own: Action['defaultBinding'],
   added: readonly TunedBinding[],

@@ -33,7 +33,7 @@ export function useToolCursor(
     ? ''
     : tier.kind === 'css'
       ? `css|${tier.css}`
-      : `${tier.glyph}|${tier.angle}|${tier.size}|${tier.worldRadius}`;
+      : `${tier.glyph}|${tier.mark}|${tier.angle}|${tier.size}|${tier.worldRadius}`;
   useLayoutEffect(() => {
     sink.setBase(tier ?? null, rest ?? '');
     // `tier` is a fresh object each render; the key is its identity.

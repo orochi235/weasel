@@ -32,6 +32,17 @@ describe('describeKeymap', () => {
     expect(d.rows[3]!.gesture).toBe('Hold Space');
   });
 
+  it('names a pointer gesture\'s modifiers as the platform\'s keyboard does', () => {
+    const cmdClick: OpenKeymap = { ...level, bindings: [
+      { spec: { kind: 'click', mods: { mod: true } }, actionId: 'pin' },
+      { spec: { kind: 'drag', mods: { alt: true, meta: true } }, actionId: 'zoom' },
+    ] };
+    expect(describeKeymap(cmdClick, actions, undefined, { platform: 'macos' }).rows.map((r) => r.gesture))
+      .toEqual([undefined, 'Cmd-click', 'Cmd-Option-drag']);
+    expect(describeKeymap(cmdClick, actions, undefined, { platform: 'windows' }).rows.map((r) => r.gesture))
+      .toEqual([undefined, 'Ctrl-click', 'Win-Alt-drag']);
+  });
+
   it("names a binding that picks a variant by the variant's label", () => {
     const flip: Action = { id: 'flip', label: 'Flip', variants: [
       { key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } },

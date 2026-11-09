@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, type BuiltinToolId, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
 import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
 import { DEFAULT_MODES, activeModeOf } from '@weasel-js/modes';
@@ -101,10 +101,11 @@ describe('modality shortcuts', () => {
 });
 
 describe('entering path-edit from the keyboard', () => {
-  function Harness({ machine, scene, pathToEdit }: {
+  function Harness({ machine, scene, pathToEdit, tool }: {
     machine: ReturnType<typeof createModeMachine>;
     scene: ReturnType<typeof createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>>;
     pathToEdit: () => string | null;
+    tool?: BuiltinToolId;
   }) {
     const deps = useDepRegistry();
     depsRef.current = deps;
@@ -115,12 +116,13 @@ describe('entering path-edit from the keyboard', () => {
     const pathEdit = useMemo(() => modePathEdit(machine, () => true), [machine]);
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
-        ambient={[keys]} modes={machine.registry} pathEdit={pathEdit} />
+        ambient={[keys]} modes={machine.registry} pathEdit={pathEdit}
+        {...(tool ? { defaultTools: ['select', tool] as const, initialActiveTool: tool } : {})} />
     );
   }
   const depsRef: { current: DepRegistry | null } = { current: null };
 
-  function setupPath(pathToEdit: () => string | null) {
+  function setupPath(pathToEdit: () => string | null, tool?: BuiltinToolId) {
     const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
     const scene = createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>(
       { systemLayers: [{ id: 'main' }] },
@@ -130,7 +132,7 @@ describe('entering path-edit from the keyboard', () => {
     render(
       <DepRegistryProvider>
         <ActionsProvider>
-          <Harness machine={machine} scene={scene} pathToEdit={pathToEdit} />
+          <Harness machine={machine} scene={scene} pathToEdit={pathToEdit} {...(tool ? { tool } : {})} />
         </ActionsProvider>
       </DepRegistryProvider>,
     );
@@ -138,7 +140,13 @@ describe('entering path-edit from the keyboard', () => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, ...init }));
     });
     const editingId = () => (depsRef.current!.get as (k: string) => { editingId: string } | undefined)('editAnchors')?.editingId;
-    return { machine, scene, key, editingId };
+    const click = (x: number, y: number) => act(() => {
+      const canvas = document.querySelector('canvas')!;
+      for (const type of ['pointerdown', 'pointerup']) {
+        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+      }
+    });
+    return { machine, scene, key, click, editingId };
   }
 
   it('Enter on a selected path enters path-edit on it, with its anchors editable', () => {
@@ -147,6 +155,26 @@ describe('entering path-edit from the keyboard', () => {
     expect(t.machine.registry.current().id).toBe('path-edit');
     expect(t.machine.getActiveTargetId()).toBe(ID);
     expect(t.editingId()).toBe(ID);
+  });
+
+  it('leaves Enter to a tool with a cut in progress, rather than entering path-edit', () => {
+    const t = setupPath(() => ID, 'slice');
+    t.click(40, 40);
+    t.click(60, 40);
+    t.key('Enter');
+    expect(t.machine.registry.current().id).toBe('normal');
+  });
+
+  it('leaves Enter to a tool with a cut in progress inside crop, rather than committing it', () => {
+    const t = setupPath(() => ID, 'slice');
+    act(() => t.machine.enterMode('crop', {}));
+    const commit = vi.spyOn(t.machine, 'commitMode');
+    t.click(40, 40);
+    t.click(60, 40);
+    t.key('Enter');
+    expect(commit).not.toHaveBeenCalled();
+    t.key('Enter');
+    expect(commit).toHaveBeenCalledOnce();
   });
 
   it('Enter does nothing to the mode when the selection offers no path', () => {

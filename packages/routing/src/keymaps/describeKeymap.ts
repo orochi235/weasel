@@ -2,7 +2,7 @@
  * What a hint, a menu or a binding list shows for a keymap: its rows, Escape
  * first, and each key's path through the leaders that reach it.
  */
-import { formatShortcut, type GestureSpec } from '@weasel-js/gestures';
+import { detectPlatform, formatShortcut, keySpecsFromMods, type GestureSpec, type LogicalMod, type Platform } from '@weasel-js/gestures';
 import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings, type GestureBinding } from '../interactions/actions/binding';
@@ -35,21 +35,26 @@ const GESTURE_WORDS: Partial<Record<GestureSpec['kind'], string>> = {
   contextMenu: 'right-click', wheel: 'scroll', pinch: 'pinch', pointerDown: 'press',
 };
 
-const MOD_WORDS: readonly [keyof NonNullable<GestureSpec['mods']>, string][] = [
-  ['mod', 'Mod'], ['ctrl', 'Ctrl'], ['meta', 'Meta'], ['alt', 'Alt'], ['shift', 'Shift'],
-];
+const MOD_ORDER: readonly LogicalMod[] = ['mod', 'ctrl', 'meta', 'alt', 'shift'];
 
-/** A pointer gesture in words, modifiers first: `Shift-click`. */
-function gestureWords(spec: GestureSpec): string | undefined {
+/** A pointer gesture in words, modifiers first and named as `platform`'s keyboard prints them: `Cmd-click`. */
+function gestureWords(spec: GestureSpec, platform: Platform): string | undefined {
   if (spec.kind === 'key-held') {
     const chip = keySpecShortcut(spec);
-    return chip ? `Hold ${formatShortcut(chip)}` : undefined;
+    return chip ? `Hold ${formatShortcut(chip, { platform })}` : undefined;
   }
   const word = GESTURE_WORDS[spec.kind];
   if (!word) return undefined;
-  const mods = MOD_WORDS.filter(([m]) => spec.mods?.[m] === true).map(([, w]) => w);
+  const held = MOD_ORDER.filter((m) => spec.mods?.[m] === true).map((name) => ({ name }));
+  const mods = keySpecsFromMods(held, { platform, legend: 'text' }).map((k) => k.label);
   const text = [...mods, word].join('-');
   return text[0]!.toUpperCase() + text.slice(1);
+}
+
+/** Options for {@link describeKeymap}. */
+export interface DescribeKeymapOptions {
+  /** Whose keyboard names the modifiers of a pointer gesture. Defaults to the detected platform. */
+  platform?: Platform;
 }
 
 /** The rows a hint lists for an open keymap, under the overrides in force. */
@@ -57,7 +62,9 @@ export function describeKeymap(
   level: OpenKeymap,
   actions: readonly Action[],
   overrides: ResolvedBindingOverrides = NO_OVERRIDES,
+  opts: DescribeKeymapOptions = {},
 ): KeymapDescription {
+  const platform = opts.platform ?? detectPlatform();
   const byId = new Map(actions.map((a) => [a.id, a]));
   // A binding that picks a variant by its params is listed by the variant's label: Flip Horizontal.
   const labelOf = (b: GestureBinding): string => {
@@ -72,7 +79,7 @@ export function describeKeymap(
     const shortcut = b.spec.kind === 'key' ? keySpecShortcut(b.spec) : undefined;
     if (shortcut) rows.push({ shortcut, label });
     else {
-      const gesture = gestureWords(b.spec);
+      const gesture = gestureWords(b.spec, platform);
       if (gesture) rows.push({ gesture, label });
     }
   }

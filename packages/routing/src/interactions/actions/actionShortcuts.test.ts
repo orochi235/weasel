@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { GestureSpec } from '@weasel-js/gestures';
 import type { Action } from './action';
 import { actionShortcuts, keySpecShortcut } from './actionShortcuts';
+import { tuneAction } from './tuning';
 
 const base = { id: 'a', label: 'A' } as const;
 const of = (defaultBinding: unknown) => actionShortcuts({ ...base, defaultBinding } as Action);
@@ -97,5 +98,24 @@ describe('actionShortcuts with params', () => {
       ],
     } as unknown as Action;
     expect(actionShortcuts(flip, { axis: 'y' })).toEqual([{ key: 'v', mod: false, alt: false, shift: true }]);
+  });
+});
+
+describe('actionShortcuts under a tuning', () => {
+  const flip = {
+    id: 'flip', label: 'Flip',
+    variants: [{ key: 'x', label: 'Flip Horizontal', params: { axis: 'x' } }, { key: 'y', label: 'Flip Vertical', params: { axis: 'y' } }],
+    defaultBinding: [{ kind: 'key', key: 'H' }, { spec: { kind: 'key', key: 'V' }, opts: { params: { axis: 'y' } } }],
+    invoker: { timing: 'immediate', run: () => {} },
+  } as unknown as Action;
+
+  it('gives a variant the key whose binding fires it through the tuning\'s params', () => {
+    const tuned = tuneAction(flip, [{ params: { axis: 'x' } }]);
+    expect(actionShortcuts(tuned, { axis: 'x' }).map((s) => s.key)).toEqual(['H']);
+    expect(actionShortcuts(tuned, { axis: 'y' }).map((s) => s.key)).toEqual(['V']);
+  });
+
+  it('gives an untuned variant no key from a binding that passes no params', () => {
+    expect(actionShortcuts(flip, { axis: 'x' })).toEqual([]);
   });
 });

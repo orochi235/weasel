@@ -20,6 +20,9 @@ export interface Conflict {
   /** The ids of every entry that declared the same tuple. At least 2 by
    *  construction, in input order. */
   ownerIds: string[];
+  /** Not a tie: the first owner, a hotkey-tier action, outranks the active
+   *  tool after it, whose binding fires only when the action declines. */
+  shadows?: true;
 }
 
 /** Detect exact-tuple overlaps across a tool registration set.
@@ -201,9 +204,9 @@ function eligibleRule(action: Action): Rule | undefined {
  *    registration;
  *  - two **hotkey-capable** tools, which can stack.
  *
- * Registered actions join the ambient and hotkey groups. An ambient action
- * gated by an `eligible` rule outranks every ungated binding when its rule
- * holds, so it is compared only with other gated actions. Two actions whose
+ * Registered actions join the ambient and hotkey groups. An action gated by
+ * an `eligible` rule outranks every ungated binding of its tier when its rule
+ * holds, so it is compared only with other gated actions of that tier. Two actions whose
  * `eligible` rules can never hold together, in any of `scopes.modes`, don't
  * collide.
  */
@@ -221,12 +224,14 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     const rule = eligibleRule(a);
     if (rule) rules.set(a.id, rule);
   }
-  const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsEntry);
   const gatedActions: Contribution<unknown>[] = [];
   const ungated: Contribution<unknown>[] = [];
+  const gatedHotkey: Contribution<unknown>[] = [];
+  const hotkeyActions: Contribution<unknown>[] = [];
   for (const a of actions) {
-    if (a.scope === 'hotkey') continue;
-    (a.eligible !== undefined ? gatedActions : ungated).push(actionAsEntry(a));
+    const hotkey = a.scope === 'hotkey';
+    const gated = a.eligible !== undefined;
+    (hotkey ? (gated ? gatedHotkey : hotkeyActions) : (gated ? gatedActions : ungated)).push(actionAsEntry(a));
   }
   const modes = scopes.modes ?? KIT_MODES;
   // A keymap is live only while it is the one open, so it can collide with nothing but itself.
@@ -247,12 +252,13 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
 
   // Self-collisions: every entry, actions included. The group passes below
   // need more than one member, so a lone action is checked by nothing else.
-  for (const tool of [...registry, ...ambient, ...keymaps, ...gatedActions, ...hotkeyActions]) {
+  for (const tool of [...registry, ...ambient, ...keymaps, ...gatedActions, ...hotkeyActions, ...gatedHotkey]) {
     add(findConflictsKeyed([tool], rules, modes));
   }
   // Ambient tools and ungated ambient actions are all live together.
   if (ambient.length > 1) add(findConflictsKeyed(ambient, rules, modes));
   if (gatedActions.length > 1) add(findConflictsKeyed(gatedActions, rules, modes));
+  if (gatedHotkey.length > 1) add(findConflictsKeyed(gatedHotkey, rules, modes));
   // Hotkey-capable tools can stack on each other. An entry declares the
   // trigger as `eligibility.offhand`; a tool handed to `useTools` without
   // going through `defineTool` carries it only on its authored `def`.
@@ -262,6 +268,15 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     ...hotkeyActions,
   ];
   if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));
+  // A hotkey-tier action outranks whichever tool holds the active slot. A pair
+  // already reported as a tie, a held tool's, is not reported again.
+  const tied = (a: string, b: string): boolean => out.some((c) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
+  for (const action of [...hotkeyActions, ...gatedHotkey]) {
+    for (const tool of registry) {
+      if (tied(action.id, tool.id)) continue;
+      add(findConflictsKeyed([action, tool], rules, modes).map((k) => ({ ...k, conflict: { ...k.conflict, shadows: true } })));
+    }
+  }
 
   return out;
 }
@@ -302,6 +317,13 @@ export function reportRouteConflicts(
 ): Conflict[] {
   const conflicts = findScopedConflicts(scopes);
   for (const c of conflicts) {
+    if (c.shadows) {
+      warn(
+        `[weasel] route conflict: a hotkey-tier action outranks a tool's binding on the same tuple, so the tool's `
+        + `fires only when the action declines.\n  ${formatConflict(c)}`,
+      );
+      continue;
+    }
     warn(
       `[weasel] route conflict: two bindings declare the same (phase, gesture, arg, target, modifiers) tuple `
       + `in the same scope, so declaration order alone decides which one fires.\n  ${formatConflict(c)}`,

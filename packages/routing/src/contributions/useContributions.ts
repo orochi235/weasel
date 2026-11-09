@@ -66,7 +66,6 @@ export function useContributions<TOverlay = KernelOverlay>(
   opts: UseContributionsOptions<TOverlay>,
 ): ContributionsApi<TOverlay> {
   const ctx = useActiveToolContext();
-  const actionsRegistry = useActionsRegistry();
 
   // First-mount sync: if the context's slot is still unseeded and the caller
   // wants a tool, push it. Captured at first render; the setState runs in a
@@ -130,11 +129,25 @@ export function useContributions<TOverlay = KernelOverlay>(
 
   useOffhandAction(entries);
 
-  // Route-conflict check. Two entries declaring the same (phase, gesture, arg,
-  // target, modifiers) tuple in one scope are resolved by declaration order and
-  // almost certainly not as either author intended. This is where the entry set
-  // is assembled, so this is where it looks.
-  //
+  useRouteConflictReport(entries, opts.modes);
+
+  // Memoized so consumers using the result as an effect dep don't see identity
+  // churn every render — which loops infinitely when the consumer setStates
+  // from inside such an effect.
+  return useMemo(
+    () => ({ entries, focused, setFocused, overlays }),
+    [entries, focused, setFocused, overlays],
+  );
+}
+
+/**
+ * Route-conflict check. Two entries declaring the same (phase, gesture, arg,
+ * target, modifiers) tuple in one scope are resolved by declaration order and
+ * almost certainly not as either author intended. This is where the entry set
+ * is assembled, so this is where it looks.
+ */
+function useRouteConflictReport(entries: readonly Contribution<unknown>[], modesRegistry: ModeRegistry | undefined): void {
+  const actionsRegistry = useActionsRegistry();
   // Dev-only, and deduped on a signature of the entry set and the binding
   // overrides: the check walks every binding of every entry, and consumers
   // usually rebuild the entry list each render. Actions are read inside the
@@ -142,7 +155,6 @@ export function useContributions<TOverlay = KernelOverlay>(
   // the registry is watched so an override set later is checked too.
   const lastConflictSigRef = useRef<{ sig: string; modes: ModeRegistry | undefined } | null>(null);
   const entrySig = entries.map((e) => e.id).join(',');
-  const modesRegistry = opts.modes;
   useEffect(() => {
     if (!isDev()) return;
     const check = (): void => {
@@ -156,11 +168,13 @@ export function useContributions<TOverlay = KernelOverlay>(
       // on top of that. Sorting on "not focus-eligible" put ambient tools in the
       // registry bucket, which is never compared against itself — registry tools
       // take turns in the active slot — so ambient-vs-ambient went unreported.
-      const registry: Contribution<TOverlay>[] = [];
-      const ambient: Contribution<TOverlay>[] = [];
+      const registry: Contribution<unknown>[] = [];
+      const ambient: Contribution<unknown>[] = [];
+      // A keymap rides in `ambient`, where the check knows to compare it only with itself.
       for (const entry of entries) {
-        if (entry.eligibility?.focus) registry.push(entry);
-        if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);
+        const e = entry.eligibility;
+        if (e?.focus || e?.offhand !== undefined) registry.push(entry);
+        if (e?.always || e?.claimed || e?.keymap) ambient.push(entry);
       }
       reportRouteConflicts({
         registry,
@@ -173,14 +187,6 @@ export function useContributions<TOverlay = KernelOverlay>(
     check();
     return actionsRegistry?.subscribe(check);
   }, [entrySig, entries, actionsRegistry, modesRegistry]);
-
-  // Memoized so consumers using the result as an effect dep don't see identity
-  // churn every render — which loops infinitely when the consumer setStates
-  // from inside such an effect.
-  return useMemo(
-    () => ({ entries, focused, setFocused, overlays }),
-    [entries, focused, setFocused, overlays],
-  );
 }
 
 /**

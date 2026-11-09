@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { actionBindings } from './binding';
 import { resolveParams, type BindingOpts, type InvocationCtx } from './invoker';
 import type { Action } from './action';
-import { tuneAction } from './tuning';
+import { invokedParams, tuneAction } from './tuning';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 
 const ctx = {} as InvocationCtx;
@@ -168,5 +168,16 @@ describe('ActionsRegistry.tune', () => {
     expect(reg.paramsOf('flip', { axis: 'x' })).toEqual(run.mock.calls[0][1]);
     expect(reg.paramsOf('flip')).toEqual({ axis: 'y', pivot: 'each' });
     expect(reg.paramsOf('untuned', { a: 1 })).toEqual({ a: 1 });
+  });
+});
+
+describe('invokedParams', () => {
+  it('names the params run receives under stacked tunings', () => {
+    const run = vi.fn();
+    const tuned = tuneAction(immediate(run), [{ params: { axis: 'y', pivot: 'center' } }, { params: () => ({ pivot: 'pointer' }) }]);
+    if (tuned.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+    tuned.invoker.run({}, { axis: 'x' });
+    expect(run.mock.calls[0]![1]).toEqual(invokedParams(tuned, { axis: 'x' }));
+    expect(invokedParams(tuned, { axis: 'x' })).toEqual({ axis: 'x', pivot: 'pointer' });
   });
 });
