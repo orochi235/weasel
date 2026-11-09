@@ -20,6 +20,13 @@ describe('scene layer parallax', () => {
     expect(scene.layers[2].parallax).toEqual({ pan: 1.3, zoom: 1.5 });
   });
 
+  it('records nothing for a factor equal to the one the layer has', () => {
+    const scene = make();
+    const entries = scene.historyEntries().length;
+    scene.setLayerParallax('sky', { pan: 0.2 });
+    expect(scene.historyEntries()).toHaveLength(entries);
+  });
+
   it('sets and clears it as an undoable step', () => {
     const scene = make();
     scene.setLayerParallax('main', { pan: 0.5 });

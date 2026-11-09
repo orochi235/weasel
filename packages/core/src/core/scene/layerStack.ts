@@ -3,6 +3,7 @@
  * layer's id to its place in that order, the rule tying a node's layer to
  * its parent's, and the edits a caller makes to the stack.
  */
+import { sameValue } from './sameValue';
 import type { LayerRecord, Node, NodeId, Scene, UseSceneOptions, UserLayerRecord } from './types';
 
 /** What the stack keeps of a scene's state. */
@@ -158,7 +159,7 @@ export function createLayerEdits<TData, TLayer extends string, TPose>(
 
     setLayerParallax(layer, parallax) {
       const rec = layers[requireLayerIndex(layer)];
-      if (rec.parallax === parallax) return;
+      if (sameValue(rec.parallax, parallax)) return;
       record('kit:setLayerParallax', { layer, from: rec.parallax, to: parallax }, 'setLayerParallax');
     },
 

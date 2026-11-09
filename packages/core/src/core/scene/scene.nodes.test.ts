@@ -276,3 +276,31 @@ describe('removeMany', () => {
     expect(scene.get(a)).toBeDefined();
   });
 });
+
+describe('a move or reorder that leaves the node where it is', () => {
+  it('records nothing', () => {
+    const s = makeScene();
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const g = s.add({ kind: 'group', layer: 'structures', pose: POSE, data: { label: 'g' } });
+    const c = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'c' }, parent: g });
+    const entries = s.historyEntries().length;
+    s.reorder(a, 0);
+    s.reorder(c, 5);
+    s.move(c, g);
+    s.move(c, g, 0);
+    s.move(g, null);
+    expect(s.historyEntries()).toHaveLength(entries);
+  });
+
+  it('still records one that moves it', () => {
+    const s = makeScene();
+    const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const entries = s.historyEntries().length;
+    s.move(a, null);
+    expect(s.roots).toEqual([b, a]);
+    s.reorder(a, 0);
+    expect(s.roots).toEqual([a, b]);
+    expect(s.historyEntries()).toHaveLength(entries + 2);
+  });
+});

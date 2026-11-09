@@ -38,6 +38,13 @@ export interface TreeEdits<TData, TLayer extends string, TPose>
   construct(specs: readonly AddNodeSpec<TData, TLayer, TPose>[]): void;
 }
 
+/** Whether `id` would land back where it is among `siblings`, which hold it, placed at `index`
+ *  once taken out: the end when `index` is omitted, clamped to the ends as `kit:move` places it. */
+function staysPut(siblings: readonly NodeId[], id: NodeId, index: number | undefined): boolean {
+  const last = siblings.length - 1;
+  return siblings.indexOf(id) === Math.max(0, Math.min(index ?? last, last));
+}
+
 /** What `kit:remove` carries for the nodes `ids`, read before any of them
  *  goes. Throws on an id that is not in the scene. */
 function removeSnapshot<TData, TLayer extends string, TPose>(
@@ -156,6 +163,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
         }
       }
       const fromParent = node.parent;
+      if (parent === fromParent && staysPut(siblingsOf(parent), id, index)) return;
       edit('move', parent !== null || fromParent !== null, () => {
         const fromIndex = siblingsOf(fromParent).indexOf(id);
         const toIndex = index ?? siblingsOf(parent).length;
@@ -170,6 +178,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       const node = requireNode(id);
       refuse(id, 'reorder');
       const parent = node.parent;
+      if (staysPut(siblingsOf(parent), id, index)) return;
       edit('reorder', parent !== null, () => {
         noteChange(parent);
         const fromIndex = siblingsOf(parent).indexOf(id);
