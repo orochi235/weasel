@@ -50,7 +50,7 @@
     "longestFunction": 122
   },
   "packages/core/src/tools/builtin/select/useSelectToolWith.ts": {
-    "longestFunction": 145
+    "longestFunction": 144
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
     "longestFunction": 185

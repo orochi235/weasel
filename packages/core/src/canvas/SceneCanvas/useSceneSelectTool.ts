@@ -12,6 +12,8 @@ import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'can
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
+import { centersBetween } from 'tools/builtin/select/centersBetween';
+import { rangeAmong, type SelectRangeDep } from 'tools/builtin/select/selectRange';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';
 import { nodeGates } from 'core/scene/nodeGates';
@@ -145,6 +147,8 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  answers only for a node's own pose. */
   boundsOfPose: (id: string, pose: TPose, view?: Pick<PickView, 'scale' | 'x' | 'y'> | null) =>
     import('core/viewport/fitViewToBounds').Bounds | null;
+  /** What a range click covers, as the select tool ranges: the `selectRange` dep. */
+  selectRange: SelectRangeDep;
   /** `selectTool.move` — what the `move` preset's bindings carry. */
   moveOptions: UseMoveOptions<TPose>;
 }
@@ -209,12 +213,16 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     };
   }, [scene, adapter, boundsOfProp, wiredBoundsOfPose]);
 
-  const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
-    pickEvery: wiredHitBody,
-    // Read by the default range, which walks the adapter as this view paints it.
-    poseDescriptor: d,
+  // One range for the tool and for the `selectRange` dep, walking the adapter as this view paints it.
+  const between = useMemo(() => centersBetween<TPose>(adapter, d, {
     ...(alphaOf ? { alphaOf } : {}),
     ...(layerIsPainted ? { layerIsPainted } : {}),
+  }), [adapter, d, alphaOf, layerIsPainted]);
+  const selectRange = useMemo<SelectRangeDep>(() => ({ at: (level) => rangeAmong(between, adapter, level) }), [between, adapter]);
+
+  const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
+    pickEvery: wiredHitBody,
+    between,
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
   });
@@ -235,6 +243,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     boundsOfPose: wiredBoundsOfPose,
     planeOfNode: wiredPlaneOfNode,
     moveOptions: wiredMoveOptions,
+    selectRange,
   };
 }
 

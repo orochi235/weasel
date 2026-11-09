@@ -4,12 +4,11 @@ import type { View } from 'core/viewport/view';
 import type { LayerEnumerableAdapter } from 'core/adapters/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
-import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
-import { pressSelects } from '../pressTarget';
+import { rangeAmong } from './selectRange';
 import { createSelectPickAction } from './selectPick';
 import { createCollapseDeferredAction } from './collapseDeferred';
 import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
@@ -173,8 +172,7 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
   const rangeIn = useCallback((level: string | null) => {
     const between = optionsRef.current.between;
     if (!between) return undefined;
-    return (from: NodeId, to: NodeId) =>
-      between(from, to).filter((id) => pressSelects(adapterRef.current, id, level)) as NodeId[];
+    return rangeAmong(between, adapterRef.current, level);
   }, [optionsRef, adapterRef]);
   const deepAction = useMemo(
     () => createSelectDeepAction({

@@ -65,7 +65,7 @@ export interface SceneCanvasInputProps {
   selection: SelectionApi;
   descriptor: PoseDescriptor<unknown>;
   picking: Pick<
-    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf' | 'enteredGroup' | 'reachable'
+    Picking, 'pickEvery' | 'pickBest' | 'boundsOf' | 'planeOfNode' | 'kindOfNode' | 'doubleClickNames' | 'viewLayerGate' | 'alphaOf' | 'enteredGroup' | 'reachable' | 'selectRange'
   > & { adapter: BridgeAdapter };
   /** The node a hit resolves to, for the `onClick` / `onDoubleClick` observers. */
   nodeAtPointRef: MutableRefObject<NodeAtPoint | undefined>;
@@ -128,6 +128,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   }, []);
   usePointerPublisher(canvas.elementRef, canvas.apiRef);
   useDepSource('chromeRules', () => chrome.chromeRules);
+  useDepSource('selectRange', () => picking.selectRange);
   useModeDefaultToolDepSource(props.modes, p.tools.tools);
   useSceneStandardActions({
     props, viewOn: p.viewOn,
