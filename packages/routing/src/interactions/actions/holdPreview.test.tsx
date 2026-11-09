@@ -112,6 +112,18 @@ describe('holdPreview', () => {
     expect(r.open()).toBeNull();
   });
 
+  it('takes the preview down and runs nothing when the action refuses by the release', () => {
+    let open = true;
+    const r = rig({ enabled: () => (open ? true : ActionDisabledReason.SelectionRequired) });
+    r.tap('p');
+    r.send('keydown', 'u');
+    expect(r.shown).toHaveBeenCalledTimes(1);
+    open = false;
+    r.send('keyup', 'u');
+    expect(r.hidden).toHaveBeenCalledTimes(1);
+    expect(r.run).not.toHaveBeenCalled();
+  });
+
   it('is disabled where the action is, so the key does nothing', () => {
     const r = rig({ enabled: () => ActionDisabledReason.SelectionRequired });
     r.tap('p');
