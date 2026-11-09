@@ -40,6 +40,17 @@ describe('offenders', () => {
     expect(offenders(file('/* .a { text-transform: uppercase; } */\n.b { color: red; }'))).toEqual([]);
   });
 
+  it('reads past a URL, whose // opens no comment', () => {
+    expect(offenders(file('.a { background: url(https://x.example/a.png);\n  text-transform: uppercase; }'))).toMatchObject([
+      { problem: expect.stringContaining('text-transform: uppercase') },
+      { problem: expect.stringContaining('sets no letter-spacing') },
+    ]);
+  });
+
+  it('reads a comment opener inside a string as text', () => {
+    expect(offenders(file(".a { content: '/*'; text-transform: uppercase; }\n.b { content: '*/'; }"))).toHaveLength(2);
+  });
+
   it('passes a row label whose size reads the params property', () => {
     expect(offenders(file('.row > .rowLabel { font-size: var(--wzl-params-text-size, var(--wzl-font-size-sm)); }'))).toEqual([]);
   });

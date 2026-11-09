@@ -17,6 +17,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { stripComments } from './lib/cssBlocks.ts';
 
 /** The surfaces whose labels inherit. Add a directory to bring one under the rule. */
 export const SURFACES = [
@@ -46,7 +47,7 @@ export interface Offender {
 
 /** Rule bodies with their selectors and the line each starts on. Comments are blanked first, keeping line numbers. */
 function rules(source: string): { selector: string; body: string; line: number }[] {
-  const text = source.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' ')).replace(/\/\/[^\n]*/g, '');
+  const text = stripComments(source);
   const out: { selector: string; body: string; line: number }[] = [];
   let depth = 0;
   let start = 0;
