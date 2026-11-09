@@ -40,6 +40,6 @@ describe('usePencilTool through <SceneCanvas>', () => {
       pointer('pointerup', 300, 300);
     });
     expect([...scene.renderOrder()]).toHaveLength(2);
-    expect(scene.get(rect)?.pose).toEqual({ x: 100, y: 100, width: 80, height: 60 });
+    expect(scene.get(rect as never)?.pose).toEqual({ x: 100, y: 100, width: 80, height: 60 });
   });
 });

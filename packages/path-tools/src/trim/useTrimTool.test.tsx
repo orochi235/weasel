@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { matchSpec, type InputEvent } from '@weasel-js/gestures';
 import { pathFromD } from '@weasel-js/geom';
 import type { ImmediateInvoker } from '@weasel-js/routing';
-import { asNodeId } from '@weasel-js/core';
+import { asNodeId, type RenderLayer } from '@weasel-js/core';
 import { useTrimTool } from './useTrimTool';
 
 const NO_MODS = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
@@ -23,26 +23,26 @@ function setup() {
   const { result } = renderHook(() => useTrimTool());
   const tool = result.current;
   /** Run every binding the event matches, as the dispatcher runs every live hover. */
-  const dispatch = (e: InputEvent) => {
+  const dispatch = (e: InputEvent & { x: number; y: number }) => {
     for (const b of tool.bindings ?? []) {
       if (!matchSpec(e, b.spec, true)) continue;
       const action = tool.actions?.find((a) => a.id === b.actionId);
       (action?.invoker as ImmediateInvoker | undefined)?.run(deps, { world: { x: e.x, y: e.y } } as never);
     }
   };
-  const drawn = () => tool.overlay!.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } } as never, { width: 0, height: 0, dpr: 1 } as never);
+  const drawn = () => (tool.overlay as RenderLayer<unknown>).draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } } as never, { width: 0, height: 0, dpr: 1 } as never);
   return { dispatch, drawn };
 }
 
 describe('useTrimTool', () => {
   it('clears the piece it previews when the pointer leaves the canvas', () => {
     const t = setup();
-    t.dispatch({ kind: 'hover', x: 15, y: 1, clientX: 15, clientY: 1, bodyTarget: 'empty', ...NO_MODS } as InputEvent);
+    t.dispatch({ kind: 'hover', x: 15, y: 1, clientX: 15, clientY: 1, bodyTarget: 'empty', ...NO_MODS } as InputEvent & { x: number; y: number });
     expect(t.drawn()).toHaveLength(1);
     t.dispatch({
       kind: 'hover', off: true, x: 15, y: 1, clientX: 15, clientY: 1, bodyTarget: 'empty', ...NO_MODS,
       from: { bodyTarget: 'empty' },
-    } as InputEvent);
+    } as InputEvent & { x: number; y: number });
     expect(t.drawn()).toEqual([]);
   });
 });
