@@ -23,6 +23,7 @@ import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { SCOPED, TRIGGERS } from './scripts/lib/fleet-triggers.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { devWatch } from './scripts/vite-watch.ts';
+import { cssCacheKey } from './scripts/vitest-css-cache-key.ts';
 import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
 import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
 import { browserShape } from './scripts/lib/browser-shape.mjs';
@@ -38,7 +39,7 @@ const shared = {
   resolve: {
     alias: weaselAliases(import.meta.dirname),
   },
-  plugins: [react()],
+  plugins: [react(), cssCacheKey()],
 };
 
 // Vitest disables dep discovery everywhere but its vm environment, where vite scans every index.html
@@ -71,6 +72,7 @@ const VITE_SERVER_TESTS = [
   'packages/prefs/src/vite.test.ts',
   'scripts/vite-prebundle.vite.test.ts',
   'scripts/vite-wake.vite.test.ts',
+  'scripts/vitest-css-cache-key.vite.test.ts',
   'scripts/vitest-browser-deps.vite.test.ts',
 ];
 
@@ -124,6 +126,7 @@ export default defineConfig({
         // 400-odd core files don't pay for reading every CHANGELOG.
         plugins: [
           react(),
+          cssCacheKey(),
           demoTimestamps({ root: import.meta.dirname }),
           demoSources({ root: import.meta.dirname }),
           changelogs({ root: import.meta.dirname }),
@@ -237,7 +240,7 @@ export default defineConfig({
         // doesn't inherit that config, so the plugin has to be added
         // here too or any test that imports a Bundle Inspector module
         // fails to resolve the virtual id at load time.
-        plugins: [react(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
+        plugins: [react(), cssCacheKey(), traitSchemasPlugin({ repoRoot: import.meta.dirname }), weaselIcons.vite({ mode: 'app' })],
         test: {
           name: 'draw',
           retry: RETRY_TIMEOUTS,
@@ -282,7 +285,7 @@ export default defineConfig({
       // resolves none of. Headless Chromium, like forge-stories below.
       {
         ...shared,
-        plugins: [react(), ...withPrebundle.plugins],
+        plugins: [react(), cssCacheKey(), ...withPrebundle.plugins],
         ...(withPrebundle.cacheDir && { cacheDir: withPrebundle.cacheDir }),
         // A dependency met mid-run makes vite re-optimize and reload the page under the suites, and a
         // node's warm cache skips the scan that would have found it. `optimizeDeps.force` is not the
@@ -331,6 +334,7 @@ export default defineConfig({
       {
         plugins: [
           react(),
+          cssCacheKey(),
           traitSchemasPlugin({ repoRoot: import.meta.dirname }),
           forgeTest({ stories: forgeStories, frameConfig: forgeFrameConfig }),
         ],

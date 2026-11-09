@@ -24,11 +24,12 @@ asked for that key — never that a rule defines it, and a class whose rule was 
 as present. The hash is per stylesheet, so an assertion can still tell *which* module a class came
 from; to know a rule survives, read the stylesheet or check it in a browser.
 
-**`fsModuleCache` serves a CSS module stale when only a sheet it `@import`s changed.** Its entries are
-keyed by the importing file's content, so an edit to `PropertyRow.auto.css` leaves
-`Properties.module.css`'s cached class map in place: in the `labkit` project (real CSS, `css: true`) a new
-class reads `undefined` and its element renders with no class, while the rule is plainly on disk
-(2026-11-07). Delete `node_modules/.vitest-cache` and rerun; a fleet node's tree keeps the same cache.
+**`fsModuleCache` keys a module by its own content alone.** A transform whose output depends on
+another file goes stale when only that file changes, on every fleet node, whose cache persists. CSS
+is covered: `scripts/vitest-css-cache-key.ts` adds the sheets a CSS file reaches by `@import` and
+`composes … from` to its key, and every project that sets its own `plugins` has to list it. A new
+transform that reads another real file needs the same, through `configureVitest`'s
+`defineCacheKeyGenerator`. A virtual module is keyed by what its `load` returns, so it is safe.
 
 **Every jsdom test file runs in its own realm (`pool: 'vmThreads'`).** Its `Object`,
 `Set`, `RegExp` and `Uint8Array` are not Node's, and `structuredClone` hands back Node's,
