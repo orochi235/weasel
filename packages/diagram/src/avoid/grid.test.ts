@@ -59,6 +59,12 @@ describe('visibilityGraph', () => {
     expect(g.neighbor(a, 1)).toBe(-1);
   });
 
+  it('files an obstacle running far past the window only over the window', () => {
+    const tall = { x: 0, y: 0, width: 40, height: Infinity };
+    const g = visibilityGraph([{ x: -100, y: 50 }, { x: 0, y: 0 }], [tall], window);
+    expect(where(g, g.neighbor(g.at({ x: -100, y: 50 }), 0))).toEqual([0, 50]);
+  });
+
   it('stops a line at an obstacle’s inside, and runs it along an edge', () => {
     const g = graph();
     const east = g.neighbor(g.at({ x: -100, y: 50 }), 0);
