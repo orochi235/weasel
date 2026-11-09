@@ -577,12 +577,14 @@ rest are ranked best-first:
 | Step | Rule |
 |---|---|
 | 1 | Bindings naming the view the pointer is in, ahead of every other |
-| 2 | Scope tier: hotkey-held tool, then the active tool, then ambient bindings |
+| 2 | Scope tier: hotkey (a held tool, the open keymap, an action declaring `scope: 'hotkey'`), then the active tool, then ambient bindings |
 | 3 | Specificity within a tier: target narrowness, then required modifiers, then phase, then a MIME filter on drop/paste |
 | 4 | An action gated by an `eligible` rule that holds now, ahead of one with no rule |
-| 5 | Registration order |
+| 5 | Registration order: held entries newest hold first, then entries in the order given, then registered actions |
 
-It fires the first whose `enabled()` passes. Step 4 is how context wins a tie:
+It fires the first whose `enabled()` passes. A dispatcher with no rule context
+(`getRuleCtx` absent, or answering `undefined`) evaluates no `eligible` rule, so
+nothing is dropped and step 4 does nothing. Step 4 is how context wins a tie:
 in path edit, Escape exits the edit instead of resetting the tool. A plain drag
 carries no intent of its own, so no kit action binds one by default: the select
 tool marquees, the shape tools insert and the hand tool pans through their own
