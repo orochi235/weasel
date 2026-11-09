@@ -28,13 +28,13 @@ export function createUiOngoing(
   function commitPrior(actionId: string, deps: ActionDeps): void {
     const prevGestureId = byAction.get(actionId);
     if (prevGestureId === undefined) return;
-    const prevHandle = inFlight.handles.get(prevGestureId);
+    // Out of flight before its `onEnd` runs, as a gesture's is.
+    const prevHandle = inFlight.take(prevGestureId);
+    byAction.delete(actionId);
     if (prevHandle?.onEnd) {
       try { prevHandle.onEnd(uiInvocationCtx(deps), 'commit'); }
       catch (e) { console.error(`weasel dispatcher: prior UI handle for "${actionId}" threw on auto-commit`, e); }
     }
-    inFlight.take(prevGestureId);
-    byAction.delete(actionId);
   }
 
   function control(actionId: string, gestureId: string, handle: OngoingHandle, deps: ActionDeps): UiOngoingControl {
@@ -57,12 +57,12 @@ export function createUiOngoing(
       end(reason) {
         if (!live()) { ended = true; return; }
         ended = true;
+        inFlight.take(gestureId);
+        if (byAction.get(actionId) === gestureId) byAction.delete(actionId);
         if (handle.onEnd) {
           try { handle.onEnd(uiInvocationCtx(deps), reason); }
           catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onEnd`, e); }
         }
-        inFlight.take(gestureId);
-        if (byAction.get(actionId) === gestureId) byAction.delete(actionId);
         notify();
       },
     };
