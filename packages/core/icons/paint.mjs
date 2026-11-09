@@ -2,6 +2,8 @@
 // are filled silhouettes: the glyph IS the ink, so the option it names is
 // legible as a shape rather than as a diagram of one.
 
+import { filledPath } from '../../icons/scripts/lib/emit.mjs';
+
 const n = (v) => Math.round(v * 100) / 100;
 
 /** A full circle as two half arcs, opening at 12 o'clock. */
@@ -53,8 +55,7 @@ const cap = (linecap) => {
 // Height ranks as the geometry does — miter runs furthest past the corner, a
 // round join reaches its half-width, a bevel is cut shortest — so the set
 // reads by height as well as by shape.
-const fill = (d, rule) =>
-  `<path d="${d}" fill="currentColor" stroke="none"${rule ? ` fill-rule="${rule}"` : ''}/>`;
+const fill = (d, rule) => filledPath(d, { rule });
 
 // ── dash ─────────────────────────────────────────────────────────────────
 // One rule across the box at four patterns. Drawn heavier than the set's 1.5
@@ -122,8 +123,7 @@ const RADII = [6.6, 5.05, 3.5, 1.95];
 // reads brighter than its neighbours at the same nominal opacity — the whole
 // scale is stepped down to sit with them.
 const RADIAL_RAMP = [0.7, 0.53, 0.37, 0.2];
-const ring = (d, op) =>
-  `<path d="${d}" fill="currentColor" fill-rule="evenodd" stroke="none" fill-opacity="${op}"/>`;
+const ring = (d, op) => filledPath(d, { rule: 'evenodd', opacity: op });
 const radialRings = RADII.map((h, i) =>
   ring(i === RADII.length - 1 ? box(h) : box(h) + box(RADII[i + 1]), RADIAL_RAMP[i]),
 ).join('');

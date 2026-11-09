@@ -22,11 +22,13 @@ export const element = (glyph) =>
       `${glyph.width ? ` stroke-width="${glyph.width}"` : ''}/>` +
       (glyph.inner ? `<path d="${glyph.inner.d}" stroke-width="${glyph.inner.width}"/>` : '');
 
+/** A region filled in `currentColor` with no stroke; `rule: 'evenodd'` leaves a subpath inside another hollow. */
+export const filledPath = (d, { rule, opacity } = {}) =>
+  `<path d="${d}" fill="currentColor" stroke="none"` +
+  `${rule ? ` fill-rule="${rule}"` : ''}${opacity === undefined ? '' : ` fill-opacity="${opacity}"`}/>`;
+
 export const fillElement = (glyph) =>
-  typeof glyph === 'string' || !glyph.fill
-    ? null
-    : `<path d="${glyph.fill}" fill="currentColor" stroke="none"` +
-      `${glyph.rule ? ` fill-rule="${glyph.rule}"` : ''}/>`;
+  typeof glyph === 'string' || !glyph.fill ? null : filledPath(glyph.fill, { rule: glyph.rule });
 
 export function checkMark(key, body) {
   if (body.includes('stroke-width')) {
