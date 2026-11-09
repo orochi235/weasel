@@ -68,7 +68,12 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
 }
 
 /** What the panel's conditions say of the node at a path: whether it takes input, is drawn, and is drawn pressed. */
-function conditionsAt<TC extends Record<string, unknown>>({ resolved, config, showHidden, over }: PanelRowsSource<TC>) {
+function conditionsAt<TC extends Record<string, unknown>>({
+  resolved,
+  config,
+  showHidden,
+  over,
+}: PanelRowsSource<TC>) {
   const values = config as Record<string, unknown>;
   return {
     enabled: (path: string): boolean => isLeafEnabled(resolved, path, values, over),

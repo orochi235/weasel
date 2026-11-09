@@ -128,9 +128,12 @@ describe('<TrialChrome>', () => {
     expect(labels).toEqual(['Clone trial', 'Reset trial', 'Save snapshot', 'Close trial']);
   });
 
-  it('disables close on the last trial', async () => {
+  it('disables close on the last trial, and says why', async () => {
     await renderSettled(<ChromeHarness isLastTrial />, { wrapper: withIcons });
-    expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
+    const close = screen.getByRole('button', { name: 'Close trial' });
+    // Focusable while disabled, so the reason can be read.
+    expect(close).toHaveAttribute('aria-disabled', 'true');
+    expect(close).toHaveAccessibleDescription('It is the last trial');
   });
 
   it('omits undo and redo only when the instrument declares undo: false', async () => {

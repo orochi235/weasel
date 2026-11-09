@@ -10,8 +10,21 @@ describe('isLeafActive', () => {
       name: 'Lab',
       members: {
         armed: { kind: 'boolean', name: 'Armed', description: '', default: false } as PrefLeaf,
-        clear: { kind: 'action', name: 'Clear', description: '', default: undefined, run: () => {}, activeIf: { path: 'armed' } } as PrefLeaf,
-        plain: { kind: 'action', name: 'Plain', description: '', default: undefined, run: () => {} } as PrefLeaf,
+        clear: {
+          kind: 'action',
+          name: 'Clear',
+          description: '',
+          default: undefined,
+          run: () => {},
+          activeIf: { path: 'armed' },
+        } as PrefLeaf,
+        plain: {
+          kind: 'action',
+          name: 'Plain',
+          description: '',
+          default: undefined,
+          run: () => {},
+        } as PrefLeaf,
       },
     }),
     [],

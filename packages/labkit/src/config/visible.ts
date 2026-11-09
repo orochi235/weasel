@@ -1,8 +1,8 @@
 import {
-  type PrefAction,
   applyPrefConditions,
   applyPrefEntryConditions,
   PREF_STATUS,
+  type PrefAction,
   type PrefAlias,
   type PrefAliasTargets,
   type PrefEntryApplied,
@@ -134,7 +134,12 @@ export function isLeafActive(
   const leaf = prefLeafAt(resolved.group, path);
   const { activeIf } = (leaf ?? {}) as Partial<PrefAction>;
   if (leaf?.kind !== 'action' || activeIf === undefined) return false;
-  return prefJudge(resolved.group, conditionReader(resolved, config, over), undefined, over)(activeIf, 'activeIf');
+  return prefJudge(
+    resolved.group,
+    conditionReader(resolved, config, over),
+    undefined,
+    over,
+  )(activeIf, 'activeIf');
 }
 
 /**
