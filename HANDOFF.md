@@ -49,7 +49,8 @@ For the session picking this up: what is in flight and what has no other home. O
   draw/path-tools, core/geom/select/history, kernel3d/animator/audio/headless, scripts and the secondary apps; 45
   fixes, plus the eyedropper and hand tool reading through chrome claims) is on `main` at 8d36c5e16 through
   `batch/2026-11-08e` (`test:fleet`: 36256 tests; postbuild green), and the hand fix at cd61bfa32 (branch run 15039
-  tests, full typecheck). Not pushed. Open questions are under "Audit round ten" in `docs/unruled.md`.
+  tests, full typecheck). Pushed. `frame-fixes` (paths in groups read and written in world, derived nodes picked
+  through their own frame) followed at 7186be511 through `batch/2026-11-09`; pushed. Open questions are under "Audit round ten" in `docs/unruled.md`.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
