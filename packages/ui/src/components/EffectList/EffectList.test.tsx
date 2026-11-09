@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { cssColorLiteral } from '@weasel-js/paint';
@@ -161,6 +161,46 @@ describe('EffectList', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove C' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove C' }));
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove A' }));
+  });
+
+  it('hands focus to the next card\'s number when a focused card goes and cards have no remove button', () => {
+    function Dropping() {
+      const [items, setItems] = useState(START);
+      return (
+        <>
+          <EffectList ariaLabel="Stages" kinds={KINDS} items={items} onChange={setItems} removable={false} />
+          <button type="button" onClick={() => setItems((v) => v.filter((it) => it.id !== 'b'))}>Drop B</button>
+        </>
+      );
+    }
+    renderWithIcons(<Dropping />);
+    const field = screen.getByRole('textbox', { name: 'Name of card 2' });
+    act(() => field.focus());
+    // A keystroke, not a click, so focus stays in the card as it goes.
+    act(() => screen.getByRole('button', { name: 'Drop B' }).click());
+    expect(document.activeElement).toBe(handle('C'));
+  });
+
+  it('moves only the inner card when one list sits in another\'s open card', () => {
+    const outer = vi.fn();
+    const inner = vi.fn();
+    function Nested() {
+      const [items, setItems] = useState(START);
+      return (
+        <Held
+          onItems={outer}
+          renderBody={() => (
+            <EffectList ariaLabel="Inner" kinds={KINDS} items={items} onChange={(next) => { setItems(next); inner(next); }} />
+          )}
+        />
+      );
+    }
+    renderWithIcons(<Nested />);
+    fireEvent.click(handle('B'));
+    const innerGrip = within(screen.getByRole('group', { name: 'Inner' })).getByRole('button', { name: 'Drag to reorder A' });
+    fireEvent.keyDown(innerGrip, { key: 'ArrowDown', altKey: true });
+    expect(ids(inner.mock.lastCall![0])).toEqual(['b', 'a', 'c']);
+    expect(outer).not.toHaveBeenCalled();
   });
 
   it('has no remove buttons when not removable', () => {
