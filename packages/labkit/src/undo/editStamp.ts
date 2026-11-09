@@ -16,3 +16,8 @@ export function editStamp(): number {
 export function lastEditStamp(): number {
   return last;
 }
+
+/** Hand out stamps past `stamp` from now on: one a restored history already holds. */
+export function seedEditStamp(stamp: number): void {
+  if (Number.isFinite(stamp)) last = Math.max(last, stamp);
+}

@@ -58,7 +58,7 @@ afterEach(() => {
 });
 
 describe('openLabStore — round trips', () => {
-  it('reopens a trial it stored, with an empty undo history', async () => {
+  it('reopens a trial it stored, with no live undo history until the trial restores one', async () => {
     const backing = new Map<string, unknown>();
     const first = await open(backing);
     first.store.getState().addTrial(trial('w1', { state: { n: 7 } }));
@@ -435,7 +435,7 @@ describe('openLabStore — two tabs', () => {
     expect(order(await open(backing))).toEqual(['a1', 'b1']);
   });
 
-  it("applies another tab's edit to a trial, and clears only that trial's undo history", async () => {
+  it("applies another tab's edit to a trial, taking that tab's undo in place of its own", async () => {
     const backing = new Map<string, unknown>();
     storeLab(backing, { trials: [trial('t1', { state: { n: 0 } }), trial('t2')] });
     const tabA = await open(backing);

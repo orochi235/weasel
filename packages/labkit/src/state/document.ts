@@ -4,7 +4,7 @@ import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } 
 import type { UndockedPanels } from './undock';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */
-export const CURRENT_DOCUMENT_VERSION = 4;
+export const CURRENT_DOCUMENT_VERSION = 5;
 
 /** Where a version-3 lab kept its one document. Read once, to fold it into
  *  records, then deleted. */
@@ -210,5 +210,17 @@ export function migrateV3toV4(doc: Record<string, unknown>): Record<string, unkn
   return { ...doc, version: 4 };
 }
 
+/** Version 4 to version 5: a trial's record may carry its saved undo. One
+ *  without it opens with nothing to undo, as every trial did before. */
+export function migrateV4toV5(doc: Record<string, unknown>): Record<string, unknown> {
+  return { ...doc, version: 5 };
+}
+
 /** Index `i` migrates a version-`i` document to version `i + 1`. */
-export const MIGRATIONS: Migration[] = [migrateV0toV1, migrateV1toV2, migrateV2toV3, migrateV3toV4];
+export const MIGRATIONS: Migration[] = [
+  migrateV0toV1,
+  migrateV1toV2,
+  migrateV2toV3,
+  migrateV3toV4,
+  migrateV4toV5,
+];

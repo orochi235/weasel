@@ -15,6 +15,7 @@ import {
 } from './labRecords';
 import type { LabStore } from './store';
 import type { SavedSnapshot, SerializedTrial, TrialRecord, UnreadableRecord } from './types';
+import { watchTrialHistories } from './watchTrialHistories';
 
 export interface BindOptions {
   orders: Map<string, number>;
@@ -64,6 +65,34 @@ function deleteDiscarded(
   return gone.length > 0;
 }
 
+/**
+ * `trials` with the record another tab wrote for trial `id`: replaced, added, or gone. The trial
+ * hydrates with that tab's undo, which describes the state it wrote.
+ */
+function remoteTrial(
+  store: LabStore,
+  trials: TrialRecord[],
+  id: string,
+  value: unknown,
+  orderOf: Map<string, number>,
+  nextOrder: () => number,
+  failed: (u: UnreadableRecord) => void,
+): TrialRecord[] {
+  if (value === undefined || !value || typeof value !== 'object') {
+    orderOf.delete(id);
+    return trials.filter((t) => t.id !== id);
+  }
+  const { order, ...rest } = value as SerializedTrial & { order?: unknown };
+  orderOf.set(id, typeof order === 'number' && Number.isFinite(order) ? order : nextOrder());
+  const hooks = store.getState().instrumentHooks();
+  const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks, failed);
+  // Kept, the stale trial's next edit would write over a record this tab cannot read.
+  if (!replacement) return trials.filter((t) => t.id !== id);
+  return trials.some((t) => t.id === id)
+    ? trials.map((t) => (t.id === id ? replacement : t))
+    : [...trials, replacement];
+}
+
 /** Keep `store` and `records` in step, both ways. Returns the unbinding. */
 export function bindLabStore(
   store: LabStore,
@@ -83,6 +112,10 @@ export function bindLabStore(
     const [serialized] = serializeTrials([trial], store.getState().instrumentHooks().serializers);
     records.set(trialRecord(trial.id), { ...serialized, order: orderOf.get(trial.id) });
   };
+  const offHistories = watchTrialHistories(store, (id) => {
+    const trial = store.getState().trials.find((t) => t.id === id);
+    if (trial && !applyingRemote) writeTrial(trial);
+  });
 
   const offStore = store.subscribe((state, prev) => {
     if (applyingRemote) return;
@@ -163,33 +196,10 @@ export function bindLabStore(
       const parsed = parseRecordName(name);
       if (!parsed) continue;
       switch (parsed.kind) {
-        case 'trial': {
-          const id = parsed.id;
-          unreadable = withoutUnreadable(unreadable, 'trial', id);
-          if (value === undefined || !value || typeof value !== 'object') {
-            trials = trials.filter((t) => t.id !== id);
-            orderOf.delete(id);
-            break;
-          }
-          const { order, ...rest } = value as SerializedTrial & { order?: unknown };
-          orderOf.set(
-            id,
-            typeof order === 'number' && Number.isFinite(order) ? order : nextOrder(),
-          );
-          // Hydrating starts an empty undo history: the old one describes a
-          // state that no longer exists.
-          const hooks = store.getState().instrumentHooks();
-          const [replacement] = hydrateTrials([{ ...rest, id }], hooks.serializers, hooks, failed);
-          if (!replacement) {
-            // Kept, the stale trial's next edit would write over a record this tab cannot read.
-            trials = trials.filter((t) => t.id !== id);
-            break;
-          }
-          trials = trials.some((t) => t.id === id)
-            ? trials.map((t) => (t.id === id ? replacement : t))
-            : [...trials, replacement];
+        case 'trial':
+          unreadable = withoutUnreadable(unreadable, 'trial', parsed.id);
+          trials = remoteTrial(store, trials, parsed.id, value, orderOf, nextOrder, failed);
           break;
-        }
         case 'save': {
           const id = parsed.id;
           unreadable = withoutUnreadable(unreadable, 'snapshot', id);
@@ -275,5 +285,6 @@ export function bindLabStore(
   return () => {
     offStore();
     offRecords();
+    offHistories();
   };
 }

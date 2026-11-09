@@ -1,3 +1,4 @@
+import { savedTrialHistory } from './savedUndo';
 import type { InstrumentSerializers, SerializedTrial, TrialRecord } from './types';
 
 /** The storage key a lab writes one of its buckets under. Namespaced by
@@ -26,21 +27,26 @@ export function newId(): string {
 }
 
 /** Serialize trials for storage, running each instrument's own serializer
- *  over its state. Undo history is deliberately dropped — it does not survive
- *  a reload. */
+ *  over its state. A trial's undo history goes with it, or, before the trial
+ *  has restored one, the undo its record was read with. */
 export function serializeTrials(
   trials: TrialRecord[],
   serializers: InstrumentSerializers,
 ): SerializedTrial[] {
-  return trials.map(({ history: _history, ...w }) => {
+  return trials.map(({ history, undo, ...w }) => {
     const s = serializers[w.instrumentName];
-    return { ...w, state: s?.serialize ? s.serialize(w.state) : w.state };
+    const trial = history ? savedTrialHistory(history, s) : undo?.trial;
+    return {
+      ...w,
+      state: s?.serialize ? s.serialize(w.state) : w.state,
+      ...(trial ? { undo: { trial } } : {}),
+    };
   });
 }
 
 /** Rebuild trials from storage, running each instrument's deserializer
- *  over its state and starting each with an empty undo history. Input that
- *  is not an array yields an empty list. */
+ *  over its state. Each keeps the undo it was saved with, for the trial to
+ *  restore once it mounts. Input that is not an array yields an empty list. */
 export function deserializeTrials(
   records: SerializedTrial[],
   deserializers: InstrumentSerializers,

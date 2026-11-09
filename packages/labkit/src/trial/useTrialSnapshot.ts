@@ -1,4 +1,4 @@
-import { createHistory, type Op, useLatest } from '@weasel-js/core';
+import { type Op, useLatest } from '@weasel-js/core';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
@@ -6,16 +6,9 @@ import { undoCapability } from '../instrument/undo';
 import type { LabStore } from '../state/store';
 import { onTrialRestart } from '../state/trialRestarts';
 import type { TrialRecord } from '../state/types';
-import { editStamp } from '../undo/editStamp';
-import { stateOp } from '../undo/stateOp';
-import {
-  readTrialEdit,
-  readTrialSettings,
-  type TrialEdit,
-  type TrialSettings,
-  writeTrialEdit,
-} from './trialEdit';
+import { TRIAL_EDIT_OP, type TrialEditArgs, trialEditOf, trialEditOp } from './trialEditOp';
 import type { TrialHistorySource } from './trialHistory';
+import { type RebuildTrialOp, trialUndoHistory, useRestoredHistory } from './useRestoredHistory';
 
 /** What a trial snapshots on when its instrument names no events. */
 const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
@@ -49,7 +42,11 @@ export function useTrialSnapshot({
   instrument,
   ownHistory,
   onUndone,
-}: TrialSnapshotOptions): { snapshot: TrialSnapshot; stored: () => TrialRecord | undefined } {
+}: TrialSnapshotOptions): {
+  snapshot: TrialSnapshot;
+  stored: () => TrialRecord | undefined;
+  rebuild: RebuildTrialOp;
+} {
   const setTrialHistory = useStore(store, (s) => s.setTrialHistory);
   const undoCap = undoCapability(instrument);
   const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? DEFAULT_SNAPSHOT_ON), [undoCap]);
@@ -73,16 +70,12 @@ export function useTrialSnapshot({
     [store, trialId],
   );
 
-  const snapshot = useCallback<TrialSnapshot>(
-    (event, op) => {
-      if (!undoCap || !undoEvents.has(event)) return false;
-      const current = stored();
-      if (!current) return false;
-      const own = ownHistory();
-      if (own && !isConfigEvent(event)) return false;
-      const entry = op ?? ownEntry(store, trialId, current, own !== null, stored);
+  /** `entry` as the trial records it: ending the gesture when undone, and fenced at the restart it
+   *  was recorded or restored under. */
+  const recorded = useCallback(
+    (entry: Op): Op => {
       const at = restarts.current;
-      const recorded = fenced(
+      return fenced(
         {
           ...entry,
           invert: () => {
@@ -92,22 +85,42 @@ export function useTrialSnapshot({
         },
         () => restarts.current === at,
       );
+    },
+    [undone],
+  );
+
+  const rebuild = useCallback<RebuildTrialOp>(
+    (name, args) =>
+      name === TRIAL_EDIT_OP ? recorded(trialEditOp(args as TrialEditArgs, store, trialId)) : null,
+    [recorded, store, trialId],
+  );
+
+  useRestoredHistory({ store, trialId, enabled: undoCap !== undefined, maxDepth, rebuild });
+
+  const snapshot = useCallback<TrialSnapshot>(
+    (event, op) => {
+      if (!undoCap || !undoEvents.has(event)) return false;
+      const current = stored();
+      if (!current) return false;
+      const own = ownHistory();
+      if (own && !isConfigEvent(event)) return false;
+      const entry = recorded(op ?? trialEditOf(current, own ? 'settings' : 'edit', store));
       if (own) {
-        own.record(recorded, event);
+        own.record(entry, event);
         return true;
       }
       let history = current.history;
       if (!history) {
-        history = createHistory(null, { historyLimit: maxDepth, now: editStamp });
+        history = trialUndoHistory(maxDepth);
         setTrialHistory(trialId, history);
       }
-      history.recordEntry([recorded], event);
+      history.recordEntry([entry], event);
       return true;
     },
-    [undoCap, undoEvents, maxDepth, stored, ownHistory, store, trialId, setTrialHistory, undone],
+    [undoCap, undoEvents, maxDepth, stored, ownHistory, store, trialId, setTrialHistory, recorded],
   );
 
-  return { snapshot, stored };
+  return { snapshot, stored, rebuild };
 }
 
 /** `op`, writing nothing once `live` says the trial has restarted since it was recorded. */
@@ -117,29 +130,4 @@ function fenced(op: Op, live: () => boolean): Op {
     apply: (adapter) => (live() ? op.apply(adapter) : 'noop'),
     invert: () => fenced(op.invert(), live),
   };
-}
-
-/** The trial's own entry: its settings where an instrument's history covers
- *  its state, its settings and state together where none does. */
-function ownEntry(
-  store: LabStore,
-  trialId: string,
-  current: TrialRecord,
-  settingsOnly: boolean,
-  stored: () => TrialRecord | undefined,
-): Op {
-  if (settingsOnly) {
-    const read = (): TrialSettings | undefined => {
-      const record = stored();
-      return record ? readTrialSettings(record) : undefined;
-    };
-    const write = (settings: TrialSettings) => writeTrialEdit(store, trialId, settings);
-    return stateOp(structuredClone(readTrialSettings(current)), read, write);
-  }
-  const read = (): TrialEdit | undefined => {
-    const record = stored();
-    return record ? readTrialEdit(record) : undefined;
-  };
-  const write = (edit: TrialEdit) => writeTrialEdit(store, trialId, edit);
-  return stateOp(structuredClone(readTrialEdit(current)), read, write);
 }

@@ -91,7 +91,7 @@ export function cloneTrial(trials: TrialRecord[], id: string): TrialRecord[] {
   const sourceIdx = trials.findIndex((w) => w.id === id);
   const source = trials[sourceIdx];
   if (!source) return trials;
-  const { history: _history, ...rest } = source;
+  const { history: _history, undo: _undo, ...rest } = source;
   const clone: TrialRecord = {
     ...rest,
     id: newId(),

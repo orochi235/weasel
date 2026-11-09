@@ -68,7 +68,7 @@ export function snapshotActions(
       set((s) => ({
         trials: s.trials.map((w) => {
           if (w.id !== trialId) return w;
-          const { auto: _pinnedNow, history: _history, ...kept } = w;
+          const { auto: _pinnedNow, history: _history, undo: _undo, ...kept } = w;
           const reset: TrialRecord = {
             ...kept,
             config: record.config,

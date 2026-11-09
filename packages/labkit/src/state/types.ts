@@ -4,6 +4,7 @@ import type { ClockPosition } from '../clock/trialClock';
 import type { Auto } from '../config/auto';
 import type { ConfigPath, ResolvedConfig, ValueAtPath } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
+import type { SavedTrialUndo } from './savedUndo';
 import type { UndockedPanels } from './undock';
 /** The trial a per-trial call is coming from. `id` is the id `useTileId`
  *  scopes a surface tile under, so a consumer keying its own per-trial
@@ -56,9 +57,12 @@ export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
    *  belongs to the instrument and is typed as such. */
   annotations?: unknown;
   /** This trial's undo history over `state`, made by the trial on its first
-   *  snapshot. Session-only: absent on a new, cloned, swapped or reloaded
-   *  trial, which is how each starts with an empty history. */
+   *  snapshot or restored from `undo`. Absent on a new, cloned, reset or
+   *  reloaded trial until then. */
   history?: History;
+  /** The undo this trial's record was read with, which the trial restores
+   *  once it mounts. Once it has a live `history`, that is what is saved. */
+  undo?: SavedTrialUndo;
   /** Where the trial's clock stood at its last rate or seek change, for a
    *  trial whose instrument declares `clock`. */
   clock?: ClockPosition;
@@ -187,8 +191,7 @@ export type InstrumentSerializers = Record<
   | undefined
 >;
 
-/** A trial as it is persisted: everything but the undo history, which is
- *  session-only. */
+/** A trial as it is persisted: its live undo history goes as `undo`. */
 export type SerializedTrial = Omit<TrialRecord, 'history'>;
 
 /** Everything a lab persists, under one key, at a known version. */
