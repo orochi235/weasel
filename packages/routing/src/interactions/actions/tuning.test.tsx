@@ -188,7 +188,7 @@ describe('invokedParams', () => {
     const reg = result.current!;
     const flip: Action = {
       ...immediate(),
-      defaultBinding: [{ spec: { kind: 'key', key: 'v' } }],
+      defaultBinding: [{ kind: 'key', key: 'v' }],
       params: pref.group('Flip', { axis: pref.enum('Axis', 'x', [{ value: 'x', label: 'X' }, { value: 'y', label: 'Y' }]) }),
     };
     act(() => {
