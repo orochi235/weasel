@@ -26,14 +26,13 @@ export function prefDisplayBounds(
   const backward = toDisplay(1) < toDisplay(0);
   const lo = p.min === undefined ? undefined : toDisplay(p.min);
   const hi = p.max === undefined ? undefined : toDisplay(p.max);
-  const flipped = lo !== undefined && hi !== undefined && lo > hi;
   const step = p.step === undefined ? 1 : displayStep(Math.abs(toDisplayExact(p.step) - toDisplayExact(0)), precision);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
   const stops = p.stops?.map(toDisplay);
   return {
-    min: flipped ? hi : lo,
-    max: flipped ? lo : hi,
+    min: backward ? hi : lo,
+    max: backward ? lo : hi,
     step,
     ...(endless === undefined ? {} : { endless }),
     ...(stops ? { stops } : {}),
