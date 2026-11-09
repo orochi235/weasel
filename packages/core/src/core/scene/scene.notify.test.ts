@@ -92,9 +92,9 @@ describe('Scene — what subscribers hear', () => {
       scene.setPose(A, at(1));
       scene.setPose(B, at(2));
     });
-    expect(heard(scene, () => scene.undo())).toEqual({ calls: 1, version: 2 });
-    expect(heard(scene, () => scene.redo())).toEqual({ calls: 1, version: 2 });
-    expect(heard(scene, () => scene.jumpToHistoryIndex(0))).toEqual({ calls: 1, version: 4 });
+    expect(heard(scene, () => scene.undo())).toEqual({ calls: 1, version: 1 });
+    expect(heard(scene, () => scene.redo())).toEqual({ calls: 1, version: 1 });
+    expect(heard(scene, () => scene.jumpToHistoryIndex(0))).toEqual({ calls: 1, version: 1 });
   });
 
   it('an engine step leaves nothing pending for the next edit to flush', () => {

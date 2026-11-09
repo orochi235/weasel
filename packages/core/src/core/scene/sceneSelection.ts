@@ -13,7 +13,7 @@ export interface SceneSelection {
   get(): readonly NodeId[];
   /** `ids` as the selection may hold them: in reach, and none held by an ancestor among them. */
   legal(ids: readonly NodeId[]): readonly NodeId[];
-  /** Select the ids of `ids` that are in reach, and tell subscribers. */
+  /** Select the ids of `ids` that are in reach, each once, and tell subscribers when that changes it. */
   set(ids: readonly NodeId[]): void;
   /** Drop the ids in `gone`, any a lock has put out of reach, and any an
    *  ancestor now holds. Tells no one: the edit that took them is what
@@ -32,7 +32,7 @@ export function createSceneSelection(
   reachable: (ids: readonly NodeId[]) => readonly NodeId[],
   parentOf: (id: NodeId) => NodeId | null | undefined,
 ): SceneSelection {
-  const legal = (next: readonly NodeId[]) => outermost(reachable(next), parentOf);
+  const legal = (next: readonly NodeId[]) => outermost(reachable(once(next)), parentOf);
   let ids: readonly NodeId[] = [];
   let changes = 0;
   const changed = createEmitter();
@@ -41,7 +41,9 @@ export function createSceneSelection(
     get: () => ids,
     legal,
     set(next) {
+      const was = ids;
       ids = legal(next);
+      if (sameIds(was, ids)) return void (ids = was);
       changes++;
       changed.emit();
     },
@@ -56,6 +58,17 @@ export function createSceneSelection(
     subscribe: changed.subscribe,
     changes: () => changes,
   };
+}
+
+/** `ids` with each id once, at its first place; `ids` itself when none repeats. */
+function once(ids: readonly NodeId[]): readonly NodeId[] {
+  if (ids.length < 2) return ids;
+  const seen = new Set(ids);
+  return seen.size === ids.length ? ids : [...seen];
+}
+
+function sameIds(a: readonly NodeId[], b: readonly NodeId[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
 }
 
 /** The scene's selection in the shape `createHistory` wants, for a consumer

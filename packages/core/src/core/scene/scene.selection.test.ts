@@ -174,4 +174,25 @@ describe('Scene — a selected node holds its subtree', () => {
     scene.undo();
     expect(scene.getSelection()).toEqual(ids(['g', 'c']));
   });
+
+  it('holds an id written twice once', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    add('b');
+    scene.setSelection(ids(['a', 'b', 'a']));
+    expect(scene.getSelection()).toEqual(ids(['a', 'b']));
+  });
+
+  it('tells nobody when a write leaves the selection as it was', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    scene.setSelection(ids(['a']));
+    const before = scene.getSelection();
+    const listener = vi.fn();
+    scene.subscribe(listener);
+    scene.setSelection(ids(['a']));
+    scene.setSelection(ids(['a', 'a']));
+    expect(listener).not.toHaveBeenCalled();
+    expect(scene.getSelection()).toBe(before);
+  });
 });
