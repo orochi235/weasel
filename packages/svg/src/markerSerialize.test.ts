@@ -104,6 +104,19 @@ describe('a marker key that is not an XML id, unregistered by the time it is rea
   });
 });
 
+describe('a sized head read back under a scaling group', () => {
+  it('scales the head with the stroke, as a browser draws its userSpaceOnUse def', () => {
+    const svg = serializeSvg(line({ markerEnd: { key: 'arrow', size: 3 } }));
+    const at = svg.lastIndexOf('<path ');
+    const end = svg.indexOf('/>', at) + 2;
+    const wrapped = `${svg.slice(0, at)}<g transform="scale(2)">${svg.slice(at, end)}</g>${svg.slice(end)}`;
+    let node = parseSvg(wrapped).nodes[0] as { kind: string; children?: unknown[]; stroke?: Record<string, unknown> };
+    while (node.kind === 'group') node = node.children![0] as typeof node;
+    expect(node.stroke!.width).toBe(4);
+    expect(node.stroke!.markerEnd).toEqual({ key: 'arrow', size: 6 });
+  });
+});
+
 describe('an unregistered marker key', () => {
   it('emits no attribute rather than a reference to a def that never exists', () => {
     // markerId mints the id, toDefsXml skips entries with no registry match —

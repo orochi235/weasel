@@ -6,6 +6,7 @@ import type { Paint } from '@weasel-js/core';
 import type { Matrix, SvgPaint, SvgStroke } from './types';
 import { applyMatrix } from './transform';
 import { scaleStroke } from './metricScale';
+import { carryUserScale } from './userScale';
 
 /** `sqrt(|det|)`: the factor a length takes under `m`, exact when `m` scales
  *  both axes alike. */
@@ -69,5 +70,6 @@ export function paintThroughMatrix(paint: SvgPaint, m: Matrix, onWarn?: (message
 }
 
 export function strokeThroughMatrix(stroke: SvgStroke, m: Matrix, onWarn?: (message: string) => void): SvgStroke {
-  return { ...scaleStroke(stroke, uniformScaleOf(m)), paint: paintThroughMatrix(stroke.paint, m, onWarn) };
+  const scaled = scaleStroke(stroke, uniformScaleOf(m));
+  return carryUserScale(scaled, { ...scaled, paint: paintThroughMatrix(stroke.paint, m, onWarn) });
 }

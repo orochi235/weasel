@@ -15,6 +15,7 @@ import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { shortHash } from './markerDefs';
 import { readPaint } from './readPaint';
+import { userScaleOf } from './userScale';
 
 type MarkerRole = 'start' | 'mid' | 'end';
 const MARKER_FIELDS = [
@@ -53,6 +54,8 @@ export function ingestMarkers(
     width: ScreenLength | undefined,
   ): void => {
     const w = width === undefined ? 1 : typeof width === 'number' ? width : width.px;
+    // A head sized in user space scales with the transforms baked into the stroke, as a browser draws it.
+    const s = userScaleOf(stroke);
     for (const [field, role, attr] of MARKER_FIELDS) {
       const id = stroke[field];
       if (typeof id !== 'string' || getMarker(id) !== undefined) continue;
@@ -72,11 +75,12 @@ export function ingestMarkers(
           minted.set(keyed.key, entry && { ...entry, id: keyed.key });
         }
         if (minted.get(keyed.key) === null) delete stroke[field];
-        else stroke[field] = keyed.size === undefined ? keyed.key : { key: keyed.key, size: keyed.size };
+        else if (keyed.size === undefined) stroke[field] = keyed.key;
+        else stroke[field] = { key: keyed.key, size: typeof keyed.size === 'number' ? keyed.size * s : keyed.size };
         continue;
       }
-      const cacheKey = `${id}\u0000${role}\u0000${w}`;
-      if (!minted.has(cacheKey)) minted.set(cacheKey, markerEntryFrom(el, id, role, w, gradients, onWarn));
+      const cacheKey = `${id}\u0000${role}\u0000${w}\u0000${s}`;
+      if (!minted.has(cacheKey)) minted.set(cacheKey, markerEntryFrom(el, id, role, w, gradients, onWarn, s));
       const entry = minted.get(cacheKey)!;
       if (entry) stroke[field] = entry.id;
       else delete stroke[field];
@@ -204,6 +208,7 @@ function markerEntryFrom(
   strokeWidth: number,
   gradients: GradientTable,
   onWarn: (m: string) => void,
+  userScale = 1,
 ): MarkerEntry | null {
   const num = (name: string, fallback: number): number => {
     const n = parseFloat(el.getAttribute(name) ?? '');
@@ -224,9 +229,9 @@ function markerEntryFrom(
 
   const refY = markerRef(el.getAttribute('refY'), vb?.y ?? 0, vb?.height ?? 0);
   // Marker units are stroke widths already, unless the marker is sized in
-  // user space; then this reference's width converts it.
+  // user space; then this reference's width converts it, its user unit `userScale` long.
   const k = el.getAttribute('markerUnits') === 'userSpaceOnUse' && strokeWidth > 0
-    ? 1 / strokeWidth
+    ? userScale / strokeWidth
     : 1;
   // A seated def's reference point sits on the head's back, `inset` behind the
   // tip the kit anchors at.

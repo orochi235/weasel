@@ -16,6 +16,7 @@ import { inheritedLang } from './textLang';
 import { mapFillPaint } from './fillPaint';
 import { fillThroughMatrix } from './paintThroughMatrix';
 import { scaleRuns, scaleStroke, scaleTextStyle } from './metricScale';
+import { carryUserScale } from './userScale';
 import type { GradientTable } from './gradients';
 import {
   deriveStyle, ownValue, styleValue, type StyleContext,
@@ -71,7 +72,7 @@ export function placeTextNode(node: SvgTextNode, m: Matrix, onWarn: (m: string) 
   }
   if (node.fill) node.fill = mapFillPaint(node.fill, (p) => fillThroughMatrix(p, inBox));
   if (node.stroke?.paint) {
-    node.stroke = { ...node.stroke, paint: fillThroughMatrix(node.stroke.paint, inBox) };
+    node.stroke = carryUserScale(node.stroke, { ...node.stroke, paint: fillThroughMatrix(node.stroke.paint, inBox) });
   }
   if (node.runs) {
     node.runs = node.runs.map((r) => (r.fill ? { ...r, fill: mapFillPaint(r.fill, (p) => fillThroughMatrix(p, inBox)) } : r));

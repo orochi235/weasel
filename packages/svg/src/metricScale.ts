@@ -8,6 +8,7 @@
  */
 import type { MarkerRef, ScreenLength, StyledRun, TextStyle } from '@weasel-js/core';
 import { resolveTextStyle, scaledDash, scaleVertexWidth, type VertexWidth } from '@weasel-js/core';
+import { carryUserScale } from './userScale';
 
 export function scaleLength(v: ScreenLength, scale: number): ScreenLength {
   return typeof v === 'number' ? v * scale : v;
@@ -42,10 +43,10 @@ export function scaleStroke<T extends StrokeMetrics>(stroke: T, scale: number): 
     ...(vertexWidths ? { vertexWidths: vertexWidths.map((n) => scaleVertexWidth(n, scale)) } : {}),
     ...scaledHeads(stroke, scale),
   };
-  if (typeof width === 'object') return Object.keys(scaledVertices).length > 0 ? { ...stroke, ...scaledVertices } : stroke;
+  if (typeof width === 'object') return carryUserScale(stroke, { ...stroke, ...scaledVertices }, scale);
   const out = { ...stroke, ...scaledVertices };
   if (width !== undefined) out.width = width * scale;
-  return scaledDash(out, scale);
+  return carryUserScale(stroke, scaledDash(out, scale), scale);
 }
 
 export function scaleRuns(runs: readonly StyledRun[], scale: number): StyledRun[] {
