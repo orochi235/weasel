@@ -201,9 +201,9 @@ function eligibleRule(action: Action): Rule | undefined {
  *    registration;
  *  - two **hotkey-capable** tools, which can stack.
  *
- * Registered actions join the ambient and hotkey groups. An ambient action
- * gated by an `eligible` rule outranks every ungated binding when its rule
- * holds, so it is compared only with other gated actions. Two actions whose
+ * Registered actions join the ambient and hotkey groups. An action gated by
+ * an `eligible` rule outranks every ungated binding of its tier when its rule
+ * holds, so it is compared only with other gated actions of that tier. Two actions whose
  * `eligible` rules can never hold together, in any of `scopes.modes`, don't
  * collide.
  */
@@ -221,12 +221,14 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     const rule = eligibleRule(a);
     if (rule) rules.set(a.id, rule);
   }
-  const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsEntry);
   const gatedActions: Contribution<unknown>[] = [];
   const ungated: Contribution<unknown>[] = [];
+  const gatedHotkey: Contribution<unknown>[] = [];
+  const hotkeyActions: Contribution<unknown>[] = [];
   for (const a of actions) {
-    if (a.scope === 'hotkey') continue;
-    (a.eligible !== undefined ? gatedActions : ungated).push(actionAsEntry(a));
+    const hotkey = a.scope === 'hotkey';
+    const gated = a.eligible !== undefined;
+    (hotkey ? (gated ? gatedHotkey : hotkeyActions) : (gated ? gatedActions : ungated)).push(actionAsEntry(a));
   }
   const modes = scopes.modes ?? KIT_MODES;
   // A keymap is live only while it is the one open, so it can collide with nothing but itself.
@@ -247,12 +249,13 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
 
   // Self-collisions: every entry, actions included. The group passes below
   // need more than one member, so a lone action is checked by nothing else.
-  for (const tool of [...registry, ...ambient, ...keymaps, ...gatedActions, ...hotkeyActions]) {
+  for (const tool of [...registry, ...ambient, ...keymaps, ...gatedActions, ...hotkeyActions, ...gatedHotkey]) {
     add(findConflictsKeyed([tool], rules, modes));
   }
   // Ambient tools and ungated ambient actions are all live together.
   if (ambient.length > 1) add(findConflictsKeyed(ambient, rules, modes));
   if (gatedActions.length > 1) add(findConflictsKeyed(gatedActions, rules, modes));
+  if (gatedHotkey.length > 1) add(findConflictsKeyed(gatedHotkey, rules, modes));
   // Hotkey-capable tools can stack on each other. An entry declares the
   // trigger as `eligibility.offhand`; a tool handed to `useTools` without
   // going through `defineTool` carries it only on its authored `def`.

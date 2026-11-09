@@ -354,13 +354,22 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
     expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
   });
 
-  it('keeps an ungated action in conflict with each gated one', () => {
+  // A gated action whose rule holds outranks an ungated tie at the hotkey tier as at the ambient one (`preferContextual`).
+  it('does not flag an ungated hotkey action against gated ones', () => {
     const c = findScopedConflicts({
       registry: [],
       actions: [escape('a', { mode: 'focus' }), escape('b', { mode: 'review' }), escape('c')],
       modes: focusAndReview,
     });
-    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b,c']);
+    expect(c).toEqual([]);
+  });
+
+  it('does not flag a held tool against a gated hotkey action, and still flags it against an ungated one', () => {
+    const held = { id: 'hand', eligibility: { focus: true, offhand: 'space' }, bindings: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'initial' }] }, actionId: 'hand.esc' }] } as unknown as Tool;
+    const gated = findScopedConflicts({ registry: [held], actions: [escape('a', { mode: 'focus' })], modes: focusAndReview });
+    expect(gated).toEqual([]);
+    const ungated = findScopedConflicts({ registry: [held], actions: [escape('c')], modes: focusAndReview });
+    expect(ungated.map((x) => x.ownerIds.join(','))).toEqual(['hand,c']);
   });
 });
 
