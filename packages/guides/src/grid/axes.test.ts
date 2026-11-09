@@ -47,6 +47,11 @@ describe('line queries', () => {
     expect(linesIn(bays, 1, 55)).toEqual([40, 55]);
   });
 
+  it('lists no lines in a span so far out that line indices stop counting', () => {
+    const endless: AxisLines = { pitch: 10, offset: 0, from: -Infinity, to: Infinity };
+    expect(linesIn(endless, 1e20, 1e20 + 100)).toEqual([]);
+  });
+
   it('finds the cell between two lines, and none outside them', () => {
     expect(cellOf(ranged, 16)).toEqual({ index: 1, lo: 15, hi: 25 });
     expect(cellOf(ranged, 36)).toBeNull();
