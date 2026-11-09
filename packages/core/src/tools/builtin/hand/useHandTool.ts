@@ -4,6 +4,7 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import { icon } from '../../../icons.gen';
+import { THROUGH_CHROME } from '../throughChrome';
 
 export type { InertiaConfig };
 
@@ -60,7 +61,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
         // (`Action.activeCursor`) the tool used to declare as an `engaged`
         // phase entry.
         bindings: [{
-          spec: { kind: 'drag' as const },
+          spec: { kind: 'drag' as const, target: THROUGH_CHROME },
           actionId: 'viewport.dragPan',
           opts: {
             id: 'hand.drag',

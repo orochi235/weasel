@@ -10,6 +10,7 @@ import type { NodeId, Scene } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
 import { useMeasureTool } from './useMeasureTool';
 import { useEyedropperTool } from '../eyedropper/useEyedropperTool';
+import { useHandTool } from '../hand/useHandTool';
 import { createMeasurements, measureIds } from 'domains/measure/measurements';
 import { measureEndsOf } from 'domains/measure/measurement';
 import { measurementsContribution } from 'domains/measure/measureContribution';
@@ -72,6 +73,7 @@ describe('measurements through <SceneCanvas>', () => {
   let scene: S;
   let ms: ReturnType<typeof createMeasurements>;
   const onPick = vi.fn();
+  const onView = vi.fn();
 
   function Probe() {
     registry = useActionsRegistry();
@@ -83,6 +85,7 @@ describe('measurements through <SceneCanvas>', () => {
     ms = m;
     const measure = useMeasureTool({ measurements: m });
     const eyedropper = useEyedropperTool({ onPick, colorOf: () => '#7fb069', hotkey: null });
+    const hand = useHandTool();
     const [s] = useState(() => {
       const made = createScene<{ kind?: string }, 'main' | 'notes', Pose>({
         systemLayers: [{ id: 'main' }, { id: 'notes', annotation: true }],
@@ -98,7 +101,7 @@ describe('measurements through <SceneCanvas>', () => {
     return (
       <SceneCanvas
         features={['draw']} scene={s} selection={selection} layers={{}} width={400} height={400}
-        tools={{ measure, eyedropper }} ambient={ambient} snap={snap}
+        tools={{ measure, eyedropper, hand }} ambient={ambient} snap={snap} onViewChange={onView}
       >
         <Probe />
       </SceneCanvas>
@@ -183,6 +186,19 @@ describe('measurements through <SceneCanvas>', () => {
     } finally {
       warn.mockRestore();
     }
+  });
+
+  it('pans under the hand tool a drag starting on a measurement, leaving the measurement where it was', () => {
+    const canvas = mountWithTwo();
+    const [first] = ids();
+    const ends = measureEndsOf(scene.get(first));
+    const picked = ms.picked.get();
+    press('h', 'KeyH');
+    onView.mockClear();
+    drag(canvas, [50, 60], [150, 160]);
+    expect(measureEndsOf(scene.get(first))).toEqual(ends);
+    expect(ms.picked.get()).toBe(picked);
+    expect(onView).toHaveBeenCalled();
   });
 
   it('measures from an existing end, which its snap source offers', () => {

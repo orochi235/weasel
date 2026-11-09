@@ -9,7 +9,7 @@ import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import type { ActionDeps, ImmediateParams, WorldPoint } from '@weasel-js/routing';
 import { viewWorldToScreen } from '@weasel-js/geom';
-import { hitPredicate } from '@weasel-js/gestures';
+import { THROUGH_CHROME } from '../throughChrome';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
@@ -34,10 +34,6 @@ export interface UseEyedropperToolOptions {
   hotkey?: HotkeyTrigger | null;
 }
 
-/** Whatever is under the press, chrome included. Sampling reads the document
- *  through chrome, so the target consults the hit only to stay a candidate
- *  under an exclusive claim, where the tool's tier then outranks the chrome's. */
-const THROUGH_CHROME = { kindOf: hitPredicate(() => true) };
 
 /** The press in the screen space `colorAt` reads: through the canvas's view,
  *  or as it came where no view is sourced — a 3D host, whose dispatcher hands
