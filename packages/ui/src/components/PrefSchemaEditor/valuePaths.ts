@@ -1,4 +1,4 @@
-import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, PREF_ENTRY, type PrefLeaf } from '@weasel-js/prefs';
+import { isPrefCondition, isPrefLeaf, isPrefSection, mapPrefConditionPaths, PREF_CONDITION_FIELDS, PREF_ENTRY, type PrefConditionField, type PrefLeaf } from '@weasel-js/prefs';
 import { childrenOf, innerOf, joinPath, keysOf, nodeAt, ownChildrenOf, pathOf, slotOf, withChildren, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
 /**
@@ -108,8 +108,8 @@ function rebasedLeaf(leaf: PrefLeaf, moves: readonly ValueMove[]): PrefLeaf {
 }
 
 /**
- * `root` with every value path a node holds to a leaf followed through `moves`: the paths a `showIf` or an
- * `enableIf` reads, on a leaf, a group, a section, or anything inside a list's entry or a union's variants, and a
+ * `root` with every value path a node holds to a leaf followed through `moves`: the paths a condition (`showIf`,
+ * `enableIf`, an action's `activeIf`) reads, on a leaf, a group, a section, or anything inside a list's entry or a union's variants, and a
  * leaf's own (an alias's `of`, a pair's `with`, a `field`
  * leaf's default). A path a condition reads from its entry (`from: 'item'`) follows a move of that field of the
  * entry, which a move names with `*` for the entry's step (`'phases.*.mode'`), and nothing outside the entry.
@@ -125,8 +125,8 @@ export function rebaseValuePaths<R extends SchemaRoot>(root: R, moves: ReadonlyA
       return to.startsWith(`${base}.`) ? to.slice(base.length + 1) : path;
     };
     let next: SchemaNode = isPrefLeaf(node) ? rebasedLeaf(node, live) : node;
-    for (const field of ['showIf', 'enableIf'] as const) {
-      const held = node[field];
+    for (const field of PREF_CONDITION_FIELDS) {
+      const held = (node as { [F in PrefConditionField]?: unknown })[field];
       // Anything else that sits where a condition goes is left for the check that reports it.
       if (!isPrefCondition(held)) continue;
       const followed = mapPrefConditionPaths(held, (path, from) => (from === 'item' ? inEntry(path) : rebased(path, live)));

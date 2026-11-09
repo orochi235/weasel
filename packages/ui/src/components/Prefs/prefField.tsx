@@ -1,10 +1,11 @@
 import { numericWeight, type Paint } from '@weasel-js/core';
 import { clampToBounds, endlessAllows, endless as withInfinity } from '@weasel-js/quantity';
-import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
+import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefEnumOption, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
 import { stepDisplay } from '../Properties/NumberControls';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
+import type { PropertyOption } from '../Properties/fieldTypes';
 import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
 import type { PrefFieldChoice } from './schema';
 import { prefNumberScale } from './prefNumberScale';
@@ -64,7 +65,8 @@ export function prefFieldProps(
   if (made === null) return null;
   const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles);
   const shown = (leaf as PrefValueBase<string, unknown>).readout === true ? { ...field, readOnly: true } : field;
-  return state.disabled ? { ...shown, disabled: true } : shown;
+  if (!state.disabled) return shown;
+  return leaf.disabledReason === undefined ? { ...shown, disabled: true } : { ...shown, disabled: true, disabledReason: leaf.disabledReason };
 }
 
 /** `field` emptying to `undefined` where `leaf` is a clearable number. */
@@ -114,6 +116,11 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     scale: prefNumberScale(leaf.scale),
     onChange: store,
   };
+}
+
+/** An enum leaf's option as its control's: the glyph its icon names in place of the name. */
+function enumOption({ value, label, icon, short, description, disabled, disabledReason }: PrefEnumOption): PropertyOption<string> {
+  return { value, label, glyph: resolveIcon(icon), short, description, disabled, disabledReason };
 }
 
 function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyControlProps | null {
@@ -185,13 +192,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         value: option,
         mixed: coded ? coded.mixed : mixed,
         unset,
-        options: leaf.options.map((o) => ({
-          value: o.value,
-          label: o.label,
-          glyph: resolveIcon(o.icon),
-          short: o.short,
-          disabled: o.disabled,
-        })),
+        options: leaf.options.map(enumOption),
         onChange: coded ? coded.write : setValue,
         onClear: leaf.clearable ? () => setValue(undefined) : undefined,
       };

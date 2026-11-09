@@ -17,6 +17,8 @@ export interface PropertyHelpProps {
   /** What the setting reads when it is auto; the tooltip's last line, after the word
    *  `auto` drawn as an auto row's readout draws it. */
   autoValue?: ReactNode;
+  /** Why the setting is disabled: a line of its own after the description. */
+  disabledReason?: string;
   /**
    * A selector for the ancestor that is the help's row (`'tr'`), with the control the help is about in it.
    * Given, the ⓘ takes no focus, by Tab or by a click: the row's first control outside the ⓘ's own parent is
@@ -35,7 +37,7 @@ export interface PropertyHelpProps {
  *  for surfaces that draw a params label outside a `<PropertyRow>`. With no
  *  `within` it stands alone: a tooltip trigger has to be interactive to be
  *  keyboard-reachable, so it is a real button and a tab stop. */
-export function PropertyHelp({ label, description, autoValue, within, children }: PropertyHelpProps) {
+export function PropertyHelp({ label, description, autoValue, disabledReason, within, children }: PropertyHelpProps) {
   const name = typeof label === 'string' ? label : 'this setting';
   const cue = useRef<HTMLElement | null>(null);
   const help = useRowHelp(cue, within);
@@ -58,8 +60,9 @@ export function PropertyHelp({ label, description, autoValue, within, children }
   const tip = (
     <Tooltip {...(bare ? { triggerRef: cue } : {})}>
       {description}
+      {disabledReason && <span className={description ? `${s.reason} ${s.autoAfter}` : s.reason}>{disabledReason}</span>}
       {autoValue != null && (
-        <span className={description ? `${s.auto} ${s.autoAfter}` : s.auto}>
+        <span className={description || disabledReason ? `${s.auto} ${s.autoAfter}` : s.auto}>
           <em className={row.autoWord}>auto</em> {autoValue}
         </span>
       )}
@@ -72,6 +75,7 @@ export function PropertyHelp({ label, description, autoValue, within, children }
     createPortal(
       <span id={help.id} hidden>
         {description && inlineMarkdownText(description)}
+        {disabledReason && <> {disabledReason}</>}
         {autoValue != null && <> auto {autoValue}</>}
       </span>,
       document.body,

@@ -65,6 +65,7 @@ function renderBuiltinInBar(
     name: ariaLabel,
     field: leafField(ctx, row.nested ?? false),
     disabled: ctx.disabled,
+    active: ctx.active,
     row: () => renderBuiltin(ctx, ariaLabel, renderers, row),
   });
 }
@@ -138,7 +139,7 @@ export function renderBuiltin(
       </UnionPicker>
     );
   }
-  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
+  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} active={ctx.active} />;
   if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
   if (prefDrawsNoControl(pref)) return <PrefWords pref={pref} />;
   if (pref.kind === 'alias') {

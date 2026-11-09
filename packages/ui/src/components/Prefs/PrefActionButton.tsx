@@ -11,18 +11,18 @@ import s from './Prefs.module.css';
  * or an action that says why it cannot run, keeps a tooltip saying so. A leaf
  * naming a parametric action by its bare id is a row per variant.
  */
-export function PrefActionButton({ pref, path, disabled }: { pref: PrefAction; path: string; disabled?: boolean }) {
+export function PrefActionButton({ pref, path, disabled, active }: { pref: PrefAction; path: string; disabled?: boolean; active?: boolean }) {
   const variants = actionLeafVariants(pref, useRegisteredActions());
-  if (!variants) return <PrefActionOne pref={pref} path={path} disabled={disabled} />;
+  if (!variants) return <PrefActionOne pref={pref} path={path} disabled={disabled} active={active} />;
   return (
     <span className={s.actionRows}>
-      {variants.map((one, i) => <PrefActionOne key={one.action} pref={one} path={`${path}.${i}`} disabled={disabled} />)}
+      {variants.map((one, i) => <PrefActionOne key={one.action} pref={one} path={`${path}.${i}`} disabled={disabled} active={active} />)}
     </span>
   );
 }
 
-function PrefActionOne({ pref, path, disabled: off }: { pref: PrefAction; path: string; disabled?: boolean }) {
-  const { press, settings, ...button } = useLeafAction(pref, path, off);
+function PrefActionOne({ pref, path, disabled: off, active }: { pref: PrefAction; path: string; disabled?: boolean; active?: boolean }) {
+  const { press, settings, ...button } = useLeafAction(pref, path, off, active);
   const iconOnly = pref.control === 'icon' && button.icon != null;
   if (settings) return <ActionSettingsPopover {...button} form={settings} description={pref.description} row={!iconOnly} />;
   return <BarActionButton {...button} description={pref.description} row={!iconOnly} onPress={press} />;

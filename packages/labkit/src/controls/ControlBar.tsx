@@ -12,6 +12,8 @@ export interface ControlBarProps {
   visible: (path: string) => boolean;
   /** Whether the leaf at a path takes input. */
   enabled: (path: string) => boolean;
+  /** Whether the action at a path is drawn pressed: its `activeIf` holds. */
+  active?: (path: string) => boolean;
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
   /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
@@ -35,7 +37,7 @@ export interface ControlBarProps {
  * dividers, and a nested page, tab, or panel opens from a button.
  */
 export function ControlBar(props: ControlBarProps) {
-  const { group, path, visible, enabled, value, read, write, bind, draft, custom, row, open } =
+  const { group, path, visible, enabled, active, value, read, write, bind, draft, custom, row, open } =
     props;
   return (
     <BarLayout
@@ -63,6 +65,7 @@ export function ControlBar(props: ControlBarProps) {
                 draft={draft && ((v) => draft(at, v))}
                 read={read}
                 disabled={!enabled(at)}
+                active={active?.(at) === true}
                 row={() => row(at)}
               />
             ),
@@ -80,6 +83,7 @@ function Cell({
   draft,
   read,
   disabled,
+  active,
   row,
 }: {
   path: string;
@@ -89,8 +93,9 @@ function Cell({
   draft: ((value: unknown) => void) | undefined;
   read: PrefBoundReader;
   disabled: boolean;
+  active: boolean;
   row: () => ReactNode;
 }) {
   const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read);
-  return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, row })}</>;
+  return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, active, row })}</>;
 }

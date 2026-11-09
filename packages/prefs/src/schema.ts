@@ -61,6 +61,8 @@ export interface PrefBase<K extends string, Value> {
   showIf?: PrefCondition;
   /** Drawn, and disabled while this does not hold. */
   enableIf?: PrefCondition;
+  /** Why the leaf is disabled, in words, read in its tooltip while it is: what has to change to enable it. */
+  disabledReason?: string;
   /** Nothing held where this leaf's value is read means `default`, because
    *  whoever reads the value takes it that way (`pose.rotation ?? 0`). A
    *  surface over sparse settings reads every leaf so already. One over a
@@ -181,6 +183,19 @@ export interface PrefEnumEncoding<T extends string = string> {
   write: (option: T, siblings: Record<string, unknown> | undefined) => unknown;
 }
 
+/** One choice of an enum leaf: see {@link PrefEnumBase.options}. */
+export interface PrefEnumOption<T extends string = string> {
+  value: T;
+  label: string;
+  short?: readonly string[];
+  icon?: IconSpec;
+  /** Help for the option, read in its tooltip. */
+  description?: string;
+  disabled?: boolean;
+  /** Why it is disabled, read in its tooltip. */
+  disabledReason?: string;
+}
+
 /** What every enum leaf carries; {@link PrefEnum} adds `clearable`. */
 export interface PrefEnumBase<T extends string = string>
   extends PrefValueBase<'enum', T | undefined> {
@@ -193,14 +208,9 @@ export interface PrefEnumBase<T extends string = string>
    *  `disabled` marks an option a control reports but cannot author — the
    *  value a stored form reads as when it matches nothing offered. Dropping it
    *  from the list instead would leave the control selecting nothing and
-   *  claiming the field is unset. */
-  options: readonly {
-    value: T;
-    label: string;
-    short?: readonly string[];
-    icon?: IconSpec;
-    disabled?: boolean;
-  }[];
+   *  claiming the field is unset. `disabledReason` says why, in the option's
+   *  tooltip, and `description` is that tooltip while it is choosable. */
+  options: readonly PrefEnumOption<T>[];
   control?: PrefEnumControl;
   encoding?: PrefEnumEncoding<T>;
 }

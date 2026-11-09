@@ -16,8 +16,12 @@ export interface PropertyOption<T extends string> {
   /** A glyph a segment draws in place of any text form, with `label` as its
    *  tooltip. A select draws it beside the label. */
   glyph?: ReactNode;
+  /** Help for the option, read in its tooltip where the control draws one. */
+  description?: string;
   /** Shown but not choosable: a value the control reports and cannot author. */
   disabled?: boolean;
+  /** Why it is not choosable, read in its tooltip where the control draws one. */
+  disabledReason?: string;
 }
 
 /** Props every kind of field shares. */
@@ -37,6 +41,8 @@ interface FieldBase {
   /** The control takes no input: every element of it is disabled, and keeps
    *  showing its value. */
   disabled?: boolean;
+  /** Why it is disabled: the row's help reads it, and a segment or a menu button keeps a tooltip saying it. */
+  disabledReason?: string;
   /** The field shows its value and offers nothing to change it with: it draws
    *  as that value in words (`PropertyReadout`), not as a control. */
   readOnly?: boolean;

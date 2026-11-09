@@ -69,6 +69,8 @@ export interface PrefRenderContext {
   disabled?: boolean;
   /** Whether the field at a path under this leaf's is disabled by a condition of its own. */
   disabledAt?: (path: string) => boolean;
+  /** An `action` leaf's `activeIf` holds: its button is drawn pressed. */
+  active?: boolean;
   /** The leaf is one a `showIf` hides, drawn because the form was given `markHidden`. */
   hidden?: boolean;
   /** Whether the field at a path under this leaf's is one a `showIf` hides, in a form given `markHidden`. */
@@ -121,6 +123,8 @@ export interface WalkCtx {
   droppable?: boolean;
   /** Paths of the leaves, fields, and groups a failed `enableIf` disables. */
   disabled?: ReadonlySet<string>;
+  /** Paths of the actions whose `activeIf` holds. */
+  active?: ReadonlySet<string>;
   /** Paths of the leaves, fields, and groups a failed `showIf` hides, in a form that draws them marked. */
   hidden?: ReadonlySet<string>;
   /** The form draws a leaf marked `hidden` (`PrefsForm`'s `showHidden`). */
@@ -202,6 +206,7 @@ export function prefRenderContext(
     disabled: ctx.disabled?.has(own) ?? false,
     // The row answers by the form's own schema, at its own path; what is inside an alias's by its target's.
     disabledAt: inside?.disabledAt ?? ((at) => ctx.disabled?.has(at) ?? false),
+    ...(ctx.active?.has(own) ? { active: true } : {}),
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
     ...(entryAt ? { entryAt } : {}),
     ...(ctx.settles ? { settles: ctx.settles } : {}),
@@ -274,6 +279,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
       onAutoChange={toggles ? setAuto : undefined}
       hint={marked || split ? <>{marked && <HiddenBadge />}{inheritHint}{split && <SplitMarks levels={split.shape.levels} />}</> : inheritHint}
       disabled={renderCtx.disabled}
+      disabledReason={pref.disabledReason}
     >
       <span className={width === 'filled' ? `${s.rowControl} ${s.rowControlFilled}` : s.rowControl}>
         {control}
@@ -313,6 +319,7 @@ function renderBuiltin(
       name: pref.name,
       field: leafField(ctx, siblings),
       disabled: ctx.disabled,
+      active: ctx.active,
       row: () => renderBuiltin(ctx, renderers, siblings),
     });
   }
@@ -353,7 +360,7 @@ function renderBuiltin(
       </UnionPicker>
     );
   }
-  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} />;
+  if (pref.kind === 'action') return <PrefActionButton pref={pref as PrefAction} path={ctx.path} disabled={ctx.disabled} active={ctx.active} />;
   if (pref.kind === 'actions') return <PrefActionRows pref={pref as PrefActions} path={ctx.path} disabled={ctx.disabled} />;
   const field = leafField(ctx, siblings);
   if (field === null) {

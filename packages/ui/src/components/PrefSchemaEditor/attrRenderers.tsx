@@ -1,4 +1,5 @@
-import type { PrefPair } from '@weasel-js/prefs';
+import type { PrefEnumOption, PrefPair } from '@weasel-js/prefs';
+import { Checkbox } from '../Checkbox';
 import type { PrefRenderContext, PrefRenderer } from '../Prefs';
 import { CloseButton } from '../CloseButton';
 import { Input } from '../Input';
@@ -15,7 +16,15 @@ function OptionalNumber({ ctx }: { ctx: PrefRenderContext }) {
   return <NumberText label={ctx.pref.name} value={ctx.mixed ? undefined : (ctx.value as number | undefined)} placeholder={ctx.mixed ? MIXED_HINT : undefined} onCommit={ctx.setValue} />;
 }
 
-interface Option { value: string; label: string }
+type Option = PrefEnumOption;
+
+/** `o` with `key` set to `value`, or without it where `value` is empty: an option keeps only what it says. */
+function optionWith(o: Option, key: 'description' | 'disabled' | 'disabledReason', value: string | boolean): Option {
+  const next: Option = { ...o };
+  if (value === '' || value === false) delete next[key];
+  else Object.assign(next, { [key]: value });
+  return next;
+}
 
 /** Why an option's stored value cannot round-trip through an enum, if it cannot. */
 function optionProblem(rows: readonly Option[], i: number): string | undefined {
@@ -44,6 +53,11 @@ function EnumOptions({ ctx }: { ctx: PrefRenderContext }) {
           <Input className={s.symbol} label="Value stored" value={o.value} onChange={(v) => set({ ...o, value: v })}
             isInvalid={optionProblem(rows, i) !== undefined} errorMessage={optionProblem(rows, i)} />
           <Input label="Label shown" value={o.label} onChange={(v) => set({ ...o, label: v })} />
+          <Input label="Description" value={o.description ?? ''} onChange={(v) => set(optionWith(o, 'description', v))} />
+          <Checkbox isSelected={o.disabled === true} onChange={(on) => set(optionWith(on ? o : optionWith(o, 'disabledReason', ''), 'disabled', on))}>Disabled</Checkbox>
+          {o.disabled === true && (
+            <Input label="Why disabled" value={o.disabledReason ?? ''} onChange={(v) => set(optionWith(o, 'disabledReason', v))} />
+          )}
         </>
       )}
     />

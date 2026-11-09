@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { actionItems, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
+import type { Grade } from '../appearance';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
 import { actionShortcutText } from '../actionShortcutText';
@@ -22,6 +23,8 @@ export interface LeafAction {
   disabledReason: string | undefined;
   /** Held down. `undefined` for an action with no pressed state. */
   active: boolean | undefined;
+  /** How serious pressing it is: the leaf's `grade`. */
+  grade: Grade | undefined;
   /** The key the leaf names, where nothing registered answers to it. */
   missing: string | undefined;
   /** Show what pressing would do; absent for an action with no `preview`. */
@@ -40,9 +43,12 @@ const NO_ITEMS: readonly ActionItem[] = Object.freeze([]);
  * its own. With no registry above, or a key the registry does not hold, the
  * button is dead and `missing` says which key. A leaf with only `run` calls
  * it, and is disabled while a promise it returned is pending. `disabled` is
- * the leaf's own state on its surface: a failed `enableIf`.
+ * the leaf's own state on its surface: a failed `enableIf`, which the leaf's
+ * `disabledReason` explains. `latched` is whether its `activeIf` holds there,
+ * which a leaf with one is drawn pressed by, over the registered action's own
+ * state. Its `shortcut` is shown over the registered action's.
  */
-export function useLeafAction(leaf: PrefAction, path: string, disabled = false): LeafAction {
+export function useLeafAction(leaf: PrefAction, path: string, disabled = false, latched = false): LeafAction {
   const registry = useActionsRegistry();
   const all = useRegisteredActions();
   const key = leaf.action;
@@ -62,6 +68,8 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
 
   const label = leaf.label ?? (leaf.name !== '' ? leaf.name : (item?.label ?? ''));
   const icon = resolveIcon(leaf.icon, 16) ?? (item ? actionIcon(item.icon) : undefined);
+  const own = leaf.activeIf !== undefined ? latched : undefined;
+  const why = disabled ? leaf.disabledReason : undefined;
 
   if (key !== undefined) {
     return {
@@ -70,10 +78,11 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       },
       label,
       icon,
-      shortcut: item ? actionShortcutText(item) : undefined,
+      shortcut: leaf.shortcut ?? (item ? actionShortcutText(item) : undefined),
       disabled: disabled || (item !== undefined && !shown.enabled),
-      disabledReason: item && !shown.enabled && shown.reason !== undefined ? reasonLabel(shown.reason) : undefined,
-      active: shown.active,
+      disabledReason: why ?? (item && !shown.enabled && shown.reason !== undefined ? reasonLabel(shown.reason) : undefined),
+      active: own ?? shown.active,
+      grade: leaf.grade,
       missing: item ? undefined : key,
       settings,
       ...(item?.action.preview && registry
@@ -93,10 +102,11 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
     },
     label,
     icon,
-    shortcut: undefined,
+    shortcut: leaf.shortcut,
     disabled: disabled || pending,
-    disabledReason: undefined,
-    active: undefined,
+    disabledReason: why,
+    active: own,
+    grade: leaf.grade,
     missing: undefined,
     settings: null,
   };

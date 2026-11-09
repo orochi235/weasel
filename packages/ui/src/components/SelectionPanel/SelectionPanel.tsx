@@ -147,6 +147,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     fields,
     leafAt: (path) => leaves.get(path),
     disabled: scope.disabled,
+    active: scope.active,
     hidden: scope.hidden,
     entryAt: scope.entryAt,
     targets: scope.targets,

@@ -10,8 +10,9 @@ import type { PropertyEnumFieldProps, PropertyOption } from './fieldTypes';
 import { nameOf } from './nameOf';
 import s from './Properties.module.css';
 
-/** A segment drawing a glyph hides its label, so the label comes back as its tooltip. */
-function glyphTip(o: PropertyOption<string>): ReactNode {
+/** A segment's tooltip: the option's description, else its label where a glyph hides that. */
+function segmentTip(o: PropertyOption<string>): ReactNode {
+  if (o.description) return o.description;
   return o.glyph === undefined || o.glyph === null ? undefined : o.label;
 }
 
@@ -56,6 +57,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         label={reads}
         current={held !== undefined}
         isDisabled={p.disabled}
+        disabledReason={p.disabledReason}
         items={choices(p).map((o) => ({ value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, isDisabled: o.disabled }))}
         onAction={choose(p)}
       />
@@ -72,8 +74,9 @@ export function EnumControl(p: PropertyEnumFieldProps) {
           value: o.value,
           label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,
           ariaLabel: nameOf(o.label),
-          tooltip: glyphTip(o),
+          tooltip: segmentTip(o),
           disabled: p.disabled || o.disabled,
+          disabledReason: (o.disabled ? o.disabledReason : undefined) ?? (p.disabled ? p.disabledReason : undefined),
         }))}
         value={current}
         // Clearable: a click on the lit segment clears it, and the arrows move focus without choosing, so each

@@ -21,7 +21,7 @@ import { Fragment, type ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
 import { schemaNodeAtPath, valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
-import { isLeafEnabled, isLeafVisible } from '../config/visible';
+import { isLeafActive, isLeafEnabled, isLeafVisible } from '../config/visible';
 import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
@@ -67,6 +67,16 @@ export interface PanelRowsSource<TC extends Record<string, unknown>> {
   fold: (key: string, declared: boolean | undefined, grid: PropertyListPack) => FoldProps;
 }
 
+/** What the panel's conditions say of the node at a path: whether it takes input, is drawn, and is drawn pressed. */
+function conditionsAt<TC extends Record<string, unknown>>({ resolved, config, showHidden, over }: PanelRowsSource<TC>) {
+  const values = config as Record<string, unknown>;
+  return {
+    enabled: (path: string): boolean => isLeafEnabled(resolved, path, values, over),
+    visible: (path: string): boolean => isLeafVisible(resolved, path, values, showHidden, over),
+    active: (path: string): boolean => isLeafActive(resolved, path, values, over),
+  };
+}
+
 /**
  * A panel's schema as rows: each group's loose nodes, then its sections, a
  * heading's control lifted into its title row, paired leaves on one row, and
@@ -82,7 +92,6 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     errors,
     renderers,
     over,
-    showHidden,
     density,
     align,
     auto,
@@ -91,10 +100,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     fold,
   } = source;
 
-  const enabled = (path: string): boolean =>
-    isLeafEnabled(resolved, path, config as Record<string, unknown>, over);
-  const visible = (path: string): boolean =>
-    isLeafVisible(resolved, path, config as Record<string, unknown>, showHidden, over);
+  const { enabled, visible, active } = conditionsAt(source);
 
   const listOf = (rows: Rows, children: ReactNode): ReactNode => (
     <PropertyList pack={rows.grid} density={density} align={align}>
@@ -144,6 +150,7 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
           path={path}
           visible={visible}
           enabled={enabled}
+          active={active}
           value={(p, leaf) => leafValueAt(shown, p, leaf)}
           read={(p) => valueAtPath(shown, p)}
           write={setConfig}

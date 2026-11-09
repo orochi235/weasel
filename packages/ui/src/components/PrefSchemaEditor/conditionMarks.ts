@@ -1,9 +1,9 @@
-import { checkPrefCondition, type PrefConditionProblem, type PrefConditionSite, type PrefList, type PrefMap } from '@weasel-js/prefs';
+import { checkPrefCondition, PREF_CONDITION_FIELDS, type PrefConditionField, type PrefConditionProblem, type PrefConditionSite, type PrefList, type PrefMap } from '@weasel-js/prefs';
 import { childrenOf, innerOf, joinPath, slotOf, type SchemaNode, type SchemaRoot } from './schemaTree';
 
-/** One thing wrong with a node's `showIf` or its `enableIf`. */
+/** One thing wrong with one of a node's conditions. */
 export interface ConditionMark extends PrefConditionProblem {
-  field: 'showIf' | 'enableIf';
+  field: PrefConditionField;
 }
 
 /**
@@ -17,10 +17,11 @@ export function conditionProblems(root: SchemaRoot, over?: SchemaRoot): Map<stri
   const out = new Map<string | null, ConditionMark[]>();
   type Holder = PrefList | PrefMap | undefined;
   const own = (node: SchemaNode, path: string | null, within: Holder, isItem = false): void => {
-    for (const field of ['showIf', 'enableIf'] as const) {
-      if (node[field] === undefined) continue;
+    const held = node as { [F in PrefConditionField]?: unknown };
+    for (const field of PREF_CONDITION_FIELDS) {
+      if (held[field] === undefined) continue;
       const site: PrefConditionSite = { ...(within ? { within } : {}), ...(isItem && field === 'showIf' ? { itemShowIf: true } : {}) };
-      const found = checkPrefCondition(node[field], root, site, over).map((problem) => ({ ...problem, field }));
+      const found = checkPrefCondition(held[field], root, site, over).map((problem) => ({ ...problem, field }));
       if (found.length > 0) out.set(path, [...(out.get(path) ?? []), ...found]);
     }
   };

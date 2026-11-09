@@ -27,6 +27,8 @@ export interface PanelCellScope {
   leafAt: (path: string) => PrefLeaf | undefined;
   disabled: ReadonlySet<string>;
   hidden: ReadonlySet<string>;
+  /** The keys of the actions whose `activeIf` holds. */
+  active?: ReadonlySet<string>;
   entryAt?: EntryAt;
   /** The schema the panel's aliases point into, where that is not a kind's own: what is inside an alias's row answers to it. */
   targets?: PrefAliasTargets;
@@ -79,6 +81,7 @@ function leafContext(panelLeaf: PanelLeaf, scope: PanelCellScope): PropertyRende
     disabledAt: inside?.disabledAt ?? ((at) => disabled.has(at)),
     hidden: hidden.has(panelLeafKey(panelLeaf)),
     hiddenAt: inside?.hiddenAt ?? ((at) => hidden.has(at)),
+    ...(scope.active?.has(panelLeafKey(panelLeaf)) ? { active: true } : {}),
     ...(entryAt ? { entryAt } : {}),
     ...(scope.settles ? { settles: scope.settles } : {}),
     ...withInherit(inheritOf(panelLeaf, scope)),

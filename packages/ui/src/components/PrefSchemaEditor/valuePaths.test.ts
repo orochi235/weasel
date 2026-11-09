@@ -30,6 +30,12 @@ describe('value paths under a section root', () => {
     const next = renameKey(NODE, 'layout/stroke/width', 'weight');
     expect(nodeAt(next, 'width')).toMatchObject({ showIf: { path: 'stroke.weight', above: 0 }, enableIf: { path: 'pose.x', above: 0 } });
   });
+
+  it("follow a renamed leaf into an action's activeIf", () => {
+    const go = { kind: 'action', name: 'Go', description: '', default: undefined, activeIf: { path: 'pose.x', above: 0 } } as PrefLeaf;
+    const next = renameKey({ ...NODE, members: { ...NODE.members, go } }, 'layout/pose.x', 'pose.left');
+    expect(nodeAt(next, 'go')).toMatchObject({ activeIf: { path: 'pose.left', above: 0 } });
+  });
 });
 
 describe('valuePathsAt', () => {

@@ -1,4 +1,5 @@
 import {
+  type PrefAction,
   applyPrefConditions,
   applyPrefEntryConditions,
   PREF_STATUS,
@@ -117,6 +118,23 @@ export function isLeafEnabled(
   over?: PrefGroup | PrefSection,
 ): boolean {
   return statusAt(resolved, path, config, over).enabled;
+}
+
+/**
+ * Whether the action at a dotted path is drawn pressed: it has an `activeIf`,
+ * and that holds. `over` is the schema the panel is drawn over, which the
+ * condition may read a setting of.
+ */
+export function isLeafActive(
+  resolved: ResolvedConfig,
+  path: string,
+  config: Record<string, unknown>,
+  over?: PrefGroup | PrefSection,
+): boolean {
+  const leaf = prefLeafAt(resolved.group, path);
+  const { activeIf } = (leaf ?? {}) as Partial<PrefAction>;
+  if (leaf?.kind !== 'action' || activeIf === undefined) return false;
+  return prefJudge(resolved.group, conditionReader(resolved, config, over), undefined, over)(activeIf, 'activeIf');
 }
 
 /**

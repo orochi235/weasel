@@ -84,6 +84,8 @@ export interface PropertyRenderContext {
   disabled?: boolean;
   /** Whether the field at a path under this leaf's is disabled by a condition of its own. */
   disabledAt?: (path: string) => boolean;
+  /** An `action` leaf's `activeIf` holds for every node: its button is drawn pressed. */
+  active?: boolean;
   /** The leaf is one a `showIf` hides, drawn because the panel was given `markHidden`. */
   hidden?: boolean;
   /** Whether the field at a path under this leaf's is one a `showIf` hides, in a panel given `markHidden`. */
