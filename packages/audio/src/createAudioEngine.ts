@@ -18,7 +18,8 @@ import type {
 import { createChainPool } from './voiceChains';
 import { createDropWarnings, type DropWarnings } from './voiceDrops';
 import { createVoicePool } from './voicePool';
-import { checkWhen, createVoices } from './voices';
+import { checkVoice, createVoices } from './voices';
+import { checkPoint } from './param';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
  *  scheduling and 2D or 3D spatialization over one `AudioContext`. Times are engine
@@ -255,9 +256,9 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     playNote: (note) => voices.launch(note, synth.note(note)),
     playNoise: (noise) => voices.launch(noise, synth.noise(noise)),
     stream(media, streamOpts = {}) {
-      // `launch` reads a `when` an untyped caller passed; check it before the earlier stream stops.
+      // `launch` reads numbers an untyped caller passed; check them before the earlier stream stops.
       const common: VoiceOptions = streamOpts;
-      checkWhen(common.when);
+      checkVoice(common);
       const el = streams.element(media, streamOpts);
       streams.streaming.get(el)?.stop();
       const handle = voices.launch(common, streams.starter(el, streamOpts));
@@ -295,6 +296,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       return patches.create(bus ?? busNames[0]);
     },
     setListener(p, o) {
+      checkPoint('listener', p);
       listener = p;
       if (o) spatialOpts = o;
       voices.respatialize();

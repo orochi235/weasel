@@ -30,6 +30,22 @@ export function checkGain(what: string, value: number, rampMs?: number): void {
   }
 }
 
+/** Throws on a voice's rate, detune, pan or position coordinate that is not finite: an
+ *  AudioParam refuses one, and the voice processor would mix it into its whole bus as NaN. */
+export function checkFinite(what: string, value: number | undefined): void {
+  if (value !== undefined && !Number.isFinite(value)) {
+    throw new RangeError(`@weasel-js/audio: a ${what} is finite, not ${value}`);
+  }
+}
+
+/** {@link checkFinite} on each of a point's coordinates. */
+export function checkPoint(what: string, p: { x: number; y: number; z?: number } | undefined): void {
+  if (!p) return;
+  checkFinite(`${what}'s x`, p.x);
+  checkFinite(`${what}'s y`, p.y);
+  checkFinite(`${what}'s z`, p.z);
+}
+
 /**
  * Give a param nothing has scheduled yet its starting value. `.value` is
  * written as well, so a ramp `writeParam` anchors before the first render
