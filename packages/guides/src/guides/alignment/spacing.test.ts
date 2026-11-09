@@ -124,6 +124,22 @@ describe('matchSpacing', () => {
     expect(m.gapsX.map((g) => [g.min, g.max])).toEqual([[10, 30], [50, 70]]);
   });
 
+  it('spaces a flat line in the row, the gap marker on its own height', () => {
+    // A horizontal line at y = 5, between the row's boxes.
+    const m = matchSpacing(bx(58, 10, 5, 0), row, tol(5));
+    expect(m.dx).toBe(2);
+    expect(m.gapsX).toEqual([
+      { axis: 'x', min: 10, max: 30, at: 5 },
+      { axis: 'x', min: 40, max: 60, at: 5 },
+    ]);
+  });
+
+  it('still ignores boxes with extent that only touch the row', () => {
+    const m = matchSpacing(bx(58, 10, 10, 10), row, tol(5));
+    expect(m.dx).toBe(0);
+    expect(m.gapsX).toEqual([]);
+  });
+
   it('an axis given null does not snap', () => {
     const m = matchSpacing(bx(58, 10), row, tol(5), { x: null, y: null });
     expect(m.dx).toBe(0);

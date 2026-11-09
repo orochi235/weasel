@@ -9,11 +9,15 @@ const lo = (b: Bounds, a: Axis): number => (a === 'x' ? b.x : b.y);
 const hi = (b: Bounds, a: Axis): number => (a === 'x' ? b.x + b.width : b.y + b.height);
 const cross = (a: Axis): Axis => (a === 'x' ? 'y' : 'x');
 
-/** The shared range of two boxes on `axis`, or null when they share none. */
+/** The shared range of two boxes on `axis`, or null when they share none. Boxes with extent there must
+ *  share some of it, not merely touch; one with none, a line across the axis, shares its point with a box
+ *  whose range holds it. */
 function overlap(a: Bounds, b: Bounds, axis: Axis): [number, number] | null {
   const min = Math.max(lo(a, axis), lo(b, axis));
   const max = Math.min(hi(a, axis), hi(b, axis));
-  return max - min > EPS ? [min, max] : null;
+  if (max - min > EPS) return [min, max];
+  const flat = hi(a, axis) - lo(a, axis) <= EPS || hi(b, axis) - lo(b, axis) <= EPS;
+  return flat && max - min >= -EPS ? [min, Math.max(min, max)] : null;
 }
 
 function gapBetween(a: Bounds, b: Bounds, axis: Axis): SpacingGap | null {

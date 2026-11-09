@@ -49,6 +49,17 @@ describe('deriveAlignmentGuides', () => {
     expect(leftTens.length).toBe(1);
   });
 
+  it('merges offsets within tolerance of each other, wherever they fall', () => {
+    // 10.0004 and 10.0006 used to round to two different 0.001 buckets.
+    const g = deriveAlignmentGuides([{ x: 10.0004, y: 0, width: 1, height: 1 }, { x: 10.0006, y: 5, width: 1, height: 1 }], { centers: false });
+    const lefts = g.filter((q) => q.axis === 'x' && Math.abs(q.offset - 10) < 0.01);
+    expect(lefts).toHaveLength(1);
+    expect(lefts[0]).toMatchObject({ offset: 10.0004, span: { min: 0, max: 6 } });
+    // Offsets further apart than the tolerance stay separate.
+    expect(deriveAlignmentGuides([{ x: 10, y: 0, width: 1, height: 1 }, { x: 10.002, y: 5, width: 1, height: 1 }], { centers: false })
+      .filter((q) => q.axis === 'x' && q.offset < 11)).toHaveLength(2);
+  });
+
   it('a rotated target advertises its ink edges, not its stored box', () => {
     // 40x10 turned a quarter turn about its centre (60, 5): ink x 55..65.
     const g = deriveAlignmentGuides([{ x: 40, y: 0, width: 40, height: 10, rotation: Math.PI / 2 }]);
