@@ -44,7 +44,7 @@ export function createGroupEntryContribution(opts: EnterGroupOptions & LeaveGrou
 export function useGroupEntryContribution(opts: EnterGroupOptions & LeaveGroupOptions): Contribution {
   const live = useLatest(opts);
   return useMemo(() => createGroupEntryContribution({
-    pickHit: (world) => live.current.pickHit(world),
+    pickHit: (world, viewId) => (viewId == null ? live.current.pickHit(world) : live.current.pickHit(world, viewId)),
     tree: {
       getParent: (id) => live.current.tree.getParent(id),
       getNode: (id) => live.current.tree.getNode(id),

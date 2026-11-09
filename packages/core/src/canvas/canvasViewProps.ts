@@ -1,5 +1,6 @@
 /** The props `<CanvasView>` takes, and the rect it paints into. */
 import type { Ref } from 'react';
+import type { DepSchema } from '@weasel-js/routing';
 import type { CanvasViewCamera } from './canvasExtension';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
@@ -87,6 +88,15 @@ export interface CanvasViewCommonProps {
   /** Opts this view into owning a selection, configured thus. Ignored when
    *  `selection` is supplied. */
   selectionOptions?: UseSelectionOptions;
+  /**
+   * Deps of this view's own, which actions dispatched inside it read in front
+   * of the surface's: how a view says what it looks through when its camera
+   * is not a 2D `View`. A 3D host passes the `camera3d`, `nodeAtPoint` and
+   * `poseDescriptor` built for this view's camera. The view's camera,
+   * selection, `hitAt` and dispatcher stay its own; these cannot replace them.
+   * Read at each event.
+   */
+  deps?: Partial<DepSchema>;
 }
 
 /** A view that holds its camera. */

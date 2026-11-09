@@ -17,7 +17,7 @@ import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  cameraEye, cameraViewProjection, createCamera, createNodeAtPoint, createPoseDescriptor,
+  cameraEye, cameraViewProjection, createCamera, createPickEvery, createPoseDescriptor,
   dollyAction, ndcToScreen, orbitAction, panAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Camera3d, type Camera3dDep, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
@@ -144,10 +144,7 @@ export function Kernel3dDemo() {
     viewport: (): Viewport3d => ({ camera: cameraRef.current, ...size.current }),
   }), [cameraRef, scene]);
   const poseDescriptor = useMemo(() => createPoseDescriptor(world), [world]);
-  const pickEvery = useMemo(() => {
-    const nodeAtPoint = createNodeAtPoint(world);
-    return nodeAtPoint;
-  }, [world]);
+  const pickEvery = useMemo(() => createPickEvery(world), [world]);
 
   const cameraRig = useMemo((): SurfaceContribution => {
     const camera3d: Camera3dDep = {

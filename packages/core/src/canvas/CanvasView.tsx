@@ -73,7 +73,7 @@ export function CanvasView(props: CanvasViewProps): null {
   const {
     id, parent, follows, bounds,
     layers = ALL_LAYERS, layerVisibility, layerOrder, background, order = Infinity, label, cameraRef,
-    selection: selectionProp, selectionOptions, interactive = true, paint = true,
+    selection: selectionProp, selectionOptions, interactive = true, paint = true, deps,
   } = props;
 
   const registry = useOptionalViewRegistry();
@@ -92,7 +92,7 @@ export function CanvasView(props: CanvasViewProps): null {
   // is registered once and must not churn, but what it answers with has to be
   // the last committed render's.
   const live = useLatest({
-    parent, follows, bounds, layers, layerVisibility, layerOrder, viewSelection, shared,
+    parent, follows, bounds, layers, layerVisibility, layerOrder, viewSelection, shared, deps,
   });
 
   const {
@@ -230,14 +230,14 @@ export function CanvasView(props: CanvasViewProps): null {
       // This view's camera: the dispatcher converted with `clientToWorldHere`,
       // and a screen-pixel tolerance needs the scale that produced it. The
       // layer gate is this view's too, never the surface's.
-      const frame = { ...camera(), layerIsPainted };
+      const frame = { ...camera(), layerIsPainted, viewId: id };
       if (i?.pickBest) return i.pickBest(world, frame);
       const ids = i?.pickEvery?.(world, frame) ?? [];
       return ids.length > 0 ? ids[ids.length - 1]! : null;
     },
     (id) => inputsRef.current?.kindOfNode?.(id),
     (id) => inputsRef.current?.doubleClickNames?.(id) ?? id,
-  ), [camera, layerIsPainted, selectionNow, inputsRef]);
+  ), [id, camera, layerIsPainted, selectionNow, inputsRef]);
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,
@@ -270,7 +270,7 @@ export function CanvasView(props: CanvasViewProps): null {
       classifyTarget,
       clientToWorld: clientToWorldHere,
       deps: () => ({
-        view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
+        ...live.current.deps, view: viewApi, ingestion: ingestionApi, hitAt: hitAtOf(classifyTarget),
         // An Escape here cancels what is in flight here.
         dispatcher: { cancelAll: (reason) => dispatcherRef.current!.cancelAll(reason) },
         ...selectionOverlay(ownedSelection()),
@@ -282,7 +282,7 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [id, parent, order, interactive, paint, held, aim, setAim, label, background, rectAt, cameraAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere, ruleInputs, ingestionApi, drawnLayers,
-       layerIsPainted, ownedSelection, inputsRef, helpersRef, frameIn, registry]);
+       layerIsPainted, ownedSelection, inputsRef, helpersRef, frameIn, registry, live]);
 
   useEffect(() => {
     if (!registry) return;

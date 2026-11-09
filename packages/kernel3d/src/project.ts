@@ -23,8 +23,12 @@ export interface Viewport3d {
   originY?: number;
 }
 
-/** Read on every dep call, so a dep always sees the current camera and pane. */
-export type ViewportSource = () => Viewport3d;
+/**
+ * The viewport the view `viewId` looks through, read on every dep call so a
+ * dep always sees the current camera and pane. `viewId` is a `<CanvasView>`'s
+ * id; absent or `null`, the surface's own camera.
+ */
+export type ViewportSource = (viewId?: string | null) => Viewport3d;
 
 type Point = { x: number; y: number };
 

@@ -35,7 +35,7 @@ function idsOf(scene: TestScene): NodeId[] {
   return [...scene.renderOrder()];
 }
 
-function world(scene: TestScene, source: ViewportSource = viewport) {
+function world(scene: TestScene, source: ViewportSource = () => viewport()) {
   return { scene, viewport: source, bounds: boundsOfTestNode };
 }
 
@@ -65,20 +65,20 @@ function mintBox(scene: TestScene) {
 describe('createNodeAtPoint', () => {
   it('picks the solid under the middle of the screen', () => {
     const scene = createTestScene();
-    const pick = createNodeAtPoint(world(scene, viewport));
+    const pick = createNodeAtPoint(world(scene));
     // The sphere is the one at the camera target.
     expect(pick(CENTER)).toBe(idsOf(scene)[1]);
   });
 
   it('picks nothing over empty sky', () => {
     const scene = createTestScene();
-    const pick = createNodeAtPoint(world(scene, viewport));
+    const pick = createNodeAtPoint(world(scene));
     expect(pick({ x: 10, y: 10 })).toBeNull();
   });
 
   it('honors the exclude set', () => {
     const scene = createTestScene();
-    const pick = createNodeAtPoint(world(scene, viewport));
+    const pick = createNodeAtPoint(world(scene));
     const first = pick(CENTER)!;
     expect(pick(CENTER, [first])).not.toBe(first);
   });
@@ -430,7 +430,7 @@ describe('createPoseDescriptor', () => {
   });
 
   it('says it cannot rotate', () => {
-    const descriptor = createPoseDescriptor(world(scene, viewport));
+    const descriptor = createPoseDescriptor(world(scene));
     expect(descriptor.supportsRotation!(pose3({ x: 0, y: 0, z: 0 }))).toBe(false);
   });
 

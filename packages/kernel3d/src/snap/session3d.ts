@@ -23,6 +23,8 @@ export interface Session3dInputs<TData, TLayer extends string> {
   /** The reach of a source that sets none, in screen px. */
   reachPx: number;
   store: SnapOutcomeStore<Vec3>;
+  /** The view whose camera the gesture is cast through. */
+  viewId?: string | null | undefined;
 }
 
 /**
@@ -57,7 +59,7 @@ export function createSession3d<TData, TLayer extends string>(inputs: Session3dI
   return {
     at(p, mods) {
       if (!frame) return unsnapped(p);
-      const vp = world.viewport();
+      const vp = world.viewport(inputs.viewId);
       const screen = frame.anchor(vp);
       const anchor = screen && castOnto(vp, screen, up, frame.offset);
       const hit = screen && castOnto(vp, { x: screen.x + p.x - req.press.x, y: screen.y + p.y - req.press.y }, up, frame.offset);

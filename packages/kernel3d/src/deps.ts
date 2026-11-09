@@ -1,7 +1,8 @@
 /**
  * The kit's deps, implemented against a 3D world.
  *
- * Every one of these takes its camera from a thunk rather than an argument:
+ * Every one of these takes its camera from a thunk rather than an argument,
+ * `world.viewport(viewId)` for the view it was built for:
  * the dispatcher keeps handing actions two numbers, and what makes them mean
  * something in 3D is the camera each dep already closes over.
  */
@@ -76,26 +77,48 @@ export { screenBoxOf } from './pickIndex';
  *
  * The kit calls this with what it believes is a world point; a 3D host feeds
  * the dispatcher an identity `clientToWorld`, so it is the pane-relative screen
- * point, which is exactly what a ray needs.
+ * point, which is exactly what a ray needs. *
+ * `viewId` names the view whose camera casts the ray; a surface with several
+ * 3D views gives each `<CanvasView deps>` its own. The same goes for every
+ * factory here that takes one.
  */
 export function createNodeAtPoint<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
+  viewId?: string | null,
 ): NodeAtPointDep {
-  return (point, exclude) => {
-    const ray = rayAt(world.viewport(), point);
-    if (!ray) return null;
-    // The ray spans near to far plane at t 0..1.
-    return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1);
-  };
+  return (point, exclude) => pickOnRay(world, viewId, point, exclude);
+}
+
+function pickOnRay<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+  viewId: string | null | undefined,
+  point: { x: number; y: number },
+  exclude?: Iterable<NodeId>,
+): NodeId | null {
+  const ray = rayAt(world.viewport(viewId), point);
+  if (!ray) return null;
+  // The ray spans near to far plane at t 0..1.
+  return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1);
+}
+
+/**
+ * `<SceneCanvas geometry={{ pickEvery }}>` over a 3D world: the node along the
+ * ray the point names, cast from the camera of the view the pick is asked for.
+ */
+export function createPickEvery<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+): (point: { x: number; y: number }, view?: { viewId?: string | null }) => NodeId | null {
+  return (point, view) => pickOnRay(world, view?.viewId, point);
 }
 
 /** Marquee: the nodes whose projected box the screen rectangle touches, in render order. */
 export function createAreaSelect<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
+  viewId?: string | null,
 ): AreaSelectDep {
   return {
-    hitTestArea: (bounds) => worldPickIndex(world).inScreenRect(world.viewport(), bounds),
+    hitTestArea: (bounds) => worldPickIndex(world).inScreenRect(world.viewport(viewId), bounds),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };
@@ -115,6 +138,8 @@ export interface Snap3dOptions {
   /** Where the marks of the snap in flight are written, for a host to draw
    *  with `projectSnapMarks`. */
   store?: SnapOutcomeStore<Vec3>;
+  /** The view whose camera a gesture is cast through. Default the surface's. */
+  viewId?: string | null;
 }
 
 let warnedGestureSources = false;
@@ -147,7 +172,7 @@ export function createSnap<TData, TLayer extends string>(
       const omit = new Set(req.omit);
       const sources = listed.filter((s) => !omit.has(s.id));
       return createSession3d({
-        req, world, sources, store,
+        req, world, sources, store, viewId: opts.viewId,
         reachPx: opts.reachPx ?? opts.kitSettings?.get('targets.snapPx') ?? DEFAULT_SNAP_PX,
       });
     },
@@ -168,7 +193,7 @@ export function createSnap<TData, TLayer extends string>(
  * produce changes depth.
  */
 export function createPoseDescriptor<TData, TLayer extends string>(
-  world: World3d<TData, TLayer>,
+  world: World3d<TData, TLayer>, viewId?: string | null,
 ): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
   const up = world.up ?? DEFAULT_UP;
   const upAxis = groundAxes(up).up;
@@ -178,7 +203,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   // last one that did, rather than snapping the node back.
   let lastCastable: Viewport3d | null = null;
   function castableViewport(): Viewport3d | null {
-    const vp = world.viewport();
+    const vp = world.viewport(viewId);
     const rect = rectOf(vp);
     if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
     return lastCastable;
@@ -187,7 +212,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
       projectAabbToScreen(worldBox(pose), viewProjectionOf(vp), rectOf(vp));
-    const boundsOf = (pose: Pose3) => boundsIn(world.viewport(), pose);
+    const boundsOf = (pose: Pose3) => boundsIn(world.viewport(viewId), pose);
 
     const descriptor: PoseDescriptor<Pose3, Node3d<TData, TLayer>> = {
       forNode(node) {
