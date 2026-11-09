@@ -5,7 +5,14 @@ import { resolveConfigSchema } from './resolve';
 import { sectionTree } from './sectionTree';
 
 const action = (activeIf: unknown): PrefLeaf =>
-  ({ kind: 'action', name: 'Clear', description: '', default: undefined, run: () => {}, activeIf }) as PrefLeaf;
+  ({
+    kind: 'action',
+    name: 'Clear',
+    description: '',
+    default: undefined,
+    run: () => {},
+    activeIf,
+  }) as PrefLeaf;
 
 describe('sectionTree activeIf', () => {
   const resolved = resolveConfigSchema(

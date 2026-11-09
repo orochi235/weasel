@@ -35,15 +35,17 @@ describe('PaletteRegion', () => {
     const grouped = (id: string, group: string) => ({ ...tool(id), group });
     renderWithIcons(
       <PaletteRegion
-        contributions={[grouped('brush', 'paint'), grouped('select', 'pick'), grouped('fill', 'paint')]}
+        contributions={[
+          grouped('brush', 'paint'),
+          grouped('select', 'pick'),
+          grouped('fill', 'paint'),
+        ]}
         ctx={ctxWith(null)}
       />,
     );
-    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([
-      'brush',
-      'fill',
-      'select',
-    ]);
+    expect(
+      screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent),
+    ).toEqual(['brush', 'fill', 'select']);
   });
 
   it('sets the tool on click', () => {
