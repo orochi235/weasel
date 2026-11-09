@@ -54,10 +54,11 @@ export interface HistoryBranch {
  * - `'undo'` / `'redo'` / `'goto'` — the entries walked across, in the order walked.
  * - `'branch'` — `switchBranch` made another future the redo stack: its entries, next redo first.
  * - `'prune'` — the undo entries `prune` evicted, oldest first.
+ * - `'drop'` — the redo entries `dropRedo` took off the redo stack, next redo first.
  * - `'clear'` / `'restore'` — the stacks were replaced wholesale; no entries.
  */
 export interface HistoryStep {
-  kind: 'push' | 'coalesce' | 'undo' | 'redo' | 'goto' | 'branch' | 'prune' | 'clear' | 'restore';
+  kind: 'push' | 'coalesce' | 'undo' | 'redo' | 'goto' | 'branch' | 'prune' | 'drop' | 'clear' | 'restore';
   /** Ops are live references — read `name`/`args`, don't mutate. */
   entries: readonly { id: number; label: string; ops: readonly Op[] }[];
 }
@@ -102,6 +103,11 @@ export interface History {
    *  `onEvict` — retention by age, beside `historyLimit`'s by count. Redo
    *  entries are never pruned: they are a future still reachable. */
   prune(t: number): void;
+  /** Take the redo stack away, leaving the undo stack as it is: what a push
+   *  does to it, for a caller whose new change landed somewhere this history
+   *  does not record. A branching history keeps it as a branch; otherwise its
+   *  entries are evicted. No-op with nothing to redo. */
+  dropRedo(): void;
   /** The futures that fork from the current entry, oldest first: the redo
    *  stack, marked `current`, and any a branching history kept. Empty when
    *  there is nothing to redo and nothing was kept. */

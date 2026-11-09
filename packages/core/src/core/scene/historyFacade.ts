@@ -142,6 +142,11 @@ export function createSceneHistory(env: SceneHistoryEnv): {
       engine.switchBranch(id);
       notify();
     },
+    dropRedo() {
+      if (engine.redoDepth() === 0) return;
+      engine.dropRedo();
+      notify();
+    },
     restore: methods.restoreHistory,
     // Reads forward to the engine, `version` included: it counts history
     // operations, where the scene's counts every mutation.

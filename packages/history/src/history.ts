@@ -372,6 +372,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (redoStack.length > 0) out.push(view([...redoStack].reverse(), true));
       return out.sort((a, b) => a.id - b.id);
     },
+    dropRedo() {
+      if (redoStack.length === 0) return;
+      const dropped = [...redoStack].reverse();
+      retireRedo(forkPoint());
+      bump(stepOf('drop', dropped));
+    },
     switchBranch(id) {
       if (redoStack[redoStack.length - 1]?.id === id) return;
       const at = forkPoint();
