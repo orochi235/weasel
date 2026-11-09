@@ -1,4 +1,6 @@
 import { endlessAllows, endlessAt, endlessTrack, type Endless } from './endless';
+import { roundWhole } from './number';
+import { decimalPlaces } from './places';
 
 /** The bounds a spin key moves a value within. */
 export interface SpinBounds {
@@ -15,26 +17,30 @@ export function clampToBounds(n: number, { min, max, endless }: SpinBounds): num
   return Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
 }
 
-/** Decimal places `n` is written with, up to ten. */
-function placesOf(n: number): number {
-  if (!Number.isFinite(n)) return 0;
-  const text = String(n);
-  const e = text.indexOf('e');
-  const mantissa = e < 0 ? text : text.slice(0, e);
-  const dot = mantissa.indexOf('.');
-  const places = (dot < 0 ? 0 : mantissa.length - dot - 1) - (e < 0 ? 0 : Number(text.slice(e + 1)));
-  return Math.min(10, Math.max(0, places));
-}
+/** The most decimal places a value can be scaled by and still be a whole number a double holds exactly. */
+const EXACT_PLACES = 15;
 
 /**
  * `n` moved to the nearest multiple of `step` counted from `origin`, written
  * with the decimals `step` and `origin` carry, so three steps of `0.1` land on
- * `0.3`. No step, no snap.
+ * `0.3`. A value halfway between two goes to the one farther from `origin`,
+ * reckoned in the decimals they are written with: `0.35` at a step of `0.1` is
+ * `0.4`, where binary division puts it just short of halfway. No step, no snap.
  */
 export function snapToStep(n: number, step: number | undefined, origin = 0): number {
   if (step === undefined || !(step > 0)) return n;
-  const places = Math.max(placesOf(step), placesOf(origin));
-  return Number((Math.round((n - origin) / step) * step + origin).toFixed(places));
+  const places = Math.max(decimalPlaces(step), decimalPlaces(origin));
+  return Number((stepsFrom(origin, n, step, places) * step + origin).toFixed(places));
+}
+
+/** How many whole steps `n` is from `origin`, a half rounded away from it, counted in whole units of the
+ *  smallest place any of the three is written with so a decimal half is exactly one. */
+function stepsFrom(origin: number, n: number, step: number, places: number): number {
+  const all = Math.max(places, decimalPlaces(n));
+  if (places > EXACT_PLACES) return roundWhole((n - origin) / step);
+  const scale = 10 ** (all <= EXACT_PLACES ? all : places);
+  const at = all <= EXACT_PLACES ? Math.round(n * scale) : n * scale;
+  return roundWhole((at - Math.round(origin * scale)) / Math.round(step * scale));
 }
 
 /**
@@ -70,7 +76,7 @@ export const COARSE_STEPS = 10;
 
 function finiteSpin(key: string, from: number, bounds: SpinBounds): number | null {
   const by = (n: number) => {
-    const places = Math.max(placesOf(from), placesOf(bounds.step));
+    const places = Math.max(decimalPlaces(from), decimalPlaces(bounds.step));
     return clampToBounds(Number((from + n * bounds.step).toFixed(places)), bounds);
   };
   switch (key) {

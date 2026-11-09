@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { imeKey } from '@weasel-js/ui-logic';
-import { decimal, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
+import { decimal, decimalPlaces, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
@@ -150,20 +150,10 @@ function isKnown(p: PropertyNumberFieldProps): p is PropertyNumberFieldProps & {
   return !p.mixed && typeof p.value === 'number' && !Number.isNaN(p.value);
 }
 
-/** The decimal places `step` is written with, at most 6: `0.25` has two, `2.5` one, `1e-7` six. */
-function stepPlaces(step: number): number {
-  if (!Number.isFinite(step) || step <= 0) return 0;
-  const text = String(step);
-  const exp = /e-(\d+)$/.exec(text);
-  if (exp) return Math.min(6, Number(exp[1]) + (text.split('e')[0].split('.')[1]?.length ?? 0));
-  const dot = text.indexOf('.');
-  return dot === -1 ? 0 : Math.min(6, text.length - dot - 1);
-}
-
 /** The readout a number shows when given no display: as many places as its
  *  `step` is written with, so integer steps show none, 0.1 one, 0.25 two. */
 export function stepDisplay(step = 1): Display {
-  return decimal({ places: stepPlaces(step), grouping: false });
+  return decimal({ places: step > 0 ? decimalPlaces(step) : 0, grouping: false });
 }
 
 /** A slider's track, with the 0..100 fallback for an unbounded one: `min` and

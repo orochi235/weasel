@@ -58,6 +58,18 @@ describe('domFocusScope', () => {
     expect(scope.moveFocus('prev')).toBe(el('b'));
   });
 
+  it('passes over a target that will not take focus, returning what did, as focused reads it', () => {
+    const { el, scope } = mount('<button id="a">a</button><button id="b">b</button><button id="c">c</button>');
+    vi.spyOn(el('b'), 'focus').mockImplementation(() => {});
+    scope.focus(el('a'));
+    expect(scope.moveFocus('next')).toBe(el('c'));
+    expect(scope.focused).toBe(el('c'));
+    vi.spyOn(el('c'), 'focus').mockImplementation(() => {});
+    scope.focus(el('a'));
+    expect(scope.moveFocus('next')).toBeNull();
+    expect(scope.focused).toBeNull();
+  });
+
   it('steps from where an element out of the tab order sits', () => {
     const { el, scope } = mount('<button id="a">a</button><div id="x" tabindex="-1">x</div><button id="b">b</button>');
     scope.focus(el('x'));

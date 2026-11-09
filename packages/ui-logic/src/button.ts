@@ -118,14 +118,16 @@ export function measureButton(face: ButtonFace, c: Constraints, env: MeasureEnv)
   return { width, height, baseline, layout: { parts: laid, metrics: m } };
 }
 
-/** Where a press stands: the pointer over the control, and a press held on it. */
+/** Where a press stands: the pointer over the control, a press held on it, and a press that went down on it,
+ *  over the control or dragged off it. */
 export interface PressState {
   readonly hovered: boolean;
   readonly held: boolean;
+  readonly down: boolean;
 }
 
 /** Nothing over the control and nothing held. */
-export const IDLE_PRESS: PressState = { hovered: false, held: false };
+export const IDLE_PRESS: PressState = { hovered: false, held: false, down: false };
 
 /** One pointer event as a press reads it. `inside` says whether the point is over the control. */
 export type PressInput =
@@ -138,10 +140,13 @@ export type PressInput =
  *  button's `:active` does. */
 export function pressStep(s: PressState, input: PressInput): { state: PressState; pressed: boolean } {
   switch (input.type) {
-    case 'down': return { state: { ...s, held: true }, pressed: false };
-    case 'move': return { state: s.held === input.inside ? s : { ...s, held: input.inside }, pressed: false };
-    case 'up': return { state: { ...s, held: false }, pressed: s.held && input.inside };
-    case 'cancel': return { state: { ...s, held: false }, pressed: false };
+    case 'down': return { state: { ...s, held: true, down: true }, pressed: false };
+    case 'move': {
+      const held = s.down && input.inside;
+      return { state: s.held === held ? s : { ...s, held }, pressed: false };
+    }
+    case 'up': return { state: { ...s, held: false, down: false }, pressed: s.held && input.inside };
+    case 'cancel': return { state: { ...s, held: false, down: false }, pressed: false };
     case 'enter': return { state: { ...s, hovered: true }, pressed: false };
     case 'leave': return { state: { ...s, hovered: false }, pressed: false };
   }

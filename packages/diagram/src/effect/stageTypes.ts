@@ -1,3 +1,4 @@
+import { decimalPlaces } from '@weasel-js/quantity';
 import type { EffectParam, EffectParamControl, EffectPort, EffectStage } from './types';
 
 /** A palette entry: a stage's ports and params, ready to be copied into a pipeline. */
@@ -20,19 +21,11 @@ export function stageFromType(t: EffectStageType, id: string): EffectStage {
   return stage;
 }
 
-/** The places after the point `step` is written with, which a multiple of it needs. */
-function stepPlaces(step: number): number {
-  const text = String(step);
-  if (text.includes('e')) return Math.min(20, Math.max(0, -Math.floor(Math.log10(step))));
-  const dot = text.indexOf('.');
-  return dot === -1 ? 0 : text.length - dot - 1;
-}
-
 /** The display string for a control's value, to as many places as its `step` has (one without a step). */
 export function formatParam(control: EffectParamControl): string {
   switch (control.kind) {
     case 'number': {
-      const n = control.value.toFixed(control.step === undefined ? 1 : stepPlaces(control.step)).replace(/^-(?=[0.]*$)/, '');
+      const n = control.value.toFixed(control.step === undefined ? 1 : decimalPlaces(control.step)).replace(/^-(?=[0.]*$)/, '');
       return control.unit ? `${n} ${control.unit}` : n;
     }
     case 'enum':

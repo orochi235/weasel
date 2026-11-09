@@ -51,8 +51,7 @@ const zeroParts = (locale: string): Part[] => [{ type: 'number', value: (0).toLo
 function asENotation(text: string): string {
   const raised = text.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+$/, (s) => `^${[...s].map((c) => (c === '⁻' ? '-' : SUPERSCRIPT.indexOf(c))).join('')}`);
   const m = /^(?:(.*\d)\s*[×xX*·]\s*)?10\s*\^\s*([-−+]?\d+)$/.exec(raised.trim());
-  if (m) return `${m[1] ?? '1'}e${m[2]!.replace(MINUS_SIGN, '-')}`;
-  return text.replace(/(\d)[eE]−/, '$1e-');
+  return m ? `${m[1] ?? '1'}e${m[2]!}` : text;
 }
 
 /** The built-in `scientific` kind, to spread into a `registerDisplayKind` replacement. */

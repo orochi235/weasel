@@ -37,3 +37,17 @@ describe('UnitField at an endless end', () => {
     expect(screen.getByRole('button', { name: 'Increment' })).toBeDisabled();
   });
 });
+
+describe('UnitField with no endless end', () => {
+  it('commits nothing for infinity typed where no bound clamps it, and shows the value again', () => {
+    const onChange = vi.fn();
+    const onInput = vi.fn();
+    render(<UnitField value={5} onChange={onChange} onInput={onInput} aria-label="Width" />);
+    const field = screen.getByRole('spinbutton', { name: 'Width' });
+    fireEvent.change(field, { target: { value: '∞' } });
+    fireEvent.blur(field);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalledWith(Infinity);
+    expect(field).toHaveValue('5');
+  });
+});

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { decimalPlaces } from '@weasel-js/quantity';
 import { NumberField } from '../NumberField';
 import { Slider, type Thumb } from '../Slider';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
@@ -83,9 +84,6 @@ function ScaleRuleControls({
   );
 }
 
-/** Decimal places an amount is written with. */
-const placesOf = (n: number) => (String(n).split('.')[1] ?? '').length;
-
 /** Room past the outermost steps, as a factor, so an end thumb can still be dragged outward. */
 const MARGIN = 1.5;
 
@@ -118,7 +116,7 @@ function ScaleSlider({
   onScaleChange?: (group: string, scale: TokenScale) => void;
 }) {
   const amounts = tokens.map((t) => splitUnit(t.value)?.amount ?? 0);
-  const places = Math.min(4, Math.max(0, ...amounts.map(placesOf)));
+  const places = Math.min(4, Math.max(0, ...amounts.map(decimalPlaces)));
   const round = (n: number) => Number(n.toFixed(places));
   // A key press moves a step by this much: a log track's own step is smaller than the scale can write.
   const finest = 10 ** -places;

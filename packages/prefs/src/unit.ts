@@ -1,7 +1,7 @@
 // A number leaf's display unit: the stored value stays canonical (radians, millimeters), and a UI converts
 // at its edge. A unit is data where the conversion is linear, and a pair of functions where it is not.
 
-import { decimal, formatUnit, unitScale, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
+import { decimal, decimalPlaces, formatUnit, unitScale, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
 
 /** What both forms of a unit say about the text around the number. */
 interface PrefUnitText {
@@ -70,14 +70,6 @@ export function isPrefLinearUnit(unit: PrefNumberUnit): unit is PrefLinearUnit {
 /** The name `formatUnit` is asked for a linear unit's one unit by. */
 const SHOWN = 'shown';
 
-/** The decimal places `n` is written with. Undefined for one written with an exponent, which is no short decimal. */
-function decimalPlaces(n: number): number | undefined {
-  const text = String(n);
-  if (text.includes('e')) return undefined;
-  const dot = text.indexOf('.');
-  return dot === -1 ? 0 : text.length - dot - 1;
-}
-
 /** Beyond this many places a number is not a decimal someone wrote, and the product is left as computed. */
 const DECIMAL_PLACES = 12;
 
@@ -88,9 +80,8 @@ const DECIMAL_PLACES = 12;
  */
 function storedOf(shown: number, scale: number, offset: number): number {
   const raw = shown * scale + offset;
-  const [a, b, c] = [decimalPlaces(shown), decimalPlaces(scale), decimalPlaces(offset)];
-  if (a === undefined || b === undefined || c === undefined || !Number.isFinite(raw)) return raw;
-  const places = Math.max(a + b, c);
+  if (!Number.isFinite(raw)) return raw;
+  const places = Math.max(decimalPlaces(shown) + decimalPlaces(scale), decimalPlaces(offset));
   return places > DECIMAL_PLACES ? raw : Number(raw.toFixed(places));
 }
 

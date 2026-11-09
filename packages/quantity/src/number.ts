@@ -46,8 +46,11 @@ export function unsignedZero(value: number, format: (n: number) => string): stri
  * writes without grouping; {@link parseNumber} reads the grouped form back.
  */
 export function parseSignedNumber(text: string): number {
-  return Number(text.replace(MINUS_SIGN, '-'));
+  return Number(hyphenated(text));
 }
+
+/** `text` with every {@link MINUS_SIGN} an ASCII hyphen: an exponent's sign as well as the number's. */
+const hyphenated = (text: string): string => text.replaceAll(MINUS_SIGN, '-');
 
 /** `n` to the nearest whole number, a half away from zero, as `Intl` rounds one: `Math.round(-2.5)` is −2. */
 export function roundWhole(n: number): number {
@@ -117,7 +120,7 @@ function readNumber(text: string, units?: Readonly<UnitTable>): number {
       return scaled(readNumber(trimmed.slice(0, -name.length)), factor) + offset;
     }
   }
-  let t = text.trim().replace(MINUS_SIGN, '-');
+  let t = hyphenated(text.trim());
   const exponent = EXPONENTS[t.slice(-1).toLowerCase()];
   if (exponent !== undefined) t = t.slice(0, -1).trimEnd();
   // `Number` alone also reads `0x10`, `0b11`, and `1e400`, none of which is a typed amount.

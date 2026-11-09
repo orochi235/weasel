@@ -79,10 +79,20 @@ export type StepperSide = 'start' | 'end';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
+type Bounds = Parameters<typeof clampToBounds>[1];
+
+/** Whether the field can hold `n`: a finite number, or an infinity an endless end stands for. */
+const holds = (n: number, endless: Endless | undefined): boolean => Number.isFinite(n) || endlessAllows(endless, n);
+
+/** A typed `n` held to `bounds`, or NaN where even that is no value the field can hold: an infinity no bound clamps. */
+function settled(n: number, bounds: Bounds): number {
+  const next = clampToBounds(n, bounds);
+  return holds(next, bounds.endless) ? next : Number.NaN;
+}
+
 /** What a step starts from: the text as typed where it reads as a value the field can hold, else the value. */
 function stepStart(typed: number, value: number, endless: Endless | undefined): number {
-  const holds = (n: number) => Number.isFinite(n) || endlessAllows(endless, n);
-  return holds(typed) ? typed : holds(value) ? value : 0;
+  return holds(typed, endless) ? typed : holds(value, endless) ? value : 0;
 }
 
 /**
@@ -155,8 +165,8 @@ export function UnitField({
 
   /** Commit a typed `n`, or give back the value typing began from when `n` is no number. */
   const commit = (n: number) => {
-    if (!Number.isNaN(n)) {
-      const next = clampToBounds(n, bounds);
+    const next = settled(n, bounds);
+    if (!Number.isNaN(next)) {
       if (next !== value) onChange(next);
     } else if (typing.current?.sent) {
       if (!Number.isNaN(typing.current.from)) onInput?.(typing.current.from);
@@ -206,10 +216,10 @@ export function UnitField({
             setDraft(typed);
             idle.typed();
             typing.current ??= { from: value, sent: false };
-            const n = read(typed);
+            const n = settled(read(typed), bounds);
             if (onInput && typed.trim() !== '' && !Number.isNaN(n)) {
               typing.current.sent = true;
-              onInput(clampToBounds(n, bounds));
+              onInput(n);
             }
           }}
           onFocus={() => {
@@ -275,10 +285,10 @@ function useWheelSteps(
 
 /** What a pause in typing commits: a value `typed` reads as inside `bounds`, and never an offset, so a pause
  *  neither applies one twice nor clamps or reformats the text under the caret. */
-function idleValue(typed: string | null, read: (text: string) => number, bounds: Parameters<typeof clampToBounds>[1]): number | null {
+function idleValue(typed: string | null, read: (text: string) => number, bounds: Bounds): number | null {
   if (typed === null || typed.trim() === '' || offsetIn(typed, read) !== null) return null;
   const n = read(typed);
-  return Number.isNaN(n) || clampToBounds(n, bounds) !== n ? null : n;
+  return Number.isNaN(n) || settled(n, bounds) !== n ? null : n;
 }
 
 /** What `typed` offsets by when it reads as `+=` or `-=` and a number: NaN

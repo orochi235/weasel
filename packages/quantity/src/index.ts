@@ -90,6 +90,7 @@ export {
   type OrdinalDisplay,
   type RomanDisplay,
 } from './kinds/numeral';
+export { decimalPlaces, MAX_DECIMAL_PLACES } from './places';
 export {
   formatCompact,
   formatNumber,

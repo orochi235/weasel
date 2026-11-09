@@ -194,6 +194,13 @@ describe('prefDisplayBounds', () => {
     expect(prefDisplayBounds({ ...leaf, stops: [0, 4] }).stops).toEqual([100, 96]);
   });
 
+  it('swaps a lone bound to the other end when the conversion decreases, as it swaps endless', () => {
+    const remaining: PrefNumberUnit = { toDisplay: (v) => 100 - v, fromDisplay: (v) => 100 - v };
+    const leaf: PrefNumber = { kind: 'number', name: 'D', description: '', default: 0, min: 0, endless: 'max', unit: remaining };
+    expect(prefDisplayBounds(leaf)).toEqual({ max: 100, step: 1, endless: 'min' });
+    expect(prefDisplayBounds({ ...leaf, min: undefined, max: 10, endless: undefined })).toEqual({ min: 90, step: 1 });
+  });
+
   it('widens a step to the smallest one the shown precision can display, never below the declared step', () => {
     const num = (step: number, unit: PrefNumber['unit']): PrefNumber => ({ kind: 'number', name: 'N', description: '', default: 0, step, unit });
     const cm = { scale: 10, suffix: 'cm', precision: 0 };

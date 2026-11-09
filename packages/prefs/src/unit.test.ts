@@ -52,6 +52,13 @@ describe('resolvePrefUnit', () => {
     expect(resolvePrefUnit({ scale: Math.PI / 180 }).fromDisplay(90)).toBe(90 * (Math.PI / 180));
   });
 
+  it('reads a scale written in exponent form as the short decimal it is', () => {
+    const micro = resolvePrefUnit({ scale: 1e-7 });
+    expect(33.3 * 1e-7).not.toBe(3.33e-6);
+    expect(micro.fromDisplay(33.3)).toBe(3.33e-6);
+    expect(micro.fromDisplay(0.7)).toBe(7e-8);
+  });
+
   it('formats a linear unit to its precision, two places without one, and ends it with the suffix', () => {
     expect(resolvePrefUnit({ scale: 10, suffix: 'cm' }).format(25)).toBe('2.5cm');
     expect(resolvePrefUnit({ scale: 3 }).format(1)).toBe('0.33');

@@ -39,11 +39,7 @@ function heldAt(at: Shared, schema: PrefGroup): Held {
  *  leaves the cache open for the others. */
 const lent = (cache: OwnedRecordCache): OwnedRecordCache =>
   Object.create(cache, {
-    close: {
-      value: async (): Promise<void> => {
-        await cache.flush();
-      },
-    },
+    close: { value: (): Promise<boolean> => cache.flush() },
   }) as OwnedRecordCache;
 
 /** Close a store nothing holds, and the cache once no store is over it, a
