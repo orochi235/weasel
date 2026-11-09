@@ -18,7 +18,7 @@ function fakeHistory() {
     able: false,
     canUndo: () => source.able,
     canRedo: () => false,
-    undo: vi.fn(() => entries.pop()?.invert().apply()),
+    undo: vi.fn(() => entries.pop()?.invert().apply(null)),
     redo: vi.fn(),
     record: vi.fn((op: Op) => entries.push(op)),
     subscribe: (l: () => void) => {
