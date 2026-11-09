@@ -155,6 +155,7 @@ function advance(run: Run, hub: Hub, dt: number): number {
 }
 
 function syncTo(run: Run, hub: Hub, timestamp: number): void {
+  if (!Number.isFinite(timestamp)) throw new RangeError(`a clock syncs to a finite time, not ${timestamp}`);
   const wasChanged = run.changed;
   const before = run.elapsed;
   if (!Number.isNaN(run.last) && !run.slept) {
