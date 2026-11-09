@@ -158,9 +158,11 @@ export function useContributions<TOverlay = KernelOverlay>(
       // take turns in the active slot — so ambient-vs-ambient went unreported.
       const registry: Contribution<TOverlay>[] = [];
       const ambient: Contribution<TOverlay>[] = [];
+      // A keymap rides in `ambient`, where the check knows to compare it only with itself.
       for (const entry of entries) {
-        if (entry.eligibility?.focus) registry.push(entry);
-        if (entry.eligibility?.always || entry.eligibility?.claimed) ambient.push(entry);
+        const e = entry.eligibility;
+        if (e?.focus || e?.offhand !== undefined) registry.push(entry);
+        if (e?.always || e?.claimed || e?.keymap) ambient.push(entry);
       }
       reportRouteConflicts({
         registry,

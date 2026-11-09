@@ -258,6 +258,32 @@ describe('conflict buckets follow declared eligibility', () => {
   });
 });
 
+describe('conflict buckets reach every entry routing can make live', () => {
+  const said = (entries: Contribution[]): string => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderHook(() => useContributions({ entries, focused: null }), { wrapper });
+    const out = warn.mock.calls.flat().join('\n');
+    warn.mockRestore();
+    return out;
+  };
+
+  it('reports a keymap binding the same key twice', () => {
+    const loupe: Contribution = {
+      id: 'loupe',
+      eligibility: { keymap: true },
+      bindings: [{ spec: { kind: 'key', key: '2' }, actionId: 'zoom' }, { spec: { kind: 'key', key: '2' }, actionId: 'pin' }],
+    };
+    expect(said([loupe])).toContain('loupe, loupe');
+  });
+
+  it('reports two entries held only on a key, which can stack', () => {
+    const held = (id: string): Contribution => ({
+      id, eligibility: { offhand: id === 'a' ? 'space' : 'z' }, bindings: [{ spec: { kind: 'drag' }, actionId: `${id}.drag` }],
+    });
+    expect(said([held('a'), held('b')])).toContain('a, b');
+  });
+});
+
 describe('a declared offhand trigger engages its entry', () => {
   const hand: Contribution = {
     id: 'hand',
