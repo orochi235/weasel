@@ -367,7 +367,8 @@ describe('findScopedConflicts — mutually exclusive eligibility', () => {
   it('does not flag a held tool against a gated hotkey action, and still flags it against an ungated one', () => {
     const held = { id: 'hand', eligibility: { focus: true, offhand: 'space' }, bindings: [{ spec: { kind: 'key', key: 'Escape', phase: [{ channel: '*', phase: 'initial' }] }, actionId: 'hand.esc' }] } as unknown as Tool;
     const gated = findScopedConflicts({ registry: [held], actions: [escape('a', { mode: 'focus' })], modes: focusAndReview });
-    expect(gated).toEqual([]);
+    // Held, it is no tie; active, the hotkey action outranks it.
+    expect(gated.map((x) => x.shadows)).toEqual([true]);
     const ungated = findScopedConflicts({ registry: [held], actions: [escape('c')], modes: focusAndReview });
     expect(ungated.map((x) => x.ownerIds.join(','))).toEqual(['hand,c']);
   });
@@ -529,5 +530,34 @@ describe('findScopedConflicts — a mode entry key another mode commits on', () 
   it('is flagged when nothing keeps the entry key out of the other mode', () => {
     const { actions } = modeShortcuts(registry(), { enter: () => {}, commit: () => {} });
     expect(findScopedConflicts({ registry: [], actions, modes: active })).toHaveLength(1);
+  });
+});
+
+// A hotkey-tier action outranks the active tool, so a tool binding the same tuple never fires while the action is enabled.
+describe('findScopedConflicts — a hotkey action over a tool', () => {
+  const keyAction = (id: string, key: string, eligible?: unknown) => ({
+    id, label: id, scope: 'hotkey', defaultBinding: { kind: 'key', key }, ...(eligible ? { eligible } : {}),
+    invoker: { timing: 'immediate', run: () => {} },
+  } as never);
+  const finisher = { id: 'slice', eligibility: { focus: true }, bindings: [{ spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish' }] } as unknown as Tool;
+
+  it('reports a hotkey action shadowing a tool\'s key', () => {
+    const c = findScopedConflicts({ registry: [finisher], actions: [keyAction('open', 'Enter')] });
+    expect(c.map((x) => [x.ownerIds.join(','), x.shadows])).toEqual([['open,slice', true]]);
+    expect(formatConflict(c[0]!)).toContain('open, slice');
+  });
+
+  it('reports a gated one too, since its rule holding is when it shadows', () => {
+    expect(findScopedConflicts({ registry: [finisher], actions: [keyAction('open', 'Enter', { selection: { empty: false } })] })).toHaveLength(1);
+  });
+
+  it('says nothing for a key the tool does not bind', () => {
+    expect(findScopedConflicts({ registry: [finisher], actions: [keyAction('open', 'L')] })).toEqual([]);
+  });
+
+  it('says a shadow outranks rather than ties', () => {
+    const warn = vi.fn();
+    reportRouteConflicts({ registry: [finisher], actions: [keyAction('open', 'Enter')] }, warn);
+    expect(String(warn.mock.calls[0]![0])).toContain('outranks');
   });
 });

@@ -20,6 +20,9 @@ export interface Conflict {
   /** The ids of every entry that declared the same tuple. At least 2 by
    *  construction, in input order. */
   ownerIds: string[];
+  /** Not a tie: the first owner, a hotkey-tier action, outranks the active
+   *  tool after it, whose binding fires only when the action declines. */
+  shadows?: true;
 }
 
 /** Detect exact-tuple overlaps across a tool registration set.
@@ -265,6 +268,15 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     ...hotkeyActions,
   ];
   if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));
+  // A hotkey-tier action outranks whichever tool holds the active slot. A pair
+  // already reported as a tie, a held tool's, is not reported again.
+  const tied = (a: string, b: string): boolean => out.some((c) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
+  for (const action of [...hotkeyActions, ...gatedHotkey]) {
+    for (const tool of registry) {
+      if (tied(action.id, tool.id)) continue;
+      add(findConflictsKeyed([action, tool], rules, modes).map((k) => ({ ...k, conflict: { ...k.conflict, shadows: true } })));
+    }
+  }
 
   return out;
 }
@@ -305,6 +317,13 @@ export function reportRouteConflicts(
 ): Conflict[] {
   const conflicts = findScopedConflicts(scopes);
   for (const c of conflicts) {
+    if (c.shadows) {
+      warn(
+        `[weasel] route conflict: a hotkey-tier action outranks a tool's binding on the same tuple, so the tool's `
+        + `fires only when the action declines.\n  ${formatConflict(c)}`,
+      );
+      continue;
+    }
     warn(
       `[weasel] route conflict: two bindings declare the same (phase, gesture, arg, target, modifiers) tuple `
       + `in the same scope, so declaration order alone decides which one fires.\n  ${formatConflict(c)}`,
