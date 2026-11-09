@@ -53,7 +53,9 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
     for (let j = 0; j < count; j++) {
       let sub = lookup + v.getUint16(lookup + 6 + j * 2);
       let subType = type;
+      // opentype.js reads no extension's header, so a font it accepts can point one past its end.
       if (type === 9) {
+        if (sub + 8 > v.byteLength) continue;
         subType = v.getUint16(sub + 2);
         sub += v.getUint32(sub + 4);
       }
@@ -70,7 +72,7 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
     let total = 0;
     for (const subtables of lookups) {
       for (const sub of subtables) {
-        const value = pairValue(v, sub, left, right);
+        const value = readablePairValue(v, sub, left, right);
         if (value !== null) { total += value; break; }
       }
     }
@@ -103,6 +105,16 @@ function valueSize(format: number): number {
 function xAdvance(v: DataView, at: number, format: number): number {
   if (!(format & 0x4)) return 0;
   return v.getInt16(at + (format & 0x1 ? 2 : 0) + (format & 0x2 ? 2 : 0));
+}
+
+/** `pairValue`, with a subtable whose offsets run past the end of the font applying to no pair. */
+function readablePairValue(v: DataView, sub: number, left: number, right: number): number | null {
+  try {
+    return pairValue(v, sub, left, right);
+  } catch (err) {
+    if (err instanceof RangeError) return null;
+    throw err;
+  }
 }
 
 /** The subtable's adjustment for this pair, or `null` when it does not apply. */
