@@ -88,6 +88,14 @@ describe('snapPoint', () => {
     expect(layout.getDropTargets(unplaced, [], dragged({ x: 0, y: 0 }))).toEqual([]);
   });
 
+  it('grid pattern offers points around a dragged pose too far out for grid indices to count', () => {
+    const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 1e-6 });
+    const endless = { ...container, bounds: { x: 0, y: 0, width: Infinity, height: Infinity } };
+    const targets = layout.getDropTargets(endless, [], dragged({ x: 1e12, y: 1e12 }));
+    expect(targets.length).toBeLessThanOrEqual(129 * 129);
+    expect(targets.length).toBeGreaterThan(0);
+  });
+
   it('grid pattern with non-divisible spacing floors to the last in-bounds step', () => {
     const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 30 });
     const targets = layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }));

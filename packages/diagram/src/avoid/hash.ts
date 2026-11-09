@@ -20,8 +20,12 @@ interface Filed<T> {
 const overlaps = (a: Box, b: Box): boolean =>
   a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
 
-/** How many cells `[i0, i1] × [j0, j1]` holds; past {@link MAX_CELLS}, or not finite, it is too many to walk. */
-const walkable = ([i0, j0, i1, j1]: readonly number[]): boolean => (i1! - i0! + 1) * (j1! - j0! + 1) <= MAX_CELLS;
+/** How many cells `[i0, i1] × [j0, j1]` holds; past {@link MAX_CELLS}, or not finite, it is too many to walk.
+ *  Nor can indices past a safe integer be walked, as `i++` stops moving there. */
+const walkable = (range: readonly number[]): boolean => {
+  const [i0, j0, i1, j1] = range;
+  return (i1! - i0! + 1) * (j1! - j0! + 1) <= MAX_CELLS && range.every(Number.isSafeInteger);
+};
 
 export class SpatialHash<T> {
   private readonly cells = new Map<number, Filed<T>[]>();

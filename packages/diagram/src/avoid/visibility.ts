@@ -48,23 +48,31 @@ interface Strips {
 }
 
 const STRIP = 64;
+/** Strips a window is cut into at most: a wider one widens its strips, so an obstacle spanning it files in few. */
+const MAX_STRIPS = 4096;
 
-/** `boxes` filed by their extent across `horizontal` lines: by y for lines along x. */
-function strips(boxes: readonly Box[], horizontal: boolean): Strips {
+/** The strip `v` falls in; every value falls in the one strip of a window with no finite width. */
+const stripOf = (s: Strips, v: number): number => (Number.isFinite(s.size) ? Math.floor((v - s.start) / s.size) : 0);
+
+/** `boxes` filed by their extent across `horizontal` lines (by y for lines along x), within `[from, to]`: the
+ *  window's, so an obstacle running far past it walks no strips out there. */
+function strips(boxes: readonly Box[], horizontal: boolean, from: number, to: number): Strips {
   const n = boxes.length;
   const s: Strips = {
     lo: new Float64Array(n), hi: new Float64Array(n), aLo: new Float64Array(n), aHi: new Float64Array(n),
-    start: Infinity, size: STRIP, cells: [],
+    start: Infinity, size: Math.max(STRIP, (to - from) / MAX_STRIPS), cells: [],
   };
   boxes.forEach((b, i) => {
     s.lo[i] = horizontal ? b.y : b.x;
     s.hi[i] = horizontal ? b.y + b.height : b.x + b.width;
     s.aLo[i] = horizontal ? b.x : b.y;
     s.aHi[i] = horizontal ? b.x + b.width : b.y + b.height;
-    s.start = Math.min(s.start, s.lo[i]!);
+    // Written so a box with a NaN side leaves the start alone, rather than every strip index NaN.
+    if (Math.max(s.lo[i]!, from) < s.start) s.start = Math.max(s.lo[i]!, from);
   });
   for (let i = 0; i < n; i++) {
-    for (let k = Math.floor((s.lo[i]! - s.start) / STRIP); k <= Math.floor((s.hi[i]! - s.start) / STRIP); k++) {
+    const last = stripOf(s, Math.min(s.hi[i]!, to));
+    for (let k = stripOf(s, Math.max(s.lo[i]!, from)); k <= last; k++) {
       (s.cells[k] ??= []).push(i);
     }
   }
@@ -75,7 +83,7 @@ function strips(boxes: readonly Box[], horizontal: boolean): Strips {
  *  an obstacle's inside or the window's edge stops it; null when the point is
  *  inside one. */
 function reach(at: number, c: number, s: Strips, lo: number, hi: number): Run | null {
-  const cell = s.cells[Math.floor((c - s.start) / STRIP)] ?? [];
+  const cell = s.cells[stripOf(s, c)] ?? [];
   for (const i of cell) {
     if (c <= s.lo[i]! + EPS || c >= s.hi[i]! - EPS) continue;
     if (s.aHi[i]! <= at + EPS) lo = Math.max(lo, s.aHi[i]!);
@@ -134,8 +142,11 @@ function crossing(along: Run, from: number, step: 1 | -1, across: readonly Run[]
 
 /** The free lines cast from `points` among `boxes`, horizontal and vertical. */
 function castLines(points: readonly Vec2[], boxes: readonly Box[], window: Box): { hs: Run[]; vs: Run[] } {
-  const across = strips(boxes, true);
-  const down = strips(boxes, false);
+  // A line is cast from every point, and an end may sit outside the window.
+  let [x0, x1, y0, y1] = [window.x, window.x + window.width, window.y, window.y + window.height];
+  for (const p of points) [x0, x1, y0, y1] = [Math.min(x0, p.x), Math.max(x1, p.x), Math.min(y0, p.y), Math.max(y1, p.y)];
+  const across = strips(boxes, true, y0, y1);
+  const down = strips(boxes, false, x0, x1);
   const rows: Run[] = [];
   const cols: Run[] = [];
   for (const p of points) {

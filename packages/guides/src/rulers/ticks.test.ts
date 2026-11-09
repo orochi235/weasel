@@ -29,6 +29,11 @@ describe('rulerTicks', () => {
     expect(majors(back).map((k) => [k.at, k.label])).toEqual([[60, '-2']]);
   });
 
+  it('lays out no ticks panned so far that step indices stop counting', () => {
+    const t = rulerTicks({ majorPx: 140, pxPerUnit: 10, start: 1e20, length: 400, scopes: [INCHES] });
+    expect(t.ticks).toEqual([]);
+  });
+
   it('reads from the origin it is given', () => {
     const t = rulerTicks({ majorPx: 140, pxPerUnit: 10, start: 0, length: 200, scopes: [INCHES], origin: 6, minorPx: 200 });
     expect(majors(t).map((k) => [k.at, k.label])).toEqual([[60, '0'], [180, '1']]);

@@ -8,6 +8,8 @@ const HOUR = 3_600_000;
 const FIXED: Readonly<Partial<Record<GanttUnit, number>>> = { ms: 1, s: 1000, m: 60_000, h: HOUR };
 /** Past this many days, a duration is not walked day by day for excluded days. */
 const WALK_LIMIT = 100_000;
+/** The furthest instant from the epoch a `Date` holds; past it a day neither has a weekday nor moves a float. */
+const MAX_INSTANT = 8.64e15;
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 /** Where one task runs, in milliseconds since the epoch. */
@@ -63,7 +65,7 @@ export function addGanttDuration(start: number, amount: number, unit: GanttUnit,
   if (unit === 'M' || unit === 'y') return addMonths(start, unit === 'y' ? n * 12 : n);
   const days = unit === 'w' ? n * 7 : n;
   let end = start + days * DAY;
-  if (days > WALK_LIMIT) return end;
+  if (days > WALK_LIMIT || !(Math.abs(start) <= MAX_INSTANT)) return end;
   for (let t = start; t < end; t += DAY) if (excluded(t)) end += DAY;
   return end;
 }

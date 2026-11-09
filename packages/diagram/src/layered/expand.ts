@@ -198,7 +198,8 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
         ? { x: at, y: 0, width: room.size, height: room.depth }
         : { x: 0, y: at, width: room.depth, height: room.size };
       add(r, { id, bounds, pinned: false, ...(group !== undefined ? { group } : {}) });
-      const toAt = room.wire / room.size;
+      // A placeholder with no width, as a zero nodeGap gives, carries its wire through the middle.
+      const toAt = room.size > 0 ? room.wire / room.size : 0.5;
       for (const p of prev) hops.push({ from: p, to: id, edge: d.id, ...(prevAt ?? leave(p)), toAt });
       if (r === labelRow) {
         labels.set(d.id, id);

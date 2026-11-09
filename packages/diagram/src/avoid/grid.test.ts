@@ -59,6 +59,25 @@ describe('visibilityGraph', () => {
     expect(g.neighbor(a, 1)).toBe(-1);
   });
 
+  it('files an obstacle running far past the window only over the window', () => {
+    const tall = { x: 0, y: 0, width: 40, height: Infinity };
+    const g = visibilityGraph([{ x: -100, y: 50 }, { x: 0, y: 0 }], [tall], window);
+    expect(where(g, g.neighbor(g.at({ x: -100, y: 50 }), 0))).toEqual([0, 50]);
+  });
+
+  it('still stops a line at an obstacle beside one with a NaN side', () => {
+    const g = visibilityGraph([{ x: -100, y: 50 }, { x: 100, y: -200 }], [{ x: 0, y: NaN, width: 10, height: 10 }, wall], window);
+    expect(g.at({ x: -100, y: 50 })).toBeGreaterThanOrEqual(0);
+    expect(g.at({ x: 100, y: 50 })).toBe(-1);
+  });
+
+  it('files an obstacle spanning a vast window in a bounded number of strips', () => {
+    const vast = { x: -1e9, y: -1e9, width: 2e9, height: 2e9 };
+    const tall = { x: 0, y: -1e9, width: 40, height: 2e9 };
+    const g = visibilityGraph([{ x: -100, y: 50 }, { x: 0, y: 0 }], [tall], vast);
+    expect(where(g, g.neighbor(g.at({ x: -100, y: 50 }), 0))).toEqual([0, 50]);
+  });
+
   it('stops a line at an obstacle’s inside, and runs it along an edge', () => {
     const g = graph();
     const east = g.neighbor(g.at({ x: -100, y: 50 }), 0);

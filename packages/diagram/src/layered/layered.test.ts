@@ -76,6 +76,11 @@ describe('layeredPlan', () => {
     expect([...layeredPlan(graph).back]).toEqual([]);
     expect(layeredPlan(graph).ranks.get('a')).toBe(0);
   });
+
+  it('places a long edge with no nodeGap at finite positions', () => {
+    const graph = generatedFrom(['a', 'b', 'c'], [['a', 'b'], ['b', 'c'], ['a', 'c']], {});
+    for (const { x, y } of layered(graph, { nodeGap: 0 }).values()) expect(Number.isFinite(x) && Number.isFinite(y)).toBe(true);
+  });
 });
 
 function generatedFrom(ids: string[], pairs: [string, string][], groups: Record<string, string[]>): Graph {

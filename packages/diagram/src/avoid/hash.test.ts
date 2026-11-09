@@ -19,6 +19,15 @@ describe('SpatialHash', () => {
     expect(hash.query({ x: 5e11, y: -1, width: 1, height: 2 })).toEqual([]);
   });
 
+  it('files and finds an item so far out that its cell indices stop counting', () => {
+    const hash = new SpatialHash<string>(10);
+    const far = { x: 1e21, y: 1e21, width: 5, height: 5 };
+    hash.insert('far', far);
+    expect(hash.query(far)).toEqual(['far']);
+    hash.remove('far', far);
+    expect(hash.query(far)).toEqual([]);
+  });
+
   it('answers a query spanning more cells than could be visited from what is filed', () => {
     const hash = new SpatialHash<string>(10);
     hash.insert('a', { x: 0, y: 0, width: 5, height: 5 });

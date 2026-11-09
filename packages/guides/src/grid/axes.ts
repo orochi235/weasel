@@ -96,12 +96,14 @@ export function nearestLine(a: AxisLines, v: number): number | null {
   return best;
 }
 
-/** Every line from `lo` to `hi`, in order. The caller bounds how many a
- *  pitch gives over the span. */
+/** Every line from `lo` to `hi`, in order; none of a pitch where their
+ *  indices are past a safe integer, so lines a pitch apart are one number.
+ *  The caller bounds how many a pitch gives over the span. */
 export function linesIn(a: AxisLines, lo: number, hi: number): number[] {
   if ('at' in a) return a.at.filter((l) => l >= lo - EPS && l <= hi + EPS);
   const [k0, k1] = indexRange({ ...a, from: Math.max(a.from, lo), to: Math.min(a.to, hi) });
   const out: number[] = [];
+  if (!Number.isSafeInteger(k0) || !Number.isSafeInteger(k1)) return out;
   for (let k = k0; k <= k1; k++) out.push(a.offset + k * a.pitch);
   return out;
 }
