@@ -77,6 +77,20 @@ describe('animator.stagger', () => {
     expect(finals.c).toBeCloseTo(30, 0);
   });
 
+  it('refuses a delay that is not finite before starting any item, rather than never finishing', () => {
+    const { animator } = mountAnimator();
+    const started: number[] = [];
+    const factory = (_item: string, i: number) => {
+      started.push(i);
+      return animator.tween({ from: 0, to: 1, ms: 10, onTick: () => {} });
+    };
+    expect(() => animator.stagger(['a', 'b', 'c'], (i) => (i === 2 ? Number.NaN : i * 10), factory, { cancelKey: 'k' })).toThrow(RangeError);
+    expect(() => animator.stagger(['a', 'b'], Number.POSITIVE_INFINITY, factory)).toThrow(RangeError);
+    expect(() => animator.stagger(['a'], Number.NaN).each(factory)).toThrow(RangeError);
+    expect(started).toEqual([]);
+    expect(animator.isActive('k')).toBe(false);
+  });
+
   it('registers the stagger handle so animator.cancel works', () => {
     const { animator, advance } = mountAnimator();
     const starts: string[] = [];
