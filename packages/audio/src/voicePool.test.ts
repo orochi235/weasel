@@ -69,6 +69,14 @@ describe('createVoicePool', () => {
     expect(d.slot).toBe(b.slot);
   });
 
+  it('steals a voice whose score is NaN rather than finding no victim', () => {
+    const pool = createVoicePool({ limit: 1, steal: 'quietest' });
+    const a = pool.acquire({ startedAt: 0, gain: Number.NaN });
+    const b = pool.acquire({ startedAt: 1, gain: 1 });
+    expect(b.stolen).toBe(a.token);
+    expect(pool.active()).toBe(1);
+  });
+
   it('reports how many voices are live', () => {
     const pool = createVoicePool({ limit: 4 });
     pool.acquire({ startedAt: 0, gain: 1 });

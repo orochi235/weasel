@@ -60,7 +60,7 @@ export function createVoicePool(opts: VoicePoolOptions): VoicePool {
     let worstScore = Infinity;
     for (const [slot, rec] of live) {
       const score = steal === 'quietest' ? rec.gain : rec.startedAt;
-      if (score < worstScore) { worstScore = score; worst = slot; }
+      if (worst < 0 || score < worstScore) { worstScore = score; worst = slot; }
     }
     return worst;
   };
