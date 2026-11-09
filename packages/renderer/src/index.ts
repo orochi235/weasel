@@ -114,6 +114,7 @@ export {
   adoptBitmapSrc,
   bitmapSrc,
   getImageBitmap,
+  holdImageBitmaps,
   isBitmapSrc,
   imagePending,
   imageStatus,

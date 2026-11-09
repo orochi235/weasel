@@ -4,6 +4,7 @@
 import {
   commandRasterizer,
   createRasterSession,
+  holdImageBitmaps,
   planPixelRender,
   viewToMat3,
   warmRender,
@@ -40,12 +41,15 @@ export async function sceneToLbx<TData, TLayer extends string, TPose>(
   await warmRender({ render: plan });
   const { commands, view } = planPixelRender(plan);
   const session = createRasterSession();
+  // The commands hold bitmaps across the write's awaits.
+  const release = holdImageBitmaps();
   try {
     return await writeLbx(
       { length, tape, commands, view: viewToMat3(view), autoLength, cuts },
       { rasterize: commandRasterizer(session), rasterDpi },
     );
   } finally {
+    release();
     session.dispose();
   }
 }

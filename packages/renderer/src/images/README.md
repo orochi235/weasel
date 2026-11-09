@@ -54,7 +54,7 @@ pixels, and the cache re-rasterizes in power-of-two steps — up when the drawn
 size passes the current raster, down only once it is four times too big, one
 raster in flight per `src`, capped by the smallest live renderer's
 `MAX_TEXTURE_SIZE` and 4096×4096 pixels. The old raster is returned until the
-new one lands, then its GL texture is freed in every renderer. The SVG is
+new one lands, then its GL texture is freed in every renderer and it is closed. The SVG is
 decoded into an `<img>` once and each raster is a canvas `drawImage` of it.
 
 ## Lifetime
@@ -67,3 +67,13 @@ drew in its latest frame and any read since the previous bitmap landed. A
 scene showing more than the budget therefore stays over it rather than
 reloading on every paint. `releaseImage(src)` drops one entry and its GL
 textures at once. Either way a later read loads it again. A failed load stays `'error'` until `retryImage(src)`.
+
+The cache owns every bitmap it loads or adopts, and closes one when it drops it:
+to fit the budget, on `releaseImage`, when a sharper SVG raster replaces it, or
+when it lands for a load already released. So a bitmap taken from the cache is
+valid only until then, which can happen whenever a load lands. A painter reads
+it again each frame; a draw command kept past a drop draws nothing. Work that
+holds draw commands across an `await` — `writePdf`, `exportPagesPdf`,
+`sceneToLbx` — takes `holdImageBitmaps()` around itself, which keeps what the
+cache drops open until the last hold is released. A `bitmapSrc` bitmap is its
+maker's, and the cache never closes it.

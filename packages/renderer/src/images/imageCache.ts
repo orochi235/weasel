@@ -7,7 +7,8 @@
  *
  * `src` is any browser-loadable image string: a remote URL, a `blob:` URL, or
  * a `data:image/…;base64,…` URI. The decoded bitmap lives only here, keyed by
- * `src` — never in node `data`.
+ * `src` — never in node `data`. The cache owns it, and closes it when it drops
+ * it, so a bitmap taken from the cache is valid only until then.
  */
 
 import { createEmitter } from '@weasel-js/registry';
@@ -99,6 +100,46 @@ function notify(): void {
   ready.emit();
 }
 
+/** Open {@link holdImageBitmaps} holds, and the bitmaps dropped while one is open. */
+let holds = 0;
+let closeLater = new Set<ImageBitmap>();
+
+/**
+ * Free `bitmap`'s textures and close it: the cache owns every bitmap it loads
+ * or adopts. While a {@link holdImageBitmaps} hold is open the close waits.
+ */
+function dispose(bitmap: ImageBitmap): void {
+  releaseImageSource(bitmap);
+  if (holds > 0) closeLater.add(bitmap);
+  else bitmap.close();
+}
+
+/** Whether an entry still holds `bitmap`, which a deferred close must then leave open. */
+function cached(bitmap: ImageBitmap): boolean {
+  for (const entry of cache.values()) if (entry.bitmap === bitmap) return true;
+  return false;
+}
+
+/**
+ * Keep every bitmap the cache drops open until the returned release is
+ * called. A bitmap taken from the cache is valid only until the cache drops
+ * it; work that holds draw commands across an `await` — an export — holds
+ * this around itself. Dropping still frees the bitmap's textures and its
+ * place in the budget at once. Release is idempotent.
+ */
+export function holdImageBitmaps(): () => void {
+  holds++;
+  let open = true;
+  return () => {
+    if (!open) return;
+    open = false;
+    if (--holds > 0) return;
+    const pending = closeLater;
+    closeLater = new Set();
+    for (const bitmap of pending) if (!cached(bitmap)) bitmap.close();
+  };
+}
+
 const bytesOf = (bitmap: ImageBitmap | undefined): number =>
   (bitmap ? bitmap.width * bitmap.height * 4 : 0);
 
@@ -148,7 +189,10 @@ function startLoad(src: string): void {
     (bitmap) => {
       // The entry may have been replaced/cleared mid-flight (reset, etc.);
       // only commit if this src is still the one we started loading.
-      if (cache.get(src) !== entry) return;
+      if (cache.get(src) !== entry) {
+        dispose(bitmap);
+        return;
+      }
       cache.set(src, {
         status: 'ready',
         bitmap,
@@ -200,13 +244,16 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
   };
   loader(src, size).then(
     (bitmap) => {
-      if (cache.get(src) !== entry) return;
+      if (cache.get(src) !== entry) {
+        dispose(bitmap);
+        return;
+      }
       v.pending = undefined;
       const old = entry.bitmap;
       entry.bitmap = bitmap;
       v.shrunkTo = grow ? undefined : target;
       v.scale = target;
-      if (old && old !== bitmap) releaseImageSource(old);
+      if (old && old !== bitmap) dispose(old);
       enforceBudget(src);
       notify();
     },
@@ -227,7 +274,12 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
  *  `drawnAt` is the size in device pixels the image is about to cover. A
  *  vector source ({@link isVectorImageSrc}) uses it to re-rasterize in
  *  power-of-two steps — the current raster is returned until the sharper one
- *  is ready. Raster sources ignore it. */
+ *  is ready. Raster sources ignore it.
+ *
+ *  The bitmap is valid until the cache drops it: when a load lands and it
+ *  goes to fit the budget or gives way to a sharper raster, or on
+ *  {@link releaseImage}. Read it again each frame rather than keep it; work
+ *  holding it across an `await` takes a {@link holdImageBitmaps} hold. */
 export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBitmap | undefined {
   if (mintedHere(src)) return held.get(src)?.deref();
   const entry = cache.get(src);
@@ -260,8 +312,8 @@ export function isBitmapSrc(src: string): boolean {
 export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
   if (mintedHere(src)) throw new Error(`weasel imageCache: ${src} was minted here; there is nothing to adopt`);
   const old = cache.get(src)?.bitmap;
-  if (old && old !== bitmap) releaseImageSource(old);
   cache.set(src, { status: 'ready', bitmap, readAt: ++reads });
+  if (old && old !== bitmap) dispose(old);
   enforceBudget(src);
   notify();
 }
@@ -319,7 +371,7 @@ export function imageStatus(src: string): ImageStatus {
 }
 
 /**
- * Forget `src`: drop its decoded bitmap, its decoded SVG, and the texture every
+ * Forget `src`: close its decoded bitmap, drop its decoded SVG and the texture every
  * live renderer holds for it, and abandon a load in flight. The cache is keyed
  * by `src` across every scene on the page, so it cannot know when the last use
  * is gone; whoever does know calls this. A later {@link getImageBitmap} for the
@@ -336,7 +388,7 @@ export function releaseImage(src: string): void {
   const entry = cache.get(src);
   cache.delete(src);
   forgetDecodedVector(src);
-  if (entry?.bitmap) releaseImageSource(entry.bitmap);
+  if (entry?.bitmap) dispose(entry.bitmap);
 }
 
 /** Load a `src` whose last load failed again. Does nothing for a `src` in any
@@ -371,4 +423,6 @@ export function _resetImageCacheForTests(): void {
   budgetBytes = DEFAULT_BUDGET_BYTES;
   reads = 0;
   readsAtLastPass = 0;
+  holds = 0;
+  closeLater = new Set();
 }

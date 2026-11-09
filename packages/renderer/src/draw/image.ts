@@ -35,7 +35,12 @@ const isMinified = (limit: [number, number], sw: number, sh: number, dw: number,
 const drawsWhole = (image: ImageBitmap, src: ImageDrawCommand['source']): boolean =>
   !src || (src.x <= 0 && src.y <= 0 && src.x + src.w >= image.width && src.y + src.h >= image.height);
 
+/** A closed bitmap reads as 0×0, and uploading one throws: the image cache
+ *  closes what it drops, and a command kept past that draws nothing. */
+const closed = (image: ImageBitmap): boolean => image.width === 0 || image.height === 0;
+
 export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
+  if (closed(cmd.image)) return;
   ctx.imageCache.upload(cmd.image, cmd.image);
   const whole = drawsWhole(cmd.image, cmd.source);
   if (whole && ctx.imageCache.lacksMipmaps(cmd.image)
@@ -78,7 +83,7 @@ export function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
 export function drawSprites(ctx: DrawContext, cmd: SpritesDrawCommand): void {
   const data = cmd.sprites;
   const count = Math.floor(data.length / SPRITE_STRIDE);
-  if (count === 0) return;
+  if (count === 0 || closed(cmd.image)) return;
 
   ctx.imageCache.upload(cmd.image, cmd.image);
   const sampling = cmd.sampling ?? 'linear';
