@@ -2,6 +2,7 @@
 '@weasel-js/core': patch
 '@weasel-js/select': patch
 '@weasel-js/react': patch
+'@weasel-js/labkit': patch
 ---
 
 Fixes to the canvas's Shift-click range, how selections hold their ids, per-anchor stroke data through the path commands, and `useNearViewport` in a second window.
@@ -11,3 +12,4 @@ Fixes to the canvas's Shift-click range, how selections hold their ids, per-anch
 - `useNearViewport` observes the viewport of the document its element is in, listening for that document's scrolls and its window's resizes, so an element in a popout window is measured against that window rather than the main one.
 - Cut at Crossings cuts a stroke's per-anchor widths and colors to each piece, blending them where a cut falls between two anchors, so a piece of a tapered stroke keeps its own part of the taper. Offset Path, Simplify and a warp drop per-anchor widths and colors (the stroke's and the fill's) whose length no longer matches the path's anchors, where they used to keep the whole path's arrays.
 - Join carries both paths' per-anchor stroke widths and colors (and fill colors) onto the joined path: a path joined by its far end has its run reversed and each width's sides traded, a merged end keeps the anchor that stays, and a path without an array fills its anchors with its own width or solid paint. `JoinPlan` gains `anchorData`, the patch laid over the kept node's data.
+- A press on the lens labkit's loupe already has selected reports it again through `onFocusLens`, taking the focus back from a chrome toggle, now that writing an unchanged selection tells no one.
