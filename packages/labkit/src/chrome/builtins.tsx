@@ -77,13 +77,14 @@ function groupFolds(
   return out;
 }
 
-/** How the Settings panel writes a trial's config. The trial's writes already run together into one undo step
- *  per gesture, so its drafts go there too, and the instrument follows every keystroke. */
 /** What the settings panel reads: the trial's config, and the lab's values for a schema it is drawn over. */
 function settingsConfig(ctx: TrialChromeContext): Record<string, unknown> {
   const own = ctx.config as Record<string, unknown>;
   return ctx.configSchema.over && ctx.overValues ? withOverValues(own, ctx.overValues) : own;
 }
+
+/** How the Settings panel writes a trial's config. The trial's writes already run together into one undo step
+ *  per gesture, so its drafts go there too, and the instrument follows every keystroke. */
 
 function settingsWrites(ctx: TrialChromeContext) {
   const write = (path: string, value: unknown): void => ctx.setConfig(path, value);
@@ -167,7 +168,8 @@ function trialActions(ctx: TrialChromeContext): TrialContribution[] {
 }
 
 /** Built-in ids contributed only while runtime state says so — the loupe
- *  toggle appears once a lens mounts, after the trial's first render, the
+ *  and eyedropper toggles and the picked color appear once a lens mounts, after
+ *  the trial's first render, the snapshot loader once a snapshot is saved, the
  *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
  *  meter once the trial has a view, which an `initialView` sized to the
  *  viewport does not until the canvas is measured. Marks, export, and the undo
@@ -178,6 +180,9 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'export',
   'marks',
   'loupe',
+  'eyedropper',
+  'picked-color',
+  'snapshot-load',
   'expand',
   'zoom-out',
   'zoom-in',

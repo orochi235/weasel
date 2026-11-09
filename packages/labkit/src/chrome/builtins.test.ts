@@ -4,7 +4,7 @@ import { fromConfigFields } from '../config/fromConfigField';
 import { resolveConfigSchema } from '../config/resolve';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
-import { builtinContributions } from './builtins';
+import { builtinContributions, TRANSIENT_BUILTINS } from './builtins';
 import type { ToolbarMenuItem, TrialChromeContext } from './types';
 
 const ctx: TrialChromeContext = {
@@ -277,5 +277,19 @@ describe('view readouts', () => {
     const out = builtinContributions(bare, ctxWithZoom(null));
     expect(out.map((c) => c.id)).not.toContain('fps');
     expect(out.map((c) => c.id)).not.toContain('zoom-control');
+  });
+});
+
+describe('TRANSIENT_BUILTINS', () => {
+  it('names every built-in that runtime state alone adds or removes', () => {
+    const full: TrialChromeContext = {
+      ...ctx,
+      hasLoupe: true,
+      canExpand: true,
+      savedSnapshots: [{ id: 's1', trialId: 't1', name: 'One' } as never],
+    };
+    const leanest = new Set(ids(withCanvas, ctxWithZoom(null)));
+    const varying = ids(withCanvas, full).filter((id) => !leanest.has(id));
+    expect(varying.filter((id) => !TRANSIENT_BUILTINS.has(id))).toEqual([]);
   });
 });

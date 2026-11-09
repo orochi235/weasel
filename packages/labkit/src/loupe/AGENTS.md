@@ -129,7 +129,7 @@ The toolbar toggle is `LoupeSwitchContext` (`src/trial/loupeSwitch.ts`, main
 bundle). A lens with no `enabled` prop calls `mount` and follows `on`; the
 trial offers its Loupe toggle while any lens is mounted. `enabled` opts a lens
 out of the switch entirely. Because the lens mounts after the trial's first
-render, `loupe` is in `TRANSIENT_BUILTINS`, so suppressing it before then is
+render, `loupe`, `eyedropper` and `picked-color` are in `TRANSIENT_BUILTINS`, so suppressing them before then is
 not a typo.
 
 The same switch carries the eyedropper: an Eyedropper toggle beside the
