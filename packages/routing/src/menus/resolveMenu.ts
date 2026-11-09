@@ -66,7 +66,6 @@ const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
-  // The params the run hands `trigger`, which judges `enabled` with them: the row must be judged the same way.
   const params = { ...ctx.params, ...it.params, ...(ctx.at ? { world: ctx.at } : {}) };
   const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at, params);
   const why = !off && reason !== undefined ? { disabledReason: reason } : {};
