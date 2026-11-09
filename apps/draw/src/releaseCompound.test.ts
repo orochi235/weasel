@@ -44,6 +44,21 @@ describe('releaseCompoundPaths', () => {
     }
   });
 
+  it("gives each piece the per-anchor stroke widths and colors of its own anchors", () => {
+    const { scene } = setup();
+    const id = asNodeId('compound');
+    const data = scene.get(id)!.data;
+    const vertexColors = Array.from({ length: 32 }, (_, i) => i);
+    scene.update(id, { data: { ...data, stroke: { width: 1, vertexWidths: [1, 2, 3, 4, 5, 6, 7, 8], vertexColors } } });
+    const [a, b] = releaseCompoundPaths(scene, ['compound']).map((piece) => scene.get(piece)!.data.stroke as {
+      vertexWidths: number[]; vertexColors: number[];
+    });
+    expect(a.vertexWidths).toEqual([1, 2, 3, 4]);
+    expect(b.vertexWidths).toEqual([5, 6, 7, 8]);
+    expect(a.vertexColors).toEqual(vertexColors.slice(0, 16));
+    expect(b.vertexColors).toEqual(vertexColors.slice(16));
+  });
+
   it('keeps a path with one subpath as it is', () => {
     const { scene, g } = setup();
     expect(releaseCompoundPaths(scene, ['below'])).toEqual([asNodeId('below')]);
