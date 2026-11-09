@@ -36,6 +36,15 @@ describe('actionShortcuts', () => {
       .toEqual([{ key: 'z', mod: true, alt: false, shift: false }]);
   });
 
+  it('gives a binding that requires Ctrl or Meta no chip, since a chip cannot draw either', () => {
+    expect(keySpecShortcut({ kind: 'key', key: 'Tab', mods: { ctrl: true } })).toBeUndefined();
+    expect(keySpecShortcut({ kind: 'key', key: 'q', mods: { meta: true } })).toBeUndefined();
+    expect(of([
+      { spec: { kind: 'key', key: 'q', mods: { ctrl: true } }, opts: {} },
+      { spec: { kind: 'key', key: 'q', mods: { mod: true, ctrl: true } }, opts: {} },
+    ])).toEqual([{ key: 'q', mod: true, alt: false, shift: false }]);
+  });
+
   it('collapses bindings that an optional modifier made identical', () => {
     // Held-or-not on one binding and a second spelling it out are one
     // shortcut to a reader, not two rows.
