@@ -50,8 +50,11 @@ describe('useEyedropperTool', () => {
       useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
     );
     expect(result.current.bindings).toEqual([
-      { spec: { kind: 'click' }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } },
+      { spec: { kind: 'click', target: { kindOf: expect.any(Function) } }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } },
     ]);
+    // It consults the hit, so an exclusive chrome claim leaves it a candidate.
+    const target = result.current.bindings![0].spec as { target: { kindOf: { readsAffordance: boolean } } };
+    expect(target.target.kindOf.readsAffordance).toBe(true);
     // The `pointerDown` claim gate is gone: it existed only to beat the other
     // dispatch pipeline's select tool to the press.
     expect(result.current.bindings?.some((b) => b.spec.kind === 'pointerDown')).toBe(false);

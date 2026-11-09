@@ -9,6 +9,7 @@ import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import type { ActionDeps, ImmediateParams, WorldPoint } from '@weasel-js/routing';
 import { viewWorldToScreen } from '@weasel-js/geom';
+import { hitPredicate } from '@weasel-js/gestures';
 
 /** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
@@ -32,6 +33,11 @@ export interface UseEyedropperToolOptions {
   /** Override the default `'alt'` hotkey trigger. Pass `null` to omit. */
   hotkey?: HotkeyTrigger | null;
 }
+
+/** Whatever is under the press, chrome included. Sampling reads the document
+ *  through chrome, so the target consults the hit only to stay a candidate
+ *  under an exclusive claim, where the tool's tier then outranks the chrome's. */
+const THROUGH_CHROME = { kindOf: hitPredicate(() => true) };
 
 /** The press in the screen space `colorAt` reads: through the canvas's view,
  *  or as it came where no view is sourced — a 3D host, whose dispatcher hands
@@ -110,11 +116,11 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
         group: 'view',
       },
       actions: [pickAction],
-      // One binding, no target filter: the action resolves the node itself
-      // and no-ops on empty. Sampling deliberately reads the PRESS point
-      // rather than the release — a 4px drift between the two can land on a
+      // One binding on any target: the action resolves the node itself and
+      // no-ops on empty. Sampling deliberately reads the PRESS point rather
+      // than the release — a 4px drift between the two can land on a
       // different node, and the color you meant is the one you pressed.
-      bindings: [{ spec: { kind: 'click' as const }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } }],
+      bindings: [{ spec: { kind: 'click' as const, target: THROUGH_CHROME }, actionId: 'eyedropper.pick', opts: { id: 'eyedropper.click' } }],
     });
   }, [opts.keybinding, opts.hotkey, pickAction]);
 }
