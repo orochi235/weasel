@@ -10,8 +10,9 @@ type Box = { x: number; y: number; width: number; height: number };
 
 /** What `group.enter` reads: the node under a point and the tree above it. */
 export interface EnterGroupOptions {
-  /** The node under the point, before any group above it is considered. */
-  pickHit: (world: WorldPoint) => string | null;
+  /** The node under the point, before any group above it is considered, as the
+   *  view `viewId` names sees it: `null` or absent for the surface. */
+  pickHit: (world: WorldPoint, viewId?: string | null) => string | null;
   tree: PressTargetTree;
 }
 
@@ -43,10 +44,10 @@ export function leaveGroupsOutside(
  * falls through to text editing, path editing and the mode triggers.
  */
 export function createEnterGroupAction(opts: EnterGroupOptions): Action {
-  const targetAt = (deps: ActionDeps | undefined, p: WorldPoint | undefined): string | null => {
+  const targetAt = (deps: ActionDeps | undefined, p: WorldPoint | undefined, viewId: string | null | undefined): string | null => {
     const entered = deps?.enteredGroup;
     if (!entered || !p) return null;
-    const hit = opts.pickHit(p);
+    const hit = viewId == null ? opts.pickHit(p) : opts.pickHit(p, viewId);
     if (hit === null) return null;
     const target = pressTarget(opts.tree, hit, entered.get());
     return isEnterable(opts.tree.getNode(target) as Parameters<typeof isEnterable>[0]) ? target : null;
@@ -56,12 +57,13 @@ export function createEnterGroupAction(opts: EnterGroupOptions): Action {
     label: 'Enter group',
     eligible: { capability: 'creates-selection' },
     requires: ['enteredGroup'],
-    enabled: (deps, at) => (targetAt(deps, at) !== null ? true : ActionDisabledReason.NotApplicable),
+    enabled: (deps, at, _carried, _params, viewId) =>
+      (targetAt(deps, at, viewId) !== null ? true : ActionDisabledReason.NotApplicable),
     invoker: {
       timing: 'immediate' as const,
       run: (deps, params) => {
-        const world = (params as ImmediateParams | undefined)?.world;
-        const target = world ? targetAt(deps, world) : null;
+        const p = params as ImmediateParams | undefined;
+        const target = p?.world ? targetAt(deps, p.world, p.viewId) : null;
         if (target !== null) deps.enteredGroup?.enter(target as NodeId);
       },
     },

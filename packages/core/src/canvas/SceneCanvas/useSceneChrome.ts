@@ -46,7 +46,7 @@ export function useSceneHover(args: {
         ? surfaceViewRegistry?.list().find((r) => r.id === target.id)
         : undefined;
       const hit = nodeAtPointRef.current?.(
-        { x, y }, reg ? { scale: view.scale, layerIsPainted: reg.layerIsPainted } : view,
+        { x, y }, reg ? { scale: view.scale, layerIsPainted: reg.layerIsPainted, viewId: reg.id } : view,
       );
       return hit ? { id: hit.id as NodeId } : null;
     },

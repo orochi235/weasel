@@ -5,7 +5,7 @@
  * overrides via the `geometry` arg take precedence.
  */
 import { drawnBoundsScene } from '../derivedPath';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'canvas/pickWalk';
@@ -134,6 +134,9 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
    *  the select tool's pointerdown classifier would settle on for a bare
    *  click. The canvas's `getNodeAtPoint` resolves through it. */
   pickBest: (world: WorldPoint, view?: PickView | null) => string | null;
+  /** `pickBest` for input routed to the view `viewId` names, as a press or a
+   *  double-click there is: `null` or absent for the surface. */
+  pickBestIn: (world: WorldPoint, viewId?: string | null) => string | null;
   /** World-space AABB of `id`, or null. Same as what the selection overlay +
    *  affordance hit-test need. Exposed so SceneCanvas can pass it to the
    *  `affordanceAt` thunk without re-deriving it. `view` is the camera the
@@ -222,11 +225,13 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   }), [adapter, d, alphaOf, layerIsPainted]);
   const selectRange = useMemo<SelectRangeDep>(() => ({ at: (level) => rangeAmong(between, adapter, level) }), [between, adapter]);
 
-  // A press routed to a view names only its id; the camera is the surface's, as it was
+  // Input routed to a view names only its id; the camera is the surface's, as it was
   // before the id was passed, so a 2D pick is unchanged and a 3D host learns the view.
+  const askedBy = useCallback((viewId?: string | null): PickView | undefined =>
+    (viewId == null ? undefined : { ...(getViewRef.current?.() ?? { scale: { x: 1, y: 1 } }), viewId }),
+  [getViewRef]);
   const pressPick = useMemo(() => (world: WorldPoint, viewId?: string | null): string[] =>
-    wiredHitBody(world, viewId == null ? undefined : { ...(getViewRef.current?.() ?? { scale: { x: 1, y: 1 } }), viewId }),
-  [wiredHitBody, getViewRef]);
+    wiredHitBody(world, askedBy(viewId)), [wiredHitBody, askedBy]);
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: pressPick,
@@ -243,10 +248,14 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     };
   }, [wiredHitBody, adapter]);
 
+  const pickBestIn = useCallback((world: WorldPoint, viewId?: string | null) =>
+    wiredPickBest(world, askedBy(viewId)), [wiredPickBest, askedBy]);
+
   return {
     selectTool,
     pickEvery: wiredHitBody,
     pickBest: wiredPickBest,
+    pickBestIn,
     boundsOf: wiredBoundsOf,
     boundsOfPose: wiredBoundsOfPose,
     planeOfNode: wiredPlaneOfNode,

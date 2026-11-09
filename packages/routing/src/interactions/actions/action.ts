@@ -176,12 +176,17 @@ export interface ActionDispatch extends BindingSource {
    * `opts.params`, or what `trigger` was handed. An action whose variants
    * differ in when they apply (reorder forward at the top of the stack)
    * answers per variant from them.
+   *
+   * `viewId` is the view the event landed in, as `InvocationCtx.viewId` names
+   * it, and `at` is in that view's world: an action that picks at `at` picks
+   * through that view. `deps` are already the ones routed to it.
    */
   enabled?: (
     deps?: ActionDeps,
     at?: { x: number; y: number },
     carried?: Carried,
     params?: Readonly<Record<string, unknown>>,
+    viewId?: string | null,
   ) => true | ActionUnavailable;
   /**
    * Whether the action reads as held down right now: bold on the selected

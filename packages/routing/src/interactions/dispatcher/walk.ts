@@ -155,7 +155,7 @@ export function walk(
     // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
     const deps = buildDepsFromRequires(action, ctx.depRegistry);
     const enabled = action.enabled
-      ? action.enabled(deps, worldPointOf(event), carriedBy(event), resolveParams(match.binding.opts?.params))
+      ? action.enabled(deps, worldPointOf(event), carriedBy(event), resolveParams(match.binding.opts?.params), ctx.viewId)
       : true;
     if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
     if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }
