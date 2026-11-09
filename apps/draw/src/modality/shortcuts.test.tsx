@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { ActionsProvider, DepRegistryProvider, SceneCanvas, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
+import { ActionsProvider, DepRegistryProvider, SceneCanvas, type BuiltinToolId, asNodeId, createScene, pathFromD, useDepRegistry, type DepRegistry, type PolygonPath } from '@weasel-js/core';
 import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
 import { DEFAULT_MODES, activeModeOf } from '@weasel-js/modes';
@@ -105,7 +105,7 @@ describe('entering path-edit from the keyboard', () => {
     machine: ReturnType<typeof createModeMachine>;
     scene: ReturnType<typeof createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>>;
     pathToEdit: () => string | null;
-    tool?: string;
+    tool?: BuiltinToolId;
   }) {
     const deps = useDepRegistry();
     depsRef.current = deps;
@@ -117,12 +117,12 @@ describe('entering path-edit from the keyboard', () => {
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         ambient={[keys]} modes={machine.registry} pathEdit={pathEdit}
-        {...(tool ? { defaultTools: ['select', tool], initialActiveTool: tool } : {})} />
+        {...(tool ? { defaultTools: ['select', tool] as const, initialActiveTool: tool } : {})} />
     );
   }
   const depsRef: { current: DepRegistry | null } = { current: null };
 
-  function setupPath(pathToEdit: () => string | null, tool?: string) {
+  function setupPath(pathToEdit: () => string | null, tool?: BuiltinToolId) {
     const machine = createModeMachine({ modes: DEFAULT_MODES, history: fakeHistory() as never });
     const scene = createScene<{ path: PolygonPath }, 'main', { x: number; y: number; width: number; height: number }>(
       { systemLayers: [{ id: 'main' }] },
