@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PLOT_THEME, seriesColor } from '../theme';
-import { compilePacket, packetPieces } from './compile';
+import { compilePacket, PACKET_MAX_BIT, PACKET_MAX_BITS_PER_ROW, packetPieces } from './compile';
+import { packetSchema } from './schema';
 import { setPacketLabel } from './edit';
 import { packetEditor } from './editor';
 import type { PacketData } from './types';
@@ -69,6 +70,26 @@ describe('compilePacket', () => {
     expect(layout.rows).toBe(7);
     expect(compilePacket({ kind: 'packet', fields: [] }, SIZE, PLOT_THEME, measure).marks).toEqual([]);
     expect(() => compilePacket(UDP, { width: 2, height: 2 }, PLOT_THEME, measure)).not.toThrow();
+  });
+});
+
+describe('packet size limits', () => {
+  it('holds a spec\'s bits per row to 128 and its fields to bit 4095, so huge ones draw rather than hang', () => {
+    const wide = byKey({ ...UDP, bitsPerRow: 1e9 });
+    expect(wide.layout.bitsPerRow).toBe(PACKET_MAX_BITS_PER_ROW);
+    const long = compilePacket({ kind: 'packet', fields: [{ start: 0, end: 1e12, label: 'Huge' }] }, SIZE, PLOT_THEME, measure).layout;
+    expect(long.rows).toBe((PACKET_MAX_BIT + 1) / 32);
+    expect(packetPieces({ start: 0, end: 1e12, label: 'Huge' }, 32).at(-1)).toEqual({ row: 127, lo: 4064, hi: PACKET_MAX_BIT });
+    expect(packetPieces({ start: 1e12, end: 1e12 + 7, label: 'Past' }, 32)).toEqual([]);
+    expect(byKey({ ...UDP, bitsPerRow: NaN }).layout.bitsPerRow).toBe(32);
+  });
+
+  it('clamps bits per row, a start and a width typed in the editor', () => {
+    const [, bitsPerRow] = packetSchema.fields;
+    expect(bitsPerRow!.set(UDP, 1e9).bitsPerRow).toBe(PACKET_MAX_BITS_PER_ROW);
+    const [, start, bits] = packetSchema.tables[0]!.columns(UDP, []);
+    expect(start!.set(UDP, [], 3, 1e9).fields[3]!.start).toBe(PACKET_MAX_BIT);
+    expect(bits!.set(UDP, [], 0, 1e12).fields[0]!.end).toBe(PACKET_MAX_BIT);
   });
 });
 

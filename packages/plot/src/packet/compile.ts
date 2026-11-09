@@ -30,15 +30,33 @@ const BOX = 32;
 const GAP = 6;
 const INSET = 2;
 
-/** The bits per row `data` lays out: its own, else 32. */
-export const packetBitsPerRow = (data: PacketData): number => Math.max(1, Math.floor(data.bitsPerRow ?? 32));
+/** The most bits a row holds: at 128 a bit's box is about 6 px across an 800 px chart, as narrow as a bit number stays legible. */
+export const PACKET_MAX_BITS_PER_ROW = 128;
 
-/** A field cut where it wraps: one piece per row it covers. None for a field that runs backward. */
+/** The last bit a packet draws, so 4096 bits, 512 bytes: 128 rows at the default 32 bits a row. */
+export const PACKET_MAX_BIT = 4095;
+
+/** The bits per row `data` lays out: its own, held to 1 to {@link PACKET_MAX_BITS_PER_ROW}, else 32. */
+export const packetBitsPerRow = (data: PacketData): number => {
+  const n = Math.floor(data.bitsPerRow ?? 32);
+  return Number.isNaN(n) ? 32 : Math.min(PACKET_MAX_BITS_PER_ROW, Math.max(1, n));
+};
+
+/** The last bit of `field` that is drawn, its own cut at {@link PACKET_MAX_BIT}; `null` for a field that runs
+ *  backward or starts past the last bit. */
+function lastBit(field: PacketField): number | null {
+  const end = Math.min(field.end, PACKET_MAX_BIT);
+  return field.start >= 0 && end >= field.start ? end : null;
+}
+
+/** A field cut where it wraps: one piece per row it covers, up to {@link PACKET_MAX_BIT}. None for a field that
+ *  runs backward or starts past it. */
 export function packetPieces(field: PacketField, bitsPerRow: number): PacketPiece[] {
-  if (!(field.start >= 0 && field.end >= field.start)) return [];
+  const end = lastBit(field);
+  if (end === null) return [];
   const pieces: PacketPiece[] = [];
-  for (let row = Math.floor(field.start / bitsPerRow); row <= Math.floor(field.end / bitsPerRow); row++) {
-    pieces.push({ row, lo: Math.max(field.start, row * bitsPerRow), hi: Math.min(field.end, (row + 1) * bitsPerRow - 1) });
+  for (let row = Math.floor(field.start / bitsPerRow); row <= Math.floor(end / bitsPerRow); row++) {
+    pieces.push({ row, lo: Math.max(field.start, row * bitsPerRow), hi: Math.min(end, (row + 1) * bitsPerRow - 1) });
   }
   return pieces;
 }
@@ -46,7 +64,7 @@ export function packetPieces(field: PacketField, bitsPerRow: number): PacketPiec
 /** Lays out `data`'s rows in `size` below `top`. */
 export function packetLayout(data: PacketData, size: { width: number; height: number }, top: number, theme: PlotTheme, measure: PlotMeasure): PacketLayout {
   const bitsPerRow = packetBitsPerRow(data);
-  const ends = data.fields.filter((f) => f.start >= 0 && f.end >= f.start).map((f) => f.end);
+  const ends = data.fields.map(lastBit).filter((end) => end !== null);
   const rows = ends.length === 0 ? 0 : Math.floor(Math.max(...ends) / bitsPerRow) + 1;
   const line = measure('0', theme.font).height;
   const bits = bandScale({

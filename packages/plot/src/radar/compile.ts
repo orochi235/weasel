@@ -18,6 +18,15 @@ const GAP = 6;
 const SWATCH = 10;
 const RING_STEPS = 72;
 
+/** The most rings a radar draws: 20 on a 150 px radius sits them 7.5 px apart, about as close as they stay apart to the eye. */
+export const RADAR_MAX_RINGS = 20;
+
+/** How many rings `data` draws: its `ticks`, held to 1 to {@link RADAR_MAX_RINGS}, else 5. */
+const radarRings = (data: RadarData): number => {
+  const n = Math.floor(data.ticks ?? 5);
+  return Number.isNaN(n) ? 5 : Math.min(RADAR_MAX_RINGS, Math.max(1, n));
+};
+
 /** The value range a radar spans: its own ends, else 0 out to its largest value. */
 export function radarDomain(data: RadarData): [number, number] {
   const values = data.curves.flatMap((c) => c.values).filter(Number.isFinite);
@@ -62,7 +71,7 @@ function labelPlacement(angle: number): { anchor: 'start' | 'middle' | 'end'; ba
 /** The rings at each tick, the spokes, and the axis labels beyond the rim. */
 function graticule(data: RadarData, scale: PolarScale, theme: PlotTheme, measure: PlotMeasure): PlotMark[] {
   const n = data.axes.length;
-  const rings = Math.max(1, Math.floor(data.ticks ?? 5));
+  const rings = radarRings(data);
   const [d0, d1] = scale.domain;
   const { center } = scale;
   const marks: PlotMark[] = [];

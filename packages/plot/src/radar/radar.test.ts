@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PLOT_THEME, seriesColor } from '../theme';
-import { compileRadar, radarDomain } from './compile';
+import { compileRadar, RADAR_MAX_RINGS, radarDomain } from './compile';
+import { radarSchema } from './schema';
 import { radarValueAt, setRadarAxisLabel, setRadarCurveLabel, setRadarValue } from './edit';
 import { radarEditor } from './editor';
 import type { RadarData } from './types';
@@ -141,5 +142,15 @@ describe('radar edits', () => {
     expect(radarEditor.text!(GRADES, { edit: 'axis', axis: 1 }, 'Physics').axes[1]!.label).toBe('Physics');
     expect(radarEditor.text!(GRADES, { edit: 'curve', curve: 0 }, 'Al').curves[0]!.label).toBe('Al');
     expect(radarEditor.text!(GRADES, { edit: 'other' }, 'x')).toBe(GRADES);
+  });
+});
+
+describe('radar size limits', () => {
+  it('draws at most 20 rings, from a spec or typed in the editor, so a huge count draws rather than hangs', () => {
+    const { marks } = byKey({ ...GRADES, ticks: 1e9 });
+    expect(marks.filter((m) => m.key.startsWith('grid:ring:'))).toHaveLength(RADAR_MAX_RINGS);
+    expect(byKey({ ...GRADES, ticks: NaN }).marks.filter((m) => m.key.startsWith('grid:ring:'))).toHaveLength(5);
+    const rings = radarSchema.fields.find((f) => f.key === 'ticks')!;
+    expect(rings.set(GRADES, 1e9).ticks).toBe(RADAR_MAX_RINGS);
   });
 });
