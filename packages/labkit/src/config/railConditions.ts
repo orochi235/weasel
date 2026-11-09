@@ -19,7 +19,7 @@ import type { ResolvedConfig } from './types';
 const ALWAYS: PrefCondition = { all: [] };
 const NEVER: PrefCondition = { any: [] };
 
-type Conditioned = { showIf?: PrefCondition; enableIf?: PrefCondition };
+type Conditioned = { showIf?: PrefCondition; enableIf?: PrefCondition; activeIf?: PrefCondition };
 
 /**
  * A resolved schema's conditions answered against its config, for a form drawn
@@ -56,13 +56,12 @@ function withFunctions(resolved: ResolvedConfig, config: Record<string, unknown>
   return fold(resolved.group, '');
 }
 
-/** `condition` where it reads an entry, which only the form has, with its other tests answered; else nothing. */
-function settled(
-  condition: PrefCondition | undefined,
+/** `condition` with every test but those reading an entry, which only the form has, answered. */
+function answered(
+  condition: PrefCondition,
   field: PrefConditionField,
   holds: PrefConditionJudge,
-): PrefCondition | undefined {
-  if (condition === undefined || !prefConditionReadsItem(condition)) return undefined;
+): PrefCondition {
   const fold = (c: PrefCondition): PrefCondition => {
     if ('all' in c) return { all: c.all.map(fold) };
     if ('any' in c) return { any: c.any.map(fold) };
@@ -73,11 +72,30 @@ function settled(
   return fold(condition);
 }
 
+/** `condition` where it reads an entry, answered as far as the config goes; else nothing, since
+ *  `applyPrefConditions` has already hidden or disabled by it. */
+function settled(
+  condition: PrefCondition | undefined,
+  field: PrefConditionField,
+  holds: PrefConditionJudge,
+): PrefCondition | undefined {
+  if (condition === undefined || !prefConditionReadsItem(condition)) return undefined;
+  return answered(condition, field, holds);
+}
+
+/** `node` with its conditions settled. An `activeIf` is always kept, answered: the form has no other way to be
+ *  told an action is pressed. */
 function settle<N extends Conditioned>(node: N, holds: PrefConditionJudge): N {
-  const { showIf, enableIf, ...rest } = node;
+  const { showIf, enableIf, activeIf, ...rest } = node;
   const shown = settled(showIf, 'showIf', holds);
   const enabled = settled(enableIf, 'enableIf', holds);
-  return { ...rest, ...(shown && { showIf: shown }), ...(enabled && { enableIf: enabled }) } as N;
+  const active = activeIf && answered(activeIf, 'activeIf', holds);
+  return {
+    ...rest,
+    ...(shown && { showIf: shown }),
+    ...(enabled && { enableIf: enabled }),
+    ...(active && { activeIf: active }),
+  } as N;
 }
 
 /** What is inside `leaf`, its fields, a list's or a map's item and a union's variants, with each condition settled. */
@@ -125,7 +143,7 @@ export function configVerdict(
         enableIf: _enabled,
         ...own
       } = drawn?.kind === leaf.kind ? drawn : leaf;
-      return settleInside(own, holds);
+      return settleInside(settle(own as PrefLeaf & Conditioned, holds), holds);
     },
   };
 }

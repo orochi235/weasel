@@ -207,6 +207,28 @@ describe('a lab’s header commands', () => {
     expect(evaluateEnabled(off)).toEqual({ enabled: false, reason: 'Nothing to publish' });
   });
 
+  it('gives a header item’s command the glyph, shortcut and grade its button shows', async () => {
+    const glyph = icon('ui:add');
+    const labChrome: LabContribution[] = [
+      {
+        id: 'x-wipe',
+        region: 'header',
+        item: { icon: glyph, label: 'Wipe', shortcut: '⌘⌫', danger: true, onActivate: () => {} },
+      },
+    ];
+    await renderSettled(
+      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+        <Grab />
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    expect(registry?.list().find((a) => a.id === 'lab.item.x-wipe')).toMatchObject({
+      icon: glyph,
+      shortcut: '⌘⌫',
+      grade: 'danger',
+    });
+  });
+
   it('registers nothing for a header render contribution', async () => {
     const labChrome: LabContribution[] = [{ id: 'x-render', region: 'header', render: () => null }];
     await renderSettled(

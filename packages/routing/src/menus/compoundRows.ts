@@ -4,6 +4,7 @@ import {
   type PrefField, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefObject, type PrefPaint,
   type PrefUnion,
 } from '@weasel-js/prefs';
+import { sep } from './separators';
 
 /** How values are read and written where a set of rows is drawn. */
 export interface MenuAccess {
@@ -23,7 +24,6 @@ export interface MenuDraw {
 }
 
 const noop = () => {};
-const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** A map key as one segment of a dotted path: a `.` or `\` in it is escaped with a `\`. */

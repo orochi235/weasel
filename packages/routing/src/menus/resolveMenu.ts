@@ -15,6 +15,7 @@ import { evaluateActive, evaluateEnabled } from '../interactions/actions/actionE
 import { actionSettingsParams, readActionSettings } from '../interactions/actions/actionSettings';
 import { endlessAllows } from '@weasel-js/quantity';
 import { isDev } from '@weasel-js/react';
+import { sep, tidy } from './separators';
 import type { MenuDef } from './types';
 import {
   fieldRows, listRows, mapRows, objectRows, paintRows, unionRows, type MenuAccess, type MenuDraw,
@@ -62,7 +63,6 @@ type Children = Record<string, PrefLeaf | PrefGroup | PrefSection>;
 const SUBMENU_AS: ReadonlySet<PrefGroupAs | undefined> = new Set(['menu', 'page', 'tab', 'panel']);
 const noop = () => {};
 const withAccess = (access?: string): { access?: string } => (access ? { access } : {});
-const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
@@ -164,6 +164,10 @@ function booleanRows(ctx: Ctx, leaf: PrefBoolean, key: string, path: string, off
   }];
 }
 
+/** What an enum option's row says besides its label: its glyph, what it does, and why it is disabled. */
+const optionNotes = ({ icon, description, disabled, disabledReason }: PrefEnum['options'][number]) =>
+  ({ ...(icon ? { icon } : {}), ...(description ? { description } : {}), ...(disabled && disabledReason ? { disabledReason } : {}) });
+
 function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: boolean): MenuEntry[] {
   const { values, onChange } = ctx.src;
   if (!values || !onChange) return [];
@@ -177,7 +181,7 @@ function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: bool
   return [
     sep(`${key}/<`),
     ...leaf.options.map((o): MenuEntry => ({
-      kind: 'item', key: `${key}/${o.value}`, label: o.label, checked: o.value === current, radio: true,
+      kind: 'item', key: `${key}/${o.value}`, label: o.label, checked: o.value === current, radio: true, ...optionNotes(o),
       disabled: off || o.disabled === true, run: () => onChange(path, write(o.value)),
     })),
     sep(`${key}/>`),
@@ -343,17 +347,6 @@ function groupRows(ctx: Ctx, children: Children, prefix: string, owner: PrefOwne
       out.push(sep(`${key}/<`), ...groupRows(ctx, kids, path, inner), sep(`${key}/>`));
     }
   }
-  return out;
-}
-
-/** Drop leading, trailing, and doubled separators. */
-function tidy(entries: MenuEntry[]): MenuEntry[] {
-  const out: MenuEntry[] = [];
-  for (const e of entries) {
-    if (e.kind === 'separator' && (!out.length || out[out.length - 1]!.kind === 'separator')) continue;
-    out.push(e);
-  }
-  if (out[out.length - 1]?.kind === 'separator') out.pop();
   return out;
 }
 

@@ -169,6 +169,16 @@ describe('resolveSchemaMenu: values', () => {
     run(es[2]);
     expect(src.onChange).toHaveBeenCalledWith('view.leaf', 'a');
   });
+  it("carries an enum option's glyph, description and reason onto its row", () => {
+    const glyph = toIconRef('test:flip')!;
+    const noted = pref.enum('Mode', 'a', [
+      { value: 'a', label: 'A', icon: glyph, description: 'Does A' },
+      { value: 'b', label: 'B', disabled: true, disabledReason: 'Needs C' },
+    ]);
+    const es = resolveSchemaMenu(view(noted), valued({ 'view.leaf': 'a' }));
+    expect(es[2]).toMatchObject({ icon: glyph, description: 'Does A' });
+    expect(es[3]).toMatchObject({ disabled: true, disabledReason: 'Needs C' });
+  });
   it('goes through a boolean encoding', () => {
     const italic = pref.boolean('Italic', false, {
       encoding: { read: (v) => v === 'italic', write: (on) => (on ? 'italic' : undefined) },

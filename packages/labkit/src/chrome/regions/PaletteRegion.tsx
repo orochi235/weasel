@@ -1,5 +1,6 @@
 import { Icon, ToolButton, ToolGroup, useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { RailItem, RegionContribution, ToolSlotContext, TrialChromeContext } from '../types';
+import { groupsOf } from './groupsOf';
 
 /** Props for `<PaletteRegion>`. */
 export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeContext> {
@@ -30,26 +31,28 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
       onKeyDown={onKeyDown}
     >
       <ToolGroup orientation="vertical">
-        {contributions.map((c) => {
-          if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
-          if (c.region !== region || !c.item) return null;
-          const item = c.item as RailItem<TCtx>;
-          const { icon, label, shortcut, disabled, disabledReason } = item;
-          const command = 'onActivate' in item ? item : null;
-          const run = command?.onActivate ?? null;
-          return (
-            <ToolButton
-              key={c.id}
-              icon={<Icon name={icon} size={16} />}
-              label={label}
-              shortcut={shortcut}
-              active={command ? command.pressed === true : ctx.activeToolId === c.id}
-              disabled={disabled}
-              disabledReason={disabledReason}
-              onClick={run ? () => run(ctx) : () => ctx.setActiveTool(c.id)}
-            />
-          );
-        })}
+        {groupsOf(contributions)
+          .flatMap((g) => g.entries)
+          .map((c) => {
+            if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
+            if (c.region !== region || !c.item) return null;
+            const item = c.item as RailItem<TCtx>;
+            const { icon, label, shortcut, disabled, disabledReason } = item;
+            const command = 'onActivate' in item ? item : null;
+            const run = command?.onActivate ?? null;
+            return (
+              <ToolButton
+                key={c.id}
+                icon={<Icon name={icon} size={16} />}
+                label={label}
+                shortcut={shortcut}
+                active={command ? command.pressed === true : ctx.activeToolId === c.id}
+                disabled={disabled}
+                disabledReason={disabledReason}
+                onClick={run ? () => run(ctx) : () => ctx.setActiveTool(c.id)}
+              />
+            );
+          })}
       </ToolGroup>
     </div>
   );

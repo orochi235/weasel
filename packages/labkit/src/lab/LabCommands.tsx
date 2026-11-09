@@ -67,6 +67,9 @@ function MarksCommand() {
 function HeaderItemCommand({ id, item }: { id: string; item: LabHeaderItem }) {
   const ctx = useLabChromeContext();
   useCommand(`lab.item.${id}`, item.label, () => item.onActivate(ctx), {
+    icon: item.icon,
+    ...(item.shortcut === undefined ? {} : { shortcut: item.shortcut }),
+    ...(item.danger ? { grade: 'danger' as const } : {}),
     enabled: () =>
       item.disabled ? (item.disabledReason ?? ActionDisabledReason.NotApplicable) : true,
     ...(item.pressed === undefined ? {} : { active: () => item.pressed === true }),
