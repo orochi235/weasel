@@ -42,6 +42,11 @@
   color: var(--wzl-fg);
 }
 
+/* Why the row is disabled: its own line, under the description. */
+.reason {
+  display: block;
+}
+
 /* What the row reads when it is auto: its own line, under the description. */
 .auto {
   composes: numeric from '@weasel-js/theme/numeric.module.css';

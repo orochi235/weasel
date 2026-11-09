@@ -18,6 +18,7 @@ interface ObjectRow {
   pair?: string;
   label: string;
   title?: string;
+  disabledReason?: string;
   /** Every field in the row brought its own chrome, so the row drops the
    *  label column and spans the block. One unlabeled field in an otherwise
    *  labeled pair would leave the row named after half of itself. */
@@ -46,6 +47,7 @@ function pairedRows(rendered: readonly RenderedCell[]): ObjectRow[] {
       ...(pair ? { pair: pair.key } : {}),
       label: pair?.label ?? leaf.name,
       title: leaf.description,
+      disabledReason: leaf.disabledReason,
       block,
       disabled,
       hidden,
@@ -77,7 +79,7 @@ export function objectFieldRows(
         {entry.controls}
       </div>
     ) : (
-      <LabeledRow key={entry.key} label={entry.label} title={entry.title} marked={marked(entry)} disabled={entry.disabled}
+      <LabeledRow key={entry.key} label={entry.label} title={entry.title} marked={marked(entry)} disabled={entry.disabled} disabledReason={entry.disabledReason}
         attrs={{ ...attrs(entry), ...hiddenAttrs(marked(entry)) }}>
         {entry.controls}
       </LabeledRow>

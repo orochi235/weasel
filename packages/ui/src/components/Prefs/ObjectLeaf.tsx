@@ -82,6 +82,7 @@ export function ObjectLeaf({
           layout={stacked ? 'block' : 'inline'}
           group={isGroup(field, held)}
           disabled={field.disabled}
+          disabledReason={child.disabledReason}
           hint={marked ? <HiddenBadge /> : undefined}
           className={stacked ? undefined : s.objectRow}
         >

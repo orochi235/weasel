@@ -19,7 +19,7 @@ export {
   visiblePrefSubtree,
 } from './helpers';
 export { prefClampNumber, prefNumberAt, type PrefBoundAt, type PrefBoundReader } from './bounds';
-export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions } from './action';
+export type { PrefAction, PrefActionContext, PrefActionControl, PrefActions, PrefGrade } from './action';
 export { prefTabRuns, type PrefTabRun } from './tabRuns';
 export { prefLeavesTagged, prefLeafTags } from './tags';
 export {
@@ -45,6 +45,7 @@ export {
 export {
   applyPrefConditions,
   applyPrefEntryConditions,
+  PREF_CONDITION_FIELDS,
   PREF_ENTRY,
   PREF_STATUS,
   prefJudge,
@@ -131,6 +132,7 @@ export {
   type PrefCustom,
   type PrefEnum,
   type PrefEnumBase,
+  type PrefEnumOption,
   type PrefNumberBase,
   type PrefEnumControl,
   type PrefEnumEncoding,

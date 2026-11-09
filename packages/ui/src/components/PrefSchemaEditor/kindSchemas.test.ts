@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefEnum, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
-import { BUILTIN_KINDS, attributeSchema, blankLeaf, changeKind, convertLeaf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
+import { BUILTIN_KINDS, CONDITION_KIND, attributeSchema, blankLeaf, changeKind, convertLeaf, leafOf, normalizeAttr, type CustomKinds } from './kindSchemas';
 import { nodeAt } from './schemaEdit';
 import { STUB } from './schemaExport';
 
@@ -65,9 +65,18 @@ describe('kindSchemas', () => {
     expect(attributeSchema(num).shared.readout).toBeDefined();
     expect(attributeSchema(blankLeaf('action')).shared.readout).toBeUndefined();
     const actions = attributeSchema(blankLeaf('actions'));
-    expect(Object.keys(actions.shared)).toEqual(['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf']);
+    expect(Object.keys(actions.shared)).toEqual(['name', 'description', 'tags', 'hidden', 'showIf', 'enableIf', 'disabledReason']);
     expect(Object.keys(actions.own)).toEqual(['group']);
     expect((convertLeaf({ ...num, readout: true } as PrefLeaf, 'string').leaf as { readout?: boolean }).readout).toBe(true);
+  });
+
+  it("offers why a leaf is disabled on every leaf with a control, and an action's grade, shortcut and pressed condition", () => {
+    expect(attributeSchema(num).shared.disabledReason?.kind).toBe('string');
+    const { own } = attributeSchema(blankLeaf('action'));
+    expect((own.grade as unknown as { options: Array<{ value: string }> }).options.map((o) => o.value)).toEqual(['info', 'success', 'warn', 'danger']);
+    expect([own.shortcut?.kind, own.activeIf?.kind]).toEqual(['string', CONDITION_KIND]);
+    const kept = convertLeaf({ ...num, disabledReason: 'Off' } as PrefLeaf, 'string').leaf;
+    expect((kept as { disabledReason?: string }).disabledReason).toBe('Off');
   });
 
   it('offers what a bar does with cells it has no room for, and offers it of nothing else', () => {
@@ -208,7 +217,7 @@ describe('kindSchemas', () => {
     const action = { kind: 'action', name: 'Undo', description: '', default: undefined, action: 'edit.undo' } as PrefLeaf;
     // The key is an attribute to edit, not something the schema fails to describe.
     const { own, readOnly } = attributeSchema(action);
-    expect(Object.keys(own)).toEqual(['action', 'label', 'control']);
+    expect(Object.keys(own)).toEqual(['action', 'label', 'control', 'grade', 'shortcut', 'activeIf']);
     expect(readOnly.map(([key]) => key)).not.toContain('action');
   });
 });

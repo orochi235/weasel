@@ -3,6 +3,7 @@
 // it and everything above it is enabled. Every surface that draws a schema
 // asks here.
 
+import type { PrefAction } from './action';
 import type { PrefAlias } from './alias';
 import { prefConditionReadsItem } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
@@ -14,7 +15,7 @@ import type { PrefLeaf, PrefObject } from './schema';
 import { PREF_ENTRY, PREF_STATUS, prefAliasStatus, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
 import type { PrefUnion } from './union';
 
-export { prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
+export { PREF_CONDITION_FIELDS, prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
 export { PREF_ENTRY, PREF_STATUS, prefStatusAt, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus, type PrefStatusAtOptions } from './statusAt';
 
 const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
@@ -39,6 +40,8 @@ export interface PrefConditionsApplied<T> {
    * since `shown` then holds none.
    */
   hidden: ReadonlySet<string>;
+  /** The value path of every `action` leaf whose `activeIf` holds, named as `disabled` names what is disabled. */
+  active: ReadonlySet<string>;
 }
 
 /** How {@link applyPrefConditions} treats what it would leave out. */
@@ -69,6 +72,7 @@ interface WalkOptions {
 function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: WalkOptions) {
   const disabled = new Set<string>();
   const hidden = new Set<string>();
+  const active = new Set<string>();
 
   const leaf = (node: PrefLeaf, path: string, above: PrefStatus, holds: PrefConditionJudge, entry?: string): PrefLeaf | null => {
     const own = prefStatusUnder(above, node, holds);
@@ -81,6 +85,8 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
   const inside = (node: PrefLeaf, path: string, status: PrefStatus, holds: PrefConditionJudge, above = status, entry?: string): PrefLeaf => {
     if (!status.shown) hidden.add(path);
     if (!status.enabled) disabled.add(path);
+    const { activeIf } = node as Partial<PrefAction>;
+    if (node.kind === 'action' && activeIf !== undefined && holds(activeIf, 'activeIf')) active.add(path);
     const owner: PrefOwner = entry === undefined ? { node, status, above } : { node, status, above, entry };
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, owner, holds);
@@ -137,7 +143,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
     return Object.keys(kept).length === 0 && !keepEmpty ? null : { ...node, members: kept };
   };
 
-  return { disabled, hidden, leaf, inside, members };
+  return { disabled, hidden, active, leaf, inside, members };
 }
 
 /**
@@ -162,7 +168,7 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   { keepEmpty = false, keepHidden = false, aliasOver, aliasHolds }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
   const walk = leafWalk({ keepEmpty, keepHidden, inItem: deferEntryConditions(holds), aliasOver: aliasOver ?? schema, aliasHolds });
-  const { disabled, hidden } = walk;
+  const { disabled, hidden, active } = walk;
 
   const group = (node: PrefGroup, path: string, above: PrefStatus): PrefGroup | null => {
     const status = prefStatusUnder(above, node, holds);
@@ -181,11 +187,11 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
     return Object.keys(children).length === 0 && !keepEmpty && path !== '' ? null : { ...node, children };
   };
 
-  if (!isPrefSection(schema)) return { shown: group(schema, '', PREF_STATUS) as T | null, disabled, hidden };
+  if (!isPrefSection(schema)) return { shown: group(schema, '', PREF_STATUS) as T | null, disabled, hidden, active };
   const status = prefStatusUnder(PREF_STATUS, schema, holds);
-  if (!status.shown && !keepHidden) return { shown: null, disabled, hidden };
+  if (!status.shown && !keepHidden) return { shown: null, disabled, hidden, active };
   const kept = walk.members(schema.members, '', { node: schema, status, above: PREF_STATUS }, holds);
-  return { shown: kept === schema.members ? schema : { ...schema, members: kept }, disabled, hidden };
+  return { shown: kept === schema.members ? schema : { ...schema, members: kept }, disabled, hidden, active };
 }
 
 /** One entry of a list or a map with the conditions that read it applied. */
@@ -196,6 +202,8 @@ export interface PrefEntryApplied {
   disabled: ReadonlySet<string>;
   /** With `keepHidden`, the path of every field of the entry that is not shown. */
   hidden: ReadonlySet<string>;
+  /** The path of every action in the entry whose `activeIf`, which reads the entry, holds. */
+  active: ReadonlySet<string>;
 }
 
 const ALWAYS: PrefConditionJudge = () => true;
@@ -217,5 +225,5 @@ export function applyPrefEntryConditions(
   const asked: PrefConditionJudge = (condition, field) => !prefConditionReadsItem(condition) || holds(condition, field);
   const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS });
   const status = prefStatusUnder(PREF_STATUS, { enableIf: item.enableIf }, asked);
-  return { item: walk.inside(item, path, status, asked, PREF_STATUS, path), disabled: walk.disabled, hidden: walk.hidden };
+  return { item: walk.inside(item, path, status, asked, PREF_STATUS, path), disabled: walk.disabled, hidden: walk.hidden, active: walk.active };
 }

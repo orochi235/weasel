@@ -7,8 +7,11 @@ import { prefSchemaHolding } from './holding';
 import type { PrefLeaf } from './schema';
 import { prefShownReader } from './shown';
 
-/** Which of a node's two conditions a {@link PrefConditionJudge} is asked about. */
-export type PrefConditionField = 'showIf' | 'enableIf';
+/** Every field a schema node holds a {@link PrefCondition} in. `activeIf` is an action leaf's alone. */
+export const PREF_CONDITION_FIELDS = ['showIf', 'enableIf', 'activeIf'] as const;
+
+/** Which of a node's conditions a {@link PrefConditionJudge} is asked about. */
+export type PrefConditionField = (typeof PREF_CONDITION_FIELDS)[number];
 
 /**
  * Says whether one condition holds. {@link prefJudge} makes one from a value

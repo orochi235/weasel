@@ -4,6 +4,7 @@ import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredAct
 import { useLeafAction } from '../Prefs/useLeafAction';
 import { ActionSettingsPopover } from '../ActionSettings/ActionSettingsPopover';
 import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
+import { useAppearance, type Grade } from '../appearance';
 import { BarInMenuContext } from './barInMenu';
 import s from './Bar.module.css';
 
@@ -28,6 +29,8 @@ export interface BarActionButtonProps {
   disabledReason?: string;
   /** Held down. Leave unset for an action with no pressed state. */
   active?: boolean;
+  /** How serious pressing it is: `danger` draws it in the danger color. */
+  grade?: Grade;
   /** It opens a dialog, which is open now. Leave unset for a button that opens nothing. */
   expanded?: boolean;
   /** Nothing answers to this key. The button is dead, and its tooltip says why. */
@@ -45,7 +48,8 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, icon, shortcut, row = false, menu = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
+  const { label, description, icon, shortcut, row = false, menu = false, disabled = false, active, grade, expanded, missing, onPress, disabledReason, preview } = props;
+  const appearance = useAppearance({ grade });
   const labeled = row || menu || props.labeled === true;
   const dead = missing !== undefined;
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
@@ -63,6 +67,7 @@ export function BarActionButton(props: BarActionButtonProps) {
         aria-disabled={disabled || dead || undefined}
         disabled={disabled && !dead && disabledReason === undefined}
         aria-pressed={active}
+        {...appearance}
         {...(expanded !== undefined ? { 'aria-haspopup': 'dialog' as const, 'aria-expanded': expanded } : {})}
         className={[s.action, words && s.actionLabeled, row && s.actionRow, menu && s.actionMenu].filter(Boolean).join(' ')}
         {...(dead ? { 'data-missing': missing } : {})}
@@ -105,18 +110,18 @@ function usePreviewWhileNear(preview: (() => () => void) | undefined): { show: (
 
 /** An `action` leaf as a bar's cell: an icon button, or icon and label for `control: 'button'`. A leaf naming a
  *  parametric action by its bare id is a button per variant. */
-export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
+export function BarAction({ leaf, path, disabled, active }: { leaf: PrefAction; path: string; disabled?: boolean; active?: boolean }) {
   const variants = actionLeafVariants(leaf, useRegisteredActions());
-  if (!variants) return <BarActionOne leaf={leaf} path={path} disabled={disabled} />;
+  if (!variants) return <BarActionOne leaf={leaf} path={path} disabled={disabled} active={active} />;
   return (
     <span className={s.actions}>
-      {variants.map((one, i) => <BarActionOne key={one.action} leaf={one} path={`${path}.${i}`} disabled={disabled} />)}
+      {variants.map((one, i) => <BarActionOne key={one.action} leaf={one} path={`${path}.${i}`} disabled={disabled} active={active} />)}
     </span>
   );
 }
 
-function BarActionOne({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
-  const { press, settings, ...button } = useLeafAction(leaf, path, disabled);
+function BarActionOne({ leaf, path, disabled, active }: { leaf: PrefAction; path: string; disabled?: boolean; active?: boolean }) {
+  const { press, settings, ...button } = useLeafAction(leaf, path, disabled, active);
   const menu = useContext(BarInMenuContext);
   if (settings) return <ActionSettingsPopover {...button} form={settings} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} />;
   return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} onPress={press} />;

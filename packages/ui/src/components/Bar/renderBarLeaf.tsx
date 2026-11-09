@@ -23,6 +23,8 @@ export interface BarLeaf {
   field: PropertyControlProps | null;
   /** The leaf takes no input. `field` and `row` carry it already; this reaches an action's button. */
   disabled?: boolean;
+  /** An action leaf's `activeIf` holds: its button is drawn pressed. */
+  active?: boolean;
   /** The leaf's row form: what a popover holds for a leaf whose value is made
    *  of others, and what a kind with no bar form draws. */
   row: () => ReactNode;
@@ -32,13 +34,13 @@ export interface BarLeaf {
  * A leaf's bar form: the one place a kind's control in a bar is decided, for
  * a bar in a form and a bar over a selection alike.
  */
-export function renderBarLeaf({ leaf, path, name, field, disabled, row }: BarLeaf): ReactNode {
+export function renderBarLeaf({ leaf, path, name, field, disabled, active, row }: BarLeaf): ReactNode {
   if (field !== null) {
     // A flag's icon is already its button's face.
     const icon = field.kind === 'boolean' ? undefined : resolveIcon(leaf.icon);
     return <BarField {...field} name={name} short={leaf.short} icon={icon} />;
   }
-  if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} disabled={disabled} />;
+  if (leaf.kind === 'action') return <BarAction leaf={leaf as PrefAction} path={path} disabled={disabled} active={active} />;
   if (leaf.kind === 'actions') return <BarActions leaf={leaf as PrefActions} path={path} disabled={disabled} />;
   if (leaf.kind === 'label') return <span className={s.words}>{leaf.name}</span>;
   const body = row();

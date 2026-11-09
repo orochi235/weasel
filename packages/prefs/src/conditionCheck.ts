@@ -5,6 +5,7 @@ import { formOf, ORDERINGS, partsOf, type PrefConditionValue, type PrefTest } fr
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
 import { prefLeafHolding, prefLeafHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
+import { PREF_CONDITION_FIELDS, type PrefConditionField } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import { isBuiltinPref, type PrefEnum, type PrefLeaf, type PrefObject } from './schema';
@@ -33,7 +34,7 @@ export interface PrefSchemaConditionProblem extends PrefConditionProblem {
    * value is read at.
    */
   at: string;
-  field: 'showIf' | 'enableIf';
+  field: PrefConditionField;
 }
 
 /** Where the node holding a condition sits, for what a condition alone does not say. */
@@ -141,16 +142,16 @@ export function checkPrefCondition(
   return partsOf(condition, form).flatMap((part) => checkPrefCondition(part, schema, site, over));
 }
 
-type Conditioned = { showIf?: unknown; enableIf?: unknown };
+type Conditioned = { [F in PrefConditionField]?: unknown };
 
-/** {@link checkPrefCondition} over every `showIf` and `enableIf` in `schema`, in schema order, each held to `over` as well. */
+/** {@link checkPrefCondition} over every condition in `schema` (`PREF_CONDITION_FIELDS`), in schema order, each held to `over` as well. */
 export function checkPrefConditions(
   schema: PrefGroup | PrefSection,
   over?: PrefGroup | PrefSection,
 ): PrefSchemaConditionProblem[] {
   const out: PrefSchemaConditionProblem[] = [];
   const own = (node: Conditioned, at: string, within: PrefList | PrefMap | undefined, isItem = false): void => {
-    for (const field of ['showIf', 'enableIf'] as const) {
+    for (const field of PREF_CONDITION_FIELDS) {
       if (node[field] === undefined) continue;
       const site = { ...(within ? { within } : {}), ...(isItem && field === 'showIf' ? { itemShowIf: true } : {}) };
       for (const problem of checkPrefCondition(node[field], schema, site, over)) out.push({ ...problem, at, field });

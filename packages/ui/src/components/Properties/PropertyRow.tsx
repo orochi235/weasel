@@ -67,6 +67,8 @@ export interface PropertyRowProps extends PropertyMetricProps {
   mixed?: boolean;
   /** The row's control takes no input: its label is drawn as a disabled control's is. */
   disabled?: boolean;
+  /** Why the row is disabled, read in its help tooltip while it is. */
+  disabledReason?: string;
   /** What the row reads when it is auto, whether or not it is now. Shown as the
    *  last line of the help tooltip, after the word `auto`; with no `description`
    *  the tooltip is that line alone. */
@@ -98,9 +100,11 @@ export function PropertyRow({
   changed = false,
   mixed = false,
   disabled = false,
+  disabledReason,
   autoValue,
   error,
 }: PropertyRowProps) {
+  const why = disabled ? disabledReason : undefined;
   const variantClass = variant === 'color' ? s.rowColor : variant === 'checkbox' ? s.rowCheckbox : '';
   // Each variant already lays out one way; a class is only needed for the
   // other one. The default variant stacks, so it needs `.rowInline`; color and
@@ -148,8 +152,8 @@ export function PropertyRow({
   );
   const head = (
     <span className={s.rowLabel} ref={labelRef}>
-      {description || autoValue != null ? (
-        <PropertyHelp label={label} description={description} autoValue={autoValue} within={`[${ROW_ATTR}]`}>
+      {description || why || autoValue != null ? (
+        <PropertyHelp label={label} description={description} autoValue={autoValue} disabledReason={why} within={`[${ROW_ATTR}]`}>
           {name}
         </PropertyHelp>
       ) : (

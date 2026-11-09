@@ -47,6 +47,20 @@ describe('attribute controls', () => {
     expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A' }, { value: 'c', label: 'c' }]);
   });
 
+  it("enum-options edits an option's description, and its reason only while it is disabled", () => {
+    const setValue = vi.fn();
+    const { rerender } = renderWithIcons(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', [{ value: 'a', label: 'A' }], setValue))}</>);
+    fireEvent.click(screen.getByRole('button', { name: 'A' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Description' }), { target: { value: 'Help' } });
+    expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A', description: 'Help' }]);
+    expect(screen.queryByRole('textbox', { name: 'Why disabled' })).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Disabled' }));
+    expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A', disabled: true }]);
+    rerender(<>{ATTR_RENDERERS['enum-options'](ctx('enum-options', [{ value: 'a', label: 'A', disabled: true, disabledReason: 'No' }], setValue))}</>);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Disabled' }));
+    expect(setValue).toHaveBeenLastCalledWith([{ value: 'a', label: 'A' }]);
+  });
+
   it('enum-options flags a value that is empty or repeats an earlier one, and still takes the edit', () => {
     const setValue = vi.fn();
     const rows = [{ value: 'a', label: 'A' }, { value: '', label: '' }, { value: 'a', label: 'Again' }];

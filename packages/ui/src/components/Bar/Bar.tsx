@@ -92,10 +92,10 @@ export function Bar(props: BarProps) {
   const over = props.over ?? schema;
   const targets = prefAliasTargets(over, (entry) => prefJudge(over, read, entry));
   const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
-  const { shown, disabled } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
+  const { shown, disabled, active } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
   const entryAt = entryApplier(judge);
   const { settles } = useParamsPolicy('panel');
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, entryAt, targets, settles };
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, active, entryAt, targets, settles };
   return (
     <BarLayout
       nodes={shown === null ? [] : shownBarNodes(groupBarNodes(orderPrefGroup(shown, props.order), '', (group, path) => <GroupBody draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
@@ -125,6 +125,8 @@ interface Draw {
   fields: readonly PrefFieldChoice[];
   /** Paths of the leaves and fields a failed `enableIf` disables. */
   disabled: ReadonlySet<string>;
+  /** Paths of the actions whose `activeIf` holds. */
+  active: ReadonlySet<string>;
   /** Answers the conditions that read an entry of a list or a map, for that entry. */
   entryAt: EntryAt;
   /** The schema the bar's aliases point into, as its conditions leave it: what an alias is drawn from. */
@@ -194,6 +196,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     disabled: draw.disabled.has(own),
     // The cell answers by the bar's own schema, at its own path; what is inside an alias's by its target's.
     disabledAt: at === undefined ? (under) => draw.disabled.has(under) : draw.targets.disabledAt,
+    ...(draw.active.has(own) ? { active: true } : {}),
     entryAt: at === undefined ? draw.entryAt : draw.targets.entryAt,
     settles: draw.settles,
   };
@@ -217,7 +220,7 @@ function leafRow(node: BarLeafNode, draw: Draw): ReactNode {
   const { leaf, path } = node;
   if (leaf.block) return <div key={path}>{control}</div>;
   return (
-    <PropertyRow key={path} label={barLeafName(leaf)} description={leaf.description} group disabled={draw.disabled.has(path)}>
+    <PropertyRow key={path} label={barLeafName(leaf)} description={leaf.description} group disabled={draw.disabled.has(path)} disabledReason={leaf.disabledReason}>
       {control}
     </PropertyRow>
   );
@@ -249,6 +252,7 @@ function GroupBody({ draw, group, path }: { draw: Draw; group: PrefGroup; path: 
     fields: draw.fields,
     targets: draw.targets,
     disabled: draw.disabled,
+    active: draw.active,
     entryAt: draw.entryAt,
     settles: draw.settles,
     leaves: {

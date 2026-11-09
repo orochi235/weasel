@@ -33,7 +33,7 @@ import type { ReactNode } from 'react';
 import { drawsOwn } from '../config/drawsOwn';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
-import { aliasTargetsOf, conditionedLeaf } from '../config/visible';
+import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
 import { boundAction } from './boundAction';
 import { type ControlPack, spansGrid } from './controlPack';
 import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
@@ -99,6 +99,7 @@ export function ControlRow<TC extends Record<string, unknown>>(props: ControlRow
             pref={action as PrefAction}
             path={props.path}
             disabled={props.disabled}
+            active={isLeafActive(resolved, props.path, props.config, props.over)}
           />
         )}
       </div>
@@ -291,12 +292,14 @@ function LeafRow<TC extends Record<string, unknown>>({
         description={description}
         layout={layout}
         disabled={disabled}
+        disabledReason={leaf.disabledReason}
         error={error}
       >
         <PrefActionButton
           pref={boundAction(leaf, config, setConfig) as PrefAction}
           path={path}
           disabled={disabled}
+          active={isLeafActive(resolved, path, config, over)}
         />
       </PropertyRow>
     );

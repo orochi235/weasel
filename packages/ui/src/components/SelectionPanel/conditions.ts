@@ -28,7 +28,8 @@ export function selectionJudge(
 /**
  * {@link effectiveSections} with each kind's conditions applied against
  * `nodes`: the sections without what a `showIf` hides, and the key of every
- * leaf, and the path of every field of an object leaf, an `enableIf` disables.
+ * leaf, and the path of every field of an object leaf, an `enableIf` disables, and in `active` the key of every
+ * action whose `activeIf` holds for every node.
  * With `keepHidden` nothing a `showIf` hides is left out, and `hidden` names
  * each such leaf and field the same way. `entryAt` answers the conditions
  * that read an entry of a list or a map, for the entry it is given.
@@ -45,9 +46,10 @@ export function conditionedSections(
   rawAliases = false,
   keepHidden = false,
   over?: PrefGroup | PrefSection,
-): { sections: PanelSection[]; disabled: ReadonlySet<string>; hidden: ReadonlySet<string>; entryAt: EntryAt; targets?: PrefAliasTargets } {
+): { sections: PanelSection[]; disabled: ReadonlySet<string>; hidden: ReadonlySet<string>; active: ReadonlySet<string>; entryAt: EntryAt; targets?: PrefAliasTargets } {
   const disabled = new Set<string>();
   const hidden = new Set<string>();
+  const active = new Set<string>();
   const schemas: PrefSection[] = [];
   // A panel draws every field a leaf holds, so its aliases do.
   const targetsIn = (of: PrefGroup | PrefSection): PrefAliasTargets =>
@@ -59,6 +61,7 @@ export function conditionedSections(
     const applied = applyPrefConditions(schema, selectionJudge(schema, nodes, undefined, over), { keepHidden, aliasOver: over ?? schema, aliasHolds: targets.holds });
     for (const path of applied.disabled) disabled.add(path);
     for (const path of applied.hidden) hidden.add(path);
+    for (const path of applied.active) active.add(path);
     return { schema: applied.shown, targets };
   });
   // The rule of `selectionJudge`, across every kind selected as across every node.
@@ -67,5 +70,5 @@ export function conditionedSections(
     return (condition, field) =>
       field === 'showIf' ? judges.some((holds) => holds(condition, field)) : judges.every((holds) => holds(condition, field));
   }, keepHidden);
-  return { sections, disabled, hidden, entryAt, ...(shared ? { targets: shared } : {}) };
+  return { sections, disabled, hidden, active, entryAt, ...(shared ? { targets: shared } : {}) };
 }

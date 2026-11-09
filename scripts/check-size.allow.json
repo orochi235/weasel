@@ -125,7 +125,7 @@
     "longestFunction": 136
   },
   "packages/labkit/src/controls/panelRows.tsx": {
-    "longestFunction": 209
+    "longestFunction": 206
   },
   "packages/labkit/src/lab/Lab.tsx": {
     "longestFunction": 191
@@ -253,7 +253,7 @@
     "longestFunction": 188
   },
   "packages/ui/src/components/Prefs/prefField.tsx": {
-    "longestFunction": 132
+    "longestFunction": 126
   },
   "packages/ui/src/components/Select/Select.tsx": {
     "longestFunction": 125
