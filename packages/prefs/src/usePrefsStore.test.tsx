@@ -194,4 +194,13 @@ describe('usePrefsStore', () => {
     await settle();
     expect(seen.live).toBe(0);
   });
+
+  it('resolves close as flush does, with whether every queued write landed', async () => {
+    const { storage } = counted();
+    const { result, unmount } = renderHook(() => usePrefsStore(SCHEMA, { storage, prefix: 'p.' }));
+    act(() => result.current.set('density', 30));
+    expect(await result.current.close()).toBe(true);
+    unmount();
+    await settle();
+  });
 });
