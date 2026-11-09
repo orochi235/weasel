@@ -81,6 +81,43 @@ describe('createTimeline', () => {
     expect(handle.time()).toBe(100);
   });
 
+  it('lands a seek into a later lap there at once, and samples it', () => {
+    const seen: number[] = [];
+    const { handle, advance } = makeTimeline({ loop: true, tracks: [numberTrack((v) => seen.push(v))] });
+    advance(10);
+    handle.seek(230);
+    expect(handle.time()).toBe(30);
+    expect(seen.at(-1)).toBe(30);
+    advance(20);
+    expect(handle.time()).toBe(40);
+  });
+
+  it('plays a finished timeline given laps on from a seek into a later lap', () => {
+    const { handle, advance } = makeTimeline({ tracks: [numberTrack(() => {})] });
+    advance(150);
+    handle.setLoop(true);
+    handle.seek(130);
+    expect(handle.time()).toBe(30);
+    // A revived entry's virtual time starts again at 0.
+    advance(20);
+    expect(handle.time()).toBe(50);
+  });
+
+  it('lands a seek past the last lap on its end', () => {
+    const { handle } = makeTimeline({ loop: 2, tracks: [numberTrack(() => {})] });
+    handle.seek(530);
+    expect(handle.time()).toBe(100);
+    expect(handle.loop()).toBe(false);
+  });
+
+  it('samples a seek to the end at once', () => {
+    const seen: number[] = [];
+    const { handle, advance } = makeTimeline({ tracks: [numberTrack((v) => seen.push(v))] });
+    advance(10);
+    handle.seek(100);
+    expect(seen.at(-1)).toBe(100);
+  });
+
   it('seeks backward', () => {
     const { handle, advance } = makeTimeline({ tracks: [numberTrack(() => {})] });
     advance(90);

@@ -39,9 +39,12 @@ const finite = (t: number): number => {
 const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : loop);
 
 /** Where a seek to `t` lands: not before 0, nor past `duration` unless laps are left, where it
- *  lands in a later lap. */
-const landing = (t: number, duration: number, lapsLeft: number): number =>
-  Math.max(0, lapsLeft > 0 ? finite(t) : Math.min(finite(t), duration));
+ *  lands in a later lap, `laps` on, and a time on a seam is the end of the lap before. */
+function landing(t: number, duration: number, lapsLeft: number): { at: number; laps: number } {
+  const to = Math.max(0, finite(t));
+  const laps = duration > 0 && to > duration ? Math.min(Math.ceil(to / duration) - 1, lapsLeft) : 0;
+  return { at: Math.min(to - laps * duration, duration), laps };
+}
 
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
@@ -200,7 +203,7 @@ export function createTimeline(
 
   // Not left to the next frame: whoever seeks or edits and then reads a target sees it.
   const sampleNow = (): void => {
-    if (live && playhead >= 0 && playhead < duration) sampler.apply(opts.tracks, playhead);
+    if (live && playhead >= 0 && playhead <= duration) sampler.apply(opts.tracks, playhead);
   };
   return {
     ...base,
@@ -215,10 +218,15 @@ export function createTimeline(
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
     seek(to) {
-      const t = landing(to, duration, loopsLeft);
+      const { at: t, laps } = landing(to, duration, loopsLeft);
       offset = t - lastVirtual;
       booker?.retract();
       playhead = t;
+      if (laps > 0) {
+        loopsLeft -= laps;
+        lap += laps;
+        if (report?.watched) report.lap(lap);
+      }
       events.place(t, true);
       booker?.seek();
       rearm();
