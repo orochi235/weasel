@@ -6,6 +6,7 @@
  */
 import { parseRoute } from '../grammar/routeGrammar';
 import { routeToSpec } from '../grammar/routeToSpec';
+import { eventKeyName } from '../grammar/keyRouteGrammar';
 import { ownValue } from './keySpecsFromMods';
 import type { GestureSpec, KeyHeldSpec, KeySpec, ModSpec } from './spec';
 
@@ -16,9 +17,6 @@ const MODIFIERS: Record<string, keyof ModSpec> = {
   shift: 'shift',
   mod: 'mod',
 };
-
-/** Key names whose `KeyboardEvent.key` is spelled otherwise. */
-const KEY_NAMES: Record<string, string> = { space: ' ', esc: 'Escape' };
 
 function parse(shortcut: string): { key: string; mods: ModSpec } {
   // A trailing '+' is the plus key: 'Mod++', or '+' alone.
@@ -32,7 +30,7 @@ function parse(shortcut: string): { key: string; mods: ModSpec } {
     if (!mod) throw new Error(`shortcut "${shortcut}": unknown modifier "${part}"`);
     mods[mod] = true;
   }
-  return { key: ownValue(KEY_NAMES, raw.toLowerCase()) ?? raw, mods };
+  return { key: eventKeyName(raw), mods };
 }
 
 /** A keystroke in the `Mod+Shift+K` form. Modifiers are case-insensitive:
@@ -73,7 +71,7 @@ export function keySpecRoute(spec: KeySpec | KeyHeldSpec): string | null {
   const k = Array.isArray(spec.key) ? spec.key[0]! : spec.key;
   const optional = MOD_ORDER.filter((m) => spec.mods?.[m] === 'optional');
   const required = MOD_ORDER.filter((m) => spec.mods?.[m] === true);
-  const arg = [k, ...optional].join('?');
+  const arg = [k === ' ' ? 'Space' : k, ...optional].join('?');
   const gesture = spec.kind === 'key' ? 'keyDown' : 'keyHeld';
   const route = [`[*:*] ${gesture}(${arg})`, ...required.map((m) => `+${m}`)].join(' ');
   return spellsKey(route, k) ? route : null;

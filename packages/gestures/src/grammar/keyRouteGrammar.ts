@@ -43,6 +43,16 @@ export function formatKeyRoute(r: ParsedKeyRoute): string {
   return r.optionalMods.length === 0 ? r.key : `${r.key}?${r.optionalMods.join('?')}`;
 }
 
+/** Key names whose `KeyboardEvent.key` is spelled otherwise, by lowercase name. */
+const KEY_NAMES: Readonly<Record<string, string>> = { space: ' ', esc: 'Escape' };
+
+/** The `KeyboardEvent.key` a key name in a route or a shortcut stands for:
+ *  `Space` is `' '` and `Esc` is `Escape`, in any case. Other names pass through. */
+export function eventKeyName(name: string): string {
+  const lower = name.toLowerCase();
+  return Object.hasOwn(KEY_NAMES, lower) ? KEY_NAMES[lower]! : name;
+}
+
 /** Build a runtime KeySpec from a parsed key route. Each optional modifier
  *  becomes `mods.<name>: 'optional'`. The matcher's `matchModifiers`
  *  honors `'optional'` uniformly across `mod`, `shift`, `alt`, `ctrl`,
@@ -50,7 +60,7 @@ export function formatKeyRoute(r: ParsedKeyRoute): string {
 export function keyRouteToSpec(r: ParsedKeyRoute): KeySpec {
   const mods: ModSpec = {};
   for (const m of r.optionalMods) mods[m] = 'optional';
-  const spec: KeySpec = { kind: 'key', key: r.key };
+  const spec: KeySpec = { kind: 'key', key: eventKeyName(r.key) };
   if (Object.keys(mods).length > 0) spec.mods = mods;
   return spec;
 }

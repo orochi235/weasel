@@ -62,6 +62,10 @@ describe('keySpecRoute', () => {
     expect(keySpecRoute(key(k))).toBeNull();
   });
 
+  it('writes the space bar by name', () => {
+    expect(keySpecRoute(held('Mod+Space'))).toBe('[*:*] keyHeld(Space) +mod');
+  });
+
   it('writes an optional modifier into the key slot', () => {
     expect(keySpecRoute({ kind: 'key', key: 'z', mods: { shift: 'optional', mod: true } }))
       .toBe('[*:*] keyDown(z?shift) +mod');

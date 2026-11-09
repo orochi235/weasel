@@ -9,6 +9,12 @@ describe('describeRoute — keyHeld', () => {
     );
   });
 
+  it('names the space bar whichever way the route spells it', () => {
+    expect(describeRoute(parseRoute('[initial] keyHeld( )'))).toBe(
+      'Fires when the user holds Space, while the tool is idle.',
+    );
+  });
+
   it('combines modifiers into the keyHeld phrase', () => {
     expect(describeRoute(parseRoute('[initial] keyHeld(Space) +mod'))).toBe(
       'Fires when the user holds Mod and holds Space, while the tool is idle.',

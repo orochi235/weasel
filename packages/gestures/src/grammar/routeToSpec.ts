@@ -1,7 +1,7 @@
 import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec } from '../ui/spec';
 import { parseTargetSpec } from '../ui/match';
 import { formatRoute, type ParsedRoute } from './routeGrammar';
-import { parseKeyRoute } from './keyRouteGrammar';
+import { keyRouteToSpec, parseKeyRoute } from './keyRouteGrammar';
 import { specKindForRouteGesture } from './specKinds';
 
 /**
@@ -75,10 +75,7 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case 'key':
     case 'key-held': {
       if (arg === undefined) return fail('a key spec needs a concrete key');
-      const { key, optionalMods } = parseKeyRoute(arg);
-      const optional: ModSpec = {};
-      for (const m of optionalMods) optional[m] = 'optional';
-      return withMods({ kind, key, ...(optionalMods.length > 0 ? { mods: optional } : {}) });
+      return withMods({ ...keyRouteToSpec(parseKeyRoute(arg)), kind });
     }
     case 'multiTouch':
     case 'multiTouchTap':

@@ -1,4 +1,5 @@
 import { getGestureDescriptor, type GestureName } from './gestures';
+import { eventKeyName } from './keyRouteGrammar';
 import type { ParsedRoute, PhaseAtom, ParsedModifiers, ModifierKey } from './routeGrammar';
 
 const MOD_NAMES: Record<ModifierKey, string> = {
@@ -122,7 +123,7 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       const verb = parsed.gesture === 'keyDown' ? 'presses'
         : parsed.gesture === 'keyUp' ? 'releases'
         : 'holds';
-      const key = arg ?? 'any key';
+      const key = arg === undefined ? 'any key' : eventKeyName(arg) === ' ' ? 'Space' : arg;
       return required.length > 0
         ? `the user holds ${joinAnd(required)} and ${verb} ${key}`
         : `the user ${verb} ${key}`;
