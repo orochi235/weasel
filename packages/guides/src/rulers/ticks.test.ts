@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IMPERIAL_INCHES, METRIC_MM, scaleBar, type UnitScope } from '@weasel-js/quantity';
+import { IMPERIAL_INCHES, METRIC_MM, PIXELS, scaleBar, type UnitScope } from '@weasel-js/quantity';
 import { rulerTicks } from './ticks';
 
 const INCHES: UnitScope = { system: IMPERIAL_INCHES };
@@ -58,6 +58,11 @@ describe('rulerTicks', () => {
   it('runs along a flipped axis in screen order', () => {
     const t = rulerTicks({ majorPx: 140, pxPerUnit: -10, start: 0, length: 250, scopes: [INCHES], minorPx: 1000 });
     expect(majors(t).map((k) => [k.at, k.label])).toEqual([[0, '0'], [120, '-1'], [240, '-2']]);
+  });
+
+  it('lays out nothing zoomed out past the longest step, where labeled ticks sit under a pixel apart', () => {
+    const t = rulerTicks({ pxPerUnit: 1e-7, start: 0, length: 1000, scopes: [{ system: PIXELS }] });
+    expect(t.ticks).toEqual([]);
   });
 
   it('lays out nothing along a ruler with no length', () => {
