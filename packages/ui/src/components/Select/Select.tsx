@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import {
   Select as RACSelect,
   Label,
@@ -195,7 +195,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
         >
           <SelectValue className={s.value}>
             {({ defaultChildren, isPlaceholder }) =>
-              isPlaceholder ? (placeholder ?? defaultChildren) : defaultChildren
+              isPlaceholder ? (placeholder ?? defaultChildren) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
             }
           </SelectValue>
           {width === 'fit' && (
@@ -251,6 +251,9 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     </RACSelect>
   );
 }
+
+/** True inside `SelectValue`'s copy of the selected row, which shows its label and not its note. */
+const InTrigger = createContext(false);
 
 /* `SelectValue` copies the selected row into the trigger, mark included; the
    trigger hides it, so the `width='fit'` sizer leaves it out. */
@@ -337,8 +340,12 @@ export function SelectItem({ children, icon, className, textValue, description, 
       <span className={s.optionLabel}>
         {/* A description slot needs a label slot beside it, or the row's name takes in the description too. */}
         {note ? withIcon(icon, <Text slot="label">{children}</Text>) : withIcon(icon, children)}
-        {note && <Text slot="description" className={s.note}>{note}</Text>}
+        {note && <OptionNote>{note}</OptionNote>}
       </span>
     </RACListBoxItem>
   );
+}
+
+function OptionNote({ children }: { children: string }) {
+  return useContext(InTrigger) ? null : <Text slot="description" className={s.note}>{children}</Text>;
 }

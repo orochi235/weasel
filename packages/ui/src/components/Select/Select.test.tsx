@@ -58,6 +58,13 @@ describe('Select', () => {
     expect(green).not.toHaveTextContent('Cool');
   });
 
+  it("keeps the chosen option's description out of the trigger", () => {
+    render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red', description: 'Warm' }]} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button', { name: /Red/ });
+    expect(trigger).not.toHaveTextContent('Warm');
+    expect(trigger).toHaveAccessibleName('Red Color');
+  });
+
   it('supports the children form with explicit SelectItem rows', () => {
     const onChange = vi.fn();
     render(
