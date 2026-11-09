@@ -52,6 +52,18 @@ describe('offenders', () => {
     expect(offenders(file('.a { margin-top: -8px; }'), RUNGS)).toEqual([]);
   });
 
+  it('catches a spacing literal after another declaration on its line', () => {
+    expect(offenders(file('.a { gap: 0; padding: 8px; }'), RUNGS)).toMatchObject([{ line: 1, rung: '4' }]);
+  });
+
+  it('catches a value continued on the next line, at the line it is on', () => {
+    expect(offenders(file('.a {\n  padding:\n    8px;\n}'), RUNGS)).toMatchObject([{ line: 3, rung: '4' }]);
+  });
+
+  it('ignores a declaration inside a comment', () => {
+    expect(offenders(file('/* padding: 8px; */\n.a { gap: 5px; }'), RUNGS)).toEqual([]);
+  });
+
   it('passes a value already on the ladder', () => {
     expect(offenders(file('.a { gap: var(--wzl-space-4); }'), RUNGS)).toEqual([]);
   });

@@ -87,10 +87,24 @@ function constraintsOf(stored: unknown): Constraints {
     const value = from[key];
     const fits = Array.isArray(fallback)
       ? Array.isArray(value)
-      : typeof value === typeof fallback && (typeof value !== 'number' || Number.isFinite(value));
+      : typeof value === typeof fallback && (typeof value !== 'number' || finite(value));
     if (fits) out[key] = value;
   }
   return out as unknown as Constraints;
+}
+
+const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+/** Each stored anchor with a name, a finite hue and lightness, and a chroma that is finite or absent. */
+function anchorsOf(stored: unknown): Anchor[] {
+  if (!Array.isArray(stored)) return [];
+  return stored.flatMap((a: unknown): Anchor[] => {
+    if (typeof a !== 'object' || a === null) return [];
+    const { name, hue, lightness, chroma } = a as Record<string, unknown>;
+    if (typeof name !== 'string' || !finite(hue) || !finite(lightness)) return [];
+    if (chroma === undefined) return [{ name, hue, lightness }];
+    return finite(chroma) ? [{ name, hue, lightness, chroma }] : [];
+  });
 }
 
 /** A stored state with every field filled from the current defaults rather than trusted: one stored before a
@@ -100,7 +114,7 @@ function stateOf(stored: unknown): LabState {
   return {
     c: constraintsOf(state.c),
     surfaceKey: state.surfaceKey === 'light' ? 'light' : 'dark',
-    anchors: Array.isArray(state.anchors) ? state.anchors : [],
+    anchors: anchorsOf(state.anchors),
   };
 }
 

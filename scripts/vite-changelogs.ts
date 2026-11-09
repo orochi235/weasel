@@ -5,6 +5,7 @@ import { parseChangesetFile } from '@changesets/parse';
 import { marked } from 'marked';
 import type { PluginOption } from 'vite';
 import type { ChangelogEntry, Release } from '../apps/shared/releases.ts';
+import { isChangesetFile } from './lib/changeset-bumps.mjs';
 
 /**
  * Virtual module exposing every package CHANGELOG as one release history,
@@ -136,7 +137,7 @@ export function readPendingChangesets(root: string): Release | null {
 
   const entries = new Map<string, ChangelogEntry>();
   for (const file of readdirSync(dir)) {
-    if (!file.endsWith('.md') || file.toUpperCase() === 'README.MD') continue;
+    if (!isChangesetFile(file)) continue;
     const parsed = parseChangeset(readFileSync(resolve(dir, file), 'utf8'));
     if (!parsed) continue;
     const id = file.replace(/\.md$/, '');

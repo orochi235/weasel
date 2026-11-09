@@ -8,3 +8,4 @@ export function scanImports(
   source: string,
   file: string,
 ): { specifiers: string[]; globs: { patterns: string[]; modules: boolean }[]; unreadable: string[] };
+export function importedNames(source: string, file: string): Map<string, Set<string>>;

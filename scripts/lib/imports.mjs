@@ -24,6 +24,24 @@ export function namedSpecifiers(source, file) {
   return specifiers(source, file, true);
 }
 
+/** What `file` needs each module it imports from to export: every name it imports or re-exports
+ *  by name at run time, `default` for a default import. A namespace import or `export *` names
+ *  nothing. */
+export function importedNames(source, file) {
+  const { staticImports, staticExports } = parse(source, file).module;
+  const out = new Map();
+  const add = (specifier, { importName, isType }) => {
+    if (isType) return;
+    const name = importName.kind === 'Default' ? 'default' : importName.kind === 'Name' ? importName.name : null;
+    if (name === null) return;
+    if (!out.has(specifier)) out.set(specifier, new Set());
+    out.get(specifier).add(name);
+  };
+  for (const { moduleRequest, entries } of staticImports) for (const e of entries) add(moduleRequest.value, e);
+  for (const { entries } of staticExports) for (const e of entries) if (e.moduleRequest) add(e.moduleRequest.value, e);
+  return out;
+}
+
 /**
  * What a browser-test scan needs from `file` in one parse: its run-time specifiers, every
  * `import.meta.glob` with literal patterns (and whether it loads the matches as modules or, through

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { judgeUses, matchLines, offendingLines } from './allowlisted-uses.mjs';
 
 describe('matchLines', () => {
-  it('reports each line a match starts on once, skipping comments', () => {
-    expect(matchLines('a a\n// a\n/* a\n a */\nb a\n', /\ba\b/g)).toEqual([1, 5]);
+  it('reports the line of each match, two on one line twice, skipping comments', () => {
+    expect(matchLines('a a\n// a\n/* a\n a */\nb a\n', /\ba\b/g)).toEqual([1, 1, 5]);
   });
 });
 

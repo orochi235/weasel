@@ -38,6 +38,26 @@ export function stripComments(source: string): string {
   return out;
 }
 
+/** Index ranges of `value` covered by a `var()`, fallback included: a length there belongs to the property the
+ *  variable names, not the one declaring it. */
+export function varSpans(value: string): [number, number][] {
+  const spans: [number, number][] = [];
+  for (const m of value.matchAll(/var\(/g)) {
+    let depth = 0;
+    for (let i = m.index + 3; i < value.length; i += 1) {
+      if (value[i] === '(') depth += 1;
+      else if (value[i] === ')') {
+        depth -= 1;
+        if (depth === 0) {
+          spans.push([m.index, i]);
+          break;
+        }
+      }
+    }
+  }
+  return spans;
+}
+
 export function lineAt(source: string, index: number): number {
   let n = 1;
   for (let i = 0; i < index; i += 1) if (source.charCodeAt(i) === 10) n += 1;

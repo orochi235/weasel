@@ -30,7 +30,11 @@ try {
   execFileSync('npx', ['typedoc', '--json', json, '--logLevel', 'Error'], { cwd: ROOT, stdio: ['ignore', 'ignore', 'inherit'] });
   const project = JSON.parse(readFileSync(json, 'utf8')) as JSONOutput.ProjectReflection;
 
-  const rows = readProject(project).map((reference) => {
+  const all = readProject(project);
+  const unknown = [...only].filter((name) => !all.some((reference) => reference.package === name));
+  if (unknown.length > 0) console.error(`undescribed: no published package named ${unknown.join(', ')}`);
+  const references = all.filter((reference) => only.size === 0 || only.has(reference.package));
+  const rows = references.map((reference) => {
     const names = reference.modules.flatMap((module) =>
       module.symbols
         .filter((symbol) => symbol.summary.trim() === '')
@@ -43,7 +47,6 @@ try {
   const width = Math.max(...rows.map((row) => row.package.length));
   for (const row of [...rows].sort((a, b) => b.names.length - a.names.length)) {
     if (row.names.length === 0) continue;
-    if (only.size > 0 && !only.has(row.package)) continue;
     console.log(`${row.package.padEnd(width)}  ${String(row.names.length).padStart(4)}`);
     if (!countsOnly) for (const name of row.names.sort()) console.log(`  ${name}`);
   }

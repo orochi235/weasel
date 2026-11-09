@@ -15,7 +15,8 @@
 
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { walk } from './lib/cssBlocks.ts';
+import { blocks, lineAt, stripComments, varSpans, walk } from './lib/cssBlocks.ts';
+import { isStylesheet } from './check-spacing.ts';
 
 /** The control ranks and their value in the default density, from the generated tokens. */
 export function ranks(css: string): Map<number, string> {
@@ -30,7 +31,7 @@ export function ranks(css: string): Map<number, string> {
   return out;
 }
 
-const DECL = /(?:^|[{;])\s*(height|min-height|block-size)\s*:\s*([^;}]*)[;}]/;
+const DECL = /^(?:height|min-height|block-size)\s*:/;
 const LEN = /(?<![-\d.])(\d+)px/g;
 
 export interface Offender {
@@ -40,25 +41,6 @@ export interface Offender {
   readonly token: string;
 }
 
-/** Index ranges covered by a `var()` fallback, which belongs to that property, not this one. */
-function varSpans(value: string): [number, number][] {
-  const spans: [number, number][] = [];
-  for (const m of value.matchAll(/var\(/g)) {
-    let depth = 0;
-    for (let i = m.index + 3; i < value.length; i += 1) {
-      if (value[i] === '(') depth += 1;
-      else if (value[i] === ')') {
-        depth -= 1;
-        if (depth === 0) {
-          spans.push([m.index, i]);
-          break;
-        }
-      }
-    }
-  }
-  return spans;
-}
-
 /** An exemption marker on the declaration or the line above it. */
 const EXEMPT = /not-a-control/;
 
@@ -66,26 +48,26 @@ export function offenders(files: readonly { path: string; source: string }[], ra
   const out: Offender[] = [];
   for (const { path, source } of files) {
     const lines = source.split('\n');
-    lines.forEach((line, i) => {
-      const d = DECL.exec(line);
-      if (!d) return;
-      // A box that happens to be rank-sized but is artwork: a fixed-aspect preview, a glyph.
-      if (EXEMPT.test(line) || (i > 0 && EXEMPT.test(lines[i - 1]))) return;
-      const value = d[2];
-      const spans = varSpans(value);
-      for (const m of value.matchAll(LEN)) {
-        const token = rankOf.get(Number(m[1]));
-        if (!token) continue;
-        if (spans.some(([a, b]) => a < m.index && m.index < b)) continue;
-        out.push({ file: path, line: i + 1, text: line.trim(), token });
+    const clean = stripComments(source);
+    for (const { decls } of blocks(clean)) {
+      for (const { text, index } of decls) {
+        if (!DECL.test(text)) continue;
+        // A box that happens to be rank-sized but is artwork: a fixed-aspect preview, a glyph.
+        const at = lineAt(clean, index);
+        if (EXEMPT.test(lines[at - 1]) || (at > 1 && EXEMPT.test(lines[at - 2]))) continue;
+        const spans = varSpans(text);
+        for (const m of text.matchAll(LEN)) {
+          const token = rankOf.get(Number(m[1]));
+          if (!token) continue;
+          if (spans.some(([a, b]) => a < m.index && m.index < b)) continue;
+          out.push({ file: path, line: lineAt(clean, index + m.index), text: text.replace(/\s+/g, ' '), token });
+        }
       }
-    });
+    }
   }
   return out;
 }
 
-// Foundations is the token showcase: its literals are the subject, not a lapse.
-const isStylesheet = (p: string) => /\.(css|less)$/.test(p) && !p.includes('.stories.') && !p.includes('/Foundations/');
 
 if (process.argv[1]?.endsWith('check-controls.ts')) {
   const root = join(import.meta.dirname, '..');

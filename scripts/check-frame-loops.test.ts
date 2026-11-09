@@ -36,4 +36,13 @@ describe('frameLoopLines', () => {
     expect(frameLoopLines('const id = setInterval(tick, 16);\nwindow.setInterval(tick, 16);\n')).toEqual([1, 2]);
     expect(frameLoopLines('clearInterval(id);\n// setInterval would leak\n')).toEqual([]);
   });
+
+  it('reads a comment opener inside a string as code', () => {
+    expect(frameLoopLines("const glob = 'src/*';\nrequestAnimationFrame(tick); // */\n")).toEqual([2]);
+    expect(frameLoopLines("const sep = 'a//b'; requestAnimationFrame(tick);\n")).toEqual([1]);
+  });
+
+  it('counts each use, two on one line included', () => {
+    expect(frameLoopLines('requestAnimationFrame(a); requestAnimationFrame(b);\n')).toEqual([1, 1]);
+  });
 });

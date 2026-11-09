@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cssDependencyKey } from './vitest-css-cache-key.ts';
+import { cssDependencyKey, cssDependencySpecifiers } from './vitest-css-cache-key.ts';
 
 const VITEST = join(dirname(createRequire(import.meta.url).resolve('vitest/package.json')), 'vitest.mjs');
 const PLUGIN = join(import.meta.dirname, 'vitest-css-cache-key.ts');
@@ -40,6 +40,14 @@ describe('cssDependencyKey', () => {
     write('a.css', "@import './b.css';\n@import './gone.css';\n");
     write('b.css', "@import './a.css';\n");
     expect(cssDependencyKey(join(root, 'a.css'))).toContain('gone.css');
+  });
+});
+
+describe('cssDependencySpecifiers', () => {
+  it('reads a sheet named after a comment opener inside a string', () => {
+    expect(cssDependencySpecifiers(".a { content: '/*'; }\n.b { composes: c from './c.module.css'; }\n.d { content: '*/'; }\n")).toEqual([
+      './c.module.css',
+    ]);
   });
 });
 

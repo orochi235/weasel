@@ -3,6 +3,18 @@
 // spelling of a level.
 import { parseChangesetFile } from '@changesets/parse';
 
+/** The names `@changesets/read` passes over; only README matches without regard to case. */
+const NOT_CHANGESETS = [/^README\.md$/i, 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
+
+/** Whether changesets reads the file named `name` in `.changeset/` as a changeset. */
+export function isChangesetFile(name) {
+  return (
+    name.endsWith('.md') &&
+    !name.startsWith('.') &&
+    !NOT_CHANGESETS.some((skip) => (typeof skip === 'string' ? skip === name : skip.test(name)))
+  );
+}
+
 /** Everything above `patch` needs sign-off. */
 const GATED = ['minor', 'major'];
 

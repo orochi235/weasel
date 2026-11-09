@@ -29,6 +29,14 @@ describe('ranks', () => {
 });
 
 describe('offenders', () => {
+  it('catches a height after another on its line', () => {
+    expect(offenders(file('.a { height: 5px; min-height: 24px; }'), RANKS)).toHaveLength(1);
+  });
+
+  it('catches a value continued on the next line', () => {
+    expect(offenders(file('.a {\n  min-height:\n    24px;\n}'), RANKS)).toMatchObject([{ line: 3 }]);
+  });
+
   it('catches a height frozen at a rank', () => {
     expect(offenders(file('.a { height: 24px; }'), RANKS)).toMatchObject([{ line: 1, token: 'control-h' }]);
   });

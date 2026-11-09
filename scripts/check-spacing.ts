@@ -9,7 +9,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { walk } from './lib/cssBlocks.ts';
+import { blocks, lineAt, stripComments, varSpans, walk } from './lib/cssBlocks.ts';
 
 /** px → rung. The ladder's own values, read from the generated tokens. */
 export function ladder(css: string): Map<number, string> {
@@ -22,7 +22,7 @@ const PROPS =
   'gap|row-gap|column-gap|padding|margin' +
   '|(?:padding|margin)-(?:top|right|bottom|left|block|inline)' +
   '|(?:padding|margin)-(?:block|inline)-(?:start|end)';
-const DECL = new RegExp(`(?:^|[{;])\\s*(${PROPS})\\s*:\\s*([^;}]*)[;}]`);
+const DECL = new RegExp(`^(?:${PROPS})\\s*:`);
 /** Not preceded by a minus, digit or dot: skips -4px and 1.5px. */
 const LEN = /(?<![-\d.])(\d+)px/g;
 
@@ -33,40 +33,22 @@ export interface Offender {
   readonly rung: string;
 }
 
-/** Index ranges covered by a `var()` fallback. */
-function varSpans(value: string): [number, number][] {
-  const spans: [number, number][] = [];
-  for (const m of value.matchAll(/var\(/g)) {
-    let depth = 0;
-    for (let i = m.index + 3; i < value.length; i += 1) {
-      if (value[i] === '(') depth += 1;
-      else if (value[i] === ')') {
-        depth -= 1;
-        if (depth === 0) {
-          spans.push([m.index, i]);
-          break;
-        }
-      }
-    }
-  }
-  return spans;
-}
-
 export function offenders(files: readonly { path: string; source: string }[], rungs: Map<number, string>): Offender[] {
   const out: Offender[] = [];
   for (const { path, source } of files) {
-    source.split('\n').forEach((line, i) => {
-      const d = DECL.exec(line);
-      if (!d) return;
-      const value = d[2];
-      const spans = varSpans(value);
-      for (const m of value.matchAll(LEN)) {
-        const rung = rungs.get(Number(m[1]));
-        if (!rung) continue;
-        if (spans.some(([a, b]) => a < m.index && m.index < b)) continue;
-        out.push({ file: path, line: i + 1, text: line.trim(), rung });
+    const clean = stripComments(source);
+    for (const { decls } of blocks(clean)) {
+      for (const { text, index } of decls) {
+        if (!DECL.test(text)) continue;
+        const spans = varSpans(text);
+        for (const m of text.matchAll(LEN)) {
+          const rung = rungs.get(Number(m[1]));
+          if (!rung) continue;
+          if (spans.some(([a, b]) => a < m.index && m.index < b)) continue;
+          out.push({ file: path, line: lineAt(clean, index + m.index), text: text.replace(/\s+/g, ' '), rung });
+        }
       }
-    });
+    }
   }
   return out;
 }

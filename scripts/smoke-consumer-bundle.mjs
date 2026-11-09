@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { isShipped } from './check-declared-imports.mjs';
-import { SOURCE, importSpecifiers, packageOf } from './lib/imports.mjs';
+import { SOURCE, importSpecifiers, importedNames, namedSpecifiers, packageOf } from './lib/imports.mjs';
 import { smokeIcons } from './smoke-consumer-icons.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -67,9 +67,6 @@ try {
   fail(`${coreDist} not found — run \`npm run build\` before the smoke test.`);
 }
 
-// Only real import/export statements: a bare grep would also match an import
-// sample inside a JSDoc block.
-const STMT = /^\s*(?:import|export)\b[^;'"]*?from\s*['"]([^'"]+)['"]/gm;
 const REPO_ALIASES = /^(core|domains|affordances|interactions|tools|canvas|debug)\//;
 
 // JS and .d.ts are tracked SEPARATELY. They come from two builds with two
@@ -82,8 +79,9 @@ const undeclared = new Set();
 const aliasLeaks = new Set();
 for (const file of distFiles) {
   const text = await readFile(join(coreDist, file), 'utf8');
-  const bucket = file.endsWith('.d.ts') ? seenDts : seenJs;
-  for (const [, spec] of text.matchAll(STMT)) {
+  const dts = file.endsWith('.d.ts');
+  const bucket = dts ? seenDts : seenJs;
+  for (const spec of (dts ? namedSpecifiers : importSpecifiers)(text, join(coreDist, file))) {
     if (REPO_ALIASES.test(spec)) aliasLeaks.add(`${spec}  (in ${file})`);
     if (!spec.startsWith('@weasel-js/')) continue;
     bucket.add(spec);
@@ -124,18 +122,10 @@ const walk = async (dir) => {
 };
 await walk(coreSrc);
 
-const IMPORT_STMT = /^\s*(import|export)\b([\s\S]*?)from\s*['"](@weasel-js\/[^'"]+)['"]/gm;
 const runtimeDeps = new Set();
 for (const file of srcFiles) {
-  const text = await readFile(file, 'utf8');
-  for (const [, , clause, spec] of text.matchAll(IMPORT_STMT)) {
-    const trimmed = clause.trim();
-    // `import type { … }` / `export type { … }` — no runtime binding.
-    if (/^type\b/.test(trimmed)) continue;
-    // Every named specifier individually marked `type` — also no binding.
-    const named = trimmed.match(/^\{([\s\S]*)\}$/);
-    if (named && named[1].split(',').every((s) => !s.trim() || /^type\s/.test(s.trim()))) continue;
-    runtimeDeps.add(spec.split('/').slice(0, 2).join('/'));
+  for (const spec of importSpecifiers(await readFile(file, 'utf8'), file)) {
+    if (spec.startsWith('@weasel-js/')) runtimeDeps.add(packageOf(spec));
   }
 }
 
@@ -220,11 +210,8 @@ console.log(
         const child = join(dir, e.name);
         if (e.isDirectory()) await walkDist(child);
         else if (e.name.endsWith('.js')) {
-          const text = await readFile(child, 'utf8');
-          for (const [, spec] of text.matchAll(
-            /^\s*(?:(?:import|export)\b[^;'"]*?from\s*|import\s*)['"](@weasel-js\/[^'"]+)['"]/gm,
-          )) {
-            externalized.add(spec.split('/').slice(0, 2).join('/'));
+          for (const spec of importSpecifiers(await readFile(child, 'utf8'), child)) {
+            if (spec.startsWith('@weasel-js/')) externalized.add(packageOf(spec));
           }
         }
       }
@@ -392,21 +379,18 @@ await smokeIcons({ repoRoot, workDir, nodeModules, external: [...thirdPartyDeps,
 // packages with `export *`, so esbuild cannot rule a name out and bundles a
 // missing one without complaint. Nor can a .d.ts import under skipLibCheck,
 // which resolves a missing name to `any`. Importing each name here, in the
-// consumer's own code, makes a missing one TS2305.
+// consumer's own code, makes a missing one TS2305. A stylesheet or other asset has no names to check.
 const siblingImports = new Map();
 for (const pkg of PACKAGES) {
   const dist = join(repoRoot, 'packages', pkg, 'dist');
   if (!existsSync(dist)) continue;
   for (const f of await readdir(dist, { recursive: true })) {
     if (!f.endsWith('.js')) continue;
-    const src = await readFile(join(dist, f), 'utf8');
-    for (const m of src.matchAll(/import\s*\{([^}]*)\}\s*from\s*['"](@weasel-js\/[^'"]+)['"]/g)) {
-      const names = siblingImports.get(m[2]) ?? new Set();
-      for (const part of m[1].split(',')) {
-        const name = part.trim().split(/\s+as\s+/)[0];
-        if (name) names.add(name);
-      }
-      siblingImports.set(m[2], names);
+    for (const [spec, imported] of importedNames(await readFile(join(dist, f), 'utf8'), join(dist, f))) {
+      if (!spec.startsWith('@weasel-js/') || /\.(?!m?js$)\w+$/.test(spec)) continue;
+      const names = siblingImports.get(spec) ?? new Set();
+      for (const name of imported) names.add(name);
+      siblingImports.set(spec, names);
     }
   }
 }
