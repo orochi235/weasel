@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from
 import { modsOf, type PressModifiers } from './useReorderDragList';
 import { useRemovedRowFocus, type FocusRow } from './useRemovedRowFocus';
 import { useTypeahead } from './useTypeahead';
+import { inlineDirection } from './useRovingTabIndex';
 
 /** What a list that folds tells {@link useRowNavigation}, so Right and Left open, close, and walk it. */
 export interface RowTree {
@@ -180,9 +181,10 @@ function rowKeyHandler({ rows, opts, typeahead, focus, focusLater, go }: KeyCtx)
       case 'activate': opts.onActivate!(id, modsOf(e)); return true;
       case 'type': return typeAhead(e.key, i) || act.held;
       case 'toggle': {
-        if (tree!.toggle(id) || e.key !== 'ArrowLeft') return true;
-        // A branch that would not close: Left steps to the parent instead.
-        const t = treeKey(rows, i, e.key, { ...treeShape!, canToggle: (r) => r.id !== id });
+        const dir = inlineDirection(e.currentTarget);
+        if (tree!.toggle(id) || e.key !== (dir === 'rtl' ? 'ArrowRight' : 'ArrowLeft')) return true;
+        // A branch that would not close: the closing arrow steps to the parent instead.
+        const t = treeKey(rows, i, e.key, { ...treeShape!, dir, canToggle: (r) => r.id !== id });
         return apply(id, i, e, t.handled && !('toggle' in t) ? { kind: 'move', at: t.at, extend: false } : null);
       }
     }
@@ -196,6 +198,7 @@ function rowKeyHandler({ rows, opts, typeahead, focus, focusLater, go }: KeyCtx)
       if (opts.onNudge(id, delta) !== false) focusLater(id);
       return true;
     }
-    return apply(id, i, e, rowKey(rows, i, e, shape, opts.textOf ? typeahead.searching() : false, isApplePlatform()));
+    const dirShape = { ...shape, dir: inlineDirection(e.currentTarget) };
+    return apply(id, i, e, rowKey(rows, i, e, dirShape, opts.textOf ? typeahead.searching() : false, isApplePlatform()));
   };
 }

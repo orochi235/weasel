@@ -228,7 +228,7 @@
     "longestFunction": 164
   },
   "packages/ui/src/components/ItemList/ItemList.tsx": {
-    "longestFunction": 183
+    "longestFunction": 169
   },
   "packages/ui/src/components/LayerList/LayerList.tsx": {
     "longestFunction": 134
@@ -273,6 +273,6 @@
     "longestFunction": 207
   },
   "packages/ui/src/components/Tree/useTreeDrag.ts": {
-    "longestFunction": 143
+    "longestFunction": 136
   }
 }

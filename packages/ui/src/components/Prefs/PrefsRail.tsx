@@ -1,5 +1,6 @@
 import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { useRovingTabIndex } from '../../useRovingTabIndex';
+import { arrowDir } from '@weasel-js/ui-logic';
+import { inlineDirection, useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
@@ -73,9 +74,10 @@ export function PrefsRail(props: PrefsRailProps) {
   });
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     const path = (e.target as HTMLElement).dataset.railFold;
-    if (foldable && path !== undefined && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+    const opens = arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) });
+    if (foldable && path !== undefined && opens !== 0) {
       e.preventDefault();
-      fold(path, e.key === 'ArrowRight');
+      fold(path, opens === 1);
       return;
     }
     roving.onKeyDown(e);

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type Ref } from 'react';
 import { useKitSetting } from '@weasel-js/react';
 import { isInControlWithin, startThresholdDrag, useLatest, type ThresholdDragHandle } from '@weasel-js/core';
-import { resolveDrop, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
+import { resolveDrop, type DropIndent, type DropMark, type DropRow, type ResolvedDrop, type TreeDropTarget } from '../../dropTarget';
 import { swallowNextClick, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { draggedIdsFor, isNoopMove, landsInside } from './treeMoves';
 import type { TreeNode } from './Tree';
 import { modsOf } from '../../useReorderDragList';
@@ -63,6 +64,24 @@ export interface TreeDragState {
   pointer: { x: number; y: number; outside: boolean } | null;
 }
 
+/** The point and the level indent {@link resolveDrop} reads, measured along the inline direction: levels step in
+ *  from the right in a right-to-left tree, so there both are read with x negated. */
+function indentAt(
+  visible: readonly TreeDragRow[], rowEl: (id: string) => HTMLElement | undefined, x: number, y: number,
+): [{ x: number; y: number }, DropIndent | undefined] {
+  const first = visible[0] && rowEl(visible[0].node.id);
+  const deep = visible.find((v) => v.level > 1);
+  const deepEl = deep && rowEl(deep.node.id);
+  const parentEl = deep?.parentId != null ? rowEl(deep.parentId) : undefined;
+  const flip = first && inlineDirection(first) === 'rtl' ? -1 : 1;
+  const start = (el: HTMLElement): number => {
+    const r = el.getBoundingClientRect();
+    return flip < 0 ? -r.right : r.left;
+  };
+  const indent = first && deepEl && parentEl ? { originX: start(first), indent: start(deepEl) - start(parentEl) } : undefined;
+  return [{ x: flip * x, y }, indent];
+}
+
 const IDLE: TreeDragState = { dragging: null, effect: 'move', mark: null, ghost: null, pointer: null };
 
 /** Pointer drag-to-reorder for `Tree`. Inert unless `enabled`. */
@@ -91,14 +110,7 @@ export function useTreeDrag(opts: UseTreeDragOptions) {
         childCount: v.node.children?.length ?? 0, top: r.top, height: r.height,
       });
     }
-    const first = visible[0] && rowEl(visible[0].node.id);
-    const deep = visible.find((v) => v.level > 1);
-    const deepEl = deep && rowEl(deep.node.id);
-    const parentEl = deep?.parentId != null ? rowEl(deep.parentId) : undefined;
-    const indent = first && deepEl && parentEl
-      ? { originX: first.getBoundingClientRect().left, indent: deepEl.getBoundingClientRect().left - parentEl.getBoundingClientRect().left }
-      : undefined;
-    const hit = resolveDrop(rows, { x, y }, indent);
+    const hit = resolveDrop(rows, ...indentAt(visible, rowEl, x, y));
     // A copy or a link dropped where its original sits is a second row beside it, and not nothing.
     if (landsInside(nodes, ids, hit.target) || (effect === 'move' && isNoopMove(nodes, ids, hit.target))) return null;
     if (canDrop && !canDrop(ids, hit.target, effect)) return null;

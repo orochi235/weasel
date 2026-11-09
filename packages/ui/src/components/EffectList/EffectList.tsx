@@ -75,9 +75,11 @@ export function EffectList<T extends EffectListItem>({
     onPress: (id) => onSelect?.(selected === id ? null : id),
   });
   const { targetIndex, draggedIds } = drag.state;
-  // A card removed with focus in it hands focus to the remove button of the card that takes its place.
-  const kept = useRemovedRowFocus<HTMLDivElement>(reorderItems, (id, els) =>
-    els.get(id)?.querySelector<HTMLElement>('[data-effect-remove]')?.focus());
+  // A card removed with focus in it hands focus to the remove button of the card that takes its place, else its number.
+  const kept = useRemovedRowFocus<HTMLDivElement>(reorderItems, (id, els) => {
+    const card = els.get(id);
+    (card?.querySelector<HTMLElement>('[data-effect-remove]') ?? card?.querySelector<HTMLElement>(`.${s.number}`))?.focus();
+  });
 
   // A browser drops focus from a node the reorder moves in the DOM.
   const refocus = useRef<HTMLElement | null>(null);
@@ -88,6 +90,8 @@ export function EffectList<T extends EffectListItem>({
   });
 
   const nudge = (e: KeyboardEvent, item: T, i: number): void => {
+    // A list nested in a card's body has already moved its own card.
+    if (e.defaultPrevented) return;
     const by = nudgeOf(e);
     if (by === null) return;
     e.preventDefault();

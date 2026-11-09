@@ -302,6 +302,20 @@ describe('Tree — keyboard', () => {
     expect(item('Fruit')).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('mirrors Right and Left in a right-to-left tree', () => {
+    const { container } = render(<Tree aria-label="Food" nodes={NODES} />);
+    container.setAttribute('dir', 'rtl');
+    act(() => item('Fruit').focus());
+    key('ArrowLeft');
+    expect(item('Fruit')).toHaveAttribute('aria-expanded', 'true');
+    key('ArrowLeft');
+    expect(focused()).toBe(item('Apple'));
+    key('ArrowRight');
+    expect(focused()).toBe(item('Fruit'));
+    key('ArrowRight');
+    expect(item('Fruit')).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('skips children of a collapsed branch', () => {
     render(<Tree aria-label="Food" nodes={NODES} />);
     act(() => item('Fruit').focus());

@@ -127,4 +127,13 @@ describe('PageTabs', () => {
     fireEvent.keyDown(tab('Cover'), { key: 'ArrowLeft', altKey: true });
     expect(onMove).toHaveBeenCalledTimes(2);
   });
+
+  it('moves a tab toward the arrow in a right-to-left strip', () => {
+    const { onMove, view } = setup();
+    view.container.setAttribute('dir', 'rtl');
+    fireEvent.keyDown(tab('Page 2'), { key: 'ArrowLeft', altKey: true });
+    expect(onMove).toHaveBeenLastCalledWith('b', 2);
+    fireEvent.keyDown(tab('Page 2'), { key: 'ArrowRight', altKey: true });
+    expect(onMove).toHaveBeenLastCalledWith('b', 0);
+  });
 });

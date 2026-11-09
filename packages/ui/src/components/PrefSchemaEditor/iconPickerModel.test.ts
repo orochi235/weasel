@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pageIndex } from './iconPickerModel';
+import { pageIndex, stepIndex } from './iconPickerModel';
 
 // Four rows of three cells, 40px apart.
 const boxes = Array.from({ length: 12 }, (_, i) => ({ top: Math.floor(i / 3) * 40, left: (i % 3) * 40, width: 32 }));
@@ -25,5 +25,15 @@ describe('pageIndex', () => {
 
   it('answers null for any other key', () => {
     expect(pageIndex(boxes, 1, 'ArrowDown', 85)).toBeNull();
+  });
+});
+
+describe('stepIndex', () => {
+  it('steps along the order with Left and Right, mirrored right to left', () => {
+    expect(stepIndex(boxes, 4, 'ArrowRight')).toBe(5);
+    expect(stepIndex(boxes, 4, 'ArrowLeft')).toBe(3);
+    expect(stepIndex(boxes, 4, 'ArrowLeft', 'rtl')).toBe(5);
+    expect(stepIndex(boxes, 4, 'ArrowRight', 'rtl')).toBe(3);
+    expect(stepIndex(boxes, 0, 'ArrowRight', 'rtl')).toBeNull();
   });
 });

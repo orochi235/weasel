@@ -16,15 +16,18 @@ const NODES: TreeNode[] = [
 ];
 const ROW = 24;
 
-/** Stamp each visible row's box, in document order, as real layout would. */
-function stamp(tree: HTMLElement) {
+/** Stamp each visible row's box, in document order, as real layout would: each level 16px in from its inline start. */
+function stamp(tree: HTMLElement, rtl = false) {
   const items = Array.from(tree.querySelectorAll<HTMLElement>('[role="treeitem"]'));
   items.forEach((li, i) => {
     const level = Number(li.getAttribute('aria-level'));
     const row = li.firstElementChild as HTMLElement;
+    const inset = (level - 1) * 16;
+    const left = rtl ? 0 : inset;
+    const right = rtl ? 200 - inset : 200;
     Object.defineProperty(row, 'getBoundingClientRect', {
       configurable: true,
-      value: () => ({ top: i * ROW, height: ROW, left: (level - 1) * 16, width: 200, bottom: (i + 1) * ROW, right: 200, x: 0, y: i * ROW } as DOMRect),
+      value: () => ({ top: i * ROW, height: ROW, left, width: right - left, bottom: (i + 1) * ROW, right, x: left, y: i * ROW } as DOMRect),
     });
   });
 }
@@ -212,6 +215,27 @@ describe('Tree — drag to reorder', () => {
     expect(onMove).toHaveBeenCalledWith(['z'], { parentId: 'g', index: 0 });
   });
 
+  it('climbs out of a subtree by how far toward the inline start the pointer is, either way the tree reads', () => {
+    for (const rtl of [false, true]) {
+      const { onMove, tree, row } = setup();
+      if (rtl) {
+        tree.setAttribute('dir', 'rtl');
+        stamp(tree, true);
+      }
+      const start = rtl ? 196 : 4;
+      const deep = rtl ? 170 : 30;
+      press(row('Ex'), 30, deep);
+      move(66, start);           // lower half of Why (48–72), the last row of Group, at level 1's start
+      release(66, start);
+      expect(onMove).toHaveBeenLastCalledWith(['x'], { parentId: null, index: 1 });
+      press(row('Ex'), 30, deep);
+      move(66, deep);            // the same, a level in
+      release(66, deep);
+      expect(onMove).toHaveBeenLastCalledWith(['x'], { parentId: 'g', index: 2 });
+      cleanup();
+    }
+  });
+
   it('marks the target row while dragging and clears it on drop', () => {
     const { row } = setup();
     press(row('Zed'), 80);
@@ -342,6 +366,18 @@ describe('Tree — keyboard moves', () => {
     await frame();
     focusOn('Zed');
     key('ArrowRight');
+    expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
+  });
+
+  it('outdents with Alt+Right and indents with Alt+Left in a right-to-left tree', async () => {
+    const { onMove, tree } = setup();
+    tree.setAttribute('dir', 'rtl');
+    focusOn('Ex');
+    key('ArrowRight');
+    expect(onMove).toHaveBeenLastCalledWith(['x'], { parentId: null, index: 1 });
+    await frame();
+    focusOn('Zed');
+    key('ArrowLeft');
     expect(onMove).toHaveBeenLastCalledWith(['z'], { parentId: 'g', index: 2 });
   });
 

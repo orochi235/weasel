@@ -226,6 +226,17 @@ describe('PrefsForm rail layout, foldable', () => {
     expect(snapping()).not.toBeInTheDocument();
   });
 
+  it('folds and unfolds with the arrows mirrored in a right-to-left rail', async () => {
+    const user = userEvent.setup();
+    const { container } = renderRail();
+    container.setAttribute('dir', 'rtl');
+    canvasEntry().focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(snapping()).toBeInTheDocument();
+    await user.keyboard('{ArrowRight}');
+    expect(snapping()).not.toBeInTheDocument();
+  });
+
   it('unfolds everything while filtering', async () => {
     const user = userEvent.setup();
     renderRail({ filterable: true });

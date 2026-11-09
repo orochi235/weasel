@@ -2,6 +2,7 @@ import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useIconVariant } from '@weasel-js/core';
 import { Input } from '../Input';
 import { Icon } from '../../icons/Icon';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { groupIcons, pageIndex, stepIndex } from './iconPickerModel';
 import s from './IconPicker.module.css';
 
@@ -32,7 +33,7 @@ export function IconPicker({ value, group, onChange }: {
     const from = flat.indexOf(current);
     const next = e.key === 'Home' ? 0
       : e.key === 'End' ? flat.length - 1
-      : pageIndex(boxes, from, e.key, list.current?.clientHeight ?? 0) ?? stepIndex(boxes, from, e.key);
+      : pageIndex(boxes, from, e.key, list.current?.clientHeight ?? 0) ?? stepIndex(boxes, from, e.key, inlineDirection(e.currentTarget));
     if (next === null) return;
     e.preventDefault();
     setActive(flat[next]!.ref);

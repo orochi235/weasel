@@ -13,9 +13,10 @@ import {
 } from 'react';
 import { CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/core';
 import { assignRef } from '@weasel-js/react';
-import { dropSide, LIST_ROLES, listMode } from '@weasel-js/ui-logic';
+import { arrowDir, dropSide, LIST_ROLES, listMode } from '@weasel-js/ui-logic';
 import { modsOf, REORDER_SKIP, type PressModifiers, type ReorderGhost } from '../../useReorderDragList';
 import { useRowNavigation } from '../../useRowNavigation';
+import { inlineDirection } from '../../useRovingTabIndex';
 import { DragGhost } from '../DragGhost';
 import s from './ItemList.module.css';
 
@@ -199,23 +200,9 @@ export const ItemList = forwardRef(function ItemList(
         return;
       case 'ArrowRight':
       case 'ArrowLeft':
-      case 'Escape': {
-        if (!controlCell) return;
-        const controls = Array.from(controlCell.querySelectorAll<HTMLElement>(CONTROL_SELECTOR))
-          .filter((c) => !c.matches(':disabled'));
-        if (onTarget) {
-          if (e.key !== 'ArrowRight' || !controls[0]) return;
-          e.preventDefault();
-          controls[0].focus();
-          return;
-        }
-        e.preventDefault();
-        const at = controls.findIndex((c) => c.contains(e.target as Node));
-        if (e.key === 'ArrowRight') controls[at + 1]?.focus();
-        else if (e.key === 'ArrowLeft' && at > 0) controls[at - 1]?.focus();
-        else target.focus();
+      case 'Escape':
+        if (controlCell) walkControls(e, controlCell, target, onTarget);
         return;
-      }
       default:
     }
   };
@@ -298,6 +285,25 @@ export const ItemList = forwardRef(function ItemList(
     </div>
   );
 });
+
+/** Left, Right and Escape in a grid row's control cell: from the row's own cell, the arrow toward the controls
+ *  enters them; from a control, the arrows step across them, and back out to the row's cell past the first. */
+function walkControls(e: KeyboardEvent<HTMLElement>, controlCell: HTMLElement, target: HTMLElement, onTarget: boolean): void {
+  const controls = Array.from(controlCell.querySelectorAll<HTMLElement>(CONTROL_SELECTOR))
+    .filter((c) => !c.matches(':disabled'));
+  const by = arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) });
+  if (onTarget) {
+    if (by !== 1 || !controls[0]) return;
+    e.preventDefault();
+    controls[0].focus();
+    return;
+  }
+  e.preventDefault();
+  const at = controls.findIndex((c) => c.contains(e.target as Node));
+  if (by === 1) controls[at + 1]?.focus();
+  else if (by === -1 && at > 0) controls[at - 1]?.focus();
+  else target.focus();
+}
 
 /** The dragged rows as the ghost draws them: leading and label, no controls. */
 function GhostRows({ rows, ids }: { rows: readonly ItemListRow[]; ids: readonly string[] }) {

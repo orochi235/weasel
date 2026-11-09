@@ -17,7 +17,7 @@ export function usableStops<L>(
   const byValue = new Map<number, SliderStop<L>>();
   for (const stop of stops) {
     const s = typeof stop === 'number' ? { value: stop } : stop;
-    if (s.value < min || s.value > max) continue;
+    if (!(s.value >= min && s.value <= max)) continue;
     const seen = byValue.get(s.value);
     if (!seen || (seen.label === undefined && s.label !== undefined)) byValue.set(s.value, s);
   }

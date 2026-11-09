@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { arrowDir } from '@weasel-js/ui-logic';
 
 /** Where focus goes once the field has rendered an edit: a chip by index, or the text field. */
 export type TokenFocusRequest = number | 'input';
@@ -11,9 +12,10 @@ export function labelOf(chip: HTMLElement | null | undefined): HTMLElement | nul
 /** What a key on a focused chip does: move focus or the chip itself one place, or remove the chip. */
 export type ChipKey = { kind: 'focus' | 'move'; by: -1 | 1 } | { kind: 'remove' };
 
-/** The {@link ChipKey} a key press means: Left and Right move focus, with Alt the chip; Backspace and Delete remove. */
-export function chipKey(e: { key: string; altKey: boolean }): ChipKey | null {
-  const by = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+/** The {@link ChipKey} a key press means: Left and Right move focus, with Alt the chip, mirrored under `'rtl'`;
+ *  Backspace and Delete remove. */
+export function chipKey(e: { key: string; altKey: boolean }, dir: 'ltr' | 'rtl' = 'ltr'): ChipKey | null {
+  const by = arrowDir(e.key, { orientation: 'horizontal', dir });
   if (by !== 0) return { kind: e.altKey ? 'move' : 'focus', by };
   return e.key === 'Backspace' || e.key === 'Delete' ? { kind: 'remove' } : null;
 }

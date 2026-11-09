@@ -328,6 +328,19 @@ describe('ItemList', () => {
       expect(cell('A')).toHaveFocus();
     });
 
+    it('walks the controls with the arrows mirrored in a right-to-left list', () => {
+      const { container } = render(<ItemList selection="single" rows={rows(() => {})} />);
+      container.setAttribute('dir', 'rtl');
+      act(() => { cell('A').focus(); });
+      fireEvent.keyDown(cell('A'), { key: 'ArrowLeft' });
+      expect(btn('eye a')).toHaveFocus();
+      fireEvent.keyDown(btn('eye a'), { key: 'ArrowLeft' });
+      expect(btn('lock a')).toHaveFocus();
+      fireEvent.keyDown(btn('lock a'), { key: 'ArrowRight' });
+      fireEvent.keyDown(btn('eye a'), { key: 'ArrowRight' });
+      expect(cell('A')).toHaveFocus();
+    });
+
     it('moves between rows from a control too', () => {
       render(<ItemList selection="single" rows={rows(() => {})} />);
       act(() => { btn('eye a').focus(); });

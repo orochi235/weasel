@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
-import { imeKey } from '@weasel-js/ui-logic';
+import { arrowDir, imeKey } from '@weasel-js/ui-logic';
+import { inlineDirection } from '../../useRovingTabIndex';
 import f from '../field.module.css';
 import { TokenChip } from './TokenChip';
 import { useTokenDrag } from './tokenDrag';
@@ -105,13 +106,13 @@ export function TokenField<T>({
     if (SEPARATORS.has(e.key) && (e.key !== 'Enter' || draft.trim() !== '')) {
       e.preventDefault();
       if (draft.trim() !== '') commit();
-    } else if (value.length > 0 && caretAtStart && (e.key === 'Backspace' || e.key === 'ArrowLeft')) {
+    } else if (value.length > 0 && caretAtStart && (e.key === 'Backspace' || arrowDir(e.key, { orientation: 'horizontal', dir: inlineDirection(e.currentTarget) }) === -1)) {
       e.preventDefault();
       focus.request(value.length - 1);
     }
   };
   const onChipKey = (e: KeyboardEvent<HTMLElement>, at: number): void => {
-    const act = e.target === e.currentTarget && !disabled ? chipKey(e) : null;
+    const act = e.target === e.currentTarget && !disabled ? chipKey(e, inlineDirection(e.currentTarget)) : null;
     if (act === null) return;
     e.preventDefault();
     if (act.kind === 'remove') remove(at);

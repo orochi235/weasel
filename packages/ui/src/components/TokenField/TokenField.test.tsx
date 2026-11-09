@@ -100,6 +100,21 @@ describe('TokenField', () => {
     expect(document.activeElement).toBe(field());
   });
 
+  it('mirrors the arrow keys in a right-to-left field', () => {
+    const onChange = vi.fn();
+    const { container } = renderWithIcons(<Controlled initial={['a', 'b', 'c']} onChange={onChange} reorder />);
+    container.setAttribute('dir', 'rtl');
+    fireEvent.keyDown(field(), { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(chip('c'));
+    fireEvent.keyDown(chip('c'), { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(chip('b'));
+    fireEvent.keyDown(chip('b'), { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(chip('c'));
+    act(() => chip('a').focus());
+    fireEvent.keyDown(chip('a'), { key: 'ArrowLeft', altKey: true });
+    expect(onChange).toHaveBeenLastCalledWith(['b', 'a', 'c']);
+  });
+
   it('moves a chip with Alt+Arrow when it reorders, and keeps focus on it', () => {
     const onChange = vi.fn();
     renderWithIcons(<Controlled initial={['a', 'b', 'c']} onChange={onChange} reorder />);
