@@ -4,6 +4,9 @@ import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 import { POSE, makeScene, type Data } from './testing/makeScene';
+import { specsFromSerialized } from './serialization';
+import { PAGE_RUN, PAGE_RUN_LAYOUT } from '../pages/pageRunLayout';
+import { PAGE_CLIP, pageClip } from '../pages/pageClip';
 
 describe('scene.toJSON', () => {
   it('captures a flat scene with no parents', () => {
@@ -217,6 +220,20 @@ describe('sceneFromJSON', () => {
       nodes: [{ id: 'bed', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPoseKey: 'toString' }],
     };
     expect(() => sceneFromJSON(json, { registry: { clipFromPose: {} } })).toThrow(/unknown clipFromPose key 'toString'/);
+  });
+
+  it('resolves the kit\'s own keys through specsFromSerialized, whatever registry it is handed', () => {
+    const json: SerializedScene<Data, 'structures', typeof POSE> = {
+      version: 3,
+      systemLayers: [{ id: 'structures' }],
+      nodes: [
+        { id: 'run', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'run' }, layoutKey: PAGE_RUN },
+        { id: 'page', kind: 'group', layer: 'structures', pose: POSE, data: { label: 'page' }, parent: 'run', clipFromPoseKey: PAGE_CLIP },
+      ],
+    };
+    const [run, page] = specsFromSerialized(json, { clipFromPose: {} });
+    expect(run.layout).toBe(PAGE_RUN_LAYOUT);
+    expect(page.clipFromPose).toBe(pageClip);
   });
 
   it('accepts a higher-layer child subtree in JSON (renders above its parent)', () => {

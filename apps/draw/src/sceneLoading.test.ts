@@ -38,6 +38,17 @@ describe('draw pages', () => {
     expect(scene.get('starter-1' as never)).toMatchObject({ parent: 'page-1', pose: { x: 80, y: 80 } });
   });
 
+  it('keeps the page run laid out and each page clipping, fresh and through a reload', () => {
+    const check = () => {
+      const specs = loadInitial();
+      expect(specs.find((s) => s.pageRun)?.layout).toBeDefined();
+      expect(specs.find((s) => s.page)?.clipFromPose).toBeDefined();
+    };
+    check();
+    save(loaded().toJSON());
+    check();
+  });
+
   it('brings back the pages a drawing saved as a document value, each root on its page', () => {
     const pages = [{ id: 'page-1', width: 794, height: 1123 }, { id: 'page-2', name: 'Back', ...LETTER }];
     save({ version: 2, nodes: [node('m', 'mark', 794 + 40 + 5)], doc: { 'core:pages': { pages } } });

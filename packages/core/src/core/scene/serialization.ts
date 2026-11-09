@@ -10,6 +10,7 @@ import { treePreorder } from './treeOrder';
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
 import { localizeWorldPoses } from './worldSave';
+import { withKitRegistry } from './kitRegistry';
 import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
   SerializedScene,
@@ -133,7 +134,8 @@ export interface SkippedKey {
 
 /** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
- *  resolves every `NODE_FN_FIELDS` key → function via the registry;
+ *  resolves every `NODE_FN_FIELDS` key → function via the registry, with the
+ *  kit's own entries under it as every scene has them;
  *  throws on an unsupported version, and on an unknown registry key unless
  *  `opts.unknownKeys` is `'skip'`. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
@@ -141,7 +143,7 @@ export function specsFromSerialized<TData, TLayer extends string, TPose>(
   registry: SceneRegistry<TPose, TData, TLayer>,
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  const specs = currentSpecs(json, registry, opts);
+  const specs = currentSpecs(json, withKitRegistry(registry), opts);
   if (json.version === 3) return specs;
   return localizeWorldPoses(specs, opts.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>));
 }
