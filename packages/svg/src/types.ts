@@ -323,6 +323,9 @@ export interface ParseResult {
   nodes: SvgNode[];
   /** Non-fatal notices (unsupported elements, unrecognized attributes). */
   warnings: string[];
+  /** Set when the text is not an SVG document at all — malformed XML, or a root that is not `<svg>` — so
+   *  the empty `nodes` is no drawing rather than an empty one. The same text is the one warning. */
+  error?: string;
   /** The root's namespaced attributes and children, for declared namespaces. */
   documentMeta?: NamespaceMeta;
   /** Root `viewBox` attribute, parsed from `"x y width height"`. */

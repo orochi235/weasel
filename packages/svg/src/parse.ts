@@ -42,27 +42,24 @@ const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
 /**
  * Public entry point: parse an SVG document string. Errors during DOM
- * parsing produce a `ParseResult` with an empty `nodes` array and a
- * warning describing the issue, rather than throwing.
+ * parsing produce a `ParseResult` with an empty `nodes` array and an
+ * `error` (also its one warning) describing the issue, rather than throwing.
  */
 export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   const warnings: string[] = [];
   const onWarn = (m: string): void => { warnings.push(m); };
 
+  const unreadable = (error: string): ParseResult => ({ nodes: [], warnings: [error], error });
   let doc: Document;
   try {
     doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
   } catch (e) {
-    return { nodes: [], warnings: [`failed to parse SVG: ${(e as Error).message}`] };
+    return unreadable(`failed to parse SVG: ${(e as Error).message}`);
   }
   const errEl = doc.getElementsByTagName('parsererror')[0];
-  if (errEl) {
-    return { nodes: [], warnings: [`SVG parse error: ${errEl.textContent ?? 'unknown'}`] };
-  }
+  if (errEl) return unreadable(`SVG parse error: ${errEl.textContent ?? 'unknown'}`);
   const root = doc.documentElement;
-  if (!root || root.tagName.toLowerCase() !== 'svg') {
-    return { nodes: [], warnings: ['root element is not <svg>'] };
-  }
+  if (!root || root.tagName.toLowerCase() !== 'svg') return unreadable('root element is not <svg>');
 
   bindStylesheets(doc, mediaEnvironmentFor(root, opts.media), onWarn);
 
