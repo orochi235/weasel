@@ -143,7 +143,7 @@ export function configVerdict(
         enableIf: _enabled,
         ...own
       } = drawn?.kind === leaf.kind ? drawn : leaf;
-      return settleInside(settle(own, holds), holds);
+      return settleInside(settle(own as PrefLeaf & Conditioned, holds), holds);
     },
   };
 }
