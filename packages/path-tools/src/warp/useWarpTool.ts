@@ -22,7 +22,7 @@ export type WarpTool = Tool & Pick<SurfaceContribution, 'attach'>;
 export interface WarpToolOptions {
   /** Palette label. */
   label?: string;
-  /** Override the default keybinding (Distort `F`, Envelope `M`, Puppet Warp
+  /** Override the default keybinding (Distort `F`, Envelope `Shift+F`, Puppet Warp
    *  `B`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** How far, in world units, a warped path's refitted curves may stray from

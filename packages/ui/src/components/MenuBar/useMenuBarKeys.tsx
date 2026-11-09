@@ -32,7 +32,7 @@ function codeOf(letter: string): string | undefined {
 }
 
 /** `menu.open`'s bindings: one per declared letter, the first title declaring a letter taking it. */
-function openBindings(titles: readonly AccessTitle[], chord: MenuAccessChord): Action['defaultBinding'] {
+export function openBindings(titles: readonly AccessTitle[], chord: MenuAccessChord): Action['defaultBinding'] {
   const seen = new Set<string>();
   return titles.flatMap(({ key, access }) => {
     const letter = accessLetter(access);

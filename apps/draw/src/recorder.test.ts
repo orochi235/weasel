@@ -94,6 +94,19 @@ describe('createRecorder', () => {
     expect(byType['pointermove']).toBe('other');
   });
 
+  it('leaves out keys typed into an editable field, which replay would send to the canvas', () => {
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    const rec = createRecorder({ canvas: () => canvas });
+    rec.start();
+    field.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'd' }));
+    field.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'd' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'x' }));
+    const out = rec.stop();
+    field.remove();
+    expect(out.events.map((e) => e.key)).toEqual(['x']);
+  });
+
   it('stamps each event with the clock time since start', () => {
     let t = 1000;
     const rec = createRecorder({ canvas: () => canvas, clock: () => t });

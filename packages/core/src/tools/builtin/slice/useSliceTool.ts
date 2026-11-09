@@ -15,7 +15,7 @@ import { ellipsePath, polylineFromPoints } from '@weasel-js/geom';
 import { OVERLAY_ROLE_STROKES } from 'canvas/overlayRoleStrokes';
 import { createEmitter } from '@weasel-js/registry';
 import { icon } from '../../../icons.gen';
-import type { ImmediateParams } from '@weasel-js/routing';
+import type { GestureBinding, ImmediateParams } from '@weasel-js/routing';
 
 /** Options for `useSliceTool`. */
 export interface UseSliceToolOptions {
@@ -34,6 +34,24 @@ export interface SliceScratch {
 export const VERTEX_RADIUS_PX = 3;
 /** How near the first point, in screen px, a click closes the cut. */
 export const SLICE_CLOSE_HIT_PX = 8;
+
+const SLICE_BINDINGS: GestureBinding[] = [
+  { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.addPoint', opts: { id: 'slice.click' } },
+  {
+    spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } },
+    actionId: 'slice.finish',
+    opts: { id: 'slice.doubleClick', params: { viaDoubleClick: true } },
+  },
+  // Ahead of the cutting drags: it declines unless points are placed.
+  { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint', opts: { id: 'slice.dragPoint', yields: true } },
+  // Requiring Alt ties it with the freehand cut's specificity, so it stays ahead of that too.
+  { spec: { kind: 'drag', mods: { shift: 'optional', alt: true } }, actionId: 'slice.dragPoint', opts: { id: 'slice.dragPoint.alt', yields: true } },
+  { spec: { kind: 'drag' }, actionId: 'slice', opts: { id: 'slice.drag' } },
+  { spec: { kind: 'drag', mods: { alt: true } }, actionId: 'slice', opts: { id: 'slice.freehand', params: { cut: 'freehand' } } },
+  { spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish', opts: { id: 'slice.finish' } },
+  { spec: { kind: 'key', key: 'Escape' }, actionId: 'slice.cancel', opts: { id: 'slice.cancel' } },
+  { spec: { kind: 'key', key: 'Backspace' }, actionId: 'slice.dropPoint', opts: { id: 'slice.dropPoint' } },
+];
 
 /**
  * Knife tool. A drag cuts along a straight line, and an Alt-drag along its
@@ -214,20 +232,6 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
       live.unfollow();
       live.notify();
     },
-    bindings: [
-      { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.addPoint', opts: { id: 'slice.click' } },
-      {
-        spec: { kind: 'doubleClick', mods: { shift: 'optional', alt: 'optional' } },
-        actionId: 'slice.finish',
-        opts: { id: 'slice.doubleClick', params: { viaDoubleClick: true } },
-      },
-      // Ahead of the cutting drags: it declines unless points are placed.
-      { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint', opts: { id: 'slice.dragPoint', yields: true } },
-      { spec: { kind: 'drag' }, actionId: 'slice', opts: { id: 'slice.drag' } },
-      { spec: { kind: 'drag', mods: { alt: true } }, actionId: 'slice', opts: { id: 'slice.freehand', params: { cut: 'freehand' } } },
-      { spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish', opts: { id: 'slice.finish' } },
-      { spec: { kind: 'key', key: 'Escape' }, actionId: 'slice.cancel', opts: { id: 'slice.cancel' } },
-      { spec: { kind: 'key', key: 'Backspace' }, actionId: 'slice.dropPoint', opts: { id: 'slice.dropPoint' } },
-    ],
+    bindings: SLICE_BINDINGS,
   }), [actions, overlay, keybinding, live]);
 }

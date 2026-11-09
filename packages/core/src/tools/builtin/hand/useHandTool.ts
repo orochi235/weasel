@@ -6,6 +6,8 @@ import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import { icon } from '../../../icons.gen';
 import { THROUGH_CHROME } from '../throughChrome';
 
+const ANY_MODS = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' } as const;
+
 export type { InertiaConfig };
 
 /** Options for `useHandTool`. Both are forwarded to `viewport.dragPan` as
@@ -61,7 +63,8 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
         // (`Action.activeCursor`) the tool used to declare as an `engaged`
         // phase entry.
         bindings: [{
-          spec: { kind: 'drag' as const, target: THROUGH_CHROME },
+          // Any modifiers: the hand always pans, so a held key never hands the drag to a move or a clone.
+          spec: { kind: 'drag' as const, target: THROUGH_CHROME, mods: ANY_MODS },
           actionId: 'viewport.dragPan',
           opts: {
             id: 'hand.drag',

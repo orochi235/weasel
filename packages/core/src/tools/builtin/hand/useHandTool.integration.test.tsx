@@ -19,6 +19,8 @@ import { useHandTool } from './useHandTool';
 import type { ToolsApi } from '../../overlayBinding';
 import { SceneCanvas } from '../../../canvas/SceneCanvas';
 import { useScene } from 'core/scene/useScene';
+import { createScene } from 'core/scene/scene';
+import type { View } from 'core/viewport/view';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as {
@@ -100,5 +102,38 @@ describe('useHandTool held-key engagement in a bare <SceneCanvas>', () => {
     expect(tools!.hotkeyEngaged).toBe('hand');
     act(() => { window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' })); });
     expect(tools!.hotkeyEngaged).toBe(null);
+  });
+});
+
+describe('the hand under a held modifier', () => {
+  it('pans on a Shift- or Alt-drag over a selected node rather than moving or cloning it', () => {
+    for (const mods of [{ shiftKey: true }, { altKey: true }]) {
+      const scene = createScene<{ kind: string }, 'main', { x: number; y: number; width: number; height: number }>({ systemLayers: [{ id: 'main' }] });
+      let id!: string;
+      scene.batch('seed', () => {
+        id = scene.add({ kind: 'mark', data: { kind: 'rect' }, layer: 'main', pose: { x: 0, y: 0, width: 200, height: 200 } });
+      });
+      scene.setSelection([id as never]);
+      const start: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+      let last = start;
+      const { container, unmount } = render(
+        <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200}
+          view={start} onViewChange={(v) => { last = v; }}
+          defaultTools={['select', 'hand']} initialActiveTool="hand" />,
+      );
+      const canvas = container.querySelector('canvas')!;
+      const fire = (type: string, x: number, y: number) =>
+        canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, isPrimary: true, ...mods }));
+      act(() => {
+        fire('pointerdown', 50, 50);
+        fire('pointermove', 65, 60);
+        fire('pointermove', 80, 70);
+        fire('pointerup', 80, 70);
+      });
+      expect([last.x, last.y]).toEqual([-30, -20]);
+      expect([...scene.renderOrder()]).toHaveLength(1);
+      expect(scene.get(id as never)?.pose).toEqual({ x: 0, y: 0, width: 200, height: 200 });
+      unmount();
+    }
   });
 });

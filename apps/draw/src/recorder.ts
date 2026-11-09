@@ -3,6 +3,7 @@
  *  before any app handler can stopPropagation. Listeners are only attached between `start()`
  *  and `stop()`.
  */
+import { isEditableTarget } from '@weasel-js/core';
 
 export interface View {
   x: number;
@@ -242,7 +243,7 @@ export function createRecorder(opts: {
   const handleKey = (type: 'keydown' | 'keyup') => (e: Event): void => {
     if (!active) return;
     const ke = e as KeyboardEvent;
-    if (opts.skipKey?.(ke)) return;
+    if (opts.skipKey?.(ke) || isEditableTarget(ke.target)) return;
     events.push({
       type,
       t: now(),

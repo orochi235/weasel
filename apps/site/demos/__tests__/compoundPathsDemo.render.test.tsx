@@ -21,9 +21,9 @@ describe('the compound paths honk', () => {
       const { queryByText, getByRole } = render(<CompoundPathsDemo />);
       const toast = () => queryByText('HONK', { selector: 'div' });
       const honk = getByRole('button', { name: 'honk' });
-      act(() => { fireEvent.pointerDown(honk); });
+      act(() => { fireEvent.click(honk); });
       act(() => { vi.advanceTimersByTime(600); });
-      act(() => { fireEvent.pointerDown(honk); });
+      act(() => { fireEvent.click(honk); });
       act(() => { vi.advanceTimersByTime(600); });
       expect(toast()).not.toBeNull();
       act(() => { vi.advanceTimersByTime(400); });
