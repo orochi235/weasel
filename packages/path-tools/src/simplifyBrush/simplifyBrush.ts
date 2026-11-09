@@ -1,7 +1,7 @@
 import {
   type Action, ActionDisabledReason, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
-import type { CursorSpec } from '@weasel-js/cursor';
+import { brushRing } from '@weasel-js/cursor';
 import { pref } from '@weasel-js/prefs';
 import {
   anchorsUnderBrush, editAnchorSetTracked, pathToAnchors, simplifyAnchorsAt,
@@ -34,12 +34,6 @@ export interface SimplifyBrushParams {
   /** How far the refit may stray from the original, in world units, as for
    *  the Simplify command. */
   tolerance?: number;
-}
-
-/** The kit's brush-ring cursor drawn `radiusPx` in radius on screen. */
-export function brushRingCursor(radiusPx: number): CursorSpec {
-  // The `brush` glyph's ring is 9.9 units in radius on a 24-unit box.
-  return { glyph: 'brush', size: Math.round((radiusPx * 24) / 9.9), fallback: 'crosshair' };
 }
 
 type Point = { x: number; y: number };
@@ -80,7 +74,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
   id: 'simplifyBrush',
   label: LABEL,
   tags: pathOperationTags('brush'),
-  cursor: (params) => brushRingCursor(radiusOf(params as SimplifyBrushParams | undefined)),
+  cursor: (params) => brushRing(radiusOf(params as SimplifyBrushParams | undefined)),
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors', 'view'],
   params: SIMPLIFY_BRUSH_PARAMS,
@@ -124,7 +118,7 @@ export const simplifyBrushAction: Action & { requires: string[] } = inPlane({
 
       return {
         kind: 'simplify-brush',
-        cursor: () => brushRingCursor(radiusPx()),
+        cursor: () => brushRing(radiusPx()),
         onMove(moveCtx: InvocationCtx): void {
           sweepTo(moveCtx.world);
         },

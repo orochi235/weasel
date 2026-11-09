@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { pxReach, smudgePath, type PolygonPath } from '@weasel-js/geom';
-import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
+import { brushRing } from '@weasel-js/cursor';
 import { commitOps, drawnAABBOf, reshapeOps, shownNodeOf, withPath, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { smudgeTargets } from './smudgeTargets';
@@ -126,7 +126,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
   tags: pathOperationTags('brush'),
   group: 'path',
   eligible: { capability: 'creates-shapes' },
-  cursor: (params) => brushRingCursor(radiusOf(params as SmudgeBrushParams | undefined)),
+  cursor: (params) => brushRing(radiusOf(params as SmudgeBrushParams | undefined)),
   requires: ['selection', 'scene', 'view', 'applyOps', 'history', 'createOutlinesAdapter', 'notices'],
   params: SMUDGE_BRUSH_PARAMS,
   invoker: {
@@ -147,7 +147,7 @@ export const smudgeBrushAction: Action & { requires: string[] } = {
       };
       return {
         kind: 'smudge-brush',
-        cursor: () => brushRingCursor(radiusPx),
+        cursor: () => brushRing(radiusPx),
         onMove(move: InvocationCtx): void {
           const p = params(move);
           radiusPx = radiusOf(p);

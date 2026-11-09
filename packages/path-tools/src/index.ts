@@ -43,7 +43,7 @@ export type { ActionParamSchema } from './actionParamSchema';
 
 // ─── Actions ───────────────────────────────────────────────────────────────
 export {
-  brushRingCursor, SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
+  SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
 } from './simplifyBrush/simplifyBrush';
 export { SIMPLIFY_BRUSH_OPTIONS, useSimplifyBrushTool } from './simplifyBrush/useSimplifyBrushTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
