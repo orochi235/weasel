@@ -15,12 +15,12 @@ export interface CursorGlyphSpec {
   readonly glyph: CursorGlyphName;
   /** A mark set in the glyph's slot, saying what the tool does: `{ glyph: 'crosshair', mark: 'rect' }`. */
   readonly mark?: CursorMarkName;
-  /** Rendered size in CSS px. Default 24. */
+  /** Rendered size in CSS px. Default 24, also for one that is not a finite positive number. */
   readonly size?: number;
   /**
    * Size in world units instead of `size`, so the glyph tracks zoom — a brush
    * radius ring. Forces the painted tier at every zoom level, because a baked
-   * image would have to be rebuilt on every wheel tick.
+   * image would have to be rebuilt on every wheel tick. Ignored unless a finite positive number.
    */
   readonly worldRadius?: number;
   /** Clockwise rotation in radians, quantized to 22.5° at bake. */
@@ -49,6 +49,10 @@ export type ResolvedCursor =
       readonly worldRadius?: number;
     };
 
+/** `n` when it is a finite positive number; a size that is not draws at the default instead of not at all. */
+const positive = (n: number | undefined): number | undefined =>
+  n !== undefined && Number.isFinite(n) && n > 0 ? n : undefined;
+
 /**
  * Resolve a spec to the tier that can actually draw it.
  *
@@ -58,7 +62,9 @@ export type ResolvedCursor =
  */
 export function resolveCursorTier(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
-  const { glyph, mark, size, worldRadius, fallback } = spec;
+  const { glyph, mark, fallback } = spec;
+  const size = positive(spec.size);
+  const worldRadius = positive(spec.worldRadius);
   const angle = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
   const marked = mark === undefined ? {} : { mark };
   if (worldRadius !== undefined) {

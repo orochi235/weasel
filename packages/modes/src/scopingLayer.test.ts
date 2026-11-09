@@ -39,6 +39,19 @@ describe('createScopingDim', () => {
   });
 });
 
+describe('createScopingDim dimAlpha', () => {
+  it.each([
+    [Number.NaN, 0.3],
+    [2, 1],
+    [-1, 0],
+    [Infinity, 1],
+  ])('reads a dimAlpha of %s as %s', (given, alpha) => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const dim = createScopingDim({ registry: reg, getTargetIds: () => new Set(), dimAlpha: given });
+    expect(dim.alphaFor('x')).toBe(alpha);
+  });
+});
+
 describe('createScopingDim change notification', () => {
   it('notifies subscribers and bumps its version on a mode switch', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });

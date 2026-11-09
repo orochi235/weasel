@@ -69,4 +69,14 @@ describe('resolveCursorTier', () => {
     // installing the layer gets no cursor at all — that is the contract.
     expect(resolveCursor({ glyph: 'brush', worldRadius: 4 })).toBe('none');
   });
+
+  it('draws at the default size where the size or world radius is not a positive number', () => {
+    const plain = resolveCursorTier({ glyph: 'pencil' });
+    for (const size of [Number.NaN, Infinity, 0, -8]) {
+      expect(resolveCursorTier({ glyph: 'pencil', size })).toEqual(plain);
+    }
+    for (const worldRadius of [Number.NaN, Infinity, 0, -1]) {
+      expect(resolveCursorTier({ glyph: 'pencil', worldRadius })).toEqual(plain);
+    }
+  });
 });

@@ -39,7 +39,15 @@ export interface ActionTuning<P = Record<string, unknown>> {
 
 type Params = BindingOpts['params'];
 
-const WRAPS = new WeakMap<Invoker, { inner: Invoker; params: ActionParams }>();
+/** Each wrapped invoker's inner one, and the params a tuning wrapped it with: none for a wrapper that adds none. */
+const WRAPS = new WeakMap<Invoker, { inner: Invoker; params?: ActionParams }>();
+
+/** Record that `outer` runs `inner` and adds no params, so {@link invokedParams} reads through it to the tunings
+ *  `inner` carries. */
+export function runsInvoker(outer: Invoker, inner: Invoker): Invoker {
+  WRAPS.set(outer, { inner });
+  return outer;
+}
 
 function layered(under: ActionParams, over: Params): Params {
   if (typeof under !== 'function' && typeof over !== 'function') return tunedParams([{ params: under }], over);
@@ -69,7 +77,7 @@ function wrapInvoker(invoker: Invoker, params: ActionParams): Invoker {
 export function invokedParams(action: Pick<Action, 'invoker'>, given?: Record<string, unknown>): Record<string, unknown> {
   const tunings: ActionTuning[] = [];
   for (let w = action.invoker, rec = w && WRAPS.get(w); rec; w = rec.inner, rec = WRAPS.get(w)) {
-    tunings.unshift({ params: rec.params });
+    if (rec.params) tunings.unshift({ params: rec.params });
   }
   return tunedParams(tunings, given);
 }

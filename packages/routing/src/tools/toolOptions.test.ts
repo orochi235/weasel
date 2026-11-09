@@ -46,6 +46,21 @@ describe('toolOptionParams', () => {
     expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 12, strength: 0.6 });
     expect(toolOptionParams('b', OPTIONS, undefined)).toEqual({ radiusPx: 40, strength: 0.6 });
   });
+
+  it('reads a held value that is not a finite number as the default', () => {
+    const values = createToolOptionValues();
+    values.set('b', 'radiusPx', Number.NaN);
+    values.set('b', 'strength', Infinity);
+    expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 40, strength: 0.6 });
+  });
+
+  it('reads the default of an option named like an Object.prototype member', () => {
+    const named: ToolOptions = {
+      ...OPTIONS,
+      prefs: { ...OPTIONS.prefs, children: { toString: { kind: 'number', name: 'T', description: '', default: 3 } } },
+    };
+    expect(toolOptionParams('b', named, createToolOptionValues())).toEqual({ toString: 3 });
+  });
 });
 
 describe('toolOptionSteps', () => {

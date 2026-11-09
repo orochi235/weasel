@@ -13,7 +13,7 @@ import {
 } from 'react';
 import type { Action } from './action';
 import { evaluateEnabled } from './actionEnabled';
-import { useLatest } from '@weasel-js/react';
+import { isDev, useLatest } from '@weasel-js/react';
 import {
   useOptionalDepRegistry,
   type DepRegistry,
@@ -30,7 +30,6 @@ import { pushOwner, ScopeNode } from './scopeNode';
 import { dropKeysOf, holdsKeysNow, takeKeys } from './keyOrder';
 import { tuneAction, tunedParams, type ActionTuning } from './tuning';
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
-import { isDev } from '@weasel-js/react';
 import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
 import type { History } from '@weasel-js/history';
 
@@ -120,9 +119,11 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       paramsOf: (id, given) => tunedParams(this.tuningsOf(id), given),
       rerun: (id, params) => {
         const a = this.resolve(id);
-        if (a?.invoker?.timing !== 'immediate') return;
+        if (a?.invoker?.timing !== 'immediate') return false;
         const deps = depsFor(a, this.deps());
-        if (evaluateEnabled(a, deps, pointOf(params), params).enabled) a.invoker.run(deps, params);
+        const ran = evaluateEnabled(a, deps, pointOf(params), params).enabled;
+        if (ran) a.invoker.run(deps, params);
+        return ran;
       },
       keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };

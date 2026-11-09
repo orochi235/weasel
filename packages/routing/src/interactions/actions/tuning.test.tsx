@@ -5,6 +5,8 @@ import { actionBindings } from './binding';
 import { resolveParams, type BindingOpts, type InvocationCtx } from './invoker';
 import type { Action } from './action';
 import { invokedParams, tuneAction } from './tuning';
+import { actionShortcuts } from './actionShortcuts';
+import { pref } from '@weasel-js/prefs';
 import { ActionsProvider, useActionsRegistry } from './ActionsProvider';
 
 const ctx = {} as InvocationCtx;
@@ -179,5 +181,22 @@ describe('invokedParams', () => {
     tuned.invoker.run({}, { axis: 'x' });
     expect(run.mock.calls[0]![1]).toEqual(invokedParams(tuned, { axis: 'x' }));
     expect(invokedParams(tuned, { axis: 'x' })).toEqual({ axis: 'x', pivot: 'pointer' });
+  });
+
+  it('names them for a listed action whose params form makes it a last operation', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const flip: Action = {
+      ...immediate(),
+      defaultBinding: [{ kind: 'key', key: 'v' }],
+      params: pref.group('Flip', { axis: pref.enum('Axis', 'x', [{ value: 'x', label: 'X' }, { value: 'y', label: 'Y' }]) }),
+    };
+    act(() => {
+      reg.register(flip);
+      reg.tune('flip', { params: { axis: 'y' } });
+    });
+    const listed = reg.list().find((a) => a.id === 'flip')!;
+    expect(invokedParams(listed)).toEqual({ axis: 'y' });
+    expect(actionShortcuts(listed, { axis: 'y' })).toHaveLength(1);
   });
 });

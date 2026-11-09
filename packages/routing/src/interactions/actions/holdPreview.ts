@@ -1,9 +1,10 @@
 /**
  * An action as a hold: bound to a held key, the press shows what it would do
- * through its `preview`, the release runs it, and a cancel — Escape, through
+ * through its `preview`, the release runs it if `enabled` still allows, and a cancel — Escape, through
  * the kit's cancel-gesture action — takes the preview down and runs nothing.
  */
 import type { Action } from './action';
+import { evaluateEnabled } from './actionEnabled';
 import { resolveParams, type OngoingHandle } from './invoker';
 
 /** The id {@link holdPreview} gives the hold of action `id`. */
@@ -34,7 +35,9 @@ export function holdPreview(action: Action): Action {
           // An end's ctx carries no deps, so the run takes the press's.
           onEnd: (_end, reason) => {
             hide?.();
-            if (reason === 'commit' && invoker?.timing === 'immediate') invoker.run(ctx.deps, params);
+            if (reason !== 'commit' || invoker?.timing !== 'immediate') return;
+            // Asked again: what the press previewed may have stopped applying while the key was held.
+            if (evaluateEnabled(action, ctx.deps, ctx.world, params).enabled) invoker.run(ctx.deps, params);
           },
         };
       },

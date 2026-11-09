@@ -10,7 +10,7 @@ import { prefLeaves, type PrefGroup } from '@weasel-js/prefs';
 import { createEmitter } from '@weasel-js/registry';
 import type { Action } from './action';
 import { resolveParams, type ImmediateInvoker, type OngoingHandle, type OngoingInvoker } from './invoker';
-import type { ActionTuning } from './tuning';
+import { runsInvoker, type ActionTuning } from './tuning';
 
 /** One operation that can still be adjusted. */
 export interface LastOperation {
@@ -51,14 +51,15 @@ export interface LastOperationHost {
   takeSelection(): (() => void) | null;
   /** The params a run of `id` handed `given` starts with: every tuning's, `given` laid over them. */
   paramsOf(id: string, given: Record<string, unknown> | undefined): Record<string, unknown>;
-  /** Run the action live for `id` here with `params`, as `trigger` would. */
-  rerun(id: string, params: Record<string, unknown>): void;
+  /** Run the action live for `id` here with `params`, as `trigger` would, and say whether it ran: false when none
+   *  is registered or its `enabled` refuses. */
+  rerun(id: string, params: Record<string, unknown>): boolean;
   /** Hand `params`, which a panel change made `id`'s for the session, to each tuning of `id` that keeps them. */
   keep(id: string, params: Readonly<Record<string, unknown>>): void;
 }
 
 /** Where an edit lands: the history, or the journal open on it. */
-type EditStack = Pick<History, 'seal' | 'observe' | 'entries' | 'undo'>;
+type EditStack = Pick<History, 'seal' | 'observe' | 'entries' | 'undo' | 'redo'>;
 
 /** The stack edits on `history` land on now: its active journal while one is open, which takes the entries an
  *  edit makes until it commits them to `history` as one. */
@@ -75,9 +76,11 @@ interface Held {
   /** The history that stack belongs to, any change on which ends the operation. */
   history: History;
   restore: (() => void) | null;
+  /** The selection as it stands, to put back when a rerun cannot run. */
+  takeSelection: () => (() => void) | null;
   /** Run the operation again with `values`, laid over what its first run was handed beyond them, such as the
-   *  point a binding carried. */
-  rerun: (values: Record<string, unknown>) => void;
+   *  point a binding carried. False when it could not run. */
+  rerun: (values: Record<string, unknown>) => boolean;
   /** Hand `values` to the tunings that keep the action's params. */
   keep: (values: Readonly<Record<string, unknown>>) => void;
   unobserve: () => void;
@@ -164,18 +167,32 @@ export class LastOperationKeeper implements LastOperationStore {
     const values = formValues(held.op.schema, { ...held.op.values, ...patch });
     this.busy = true;
     let clean = true;
+    let ran = true;
     try {
-      if (held.entry !== null) stack.undo();
+      const undid = held.entry !== null;
+      const back = held.restore ? held.takeSelection() : null;
+      if (undid) stack.undo();
       held.restore?.();
-      ({ entry: held.entry, clean } = soleEntry(stack, () => {
+      const watched = soleEntry(stack, () => {
         try {
-          held.rerun(values);
+          ran = held.rerun(values);
         } catch (err) {
           console.error(`weasel last operation: rerunning "${held.op.id}" threw`, err);
         }
-      }));
+      });
+      // An action gone or refusing since leaves the operation as it was, not undone with nothing in its place.
+      if (!ran) {
+        if (undid) stack.redo();
+        back?.();
+      } else {
+        ({ entry: held.entry, clean } = watched);
+      }
     } finally {
       this.busy = false;
+    }
+    if (!ran) {
+      this.dismiss();
+      return false;
     }
     held.op = { ...held.op, values };
     this.remember(held.op.id, values);
@@ -198,7 +215,9 @@ export class LastOperationKeeper implements LastOperationStore {
     const { params: form, invoker } = action;
     if (!form || !invoker) return action;
     const schemaOf = typeof form === 'function' ? form : () => form;
-    if (invoker.timing === 'ongoing') return { ...action, invoker: this.ongoing(action.id, action.label, schemaOf, invoker, host) };
+    if (invoker.timing === 'ongoing') {
+      return { ...action, invoker: runsInvoker(this.ongoing(action.id, action.label, schemaOf, invoker, host), invoker) };
+    }
     const run: ImmediateInvoker['run'] = (deps, given) => {
       const history = this.busy ? null : host.history();
       if (!history) return invoker.run(deps, given);
@@ -213,11 +232,12 @@ export class LastOperationKeeper implements LastOperationStore {
         const rest = without(given, values);
         const op = { id: action.id, label: schema.name || action.label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(action.id, v);
-        this.hold({ op, entry, stack, history, restore, keep, rerun: (v) => host.rerun(action.id, { ...rest, ...v }) });
+        const rerun = (v: Record<string, unknown>) => host.rerun(action.id, { ...rest, ...v });
+        this.hold({ op, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
       }
       return out;
     };
-    return { ...action, invoker: { timing: 'immediate', run } };
+    return { ...action, invoker: runsInvoker({ timing: 'immediate', run }, invoker) };
   }
 
   /** `invoker` with each gesture whose handle can `replay` kept as the last operation when its commit leaves
@@ -247,7 +267,11 @@ export class LastOperationKeeper implements LastOperationStore {
         const rest = without(resolved, values);
         const op = { id, label: schema.name || label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(id, v);
-        this.hold({ op, entry, stack, history, restore, keep, rerun: (v) => replay.call(handle, { ...rest, ...v }) });
+        const rerun = (v: Record<string, unknown>) => {
+          replay.call(handle, { ...rest, ...v });
+          return true;
+        };
+        this.hold({ op, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
       };
       return { ...handle, onEnd: ended };
     };

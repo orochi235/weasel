@@ -16,4 +16,9 @@ describe('freshId', () => {
     expect(freshId('group', new Set(), { bare: true, from: 2 })).toBe('group');
     expect(freshId('group', new Set(['group']), { bare: true, from: 2 })).toBe('group-2');
   });
+
+  it('numbers a `from` that is not a finite number from 1', () => {
+    expect(freshId('page', new Set(['page-1', 'page-NaN']), { from: Number.NaN })).toBe('page-2');
+    expect(freshId('page', new Set(['page-Infinity']), { from: Infinity })).toBe('page-1');
+  });
 });
