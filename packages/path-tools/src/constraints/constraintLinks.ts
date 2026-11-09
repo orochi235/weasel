@@ -27,6 +27,7 @@ import {
 import {
   registerNodeShape,
   resolveEditablePathOf,
+  shownNodeOf,
   type AddNodeSpec, type NodeId, type NodeShapeEntry, type PathEditFinishCtx, type PathEditOther,
   type PathTransformFinishCtx, type RectPose, type Scene,
 } from '@weasel-js/core';
@@ -223,7 +224,7 @@ type LinkScene = Pick<Scene<unknown, string, unknown>, 'get'>;
 export function brokenConstraintLink(scene: LinkScene, id: string): BrokenConstraintLink | null {
   const link = linkAt({ node: (nid) => scene.get(nid as NodeId) ?? null, dependents: () => [] }, id);
   if (!link) return null;
-  const paths = link.nodes.map((n) => resolveEditablePathOf(scene.get(n as NodeId)));
+  const paths = link.nodes.map((n) => resolveEditablePathOf(shownNodeOf(scene, n)));
   const points = paths.every((p) => p) ? paths.flatMap((p) => pathAnchorPoints(p!)) : null;
   if (points && unsatisfiedConstraints(points, [link.constraint]).length === 0) return null;
   return { ...link, points };
