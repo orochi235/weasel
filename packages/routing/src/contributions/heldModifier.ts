@@ -20,13 +20,14 @@ const loosened = new WeakMap<GestureBinding, Partial<Record<Modifier, GestureBin
  * `binding` as an entry held on `modifier` sees it: a binding that does not
  * name the modifier takes it down, since it is down through every gesture the
  * hold is for. One that names it keeps what it says, so `false` still refuses
- * it; so does one whose `mod` stands for it, on the platform where it does.
+ * it; so does one whose `mod` stands for it, on the platform where it does,
+ * and `mod: false` refuses it on both.
  * The same binding in gives the same binding out.
  */
 export function withHeldModifier(binding: GestureBinding, modifier: Modifier): GestureBinding {
   const mods: Partial<ModSpec> | undefined = binding.spec.mods;
   if (mods?.[modifier] !== undefined) return binding;
-  if ((modifier === 'ctrl' || modifier === 'meta') && mods?.mod !== undefined) return binding;
+  if ((modifier === 'ctrl' || modifier === 'meta') && mods?.mod === false) return binding;
   let byModifier = loosened.get(binding);
   if (!byModifier) loosened.set(binding, byModifier = {});
   return byModifier[modifier] ??= {
