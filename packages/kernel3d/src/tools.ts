@@ -168,6 +168,7 @@ export const dollyAction: Action = {
       if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return 'pass';
       const pane = dep.size();
       dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep, pane), pane, dep.limits?.()));
+      return undefined;
     },
   },
 };
@@ -218,6 +219,7 @@ export const homeAction: Action = {
       const home = dep?.home?.();
       if (!dep || !home) return 'pass';
       dep.set(home);
+      return undefined;
     },
   },
 };
