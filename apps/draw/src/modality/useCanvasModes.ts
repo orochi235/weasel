@@ -23,11 +23,12 @@ export interface CanvasModes {
   pathEdit: PathEditHost;
 }
 
-/** The path Enter opens for `ids`: one selected path, or the path a selected effect hides. */
+/** The path Enter opens for `ids`: one selected path, or the unlocked path a selected effect hides. */
 export function pathToEdit(scene: DrawScene, ids: readonly string[]): string | null {
   const [id, ...rest] = ids;
   if (id === undefined || rest.length > 0) return null;
   const target = effectSourceFor(scene, asNodeId(id), 'path') ?? id;
+  if (scene.isLocked(asNodeId(target))) return null;
   return (scene.get(asNodeId(target))?.data as { path?: unknown } | undefined)?.path != null ? target : null;
 }
 

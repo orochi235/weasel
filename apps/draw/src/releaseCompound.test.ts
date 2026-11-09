@@ -32,6 +32,33 @@ describe('releaseCompoundPaths', () => {
     expect(scene.get(out[0])!.data.label).toBe('two squares');
   });
 
+  it('drops from each piece what named the compound path\'s anchors or how it was drawn', () => {
+    const { scene } = setup();
+    const id = asNodeId('compound');
+    const data = scene.get(id)!.data;
+    scene.update(id, { data: { ...data, constraints: [{ kind: 'fixed', anchors: [5] }], warp: { kind: 'held' } } as typeof data });
+    const out = releaseCompoundPaths(scene, ['compound']);
+    for (const piece of out) {
+      expect(scene.get(piece)!.data).not.toHaveProperty('constraints');
+      expect(scene.get(piece)!.data).not.toHaveProperty('warp');
+    }
+  });
+
+  it("gives each piece the per-anchor stroke widths and colors of its own anchors", () => {
+    const { scene } = setup();
+    const id = asNodeId('compound');
+    const data = scene.get(id)!.data;
+    const vertexColors = Array.from({ length: 32 }, (_, i) => i);
+    scene.update(id, { data: { ...data, stroke: { width: 1, vertexWidths: [1, 2, 3, 4, 5, 6, 7, 8], vertexColors } } });
+    const [a, b] = releaseCompoundPaths(scene, ['compound']).map((piece) => scene.get(piece)!.data.stroke as {
+      vertexWidths: number[]; vertexColors: number[];
+    });
+    expect(a.vertexWidths).toEqual([1, 2, 3, 4]);
+    expect(b.vertexWidths).toEqual([5, 6, 7, 8]);
+    expect(a.vertexColors).toEqual(vertexColors.slice(0, 16));
+    expect(b.vertexColors).toEqual(vertexColors.slice(16));
+  });
+
   it('keeps a path with one subpath as it is', () => {
     const { scene, g } = setup();
     expect(releaseCompoundPaths(scene, ['below'])).toEqual([asNodeId('below')]);

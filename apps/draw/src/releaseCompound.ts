@@ -1,5 +1,31 @@
-import { asNodeId, boundsOfPath, PATH_M, pathInWorld, splitSubpaths, type NodeId } from '@weasel-js/core';
-import type { DrawScene } from './drawDocument';
+import {
+  asNodeId, boundsOfPath, countPathAnchors, PATH_M, type PolygonPath, pathInWorld, splitSubpaths, type NodeId,
+  withoutGeometryBoundData, withoutShapeGenerator,
+} from '@weasel-js/core';
+import type { DrawScene, WeaselDrawData } from './drawDocument';
+
+/** Channels per anchor in a `vertexColors` array. */
+const COLOR_STRIDE = 4;
+
+/** `stroke` for each of `parts` in turn, its per-anchor widths and colors cut to that part's anchors; dropped
+ *  where they do not line up with the anchors `parts` hold between them. */
+function strokesOf(stroke: WeaselDrawData['stroke'], parts: readonly PolygonPath[]): WeaselDrawData['stroke'][] {
+  if (!stroke || stroke === 'inherit' || (!stroke.vertexWidths && !stroke.vertexColors)) return parts.map(() => stroke);
+  const counts = parts.map(countPathAnchors);
+  const total = counts.reduce((a, b) => a + b, 0);
+  const { vertexWidths, vertexColors, ...rest } = stroke;
+  let at = 0;
+  return counts.map((n) => {
+    const from = at;
+    at += n;
+    return {
+      ...rest,
+      ...(vertexWidths?.length === total ? { vertexWidths: vertexWidths.slice(from, at) } : {}),
+      ...(vertexColors?.length === total * COLOR_STRIDE
+        ? { vertexColors: vertexColors.slice(from * COLOR_STRIDE, at * COLOR_STRIDE) } : {}),
+    };
+  });
+}
 
 /** Whether any leaf among `ids` holds a polygon path with more than one subpath. */
 export function hasCompoundPath(scene: DrawScene, ids: readonly string[]): boolean {
@@ -36,6 +62,8 @@ export function releaseCompoundPaths(scene: DrawScene, ids: readonly string[]): 
       const siblings = node.parent == null ? scene.roots : scene.childrenOf(node.parent);
       const at = siblings.indexOf(nid);
       scene.remove(nid);
+      const carried = withoutGeometryBoundData(withoutShapeGenerator(node.data));
+      const strokes = strokesOf(node.data.stroke, parts);
       parts.forEach((sub, i) => {
         const b = boundsOfPath(sub);
         newIds.push(scene.add({
@@ -44,7 +72,7 @@ export function releaseCompoundPaths(scene: DrawScene, ids: readonly string[]): 
           parent: node.parent,
           ...(at >= 0 ? { index: at + i } : {}),
           pose: { x: b.x, y: b.y, width: b.width, height: b.height },
-          data: { ...node.data, path: sub },
+          data: { ...carried, path: sub, ...(strokes[i] !== undefined ? { stroke: strokes[i] } : {}) },
         }));
       });
     }

@@ -50,10 +50,14 @@ function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
   return scene?.renderOrderNodes?.() ?? [];
 }
 
-/** `ids` with every container among them replaced by its leaves, depth first. */
-export function leavesOf(scene: { childrenOf?(id: NodeId): readonly NodeId[] }, ids: readonly string[]): NodeId[] {
+/** `ids` with every container among them replaced by its leaves, depth first, less the locked and hidden ones. */
+export function leavesOf(
+  scene: { childrenOf?(id: NodeId): readonly NodeId[]; isLocked?(id: NodeId): boolean; isHidden?(id: NodeId): boolean },
+  ids: readonly string[],
+): NodeId[] {
   const out: NodeId[] = [];
   const visit = (id: NodeId) => {
+    if (scene.isLocked?.(id) || scene.isHidden?.(id)) return;
     const kids = scene.childrenOf?.(id) ?? [];
     if (kids.length === 0) out.push(id);
     else kids.forEach(visit);
