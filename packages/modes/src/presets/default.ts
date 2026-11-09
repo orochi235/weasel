@@ -20,6 +20,10 @@ export const NORMAL: ModeDefinition = {
   scoping: false,
 };
 
+/** Discarding a soft mode: Cmd+Escape on a Mac, and no key elsewhere, where
+ *  Ctrl+Escape opens the Windows Start menu and Meta is the Windows key. */
+const DISCARD = { shortcut: { apple: 'Meta+Escape' } } as const;
+
 /** Editing the anchors of a path. Scoped to the target, entered by
  *  double-clicking a `path` or with Enter, left with Escape. It starts on
  *  core's `anchors` tool. */
@@ -33,7 +37,7 @@ export const PATH_EDIT: ModeDefinition = {
   workspace: { tint: '#3b82f6', gradient: 'bottom-up', intensity: 0.12 },
   entry: { trigger: 'double-click-target', targets: ['path'], shortcut: 'Enter' },
   exit: { shortcut: 'Escape' },
-  discard: { shortcut: 'Meta+Escape' },
+  discard: DISCARD,
   defaultTool: 'anchors',
 };
 
@@ -66,7 +70,7 @@ export const TEXT_EDIT: ModeDefinition = {
   workspace: { tint: '#10b981', gradient: 'bottom-up', intensity: 0.12 },
   entry: { trigger: 'double-click-target' },
   exit: { shortcut: 'Escape' },
-  discard: { shortcut: 'Meta+Escape' },
+  discard: DISCARD,
 };
 
 /** A transaction that changes the page extents, committed with Enter or

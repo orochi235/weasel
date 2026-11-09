@@ -16,8 +16,10 @@ import {
   createModeRegistry,
   createScopingDim,
   modeLabel,
+  shortcutOn,
   type ModeDefinition,
 } from '@weasel-js/modes';
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { Fill } from '@weasel-js/core';
 import { modeShortcuts } from '@weasel-js/routing';
 import { ToggleBar } from '@weasel-js/ui/components/ToggleBar';
@@ -138,13 +140,14 @@ export function ModesDemo() {
 
   const allowed = new Set<string>(mode.allows);
 
+  const exitKey = shortcutOn(mode.exit?.shortcut, isApplePlatform());
   return (
     <div className={styles.demo}>
       <div className={styles.bar}>
         <ToggleBar
           items={registry.list().map((m) => ({
             value: m.id,
-            label: <>{modeLabel(m)} <kbd className={styles.key}>{m.entry?.shortcut}</kbd></>,
+            label: <>{modeLabel(m)} <kbd className={styles.key}>{shortcutOn(m.entry?.shortcut, isApplePlatform())}</kbd></>,
             tooltip: m.description,
           }))}
           value={mode.id}
@@ -178,7 +181,7 @@ export function ModesDemo() {
         <dt>Mode</dt>
         <dd>
           <strong>{modeLabel(mode)}</strong> — {mode.description}
-          {mode.exit?.shortcut && <> Press <kbd className={styles.key}>{mode.exit.shortcut}</kbd> to leave.</>}
+          {exitKey && <> Press <kbd className={styles.key}>{exitKey}</kbd> to leave.</>}
         </dd>
         <dt>Scoping</dt>
         <dd>{mode.scoping ? 'on — shapes outside the target dim and ignore the pointer' : 'off'}</dd>
