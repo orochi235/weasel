@@ -219,7 +219,10 @@ function ReticleFollower<C>({ scene }: { scene: LensScene<C> }) {
  * selection as it was, so a press takes the focus back from a chrome toggle. The press half runs around the
  * dispatcher's own: `start` in the capture phase, before the press picks, and `end` after it.
  */
-function useFocusReports<C>(scene: LensScene<C>, onFocusLens: ((id: string | null) => void) | undefined) {
+function useFocusReports<C>(
+  scene: LensScene<C>,
+  onFocusLens: ((id: string | null) => void) | undefined,
+) {
   const focusRef = useLatest(onFocusLens);
   const press = useRef({ on: false, reported: false });
   const report = useCallback(() => {
@@ -236,15 +239,20 @@ function useFocusReports<C>(scene: LensScene<C>, onFocusLens: ((id: string | nul
       report();
     });
   }, [scene, report]);
-  return useMemo(() => ({
-    start: () => { press.current = { on: true, reported: false }; },
-    end: (e: { target: EventTarget | null }) => {
-      const { on, reported } = press.current;
-      press.current = { on: false, reported: false };
-      const hit = e.target instanceof Element && e.target.closest('.lk-lens-hit');
-      if (on && !reported && hit && scene.getSelection().length > 0) report();
-    },
-  }), [scene, report]);
+  return useMemo(
+    () => ({
+      start: () => {
+        press.current = { on: true, reported: false };
+      },
+      end: (e: { target: EventTarget | null }) => {
+        const { on, reported } = press.current;
+        press.current = { on: false, reported: false };
+        const hit = e.target instanceof Element && e.target.closest('.lk-lens-hit');
+        if (on && !reported && hit && scene.getSelection().length > 0) report();
+      },
+    }),
+    [scene, report],
+  );
 }
 
 function useLensCanvas<C>(scene: LensScene<C>) {
@@ -323,7 +331,12 @@ export function LensOverlay<C>({
   if (!container) return null;
   const lenses = sources ? lensesOf(scene) : [];
   return createPortal(
-    <div ref={attachLayer} className="lk-lens-layer" onPointerDownCapture={pressFocus.start} onPointerDown={pressFocus.end}>
+    <div
+      ref={attachLayer}
+      className="lk-lens-layer"
+      onPointerDownCapture={pressFocus.start}
+      onPointerDown={pressFocus.end}
+    >
       {sources
         ? boxes.map((b) => {
             const lens = b.role === 'lens-body' && lenses.find((l) => l.body === b.nodeId);
