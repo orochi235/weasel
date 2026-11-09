@@ -4,13 +4,13 @@ import { icon } from '../../icons.gen';
 import f from '../field.module.css';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';
 import { Switch } from '../Switch';
-import type { StackKind, StackListItem } from './StackList';
-import s from './StackList.module.css';
+import type { EffectKind, EffectListItem } from './EffectList';
+import s from './EffectList.module.css';
 
-interface StackCardProps {
-  item: StackListItem;
+interface EffectCardProps {
+  item: EffectListItem;
   index: number;
-  kind: StackKind | undefined;
+  kind: EffectKind | undefined;
   /** The kind's color as CSS. */
   color: string | undefined;
   open: boolean;
@@ -19,20 +19,20 @@ interface StackCardProps {
   onGripDown(e: PointerEvent): void;
   onToggleOpen(): void;
   onKeyDown(e: KeyboardEvent): void;
-  onPatch(next: Partial<StackListItem>): void;
+  onPatch(next: Partial<EffectListItem>): void;
   onDuplicate: (() => void) | undefined;
   onRemove: (() => void) | undefined;
   children: ReactNode;
 }
 
-/** One card of a `StackList`: its header row, and its body when it is open. */
-export function StackCard({
+/** One card of a `EffectList`: its header row, and its body when it is open. */
+export function EffectCard({
   item, index, kind, color, open, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onDuplicate, onRemove, children,
-}: StackCardProps) {
+}: EffectCardProps) {
   return (
     <div
       className={s.card}
-      style={color === undefined ? undefined : ({ '--_stack-kind': color } as CSSProperties)}
+      style={color === undefined ? undefined : ({ '--_effect-kind': color } as CSSProperties)}
       data-open={open || undefined}
       data-off={!item.on || undefined}
       data-dragging={dragging || undefined}

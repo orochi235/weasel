@@ -4,9 +4,9 @@
   gap: var(--wzl-space-3);
 }
 
-/* `--_stack-kind` is the kind's color, set on each card. */
+/* `--_effect-kind` is the kind's color, set on each card. */
 .card {
-  --_kind: var(--_stack-kind, var(--wzl-border-strong));
+  --_kind: var(--_effect-kind, var(--wzl-border-strong));
   display: flex;
   flex-direction: column;
   gap: var(--wzl-space-2);

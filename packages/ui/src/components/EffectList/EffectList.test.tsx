@@ -3,26 +3,26 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { cssColorLiteral } from '@weasel-js/paint';
 import { renderWithIcons } from '../../testing/withIcons';
-import { StackList, type StackKind, type StackListItem, type StackListProps } from './StackList';
+import { EffectList, type EffectKind, type EffectListItem, type EffectListProps } from './EffectList';
 
-const KINDS: Record<string, StackKind> = {
+const KINDS: Record<string, EffectKind> = {
   match: { label: 'Match', color: cssColorLiteral('#7fd0ff') },
   weld: { label: 'Weld', color: 2 },
 };
 
-const START: StackListItem[] = [
+const START: EffectListItem[] = [
   { id: 'a', kind: 'match', name: 'A', on: true },
   { id: 'b', kind: 'weld', name: 'B', on: true },
   { id: 'c', kind: 'match', name: 'C', on: false },
 ];
 
-type HeldProps = Partial<StackListProps<StackListItem>> & { onItems?: (v: StackListItem[]) => void };
+type HeldProps = Partial<EffectListProps<EffectListItem>> & { onItems?: (v: EffectListItem[]) => void };
 
 function Held({ onItems, onSelect, ...rest }: HeldProps) {
   const [items, setItems] = useState(START);
   const [selected, setSelected] = useState<string | null>(null);
   return (
-    <StackList
+    <EffectList
       ariaLabel="Stages"
       kinds={KINDS}
       items={items}
@@ -41,7 +41,7 @@ function Held({ onItems, onSelect, ...rest }: HeldProps) {
   );
 }
 
-const ids = (v: StackListItem[]): string[] => v.map((it) => it.id);
+const ids = (v: EffectListItem[]): string[] => v.map((it) => it.id);
 const handle = (name: string): HTMLElement => screen.getByRole('button', { name: `Drag to reorder ${name}` });
 
 const ROW_H = 40;
@@ -59,7 +59,7 @@ function stubRows(): void {
   list.releasePointerCapture = vi.fn();
 }
 
-describe('StackList', () => {
+describe('EffectList', () => {
   it('moves a card dragged by its number', () => {
     const onItems = vi.fn();
     renderWithIcons(<Held onItems={onItems} />);
@@ -160,7 +160,7 @@ describe('StackList', () => {
   });
 
   it('draws each kind by its label, and an unknown kind by its key', () => {
-    renderWithIcons(<StackList items={[...START, { id: 'd', kind: 'other', name: 'D', on: true }]} kinds={KINDS} onChange={() => {}} />);
+    renderWithIcons(<EffectList items={[...START, { id: 'd', kind: 'other', name: 'D', on: true }]} kinds={KINDS} onChange={() => {}} />);
     expect(screen.getAllByText('Match')).toHaveLength(2);
     expect(screen.getByText('Weld')).toBeInTheDocument();
     expect(screen.getByText('other')).toBeInTheDocument();

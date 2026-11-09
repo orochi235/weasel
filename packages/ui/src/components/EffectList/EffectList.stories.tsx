@@ -2,22 +2,22 @@ import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { cssColorLiteral } from '@weasel-js/paint';
 import { PropertyControl } from '@weasel-js/ui/components/Properties';
-import s from './StackList.stories.module.css';
-import { StackList, type StackKind, type StackListItem, type StackListProps } from '@weasel-js/ui/components/StackList';
+import s from './EffectList.stories.module.css';
+import { EffectList, type EffectKind, type EffectListItem, type EffectListProps } from '@weasel-js/ui/components/EffectList';
 
-const meta: Meta<typeof StackList> = {
-  title: 'ui/StackList',
-  component: StackList,
+const meta: Meta<typeof EffectList> = {
+  title: 'ui/EffectList',
+  component: EffectList,
 };
 export default meta;
 
-type Story = StoryObj<typeof StackList>;
+type Story = StoryObj<typeof EffectList>;
 
-interface Stage extends StackListItem {
+interface Stage extends EffectListItem {
   strength: number;
 }
 
-const KINDS: Record<string, StackKind> = {
+const KINDS: Record<string, EffectKind> = {
   match: { label: 'Match', color: cssColorLiteral('#7fd0ff') },
   unify: { label: 'Unify', color: cssColorLiteral('#ff9a5c') },
   weld: { label: 'Weld', color: cssColorLiteral('#8fe07a') },
@@ -37,8 +37,8 @@ function Stages({ args }: { args: Story['args'] }): ReactElement {
   const [selected, setSelected] = useState<string | null>('s2');
   return (
     <div className={s.frame}>
-      <StackList<Stage>
-        {...(args as Partial<StackListProps<Stage>>)}
+      <EffectList<Stage>
+        {...(args as Partial<EffectListProps<Stage>>)}
         ariaLabel="Stages"
         items={items}
         kinds={KINDS}

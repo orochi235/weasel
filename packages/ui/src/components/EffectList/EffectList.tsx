@@ -5,11 +5,11 @@ import { useColorCss } from '@weasel-js/theme/react';
 import { dropSide, moveItems, nudgeOf } from '@weasel-js/ui-logic';
 import { useReorderDragList } from '../../useReorderDragList';
 import { tintSource } from '../appearance';
-import { StackCard } from './StackCard';
-import s from './StackList.module.css';
+import { EffectCard } from './EffectCard';
+import s from './EffectList.module.css';
 
-/** One operation in a {@link StackList}: which kind it is, what it is called, and whether it runs. */
-export interface StackListItem {
+/** One operation in a {@link EffectList}: which kind it is, what it is called, and whether it runs. */
+export interface EffectListItem {
   id: string;
   /** A key of the list's `kinds`. */
   kind: string;
@@ -17,8 +17,8 @@ export interface StackListItem {
   on: boolean;
 }
 
-/** How a {@link StackList} draws one kind of operation. */
-export interface StackKind {
+/** How a {@link EffectList} draws one kind of operation. */
+export interface EffectKind {
   label: string;
   /** The card's edge, tint, and number: an index into the theme's tint list, or a color source. */
   color: number | ColorSource;
@@ -26,10 +26,10 @@ export interface StackKind {
   icon?: IconRef;
 }
 
-/** Props for {@link StackList}. */
-export interface StackListProps<T extends StackListItem> {
+/** Props for {@link EffectList}. */
+export interface EffectListProps<T extends EffectListItem> {
   items: readonly T[];
-  kinds: Readonly<Record<string, StackKind>>;
+  kinds: Readonly<Record<string, EffectKind>>;
   /** The whole list after a move, a switch, a rename, a duplicate, or a removal. */
   onChange(next: T[]): void;
   /** The id of the card that is open. */
@@ -47,12 +47,12 @@ export interface StackListProps<T extends StackListItem> {
 }
 
 /**
- * An ordered stack of operations that run top to bottom, such as a pipeline of effects, each drawn as a card
+ * An ordered list of effects or operations that run top to bottom, each drawn as a card
  * in its kind's color. A card is dragged by its number, or moved with Alt+Up / Alt+Down from anywhere in it;
  * a press on the number that does not drag opens or closes it. Each card switches on and off, is renamed in
  * place, and can be duplicated and removed. Only the open card shows its body.
  */
-export function StackList<T extends StackListItem>({
+export function EffectList<T extends EffectListItem>({
   items,
   kinds,
   onChange,
@@ -63,7 +63,7 @@ export function StackList<T extends StackListItem>({
   removable = true,
   ariaLabel,
   className,
-}: StackListProps<T>) {
+}: EffectListProps<T>) {
   const css = useColorCss();
   const reorderItems = useMemo(() => items.map((it) => ({ id: it.id, label: it.name })), [items]);
   const drag = useReorderDragList({
@@ -88,7 +88,7 @@ export function StackList<T extends StackListItem>({
     e.preventDefault();
     if (drag.nudge(item.id, i, by)) refocus.current = e.target as HTMLElement;
   };
-  const patch = (id: string, next: Partial<StackListItem>): void =>
+  const patch = (id: string, next: Partial<EffectListItem>): void =>
     onChange(items.map((it) => (it.id === id ? { ...it, ...next } : it)));
   const remove = (item: T): void => {
     onChange(items.filter((it) => it.id !== item.id));
@@ -109,7 +109,7 @@ export function StackList<T extends StackListItem>({
         const kind = kinds[item.kind];
         const side = dropSide(targetIndex, i, items.length);
         return (
-          <StackCard
+          <EffectCard
             key={item.id}
             item={item}
             index={i}
@@ -126,7 +126,7 @@ export function StackList<T extends StackListItem>({
             onRemove={removable ? () => remove(item) : undefined}
           >
             {selected === item.id ? renderBody?.(item) : undefined}
-          </StackCard>
+          </EffectCard>
         );
       })}
     </div>
