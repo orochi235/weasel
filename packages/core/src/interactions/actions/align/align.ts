@@ -7,7 +7,8 @@ import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionAABB } from 'core/geometry/unionBounds';
-import { poseFrame } from '../poseFrame';
+import { poseFrame, type PoseFrame } from '../poseFrame';
+import { uncarried } from '../selectionSubtree';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 import { usePointerContext } from '@weasel-js/routing/react';
 import type { Scale2 } from '@weasel-js/geom';
@@ -125,7 +126,6 @@ export function useAlign<TPose>(
   const align = useCallback((edge: AlignEdge, to?: AlignReference): void => {
     const a = adapterRef.current;
     const o = optsRef.current;
-    const sel = a.getSelection();
     const geom =
       o.geometry ??
       (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
@@ -136,6 +136,7 @@ export function useAlign<TPose>(
       },
       o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
     );
+    const sel = uncarried(frame as PoseFrame<unknown>, a.getSelection());
     const boxOf = alignBoxReader(o, geom, frame.world);
     const poses = sel.map((id) => frame.world(id));
     const bounds = poses.map((p, i) => boxOf(sel[i]!, p));

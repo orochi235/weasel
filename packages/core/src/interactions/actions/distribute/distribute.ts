@@ -7,7 +7,8 @@ import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../resize/geometry';
 import { alignBoxReader, translatePoseViaDescriptor, type UseAlignOptions } from '../align/align';
 import { planDistribute } from './plan';
-import { poseFrame } from '../poseFrame';
+import { poseFrame, type PoseFrame } from '../poseFrame';
+import { uncarried } from '../selectionSubtree';
 import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/composePose';
 
 /** Axis along which selection is distributed. `'x'` spreads horizontally. */
@@ -71,8 +72,6 @@ export function useDistribute<TPose>(
   const distribute = useCallback((axis: DistributeAxis, mode?: DistributeMode): void => {
     const a = adapterRef.current;
     const o = optsRef.current;
-    const sel = a.getSelection();
-    if (sel.length < 3) return;
     const geom =
       o.geometry ??
       (RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<TPose>);
@@ -85,6 +84,8 @@ export function useDistribute<TPose>(
       },
       o.composition ?? (IDENTITY_POSE_COMPOSITION as PoseComposition<TPose>),
     );
+    const sel = uncarried(frame as PoseFrame<unknown>, a.getSelection());
+    if (sel.length < 3) return;
     const boxOf = alignBoxReader(o, geom, frame.world);
     const items = sel.map((id) => {
       const pose = frame.world(id);
