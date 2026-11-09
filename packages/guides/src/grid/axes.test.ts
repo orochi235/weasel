@@ -59,6 +59,14 @@ describe('line queries', () => {
     expect(cellOf(null, 41)).toEqual({ index: 0, lo: -Infinity, hi: Infinity });
   });
 
+  it('puts a point on a pitch line in the cell above it, as it does on an explicit line', () => {
+    const tenths: AxisLines = { pitch: 0.1, offset: 0, from: 0, to: 1 };
+    // 0.3 / 0.1 is 2.9999999999999996 in floating point.
+    expect(cellOf(tenths, 0.3)?.index).toBe(3);
+    expect(cellOf({ at: [0, 0.1, 0.2, 0.3, 0.4] }, 0.3)?.index).toBe(3);
+    expect(cellOf(tenths, 1)).toBeNull();
+  });
+
   it('moves every line through a scale and shift', () => {
     expect(mapLines(ranged, 2, 1)).toEqual({ pitch: 20, offset: 11, from: 11, to: 71 });
     expect(mapLines(bays, -1, 0)).toEqual({ at: [-55, -40, 0] });

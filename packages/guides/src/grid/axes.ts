@@ -118,7 +118,8 @@ export function cellOf(a: AxisLines | null, v: number): { index: number; lo: num
     return i >= 0 && i < a.at.length - 1 ? { index: i, lo: a.at[i]!, hi: a.at[i + 1]! } : null;
   }
   const [lo, hi] = indexRange(a);
-  const k = Math.floor((v - a.offset) / a.pitch);
+  // The tolerance explicit lines get from `lastAtOrBefore`: 0.3 / 0.1 floors to 2.
+  const k = Math.floor((v - a.offset) / a.pitch + EPS);
   if (k < lo || k >= hi) return null;
   return { index: k, lo: a.offset + k * a.pitch, hi: a.offset + (k + 1) * a.pitch };
 }
