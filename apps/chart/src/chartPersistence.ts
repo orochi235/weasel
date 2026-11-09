@@ -4,7 +4,7 @@ import {
 import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
 import { addDocumentScene, type DocumentScene } from '@weasel-js/diagram-formats';
 import {
-  docFromSnapshot, nodeSpecsFromSnapshot, readStored, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
+  docFromSnapshot, nodeSpecsFromSnapshot, readStored, reviveTypedArrays, serializeReplacer,
 } from '@weasel-js/editor';
 import {
   CHART_LAYERS, CHART_PAGES, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
@@ -57,19 +57,9 @@ export function loadChartSession(): ChartFile {
   return readStored(CHART_SCENE_KEY, chartFromJson, () => emptyChart());
 }
 
-/** The undo stack the last session left, or `null` where that session's chart loads with its tree rebuilt
- *  (`snapshotRebuildsTree`): its stack would replay wrongly. */
-export function loadChartHistory(): unknown {
-  const stale = readStored(CHART_SCENE_KEY, (raw) => {
-    const json: unknown = JSON.parse(raw);
-    return !isSerializedScene<ChartData, ChartLayer, ChartPose>(json) || snapshotRebuildsTree(json, { pages: CHART_PAGES });
-  }, () => true);
-  if (stale) {
-    try { localStorage.removeItem(CHART_HISTORY_KEY); } catch { /* best-effort */ }
-    return null;
-  }
-  return readStored(CHART_HISTORY_KEY, (raw) => reviveTypedArrays(JSON.parse(raw) as unknown), () => null);
-}
+/** Where `useSessionPersistence` keeps the chart and its undo stack. Its default drops a stack saved beside a
+ *  chart that loads with its tree rebuilt, or that cannot be read. */
+export const CHART_SESSION = { sceneKey: CHART_SCENE_KEY, historyKey: CHART_HISTORY_KEY, pages: CHART_PAGES } as const;
 
 /** Replaces everything in the chart, nodes, pages and document values, with `file`, as one undo entry. */
 export function replaceChart(scene: ChartScene, file: ChartFile, label: string): void {

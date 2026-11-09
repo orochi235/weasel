@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { useSessionPersistence } from '@weasel-js/editor';
 import { PAGES_DOC_KEY, commitOps, createScene, isPageStructure, pageRunOf, pagesOf, setPages, type ActionDeps, type NodeId } from '@weasel-js/core';
 import {
   DIAGRAM_THEME_KEY, DIAGRAM_THEMES, DIAGRAM_TYPE_DOC_KEY, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, diagramTypeDocOf,
@@ -6,7 +8,7 @@ import {
 } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import {
-  CHART_HISTORY_KEY, CHART_SCENE_KEY, chartFromJson, chartToJson, emptyChart, loadChartHistory, replaceChart,
+  CHART_HISTORY_KEY, CHART_SCENE_KEY, CHART_SESSION, chartFromJson, chartToJson, emptyChart, replaceChart,
   replaceChartWithDocument, type ChartFile,
 } from './chartPersistence';
 
@@ -123,13 +125,17 @@ describe('chart persistence', () => {
 
   it('drops the undo stack saved beside a chart whose pages were not yet nodes, and keeps it beside one whose were', () => {
     const { scene } = twoBodiesAndAnEdge();
-    localStorage.setItem(CHART_SCENE_KEY, chartToJson(scene));
-    localStorage.setItem(CHART_HISTORY_KEY, '{"version":1}');
-    expect(loadChartHistory()).toBeNull();
-    expect(localStorage.getItem(CHART_HISTORY_KEY)).toBeNull();
-    localStorage.setItem(CHART_SCENE_KEY, chartToJson(reopened(scene)));
-    localStorage.setItem(CHART_HISTORY_KEY, '{"version":1}');
-    expect(loadChartHistory()).toEqual({ version: 1 });
+    /** The stack the session handed `restoreHistory`, or null for none. */
+    const restored = (saved: string): unknown => {
+      localStorage.setItem(CHART_SCENE_KEY, saved);
+      localStorage.setItem(CHART_HISTORY_KEY, '{"version":1}');
+      const target = newScene();
+      const restore = vi.spyOn(target, 'restoreHistory').mockImplementation(() => {});
+      renderHook(() => useSessionPersistence(target, CHART_SESSION)).unmount();
+      return restore.mock.calls[0]?.[0] ?? null;
+    };
+    expect(restored(chartToJson(scene))).toBeNull();
+    expect(restored(chartToJson(reopened(scene)))).toEqual({ version: 1 });
     localStorage.clear();
   });
 
