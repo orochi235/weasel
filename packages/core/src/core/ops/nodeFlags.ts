@@ -1,4 +1,5 @@
 import type { Op } from './types';
+import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
 interface NodeFlagAdapter {
@@ -24,7 +25,10 @@ function flagOp(name: 'setHidden' | 'setLocked', args: NodeFlagArgs): Op {
     label,
     coalesceKey,
     apply(adapter) {
+      const flag = name === 'setHidden' ? 'hidden' : 'locked';
+      const held = alreadyHolds(adapter, id, (node) => (node[flag] === true) === to);
       (adapter as NodeFlagAdapter)[name](id, to);
+      return held ? false : undefined;
     },
     invert() {
       return flagOp(name, { id, from: to, to: from, label, coalesceKey });

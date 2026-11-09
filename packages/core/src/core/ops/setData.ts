@@ -1,4 +1,6 @@
 import type { Op } from './types';
+import { sameValue } from '../scene/sameValue';
+import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
 interface SetDataAdapter<TData> {
@@ -23,7 +25,9 @@ export function createSetDataOp<TData>(args: SetDataArgs<TData>): Op {
     label,
     coalesceKey,
     apply(adapter) {
+      const held = alreadyHolds(adapter, id, (node) => sameValue(node.data, to));
       (adapter as SetDataAdapter<TData>).setData(id, to);
+      return held ? false : undefined;
     },
     invert() {
       return createSetDataOp<TData>({ id, from: to, to: from, label, coalesceKey });

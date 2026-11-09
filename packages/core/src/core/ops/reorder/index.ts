@@ -182,7 +182,9 @@ export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
         argsForSerial.prevPositions = before.slice();
       }
       const after = moveToIndex(current, eligible, index);
+      if (sameList(current, after)) return false;
       a.setChildOrder(parentId, after);
+      return true;
     },
     invert() {
       const captured = before;

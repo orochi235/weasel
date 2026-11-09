@@ -1,3 +1,4 @@
+import { sameList } from '@weasel-js/registry';
 import type { Op } from '../types';
 import { registerOpFactory } from '../registry';
 
@@ -38,8 +39,13 @@ export function createSetChildOrderOp(args: SetChildOrderArgs): Op {
         before = orders.map((o) => ({ parentId: o.parentId, ids: a.getChildren(o.parentId).slice() }));
         argsForSerial.prevOrders = before;
       }
-      for (const o of orders) a.setChildOrder(o.parentId, o.ids.slice());
-      return undefined;
+      let changed = false;
+      for (const o of orders) {
+        if (sameList(a.getChildren(o.parentId), o.ids)) continue;
+        a.setChildOrder(o.parentId, o.ids.slice());
+        changed = true;
+      }
+      return changed;
     },
     invert: () => createSetChildOrderOp({ orders: before ?? [], label, prevOrders: orders }),
   };
