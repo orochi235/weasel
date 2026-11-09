@@ -1,12 +1,12 @@
 /**
  * Uniform scaling of the lengths a node holds in its data instead of its
- * geometry: stroke width and dashes, font size, and letter spacing. A scale
+ * geometry: stroke width, dashes, and head sizes, font size, and letter spacing. A scale
  * applied to coordinates alone (a baked transform, a fit-to-viewport import)
  * leaves these at source size unless they are taken through it too.
  *
  * A `{ px }` length is pinned to the screen and never scaled.
  */
-import type { ScreenLength, StyledRun, TextStyle } from '@weasel-js/core';
+import type { MarkerRef, ScreenLength, StyledRun, TextStyle } from '@weasel-js/core';
 import { resolveTextStyle, scaledDash, scaleVertexWidth, type VertexWidth } from '@weasel-js/core';
 
 export function scaleLength(v: ScreenLength, scale: number): ScreenLength {
@@ -18,15 +18,31 @@ interface StrokeMetrics {
   dash?: number[];
   dashOffset?: number;
   vertexWidths?: VertexWidth[];
+  markerStart?: MarkerRef;
+  markerMid?: MarkerRef;
+  markerEnd?: MarkerRef;
+}
+
+/** The heads whose size is a world length, scaled; an unsized head follows the width by itself. */
+function scaledHeads(stroke: StrokeMetrics, scale: number): Pick<StrokeMetrics, 'markerStart' | 'markerMid' | 'markerEnd'> {
+  const out: Pick<StrokeMetrics, 'markerStart' | 'markerMid' | 'markerEnd'> = {};
+  for (const role of ['markerStart', 'markerMid', 'markerEnd'] as const) {
+    const ref = stroke[role];
+    if (typeof ref === 'object' && typeof ref.size === 'number') out[role] = { ...ref, size: ref.size * scale };
+  }
+  return out;
 }
 
 export function scaleStroke<T extends StrokeMetrics>(stroke: T, scale: number): T {
   // A screen-pinned width takes its dashes with it.
   const { width, vertexWidths } = stroke;
   if (scale === 1) return stroke;
-  // Per-vertex widths are world units on any stroke, a `{ px }` one included.
-  const scaledVertices = vertexWidths ? { vertexWidths: vertexWidths.map((n) => scaleVertexWidth(n, scale)) } : {};
-  if (typeof width === 'object') return vertexWidths ? { ...stroke, ...scaledVertices } : stroke;
+  // Per-vertex widths and sized heads are world units on any stroke, a `{ px }` one included.
+  const scaledVertices = {
+    ...(vertexWidths ? { vertexWidths: vertexWidths.map((n) => scaleVertexWidth(n, scale)) } : {}),
+    ...scaledHeads(stroke, scale),
+  };
+  if (typeof width === 'object') return Object.keys(scaledVertices).length > 0 ? { ...stroke, ...scaledVertices } : stroke;
   const out = { ...stroke, ...scaledVertices };
   if (width !== undefined) out.width = width * scale;
   return scaledDash(out, scale);
