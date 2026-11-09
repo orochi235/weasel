@@ -5,19 +5,12 @@
  */
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { lineAt, stripComments } from './cssBlocks.ts';
 
-/** `source` with its comments blanked, line breaks kept. A `//` after a `:` is taken for a URL. */
-const withoutComments = (source) =>
-  source
-    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
-    .replace(/(?<!:)\/\/.*$/gm, '');
-
-/** The 1-based lines of `source` on which the global regex `pattern` matches outside a comment. */
+/** The 1-based line of each match of the global regex `pattern` in `source` outside a comment, one per match. */
 export function matchLines(source, pattern) {
-  const lines = new Set();
-  const clean = withoutComments(source);
-  for (const match of clean.matchAll(pattern)) lines.add(clean.slice(0, match.index).split('\n').length);
-  return [...lines];
+  const clean = stripComments(source);
+  return [...clean.matchAll(pattern)].map((match) => lineAt(clean, match.index));
 }
 
 /** Every file under `dir` that `keep(name)` accepts, skipping directories named in `skip`. */
