@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 import type { Action } from '../actions/action';
 import { openPointerSession, type PointerSession } from '../pointerSession';
@@ -136,5 +136,30 @@ describe("useGestureDispatcher — controls: 'take'", () => {
     act(() => { press(span, 'pointerdown', 0, 2); press(span, 'pointerup', 0, 2); });
     expect(click).not.toHaveBeenCalled();
     expect(item).not.toBeNull();
+  });
+
+  it('yields to an item whose own press listener ran before the surface heard the press', () => {
+    const click = vi.fn();
+    function NativeItem() {
+      const ref = useRef<HTMLSpanElement | null>(null);
+      useEffect(() => {
+        const el = ref.current!;
+        const down = (e: PointerEvent): void => { openPointerSession(el, e, {}); };
+        el.addEventListener('pointerdown', down);
+        return () => { el.removeEventListener('pointerdown', down); };
+      }, []);
+      return <span ref={ref}>native</span>;
+    }
+    function NativeProbe() {
+      const registry = useActionsRegistry();
+      const hostRef = useRef<HTMLDivElement | null>(null);
+      registry?.register(clickAction(click));
+      useGestureDispatcher({ canvasRef: hostRef, actions: registry!, entriesById: new Map(), controls: 'take' });
+      return <div ref={hostRef}><NativeItem /></div>;
+    }
+    const { getByText } = render(<Harness><NativeProbe /></Harness>);
+    const span = getByText('native');
+    act(() => { press(span, 'pointerdown', 0); press(span, 'pointerup', 0); });
+    expect(click).not.toHaveBeenCalled();
   });
 });

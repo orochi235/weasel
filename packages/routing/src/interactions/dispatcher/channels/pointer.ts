@@ -262,6 +262,8 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       if (onControl && opts.controls() === 'leave') return;
       // A surface nested inside this one runs its own gestures for a press in it.
       if (pressedNestedIn(canvas, e.target)) return;
+      // An item whose own listener ran first already took this press for a drag of its own.
+      if (heldWithin(e.pointerId, canvas)) return;
       routeDown(e.pointerId, e.clientX, e.clientY);
       const w = toWorld(e.clientX, e.clientY);
       const where = underPointer(target(), e, w);

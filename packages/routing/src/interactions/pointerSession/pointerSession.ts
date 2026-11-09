@@ -81,7 +81,7 @@ const OPEN = new Map<PointerSession, Element>();
  * inside `surface`: an item in the surface running a drag of its own. A
  * surface that yields to it is how an item's drag preempts the surface's.
  */
-export function heldWithin(pointerId: number, surface: Element, self: PointerSession): boolean {
+export function heldWithin(pointerId: number, surface: Element, self?: PointerSession): boolean {
   for (const [session, origin] of OPEN) {
     if (session !== self && session.pointerId === pointerId && origin !== surface && surface.contains(origin)) return true;
   }
