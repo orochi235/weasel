@@ -67,12 +67,15 @@ export function domFocusScope(root: HTMLElement): FocusScope<HTMLElement> {
       if (target === null) { focusedIn()?.blur(); return false; }
       return root.contains(target) && focusEl(target, options?.visible ?? false);
     },
+    // A target that will not take focus is passed over, as Tab passes it, so what comes back is what `focused` reads.
     moveFocus(direction, options) {
       const from = focusedIn();
-      const next = tabStep(tabOrder(), from, direction, follows);
-      if (next) focusEl(next, options?.visible ?? true);
-      else from?.blur();
-      return next;
+      const order = tabOrder();
+      for (let next = tabStep(order, from, direction, follows); next; next = tabStep(order, next, direction)) {
+        if (focusEl(next, options?.visible ?? true)) return next;
+      }
+      focusedIn()?.blur();
+      return null;
     },
     tabOrder,
     subscribeFocus(fn) {
