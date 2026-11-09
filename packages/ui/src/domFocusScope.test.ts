@@ -25,6 +25,18 @@ describe('domFocusScope', () => {
     expect(scope.tabOrder().map((e) => e.id)).toEqual(['a']);
   });
 
+  it('takes a radio group at its checked radio, or its first with none checked, as Tab does', () => {
+    const { scope } = mount(`
+      <input type="radio" name="g" id="g1"><input type="radio" name="g" id="g2" checked><input type="radio" name="g" id="g3">
+      <input type="radio" name="h" id="h1"><input type="radio" name="h" id="h2"><input type="radio" id="lone">`);
+    expect(scope.tabOrder().map((e) => e.id)).toEqual(['g2', 'h1', 'lone']);
+  });
+
+  it('skips what a closed details hides, but not its summary', () => {
+    const { scope } = mount('<details><summary id="s">s</summary><button id="x">x</button></details><details open><summary id="t">t</summary><button id="y">y</button></details>');
+    expect(scope.tabOrder().map((e) => e.id)).toEqual(['s', 't', 'y']);
+  });
+
   it('focuses and blurs elements inside it, and refuses ones outside', () => {
     const { el, scope } = mount('<button id="a">a</button>');
     const outside = document.createElement('button');
