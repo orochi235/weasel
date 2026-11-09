@@ -335,6 +335,21 @@ describe('useSliceTool — through <SceneCanvas>', () => {
     expect(commit.mock.calls[0][0]).toEqual([{ x: 20, y: 20 }, { x: 200, y: 150 }]);
   });
 
+  it('places a point on an Alt-drag while a cut is pending, rather than cutting freehand', () => {
+    const { commit, canvas } = mount();
+    const altPointer = (type: string, x: number, y: number) =>
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1, altKey: true }));
+    act(() => { click(canvas, 20, 20); });
+    act(() => {
+      altPointer('pointerdown', 100, 100);
+      altPointer('pointermove', 200, 150);
+      altPointer('pointerup', 200, 150);
+    });
+    expect(commit).not.toHaveBeenCalled();
+    act(() => { key('Enter'); });
+    expect(commit.mock.calls[0][0]).toEqual([{ x: 20, y: 20 }, { x: 200, y: 150 }]);
+  });
+
   it('discards clicked points on Escape and stays on the tool', () => {
     const { commit, canvas } = mount();
     act(() => { click(canvas, 20, 20); });

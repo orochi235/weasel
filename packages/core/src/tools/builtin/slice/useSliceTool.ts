@@ -223,6 +223,8 @@ export function useSliceTool(options: UseSliceToolOptions = {}): Tool {
       },
       // Ahead of the cutting drags: it declines unless points are placed.
       { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'slice.dragPoint', opts: { id: 'slice.dragPoint', yields: true } },
+      // Requiring Alt ties it with the freehand cut's specificity, so it stays ahead of that too.
+      { spec: { kind: 'drag', mods: { shift: 'optional', alt: true } }, actionId: 'slice.dragPoint', opts: { id: 'slice.dragPoint.alt', yields: true } },
       { spec: { kind: 'drag' }, actionId: 'slice', opts: { id: 'slice.drag' } },
       { spec: { kind: 'drag', mods: { alt: true } }, actionId: 'slice', opts: { id: 'slice.freehand', params: { cut: 'freehand' } } },
       { spec: { kind: 'key', key: 'Enter' }, actionId: 'slice.finish', opts: { id: 'slice.finish' } },
