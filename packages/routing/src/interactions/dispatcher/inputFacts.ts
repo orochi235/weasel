@@ -74,6 +74,8 @@ export type ImmediateParams = {
   carry?: { type: string; value: unknown };
   items?: readonly IngestItem[];
   via?: 'drop' | 'paste';
+  /** The view the input landed in, as `InvocationCtx.viewId` names it. */
+  viewId?: string | null;
 };
 
 const at = (x: number | undefined, y: number | undefined): { world?: WorldPoint } =>

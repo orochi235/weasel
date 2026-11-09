@@ -52,6 +52,8 @@ export interface PickView extends ViewPickGates {
    *  the camera. */
   x?: number;
   y?: number;
+  /** Which view asks: a `<CanvasView>`'s id, or `null` for the surface. */
+  viewId?: string | null;
 }
 
 /** A pick view that names a whole camera, or null. */
@@ -220,8 +222,14 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   }), [adapter, d, alphaOf, layerIsPainted]);
   const selectRange = useMemo<SelectRangeDep>(() => ({ at: (level) => rangeAmong(between, adapter, level) }), [between, adapter]);
 
+  // A press routed to a view names only its id; the camera is the surface's, as it was
+  // before the id was passed, so a 2D pick is unchanged and a 3D host learns the view.
+  const pressPick = useMemo(() => (world: WorldPoint, viewId?: string | null): string[] =>
+    wiredHitBody(world, viewId == null ? undefined : { ...(getViewRef.current?.() ?? { scale: { x: 1, y: 1 } }), viewId }),
+  [wiredHitBody, getViewRef]);
+
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
-    pickEvery: wiredHitBody,
+    pickEvery: pressPick,
     between,
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
@@ -275,7 +283,9 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   const walk = useMemo(() => {
     return (world: WorldPoint, view?: PickView | null): string[] => {
       if (pickEveryProp) {
-        const r = pickEveryProp(world);
+        const r = view?.viewId != null
+          ? pickEveryProp(world, { viewId: view.viewId, ...(view.layerIsPainted ? { layerIsPainted: view.layerIsPainted } : {}) })
+          : pickEveryProp(world);
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];
       }

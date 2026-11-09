@@ -206,6 +206,10 @@ function carryStageFits(event: InputEvent, timing: 'immediate' | 'ongoing'): boo
   return timing === 'immediate' ? event.stage === 'drop' : event.stage === 'enter' || event.stage === 'move';
 }
 
+function withView<P extends object>(params: P | undefined, viewId: string | null | undefined): P | undefined {
+  return params && viewId !== undefined ? { ...params, viewId } : params;
+}
+
 /** Run the candidate the walk chose. */
 export function invokeAction(
   run: GestureRun,
@@ -218,7 +222,7 @@ export function invokeAction(
 
   if (action.invoker?.timing === 'immediate') {
     try {
-      const params = immediateParams(event, resolveParams(match.binding.opts?.params));
+      const params = withView(immediateParams(event, resolveParams(match.binding.opts?.params)), run.viewId());
       if (action.invoker.run(deps, params) === 'pass') return 'empty-handle';
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);

@@ -141,6 +141,9 @@ export interface RegionPickView {
   get?(): View;
   /** Whether that view paints a layer at all. */
   layerIsPainted?(layer: string): boolean;
+  /** Which view asks: a `<CanvasView>`'s id, or `null` for the surface's own
+   *  camera. A host whose camera is not a 2D `View` reads its own by it. */
+  viewId?: string | null;
 }
 
 /**

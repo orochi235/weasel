@@ -27,11 +27,12 @@ export interface UseSelectToolOptions<TPose> {
    *  Order doesn't matter — the tool collapses parent/child overlap via
    *  `pickTopMostHit`. When omitted, defaults to an AABB-vs-point walk of
    *  the adapter's tree using the pose descriptor. Override for tighter
-   *  shapes (path / polygon hit-tests). */
-  pickEvery?: (world: WorldPoint) => string[];
+   *  shapes (path / polygon hit-tests). `viewId` is the view the press
+   *  landed in, where the host routes views. */
+  pickEvery?: (world: WorldPoint, viewId?: string | null) => string[];
   /** Optional alt-aware selection-update hit returning the single id the
    *  click should act on. */
-  pickBest?: (world: WorldPoint, alt: boolean, selection: readonly string[]) => string | null;
+  pickBest?: (world: WorldPoint, alt: boolean, selection: readonly string[], viewId?: string | null) => string | null;
   /** How to read poses for the default `pickEvery` and `between`. Default
    *  `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -128,6 +129,11 @@ interface PressClassification {
 
 
 
+/** The routed view as a trailing argument, or none: a pick no view was routed for is asked as before. */
+function routed(viewId: string | null | undefined): [] | [string | null] {
+  return viewId === undefined ? [] : [viewId];
+}
+
 /** The select tool over a picker the host supplies (`pickEvery`), with no
  *  2D default: what a host that is not a 2D canvas builds on. `useSelectTool`
  *  is this with the kit's adapter walk as the default picker.
@@ -158,10 +164,10 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
   const adapterRef = useLatest(adapter);
 
   // The node under a point, before any group above it is considered.
-  const pickHit = useCallback((world: WorldPoint, alt: boolean, sel: readonly string[]): string | null => {
+  const pickHit = useCallback((world: WorldPoint, alt: boolean, sel: readonly string[], viewId?: string | null): string | null => {
     const opts = optionsRef.current;
-    if (opts.pickBest) return opts.pickBest(world, alt, sel);
-    const ids = pickEveryRef.current(world);
+    if (opts.pickBest) return opts.pickBest(world, alt, sel, ...routed(viewId));
+    const ids = pickEveryRef.current(world, ...routed(viewId));
     if (ids.length === 0) return null;
     return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
   }, [optionsRef, pickEveryRef, adapterRef]);

@@ -21,7 +21,7 @@ export {
   type ChromeBox, type ScreenBox,
 } from './screen';
 export {
-  screenBoxOf, createNodeAtPoint, createAreaSelect, createSnap,
+  screenBoxOf, createNodeAtPoint, createPickEvery, createAreaSelect, createSnap,
   createPoseDescriptor, worldPoseOf,
   type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,

@@ -9,7 +9,7 @@ type Between = (from: NodeId, to: NodeId) => readonly NodeId[];
 
 export interface SelectPickOptions {
   /** The node under the point, before any group above it is considered. */
-  pickHit: (world: WorldPoint, alt: boolean, selection: readonly string[]) => string | null;
+  pickHit: (world: WorldPoint, alt: boolean, selection: readonly string[], viewId?: string | null) => string | null;
   /** True when an extend press must leave the selection alone. */
   extendLocked: () => boolean;
   /** The tree the press reads. */
@@ -42,7 +42,7 @@ export function createSelectPickAction(opts: SelectPickOptions): Action {
         if (!selection || !p?.world) return;
         const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
         const sel = selection.get();
-        const hit = opts.pickHit(p.world, mods.alt, sel);
+        const hit = opts.pickHit(p.world, mods.alt, sel, p.viewId);
         if (hit === null) {
           opts.pressed(null);
           return;

@@ -299,11 +299,10 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P2) [agent] Two 3D views on one surface share one camera.** A core view (`CanvasViewProps`) carries a 2D
-  `View` and no `Camera3d`, and the dep contracts kernel3d implements (`NodeAtPointDep`, the `PoseDescriptor`
-  methods) take no view, so kernel3d's world deps read one `world.viewport()`. Today a 3D view needs its own pane or
-  input scope (audit round twelve, 2026-11-09). Closes when a press in either of two 3D views on one surface casts
-  its ray from that view's camera, with a test.
+- **(P2) [agent] A double-click in a 3D view enters the group the surface's camera sees there.** `group.enter`
+  picks in `Action.enabled(deps, at)`, which is handed a world point and no view, so its `pickHit` cannot pass the
+  routed `viewId` to `geometry.pickEvery` the way `select.pick` does through its params (2026-11-09). Closes when a
+  double-click on a container in the second of two 3D views enters it, with a test beside `kernel3d/src/views.test.tsx`.
 
 - **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
   `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
