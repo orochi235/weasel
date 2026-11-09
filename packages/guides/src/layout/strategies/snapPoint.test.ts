@@ -75,6 +75,19 @@ describe('snapPoint', () => {
     expect(layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }))).toEqual([]);
   });
 
+  it('grid pattern too dense to list offers the 129 × 129 points around the dragged pose', () => {
+    const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 1e-6 });
+    const targets = layout.getDropTargets(container, [], dragged({ x: 40, y: 60 }));
+    expect(targets).toHaveLength(129 * 129);
+    const xs = targets.map((t) => t.origin.x);
+    expect(Math.min(...xs)).toBeCloseTo(40 - 64e-6, 9);
+    expect(Math.max(...xs)).toBeCloseTo(40 + 64e-6, 9);
+    const endless = { ...container, bounds: { x: 0, y: 0, width: Infinity, height: 100 } };
+    expect(layout.getDropTargets(endless, [], dragged({ x: 0, y: 0 }))).toHaveLength(129 * 129);
+    const unplaced = { ...container, bounds: { x: -Infinity, y: 0, width: Infinity, height: 100 } };
+    expect(layout.getDropTargets(unplaced, [], dragged({ x: 0, y: 0 }))).toEqual([]);
+  });
+
   it('grid pattern with non-divisible spacing floors to the last in-bounds step', () => {
     const layout = snapPoint<P>({ pattern: 'grid', gridSpacing: 30 });
     const targets = layout.getDropTargets(container, [], dragged({ x: 0, y: 0 }));

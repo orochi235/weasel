@@ -1,6 +1,7 @@
 /** A packet diagram as its options and one table of fields, each laid after the one before. */
 import { integerOf, titleField } from '../editing/schemaKit';
 import type { PlotSchema } from '../editing/schemaTypes';
+import { PACKET_MAX_BIT, PACKET_MAX_BITS_PER_ROW } from './compile';
 import { setPacketLabel } from './edit';
 import {
   insertPacketField, movePacketField, removePacketField, setPacketBits, setPacketBitsPerRow, setPacketRelative, setPacketStart,
@@ -11,9 +12,12 @@ export const packetSchema: PlotSchema<PacketData> = {
   fields: [
     titleField(),
     {
-      key: 'bitsPerRow', label: 'Bits per row', type: { kind: 'number', min: 1, step: 1 }, optional: true,
+      key: 'bitsPerRow', label: 'Bits per row', type: { kind: 'number', min: 1, max: PACKET_MAX_BITS_PER_ROW, step: 1 }, optional: true,
       get: (d) => d.bitsPerRow,
-      set: (d, v) => { const n = integerOf(v); return v === undefined || (n !== undefined && n >= 1) ? setPacketBitsPerRow(d, n) : d; },
+      set: (d, v) => {
+        const n = integerOf(v);
+        return v === undefined || (n !== undefined && n >= 1) ? setPacketBitsPerRow(d, n === undefined ? n : Math.min(n, PACKET_MAX_BITS_PER_ROW)) : d;
+      },
     },
   ],
   tables: [{
@@ -26,18 +30,21 @@ export const packetSchema: PlotSchema<PacketData> = {
         set: (d, _, r, v) => (typeof v === 'string' ? setPacketLabel(d, r, v.trim()) : d),
       },
       {
-        key: 'start', label: 'Start', type: { kind: 'number', min: 0, step: 1 },
+        key: 'start', label: 'Start', type: { kind: 'number', min: 0, max: PACKET_MAX_BIT, step: 1 },
         get: (d, _, r) => d.fields[r]?.start,
         set: (d, _, r, v) => {
           const n = integerOf(v);
           const floor = r === 0 ? 0 : (d.fields[r - 1]?.end ?? -1) + 1;
-          return n !== undefined && n >= floor ? setPacketStart(d, r, n) : d;
+          return n !== undefined && n >= floor ? setPacketStart(d, r, Math.max(floor, Math.min(n, PACKET_MAX_BIT))) : d;
         },
       },
       {
-        key: 'bits', label: 'Bits', type: { kind: 'number', min: 1, step: 1 },
+        key: 'bits', label: 'Bits', type: { kind: 'number', min: 1, max: PACKET_MAX_BIT + 1, step: 1 },
         get: (d, _, r) => { const f = d.fields[r]; return f && f.end - f.start + 1; },
-        set: (d, _, r, v) => { const n = integerOf(v); return n !== undefined && n >= 1 ? setPacketBits(d, r, n) : d; },
+        set: (d, _, r, v) => {
+          const n = integerOf(v);
+          return n !== undefined && n >= 1 ? setPacketBits(d, r, Math.min(n, PACKET_MAX_BIT + 1)) : d;
+        },
       },
       {
         key: 'end', label: 'End', type: { kind: 'number' }, readOnly: true,

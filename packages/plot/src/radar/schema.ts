@@ -1,6 +1,7 @@
 /** A radar as its options, a table of axes holding a value of each curve, and a table of the curves. */
 import { choiceOf, integerOf, numberOf, textOf, titleField } from '../editing/schemaKit';
 import type { PlotColumn, PlotField, PlotSchema } from '../editing/schemaTypes';
+import { RADAR_MAX_RINGS } from './compile';
 import { setRadarAxisLabel, setRadarCurveLabel, setRadarValue } from './edit';
 import {
   insertRadarAxis, insertRadarCurve, moveRadarAxis, moveRadarCurve, removeRadarAxis, removeRadarCurve, setRadarAxisId, setRadarCurveId,
@@ -56,9 +57,12 @@ export const radarSchema: PlotSchema<RadarData> = {
       set: (d, v) => { const g = choiceOf(v, ['circle', 'polygon'] as const); return g ? setRadarOption(d, 'graticule', g === 'circle' ? undefined : g) : d; },
     },
     {
-      key: 'ticks', label: 'Rings', type: { kind: 'number', min: 1, step: 1 }, optional: true,
+      key: 'ticks', label: 'Rings', type: { kind: 'number', min: 1, max: RADAR_MAX_RINGS, step: 1 }, optional: true,
       get: (d) => d.ticks,
-      set: (d, v) => { const n = integerOf(v); return v === undefined || (n !== undefined && n >= 1) ? setRadarOption(d, 'ticks', n) : d; },
+      set: (d, v) => {
+        const n = integerOf(v);
+        return v === undefined || (n !== undefined && n >= 1) ? setRadarOption(d, 'ticks', n === undefined ? n : Math.min(n, RADAR_MAX_RINGS)) : d;
+      },
     },
     {
       key: 'showLegend', label: 'Legend', type: { kind: 'boolean' },
