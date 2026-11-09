@@ -13,9 +13,10 @@
 
 import { createEmitter } from '@weasel-js/registry';
 import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
+import { _resetBitmapHoldsForTests, closeDropped, holdImageBitmaps, reclaimed } from './bitmapHolds';
 import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
 
-export { isVectorImageSrc };
+export { holdImageBitmaps, isVectorImageSrc };
 
 /** Public shape of an image node's `data`. `src` round-trips through
  *  serialization; the decoded bitmap is held in this cache, not on the node. */
@@ -100,46 +101,6 @@ function notify(): void {
   ready.emit();
 }
 
-/** Open {@link holdImageBitmaps} holds, and the bitmaps dropped while one is open. */
-let holds = 0;
-let closeLater = new Set<ImageBitmap>();
-
-/**
- * Free `bitmap`'s textures and close it: the cache owns every bitmap it loads
- * or adopts. While a {@link holdImageBitmaps} hold is open the close waits.
- */
-function dispose(bitmap: ImageBitmap): void {
-  releaseImageSource(bitmap);
-  if (holds > 0) closeLater.add(bitmap);
-  else bitmap.close();
-}
-
-/** Whether an entry still holds `bitmap`, which a deferred close must then leave open. */
-function cached(bitmap: ImageBitmap): boolean {
-  for (const entry of cache.values()) if (entry.bitmap === bitmap) return true;
-  return false;
-}
-
-/**
- * Keep every bitmap the cache drops open until the returned release is
- * called. A bitmap taken from the cache is valid only until the cache drops
- * it; work that holds draw commands across an `await` — an export — holds
- * this around itself. Dropping still frees the bitmap's textures and its
- * place in the budget at once. Release is idempotent.
- */
-export function holdImageBitmaps(): () => void {
-  holds++;
-  let open = true;
-  return () => {
-    if (!open) return;
-    open = false;
-    if (--holds > 0) return;
-    const pending = closeLater;
-    closeLater = new Set();
-    for (const bitmap of pending) if (!cached(bitmap)) bitmap.close();
-  };
-}
-
 const bytesOf = (bitmap: ImageBitmap | undefined): number =>
   (bitmap ? bitmap.width * bitmap.height * 4 : 0);
 
@@ -190,9 +151,10 @@ function startLoad(src: string): void {
       // The entry may have been replaced/cleared mid-flight (reset, etc.);
       // only commit if this src is still the one we started loading.
       if (cache.get(src) !== entry) {
-        dispose(bitmap);
+        closeDropped(bitmap);
         return;
       }
+      reclaimed(bitmap);
       cache.set(src, {
         status: 'ready',
         bitmap,
@@ -245,15 +207,16 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
   loader(src, size).then(
     (bitmap) => {
       if (cache.get(src) !== entry) {
-        dispose(bitmap);
+        closeDropped(bitmap);
         return;
       }
       v.pending = undefined;
       const old = entry.bitmap;
+      reclaimed(bitmap);
       entry.bitmap = bitmap;
       v.shrunkTo = grow ? undefined : target;
       v.scale = target;
-      if (old && old !== bitmap) dispose(old);
+      if (old && old !== bitmap) closeDropped(old);
       enforceBudget(src);
       notify();
     },
@@ -312,8 +275,9 @@ export function isBitmapSrc(src: string): boolean {
 export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
   if (mintedHere(src)) throw new Error(`weasel imageCache: ${src} was minted here; there is nothing to adopt`);
   const old = cache.get(src)?.bitmap;
+  reclaimed(bitmap);
   cache.set(src, { status: 'ready', bitmap, readAt: ++reads });
-  if (old && old !== bitmap) dispose(old);
+  if (old && old !== bitmap) closeDropped(old);
   enforceBudget(src);
   notify();
 }
@@ -388,7 +352,7 @@ export function releaseImage(src: string): void {
   const entry = cache.get(src);
   cache.delete(src);
   forgetDecodedVector(src);
-  if (entry?.bitmap) dispose(entry.bitmap);
+  if (entry?.bitmap) closeDropped(entry.bitmap);
 }
 
 /** Load a `src` whose last load failed again. Does nothing for a `src` in any
@@ -423,6 +387,5 @@ export function _resetImageCacheForTests(): void {
   budgetBytes = DEFAULT_BUDGET_BYTES;
   reads = 0;
   readsAtLastPass = 0;
-  holds = 0;
-  closeLater = new Set();
+  _resetBitmapHoldsForTests();
 }

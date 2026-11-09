@@ -118,4 +118,14 @@ describe('the image cache closes the bitmaps it drops', () => {
     expect(a.closes).toBe(1);
     expect(b.closes).toBe(0);
   });
+
+  it('leaves open a bitmap dropped under a hold and taken back before it ends', () => {
+    const b = counted();
+    const release = holdImageBitmaps();
+    adoptBitmapSrc('weasel-bitmap:elsewhere.2', b);
+    releaseImage('weasel-bitmap:elsewhere.2');
+    adoptBitmapSrc('weasel-bitmap:elsewhere.3', b);
+    release();
+    expect(b.closes).toBe(0);
+  });
 });
