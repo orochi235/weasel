@@ -10,7 +10,7 @@ import { createSetDependsOnOp } from './setDependsOn';
 
 function oneNode() {
   const s = makeScene();
-  const id = s.add({ kind: 'm', layer: 'structures', pose: POSE, data: { label: 'a' } });
+  const id = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
   return { s, id, adapter: sceneMutators(s) };
 }
 

@@ -5,8 +5,8 @@ import { createMoveToIndexOp, createSetChildOrderOp } from './index';
 
 function twoRoots() {
   const s = makeScene();
-  const a = s.add({ kind: 'm', layer: 'structures', pose: POSE, data: { label: 'a' } });
-  const b = s.add({ kind: 'm', layer: 'structures', pose: POSE, data: { label: 'b' } });
+  const a = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'a' } });
+  const b = s.add({ kind: 'mark', layer: 'structures', pose: POSE, data: { label: 'b' } });
   return { s, a, b, entries: s.historyEntries().length, adapter: sceneMutators(s) };
 }
 
