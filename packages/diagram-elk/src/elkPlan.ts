@@ -138,7 +138,7 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
   const ports = new Map<string, LayoutPorts>();
   for (const edge of drawnEdges(graph)) {
     const elkRoute = placed.routes.get(edge.id);
-    if (edge.authored || elkRoute === undefined || elkRoute.length < 2) continue;
+    if (edge.authored || elkRoute === undefined || elkRoute.length < 2 || drawnBySelfLoop(edge)) continue;
     const route = elkRoute.map(shift);
     routes.set(edge.id, route);
     if (route.length > 2) waypoints.set(edge.id, route.slice(1, -1));
@@ -157,6 +157,13 @@ function planFrom(graph: Graph, placed: ElkPlacement, opts: ElkLayoutOptions): E
     routes,
     unheld,
   };
+}
+
+/** Whether the diagram draws `edge` by its own self-loop rule, which picks both sides itself: an edge from a node to
+ *  itself naming at most one port. ELK meets such a loop at two free points on one side, which would name the same
+ *  port at both ends and draw the loop as a notch there. */
+function drawnBySelfLoop(edge: DrawnEdge): boolean {
+  return edge.from === edge.to && (edge.fromPort === undefined || edge.toPort === undefined);
 }
 
 /** The port an edge leaves and arrives by: the one it names, or else the

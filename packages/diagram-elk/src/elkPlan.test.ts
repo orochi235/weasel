@@ -217,6 +217,21 @@ describe('elkPlan', () => {
     expect(plan.ports!.get('aG')).toEqual({ from: 's' });
   });
 
+  it('leaves a self-loop naming at most one port to the diagram, and routes one naming both', async () => {
+    const graph = graphOf([node('a')], [
+      { id: 'free', from: 'a', to: 'a' },
+      { id: 'half', from: 'a', to: 'a', fromPort: 'e' },
+      { id: 'named', from: 'a', to: 'a', fromPort: 'e', toPort: 'n' },
+    ]);
+    const plan = await elkPlan(graph);
+    for (const id of ['free', 'half']) {
+      expect(plan.ports.has(id)).toBe(false);
+      expect(plan.waypoints.has(id)).toBe(false);
+    }
+    expect(plan.ports.get('named')).toEqual({ from: 'e', to: 'n' });
+    expect(plan.waypoints.get('named')!.length).toBeGreaterThan(0);
+  });
+
   it('routes no authored edge, though it still shapes the layout', async () => {
     const graph = graphOf([node('a'), node('b')], [{ id: 'ab', from: 'a', to: 'b', authored: true }]);
     const plan = await elkPlan(graph);
