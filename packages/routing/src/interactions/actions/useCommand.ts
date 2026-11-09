@@ -66,11 +66,12 @@ export function useCommand(
   const tags = useStableByContent(options?.tags, deepEqual);
   const variants = useStableByContent(options?.variants, deepEqual);
   const schema = useStableByContent(options?.settings?.schema, deepEqual);
+  const icon = useStableByContent(options?.icon, deepEqual);
   const hasEnabled = options?.enabled !== undefined;
   const hasActive = options?.active !== undefined;
   const hasPreview = options?.preview !== undefined;
   const hasSettingsParams = options?.settings?.params !== undefined;
-  const { icon, group, shortcut, description, grade } = options ?? {};
+  const { group, shortcut, description, grade } = options ?? {};
   const action = useMemo<Action>(() => {
     const read = () => latest.current.options;
     const a: Action = {

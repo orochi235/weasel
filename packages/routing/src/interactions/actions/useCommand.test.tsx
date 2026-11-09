@@ -64,6 +64,13 @@ describe('useCommand', () => {
     expect(found()).toBe(before);
   });
 
+  it('does not re-register for an inline icon with a mark, equal by value', () => {
+    const { found, rerender } = mount({ label: 'A', run: () => {}, options: { icon: { name: 'ui:layers', mark: 'ui:markAdd' } } });
+    const before = found();
+    rerender({ label: 'A', run: () => {}, options: { icon: { name: 'ui:layers', mark: 'ui:markAdd' } } });
+    expect(found()).toBe(before);
+  });
+
   it('gives each variant its own key through keys in the { spec, opts } form', () => {
     const run = vi.fn();
     const { found } = mount({
