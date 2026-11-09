@@ -69,6 +69,16 @@ describe('resolveSchemaMenu: action leaves', () => {
     run(resolveSchemaMenu(menu({ cut: act('cut') }), src, { x: 3, y: 4 }, { nodeId: 'n1', world: { x: 99, y: 99 } })[0]);
     expect(src.trigger).toHaveBeenCalledWith('cut', { nodeId: 'n1', world: { x: 3, y: 4 } });
   });
+  it('asks enabled and active with the params the run will hand trigger, the menu\'s included', () => {
+    const forNode: Action = {
+      id: 'forNode', label: 'For node', invoker: immediate,
+      enabled: (_d, _at, _c, p) => (p?.nodeId === 'n1' ? true : 'No node'),
+      active: (_d, p) => p?.nodeId === 'n1',
+    };
+    const src = sources({ actions: () => [forNode] });
+    expect(resolveSchemaMenu(menu({ f: act('forNode') }), src, undefined, { nodeId: 'n1' })[0])
+      .toMatchObject({ disabled: false, checked: true });
+  });
   it('sends no point when opened without one', () => {
     const src = sources();
     run(resolveSchemaMenu(menu({ cut: act('cut') }), src)[0]);
