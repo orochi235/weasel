@@ -92,7 +92,19 @@ function matchKeyOrCode(
   spec: { key: string | string[]; code?: string | string[] },
 ): boolean {
   if (spec.code !== undefined && e.code !== undefined && [spec.code].flat().includes(e.code)) return true;
-  return matchKey(e.key, spec.key);
+  if (matchKey(e.key, spec.key)) return true;
+  const latin = chordTypedNoLatin(e) ? /^(?:Key|Digit)(.)$/.exec(e.code ?? '')?.[1] : undefined;
+  return latin !== undefined && matchKey(latin, spec.key);
+}
+
+/** Whether a chord typed no Latin letter or digit: a non-Latin layout's letter
+ *  under Ctrl or Cmd, Option's symbol on a Mac, or a dead key. Such a chord is
+ *  matched by the letter or digit its key bears, so Ctrl+я is Ctrl+Z. A key
+ *  pressed alone, or AltGr's character with its Ctrl and Alt taken off, is
+ *  what it typed. */
+function chordTypedNoLatin(e: { key: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }): boolean {
+  if (!e.altKey && !e.ctrlKey && !e.metaKey) return false;
+  return e.key === 'Dead' || (e.key.length === 1 && !/[\x20-\x7e]/.test(e.key));
 }
 
 /** Per-tool gesture-lifecycle state at match time. `selfChannel` is the tool

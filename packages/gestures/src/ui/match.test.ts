@@ -287,6 +287,22 @@ describe('matchSpec', () => {
     expect(matchSpec({ kind: 'key-held', phase: 'down', key: 'Shift', code: 'ShiftRight', ...noMods }, held, false)).toBe(false);
   });
 
+  it('a Latin letter or digit matches its key when a layout or Option types something else on it', () => {
+    const undo = { kind: 'key', key: 'z', mods: { mod: true } } as const;
+    // A Russian layout reports Ctrl+Z as Ctrl+я.
+    expect(matchSpec({ kind: 'key', key: 'я', code: 'KeyZ', ...noMods, ctrlKey: true }, undo, false)).toBe(true);
+    // Option+Z types Ω on a Mac, and Option+E is a dead key.
+    expect(matchSpec({ kind: 'key', key: 'Ω', code: 'KeyZ', ...noMods, altKey: true }, { kind: 'key', key: 'z', mods: { alt: true } }, true)).toBe(true);
+    expect(matchSpec({ kind: 'key', key: 'Dead', code: 'KeyE', ...noMods, altKey: true }, { kind: 'key', key: 'e', mods: { alt: true } }, true)).toBe(true);
+    expect(matchSpec({ kind: 'key', key: '¡', code: 'Digit1', ...noMods, altKey: true }, { kind: 'key', key: '1', mods: { alt: true } }, true)).toBe(true);
+    // A key that types a Latin letter is read by that letter, as AZERTY's A on the Q position is.
+    expect(matchSpec({ kind: 'key', key: 'a', code: 'KeyQ', ...noMods, ctrlKey: true }, { kind: 'key', key: 'q', mods: { ctrl: true } }, false)).toBe(false);
+    // Alone, or as AltGr's character with Ctrl and Alt taken off, a key is what it typed.
+    expect(matchSpec({ kind: 'key', key: '€', code: 'KeyE', ...noMods }, { kind: 'key', key: 'e' }, false)).toBe(false);
+    // A spec naming a non-Latin key is not widened.
+    expect(matchSpec({ kind: 'key', key: 'я', code: 'KeyZ', ...noMods }, { kind: 'key', key: 'ф' }, false)).toBe(false);
+  });
+
   it('MultiTouchSpec matches when fingers count matches', () => {
     const e: InputEvent = { kind: 'multitouch', fingers: 2, ...noMods };
     expect(matchSpec(e, { kind: 'multiTouch', fingers: 2 }, false)).toBe(true);
