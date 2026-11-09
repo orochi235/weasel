@@ -21,7 +21,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 const commands: AppCommands = {
-  gridVisible: false, toggleGrid: vi.fn(), snapToGrid: false, toggleSnap: vi.fn(), rulersVisible: false, toggleRulers: vi.fn(), boundToContent: true, toggleBoundToContent: vi.fn(),
+  gridVisible: false, toggleGrid: vi.fn(), snapToGrid: false, toggleSnap: vi.fn(), snapping: true, toggleSnapping: vi.fn(), rulersVisible: false, toggleRulers: vi.fn(), boundToContent: true, toggleBoundToContent: vi.fn(),
   symmetryOn: false, toggleSymmetry: vi.fn(), canReleaseCompound: false, releaseCompound: vi.fn(),
   openPalette: vi.fn(), chromeHidden: () => false, toggleChrome: vi.fn(),
 };

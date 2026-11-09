@@ -88,6 +88,9 @@ The marks drawn are those of every in-reach candidate the result meets, not only
 combination's: when three siblings share the edge you landed on, all three lines show.
 
 `snap.suspend` (Ctrl) turns every source off for the frame; `H` still applies.
+`<SceneCanvas snap={{ enabled: false }}>` does the same for every frame until it is set back, which
+is how an app's snapping toggle works (WeaselDraw's View › Snapping, Mod+Shift+;, `SNAPPING_KEY`
+in `@weasel-js/editor`).
 
 ## Sources
 

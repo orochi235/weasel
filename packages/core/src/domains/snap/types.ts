@@ -179,6 +179,10 @@ export interface SceneCanvasSnap {
    *  that order. Two of them sharing an id throw when a gesture begins. A
    *  canvas default (`'rotation'`, `'path-snap'`) gives way to one with its id. */
   sources?: readonly SnapSource[];
+  /** Whether gestures snap at all. `false` treats every frame as though
+   *  `snap.suspend` (Ctrl) were held: no source answers, and Shift's
+   *  constraints still apply. Default `true`. */
+  enabled?: boolean;
   /** Ids of canvas defaults to leave out: `'rotation'` stops a rotate
    *  snapping to quarter turns and other nodes' angles (Shift's step is the
    *  rotate's own and stays), and `'path-snap'` stops a point gesture (the

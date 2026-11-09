@@ -46,6 +46,8 @@ function Actions({ selected, compound, children }: { selected: number; compound:
     toggleGrid: () => setGrid((v) => !v),
     snapToGrid,
     toggleSnap: () => setSnap((v) => !v),
+    snapping: true,
+    toggleSnapping: noop,
     rulersVisible: false,
     toggleRulers: noop,
     boundToContent: true,
