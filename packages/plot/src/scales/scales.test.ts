@@ -28,6 +28,9 @@ describe('linearScale', () => {
     expect(formatNumber(2.5, 0.5)).toBe('2.5');
     expect(formatNumber(3, 0.5)).toBe('3');
     expect(formatNumber(1e21, 1e20)).toBe('1000000000000000000000');
+    expect(formatNumber(-0.04, 0.1)).toBe('0');
+    expect(formatNumber(-0.3, 1)).toBe('0');
+    expect(formatNumber(-0.3, 0.1)).toBe('-0.3');
     const big = logScale({ domain: [1e20, 1e22], range: [0, 1] });
     expect(big.ticks(2).map((v) => big.format(v).length)).toEqual([21, 22, 23]);
   });

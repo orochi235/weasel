@@ -79,6 +79,8 @@ describe('compileRadar', () => {
     expect(radarDomain({ ...GRADES, max: undefined })).toEqual([0, 100]);
     expect(radarDomain({ ...GRADES, max: undefined, curves: [{ id: 'c', values: [3, 7] }] })).toEqual([0, 7]);
     expect(radarDomain({ kind: 'radar', axes: [], curves: [], min: 2 })).toEqual([2, 3]);
+    const long = Array.from({ length: 3_000_000 }, (_, i) => i % 50);
+    expect(radarDomain({ kind: 'radar', axes: [], curves: [{ id: 'c', values: long }] })).toEqual([0, 49]);
   });
 
   it('does not throw on an empty chart or a tiny box', () => {

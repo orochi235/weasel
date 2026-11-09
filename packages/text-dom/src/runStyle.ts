@@ -20,6 +20,15 @@ export const ROTATE_ATTR = 'data-rotate';
 export const FONT_SIZE_PX_ATTR = 'data-font-size-px';
 export const LETTER_SPACING_PX_ATTR = 'data-letter-spacing-px';
 
+/** Significant digits a run's `fontScale` keeps through its CSS percentage, which drops the float noise of
+ *  scaling by 100 (`0.07 * 100` is `7.000000000000001`). */
+const SCALE_DIGITS = 12;
+
+const settle = (n: number): number => Number(n.toPrecision(SCALE_DIGITS));
+
+/** A run's `fontScale` as the CSS `font-size` percentage the overlay writes. */
+export const fontScalePercent = (scale: number): string => `${settle(scale * 100)}%`;
+
 /** The `{ px }` length `attr` holds on `el`, if it holds one. */
 function pxAttr(el: Element, attr: string): { px: number } | undefined {
   const px = parseFloat(el.getAttribute(attr) ?? '');
@@ -155,7 +164,7 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
     } else if (el.style.fontSize) {
       const size = parseFloat(el.style.fontSize);
       if (Number.isFinite(size)) {
-        if (el.style.fontSize.trim().endsWith('%')) next.fontScale = size / 100;
+        if (el.style.fontSize.trim().endsWith('%')) next.fontScale = settle(size / 100);
         else next.fontSize = size;
       }
     }

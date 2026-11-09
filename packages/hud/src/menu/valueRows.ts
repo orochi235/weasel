@@ -3,7 +3,7 @@ import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { menuNumberCanStep, menuNumberText, type MenuColorEntry, type MenuEntry, type MenuNumberEntry } from '@weasel-js/menu';
 import type { WidgetBounds } from '../widget';
 import type { MenuMetrics } from './drawPanel';
-import { selectionOf, shownEdit, type HudTextEdit } from './textEdit';
+import { clusterStops, selectionOf, shownEdit, type HudTextEdit } from './textEdit';
 
 /** A span across a panel, from its left edge. */
 export interface Span { x: number; w: number }
@@ -76,14 +76,13 @@ export function textCommands(
 /** The right edge typed text is set against in a row of panel width `w`, leaving room for a caret after it. */
 const typedRight = (w: number, m: MenuMetrics) => w - m.padX - 3;
 
-/** The code-point offset in `draft`, typed into a row of panel width `w`, nearest panel-local `x`, or undefined when
- *  `x` is left of the text, over the row's label. `measure` gives the width of a run of the row's text. */
+/** The code-point offset in `draft`, typed into a row of panel width `w`, at the grapheme cluster boundary nearest
+ *  panel-local `x`, or undefined when `x` is left of the text, over the row's label. `measure` gives the width of a run of the row's text. */
 export function caretAt(draft: string, w: number, m: MenuMetrics, x: number, measure: (text: string) => number): number | undefined {
-  const chars = Array.from(draft);
   const xAt = offsetsX(draft, w, m, measure);
   if (x < xAt(0) - m.padX) return undefined;
   let best = 0;
-  for (let i = 1; i <= chars.length; i++) if (Math.abs(xAt(i) - x) < Math.abs(xAt(best) - x)) best = i;
+  for (const i of clusterStops(draft)) if (Math.abs(xAt(i) - x) < Math.abs(xAt(best) - x)) best = i;
   return best;
 }
 

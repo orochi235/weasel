@@ -31,6 +31,14 @@ describe('editKey', () => {
     expect(shown(run('abc', [['ArrowLeft', { line: true }]]))).toBe('|abc');
   });
 
+  it('steps and deletes a grapheme cluster at a time: a letter with its mark, a flag, an emoji sequence', () => {
+    expect(shown(run('ae\u0301', ['ArrowLeft']))).toBe('a|e\u0301');
+    expect(shown(run('ae\u0301', ['Backspace']))).toBe('a|');
+    expect(shown(run('a🇺🇸b', ['Home', 'ArrowRight', 'ArrowRight']))).toBe('a🇺🇸|b');
+    expect(shown(run('👩‍👩‍👧x', ['Home', 'Delete']))).toBe('|x');
+    expect(shown(run('x👩‍👩‍👧', ['ArrowLeft', ['ArrowRight', { shift: true }]]))).toBe('x👩‍👩‍👧|');
+  });
+
   it('types and deletes at the caret', () => {
     expect(shown(run('abc', ['ArrowLeft', 'X']))).toBe('abX|c');
     expect(shown(run('abc', ['ArrowLeft', 'Backspace']))).toBe('a|c');

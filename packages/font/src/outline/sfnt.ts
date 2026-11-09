@@ -35,8 +35,12 @@ export function isFontCollection(bytes: ArrayBuffer): boolean {
 
 interface TableRecord { tag: string; offset: number; length: number; checksum: number }
 
+const truncatedDirectory = (): Error => new Error('font collection is truncated: a table directory runs past the end of the file');
+
 function readTableDirectory(view: DataView, dirOffset: number): TableRecord[] {
+  if (dirOffset + SFNT_HEADER_BYTES > view.byteLength) throw truncatedDirectory();
   const numTables = view.getUint16(dirOffset + 4);
+  if (dirOffset + SFNT_HEADER_BYTES + numTables * TABLE_RECORD_BYTES > view.byteLength) throw truncatedDirectory();
   const records: TableRecord[] = [];
   for (let i = 0; i < numTables; i++) {
     const at = dirOffset + SFNT_HEADER_BYTES + i * TABLE_RECORD_BYTES;
@@ -48,6 +52,16 @@ function readTableDirectory(view: DataView, dirOffset: number): TableRecord[] {
     });
   }
   return records;
+}
+
+/** The PostScript name of the member whose directory is at `dirOffset`, or `null` when it carries none or its
+ *  directory or `name` table runs past the end of the file: a member that cannot be read leaves the rest selectable. */
+function memberName(view: DataView, dirOffset: number): string | null {
+  try {
+    return postScriptNameAt(view, readTableDirectory(view, dirOffset));
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -147,10 +161,7 @@ function membersOf(bytes: ArrayBuffer): Member[] | null {
   if (isDataForkFont(bytes)) {
     const fonts = sfntResources(bytes);
     if (fonts.length === 0) throw new Error('Datafork TrueType (.dfont) holds no sfnt resource.');
-    return fonts.map((font) => {
-      const view = new DataView(font);
-      return { name: postScriptNameAt(view, readTableDirectory(view, 0)), bytes: () => font };
-    });
+    return fonts.map((font) => ({ name: memberName(new DataView(font), 0), bytes: () => font }));
   }
   if (!isFontCollection(bytes)) return null;
 
@@ -162,7 +173,7 @@ function membersOf(bytes: ArrayBuffer): Member[] | null {
   for (let i = 0; i < numFonts; i++) {
     const dirOffset = view.getUint32(12 + i * 4);
     members.push({
-      name: postScriptNameAt(view, readTableDirectory(view, dirOffset)),
+      name: memberName(view, dirOffset),
       bytes: () => extractFont(bytes, view, dirOffset),
     });
   }

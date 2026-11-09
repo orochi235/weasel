@@ -35,6 +35,14 @@ describe('compilePie', () => {
     expect(angles[3]!.end).toBeCloseTo(2 * Math.PI);
   });
 
+  it('shares out values whose sum is past what a number holds', () => {
+    const huge: PieData = { kind: 'pie', slices: [{ label: 'a', value: 1e308 }, { label: 'b', value: 1e308 }] };
+    const angles = pieAngles(huge);
+    expect(angles[0]!.end).toBeCloseTo(Math.PI);
+    expect(angles[1]!.end).toBeCloseTo(2 * Math.PI);
+    expect(byKey(huge).get('percent:0')!.data.text).toBe('50%');
+  });
+
   it('draws each slice in its series color, keyed by its index, and nothing for a zero', () => {
     const { get, layout } = byKey(PETS);
     const dogs = get('slice:0')!;

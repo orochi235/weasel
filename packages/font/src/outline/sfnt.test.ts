@@ -153,6 +153,20 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
       .toBeGreaterThan(0);
   });
 
+  it('still unpacks a member when another member\'s name table lies past the end of the file', () => {
+    const collection = synthesizeCollection(interBytes());
+    const view = new DataView(collection);
+    const second = view.getUint32(16);
+    for (let i = 0; i < view.getUint16(second + 4); i++) {
+      const at = second + 12 + i * 16;
+      if (tag(view, at) === 'name') view.setUint32(at + 8, collection.byteLength + 64);
+    }
+    const { matched, names, bytes } = sfntFromCollection(collection, 'Inter-Regular');
+    expect(matched).toBe(true);
+    expect(names).toEqual(['Inter-Regular', null]);
+    expect(bytes.byteLength).toBeGreaterThan(0);
+  });
+
   it('names every member, so a caller can say what it was offered', () => {
     const collection = synthesizeCollection(interBytes());
     expect(sfntFromCollection(collection, 'NoSuchFace-Bold').names).toEqual(['Inter-Regular', 'Inter-Regular']);

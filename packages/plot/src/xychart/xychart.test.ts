@@ -60,6 +60,8 @@ describe('compileXyChart', () => {
     expect(xyValueDomain({ kind: 'xychart', series: [{ kind: 'bar', values: [3, 97] }] })).toEqual([0, 100]);
     expect(xyValueDomain({ kind: 'xychart', series: [{ kind: 'bar', values: [-12, 40] }] })).toEqual([-20, 40]);
     expect(xyValueDomain({ kind: 'xychart', y: { max: 10 }, series: [] })).toEqual([0, 10]);
+    const long = Array.from({ length: 3_000_000 }, (_, i) => i % 50);
+    expect(xyValueDomain({ kind: 'xychart', series: [{ kind: 'line', values: long }] })).toEqual([0, 50]);
   });
 
   it('numbers its bands when it has no categories, and spreads values over a range axis', () => {
