@@ -16,7 +16,7 @@ export interface TrialTool {
   disabled?: boolean;
   /** Why it is disabled, read in its tooltip while it is. */
   disabledReason?: string;
-  /** Presentation grouping in the palette. Ungrouped tools sort after grouped. */
+  /** Presentation grouping in the palette: a group's tools sit together where its first one is. */
   group?: string;
 }
 

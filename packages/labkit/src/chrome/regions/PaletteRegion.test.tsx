@@ -31,6 +31,21 @@ describe('PaletteRegion', () => {
     expect(screen.getByRole('button', { name: 'eraser' })).not.toHaveAttribute('aria-current');
   });
 
+  it('keeps a group together where it first appears, as every region does', () => {
+    const grouped = (id: string, group: string) => ({ ...tool(id), group });
+    renderWithIcons(
+      <PaletteRegion
+        contributions={[grouped('brush', 'paint'), grouped('select', 'pick'), grouped('fill', 'paint')]}
+        ctx={ctxWith(null)}
+      />,
+    );
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual([
+      'brush',
+      'fill',
+      'select',
+    ]);
+  });
+
   it('sets the tool on click', () => {
     const setActiveTool = vi.fn();
     renderWithIcons(
