@@ -52,6 +52,7 @@ export interface VoiceHandle {
    *  has reached. A buffer voice has no envelope, so this is `stop()`. Either
    *  one released before it starts is canceled. */
   release(): void;
+  /** Throws a `RangeError` on a value or ramp that is not finite. */
   setGain(value: number, rampMs?: number): void;
   /** Playback rate. Applies to a voice booked for a future `when` too. */
   setRate(value: number): void;

@@ -1,3 +1,4 @@
+import { checkGain } from './param';
 import type { Scheduler } from './scheduler';
 import { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
@@ -168,6 +169,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       teardown(voice);
     },
     setGain(value, rampMs) {
+      checkGain('voice', value, rampMs);
       voice.baseGain = value;
       if (!voice.out || voice.fading) return;
       voice.rampEnd = rampMs && rampMs > 0 ? ctx.currentTime + rampMs / 1000 : 0;

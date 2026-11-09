@@ -1,7 +1,7 @@
 import {
   createInsertChain, type InsertChain, type InsertChainOptions, type OwnedInsertChain,
 } from './inserts';
-import { writeParam } from './param';
+import { checkGain, writeParam } from './param';
 
 /** Controls for one named bus. `rampMs` slews a gain change over that many
  *  ms instead of stepping it. */
@@ -118,11 +118,7 @@ export function createBusGraph(
       const s = get(name);
       return {
         setGain(value, rampMs) {
-          // Kept, a NaN never equals what was written, so every later mute or solo rewrites it
-          // and a real AudioParam throws there, on whichever bus was touched.
-          if (!Number.isFinite(value) || (rampMs !== undefined && !Number.isFinite(rampMs))) {
-            throw new RangeError(`@weasel-js/audio: a bus gain is finite and ramps over a finite time, not ${value} over ${rampMs} ms`);
-          }
+          checkGain('bus', value, rampMs);
           s.gain = value;
           apply(rampMs && rampMs > 0 ? { bus: s, ms: rampMs } : undefined);
         },
