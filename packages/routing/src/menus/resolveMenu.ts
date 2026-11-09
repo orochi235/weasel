@@ -178,6 +178,9 @@ function enumRows(ctx: Ctx, leaf: PrefEnum, key: string, path: string, off: bool
     sep(`${key}/<`),
     ...leaf.options.map((o): MenuEntry => ({
       kind: 'item', key: `${key}/${o.value}`, label: o.label, checked: o.value === current, radio: true,
+      ...(o.icon ? { icon: o.icon } : {}),
+      ...(o.description ? { description: o.description } : {}),
+      ...(o.disabled && o.disabledReason ? { disabledReason: o.disabledReason } : {}),
       disabled: off || o.disabled === true, run: () => onChange(path, write(o.value)),
     })),
     sep(`${key}/>`),
