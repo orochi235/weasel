@@ -13,6 +13,7 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import type { BindingSource } from './binding';
 import type { DepName } from '../../index';
 import type { IngestItem } from '@weasel-js/gestures';
+import type { MenuGrade } from '@weasel-js/menu';
 
 /** What content being routed brings to `Action.enabled`: a drop's or a
  *  paste's items, or a carry's payload with no items. */
@@ -48,6 +49,11 @@ export type ActionUnavailable = ActionDisabledReason | (string & {});
  */
 export interface ActionPresentation {
   label: string;
+  /** What the action does, in a sentence: a toolbar's tooltip, a menu row's or a palette row's hint. */
+  description?: string;
+  /** How serious running it is, as `@weasel-js/theme`'s `Grade`: `'danger'` for one that destroys
+   *  something. A surface draws the entry in its grade's color. */
+  grade?: MenuGrade;
   /** The action's icon, by qualified name: `icon('group')` in the package that draws it. */
   icon?: IconSpec;
   /** Grouping key for palette/menu surfaces. Free-form string; the kit
@@ -95,9 +101,16 @@ export interface ActionVariant {
   label: string;
   /** Falls back to the action's own `icon`. */
   icon?: IconSpec;
+  /** Falls back to the action's own `description`. */
+  description?: string;
+  /** Falls back to the action's own `grade`. */
+  grade?: MenuGrade;
+  /** Display text for this variant's shortcut. Falls back to the action's own `shortcut`, and then to the
+   *  bindings whose `opts.params` match `params`. */
+  shortcut?: string;
   /** Tags this variant carries besides its action's, which it carries too. */
   tags?: readonly string[];
-  /** Passed to `trigger`, and matched against each binding's
+  /** Passed to `trigger`, `enabled` and `active`, and matched against each binding's
    *  `opts.params` to find the variant's shortcuts. */
   params: Readonly<Record<string, unknown>>;
 }
@@ -158,11 +171,17 @@ export interface ActionDispatch extends BindingSource {
    * hands over its payload whole. An action that takes only some content
    * refuses the rest here, so a drag it would not take is not accepted and a
    * paste it would not take stays the page's.
+   *
+   * `params` are the ones a run would get: a variant's, a binding's
+   * `opts.params`, or what `trigger` was handed. An action whose variants
+   * differ in when they apply (reorder forward at the top of the stack)
+   * answers per variant from them.
    */
   enabled?: (
     deps?: ActionDeps,
     at?: { x: number; y: number },
     carried?: Carried,
+    params?: Readonly<Record<string, unknown>>,
   ) => true | ActionUnavailable;
   /**
    * Whether the action reads as held down right now: bold on the selected
@@ -171,9 +190,11 @@ export interface ActionDispatch extends BindingSource {
    * one that is off. Never read during dispatch.
    *
    * Under the same contract as `enabled`: pure, fast, and it must not
-   * throw. `deps` is the bag `enabled` is given.
+   * throw. `deps` is the bag `enabled` is given, and `params` the entry's,
+   * so each variant of a parametric action reads its own state: align left
+   * pressed while align right is not.
    */
-  active?: (deps?: ActionDeps) => boolean;
+  active?: (deps?: ActionDeps, params?: Readonly<Record<string, unknown>>) => boolean;
   /**
    * Show what running the action now would do, and change nothing: the
    * result an operation would make, drawn over the canvas. A toolbar asks

@@ -3,7 +3,7 @@ import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
-import { expandVars, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
+import { expandVars, GRADE_TOKENS, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
 import { toIconSpec, type IconRegistry } from '@weasel-js/icons';
 import { boxShadowCommands } from '../boxShadow';
 import { iconCommands } from '../glyph';
@@ -141,7 +141,7 @@ export function drawPanel(
     }
     if (i === highlight) out.push(rect(b.x + 2, b.y + r.y, b.w - 4, r.h, t['--wzl-surface-hover']));
     // A color row left a color row is one nothing writes (the widget makes the rest pickers), so it reads as disabled.
-    const color = e.disabled || e.kind === 'color' ? muted : fg;
+    const color = e.disabled || e.kind === 'color' ? muted : gradedInk(e, t) ?? fg;
     out.push(textCommandFromRuns(
       b.x + m.padX + m.rowHeight, b.y + r.y,
       [{ text: e.label, fill: solid(color) }],
@@ -175,6 +175,12 @@ export function drawPanel(
     if (e.kind === 'submenu') out.push(caret(b.x + b.w - m.padX - m.rowHeight / 2, b.y + r.y + r.h / 2, color));
   });
   return out;
+}
+
+/** The color a graded item or submenu row draws its label and icon in, when the theme has its grade's token. */
+function gradedInk(e: MenuEntry, t: HudDrawCtx['tokens']): string | undefined {
+  const grade = e.kind === 'item' || e.kind === 'submenu' ? e.grade : undefined;
+  return grade ? (t as Readonly<Record<string, string | undefined>>)[GRADE_TOKENS[grade]] : undefined;
 }
 
 /** Index of the entry under panel-local `y`, or null. */

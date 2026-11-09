@@ -150,6 +150,60 @@ describe('useCommand', () => {
     expect(actionItems(found()!).map((i) => i.params)).toEqual([{ n: 1 }, { n: 3 }]);
   });
 
+  it('asks enabled and active with each variant\'s params, and trigger with its own', () => {
+    const run = vi.fn();
+    const { found, registry } = mount({
+      label: 'X', run, options: {
+        variants: variants(),
+        enabled: (p) => (p?.n === 2 ? 'Not for two' : true),
+        active: (p) => p?.n === 1,
+      },
+    });
+    const [a, b] = actionItems(found()!);
+    expect(evaluateEnabled(a!.action, undefined, undefined, a!.params)).toEqual({ enabled: true });
+    expect(evaluateEnabled(b!.action, undefined, undefined, b!.params)).toEqual({ enabled: false, reason: 'Not for two' });
+    expect([evaluateActive(a!.action, undefined, a!.params), evaluateActive(b!.action, undefined, b!.params)]).toEqual([true, false]);
+    expect(registry.trigger('cmd.a', { n: 2 })).toBe(false);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('carries shortcut text, description and grade', () => {
+    const { found } = mount({
+      label: 'Wipe', run: vi.fn(), options: { shortcut: '⌘⌫', description: 'Clear the page', grade: 'danger' },
+    });
+    expect(found()).toMatchObject({ shortcut: '⌘⌫', description: 'Clear the page', grade: 'danger' });
+  });
+
+  it('previews through the latest callback, with the params asked for', () => {
+    const stop = vi.fn();
+    const first = vi.fn(() => stop);
+    const second = vi.fn(() => stop);
+    const { registry, rerender } = mount({ label: 'A', run: vi.fn(), options: { preview: first } });
+    rerender({ label: 'A', run: vi.fn(), options: { preview: second } });
+    registry.preview('cmd.a', { n: 1 })();
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith({ n: 1 });
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('carries a settings form whose read and params are the latest', () => {
+    const schema = { name: 'Size', children: {} };
+    const { found, rerender } = mount({
+      label: 'A', run: vi.fn(), options: { settings: { schema, read: () => ({ values: { w: 1 } }) } },
+    });
+    const action = found()!;
+    rerender({
+      label: 'A', run: vi.fn(), options: {
+        settings: { schema: { name: 'Size', children: {} }, read: () => ({ values: { w: 2 } }), params: (path, value) => ({ [path]: value, again: true }) },
+      },
+    });
+    const settings = found()!.settings!;
+    expect(settings.schema).toEqual(schema);
+    expect(settings.read({})).toEqual({ values: { w: 2 } });
+    expect(settings.params?.('w', 3)).toEqual({ w: 3, again: true });
+    expect(found()).not.toBe(action);
+  });
+
   it('leaves the registry on unmount', () => {
     const run = vi.fn();
     const { registry, unmount } = mount({ label: 'A', run });

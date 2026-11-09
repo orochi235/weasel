@@ -220,6 +220,8 @@ export interface HudAccessibleNode {
   key: string;
   /** Text content for a leaf, the accessible name of a node with children. */
   label?: string;
+  /** Read after the name: what the node does, or why it is disabled. */
+  description?: string;
   /** The node the keyboard is on. At most one in a tree. */
   active?: boolean;
   checked?: boolean;

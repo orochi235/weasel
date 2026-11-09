@@ -1,9 +1,11 @@
 import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import type { PrefAction } from '@weasel-js/prefs';
+import type { Grade } from '@weasel-js/theme';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';
 import { ActionSettingsPopover } from '../ActionSettings/ActionSettingsPopover';
 import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
+import { useAppearance } from '../appearance';
 import { BarInMenuContext } from './barInMenu';
 import s from './Bar.module.css';
 
@@ -12,6 +14,9 @@ export interface BarActionButtonProps {
   label: string;
   /** What the tooltip reads in place of the label. */
   description?: string;
+  /** How serious pressing it is: `'danger'` for a button that destroys something, which shows its grade's color
+   *  while pointed at, as a graded ghost `Button` does. */
+  grade?: Grade;
   icon?: ReactNode;
   /** The keys that fire the action, read after the label or description in the tooltip. */
   shortcut?: string;
@@ -45,10 +50,11 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, icon, shortcut, row = false, menu = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
+  const { label, description, grade, icon, shortcut, row = false, menu = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
   const labeled = row || menu || props.labeled === true;
   const dead = missing !== undefined;
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
+  const appearance = useAppearance({ grade });
   const tip = dead
     ? `${label}: no action “${missing}”`
     : segmentTooltipContent({ description: description || label, shortcut, disabled, disabledReason });
@@ -63,6 +69,7 @@ export function BarActionButton(props: BarActionButtonProps) {
         aria-disabled={disabled || dead || undefined}
         disabled={disabled && !dead && disabledReason === undefined}
         aria-pressed={active}
+        {...appearance}
         {...(expanded !== undefined ? { 'aria-haspopup': 'dialog' as const, 'aria-expanded': expanded } : {})}
         className={[s.action, words && s.actionLabeled, row && s.actionRow, menu && s.actionMenu].filter(Boolean).join(' ')}
         {...(dead ? { 'data-missing': missing } : {})}
@@ -118,6 +125,6 @@ export function BarAction({ leaf, path, disabled }: { leaf: PrefAction; path: st
 function BarActionOne({ leaf, path, disabled }: { leaf: PrefAction; path: string; disabled?: boolean }) {
   const { press, settings, ...button } = useLeafAction(leaf, path, disabled);
   const menu = useContext(BarInMenuContext);
-  if (settings) return <ActionSettingsPopover {...button} form={settings} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} />;
-  return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} onPress={press} />;
+  if (settings) return <ActionSettingsPopover {...button} form={settings} labeled={leaf.control === 'button'} menu={menu} />;
+  return <BarActionButton {...button} labeled={leaf.control === 'button'} menu={menu} onPress={press} />;
 }

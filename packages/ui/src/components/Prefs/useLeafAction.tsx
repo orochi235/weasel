@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { actionItems, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
+import type { Grade } from '@weasel-js/theme';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
 import { actionShortcutText } from '../actionShortcutText';
@@ -13,6 +14,10 @@ import { useActionSettings, type ActionSettingsForm } from '../ActionSettings/us
 export interface LeafAction {
   press: () => void;
   label: string;
+  /** What it does, for a tooltip: the leaf's own description, else the registered entry's. */
+  description: string | undefined;
+  /** How serious pressing it is: the registered entry's grade. */
+  grade: Grade | undefined;
   icon: ReactNode;
   /** The keys that fire it, for a tooltip. */
   shortcut: string | undefined;
@@ -62,6 +67,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
 
   const label = leaf.label ?? (leaf.name !== '' ? leaf.name : (item?.label ?? ''));
   const icon = resolveIcon(leaf.icon, 16) ?? (item ? actionIcon(item.icon) : undefined);
+  const description = leaf.description || item?.description || undefined;
 
   if (key !== undefined) {
     return {
@@ -69,6 +75,8 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
         if (item) registry?.trigger(item.action.id, item.params);
       },
       label,
+      description,
+      grade: item?.grade,
       icon,
       shortcut: item ? actionShortcutText(item) : undefined,
       disabled: disabled || (item !== undefined && !shown.enabled),
@@ -92,6 +100,8 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false):
       });
     },
     label,
+    description,
+    grade: undefined,
     icon,
     shortcut: undefined,
     disabled: disabled || pending,

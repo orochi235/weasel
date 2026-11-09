@@ -66,3 +66,30 @@ describe('actionItemTitle', () => {
     expect(titles('Zoom', ['Unzoom'])).toEqual(['Zoom: Unzoom']);
   });
 });
+
+describe('actionItems: description, grade and shortcut', () => {
+  it('carries the action\'s on a plain entry, and leaves them out when unset', () => {
+    const a: Action = {
+      id: 'del', label: 'Delete', description: 'Remove the selection', grade: 'danger', shortcut: '⌫',
+      invoker: { timing: 'immediate', run },
+    };
+    expect(actionItems(a)[0]).toMatchObject({ description: 'Remove the selection', grade: 'danger', shortcut: '⌫' });
+    const bare = actionItems({ id: 'undo', label: 'Undo', invoker: { timing: 'immediate', run } })[0]!;
+    expect('description' in bare || 'grade' in bare || 'shortcut' in bare).toBe(false);
+  });
+
+  it('gives each variant its own, falling back to the action\'s', () => {
+    const a: Action = {
+      id: 'clear', label: 'Clear', description: 'Clear', shortcut: '⌘K',
+      invoker: { timing: 'immediate', run },
+      variants: [
+        { key: 'one', label: 'Clear One', params: { all: false } },
+        { key: 'all', label: 'Clear All', description: 'Clear every one', grade: 'danger', shortcut: '⇧⌘K', params: { all: true } },
+      ],
+    };
+    const [one, all] = actionItems(a);
+    expect(one).toMatchObject({ description: 'Clear', shortcut: '⌘K' });
+    expect(one!.grade).toBeUndefined();
+    expect(all).toMatchObject({ description: 'Clear every one', grade: 'danger', shortcut: '⇧⌘K' });
+  });
+});

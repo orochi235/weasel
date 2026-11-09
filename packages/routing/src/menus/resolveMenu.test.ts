@@ -82,6 +82,29 @@ describe('resolveSchemaMenu: action leaves', () => {
     run(es[1]);
     expect(src.trigger).toHaveBeenCalledWith('flip', { axis: 'y' });
   });
+  it('asks enabled and active once per variant, with its params', () => {
+    const order: Action = {
+      id: 'order', label: 'Order', invoker: immediate,
+      enabled: (_d, _at, _c, p) => (p?.step === 'up' ? 'Already at the top' : true),
+      active: (_d, p) => p?.step === 'down',
+      variants: [
+        { key: 'up', label: 'Up', params: { step: 'up' } },
+        { key: 'down', label: 'Down', params: { step: 'down' } },
+      ],
+    };
+    const es = resolveSchemaMenu(menu({ o: act('order') }), sources({ actions: () => [order] }));
+    expect(es).toMatchObject([
+      { label: 'Up', disabled: true, disabledReason: 'Already at the top', checked: false },
+      { label: 'Down', disabled: false, checked: true },
+    ]);
+  });
+  it('carries each entry\'s description and grade', () => {
+    const del: Action = { id: 'del', label: 'Delete', description: 'Remove it', grade: 'danger', invoker: immediate };
+    const es = resolveSchemaMenu(menu({ d: act('del'), c: act('cut') }), sources({ actions: () => [...actions, del] }));
+    expect(es[0]).toMatchObject({ description: 'Remove it', grade: 'danger' });
+    expect(es[1]).not.toHaveProperty('description');
+    expect(es[1]).not.toHaveProperty('grade');
+  });
   it('resolves an id:variant leaf to that variant alone', () => {
     const src = sources();
     const es = resolveSchemaMenu(menu({ r: act('align:r'), named: pref.action('align:l', { name: 'Flush left' }) }), src);

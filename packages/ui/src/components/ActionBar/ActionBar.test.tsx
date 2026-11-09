@@ -353,6 +353,58 @@ describe('ActionBar', () => {
     act(() => y.focus());
     expect(screen.getByRole('tooltip').textContent).toBe('Flip Vertical (Shift+V)');
   });
+
+  it("reads the action's description in the tooltip, and a variant's own shortcut text", () => {
+    renderWithIcons(
+      <Harness
+        actions={[
+          makeAction({ id: 'a', label: 'Alpha', description: 'Does the alpha thing' }),
+          makeAction({
+            id: 'zoom', label: 'Zoom', shortcut: 'Z',
+            variants: [{ key: 'in', label: 'Zoom In', params: { d: 1 } }, { key: 'out', label: 'Zoom Out', shortcut: 'Q', params: { d: -1 } }],
+          }),
+        ]}
+        bar={<ActionBar group="demo" />}
+      />,
+    );
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => item('Alpha').focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Does the alpha thing');
+    act(() => item('Zoom In').focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Zoom In (Z)');
+    act(() => item('Zoom Out').focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Zoom Out (Q)');
+  });
+
+  it("carries the action's grade onto its button", () => {
+    renderWithIcons(
+      <Harness actions={[makeAction({ id: 'del', grade: 'danger' }), makeAction({ id: 'keep' })]} bar={<ActionBar group="demo" />} />,
+    );
+    expect(item('del')).toHaveAttribute('data-grade', 'danger');
+    expect(item('keep')).not.toHaveAttribute('data-grade');
+  });
+
+  it('presses and enables each variant by its own params', () => {
+    renderWithIcons(
+      <Harness
+        actions={[
+          makeAction({
+            id: 'align', label: 'Align',
+            active: (_d, p) => p?.edge === 'left',
+            enabled: (_d, _at, _c, p) => (p?.edge === 'right' ? 'not-applicable' : true),
+            variants: [
+              { key: 'l', label: 'Left', params: { edge: 'left' } },
+              { key: 'c', label: 'Center', params: { edge: 'center' } },
+              { key: 'r', label: 'Right', params: { edge: 'right' } },
+            ],
+          }),
+        ]}
+        bar={<ActionBar group="demo" />}
+      />,
+    );
+    expect(['Left', 'Center', 'Right'].map((l) => item(l).getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false']);
+    expect(['Left', 'Center', 'Right'].map((l) => item(l).getAttribute('aria-disabled'))).toEqual([null, null, 'true']);
+  });
 });
 
 describe('ActionBar kit glyphs', () => {

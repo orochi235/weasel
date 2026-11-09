@@ -3,7 +3,8 @@
  * variant, or the action itself when it declares none.
  */
 import type { IconSpec } from '@weasel-js/icons';
-import type { Action } from './action';
+import type { MenuGrade } from '@weasel-js/menu';
+import type { Action, ActionVariant } from './action';
 
 const NO_TAGS: readonly string[] = Object.freeze([]);
 
@@ -14,6 +15,13 @@ export interface ActionItem {
   action: Action;
   label: string;
   icon?: IconSpec;
+  /** The variant's, else the action's. */
+  description?: string;
+  /** The variant's, else the action's. */
+  grade?: MenuGrade;
+  /** Display text for the shortcut: the variant's, else the action's. Absent, a surface writes out the
+   *  first binding `actionShortcuts` finds for `params`. */
+  shortcut?: string;
   /** The action's tags, then the variant's own. */
   tags: readonly string[];
   /** What to pass to `trigger(action.id, params)`; absent for a plain action. */
@@ -26,7 +34,7 @@ export interface ActionItem {
 export function actionItems(action: Action): ActionItem[] {
   if (action.invoker?.timing !== 'immediate') return [];
   if (!action.variants?.length) {
-    return [{ key: action.id, action, label: action.label, icon: action.icon, tags: action.tags ?? NO_TAGS }];
+    return [{ key: action.id, action, label: action.label, icon: action.icon, tags: action.tags ?? NO_TAGS, ...shown(action) }];
   }
   return action.variants.map((v) => ({
     key: `${action.id}:${v.key}`,
@@ -35,7 +43,20 @@ export function actionItems(action: Action): ActionItem[] {
     icon: v.icon ?? action.icon,
     tags: v.tags ? [...(action.tags ?? NO_TAGS), ...v.tags] : action.tags ?? NO_TAGS,
     params: v.params,
+    ...shown(action, v),
   }));
+}
+
+/** The description, grade and shortcut text an entry shows, each only when set. */
+function shown(action: Action, v?: ActionVariant): Pick<ActionItem, 'description' | 'grade' | 'shortcut'> {
+  const description = v?.description ?? action.description;
+  const grade = v?.grade ?? action.grade;
+  const shortcut = v?.shortcut ?? action.shortcut;
+  return {
+    ...(description === undefined ? {} : { description }),
+    ...(grade === undefined ? {} : { grade }),
+    ...(shortcut === undefined ? {} : { shortcut }),
+  };
 }
 
 /** How a palette titles `item`: a variant reads as its action's

@@ -19,16 +19,17 @@ const enabledSlowWarned = new Set<string>();
 const enabledThrewWarned = new Set<string>();
 const ENABLED_BUDGET_MS = 4;
 /**
- * Safely evaluate an action's `enabled` predicate. Returns `{enabled: true}`
- * when no predicate is supplied. Catches throws and treats them as disabled
- * with reason `'(predicate threw)'`. In dev mode, warns once per action id
- * when a single call exceeds 4ms (single frame at 240fps — generous; real
- * predicates should be sub-millisecond).
+ * Safely evaluate an action's `enabled` predicate for the entry `params`
+ * names. Returns `{enabled: true}` when no predicate is supplied. Catches
+ * throws and treats them as disabled with reason `'(predicate threw)'`. In
+ * dev mode, warns once per action id when a single call exceeds 4ms (single
+ * frame at 240fps — generous; real predicates should be sub-millisecond).
  */
 export function evaluateEnabled(
   action: Action,
   deps?: ActionDeps,
   at?: { x: number; y: number },
+  params?: Readonly<Record<string, unknown>>,
 ): ActionEnabledResult {
   if (!action.enabled) return { enabled: true };
   const dev = isDev();
@@ -37,7 +38,7 @@ export function evaluateEnabled(
     : () => Date.now();
   const start = dev ? now() : 0;
   try {
-    const result = action.enabled(deps, at);
+    const result = action.enabled(deps, at, undefined, params);
     if (dev) {
       const elapsed = now() - start;
       if (elapsed > ENABLED_BUDGET_MS && !enabledSlowWarned.has(action.id)) {
@@ -64,13 +65,18 @@ export function evaluateEnabled(
 }
 
 /**
- * Safely evaluate an action's `active` predicate. `undefined` for an action
- * with no pressed state; a predicate that throws reads as not active.
+ * Safely evaluate an action's `active` predicate, for the entry `params`
+ * names. `undefined` for an action with no pressed state; a predicate that
+ * throws reads as not active.
  */
-export function evaluateActive(action: Action, deps?: ActionDeps): boolean | undefined {
+export function evaluateActive(
+  action: Action,
+  deps?: ActionDeps,
+  params?: Readonly<Record<string, unknown>>,
+): boolean | undefined {
   if (!action.active) return undefined;
   try {
-    return action.active(deps) === true;
+    return action.active(deps, params) === true;
   } catch {
     return false;
   }

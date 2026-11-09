@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { MenuEntry } from '@weasel-js/menu';
+import type { MenuEntry, MenuGrade } from '@weasel-js/menu';
+import type { Grade } from '@weasel-js/theme';
 import { ActionDisabledReason } from '@weasel-js/core';
 import { formatShortcut } from '@weasel-js/gestures';
 import { REST_MS } from '../Tree/useRowTip';
@@ -53,5 +54,40 @@ describe('a disabled item row in a DOM menu', () => {
     const dup = screen.getByRole('menuitem', { name: /Duplicate/ });
     expect(dup).not.toHaveAttribute('aria-description');
     expect(dup.textContent).not.toContain('stale');
+  });
+});
+
+describe('a row hint and grade in a DOM menu', () => {
+  it('reads its description as its description, and its disabled reason over it', () => {
+    open([
+      { kind: 'item', key: 'del', label: 'Delete', description: 'Remove the selection', run },
+      { kind: 'item', key: 'cut', label: 'Cut', description: 'Move it to the clipboard', disabled: true, disabledReason: 'Nothing selected', run },
+      { kind: 'submenu', key: 'size', label: 'Size', description: 'Set the size', entries: [] },
+    ]);
+    expect(screen.getByRole('menuitem', { name: /Delete/ })).toHaveAttribute('aria-description', 'Remove the selection');
+    expect(screen.getByRole('menuitem', { name: /Cut/ })).toHaveAttribute('aria-description', 'Nothing selected');
+    expect(screen.getByRole('menuitem', { name: /Size/ })).toHaveAttribute('aria-description', 'Set the size');
+  });
+
+  it('says why a disabled value row or submenu cannot be chosen', () => {
+    open([
+      { kind: 'number', key: 'w', label: 'Width', value: 3, disabled: true, disabledReason: 'Locked', set: () => {} },
+      { kind: 'submenu', key: 's', label: 'More', disabled: true, disabledReason: ActionDisabledReason.NotApplicable, entries: [] },
+    ]);
+    expect(screen.getByRole('menuitem', { name: /Width/ })).toHaveAttribute('aria-description', 'Locked');
+    expect(screen.getByRole('menuitem', { name: /More/ })).toHaveAttribute('aria-description', 'Not applicable here');
+  });
+
+  it('carries its grade', () => {
+    open([
+      { kind: 'item', key: 'del', label: 'Delete', grade: 'danger', run },
+      { kind: 'item', key: 'cut', label: 'Cut', run },
+    ]);
+    expect(screen.getByRole('menuitem', { name: /Delete/ })).toHaveAttribute('data-grade', 'danger');
+    expect(screen.getByRole('menuitem', { name: /Cut/ })).not.toHaveAttribute('data-grade');
+  });
+
+  it('takes the grades the theme has, since the menu model cannot depend on it', () => {
+    expectTypeOf<MenuGrade>().toEqualTypeOf<Grade>();
   });
 });

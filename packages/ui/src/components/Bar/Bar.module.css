@@ -318,6 +318,11 @@
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
 
+/* A graded action stays quiet until pointed at, then shows its grade, as a graded ghost Button does. */
+.action[data-grade]:hover:not([disabled], [aria-disabled='true'], [aria-pressed='true']) {
+  color: var(--wzl-grade);
+}
+
 .action[disabled],
 .action[aria-disabled='true'],
 .popTrigger[data-disabled] {

@@ -33,12 +33,11 @@ export function usePaletteItems(open: boolean, query: string): PaletteItems {
     [registry, open],
   );
 
-  const enabledById = useMemo<ReadonlyMap<string, ActionEnabledResult>>(() => {
+  const enabledByKey = useMemo<ReadonlyMap<string, ActionEnabledResult>>(() => {
     const m = new Map<string, ActionEnabledResult>();
-    for (const { action } of allItems) {
-      if (m.has(action.id)) continue;
-      const deps = depReg ? buildDepsFromRequires(action, depReg) : undefined;
-      m.set(action.id, evaluateEnabled(action, deps));
+    for (const item of allItems) {
+      const deps = depReg ? buildDepsFromRequires(item.action, depReg) : undefined;
+      m.set(item.key, evaluateEnabled(item.action, deps, undefined, item.params));
     }
     return m;
   }, [allItems, depReg]);
@@ -56,7 +55,7 @@ export function usePaletteItems(open: boolean, query: string): PaletteItems {
   return {
     registry,
     filtered,
-    enabledOf: (item) => enabledById.get(item.action.id) ?? ENABLED,
+    enabledOf: (item) => enabledByKey.get(item.key) ?? ENABLED,
     tagOf: (item) => tags.get(item.key),
   };
 }

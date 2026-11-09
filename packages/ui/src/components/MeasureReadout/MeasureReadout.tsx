@@ -89,6 +89,8 @@ export function MeasureReadout({ scene, measurements: ms, className }: MeasureRe
             <BarActionButton
               key={cmd}
               label={label}
+              description={items[i]!.description}
+              grade={items[i]!.grade}
               labeled
               disabled={!state.enabled}
               {...(state.reason !== undefined ? { disabledReason: reasonLabel(state.reason) } : {})}

@@ -6,7 +6,7 @@
 
 // --- Commands ----------------------------------------------------------------
 export { useCommand } from '@weasel-js/routing/react';
-export type { CommandOptions } from '@weasel-js/routing/react';
+export type { CommandOptions, CommandSettings } from '@weasel-js/routing/react';
 
 // --- Context menu --------------------------------------------------------------
 export { contextMenuAction, openContextMenu } from '../interactions/actions/defaults/contextMenu';

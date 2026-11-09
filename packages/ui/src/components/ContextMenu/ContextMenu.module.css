@@ -31,6 +31,10 @@ a.row {
   text-decoration: underline;
 }
 
+.row[data-grade] {
+  color: var(--wzl-grade);
+}
+
 .row[data-highlighted] {
   background: var(--wzl-surface-hover);
 }

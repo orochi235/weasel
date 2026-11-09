@@ -13,6 +13,7 @@ import {
   type ActionItem,
 } from '@weasel-js/core';
 import { Dialog } from '../Dialog';
+import { useAppearance } from '../appearance';
 import { ActionSettingsDialog } from '../ActionSettings/ActionSettingsDialog';
 import { DEFAULT_REASON_LABELS, reasonLabel } from '../ActionBar/reasonLabels';
 import { KeySequence, keySpecFromKey, ShortcutKeys } from '../Keycaps';
@@ -20,11 +21,11 @@ import { describeSelection } from './selectionSummary';
 import { usePaletteItems, type PaletteItems } from './usePaletteItems';
 import styles from './CommandPalette.module.css';
 
-/** The action's own `shortcut` text when it has one, else every shortcut it answers to, as chip groups. An entry can be
+/** The entry's own `shortcut` text when it has one, else every shortcut it answers to, as chip groups. An entry can be
  *  bound more than once — Bring to Front has two — so each binding gets its
  *  own group rather than one being picked as canonical. */
 function ShortcutChips({ item }: { item: ActionItem }) {
-  if (item.action.shortcut) return <span className={styles.shortcuts}>{item.action.shortcut}</span>;
+  if (item.shortcut) return <span className={styles.shortcuts}>{item.shortcut}</span>;
   const shortcuts = actionShortcuts(item.action, item.params);
   if (shortcuts.length === 0) return null;
   return (
@@ -83,38 +84,63 @@ function PaletteList({ id, items, highlight, reasonLabels, onHighlight, onRun }:
 
   return (
     <ul ref={listRef} id={id} className={styles.list} role="listbox" aria-label="Actions">
-      {items.filtered.map((item, idx) => {
-        const { enabled, reason: code } = items.enabledOf(item);
-        const reason = code ? reasonLabel(code, reasonLabels) : undefined;
-        const tag = items.tagOf(item);
-        const cls = [
-          styles.row,
-          idx === highlight ? styles.rowActive : '',
-          enabled ? '' : styles.rowDisabled,
-        ].filter(Boolean).join(' ');
-        return (
-          <li
-            key={item.key}
-            id={`${id}-${idx}`}
-            data-idx={idx}
-            role="option"
-            aria-selected={idx === highlight}
-            aria-disabled={!enabled}
-            className={cls}
-            onMouseEnter={() => { if (enabled) onHighlight(idx); }}
-            onMouseDown={(e) => { e.preventDefault(); if (enabled && e.button === 0) onRun(item); }}
-            title={reason}
-          >
-            <span className={styles.label}>{actionItemTitle(item)}</span>
-            {tag !== undefined && <span className={styles.tag}>{tag}</span>}
-            {!enabled && reason && (
-              <span className={styles.reason}>{reason}</span>
-            )}
-            <ShortcutChips item={item} />
-          </li>
-        );
-      })}
+      {items.filtered.map((item, idx) => (
+        <PaletteRow
+          key={item.key}
+          id={`${id}-${idx}`}
+          idx={idx}
+          item={item}
+          items={items}
+          highlighted={idx === highlight}
+          reasonLabels={reasonLabels}
+          onHighlight={onHighlight}
+          onRun={onRun}
+        />
+      ))}
     </ul>
+  );
+}
+
+interface PaletteRowProps extends Pick<PaletteListProps, 'items' | 'reasonLabels' | 'onHighlight' | 'onRun'> {
+  id: string;
+  idx: number;
+  item: ActionItem;
+  highlighted: boolean;
+}
+
+/** One entry: its title, the tag that found it, why it cannot run or else what it does, and its shortcut. */
+function PaletteRow({ id, idx, item, items, highlighted, reasonLabels, onHighlight, onRun }: PaletteRowProps) {
+  const { enabled, reason: code } = items.enabledOf(item);
+  const reason = code ? reasonLabel(code, reasonLabels) : undefined;
+  const hint = reason ?? item.description;
+  const tag = items.tagOf(item);
+  const appearance = useAppearance({ grade: item.grade });
+  const cls = [
+    styles.row,
+    highlighted ? styles.rowActive : '',
+    enabled ? '' : styles.rowDisabled,
+  ].filter(Boolean).join(' ');
+  return (
+    <li
+      id={id}
+      data-idx={idx}
+      role="option"
+      aria-selected={highlighted}
+      aria-disabled={!enabled}
+      aria-description={hint}
+      {...appearance}
+      className={cls}
+      onMouseEnter={() => { if (enabled) onHighlight(idx); }}
+      onMouseDown={(e) => { e.preventDefault(); if (enabled && e.button === 0) onRun(item); }}
+      title={hint}
+    >
+      <span className={styles.label}>{actionItemTitle(item)}</span>
+      {tag !== undefined && <span className={styles.tag}>{tag}</span>}
+      {!enabled && reason && (
+        <span className={styles.reason}>{reason}</span>
+      )}
+      <ShortcutChips item={item} />
+    </li>
   );
 }
 

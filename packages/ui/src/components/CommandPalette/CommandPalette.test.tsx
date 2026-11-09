@@ -291,3 +291,46 @@ describe('CommandPalette', () => {
     expect(runs.duplicate).not.toHaveBeenCalled();
   });
 });
+
+describe('CommandPalette: per entry', () => {
+  function Order() {
+    useAction({
+      id: 'order',
+      label: 'Order',
+      description: 'Move the selection in the stack',
+      enabled: (_d, _at, _c, p) => (p?.step === 'up' ? 'Already at the top' : true),
+      variants: [
+        { key: 'up', label: 'Up', shortcut: 'U', params: { step: 'up' } },
+        { key: 'down', label: 'Down', grade: 'danger', description: 'Send it down', params: { step: 'down' } },
+      ],
+      invoker: { timing: 'immediate' as const, run: () => {} },
+    });
+    return null;
+  }
+  function OrderHarness() {
+    const [open, setOpen] = useState(false);
+    return (
+      <ActionsProvider>
+        <Order />
+        <button type="button" onClick={() => setOpen(true)}>open</button>
+        <CommandPalette open={open} onClose={() => setOpen(false)} />
+      </ActionsProvider>
+    );
+  }
+  const row = (label: string) => options().find((o) => o.textContent?.includes(label))!;
+
+  it('asks enabled once per variant, shows its own shortcut text, and hints with its description', () => {
+    renderWithIcons(<OrderHarness />);
+    fireEvent.click(screen.getByText('open'));
+    expect(row('Up').getAttribute('aria-disabled')).toBe('true');
+    expect(row('Up').textContent).toContain('Already at the top');
+    expect(row('Up').textContent).toContain('U');
+    expect(row('Up')).toHaveAttribute('aria-description', 'Already at the top');
+    expect(row('Down').getAttribute('aria-disabled')).toBe('false');
+    expect(row('Down')).toHaveAttribute('aria-description', 'Send it down');
+    expect(row('Down')).toHaveAttribute('title', 'Send it down');
+    expect(row('Down')).toHaveAttribute('data-grade', 'danger');
+    expect(row('Up')).not.toHaveAttribute('data-grade');
+    expect(selected()).toBe(row('Down'));
+  });
+});

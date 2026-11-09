@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import { useRowTip } from '../Tree/useRowTip';
 
-/** The highlighted row's tooltip saying why it is disabled, opened once the highlight rests on it, by pointer or
- *  by key. `why` undefined is a row with nothing to say. */
+/** The highlighted row's tooltip saying why it is disabled, or else what it does, opened once the highlight rests
+ *  on it, by pointer or by key. `why` undefined is a row with nothing to say. */
 export function MenuRowTip({ rowId, why }: { rowId: string; why: string | undefined }) {
   const rowTip = useRowTip();
   useEffect(() => {
