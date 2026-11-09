@@ -238,9 +238,7 @@ function TrialRuntime({
   const snapshots = useHistoryVersion(record.history);
   const undoBindings = trialUndoBindings({
     declaresUndo: undoCapability(instrument) != null,
-    marks: annotationsCap
-      ? { moves: markMoves, undo: () => annotations.undo(), redo: () => annotations.redo() }
-      : null,
+    marks: annotationsCap ? { moves: markMoves, store: annotations } : null,
     own: ownHistory,
     snapshots,
   });

@@ -13,7 +13,7 @@ import {
   roundPoints,
   worldToFrac,
 } from './frac';
-import { MarkHistory } from './history';
+import { MarkHistory, markUndo } from './history';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
@@ -273,21 +273,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       return isStaleAgainst(a.seen, config, keys);
     },
 
-    canUndo() {
-      return history.canUndo(historySceneAt);
-    },
-
-    canRedo() {
-      return history.canRedo(historySceneAt);
-    },
-
-    undo() {
-      return history.undo(historySceneAt);
-    },
-
-    redo() {
-      return history.redo(historySceneAt);
-    },
+    ...markUndo(history, historySceneAt),
 
     selection() {
       const out: string[] = [];

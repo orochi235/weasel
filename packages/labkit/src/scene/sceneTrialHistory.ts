@@ -11,6 +11,8 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
     canRedo: () => scene.canRedo(),
     undo: () => scene.undo(),
     redo: () => scene.redo(),
+    undoStamp: () => scene.history.timestampAt(scene.history.undoDepth() - 1),
+    redoStamp: () => scene.history.timestampAt(scene.history.undoDepth()),
     subscribe: (listener) => scene.subscribe(listener),
     record: (op, label) => scene.history.recordEntry([op], label),
   };

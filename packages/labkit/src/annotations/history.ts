@@ -1,4 +1,5 @@
 import type { Scene } from '@weasel-js/core';
+import { editStamp } from '../undo/editStamp';
 
 /** What the ordering needs of a scene: its history entries and depth, and the two moves. */
 export interface HistoryScene {
@@ -28,8 +29,9 @@ export class MarkHistory {
   private readonly depth = new Map<string, number>();
   /** Per target, the ids of the entries its scene could redo when last seen. */
   private readonly ahead = new Map<string, ReadonlySet<string>>();
-  private undoable: string[] = [];
-  private redoable: string[] = [];
+  /** Per change, its target and when it was first made. */
+  private undoable: Step[] = [];
+  private redoable: Step[] = [];
 
   private see(target: string, scene: HistoryScene): { now: number; current: string | undefined } {
     const now = scene.historyIndex();
@@ -52,32 +54,29 @@ export class MarkHistory {
     const { now, current } = this.see(target, scene);
     if (now > before) {
       // Depth cannot tell a redo from a change, whoever ran it: the entry that became current can.
-      if (current !== undefined && redoable?.has(current)) {
-        drop(this.redoable, target);
-      } else {
-        // A change dropped whatever was redoable — weasel's own scene did the
-        // same to its stack.
-        this.redoable = [];
-      }
-      this.undoable.push(target);
+      const isRedo = current !== undefined && redoable?.has(current) === true;
+      const redone = isRedo ? drop(this.redoable, target) : undefined;
+      // A change drops whatever was redoable — weasel's own scene did the same to its stack.
+      if (!isRedo) this.redoable = [];
+      this.undoable.push(redone ?? { target, stamp: editStamp() });
     } else if (now < before) {
-      drop(this.undoable, target);
-      this.redoable.push(target);
+      const undone = drop(this.undoable, target);
+      this.redoable.push(undone ?? { target, stamp: editStamp() });
     }
   }
 
-  /** The target `undo` would act on, skipping any whose scene has nothing
+  /** The change `undo` would act on, skipping any whose scene has nothing
    *  left — a scene can drop entries this ordering still lists. */
   private next(
-    stack: string[],
+    stack: readonly Step[],
     can: (s: HistoryScene) => boolean,
     at: (t: string) => HistoryScene | undefined,
-  ): string | null {
+  ): Step | null {
     for (let i = stack.length - 1; i >= 0; i--) {
-      const target = stack[i];
-      if (target === undefined) continue;
-      const scene = at(target);
-      if (scene && can(scene)) return target;
+      const step = stack[i];
+      if (step === undefined) continue;
+      const scene = at(step.target);
+      if (scene && can(scene)) return step;
     }
     return null;
   }
@@ -90,27 +89,53 @@ export class MarkHistory {
     return this.next(this.redoable, (s) => s.canRedo(), at) !== null;
   }
 
+  /** When the change `undo` would take back was made. */
+  undoStamp(at: (t: string) => HistoryScene | undefined): number | undefined {
+    return this.next(this.undoable, (s) => s.canUndo(), at)?.stamp;
+  }
+
+  /** When the change `redo` would make again was first made. */
+  redoStamp(at: (t: string) => HistoryScene | undefined): number | undefined {
+    return this.next(this.redoable, (s) => s.canRedo(), at)?.stamp;
+  }
+
   undo(at: (t: string) => HistoryScene | undefined): boolean {
-    const target = this.next(this.undoable, (s) => s.canUndo(), at);
-    const scene = target === null ? undefined : at(target);
+    const step = this.next(this.undoable, (s) => s.canUndo(), at);
+    const scene = step === null ? undefined : at(step.target);
     return scene ? scene.undo() : false;
   }
 
   redo(at: (t: string) => HistoryScene | undefined): boolean {
-    const target = this.next(this.redoable, (s) => s.canRedo(), at);
-    const scene = target === null ? undefined : at(target);
+    const step = this.next(this.redoable, (s) => s.canRedo(), at);
+    const scene = step === null ? undefined : at(step.target);
     return scene ? scene.redo() : false;
   }
 }
 
-/** Remove the last occurrence of `value`, in place. */
-function drop(stack: string[], value: string): void {
+/** A mark store's undo, over `history`'s ordering of the scenes `at` finds. */
+export function markUndo(history: MarkHistory, at: (t: string) => HistoryScene | undefined) {
+  return {
+    canUndo: () => history.canUndo(at),
+    canRedo: () => history.canRedo(at),
+    undo: () => history.undo(at),
+    redo: () => history.redo(at),
+    undoStamp: () => history.undoStamp(at),
+    redoStamp: () => history.redoStamp(at),
+  };
+}
+
+/** One change in the ordering. */
+interface Step {
+  target: string;
+  stamp: number;
+}
+
+/** Remove the last step on `target`, in place, and return it. */
+function drop(stack: Step[], target: string): Step | undefined {
   for (let i = stack.length - 1; i >= 0; i--) {
-    if (stack[i] === value) {
-      stack.splice(i, 1);
-      return;
-    }
+    if (stack[i]?.target === target) return stack.splice(i, 1)[0];
   }
+  return undefined;
 }
 
 /** A `Scene` satisfies `HistoryScene`; this names the narrowing once. */
