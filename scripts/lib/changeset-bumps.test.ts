@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readBumps } from './changeset-bumps.mjs';
+import { isChangesetFile, readBumps } from './changeset-bumps.mjs';
 
 const levels = (text: string) => readBumps(text).unapproved.map((b) => b.level);
 
@@ -31,5 +31,18 @@ describe('readBumps', () => {
 
   it('throws on a level changesets refuses', () => {
     expect(() => readBumps('---\n"a": Minor\n---\n\nx\n')).toThrow(/invalid version type/);
+  });
+});
+
+describe('isChangesetFile', () => {
+  it('skips exactly the files changesets skips', () => {
+    expect(['README.md', 'readme.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.hidden.md', 'notes.txt'].filter(isChangesetFile)).toEqual([]);
+    // changesets reads these as changesets: its AGENTS, CLAUDE and GEMINI names match by case.
+    expect(['claude.md', 'Agents.md', 'gemini.md', 'brave-cats.md'].filter(isChangesetFile)).toEqual([
+      'claude.md',
+      'Agents.md',
+      'gemini.md',
+      'brave-cats.md',
+    ]);
   });
 });

@@ -1,8 +1,12 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   compareVersions,
   headingDates,
   parseChangeset,
+  readPendingChangesets,
   releasesFromChangelogs,
   splitSummary,
 } from './vite-changelogs';
@@ -158,6 +162,22 @@ describe('parseChangeset', () => {
   it('returns null for a file with no frontmatter or no body', () => {
     expect(parseChangeset('just prose')).toBeNull();
     expect(parseChangeset("---\n'@weasel-js/core': patch\n---\n\n")).toBeNull();
+  });
+});
+
+describe('readPendingChangesets', () => {
+  it('lists the files changesets versions from, and no others', () => {
+    const root = mkdtempSync(join(tmpdir(), 'pending-'));
+    try {
+      mkdirSync(join(root, '.changeset'));
+      const changeset = '---\n"@weasel-js/core": patch\n---\n\nA fix.\n';
+      for (const name of ['real.md', '.draft.md', 'CLAUDE.md', 'README.md']) {
+        writeFileSync(join(root, '.changeset', name), changeset);
+      }
+      expect([...(readPendingChangesets(root)?.entries ?? [])].map((e) => e.id)).toEqual(['real']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

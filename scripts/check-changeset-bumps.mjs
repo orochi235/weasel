@@ -14,7 +14,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readBumps } from './lib/changeset-bumps.mjs';
+import { isChangesetFile, readBumps } from './lib/changeset-bumps.mjs';
 
 // From the script's own place, so a run from another directory still looks.
 const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.changeset');
@@ -28,10 +28,7 @@ if (!existsSync(DIR)) {
 // has consumed it. Those still decide the version every later prerelease
 // computes, so scan both.
 const PRE_DIR = join(DIR, 'pre');
-// The files changesets itself skips (`@changesets/read`).
-const NOT_CHANGESETS = /^(readme|AGENTS|CLAUDE|GEMINI)\.md$/i;
-const mds = (dir) =>
-  existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md') && !f.startsWith('.') && !NOT_CHANGESETS.test(f)) : [];
+const mds = (dir) => (existsSync(dir) ? readdirSync(dir).filter(isChangesetFile) : []);
 const files = [
   ...mds(DIR).map((f) => ({ file: f, path: join(DIR, f), label: `.changeset/${f}` })),
   ...mds(PRE_DIR).map((f) => ({ file: f, path: join(PRE_DIR, f), label: `.changeset/pre/${f}` })),
