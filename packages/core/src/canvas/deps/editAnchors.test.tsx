@@ -101,6 +101,31 @@ describe('useEditAnchorsDepSource', () => {
     expect(dep().handleLocks).toEqual({ angle: true, length: false });
   });
 
+  it('reads the handle locks live on a dep taken before they changed, as a drag holds the press\'s', () => {
+    const scene = {
+      layers: [{ id: 'default' }],
+      renderOrder: () => [] as NodeId[],
+      get: () => undefined,
+      update: () => {},
+    } as unknown as Scene<unknown, string, unknown>;
+    const sel = { current: [] as NodeId[], set: () => {} } as unknown as SelectionApi;
+    let reg!: DepRegistry;
+    function Wire() {
+      useEditAnchorsDepSource(scene, sel, { applyOps: () => {} });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const atPress = (reg.get as any)('editAnchors');
+    expect(atPress.handleLocks).toEqual({ angle: false, length: false });
+    act(() => { atPress.setHandleLocks({ angle: true, length: false }); });
+    expect(atPress.handleLocks).toEqual({ angle: true, length: false });
+  });
+
   it('clears the effective editingId when the target leaves the selection', () => {
     const nodes = new Map<string, any>([
       ['poly', {

@@ -122,7 +122,10 @@ export function useEditAnchorsDepSource(
         if (!effectiveId) return;
         state.setMarquee(rect);
       },
-      handleLocks: state.getHandleLocks() ?? locksOf(tunedHandleLock(tuneRef.current)),
+      // A getter: a drag holds the dep from its press, and the moves bring none.
+      get handleLocks() {
+        return stateRef.current.getHandleLocks() ?? locksOf(tunedHandleLock(tuneRef.current));
+      },
       setHandleLocks(next) {
         state.setHandleLocks(next);
         registry.changed?.();
