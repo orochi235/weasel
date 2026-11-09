@@ -1,4 +1,5 @@
 import { Select, useLabContext, usePersistedState } from '@weasel-js/labkit';
+import type { SelectOption } from '@weasel-js/ui/components/Select';
 import type { IconSpec } from '@weasel-js/icons';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Callout } from '@weasel-js/ui/components/Callout';
@@ -6,7 +7,7 @@ import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon as glyph } from '../icons.gen';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Globals } from '../protocol/messages';
-import { followApp, type GlobalDeclaration, type GlobalDeclarations, labGlobals, labOptions } from './globals';
+import { followApp, type GlobalDeclaration, type GlobalDeclarations, type GlobalOption, labGlobals, labOptions } from './globals';
 
 const RECORD = 'fg-globals';
 
@@ -19,6 +20,17 @@ export function useLabGlobals(declarations: GlobalDeclarations): [Globals, (key:
     [declarations, setStored],
   );
   return [values, set];
+}
+
+/** A global's option as the select draws it. */
+function selectOption({ value, label, icon, disabled, disabledReason, description }: GlobalOption): SelectOption {
+  return {
+    value, label,
+    ...(icon ? { icon: <Icon name={icon} size={16} /> } : {}),
+    ...(disabled ? { isDisabled: true } : {}),
+    ...(disabledReason ? { disabledReason } : {}),
+    ...(description ? { description } : {}),
+  };
 }
 
 interface GlobalSelectProps {
@@ -36,7 +48,7 @@ function GlobalSelect({ name, declaration, values, set, labeled = false }: Globa
       width={labeled ? 'fill' : 'fit'}
       selectedKey={String(values[name])}
       onSelectionChange={(value) => set(name, value)}
-      options={labOptions(declaration, values)}
+      options={labOptions(declaration, values).map(selectOption)}
     />
   );
 }

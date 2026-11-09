@@ -8,14 +8,24 @@
 export interface ToolSet<TId extends string = string> {
   readonly id: string;
   readonly members: readonly (TId | ToolSet<TId>)[];
+  /** Its tools share one palette button, which opens a menu of them. See {@link toolStacksOf}. */
+  readonly stack?: boolean;
+}
+
+/** What a set says beside its members. */
+export interface ToolSetOptions {
+  /** {@link ToolSet.stack}. */
+  stack?: boolean;
 }
 
 /** One entry of a list of tools to mount: an id, or a set of them. */
 export type ToolEntry<TId extends string = string> = TId | ToolSet<TId>;
 
 /** A set named `id` of `members`, in palette order. */
-export function toolSet<TId extends string>(id: string, members: readonly ToolEntry<TId>[]): ToolSet<TId> {
-  return { id, members };
+export function toolSet<TId extends string>(
+  id: string, members: readonly ToolEntry<TId>[], options: ToolSetOptions = {},
+): ToolSet<TId> {
+  return options.stack ? { id, members, stack: true } : { id, members };
 }
 
 /** Whether `entry` is a set rather than a single id. */
@@ -40,10 +50,26 @@ export function toolIdsOf<TId extends string>(entries: readonly ToolEntry<TId>[]
   return out;
 }
 
-/** `set` less every id `omit` names, sets opened. Keeps `set`'s id with a `-without` suffix. */
+/** `set` less every id `omit` names, sets opened. Keeps `set`'s id with a `-without` suffix, and its `stack`. */
 export function withoutTools<TId extends string>(set: ToolSet<TId>, ...omit: readonly ToolEntry<TId>[]): ToolSet<TId> {
   const gone = new Set<string>(toolIdsOf(omit));
-  return { id: `${set.id}-without`, members: toolIdsOf([set]).filter((id) => !gone.has(id)) };
+  return toolSet(`${set.id}-without`, toolIdsOf([set]).filter((id) => !gone.has(id)), { stack: set.stack });
+}
+
+/** The ids of each set `entries` hold, at any depth, that is marked `stack`, sets inside it opened: the
+ *  stacks a palette showing `entries` draws. A stacked set's own nested sets are part of its stack, not
+ *  stacks of their own. */
+export function toolStacksOf<TId extends string>(entries: readonly ToolEntry<TId>[]): TId[][] {
+  const out: TId[][] = [];
+  const walk = (list: readonly ToolEntry<TId>[]): void => {
+    for (const entry of list) {
+      if (!isToolSet(entry)) continue;
+      if (entry.stack) out.push(toolIdsOf([entry]));
+      else walk(entry.members);
+    }
+  };
+  walk(entries);
+  return out;
 }
 
 /** Whether `set` names `id`, directly or through a set inside it. */

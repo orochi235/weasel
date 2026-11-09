@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { useState } from 'react';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
-import type { Tool, ToolsApi } from '@weasel-js/core';
+import { toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
 
 const tool = (id: string, group = 'shape'): Tool =>
   ({ id, keybinding: { key: id[0] }, presentation: { label: id, group } }) as Tool;
@@ -70,5 +70,28 @@ describe('ToolPalette stacks', () => {
     renderWithIcons(<Palette stacks={[['pen', 'rect']]} />);
     const names = screen.getAllByRole('button').map((b) => b.textContent);
     expect(names).toEqual(['selectS', 'penP', 'ellipseE', 'starS']);
+  });
+
+  it('stacks a set given in stacks, its ids opened', () => {
+    renderWithIcons(<Palette stacks={[toolSet('shapes', ['rect', toolSet('round', ['ellipse'])])]} />);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['selectS', 'rectR', 'starS', 'penP']);
+  });
+
+  it('stacks the sets an include set marks stack, unless stacks is given', () => {
+    const shown = toolSet('all', ['select', toolSet('shapes', SHAPES, { stack: true }), 'pen']);
+    const { unmount } = renderWithIcons(<Palette stacks={undefined} include={shown} />);
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['selectS', 'rectR', 'penP']);
+    unmount();
+    renderWithIcons(<Palette stacks={[]} include={shown} />);
+    expect(screen.getAllByRole('button')).toHaveLength(5);
+  });
+
+  it('reads a stack face\'s description in its tooltip', () => {
+    const described = { ...LIST[1], presentation: { label: 'rect', group: 'shape', description: 'Drag out a rectangle' } } as Tool;
+    const tools = { registry: { rect: described, ellipse: LIST[2] }, active: null, setActive: () => {} } as unknown as ToolsApi;
+    renderWithIcons(<ToolPalette tools={tools} stacks={[['rect', 'ellipse']]} />);
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => screen.getByRole('button', { name: /rect/ }).focus());
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Drag out a rectangle (R)');
   });
 });

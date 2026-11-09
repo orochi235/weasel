@@ -19,8 +19,9 @@ export type PathToolId =
 /** The ids {@link usePathEditTools} keys its tools by. */
 export type PathEditToolId = 'simplifyBrush' | 'lengthen';
 
-/** The tools that pull a selected path's shape around as a whole: distort, envelope mesh, and puppet warp. */
-export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'envelope', 'puppet']);
+/** The tools that pull a selected path's shape around as a whole: distort, envelope mesh, and puppet warp.
+ *  A palette stacks them on one button. */
+export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'envelope', 'puppet'], { stack: true });
 
 /** The tools that reshape paths already drawn: girth, the stroke tools, the smudge brush, and the warps. */
 export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'trim', 'extend', 'smudgeBrush', WARP_TOOLS]);

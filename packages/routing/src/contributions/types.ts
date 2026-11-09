@@ -24,6 +24,8 @@ export type HotkeyTrigger = 'space' | 'alt' | 'ctrl' | 'meta' | 'shift' | (strin
 export interface ToolPresentation {
   /** Human-readable label, distinct from the `id`. Falls back to `id`. */
   label?: string;
+  /** What the tool does, in a sentence: a palette's tooltip reads it in place of the label. */
+  description?: string;
   /** The tool's icon, by qualified name: `icon('rect')` in the package that draws it. */
   icon?: import('@weasel-js/icons').IconSpec;
   /** Palette grouping key. Tools sharing a group render contiguously

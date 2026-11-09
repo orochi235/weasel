@@ -3,14 +3,16 @@ import {
   placedPagesOf,
   type SceneCanvasApi,
   type SelectionApi,
+  SHAPE_TOOLS,
   TOOL_GROUP_ORDER,
   type ToolsApi,
   useActionsRegistry,
   useCanvasSize,
-  type View
+  type View,
+  withoutTools,
 } from '@weasel-js/core';
 import type { ModeRegistry } from '@weasel-js/modes';
-import { PATH_OVERLAYS_GROUP } from '@weasel-js/path-tools';
+import { PATH_OVERLAYS_GROUP, WARP_TOOLS } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
 import { ActiveToolOptions } from './ui/ToolOptions';
@@ -53,9 +55,7 @@ import { Workspace } from './Workspace';
 
 /** The palette's groups: core's, then path-tools' reshaping tools and its warps. */
 const TOOL_GROUPS = [...TOOL_GROUP_ORDER, 'path', 'warp'];
-const TOOL_STACKS = [
-  ['rect', 'ellipse', 'polygon', 'star'], ['pen', 'spiro', 'pencil'], ['trim', 'extend'], ['distort', 'envelope', 'puppet'],
-];
+const TOOL_STACKS = [withoutTools(SHAPE_TOOLS, 'line'), ['pen', 'spiro', 'pencil'], ['trim', 'extend'], WARP_TOOLS];
 /** What the view fits before the scene has a page to fit. */
 const FALLBACK_PAGE = { x: 0, y: 0, ...PAPER_PRESETS[DEFAULT_PAPER_SIZE] };
 

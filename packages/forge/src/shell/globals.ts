@@ -4,10 +4,24 @@ import type { LabMode } from '@weasel-js/labkit';
 import { type ConfigSchema, f } from '@weasel-js/labkit/config';
 import type { Globals } from '../protocol/messages';
 
+/** One value a global offers. */
+export interface GlobalOption {
+  value: string;
+  label: string;
+  /** Drawn before `label`. */
+  icon?: IconSpec;
+  /** Shown but not choosable. A lab value it names falls back as one `shows` hides does. */
+  disabled?: boolean;
+  /** Why it is disabled, read in its place in the list. */
+  disabledReason?: string;
+  /** What choosing it does, read under `label` in the list. */
+  description?: string;
+}
+
 /** One global the workshop's toolbar sets for every story, and a trial may pin for its own. */
 export interface GlobalDeclaration {
   label: string;
-  options: readonly { value: string; label: string }[];
+  options: readonly GlobalOption[];
   default: string;
   /** Another global's key: the toolbar shows this one in a popover beside that one rather than in the bar itself. */
   under?: string;
@@ -82,7 +96,8 @@ export function followApp(declarations: GlobalDeclarations, values: Globals, chr
 
 /**
  * The lab's values from what was stored: declared keys only. A value no option offers falls back to the default, and
- * one its declaration's `shows` hides falls back to the shown option nearest it in `options`, the earlier on a tie.
+ * one its declaration's `shows` hides or its option disables falls back to the shown, enabled option nearest it in
+ * `options`, the earlier on a tie.
  */
 export function labGlobals(declarations: GlobalDeclarations, stored: unknown): Globals {
   const from = isRecord(stored) ? stored : {};
@@ -96,10 +111,10 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
   );
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const shown = shownOptions(declaration, offered);
+      const shown = shownOptions(declaration, offered).filter((option) => !option.disabled);
       const value = offered[key];
       if (value === FOLLOW_APP && declaration.follows) return [key, value];
-      if (!declaration.shows || shown.length === 0 || shown.some((option) => option.value === value)) return [key, value];
+      if (shown.length === 0 || shown.some((option) => option.value === value)) return [key, value];
       const at = (v: unknown) => declaration.options.findIndex((option) => option.value === v);
       const from = at(value);
       const nearest = shown.reduce((best, option) =>

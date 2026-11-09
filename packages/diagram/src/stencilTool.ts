@@ -16,13 +16,15 @@ import { roleStyle } from './theme/resolve';
 import type { DiagramTheme } from './theme/types';
 
 /** The tool that draws `stencil`, a shape's or a container's: its id is the stencil's insert kind. */
-export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon'>): Tool {
+export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {
   return defineTool({
     id: stencilKind(stencil.id),
     hookName: 'useStencilTool',
     capabilities: ['creates-shapes'],
     cursor: 'crosshair',
-    presentation: { label: stencil.label, icon: stencil.icon, group: 'stencil' },
+    presentation: {
+      label: stencil.label, ...(stencil.description ? { description: stencil.description } : {}), icon: stencil.icon, group: 'stencil',
+    },
     bindings: [
       { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { id: `${stencilKind(stencil.id)}.drag`, params: { kind: stencilKind(stencil.id) } } },
       INSERT_REPOSITION_BINDING,
@@ -31,7 +33,7 @@ export function stencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon
 }
 
 /** {@link stencilTool}, rebuilt only when the stencil changes. */
-export function useStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'icon'>): Tool {
+export function useStencilTool(stencil: Pick<DiagramStencil, 'id' | 'label' | 'description' | 'icon'>): Tool {
   return useMemo(() => stencilTool(stencil), [stencil]);
 }
 

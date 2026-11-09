@@ -8,6 +8,7 @@ import {
   ListBoxItem as RACListBoxItem,
   ListBoxSection as RACListBoxSection,
   Header,
+  Text,
   type SelectProps as RACSelectProps,
   type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
@@ -31,6 +32,10 @@ export type SelectOption = {
   isDisabled?: boolean;
   /** A glyph drawn before `label`, in the list and in the trigger. */
   icon?: ReactNode;
+  /** A line under `label` in the list, saying what the option does. */
+  description?: string;
+  /** Why the option is disabled, read in the list in place of `description` while `isDisabled`. */
+  disabledReason?: string;
   /**
    * Plain-text form of `label`, for type-to-select and screen readers.
    * Only needed when `label` isn't a bare string — a label built from
@@ -259,7 +264,10 @@ function CheckMark() {
 
 function renderOption<T extends OptionKey>(o: SelectOption & { value: T }) {
   return (
-    <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}>
+    <SelectItem
+      key={String(o.value)} id={o.value} isDisabled={o.isDisabled} icon={o.icon} textValue={o.textValue}
+      description={o.description} disabledReason={o.disabledReason}
+    >
       {o.label}
     </SelectItem>
   );
@@ -289,6 +297,10 @@ export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children'
   children?: ReactNode;
   /** A glyph drawn before the label, in the list and in the trigger. */
   icon?: ReactNode;
+  /** A line under the label in the list, and the row's accessible description. */
+  description?: string;
+  /** Why the row is disabled, in place of `description` while `isDisabled`. */
+  disabledReason?: string;
   className?: string;
 };
 
@@ -311,7 +323,8 @@ function textValueOf(children: ReactNode, explicit: string | undefined): string 
  * selected. A string child supplies its own `textValue`; anything richer must
  * pass one so type-to-select and screen readers have something to read.
  */
-export function SelectItem({ children, icon, className, textValue, ...rest }: SelectItemProps) {
+export function SelectItem({ children, icon, className, textValue, description, disabledReason, ...rest }: SelectItemProps) {
+  const note = (rest.isDisabled && disabledReason) || description;
   return (
     <RACListBoxItem
       {...rest}
@@ -321,7 +334,11 @@ export function SelectItem({ children, icon, className, textValue, ...rest }: Se
       <CheckMark />
       {/* A box around the label, not just text: landing the list over its
           trigger means measuring where this row's label sits. */}
-      <span className={s.optionLabel}>{withIcon(icon, children)}</span>
+      <span className={s.optionLabel}>
+        {/* A description slot needs a label slot beside it, or the row's name takes in the description too. */}
+        {note ? withIcon(icon, <Text slot="label">{children}</Text>) : withIcon(icon, children)}
+        {note && <Text slot="description" className={s.note}>{note}</Text>}
+      </span>
     </RACListBoxItem>
   );
 }

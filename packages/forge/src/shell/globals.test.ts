@@ -46,6 +46,18 @@ describe('labGlobals', () => {
     expect(labGlobals(shaped, { font: 'inter', size: 'l' }).size).toBe('m');
     expect(labGlobals(shaped, { font: 'inter', size: 'xs' }).size).toBe('xs');
   });
+
+  it('moves a value whose option is disabled to the nearest enabled one, the default included', () => {
+    const blocked: GlobalDeclarations = {
+      mode: {
+        ...declarations.mode!,
+        options: declarations.mode!.options.map((o) => (o.value === 'light' ? { ...o, disabled: true } : o)),
+        default: 'light',
+      },
+    };
+    expect(labGlobals(blocked, undefined).mode).toBe('auto');
+    expect(labGlobals(blocked, { mode: 'dark' }).mode).toBe('dark');
+  });
 });
 
 describe('effectiveGlobals', () => {

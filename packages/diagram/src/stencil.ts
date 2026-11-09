@@ -20,6 +20,8 @@ import type { Outline } from './outline';
 export interface DiagramStencil {
   id: string;
   label: string;
+  /** Its tool's presentation `description`: what a palette's tooltip reads. */
+  description?: string;
   outline: Outline;
   size: { width: number; height: number };
   rows?: readonly Row[];

@@ -83,7 +83,11 @@ a preset's `tools`, and `ToolPalette`'s `include` each take one. Core ships one 
 family (`SELECT_TOOLS`, `VIEW_TOOLS`, `SHAPE_TOOLS`, `DRAW_TOOLS`, `TYPE_TOOLS`,
 `PAGE_TOOLS`) and `BUILTIN_TOOLS` over them all; `withoutTools(set,
 ...omit)` leaves some out, so an app takes "everything but the knife" without
-listing ids that a new built-in would then miss. A set names ids, not tools,
+listing ids that a new built-in would then miss. A set made with
+`toolSet(id, members, { stack: true })` is a stack: a palette gives its tools one
+button that opens a menu of them, as `WARP_TOOLS` is. `ToolPalette` stacks the
+stacked sets inside its `include`, or the sets and id lists its `stacks` names in
+their place. A set names ids, not tools,
 because a tool is built by a hook holding its state: whatever mounts the set
 supplies each tool, core for its built-ins and a package's own hook for its.
 
