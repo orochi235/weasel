@@ -224,3 +224,33 @@ describe('per-anchor stroke data on the pieces a command makes', () => {
     expect(data.stroke.vertexWidths).toBeUndefined();
   });
 });
+
+describe('per-anchor stroke data through Join', () => {
+  const run = (deps: InvocationCtx['deps']) => (joinPathsAction.invoker as ImmediateInvoker).run(deps);
+  const joinedData = (batches: Array<{ ops: Op[] }>) =>
+    args(batches[0].ops.find((o) => o.name === 'setData')!).to as {
+      stroke: { width: number; vertexWidths?: unknown; vertexColors?: unknown };
+    };
+
+  it('carries both strokes\' widths and colors, reversing the one joined from its far end', () => {
+    // a runs 0 → 10; b runs 30 → 10, so it joins end to end, reversed, its 10 merging into a's.
+    const a = { pose: line(0, 0, 10, 0), data: { stroke: { width: 2, vertexWidths: [1, 3], vertexColors: [1, 0, 0, 1, 0, 1, 0, 1] } } };
+    const b = { pose: line(30, 0, 10, 0), data: { stroke: { width: 2, vertexWidths: [{ left: 5, right: 6 }, 7], vertexColors: [0, 0, 1, 1, 1, 1, 1, 1] } } };
+    const { deps, batches } = setup({ a, b }, ['a', 'b']);
+    run(deps);
+    const stroke = joinedData(batches).stroke;
+    expect(stroke.vertexWidths).toEqual([1, 3, { left: 6, right: 5 }]);
+    expect(stroke.vertexColors).toEqual([1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1]);
+  });
+
+  it('fills a stroke with no widths or colors from its own width and paint', () => {
+    const a = { pose: line(0, 0, 10, 0), data: { stroke: { width: 2, vertexWidths: [1, 3], paint: { color: '#ff0000' } } } };
+    const b = { pose: line(12, 0, 30, 0), data: { stroke: { width: 4, paint: { color: '#0000ff' } } } };
+    const { deps, batches } = setup({ a, b }, ['a', 'b']);
+    run(deps);
+    const stroke = joinedData(batches).stroke;
+    expect(stroke.vertexWidths).toEqual([1, 3, 4, 4]);
+    expect(stroke.vertexColors).toBeUndefined();
+  });
+});
+

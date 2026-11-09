@@ -89,10 +89,13 @@ export function withPath(target: PathNode, worldPath: PolygonPath): { pose: unkn
   return shape;
 }
 
-/** The ops that give `target` the geometry `worldPath`, labeled `label`. */
-export function reshapeOps(target: PathNode, worldPath: PolygonPath, label: string): Op[] {
+/** The ops that give `target` the geometry `worldPath`, labeled `label`, with `anchorData` (per-anchor
+ *  fields carried through the edit) laid over its data. */
+export function reshapeOps(target: PathNode, worldPath: PolygonPath, label: string, anchorData: Record<string, unknown> = {}): Op[] {
   const next = withPath(target, worldPath);
-  return next ? reshapeTo(target.node, next, label) : [];
+  if (!next) return [];
+  const data = Object.keys(anchorData).length > 0 ? { ...(next.data as object), ...anchorData } : next.data;
+  return reshapeTo(target.node, data === next.data ? next : { pose: next.pose, data }, label);
 }
 
 /** The ops taking `node` from what it is to `next`, labeled `label`. */
