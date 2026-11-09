@@ -1,6 +1,6 @@
 /**
  * Integration tests for `useEyedropperTool` through the gesture dispatcher:
- * registry-active (sticky `I`) and hotkey-engaged (alt-hold).
+ * registry-active (sticky `I`) and hotkey-engaged (alt-hold, where the caller gives it Alt).
  *
  * The tool declares one `click` binding and nothing else, so everything
  * about *when* it samples — sub-threshold release, hotkey scope outranking
@@ -170,13 +170,13 @@ describe('useEyedropperTool through the gesture dispatcher', () => {
     expect(onPick).toHaveBeenCalledExactlyOnceWith('#7fb069');
     expect(rivalSpy).toHaveBeenCalledTimes(1);
   });
-  it('samples while Alt, its hotkey, is held through the click', () => {
+  it('samples while Alt, the hotkey its caller gave it, is held through the click', () => {
     const onPick = vi.fn();
     let ctx!: ActiveToolContextValue;
     function CtxCapture() { ctx = useActiveToolContext(); return null; }
     const { container } = render(
       <Harness initialActive={RIVAL_ID}>
-        <Mount options={{ onPick, colorOf: () => '#7fb069' }} hitId="r1" rivalSpy={vi.fn()} />
+        <Mount options={{ onPick, colorOf: () => '#7fb069', hotkey: 'alt' }} hitId="r1" rivalSpy={vi.fn()} />
         <CtxCapture />
       </Harness>,
     );

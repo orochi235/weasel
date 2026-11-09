@@ -564,7 +564,7 @@ gesture + toggle-grid action" hides the grid.
 
 Interactions don't have their own type or runtime today — they emerge from the
 gesture system invoking actions. The term is most useful for *describing* what a
-feature does (e.g. "alt-click invokes the eyedropper action") and for keeping the
+feature does (e.g. "Cmd-click invokes the selection toggle") and for keeping the
 gesture and action sides of a feature factored separately when designing.
 [dispatcher.md](./dispatcher.md) draws how the dispatcher routes one input,
 ranks the bindings that match it, and picks whose registries answer.

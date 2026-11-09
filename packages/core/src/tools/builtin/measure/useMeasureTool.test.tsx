@@ -84,7 +84,7 @@ describe('measurements through <SceneCanvas>', () => {
     const [m] = useState(ms0);
     ms = m;
     const measure = useMeasureTool({ measurements: m });
-    const eyedropper = useEyedropperTool({ onPick, colorOf: () => '#7fb069', hotkey: null });
+    const eyedropper = useEyedropperTool({ onPick, colorOf: () => '#7fb069' });
     const hand = useHandTool();
     const [s] = useState(() => {
       const made = createScene<{ kind?: string }, 'main' | 'notes', Pose>({
