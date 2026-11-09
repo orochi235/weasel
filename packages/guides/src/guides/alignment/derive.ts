@@ -27,21 +27,11 @@ export function deriveAlignmentGuides<TPose = Bounds>(
   const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const edges = opts.edges ?? true;
   const centers = opts.centers ?? true;
-  // Dedup per axis: key = rounded offset. First writer wins (stable id).
-  const seenX = new Map<number, Guide>();
-  const seenY = new Map<number, Guide>();
-
+  const found: Candidate[] = [];
   const add = (axis: 'x' | 'y', offset: number, b: Bounds): void => {
-    const seen = axis === 'x' ? seenX : seenY;
-    const key = Math.round(offset / EPS);
     const min = axis === 'x' ? b.y : b.x;
     const max = min + (axis === 'x' ? b.height : b.width);
-    const prev = seen.get(key);
-    if (prev) {
-      prev.span = { min: Math.min(prev.span!.min, min), max: Math.max(prev.span!.max, max) };
-      return;
-    }
-    seen.set(key, { id: `align:${axis}:${offset.toFixed(3)}`, axis, offset, span: { min, max } });
+    found.push({ axis, offset, min, max, order: found.length });
   };
 
   const emit = (b: Bounds): void => {
@@ -64,5 +54,27 @@ export function deriveAlignmentGuides<TPose = Bounds>(
   });
   if (opts.page) emit(opts.page);
 
-  return [...seenX.values(), ...seenY.values()];
+  return [...merged(found, 'x'), ...merged(found, 'y')];
+}
+
+interface Candidate { axis: 'x' | 'y'; offset: number; min: number; max: number; order: number }
+
+/** `axis`'s candidates, those within `EPS` of the lowest offset in their run merged into one guide: the
+ *  first one found names it and places it, and its span covers all of them. In the order they were found. */
+function merged(found: readonly Candidate[], axis: 'x' | 'y'): Guide[] {
+  const sorted = found.filter((c) => c.axis === axis).sort((a, b) => a.offset - b.offset);
+  const runs: Candidate[][] = [];
+  for (const c of sorted) {
+    const run = runs[runs.length - 1];
+    if (run && c.offset - run[0]!.offset <= EPS) run.push(c);
+    else runs.push([c]);
+  }
+  return runs
+    .map((run) => {
+      const first = run.reduce((a, b) => (b.order < a.order ? b : a));
+      const span = { min: Math.min(...run.map((c) => c.min)), max: Math.max(...run.map((c) => c.max)) };
+      return { order: first.order, guide: { id: `align:${axis}:${first.offset.toFixed(3)}`, axis, offset: first.offset, span } };
+    })
+    .sort((a, b) => a.order - b.order)
+    .map((r) => r.guide);
 }
