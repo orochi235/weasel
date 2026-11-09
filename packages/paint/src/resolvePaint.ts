@@ -23,8 +23,9 @@ export function resolveFill(
   return fill?.paint == null ? null : (fill as PaintedFill);
 }
 
-/** {@link resolveFill} for a stroke. Width is not consulted: a stroke whose
- *  base width is 0 can still draw through its per-vertex widths. */
+/** {@link resolveFill} for a stroke. Width is not consulted here, though a
+ *  stroke with no width draws nothing, whatever its per-vertex widths:
+ *  `strokeHasInk` answers both. */
 export function resolveStroke(
   stroke: Stroke | Inherit | null | undefined,
   inherited: PaintedStroke | null = null,

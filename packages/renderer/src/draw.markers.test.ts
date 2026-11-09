@@ -106,6 +106,16 @@ describe('renderer — stroke markers', () => {
     expect(frame(stroke, 4).ribbon.maxX).toBeCloseTo(800 - 24, 3);
   });
 
+  it('draws neither ribbon nor head for a stroke of no width, whatever its per-vertex widths and head size', () => {
+    for (const width of [0, { px: 0 }]) {
+      const { head, ribbon } = frame({
+        width, paint: LINE_PAINT, vertexWidths: [4, 4], markerEnd: { key: HEAD, size: 4 },
+      }, 1);
+      expect(head.minX).toBe(Infinity);
+      expect(ribbon.minX).toBe(Infinity);
+    }
+  });
+
   it('sizes a default head from a { px } stroke width resolved at that scale', () => {
     const stroke: Stroke = { width: { px: 2 }, paint: LINE_PAINT, markerEnd: HEAD };
     expect(frame(stroke, 1).head.height).toBeCloseTo(6, 3);

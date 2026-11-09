@@ -8,7 +8,7 @@
  * @packageDocumentation
  */
 
-export { tessellateStroke, resolveStrokeWidth, ribbonAligns } from './tessellate/stroke';
+export { inkWidth, tessellateStroke, resolveStrokeWidth, ribbonAligns } from './tessellate/stroke';
 export type { StrokeOptions } from './tessellate/stroke';
 export { dashLength, splitForDash } from './tessellate/dash';
 export { populatePolylineWidths, widestStrokeWidth } from './tessellate/vertexWidths';
