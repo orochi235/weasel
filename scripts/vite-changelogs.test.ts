@@ -149,6 +149,12 @@ describe('parseChangeset', () => {
     expect(parsed.body).toBe('Summary line\n\nBody.');
   });
 
+  it('reads a level however YAML writes it, as changesets does', () => {
+    const parsed = parseChangeset(`---\n'@weasel-js/core': "minor" # why\n"@weasel-js/geom": patch\n---\n\nSummary\n`)!;
+    expect(parsed.packages).toEqual(['core', 'geom']);
+    expect(parsed.level).toBe('minor');
+  });
+
   it('returns null for a file with no frontmatter or no body', () => {
     expect(parseChangeset('just prose')).toBeNull();
     expect(parseChangeset("---\n'@weasel-js/core': patch\n---\n\n")).toBeNull();
