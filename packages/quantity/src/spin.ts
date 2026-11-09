@@ -1,4 +1,5 @@
 import { endlessAllows, endlessAt, endlessTrack, type Endless } from './endless';
+import { decimalPlaces } from './places';
 
 /** The bounds a spin key moves a value within. */
 export interface SpinBounds {
@@ -15,17 +16,6 @@ export function clampToBounds(n: number, { min, max, endless }: SpinBounds): num
   return Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n));
 }
 
-/** Decimal places `n` is written with, up to ten. */
-function placesOf(n: number): number {
-  if (!Number.isFinite(n)) return 0;
-  const text = String(n);
-  const e = text.indexOf('e');
-  const mantissa = e < 0 ? text : text.slice(0, e);
-  const dot = mantissa.indexOf('.');
-  const places = (dot < 0 ? 0 : mantissa.length - dot - 1) - (e < 0 ? 0 : Number(text.slice(e + 1)));
-  return Math.min(10, Math.max(0, places));
-}
-
 /**
  * `n` moved to the nearest multiple of `step` counted from `origin`, written
  * with the decimals `step` and `origin` carry, so three steps of `0.1` land on
@@ -33,7 +23,7 @@ function placesOf(n: number): number {
  */
 export function snapToStep(n: number, step: number | undefined, origin = 0): number {
   if (step === undefined || !(step > 0)) return n;
-  const places = Math.max(placesOf(step), placesOf(origin));
+  const places = Math.max(decimalPlaces(step), decimalPlaces(origin));
   return Number((Math.round((n - origin) / step) * step + origin).toFixed(places));
 }
 
@@ -70,7 +60,7 @@ export const COARSE_STEPS = 10;
 
 function finiteSpin(key: string, from: number, bounds: SpinBounds): number | null {
   const by = (n: number) => {
-    const places = Math.max(placesOf(from), placesOf(bounds.step));
+    const places = Math.max(decimalPlaces(from), decimalPlaces(bounds.step));
     return clampToBounds(Number((from + n * bounds.step).toFixed(places)), bounds);
   };
   switch (key) {
