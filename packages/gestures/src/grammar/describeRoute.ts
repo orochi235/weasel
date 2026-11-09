@@ -1,5 +1,5 @@
 import { getGestureDescriptor, type GestureName } from './gestures';
-import { eventKeyName } from './keyRouteGrammar';
+import { eventKeyName, parseKeyRoute, type ParsedKeyRoute } from './keyRouteGrammar';
 import type { ParsedRoute, PhaseAtom, ParsedModifiers, ModifierKey } from './routeGrammar';
 
 const MOD_NAMES: Record<ModifierKey, string> = {
@@ -111,9 +111,22 @@ function userDoes(required: readonly string[], verb: string): string {
   return `the user holds ${joinAnd(required)} and ${verb}`;
 }
 
-function actionClause(parsed: ParsedRoute, required: readonly string[]): string {
-  const desc = getGestureDescriptor(parsed.gesture as GestureName);
+const isKeyGesture = (g: GestureName): boolean => g === 'keyDown' || g === 'keyUp' || g === 'keyHeld';
+
+/** A key route's key and its optional modifiers, the latter folded into the
+ *  route's own. A key route that does not parse is read as the key itself. */
+function keyRouteOf(parsed: ParsedRoute): { arg: string | undefined; modifiers: ParsedModifiers } {
   const arg = concreteArg(parsed);
+  if (arg === undefined || !isKeyGesture(parsed.gesture)) return { arg, modifiers: parsed.modifiers };
+  let keyRoute: ParsedKeyRoute;
+  try { keyRoute = parseKeyRoute(arg); } catch { return { arg, modifiers: parsed.modifiers }; }
+  const modifiers: ParsedModifiers = { ...parsed.modifiers };
+  for (const m of keyRoute.optionalMods) modifiers[m] ??= 'optional';
+  return { arg: eventKeyName(keyRoute.key) === ' ' ? 'Space' : keyRoute.key, modifiers };
+}
+
+function actionClause(parsed: ParsedRoute, arg: string | undefined, required: readonly string[]): string {
+  const desc = getGestureDescriptor(parsed.gesture as GestureName);
   const target = targetClause(parsed.target, desc.hasTarget);
 
   switch (parsed.gesture) {
@@ -123,7 +136,7 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       const verb = parsed.gesture === 'keyDown' ? 'presses'
         : parsed.gesture === 'keyUp' ? 'releases'
         : 'holds';
-      const key = arg === undefined ? 'any key' : eventKeyName(arg) === ' ' ? 'Space' : arg;
+      const key = arg ?? 'any key';
       return required.length > 0
         ? `the user holds ${joinAnd(required)} and ${verb} ${key}`
         : `the user ${verb} ${key}`;
@@ -190,8 +203,9 @@ export function describeRouteParts(
   opts: DescribeRouteOptions = {},
 ): readonly RouteDescriptionPart[] {
   const { capitalize = true, period = true } = opts;
-  const { required, optional } = partitionModifiers(parsed.modifiers);
-  const action = actionClause(parsed, required);
+  const { arg, modifiers } = keyRouteOf(parsed);
+  const { required, optional } = partitionModifiers(modifiers);
+  const action = actionClause(parsed, arg, required);
   const optClause = optional.length > 0
     ? ` (${joinAnd(optional)} optional)`
     : '';

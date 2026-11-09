@@ -75,7 +75,10 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
     case 'key':
     case 'key-held': {
       if (arg === undefined) return fail('a key spec needs a concrete key');
-      return withMods({ ...keyRouteToSpec(parseKeyRoute(arg)), kind });
+      const keyRoute = parseKeyRoute(arg);
+      const twice = keyRoute.optionalMods.find((m) => parsed.modifiers[m] !== undefined);
+      if (twice) fail(`the key route and the mod slot both name ${twice}`);
+      return withMods({ ...keyRouteToSpec(keyRoute), kind });
     }
     case 'multiTouch':
     case 'multiTouchTap':

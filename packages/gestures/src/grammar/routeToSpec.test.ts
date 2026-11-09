@@ -88,6 +88,11 @@ describe('routeToSpec', () => {
     expect(spec('[*:*] paste')).toEqual({ kind: 'paste' });
   });
 
+  it('rejects a key route that names a modifier the mod slot names too', () => {
+    expect(() => spec('[*:*] keyDown(z?shift) +shift')).toThrow(/shift/);
+    expect(() => spec('[*:*] keyDown(z?shift) ?shift')).toThrow(/shift/);
+  });
+
   it('rejects routes no GestureSpec can express', () => {
     expect(() => spec('[*:*] keyUp(a)')).toThrow(/keyUp/);
     expect(() => spec('[*:*] keyDown')).toThrow(/key/);

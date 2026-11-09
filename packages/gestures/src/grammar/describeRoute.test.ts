@@ -92,6 +92,13 @@ describe('describeRoute — modifiers', () => {
     expect(action('[*:*] paste +shift +alt')).toBe('the user holds Shift and Alt and pastes any content');
   });
 
+  it('reads a key route\'s optional modifiers as optional, not as part of the key', () => {
+    expect(describeRoute(parseRoute('[initial] keyDown(z?shift) +mod'))).toBe(
+      'Fires when the user holds Mod and presses z, while the tool is idle (Shift optional).',
+    );
+    expect(describeRoute(parseRoute('[initial] keyDown(ArrowUp?shift?alt) ?mod'))).toContain('(Mod, Shift, and Alt optional)');
+  });
+
   it('keeps optional modifiers in their own clause', () => {
     expect(describeRoute(parseRoute('[initial] drag +mod ?shift'))).toBe(
       'Fires when the user Mod-drags anywhere, while the tool is idle (Shift optional).',
