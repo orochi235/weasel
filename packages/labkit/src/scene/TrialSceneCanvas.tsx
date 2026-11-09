@@ -10,12 +10,13 @@ import {
   type ReactElement,
   type Ref,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
 } from 'react';
 import { useTrialHistory } from '../trial/trialHistory';
 import { useTrialTitle } from '../trial/trialTitle';
-import { sceneTrialHistory } from './sceneTrialHistory';
+import { editStampsOf, sceneTrialHistory, stampSceneEdits } from './sceneTrialHistory';
 import { useSceneCamera } from './useSceneCamera';
 import { type TrialToolSlot, useSceneToolSlot } from './useSceneToolSlot';
 
@@ -49,7 +50,11 @@ function TrialSceneCanvasInner<TData, TLayer extends string, TPose>(
   }: TrialSceneCanvasProps<TData, TLayer, TPose>,
   ref: ForwardedRef<SceneCanvasApi>,
 ) {
-  useTrialHistory(useMemo(() => (history ? sceneTrialHistory(scene) : null), [history, scene]));
+  const stamps = editStampsOf(scene);
+  useEffect(() => stampSceneEdits(scene, stamps), [scene, stamps]);
+  useTrialHistory(
+    useMemo(() => (history ? sceneTrialHistory(scene, stamps) : null), [history, scene, stamps]),
+  );
   const toolsReported = useSceneToolSlot(trial, onToolsCreated);
   const title = useTrialTitle();
   const api = useRef<SceneCanvasApi | null>(null);

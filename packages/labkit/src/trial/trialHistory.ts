@@ -27,6 +27,11 @@ export interface TrialHistorySource {
   undoStamp?(): number | undefined;
   /** When the step `redo` would make again was first recorded. */
   redoStamp?(): number | undefined;
+  /** Drop every step `redo` could make again, keeping the undo steps: the
+   *  trial calls it when a change lands on its marks. Without it, and without
+   *  `undoStamp`, a new change on either side leaves the other's redo in
+   *  place, so Redo can make a step again over a later change. */
+  dropRedo?(): void;
   /** Called whenever `canUndo` or `canRedo` may have changed. */
   subscribe(listener: () => void): () => void;
   /** Take an entry the trial records itself — a settings change — onto this

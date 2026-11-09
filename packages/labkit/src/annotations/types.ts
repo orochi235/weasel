@@ -273,6 +273,8 @@ export interface AnnotationsApi {
   undoStamp(): number | undefined;
   /** When the change `redo` would make again was first made; `undefined` with none. */
   redoStamp(): number | undefined;
+  /** Drop every mark change `redo` could make again, as a new change elsewhere in the trial does. */
+  dropRedo(): void;
 
   /** A target's marks as its pane paints them, in scene order: geometry in
    *  the target's content box, each with the style its status and staleness

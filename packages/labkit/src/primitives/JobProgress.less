@@ -29,8 +29,14 @@
 
   &__count {
     .numeric();
+    display: inline-grid;
+    justify-items: end;
     white-space: nowrap;
+
+    > * { grid-area: 1 / 1; }
   }
+
+  &__count-sizer { visibility: hidden; }
 
   &__failures,
   &__error {

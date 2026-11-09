@@ -183,7 +183,7 @@ export interface DevtoolsHistoryOp {
 /** One change to a scene's history: an edit recorded, merged, undone, redone or jumped across. */
 export interface DevtoolsHistoryRecord {
   ts: number;
-  step: 'push' | 'coalesce' | 'undo' | 'redo' | 'goto' | 'branch' | 'prune' | 'clear' | 'restore';
+  step: 'push' | 'coalesce' | 'undo' | 'redo' | 'goto' | 'branch' | 'prune' | 'drop' | 'clear' | 'restore';
   /** The entries the step pushed, merged into or walked across, in the order it touched them. */
   entries: { id: number; label: string; opCount: number; ops: DevtoolsHistoryOp[] }[];
   /** Where the history stood after the step: entries applied, and entries in all. */

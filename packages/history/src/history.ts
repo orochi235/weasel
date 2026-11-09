@@ -1,4 +1,5 @@
 import { createEmitter } from '@weasel-js/registry';
+import { depthAt, timestampAt } from './stackTime';
 import type { Op } from './op';
 import { anyCaused, appliedHalves, createApplier, entryView, foldEntry, sameCoalesceKeys, stepOf } from './entryOps';
 import { createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive, type Journal, type BeginJournalOptions } from './journal';
@@ -342,19 +343,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       }
       bump(stepOf('goto', walked));
     },
-    timestampAt(i) {
-      if (!Number.isInteger(i) || i < 0) return undefined;
-      if (i < undoStack.length) return undoStack[i]!.timestamp;
-      // redoStack is newest-on-top, so time order runs from its end.
-      return redoStack[redoStack.length - 1 - (i - undoStack.length)]?.timestamp;
-    },
-    depthAt(t) {
-      let n = undoStack.length;
-      while (n > 0 && undoStack[n - 1]!.timestamp > t) n--;
-      if (n < undoStack.length) return n;
-      for (let r = redoStack.length - 1; r >= 0 && redoStack[r]!.timestamp <= t; r--) n++;
-      return n;
-    },
+    timestampAt: (i) => timestampAt(undoStack, redoStack, i),
+    depthAt: (t) => depthAt(undoStack, redoStack, t),
     prune(t) {
       let k = 0;
       while (k < undoStack.length && undoStack[k]!.timestamp < t) k++;
@@ -371,6 +361,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const out = (forks.get(forkPoint()) ?? []).map((b) => view(b, false));
       if (redoStack.length > 0) out.push(view([...redoStack].reverse(), true));
       return out.sort((a, b) => a.id - b.id);
+    },
+    dropRedo() {
+      if (redoStack.length === 0) return;
+      const dropped = [...redoStack].reverse();
+      retireRedo(forkPoint());
+      bump(stepOf('drop', dropped));
     },
     switchBranch(id) {
       if (redoStack[redoStack.length - 1]?.id === id) return;
