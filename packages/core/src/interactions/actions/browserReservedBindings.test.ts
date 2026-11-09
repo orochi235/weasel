@@ -14,7 +14,6 @@ import type { Action } from '@weasel-js/routing';
 /** Collisions waiting on a choice of key, each listed under "Audit round twelve" in `docs/unruled.md`.
  *  Drop an entry once its key changes. */
 const KNOWN = [
-  'FILE_KEYS.new: {"mod":true}+n',
   'free-transform.entry: {"meta":true}+t',
 ];
 
