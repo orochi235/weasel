@@ -78,12 +78,27 @@ export function parseLive(raw: string | null): LabState | null {
   return stateOf(parsed);
 }
 
+/** Each stored constraint whose kind matches its default's, the default for the rest. `NaN` is stored as `null`. */
+function constraintsOf(stored: unknown): Constraints {
+  const from = (typeof stored === 'object' && stored !== null ? stored : {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...INITIAL.c };
+  for (const [key, fallback] of Object.entries(INITIAL.c)) {
+    if (!Object.hasOwn(from, key)) continue;
+    const value = from[key];
+    const fits = Array.isArray(fallback)
+      ? Array.isArray(value)
+      : typeof value === typeof fallback && (typeof value !== 'number' || Number.isFinite(value));
+    if (fits) out[key] = value;
+  }
+  return out as unknown as Constraints;
+}
+
 /** A stored state with every field filled from the current defaults rather than trusted: one stored before a
  *  constraint existed would leave that field undefined, and the generator would read NaN out of it. */
 function stateOf(stored: unknown): LabState {
   const state = (typeof stored === 'object' && stored !== null ? stored : {}) as Partial<LabState>;
   return {
-    c: { ...INITIAL.c, ...state.c },
+    c: constraintsOf(state.c),
     surfaceKey: state.surfaceKey === 'light' ? 'light' : 'dark',
     anchors: Array.isArray(state.anchors) ? state.anchors : [],
   };

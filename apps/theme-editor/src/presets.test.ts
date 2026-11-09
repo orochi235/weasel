@@ -27,6 +27,11 @@ describe('restoring the live state', () => {
     expect(Number.isFinite(restored?.c.hueFloor)).toBe(true);
   });
 
+  it('takes the default for a constraint stored as the wrong kind of value', () => {
+    const restored = parseLive(JSON.stringify({ c: { count: null, hueFloor: '0.5', anchors: {}, order: 7, minContrast: 3 } }));
+    expect(restored?.c).toEqual({ ...INITIAL.c, minContrast: 3 });
+  });
+
   it('ignores a corrupt store rather than failing to start', () => {
     expect(parseLive('{not json')).toBeNull();
     expect(parseLive('42')).toBeNull();
