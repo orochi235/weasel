@@ -14,6 +14,7 @@ function makeScene(): Scene<unknown, string, unknown> {
     roots: [],
     renderOrder: () => [],
     get: () => undefined as never,
+    batch: (_label: string, fn: () => unknown) => fn(),
   } as unknown as Scene<unknown, string, unknown>;
 }
 
