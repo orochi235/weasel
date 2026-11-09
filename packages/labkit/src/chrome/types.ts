@@ -94,6 +94,9 @@ export interface ContributionBase {
   group?: string;
   /** Pushes this contribution, and its group, to the far end of the region. */
   end?: boolean;
+  /** Puts this contribution ahead of every one not marked so, the built-ins
+   *  included: a sidebar section above Settings, say. */
+  start?: boolean;
 }
 
 /**

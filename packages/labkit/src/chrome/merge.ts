@@ -1,12 +1,13 @@
 /**
  * Concatenate contribution bundles into one list, preserving order — order
  * decides how a region lays its contributions out, so it is part of the
- * result, not an accident of it.
+ * result, not an accident of it. A contribution marked `start` moves ahead of
+ * every one that is not, keeping its order among the others marked so.
  *
  * Throws on a duplicate id rather than dropping one: a contribution silently
  * losing to a later bundle is the failure a registry exists to prevent.
  */
-export function mergeContributions<T extends { id: string }>(
+export function mergeContributions<T extends { id: string; start?: boolean }>(
   ...bundles: readonly (readonly T[])[]
 ): T[] {
   const out: T[] = [];
@@ -24,7 +25,7 @@ export function mergeContributions<T extends { id: string }>(
       out.push(entry);
     }
   }
-  return out;
+  return [...out.filter((c) => c.start), ...out.filter((c) => !c.start)];
 }
 
 /**

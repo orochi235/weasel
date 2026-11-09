@@ -71,6 +71,8 @@
 
 .switch {
   flex: none;
+  /* Switch fills with the accent when on; a card's switch fills with its kind instead. */
+  --wzl-accent-strong: var(--_kind);
 }
 
 .kind {
