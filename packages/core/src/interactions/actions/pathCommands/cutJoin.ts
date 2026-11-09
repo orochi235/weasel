@@ -14,6 +14,7 @@ import type { Op } from 'core/ops/types';
 import {
   deleteNode, insertAt, pathCopy, reshapeOps, selectedPathNodes, slotOf, type PathNode,
 } from './pathNodes';
+import { pieceOrigins } from './pieceOrigins';
 import { commitOps } from '../defaultCommitAdapter';
 import { pathOperationTags } from '../pathGestureTags';
 import { icon } from '../../../icons.gen';
@@ -50,7 +51,7 @@ export const snipAtCrossingsAction: Action & { requires: string[] } = {
       const made = new Map<string, string[]>();
       for (const { node, pieces: runs, at } of cut) {
         ops.push(deleteNode(scene, node.node, CUT_LABEL));
-        const copies = runs.flatMap((p) => pathCopy(scene, node, p) ?? []);
+        const copies = runs.flatMap((p) => pathCopy(scene, node, p, pieceOrigins(node.path, p)) ?? []);
         copies.forEach((copy, k) => ops.push(insertAt(copy, at < 0 ? at : at + k, CUT_LABEL)));
         made.set(node.id, copies.map((c) => c.id));
       }

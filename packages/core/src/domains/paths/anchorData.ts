@@ -72,3 +72,28 @@ export function anchorDataPatch(
   }
   return patch as Record<string, unknown>;
 }
+
+/**
+ * `data` less each per-anchor array whose length does not match `anchors`, the anchor count of the path it
+ * now holds: one carried over from a path with other anchors names points that are not there. `data` itself
+ * when nothing is dropped. A skin is not checked here; it goes with the other geometry-bound data.
+ */
+export function withAnchorDataFitting<T>(data: T, anchors: number): T {
+  if (!data || typeof data !== 'object') return data;
+  const d = data as AnchorDataCarrier;
+  const fits = (values: readonly unknown[] | undefined, stride: number) => !values || values.length === anchors * stride;
+  const stroke = d.stroke;
+  const strokeFits = !stroke || (fits(stroke.vertexWidths, 1) && fits(stroke.vertexColors, COLOR_STRIDE));
+  if (fits(d.vertexColors, COLOR_STRIDE) && strokeFits) return data;
+  const out = { ...d } as AnchorDataCarrier;
+  if (!fits(d.vertexColors, COLOR_STRIDE)) delete out.vertexColors;
+  if (!strokeFits && stroke) {
+    const { vertexWidths, vertexColors, ...rest } = stroke;
+    out.stroke = {
+      ...rest,
+      ...(vertexWidths && fits(vertexWidths, 1) ? { vertexWidths } : {}),
+      ...(vertexColors && fits(vertexColors, COLOR_STRIDE) ? { vertexColors } : {}),
+    };
+  }
+  return out as T;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PathBuilder, boundsOfPath, pathToAnchors, rectPath, type PolygonPath } from '@weasel-js/geom';
+import { PathBuilder, boundsOfPath, countPathAnchors, pathToAnchors, rectPath, type PolygonPath } from '@weasel-js/geom';
 import type { ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
@@ -168,5 +168,59 @@ describe('joinPathsAction', () => {
     expect(joinPathsAction.enabled!(three.deps)).toBe(ActionDisabledReason.NotApplicable);
     const editing = setup({ a: line(0, 0, 1, 0) }, ['a'], { editAnchors: { editingId: 'a' } });
     expect(joinPathsAction.enabled!(editing.deps)).toBe(ActionDisabledReason.NotApplicable);
+  });
+});
+
+describe('per-anchor stroke data on the pieces a command makes', () => {
+  const tapered = (path: PolygonPath, vertexWidths: number[], vertexColors: number[]): Stored => ({
+    pose: path, data: { stroke: { width: 2, vertexWidths, vertexColors } },
+  });
+  const strokeOf = (node: StubNode | undefined) =>
+    (node!.data as { stroke: { width: number; vertexWidths?: unknown; vertexColors?: unknown } }).stroke;
+
+  it('cuts a tapered stroke\'s widths and colors to each piece Cut at Crossings makes, blending at the cut', () => {
+    const a = tapered(line(0, 0, 10, 0), [1, 3], [0, 0, 0, 1, 1, 1, 1, 1]);
+    const { deps, batches } = setup({ a, b: line(5, -5, 5, 5) }, ['a', 'b']);
+    (snipAtCrossingsAction.invoker as ImmediateInvoker).run(deps);
+    const pieces = batches[0].ops.filter((o) => o.name === 'insert').map((o) => args(o).node!)
+      .filter((n) => (n.data as { stroke?: unknown }).stroke !== undefined)
+      .map(strokeOf);
+    expect(pieces).toHaveLength(2);
+    const byStart = pieces.sort((p, q) => (p.vertexWidths as number[])[0] - (q.vertexWidths as number[])[0]);
+    expect(byStart[0].vertexWidths).toEqual([1, 2]);
+    expect(byStart[1].vertexWidths).toEqual([2, 3]);
+    expect(byStart[0].vertexColors).toEqual([0, 0, 0, 1, 0.5, 0.5, 0.5, 1]);
+    expect(byStart[0].width).toBe(2);
+  });
+
+  it('blends a closed stroke\'s widths where a cut opens it, the closing edge included', () => {
+    const a = tapered(square(10), [1, 2, 3, 4], []);
+    const { deps, batches } = setup({ a, b: line(-5, 5, 15, 5) }, ['a', 'b']);
+    (snipAtCrossingsAction.invoker as ImmediateInvoker).run(deps);
+    const pieces = batches[0].ops.filter((o) => o.name === 'insert').map((o) => args(o).node!)
+      .filter((n) => (n.data as { stroke?: unknown }).stroke !== undefined);
+    const widths = pieces.map((n) => strokeOf(n).vertexWidths as number[]);
+    pieces.forEach((n, i) => expect(widths[i]).toHaveLength(countPathAnchors(n.pose as PolygonPath)));
+    expect(widths.flat().filter((w) => !Number.isInteger(w)).sort()).toEqual([2.5, 2.5, 2.5, 2.5]);
+  });
+
+  it('gives an offset copy widths and colors only when they line up with its own anchors', () => {
+    const { deps, batches } = setup({ a: tapered(circle(12, 20), new Array(12).fill(1), new Array(48).fill(1)) }, ['a']);
+    const handle = (offsetPathAction.invoker as OngoingInvoker).start(ctx(deps, { distance: 3 }), {});
+    handle.onEnd!(ctx(deps), 'commit');
+    const copy = args(batches[0].ops[0]).node!;
+    const anchors = countPathAnchors(copy.pose as PolygonPath);
+    const stroke = strokeOf(copy);
+    expect([undefined, anchors]).toContain((stroke.vertexWidths as unknown[] | undefined)?.length);
+    expect([undefined, anchors * 4]).toContain((stroke.vertexColors as unknown[] | undefined)?.length);
+    expect(stroke.width).toBe(2);
+  });
+
+  it('drops widths a simplified path no longer has the anchors for', () => {
+    const { deps, batches } = setup({ a: tapered(circle(120, 50), new Array(120).fill(2), []) }, ['a']);
+    const handle = (simplifyPathAction.invoker as OngoingInvoker).start(ctx(deps, { tolerance: 2 }), {});
+    handle.onEnd!(ctx(deps), 'commit');
+    const data = batches[0].ops.map(args).find((x) => x.to && (x.to as { stroke?: unknown }).stroke)!.to as { stroke: { vertexWidths?: unknown } };
+    expect(data.stroke.vertexWidths).toBeUndefined();
   });
 });
