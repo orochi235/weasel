@@ -109,6 +109,19 @@ describe('an orbit placed by its viewport size', () => {
     expect(result.current.view).toMatchObject({ distance: 8, yaw: 1 });
   });
 
+  it('keeps a camera dollied out past the default limits, inside its own', () => {
+    const far: Instrument = {
+      ...orbiting,
+      orbit: { initialView: (vp) => ({ distance: vp.width * 2 }), limits: { maxDistance: 2000 } },
+    };
+    const { result } = place(null, far);
+    act(() => result.current.onResize(WIDE));
+    expect(result.current.view).toMatchObject({ distance: 1600 });
+    act(() => result.current.setView({ ...(result.current.view as object), distance: 1000 }));
+    act(() => result.current.onResize(NARROW));
+    expect(result.current.view).toMatchObject({ distance: 1000 });
+  });
+
   it('goes home to the camera the last measurement placed', () => {
     const { result } = place(null, orbiting);
     act(() => result.current.onResize(NARROW));

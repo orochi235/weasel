@@ -135,6 +135,21 @@ describe('builder / groups', () => {
     expect(s.defaults()).toEqual({ a: { b: { c: 1 } } });
   });
 
+  it('hands out its list, object and map defaults fresh on every call', () => {
+    const tags = f.list(['a']);
+    const point = f.object({ x: f.number(1) });
+    const named = f.map({ k: 1 }, f.number(0));
+    const s = f.schema({ tags, point, named });
+    const one = s.defaults();
+    const two = s.defaults();
+    expect(two).toEqual(one);
+    for (const key of ['tags', 'point', 'named'] as const) {
+      expect(one[key]).not.toBe(two[key]);
+    }
+    expect(one.tags).not.toBe(tags.default);
+    expect(one.point).not.toBe(point.default);
+  });
+
   it('chains a group label and description immutably', () => {
     const base = f.group({ size: f.number(20) });
     const a = base.label('Grid').describe('How the grid is drawn');

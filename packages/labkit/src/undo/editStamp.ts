@@ -10,3 +10,9 @@ export function editStamp(): number {
   last = Math.max(Date.now(), last + 0.001);
   return last;
 }
+
+/** The stamp `editStamp` last handed out: unchanged while no history anywhere
+ *  has recorded an edit since. */
+export function lastEditStamp(): number {
+  return last;
+}

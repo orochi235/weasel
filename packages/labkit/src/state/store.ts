@@ -11,13 +11,12 @@ import {
 import type { InstrumentList } from '../instrument/types';
 import { emptyDocument } from './document';
 import { hydrateSnapshots, hydrateTrials, rehydrated, withoutUnreadable } from './hydrate';
-import { loadedFrom, snapshotOf } from './snapshots';
+import { type SnapshotActions, snapshotActions } from './snapshotActions';
 import type {
   CreateLabStoreOptions,
   InstrumentHooks,
   LabMode,
   LabStoreState,
-  SavedSnapshot,
   TrialRecord,
   UnreadableRecord,
 } from './types';
@@ -29,8 +28,8 @@ import {
 } from './undock';
 
 /** Every mutation a lab store supports: managing trials, saving and
- *  restoring snapshots, and setting the color mode. */
-export interface LabStoreActions {
+ *  restoring snapshots, resetting a trial, and setting the color mode. */
+export interface LabStoreActions extends SnapshotActions {
   addTrial: (record: Omit<TrialRecord, 'history'>) => void;
   removeTrial: (id: string) => void;
   updateTrialState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
@@ -49,10 +48,6 @@ export interface LabStoreActions {
   /** Record where a trial's clock stands. */
   updateTrialClock: (id: string, clock: ClockPosition) => void;
   setTrialInstrument: (id: string, instrumentName: string) => void;
-  saveSnapshot: (trialId: string, name: string) => void;
-  loadSnapshot: (snapshotId: string, trialId: string) => void;
-  deleteSnapshot: (snapshotId: string) => void;
-  listSnapshots: (trialId?: string) => SavedSnapshot[];
   setMode: (mode: LabMode) => void;
   setLabTool: (id: string | null) => void;
   setTrialTool: (trialId: string, id: string | null) => void;
@@ -82,7 +77,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
   let hooks = initialHooks(options);
   const loaded = loadedState(options, hooks);
 
-  const init: StateCreator<LabStoreState & LabStoreActions> = (set, get) => ({
+  const init: StateCreator<LabStoreState & LabStoreActions> = (set, get, api) => ({
     ...loaded,
     activeToolId: null,
     instruments: options.instruments ?? null,
@@ -189,40 +184,7 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
       }));
     },
 
-    saveSnapshot: (trialId, name) => {
-      const trial = get().trials.find((w) => w.id === trialId);
-      if (!trial) return;
-      const snapshot = snapshotOf(trial, name, hooks, get().savedSnapshots);
-      set((s) => ({ savedSnapshots: [...s.savedSnapshots, snapshot] }));
-    },
-
-    loadSnapshot: (snapshotId, trialId) => {
-      const snapshot = get().savedSnapshots.find((sn) => sn.id === snapshotId);
-      if (!snapshot) return;
-      const trial = get().trials.find((w) => w.id === trialId);
-      if (!trial) return;
-      if (snapshot.instrumentName !== trial.instrumentName) {
-        console.warn(
-          `[labkit] loadSnapshot: instrument mismatch (snapshot=${snapshot.instrumentName}, trial=${trial.instrumentName}); refusing to load`,
-        );
-        return;
-      }
-      set((s) => ({
-        trials: s.trials.map((w) => (w.id === trialId ? loadedFrom(w, snapshot, hooks) : w)),
-      }));
-    },
-
-    deleteSnapshot: (snapshotId) => {
-      set((s) => ({
-        savedSnapshots: s.savedSnapshots.filter((sn) => sn.id !== snapshotId),
-      }));
-    },
-
-    listSnapshots: (trialId) => {
-      const all = get().savedSnapshots;
-      const filtered = trialId ? all.filter((sn) => sn.trialId === trialId) : all;
-      return [...filtered].sort((a, b) => b.savedAt - a.savedAt);
-    },
+    ...snapshotActions(set, get, api, () => hooks),
 
     setMode: (mode) => {
       set({ mode });

@@ -1,5 +1,5 @@
 import { createHistory, type Op, useLatest } from '@weasel-js/core';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
@@ -15,6 +15,7 @@ import {
   writeTrialEdit,
 } from './trialEdit';
 import type { TrialHistorySource } from './trialHistory';
+import { onTrialRestart } from '../state/trialRestarts';
 
 /** What a trial snapshots on when its instrument names no events. */
 const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
@@ -54,6 +55,16 @@ export function useTrialSnapshot({
   const undoEvents = useMemo(() => new Set(undoCap?.snapshotOn ?? DEFAULT_SNAPSHOT_ON), [undoCap]);
   const maxDepth = undoCap?.maxDepth ?? 50;
   const undone = useLatest(onUndone);
+  // Bumped when the trial starts its undo afresh: an entry recorded before then writes nothing.
+  const restarts = useRef(0);
+  useEffect(
+    () =>
+      onTrialRestart(store, trialId, () => {
+        restarts.current += 1;
+        ownHistory()?.clear?.();
+      }),
+    [store, trialId, ownHistory],
+  );
 
   // Read from the store, not the render: a caller may write several times
   // before the next render, and each write has to build on the one before.
@@ -70,13 +81,17 @@ export function useTrialSnapshot({
       const own = ownHistory();
       if (own && !isConfigEvent(event)) return false;
       const entry = op ?? ownEntry(store, trialId, current, own !== null, stored);
-      const recorded: Op = {
-        ...entry,
-        invert: () => {
-          undone.current();
-          return entry.invert();
+      const at = restarts.current;
+      const recorded = fenced(
+        {
+          ...entry,
+          invert: () => {
+            undone.current();
+            return entry.invert();
+          },
         },
-      };
+        () => restarts.current === at,
+      );
       if (own) {
         own.record(recorded, event);
         return true;
@@ -93,6 +108,15 @@ export function useTrialSnapshot({
   );
 
   return { snapshot, stored };
+}
+
+/** `op`, writing nothing once `live` says the trial has restarted since it was recorded. */
+function fenced(op: Op, live: () => boolean): Op {
+  return {
+    ...op,
+    apply: (adapter) => (live() ? op.apply(adapter) : 'noop'),
+    invert: () => fenced(op.invert(), live),
+  };
 }
 
 /** The trial's own entry: its settings where an instrument's history covers

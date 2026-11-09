@@ -32,6 +32,10 @@ export interface TrialHistorySource {
    *  `undoStamp`, a new change on either side leaves the other's redo in
    *  place, so Redo can make a step again over a later change. */
   dropRedo?(): void;
+  /** Drop every step, both ways: the trial calls it when it starts its undo
+   *  afresh, on Reset or a snapshot loaded over it. Without it, the settings
+   *  entries the trial recorded here stay on the stack and write nothing. */
+  clear?(): void;
   /** Called whenever `canUndo` or `canRedo` may have changed. */
   subscribe(listener: () => void): () => void;
   /** Take an entry the trial records itself — a settings change — onto this

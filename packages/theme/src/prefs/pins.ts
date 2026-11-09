@@ -96,12 +96,18 @@ export function themePrefsValues(
     const held = foldAxes(axes, (selection) => prefOfCss(leaf, resolved[selectionKey(axes, selection)]), scopeByAxis);
     if (isPrefScope(held)) scopes.set(path, held);
     else scopes.delete(path);
-    const group = path.slice(0, path.indexOf('.'));
+    const value = prefOfCss(leaf, resolved[now]);
+    const dot = path.indexOf('.');
+    if (dot < 0) {
+      values[path] = value;
+      continue;
+    }
+    const group = path.slice(0, dot);
     if (!copied.has(group)) {
       copied.add(group);
       values[group] = { ...(values[group] as Record<string, unknown>) };
     }
-    (values[group] as Record<string, unknown>)[themeTokenOf(path)] = prefOfCss(leaf, resolved[now]);
+    (values[group] as Record<string, unknown>)[themeTokenOf(path)] = value;
   }
   return { values, scopes };
 }

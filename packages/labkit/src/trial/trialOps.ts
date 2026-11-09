@@ -156,12 +156,15 @@ export function swapTrial(
 
 /**
  * Reorder to match `ids`. Ids the list doesn't mention keep their relative
- * order at the end, and ids it names that no longer exist are dropped — a
- * reorder that raced a close should not resurrect the closed trial.
+ * order at the end, ids it names that no longer exist are dropped — a
+ * reorder that raced a close should not resurrect the closed trial — and an
+ * id named twice takes its first place.
  */
 export function reorderTrials(trials: TrialRecord[], ids: readonly string[]): TrialRecord[] {
   const byId = new Map(trials.map((w) => [w.id, w]));
-  const named = ids.map((id) => byId.get(id)).filter((w): w is TrialRecord => w !== undefined);
+  const named = [...new Set(ids)]
+    .map((id) => byId.get(id))
+    .filter((w): w is TrialRecord => w !== undefined);
   const seen = new Set(named.map((w) => w.id));
   const rest = trials.filter((w) => !seen.has(w.id));
   return [...named, ...rest];
