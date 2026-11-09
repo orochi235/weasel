@@ -1,6 +1,6 @@
 import type { GpuDevice } from './gpu/types';
 
-/** A rect of a canvas in device pixels, counted from its top-left. */
+/** A rect of a canvas in whole device pixels, counted from its top-left. */
 export interface PixelRect {
   x: number;
   y: number;
@@ -11,6 +11,9 @@ export interface PixelRect {
 function checked(gpu: GpuDevice, rect: PixelRect): PixelRect {
   const { width, height } = gpu.canvasSize();
   const { x, y } = rect;
+  if (![x, y, rect.width, rect.height].every(Number.isInteger)) {
+    throw new RangeError(`weasel: readPixels rect ${x},${y} ${rect.width}×${rect.height} is not whole device pixels`);
+  }
   if (x < 0 || y < 0 || rect.width < 0 || rect.height < 0 || x + rect.width > width || y + rect.height > height) {
     throw new RangeError(`weasel: readPixels rect ${x},${y} ${rect.width}×${rect.height} is outside the ${width}×${height} canvas`);
   }
