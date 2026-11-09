@@ -1,5 +1,7 @@
 import type { DrawCommand } from '@weasel-js/renderer';
-import { registerTexture, unregisterTexture } from '@weasel-js/renderer';
+import {
+  adoptBitmapSrc, registerTexture, releaseImage, resolveFillPattern, unregisterTexture,
+} from '@weasel-js/renderer';
 import { afterEach, describe, expect, it } from 'vitest';
 import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
@@ -151,6 +153,35 @@ describe('texture paint', () => {
     };
     const { s } = await render([group]);
     expect(s).toContain('/Matrix [2 0 0 -2 3 95]');
+  });
+
+  it('spans a tile over the width and height the paint gives, not the texture\'s pixels', async () => {
+    handles.push(registerTexture(fakeImage(4, 2)));
+    const { s } = await render([texturePath({ width: 20, height: 10 })]);
+    expect(s).toContain('/BBox [0 0 20 10] /XStep 20 /YStep 10');
+    expect(s).toContain('20 0 0 -10 0 10 cm');
+  });
+
+  it('writes a pattern per tile extent for one texture', async () => {
+    handles.push(registerTexture(fakeImage(4, 2)));
+    const { s } = await render([texturePath({ width: 20, height: 10 }), texturePath({ width: 8, height: 4 })]);
+    expect(s).toContain('/XStep 20 /YStep 10');
+    expect(s).toContain('/XStep 8 /YStep 4');
+  });
+
+  it('tiles an image paint the renderer has not drawn yet', async () => {
+    const src = 'weasel-bitmap:pdf-pattern.1';
+    adoptBitmapSrc(src, Object.assign(fakeImage(4, 2), { close() {} }));
+    try {
+      const fill = resolveFillPattern({ kind: 'image', src });
+      const { s, skipped } = await render([
+        { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 50, height: 50 }, fill: { paint: fill as never } },
+      ]);
+      expect(skipped).toEqual([]);
+      expect(s).toContain('/BBox [0 0 4 2] /XStep 4 /YStep 2');
+    } finally {
+      releaseImage(src);
+    }
   });
 
   it('skips a texture that is not registered', async () => {

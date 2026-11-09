@@ -4,7 +4,8 @@ import {
   type ImageDrawCommand,
   SPRITE_STRIDE,
   type SpritesDrawCommand,
-  textureRegistry,
+  getTexture,
+  tileExtent,
 } from '@weasel-js/renderer';
 import { foldPixels } from './color';
 import { type DrawState, type PageCtx, pageFlip, skip } from './drawCommands';
@@ -185,7 +186,7 @@ export function writeImage(ctx: PageCtx, cmd: ImageDrawCommand | SpritesDrawComm
  * texture is not registered or its placement has no inverse, which paints nothing.
  */
 export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawState): string | null {
-  const entry = textureRegistry.get(paint.texture.id);
+  const entry = getTexture(paint.texture.id);
   if (!entry) return null;
   const toFrame = paintToFrame(ctx, paint, state);
   if (!toFrame) return null;
@@ -197,11 +198,11 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
   const m = mat3.multiply(mat3.multiply(pageFlip(ctx), mat3.multiply(Float64Array.from(state.transform), toFrame)), placement);
   const matrix = mat3.toAffine(m);
 
-  const key = `pattern ${paint.texture.id} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
+  const [w, h] = tileExtent(paint, entry);
+  const key = `pattern ${paint.texture.id} ${w},${h} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
   const cache = memo(ctx);
   let ref = cache.get(key);
   if (!ref) {
-    const { w, h } = sizeOf(entry.source);
     const image = imageXObject(ctx, entry.source, state, 'linear');
     if (!image) return null;
     ref = ctx.objects.alloc();
