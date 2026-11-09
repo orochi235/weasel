@@ -211,4 +211,22 @@ describe('DragDrop integration', () => {
 
     expect(latest.items[0]).toMatchObject({ x: 50, y: 50 });
   });
+
+  it.each([
+    ['the event it declares', testInstrument],
+    ['the default undo', { ...testInstrument, name: 'DefaultUndo', undo: undefined }],
+  ])('takes a drop back in one undo, under %s', async (_, instrument) => {
+    let latest: DropState = { items: [] };
+    await renderLab((s) => {
+      latest = s;
+    }, instrument);
+    await act(async () => {
+      pointerDown(screen.getByRole('button', { name: 'Item A' }), 0, 0);
+    });
+    await pointerUp(250, 250);
+    expect(latest.items).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(latest.items).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
 });

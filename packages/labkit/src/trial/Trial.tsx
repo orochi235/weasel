@@ -249,11 +249,9 @@ function TrialRuntime({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
     state: record.state,
     config,
-    setState: (next) => {
-      snapshotIfNeeded('canvas.itemAdded');
-      updateTrialState(record.id, next as never);
-    },
-    emit: snapshotIfNeeded,
+    setState: (next) => updateTrialState(record.id, next as never),
+    // A drop is announced before it lands, so this snapshot holds the state from before it.
+    emit: (event) => snapshotIfNeeded(event) || snapshotIfNeeded('state.change'),
   });
 
   const paletteItems: PaletteItem[] = useMemo(() => {
