@@ -33,6 +33,7 @@
       "@weasel-js/icons-plugin",
       "@weasel-js/react",
       "@weasel-js/loupe",
+      "@weasel-js/brush",
       "@weasel-js/modes",
       "@weasel-js/svg",
       "@weasel-js/d3",

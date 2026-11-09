@@ -36,6 +36,7 @@ export const BUILD_ORDER = [
   '@weasel-js/audio',
   '@weasel-js/cursor',
   '@weasel-js/routing',
+  '@weasel-js/brush',
   '@weasel-js/animator',
   '@weasel-js/core',
   '@weasel-js/headless',
