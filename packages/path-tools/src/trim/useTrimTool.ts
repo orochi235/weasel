@@ -12,6 +12,7 @@ export type UseTrimToolOptions = StrokeClickToolOptions;
 
 const TRIM_KEY: ToolKeybinding = { key: 'Y' };
 const TRIM_PREVIEW_ID = 'trim.preview';
+const TRIM_UNPREVIEW_ID = 'trim.unpreview';
 
 /**
  * Trim segment tool. A click on a stroke removes its piece between the
@@ -36,9 +37,18 @@ export function useTrimTool(options: UseTrimToolOptions = {}): Tool {
         },
       },
     };
+    const clear: Action = {
+      id: TRIM_UNPREVIEW_ID,
+      label: 'Trim segment: stop showing the piece',
+      eligible: { capability: 'creates-shapes' },
+      invoker: { timing: 'immediate', run: () => preview.show(null) },
+    };
     return {
-      actions: [action],
-      bindings: [{ spec: { kind: 'hover' }, actionId: TRIM_PREVIEW_ID, opts: { id: 'trim.hover' } }],
+      actions: [action, clear],
+      bindings: [
+        { spec: { kind: 'hover' }, actionId: TRIM_PREVIEW_ID, opts: { id: 'trim.hover' } },
+        { spec: { kind: 'hover', motion: 'leave' }, actionId: TRIM_UNPREVIEW_ID, opts: { id: 'trim.leave' } },
+      ],
       overlay: preview.layer,
       onDeactivate: () => preview.show(null),
     };
