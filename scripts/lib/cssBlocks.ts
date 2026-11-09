@@ -1,9 +1,41 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-/** Comments blanked to spaces, so indices and line numbers survive. */
+const blank = (text: string): string => text.replace(/[^\n]/g, ' ');
+
+/**
+ * Comments blanked to spaces, so indices and line numbers survive. A quoted string is code: a `/*` or `//` inside
+ * one opens nothing. A `'` or `"` string ends at a line break, as CSS and TypeScript both end it, so a stray quote
+ * costs one line. `//` after a `:` is a URL scheme, not a comment.
+ */
 export function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\/|(?<![:'"])\/\/[^\n]*/g, (m) => m.replace(/[^\n]/g, ' '));
+  let out = '';
+  let i = 0;
+  while (i < source.length) {
+    const c = source[i]!;
+    const next = source[i + 1];
+    let end: number;
+    if (c === '/' && next === '*') {
+      const close = source.indexOf('*/', i + 2);
+      end = close < 0 ? source.length : close + 2;
+      out += blank(source.slice(i, end));
+    } else if (c === '/' && next === '/' && source[i - 1] !== ':') {
+      const eol = source.indexOf('\n', i);
+      end = eol < 0 ? source.length : eol;
+      out += blank(source.slice(i, end));
+    } else if (c === "'" || c === '"' || c === '`') {
+      end = i + 1;
+      while (end < source.length && source[end] !== c && (c === '`' || source[end] !== '\n')) end += source[end] === '\\' ? 2 : 1;
+      if (source[end] === c) end += 1;
+      end = Math.min(end, source.length);
+      out += source.slice(i, end);
+    } else {
+      end = i + 1;
+      out += c;
+    }
+    i = end;
+  }
+  return out;
 }
 
 export function lineAt(source: string, index: number): number {

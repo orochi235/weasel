@@ -18,6 +18,7 @@ import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { TOKEN_HOOKS } from '../packages/theme/src/hooks';
 import { stanceSlotNames } from '../packages/theme/src/panel';
+import { stripComments } from './lib/cssBlocks.ts';
 
 /** Override hooks: read with a fallback, declared by no theme on purpose. */
 export const HOOKS = new Set(TOKEN_HOOKS.map((h) => `--wzl-${h.name}`));
@@ -46,8 +47,6 @@ const JS_DECL = /['"`](--wzl-[\w-]+)['"`]\s*[:,)\]]/g;
 
 /** `packages/ui/src/x.css` → `packages/ui`: the scope a local declaration covers. */
 const scopeOf = (path: string) => path.split('/').slice(0, 2).join('/');
-
-const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
 
 export function findUndeclaredReads(
   files: readonly SourceFile[],

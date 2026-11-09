@@ -40,4 +40,9 @@ describe('offenders', () => {
   it('passes a literal in a comment', () => {
     expect(offenders(file('/* was z-index: 1000; */'), FLOOR)).toEqual([]);
   });
+
+  it('catches a literal after a string holding a comment opener', () => {
+    const source = "const glob = 'src/*.ts';\nconst style = { zIndex: 9999 };\nconst end = '*/';";
+    expect(offenders(file(source, 'x.ts'), FLOOR)).toMatchObject([{ line: 2 }]);
+  });
 });
