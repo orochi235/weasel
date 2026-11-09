@@ -174,11 +174,13 @@ export const linkAnchorAction: Action & { requires: string[] } = {
       const anchor = pressedAnchor(ctx);
       if (!dep?.editingId || !ctx.deps.scene || anchor < 0) return {};
       const id = dep.editingId;
+      // The dispatcher hands `onEnd` empty deps; the press's are the ones to read.
+      const deps = ctx.deps;
       const move = (editAnchorsAction.invoker as OngoingInvoker).start(ctx, opts);
       if (!move.onEnd || !move.previewPose) return move;
       /** Where the drag left the path, for a replay to land it again. */
-      let dropped: { path: PolygonPath; deps: ActionDeps; scale: Point | undefined } | null = null;
-      const targetOf = (deps: ActionDeps, path: PolygonPath, params: LinkAnchorParams | undefined, scale: Point | undefined) => {
+      let dropped: { path: PolygonPath; scale: Point | undefined } | null = null;
+      const targetOf = (path: PolygonPath, params: LinkAnchorParams | undefined, scale: Point | undefined) => {
         const p = pathAnchorPoints(path)[anchor];
         return p ? linkTargetAt(deps.scene as AnyScene, dep, p, reachOf(params), scale) : null;
       };
@@ -192,21 +194,21 @@ export const linkAnchorAction: Action & { requires: string[] } = {
             ? pathEditPathOf({ pose: shown, data: move.previewData?.(id) ?? node.data }, dep.extensions)
             : null;
           const params = resolveParams(opts?.params) as LinkAnchorParams | undefined;
-          const scale = endCtx.deps.view?.get().scale;
-          const target = path && targetOf(endCtx.deps, path, params, scale);
-          if (path) dropped = { path, deps: endCtx.deps, scale };
+          const scale = deps.view?.get().scale;
+          const target = path && targetOf(path, params, scale);
+          if (path) dropped = { path, scale };
           if (!path || !target) {
             move.onEnd!(endCtx, reason);
             return;
           }
           move.onEnd!(endCtx, 'cancel');
-          const ops = linkOps(endCtx.deps, path, anchor, target, params);
-          if (ops.length > 0) commitOps(endCtx.deps, ops, LABEL);
+          const ops = linkOps(deps, path, anchor, target, params);
+          if (ops.length > 0) commitOps(deps, ops, LABEL);
         },
         replay(params: Record<string, unknown>): void {
           if (!dropped) return;
-          const { path, deps, scale } = dropped;
-          const target = targetOf(deps, path, params, scale);
+          const { path, scale } = dropped;
+          const target = targetOf(path, params, scale);
           const ops = target ? linkOps(deps, path, anchor, target, params) : [];
           if (ops.length > 0) commitOps(deps, ops, LABEL);
           else dep.applyEdit(id, path, 'Edit anchors');

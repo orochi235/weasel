@@ -124,7 +124,8 @@ function setup() {
     };
     const handle = (linkAnchorAction.invoker as OngoingInvoker).start(alt(p.x, p.y), undefined);
     handle.onMove!(alt(p.x + dx, p.y + dy));
-    handle.onEnd!(alt(p.x + dx, p.y + dy), 'commit');
+    // The dispatcher hands `onEnd` empty deps.
+    handle.onEnd!({ ...alt(p.x + dx, p.y + dy), deps: {} }, 'commit');
     return handle;
   };
   /** Drag node `id` whole by `(dx, dy)` with the move action and release; answers each node's preview mid-drag. */
