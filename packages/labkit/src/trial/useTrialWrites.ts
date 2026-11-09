@@ -1,4 +1,4 @@
-import { createHistory } from '@weasel-js/core';
+import { createHistory, type Op } from '@weasel-js/core';
 import { isDev } from '@weasel-js/react';
 import { useCallback, useContext, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
@@ -49,10 +49,10 @@ export interface TrialWrites {
   /** Record the trial's state and settings for undo, if its instrument
    *  snapshots on `event`. With a history of the instrument's own mounted,
    *  only a settings change is recorded, onto that history: the instrument's
-   *  history is what covers its state. */
-  snapshot: (event: string) => void;
-  /** Write one config value: snapshots on `config.change` and
-   *  `config.change:<path>`, once for a run of writes to one path, then runs
+   *  history is what covers its state. True when it recorded. */
+  snapshot: (event: string) => boolean;
+  /** Write one config value: snapshots on `config.change` or
+   *  `config.change:<path>`, one entry for a run of writes to one path, then runs
    *  the instrument's `onConfigChange` against the stored record. A path of
    *  the schema the config is drawn over goes to the lab's `over` instead. */
   setConfig: (path: string, value: unknown) => void;
@@ -82,21 +82,34 @@ export function useTrialWrites({
     [store, trialId],
   );
 
+  const lastWrite = useRef<{ path: string; at: number; version: number } | null>(null);
+  // Undoing an entry ends the gesture that recorded it, on whichever history holds it.
+  const endsGesture = useCallback(
+    (op: Op): Op => ({
+      ...op,
+      invert: () => {
+        lastWrite.current = null;
+        return op.invert();
+      },
+    }),
+    [],
+  );
+
   const snapshot = useCallback(
-    (event: string): void => {
-      if (!undoCap || !undoEvents.has(event)) return;
+    (event: string): boolean => {
+      if (!undoCap || !undoEvents.has(event)) return false;
       const current = stored();
-      if (!current) return;
+      if (!current) return false;
       const own = ownHistory();
       if (own) {
-        if (!isConfigEvent(event)) return;
+        if (!isConfigEvent(event)) return false;
         const read = (): TrialSettings | undefined => {
           const record = stored();
           return record ? readTrialSettings(record) : undefined;
         };
         const write = (settings: TrialSettings) => writeTrialEdit(store, trialId, settings);
-        own.record(stateOp(structuredClone(readTrialSettings(current)), read, write), event);
-        return;
+        own.record(endsGesture(stateOp(structuredClone(readTrialSettings(current)), read, write)), event);
+        return true;
       }
       let history = current.history;
       if (!history) {
@@ -108,12 +121,25 @@ export function useTrialWrites({
         return record ? readTrialEdit(record) : undefined;
       };
       const write = (edit: TrialEdit) => writeTrialEdit(store, trialId, edit);
-      history.recordEntry([stateOp(structuredClone(readTrialEdit(current)), read, write)], event);
+      history.recordEntry(
+        [endsGesture(stateOp(structuredClone(readTrialEdit(current)), read, write))],
+        event,
+      );
+      return true;
     },
-    [undoCap, undoEvents, maxDepth, stored, ownHistory, store, trialId, setTrialHistory],
+    [
+      undoCap,
+      undoEvents,
+      maxDepth,
+      stored,
+      ownHistory,
+      store,
+      trialId,
+      setTrialHistory,
+      endsGesture,
+    ],
   );
 
-  const lastWrite = useRef<{ path: string; at: number; version: number } | null>(null);
   const setConfig = useCallback(
     (path: string, value: unknown): void => {
       if (writesOver(schema, path)) {
@@ -140,10 +166,7 @@ export function useTrialWrites({
         last.path === path &&
         Date.now() - last.at < GESTURE_MS &&
         last.version === version();
-      if (!sameGesture) {
-        snapshot('config.change');
-        snapshot(`config.change:${path}`);
-      }
+      if (!sameGesture && !snapshot('config.change')) snapshot(`config.change:${path}`);
       updateTrialConfig(trialId, path, value);
       lastWrite.current = { path, at: Date.now(), version: version() };
       const after = stored();
