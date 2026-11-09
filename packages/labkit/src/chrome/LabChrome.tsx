@@ -47,6 +47,8 @@ export function toolContributions(tools: readonly TrialTool[]): LabContribution[
       icon: t.icon,
       label: t.label,
       ...(t.shortcut === undefined ? {} : { shortcut: t.shortcut }),
+      ...(t.disabled === undefined ? {} : { disabled: t.disabled }),
+      ...(t.disabledReason === undefined ? {} : { disabledReason: t.disabledReason }),
     },
   }));
 }

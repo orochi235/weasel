@@ -119,7 +119,7 @@
     "longestFunction": 320
   },
   "packages/labkit/src/chrome/builtins.tsx": {
-    "longestFunction": 211
+    "longestFunction": 155
   },
   "packages/labkit/src/controls/ControlMatrix.tsx": {
     "longestFunction": 136

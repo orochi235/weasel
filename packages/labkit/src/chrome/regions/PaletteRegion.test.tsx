@@ -81,4 +81,45 @@ describe('PaletteRegion', () => {
     fireEvent.keyDown(eraser, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(eraser);
   });
+
+  it('latches a command while it is pressed, without writing the tool slot', () => {
+    const setActiveTool = vi.fn();
+    const onActivate = vi.fn();
+    renderWithIcons(
+      <PaletteRegion
+        contributions={[
+          {
+            id: 'grid',
+            region: 'palette',
+            item: { icon: Glyph, label: 'Grid', pressed: true, onActivate },
+          },
+          { id: 'snap', region: 'palette', item: { icon: Glyph, label: 'Snap', onActivate } },
+        ]}
+        ctx={ctxWith(null, setActiveTool)}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Grid' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'Snap' })).not.toHaveAttribute('aria-current');
+    screen.getByRole('button', { name: 'Grid' }).click();
+    expect(onActivate).toHaveBeenCalledOnce();
+    expect(setActiveTool).not.toHaveBeenCalled();
+  });
+
+  it('keeps a disabled tool with a reason reachable, and says why', () => {
+    renderWithIcons(
+      <PaletteRegion
+        contributions={[
+          {
+            id: 'pen',
+            region: 'palette',
+            item: { icon: Glyph, label: 'Pen', disabled: true, disabledReason: 'Locked' },
+          },
+        ]}
+        ctx={ctxWith(null)}
+      />,
+    );
+    const pen = screen.getByRole('button', { name: 'Pen' });
+    expect(pen).toHaveAttribute('aria-disabled', 'true');
+    expect(pen).toHaveAttribute('aria-description', 'Locked');
+  });
 });

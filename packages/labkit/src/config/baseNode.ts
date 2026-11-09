@@ -1,3 +1,4 @@
+import type { IconSpec } from '@weasel-js/icons';
 import type { PrefCondition, PrefPair, PrefScopeSpec } from '@weasel-js/prefs';
 import { type Auto, isAuto } from './auto';
 import type {
@@ -65,6 +66,18 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
   /** Longer help text, surfaced as a tooltip on the row label. */
   describe(description: string): this {
     return this.ann({ description });
+  }
+
+  /** A glyph naming the leaf, drawn where its label has no room: a boolean's
+   *  toggle in a bar, a field of a `pair`ed row. The label stays its name. */
+  icon(icon: IconSpec): this {
+    return this.ann({ icon });
+  }
+
+  /** Shorter forms of the label, longest first; a surface short of room shows
+   *  the longest that fits, and the label stays the accessible name. */
+  short(...forms: string[]): this {
+    return this.ann({ short: forms });
   }
 
   /** Omit from the panel unless it is asked to show hidden leaves. */

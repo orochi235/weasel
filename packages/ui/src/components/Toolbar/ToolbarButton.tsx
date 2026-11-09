@@ -5,6 +5,8 @@ interface ToolbarButtonBase {
   children: ReactNode;
   onClick: MouseEventHandler<HTMLButtonElement>;
   disabled?: boolean;
+  /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name. */
+  disabledReason?: string;
   /** Tooltip text, and the accessible name when `aria-label` is unset. */
   title?: string;
   /** A key chord, shown after the name in the tooltip. */
@@ -29,9 +31,9 @@ export type ToolbarButtonProps = ToolbarButtonBase & (
 
 /** A ghost button at the toolbar's height, named by its `title` when it has no `aria-label`. */
 export function ToolbarButton(props: ToolbarButtonProps) {
-  const { children, onClick, disabled, title, shortcut, 'aria-label': ariaLabel, grade, iconOnly, icon, pressed } = props;
+  const { children, onClick, disabled, disabledReason, title, shortcut, 'aria-label': ariaLabel, grade, iconOnly, icon, pressed } = props;
   const name = ariaLabel ?? title;
-  const common = { variant: 'ghost', onClick, disabled, grade, pressed, shortcut, tooltip: shortcut ? undefined : title } as const;
+  const common = { variant: 'ghost', onClick, disabled, disabledReason, grade, pressed, shortcut, tooltip: shortcut ? undefined : title } as const;
   return iconOnly ? (
     <Button {...common} iconOnly ariaLabel={name!}>
       {children}

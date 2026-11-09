@@ -197,4 +197,24 @@ describe('MenuButton tooltip', () => {
     keyboardFocus(btn);
     expect(screen.queryByRole('tooltip')).toBeNull();
   });
+
+  it('opens menu entries, which run themselves, built when it opens', () => {
+    const run = vi.fn();
+    let label = 'First';
+    render(
+      <MenuButton
+        label="Export"
+        entries={() => [
+          { kind: 'item', key: 'a', label, run },
+          { kind: 'separator', key: 's' },
+          { kind: 'item', key: 'b', label: 'Off', disabled: true, run: () => {} },
+        ]}
+      />,
+    );
+    label = 'Later';
+    press(trigger(/Export/));
+    expect(screen.getAllByRole('menuitem').map((el) => el.textContent)).toEqual(['Later', 'Off']);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Later' }));
+    expect(run).toHaveBeenCalledOnce();
+  });
 });

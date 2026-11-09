@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
 import { fromConfigFields } from '../config/fromConfigField';
 import { resolveConfigSchema } from '../config/resolve';
+import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { builtinContributions } from './builtins';
-import type { TrialChromeContext } from './types';
+import type { ToolbarMenuItem, TrialChromeContext } from './types';
 
 const ctx: TrialChromeContext = {
   trialId: 't1',
@@ -160,11 +161,43 @@ describe('builtinContributions', () => {
     expect(undo?.item).toMatchObject({ disabled: true });
   });
 
-  it('marks close as danger and disables it on the last trial', () => {
+  it('marks close as danger and disables it on the last trial, saying why', () => {
     const list = builtinContributions(bare, { ...ctx, isLastTrial: true });
     expect(list.find((c) => c.id === 'close')?.item).toMatchObject({
+      label: 'Close trial',
       danger: true,
       disabled: true,
+      disabledReason: 'It is the last trial',
+    });
+  });
+
+  it('holds the expand toggle down while the trial is expanded', () => {
+    const expand = (expanded: boolean) =>
+      builtinContributions(bare, { ...ctx, canExpand: true, expanded }).find(
+        (c) => c.id === 'expand',
+      )?.item;
+    expect(expand(false)).toMatchObject({ label: 'Expand trial', pressed: false });
+    expect(expand(true)).toMatchObject({ label: 'Expand trial', pressed: true });
+  });
+
+  it('carries a tool’s disabled state and reason onto its rail item', () => {
+    const tooled: Instrument = {
+      ...bare,
+      tools: {
+        tools: [
+          {
+            id: 'pen',
+            label: 'Pen',
+            icon: icon('ui:add'),
+            disabled: true,
+            disabledReason: 'Locked',
+          },
+        ],
+      },
+    };
+    expect(builtinContributions(tooled, ctx).find((c) => c.id === 'pen')?.item).toMatchObject({
+      disabled: true,
+      disabledReason: 'Locked',
     });
   });
 
@@ -185,6 +218,33 @@ describe('builtinContributions', () => {
       ],
     };
     expect(ids(bare, withSaves)).toContain('snapshot-load');
+  });
+
+  it('lists the snapshots as menu entries that load the one chosen', () => {
+    const loadSnapshot = vi.fn();
+    const withSaves: TrialChromeContext = {
+      ...ctx,
+      loadSnapshot,
+      savedSnapshots: [
+        {
+          id: 's1',
+          name: 'First',
+          trialId: 't1',
+          instrumentName: 'Stub',
+          config: {},
+          state: {},
+          savedAt: 1,
+        },
+      ],
+    };
+    const load = builtinContributions(bare, withSaves).find((c) => c.id === 'snapshot-load');
+    const item = load?.item as ToolbarMenuItem;
+    expect(item.kind).toBe('menu');
+    const entries = typeof item.entries === 'function' ? item.entries(withSaves) : item.entries;
+    expect(entries).toMatchObject([{ kind: 'item', key: 's1', label: 'First' }]);
+    const first = entries[0];
+    if (first?.kind === 'item') first.run();
+    expect(loadSnapshot).toHaveBeenCalledWith('s1');
   });
 
   it('produces no duplicate ids for a fully-declared instrument', () => {

@@ -65,4 +65,55 @@ describe('TitleBarRegion', () => {
     screen.getByRole('button', { name: 'Go' }).click();
     expect(onActivate).toHaveBeenCalledWith(ctx);
   });
+
+  it('holds a pressed item down and draws a label it is asked to show', () => {
+    renderWithIcons(
+      <TitleBarRegion
+        contributions={[
+          item('pin', {
+            end: true,
+            item: {
+              icon: Glyph,
+              label: 'Pin',
+              pressed: true,
+              showLabel: true,
+              onActivate: () => {},
+            },
+          }),
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const pin = screen.getByRole('button', { name: 'Pin' });
+    expect(pin).toHaveAttribute('aria-pressed', 'true');
+    expect(pin.textContent).toBe('Pin');
+  });
+
+  it('keeps a disabled item with a reason reachable, says why, and ignores a press', () => {
+    const onActivate = vi.fn();
+    renderWithIcons(
+      <TitleBarRegion
+        contributions={[
+          item('close', {
+            end: true,
+            item: {
+              icon: Glyph,
+              label: 'Close trial',
+              disabled: true,
+              disabledReason: 'It is the last trial',
+              onActivate,
+            },
+          }),
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const close = screen.getByRole('button', { name: 'Close trial' });
+    expect(close).not.toBeDisabled();
+    expect(close).toHaveAttribute('aria-disabled', 'true');
+    expect(close).toHaveAttribute('aria-description', 'It is the last trial');
+    expect(close).toHaveAttribute('title', 'Close trial: It is the last trial');
+    close.click();
+    expect(onActivate).not.toHaveBeenCalled();
+  });
 });

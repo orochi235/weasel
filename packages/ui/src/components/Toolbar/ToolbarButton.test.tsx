@@ -60,4 +60,17 @@ describe('Toolbar.Button and Toolbar.Title', () => {
     );
     expect(screen.getByRole('button', { name: 'Grid' })).toHaveAttribute('aria-pressed', 'true');
   });
+
+  test('keeps a disabled button reachable and says why', () => {
+    render(
+      <Toolbar aria-label="Trial actions">
+        <Toolbar.Button iconOnly title="Close trial" disabled disabledReason="It is the last trial" onClick={() => {}}>
+          X
+        </Toolbar.Button>
+      </Toolbar>,
+    );
+    const close = screen.getByRole('button', { name: 'Close trial' });
+    expect(close).toHaveAttribute('aria-disabled', 'true');
+    expect(close).toHaveAttribute('aria-description', 'It is the last trial');
+  });
 });

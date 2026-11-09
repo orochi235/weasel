@@ -1,7 +1,12 @@
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import type { ReactNode } from 'react';
-import { Icon } from '../../passthrough/weasel-ui';
-import type { RegionContribution, ToolbarItem, TrialChromeContext } from '../types';
+import { Icon, MenuButton } from '../../passthrough/weasel-ui';
+import type {
+  RegionContribution,
+  ToolbarEntry,
+  ToolbarMenuItem,
+  TrialChromeContext,
+} from '../types';
 import { groupsOf } from './groupsOf';
 
 /** Props for `<ToolbarRegion>`. */
@@ -14,17 +19,54 @@ export interface ToolbarRegionProps<TCtx = TrialChromeContext> {
   label?: string;
 }
 
+function renderMenu<TCtx>(id: string, item: ToolbarMenuItem<TCtx>, ctx: TCtx): ReactNode {
+  const { icon, label, showLabel, shortcut, disabled, disabledReason, entries } = item;
+  const glyph = icon === undefined ? null : <Icon name={icon} size={16} />;
+  return (
+    <MenuButton
+      key={id}
+      aria-label={label}
+      label={
+        glyph && !showLabel ? (
+          glyph
+        ) : (
+          <>
+            {glyph}
+            {label}
+          </>
+        )
+      }
+      shortcut={shortcut}
+      isDisabled={disabled}
+      disabledReason={disabledReason}
+      entries={typeof entries === 'function' ? () => entries(ctx) : entries}
+    />
+  );
+}
+
 function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: string): ReactNode {
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
   if (c.region !== region || !c.item) return null;
-  const { icon, label, shortcut, disabled, danger, showLabel, pressed, onActivate } =
-    c.item as ToolbarItem<TCtx>;
+  const item = c.item as ToolbarEntry<TCtx>;
+  if (item.kind === 'menu') return renderMenu(c.id, item, ctx);
+  const {
+    icon,
+    label,
+    shortcut,
+    disabled,
+    disabledReason,
+    danger,
+    showLabel,
+    pressed,
+    onActivate,
+  } = item;
   return (
     <Toolbar.Button
       key={c.id}
       iconOnly={!showLabel}
       grade={danger ? 'danger' : undefined}
       disabled={disabled}
+      disabledReason={disabledReason}
       pressed={pressed}
       aria-label={label}
       title={label}
