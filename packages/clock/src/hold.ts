@@ -1,20 +1,11 @@
-import { passesOf } from './place';
 import type { Clock, ClockHandle, ClockPosition } from './types';
 
-/** The time a clock standing `elapsed` into a run of `loop` passes shows
- *  within its pass: a time on a pass boundary past the start shows as the end
- *  of the pass before, and one past the run's end runs on in its last pass. */
-export function shownInPass(
-  origin: number,
-  elapsed: number,
-  duration: number,
-  loop: boolean | number = true,
-): number {
-  if (!Number.isFinite(duration)) return origin + elapsed;
-  const last = (Math.ceil(passesOf(loop)) - 1) * duration;
-  if (elapsed > last + duration) return origin + elapsed - last;
-  const into = elapsed % duration;
-  return origin + (into === 0 && elapsed > 0 ? duration : into);
+/** The time `clock` shows within its pass: its origin plus how far it stands into
+ *  the pass it reads as, so a time on a pass boundary shows as the end of the pass
+ *  before only when the clock stands at that end, as its `phase` says. */
+export function shownInPass(clock: Pick<Clock, 'origin' | 'elapsed' | 'duration' | 'pass'>): number {
+  if (!Number.isFinite(clock.duration)) return clock.origin + clock.elapsed;
+  return clock.origin + clock.elapsed - clock.pass * clock.duration;
 }
 
 /** A clock held at a time its span may not reach yet. */

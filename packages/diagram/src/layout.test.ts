@@ -165,6 +165,18 @@ describe('force', () => {
     expect(new Set(points.map((p) => `${p.x},${p.y}`)).size).toBe(3);
   });
 
+  it('spaces a coincident pair as it spaces one that starts apart', () => {
+    const span = (boxes: Record<string, readonly [number, number]>): number => {
+      const result = force(graphOf(boxes));
+      const a = at(boxes, result, 'a');
+      const b = at(boxes, result, 'b');
+      return Math.hypot(b.x - a.x, b.y - a.y);
+    };
+    const apart = span({ a: [0, 0], b: [200, 0] });
+    expect(span({ a: [0, 0], b: [0, 0] })).toBeLessThan(apart * 1.2);
+    expect(span({ a: [0, 0], b: [1, 0] })).toBeLessThan(apart * 1.2);
+  });
+
   it('pulls a connected pair closer than the repulsion alone would leave them', () => {
     const near = force(graphOf({ a: [0, 0], b: [900, 0] }, [['a', 'b']]));
     const apart = force(graphOf({ a: [0, 0], b: [900, 0] }));

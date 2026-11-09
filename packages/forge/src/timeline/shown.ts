@@ -2,7 +2,7 @@ import { type Clock, shownInPass } from '@weasel-js/clock';
 
 /** The time a story's playhead shows: the clock's origin plus how far it is into the current pass; see `shownInPass`. */
 export function shownTime(clock: Clock): number {
-  return shownInPass(clock.origin, clock.elapsed, clock.duration, clock.loop);
+  return shownInPass(clock);
 }
 
 /** Moves the playhead to shown time `t`, clamped to the span; the span's end stands as the end of the first pass. */

@@ -17,6 +17,12 @@ describe('DIAGRAM_MERMAID', () => {
     expect(DIAGRAM_MERMAID.detect('%%{init: {}}%%\nclassDiagram\nA <|-- B')).toBe(true);
   });
 
+  it('refuses text whose first statement opens with a semicolon, and reads it as a flowchart that says what is wrong', () => {
+    expect(DIAGRAM_MERMAID.detect(';')).toBe(false);
+    expect(DIAGRAM_MERMAID.detect('  ;\nflowchart LR')).toBe(false);
+    expect(() => read(';')).toThrow(/line 1/);
+  });
+
   it('refuses a DOT graph that starts the same way', () => {
     expect(DIAGRAM_MERMAID.detect('graph { a -- b }')).toBe(false);
     expect(DIAGRAM_MERMAID.detect('graph G {\n a\n}')).toBe(false);
