@@ -10,4 +10,5 @@ Fixes to palette focus, Select's trigger, parametric action leaves, tiled bars a
 - An `action` leaf naming a parametric action by its bare id draws each variant with the variant's own shortcut. The leaf's `shortcut` was shown on every variant's button, though one chord cannot fire them all.
 - `tileGrid`'s `corners` rounds a grid of one row shorter than its `columns` only at the corners its items reach: a row at the start no longer rounds its last item's top-right corner, and a centered or end-aligned one no longer rounds its first item's left corners.
 - `frames` walks no steps for a zero-length looping run under `passes: 'all'`, and one step for `loop: 0`, where it had stepped on past the run's end until the cap.
+- An `EffectList` card removed while focus is in it hands focus to the remove button of the next card, else the previous one, through the same rule `useRowNavigation` lists follow. Before, focus dropped to the page.
 - An `EffectList` given two kinds with the same label no longer logs a duplicate-key error.

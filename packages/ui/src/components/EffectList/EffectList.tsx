@@ -4,6 +4,7 @@ import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
 import { dropSide, moveItems, nudgeOf } from '@weasel-js/ui-logic';
 import { useReorderDragList } from '../../useReorderDragList';
+import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { tintSource } from '../appearance';
 import { EffectCard } from './EffectCard';
 import s from './EffectList.module.css';
@@ -74,6 +75,9 @@ export function EffectList<T extends EffectListItem>({
     onPress: (id) => onSelect?.(selected === id ? null : id),
   });
   const { targetIndex, draggedIds } = drag.state;
+  // A card removed with focus in it hands focus to the remove button of the card that takes its place.
+  const kept = useRemovedRowFocus<HTMLDivElement>(reorderItems, (id, els) =>
+    els.get(id)?.querySelector<HTMLElement>('[data-effect-remove]')?.focus());
 
   // A browser drops focus from a node the reorder moves in the DOM.
   const refocus = useRef<HTMLElement | null>(null);
@@ -112,6 +116,7 @@ export function EffectList<T extends EffectListItem>({
         return (
           <EffectCard
             key={item.id}
+            cardRef={kept.rowRef(item.id)}
             item={item}
             index={i}
             kind={kind}

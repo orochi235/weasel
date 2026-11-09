@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode, Ref } from 'react';
 import { Icon } from '../../icons/Icon';
 import { icon } from '../../icons.gen';
 import f from '../field.module.css';
@@ -8,6 +8,7 @@ import type { EffectKind, EffectListItem } from './EffectList';
 import s from './EffectList.module.css';
 
 interface EffectCardProps {
+  cardRef: Ref<HTMLDivElement>;
   item: EffectListItem;
   index: number;
   kind: EffectKind | undefined;
@@ -29,10 +30,11 @@ interface EffectCardProps {
 
 /** One card of a `EffectList`: its header row, and its body when it is open. */
 export function EffectCard({
-  item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onDuplicate, onRemove, children,
+  cardRef, item, index, kind, kinds, open, color, dragging, drop, onGripDown, onToggleOpen, onKeyDown, onPatch, onDuplicate, onRemove, children,
 }: EffectCardProps) {
   return (
     <div
+      ref={cardRef}
       className={s.card}
       style={color === undefined ? undefined : ({ '--_effect-kind': color } as CSSProperties)}
       data-open={open || undefined}
@@ -71,7 +73,7 @@ export function EffectCard({
           </button>
         )}
         {onRemove && (
-          <button type="button" className={s.action} aria-label={`Remove ${item.name}`} onClick={onRemove}>
+          <button type="button" className={s.action} aria-label={`Remove ${item.name}`} data-effect-remove="" onClick={onRemove}>
             <Icon name={icon('core:delete')} size={16} />
           </button>
         )}

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { cssColorLiteral } from '@weasel-js/paint';
@@ -152,6 +152,15 @@ describe('EffectList', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Remove B' }));
     expect(ids(onItems.mock.lastCall![0])).toEqual(['a', 'c']);
     expect(onSelect).toHaveBeenLastCalledWith(null);
+  });
+
+  it('hands focus to the next card\'s remove button when a card is removed, else the previous one\'s', () => {
+    renderWithIcons(<Held />);
+    act(() => screen.getByRole('button', { name: 'Remove B' }).focus());
+    fireEvent.click(screen.getByRole('button', { name: 'Remove B' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove C' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove C' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove A' }));
   });
 
   it('has no remove buttons when not removable', () => {
