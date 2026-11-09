@@ -18,14 +18,21 @@ export const SHAPE_OUTLINES: Readonly<Record<Exclude<MindmapShape, 'plain'>, Out
 /** How a mind map lays out: the root in the middle, its branches balanced to its right and left. */
 export const MINDMAP_LAYOUT: PageLayout = { name: 'radial' };
 
-/** The ids a mind map's nodes take, in order: its own where it gives one, else `n` and its place, made unique. */
+/** The ids a mind map's nodes take, in order: its own where it gives one, else `n` and its place, made unique. A
+ *  repeated id of its own, which Mermaid draws as two nodes, is made unique the same way. */
 export function mindmapIds(nodes: readonly { id?: string }[]): string[] {
   const taken = new Set(nodes.flatMap((n) => (n.id !== undefined ? [n.id] : [])));
+  const used = new Set<string>();
   return nodes.map((n, k) => {
-    if (n.id !== undefined) return n.id;
-    let id = `n${k + 1}`;
-    for (let m = 2; taken.has(id); m++) id = `n${k + 1}_${m}`;
+    if (n.id !== undefined && !used.has(n.id)) {
+      used.add(n.id);
+      return n.id;
+    }
+    const base = n.id ?? `n${k + 1}`;
+    let id = base;
+    for (let m = 2; taken.has(id); m++) id = `${base}_${m}`;
     taken.add(id);
+    used.add(id);
     return id;
   });
 }

@@ -24,6 +24,11 @@ describe('reading a Mermaid mind map', () => {
     ]);
   });
 
+  it('gives a repeated id of a node\'s own a unique one', () => {
+    const ids = page('mindmap\n  a[A]\n    a[B]\n    a_2[C]\n    n4').data.nodes.map((n) => n.id);
+    expect(ids).toEqual(['a', 'a_3', 'a_2', 'n4']);
+  });
+
   it('joins each node to its parent by indentation, with no arrowheads', () => {
     const { edges } = page(LAUNCH).data;
     expect(edges.filter((e) => e.from === 'root').map((e) => e.to)).toEqual(['n2', 'plan', 'risks', 'n11', 'n14']);
