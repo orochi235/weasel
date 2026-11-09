@@ -61,7 +61,7 @@ export function fillHasInk(fill: Fill | null | undefined): fill is PaintedFill {
 }
 
 /** Whether a stroke puts ink down: it does not when it is absent, holds no
- *  paint, or has no width. */
+ *  paint, or has no width — whatever its per-vertex widths. */
 export function strokeHasInk(stroke: Stroke | null | undefined): stroke is PaintedStroke {
   const painted = resolveStroke(stroke);
   if (painted === null) return false;

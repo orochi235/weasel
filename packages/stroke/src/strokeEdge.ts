@@ -7,7 +7,7 @@ import { extractPolylines } from '@weasel-js/geom/tessellate';
 import type { Stroke } from '@weasel-js/paint';
 import { strokeFlattening } from './tessellate/flattening';
 import { nibWidthScale } from './tessellate/nib';
-import { resolveStrokeWidth } from './tessellate/stroke';
+import { inkWidth, resolveStrokeWidth } from './tessellate/stroke';
 import { populateWidths } from './tessellate/vertexWidths';
 
 /** One side of a stroke's ribbon, as `VertexWidth` names them. */
@@ -49,12 +49,14 @@ export interface StrokeEdgeOptions {
  * inner or outer stroke is a centered one twice as wide cut to one side of the
  * path's fill, so its edge is the one on that side, at twice the distance, and
  * a point on the far side is measured to it across the ink. Caps, joins, and
- * markers are not considered. `null` when the path has no segment of any length.
+ * markers are not considered. `null` when the path has no segment of any length,
+ * or the stroke has no width, which draws nothing whatever its per-vertex widths.
  */
 export function strokeEdgeNear(
   path: Path, stroke: Stroke, x: number, y: number, opts: StrokeEdgeOptions = {},
 ): StrokeEdgeHit | null {
   const width = resolveStrokeWidth(stroke.width ?? 1, opts.scale ?? 1);
+  if (!inkWidth(width)) return null;
   const vw = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
   const nibScale = stroke.nib ? nibWidthScale(stroke.nib) : null;
   const align = stroke.align ?? 'center';

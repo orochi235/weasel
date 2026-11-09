@@ -204,7 +204,8 @@ export interface Stroke {
    * distance — see {@link VertexWidth}, and read one through
    * `vertexHalfWidths`. Entries are world units, even on a `{ px }` stroke.
    * `width` is used as the fallback for any anchor whose entry, or side of
-   * one, is missing, negative, or non-finite. Pair with `pressureToWidth` to
+   * one, is missing, negative, or non-finite; a stroke whose `width` is 0
+   * draws nothing, whatever these say. Pair with `pressureToWidth` to
    * derive widths from stylus input.
    *
    * Joins between adjacent segments whose widths differ by more than

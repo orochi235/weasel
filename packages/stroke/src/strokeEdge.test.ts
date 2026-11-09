@@ -70,6 +70,11 @@ describe('strokeEdgeNear', () => {
     });
   });
 
+  it('answers null for a stroke of no width, which draws nothing whatever its per-vertex widths', () => {
+    expect(strokeEdgeNear(LINE, { ...stroke, width: 0, vertexWidths: [4, 4] }, 30, 3)).toBeNull();
+    expect(strokeEdgeNear(LINE, { ...stroke, width: { px: 0 }, vertexWidths: [4, 4] }, 30, 3)).toBeNull();
+  });
+
   it('answers null for a path with no segments', () => {
     expect(strokeEdgeNear(new PathBuilder().moveTo(5, 5).build(), stroke, 5, 5)).toBeNull();
   });

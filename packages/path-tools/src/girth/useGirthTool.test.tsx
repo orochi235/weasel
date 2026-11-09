@@ -90,6 +90,12 @@ describe('useGirthTool', () => {
     expect(t.widths()).toBeUndefined();
   });
 
+  it('takes no edge of a stroke with no width, which draws nothing whatever its per-vertex widths', () => {
+    const t = setup(LINE, { paint: { color: '#000' }, width: 0, vertexWidths: [4, 4] });
+    t.drag([[100, 2], [103, 10]]);
+    expect(t.widths()).toEqual([4, 4]);
+  });
+
   it('pinches the stroke when an edge is dragged inward, and stops at zero', () => {
     const t = setup();
     t.drag([[100, -2], [100, 1], [100, 5]]);
