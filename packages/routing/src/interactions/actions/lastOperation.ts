@@ -10,7 +10,7 @@ import { prefLeaves, type PrefGroup } from '@weasel-js/prefs';
 import { createEmitter } from '@weasel-js/registry';
 import type { Action } from './action';
 import { resolveParams, type ImmediateInvoker, type OngoingHandle, type OngoingInvoker } from './invoker';
-import type { ActionTuning } from './tuning';
+import { runsInvoker, type ActionTuning } from './tuning';
 
 /** One operation that can still be adjusted. */
 export interface LastOperation {
@@ -215,7 +215,9 @@ export class LastOperationKeeper implements LastOperationStore {
     const { params: form, invoker } = action;
     if (!form || !invoker) return action;
     const schemaOf = typeof form === 'function' ? form : () => form;
-    if (invoker.timing === 'ongoing') return { ...action, invoker: this.ongoing(action.id, action.label, schemaOf, invoker, host) };
+    if (invoker.timing === 'ongoing') {
+      return { ...action, invoker: runsInvoker(this.ongoing(action.id, action.label, schemaOf, invoker, host), invoker) };
+    }
     const run: ImmediateInvoker['run'] = (deps, given) => {
       const history = this.busy ? null : host.history();
       if (!history) return invoker.run(deps, given);
@@ -235,7 +237,7 @@ export class LastOperationKeeper implements LastOperationStore {
       }
       return out;
     };
-    return { ...action, invoker: { timing: 'immediate', run } };
+    return { ...action, invoker: runsInvoker({ timing: 'immediate', run }, invoker) };
   }
 
   /** `invoker` with each gesture whose handle can `replay` kept as the last operation when its commit leaves
