@@ -176,6 +176,13 @@ describe('elkPlan', () => {
     expect(G.height).toBeLessThan(400);
   });
 
+  it.each(['down', 'up', 'right', 'left'] as const)('widens a group holding nothing to its minWidth, laid out %s', async (direction) => {
+    const graph = graphOf([node('a')], [], [{ id: 'G', members: [], inset: INSET, minWidth: 400 }]);
+    const G = (await elkPlan(graph, { direction })).groups.get('G')!;
+    expect(G.width).toBeGreaterThanOrEqual(400);
+    expect(G.height).toBeLessThan(400);
+  });
+
   it('stations a label beside its route, on a point of the route', async () => {
     const graph = nested();
     const plan = await elkPlan(graph);

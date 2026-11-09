@@ -105,11 +105,11 @@ export function toElk(graph: Graph, layoutOptions: Record<string, string>): { ro
     pushTo(leaves, known(n.group), leafOf(n, elkIdOf.get(n.id)!, named.get(n.id)));
   }
   const transposed = minimumTransposed(layoutOptions);
-  const boxOf = (g: GraphGroup): ElkNode => ({
-    id: elkIdOf.get(g.id)!,
-    layoutOptions: groupOptions(g, transposed),
-    children: [...groups.filter((c) => parentOf.get(c.id) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])],
-  });
+  const boxOf = (g: GraphGroup): ElkNode => {
+    const children = [...groups.filter((c) => parentOf.get(c.id) === g.id).map(boxOf), ...(leaves.get(g.id) ?? [])];
+    // A group holding nothing is a leaf to ELK, which reads a leaf's minimum the right way round.
+    return { id: elkIdOf.get(g.id)!, layoutOptions: groupOptions(g, transposed && children.length > 0), children };
+  };
 
   const elkEdges: ElkExtendedEdge[] = edges.map((e, i) => {
     index.edges.set(`e${i}`, e);
