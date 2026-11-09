@@ -838,3 +838,42 @@ Calls the round made:
 - `check:size` covers `packages/*/src` only, where `check:frame-loops` covers `apps/` too. Left as is.
 - `stripComments` (`scripts/lib/cssBlocks.ts`) skips strings; a regex literal holding a quote reads the rest of its
   line as a string, which can only raise a false alarm. weaselchart's audio Play rejection stays console-only.
+
+## Audit round eleven (2026-11-09)
+
+- The image cache owns the bitmaps it decodes and closes each one it drops: evicted, released mid-load, replaced,
+  or released (Mike, 2026-11-09). A `bitmapSrc` bitmap stays its maker's. Work that keeps draw commands across an
+  `await` takes `holdImageBitmaps()`; PDF, pages-PDF and LBX export do. A consumer layer that caches commands
+  through `deps` without a hold draws a closed bitmap as nothing until it rebuilds.
+- plot's editors and specs clamp the sizes that drive a loop (Mike, 2026-11-09): packet bits per row ≤ 128, a
+  packet field ends by bit 4095, radar rings ≤ 20. guides' `snapPoint` offers at most the 129 × 129 grid points
+  around the dragged child.
+- Non-finite input to audio (voice gain, rate, detune, pan, position, the listener and its options, a pattern
+  start), `clock.sync`, `tween({ ms })` and a stagger's delay throws `RangeError`, extending round ten's `setGain`
+  call. A stagger asks its delay for every index before the first item starts. An `ms` of `Infinity` still never
+  arrives.
+- A timeline seek lands in `[0, duration]` unless laps remain, when it lands in a later lap.
+- A selected node that a selected group's frame carries goes with the group under align, distribute, flip,
+  rotate and resize. Under `IDENTITY_POSE_COMPOSITION` both are still written.
+- A key binding needing Ctrl or Meta alone shows no shortcut chip; forge's keys panel labels it "Key".
+- A tuned action's `enabled` and `active` get the tuning's params, as `run` does.
+- An ongoing action's `start` that throws at a press is caught and logged, and the press counts as handled. One
+  deferred by `dragThresholdPx` is not caught. Not ruled: logging it retries `start` on every move; ending the
+  gesture changes how an in-flight drag ends.
+- Undo in a lab steps whichever of the marks and the trial's history changed last. A `TrialHistorySource`
+  without `undoStamp` keeps marks first.
+- A trial's writes to the lab's `over` (`f.alias` rows) are undo steps, so Undo rewrites the app's own values.
+- Trim and Extend pass over locked and hidden strokes; a locked stroke still cuts and stops, a hidden one does
+  neither. Link anchor ties to no hidden or locked path.
+- Arrows in ui's widgets (`PageTabs`, `TokenField`, `ItemList`, the icon picker, `PrefsRail`, `Tree`) follow the
+  direction read from computed CSS at the key press, through ui-logic's `arrowDir`. `ResizeHandle` stays physical.
+- A `Tree` drop with a zero, negative or NaN indent keeps the row's depth.
+- A pasted table keeps a tab per empty cell before one with text; a trailing empty cell still pastes nothing.
+- A chunks or dots tile with a size that isn't positive draws nothing.
+- `check:bumps` and the site's Releases view read changesets through `@changesets/parse`, which arrives through
+  `@changesets/cli` and is not declared at the root. `import { type A }` counts as a run-time import in
+  `scripts/lib/imports.mjs`, as `verbatimModuleSyntax` builds it.
+- `resolveStroke`'s doc says a stroke of base width 0 draws through its per-vertex widths; `tessellateStroke`,
+  `strokeToPath` and `strokeHasInk` draw nothing. Not ruled which one changes.
+- A drag spanning containers with equal grid spacing but different corners snaps to a world-aligned lattice, which
+  is neither container's grid. Left as is; `gridSnapSource`'s doc may intend it.

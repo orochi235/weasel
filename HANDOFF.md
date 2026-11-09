@@ -51,6 +51,10 @@ For the session picking this up: what is in flight and what has no other home. O
   `batch/2026-11-08e` (`test:fleet`: 36256 tests; postbuild green), and the hand fix at cd61bfa32 (branch run 15039
   tests, full typecheck). Pushed. `frame-fixes` (paths in groups read and written in world, derived nodes picked
   through their own frame) followed at 7186be511 through `batch/2026-11-09`; pushed. Open questions are under "Audit round ten" in `docs/unruled.md`.
+- Round eleven (2026-11-09, the same lanes; about 50 fixes, plus Mike's rulings that the image cache closes what it
+  drops and plot's sizes clamp) is on `main` at 5e7c5fabd through `batch/2026-11-09b` (`test:fleet` full at
+  194990bac: 34268 passed, 1 failed, fixed; reruns on the tip green; postbuild green after the consumer smoke check
+  learned bare imports). Not pushed. Open questions are under "Audit round eleven" in `docs/unruled.md`.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
@@ -85,6 +89,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-09, audit round eleven: right-to-left arrows in `PageTabs`, `TokenField`, `ItemList`, the icon picker,
+  `PrefsRail` and `Tree`, and a right-to-left `Tree` drag; a long letter-spaced underline on a retained surface;
+  Undo order between marks and settings in a lab; packet and radar editors clamping a typed size.
 - 2026-11-08, audit round ten: a thick hatch fill's tile corners (no notches past a 2.8-unit line); an ELK self-loop
   naming one port drawn round a corner; the eyedropper picking and the hand panning over a measurement in draw;
   draw's page clip after a reload; arrow keys then Tab leaving a `SwatchGrid` from the swatch reached.
