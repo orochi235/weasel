@@ -718,9 +718,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) [agent] `weaselIcons` rewrites a local `icon` that shadows the imported one.** Its rewrite does not track
-  scope, so a parameter or local function named `icon` is rewritten as the import. Nothing in the repo does this.
-  Closes when a shadowing `icon` is left alone, with a test (found in audit round nine, 2026-11-08).
 - **(P2) [agent] vitest's `fsModuleCache` keeps a CSS module whose `@import`ed sheet changed.** It keys an entry by
   the importing file alone, so a new class in `PropertyRow.auto.css` read `undefined` through
   `Properties.module.css` in the `labkit` project until `node_modules/.vitest-cache` was deleted (2026-11-07,
