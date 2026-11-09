@@ -12,6 +12,10 @@ export function writeParam(
   value: number,
   rampMs?: number,
 ): void {
+  // Before the cancel: an AudioParam refuses either, and would throw with the ramp in flight gone.
+  if (!Number.isFinite(value) || (rampMs !== undefined && !Number.isFinite(rampMs))) {
+    throw new RangeError(`@weasel-js/audio: a param is set to a finite value over a finite time, not ${value} over ${rampMs} ms`);
+  }
   const now = ctx.currentTime;
   param.cancelScheduledValues(now);
   if (rampMs && rampMs > 0) {

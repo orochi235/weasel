@@ -61,9 +61,9 @@ function wetDry(
   wetOut.connect(wet);
   wet.connect(output);
   let mix = checkMix(initial);
-  const write = (rampMs?: number): void => {
-    writeParam(ctx, dry.gain, 1 - mix, rampMs);
-    writeParam(ctx, wet.gain, mix, rampMs);
+  const write = (to: number, rampMs?: number): void => {
+    writeParam(ctx, dry.gain, 1 - to, rampMs);
+    writeParam(ctx, wet.gain, to, rampMs);
   };
   initParam(ctx, dry.gain, 1 - mix);
   initParam(ctx, wet.gain, mix);
@@ -71,8 +71,8 @@ function wetDry(
     input, output,
     mix: () => mix,
     setMix(value, rampMs) {
-      mix = checkMix(value);
-      write(rampMs);
+      write(checkMix(value), rampMs);
+      mix = value;
     },
   };
 }
@@ -159,8 +159,8 @@ export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOption
     },
     feedback: () => fb,
     setFeedback(value, rampMs) {
-      fb = checkFeedback(value);
-      writeParam(ctx, loop.gain, fb, rampMs);
+      writeParam(ctx, loop.gain, checkFeedback(value), rampMs);
+      fb = value;
     },
     dispose() {
       delay.disconnect();
