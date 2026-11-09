@@ -57,3 +57,18 @@ describe('tileGeometry', () => {
     expect(missed).toEqual([]);
   });
 });
+
+describe('tileGeometry on sizes that draw nothing', () => {
+  it('scatters no chunks of zero, negative or NaN size, or at an infinite density', () => {
+    for (const [chunkSize, density] of [[0, 0.35], [0, 0], [-2, 0.35], [NaN, 0.35], [3, Infinity]]) {
+      const shapes = tileGeometry({ kind: 'chunks', color: 'red', bg: 'blue', chunkSize, density }).shapes;
+      expect(shapes.map((s) => s.kind)).toEqual(['rect']);
+    }
+  });
+
+  it('draws no dot of a negative or NaN radius, which a canvas arc throws on', () => {
+    for (const radius of [-1, NaN]) {
+      expect(tileGeometry({ kind: 'dots', color: 'red', radius }).shapes).toEqual([]);
+    }
+  });
+});
