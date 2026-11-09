@@ -14,6 +14,7 @@ import {
   swapTrial as swapTrialOp,
 } from '../trial/trialOps';
 import type { LabCommands } from './LabContext';
+import { announceTrialRestart } from '../trial/trialRestarts';
 import { snapshotCommands, useLoadHolds } from './snapshotCommands';
 import type { TrialLayout } from './Workspace';
 
@@ -109,6 +110,7 @@ export function useStoreCommands(
             return reset;
           }),
         }));
+        announceTrialRestart(store, id);
         const handle = clocks.get(id);
         // The lab's clock is every trial's on it, so resetting one leaves it.
         if (handle !== clocks.shared) handle?.reset();

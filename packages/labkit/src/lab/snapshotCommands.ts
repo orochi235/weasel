@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { declaredClock } from '../clock/trialClock';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
+import { announceTrialRestart } from '../trial/trialRestarts';
 import type { LabCommands } from './LabContext';
 
 /**
@@ -55,6 +56,7 @@ export function snapshotCommands(
       const position = store.getState().savedSnapshots.find((s) => s.id === snapshotId)?.clock;
       const handle = ownClock(trialId);
       if (after === before) return;
+      announceTrialRestart(store, trialId);
       holds.get(trialId)?.release();
       holds.delete(trialId);
       if (position && handle) holds.set(trialId, holdElapsed(handle, position));
