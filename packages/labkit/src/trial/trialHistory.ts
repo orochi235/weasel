@@ -41,6 +41,25 @@ export interface TrialHistorySource {
   /** Take an entry the trial records itself — a settings change — onto this
    *  stack, already applied, so one undo order covers both. */
   record(op: Op, label: string): void;
+  /** This history as data storage can keep, the entries `record` took
+   *  included, by their `name` and `args`. The trial saves it in its record
+   *  beside its state. Without it, the history starts empty on every load. */
+  serialize?(): unknown;
+  /** Put back what `serialize` wrote, over the state it was saved beside.
+   *  `rebuild` makes a live op again of an entry the trial recorded, from its
+   *  `name` and `args`, and answers null for any other. The trial calls it
+   *  once per load of its record: when the lab opens, and when another tab
+   *  writes the trial. */
+  restore?(data: unknown, rebuild: (name: string, args: unknown) => Op | null): void;
+}
+
+/** What `useMountedHistory` hands the trial. */
+export interface MountedTrialHistory {
+  mount: MountTrialHistory;
+  history: TrialHistorySource | null;
+  /** The one mounted now, ahead of the render that shows it — a write in the
+   *  same commit as the mount must already see it. */
+  current: () => TrialHistorySource | null;
 }
 
 /** Reports a history mounted; the returned function reports it gone. */
@@ -71,13 +90,7 @@ const NO_SUBSCRIBE = () => () => {};
  * history most recently mounted in it, re-rendering the caller as that
  * history's undo and redo availability changes.
  */
-export function useMountedHistory(): {
-  mount: MountTrialHistory;
-  history: TrialHistorySource | null;
-  /** The one mounted now, ahead of the render that shows it — a write in the
-   *  same commit as the mount must already see it. */
-  current: () => TrialHistorySource | null;
-} {
+export function useMountedHistory(): MountedTrialHistory {
   const [mounted, setMounted] = useState<readonly TrialHistorySource[]>([]);
   const live = useRef<readonly TrialHistorySource[]>([]);
   const mount = useCallback<MountTrialHistory>((source) => {

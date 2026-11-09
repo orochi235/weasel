@@ -8,7 +8,12 @@ import { onTrialRestart } from '../state/trialRestarts';
 import type { TrialRecord } from '../state/types';
 import { TRIAL_EDIT_OP, type TrialEditArgs, trialEditOf, trialEditOp } from './trialEditOp';
 import type { TrialHistorySource } from './trialHistory';
-import { type RebuildTrialOp, trialUndoHistory, useRestoredHistory } from './useRestoredHistory';
+import {
+  type RebuildTrialOp,
+  trialUndoHistory,
+  useHeldOwnHistory,
+  useRestoredHistory,
+} from './useRestoredHistory';
 
 /** What a trial snapshots on when its instrument names no events. */
 const DEFAULT_SNAPSHOT_ON = ['state.change', 'config.change'];
@@ -24,6 +29,9 @@ export interface TrialSnapshotOptions {
   instrument: Instrument<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   /** The history the instrument handed over with `useTrialHistory`, if any. */
   ownHistory: () => TrialHistorySource | null;
+  /** That history as the trial last rendered it, which the trial saves and restores. Absent
+   *  where this trial does not hold it. */
+  mounted?: TrialHistorySource | null;
   /** Called when an entry this records is undone. */
   onUndone: () => void;
 }
@@ -41,6 +49,7 @@ export function useTrialSnapshot({
   trialId,
   instrument,
   ownHistory,
+  mounted = null,
   onUndone,
 }: TrialSnapshotOptions): {
   snapshot: TrialSnapshot;
@@ -96,6 +105,7 @@ export function useTrialSnapshot({
   );
 
   useRestoredHistory({ store, trialId, enabled: undoCap !== undefined, maxDepth, rebuild });
+  useHeldOwnHistory({ store, trialId, source: mounted, rebuild });
 
   const snapshot = useCallback<TrialSnapshot>(
     (event, op) => {

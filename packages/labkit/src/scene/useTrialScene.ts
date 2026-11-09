@@ -44,7 +44,9 @@ export function useTrialScene<
 
   useEffect(
     () =>
-      scene.history.subscribe(() => {
+      // A restore changes no node, and writing the scene back would echo another tab's write.
+      scene.history.observe((step) => {
+        if (step.kind === 'restore') return;
         const json = scene.toJSON();
         known.current = json;
         written.current.add(json);

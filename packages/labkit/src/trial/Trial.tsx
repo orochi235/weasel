@@ -149,13 +149,13 @@ function TrialRuntime({
     clock: clockHandle?.clock,
   });
 
-  const { mount: mountHistory, history: ownHistory, current: ownHistoryNow } = useMountedHistory();
+  const { mount: mountHistory, ...mounted } = useMountedHistory();
   const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
     store,
     trialId: record.id,
     instrument,
     schema,
-    ownHistory: ownHistoryNow,
+    mounted,
   });
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
@@ -239,7 +239,7 @@ function TrialRuntime({
   const undoBindings = useTrialUndo({
     declaresUndo: undoCapability(instrument) != null,
     marks: annotationsCap ? { moves: markMoves, store: annotations } : null,
-    own: ownHistory,
+    own: mounted.history,
     snapshots,
   });
 

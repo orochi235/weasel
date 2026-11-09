@@ -28,18 +28,26 @@ export function newId(): string {
 
 /** Serialize trials for storage, running each instrument's own serializer
  *  over its state. A trial's undo history goes with it, or, before the trial
- *  has restored one, the undo its record was read with. */
+ *  has restored one, the undo its record was read with. `own` answers for the
+ *  history an instrument keeps itself, as `ownUndoOf` does. */
 export function serializeTrials(
   trials: TrialRecord[],
   serializers: InstrumentSerializers,
+  own: (trialId: string) => { data: unknown } | undefined = () => undefined,
 ): SerializedTrial[] {
   return trials.map(({ history, undo, ...w }) => {
     const s = serializers[w.instrumentName];
     const trial = history ? savedTrialHistory(history, s) : undo?.trial;
+    const mine = own(w.id);
+    const ownData = mine ? mine.data : undo?.own;
+    const saved = {
+      ...(trial ? { trial } : {}),
+      ...(ownData !== undefined ? { own: ownData } : {}),
+    };
     return {
       ...w,
       state: s?.serialize ? s.serialize(w.state) : w.state,
-      ...(trial ? { undo: { trial } } : {}),
+      ...(trial || ownData !== undefined ? { undo: saved } : {}),
     };
   });
 }

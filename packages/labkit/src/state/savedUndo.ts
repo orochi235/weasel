@@ -14,6 +14,9 @@ export interface SavedTrialUndo {
   /** The trial's own history, with each edit's state put through the
    *  instrument's `serialize`. */
   trial?: SerializedHistory;
+  /** The history the instrument handed over with `useTrialHistory`, as its
+   *  `serialize` wrote it. */
+  own?: unknown;
 }
 
 /** `history` as a trial's record saves it: undefined with nothing to undo or redo. */

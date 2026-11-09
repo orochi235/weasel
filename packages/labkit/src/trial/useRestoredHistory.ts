@@ -1,9 +1,11 @@
 import { createHistory, type History, type Op } from '@weasel-js/core';
 import { useEffect } from 'react';
 import { useStore } from 'zustand/react';
+import { holdOwnUndo, restoringOwnUndo } from '../state/ownUndo';
 import { latestStamp, restorableTrialHistory } from '../state/savedUndo';
 import type { LabStore } from '../state/store';
 import { editStamp, seedEditStamp } from '../undo/editStamp';
+import type { TrialHistorySource } from './trialHistory';
 
 /** Rebuilds one of the trial's own saved entries, or answers null for an op it does not own. */
 export type RebuildTrialOp = (name: string, args: unknown) => Op | null;
@@ -46,4 +48,29 @@ export function useRestoredHistory(args: {
     seedEditStamp(latestStamp(data));
     store.getState().setTrialHistory(trialId, history);
   }, [saved, store, trialId, enabled, maxDepth, rebuild]);
+}
+
+/**
+ * Holds `source`, the history trial `trialId`'s instrument mounted, as the one
+ * its record saves, and restores into it what the record was read with, once
+ * per read.
+ */
+export function useHeldOwnHistory(args: {
+  store: LabStore;
+  trialId: string;
+  source: TrialHistorySource | null;
+  rebuild: RebuildTrialOp;
+}): void {
+  const { store, trialId, source, rebuild } = args;
+  const saved = useStore(store, (s) => s.trials.find((t) => t.id === trialId)?.undo?.own);
+  useEffect(
+    () => (source ? holdOwnUndo(store, trialId, source) : undefined),
+    [store, trialId, source],
+  );
+  useEffect(() => {
+    if (!source?.restore || typeof saved !== 'object' || saved === null) return;
+    if (restored.has(saved)) return;
+    restored.add(saved);
+    restoringOwnUndo(() => source.restore?.(saved, rebuild));
+  }, [source, saved, rebuild]);
 }

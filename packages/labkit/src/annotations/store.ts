@@ -13,8 +13,9 @@ import {
   roundPoints,
   worldToFrac,
 } from './frac';
-import { MarkHistory, markUndo } from './history';
+import { MarkHistory, markHistoryOf, markUndo, restoreSceneHistory } from './history';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
+import { matchesQuery } from './query';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
 import type {
   Annotation,
@@ -22,7 +23,6 @@ import type {
   AnnotationInit,
   AnnotationMeaning,
   AnnotationPatch,
-  AnnotationQuery,
   AnnotationSelectionMode,
   AnnotationsApi,
   AnnotationTargetInfo,
@@ -51,6 +51,8 @@ export interface AnnotationStoreOptions {
   targets: () => readonly AnnotationTargetInfo[];
   /** Serialized scenes from a previous `toJSON`, keyed by target. */
   restore?: Readonly<Record<string, unknown>>;
+  /** The undo history the same `toJSON` wrote beside them. */
+  history?: unknown;
   /** The instrument's vocabulary, so an export draws a mark in the color its
    *  status gives it. A thunk is read at each capture, for a vocabulary that
    *  changes under a store built once. */
@@ -148,6 +150,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
           {},
         )
       : createAnnotationScene();
+    if (raw) restoreSceneHistory(scene, target, opts.history);
     scenes.set(target, scene);
     history.track(target, scene);
     lastSelection.set(target, selectionKey(scene));
@@ -180,6 +183,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   // `scenes`, and a mark that only appears once its pane asks for its scene is
   // a mark a sidebar cannot list.
   for (const target of Object.keys(restore ?? {})) sceneFor(target);
+  history.fromJSON(opts.history);
 
   /** How a target's marks are drawn right now — one answer for the pane, an
    *  export and an overview, so none can disagree on a color or a dash. */
@@ -223,18 +227,6 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
   const all = (): Annotation[] => liveTargets().flatMap(marksOn);
 
-  const matches = (a: Annotation, q: AnnotationQuery): boolean => {
-    if (q.target !== undefined && a.target !== q.target) return false;
-    if (q.kind !== undefined && a.kind !== q.kind) return false;
-    if (q.status !== undefined && a.status !== q.status) return false;
-    if (q.tags !== undefined) {
-      const have = a.tags ?? [];
-      for (const t of q.tags) if (!have.includes(t)) return false;
-    }
-    if (q.where && !q.where(a)) return false;
-    return true;
-  };
-
   /** The node behind a public id, or undefined. */
   const nodeOf = (id: string) => {
     const parts = splitId(id);
@@ -255,7 +247,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     },
 
     query(q) {
-      return q ? all().filter((a) => matches(a, q)) : all();
+      return q ? all().filter((a) => matchesQuery(a, q)) : all();
     },
 
     hitTest(target, pt: FracPoint, tol = 0) {
@@ -396,7 +388,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     toJSON(): SerializedAnnotations {
       const out: Record<string, unknown> = {};
       for (const [target, scene] of scenes) out[target] = scene.toJSON();
-      return { version: 1, scenes: out };
+      return { version: 1, scenes: out, history: markHistoryOf(history, scenes) };
     },
   };
 }
@@ -407,9 +399,9 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 export function annotationsFromJSON(
   raw: unknown,
   targets: () => readonly AnnotationTargetInfo[],
-  rest: Omit<AnnotationStoreOptions, 'targets' | 'restore'> = {},
+  rest: Omit<AnnotationStoreOptions, 'targets' | 'restore' | 'history'> = {},
 ): AnnotationsApi {
   const doc = raw as Partial<SerializedAnnotations> | null;
   if (doc?.version !== 1 || !doc.scenes) return createAnnotationStore({ targets, ...rest });
-  return createAnnotationStore({ targets, restore: doc.scenes, ...rest });
+  return createAnnotationStore({ targets, restore: doc.scenes, history: doc.history, ...rest });
 }

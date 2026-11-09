@@ -1,5 +1,5 @@
-import type { Scene } from '@weasel-js/core';
-import { editStamp } from '../undo/editStamp';
+import type { Scene, SerializedHistory } from '@weasel-js/core';
+import { editStamp, seedEditStamp } from '../undo/editStamp';
 
 /** What the ordering needs of a scene: its history entries and depth, and the two moves. */
 export interface HistoryScene {
@@ -119,6 +119,68 @@ export class MarkHistory {
     const scene = step === null ? undefined : at(step.target);
     return scene ? scene.redo() : false;
   }
+
+  /** The order as data: each change's target and when it was first made, both ways. */
+  toJSON(): MarkOrder {
+    return {
+      undoable: this.undoable.map((s) => ({ ...s })),
+      redoable: this.redoable.map((s) => ({ ...s })),
+    };
+  }
+
+  /** Put back an order `toJSON` wrote, once every target it names is tracked. A stamp
+   *  handed out after is later than any it holds. */
+  fromJSON(saved: unknown): void {
+    const order = saved as Partial<MarkOrder> | null | undefined;
+    this.undoable = steps(order?.undoable);
+    this.redoable = steps(order?.redoable);
+    seedEditStamp(Math.max(...[...this.undoable, ...this.redoable].map((s) => s.stamp)));
+  }
+}
+
+/** What `MarkHistory.toJSON` writes. */
+export interface MarkOrder {
+  undoable: Step[];
+  redoable: Step[];
+}
+
+/** A mark store's undo as data: each target's scene history and the order across them. */
+export interface SerializedMarkHistory extends MarkOrder {
+  /** Keyed by target, each as its scene's `serializeHistory` wrote it. */
+  scenes: Record<string, SerializedHistory>;
+}
+
+/** What saving and restoring a target's history needs of its scene. */
+type SavedScene = Pick<Scene<never, never, never>, 'serializeHistory' | 'restoreHistory'>;
+
+/** `history`'s order, with the history of each scene in `scenes`. */
+export function markHistoryOf(
+  history: MarkHistory,
+  scenes: ReadonlyMap<string, SavedScene>,
+): SerializedMarkHistory {
+  const out: Record<string, SerializedHistory> = {};
+  for (const [target, scene] of scenes) out[target] = scene.serializeHistory();
+  return { scenes: out, ...history.toJSON() };
+}
+
+/** Restore `target`'s scene history from `saved`, over the marks it was saved beside. */
+export function restoreSceneHistory(scene: SavedScene, target: string, saved: unknown): void {
+  const held = (saved as Partial<SerializedMarkHistory> | null | undefined)?.scenes?.[target];
+  if (held) scene.restoreHistory(held);
+}
+
+/** A saved mark set without its undo history: what a copy of the marks starts from. */
+export function withoutMarkHistory(doc: unknown): unknown {
+  if (doc === null || typeof doc !== 'object' || !('history' in doc)) return doc;
+  const { history: _history, ...rest } = doc as Record<string, unknown>;
+  return rest;
+}
+
+function steps(raw: unknown): Step[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (s): s is Step => typeof s?.target === 'string' && typeof s?.stamp === 'number',
+  );
 }
 
 /** A mark store's undo, over `history`'s ordering of the scenes `at` finds. */

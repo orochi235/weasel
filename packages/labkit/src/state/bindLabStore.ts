@@ -13,9 +13,10 @@ import {
   trialValuesPrefix,
   UNDOCK_RECORD,
 } from './labRecords';
+import { ownUndoOf } from './ownUndo';
 import type { LabStore } from './store';
 import type { SavedSnapshot, SerializedTrial, TrialRecord, UnreadableRecord } from './types';
-import { watchTrialHistories } from './watchTrialHistories';
+import { onUndoSteps } from './watchTrialHistories';
 
 export interface BindOptions {
   orders: Map<string, number>;
@@ -109,12 +110,12 @@ export function bindLabStore(
   };
 
   const writeTrial = (trial: TrialRecord): void => {
-    const [serialized] = serializeTrials([trial], store.getState().instrumentHooks().serializers);
+    const { serializers } = store.getState().instrumentHooks();
+    const [serialized] = serializeTrials([trial], serializers, (id) => ownUndoOf(store, id));
     records.set(trialRecord(trial.id), { ...serialized, order: orderOf.get(trial.id) });
   };
-  const offHistories = watchTrialHistories(store, (id) => {
-    const trial = store.getState().trials.find((t) => t.id === id);
-    if (trial && !applyingRemote) writeTrial(trial);
+  const offSteps = onUndoSteps(store, (trial) => {
+    if (!applyingRemote) writeTrial(trial);
   });
 
   const offStore = store.subscribe((state, prev) => {
@@ -285,6 +286,6 @@ export function bindLabStore(
   return () => {
     offStore();
     offRecords();
-    offHistories();
+    offSteps();
   };
 }

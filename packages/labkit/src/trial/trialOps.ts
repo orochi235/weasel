@@ -1,3 +1,4 @@
+import { withoutMarkHistory } from '../annotations/history';
 import { isAuto } from '../config/auto';
 import { autoPathsOf } from '../config/autoConfig';
 import { fillConfigDefaults, isRecord } from '../config/path';
@@ -91,9 +92,10 @@ export function cloneTrial(trials: TrialRecord[], id: string): TrialRecord[] {
   const sourceIdx = trials.findIndex((w) => w.id === id);
   const source = trials[sourceIdx];
   if (!source) return trials;
-  const { history: _history, undo: _undo, ...rest } = source;
+  const { history: _history, undo: _undo, annotations, ...rest } = source;
   const clone: TrialRecord = {
     ...rest,
+    ...(annotations !== undefined ? { annotations: withoutMarkHistory(annotations) } : {}),
     id: newId(),
     config: structuredClone(source.config),
     state: structuredClone(source.state),

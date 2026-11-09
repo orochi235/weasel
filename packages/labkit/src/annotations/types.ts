@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import type { ViewTransform } from '../instrument/types';
 import type { TrialInfo } from '../state/types';
+import type { SerializedMarkHistory } from './history';
 import type { MarkStyle, PaintableMark } from './paint';
 import type { MarkScene } from './store';
 import type { ContentWindow } from './view';
@@ -220,6 +221,9 @@ export interface SerializedAnnotations {
   version: 1;
   /** One serialized scene per target that has ever held a mark. */
   scenes: Record<string, unknown>;
+  /** The marks' undo history, so Undo and Redo survive a reload. Absent in a
+   *  mark set saved before it was kept, which loads with nothing to undo. */
+  history?: SerializedMarkHistory;
 }
 
 /** One mark, as `AnnotationsApi.paintedMarks` hands it over. */

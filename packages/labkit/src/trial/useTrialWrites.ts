@@ -11,7 +11,7 @@ import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { lastEditStamp } from '../undo/editStamp';
 import { stateOp } from '../undo/stateOp';
-import type { TrialHistorySource } from './trialHistory';
+import type { MountedTrialHistory } from './trialHistory';
 import { type TrialSnapshot, useTrialSnapshot } from './useTrialSnapshot';
 
 /** A config write within this long of the last one to the same path belongs
@@ -27,9 +27,9 @@ export interface TrialWritesOptions {
   // biome-ignore lint/suspicious/noExplicitAny: instruments are stored contravariantly; see InstrumentList
   instrument: Instrument<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
   schema: ResolvedConfig;
-  /** The history the instrument handed over with `useTrialHistory`, if any.
-   *  Absent means none. */
-  ownHistory?: () => TrialHistorySource | null;
+  /** The history the instrument handed over with `useTrialHistory`, if any,
+   *  which these writes record onto, save and restore. Absent means none. */
+  mounted?: Pick<MountedTrialHistory, 'current' | 'history'>;
 }
 
 /** A trial's writes that its undo history hears. */
@@ -54,8 +54,9 @@ export function useTrialWrites({
   trialId,
   instrument,
   schema,
-  ownHistory = NO_HISTORY,
+  mounted,
 }: TrialWritesOptions): TrialWrites {
+  const ownHistory = mounted?.current ?? NO_HISTORY;
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const over = useLatest(useContext(LabOverContext));
@@ -66,6 +67,7 @@ export function useTrialWrites({
     trialId,
     instrument,
     ownHistory,
+    mounted: mounted?.history ?? null,
     onUndone: () => {
       lastWrite.current = null;
     },

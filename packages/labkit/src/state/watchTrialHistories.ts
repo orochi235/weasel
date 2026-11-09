@@ -1,4 +1,5 @@
 import type { History } from '@weasel-js/core';
+import { onOwnUndoStep } from './ownUndo';
 import type { LabStore } from './store';
 import type { TrialRecord } from './types';
 
@@ -41,5 +42,20 @@ export function watchTrialHistories(
     offStore();
     for (const { off } of watched.values()) off();
     watched.clear();
+  };
+}
+
+/** Calls `onStep` with a trial's record each time one of its undo histories steps: its own, or
+ *  the one its instrument handed over. Returns the stop. */
+export function onUndoSteps(store: LabStore, onStep: (trial: TrialRecord) => void): () => void {
+  const stepped = (id: string): void => {
+    const trial = store.getState().trials.find((t) => t.id === id);
+    if (trial) onStep(trial);
+  };
+  const offHistories = watchTrialHistories(store, stepped);
+  const offOwn = onOwnUndoStep(store, stepped);
+  return () => {
+    offHistories();
+    offOwn();
   };
 }
