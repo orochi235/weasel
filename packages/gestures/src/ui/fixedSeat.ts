@@ -46,7 +46,11 @@ export interface FixedSeat {
  */
 export function fixedSeat(from: Element | null | undefined): FixedSeat {
   const host = nearestPortalHost(from) ?? document.body;
-  if (host === document.body || !containsFixed(host)) return { host, left: 0, top: 0 };
-  const rect = host.getBoundingClientRect();
-  return { host, left: rect.left, top: rect.top };
+  // The containing block can be any ancestor of the host, not only the host.
+  for (let el: Element | null = host; el !== null; el = el.parentElement) {
+    if (!containsFixed(el)) continue;
+    const rect = el.getBoundingClientRect();
+    return { host, left: rect.left, top: rect.top };
+  }
+  return { host, left: 0, top: 0 };
 }

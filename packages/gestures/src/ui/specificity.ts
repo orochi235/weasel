@@ -1,16 +1,19 @@
 import { parseTargetSpec } from './match';
+import { isApplePlatform } from './platform';
 import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec } from './spec';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 
-/** Count modifier keys declared as `required` (`true`). `'optional'`,
- *  `false`, and `undefined` do NOT discriminate — they don't count. */
-function modsCount(mods: ModSpec | undefined): number {
+/** Count the physical keys a spec requires held (`true`), as `matchModifiers`
+ *  resolves them on `isMac`: `mod` is the same key as `meta` on a Mac and as
+ *  `ctrl` elsewhere, so naming both requires one key. `'optional'`, `false`,
+ *  and `undefined` do NOT discriminate — they don't count. */
+function modsCount(mods: ModSpec | undefined, isMac: boolean): number {
   if (!mods) return 0;
+  const mod = mods.mod === true;
   let n = 0;
   if (mods.alt === true) n++;
-  if (mods.ctrl === true) n++;
-  if (mods.meta === true) n++;
-  if (mods.mod === true) n++;
+  if (mods.ctrl === true || (mod && !isMac)) n++;
+  if (mods.meta === true || (mod && isMac)) n++;
   if (mods.shift === true) n++;
   return n;
 }
@@ -84,8 +87,9 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *  lexicographic compare. Dimensions, in order of precedence:
  *
  *    [0] target — how much the spec's target narrows; see `targetRank`.
- *    [1] mods   — count of required modifier keys (shift/alt/ctrl/meta/mod).
- *                 `'optional'` does NOT count.
+ *    [1] mods   — count of required modifier keys (shift/alt/ctrl/meta), with
+ *                 `mod` read as the key it is on `isMac` (default: this
+ *                 platform), as the matcher reads it. `'optional'` does NOT count.
  *    [2] phase  — how much the spec's `phase` narrows; see `phaseRank`.
  *    [3] exact  — per-kind tiebreak: 2 for a drop/carry/paste spec with a
  *                 non-empty `types` MIME filter, else 1.
@@ -94,10 +98,11 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *  stable sort. */
 export function specificity(
   spec: GestureSpec,
+  isMac: boolean = isApplePlatform(),
 ): readonly [number, number, number, number] {
   const t = targetRank(specTargetOf(spec));
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
-  const m = modsCount(mods);
+  const m = modsCount(mods, isMac);
   const p = phaseRank(('phase' in spec ? spec.phase : undefined) as PhaseSpec | undefined);
   // A consumer's `types: ['text/csv']` binding should win over the kit's
   // catch-all ingest binding.

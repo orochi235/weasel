@@ -5,6 +5,7 @@ import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 import { matchIngestTypes } from './ingestTypes';
 import { matchTarget } from './matchTarget';
+import { oneCodePoint } from './oneCodePoint';
 
 export { matchTarget, parseTargetSpec } from './matchTarget';
 export type { TargetSpecForm } from './matchTarget';
@@ -104,8 +105,9 @@ function matchKeyOrCode(
  *  what it typed. */
 function chordTypedNoLatin(e: { key: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }): boolean {
   if (!e.altKey && !e.ctrlKey && !e.metaKey) return false;
-  return e.key === 'Dead' || (e.key.length === 1 && !/[\x20-\x7e]/.test(e.key));
+  return e.key === 'Dead' || (oneCodePoint(e.key) && !/[\x20-\x7e]/.test(e.key));
 }
+
 
 /** Per-tool gesture-lifecycle state at match time. `selfChannel` is the tool
  *  id `'&'` resolves to — the tool that owns the binding being evaluated — or

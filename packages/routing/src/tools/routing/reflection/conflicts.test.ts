@@ -464,6 +464,14 @@ describe('findConflicts — `mod` against the key it resolves to', () => {
     expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
   });
 
+  it('reads a `ctrl` or `meta` spelled out beside `mod`, as the matcher does', () => {
+    // Both are Cmd+Ctrl on a Mac; off one, Ctrl against Ctrl+Win.
+    const c = findConflicts([
+      tool('a', [wheel({ mod: true, ctrl: true }, 'x')]), tool('b', [wheel({ meta: true, ctrl: true }, 'y')]),
+    ]);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
+  });
+
   it('reports a pair that ties on both platforms once', () => {
     const c = findConflicts([tool('a', [wheel({ shift: true }, 'x')]), tool('b', [wheel({ shift: true }, 'y')])]);
     expect(c).toHaveLength(1);

@@ -6,12 +6,14 @@ import { PREDICATE_TARGET, type RegistryEntry } from './registry';
 export type Platform = 'mac' | 'other';
 export const PLATFORMS: readonly Platform[] = ['mac', 'other'];
 
-/** `mods` with `mod` replaced by the key it stands for on `platform`. As in
- *  `matchModifiers`, a spec naming `mod` has its own `meta` and `ctrl` ignored. */
+/** `mods` with `mod` folded into the key it stands for on `platform`. As in
+ *  `matchModifiers`, the other key keeps its own field, and where `mod` and
+ *  that key's own field disagree the stronger wins. */
 function resolveMod(mods: ParsedModifiers, platform: Platform): ParsedModifiers {
   if (mods.mod === undefined) return mods;
-  const { mod, meta: _meta, ctrl: _ctrl, ...rest } = mods;
-  return { ...rest, [platform === 'mac' ? 'meta' : 'ctrl']: mod };
+  const { mod, ...rest } = mods;
+  const key = platform === 'mac' ? 'meta' : 'ctrl';
+  return { ...rest, [key]: mod === 'required' || rest[key] === 'required' ? 'required' : 'optional' };
 }
 
 /** Whether every entry fires the same action of the same owner with equal

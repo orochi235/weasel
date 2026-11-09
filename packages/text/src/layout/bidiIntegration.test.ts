@@ -174,6 +174,15 @@ describe('paragraphs', () => {
     expect(second.order).toEqual([0, 1, 2, 3]);
   });
 
+  it('keeps one paragraph across a line separator, VT or FF, which end only a line', () => {
+    // `abc.` sits in the right-to-left paragraph `سلام` opened, so the full
+    // stop moves to the left of `abc`.
+    for (const sep of ['\u2028', '\u000b', '\u000c']) {
+      expect(visualOf(`سلام${sep}abc.`, 1).order, `U+${sep.codePointAt(0)!.toString(16)}`).toEqual([3, 0, 1, 2]);
+    }
+    expect(visualOf('سلام\u2029abc.', 1).order).toEqual([0, 1, 2, 3]);
+  });
+
   it('still reorders the first paragraph across CRLF', () => {
     expect(visualOf('אבג\r\nדה', 0).order).toEqual([2, 1, 0]);
     expect(visualOf('אבג\r\nדה', 1).order).toEqual([1, 0]);

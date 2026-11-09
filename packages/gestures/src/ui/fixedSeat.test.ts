@@ -33,4 +33,22 @@ describe('fixedSeat', () => {
     host.getBoundingClientRect = () => ({ left: 40, top: 25, right: 0, bottom: 0, width: 0, height: 0, x: 40, y: 25, toJSON: () => ({}) });
     expect(fixedSeat(from)).toEqual({ host, left: 40, top: 25 });
   });
+
+  it("answers the corner of a host's ancestor that contains its fixed descendants", () => {
+    const from = mount('<div id="a" style="transform: translate(1px, 0)"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
+    const outer = document.getElementById('a')!;
+    outer.getBoundingClientRect = () => ({ left: 12, top: 7, right: 0, bottom: 0, width: 0, height: 0, x: 12, y: 7, toJSON: () => ({}) });
+    expect(fixedSeat(from)).toEqual({ host: document.getElementById('h'), left: 12, top: 7 });
+  });
+
+  it("answers the body's corner when the body contains its fixed descendants", () => {
+    document.body.style.transform = 'translate(1px, 0)';
+    try {
+      document.body.getBoundingClientRect = () => ({ left: 3, top: 4, right: 0, bottom: 0, width: 0, height: 0, x: 3, y: 4, toJSON: () => ({}) });
+      expect(fixedSeat(mount('<i id="from"></i>'))).toEqual({ host: document.body, left: 3, top: 4 });
+    } finally {
+      document.body.style.transform = '';
+      delete (document.body as Partial<HTMLElement>).getBoundingClientRect;
+    }
+  });
 });
