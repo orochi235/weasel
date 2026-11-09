@@ -34,6 +34,10 @@ describe('resolveCursor', () => {
 });
 
 describe('resolveCursorTier', () => {
+  it('reads a non-finite angle as none, for the painted tier as for the baked one', () => {
+    expect(resolveCursorTier({ glyph: 'brush', worldRadius: 4, angle: Number.NaN })).toMatchObject({ angle: 0 });
+  });
+
   it('reports a keyword and a bakeable glyph as CSS', () => {
     expect(resolveCursorTier('grab')).toEqual({ kind: 'css', css: 'grab' });
     const baked = resolveCursorTier({ glyph: 'pencil' });
