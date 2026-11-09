@@ -3,6 +3,7 @@
 import type { Point } from '../paths/cubicMath';
 import { evalSeg, derivSeg, type Seg } from '../booleans/contourSegments';
 import { nearlyParallel } from '../scalar';
+import { pointSegmentDist } from '../points2';
 
 /** One crossing of segments `a` and `b`: the parameter on each, and the point. */
 export interface SegmentCrossing {
@@ -37,16 +38,14 @@ function boxOf(pts: Seg): [number, number, number, number] {
   return [x0, y0, x1, y1];
 }
 
-/** How far the control points stray from the chord. Zero for a line. */
+/** How far the control points stray from the chord, as a segment: a control
+ *  on the chord's line but past its end pulls the curve past it. Zero for a line. */
 function flatness(pts: Seg): number {
   if (pts.length === 2) return 0;
   const a = pts[0], b = pts[pts.length - 1];
-  const dx = b.x - a.x, dy = b.y - a.y;
-  const len = Math.hypot(dx, dy);
   let worst = 0;
   for (let i = 1; i < pts.length - 1; i++) {
-    const p = pts[i];
-    const d = len === 0 ? Math.hypot(p.x - a.x, p.y - a.y) : Math.abs((p.x - a.x) * dy - (p.y - a.y) * dx) / len;
+    const d = pointSegmentDist(pts[i].x, pts[i].y, a.x, a.y, b.x, b.y);
     if (d > worst) worst = d;
   }
   return worst;

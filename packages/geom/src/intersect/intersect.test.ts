@@ -13,6 +13,17 @@ describe('intersectSegments', () => {
     expect(h).toMatchObject({ ta: 0.5, tb: 0.5, x: 5, y: 5 });
   });
 
+  it('finds where a cubic crosses a line beyond its chord, its controls collinear with it', () => {
+    // x(t) = 90t(1-t) + 10t³ runs out to ~23.7 and back to 10 along y = 0, so x = 20 is crossed twice.
+    const cubic = [P(0, 0), P(30, 0), P(30, 0), P(10, 0)];
+    const hits = intersectSegments(cubic, [P(20, -5), P(20, 5)]);
+    expect(hits).toHaveLength(2);
+    for (const h of hits) {
+      expect(cubicEvalAt(0, 0, 30, 0, 30, 0, 10, 0, h.ta)[0]).toBeCloseTo(20, 6);
+      expect(h.x).toBeCloseTo(20, 6);
+    }
+  });
+
   it('finds nothing between parallel lines', () => {
     expect(intersectSegments([P(0, 0), P(10, 0)], [P(0, 1), P(10, 1)])).toEqual([]);
   });
