@@ -45,6 +45,9 @@ export const groups = [
     tags: {
       snowflake: ['freeze', 'frozen', 'cold', 'ice'],
       droplet: ['thaw', 'melt', 'water', 'liquid'],
+      icicles: ['freeze', 'frozen', 'ice', 'cold'],
+      melt: ['thaw', 'melt', 'drip', 'warm'],
+      thaw: ['thaw', 'melt', 'warm', 'spark'],
     },
   }],
   ['Appearance', APPEARANCE],
