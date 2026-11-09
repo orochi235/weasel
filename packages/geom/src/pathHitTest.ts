@@ -12,7 +12,7 @@
 
 import { pointInPolygon, segmentsCross } from './polyline';
 import { pointSegmentDist2 } from './points2';
-import type { Rect } from './box';
+import { rectsIntersect, type Rect } from './box';
 import type { Path } from './path';
 import type { CurveSpan } from './along/curvePosition';
 import { closedSubpaths, regionSubpaths } from './pathSubpaths';
@@ -254,14 +254,7 @@ export function pathContainsRect(path: Path, rect: Rect, opts: PointInPathOption
 
 /** Returns true if `rect` overlaps (intersects or contains) `path`. */
 export function pathIntersectsRect(path: Path, rect: Rect, opts: PointInPathOptions = {}): boolean {
-  if (path.kind === 'rect') {
-    return (
-      rect.x < path.x + path.width &&
-      rect.x + rect.width > path.x &&
-      rect.y < path.y + path.height &&
-      rect.y + rect.height > path.y
-    );
-  }
+  if (path.kind === 'rect') return rectsIntersect(path, rect);
   const subpaths = closedSubpaths(path, opts);
   if (subpaths.length === 0) return false;
   for (const c of rectToVerts(rect)) {

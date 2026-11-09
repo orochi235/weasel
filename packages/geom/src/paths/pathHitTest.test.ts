@@ -45,6 +45,14 @@ describe('pathIntersectsRect', () => {
   it('polygon path: rect overlapping → true', () => {
     expect(pathIntersectsRect(tri, { x: 4, y: 5, width: 4, height: 4 })).toBe(true);
   });
+  it('answers a rect touching the edge the same for a rect path and the same square as a polygon', () => {
+    const square = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }, { x: 0, y: 10 }]);
+    const touching = { x: 10, y: 2, width: 5, height: 5 };
+    expect(pathIntersectsRect(square, touching)).toBe(true);
+    expect(pathIntersectsRect(rectPath(0, 0, 10, 10), touching)).toBe(true);
+    // A zero-size rect on the edge is a point pointInPath already calls inside.
+    expect(pathIntersectsRect(rectPath(0, 0, 10, 10), { x: 10, y: 5, width: 0, height: 0 })).toBe(true);
+  });
 });
 
 describe('pathContainsPolygon', () => {
