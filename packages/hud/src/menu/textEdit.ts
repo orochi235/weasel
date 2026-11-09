@@ -41,6 +41,31 @@ export function wordStop(chars: readonly string[], from: number, dir: -1 | 1): n
   return i;
 }
 
+let segmenter: Intl.Segmenter | null | undefined;
+
+/** Code-point offsets into `draft` that start a grapheme cluster, its end included: where a caret can stand.
+ *  Every offset, where the platform has no `Intl.Segmenter`. */
+export function clusterStops(draft: string): number[] {
+  segmenter ??= typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  const n = Array.from(draft).length;
+  if (!segmenter) return Array.from({ length: n + 1 }, (_, i) => i);
+  const stops = [0];
+  let at = 0;
+  for (const { segment } of segmenter.segment(draft)) stops.push((at += Array.from(segment).length));
+  return stops;
+}
+
+/** The cluster boundary one cluster before `from` (dir -1) or after it (dir 1), clamped to the draft. */
+function clusterStep(draft: string, from: number, dir: -1 | 1): number {
+  const stops = clusterStops(draft);
+  if (dir < 0) {
+    for (let i = stops.length - 1; i >= 0; i--) if (stops[i]! < from) return stops[i]!;
+    return 0;
+  }
+  for (const stop of stops) if (stop > from) return stop;
+  return stops[stops.length - 1]!;
+}
+
 /** An edit of `entry` holding `draft`, with the caret at its end. */
 export function startEdit(entry: MenuTextEntry, draft: string): HudTextEdit {
   const n = Array.from(draft).length;
@@ -99,15 +124,15 @@ function moveFor(edit: HudTextEdit, key: string, mods: EditMods): number | undef
     return wordStop(Array.from(edit.draft), start, dir);
   }
   // An arrow with no Shift collapses a selection to its side before it moves anything.
-  if (key === 'ArrowLeft') return !mods.shift && from !== to ? from : edit.caret - 1;
-  if (key === 'ArrowRight') return !mods.shift && from !== to ? to : edit.caret + 1;
+  if (key === 'ArrowLeft') return !mods.shift && from !== to ? from : clusterStep(edit.draft, edit.caret, -1);
+  if (key === 'ArrowRight') return !mods.shift && from !== to ? to : clusterStep(edit.draft, edit.caret, 1);
   return undefined;
 }
 
 /** What one key does to an edit: the edit it leaves, null once Enter or Escape ends it, and on Enter the text to
  *  write. A character replaces the selection, Backspace and Delete take it or the character (or the word, or the
- *  rest of the line) either side of the caret, and the arrows, Home and End move the caret; any other key is held
- *  and ignored. */
+ *  rest of the line) either side of the caret, and the arrows, Home and End move the caret. A character here is a
+ *  grapheme cluster: a letter with its marks, or a whole emoji sequence. Any other key is held and ignored. */
 export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { edit: HudTextEdit | null; commit?: string } {
   const ends = editEnd({ key, shift: mods.shift === true });
   if (ends) return ends === 'commit' ? { edit: null, commit: edit.draft } : { edit: null };
@@ -117,11 +142,11 @@ export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { 
   if ((key === 'Backspace' || key === 'Delete') && from !== end) return { edit: splice(edit, from, end, '') };
   const chars = Array.from(edit.draft);
   if (key === 'Backspace') {
-    const start = mods.line ? 0 : mods.word ? wordStop(chars, from, -1) : Math.max(0, from - 1);
+    const start = mods.line ? 0 : mods.word ? wordStop(chars, from, -1) : clusterStep(edit.draft, from, -1);
     return { edit: splice(edit, start, from, '') };
   }
   if (key === 'Delete') {
-    return { edit: splice(edit, from, mods.line ? chars.length : mods.word ? wordStop(chars, from, 1) : from + 1, '') };
+    return { edit: splice(edit, from, mods.line ? chars.length : mods.word ? wordStop(chars, from, 1) : clusterStep(edit.draft, from, 1), '') };
   }
   if (mods.mod) return { edit: key.toLowerCase() === 'a' ? { ...edit, anchor: 0, caret: chars.length } : edit };
   if (Array.from(key).length === 1) return { edit: splice(edit, from, end, key) };

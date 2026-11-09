@@ -7,7 +7,7 @@ import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu'
 import type { HudDrawCtx, HudKeyEvent } from '../widget';
 import { DEFAULT_MENU_METRICS as m, drawPanel, OPENED_VALUES, panelSize } from './drawPanel';
 import { createMenuWidget } from './menuWidget';
-import { numberChips } from './valueRows';
+import { caretAt, numberChips } from './valueRows';
 import { startEdit } from './textEdit';
 
 const ctx = {
@@ -107,6 +107,15 @@ function widget(entries: MenuEntry[]) {
   };
   return { w, close, click };
 }
+
+describe('caretAt', () => {
+  it('puts a click between a letter and its mark at a cluster boundary', () => {
+    const measure = (text: string) => Array.from(text).length * 10;
+    const draft = 'ae\u0301';
+    const between = 200 - m.padX - 3 - measure('\u0301');
+    expect(caretAt(draft, 200, m, between, measure)).toBe(1);
+  });
+});
 
 describe('createMenuWidget: value rows', () => {
   it('steps a number row from its chips, redraws the value, and stays open', () => {
