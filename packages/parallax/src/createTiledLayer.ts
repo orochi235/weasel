@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core';
-import { subscribeToSources, viewportWorldRect, type Dims, type RenderLayer } from '@weasel-js/core';
+import { drawOneLayer, subscribeToSources, viewportWorldRect, type Dims, type RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import { tiledProject } from './tiledProject';
 
@@ -61,7 +61,8 @@ function translate(tx: number, ty: number): Float64Array {
  * `+k * period` in world space.
  *
  * The lattice is per layer, not per shape. Content on two different periods
- * is two tiled layers stacked.
+ * is two tiled layers stacked. Sources keep their order in every copy, and a
+ * source's `effects` run once over all of its copies.
  *
  * The plane is `space: 'world'`, which is what lets it be a `source` of
  * `createParallaxLayer`: the parallax plane hands it the derived inner view,
@@ -93,7 +94,7 @@ export function createTiledLayer<TData>(
       const out: DrawCommand[] = [];
       const onScreen: DrawCommand[] = [];
       for (const layer of source) {
-        if ((layer.space ?? 'world') === 'screen') onScreen.push(...layer.draw(data, view, dims));
+        if ((layer.space ?? 'world') === 'screen') onScreen.push(...drawOneLayer(layer, data, view, dims));
       }
       // This plane is drawn through the view, so screen content is handed the view's inverse.
       if (onScreen.length > 0) {
@@ -107,18 +108,25 @@ export function createTiledLayer<TData>(
       // Written so a non-finite span, which a zero view scale gives, fails it too.
       if (!((kx.to - kx.from + 1) * (ky.to - ky.from + 1) <= MAX_COPIES)) return out;
 
-      for (let i = kx.from; i <= kx.to; i++) {
-        for (let j = ky.from; j <= ky.to; j++) {
-          const tx = Number.isFinite(p.x) ? i * p.x : 0;
-          const ty = Number.isFinite(p.y) ? j * p.y : 0;
-          const shifted: View = { ...view, x: view.x - tx, y: view.y - ty };
-          const children: DrawCommand[] = [];
-          for (const layer of tiles) children.push(...layer.draw(data, shifted, dims));
-          if (children.length === 0) continue;
-          out.push(tx === 0 && ty === 0
-            ? { kind: 'group', children }
-            : { kind: 'group', transform: translate(tx, ty), children });
+      // Layer by layer, so a later source sits above an earlier one in every copy, and a
+      // layer's effects run once over all of its copies.
+      for (const layer of tiles) {
+        const copies: DrawCommand[] = [];
+        for (let i = kx.from; i <= kx.to; i++) {
+          for (let j = ky.from; j <= ky.to; j++) {
+            const tx = Number.isFinite(p.x) ? i * p.x : 0;
+            const ty = Number.isFinite(p.y) ? j * p.y : 0;
+            const shifted: View = { ...view, x: view.x - tx, y: view.y - ty };
+            const children = layer.draw(data, shifted, dims);
+            if (children.length === 0) continue;
+            copies.push(tx === 0 && ty === 0
+              ? { kind: 'group', children }
+              : { kind: 'group', transform: translate(tx, ty), children });
+          }
         }
+        if (copies.length === 0) continue;
+        if (layer.effects && layer.effects.length > 0) out.push({ kind: 'group', effects: layer.effects, children: copies });
+        else out.push(...copies);
       }
       return out;
     },

@@ -1,5 +1,5 @@
 /** A Mermaid quadrant chart as a one-page document holding a plot page. */
-import type { QuadrantAxis, QuadrantData, QuadrantPoint, QuadrantPointStyle } from '@weasel-js/plot';
+import { quadrantClassesOf, type QuadrantAxis, type QuadrantData, type QuadrantPoint, type QuadrantPointStyle } from '@weasel-js/plot';
 import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
@@ -18,7 +18,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
   const axes: { x?: QuadrantAxis; y?: QuadrantAxis } = {};
   const quadrants: [string?, string?, string?, string?] = [undefined, undefined, undefined, undefined];
   const points: QuadrantPoint[] = [];
-  const classes: Record<string, QuadrantPointStyle> = {};
+  const classes = new Map<string, QuadrantPointStyle>();
   for (const s of src.body) {
     const m = /^(\S+)(?:\s+(.*))?$/.exec(s.text)!;
     const keyword = m[1]!;
@@ -30,7 +30,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
     else if (keyword === 'classDef') {
       const c = /^([\w-]+)\s*(.*)$/.exec(rest);
       if (c === null) throw lineError('Mermaid', s.line, 'a classDef needs a name');
-      classes[c[1]!] = styleOf(c[2]!, s.line);
+      classes.set(c[1]!, styleOf(c[2]!, s.line));
     } else {
       const point = pointOf(s);
       if (point === null) throw lineError('Mermaid', s.line, `"${s.text}" is not a quadrantChart statement`);
@@ -51,7 +51,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
     ...(y !== undefined ? { y } : {}),
     ...(quadrants.length > 0 ? { quadrants } : {}),
     points,
-    ...(Object.keys(classes).length > 0 ? { classes } : {}),
+    ...quadrantClassesOf([...classes]),
   };
   const name = title ?? named;
   const page: PlotPage = { kind: 'plot', id: 'page-1', ...(name !== undefined ? { name } : {}), ...QUADRANT_PAGE, data };

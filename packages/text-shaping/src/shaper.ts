@@ -203,7 +203,8 @@ let loading: Promise<Shaper> | null = null;
 
 /**
  * Load HarfBuzz (about 450 kB of WebAssembly) and resolve with a shaper over
- * it. Once per process: every call answers the same shaper.
+ * it. Once per process: every call answers the same shaper. A load that
+ * fails rejects, and the next call tries again.
  *
  * ```ts
  * import { loadShaper } from '@weasel-js/text-shaping';
@@ -213,12 +214,16 @@ let loading: Promise<Shaper> | null = null;
  * ```
  */
 export function loadShaper(): Promise<Shaper> {
-  loading ??= Promise.all([import('./vendor/harfbuzzjs/index'), import('./vendor/harfbuzzjs/harfbuzz')])
+  if (loading) return loading;
+  const load = Promise.all([import('./vendor/harfbuzzjs/index'), import('./vendor/harfbuzzjs/harfbuzz')])
     .then(async ([hb, { default: createHarfBuzz }]) => {
       hb.init(await createHarfBuzz(wasmLocation()));
       return new HarfBuzzShaper(hb);
     });
-  return loading;
+  // A fetch of the WebAssembly that failed once may not fail again.
+  load.catch(() => { if (loading === load) loading = null; });
+  loading = load;
+  return load;
 }
 
 /**

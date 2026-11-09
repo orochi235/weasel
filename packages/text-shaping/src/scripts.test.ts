@@ -24,6 +24,11 @@ describe('scriptPieces', () => {
     expect(cut('abc (שלום) def')).toEqual([['abc (', 'ltr'], ['שלום', 'rtl'], [') def', 'ltr']]);
   });
 
+  it('reads a piece a closing bracket opens in its script\'s direction', () => {
+    // The `)` is Hebrew by its pair, and shaped the way its `(` was.
+    expect(cut('שלום (abc)')).toEqual([['שלום (', 'rtl'], ['abc', 'ltr'], [')', 'rtl']]);
+  });
+
   it('pairs brackets that open before any letter once a letter arrives', () => {
     expect(cut('(abc שלום) x')).toEqual([['(abc ', 'ltr'], ['שלום', 'rtl'], [') x', 'ltr']]);
   });

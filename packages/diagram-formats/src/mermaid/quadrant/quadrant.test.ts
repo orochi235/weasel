@@ -94,6 +94,31 @@ describe('writing a Mermaid quadrant chart', () => {
     ].join('\n'));
   });
 
+  it('writes classes back in the order it read them, a name made of digits included', () => {
+    const text = 'quadrantChart\n  A:::9: [0.5, 0.5]\n  classDef hot color: #ff0000\n  classDef 9 radius: 4\n';
+    expect(writeMermaidQuadrant(plotOf(text)).text).toBe(text);
+  });
+
+  it('quotes a point named like a statement, so it reads back as a point', () => {
+    const names = ['title Outlier', 'x-axis drift', 'quadrant-2 edge', 'classDef', 'accTitle', '%% note'];
+    const page: PlotPage = {
+      kind: 'plot', id: 'page-1', width: 600, height: 600,
+      data: { kind: 'quadrant', points: names.map((name) => ({ name, x: 0.5, y: 0.5 })) },
+    };
+    const back = plotOf(writeMermaidQuadrant(page).text).data;
+    expect(back.kind === 'quadrant' && back.points.map((p) => p.name)).toEqual(names);
+  });
+
+  it('reads back a quoted name holding text that looks like a reference', () => {
+    const names = ['a: #35; b', 'c: #quot; d', 'e: &amp; <b>'];
+    const page: PlotPage = {
+      kind: 'plot', id: 'page-1', width: 600, height: 600,
+      data: { kind: 'quadrant', points: names.map((name) => ({ name, x: 0.5, y: 0.5 })) },
+    };
+    const back = plotOf(writeMermaidQuadrant(page).text).data;
+    expect(back.kind === 'quadrant' && back.points.map((p) => p.name)).toEqual(names);
+  });
+
   it('warns on what Mermaid cannot hold, and throws on another kind of chart', () => {
     const page: PlotPage = {
       kind: 'plot', id: 'p', width: 1, height: 1,

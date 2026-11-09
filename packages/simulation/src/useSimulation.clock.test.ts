@@ -80,3 +80,33 @@ describe('useSimulation on a clock', () => {
     expect(sim.alpha()).toBe(alpha);
   });
 });
+
+describe('useSimulation switching clocks', () => {
+  function mount() {
+    const a = createClock({ rate: 1, seekable: false, step: 10 });
+    const b = createClock({ rate: 1, seekable: false, step: 10 });
+    const onTick = vi.fn();
+    const n: SimulationNode = { x: 0, y: 0, vx: 10, vy: 0 };
+    const { result, rerender } = renderHook(
+      ({ clock }) => useSimulation({ nodes: [n], clock, onTick, requestFrame: () => 1, cancelFrame: () => {} }),
+      { initialProps: { clock: a } },
+    );
+    act(() => { a.clock.sync(0); b.clock.sync(0); });
+    return { sim: result.current, onTick, b, toB: () => rerender({ clock: b }) };
+  }
+
+  it('leaves a stopped simulation stopped', () => {
+    const { sim, onTick, b, toB } = mount();
+    act(() => { sim.stop(); });
+    toB();
+    act(() => { b.clock.sync(100); });
+    expect(onTick).not.toHaveBeenCalled();
+  });
+
+  it('carries a running simulation over to the new clock', () => {
+    const { onTick, b, toB } = mount();
+    toB();
+    act(() => { b.clock.sync(30); });
+    expect(onTick).toHaveBeenCalledTimes(3);
+  });
+});

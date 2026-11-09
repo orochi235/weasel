@@ -16,7 +16,7 @@ interface HarnessProps {
   sample?: (p: { x: number; y: number }) => string | null;
   minFactor?: number;
   maxFactor?: number;
-  onColorChange?: (hex: string) => void;
+  onColorChange?: (hex: string | null) => void;
   shape?: LoupeShape;
   place?: LoupeOptions['place'];
   onLens?: LoupeOptions['onLens'];

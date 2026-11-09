@@ -229,6 +229,15 @@ describe('writing what the format cannot carry', () => {
     expect(back).toMatchObject({ label: 'owns', endLabels: { from: '1', to: '0..*' } });
   });
 
+  it('round-trips end labels that read as markup', async () => {
+    const doc: DiagramDocument = { pages: [{ kind: 'graph', id: 'p', width: 400, height: 200, data: {
+      nodes: [{ id: 'a', lines: ['A'], at: { x: 0, y: 0 } }, { id: 'b', lines: ['B'], at: { x: 200, y: 0 } }],
+      edges: [{ id: 'ab', from: 'a', to: 'b', endLabels: { from: '<b>1</b>', to: 'x &amp; y' } }],
+    } }] };
+    const back = asGraph((await DRAW_XML.read!(DRAW_XML.write!(doc).text)).document.pages[0]!).data.edges[0]!;
+    expect(back.endLabels).toEqual({ from: '<b>1</b>', to: 'x &amp; y' });
+  });
+
   it('warns that a trimmed connector was written whole', () => {
     const data: DiagramData = {
       nodes: [{ id: 'a', at: { x: 10, y: 10 } }, { id: 'b', at: { x: 200, y: 10 } }],

@@ -2,6 +2,7 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import type { BadgeBase, BadgeEffect, BadgeEffectSpec } from '@weasel-js/ui/components/Badge';
 import { defaultsOf } from '../shapeControls';
 import { BASE_LAB_CONTROLS, EFFECT_LAB_CONTROLS, isColorParam } from './controls';
+import { effectLabel } from './effectKinds';
 import type { LabPreset } from './presets';
 import type { LabEffect, LabParams, LabSnapshot } from './snapshot';
 
@@ -37,8 +38,7 @@ export function resetPatch(): Pick<Shape, 'base' | 'baseParams' | 'labEffects'> 
 
 export function presetPatch(preset: LabPreset, nextId: number): Shape {
   const labEffects = preset.effects.map((e, i) => ({
-    id: nextId + i,
-    type: e.type,
+    ...freshEffect(nextId + i, e.type),
     params: { ...defaultsOf(EFFECT_LAB_CONTROLS[e.type]), ...e.params },
   }));
   return {
@@ -50,41 +50,36 @@ export function presetPatch(preset: LabPreset, nextId: number): Shape {
   };
 }
 
-export function addEffect(shape: Pick<Shape, 'labEffects' | 'nextId'>, type: BadgeEffect): Pick<Shape, 'labEffects' | 'nextId'> {
-  const effect: LabEffect = { id: shape.nextId, type, params: defaultsOf(EFFECT_LAB_CONTROLS[type]) };
-  return { labEffects: [...shape.labEffects, effect], nextId: shape.nextId + 1 };
-}
+const freshEffect = (id: number, type: BadgeEffect): LabEffect => ({
+  id, type, name: effectLabel(type), on: true, params: defaultsOf(EFFECT_LAB_CONTROLS[type]),
+});
 
-export function removeEffect(effects: readonly LabEffect[], id: number): LabEffect[] {
-  return effects.filter((e) => e.id !== id);
+export function addEffect(shape: Pick<Shape, 'labEffects' | 'nextId'>, type: BadgeEffect): Pick<Shape, 'labEffects' | 'nextId'> {
+  return { labEffects: [...shape.labEffects, freshEffect(shape.nextId, type)], nextId: shape.nextId + 1 };
 }
 
 export function setEffectParam(effects: readonly LabEffect[], id: number, key: string, value: number | string): LabEffect[] {
   return effects.map((e) => (e.id === id ? { ...e, params: { ...e.params, [key]: value } } : e));
 }
 
-/** Effect `id` switched to another type, at that type's default params. */
+/** Effect `id` switched to another type, at that type's default params. A name still the old type's default follows the type. */
 export function setEffectType(effects: readonly LabEffect[], id: number, type: BadgeEffect): LabEffect[] {
-  return effects.map((e) => (e.id === id ? { ...e, type, params: defaultsOf(EFFECT_LAB_CONTROLS[type]) } : e));
+  return effects.map((e) => (e.id === id
+    ? { ...e, type, name: e.name === effectLabel(e.type) ? effectLabel(type) : e.name, params: defaultsOf(EFFECT_LAB_CONTROLS[type]) }
+    : e));
 }
 
 /**
- * Effect `id` dropped into the gap `gap`, counted against the list as it stands
- * before the move: gap 0 is above the first card, gap `length` below the last.
+ * The list as the effect list hands it back, after a move, switch, rename, duplicate, or removal. A duplicate
+ * carries the id `nextId` gave it, so `nextId` moves past every id in the list.
  */
-export function moveEffectToGap(effects: readonly LabEffect[], id: number, gap: number): LabEffect[] {
-  const from = effects.findIndex((e) => e.id === id);
-  const target = from < gap ? gap - 1 : gap;
-  if (from < 0 || from === target) return [...effects];
-  const next = [...effects];
-  const [moved] = next.splice(from, 1);
-  next.splice(Math.max(0, Math.min(target, next.length)), 0, moved);
-  return next;
+export function setEffects(shape: Pick<Shape, 'nextId'>, labEffects: LabEffect[]): Pick<Shape, 'labEffects' | 'nextId'> {
+  return { labEffects, nextId: Math.max(shape.nextId, ...labEffects.map((e) => e.id + 1)) };
 }
 
-/** The lab's effect list as `<Badge effects>` takes it: a color control's hex string becomes a color literal. */
+/** The lab's effects that are on, as `<Badge effects>` takes them: a color control's hex string becomes a color literal. */
 export function effectSpecs(effects: readonly LabEffect[]): BadgeEffectSpec[] {
-  return effects.map((e) => ({
+  return effects.filter((e) => e.on).map((e) => ({
     type: e.type,
     params: Object.fromEntries(
       Object.entries(e.params).map(([k, v]) => [k, isColorParam(e.type, k) ? cssColorLiteral(String(v)) : v]),

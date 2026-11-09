@@ -140,7 +140,7 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
       transport.send({ type: 'bye', protocol: DEVTOOLS_PROTOCOL });
       off();
       off = null;
-      set({ status: 'closed' });
+      set({ status: 'closed', kitVersion: null, roots: [] });
       const err = new Error('the devtools connection is closed');
       for (const p of pending.values()) p.reject(err);
       pending.clear();

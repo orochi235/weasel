@@ -68,6 +68,14 @@ describe('rewriteIconCalls on imports it cannot follow', () => {
     expect(warned(`import { icon } from './icons.gen';\nexport { icon as glyph };\n`)).toMatch(/w\.ts.*re-export/);
   });
 
+  it('warns on an icon imported from an icons.gen it cannot find', () => {
+    const lost = (spec: string) => (spec.endsWith('icons.gen') ? undefined : 'core');
+    const warnings: string[] = [];
+    const out = rewriteIconCalls(`import { icon } from '@app/icons.gen';\nicon('x');\n`, 'w.ts', lost, (m) => warnings.push(m));
+    expect(out).toBeNull();
+    expect(warnings.join('\n')).toMatch(/w\.ts.*@app\/icons\.gen/);
+  });
+
   it('says nothing about a type-only re-export', () => {
     expect(warned(`export type { CoreIconName } from './icons.gen';\n`)).toBe('');
   });

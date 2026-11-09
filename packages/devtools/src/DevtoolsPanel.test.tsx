@@ -130,6 +130,15 @@ describe('DevtoolsPanel', () => {
     expect(t.sentOfType('bye')).toHaveLength(1);
   });
 
+  it('drops the hovered row’s outline when the Scene tab closes under the pointer', async () => {
+    const t = mount();
+    const solo = await waitFor(() => row('solo'));
+    fireEvent.pointerOver(solo.firstElementChild as HTMLElement);
+    await waitFor(() => expect(t.root().source.overlays()?.highlight).toEqual(['solo']));
+    fireEvent.click(screen.getByRole('tab', { name: 'State' }));
+    await waitFor(() => expect(t.root().source.overlays()?.highlight ?? []).toEqual([]));
+  });
+
   it('sets the active tool and the overlay flags from the State tab', async () => {
     const t = mount();
     fireEvent.click(await screen.findByRole('tab', { name: 'State' }));

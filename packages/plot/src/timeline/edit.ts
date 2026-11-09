@@ -78,7 +78,7 @@ export function moveTimelinePeriod(data: TimelineData, from: number, to: number)
   const sections: TimelineSection[] = [];
   data.sections.forEach((s, i) => {
     const periods = flat.filter((f) => f.section === i).map((f) => f.period);
-    if (periods.length > 0) sections.push({ ...s, periods });
+    if (periods.length > 0 || s.periods.length === 0) sections.push({ ...s, periods });
   });
   return { ...data, sections };
 }

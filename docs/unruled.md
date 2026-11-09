@@ -782,3 +782,25 @@ Calls the round made:
   Left as is.
 - `ActionSettings` is exported from `@weasel-js/ui`'s root barrel, the one component folder that was not.
 - Group puts the new group in its frontmost member's place and keeps its members' stacking, as Make Boolean Group did.
+
+## Audit round nine (2026-11-08)
+
+- `createIndexedDbAdapter` upgrades an existing database by one version to add a store it lacks, where it used to
+  leave every read and write of that store rejected. Like any upgrade, it waits for the database's other connections
+  to close.
+- A loupe's `onColorChange` takes `string | null`: a sample of nothing clears the color, including from a surface that
+  cannot answer yet (hud before its first frame). Breaking for a handler typed `string`, said in the changeset.
+- `polarScale().valueAt` and `radarValueAt` take an optional `open`, so a radar with no `max` grows past its rim when
+  dragged. A `PlotView` whose `theme` prop is removed draws in `PLOT_THEME`.
+- A quadrant chart keeps an optional `classOrder` beside `classes`, rather than `classes` becoming an array; code
+  walking classes reads them through `quadrantClassEntries`.
+- A local face styled `W0` reads as weight 100, the same as `W1`. A glyph contour followed by a relative `m` stays
+  open, rather than being closed and its `m` rewritten. A shaped run starting with a closing bracket takes its
+  script's direction.
+- symmetry's radial, kaleidoscope and repeat counts are held to `MAX_WALLPAPER_COPIES`, and a NaN kaleidoscope count
+  draws one wedge. A tiled parallax layer draws its sources one layer at a time, each with its effects.
+- `sceneContentBounds` is new in core: content bounds that include the copies a group draws, used by zoom to fit and
+  the minimap. The minimap's fit now leaves hidden nodes out, as zoom to fit does.
+- `parseSvg` ignores a whole `transform` list that does not parse, CSS units (`10px`, `45deg`) and infinite numbers
+  included.
+

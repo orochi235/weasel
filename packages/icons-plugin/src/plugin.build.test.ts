@@ -7,12 +7,15 @@ import { weaselIcons, type WeaselIconsOptions } from './index';
 const root = fileURLToPath(new URL('./fixtures/app', import.meta.url));
 const iconsSrc = fileURLToPath(new URL('../../icons/src/index.ts', import.meta.url));
 
-async function bundle(options: Partial<WeaselIconsOptions> = {}, { minify = false, entry = 'main.ts' } = {}) {
+async function bundle(
+  options: Partial<WeaselIconsOptions> = {},
+  { minify = false, entry = 'main.ts', alias = {} as Record<string, string> } = {},
+) {
   const out = await build({
     root,
     logLevel: 'silent',
     configFile: false,
-    resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+    resolve: { alias: { '@weasel-js/icons': iconsSrc, ...alias } },
     plugins: [weaselIcons.vite({ mode: 'app', ...options })],
     build: { write: false, minify, rollupOptions: { input: `${root}/src/${entry}` } },
   });
@@ -38,6 +41,12 @@ describe('weaselIcons app mode', () => {
     expect(entry).toContain('lib-star-body');
     expect(entry).not.toContain('fx-ring-body');
     expect(entry).not.toContain('lib-moon-body');
+  });
+
+  it('follows an icons.gen import the bundler resolves through an alias', async () => {
+    const { entry } = await bundle({}, { entry: 'aliased.ts', alias: { '#gen': `${root}/src` } });
+    expect(entry).toContain('fx-ring-body');
+    expect(entry).not.toContain('fx-dot-body');
   });
 
   it('survives minification', async () => {

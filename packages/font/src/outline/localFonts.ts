@@ -56,7 +56,8 @@ const WEIGHT_WORDS: readonly (readonly [string, number])[] = [
   ['extrabold', 800], ['ultrabold', 800],
   ['extralight', 200], ['ultralight', 200],
   ['semibold', 600], ['demibold', 600],
-  ['semilight', 350],
+  ['semilight', 350], ['demilight', 350],
+  ['demi', 600],
   ['black', 900], ['heavy', 900],
   ['bold', 700],
   ['medium', 500],
@@ -73,15 +74,23 @@ function joinWeightWords(style: string): string {
 
 /**
  * Parse a `FontData.style` string — "Regular", "Bold Italic", "Condensed
- * ExtraLight Oblique" — into the CSS variant the kit's registry is keyed by.
+ * ExtraLight Oblique", "W6" — into the CSS variant the kit's registry is keyed by.
  *
  * Anything unrecognized lands on 400/normal.
  */
 export function parseFontStyle(style: string): { weight: number; style: FontStyle } {
   const s = joinWeightWords(style);
   const italic = s.includes('italic') || s.includes('oblique');
-  const weight = WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? 400;
+  const weight = WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? numberedWeight(s) ?? 400;
   return { weight, style: italic ? 'italic' : 'normal' };
+}
+
+/** A Japanese face's numbered weight, `W0` to `W9` (Hiragino Sans), as hundreds. */
+const NUMBERED_WEIGHT = /(?:^|[\s_-])w(\d)(?=$|[\s_-])/;
+
+function numberedWeight(style: string): number | undefined {
+  const m = NUMBERED_WEIGHT.exec(style);
+  return m ? Math.max(1, Number(m[1])) * 100 : undefined;
 }
 
 /**
@@ -91,7 +100,7 @@ export function parseFontStyle(style: string): { weight: number; style: FontStyl
  */
 function styleQualifierCount(style: string): number {
   const words = joinWeightWords(style).split(/[\s_-]+/).filter(Boolean);
-  return words.filter((w) => w !== 'italic' && w !== 'oblique'
+  return words.filter((w) => w !== 'italic' && w !== 'oblique' && numberedWeight(w) === undefined
     && !WEIGHT_WORDS.some(([word]) => word === w)).length;
 }
 

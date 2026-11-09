@@ -8,7 +8,7 @@ import { rasterFill, writeGroup, writeShader } from './groupOps';
 import { type TextureFill, texturePattern, writeImage } from './images';
 import type { PdfObjects } from './objects';
 import { NonFiniteNumber } from './num';
-import { fillPathOps } from './pathOps';
+import { fillPathOps, fillsAnything } from './pathOps';
 import type { PageResources } from './resources';
 import { paintShading } from './shading';
 import { writeStroke } from './strokeOps';
@@ -99,7 +99,7 @@ function writeTextureFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState, 
 
 async function writeFill(ctx: PageCtx, cmd: PathDrawCommand, state: DrawState): Promise<void> {
   const paint = cmd.fill?.paint;
-  if (!paint) return;
+  if (!paint || !fillsAnything(cmd.path)) return;
   if (isGradientPaint(paint)) return writeShadedFill(ctx, cmd, state, paint);
   if (paint.kind === 'texture') return writeTextureFill(ctx, cmd, state, paint);
   // A registered paint kind, which the paint union does not name.

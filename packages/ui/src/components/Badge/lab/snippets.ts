@@ -19,9 +19,10 @@ export function composeSnippet(lab: Composed): string {
     const params = Object.entries(lab.baseParams).map(([k, v]) => `${k}: ${literal(v)}`).join(', ');
     lines.push(`  baseParams={{ ${params} }}`);
   }
-  if (lab.labEffects.length > 0) {
+  const effects = lab.labEffects.filter((e) => e.on);
+  if (effects.length > 0) {
     lines.push('  effects={[');
-    for (const effect of lab.labEffects) {
+    for (const effect of effects) {
       const params = Object.entries(effect.params)
         .map(([k, v]) => `${k}: ${isColorParam(effect.type, k) ? `cssColorLiteral(${JSON.stringify(v)})` : literal(v)}`)
         .join(', ');

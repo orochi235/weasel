@@ -35,7 +35,7 @@ describe('writeMermaidSequence', () => {
   it('escapes the text Mermaid reads as syntax, and reads it back', () => {
     const data: SequenceData = {
       participants: [{ id: 'A', label: 'a;b' }, { id: 'B' }],
-      steps: [{ kind: 'message', id: 'm1', from: 'A', to: 'B', line: 'solid', head: 'arrow', text: '#1 <x>; two\nlines' }],
+      steps: [{ kind: 'message', id: 'm1', from: 'A', to: 'B', line: 'solid', head: 'arrow', text: '#1 <x>; two\nlines &amp; &#65; a&b' }],
     };
     expect(pageOf(writeMermaidSequence(page(data)).text).data).toEqual(data);
   });

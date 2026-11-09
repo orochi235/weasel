@@ -1,10 +1,15 @@
 /** A plot page holding a quadrant chart as Mermaid `quadrantChart` text. */
-import type { QuadrantAxis, QuadrantPointStyle } from '@weasel-js/plot';
+import { quadrantClassEntries, type QuadrantAxis, type QuadrantPointStyle } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { mermaidQuoted } from '../common/text';
 
-/** Text bare where Mermaid reads it back the same, else in double quotes with a quote inside written `#quot;`. */
-const text = (s: string): string => (/^[^\s"].*$/.test(s) && !/[:[\]"]|-->|\s$/.test(s) ? s : `"${s.replace(/"/g, '#quot;')}"`);
+/** A first word that would read as a statement of its own, or a comment, rather than a point. */
+const STATEMENT = /^(?:(?:title|x-axis|y-axis|quadrant-[1-4]|classDef)(?:\s|$)|%%|acc(?:Title|Descr))/;
+
+/** Text bare where Mermaid reads it back the same, else as {@link mermaidQuoted} writes it. */
+const text = (s: string): string =>
+  /^[^\s"].*$/.test(s) && !/[:[\]"]|-->|\s$/.test(s) && !STATEMENT.test(s) ? s : mermaidQuoted(s);
 
 function axisLine(name: 'x' | 'y', axis: QuadrantAxis | undefined, warnings: Warnings): string | null {
   if (axis?.low === undefined) {
@@ -45,6 +50,6 @@ export function writeMermaidQuadrant(page: PlotPage): ExportResult {
     const style = styleText(p.style);
     lines.push(`  ${text(p.name)}${p.className !== undefined ? `:::${p.className}` : ''}: [${unit(p.x)}, ${unit(p.y)}]${style ? ` ${style}` : ''}`);
   }
-  for (const [name, style] of Object.entries(data.classes ?? {})) lines.push(`  classDef ${name} ${styleText(style)}`);
+  for (const [name, style] of quadrantClassEntries(data)) lines.push(`  classDef ${name} ${styleText(style)}`);
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };
 }

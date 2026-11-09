@@ -1,5 +1,8 @@
 /** Pure math helpers for `<MinimapCanvas>`: no GL, DOM, or renderer. */
-import { composeWorldPose, documentPose, effectivePose, scenePoseAdapter, viewportWorldRect } from '@weasel-js/core';
+import {
+  composeWorldPose, documentPose, effectivePose, fitViewToBounds, sceneContentBounds, scenePoseAdapter, unionAABB,
+  viewportWorldRect,
+} from '@weasel-js/core';
 import type { NodeId, PoseAdapter, Scene } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { Bounds, ViewportDims } from '@weasel-js/core';
@@ -15,8 +18,9 @@ export const FALLBACK_FIT_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 /**
  * Fit policy for `<MinimapCanvas>` / `computeFitView`.
  *
- * - `"scene"` — union of leaf-node pose AABBs (via the pose descriptor), read
- *   from the document: a pose override moves what is painted and not the frame.
+ * - `"scene"` — union of the shown leaf-node pose AABBs (via the pose
+ *   descriptor) and every copy a group draws of them, read from the document:
+ *   a pose override moves what is painted and not the frame.
  * - `"live"` — the same union over the poses being shown, overrides included,
  *   so the frame follows a drag, a settle, or a simulation writing overrides.
  *   Refit on every override publish, which is a sweep of every leaf and
@@ -43,69 +47,51 @@ export interface IndicatorStyle {
 const DEFAULT_INDICATOR_WIDTH = 1;
 const DEFAULT_INDICATOR_DASH: readonly number[] = [2, 3];
 
-/** Internal: fit a world rect uniformly into dims with padding. */
+/** Internal: fit a world rect uniformly into dims with padding, at whatever
+ *  scale that takes. A rect with nothing to fit, or a minimap not yet measured,
+ *  gets identity scale centered on the rect's top-left. */
 function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
-  const availW = Math.max(1, dims.width - padding * 2);
-  const availH = Math.max(1, dims.height - padding * 2);
-  const hasW = rect.width > 0;
-  const hasH = rect.height > 0;
-  if (!hasW && !hasH) {
-    return {
-      x: rect.x - dims.width / 2,
-      y: rect.y - dims.height / 2,
-      scale: { x: 1, y: 1 },
-    };
+  if (dims.width > 0 && dims.height > 0) {
+    const fitted = fitViewToBounds(rect, dims, FALLBACK_FIT_VIEW, { padding, minScale: 0, maxScale: Infinity });
+    if (fitted) return fitted;
   }
-  const s = Math.min(
-    hasW ? availW / rect.width : Infinity,
-    hasH ? availH / rect.height : Infinity,
-  );
-  const worldCx = rect.x + Math.max(0, rect.width) / 2;
-  const worldCy = rect.y + Math.max(0, rect.height) / 2;
   return {
-    x: worldCx - dims.width / (2 * s),
-    y: worldCy - dims.height / (2 * s),
-    scale: { x: s, y: s },
+    x: rect.x - dims.width / 2,
+    y: rect.y - dims.height / 2,
+    scale: { x: 1, y: 1 },
   };
 }
 
 /**
- * Compute the AABB union of all leaf-node poses in the scene, in world (each
- * folded up its containers' frames under the scene's composition), via
- * `descriptor`. Container nodes are skipped — their effective bounds come
- * from their descendant leaves, and so is a leaf whose bounds are not finite,
- * which would otherwise make the whole union non-finite. Returns `null` when
- * the scene has no leaf with bounds.
+ * The world box a scene's content covers, as `sceneContentBounds` frames it
+ * for zoom to fit: every shown node, and every copy a group draws of it. A
+ * node is boxed by the union of the marks under it, each its pose folded up
+ * its containers' frames and read through `descriptor`; containers add no box
+ * of their own, and a mark whose bounds are not finite is skipped, which would
+ * otherwise make the whole union non-finite. `null` when nothing has bounds.
  */
 function sceneLeafBounds<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   descriptor: PoseDescriptor<TPose>,
   poseOf: typeof documentPose,
 ): Bounds | null {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  let any = false;
   const frames = {
     ...(scenePoseAdapter(scene as Scene<unknown, string, unknown>) as PoseAdapter<TPose>),
     getPose: (id: string) => poseOf(scene, scene.get(id as NodeId)!),
   };
   const compose = scene.composition.compose.bind(scene.composition);
-  for (const node of scene.nodes.values()) {
-    if (node.kind !== 'mark') continue;
-    const b = poseDescriptorForNode(descriptor, node).getBounds(composeWorldPose(frames, node.id, compose));
-    if (!Number.isFinite(b.x + b.y + b.width + b.height)) continue;
-    if (b.x < minX) minX = b.x;
-    if (b.y < minY) minY = b.y;
-    const right = b.x + b.width;
-    const bottom = b.y + b.height;
-    if (right > maxX) maxX = right;
-    if (bottom > maxY) maxY = bottom;
-    any = true;
-  }
-  if (!any) return null;
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  const worldPose = (id: NodeId): TPose => composeWorldPose(frames, id, compose);
+  const boxOf = (id: NodeId): Bounds | null => {
+    const node = scene.get(id);
+    if (!node) return null;
+    const parts: (Bounds | null)[] = scene.childrenOf(id).map(boxOf);
+    if (node.kind === 'mark') {
+      const b = poseDescriptorForNode(descriptor, node).getBounds(worldPose(id));
+      if (Number.isFinite(b.x + b.y + b.width + b.height)) parts.push(b);
+    }
+    return unionAABB(parts);
+  };
+  return sceneContentBounds(scene, boxOf, (node) => worldPose(node.id));
 }
 
 /** Options for {@link computeFitView}. */
@@ -122,7 +108,8 @@ export interface ComputeFitViewOptions {
  * {@link FALLBACK_FIT_VIEW}; a function `fit` is passed through unchanged.
  *
  * A rect with one zero axis (a line) is fitted along the other. One with no
- * positive axis falls back to identity scale centered on its top-left.
+ * positive axis, or a side that is not finite, falls back to identity scale
+ * centered on its top-left.
  */
 export function computeFitView<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,

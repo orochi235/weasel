@@ -36,9 +36,10 @@ export function setRadarCurveLabel(data: RadarData, curve: number, text: string)
   return curves === null ? data : { ...data, curves };
 }
 
-/** The value on axis `axis` nearest `at`, rounded to a tenth of the scale's tick step. */
-export function radarValueAt(layout: RadarLayout, axis: number, at: PlotPoint): number {
-  const raw = layout.scale.valueAt(axis, at);
+/** The value on axis `axis` nearest `at`, rounded to a tenth of the scale's tick step; with `open`, a point past the
+ *  rim reads past the rim's value, as it should where the rim fits the largest value rather than a set `max`. */
+export function radarValueAt(layout: RadarLayout, axis: number, at: PlotPoint, open = false): number {
+  const raw = layout.scale.valueAt(axis, at, open);
   const step = layout.scale.tickStep() / 10;
   return Number((Math.round(raw / step) * step).toFixed(decimalsOf(step)));
 }

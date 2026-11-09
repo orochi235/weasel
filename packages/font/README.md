@@ -3,7 +3,7 @@
 MSDF font atlases, glyph metrics, and runtime glyph rasterization for
 `@weasel-js/core`.
 
-A Tier A leaf: core depends on this package, never the reverse. It owns the
+A `base`-tier package: core depends on it, never the reverse. It owns the
 font registry — the one piece of module-level state whose duplication renders
 no glyphs at all.
 

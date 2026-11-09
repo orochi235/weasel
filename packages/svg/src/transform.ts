@@ -30,70 +30,75 @@ export function isIdentity(m: Matrix, eps = 1e-9): boolean {
   );
 }
 
-const NUM_RE = /[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g;
+const NUMBER = /^[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?$/;
+const FUNCTION = /\s*([A-Za-z]+)\s*\(([^)]*)\)\s*,?/y;
 
-function readNumbers(s: string): number[] {
-  const out: number[] = [];
-  const matches = s.match(NUM_RE);
-  if (!matches) return out;
-  for (const m of matches) {
-    const n = Number(m);
-    if (Number.isFinite(n)) out.push(n);
+/** How many arguments each function takes. */
+const ARITY: Readonly<Record<string, readonly number[]>> = {
+  matrix: [6], translate: [1, 2], scale: [1, 2], rotate: [1, 3], skewx: [1], skewy: [1],
+};
+
+/** A function's arguments, or `null` when one is not a finite number. */
+function readNumbers(args: string): number[] | null {
+  const parts = args.trim().split(/\s*,\s*|\s+/);
+  if (parts.length === 1 && parts[0] === '') return [];
+  if (!parts.every((p) => NUMBER.test(p))) return null;
+  const nums = parts.map(Number);
+  return nums.every(Number.isFinite) ? nums : null;
+}
+
+function functionMatrix(name: string, nums: readonly number[]): Matrix {
+  switch (name) {
+    case 'matrix': return [nums[0], nums[1], nums[2], nums[3], nums[4], nums[5]];
+    case 'translate': return [1, 0, 0, 1, nums[0], nums[1] ?? 0];
+    case 'scale': return [nums[0], 0, 0, nums[1] ?? nums[0], 0, 0];
+    case 'rotate': {
+      const ang = nums[0] * DEG_TO_RAD;
+      const rot: Matrix = [Math.cos(ang), Math.sin(ang), -Math.sin(ang), Math.cos(ang), 0, 0];
+      if (nums.length < 3) return rot;
+      // rotate(angle, cx, cy) = translate(cx,cy) * rotate * translate(-cx,-cy)
+      return multiply(multiply([1, 0, 0, 1, nums[1], nums[2]], rot), [1, 0, 0, 1, -nums[1], -nums[2]]);
+    }
+    default: {
+      const t = Math.tan(nums[0] * DEG_TO_RAD);
+      return name === 'skewx' ? [1, 0, t, 1, 0, 0] : [1, t, 0, 1, 0, 0];
+    }
   }
-  return out;
 }
 
 /**
  * Parse an SVG `transform="..."` string into a single 2x3 matrix. In
  * `transform="A B"`, the rightmost function is applied first to a point's
- * local coordinates. Unrecognized functions warn and are skipped; the rest of
- * the transform list still applies.
+ * local coordinates. A list that does not parse whole (an unknown function, a
+ * function with the wrong number of arguments, an argument that is not a
+ * number, or text between functions) is ignored whole, as browsers ignore it,
+ * with a warning.
  */
 export function parseTransform(
   attr: string | null | undefined,
   onWarn?: (message: string) => void,
 ): Matrix {
-  if (!attr) return IDENTITY_MATRIX;
+  if (!attr || attr.trim() === '' || attr.trim() === 'none') return IDENTITY_MATRIX;
   let result: Matrix = IDENTITY_MATRIX;
-  // Split into "name(args)" chunks.
-  const fnRe = /([A-Za-z]+)\s*\(([^)]*)\)/g;
-  let match: RegExpExecArray | null;
-  while ((match = fnRe.exec(attr)) !== null) {
-    const name = match[1].toLowerCase();
-    const nums = readNumbers(match[2]);
-    let local: Matrix | null = null;
-    if (name === 'matrix' && nums.length >= 6) {
-      local = [nums[0], nums[1], nums[2], nums[3], nums[4], nums[5]];
-    } else if (name === 'translate') {
-      const tx = nums[0] ?? 0;
-      const ty = nums[1] ?? 0;
-      local = [1, 0, 0, 1, tx, ty];
-    } else if (name === 'scale') {
-      const sx = nums[0] ?? 1;
-      const sy = nums.length >= 2 ? nums[1] : sx;
-      local = [sx, 0, 0, sy, 0, 0];
-    } else if (name === 'rotate') {
-      const ang = (nums[0] ?? 0) * DEG_TO_RAD;
-      const c = Math.cos(ang);
-      const s = Math.sin(ang);
-      const rot: Matrix = [c, s, -s, c, 0, 0];
-      if (nums.length >= 3) {
-        // rotate(angle, cx, cy) = translate(cx,cy) * rotate * translate(-cx,-cy)
-        const cx = nums[1];
-        const cy = nums[2];
-        local = multiply(multiply([1, 0, 0, 1, cx, cy], rot), [1, 0, 0, 1, -cx, -cy]);
-      } else {
-        local = rot;
-      }
-    } else if (name === 'skewx' || name === 'skewy') {
-      const ang = (nums[0] ?? 0) * DEG_TO_RAD;
-      const t = Math.tan(ang);
-      local = name === 'skewx' ? [1, 0, t, 1, 0, 0] : [1, t, 0, 1, 0, 0];
-    } else {
-      onWarn?.(`unsupported transform function: ${name}`);
-      continue;
+  FUNCTION.lastIndex = 0;
+  while (FUNCTION.lastIndex < attr.length && attr.slice(FUNCTION.lastIndex).trim() !== '') {
+    const match = FUNCTION.exec(attr);
+    if (match === null) {
+      onWarn?.(`transform "${attr}" is not a transform list; it is ignored`);
+      return IDENTITY_MATRIX;
     }
-    result = multiply(result, local);
+    const name = match[1].toLowerCase();
+    const arity = ARITY[name];
+    if (arity === undefined) {
+      onWarn?.(`unsupported transform function: ${match[1]}; transform "${attr}" is ignored`);
+      return IDENTITY_MATRIX;
+    }
+    const nums = readNumbers(match[2]);
+    if (nums === null || !arity.includes(nums.length)) {
+      onWarn?.(`transform "${attr}" has ${match[1]}(${match[2].trim()}), which takes ${arity.join(' or ')} numbers; it is ignored`);
+      return IDENTITY_MATRIX;
+    }
+    result = multiply(result, functionMatrix(name, nums));
   }
   return result;
 }

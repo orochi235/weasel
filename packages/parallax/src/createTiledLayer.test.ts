@@ -127,6 +127,36 @@ describe('createTiledLayer', () => {
     expect(inner!.children).toEqual([unit]);
   });
 
+  it('runs a source layer\'s effects once, over all of its copies', () => {
+    const effects = [{ program: 'fx', uniforms: {} }] as unknown as RenderLayer<unknown>['effects'];
+    const layer: RenderLayer<unknown> = { id: 'src', label: 'src', space: 'world', effects, draw: () => [unit] };
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
+    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims) as Array<{ effects?: unknown; children: DrawCommand[] }>;
+    expect(out).toHaveLength(1);
+    expect(out[0]!.effects).toBe(effects);
+    expect(out[0]!.children.map(offsetOf)).toEqual([[0, 0], [200, 0], [400, 0]]);
+  });
+
+  it('keeps a screen-space source\'s effects', () => {
+    const effects = [{ program: 'fx', uniforms: {} }] as unknown as RenderLayer<unknown>['effects'];
+    const layer: RenderLayer<unknown> = { id: 'src', label: 'src', space: 'screen', effects, draw: () => [unit] };
+    const l = createTiledLayer({ id: 't', label: 'T', source: [layer], period: 200 });
+    const [wrap] = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims) as Array<{ children: Array<{ effects?: unknown }> }>;
+    expect(wrap!.children[0]!.effects).toBe(effects);
+  });
+
+  it('draws a later source above an earlier one in every copy', () => {
+    const a = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } } as DrawCommand;
+    const b = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 2, height: 2 } } as DrawCommand;
+    const l = createTiledLayer({
+      id: 't', label: 'T', period: 200,
+      source: [{ id: 'a', label: 'a', draw: () => [a] }, { id: 'b', label: 'b', draw: () => [b] }],
+    });
+    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims) as Array<{ children: DrawCommand[] }>;
+    const order = out.map((g) => g.children[0]);
+    expect(order.lastIndexOf(a)).toBeLessThan(order.indexOf(b));
+  });
+
   it('emits nothing for a source that drew nothing', () => {
     const empty: RenderLayer<unknown> = { id: 'e', label: 'e', space: 'world', draw: () => [] };
     const l = createTiledLayer({ id: 't', label: 'T', source: [empty], period: 200 });

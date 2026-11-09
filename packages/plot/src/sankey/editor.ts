@@ -1,6 +1,7 @@
 /** A sankey's title, link values and node labels, edited in place. */
 import { withTitle } from '../chartTitle';
 import type { PlotEditor } from '../editing/editors';
+import { formatFlow } from './compile';
 import { renameSankeyNode, setSankeyValue } from './edit';
 import { sankeyNodes } from './layout';
 import type { SankeyData } from './types';
@@ -19,6 +20,9 @@ export const sankeyEditor: PlotEditor<SankeyData> = {
   text(data, datum, text) {
     if (datum.edit === 'title') return withTitle(data, text);
     if (datum.edit === 'value' && typeof datum.link === 'number') {
+      // The label rounds the value, so reading back the label as shown would rewrite it.
+      const link = data.links[datum.link];
+      if (link !== undefined && text.trim() === formatFlow(link.value)) return data;
       const v = flowOf(text);
       return v === null ? data : setSankeyValue(data, datum.link, v);
     }

@@ -187,68 +187,6 @@
   margin: 0;
 }
 
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.card {
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  gap: 6px;
-  padding: 0;
-  border-radius: var(--wzl-radius-sm);
-  background: var(--wzl-surface-sunken);
-  border: 1px solid var(--wzl-border);
-  border-top: 2px solid transparent;
-  border-bottom: 2px solid transparent;
-  overflow: hidden;
-}
-
-.card[data-dragging] { opacity: 0.4; }
-.card[data-drop-above] { border-top-color: var(--wzl-success); }
-.card[data-drop-below] { border-bottom-color: var(--wzl-success); }
-
-.grip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--wzl-fg) 4%, transparent);
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  opacity: 0.5;
-}
-
-.cardBody {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px;
-}
-
-.cardHead {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ordinal {
-  font-size: var(--wzl-font-size-2xs);
-  opacity: 0.85;
-}
-
-.typeSelect {
-  font-size: var(--wzl-font-size-sm);
-  flex: 1;
-}
-
-.zone {
-  font-size: var(--wzl-font-size-2xs);
-  opacity: 0.6;
-}
-
 .presets { gap: 8px; }
 
 .presetsTitle { margin: 0; }

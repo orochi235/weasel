@@ -130,8 +130,8 @@ export interface LoupeOptions<TData = unknown, TLayer extends string = string, T
   peekKey?: string | null;
   /** Called with the color under the aim, wherever the surface can say. The
    *  canvas painter and a `source` read it back; a DOM loupe with no `source`
-   *  has no pixels to sample. */
-  onColorChange?: (hex: string) => void;
+   *  has no pixels to sample. `null` where nothing is drawn under the aim. */
+  onColorChange?: (hex: string | null) => void;
 }
 
 /** {@link LoupeOptions} with every default filled in. */
@@ -139,7 +139,7 @@ export interface ResolvedLoupe<TData = unknown, TLayer extends string = string, 
   render?: (args: LoupeRenderArgs) => ReactNode;
   sceneView?: SceneViewSource<TData, TLayer, TPose>;
   source?: LoupeSource;
-  onColorChange?: (hex: string) => void;
+  onColorChange?: (hex: string | null) => void;
   factor: number;
   minFactor: number;
   maxFactor: number;

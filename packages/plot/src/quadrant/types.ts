@@ -34,4 +34,7 @@ export interface QuadrantData {
   points: readonly QuadrantPoint[];
   /** Named point styles. */
   classes?: Readonly<Record<string, QuadrantPointStyle>>;
+  /** The order of `classes`, where it is not the order of their keys: an object puts a name made only of digits
+   *  first. A name missing here follows the ones it lists; one `classes` lacks is skipped. */
+  classOrder?: readonly string[];
 }

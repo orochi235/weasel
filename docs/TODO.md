@@ -725,8 +725,15 @@ only story runner in the repo.
   better; that is a call on the mark, not made (2026-10-19).
   Ruled (2026-11-07): crop to the head at 16 and 32 px. Closes when `gen-icons.ts` draws those two sizes so.
 
+- **(P3) [agent] The devtools extension's panel appears only when the top frame has a weasel hook.** The relay
+  handles weasel inside iframes, but the presence probe evaluates the top window alone. Closes when the panel shows
+  for a page whose weasel runs only in an iframe (found in audit round nine, 2026-11-08).
+
 ## Release-gate & build hygiene
 
+- **(P3) [agent] `weaselIcons` rewrites a local `icon` that shadows the imported one.** Its rewrite does not track
+  scope, so a parameter or local function named `icon` is rewritten as the import. Nothing in the repo does this.
+  Closes when a shadowing `icon` is left alone, with a test (found in audit round nine, 2026-11-08).
 - **(P2) [agent] vitest's `fsModuleCache` keeps a CSS module whose `@import`ed sheet changed.** It keys an entry by
   the importing file alone, so a new class in `PropertyRow.auto.css` read `undefined` through
   `Properties.module.css` in the `labkit` project until `node_modules/.vitest-cache` was deleted (2026-11-07,
