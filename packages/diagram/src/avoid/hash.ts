@@ -7,14 +7,26 @@ import type { Box } from './types';
 /** The cell size the router's hashes use, in world units. */
 export const CELL = 128;
 
+/** Cells an item or a query walks before it is checked against every item instead. */
+const MAX_CELLS = 4096;
+
 /** An item as filed: `seen` marks the query that last returned it. */
 interface Filed<T> {
   item: T;
+  box: Box;
   seen: number;
 }
 
+const overlaps = (a: Box, b: Box): boolean =>
+  a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
+
+/** How many cells `[i0, i1] × [j0, j1]` holds; past {@link MAX_CELLS}, or not finite, it is too many to walk. */
+const walkable = ([i0, j0, i1, j1]: readonly number[]): boolean => (i1! - i0! + 1) * (j1! - j0! + 1) <= MAX_CELLS;
+
 export class SpatialHash<T> {
   private readonly cells = new Map<number, Filed<T>[]>();
+  /** Items spanning too many cells to file in each, checked by box on every query. */
+  private readonly wide: Filed<T>[] = [];
   private query_ = 0;
 
   constructor(private readonly cell = CELL) {}
@@ -30,8 +42,13 @@ export class SpatialHash<T> {
   }
 
   insert(item: T, box: Box): void {
-    const filed: Filed<T> = { item, seen: 0 };
-    const [i0, j0, i1, j1] = this.range(box);
+    const filed: Filed<T> = { item, box, seen: 0 };
+    const range = this.range(box);
+    if (!walkable(range)) {
+      this.wide.push(filed);
+      return;
+    }
+    const [i0, j0, i1, j1] = range;
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
         const k = SpatialHash.key(i, j);
@@ -44,7 +61,13 @@ export class SpatialHash<T> {
 
   /** Take `item`, filed under `box`, back out. */
   remove(item: T, box: Box): void {
-    const [i0, j0, i1, j1] = this.range(box);
+    const range = this.range(box);
+    if (!walkable(range)) {
+      const at = this.wide.findIndex((f) => f.item === item);
+      if (at >= 0) this.wide.splice(at, 1);
+      return;
+    }
+    const [i0, j0, i1, j1] = range;
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
         const list = this.cells.get(SpatialHash.key(i, j));
@@ -56,17 +79,23 @@ export class SpatialHash<T> {
 
   /** Every item filed in a cell `box` touches, each once. */
   query(box: Box, out: T[] = []): T[] {
-    const [i0, j0, i1, j1] = this.range(box);
+    const range = this.range(box);
     const stamp = ++this.query_;
+    const take = (filed: Filed<T>): void => {
+      if (filed.seen === stamp) return;
+      filed.seen = stamp;
+      out.push(filed.item);
+    };
+    for (const filed of this.wide) if (overlaps(filed.box, box)) take(filed);
+    if (!walkable(range)) {
+      for (const list of this.cells.values()) for (const filed of list) if (overlaps(filed.box, box)) take(filed);
+      return out;
+    }
+    const [i0, j0, i1, j1] = range;
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
         const list = this.cells.get(SpatialHash.key(i, j));
-        if (list === undefined) continue;
-        for (const filed of list) {
-          if (filed.seen === stamp) continue;
-          filed.seen = stamp;
-          out.push(filed.item);
-        }
+        if (list !== undefined) for (const filed of list) take(filed);
       }
     }
     return out;
