@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { ActionsProvider, type Action } from '@weasel-js/core';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { PrefsForm } from './PrefsForm';
+import { actionLeafVariants } from './registeredActions';
 import { icon } from '../../icons.gen';
 import { renderWithIcons } from '../../testing/withIcons';
 import { RegisterActions } from '@weasel-js/routing/testing/registerAction';
@@ -65,6 +66,12 @@ describe('PrefsForm action rows', () => {
     ]);
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Bring to front', 'Flip H', 'Flip V']);
     expect(screen.queryByText('Arrange')).toBeNull();
+  });
+
+  it('leaves a parametric leaf’s own shortcut off its variants, which each answer to their own', () => {
+    const zoom = action('zoom', { variants: [{ key: 'in', label: 'In', shortcut: '+', params: {} }, { key: 'out', label: 'Out', params: {} }] });
+    const variants = actionLeafVariants(pref.action('zoom', { name: 'Zoom', shortcut: '⌘Z' }), [zoom]);
+    expect(variants?.map((v) => [v.action, v.shortcut])).toEqual([['zoom:in', undefined], ['zoom:out', undefined]]);
   });
 });
 
