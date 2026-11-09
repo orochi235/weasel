@@ -207,8 +207,10 @@ export function createTimeline(
     setTimeScale(s) { wantScale = s; base.setTimeScale(s); playbackChanged(); },
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
-    seek(t) {
-      offset = finite(t) - lastVirtual;
+    seek(to) {
+      // Past the end of a timeline with laps left, a seek lands in a later lap.
+      const t = Math.max(0, loopsLeft > 0 ? finite(to) : Math.min(finite(to), duration));
+      offset = t - lastVirtual;
       booker?.retract();
       playhead = t;
       events.place(t, true);

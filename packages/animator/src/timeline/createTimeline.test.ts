@@ -63,6 +63,24 @@ describe('createTimeline', () => {
     expect(seen.at(-1)).toBe(90);
   });
 
+  it('lands a seek before the start on the start, and plays on from there at once', () => {
+    const seen: number[] = [];
+    const { handle, advance } = makeTimeline({ tracks: [numberTrack((v) => seen.push(v))] });
+    advance(10);
+    handle.seek(-20);
+    expect(handle.time()).toBe(0);
+    advance(15);
+    expect(handle.time()).toBe(5);
+    expect(seen.at(-1)).toBe(5);
+  });
+
+  it('lands a seek past the end of a timeline that does not loop on its end', () => {
+    const { handle, advance } = makeTimeline({ tracks: [numberTrack(() => {})] });
+    advance(10);
+    handle.seek(150);
+    expect(handle.time()).toBe(100);
+  });
+
   it('seeks backward', () => {
     const { handle, advance } = makeTimeline({ tracks: [numberTrack(() => {})] });
     advance(90);
