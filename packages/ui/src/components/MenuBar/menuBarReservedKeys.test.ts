@@ -11,8 +11,9 @@ const KNOWN = ['menu.open.f', 'menu.open.e', 'menu.open.v', 'menu.open.h'];
 describe('the menu bar access keys a browser reserves', () => {
   it('collide only where known, under the default chord and the usual titles', () => {
     const titles = ['File', 'Edit', 'View', 'Window', 'Help'].map((t) => ({ key: t, access: t }));
-    const hits = (openBindings(titles, DEFAULT_ACCESS_CHORD) ?? [])
-      .filter((b) => browserReservedChord(b.spec as KeySpec) !== null)
+    const bindings = openBindings(titles, DEFAULT_ACCESS_CHORD) as readonly { spec: KeySpec; opts?: { id?: string } }[];
+    const hits = bindings
+      .filter((b) => browserReservedChord(b.spec) !== null)
       .map((b) => b.opts?.id);
     expect(hits).toEqual(KNOWN);
   });
