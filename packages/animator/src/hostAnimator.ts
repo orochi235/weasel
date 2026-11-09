@@ -20,10 +20,11 @@ export interface AnimatorHost {
 /** An animator and the frame calls its host makes. */
 export interface HostedAnimator {
   animator: Animator;
-  /** Run one frame at time `t`, on the host's clock. */
+  /** Run one frame at time `t`, on the host's clock. Throws on a `t` that is not finite. */
   tick(t: number): void;
   /** Run one frame at time `t` of an outside clock playing at `rate`, which may have gone back
-   *  since the last: running animations then play backward over the difference. */
+   *  since the last: running animations then play backward over the difference. Throws on a `t`
+   *  or `rate` that is not finite. */
   follow(t: number, rate: number): void;
   /** The host's frames stop for time nobody will see, which is charged to no animation. */
   suspended(): void;

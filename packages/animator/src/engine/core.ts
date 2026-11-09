@@ -147,8 +147,13 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
 
   return {
     api,
-    tick(t) { pacing.outside.on = false; frame.tick(t); },
+    tick(t) {
+      checkFrame(t, 1);
+      pacing.outside.on = false;
+      frame.tick(t);
+    },
     follow(t, rate, wall) {
+      checkFrame(t, rate);
       pacing.follow(rate, wall);
       const moved = clock.frameT == null ? 0 : t - clock.frameT;
       const drive = moved < 0 || (moved === 0 && rate < 0) ? -1 : 1;
@@ -162,6 +167,14 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (handoffs.any()) host.requestFrame();
     },
   };
+}
+
+/** Refused before the frame starts: a NaN time is kept as the last frame's, and every frame
+ *  after it advances by NaN. */
+function checkFrame(t: number, rate: number): void {
+  if (!Number.isFinite(t) || !Number.isFinite(rate)) {
+    throw new RangeError(`animator: a frame runs at a finite time and rate, not ${t} at ${rate}`);
+  }
 }
 
 /** Where the animator's clock stands against the document timeline, by which a run handed to the

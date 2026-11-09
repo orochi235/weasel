@@ -38,4 +38,18 @@ describe('hostAnimator', () => {
     }
     expect(seen.at(-1)).toBe(100);
   });
+
+  it('refuses a frame at a time that is not finite, which left every animation NaN for good', () => {
+    let now = 0;
+    const hosted = hostAnimator({ now: () => now, requestFrame: () => {} });
+    const seen: number[] = [];
+    hosted.animator.tween({ from: 0, to: 100, ms: 100, easing: 'linear', onTick: (v) => seen.push(v) });
+    hosted.tick(0);
+    expect(() => hosted.tick(Number.NaN)).toThrow(RangeError);
+    expect(() => hosted.follow(Number.POSITIVE_INFINITY, 1)).toThrow(RangeError);
+    expect(() => hosted.follow(10, Number.NaN)).toThrow(RangeError);
+    now = 50;
+    hosted.tick(50);
+    expect(seen.at(-1)).toBeCloseTo(50);
+  });
 });
