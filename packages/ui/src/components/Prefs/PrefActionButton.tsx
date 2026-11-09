@@ -24,8 +24,8 @@ export function PrefActionButton({ pref, path, disabled, active }: { pref: PrefA
 function PrefActionOne({ pref, path, disabled: off, active }: { pref: PrefAction; path: string; disabled?: boolean; active?: boolean }) {
   const { press, settings, ...button } = useLeafAction(pref, path, off, active);
   const iconOnly = pref.control === 'icon' && button.icon != null;
-  if (settings) return <ActionSettingsPopover {...button} form={settings} description={pref.description} row={!iconOnly} />;
-  return <BarActionButton {...button} description={pref.description} row={!iconOnly} onPress={press} />;
+  if (settings) return <ActionSettingsPopover {...button} form={settings} row={!iconOnly} />;
+  return <BarActionButton {...button} row={!iconOnly} onPress={press} />;
 }
 
 /** An `actions` leaf in a panel: one {@link PrefActionButton} row per entry of its registry group. */

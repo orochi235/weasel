@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { actionItems, useActionsRegistry, type ActionItem } from '@weasel-js/core';
 import type { PrefAction } from '@weasel-js/prefs';
-import type { Grade } from '../appearance';
+import type { Grade } from '@weasel-js/theme';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { actionIcon } from '../../icons/actionIcon';
 import { actionShortcutText } from '../actionShortcutText';
@@ -14,6 +14,8 @@ import { useActionSettings, type ActionSettingsForm } from '../ActionSettings/us
 export interface LeafAction {
   press: () => void;
   label: string;
+  /** What it does, for a tooltip: the leaf's own description, else the registered entry's. */
+  description: string | undefined;
   icon: ReactNode;
   /** The keys that fire it, for a tooltip. */
   shortcut: string | undefined;
@@ -23,7 +25,7 @@ export interface LeafAction {
   disabledReason: string | undefined;
   /** Held down. `undefined` for an action with no pressed state. */
   active: boolean | undefined;
-  /** How serious pressing it is: the leaf's `grade`. */
+  /** How serious pressing it is: the leaf's `grade`, else the registered entry's. */
   grade: Grade | undefined;
   /** The key the leaf names, where nothing registered answers to it. */
   missing: string | undefined;
@@ -70,6 +72,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
   const icon = resolveIcon(leaf.icon, 16) ?? (item ? actionIcon(item.icon) : undefined);
   const own = leaf.activeIf !== undefined ? latched : undefined;
   const why = disabled ? leaf.disabledReason : undefined;
+  const description = leaf.description || item?.description || undefined;
 
   if (key !== undefined) {
     return {
@@ -77,12 +80,13 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
         if (item) registry?.trigger(item.action.id, item.params);
       },
       label,
+      description,
       icon,
       shortcut: leaf.shortcut ?? (item ? actionShortcutText(item) : undefined),
       disabled: disabled || (item !== undefined && !shown.enabled),
       disabledReason: why ?? (item && !shown.enabled && shown.reason !== undefined ? reasonLabel(shown.reason) : undefined),
       active: own ?? shown.active,
-      grade: leaf.grade,
+      grade: leaf.grade ?? item?.grade,
       missing: item ? undefined : key,
       settings,
       ...(item?.action.preview && registry
@@ -101,6 +105,7 @@ export function useLeafAction(leaf: PrefAction, path: string, disabled = false, 
       });
     },
     label,
+    description,
     icon,
     shortcut: leaf.shortcut,
     disabled: disabled || pending,

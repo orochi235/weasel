@@ -55,6 +55,9 @@
   --wzl-fg-muted: var(--wzl-fg-muted-on-accent);
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
+.row[data-grade]:not(.rowActive) {
+  color: var(--wzl-grade);
+}
 .rowDisabled {
   opacity: 0.4;
   cursor: default;

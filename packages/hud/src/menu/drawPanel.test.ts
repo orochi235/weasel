@@ -48,6 +48,15 @@ describe('drawPanel', () => {
     expect(JSON.stringify(chip!.runs)).toContain('#888');
   });
 
+  it('draws a graded row\'s label in its grade\'s color, and a disabled one muted all the same', () => {
+    const graded = { ...ctx, tokens: { ...ctx.tokens, '--wzl-danger': '#f00' } } as HudDrawCtx;
+    const del: MenuEntry = { kind: 'item', key: 'del', label: 'Delete', grade: 'danger', run };
+    const off: MenuEntry = { ...del, disabled: true };
+    expect(JSON.stringify(texts(drawPanel(graded, b, [del], null, m))[0]!.runs)).toContain('#f00');
+    expect(JSON.stringify(texts(drawPanel(graded, b, [off], null, m))[0]!.runs)).toContain('#888');
+    expect(JSON.stringify(texts(drawPanel(ctx, b, [del], null, m))[0]!.runs)).toContain('#eee');
+  });
+
   it('widens the panel to fit a label and its shortcut', () => {
     const label = 'L'.repeat(30);
     const plain: MenuEntry = { kind: 'item', key: 'a', label, run };

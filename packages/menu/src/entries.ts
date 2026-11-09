@@ -15,6 +15,10 @@ export interface MenuShortcut {
   leader?: readonly { label: string; shortcut: Omit<MenuShortcut, 'leader'> }[];
 }
 
+/** How serious a row is, as `@weasel-js/theme`'s `Grade`: `'danger'` for one that destroys something. A
+ *  renderer draws a row in its grade's color. */
+export type MenuGrade = 'info' | 'success' | 'warn' | 'danger';
+
 /** A row that runs something when chosen. */
 export interface MenuItemEntry {
   kind: 'item';
@@ -27,6 +31,9 @@ export interface MenuItemEntry {
   /** Why a disabled row cannot be chosen: a sentence, or a symbolic code a renderer maps to words, such as
    *  `@weasel-js/routing`'s `ActionDisabledReason`. */
   disabledReason?: string;
+  /** What the row does, in a sentence: a renderer shows it as a hint. */
+  description?: string;
+  grade?: MenuGrade;
   /** `undefined` for a row with no on/off state. */
   checked?: boolean;
   /** A checked row that is one of a set held by exactly one, as an enum's options are: read as a radio row. */
@@ -55,6 +62,11 @@ export interface SubmenuEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Why a disabled row cannot be chosen; see {@link MenuItemEntry.disabledReason}. */
+  disabledReason?: string;
+  /** What the row's submenu is for, in a sentence: a renderer shows it as a hint. */
+  description?: string;
+  grade?: MenuGrade;
   /** Letter that opens this row from the keyboard, compared ignoring case. */
   access?: string;
   entries: readonly MenuEntry[];
@@ -68,6 +80,8 @@ export interface MenuNumberEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Why a disabled row cannot be chosen; see {@link MenuItemEntry.disabledReason}. */
+  disabledReason?: string;
   /** Letter that highlights this row from the keyboard, compared ignoring case. */
   access?: string;
   /** What it held when the menu opened. `undefined` for none. */
@@ -97,6 +111,8 @@ export interface MenuColorEntry {
   key: string;
   label: string;
   disabled?: boolean;
+  /** Why a disabled row cannot be chosen; see {@link MenuItemEntry.disabledReason}. */
+  disabledReason?: string;
   /** Letter that highlights this row from the keyboard, compared ignoring case. */
   access?: string;
   /** What it held when the menu opened, a CSS color: `#rrggbb` or `#rrggbbaa`. `undefined` for none. */
@@ -115,6 +131,8 @@ export interface MenuTextEntry {
   label: string;
   icon?: unknown;
   disabled?: boolean;
+  /** Why a disabled row cannot be chosen; see {@link MenuItemEntry.disabledReason}. */
+  disabledReason?: string;
   /** Letter that highlights this row from the keyboard, compared ignoring case. */
   access?: string;
   /** What it held when the menu opened. `undefined` for none. */

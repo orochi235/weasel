@@ -1,10 +1,11 @@
 import { useContext, useEffect, useRef, type ReactNode } from 'react';
 import type { PrefAction } from '@weasel-js/prefs';
+import type { Grade } from '@weasel-js/theme';
 import { actionLeafVariants, useRegisteredActions } from '../Prefs/registeredActions';
 import { useLeafAction } from '../Prefs/useLeafAction';
 import { ActionSettingsPopover } from '../ActionSettings/ActionSettingsPopover';
 import { SegmentTooltip, segmentTooltipContent } from '../segmentTooltip';
-import { useAppearance, type Grade } from '../appearance';
+import { useAppearance } from '../appearance';
 import { BarInMenuContext } from './barInMenu';
 import s from './Bar.module.css';
 
@@ -13,6 +14,9 @@ export interface BarActionButtonProps {
   label: string;
   /** What the tooltip reads in place of the label. */
   description?: string;
+  /** How serious pressing it is: `'danger'` for a button that destroys something, which shows its grade's color
+   *  while pointed at, as a graded ghost `Button` does. */
+  grade?: Grade;
   icon?: ReactNode;
   /** The keys that fire the action, read after the label or description in the tooltip. */
   shortcut?: string;
@@ -29,8 +33,6 @@ export interface BarActionButtonProps {
   disabledReason?: string;
   /** Held down. Leave unset for an action with no pressed state. */
   active?: boolean;
-  /** How serious pressing it is: `danger` draws it in the danger color. */
-  grade?: Grade;
   /** It opens a dialog, which is open now. Leave unset for a button that opens nothing. */
   expanded?: boolean;
   /** Nothing answers to this key. The button is dead, and its tooltip says why. */
@@ -48,11 +50,11 @@ export interface BarActionButtonProps {
  * entry.
  */
 export function BarActionButton(props: BarActionButtonProps) {
-  const { label, description, icon, shortcut, row = false, menu = false, disabled = false, active, grade, expanded, missing, onPress, disabledReason, preview } = props;
-  const appearance = useAppearance({ grade });
+  const { label, description, grade, icon, shortcut, row = false, menu = false, disabled = false, active, expanded, missing, onPress, disabledReason, preview } = props;
   const labeled = row || menu || props.labeled === true;
   const dead = missing !== undefined;
   const { show, hide } = usePreviewWhileNear(disabled || dead ? undefined : preview);
+  const appearance = useAppearance({ grade });
   const tip = dead
     ? `${label}: no action “${missing}”`
     : segmentTooltipContent({ description: description || label, shortcut, disabled, disabledReason });
@@ -123,6 +125,6 @@ export function BarAction({ leaf, path, disabled, active }: { leaf: PrefAction; 
 function BarActionOne({ leaf, path, disabled, active }: { leaf: PrefAction; path: string; disabled?: boolean; active?: boolean }) {
   const { press, settings, ...button } = useLeafAction(leaf, path, disabled, active);
   const menu = useContext(BarInMenuContext);
-  if (settings) return <ActionSettingsPopover {...button} form={settings} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} />;
-  return <BarActionButton {...button} description={leaf.description} labeled={leaf.control === 'button'} menu={menu} onPress={press} />;
+  if (settings) return <ActionSettingsPopover {...button} form={settings} labeled={leaf.control === 'button'} menu={menu} />;
+  return <BarActionButton {...button} labeled={leaf.control === 'button'} menu={menu} onPress={press} />;
 }

@@ -98,6 +98,19 @@ describe('enabled() sees where the event landed', () => {
     expect(enabled.mock.calls[0][1]).toBeUndefined();
   });
 
+  it('hands the gate the binding’s params, so a key for one variant asks after that variant', () => {
+    const run = vi.fn();
+    const action: Action = {
+      id: 'order',
+      label: 'order',
+      defaultBinding: [{ spec: { kind: 'key', key: 'a' }, opts: { params: () => ({ step: 'up' }) } }],
+      enabled: (_deps, _at, _carried, params) => (params?.step === 'up' ? 'Already at the top' : true),
+      invoker: { timing: 'immediate', run },
+    };
+    createDispatcher().handleInput(keyAEvent, makeCtx({ actions: makeRegistry([action]) }));
+    expect(run).not.toHaveBeenCalled();
+  });
+
   it('falls through to the next binding when the gate refuses that point', () => {
     const near = vi.fn();
     const far = vi.fn();

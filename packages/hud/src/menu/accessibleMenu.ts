@@ -10,6 +10,12 @@ function labelOf(c: MenuController, e: MenuRowEntry, swatchOf?: (e: MenuEntry) =
   return e.label;
 }
 
+/** What a row says after its name: why it is disabled, else what it does. A symbolic reason code is read as it is. */
+function descriptionOf(e: MenuRowEntry): string | undefined {
+  if (e.disabled && e.disabledReason) return e.disabledReason;
+  return (e.kind === 'item' || e.kind === 'submenu') && e.description ? e.description : undefined;
+}
+
 /** One level's rows, with the open submenu nested under the row it hangs from. */
 function level(c: MenuController, at: number, swatchOf?: (e: MenuEntry) => string | undefined): HudAccessibleNode[] {
   const stack = c.stack();
@@ -18,10 +24,12 @@ function level(c: MenuController, at: number, swatchOf?: (e: MenuEntry) => strin
     if (e.kind === 'separator') return { role: 'separator', key: e.key };
     const checkable = e.kind === 'item' && e.checked !== undefined;
     const open = e.kind === 'submenu' && stack[at] === i && stack.length > at + 1;
+    const description = descriptionOf(e);
     return {
       role: !checkable ? 'menuitem' : e.radio ? 'menuitemradio' : 'menuitemcheckbox',
       key: e.key,
       label: labelOf(c, e, swatchOf),
+      ...(description ? { description } : {}),
       ...(deepest && stack[at] === i ? { active: true } : {}),
       ...(e.kind === 'item' && e.checked !== undefined ? { checked: e.checked } : {}),
       ...(e.disabled || e.kind === 'color' ? { disabled: true } : {}),

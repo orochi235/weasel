@@ -68,4 +68,11 @@ describe('resolveSchemaMenu: an action carrying settings', () => {
     const [entry] = resolve(resize(false));
     expect(entry).toMatchObject({ kind: 'submenu', disabled: true, entries: [] });
   });
+
+  it('says why it cannot run, and carries the description and grade', () => {
+    const [entry] = resolve({ ...resize(false), description: 'Set the size', grade: 'warn' });
+    expect(entry).toMatchObject({
+      disabledReason: ActionDisabledReason.NotApplicable, description: 'Set the size', grade: 'warn',
+    });
+  });
 });

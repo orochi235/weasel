@@ -67,25 +67,34 @@ const sep = (key: string): MenuEntry => ({ kind: 'separator', key });
 function itemOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
   const deps = ctx.src.depsFor(it.action);
   const point = ctx.at ? { world: ctx.at } : {};
-  const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at);
-  if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, access);
+  const { enabled, reason } = evaluateEnabled(it.action, deps, ctx.at, it.params);
+  const why = !off && reason !== undefined ? { disabledReason: reason } : {};
+  if (it.action.settings) return settingsOf(ctx, it, key, label, off || !enabled, why, access);
   return {
     kind: 'item',
     key,
     label,
     ...withAccess(access),
     icon: it.icon,
+    ...hintOf(it),
     shortcut: actionShortcuts(it.action, it.params)[0],
     disabled: off || !enabled,
-    ...(!off && reason !== undefined ? { disabledReason: reason } : {}),
-    checked: evaluateActive(it.action, deps),
+    ...why,
+    checked: evaluateActive(it.action, deps, it.params),
     run: () => { ctx.src.trigger(it.action.id, { ...ctx.params, ...it.params, ...point }); },
   };
 }
 
+const hintOf = ({ description, grade }: ActionItem): Pick<ActionItem, 'description' | 'grade'> => ({
+  ...(description ? { description } : {}),
+  ...(grade ? { grade } : {}),
+});
+
 /** An action carrying settings as a submenu of its form's rows, read when the
  *  menu resolves; each change triggers the action with the params it makes. */
-function settingsOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, access?: string): MenuEntry {
+function settingsOf(
+  ctx: Ctx, it: ActionItem, key: string, label: string, off: boolean, why: { disabledReason?: string }, access?: string,
+): MenuEntry {
   const settings = it.action.settings!;
   const state = off ? null : readActionSettings(it.action, ctx.src.depsFor(it.action));
   const mixed = new Set(state?.mixed ?? []);
@@ -106,8 +115,9 @@ function settingsOf(ctx: Ctx, it: ActionItem, key: string, label: string, off: b
     key,
     label,
     ...(it.icon ? { icon: it.icon } : {}),
+    ...hintOf(it),
     ...withAccess(access),
-    ...(entries.length === 0 ? { disabled: true } : {}),
+    ...(entries.length === 0 ? { disabled: true, ...why } : {}),
     entries,
   };
 }

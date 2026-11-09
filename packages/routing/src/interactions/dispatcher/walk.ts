@@ -7,6 +7,7 @@ import type { Action, ActionSource } from '../actions/action';
 import { actionBindings, type GestureBinding } from '../actions/binding';
 import { NO_OVERRIDES } from '../actions/bindingOverrides';
 import { buildDepsFromRequires } from '../actions/buildDeps';
+import { resolveParams } from '../actions/bindingOpts';
 import type { ActionDeps } from '../actions/invoker';
 import { assembleEntries, scopeBindings } from '../../contributions/assemble';
 import type { DispatcherContext, ResolvedCandidate } from './dispatcherApi';
@@ -153,7 +154,9 @@ export function walk(
     // winner's invoke reuses the same bag. Shared with
     // `ActionsRegistry.trigger`, including the dev undeclared-read guard.
     const deps = buildDepsFromRequires(action, ctx.depRegistry);
-    const enabled = action.enabled ? action.enabled(deps, worldPointOf(event), carriedBy(event)) : true;
+    const enabled = action.enabled
+      ? action.enabled(deps, worldPointOf(event), carriedBy(event), resolveParams(match.binding.opts?.params))
+      : true;
     if (enabled !== true) { push({ kind: 'declined', reason: String(enabled) }); continue; }
     if (stop !== 'exhausted') { push({ kind: 'outranked' }); continue; }
     if (!attempt) {

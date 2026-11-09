@@ -4,6 +4,7 @@ import { formatShortcut } from '@weasel-js/gestures';
 import { Caret } from '../Caret';
 import { resolveIcon } from '../../icons/resolveIcon';
 import { reasonLabel } from '../ActionBar/reasonLabels';
+import { useAppearance } from '../appearance';
 import { AccessLabel } from './AccessLabel';
 import { MenuNumberValue, MenuTextValue } from './MenuValue';
 import { MenuColorValue, editsColor } from './MenuColorValue';
@@ -11,10 +12,17 @@ import s from './ContextMenu.module.css';
 
 const leftToBrowser = (e: MouseEvent) => e.metaKey || e.ctrlKey || e.shiftKey;
 
-/** Why a disabled item row cannot be chosen, in words, or `undefined` for a row with nothing to say. */
+/** Why a disabled row cannot be chosen, in words, or `undefined` for a row with nothing to say. */
 export function disabledReasonText(e: MenuEntry | undefined): string | undefined {
-  return e?.kind === 'item' && e.disabled && e.disabledReason
+  return e && e.kind !== 'separator' && e.disabled && e.disabledReason
     ? reasonLabel(e.disabledReason) : undefined;
+}
+
+/** What a row's tip reads: why it is disabled, else what it does, or `undefined` for a row with nothing to say. */
+export function rowTipText(e: MenuEntry | undefined): string | undefined {
+  const why = disabledReasonText(e);
+  if (why !== undefined) return why;
+  return (e?.kind === 'item' || e?.kind === 'submenu') && e.description ? e.description : undefined;
 }
 
 /** One line of a panel. Rows are `div`s: the panel owns focus and points at
@@ -36,12 +44,13 @@ export function MenuRow(props: {
 }) {
   const { entry: e, id, highlighted, expanded } = props;
   const row = useRef<HTMLDivElement>(null);
+  const appearance = useAppearance({ grade: e.kind === 'item' || e.kind === 'submenu' ? e.grade : undefined });
   if (e.kind === 'separator') return <div role="separator" className={s.separator} />;
   const checkable = e.kind === 'item' && e.checked !== undefined;
   const link = e.kind === 'item' && e.href !== undefined;
   const current = e.kind === 'item' && e.current;
   const picks = e.kind === 'color' && editsColor(e);
-  const why = disabledReasonText(e);
+  const why = rowTipText(e);
 
   const onClick = (ev: MouseEvent) => {
     const browser = link && !e.disabled && leftToBrowser(ev);
@@ -54,6 +63,7 @@ export function MenuRow(props: {
     role: !checkable ? 'menuitem' : e.radio ? 'menuitemradio' : 'menuitemcheckbox',
     className: current ? `${s.row} ${s.current}` : s.row,
     'data-highlighted': highlighted || undefined,
+    ...appearance,
     'aria-disabled': e.disabled || (e.kind === 'color' && !e.set) || undefined,
     'aria-description': why,
     'aria-checked': checkable ? e.checked : undefined,

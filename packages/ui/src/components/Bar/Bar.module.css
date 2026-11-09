@@ -318,14 +318,9 @@
   --wzl-fg-subtle: var(--wzl-fg-subtle-on-accent);
 }
 
-/* A graded action is drawn in its grade, pressed as well: a "Clear all" is red. */
-.action[data-grade] {
-  --wzl-accent: var(--wzl-grade);
+/* A graded action stays quiet until pointed at, then shows its grade, as a graded ghost Button does. */
+.action[data-grade]:hover:not([disabled], [aria-disabled='true'], [aria-pressed='true']) {
   color: var(--wzl-grade);
-}
-
-.action[data-grade][aria-pressed='true'] {
-  color: var(--wzl-fg-on-accent);
 }
 
 .action[disabled],

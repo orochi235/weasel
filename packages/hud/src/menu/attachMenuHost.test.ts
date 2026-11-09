@@ -15,7 +15,7 @@ const immediate = { timing: 'immediate' as const, run: () => {} };
 
 function makeHost(): MenuHost {
   const h = createMenuHost({
-    actions: () => [{ id: 'cut', label: 'Cut', invoker: immediate }],
+    actions: () => [{ id: 'cut', label: 'Cut', description: 'Move it to the clipboard', invoker: immediate }],
     depsFor: () => undefined, trigger, activeTool: () => null,
   });
   h.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
@@ -276,6 +276,7 @@ describe('attachMenuHost on an attached hud', () => {
     expect(el.getAttribute('aria-owns')).toBe(mirror!.id);
     const row = mirror!.querySelector<HTMLElement>('[role="menuitem"]')!;
     expect(row.textContent).toBe('Cut');
+    expect(row.getAttribute('aria-description')).toBe('Move it to the clipboard');
     expect(el.getAttribute('aria-activedescendant')).toBeNull();
     keydown(el, 'ArrowDown');
     expect(mirror!.getAttribute('aria-activedescendant')).toBe(row.id);

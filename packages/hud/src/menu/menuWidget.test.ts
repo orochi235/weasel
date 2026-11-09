@@ -168,6 +168,19 @@ describe('createMenuWidget', () => {
     expect(w.accessibleTree!.read().children![0]).toMatchObject({ role: 'menuitemradio', checked: false });
   });
 
+  it('describes a row by why it is disabled, else by what it does', () => {
+    const { w } = widget({
+      ...open, source: 'keyboard',
+      entries: [
+        { kind: 'item', key: 'a', label: 'A', description: 'Does A', run },
+        { kind: 'item', key: 'b', label: 'B', description: 'Does B', disabled: true, disabledReason: 'Not now', run },
+        { kind: 'text', key: 't', label: 'T', value: 'x', disabled: true, disabledReason: 'Locked', set: () => {} },
+        { kind: 'item', key: 'c', label: 'C', run },
+      ],
+    });
+    expect(w.accessibleTree!.read().children!.map((n) => n.description)).toEqual(['Does A', 'Not now', 'Locked', undefined]);
+  });
+
   it('draws every color from a real theme as a concrete value', () => {
     const { w } = widget();
     w.onPointer({ type: 'hovermove', x: 110, y: 110, native: null });

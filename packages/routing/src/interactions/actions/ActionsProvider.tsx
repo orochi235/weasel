@@ -122,7 +122,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         const a = this.resolve(id);
         if (a?.invoker?.timing !== 'immediate') return;
         const deps = depsFor(a, this.deps());
-        if (evaluateEnabled(a, deps, pointOf(params)).enabled) a.invoker.run(deps, params);
+        if (evaluateEnabled(a, deps, pointOf(params), params).enabled) a.invoker.run(deps, params);
       },
       keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };
@@ -287,7 +287,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const a = leaf.resolve(id);
       if (!a?.invoker || a.invoker.timing !== 'immediate') return false;
       const deps = leaf.depsOf(a);
-      if (!evaluateEnabled(a, deps, pointOf(params)).enabled) return false;
+      if (!evaluateEnabled(a, deps, pointOf(params), params).enabled) return false;
       try {
         if (a.invoker.run(deps, params) === 'pass') return false;
       } catch (err) {
@@ -300,7 +300,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const a = leaf.resolve(id);
       if (!a?.preview) return NO_PREVIEW;
       const deps = leaf.depsOf(a);
-      if (!evaluateEnabled(a, deps, pointOf(params)).enabled) return NO_PREVIEW;
+      if (!evaluateEnabled(a, deps, pointOf(params), params).enabled) return NO_PREVIEW;
       let stop: (() => void) | void;
       try {
         stop = a.preview(deps, params);
