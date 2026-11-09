@@ -373,16 +373,6 @@ Owner tags, after the priority (2026-10-26):
   `start` to `start + duration`; `Transport.test.tsx` pins `-0.50s / 3.00s` for a timeline from −0.5 s to
   2.5 s. Either the second number becomes the end time, or the first becomes relative to `start`
   (2026-11-07). Closes when the maintainer has picked one and the readout and its test follow it.
-- **(P2) [agent] Cmd-click toggles, Shift-click selects a range, by default.** Today a Shift-press extends
-  (`pressDecision`'s `isExtend`, toggling the pressed node) and a Cmd-press is `select.deep`, picking the node
-  itself past every group. The maintainer wants the desktop convention as the default (2026-11-03): Cmd (Ctrl
-  off macOS) adds or removes the pressed node, and Shift selects from the last node clicked to the pressed one.
-  Two calls are open: where `select.deep` moves (Alt is clone-drag, double-click enters groups), and what a range
-  is in a free 2D scene. collego's answer, which it wires over weasel's picks in its own press handler: every
-  item of the same kind whose center lies in the box the two span (`drawersBetween`). Ruled (2026-11-07):
-  `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
-  box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
-
 - **(P3) [agent] Arrow keys on a curved row that runs right to left move against the screen.** Since rows along
   a shape follow its direction (2026-10-30), a clockwise bottom arc or a counterclockwise top one lays its first item at
   the right, and Right still moves to the next item, which sits to its left. `useRovingTabIndex` takes a `dir`

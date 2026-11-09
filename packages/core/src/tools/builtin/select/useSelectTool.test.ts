@@ -286,14 +286,14 @@ describe('useSelectTool', () => {
     it('select.deep holds back an extending press while extendClickLocked, by the same keys', () => {
       const tool = mount({ pickEvery: () => ['a'], extendClickLocked: () => true });
       const ranging = selectionStub(['a'], keys);
-      run(tool, 'select.deep', ranging.api, { meta: true, shift: true });
+      run(tool, 'select.deep', ranging.api, { meta: true, alt: true, shift: true });
       expect(ranging.applyClick).not.toHaveBeenCalled();
       // Shift is the anchor edit's own key, so the lock holds it even where the selection reads it as a replace.
       const replacing = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
-      run(tool, 'select.deep', replacing.api, { meta: true, shift: true });
+      run(tool, 'select.deep', replacing.api, { meta: true, alt: true, shift: true });
       expect(replacing.applyClick).not.toHaveBeenCalled();
       const plain = selectionStub(['a'], { mode: 'multi', toggle: 'meta' });
-      run(tool, 'select.deep', plain.api, { meta: true });
+      run(tool, 'select.deep', plain.api, { meta: true, alt: true });
       expect(plain.applyClick).toHaveBeenCalledWith('a', { ctrl: false, meta: false, shift: false });
     });
   });
@@ -370,10 +370,24 @@ describe('useSelectTool — press and drag bindings do not collide', () => {
     }
   });
 
-  it('the platform mod key routes to select.deep, ahead of select.pick', () => {
+  it('the platform mod key alone reaches select.pick, where it toggles', () => {
     const ev = { ...pressEvent('unselected-body'), ctrlKey: true };
     const matches = matchSorted(ev, selectBindings(), false);
+    expect(matches.map((m) => m.binding.actionId)).toEqual(['select.pick']);
+  });
+
+  it('the platform mod key with Alt routes to select.deep, ahead of select.pick', () => {
+    const ev = { ...pressEvent('unselected-body'), ctrlKey: true, altKey: true };
+    const matches = matchSorted(ev, selectBindings(), false);
     expect(matches.map((m) => m.binding.actionId)).toEqual(['select.deep', 'select.pick']);
+  });
+
+  it('a Shift-press routed as a range hands applyClick what the tool counts as one', () => {
+    const tool = mount({ pickEvery: () => ['a'], between: () => ['x', 'a'] });
+    const sel = selectionStub(['x'], { mode: 'multi', toggle: 'meta', range: 'shift' });
+    press(tool, sel.api, { mods: { shift: true } });
+    const between = sel.applyClick.mock.calls[0]?.[2] as (from: string, to: string) => readonly string[];
+    expect(between('x', 'a')).toEqual(['x', 'a']);
   });
 });
 

@@ -211,6 +211,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
+    // Read by the default range, which walks the adapter as this view paints it.
+    poseDescriptor: d,
+    ...(alphaOf ? { alphaOf } : {}),
+    ...(layerIsPainted ? { layerIsPainted } : {}),
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
   });

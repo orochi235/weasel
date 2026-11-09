@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { createElement } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
@@ -29,8 +29,8 @@ describe('useSelection', () => {
     expect(result.current.current).toEqual([b]);
   });
 
-  it('multi-mode applyClick with shift toggles', () => {
-    const { result } = renderHook(() => useSelection({ mode: 'multi', initial: [a] }));
+  it('multi-mode applyClick with the extend key toggles', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'shift', initial: [a] }));
     act(() => result.current.applyClick(b, { ...NO_MODS, shift: true }));
     expect(result.current.current).toEqual([a, b]);
     act(() => result.current.applyClick(a, { ...NO_MODS, shift: true }));
@@ -219,7 +219,7 @@ describe('useSelection — identity', () => {
 
   it('follows a changed mode without changing identity', () => {
     const { result, rerender } = renderHook(
-      ({ mode }: { mode: 'single' | 'multi' }) => useSelection({ mode, initial: [a] }),
+      ({ mode }: { mode: 'single' | 'multi' }) => useSelection({ mode, extend: 'shift', initial: [a] }),
       { initialProps: { mode: 'single' as 'single' | 'multi' } },
     );
     const first = result.current;
@@ -319,9 +319,44 @@ describe('useSelection range', () => {
     expect(result.current.current).toEqual([c]);
   });
 
-  it('does not range unless a range key is named', () => {
-    const { result } = renderHook(() => useSelection({ mode: 'multi', order, initial: [a] }));
+  it('keeps Shift a toggle, and ranges on nothing, when `extend` names Shift', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'shift', order, initial: [a] }));
     act(() => result.current.applyClick(c, SHIFT));
     expect(result.current.current).toEqual([a, c]);
+  });
+
+  it('ranges over what the click hands it in place of the order', () => {
+    const { result } = renderHook(() => useSelection({ mode: 'multi', extend: 'meta', range: 'shift', order }));
+    act(() => result.current.applyClick(a, NO_MODS));
+    act(() => result.current.applyClick(d, SHIFT, (from, to) => [from, c, to]));
+    expect(result.current.current).toEqual([a, c, d]);
+  });
+});
+
+describe('useSelection default keys', () => {
+  const SHIFT = { ...NO_MODS, shift: true };
+  const order = () => [a, b, c];
+  const onPlatform = (platform: string) => vi.spyOn(navigator, 'platform', 'get').mockReturnValue(platform);
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('toggles on Cmd on a Mac, and ranges on Shift', () => {
+    onPlatform('MacIntel');
+    const { result } = renderHook(() => useSelection({ mode: 'multi', order }));
+    expect(result.current.intentOf({ ...NO_MODS, meta: true })).toBe('toggle');
+    expect(result.current.intentOf({ ...NO_MODS, ctrl: true })).toBe('replace');
+    expect(result.current.intentOf(SHIFT)).toBe('range');
+    act(() => result.current.applyClick(a, NO_MODS));
+    act(() => result.current.applyClick(c, SHIFT));
+    expect(result.current.current).toEqual([a, b, c]);
+    act(() => result.current.applyClick(b, { ...NO_MODS, meta: true }));
+    expect(result.current.current).toEqual([a, c]);
+  });
+
+  it('toggles on Ctrl elsewhere', () => {
+    onPlatform('Win32');
+    const { result } = renderHook(() => useSelection({ mode: 'multi' }));
+    expect(result.current.intentOf({ ...NO_MODS, ctrl: true })).toBe('toggle');
+    expect(result.current.intentOf({ ...NO_MODS, meta: true })).toBe('replace');
+    expect(result.current.intentOf(SHIFT)).toBe('range');
   });
 });

@@ -46,8 +46,16 @@ export interface SelectionApi {
    * - `multi`: with the extend key held, toggles `id` in/out of the selection;
    *   with the range key held, selects from the last pressed id through `id`;
    *   otherwise replaces with `[id]`.
+   *
+   * `between` is what the surface pressed counts as a range from the last pressed id to `id`
+   * (a canvas: the nodes in the box the two span); without it a range walks the selection's
+   * own order.
    */
-  applyClick(id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): void;
+  applyClick(
+    id: NodeId,
+    modifiers: { shift: boolean; meta: boolean; ctrl: boolean },
+    between?: (from: NodeId, to: NodeId) => readonly NodeId[],
+  ): void;
   /** What a click with `modifiers` would do under the configured mode and keys: the one
    *  answer every press reads, so a tool never assumes which key extends. */
   intentOf(modifiers: { shift: boolean; meta: boolean; ctrl: boolean }): SelectIntent;

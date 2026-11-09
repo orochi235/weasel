@@ -11,12 +11,14 @@ export interface SelectDeepOptions {
   extendLocked: () => boolean;
   /** Called once the press is handled, so a deferral left by an earlier press cannot fire on release. */
   settled: () => void;
+  /** What a range to `hit` covers, or undefined to walk the selection's own order. */
+  rangeAt?: (hit: string) => ((from: NodeId, to: NodeId) => readonly NodeId[]) | undefined;
 }
 
 /**
  * `select.deep` — selects the node under the point itself, not the outermost
- * group above it; with Shift it applies the click the way the selection's keys read Shift. Bound to Cmd-press by
- * `useSelectTool`, ahead of `select.pick`.
+ * group above it; with Shift it applies the click the way the selection's keys read Shift, a range
+ * covering what `rangeAt` gives. Bound to Cmd+Alt-press by `useSelectTool`, ahead of `select.pick`.
  */
 export function createSelectDeepAction(opts: SelectDeepOptions): Action {
   return {
@@ -30,12 +32,15 @@ export function createSelectDeepAction(opts: SelectDeepOptions): Action {
         const p = params as ImmediateParams | undefined;
         const selection = deps.selection;
         if (!selection || !p?.world) return;
-        // The deep chord is Mod, so only Shift is left to say how the click applies.
+        // The deep chord is Mod+Alt, so only Shift is left to say how the click applies.
         const mods = { ctrl: false, meta: false, shift: p.mods?.shift === true };
-        const hit = opts.pickHit(p.world, p.mods?.alt === true, selection.get());
+        const hit = opts.pickHit(p.world, false, selection.get());
         opts.settled();
-        if (hit === null || extendPressLocked(selection.intentOf(mods), mods.shift, opts.extendLocked)) return;
-        selection.applyClick(hit as NodeId, mods);
+        const intent = selection.intentOf(mods);
+        if (hit === null || extendPressLocked(intent, mods.shift, opts.extendLocked)) return;
+        const between = intent === 'range' ? opts.rangeAt?.(hit) : undefined;
+        if (between) selection.applyClick(hit as NodeId, mods, between);
+        else selection.applyClick(hit as NodeId, mods);
       },
     },
   };

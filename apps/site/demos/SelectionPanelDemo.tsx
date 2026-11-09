@@ -45,7 +45,7 @@ export function SelectionPanelDemo() {
         selection={selection}
         properties={defaultNodeProperties}
         routing={defaultNodeRouting}
-        emptyState={<em>Click a shape (shift-click for multi)</em>}
+        emptyState={<em>Click a shape (Cmd-click for multi)</em>}
         className="ckd-panel ckd-panel-plain"
       />
     </div>

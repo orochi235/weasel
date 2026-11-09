@@ -30,7 +30,7 @@ export function outermostSelection(api: SelectionApi, parentOf: ParentOf<NodeId>
     remove: api.remove,
     toggle(id) { api.toggle(id); settle(); },
     clear: api.clear,
-    applyClick(id, modifiers) { api.applyClick(id, modifiers); settle(); },
+    applyClick(id, modifiers, between) { api.applyClick(id, modifiers, between); settle(); },
     intentOf: api.intentOf,
     adapterMethods: {
       getSelection: api.adapterMethods.getSelection,

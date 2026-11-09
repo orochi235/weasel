@@ -977,13 +977,17 @@ rebind:
 
 | Binding | Bound by | Gesture | Does |
 |---|---|---|---|
-| `select.deep` | the select tool | Cmd-press (Ctrl off macOS) on a body | selects the deepest pickable node under the pointer |
+| `select.deep` | the select tool | Cmd+Alt-press (Ctrl+Alt off macOS) on a body | selects the deepest pickable node under the pointer |
 | `group.enter` | `createGroupEntryContribution`, under any tool | double-click on a member of a group outside the entered one | enters the outermost such group |
 | `group.leave.key` | `createGroupEntryContribution`, under any tool | Escape, yielding to `escape` when nothing is entered | leaves one level |
 | `group.leave.press` | the select tool | a press outside the entered group's box | leaves every group that box is outside of |
 
 The entered group is session state beside the selection (`enteredGroup` dep), never saved
-or undone. Shift extends a selection, and Cmd-Shift adds the deepest node under the pointer.
+or undone. A press selects with the selection's keys (`useSelection`): Cmd (Ctrl off macOS)
+adds the pressed node or takes it out, and Shift selects every node a press there could select
+whose center lies in the box the last node clicked and the pressed one span, with no filter on
+kind (2026-11-07). The last node clicked is the selection's anchor. Cmd+Alt+Shift ranges the same
+way among the deepest node's siblings.
 
 **Saving.** Scenes save as version 2 with `kind: 'mark' | 'group'`. A version 1 save loads
 with each `leaf` as a mark and each `container` as a group, unless `classifyV1` says

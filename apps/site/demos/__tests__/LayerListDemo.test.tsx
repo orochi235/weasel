@@ -31,12 +31,12 @@ function setup() {
 }
 
 describe('LayerListDemo', () => {
-  it('selects in the list what is clicked on the canvas, and adds with shift', () => {
+  it('selects in the list what is clicked on the canvas, and adds with the platform mod key', () => {
     const t = setup();
     expect(t.selectedRows()).toEqual([]);
     t.click(80, 90);
     expect(t.selectedRows()).toEqual(['#7fb069']);
-    t.click(350, 150, { shiftKey: true });
+    t.click(350, 150, { ctrlKey: true });
     expect(t.selectedRows().sort()).toEqual(['#7ab8d4', '#7fb069']);
     t.click(460, 300);
     expect(t.selectedRows()).toEqual([]);

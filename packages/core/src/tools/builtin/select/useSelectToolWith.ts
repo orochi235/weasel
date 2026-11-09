@@ -6,12 +6,11 @@ import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool } from '../../overlayBinding';
-import type { Action, WorldPoint } from '@weasel-js/routing';
+import type { WorldPoint } from '@weasel-js/routing';
 import type { Tool } from '../../overlayBinding';
 import { pickTopMostHit } from '../pickTopMostHit';
-import { pressTarget } from '../pressTarget';
-import { pressDecision } from './pressDecision';
-import { extendPressLocked, extendsSelection } from 'core/selection/extendPressLocked';
+import { pressSelects } from '../pressTarget';
+import { createSelectPickAction } from './selectPick';
 import { createCollapseDeferredAction } from './collapseDeferred';
 import { GROUP_LEAVE_PRESS_BINDING } from './groupEntry';
 import { createSelectDeepAction } from '../../../interactions/actions/defaults/selectDeep';
@@ -19,7 +18,6 @@ import { onBody, onEmptyCanvas } from './selectionContributions';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 import { icon } from '../../../icons.gen';
-import type { ImmediateParams } from '@weasel-js/routing';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 
@@ -35,7 +33,7 @@ export interface UseSelectToolOptions<TPose> {
   /** Optional alt-aware selection-update hit returning the single id the
    *  click should act on. */
   pickBest?: (world: WorldPoint, alt: boolean, selection: readonly string[]) => string | null;
-  /** How to read poses for the default `pickEvery`. Default
+  /** How to read poses for the default `pickEvery` and `between`. Default
    *  `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
   /**
@@ -67,11 +65,11 @@ export interface UseSelectToolOptions<TPose> {
    */
   pickTolerance?: number;
   /** Painted alpha per node in the view this tool picks for. A node painted
-   *  at alpha 0 is not under the pointer. Ignored when `pickEvery` is
-   *  supplied. */
+   *  at alpha 0 is not under the pointer, nor in a range. Read by the default
+   *  `pickEvery` and `between`. */
   alphaOf?: (id: string) => number;
   /** Whether a node's `layer` reaches the screen in the view this tool picks
-   *  for. Ignored when `pickEvery` is supplied. */
+   *  for. Read by the default `pickEvery` and `between`. */
   layerIsPainted?: (layer: string) => boolean;
   /** The camera of the view this tool picks for. With it, a node on an
    *  adapter layer carrying `parallax` (`getLayers`) is picked where that
@@ -79,7 +77,7 @@ export interface UseSelectToolOptions<TPose> {
    *  the camera. Ignored when `pickEvery` is supplied. */
   getView?: () => View | null;
   /**
-   * When this returns true, a Shift/Meta extend-click must NOT change the
+   * When this returns true, a toggle or range click must NOT change the
    * node selection.
    *
    * `<SceneCanvas>` wires it to "a path is in anchor-edit mode", where
@@ -92,6 +90,13 @@ export interface UseSelectToolOptions<TPose> {
    * clicking a different node exits edit mode as usual.
    */
   extendClickLocked?: () => boolean;
+  /**
+   * The nodes a range from `from` to `to` covers. The tool keeps those a press there could
+   * select itself, so a range takes a group whole, and inside an entered group stays in it.
+   * `useSelectTool` defaults it to every node whose center lies in the box the two span;
+   * without it a range walks the selection's own order.
+   */
+  between?: (from: string, to: string) => readonly string[];
 }
 
 /** Intersection of the move + area-select adapter interfaces.
@@ -164,52 +169,25 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
 
   const extendLocked = useCallback(() => optionsRef.current.extendClickLocked?.() === true, [optionsRef]);
   const settled = useCallback(() => { pressRef.current = { deferredClickId: null }; }, []);
+  // A range among what a press inside `level` selects.
+  const rangeIn = useCallback((level: string | null) => {
+    const between = optionsRef.current.between;
+    if (!between) return undefined;
+    return (from: NodeId, to: NodeId) =>
+      between(from, to).filter((id) => pressSelects(adapterRef.current, id, level)) as NodeId[];
+  }, [optionsRef, adapterRef]);
   const deepAction = useMemo(
-    () => createSelectDeepAction({ pickHit, extendLocked, settled }),
-    [pickHit, extendLocked, settled],
+    () => createSelectDeepAction({
+      pickHit, extendLocked, settled, rangeAt: (hit) => rangeIn(adapterRef.current.getParent(hit)),
+    }),
+    [pickHit, extendLocked, settled, rangeIn, adapterRef],
   );
 
-  /**
-   * `select.pick` — classifies the press and updates the node selection.
-   *
-   * Bound to `pointerDown` rather than `click` on purpose: pressing an
-   * unselected node must highlight it while the button is still down, and any
-   * drag that follows has to start from the updated selection (both
-   * `moveAction` and `cloneAction` read `selection.get()` in their `start`).
-   */
-  const pickAction = useMemo<Action>(() => ({
-    id: 'select.pick',
-    label: 'Select — pick under pointer',
-    eligible: { capability: 'creates-selection' },
-    requires: ['selection', 'enteredGroup'],
-    invoker: {
-      timing: 'immediate' as const,
-      run: (deps, params) => {
-        const p = params as ImmediateParams | undefined;
-        const selection = deps.selection;
-        if (!selection || !p?.world) return;
-        const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
-        const opts = optionsRef.current;
-
-        const sel = selection.get();
-        const hit = pickHit(p.world, mods.alt, sel);
-
-        if (hit === null) {
-          pressRef.current = { deferredClickId: null };
-          return;
-        }
-        const top = pressTarget(adapterRef.current, hit, deps.enteredGroup?.get() ?? null);
-
-        // `extendClickLocked` is an option rather than `Action.enabled` because it reads the press's
-        // modifiers, and `enabled` is evaluated without them.
-        const intent = selection.intentOf(mods);
-        const locked = extendPressLocked(intent, mods.shift === true, () => opts.extendClickLocked?.() === true);
-        const press = pressDecision(top, sel, extendsSelection(intent), locked, adapterRef.current);
-        if (press.applyNow) selection.applyClick(top as NodeId, mods);
-        pressRef.current = { deferredClickId: press.deferred };
-      },
-    },
-  }), [optionsRef, adapterRef, pickHit]);
+  const pickAction = useMemo(() => createSelectPickAction({
+    pickHit, extendLocked, rangeIn,
+    tree: () => adapterRef.current,
+    pressed: (deferred) => { pressRef.current = { deferredClickId: deferred }; },
+  }), [pickHit, extendLocked, rangeIn, adapterRef]);
 
 
   const collapseDeferredAction = useMemo(() => createCollapseDeferredAction(pressRef), []);
@@ -241,13 +219,13 @@ export function useSelectToolWith<TNode extends { id: string }, TPose>(
         // bindings owned by the selection (`selectionContributions.ts`), so
         // they run under any tool that leaves the gesture unclaimed.
         bindings: [
-          // Cmd-press selects the node itself, past every group. It outranks
+          // Cmd+Alt-press selects the node itself, past every group. It outranks
           // `select.pick` because a required modifier counts in specificity.
           {
             spec: {
               kind: 'pointerDown' as const,
               target: { kindOf: onBody },
-              mods: { mod: true, shift: 'optional' as const },
+              mods: { mod: true, alt: true, shift: 'optional' as const },
             },
             actionId: 'select.deep',
             opts: { id: 'select.deep' },

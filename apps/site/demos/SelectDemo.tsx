@@ -7,16 +7,16 @@ import s from './SelectDemo.module.css';
 const ROWS = ['Sky', 'Hills', 'Tree', 'Background', 'House', 'Path', 'Fence', 'Sun'];
 const LOCKED = new Set(['Background']);
 
-type Convention = 'list' | 'canvas';
+type Convention = 'list' | 'shift';
 
 const POLICIES: Record<Convention, SelectPolicy> = {
   list: { mode: 'multi', toggle: ['meta', 'ctrl'], range: 'shift' },
-  canvas: { mode: 'multi', toggle: 'shift' },
+  shift: { mode: 'multi', toggle: 'shift' },
 };
 
 const CONVENTIONS: { value: Convention; label: string }[] = [
   { value: 'list', label: 'list: ⌘ toggles, ⇧ ranges' },
-  { value: 'canvas', label: 'canvas: ⇧ toggles' },
+  { value: 'shift', label: '⇧ toggles' },
 ];
 
 export function SelectDemo() {
