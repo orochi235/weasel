@@ -71,6 +71,7 @@ function dragCamera(
   kind: string,
   step: (origin: Camera3d, delta: { x: number; y: number }, dep: Camera3dDep) => Camera3d,
 ) {
+  if (!ctx.deps.camera3d) return {};
   const apply = cameraStepper(ctx.deps.camera3d, { x: 0, y: 0 }, (a, b) => ({ x: a.x - b.x, y: a.y - b.y }), step);
   return {
     kind,
@@ -157,14 +158,14 @@ export const dollyAction: Action = {
     timing: 'immediate',
     run(deps, params) {
       const dep = deps.camera3d;
-      if (!dep) return;
+      if (!dep) return 'pass';
       const factor = typeof params?.scale === 'number'
         ? 1 / params.scale
         : Math.exp(
           (typeof params?.deltaY === 'number' ? params.deltaY : 0)
             * (deps.kitSettings?.get('orbit3d.dollyRate') ?? DOLLY_RATE),
         );
-      if (!(factor > 0) || !Number.isFinite(factor)) return;
+      if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return 'pass';
       const pane = dep.size();
       dep.set(dollyToward(dep.get(), factor, paneAnchor(wheelPoint(params), dep, pane), pane, dep.limits?.()));
     },
@@ -183,6 +184,7 @@ export const pinchDollyAction: Action = {
     timing: 'ongoing',
     start(ctx) {
       const dep = ctx.deps.camera3d;
+      if (!dep) return {};
       const startSpread = ctx.multiTouch?.spread ?? 0;
       const at = ctx.multiTouch?.centroid;
       const apply = cameraStepper(dep, 1, (a, b) => a / b, (origin, factor, d) => {
@@ -214,7 +216,8 @@ export const homeAction: Action = {
     run(deps) {
       const dep = deps.camera3d;
       const home = dep?.home?.();
-      if (dep && home) dep.set(home);
+      if (!dep || !home) return 'pass';
+      dep.set(home);
     },
   },
 };

@@ -191,3 +191,30 @@ describe('camera.home', () => {
     expect(b.camera().yaw).toBe(2);
   });
 });
+
+describe('a camera action with no camera to move', () => {
+  const none = {} as ActionDeps;
+
+  it('hands a drag or a pinch on with an empty handle', () => {
+    for (const action of [orbitAction, panAction, pinchDollyAction]) {
+      const handle = (action.invoker as OngoingInvoker).start(
+        ctxOf(none, { multiTouch: { spread: 100 } } as Partial<InvocationCtx>),
+        undefined,
+      );
+      expect(handle).toEqual({});
+    }
+  });
+
+  it('passes on a wheel, a pinch or a double click it does nothing with', () => {
+    expect(run(dollyAction, none, { deltaY: 100 })).toBe('pass');
+    expect(run(homeAction, none)).toBe('pass');
+    expect(run(homeAction, depsFor({}).deps)).toBe('pass');
+  });
+
+  it('passes on a wheel that moves only sideways, leaving the camera as it was', () => {
+    const { deps, camera } = depsFor({ distance: 10 });
+    const before = camera();
+    expect(run(dollyAction, deps, { deltaX: 40, deltaY: 0 })).toBe('pass');
+    expect(camera()).toBe(before);
+  });
+});
