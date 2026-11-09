@@ -82,11 +82,11 @@ describe('writeStroke', () => {
 
   it('fills the outline of a stroke PDF cannot draw', async () => {
     const square: Path = { kind: 'rect', x: 10, y: 10, width: 40, height: 40 };
-    for (const [path, stroke] of [
-      [square, { paint: ink, width: 4, align: 'inner' as const }],
-      [line, { paint: ink, width: 4, vertexWidths: [1, 3] }],
-      [line, { paint: ink, width: 4, nib: { angle: 0, ratio: 0.5 } }],
-    ] as const) {
+    for (const { path, stroke } of [
+      { path: square, stroke: { paint: ink, width: 4, align: 'inner' as const } },
+      { path: line, stroke: { paint: ink, width: 4, vertexWidths: [1, 3] } },
+      { path: line, stroke: { paint: ink, width: 4, nib: { angle: 0, ratio: 0.5 } } },
+    ]) {
       const c = await content([{ kind: 'path', path, stroke }]);
       expect(c, JSON.stringify(stroke)).not.toMatch(/\nS\n/);
       expect(c, JSON.stringify(stroke)).toContain('0 0 0 rg\n');
