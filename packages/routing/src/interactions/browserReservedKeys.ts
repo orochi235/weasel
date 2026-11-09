@@ -42,12 +42,21 @@ const lower = (k: string | readonly string[]): string[] => (typeof k === 'string
 const allows = (policy: boolean | 'optional' | undefined, held: boolean): boolean =>
   policy === 'optional' || (policy === true) === held;
 
+type Policy = boolean | 'optional' | undefined;
+
+/** The stronger of two policies on one key, as `matchModifiers` folds `mod` into it. */
+const stronger = (a: Policy, b: Policy): Policy =>
+  a === true || b === true ? true : a === 'optional' || b === 'optional' ? 'optional' : false;
+
 /** The first reserved chord `spec` can fire on, on an Apple platform or not (default: this one), or
- *  `null` when none. */
+ *  `null` when none. `mod` and the key it stands for there (Meta on Apple, Ctrl elsewhere) are one
+ *  key, and the other of Ctrl and Meta must be free to be released, as in `matchModifiers`. */
 export function browserReservedChord(spec: KeySpec, apple = isApplePlatform()): ReservedChord | null {
   const keys = lower(spec.key);
   const m = spec.mods ?? {};
-  const mod = m.mod ?? (m.meta === true || m.ctrl === true ? true : m.meta ?? m.ctrl);
+  const mod = stronger(m.mod, apple ? m.meta : m.ctrl);
+  const other = apple ? m.ctrl : m.meta;
+  if (!allows(other, false)) return null;
   for (const c of BROWSER_RESERVED_CHORDS) {
     if (!keys.includes(c.key) || (c.platform === 'other' && apple)) continue;
     if (allows(mod, c.mod === true) && allows(m.alt, c.alt === true) && allows(m.shift, c.shift === true)) return c;
