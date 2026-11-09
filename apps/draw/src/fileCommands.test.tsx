@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
+  ActionDisabledReason,
   ActionsProvider,
   DepRegistryProvider,
   SceneCanvas,
@@ -149,6 +150,14 @@ describe('useFileCommands', () => {
     rerender({ ...target, page: null });
     act(() => { registry.trigger('file.exportPage'); });
     expect(exportPageSvgFile).not.toHaveBeenCalled();
+  });
+
+  it('Export Page reads as unavailable while there is no page to write, so a menu greys it', () => {
+    const { registry, target, rerender } = setup();
+    const enabled = () => registry.list().find((a) => a.id === 'file.exportPage')!.enabled?.({}) ?? true;
+    expect(enabled()).toBe(true);
+    rerender({ ...target, page: null });
+    expect(enabled()).toBe(ActionDisabledReason.NotApplicable);
   });
 
   it('mod+S saves, and keeps the browser from saving the page', () => {
