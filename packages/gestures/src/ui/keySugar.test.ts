@@ -17,6 +17,7 @@ describe('key', () => {
 
   it('takes a plus as the key', () => {
     expect(key('Mod++')).toEqual({ kind: 'key', key: '+', mods: { mod: true } });
+    expect(key('+')).toEqual({ kind: 'key', key: '+' });
   });
 
   it('throws on an unknown modifier or no key', () => {
