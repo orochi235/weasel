@@ -450,13 +450,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every variant at `md` and `sm` in a browser and called it
   done.
 
-- **(P3) [agent] An empty fragment takes no drop in the live preview.** It draws nothing
-  (`display: contents` with no rows), so `Prefs/dropTarget.ts` has no rect to measure it by, and
-  only the structure tree drops into it. Needs a call on the look: drawing it a slot while a drag
-  is on would give the preview somewhere to land, and would also move the rows around it.
-  Ruled (2026-11-07): it draws a row-height drop slot only while a drag is on, and the rows around it move.
-  Closes when an empty fragment takes a drop in the live preview.
-
 - **(P3) [maintainer] Nobody has looked at the desktop themes' bevels.** Under `win9xTheme` and
   `platinumTheme` (`@weasel-js/theme/themes/*`), every control in `@weasel-js/ui` that draws a
   raised face, a well, or a button that stays down reads the `--wzl-bevel-*` hooks;

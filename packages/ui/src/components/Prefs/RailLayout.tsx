@@ -97,7 +97,7 @@ export function RailLayout(props: PrefsFormProps & {
   const group = useMemo(() => (whole === null ? null : ownOf(whole)), [whole]);
 
   return (
-    <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined} {...formAttrs(drop)}
+    <div className={[s.railLayout, className].filter(Boolean).join(' ')} data-across={props.rowsAcross === 2 ? 2 : undefined} {...formAttrs(drop, props.drop != null)}
       style={railWidth === null ? undefined : ({ '--wzl-prefs-rail-width': `${railWidth}px` } as CSSProperties)} {...selection}>
       <PrefsRail
         items={drawnItems}

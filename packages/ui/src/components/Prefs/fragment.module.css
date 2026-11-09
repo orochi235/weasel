@@ -1,0 +1,14 @@
+/* `as: 'fragment'`: a group with nothing of its own to draw. Its rows are laid out by whatever holds the group. */
+.fragment {
+  display: contents;
+}
+
+/* An empty one has no rows to measure or drop beside, so while a drag is over the form it draws a slot a row high to
+   drop into, and the rows after it move down for it. */
+[data-pref-drag] .fragment:empty {
+  display: block;
+  min-block-size: var(--wzl-prop-row-h, var(--wzl-field-h, var(--wzl-control-h)));
+  border-radius: var(--wzl-radius-sm);
+  outline: 1px dashed var(--wzl-border-strong);
+  outline-offset: 3px;
+}

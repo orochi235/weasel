@@ -5,6 +5,9 @@ import { PATH_ATTR, RAIL_ATTR } from './selection';
 
 const FORM_ATTR = 'data-pref-form';
 const DROPPING_ATTR = 'data-dropping';
+/** Set while a drag is over the form, whether or not it has somewhere to land: `fragment.module.css` opens an empty
+ *  fragment to it. */
+const DRAG_ATTR = 'data-pref-drag';
 const SCROLL_ATTR = 'data-pref-scroll';
 const FRAGMENT_ATTR = 'data-pref-fragment';
 
@@ -44,10 +47,11 @@ interface Frame { left: number; top: number; scrollers: Scroller[]; covers: Cove
 
 const frames = new WeakMap<Element, Frame>();
 
-/** The attributes of a form's root element, which `prefDropTargetAt` finds the form by. */
-export function formAttrs(drop: PrefDrop | null): Record<string, string | undefined> {
+/** The attributes of a form's root element, which `prefDropTargetAt` finds the form by: `drop` is what it draws, and
+ *  `dragging` whether a drag is over it at all. */
+export function formAttrs(drop: PrefDrop | null, dragging: boolean): Record<string, string | undefined> {
   // A drop with nowhere to land moves nothing, so the form is still read as it lies.
-  return { [FORM_ATTR]: '', [DROPPING_ATTR]: drop && drop.where !== 'home' ? '' : undefined };
+  return { [FORM_ATTR]: '', [DROPPING_ATTR]: drop && drop.where !== 'home' ? '' : undefined, [DRAG_ATTR]: dragging ? '' : undefined };
 }
 
 const GROUP = `[${PATH_ATTR}]:not([data-pref-leaf]), [data-pref-into]`;
@@ -224,19 +228,24 @@ export function prefDropTargetAt(root: Element, x: number, y: number): PrefDropM
 }
 
 /**
- * The drop a form draws this render: `drop`, or none for the one render after `root` or `page` changed under a
- * drag, in which the form is measured afresh for `prefDropTargetAt` before it draws the drop again.
+ * The drop a form draws this render: `drop`, or none for the one render after a drag began, or `root` or `page`
+ * changed under one, in which the form is measured afresh for `prefDropTargetAt` before it draws the drop again. A drag
+ * that has begun draws what it opens, an empty fragment's slot, in that render, so the measure holds it.
  */
 export function useDropFrame(
   form: RefObject<Element | null>, drop: PrefDrop | null | undefined, root: unknown, page: string,
 ): PrefDrop | null {
-  const [settled, setSettled] = useState({ root, page });
-  const same = settled.root === root && settled.page === page;
+  const [settled, setSettled] = useState({ root, page, dragging: false });
+  const same = settled.root === root && settled.page === page && settled.dragging;
   useLayoutEffect(() => {
-    if (same || !drop) return;
+    if (!drop) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- a drag that ended is measured afresh when the next begins
+      if (settled.dragging) setSettled({ root, page, dragging: false });
+      return;
+    }
+    if (same) return;
     if (form.current) frames.set(form.current, measure(form.current));
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the layout is measured without the drop, then drawn with it
-    setSettled({ root, page });
-  }, [same, drop, form, root, page]);
+    setSettled({ root, page, dragging: true });
+  }, [same, drop, form, root, page, settled.dragging]);
   return drop && same ? drop : null;
 }
