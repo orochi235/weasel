@@ -25,6 +25,7 @@ describe('formatParam', () => {
     expect(formatParam({ kind: 'number', value: 0.04, step: 0.01 })).toBe('0.04');
     expect(formatParam({ kind: 'number', value: 3, step: 1 })).toBe('3');
     expect(formatParam({ kind: 'number', value: 0.5, step: 0.25 })).toBe('0.50');
+    expect(formatParam({ kind: 'number', value: 3e-7, step: 1.5e-7 })).toBe('0.00000030');
     expect(formatParam({ kind: 'number', value: -0.02 })).toBe('0.0');
     expect(formatParam({ kind: 'number', value: -0.5 })).toBe('-0.5');
     expect(formatParam({ kind: 'enum', value: 'a', options: [{ value: 'a', label: 'Alpha' }] })).toBe('Alpha');
