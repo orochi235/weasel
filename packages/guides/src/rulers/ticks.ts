@@ -33,7 +33,8 @@ export interface RulerTick {
   label?: string;
 }
 
-/** What {@link rulerTicks} lays out: no ticks once labeled ones would sit under a pixel apart. */
+/** What {@link rulerTicks} lays out: no ticks once labeled ones would sit under a pixel apart, or so far from the
+ *  origin that ticks a step apart are one number. */
 export interface RulerTicks {
   ticks: RulerTick[];
   /** The step between labeled ticks, in the innermost scope's base units. */
@@ -72,6 +73,8 @@ export function rulerTicks(opts: RulerTicksOptions): RulerTicks {
   const end = start + length / pxPerUnit;
   const lo = Math.ceil((Math.min(start, end) - origin) / minorWorld - 1e-9);
   const hi = Math.floor((Math.max(start, end) - origin) / minorWorld + 1e-9);
+  // Past a safe integer `j++` stops moving, and ticks a step apart land on one float.
+  if (!Number.isSafeInteger(lo) || !Number.isSafeInteger(hi)) return { ticks, step: bar.length, unit: bar.unit, subdivisions, magnification: bar.magnification };
   for (let j = lo; j <= hi; j++) {
     const at = (origin + j * minorWorld - start) * pxPerUnit || 0;
     if (j % subdivisions !== 0) {
