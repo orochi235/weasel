@@ -205,6 +205,17 @@ describe('File › Import…', () => {
     expect(await screen.findByText('Imported with 1 warning')).toBeTruthy();
     expect(screen.getByText('A lost thing')).toBeTruthy();
   });
+
+  it('says in a toast that a file no format reads could not be imported, and leaves the chart alone', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    io.picked = new File(['not a diagram'], 'notes.bin');
+    mount();
+    const before = stored();
+    choose('Import');
+    expect(await screen.findByText('Could not import the file')).toBeTruthy();
+    expect(stored()).toEqual(before);
+    warn.mockRestore();
+  });
 });
 
 describe('File › Export › As a diagram format', () => {

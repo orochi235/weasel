@@ -5,6 +5,7 @@ import { downloadBlob, reportFileWarnings, menuRun } from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { FORMAT_EXPORT_RUN } from './importExport';
 import type { ChartPages } from './pages/useChartPages';
+import { reportFailure } from './reportFailure';
 
 export const EXPORT_ACTIONS = {
   pdf: 'chart.export.pdf', svg: 'chart.export.svg', png1: 'chart.export.png1', png2: 'chart.export.png2', png4: 'chart.export.png4',
@@ -25,7 +26,7 @@ function exportPage(pages: ChartPages, write: (page: PlacedPage, name: string) =
   if (page === undefined) return;
   write(page, pageName(page, page.index))
     .then(({ blob, name }) => downloadBlob(blob, name))
-    .catch((err: unknown) => console.warn('weaselchart: could not export the page', err));
+    .catch(reportFailure('Could not export the page'));
 }
 
 /** Registers File › Export's commands: every page as one PDF, the page in view as an SVG document, or as a PNG at 1×, 2×, or 4×. */
@@ -55,6 +56,6 @@ function usePdfCommand(scene: ChartScene, pages: ChartPages): void {
         downloadBlob(blob, 'chart.pdf');
         reportFileWarnings('Exported', skipped.map((s) => s.detail), 'chart-export-pdf');
       })
-      .catch((err: unknown) => console.warn('weaselchart: could not export the pages', err));
+      .catch(reportFailure('Could not export the pages'));
   });
 }

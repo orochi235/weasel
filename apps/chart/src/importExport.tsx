@@ -11,6 +11,7 @@ import { replaceChartWithDocument } from './chartPersistence';
 import { can } from './menuBar';
 import type { ChartPages } from './pages/useChartPages';
 import { CHART_DEFAULT_THEME, chartThemeOf } from './theme/themeCommands';
+import { reportFailure } from './reportFailure';
 
 export const IMPORT_ACTION = 'chart.import';
 
@@ -63,7 +64,7 @@ function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: Char
  *  hold every kind of page the chart has. */
 export function ImportExportCommands({ scene, pages }: { scene: ChartScene; pages: ChartPages }): ReactElement {
   useCommand(IMPORT_ACTION, 'Import…', () => {
-    pickAndImport(scene).catch((err: unknown) => console.warn('weaselchart: could not import the file', err));
+    pickAndImport(scene).catch(reportFailure('Could not import the file'));
   });
   return <>{WRITABLE.map((format) => <FormatExport key={format.id} scene={scene} pages={pages} format={format} />)}</>;
 }
