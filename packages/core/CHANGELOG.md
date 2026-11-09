@@ -1,5 +1,76 @@
 # Changelog
 
+## 1.18.1
+
+### Patch Changes
+
+- 7a33153: Describe and grade actions in data, and give each variant its own state
+  
+  - An action takes a `description`, which a toolbar button reads as its tooltip, and a menu row and a palette row as their hint, and a `grade` (`'danger'` for one that destroys something), which a menu row and a palette row draw in their grade's color and a toolbar button shows while pointed at. A variant may set its own of either, and its own `shortcut` text; each falls back to the action's. `ActionItem` carries all three, resolved.
+  - `enabled` is handed the params a run would get as its fourth argument, and `active` as its second, so the variants of one action can each be pressed or unavailable on their own: align left pressed while right is not, Bring Forward unavailable at the top of the stack. Bars, menus and the command palette ask once per variant, and the dispatcher hands the gate a binding's `opts.params`, so a key for one variant runs only when that variant can. An action that ignores the new argument behaves as before.
+  - `useCommand` takes `shortcut`, `preview`, `settings`, `description` and `grade`, and hands its `enabled` and `active` the params asked about. `CommandSettings` is an `ActionSettings` whose `read` takes no deps.
+  - `@weasel-js/menu`: an item and a submenu row take `description` and `grade` (`MenuGrade`, the theme's `Grade`), and a submenu, number, color and text row take `disabledReason`. ui's menu rows show a reason or a description in their tip and as their accessible description; hud's canvas menus draw a graded row's label in its color and describe a row to assistive tech the same way. `HudAccessibleNode` takes a `description`, mirrored as `aria-description`.
+  - `BarActionButton` takes a `grade`, and `useLeafAction` answers a `description` (the leaf's, else the action's) and a `grade`.
+- f2a1845: Fix edge cases in symmetry counts, simulation clocks, tiled layers, and the zoom-to-fit and minimap framing of copies.
+  
+  - `@weasel-js/symmetry`: a radial, kaleidoscope or repeat group with a huge `count` is now held to `MAX_WALLPAPER_COPIES` copies, as a wallpaper already was. Before, a count of 1e7 built ten million transforms on every draw, and `Infinity` threw. This changes behavior: a count past the limit now draws fewer copies than it asks for, and a NaN count gives a kaleidoscope one wedge (a single mirror) where it used to draw nothing.
+  - `@weasel-js/symmetry`: where a short step puts the guide's step handle over the center, the step handle is now drawn on top, since that is the handle a press takes.
+  - `@weasel-js/simulation`: changing `useSimulation`'s `clock` no longer restarts a simulation the host stopped, or steps one that has settled. A running simulation carries on, on the new clock.
+  - `@weasel-js/parallax`: `createTiledLayer` now applies each source layer's `effects`, once over all of that layer's copies. Before, it dropped them. Sources now also keep their stacking order in every copy, so a later source draws over an earlier one where content bleeds into the next cell. Before, sources were drawn copy by copy.
+  - `@weasel-js/minimap`: the fit now goes through core's `fitViewToBounds`. A `{ kind: 'world' }` rect with a side that is not finite now falls back to identity scale, where before it got a scale of zero.
+  - `@weasel-js/core`: zoom to fit now frames every copy a `copiesFromPose` group draws, such as a symmetry group's copies. Before, it cut off copies outside the authored content. New export: `sceneContentBounds(scene, boxOf, poseOf?)` returns the world box a scene's content covers, copies included. It's what zoom to fit and the minimap both frame.
+  - `@weasel-js/minimap`: the `'scene'` and `'live'` fits now frame the copies a group draws, and leave out hidden nodes, matching zoom to fit.
+- 7537af5: Set a mark in a cursor's corner instead of drawing one glyph per pair
+  
+  - A cursor glyph with a mark slot carries a mark naming what the tool does: `cursorFor('crosshair', { mark: 'rect' })`, or `{ glyph: 'pen', mark: 'add' }` as a `CursorSpec`. The mark is drawn after the glyph with a halo of its own, in both the baked and the painted tier.
+  - `crosshair` and `pen` have slots. The marks are `add`, `remove`, `rect`, `ellipse`, `polygon`, `star` and `line`, in `MARKS`.
+  - Breaking for `@weasel-js/cursor`: `crosshairRect`, `crosshairEllipse`, `crosshairLine`, `crosshairStar`, `crosshairPolygon` and `penPlus` are gone from `GLYPHS`. Write `cursorFor('crosshair', { mark: 'rect' })` and the like, and `{ glyph: 'pen', mark: 'add' }` for `penPlus`. Each pair bakes to the same pixels and hotspot the glyph it replaces did.
+  - New exports: `cursorGlyph(name, mark?)`, `markedGlyph`, `placeCursorPath`, `cursorVariants()`, `MARKS`, and the types `CursorMark`, `CursorMarkSlot`, `CursorMarkName`, `CursorVariant` and `CursorForOptions`.
+- f4d2261: Redraw the hand tool's icon as an open hand with its fingers fanned from the knuckles, after macOS's grab cursor.
+- 112f6bb: Name an icon with a mark in data
+  
+  - Every field that names an icon takes an `IconSpec`: a ref, or `{ name, mark }` for a subject with a mark set in its corner. That covers an action's and a variant's `icon`, a tool's `presentation.icon`, `useCommand`'s, a pref's and a group's, labkit's chrome, tool and builder items, path-tools' stroke-click tools, diagram stencils and types, forge globals, paint kinds, `SelectionPanel` sections, and `Bar`'s and `ActionBar`'s icons. A bare ref still works everywhere one did.
+  - `@weasel-js/icons` exports `IconSpec`, `iconParts`, `iconSpecRefs` and `toIconSpec`, which reads a spec from JSON. It also exports `markLayers`, `ICON_SLOTS`, `ICON_FRAME` and `ICON_STROKE`, the slot geometry `<Icon mark>` used to keep in ui, so every renderer sets a mark the same way.
+  - `<Icon name>` takes a spec, and its `mark` prop replaces the spec's. `resolveIcon` and `actionIcon` draw a spec's mark.
+  - hud's canvas menus draw a row's mark, cutting the subject around it. `iconCommands(icons, spec, at)` is exported beside `glyphCommands`.
+  - The schema editor's icon field picks a mark from the `Marks` group and writes `{ name, mark }`.
+  - Code reading a field that was `IconRef` and is now `IconSpec` should read its refs with `iconSpecRefs` rather than assume a string. The devtools snapshot writes a spec's icon as `name + mark`.
+  - The boolean crop glyph no longer uses a `clipPath`, which hud's canvas renderer skipped, drawing the whole disc filled.
+- 860ab3b: Describe tools and stack tool sets in data, and give forge's global options icons, descriptions and disabled states
+  
+  - `ToolPresentation.description` says what a tool does. `ToolPalette` reads it in a tool's tooltip in place of the label, the shortcut after it, for a lone button and for a stack's face; `ToolButton` takes `description` for the same. `StrokeClickToolSpec`, `DiagramStencil` and `ContainerStencil` carry one into the tools they build.
+  - A tool set can be a stack: `toolSet(id, members, { stack: true })`. `ToolPalette` gives each stacked set inside its `include` one button, and its `stacks` takes sets beside id lists; given, `stacks` replaces the stacks `include` would give. `toolStacksOf(entries)` lists them. `withoutTools` keeps a set's `stack`. `WARP_TOOLS` is now a stack, so a palette including it shows the three warps on one button.
+  - `Select` options and `SelectItem` take `description`, a line under the label in the list, and `disabledReason`, read in its place while the option is disabled. Both become the row's accessible description.
+  - forge's `GlobalDeclaration` options are `GlobalOption`s, which add `icon`, `disabled`, `disabledReason` and `description`; the globals toolbar draws all four. A lab value naming a disabled option falls back to the nearest enabled one, as one `shows` hides does.
+- Updated dependencies [7a33153]
+- Updated dependencies [f2a1845]
+- Updated dependencies [c9fb4d6]
+- Updated dependencies [7537af5]
+- Updated dependencies [112f6bb]
+- Updated dependencies [4dd9285]
+- Updated dependencies [860ab3b]
+  - @weasel-js/routing@1.18.1
+  - @weasel-js/simulation@1.18.1
+  - @weasel-js/font@1.18.1
+  - @weasel-js/cursor@1.18.1
+  - @weasel-js/icons@1.18.1
+  - @weasel-js/prefs@1.18.1
+  - @weasel-js/gestures@1.18.1
+  - @weasel-js/renderer@1.18.1
+  - @weasel-js/text@1.18.1
+  - @weasel-js/text-dom@1.18.1
+  - @weasel-js/animator@1.18.1
+  - @weasel-js/geom@1.18.1
+  - @weasel-js/history@1.18.1
+  - @weasel-js/modes@1.18.1
+  - @weasel-js/paint@1.18.1
+  - @weasel-js/quantity@1.18.1
+  - @weasel-js/react@1.18.1
+  - @weasel-js/registry@1.18.1
+  - @weasel-js/select@1.18.1
+  - @weasel-js/stroke@1.18.1
+  - @weasel-js/ui-logic@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

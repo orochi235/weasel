@@ -1,5 +1,32 @@
 # @weasel-js/devtools
 
+## 1.18.1
+
+### Patch Changes
+
+- 39bac06: Fixes from bug-audit round nine in the devtools panel and the icons build plugin.
+  
+  - `weaselIcons` now follows an `icons.gen` import written through a path alias or any other specifier the bundler resolves. Before, such an `icon()` call was never rewritten, so an app build collected none of its names and trimmed their glyphs.
+  - `weaselIcons` warns when a module imports `icon` from an `icons.gen` it cannot read a namespace from, instead of silently leaving its calls unrewritten.
+  - `weaselIcons` reads custom variants by their own keys: an icon namespace named `constructor` is no longer refused as a clash, and `virtual:weasel-icons/toString` fails rather than serving every table.
+  - A `DevtoolsClient` that closes now reports no roots and no kit version, rather than the last ones its closed connection saw.
+  - The Scene tab clears the canvas highlight when it unmounts with a row hovered, as when switching tabs from the keyboard.
+- Updated dependencies [7a33153]
+- Updated dependencies [f2a1845]
+- Updated dependencies [7537af5]
+- Updated dependencies [a8da60f]
+- Updated dependencies [f4d2261]
+- Updated dependencies [112f6bb]
+- Updated dependencies [89e4422]
+- Updated dependencies [3677316]
+- Updated dependencies [4dd9285]
+- Updated dependencies [217e52c]
+- Updated dependencies [860ab3b]
+  - @weasel-js/core@1.18.1
+  - @weasel-js/ui@1.18.1
+  - @weasel-js/react@1.18.1
+  - @weasel-js/registry@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes

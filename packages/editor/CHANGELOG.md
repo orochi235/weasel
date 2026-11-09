@@ -1,5 +1,26 @@
 # @weasel-js/editor
 
+## 1.18.1
+
+### Patch Changes
+
+- Updated dependencies [7a33153]
+- Updated dependencies [f2a1845]
+- Updated dependencies [7537af5]
+- Updated dependencies [a8da60f]
+- Updated dependencies [f4d2261]
+- Updated dependencies [112f6bb]
+- Updated dependencies [89e4422]
+- Updated dependencies [3677316]
+- Updated dependencies [4dd9285]
+- Updated dependencies [217e52c]
+- Updated dependencies [860ab3b]
+  - @weasel-js/core@1.18.1
+  - @weasel-js/ui@1.18.1
+  - @weasel-js/prefs@1.18.1
+  - @weasel-js/guides@1.18.1
+  - @weasel-js/geom@1.18.1
+
 ## 1.18.0
 
 ### Patch Changes
