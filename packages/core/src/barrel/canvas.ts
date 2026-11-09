@@ -68,6 +68,7 @@ export {
   getImageBitmap,
   holdImageBitmaps,
   imageStatus,
+  isBitmapSrc,
   subscribeImageReady,
   isVectorImageSrc,
   releaseImage,

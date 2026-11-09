@@ -18,6 +18,7 @@ import {
 } from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
 import { imageHref } from './readImage';
+import { exportedHref } from './bitmapHref';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
 import { RAD_TO_DEG } from '@weasel-js/geom';
 
@@ -50,7 +51,7 @@ function imagePatternXml(id: string, paint: ImagePatternPaint, onWarn?: (m: stri
   }
   const w = trimNumber(width!);
   const h = trimNumber(height!);
-  const body = `<image href="${escapeAttr(paint.src)}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+  const body = `<image href="${escapeAttr(exportedHref(paint.src, onWarn ?? (() => {})))}" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
   return `<pattern ${patternBoxAttrs(id, width!, height!, paint).join(' ')}>${body}</pattern>`;
 }
 

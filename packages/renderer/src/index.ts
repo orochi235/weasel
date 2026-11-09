@@ -76,8 +76,9 @@ export {
   type ShaderUniform,
 } from './shaders/registerProgram';
 export {
-  registerTexture, unregisterTexture, textureRegistry, type TextureEntry, type TextureHandle,
+  getTexture, registerTexture, unregisterTexture, textureRegistry, type TextureEntry, type TextureHandle,
 } from './textures/registerTexture';
+export { tileExtent } from './draw/patternBatch';
 export { registerEffect, effectsReach, type Effect, type EffectProgramSource } from './effects/types';
 export { blur, vignette } from './effects/builtins';
 export type { CompositeOp, BlendFactor, BlendFactors } from './effects/compositeOp';

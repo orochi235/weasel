@@ -36,7 +36,8 @@ const DIMENSION = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)$/i;
 
 function dimension(v: string): { n: number; unit: string } | undefined {
   const m = DIMENSION.exec(v);
-  return m ? { n: Number(m[1]), unit: m[2].toLowerCase() } : undefined;
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isFinite(n) ? { n, unit: m![2].toLowerCase() } : undefined;
 }
 
 /** What one of `unit` is in px, a font-relative unit taken against `fontSize`. */
@@ -56,7 +57,7 @@ const length = (native: 'px' | 'em', coercedAs: string) =>
     const d = dimension(v);
     if (!d) return undefined;
     const scale = native === 'px' ? pxPer(d.unit, fontSize) : emsPer(d.unit);
-    if (scale != null) return d.n * scale;
+    if (scale != null) return Number.isFinite(d.n * scale) ? d.n * scale : undefined;
     if (d.unit) {
       warn(`${prop} "${v}" uses unit "${d.unit}", which is not converted; treated as ${d.n} ${coercedAs}`);
     }

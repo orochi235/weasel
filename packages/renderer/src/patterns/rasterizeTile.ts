@@ -1,8 +1,9 @@
 import type { TilePatternOpts } from './';
 
 /** Draw one tile and hand back its pixels, or `null` where no
- *  `OffscreenCanvas` 2D context can be had. */
+ *  `OffscreenCanvas` 2D context can be had or `size` holds no whole pixel. */
 export function rasterizeTile(opts: TilePatternOpts): ImageBitmap | null {
+  if (!(opts.size >= 1 && Number.isFinite(opts.size))) return null;
   // Prefer OffscreenCanvas; fall back to <canvas> for environments without it.
   let off: OffscreenCanvas | HTMLCanvasElement;
   try {

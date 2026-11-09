@@ -88,9 +88,9 @@ export function clipped(a: ScreenBox, clip: ScreenBox | null): ScreenBox {
 
 /**
  * A screen-space box enclosing every pixel a path, image or sprites command
- * can paint under `m`, slack left out: the bound culling tests.
- * `null` where there is nothing to bound by, which a caller must read as
- * anywhere.
+ * can paint under `m`, slack left out: the bound culling tests. Empty
+ * (infinite edges, min past max) for geometry with no points. `null` where
+ * there is nothing to bound by, which a caller must read as anywhere.
  */
 export function paintedBox(
   cmd: PathDrawCommand | ImageDrawCommand | SpritesDrawCommand, m: GlMat3,
@@ -113,7 +113,7 @@ export function pathBox(path: Path, stroke: Stroke | undefined, m: GlMat3): Scre
     maxY = Math.max(path.y, path.y + path.height);
   } else if (path.kind === 'polygon') {
     const c = path.coords;
-    if (c.length < 2) return null;
+    if (c.length < 2) return EMPTY;
     minX = maxX = c[0];
     minY = maxY = c[1];
     for (let i = 2; i + 1 < c.length; i += 2) {
@@ -159,7 +159,7 @@ export function strokeReachAt(stroke: Stroke, scale: number, least = scale): num
   return Math.max(Math.abs(width) * spike, heads.world, resolveScreenLength({ px: heads.px }, at));
 }
 
-function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox | null {
+function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let i = 0; i + SPRITE_STRIDE <= sprites.length; i += SPRITE_STRIDE) {
     const x0 = sprites[i], y0 = sprites[i + 1];
@@ -167,7 +167,7 @@ function spritesBox(sprites: Float32Array, m: GlMat3): ScreenBox | null {
     minX = Math.min(minX, x0, x1); maxX = Math.max(maxX, x0, x1);
     minY = Math.min(minY, y0, y1); maxY = Math.max(maxY, y0, y1);
   }
-  if (minX === Infinity) return null;
+  if (minX === Infinity) return EMPTY;
   return screenBox(minX, minY, maxX, maxY, m);
 }
 
