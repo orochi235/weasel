@@ -58,7 +58,6 @@ const instrument = defineInstrument<{ n: number }, Record<string, never>>({
   render: (ctx) => <Body ctx={ctx} />,
 });
 
-
 function KnobOwner({ ctx }: { ctx: RenderContext<Record<string, never>, { size: number }> }) {
   useTrialHistory(history as TrialHistorySource);
   return (

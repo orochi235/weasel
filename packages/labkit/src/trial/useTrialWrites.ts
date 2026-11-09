@@ -108,7 +108,10 @@ export function useTrialWrites({
           return record ? readTrialSettings(record) : undefined;
         };
         const write = (settings: TrialSettings) => writeTrialEdit(store, trialId, settings);
-        own.record(endsGesture(stateOp(structuredClone(readTrialSettings(current)), read, write)), event);
+        own.record(
+          endsGesture(stateOp(structuredClone(readTrialSettings(current)), read, write)),
+          event,
+        );
         return true;
       }
       let history = current.history;
