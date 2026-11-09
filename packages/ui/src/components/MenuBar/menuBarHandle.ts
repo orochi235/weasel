@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-/** The modifiers held with a title's access letter to open its menu from anywhere in the app. */
+/** The modifiers held with a title's access letter to open its menu while focus is in the bar. */
 export interface MenuAccessChord {
   alt?: boolean;
   ctrl?: boolean;
@@ -14,6 +14,8 @@ export interface MenuBarHandle {
   focus(): void;
   /** Open a title's menu, as from the keyboard. A disabled title opens nothing. */
   open(key: string): void;
+  /** Whether focus is on one of the bar's titles. */
+  hasFocus(): boolean;
 }
 
 /** The enclosing bar's handle, for the key layer drawn inside it. */

@@ -369,11 +369,6 @@ Owner tags, after the priority (2026-10-26):
   2.5 s. Either the second number becomes the end time, or the first becomes relative to `start`
   (2026-11-07). Closes when the maintainer has picked one and the readout and its test follow it.
 
-- **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
-  open its own menu on Alt+F; check there before relying on it.**
-  Closes when the maintainer has pressed Alt and Alt+F with the menu bar mounted in Chrome on Windows and
-  seen which menu opens.
-
 - **(P3) [maintainer] Shift+F10 / the ContextMenu key may open the menu twice in Chrome on Windows/Linux.**
   The `menu.context` key binding opens it at the selection, and those platforms also send a
   native `contextmenu` event to the focused canvas, which would reopen it at that event's point.
