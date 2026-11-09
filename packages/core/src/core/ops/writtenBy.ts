@@ -1,5 +1,6 @@
 import { sceneMutators } from '../scene/sceneMutators';
 import type { NodeId, Scene } from '../scene/types';
+import { rebuildOp } from './registry';
 import type { Op } from './types';
 
 /** A node's pose and data, as a batch of ops leaves them. */
@@ -12,6 +13,8 @@ export interface WrittenNode {
  * The pose and data `ops` leave each node they write, by id, read by applying
  * them to a recorder rather than the scene; null when one cannot be read that
  * way. A node only re-parented, re-layered, inserted, or removed is not in it.
+ * A registered op is read through a copy rebuilt from its args, since several
+ * record their undo on first apply and that apply belongs to the real one.
  */
 export function writtenBy(sc: Scene<unknown, string, unknown>, ops: readonly Op[]): Map<string, WrittenNode> | null {
   const after = new Map<string, WrittenNode>();
@@ -35,9 +38,13 @@ export function writtenBy(sc: Scene<unknown, string, unknown>, ops: readonly Op[
     setSelection: noop,
   };
   try {
-    for (const op of ops) op.apply(recorder);
+    for (const op of ops) (copyOf(op) ?? op).apply(recorder);
   } catch {
     return null;
   }
   return after;
+}
+
+function copyOf(op: Op): Op | null {
+  return op.name ? rebuildOp(op.name, op.args) : null;
 }
