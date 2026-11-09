@@ -232,11 +232,11 @@ describe('elkPlan', () => {
     ]);
     const plan = await elkPlan(graph);
     for (const id of ['free', 'half']) {
-      expect(plan.ports.has(id)).toBe(false);
-      expect(plan.waypoints.has(id)).toBe(false);
+      expect(plan.ports!.has(id)).toBe(false);
+      expect(plan.waypoints!.has(id)).toBe(false);
     }
-    expect(plan.ports.get('named')).toEqual({ from: 'e', to: 'n' });
-    expect(plan.waypoints.get('named')!.length).toBeGreaterThan(0);
+    expect(plan.ports!.get('named')).toEqual({ from: 'e', to: 'n' });
+    expect(plan.waypoints!.get('named')!.length).toBeGreaterThan(0);
   });
 
   it('routes no authored edge, though it still shapes the layout', async () => {
