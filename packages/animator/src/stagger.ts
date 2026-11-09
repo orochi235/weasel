@@ -215,6 +215,10 @@ function runStagger<TItem>(
   factory: StaggerFactory<TItem>,
   opts?: StaggerOptions,
 ): AnimationHandle {
+  // Read before any item starts: an item whose delay is never reached keeps the stagger open for good.
+  const delays = items.map((_, i) => delayFor(delay, i));
+  const bad = delays.findIndex((ms) => !Number.isFinite(ms));
+  if (bad >= 0) throw new RangeError(`animator.stagger: item ${bad}'s delay is a finite time, not ${delays[bad]}`);
   const supervisor = createSupervisor({ kind: 'stagger', cancelKey: opts?.cancelKey, label: opts?.label });
   const composite = new CompositeHandle(supervisor, items.length);
   if (items.length === 0) {
@@ -223,7 +227,7 @@ function runStagger<TItem>(
   }
   // Its items start at their own starts whenever the stagger does.
   supervisor.starting(false, () => items.forEach((item, i) => {
-    const ms = delayFor(delay, i);
+    const ms = delays[i]!;
     const fire = (): void => {
       const child = factory(item, i);
       // Hook into the child's deregistration (natural OR cancel). If the

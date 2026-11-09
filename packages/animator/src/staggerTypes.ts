@@ -15,7 +15,8 @@ export interface StaggerOptions {
 }
 
 /** Per-index delay schedule. Number ⇒ `index * delay` ms. Function ⇒ caller
- *  decides the absolute delay for each index (e.g. `i => i * i * 30`). */
+ *  decides the absolute delay for each index (e.g. `i => i * i * 30`), asked for
+ *  every index before any item starts. A delay that is not finite throws a `RangeError`. */
 export type StaggerDelay = number | ((index: number) => number);
 
 /** Produces the animation for one staggered item. */
