@@ -912,3 +912,38 @@ Rulings and TODO pickups that landed in the same batch are here too.
   hotkey shadowing other tools' Alt-clicks, MenuBar's Alt+F/E/V/H off a Mac, spiro and pen unable to place a point
   with snapping suspended (Ctrl), and `TrialTransport keys` taking Space, the arrows and `r` page-wide. The
   reserved-key tests list the browser collisions as known.
+
+## Audit round thirteen (2026-11-09)
+
+Key rulings and the per-view camera TODO landed in the same batch.
+
+- Key choices (Mike, 2026-11-09): File › New is Alt+N. Free Transform enters on Mod+Alt+T, because Mod+Shift+T
+  reopens a closed tab. The eyedropper has no default hotkey. MenuBar's Alt+letter opens a title only while focus is
+  on a title. `TrialTransport keys` skip fields, controls and any focused canvas. Snapping toggles on Mod+Shift+;
+  (`<SceneCanvas snap={{ enabled }}>`, draw's View › Snapping), matched by physical key; held Ctrl still suspends one
+  drag.
+- SVG export embeds a runtime-bitmap image as a PNG data URL, drawn through a DOM canvas synchronously, and keeps
+  the old href with a warning where no canvas can draw it (Mike, 2026-11-09).
+- Each `<CanvasView>` takes `deps` of its own, read ahead of the surface's, so a 3D host gives each view its own
+  camera, picker and pose descriptor; the dep contracts take no view. `Action.enabled` gets the view id as a fifth
+  argument, so a double-click and hover resolve in the view the pointer is in. 2D presses routed to a view still
+  pick with the surface's camera.
+- An unchanged selection write notifies nobody, and an id given twice is held once. The loupe learns that a press
+  re-selected its lens from the press itself, around the dispatcher's own listeners.
+- `History.dropRedo()` takes the redo stack and keeps undo. A trial drops the other side's redo when marks or its
+  history change, and stamps scene edits with `editStamp`. A `TrialHistorySource` without `undoStamp` or `dropRedo`
+  keeps marks-first order.
+- Next from a view never shown a page goes to the first page; `add` there puts the page after the last.
+- Cut at Crossings, Join and Release Compound Path carry per-anchor widths and colors to the pieces (blended at a
+  cut, reversed with a reversed path); any command leaving them out of step with the anchors drops them.
+- Warp and smudge on a group skip its locked and hidden members, as trim and extend do.
+- Far from the origin, where a step index passes 2^53, the ruler, grid lines and tiled layers draw nothing;
+  `snapPoint` still offers points. A repeated Mermaid architecture name is an error; a repeated mind-map id is
+  renamed.
+- Non-finite input to animator frames, IK, voice fades and audio param writes throws `RangeError`.
+- A `readPixels` rect that isn't whole device pixels throws. Empty paths and sprite runs bound as empty, so an empty
+  clip path clips everything.
+- `scripts/lib/imports.mjs` and the consumer smoke check read imports through the oxc reader; `check:frame-loops`
+  and `check:listener-sets` count each use, not each line.
+- Open: whether a scope below a `mute` may re-register the muted id. path-edit's and text-edit's discard key is
+  being moved to Cmd+Escape on a Mac only, with Ctrl+Esc added to the reserved chords.

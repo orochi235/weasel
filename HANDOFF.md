@@ -59,6 +59,10 @@ For the session picking this up: what is in flight and what has no other home. O
   deferred start and zero-width strokes, and six TODO pickups) is on `main` at 535d4001f through `batch/2026-11-09c`
   (`test:fleet` full: 36477 passed after three test fixes; postbuild green). Not pushed. Six key choices wait on
   Mike under "Audit round twelve" in `docs/unruled.md`.
+- Round thirteen (2026-11-09, the nine lanes again, per-view 3D cameras, Mike's key choices and the SVG data-URL
+  ruling) is on `main` at 84c3cb6b6 through `batch/2026-11-09d` (`test:fleet` full: 36604 passed after a loupe
+  regression, a format fix and a size split; postbuild green). Not pushed. The discard-key change is on
+  `keys-ruled`, still in flight.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
@@ -93,6 +97,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 Passed its tests and was never looked at by a person. Delete a line when someone has.
 
+- 2026-11-09, round thirteen: two 3D views on one surface picking through their own cameras; View › Snapping and
+  Mod+Shift+;; MenuBar's Alt+letter only with focus on a title; a press on a selected lens taking focus back;
+  a job's Cancel staying put as its count climbs.
 - 2026-11-09, round twelve: Cmd/Shift-click selection and the range box; a curved slider's values along its arc;
   an empty prefs fragment's drop slot; the API panel's typedoc links and overloads; Path Edit's Enter yielding to
   slice, pen and spiro.
