@@ -63,6 +63,11 @@ describe('frames', () => {
     expect(all(frames({ duration: 200, loop: 2 }, { every: 100 }))).toEqual([0, 100]);
   });
 
+  it('walks no frames past the end of an endless loop of no length', () => {
+    expect(stepsOf(frames({ duration: 0, loop: true }, { every: 10, passes: 'all' }))).toEqual({ steps: [], capped: false });
+    expect(stepsOf(frames({ loop: 0 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
+  });
+
   it('labels a frame with the time it shows, origin included', () => {
     const s = frames({ duration: 100, origin: 1000 }, { every: 50 });
     expect(s.label(50)).toBe('1050 ms');

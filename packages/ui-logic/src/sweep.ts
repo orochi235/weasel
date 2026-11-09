@@ -122,9 +122,10 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
   const loop = span.loop ?? false;
   const passes = loop === true ? Infinity : loop === false ? 1 : loop;
   const walked = options.passes === 'all' ? passes : 1;
-  const end = duration * walked;
+  // No length times no end is no length, where the product is NaN.
+  const end = duration === 0 || walked === 0 ? 0 : duration * walked;
   // The end is a frame only where nothing follows it: the run's end, not a pass's.
-  const ends = walked === passes && Number.isFinite(end);
+  const ends = walked === passes && Number.isFinite(passes) && Number.isFinite(end);
   const origin = span.origin ?? 0;
   const label = options.label ?? ((t: number) => ms(origin + t));
   return {
