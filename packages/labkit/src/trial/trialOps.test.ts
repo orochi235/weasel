@@ -274,6 +274,11 @@ describe('reorderTrials', () => {
     const next = reorderTrials([ws('a'), ws('b'), ws('c')], ['c']);
     expect(next.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
+
+  it('places a trial named twice once, where it was first named', () => {
+    const next = reorderTrials([ws('a'), ws('b'), ws('c')], ['b', 'a', 'b']);
+    expect(next.map((w) => w.id)).toEqual(['b', 'a', 'c']);
+  });
 });
 
 describe('a size-aware initial view', () => {
