@@ -278,7 +278,8 @@ function HonkButton({ getBounds, onHonk }: { getBounds: () => { x: number; y: nu
   if (!b) return null;
   return (
     <button
-      onPointerDown={(e) => { e.stopPropagation(); onHonk(); }}
+      type="button"
+      onClick={onHonk}
       className={styles.honk}
       style={{ left: b.x, top: b.y, width: b.w, height: b.h }}
     >
