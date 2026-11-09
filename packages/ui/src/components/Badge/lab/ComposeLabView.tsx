@@ -10,7 +10,7 @@ import { LAB_PRESETS, type LabPreset } from './presets';
 import { Preview } from './Preview';
 import type { LabSnapshot } from './snapshot';
 import { composeSnippet } from './snippets';
-import { addEffect, basePatch, presetPatch, resetPatch } from './transitions';
+import { addEffect, basePatch, presetPatch, resetPatch, setEffects } from './transitions';
 import { TypeSection } from './TypeSection';
 import { useLabState, type LabArgs } from './useLabState';
 import controls from './controls.stories.module.css';
@@ -91,8 +91,10 @@ export function ComposeLabView(args: LabArgs) {
         <div className={s.stack}>
           <EffectsSection
             effects={lab.labEffects}
+            nextId={lab.nextId}
             onAdd={(type) => change((snap) => addEffect(snap, type))}
             onEffects={(update) => change((snap) => ({ labEffects: update(snap.labEffects) }))}
+            onList={(next) => change((snap) => setEffects(snap, next))}
           />
         </div>
       </div>

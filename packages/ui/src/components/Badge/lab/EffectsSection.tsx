@@ -1,79 +1,68 @@
-import { useMemo, type PointerEvent } from 'react';
-import { CloseButton } from '@weasel-js/ui/components/CloseButton';
-import { DragGrip } from '@weasel-js/ui/components/DragGrip';
-import { useReorderDragList } from '@weasel-js/ui';
+import { useMemo, useState } from 'react';
 import { type BadgeEffect } from '@weasel-js/ui/components/Badge';
-import { EFFECTS } from '../effects';
+import { EffectList, type EffectListItem } from '@weasel-js/ui/components/EffectList';
 import { EFFECT_KEYS, EFFECT_LAB_CONTROLS } from './controls';
-import { ParamControl } from './ParamControl';
+import { EFFECT_KINDS, zoneOf } from './effectKinds';
+import { Field, ParamControl } from './ParamControl';
 import type { LabEffect } from './snapshot';
-import { moveEffectToGap, removeEffect, setEffectParam, setEffectType } from './transitions';
+import { setEffectParam, setEffectType } from './transitions';
+import controls from './controls.stories.module.css';
 import s from './ComposeLab.stories.module.css';
 
 type Update = (update: (effects: LabEffect[]) => LabEffect[]) => void;
 
-/** Where an effect acts: on the outline itself, or as decoration in one of the paint zones. */
-const zoneOf = (type: BadgeEffect): string => (EFFECTS[type].offsetAt ? 'offset' : (EFFECTS[type].zone ?? 'foreground'));
-
-function EffectCard({ effect, index, dragging, dropAbove, dropBelow, onGripDown, onEffects }: {
+/** A lab effect as the effect list draws it: its id as a string, and its zone as its kind. */
+interface Card extends EffectListItem {
   effect: LabEffect;
-  index: number;
-  dragging: boolean;
-  dropAbove: boolean;
-  dropBelow: boolean;
-  onGripDown: (e: PointerEvent) => void;
-  onEffects: Update;
-}) {
+}
+
+const cardOf = (effect: LabEffect): Card => ({
+  id: String(effect.id), kind: zoneOf(effect.type), name: effect.name, on: effect.on, effect,
+});
+
+const effectOf = (card: Card): LabEffect => ({ ...card.effect, id: Number(card.id), name: card.name, on: card.on });
+
+/** The open card's settings: its type, then that type's params. */
+function EffectBody({ effect, onEffects }: { effect: LabEffect; onEffects: Update }) {
   return (
-    <div
-      className={s.card}
-      data-dragging={dragging || undefined}
-      data-drop-above={dropAbove || undefined}
-      data-drop-below={dropBelow || undefined}
-    >
-      <div className={s.grip} onPointerDown={onGripDown} title="Drag to reorder">
-        <DragGrip />
-      </div>
-      <div className={s.cardBody}>
-        <div className={s.cardHead}>
-          <code className={s.ordinal}>{index + 1}.</code>
-          <select
-            aria-label={`Effect ${index + 1} type`}
-            className={s.typeSelect}
-            value={effect.type}
-            onChange={(e) => onEffects((list) => setEffectType(list, effect.id, e.target.value as BadgeEffect))}
-          >
-            {EFFECT_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
-          </select>
-          <code className={s.zone}>{zoneOf(effect.type)}</code>
-          <CloseButton ariaLabel={`Remove effect ${index + 1}`} onClick={() => onEffects((list) => removeEffect(list, effect.id))} />
-        </div>
-        {EFFECT_LAB_CONTROLS[effect.type].map((c) => (
-          <ParamControl
-            key={c.key}
-            control={c}
-            value={effect.params[c.key]}
-            onChange={(v) => onEffects((list) => setEffectParam(list, effect.id, c.key, v))}
-          />
-        ))}
-      </div>
-    </div>
+    <>
+      <Field label="type" columns={controls.wide3}>
+        <select
+          className={controls.select}
+          value={effect.type}
+          onChange={(e) => onEffects((list) => setEffectType(list, effect.id, e.target.value as BadgeEffect))}
+        >
+          {EFFECT_KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+        </select>
+        <span />
+      </Field>
+      {EFFECT_LAB_CONTROLS[effect.type].map((c) => (
+        <ParamControl
+          key={c.key}
+          control={c}
+          value={effect.params[c.key]}
+          onChange={(v) => onEffects((list) => setEffectParam(list, effect.id, c.key, v))}
+        />
+      ))}
+    </>
   );
 }
 
-/** The ordered effect list: add one, edit each one's params, drag a card by its grip to reorder. */
-export function EffectsSection({ effects, onAdd, onEffects }: {
+/**
+ * The ordered effect list: add one, open a card by its number to edit it, drag a card by its number to
+ * reorder, and switch, rename, duplicate, or remove each one.
+ */
+export function EffectsSection({ effects, nextId, onAdd, onEffects, onList }: {
   effects: LabEffect[];
+  /** The id the next new effect takes. */
+  nextId: number;
   onAdd: (type: BadgeEffect) => void;
   onEffects: Update;
+  /** The whole list after a move, a switch, a rename, a duplicate, or a removal. */
+  onList: (effects: LabEffect[]) => void;
 }) {
-  const items = useMemo(() => effects.map((e) => ({ id: String(e.id), label: e.type })), [effects]);
-  const reorder = useReorderDragList({
-    items,
-    selectedIds: [],
-    onReorder: (ids, gap) => onEffects((list) => moveEffectToGap(list, Number(ids[0]), gap)),
-  });
-  const { draggedIds, targetIndex } = reorder.state;
+  const [selected, setSelected] = useState<string | null>(null);
+  const cards = useMemo(() => effects.map(cardOf), [effects]);
   return (
     <section className={s.effects}>
       <div className={s.effectsHead}>
@@ -86,6 +75,7 @@ export function EffectsSection({ effects, onAdd, onEffects }: {
             onChange={(e) => {
               if (!e.target.value) return;
               onAdd(e.target.value as BadgeEffect);
+              setSelected(String(nextId));
               e.target.value = '';
             }}
           >
@@ -95,20 +85,16 @@ export function EffectsSection({ effects, onAdd, onEffects }: {
         </div>
       </div>
       {effects.length === 0 && <p className={s.empty}>No effects. Add one from the dropdown.</p>}
-      <div className={s.cards} {...reorder.containerProps}>
-        {effects.map((effect, i) => (
-          <EffectCard
-            key={effect.id}
-            effect={effect}
-            index={i}
-            dragging={draggedIds?.includes(String(effect.id)) ?? false}
-            dropAbove={targetIndex === i}
-            dropBelow={targetIndex === effects.length && i === effects.length - 1}
-            onGripDown={reorder.rowProps(String(effect.id), i).onPointerDown}
-            onEffects={onEffects}
-          />
-        ))}
-      </div>
+      <EffectList<Card>
+        ariaLabel="Effects"
+        items={cards}
+        kinds={EFFECT_KINDS}
+        onChange={(next) => onList(next.map(effectOf))}
+        selected={selected}
+        onSelect={setSelected}
+        onDuplicate={(card) => ({ ...card, id: String(nextId), name: `${card.name} copy` })}
+        renderBody={(card) => <EffectBody effect={card.effect} onEffects={onEffects} />}
+      />
     </section>
   );
 }

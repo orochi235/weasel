@@ -3,12 +3,12 @@ import { cssColorLiteral } from '@weasel-js/paint';
 import type { LabPreset } from './presets';
 import { initialSnapshot, type LabEffect } from './snapshot';
 import {
-  addEffect, basePatch, effectSpecs, linkPatch, moveEffectToGap, padPatch, presetPatch, removeEffect, resetPatch,
-  setEffectParam, setEffectType,
+  addEffect, basePatch, effectSpecs, linkPatch, padPatch, presetPatch, resetPatch, setEffectParam, setEffects, setEffectType,
 } from './transitions';
 
-const effect = (id: number, type: LabEffect['type'] = 'shadow'): LabEffect => ({ id, type, params: {} });
-const ids = (effects: LabEffect[]): number[] => effects.map((e) => e.id);
+const effect = (id: number, type: LabEffect['type'] = 'shadow', more: Partial<LabEffect> = {}): LabEffect => ({
+  id, type, name: type === 'shadow' ? 'Shadow' : 'Bevel', on: true, params: {}, ...more,
+});
 
 describe('initialSnapshot', () => {
   const args = { look: 'high', variant: 'solid', label: 'COMPOSE' } as const;
@@ -29,6 +29,14 @@ describe('initialSnapshot', () => {
     const snap = initialSnapshot({ base: 'chamfered-rect', look: 'warn', zoom: 4, linkPadX: false }, args);
     expect(snap.baseParams).toEqual({ chamfer: 6 });
     expect(snap).toMatchObject({ look: 'warn', zoom: 4, linkPadX: false, variant: 'solid' });
+  });
+
+  it('loads effects saved before names and switches as on, named for their type', () => {
+    const saved = JSON.parse('{"labEffects":[{"id":3,"type":"bevel2","params":{"bevelWidth":4}},{"id":4,"type":"shadow","name":"Drop","on":false,"params":{}}],"nextId":5}');
+    expect(initialSnapshot(saved, args).labEffects).toEqual([
+      { id: 3, type: 'bevel2', name: 'Bevel 2', on: true, params: { bevelWidth: 4 } },
+      { id: 4, type: 'shadow', name: 'Drop', on: false, params: {} },
+    ]);
   });
 });
 
@@ -80,8 +88,8 @@ describe('base and presets', () => {
       base: 'chamfered-rect',
       baseParams: { chamfer: 8 },
       labEffects: [
-        { id: 4, type: 'bites', params: { biteRadius: 2, biteSpacing: 8, irregularity: 0 } },
-        { id: 5, type: 'bevel', params: { bevelWidth: 6, lightFrom: 'tl' } },
+        { id: 4, type: 'bites', name: 'Bites', on: true, params: { biteRadius: 2, biteSpacing: 8, irregularity: 0 } },
+        { id: 5, type: 'bevel', name: 'Bevel', on: true, params: { bevelWidth: 6, lightFrom: 'tl' } },
       ],
       nextId: 6,
     });
@@ -89,39 +97,42 @@ describe('base and presets', () => {
 });
 
 describe('effects', () => {
-  it('appends an effect at its defaults and spends an id', () => {
+  it('appends an effect at its defaults, named for its type, and spends an id', () => {
     expect(addEffect({ labEffects: [effect(1)], nextId: 3 }, 'shadow')).toEqual({
-      labEffects: [effect(1), { id: 3, type: 'shadow', params: { dx: 1, dy: 2, opacity: 0.28 } }],
+      labEffects: [effect(1), effect(3, 'shadow', { params: { dx: 1, dy: 2, opacity: 0.28 } })],
       nextId: 4,
     });
   });
 
-  it('removes, edits, and retypes one effect by id', () => {
+  it('edits one effect by id', () => {
     const list = [effect(1), effect(2)];
-    expect(ids(removeEffect(list, 1))).toEqual([2]);
-    expect(setEffectParam(list, 2, 'dx', 3)).toEqual([effect(1), { id: 2, type: 'shadow', params: { dx: 3 } }]);
-    expect(setEffectType(list, 1, 'bevel')).toEqual([
-      { id: 1, type: 'bevel', params: { bevelWidth: 6, lightFrom: 'tl' } },
-      effect(2),
+    expect(setEffectParam(list, 2, 'dx', 3)).toEqual([effect(1), effect(2, 'shadow', { params: { dx: 3 } })]);
+  });
+
+  it('retypes an effect at its new defaults, its name following the type unless it was renamed', () => {
+    const list = [effect(1), effect(2, 'shadow', { name: 'Drop' })];
+    const next = setEffectType(setEffectType(list, 1, 'bevel'), 2, 'bevel');
+    expect(next).toEqual([
+      { id: 1, type: 'bevel', name: 'Bevel', on: true, params: { bevelWidth: 6, lightFrom: 'tl' } },
+      { id: 2, type: 'bevel', name: 'Drop', on: true, params: { bevelWidth: 6, lightFrom: 'tl' } },
     ]);
   });
 
-  it('moves an effect to a gap counted before the move', () => {
-    const list = [effect(1), effect(2), effect(3)];
-    expect(ids(moveEffectToGap(list, 1, 3))).toEqual([2, 3, 1]);
-    expect(ids(moveEffectToGap(list, 3, 0))).toEqual([3, 1, 2]);
-    expect(ids(moveEffectToGap(list, 1, 2))).toEqual([2, 1, 3]);
+  it('takes the list back with nextId past every id, so a duplicate spends the id it was given', () => {
+    expect(setEffects({ nextId: 3 }, [effect(1), effect(3), effect(2)])).toEqual({
+      labEffects: [effect(1), effect(3), effect(2)],
+      nextId: 4,
+    });
+    expect(setEffects({ nextId: 7 }, [effect(1)]).nextId).toBe(7);
   });
 
-  it('leaves the order alone for either gap beside the effect, or an unknown id', () => {
-    const list = [effect(1), effect(2), effect(3)];
-    expect(ids(moveEffectToGap(list, 2, 1))).toEqual([1, 2, 3]);
-    expect(ids(moveEffectToGap(list, 2, 2))).toEqual([1, 2, 3]);
-    expect(ids(moveEffectToGap(list, 9, 0))).toEqual([1, 2, 3]);
+  it('leaves an effect that is off out of the badge', () => {
+    const specs = effectSpecs([effect(1), effect(2, 'bevel', { on: false }), effect(3, 'shadow', { params: { dx: 2 } })]);
+    expect(specs).toEqual([{ type: 'shadow', params: {} }, { type: 'shadow', params: { dx: 2 } }]);
   });
 
   it('turns a color control into a color literal for the badge and passes the rest through', () => {
-    const specs = effectSpecs([{ id: 1, type: 'outline', params: { width: 2, color: '#ff0000', dash: '' } }]);
+    const specs = effectSpecs([effect(1, 'outline', { params: { width: 2, color: '#ff0000', dash: '' } })]);
     expect(specs).toEqual([{ type: 'outline', params: { width: 2, color: cssColorLiteral('#ff0000'), dash: '' } }]);
   });
 });

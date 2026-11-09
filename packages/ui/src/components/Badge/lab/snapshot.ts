@@ -3,10 +3,23 @@ import { defaultsOf } from '../shapeControls';
 import type { BadgeLook } from '../looks';
 import type { BadgeVariant } from '../types';
 import { BASE_LAB_CONTROLS } from './controls';
+import { effectLabel } from './effectKinds';
 
 export type LabParams = Record<string, number | string>;
 
-export interface LabEffect { id: number; type: BadgeEffect; params: LabParams }
+export interface LabEffect {
+  id: number;
+  type: BadgeEffect;
+  name: string;
+  /** Off, the badge skips it. */
+  on: boolean;
+  params: LabParams;
+}
+
+/** An effect as saved, which before names and switches had neither. */
+export type SavedLabEffect = Omit<LabEffect, 'name' | 'on'> & Partial<Pick<LabEffect, 'name' | 'on'>>;
+
+export const readLabEffect = (e: SavedLabEffect): LabEffect => ({ ...e, name: e.name ?? effectLabel(e.type), on: e.on ?? true });
 
 export type LabCaps = 'normal' | 'small-caps' | 'all-small-caps';
 
@@ -42,7 +55,10 @@ export interface LabSnapshot {
 
 const STORAGE_KEY = 'weasel-badge-compose-lab-v6';
 
-export function loadLabSnapshot(): Partial<LabSnapshot> {
+/** What local storage may hold: a snapshot from any build that saved under this key. */
+export type SavedLabSnapshot = Partial<Omit<LabSnapshot, 'labEffects'>> & { labEffects?: SavedLabEffect[] };
+
+export function loadLabSnapshot(): SavedLabSnapshot {
   if (typeof window === 'undefined') return {};
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -65,14 +81,14 @@ export function saveLabSnapshot(snap: LabSnapshot): void {
 
 /** The lab's opening state: what was saved, over the story's args, over the lab's own defaults. */
 export function initialSnapshot(
-  saved: Partial<LabSnapshot>,
+  saved: SavedLabSnapshot,
   args: { look: BadgeLook; variant: BadgeVariant; label: string },
 ): LabSnapshot {
   const base = saved.base ?? 'rounded-rect';
   return {
     base,
     baseParams: saved.baseParams ?? defaultsOf(BASE_LAB_CONTROLS[base]),
-    labEffects: saved.labEffects ?? [],
+    labEffects: (saved.labEffects ?? []).map(readLabEffect),
     nextId: saved.nextId ?? 1,
     look: saved.look ?? args.look,
     tint: saved.tint ?? '#7fb069',
