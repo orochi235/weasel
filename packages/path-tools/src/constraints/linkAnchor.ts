@@ -80,11 +80,11 @@ function landingOn(path: PolygonPath, p: Point, reach: number, scale: Point): Om
 /**
  * The node other than `editingId` that world point `p` lands on, read
  * through `dep`'s editable paths: the nearest anchor within `reachPx` screen
- * px, else a segment within it. Link nodes are passed over. Null when it
- * lands on nothing.
+ * px, else a segment within it. Link nodes, and hidden or locked nodes, are
+ * passed over. Null when it lands on nothing.
  */
 export function linkTargetAt(
-  scene: Pick<AnyScene, 'renderOrderNodes'>,
+  scene: Pick<AnyScene, 'renderOrderNodes'> & Partial<Pick<AnyScene, 'isLocked' | 'isHidden'>>,
   dep: Pick<EditAnchorsDep, 'editingId' | 'getEditablePath'>,
   p: Point,
   reachPx: number,
@@ -96,6 +96,7 @@ export function linkTargetAt(
   let onPath: LinkTarget | null = null;
   for (const node of nodes) {
     if (node.id === dep.editingId || constraintLinkOf(node.data)) continue;
+    if (scene.isHidden?.(node.id) || scene.isLocked?.(node.id)) continue;
     const path = dep.getEditablePath(node.id) as PolygonPath | null | undefined;
     if (path?.kind !== 'polygon') continue;
     const landed = landingOn(path, p, reach, scale);
