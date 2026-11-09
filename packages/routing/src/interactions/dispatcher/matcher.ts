@@ -106,6 +106,10 @@ function isExclusiveClaim(e: InputEvent): boolean {
   return claim.claimedKinds === undefined || claim.claimedKinds.includes(gesture);
 }
 
+function isEagerPress(e: InputEvent): boolean {
+  return e.kind === 'pointerdown' && e.stage === 'press';
+}
+
 const warnedDeadClaims = new Set<string>();
 
 /** Dev-only. An exclusive claim that matches no binding drops the press with
@@ -216,7 +220,9 @@ export function matchSortedWithBarred(
   }
   // Checked against the final result, not the pool: a binding can declare a
   // `kindOf`/`affordance:` target and still fail to match this particular claim.
-  if (exclusive && out.length === 0 && bindings.length > 0) {
+  // Not at the eager press stage: the press is dispatched again as the drag or
+  // click it settles into, which is where a claim owner's own bindings match.
+  if (exclusive && out.length === 0 && bindings.length > 0 && !isEagerPress(e)) {
     reportDeadClaim(claimOf(e)?.owner, warn);
   }
   const owner = exclusive ? claimOf(e)?.owner : undefined;
