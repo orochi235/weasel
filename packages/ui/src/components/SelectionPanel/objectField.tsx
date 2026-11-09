@@ -68,6 +68,8 @@ function fieldContext({ ctx, held, eachObject }: Pick<ObjectFieldOwner, 'ctx' | 
     // The walk names every field of a disabled leaf but the one its own `enableIf` reads, which stays live.
     disabled: ctx.disabledAt ? ctx.disabledAt(childPath) : ctx.disabled === true,
     disabledAt: ctx.disabledAt,
+    active: ctx.activeAt?.(childPath) === true,
+    activeAt: ctx.activeAt,
     hidden: ctx.hidden === true || ctx.hiddenAt?.(childPath) === true,
     hiddenAt: ctx.hiddenAt,
     entryAt: ctx.entryAt,

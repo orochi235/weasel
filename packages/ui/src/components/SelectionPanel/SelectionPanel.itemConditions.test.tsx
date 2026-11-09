@@ -64,7 +64,10 @@ describe('SelectionPanel conditions that read the entry', () => {
   const held = { from: 'item', path: 'held' } as const;
   const stop = {
     kind: 'object', name: 'Stop', description: '', default: {},
-    children: { held: flag('Held'), hold: num('Hold', { showIf: held }), gain: num('Gain', { enableIf: held }) },
+    children: {
+      held: flag('Held'), hold: num('Hold', { showIf: held }), gain: num('Gain', { enableIf: held }),
+      go: { kind: 'action', name: 'Go', description: '', default: undefined, run: () => {}, activeIf: held } as PrefLeaf,
+    },
   } as PrefLeaf;
   const entries: PrefSection['members'] = {
     'data.held': flag('Held on the node'),
@@ -83,5 +86,10 @@ describe('SelectionPanel conditions that read the entry', () => {
     expect(screen.getAllByRole('spinbutton', { name: 'Hold' })).toHaveLength(2);
     const gains = screen.getAllByRole('spinbutton', { name: 'Gain' });
     expect(gains.map((g) => (g as HTMLInputElement).disabled)).toEqual([false, true, true, false]);
+  });
+
+  it("draws an entry's action pressed where its activeIf holds for that entry", () => {
+    draw([{ stops: [{ held: true }, { held: false }] }]);
+    expect(screen.getAllByRole('button', { name: 'Go' }).map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
   });
 });

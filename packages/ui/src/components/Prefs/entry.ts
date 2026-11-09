@@ -23,6 +23,8 @@ export function entryApplier(judge: (entry: PrefEntry) => PrefConditionJudge, ke
 export interface EntryConditions {
   disabled?: boolean;
   disabledAt?: (path: string) => boolean;
+  active?: boolean;
+  activeAt?: (path: string) => boolean;
   hidden?: boolean;
   hiddenAt?: (path: string) => boolean;
   entryAt?: EntryAt;
@@ -36,7 +38,7 @@ export interface EntryConditions {
 export function entryConditions(
   ctx: EntryConditions & { path: string }, entryPath: string, item: PrefLeaf, value: unknown,
 ): EntryConditions & { item: PrefLeaf } {
-  const { disabledAt, hiddenAt, entryAt } = ctx;
+  const { disabledAt, activeAt, hiddenAt, entryAt } = ctx;
   const every = `${ctx.path}.${PREF_ENTRY}`;
   const asked = (at: string): string => (at === entryPath || at.startsWith(`${entryPath}.`) ? every + at.slice(entryPath.length) : at);
   const own = entryAt?.(item, entryPath, value);
@@ -44,6 +46,8 @@ export function entryConditions(
     item: own ? own.item : item,
     disabled: ctx.disabled === true || disabledAt?.(every) === true || own?.disabled.has(entryPath) === true,
     ...(disabledAt || own ? { disabledAt: (at: string) => own?.disabled.has(at) === true || disabledAt?.(asked(at)) === true } : {}),
+    active: own?.active.has(entryPath) === true || activeAt?.(every) === true,
+    ...(activeAt || own ? { activeAt: (at: string) => own?.active.has(at) === true || activeAt?.(asked(at)) === true } : {}),
     hidden: ctx.hidden,
     ...(hiddenAt || own ? { hiddenAt: (at: string) => own?.hidden.has(at) === true || hiddenAt?.(asked(at)) === true } : {}),
     ...(entryAt ? { entryAt } : {}),

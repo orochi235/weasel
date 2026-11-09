@@ -71,6 +71,8 @@ export interface PrefRenderContext {
   disabledAt?: (path: string) => boolean;
   /** An `action` leaf's `activeIf` holds: its button is drawn pressed. */
   active?: boolean;
+  /** Whether the action at a path under this leaf's is drawn pressed. */
+  activeAt?: (path: string) => boolean;
   /** The leaf is one a `showIf` hides, drawn because the form was given `markHidden`. */
   hidden?: boolean;
   /** Whether the field at a path under this leaf's is one a `showIf` hides, in a form given `markHidden`. */
@@ -207,6 +209,7 @@ export function prefRenderContext(
     // The row answers by the form's own schema, at its own path; what is inside an alias's by its target's.
     disabledAt: inside?.disabledAt ?? ((at) => ctx.disabled?.has(at) ?? false),
     ...(ctx.active?.has(own) ? { active: true } : {}),
+    ...(ctx.active ? { activeAt: (at: string) => ctx.active!.has(at) } : {}),
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
     ...(entryAt ? { entryAt } : {}),
     ...(ctx.settles ? { settles: ctx.settles } : {}),

@@ -87,6 +87,21 @@ describe('PrefsForm conditions that read the entry', () => {
     expect(holds[0]!.closest('[data-pref-hidden]')).toBeNull();
     expect(holds[1]!.closest('[data-pref-hidden]')).not.toBeNull();
   });
+
+  it("draws an entry's action pressed where its activeIf holds for that entry", () => {
+    const go = { kind: 'action', name: 'Go', description: '', default: undefined, run: () => {}, activeIf: { from: 'item', path: 'armed' } } as PrefLeaf;
+    const runs = list('Runs', object('Run', { armed: flag('Armed'), go }));
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { runs } }} values={{ runs: [{ armed: true }, { armed: false }] }} onChange={() => {}} />);
+    const [first, second] = screen.getAllByRole('button', { name: 'Go' });
+    expect(first).toHaveAttribute('aria-pressed', 'true');
+    expect(second).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it("draws an object's action pressed where its activeIf holds", () => {
+    const go = { kind: 'action', name: 'Go', description: '', default: undefined, run: () => {}, activeIf: { path: 'armed' } } as PrefLeaf;
+    renderWithIcons(<PrefsForm schema={{ name: '', children: { armed: flag('Armed'), run: object('Run', { go }) } }} values={{ armed: true, run: {} }} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Go' })).toHaveAttribute('aria-pressed', 'true');
+  });
 });
 
 describe('PrefControl', () => {
