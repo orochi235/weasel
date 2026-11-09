@@ -72,6 +72,16 @@ describe('insertAction — selection across a canceled draw', () => {
     expect(calls).toHaveLength(0);
     expect(selection.get()).toEqual(['a']);
   });
+
+  it('puts it back when the commit throws, and lets the error out', () => {
+    const selection = makeSelection(['a']);
+    const dep: InsertDep = { commit() { throw new Error('refused'); } };
+    const deps = { insert: dep, selection };
+    const handle = ongoing().start(makeCtx({ x: 0, y: 0 }, deps), { params: { kind: 'rect' } });
+    handle.onMove!(makeCtx({ x: 40, y: 40 }, deps));
+    expect(() => handle.onEnd!(makeCtx({ x: 40, y: 40 }, deps), 'commit')).toThrow('refused');
+    expect(selection.get()).toEqual(['a']);
+  });
 });
 
 describe('insertAction — Shift on a line whose start a behavior moved', () => {
