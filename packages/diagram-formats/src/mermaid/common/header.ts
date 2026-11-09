@@ -53,7 +53,7 @@ export function headerWord(text: string): { word: string; text: string; line: nu
       continue;
     }
     if (l === '' || l.startsWith('%%')) continue;
-    return { word: /^[^\s;]+/.exec(l)![0], text: l, line: k + 1 };
+    return { word: /^[^\s;]*/.exec(l)![0], text: l, line: k + 1 };
   }
   return null;
 }
