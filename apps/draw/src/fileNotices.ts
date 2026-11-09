@@ -6,6 +6,11 @@ export function reportSvgWarnings(did: 'Opened' | 'Imported' | 'Saved', warnings
   reportFileWarnings(did, warnings, 'svg-warnings');
 }
 
+/** Tells the user a picked file was not an SVG document, so nothing was opened or imported. */
+export function reportSvgUnreadable(did: 'opened' | 'imported', name: string, why: string): void {
+  toast.danger(`“${name}” was not ${did}`, { id: 'svg-unreadable', description: `It is not an SVG document: ${why}` });
+}
+
 /** Tells the user a Save produced no file. */
 export function reportSaveFailure(err: unknown): void {
   toast.danger('The SVG was not saved', {

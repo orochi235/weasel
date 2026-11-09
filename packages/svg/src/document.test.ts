@@ -188,3 +188,18 @@ describe('stroke serialization', () => {
     expect(svg).toContain('stroke-opacity="0.4"');
   });
 });
+
+describe('unreadable text', () => {
+  it('sets error, and the same text as its one warning, for malformed XML and a non-svg root', () => {
+    for (const text of ['<svg xmlns="http://www.w3.org/2000/svg"><rect', '<html><body/></html>']) {
+      const r = parseSvg(text);
+      expect(r.nodes).toEqual([]);
+      expect(r.error).toEqual(expect.any(String));
+      expect(r.warnings).toEqual([r.error]);
+    }
+  });
+
+  it('leaves error unset for an empty drawing', () => {
+    expect(parseSvg('<svg xmlns="http://www.w3.org/2000/svg"/>').error).toBeUndefined();
+  });
+});

@@ -6,7 +6,7 @@ import { parseSvg, type ParseResult } from '@weasel-js/svg';
 import { setBackground } from './docBackground';
 import { DEFAULT_BG_COLOR } from './docPersistence';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { reportSvgWarnings } from './fileNotices';
+import { reportSvgUnreadable, reportSvgWarnings } from './fileNotices';
 import { firstPageSize, onePage, replacePages } from './pages/drawPages';
 import { leafOfObj } from './svgImport';
 import type { Obj } from './svgObj';
@@ -19,8 +19,12 @@ export interface OpenedSvg {
   filename: string;
 }
 
+/** Thrown by Open and Import for text that is not an SVG document, before the scene is touched. */
+export class UnreadableSvgError extends Error {}
+
 function parseDrafts(text: string, onWarn: OnWarn): { parsed: ParseResult; drafts: SceneDraft[] } {
   const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES, keepHidden: true });
+  if (parsed.error !== undefined) throw new UnreadableSvgError(parsed.error);
   for (const w of parsed.warnings) onWarn(w);
   let seq = 0;
   return { parsed, drafts: svgNodesToSceneDrafts(parsed, () => `svg-${++seq}`) };
@@ -83,17 +87,21 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[], keepPages: b
  * when it has none, in one undo entry. The document takes the file's
  * name, which undo leaves, and the pages it
  * lists; a file listing none is one page of the paper size it declares, or of
- * the document's first page's size when it declares none.
+ * the document's first page's size when it declares none. `beforeReplace` runs
+ * once the file has been read, just before the document is replaced. Text that
+ * is not an SVG document throws `UnreadableSvgError` with the document untouched.
  */
 export function openSvgText(
   scene: DrawScene,
   text: string,
   fileName: string,
   onWarn: OnWarn = () => {},
+  beforeReplace: () => void = () => {},
 ): OpenedSvg {
   const { parsed, drafts } = parseDrafts(text, onWarn);
   const doc = parsedToDoc(parsed);
   const pages = doc.pages ? { pages: doc.pages } : onePage(firstPageSize(scene));
+  beforeReplace();
   scene.batch('Open', () => {
     replacePages(scene, pages);
     addDrafts(scene, drafts, true);
@@ -104,7 +112,8 @@ export function openSvgText(
 
 /**
  * Add an SVG file's nodes on top of the document's own, in one undo entry.
- * The document keeps its name, pages, and background.
+ * The document keeps its name, pages, and background. Text that is not an SVG
+ * document throws `UnreadableSvgError` and adds nothing.
  */
 export function importSvgText(scene: DrawScene, text: string, onWarn: OnWarn = () => {}): void {
   const { drafts } = parseDrafts(text, onWarn);
@@ -121,29 +130,43 @@ export interface OpenSvgTarget {
   leaveMode(): void;
 }
 
+/** Whether `read` read the file `name`; when it was not an SVG document, a toast says so. */
+function readOrReport(did: 'opened' | 'imported', name: string, read: () => void): boolean {
+  try {
+    read();
+    return true;
+  } catch (err) {
+    if (!(err instanceof UnreadableSvgError)) throw err;
+    reportSvgUnreadable(did, name, err.message);
+    return false;
+  }
+}
+
 /**
  * Pick an SVG file and open it as the document, with a toast for what it
- * could not read. A canceled picker changes nothing.
+ * could not read. A canceled picker, or a file that is not an SVG document, changes nothing.
  */
 export async function openSvgFile(target: OpenSvgTarget): Promise<void> {
   const picked = await pickSvgFileNamed();
   if (picked === null) return;
-  target.leaveMode();
   const warnings: string[] = [];
-  const opened = openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w));
+  const read = readOrReport('opened', picked.name, () => {
+    openSvgText(target.scene, picked.text, picked.name, (w) => warnings.push(w), () => target.leaveMode());
+  });
+  if (!read) return;
   reportSvgWarnings('Opened', warnings);
-  target.setFilename(opened.filename);
+  target.setFilename(picked.name);
   target.showFirstPage();
 }
 
 /**
  * Pick an SVG file and add it to the document, with a toast for what it
- * could not read. A canceled picker changes nothing.
+ * could not read. A canceled picker, or a file that is not an SVG document, changes nothing.
  */
 export async function importSvgFile(scene: DrawScene): Promise<void> {
   const picked = await pickSvgFileNamed();
   if (picked === null) return;
   const warnings: string[] = [];
-  importSvgText(scene, picked.text, (w) => warnings.push(w));
+  if (!readOrReport('imported', picked.name, () => importSvgText(scene, picked.text, (w) => warnings.push(w)))) return;
   reportSvgWarnings('Imported', warnings);
 }

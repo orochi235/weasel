@@ -1,4 +1,4 @@
-import { defaultCommitAdapter, type PagesDoc, type SavedScene, type Scene, useLatest } from '@weasel-js/core';
+import { defaultCommitAdapter, isSerializedScene, type PagesDoc, type Scene, useLatest } from '@weasel-js/core';
 import { useEffect, useRef } from 'react';
 import { readStored } from './sessionStore';
 import { reviveTypedArrays, serializeReplacer, snapshotRebuildsTree } from './snapshot';
@@ -20,15 +20,20 @@ export interface SessionPersistenceOptions {
 
 const parseHistory = (raw: string): unknown => reviveTypedArrays(JSON.parse(raw));
 
-/** Whether the scene saved under `key` loads with its tree rebuilt (`snapshotRebuildsTree`), so its undo
- *  stack would replay wrongly. */
+/** Whether an undo stack saved beside the scene under `key` would replay wrongly: the scene loads with its
+ *  tree rebuilt (`snapshotRebuildsTree`), or there is no saved scene it can be read as, so the scene
+ *  starts from something else. */
 const savedStale = (key: string, pages: PagesDoc | undefined): boolean =>
-  readStored(key, (raw) => snapshotRebuildsTree(JSON.parse(raw) as SavedScene<unknown, string, unknown>, { pages }), () => false);
+  readStored(key, (raw) => {
+    const json: unknown = JSON.parse(raw);
+    return !isSerializedScene(json) || snapshotRebuildsTree(json, { pages });
+  }, () => true);
 
 /**
  * Keeps a scene and its undo stack in local storage: restores the stack once on mount,
  * then saves them through `useAutosave` after each render. A stack saved beside a scene that loads
- * with its tree rebuilt (`snapshotRebuildsTree`, with `opts.pages`) is dropped, not restored.
+ * with its tree rebuilt (`snapshotRebuildsTree`, with `opts.pages`), or beside none that can be read, is
+ * dropped, not restored.
  */
 export function useSessionPersistence<D, L extends string, P>(
   scene: Scene<D, L, P>,

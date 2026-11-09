@@ -1,4 +1,4 @@
-import { useCommand, type PlacedPage } from '@weasel-js/core';
+import { ActionDisabledReason, useCommand, type PlacedPage } from '@weasel-js/core';
 import { useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { backgroundOf, setBackground } from './docBackground';
@@ -56,5 +56,5 @@ export function useFileCommands(target: FileCommandsTarget): void {
   useCommand(FILE_ACTIONS.exportPage, 'Export Page as SVG…', () => {
     const { filename, page } = target;
     if (page !== null) void exportPageSvgFile(scene, page, { filename, backgroundColor: backgroundOf(scene) });
-  });
+  }, { enabled: () => target.page !== null || ActionDisabledReason.NotApplicable });
 }

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { importSvgText, openSvgFile, openSvgText } from './openSvg';
+import { importSvgText, openSvgFile, openSvgText, UnreadableSvgError } from './openSvg';
+import { toast } from '@weasel-js/ui/components/Toast';
 import { contentRoots } from '@weasel-js/core';
 import { backgroundOf, setBackground } from './docBackground';
 import { drawScene } from './testScenes';
@@ -221,5 +222,35 @@ describe('openSvgFile', () => {
     expect(t.setFilename).not.toHaveBeenCalled();
     expect(t.showFirstPage).not.toHaveBeenCalled();
     expect(t.leaveMode).not.toHaveBeenCalled();
+  });
+});
+
+describe('a file that is not an SVG document', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const NOT_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect';
+
+  it('throws from Open and Import with the document untouched', () => {
+    const scene = sceneWithOneShape();
+    const entries = scene.historyEntries().length;
+    expect(() => openSvgText(scene, NOT_SVG, 'broken.svg')).toThrow(UnreadableSvgError);
+    expect(() => importSvgText(scene, '<html/>')).toThrow(UnreadableSvgError);
+    expect(contentRoots(scene)).toEqual([asNodeId('old')]);
+    expect(pagesOf(scene)?.pages).toHaveLength(2);
+    expect(scene.historyEntries()).toHaveLength(entries);
+  });
+
+  it('opens as nothing: the document, its name, and the mode stay, and a toast says why', async () => {
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
+      Object.defineProperty(this, 'files', { value: [new File([NOT_SVG], 'broken.svg')] });
+      this.dispatchEvent(new Event('change'));
+    });
+    const danger = vi.spyOn(toast, 'danger');
+    const t = { scene: sceneWithOneShape(), setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn() };
+    await openSvgFile(t);
+    expect(contentRoots(t.scene)).toEqual([asNodeId('old')]);
+    expect(t.setFilename).not.toHaveBeenCalled();
+    expect(t.leaveMode).not.toHaveBeenCalled();
+    expect(t.showFirstPage).not.toHaveBeenCalled();
+    expect(danger).toHaveBeenCalledWith('“broken.svg” was not opened', expect.anything());
   });
 });

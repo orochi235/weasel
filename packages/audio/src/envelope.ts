@@ -45,17 +45,19 @@ export function envelopeLevel(e: ResolvedEnvelope, t: number, gate?: number): nu
 }
 
 /**
- * Breakpoints joined by linear ramps. Without `gate` they end at the sustain,
- * held until something releases the note; with it they end at zero, `gate +
- * release` ms in.
+ * Breakpoints joined by linear ramps, tracing `envelopeLevel`. Without `gate`
+ * they end at the sustain, held until something releases the note; with it
+ * they end at zero, `gate + release` ms in. With no decay, the attack's peak
+ * and the sustain are two points at one time: the level steps between them.
  */
 export function envelopePoints(e: ResolvedEnvelope, gate?: number): EnvelopePoint[] {
   const end = gate ?? Infinity;
-  const points: EnvelopePoint[] = [{ at: 0, value: e.attack > 0 ? 0 : 1 }];
-  for (const at of [e.attack, e.attack + e.decay]) {
-    if (at <= points[points.length - 1].at) continue;
-    if (at >= end) break;
-    points.push({ at, value: heldLevel(e, at) });
+  const points: EnvelopePoint[] = [{ at: 0, value: e.attack > 0 ? 0 : heldLevel(e, 0) }];
+  const last = (): EnvelopePoint => points[points.length - 1];
+  if (e.attack > 0 && e.attack < end) points.push({ at: e.attack, value: 1 });
+  const decayEnd = e.attack + e.decay;
+  if (decayEnd < end && (decayEnd > last().at || last().value !== e.sustain)) {
+    points.push({ at: decayEnd, value: e.sustain });
   }
   if (gate === undefined) return points;
   if (gate > points[points.length - 1].at) points.push({ at: gate, value: heldLevel(e, gate) });

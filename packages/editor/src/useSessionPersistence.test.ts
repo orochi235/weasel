@@ -37,4 +37,18 @@ describe('useSessionPersistence', () => {
     expect(restore).not.toHaveBeenCalled();
     expect(localStorage.getItem('test:history')).toBeNull();
   });
+
+  it('drops a saved undo stack when the scene beside it is missing, unparseable, or not a saved scene', () => {
+    for (const saved of [null, '{"version":3,"nodes":[', '{"not":"a scene"}']) {
+      localStorage.clear();
+      if (saved !== null) localStorage.setItem('test:scene', saved);
+      localStorage.setItem('test:history', '{"version":1}');
+      const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+      const restore = vi.spyOn(scene, 'restoreHistory');
+      const { unmount } = renderHook(() => useSessionPersistence(scene, { sceneKey: 'test:scene', historyKey: 'test:history' }));
+      expect(restore).not.toHaveBeenCalled();
+      expect(localStorage.getItem('test:history')).toBeNull();
+      unmount();
+    }
+  });
 });

@@ -129,9 +129,14 @@ export function envelopeOnParam(
   t0: number,
   map: (level: number) => number,
 ): { release(at: number): void } {
-  const [first, ...rest] = envelopePoints(env, gate);
-  param.setValueAtTime(map(first.value), t0);
-  for (const p of rest) param.linearRampToValueAtTime(map(p.value), t0 + p.at / 1000);
+  const points = envelopePoints(env, gate);
+  param.setValueAtTime(map(points[0].value), t0);
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i];
+    const at = t0 + p.at / 1000;
+    if (p.at === points[i - 1].at) param.setValueAtTime(map(p.value), at);
+    else param.linearRampToValueAtTime(map(p.value), at);
+  }
   return {
     release(at) {
       const elapsed = Math.max(0, (at - t0) * 1000);

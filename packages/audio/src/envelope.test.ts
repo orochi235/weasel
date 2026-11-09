@@ -46,6 +46,17 @@ describe('envelope', () => {
     ]);
   });
 
+  it('traces envelopeLevel with no decay: the attack reaches the peak, then steps to the sustain', () => {
+    const e = resolveEnvelope({ attack: 10, decay: 0, sustain: 0.5, release: 20 });
+    expect(envelopePoints(e, 50)).toEqual([
+      { at: 0, value: 0 }, { at: 10, value: 1 }, { at: 10, value: 0.5 }, { at: 50, value: 0.5 }, { at: 70, value: 0 },
+    ]);
+    // Halfway through the attack, the ramp the points draw and the level agree.
+    expect(envelopeLevel(e, 5)).toBeCloseTo(0.5);
+    const held = resolveEnvelope({ attack: 0, decay: 0, sustain: 0.25 });
+    expect(envelopePoints(held)).toEqual([{ at: 0, value: envelopeLevel(held, 0) }]);
+  });
+
   it('starts at full level with no attack', () => {
     const e = resolveEnvelope({ attack: 0, decay: 0, sustain: 1, release: 10 });
     expect(envelopePoints(e, 50)).toEqual([
