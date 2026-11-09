@@ -165,7 +165,7 @@ describe('op-factory registry — per-factory round trip', () => {
     // Invert of the rebuilt op restores the prior order (round-trip across
     // serialization is the whole point — invert must work post-restore).
     const aRebInv = seeded();
-    // First apply rebuilt to align state, then invert.
+    rebuilt.apply(aRebInv);
     rebuilt.invert().apply(aRebInv);
     expect(aRebInv.orderCalls[aRebInv.orderCalls.length - 1]).toEqual([null, ['r1', 'r2', 'r3']]);
   });
