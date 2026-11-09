@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import type { Tool, ToolsApi } from '@weasel-js/core';
+import { DRAW_TOOLS, SHAPE_TOOLS, withoutTools, type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';
@@ -17,7 +17,7 @@ function fullList(): Tool[] {
   return [
     { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', icon: icon('core:select'), group: 'select' } } as Tool,
     { id: 'lasso',  keybinding: { key: 'l' }, presentation: { label: 'Lasso',  icon: icon('core:lasso'),  group: 'select' } } as Tool,
-    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: icon('core:rect'),   group: 'shape'  } } as Tool,
+    { id: 'rect',   keybinding: { key: 'r' }, presentation: { label: 'Rect',   icon: icon('core:rect'),   group: 'shape', description: 'Drag out a rectangle' } } as Tool,
     { id: 'text',   keybinding: { key: 't' }, presentation: { label: 'Text',   icon: icon('core:text'),   group: 'type'   } } as Tool,
     { id: 'pen',    keybinding: { key: 'p' }, presentation: { label: 'Pen',    icon: icon('core:pen'),    group: 'draw'   } } as Tool,
     { id: 'hand',   keybinding: { key: 'h' }, presentation: { label: 'Hand',   icon: icon('core:hand'),   group: 'view'   } } as Tool,
@@ -142,7 +142,7 @@ function stackedList(): Tool[] {
 function StackedDemo(props: Partial<ToolPaletteProps>) {
   const [active, setActive] = useState<string>('select');
   const tools = makeFakeToolsApi(stackedList(), active, setActive);
-  return <ToolPalette stacks={[['rect', 'ellipse', 'polygon', 'star'], ['pen', 'pencil']]} {...props} tools={tools} />;
+  return <ToolPalette stacks={[withoutTools(SHAPE_TOOLS, 'line'), DRAW_TOOLS]} {...props} tools={tools} />;
 }
 
 // A stack shares one button between related tools. Click it for a menu of them; Alt-click steps

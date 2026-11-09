@@ -17,6 +17,8 @@ export interface StrokeClickToolOptions {
 export interface StrokeClickToolSpec {
   id: string;
   label: string;
+  /** Its presentation's `description`. */
+  description?: string;
   icon: IconSpec;
   hookName: string;
   actionId: string;
@@ -40,7 +42,7 @@ export function useStrokeClickTool(
   extras: StrokeClickExtras = {},
 ): Tool {
   const { keybinding = spec.keybinding, radiusPx } = options;
-  const { id, label, icon, hookName, actionId } = spec;
+  const { id, label, description, icon, hookName, actionId } = spec;
   return useMemo(() => {
     const params = radiusPx !== undefined
       ? { params: () => ({ radiusPx: typeof radiusPx === 'function' ? radiusPx() : radiusPx }) }
@@ -51,7 +53,7 @@ export function useStrokeClickTool(
       capabilities: ['creates-shapes'],
       hookName,
       cursor: 'crosshair',
-      presentation: { label, group: 'path', icon },
+      presentation: { label, ...(description ? { description } : {}), group: 'path', icon },
       ...(extras.actions ? { actions: extras.actions } : {}),
       ...(extras.overlay ? { overlay: extras.overlay } : {}),
       ...(extras.onDeactivate ? { onDeactivate: extras.onDeactivate } : {}),
@@ -60,5 +62,5 @@ export function useStrokeClickTool(
         ...(extras.bindings ?? []).map((b) => ({ ...b, opts: { ...b.opts, ...params } })),
       ],
     });
-  }, [id, label, icon, hookName, actionId, keybinding, radiusPx, extras.actions, extras.bindings, extras.overlay, extras.onDeactivate]);
+  }, [id, label, description, icon, hookName, actionId, keybinding, radiusPx, extras.actions, extras.bindings, extras.overlay, extras.onDeactivate]);
 }

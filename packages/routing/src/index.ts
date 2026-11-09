@@ -213,8 +213,8 @@ export { defineTool } from './tools/defineTool';
 export { createToolOptionValues, steppedOption, toolOptionParams, toolOptionSteps } from './tools/toolOptions';
 export type { ToolOptions, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
 export { returnToModeDefault } from './tools/returnToModeDefault';
-export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas } from './tools/toolSet';
-export type { ToolSet, ToolEntry } from './tools/toolSet';
+export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas, toolStacksOf } from './tools/toolSet';
+export type { ToolSet, ToolSetOptions, ToolEntry } from './tools/toolSet';
 export { isTool } from './tools/types';
 
 // ─── route grammar reflection ─────────────────────────────────────────────

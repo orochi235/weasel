@@ -6,6 +6,7 @@ import type { IndexEntry } from '../story/types';
 import { installResizeObserver } from './labHarness';
 import { Workshop } from './Workshop';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { icon as glyph } from '../icons.gen';
 
 installResizeObserver();
 
@@ -99,4 +100,31 @@ describe('GlobalsToolbar', () => {
       expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual(['Soft', 'Glare']),
     );
   });
+
+  it('draws an option’s icon, disables it with its reason, and reads its description', async () => {
+    const rich: ShellConfig = {
+      globals: {
+        tone: {
+          label: 'Tone',
+          default: 'soft',
+          options: [
+            { value: 'soft', label: 'Soft', icon: glyph('core:tune'), description: 'Low contrast' },
+            { value: 'glare', label: 'Glare', disabled: true, disabledReason: 'Needs dark mode' },
+          ],
+        },
+      },
+    };
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" config={rich} storage={createMemoryAdapter()} />);
+    const toolbar = within(await screen.findByRole('toolbar', { name: 'Globals' }));
+    act(() => {
+      fireEvent.click(toolbar.getByRole('button', { name: /Tone/ }));
+    });
+    const soft = await screen.findByRole('option', { name: 'Soft' });
+    expect(soft.querySelector('svg')).not.toBeNull();
+    expect(soft).toHaveAccessibleDescription('Low contrast');
+    const glare = screen.getByRole('option', { name: 'Glare' });
+    expect(glare).toHaveAttribute('aria-disabled', 'true');
+    expect(glare).toHaveAccessibleDescription('Needs dark mode');
+  });
 });
+

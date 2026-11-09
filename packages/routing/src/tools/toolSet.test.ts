@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isToolSet, toolIdsOf, toolSet, toolSetHas, withoutTools } from './toolSet';
+import { isToolSet, toolIdsOf, toolSet, toolSetHas, toolStacksOf, withoutTools } from './toolSet';
 
 const shapes = toolSet('shape', ['rect', 'ellipse']);
 const draw = toolSet('draw', ['pen', 'pencil']);
@@ -26,4 +26,15 @@ describe('tool sets', () => {
     expect(isToolSet(shapes)).toBe(true);
     expect(isToolSet('rect')).toBe(false);
   });
+
+  it('lists the stacked sets at any depth, opened, and keeps the mark through withoutTools', () => {
+    const warps = toolSet('warp', ['distort', toolSet('bend', ['envelope'])], { stack: true });
+    const reshape = toolSet('reshape', ['trim', toolSet('outer', [warps])]);
+    expect(toolStacksOf([reshape, toolSet('pens', ['pen', 'pencil'], { stack: true })]))
+      .toEqual([['distort', 'envelope'], ['pen', 'pencil']]);
+    expect(toolStacksOf([shapes])).toEqual([]);
+    expect(withoutTools(warps, 'envelope').stack).toBe(true);
+    expect('stack' in withoutTools(shapes, 'rect')).toBe(false);
+  });
 });
+

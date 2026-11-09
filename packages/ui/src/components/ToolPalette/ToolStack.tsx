@@ -15,6 +15,8 @@ export type StackCycleModifier = 'alt' | 'mod' | 'shift';
 export interface StackMember {
   tool: Tool;
   label: string;
+  /** What the tool does, which the button's tooltip reads while it is the stack's face. */
+  description?: string;
   /** The binding the menu row draws. */
   keys?: MenuShortcut;
   /** The binding as the button's chip reads, which a presentation may override. */
@@ -75,6 +77,7 @@ export function ToolStack(props: {
       <ToolButton
         icon={<Icon name={glyph(face.tool)} />}
         label={face.label}
+        description={face.description}
         shortcut={face.shortcut}
         active={activeHere}
         ariaDisabled={!anyEnabled}

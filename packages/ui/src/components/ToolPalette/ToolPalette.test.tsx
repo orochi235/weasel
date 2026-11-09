@@ -211,6 +211,15 @@ describe('ToolPalette — shortcuts', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('Select');
   });
 
+  it('button tooltip reads the description in place of the label', () => {
+    const tool = { id: 'select', keybinding: { key: 'v' }, presentation: { label: 'Select', description: 'Pick things up', group: 'select' } } as Tool;
+    renderWithIcons(<ToolPalette tools={fakeTools([tool])} />);
+    const btn = screen.getByRole('button', { name: /select/i });
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => btn.focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Pick things up (V)');
+  });
+
   it('leaves the shortcut chip out of the button name', () => {
     const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
     renderWithIcons(<ToolPalette tools={tools} />);

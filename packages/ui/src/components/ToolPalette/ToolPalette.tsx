@@ -1,6 +1,6 @@
 import { Fragment, type DragEvent, type ReactNode } from 'react';
 import {
-  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolSetHas, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
+  BUILTIN_TOOL_IDS, TOOL_GROUP_ORDER, toolIdsOf, toolSetHas, toolStacksOf, type CarryPayload, type Tool, type ToolSet, type ToolsApi,
 } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
@@ -62,8 +62,10 @@ export interface ToolPaletteProps {
    * the stack's tool in use, or the one last used from it; a click opens a menu of the stack, and
    * a click with `stackCycle` held makes the next one active instead. The stack sits where the
    * first of its tools the palette shows would. Tools named in no stack get buttons of their own.
+   * A set given here is one stack of every id it names. Defaults to the sets marked `stack` inside
+   * an `include` set (`toolStacksOf`); given, it replaces them.
    */
-  stacks?: ReadonlyArray<readonly string[]>;
+  stacks?: ReadonlyArray<readonly string[] | ToolSet>;
   /** The modifier that makes a click on a stack step through it. Default `'alt'`. */
   stackCycle?: StackCycleModifier;
   /** Lays each group out as a grid this many buttons across, the groups stacked; `orientation`
@@ -82,6 +84,11 @@ export interface ToolPaletteProps {
   carryGhost?: (tool: Tool) => ReactNode;
 }
 
+function paletteStacks(stacks: ToolPaletteProps['stacks'], include: ToolPaletteProps['include']): (readonly string[])[] {
+  if (stacks) return stacks.map((stack) => ('members' in stack ? toolIdsOf([stack]) : stack));
+  return include !== undefined && typeof include !== 'function' ? toolStacksOf([include]) : [];
+}
+
 const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.tool] : slot.members);
 
 /**
@@ -97,7 +104,7 @@ const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.t
 export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry, ineligible = 'dim',
-    groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks = [], stackCycle = 'alt',
+    groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks, stackCycle = 'alt',
     columns, onToolDragStart, carryTool, carryGhost,
   } = props;
   const carry = useToolCarry(carryTool, carryGhost);
@@ -110,7 +117,7 @@ export function ToolPalette(props: ToolPaletteProps) {
   const cls = [s.palette, horizontal && s.horizontal, className].filter(Boolean).join(' ');
 
   const shown = new Map(list.map((t) => [t.id, t]));
-  const stackOf = stackIndex(stacks);
+  const stackOf = stackIndex(paletteStacks(stacks, include));
   const placed = new Set<readonly string[]>();
   const slotGroups = groupTools(list, groupOrder, toolOrder)
     .map(({ key, tools: group }) => ({ key, slots: slotsOf(group, shown, stackOf, placed) }));
@@ -120,6 +127,7 @@ export function ToolPalette(props: ToolPaletteProps) {
     const keys = lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding;
     return {
       tool, label, keys,
+      description: tool.presentation?.description,
       shortcut: tool.presentation?.shortcut ?? formatShortcut(keys),
       enabled: allowed(tool),
     };
@@ -166,7 +174,7 @@ export function ToolPalette(props: ToolPaletteProps) {
                   />
                 );
               }
-              const { tool, label, shortcut, enabled } = describe(slot.tool);
+              const { tool, label, description, shortcut, enabled } = describe(slot.tool);
               const resolvedTitle = !enabled && modeName
                 ? `${label}${shortcut ? ` (${shortcut})` : ''} — disabled in ${modeName} mode`
                 : undefined;
@@ -175,6 +183,7 @@ export function ToolPalette(props: ToolPaletteProps) {
                   key={tool.id}
                   icon={toolGlyph(tool)}
                   label={label}
+                  description={description}
                   shortcut={shortcut}
                   active={tools.active === tool.id}
                   ariaDisabled={!enabled}

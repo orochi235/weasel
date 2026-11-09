@@ -10,6 +10,8 @@ export interface ToolButtonProps {
   label: string;
   /** Optional shortcut hint (e.g. "V" or "⌘Z"). */
   shortcut?: string;
+  /** What the button does: the tooltip reads it in place of `label`, before `shortcut`. */
+  description?: string;
   /** Selected/active state — toggles the active visual treatment. */
   active?: boolean;
   /** Disabled state — passes through to the underlying button. */
@@ -39,7 +41,7 @@ export interface ToolButtonProps {
     onPointerDown(e: PointerEvent): void;
   };
   /**
-   * Tooltip content. Defaults to `label` (plus `shortcut` if provided).
+   * Tooltip content. Defaults to `description`, else `label`, plus `shortcut` if provided.
    */
   title?: string;
   /** Additional class for the root button. */
@@ -53,10 +55,10 @@ export interface ToolButtonProps {
  */
 export function ToolButton(props: ToolButtonProps) {
   const {
-    icon, label, shortcut, active, disabled, disabledReason, ariaDisabled,
+    icon, label, shortcut, description, active, disabled, disabledReason, ariaDisabled,
     onClick, onPointerDown, onDragStart, title, className, menu,
   } = props;
-  const content = segmentTooltipContent({ tooltip: title, shortcut, label, disabled, disabledReason }) ?? label;
+  const content = segmentTooltipContent({ tooltip: title, shortcut, label, description, disabled, disabledReason }) ?? label;
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
     <SegmentTooltip content={content} disabled={disabled} disabledReason={disabledReason}>

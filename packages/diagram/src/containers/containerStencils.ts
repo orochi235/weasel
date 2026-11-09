@@ -18,6 +18,8 @@ export type { ContainerBuildOptions };
 export interface ContainerStencil {
   id: string;
   label: string;
+  /** Its tool's presentation `description`: what a palette's tooltip reads. */
+  description?: string;
   role: 'container' | 'pool';
   axis?: 'x' | 'y';
   size: { width: number; height: number };

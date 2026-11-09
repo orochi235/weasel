@@ -44,6 +44,20 @@ describe('Select', () => {
     expect(red.querySelector('[data-testid="red-icon"]')).not.toBeNull();
   });
 
+  it("reads an option's description under its label in the list, and a disabled one's reason in its place", () => {
+    const described = [
+      { value: 'r', label: 'Red', description: 'Warm' },
+      { value: 'g', label: 'Green', description: 'Cool', isDisabled: true, disabledReason: 'Out of stock' },
+    ];
+    render(<Select label="Color" options={described} defaultSelectedKey="r" />);
+    const trigger = screen.getByRole('button', { name: /Red/ });
+    act(() => { fireEvent.click(trigger); });
+    expect(screen.getByRole('option', { name: 'Red' })).toHaveAccessibleDescription('Warm');
+    const green = screen.getByRole('option', { name: 'Green' });
+    expect(green).toHaveAccessibleDescription('Out of stock');
+    expect(green).not.toHaveTextContent('Cool');
+  });
+
   it('supports the children form with explicit SelectItem rows', () => {
     const onChange = vi.fn();
     render(
