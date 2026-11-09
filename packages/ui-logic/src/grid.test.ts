@@ -127,6 +127,13 @@ describe('tileRows', () => {
   it('splits a run into rows in reading order, the last one short', () => {
     expect(tileRows(5, 2)).toEqual([[0, 1], [2, 3], [4]]);
   });
+
+  it('reads a column count below one, or not a number, as one, and a fractional one as its whole part', () => {
+    for (const columns of [0, -2, NaN]) expect(tileRows(3, columns)).toEqual([[0], [1], [2]]);
+    expect(tileRows(5, 2.5)).toEqual([[0, 1], [2, 3], [4]]);
+    expect(tileKey(0, 'ArrowDown', 3, { columns: 0 })).toBe(1);
+    expect(tileGrid(3, { columns: 0 })).toMatchObject({ tracks: 2, span: 2, lastStart: 2 });
+  });
 });
 
 describe('tileKey', () => {

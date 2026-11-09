@@ -13,7 +13,7 @@ export type LastRow = 'start' | 'center' | 'end' | 'fill';
 
 /** How a run of items tiles. */
 export interface Tiling {
-  /** Items per row. */
+  /** Items per row: a whole number, one for anything below one. */
   columns: number;
   /** Where a last row shorter than `columns` sits. Default `'start'`. */
   lastRow?: LastRow;
@@ -48,9 +48,12 @@ export interface TileGrid {
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
+/** A column count as a grid can lay out: its whole part, and one for anything below one or not a number. */
+const wholeColumns = (columns: number): number => (columns >= 1 ? Math.floor(columns) : 1);
+
 /** How `count` items tile under `spec`. */
 export function tileGrid(count: number, spec: Tiling): TileGrid {
-  const { columns } = spec;
+  const columns = wholeColumns(spec.columns);
   const lastRow = spec.lastRow ?? 'start';
   const short = count % columns;
   const lastStart = count - (short || columns);
@@ -92,7 +95,8 @@ export interface GridLayout {
 }
 
 /** The rows of `count` items `columns` across, as item indices in reading order. */
-export function tileRows(count: number, columns: number): number[][] {
+export function tileRows(count: number, across: number): number[][] {
+  const columns = wholeColumns(across);
   return Array.from({ length: Math.ceil(count / columns) }, (_, r) =>
     Array.from({ length: Math.min(columns, count - r * columns) }, (_, j) => r * columns + j));
 }
@@ -112,7 +116,8 @@ export function tileKey(
 }
 
 /** The layout of `rows` in a grid `columns` across whose short rows sit as `lastRow` says. */
-export function gridLayout(rows: readonly (readonly number[])[], columns: number, lastRow: LastRow = 'start'): GridLayout {
+export function gridLayout(rows: readonly (readonly number[])[], across: number, lastRow: LastRow = 'start'): GridLayout {
+  const columns = wholeColumns(across);
   const short = (row: readonly number[]): boolean => row.length < columns;
   return {
     offsets: rows.map((row) => (short(row) ? rowOffset(row.length, columns, lastRow) : 0)),
