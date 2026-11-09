@@ -61,8 +61,8 @@ For the session picking this up: what is in flight and what has no other home. O
   Mike under "Audit round twelve" in `docs/unruled.md`.
 - Round thirteen (2026-11-09, the nine lanes again, per-view 3D cameras, Mike's key choices and the SVG data-URL
   ruling) is on `main` at 84c3cb6b6 through `batch/2026-11-09d` (`test:fleet` full: 36604 passed after a loupe
-  regression, a format fix and a size split; postbuild green). Not pushed. The discard-key change is on
-  `keys-ruled`, still in flight.
+  regression, a format fix and a size split; postbuild green), and the discard-key change through
+  `batch/2026-11-09e`. Released and pushed with the version commit that follows.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.

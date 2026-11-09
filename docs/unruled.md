@@ -945,5 +945,7 @@ Key rulings and the per-view camera TODO landed in the same batch.
   clip path clips everything.
 - `scripts/lib/imports.mjs` and the consumer smoke check read imports through the oxc reader; `check:frame-loops`
   and `check:listener-sets` count each use, not each line.
-- Open: whether a scope below a `mute` may re-register the muted id. path-edit's and text-edit's discard key is
-  being moved to Cmd+Escape on a Mac only, with Ctrl+Esc added to the reserved chords.
+- path-edit's and text-edit's discard is Cmd+Escape on a Mac and has no default key elsewhere, since Ctrl+Esc
+  opens the Windows Start menu; Ctrl+Esc is a reserved chord off a Mac (Mike, 2026-11-09). A mode shortcut can
+  name a key per platform (`{ apple?, other? }`).
+- Open: whether a scope below a `mute` may re-register the muted id.
