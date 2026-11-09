@@ -57,6 +57,14 @@ describe('createAvoidRouter', () => {
     expect(routes.get('top')).toEqual([]);
   });
 
+  it('answers for a connector whose waypoint has no end, rather than walking every cell to it', () => {
+    const [a, b] = [shapes.a, shapes.b];
+    const routes = createAvoidRouter().update({
+      obstacles: [a, b], edges: [{ ...edgeBetween('e', a, b, 'e', 'w'), waypoints: [{ x: Infinity, y: 0 }] }],
+    });
+    expect(routes.has('e')).toBe(true);
+  });
+
   it.each([0, -5])('routes around a wall with a margin of %d, widening the search from nothing', (margin) => {
     const wall: AvoidObstacle = { id: 'wall', kind: 'shape', box: { x: 200, y: -300, width: 40, height: 700 } };
     const input = scene([shapes.a, shapes.b, wall], [edgeBetween('ab', shapes.a, shapes.b, 'e', 'w')]);

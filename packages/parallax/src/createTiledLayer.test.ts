@@ -157,6 +157,17 @@ describe('createTiledLayer', () => {
     expect(order.lastIndexOf(a)).toBeLessThan(order.indexOf(b));
   });
 
+  it('draws a screen-space source above the world sources listed before it', () => {
+    const a = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } } as DrawCommand;
+    const hud = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 2, height: 2 } } as DrawCommand;
+    const l = createTiledLayer({
+      id: 't', label: 'T', period: 200,
+      source: [{ id: 'a', label: 'a', draw: () => [a] }, { id: 'hud', label: 'hud', space: 'screen', draw: () => [hud] }],
+    });
+    const out = l.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims) as Array<{ children: DrawCommand[] }>;
+    expect(out.at(-1)!.children).toEqual([hud]);
+  });
+
   it('emits nothing for a source that drew nothing', () => {
     const empty: RenderLayer<unknown> = { id: 'e', label: 'e', space: 'world', draw: () => [] };
     const l = createTiledLayer({ id: 't', label: 'T', source: [empty], period: 200 });

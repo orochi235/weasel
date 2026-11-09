@@ -71,7 +71,7 @@ function translate(tx: number, ty: number): Float64Array {
  * **Zoomed out until a draw would take more than a few thousand copies, the
  * lattice draws none.** A cell is then a pixel or two across.
  *
- * **A `space: 'screen'` source is drawn once, untiled, in screen space** — it
+ * **A `space: 'screen'` source is drawn once, untiled, in screen space**, in its place among the sources — it
  * ignores the view by definition, so every copy would land on top of the last. Same constraint
  * `createParallaxLayer` carries.
  */
@@ -92,25 +92,25 @@ export function createTiledLayer<TData>(
       const ky = tiledProject(shown.y, shown.y + shown.height, p.y, b.y);
 
       const out: DrawCommand[] = [];
-      const onScreen: DrawCommand[] = [];
-      for (const layer of source) {
-        if ((layer.space ?? 'world') === 'screen') onScreen.push(...drawOneLayer(layer, data, view, dims));
-      }
-      // This plane is drawn through the view, so screen content is handed the view's inverse.
-      if (onScreen.length > 0) {
-        out.push({
-          kind: 'group',
-          transform: new Float64Array([1 / view.scale.x, 0, 0, 0, 1 / view.scale.y, 0, view.x, view.y, 1]),
-          children: onScreen,
-        });
-      }
-      const tiles = source.filter((layer) => (layer.space ?? 'world') !== 'screen');
       // Written so a non-finite span, which a zero view scale gives, fails it too.
-      if (!((kx.to - kx.from + 1) * (ky.to - ky.from + 1) <= MAX_COPIES)) return out;
+      const tiling = (kx.to - kx.from + 1) * (ky.to - ky.from + 1) <= MAX_COPIES;
 
       // Layer by layer, so a later source sits above an earlier one in every copy, and a
       // layer's effects run once over all of its copies.
-      for (const layer of tiles) {
+      for (const layer of source) {
+        if ((layer.space ?? 'world') === 'screen') {
+          const onScreen = drawOneLayer(layer, data, view, dims);
+          // This plane is drawn through the view, so screen content is handed the view's inverse.
+          if (onScreen.length > 0) {
+            out.push({
+              kind: 'group',
+              transform: new Float64Array([1 / view.scale.x, 0, 0, 0, 1 / view.scale.y, 0, view.x, view.y, 1]),
+              children: onScreen,
+            });
+          }
+          continue;
+        }
+        if (!tiling) continue;
         const copies: DrawCommand[] = [];
         for (let i = kx.from; i <= kx.to; i++) {
           for (let j = ky.from; j <= ky.to; j++) {

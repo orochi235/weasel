@@ -33,7 +33,7 @@ export interface RulerTick {
   label?: string;
 }
 
-/** What {@link rulerTicks} lays out. */
+/** What {@link rulerTicks} lays out: no ticks once labeled ones would sit under a pixel apart. */
 export interface RulerTicks {
   ticks: RulerTick[];
   /** The step between labeled ticks, in the innermost scope's base units. */
@@ -67,7 +67,8 @@ export function rulerTicks(opts: RulerTicksOptions): RulerTicks {
   const worldPerBase = (toRoot(1, scopes) - toRoot(0, scopes)) * bar.magnification;
   const minorWorld = (bar.length * worldPerBase) / subdivisions;
   const ticks: RulerTick[] = [];
-  if (!(minorWorld > 0) || !(length > 0)) return { ticks, step: bar.length, unit: bar.unit, subdivisions, magnification: bar.magnification };
+  // Zoomed out past the longest step there is, ticks would number in the millions.
+  if (!(minorWorld > 0) || !(length > 0) || !(bar.px >= 1)) return { ticks, step: bar.length, unit: bar.unit, subdivisions, magnification: bar.magnification };
   const end = start + length / pxPerUnit;
   const lo = Math.ceil((Math.min(start, end) - origin) / minorWorld - 1e-9);
   const hi = Math.floor((Math.max(start, end) - origin) / minorWorld + 1e-9);
