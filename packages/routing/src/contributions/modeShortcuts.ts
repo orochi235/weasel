@@ -51,9 +51,12 @@ export function modeShortcutSpec(shortcut: string): KeySpec {
  * a route conflict unless `canEnter` is given: that is what keeps the entry
  * key from firing inside the other mode.
  *
- * The bindings ride the hotkey tier, so leaving a mode outranks what the same
- * key does otherwise (Escape clearing the selection), and they yield while a
- * gesture is in flight, so Escape mid-drag still cancels the drag first. Keys
+ * The bindings ride the ambient tier, so the active tool's own binding on the
+ * key comes first (Enter finishing a slice, Escape dropping a measurement) and
+ * the mode key fires once it declines. Gated on their modes, they outrank an
+ * ungated ambient binding (Escape clearing the selection) while their rule
+ * holds. They yield while a gesture is in flight, so Escape mid-drag still
+ * cancels the drag first. Keys
  * typed into an editable element never reach them. A mode's `exit` and
  * `cancel`, pressed while a tool other than its `defaultTool` is active,
  * return to that tool instead (`returnToModeDefault`), so the next press leaves.
@@ -97,7 +100,6 @@ function shortcutAction(
   return {
     id: `mode.${mode.id}.${role}`,
     label: `${VERB[role]} ${modeLabel(mode)}`,
-    scope: 'hotkey',
     defaultBinding: [{
       spec: { ...modeShortcutSpec(shortcut), phase: BETWEEN_GESTURES },
       opts: { id: `mode.${mode.id}.${role}.key`, yields },
