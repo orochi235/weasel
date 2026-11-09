@@ -9,8 +9,9 @@ export interface TrialTransportProps {
   /** The trial whose clock it plays, resolved as `useTrialClock` does: this
    *  trial's, else the one it renders inside, else the lab's focused trial's. */
   trialId?: string;
-  /** Answer Space, the arrows, Home and End, R, and `<` / `>` anywhere on the
-   *  page, except in a field or on another control. Default `false`. */
+  /** Answer Space, the arrows, Home and End, R, and `<` / `>` on the page
+   *  while focus is outside a field, a control and a canvas, which has keys
+   *  of its own (the trial's, say). Default `false`. */
   keys?: boolean;
   /** Play a run that has ended again from the start after this many ms, until
    *  anyone works the clock from a transport. Omitted, an ended run stays ended. */

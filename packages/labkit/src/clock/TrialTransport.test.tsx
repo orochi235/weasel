@@ -22,6 +22,7 @@ function timed(spec: ClockCapability | undefined, props: TrialTransportProps = {
         <>
           <TrialTransport {...props} />
           <input aria-label="field" />
+          <canvas aria-label="stage" tabIndex={0} />
         </>
       );
     },
@@ -220,6 +221,16 @@ describe('<TrialTransport>', () => {
       key(' ', screen.getByRole('textbox', { name: 'field' }));
       key(' ', screen.getByRole('button', { name: 'Play' }));
       expect(c().rate).toBe(0);
+    });
+
+    it("leaves a key pressed on the trial's canvas to the canvas", async ({ mount }) => {
+      await mount({ duration: 1000 }, { keys: true });
+      const stage = document.querySelector('canvas[aria-label="stage"]')!;
+      key(' ', stage);
+      key('ArrowRight', stage);
+      key('r', stage);
+      expect(c().rate).toBe(0);
+      expect(c().elapsed).toBe(0);
     });
 
     it('answers none without `keys`', async ({ mount }) => {
