@@ -16,13 +16,13 @@ export function cursorGlyph(name: CursorGlyphName, mark?: CursorMarkName): Curso
   // Widened deliberately: the key types say these are always defined, but the
   // guard is what makes a bad name from untyped JS throw instead of baking
   // `undefined` into a cursor string that silently does nothing.
-  const glyph = (GLYPHS as Record<string, CursorGlyph | undefined>)[name];
+  const glyph = Object.hasOwn(GLYPHS, name) ? (GLYPHS as Record<string, CursorGlyph>)[name] : undefined;
   if (glyph === undefined) throw new Error(`unknown cursor glyph: ${String(name)}`);
   if (mark === undefined) return glyph;
   const key = `${name}+${mark}`;
   const hit = composed.get(key);
   if (hit) return hit;
-  const m = (MARKS as Record<string, CursorMark | undefined>)[mark];
+  const m = Object.hasOwn(MARKS, mark) ? (MARKS as Record<string, CursorMark>)[mark] : undefined;
   if (m === undefined) throw new Error(`unknown cursor mark: ${String(mark)}`);
   if (!glyph.mark) throw new Error(`cursor glyph ${name} has no slot for a mark`);
   const out = markedGlyph(glyph, m);

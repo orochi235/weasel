@@ -26,6 +26,13 @@ describe('cursorFor', () => {
     // @ts-expect-error — exercising the runtime guard behind the type.
     expect(() => cursorFor('trowel')).toThrow(/trowel/);
   });
+
+  it('throws on a glyph or mark named like an Object.prototype member', () => {
+    // @ts-expect-error — exercising the runtime guard behind the type.
+    expect(() => cursorFor('constructor')).toThrow(/unknown cursor glyph: constructor/);
+    // @ts-expect-error — as above.
+    expect(() => cursorFor('crosshair', { mark: 'toString' })).toThrow(/unknown cursor mark: toString/);
+  });
 });
 
 describe('cursorFor rotation', () => {
