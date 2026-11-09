@@ -17,25 +17,58 @@
           "name": "Chart",
           "variant": "declaration",
           "kind": 32,
-          "flags": { "isConst": true },
-          "comment": { "summary": [{ "kind": "text", "text": "A line chart." }] },
-          "sources": [{ "fileName": "packages/ui/src/Chart.tsx", "line": 30, "character": 13 }],
+          "flags": {
+            "isConst": true
+          },
+          "comment": {
+            "summary": [
+              {
+                "kind": "text",
+                "text": "A line chart."
+              }
+            ]
+          },
+          "sources": [
+            {
+              "fileName": "packages/ui/src/Chart.tsx",
+              "line": 30,
+              "character": 13
+            }
+          ],
           "type": {
             "type": "reference",
             "name": "ForwardRefExoticComponent",
-            "target": { "sourceFileName": "node_modules/@types/react/index.d.ts", "qualifiedName": "React.ForwardRefExoticComponent" },
+            "target": {
+              "sourceFileName": "node_modules/@types/react/index.d.ts",
+              "qualifiedName": "React.ForwardRefExoticComponent"
+            },
             "package": "@types/react",
             "typeArguments": [
               {
                 "type": "intersection",
                 "types": [
-                  { "type": "reference", "name": "ChartProps", "target": 20, "package": "@demo/ui" },
+                  {
+                    "type": "reference",
+                    "name": "ChartProps",
+                    "target": 20,
+                    "package": "@demo/ui"
+                  },
                   {
                     "type": "reference",
                     "name": "RefAttributes",
-                    "target": { "sourceFileName": "node_modules/@types/react/index.d.ts", "qualifiedName": "React.RefAttributes" },
+                    "target": {
+                      "sourceFileName": "node_modules/@types/react/index.d.ts",
+                      "qualifiedName": "React.RefAttributes"
+                    },
                     "package": "@types/react",
-                    "typeArguments": [{ "type": "reference", "name": "ChartHandle", "target": 30, "package": "@demo/ui" }]
+                    "typeArguments": [
+                      {
+                        "type": "reference",
+                        "name": "ChartHandle",
+                        "target": 30,
+                        "package": "@demo/ui"
+                      }
+                    ]
                   }
                 ]
               }
@@ -48,7 +81,13 @@
           "variant": "declaration",
           "kind": 256,
           "flags": {},
-          "sources": [{ "fileName": "packages/ui/src/Chart.tsx", "line": 8, "character": 17 }],
+          "sources": [
+            {
+              "fileName": "packages/ui/src/Chart.tsx",
+              "line": 8,
+              "character": 17
+            }
+          ],
           "children": [
             {
               "id": 21,
@@ -58,32 +97,82 @@
               "flags": {},
               "comment": {
                 "summary": [
-                  { "kind": "text", "text": "Shown beside the glyph, at each " },
-                  { "kind": "inline-tag", "tag": "@link", "text": "Point", "target": 40 },
-                  { "kind": "text", "text": "." }
+                  {
+                    "kind": "text",
+                    "text": "Shown beside the glyph, at each "
+                  },
+                  {
+                    "kind": "inline-tag",
+                    "tag": "@link",
+                    "text": "Point",
+                    "target": 40
+                  },
+                  {
+                    "kind": "text",
+                    "text": "."
+                  }
                 ],
                 "blockTags": [
-                  { "tag": "@see", "content": [{ "kind": "inline-tag", "tag": "@link", "text": "ChartHandle.toModel", "target": 31 }] },
-                  { "tag": "@remarks", "content": [{ "kind": "text", "text": "Read once." }] }
+                  {
+                    "tag": "@see",
+                    "content": [
+                      {
+                        "kind": "inline-tag",
+                        "tag": "@link",
+                        "text": "ChartHandle.toModel",
+                        "target": 31
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "@remarks",
+                    "content": [
+                      {
+                        "kind": "text",
+                        "text": "Read once."
+                      }
+                    ]
+                  }
                 ]
               },
-              "type": { "type": "intrinsic", "name": "string" }
+              "type": {
+                "type": "intrinsic",
+                "name": "string"
+              }
             },
             {
               "id": 22,
               "name": "size",
               "variant": "declaration",
               "kind": 1024,
-              "flags": { "isOptional": true },
+              "flags": {
+                "isOptional": true
+              },
               "comment": {
                 "summary": [],
-                "blockTags": [{ "tag": "@default", "content": [{ "kind": "code", "text": "```ts\n'md'\n```" }] }]
+                "blockTags": [
+                  {
+                    "tag": "@default",
+                    "content": [
+                      {
+                        "kind": "code",
+                        "text": "```ts\n'md'\n```"
+                      }
+                    ]
+                  }
+                ]
               },
               "type": {
                 "type": "union",
                 "types": [
-                  { "type": "literal", "value": "sm" },
-                  { "type": "literal", "value": "md" }
+                  {
+                    "type": "literal",
+                    "value": "sm"
+                  },
+                  {
+                    "type": "literal",
+                    "value": "md"
+                  }
                 ]
               }
             },
@@ -92,37 +181,93 @@
               "name": "loud",
               "variant": "declaration",
               "kind": 1024,
-              "flags": { "isOptional": true },
+              "flags": {
+                "isOptional": true
+              },
               "comment": {
                 "summary": [],
-                "blockTags": [{ "tag": "@deprecated", "content": [{ "kind": "text", "text": "use " }, { "kind": "code", "text": "`tone`" }] }]
+                "blockTags": [
+                  {
+                    "tag": "@deprecated",
+                    "content": [
+                      {
+                        "kind": "text",
+                        "text": "use "
+                      },
+                      {
+                        "kind": "code",
+                        "text": "`tone`"
+                      }
+                    ]
+                  }
+                ]
               },
-              "type": { "type": "intrinsic", "name": "boolean" }
+              "type": {
+                "type": "intrinsic",
+                "name": "boolean"
+              }
             },
             {
               "id": 24,
               "name": "tone",
               "variant": "declaration",
               "kind": 1024,
-              "flags": { "isOptional": true },
-              "comment": { "summary": [{ "kind": "text", "text": "The ink." }] },
-              "type": { "type": "intrinsic", "name": "string" },
-              "inheritedFrom": { "type": "reference", "name": "Toned.tone", "target": 51 }
+              "flags": {
+                "isOptional": true
+              },
+              "comment": {
+                "summary": [
+                  {
+                    "kind": "text",
+                    "text": "The ink."
+                  }
+                ]
+              },
+              "type": {
+                "type": "intrinsic",
+                "name": "string"
+              },
+              "inheritedFrom": {
+                "type": "reference",
+                "name": "Toned.tone",
+                "target": 51
+              }
             },
             {
               "id": 25,
               "name": "linkplain",
               "variant": "declaration",
               "kind": 1024,
-              "flags": { "isOptional": true },
+              "flags": {
+                "isOptional": true
+              },
               "comment": {
                 "summary": [
-                  { "kind": "inline-tag", "tag": "@linkplain", "text": "the docs", "target": "https://example.com/docs" },
-                  { "kind": "text", "text": " and " },
-                  { "kind": "inline-tag", "tag": "@link", "text": "Elsewhere", "target": { "packageName": "other", "qualifiedName": "Elsewhere" } }
+                  {
+                    "kind": "inline-tag",
+                    "tag": "@linkplain",
+                    "text": "the docs",
+                    "target": "https://example.com/docs"
+                  },
+                  {
+                    "kind": "text",
+                    "text": " and "
+                  },
+                  {
+                    "kind": "inline-tag",
+                    "tag": "@link",
+                    "text": "Elsewhere",
+                    "target": {
+                      "packageName": "other",
+                      "qualifiedName": "Elsewhere"
+                    }
+                  }
                 ]
               },
-              "type": { "type": "intrinsic", "name": "number" }
+              "type": {
+                "type": "intrinsic",
+                "name": "number"
+              }
             }
           ]
         },
@@ -132,7 +277,13 @@
           "variant": "declaration",
           "kind": 256,
           "flags": {},
-          "sources": [{ "fileName": "packages/ui/src/Chart.tsx", "line": 2, "character": 17 }],
+          "sources": [
+            {
+              "fileName": "packages/ui/src/Chart.tsx",
+              "line": 2,
+              "character": 17
+            }
+          ],
           "children": [
             {
               "id": 31,
@@ -147,11 +298,33 @@
                   "variant": "signature",
                   "kind": 4096,
                   "flags": {},
-                  "comment": { "summary": [{ "kind": "text", "text": "Maps a plot point to the model." }] },
+                  "comment": {
+                    "summary": [
+                      {
+                        "kind": "text",
+                        "text": "Maps a plot point to the model."
+                      }
+                    ]
+                  },
                   "parameters": [
-                    { "id": 33, "name": "pt", "variant": "param", "kind": 32768, "flags": {}, "type": { "type": "reference", "name": "Point", "target": 40 } }
+                    {
+                      "id": 33,
+                      "name": "pt",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "reference",
+                        "name": "Point",
+                        "target": 40
+                      }
+                    }
                   ],
-                  "type": { "type": "reference", "name": "Point", "target": 40 }
+                  "type": {
+                    "type": "reference",
+                    "name": "Point",
+                    "target": 40
+                  }
                 },
                 {
                   "id": 34,
@@ -159,19 +332,59 @@
                   "variant": "signature",
                   "kind": 4096,
                   "flags": {},
-                  "typeParameters": [{ "id": 37, "name": "T", "variant": "typeParam", "kind": 131072, "flags": {} }],
+                  "typeParameters": [
+                    {
+                      "id": 37,
+                      "name": "T",
+                      "variant": "typeParam",
+                      "kind": 131072,
+                      "flags": {}
+                    }
+                  ],
                   "parameters": [
-                    { "id": 35, "name": "x", "variant": "param", "kind": 32768, "flags": {}, "type": { "type": "intrinsic", "name": "number" } },
+                    {
+                      "id": 35,
+                      "name": "x",
+                      "variant": "param",
+                      "kind": 32768,
+                      "flags": {},
+                      "type": {
+                        "type": "intrinsic",
+                        "name": "number"
+                      }
+                    },
                     {
                       "id": 36,
                       "name": "rest",
                       "variant": "param",
                       "kind": 32768,
-                      "flags": { "isRest": true },
-                      "type": { "type": "array", "elementType": { "type": "union", "types": [{ "type": "intrinsic", "name": "number" }, { "type": "reference", "name": "T", "refersToTypeParameter": true }] } }
+                      "flags": {
+                        "isRest": true
+                      },
+                      "type": {
+                        "type": "array",
+                        "elementType": {
+                          "type": "union",
+                          "types": [
+                            {
+                              "type": "intrinsic",
+                              "name": "number"
+                            },
+                            {
+                              "type": "reference",
+                              "name": "T",
+                              "refersToTypeParameter": true
+                            }
+                          ]
+                        }
+                      }
                     }
                   ],
-                  "type": { "type": "reference", "name": "Point", "target": 40 }
+                  "type": {
+                    "type": "reference",
+                    "name": "Point",
+                    "target": 40
+                  }
                 }
               ]
             },
@@ -180,9 +393,21 @@
               "name": "width",
               "variant": "declaration",
               "kind": 1024,
-              "flags": { "isReadonly": true },
-              "comment": { "summary": [{ "kind": "text", "text": "In pixels." }] },
-              "type": { "type": "intrinsic", "name": "number" }
+              "flags": {
+                "isReadonly": true
+              },
+              "comment": {
+                "summary": [
+                  {
+                    "kind": "text",
+                    "text": "In pixels."
+                  }
+                ]
+              },
+              "type": {
+                "type": "intrinsic",
+                "name": "number"
+              }
             }
           ]
         },
@@ -192,9 +417,25 @@
           "variant": "declaration",
           "kind": 256,
           "flags": {},
-          "sources": [{ "fileName": "packages/ui/src/point.ts", "line": 1, "character": 17 }],
+          "sources": [
+            {
+              "fileName": "packages/ui/src/point.ts",
+              "line": 1,
+              "character": 17
+            }
+          ],
           "children": [
-            { "id": 41, "name": "x", "variant": "declaration", "kind": 1024, "flags": {}, "type": { "type": "intrinsic", "name": "number" } }
+            {
+              "id": 41,
+              "name": "x",
+              "variant": "declaration",
+              "kind": 1024,
+              "flags": {},
+              "type": {
+                "type": "intrinsic",
+                "name": "number"
+              }
+            }
           ]
         },
         {
@@ -203,9 +444,27 @@
           "variant": "declaration",
           "kind": 256,
           "flags": {},
-          "sources": [{ "fileName": "packages/ui/src/tone.ts", "line": 1, "character": 17 }],
+          "sources": [
+            {
+              "fileName": "packages/ui/src/tone.ts",
+              "line": 1,
+              "character": 17
+            }
+          ],
           "children": [
-            { "id": 51, "name": "tone", "variant": "declaration", "kind": 1024, "flags": { "isOptional": true }, "type": { "type": "intrinsic", "name": "string" } }
+            {
+              "id": 51,
+              "name": "tone",
+              "variant": "declaration",
+              "kind": 1024,
+              "flags": {
+                "isOptional": true
+              },
+              "type": {
+                "type": "intrinsic",
+                "name": "string"
+              }
+            }
           ]
         },
         {
@@ -221,7 +480,13 @@
               "variant": "declaration",
               "kind": 64,
               "flags": {},
-              "sources": [{ "fileName": "packages/ui/src/charts/Gauge.tsx", "line": 4, "character": 16 }],
+              "sources": [
+                {
+                  "fileName": "packages/ui/src/charts/Gauge.tsx",
+                  "line": 4,
+                  "character": 16
+                }
+              ],
               "signatures": [
                 {
                   "id": 62,
@@ -251,17 +516,146 @@
                               "variant": "declaration",
                               "kind": 1024,
                               "flags": {},
-                              "comment": { "summary": [{ "kind": "text", "text": "From 0 to 1." }] },
-                              "type": { "type": "intrinsic", "name": "number" }
+                              "comment": {
+                                "summary": [
+                                  {
+                                    "kind": "text",
+                                    "text": "From 0 to 1."
+                                  }
+                                ]
+                              },
+                              "type": {
+                                "type": "intrinsic",
+                                "name": "number"
+                              }
                             }
                           ]
                         }
                       }
                     }
                   ],
-                  "type": { "type": "intrinsic", "name": "null" }
+                  "type": {
+                    "type": "intrinsic",
+                    "name": "null"
+                  }
                 }
               ]
+            }
+          ]
+        },
+        {
+          "id": 70,
+          "name": "PillProps",
+          "variant": "declaration",
+          "kind": 2097152,
+          "flags": {},
+          "sources": [
+            {
+              "fileName": "packages/ui/src/Pill.tsx",
+              "line": 3,
+              "character": 12
+            }
+          ],
+          "type": {
+            "type": "indexedAccess",
+            "indexType": {
+              "type": "reference",
+              "name": "PillShape",
+              "target": 72
+            },
+            "objectType": {
+              "type": "mapped",
+              "parameter": "S",
+              "parameterType": {
+                "type": "reference",
+                "name": "PillShape",
+                "target": 72
+              },
+              "templateType": {
+                "type": "intersection",
+                "types": [
+                  {
+                    "type": "reference",
+                    "name": "Toned",
+                    "target": 50
+                  },
+                  {
+                    "type": "reflection",
+                    "declaration": {
+                      "id": 71,
+                      "name": "__type",
+                      "variant": "declaration",
+                      "kind": 65536,
+                      "flags": {},
+                      "children": [
+                        {
+                          "id": 73,
+                          "name": "shape",
+                          "variant": "declaration",
+                          "kind": 1024,
+                          "flags": {
+                            "isOptional": true
+                          },
+                          "comment": {
+                            "summary": [
+                              {
+                                "kind": "text",
+                                "text": "The outline."
+                              }
+                            ]
+                          },
+                          "type": {
+                            "type": "reference",
+                            "name": "S",
+                            "refersToTypeParameter": true
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 74,
+          "name": "Pill",
+          "variant": "declaration",
+          "kind": 64,
+          "flags": {},
+          "sources": [
+            {
+              "fileName": "packages/ui/src/Pill.tsx",
+              "line": 9,
+              "character": 16
+            }
+          ],
+          "signatures": [
+            {
+              "id": 75,
+              "name": "Pill",
+              "variant": "signature",
+              "kind": 4096,
+              "flags": {},
+              "parameters": [
+                {
+                  "id": 76,
+                  "name": "props",
+                  "variant": "param",
+                  "kind": 32768,
+                  "flags": {},
+                  "type": {
+                    "type": "reference",
+                    "name": "PillProps",
+                    "target": 70
+                  }
+                }
+              ],
+              "type": {
+                "type": "intrinsic",
+                "name": "null"
+              }
             }
           ]
         }

@@ -88,6 +88,10 @@ function collect(index: TdIndex, type: TdType | undefined, props: Map<string, Td
   if (!type) return;
   if (type.type === 'intersection' || type.type === 'union') {
     for (const part of type.types ?? []) collect(index, part, props, handle, seen);
+  } else if (type.type === 'indexedAccess') {
+    collect(index, type.objectType, props, handle, seen);
+  } else if (type.type === 'mapped') {
+    collect(index, type.templateType, props, handle, seen);
   } else if (type.type === 'reflection') {
     for (const child of type.declaration?.children ?? []) if (!props.has(child.name)) props.set(child.name, child);
   } else if (type.type === 'reference') {

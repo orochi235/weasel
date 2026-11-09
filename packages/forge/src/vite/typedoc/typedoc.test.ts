@@ -49,6 +49,12 @@ describe('readTypedoc', () => {
     expect(chart.members.get('width')).toEqual({ description: 'In pixels.', signatures: [] });
   });
 
+  it('reads the props of a type mapped over a union and indexed by it, as a discriminated props type is', () => {
+    const pill = docs.component('Pill', '/repo/packages/ui/src/Pill.tsx')!;
+    expect([...pill.props.keys()]).toEqual(['tone', 'shape']);
+    expect(pill.props.get('shape')).toEqual({ description: 'The outline.' });
+  });
+
   it('reads a function component in a subpath entry, its props an inline type', () => {
     const gauge = docs.component('Gauge', '/repo/packages/ui/src/charts/Gauge.tsx')!;
     expect(gauge.href).toBe('ref:@demo/ui/charts/Gauge');
