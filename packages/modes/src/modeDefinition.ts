@@ -31,7 +31,7 @@ export interface ModeEntry {
  * (free-transform, crop) is a transaction: the whole session collapses to one
  * undoable step and leaving requires an explicit `commit` or `cancel`.
  *
- * The shortcut fields (`entry`, `exit`, `discard`, `commit`, `cancel`) are key chords (`'Escape'`, `'Meta+T'`) that
+ * The shortcut fields (`entry`, `exit`, `discard`, `commit`, `cancel`) are key chords (`'Escape'`, `'Mod+Alt+T'`) that
  * `modeShortcuts` in `@weasel-js/routing` turns into dispatcher bindings,
  * each live only while the mode it acts on is (or, for `entry`, is not).
  */

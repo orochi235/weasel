@@ -9,6 +9,7 @@ import { ActionsProvider, DepRegistryProvider, SceneCanvas, type BuiltinToolId, 
 import { reportRouteConflicts } from '@weasel-js/core/routing';
 import { useMemo } from 'react';
 import { DEFAULT_MODES, activeModeOf } from '@weasel-js/modes';
+import { isApplePlatform } from '@weasel-js/gestures';
 import { createModeMachine } from './machine';
 import { modePathEdit } from './pathEditHost';
 import { modalityShortcuts } from './shortcuts';
@@ -100,6 +101,10 @@ describe('modality shortcuts', () => {
   });
 });
 
+const MAC = isApplePlatform();
+/** Cmd+Option+T (Ctrl+Alt+T off a Mac), as macOS reports it: the character Option makes, the physical key in `code`. */
+const MOD_ALT_T: KeyboardEventInit = { code: 'KeyT', altKey: true, metaKey: MAC, ctrlKey: !MAC };
+
 describe('entering path-edit from the keyboard', () => {
   function Harness({ machine, scene, pathToEdit, tool }: {
     machine: ReturnType<typeof createModeMachine>;
@@ -183,17 +188,17 @@ describe('entering path-edit from the keyboard', () => {
     expect(t.machine.registry.current().id).toBe('normal');
   });
 
-  it('Meta+T opens a free-transform transaction on the selection', () => {
+  it('Mod+Alt+T opens a free-transform transaction on the selection', () => {
     const t = setupPath(() => ID);
-    t.key('t', { metaKey: true });
+    t.key('†', MOD_ALT_T);
     expect(t.machine.registry.current().id).toBe('free-transform');
     expect(t.machine.getActiveTargetId()).toBe(ID);
   });
 
-  it('Meta+T does nothing with nothing selected', () => {
+  it('Mod+Alt+T does nothing with nothing selected', () => {
     const t = setupPath(() => null);
     act(() => t.scene.setSelection([]));
-    t.key('t', { metaKey: true });
+    t.key('†', MOD_ALT_T);
     expect(t.machine.registry.current().id).toBe('normal');
   });
 
@@ -210,7 +215,7 @@ describe('entering path-edit from the keyboard', () => {
     act(() => t.machine.enterMode('text-edit', { targetId: 't' }));
     t.key('Enter');
     t.key('c');
-    t.key('t', { metaKey: true });
+    t.key('†', MOD_ALT_T);
     expect(t.machine.registry.current().id).toBe('text-edit');
     expect(t.editingId() || null).toBeNull();
   });

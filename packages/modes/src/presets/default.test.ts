@@ -24,6 +24,13 @@ describe('default mode preset', () => {
     expect(m.cancel?.shortcut).toBeDefined();
   });
 
+  it('free-transform is entered on Mod+Alt+T and abandoned on Escape', () => {
+    const m = byId('free-transform');
+    expect(m.entry?.shortcut).toBe('Mod+Alt+T');
+    expect(m.cancel?.shortcut).toBe('Escape');
+    expect(m.discard).toBeUndefined();
+  });
+
   it('normal has no workspace tint', () => {
     const m = byId('normal');
     expect(m.workspace).toBeUndefined();
