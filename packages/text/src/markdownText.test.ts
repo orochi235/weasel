@@ -161,6 +161,15 @@ describe('layoutMarkdown', () => {
   });
 });
 
+describe('layoutMarkdown on a long text', () => {
+  it('measures more lines than a call can take arguments', () => {
+    const lines = 1_000_000;
+    const laid = layoutMarkdown([{ text: 'ab\n'.repeat(lines - 1) + 'abc' }], Infinity, 10, (t) => t.length);
+    expect(laid.lines.length).toBe(lines);
+    expect(laid.width).toBe(3);
+  });
+});
+
 describe('layoutMarkdown with no characters', () => {
   it('reports a zero-size layout for runs whose text is empty', () => {
     const result = layoutMarkdown([{ text: '' }, { text: '', bold: true }], Infinity, 13, mockMeasure);
