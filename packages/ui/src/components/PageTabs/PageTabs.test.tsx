@@ -75,6 +75,30 @@ describe('PageTabs', () => {
     expect(onRename).toHaveBeenCalledTimes(1);
   });
 
+  it('renames nothing when the name is left as it was, so an unnamed page keeps its numbered label', () => {
+    const { onRename } = setup();
+    press(tab('Page 2'));
+    press(tab('Page 2'));
+    fireEvent.keyDown(screen.getByLabelText('Page name'), { key: 'Enter' });
+    press(tab('Cover'));
+    press(tab('Cover'));
+    fireEvent.change(screen.getByLabelText('Page name'), { target: { value: ' Cover ' } });
+    fireEvent.blur(screen.getByLabelText('Page name'));
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it('hands focus back to the tab when a rename ends from the keyboard', () => {
+    setup();
+    press(tab('Page 2'));
+    press(tab('Page 2'));
+    fireEvent.keyDown(screen.getByLabelText('Page name'), { key: 'Enter' });
+    expect(document.activeElement).toBe(tab('Page 2'));
+    press(tab('Page 3'));
+    press(tab('Page 3'));
+    fireEvent.keyDown(screen.getByLabelText('Page name'), { key: 'Escape' });
+    expect(document.activeElement).toBe(tab('Page 3'));
+  });
+
   it('leaves an input method\'s Enter and Escape to it while renaming, Safari\'s closing Enter included', () => {
     const { onRename } = setup();
     press(tab('Page 2'));
