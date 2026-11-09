@@ -188,10 +188,12 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   return {
     start(when) {
       if (running) return;
+      const at = when ?? engine.now();
+      if (!Number.isFinite(at)) throw new RangeError(`@weasel-js/audio: a pattern starts at a finite time, not ${at}`);
       running = true;
       count = 0;
       lastAt = null;
-      nextAt = when ?? engine.now();
+      nextAt = at;
       book();
     },
     stop() {
