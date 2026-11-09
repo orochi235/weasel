@@ -313,6 +313,16 @@ describe('a long-press', () => {
     }
   });
 
+  it('survives a pointer of another kind landing beside it: a palm under a held pen, a pen beside a held finger', () => {
+    for (const [held, beside] of [['pen', 'touch'], ['pen', 'mouse'], ['touch', 'pen'], ['touch', 'mouse']] as const) {
+      const h = harness({ handles: ['longpress'] });
+      h.down(1, 0, { pointerType: held });
+      h.down(2, 30, { pointerType: beside });
+      h.clock.advance(LONG_PRESS_MS);
+      expect(h.log, `${beside} beside ${held}`).toContain(`haptic:${held}`);
+    }
+  });
+
   it('reports the press being held, and its end when it fires', () => {
     const h = harness();
     h.clock.advance(40);

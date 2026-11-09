@@ -30,7 +30,8 @@ export interface LongPressHold {
 
 /**
  * One slot, not one per pointer: only a lone pointer arms a hold, and a second
- * one landing cancels it. `onChange` hears the pending press, and `null` when
+ * finger beside a held finger cancels it, as the multitouch it starts. A
+ * pointer of another kind beside it, a palm under a pen, leaves it running. `onChange` hears the pending press, and `null` when
  * it fires or is abandoned.
  */
 export function createLongPressHold(
