@@ -31,6 +31,9 @@ export interface SnapSessionSources {
   sources: readonly SnapSource[];
   /** Sources `useSnapSource` adds, after `sources`. */
   registry?: SnapSourceRegistry;
+  /** Whether anything snaps. `false` runs every frame as though `snap.suspend`
+   *  were held, read frame by frame. Default `true`. */
+  enabled?: boolean;
   /** Ids of the canvas's default sources to leave out. */
   omit?: readonly string[];
   /** Overrides the kit setting `targets.snapPx`. */
@@ -84,7 +87,7 @@ export function useSnapDepSource(
       assertSnapSourceIds(sources);
       const debug = s.debug?.() ?? undefined;
       const reachPx = s.reachPx ?? kitSettings.get('targets.snapPx') ?? DEFAULT_SNAP_PX;
-      return sceneSession2d({
+      const session = sceneSession2d({
         req,
         scene: s.scene,
         boxes: s.boxes(),
@@ -97,6 +100,12 @@ export function useSnapDepSource(
         ...(debug ? { debug } : {}),
         store,
       });
+      const off = () => sessionRef.current.enabled === false;
+      return {
+        at: (p, mods) => session.at(p, off() ? { ...mods, suspend: true } : mods),
+        angle: (theta, mods) => session.angle(theta, off() ? { ...mods, suspend: true } : mods),
+        end: () => session.end(),
+      };
     },
   }));
   return store;

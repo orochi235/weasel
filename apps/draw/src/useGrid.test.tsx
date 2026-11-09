@@ -17,6 +17,14 @@ describe('useGrid', () => {
     expect(result.current.snapSource).toBeUndefined();
   });
 
+  it('starts with snapping on, and toggles it through the preferences', () => {
+    const { result } = mount();
+    expect(result.current.commands.snapping).toBe(true);
+    act(() => result.current.commands.toggleSnapping());
+    expect(drawPrefs().get('view.snapping')).toBe(false);
+    expect(result.current.commands.snapping).toBe(false);
+  });
+
   it('shows the grid when the preference says so', () => {
     act(() => drawPrefs().set('view.gridVisible', true));
     expect(mount().result.current.layer).toBeDefined();

@@ -42,6 +42,12 @@ describe('the snap dep', () => {
     expect(s.at({ x: 70, y: 47 }, FREE)).toMatchObject({ point: { x: 70, y: 47 }, held: false });
   });
 
+  it('snaps nothing while snapping is off, as though suspended', () => {
+    const snap = snapDepOf({ sources: [pointAt({ x: 50, y: 50 })], enabled: false });
+    const s = snap.begin({ gesture: 'point', press: { x: 0, y: 0 } });
+    expect(s.at({ x: 52, y: 47 }, FREE)).toMatchObject({ point: { x: 52, y: 47 }, held: false, marks: [] });
+  });
+
   it('records each frame\'s candidates into the debug sink, and clears them at the end', () => {
     const sink = createDebugSink({ snap: true });
     const snap = snapDepOf({ sources: [pointAt({ x: 50, y: 50 }), pointAt({ x: 56, y: 50 })], debug: () => sink });

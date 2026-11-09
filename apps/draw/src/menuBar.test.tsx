@@ -39,7 +39,7 @@ afterEach(() => {
 function setup() {
   const commands: AppCommands = {
     gridVisible: false, toggleGrid: vi.fn(),
-    snapToGrid: false, toggleSnap: vi.fn(), rulersVisible: false, toggleRulers: vi.fn(), boundToContent: true, toggleBoundToContent: vi.fn(),
+    snapToGrid: false, toggleSnap: vi.fn(), snapping: true, toggleSnapping: vi.fn(), rulersVisible: false, toggleRulers: vi.fn(), boundToContent: true, toggleBoundToContent: vi.fn(),
     symmetryOn: false, toggleSymmetry: vi.fn(),
     canReleaseCompound: false, releaseCompound: vi.fn(),
     openPalette: vi.fn(),
@@ -95,7 +95,7 @@ const ROWS = {
   Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',
     'Distribute Horizontally', 'Distribute Vertically', 'Flip Horizontal', 'Flip Vertical'],
-  View: ['Show grid', 'Snap to grid', 'Show rulers', 'Bound view to content', 'Symmetry', 'Path direction', 'Curvature comb',
+  View: ['Show grid', 'Snapping', 'Snap to grid', 'Show rulers', 'Bound view to content', 'Symmetry', 'Path direction', 'Curvature comb',
     'Handle balance', 'Corner widgets', 'Zoom In', 'Zoom Out', 'Reset Zoom', 'Fit Content',
     'Arrange', 'Pathfinder', 'Path', 'Constraints', 'Loupe', 'Tools', 'Properties', 'Colors', 'Layers', 'History',
     'Status bar'],

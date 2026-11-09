@@ -35,7 +35,7 @@ const noop = () => {};
 function App() {
   const chrome = useChromeCommands();
   const commands: AppCommands = {
-    gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop, rulersVisible: false, toggleRulers: noop, boundToContent: true, toggleBoundToContent: noop,
+    gridVisible: false, toggleGrid: noop, snapToGrid: false, toggleSnap: noop, snapping: true, toggleSnapping: noop, rulersVisible: false, toggleRulers: noop, boundToContent: true, toggleBoundToContent: noop,
     symmetryOn: false, toggleSymmetry: noop,
     canReleaseCompound: false, releaseCompound: noop, openPalette: noop,
     ...chrome,

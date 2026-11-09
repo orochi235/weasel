@@ -9,7 +9,7 @@
 import './depSchemaAugmentation';
 
 import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/core';
-import type { EditorCommandOptions } from '@weasel-js/editor';
+import { SNAPPING_KEY, type EditorCommandOptions } from '@weasel-js/editor';
 import { icon } from '../icons.gen';
 import { CHROME_ITEMS, chromeActionId } from '../surfaces/chrome';
 
@@ -19,6 +19,9 @@ export interface AppCommands {
   toggleGrid(): void;
   snapToGrid: boolean;
   toggleSnap(): void;
+  /** Whether anything snaps. */
+  snapping: boolean;
+  toggleSnapping(): void;
   rulersVisible: boolean;
   toggleRulers(): void;
   /** Whether the view pans only as far as the content and its margin. */
@@ -60,6 +63,16 @@ export const toggleSnapAction: AppAction = {
   requires: ['appCommands'],
   active: (deps) => read(deps)?.snapToGrid === true,
   invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnap() },
+};
+
+export const toggleSnappingAction: AppAction = {
+  id: 'view.snapping',
+  label: 'Snapping',
+  group: 'view',
+  defaultBinding: [SNAPPING_KEY],
+  requires: ['appCommands'],
+  active: (deps) => read(deps)?.snapping === true,
+  invoker: { timing: 'immediate', run: (deps) => read(deps)?.toggleSnapping() },
 };
 
 export const toggleRulersAction: AppAction = {
@@ -140,6 +153,7 @@ export const commandsAction: AppAction = {
 
 export const appActions: Action[] = [
   toggleGridAction,
+  toggleSnappingAction,
   toggleSnapAction,
   toggleRulersAction,
   toggleBoundToContentAction,

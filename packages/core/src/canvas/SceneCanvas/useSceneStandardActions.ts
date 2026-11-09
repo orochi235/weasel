@@ -209,6 +209,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
       sources: snap.sources,
       ...(snap.registry ? { registry: snap.registry } : {}),
       ...(props.snap?.reachPx !== undefined ? { reachPx: props.snap.reachPx } : {}),
+      ...(props.snap?.enabled !== undefined ? { enabled: props.snap.enabled } : {}),
       ...(props.snap?.omit ? { omit: props.snap.omit } : {}),
       ...(props.snap?.originProjection ? { originProjection: props.snap.originProjection } : {}),
       ...(props.snap?.anchors ? { anchors: props.snap.anchors } : {}),

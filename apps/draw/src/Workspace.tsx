@@ -157,9 +157,10 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   // within a few screen pixels; past them it takes the guides, then the grid.
   const gridSource = grid.snapSource;
   const guideSource = rulers.snapSource;
+  const snapping = grid.commands.snapping;
   const snap = useMemo(
-    () => ({ sources: [...(gridSource ? [gridSource] : []), guideSource, measureEndSource()] }),
-    [gridSource, guideSource],
+    () => ({ sources: [...(gridSource ? [gridSource] : []), guideSource, measureEndSource()], enabled: snapping }),
+    [gridSource, guideSource, snapping],
   );
   const { tool: opacityScrubTool, percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],

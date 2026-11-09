@@ -36,7 +36,7 @@ export const DRAW_MENU_CONTRIBUTIONS: MenuContributions = {
     flip: menuRun({ flip: 'flip' }),
   },
   view: {
-    toggles: menuRun({ grid: 'view.grid', snap: 'view.snap', rulers: 'view.rulers', bounds: 'view.boundToContent', symmetry: 'view.symmetry' }),
+    toggles: menuRun({ grid: 'view.grid', snapping: 'view.snapping', snap: 'view.snap', rulers: 'view.rulers', bounds: 'view.boundToContent', symmetry: 'view.symmetry' }),
     pathOverlays: menuRun({
       direction: 'pathEdit.show.direction', comb: 'pathEdit.show.comb',
       balance: 'pathEdit.show.balance', corners: 'pathEdit.show.corners',

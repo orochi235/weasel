@@ -23,6 +23,8 @@ function setup(over: Partial<AppCommands> = {}) {
     toggleGrid: vi.fn(),
     snapToGrid: false,
     toggleSnap: vi.fn(),
+    snapping: true,
+    toggleSnapping: vi.fn(),
     rulersVisible: false,
     toggleRulers: vi.fn(),
     boundToContent: true,
@@ -62,6 +64,16 @@ describe('draw app commands', () => {
     const t = setup();
     t.key({ key: '#', code: 'Digit3', shiftKey: true });
     expect(t.commands.toggleGrid).toHaveBeenCalledOnce();
+  });
+
+  it('Mod+Shift+; turns snapping off and on, by the key US layouts put ; on', () => {
+    const t = setup();
+    t.key({ key: ':', code: 'Semicolon', ctrlKey: true, shiftKey: true });
+    expect(t.commands.toggleSnapping).toHaveBeenCalledOnce();
+    // A German layout's key there types Ö.
+    t.key({ key: 'Ö', code: 'Semicolon', ctrlKey: true, shiftKey: true });
+    expect(t.commands.toggleSnapping).toHaveBeenCalledTimes(2);
+    expect(t.commands.toggleSnap).not.toHaveBeenCalled();
   });
 
   it('Shift+| releases a compound path, and does nothing when there is none', () => {

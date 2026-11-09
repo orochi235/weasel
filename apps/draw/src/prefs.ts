@@ -132,6 +132,12 @@ export const PREFS = {
           description: 'Rulers along the top and left of the canvas, in the units of the frame under the pointer. Drag from one to place a guide.',
           default: false,
         },
+        snapping: {
+          kind: 'boolean',
+          name: 'Snapping',
+          description: 'Snap gestures to the grid, guides, other shapes and their anchors. Off, the pen and every other gesture place points where you put them. Hold Ctrl to suspend it for one drag.',
+          default: true,
+        },
         snapToGrid: {
           kind: 'boolean',
           name: 'Snap to grid',

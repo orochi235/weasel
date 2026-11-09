@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import {
-  EDITOR_ACTIONS, downloadBlob, pickFile, menuRun, useOpenCommand, useSaveCommand, type MenuContributions,
+  EDITOR_ACTIONS, SNAPPING_KEY, downloadBlob, pickFile, menuRun, useOpenCommand, useSaveCommand, type MenuContributions,
 } from '@weasel-js/editor';
 import type { ChartScene } from './chartDocument';
 import { CHART_FILE_EXTENSION, chartFromJson, chartToJson, replaceChart } from './chartPersistence';
@@ -73,7 +73,7 @@ export function useChartCommands(scene: ChartScene): void {
   });
   const [gridVisible, setGridVisible] = useChartPref('view.gridVisible');
   const [snapToGrid, setSnapToGrid] = useChartPref('view.snapToGrid');
-  // Photoshop's View › Show › Grid and View › Snap. Shift turns ; into :, so Snap names both and the physical key.
+  // Photoshop's View › Show › Grid and View › Snap.
   useCommand(CHART_ACTIONS.grid, 'Show grid', () => setGridVisible(!gridVisible), {
     icon: icon('ui:grid'),
     active: () => gridVisible,
@@ -82,7 +82,7 @@ export function useChartCommands(scene: ChartScene): void {
   useCommand(CHART_ACTIONS.snapToGrid, 'Snap to grid', () => setSnapToGrid(!snapToGrid), {
     icon: icon('ui:snap'),
     active: () => snapToGrid,
-    keys: { kind: 'key', key: [';', ':'], code: 'Semicolon', mods: { mod: true, shift: true } },
+    keys: SNAPPING_KEY,
   });
   const [snapToShapes, setSnapToShapes] = useChartPref('view.alignmentSnap');
   const [snapToGaps, setSnapToGaps] = useChartPref('view.spacingSnap');
