@@ -176,6 +176,13 @@ describe('elkPlan', () => {
     expect(G.height).toBeLessThan(400);
   });
 
+  it.each(['down', 'up', 'right', 'left'] as const)('widens a group holding nothing to its minWidth, laid out %s', async (direction) => {
+    const graph = graphOf([node('a')], [], [{ id: 'G', members: [], inset: INSET, minWidth: 400 }]);
+    const G = (await elkPlan(graph, { direction })).groups.get('G')!;
+    expect(G.width).toBeGreaterThanOrEqual(400);
+    expect(G.height).toBeLessThan(400);
+  });
+
   it('stations a label beside its route, on a point of the route', async () => {
     const graph = nested();
     const plan = await elkPlan(graph);
@@ -215,6 +222,21 @@ describe('elkPlan', () => {
     const end = plan.routes.get('aG')!.at(-1)!;
     expect(end.y).toBeCloseTo(G.y);
     expect(plan.ports!.get('aG')).toEqual({ from: 's' });
+  });
+
+  it('leaves a self-loop naming at most one port to the diagram, and routes one naming both', async () => {
+    const graph = graphOf([node('a')], [
+      { id: 'free', from: 'a', to: 'a' },
+      { id: 'half', from: 'a', to: 'a', fromPort: 'e' },
+      { id: 'named', from: 'a', to: 'a', fromPort: 'e', toPort: 'n' },
+    ]);
+    const plan = await elkPlan(graph);
+    for (const id of ['free', 'half']) {
+      expect(plan.ports!.has(id)).toBe(false);
+      expect(plan.waypoints!.has(id)).toBe(false);
+    }
+    expect(plan.ports!.get('named')).toEqual({ from: 'e', to: 'n' });
+    expect(plan.waypoints!.get('named')!.length).toBeGreaterThan(0);
   });
 
   it('routes no authored edge, though it still shapes the layout', async () => {
