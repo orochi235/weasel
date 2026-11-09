@@ -26,7 +26,10 @@ describe('mergeContributions', () => {
   });
 
   it('puts a contribution marked start ahead of the rest, built-ins included', () => {
-    const out = mergeContributions([toolbarItem('a'), toolbarItem('b')], [toolbarItem('c'), { ...toolbarItem('d'), start: true }]);
+    const out = mergeContributions(
+      [toolbarItem('a'), toolbarItem('b')],
+      [toolbarItem('c'), { ...toolbarItem('d'), start: true }],
+    );
     expect(out.map((c) => c.id)).toEqual(['d', 'a', 'b', 'c']);
   });
 
