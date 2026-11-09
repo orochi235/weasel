@@ -64,4 +64,15 @@ describe('boundsOfPath', () => {
     expect(b.y).toBe(-1000);
     expect(b.y + b.height).toBeCloseTo(75, 3);
   });
+
+  it('counts the origin a stroke with no opening M starts from', () => {
+    // L 10,10 L 20,0 with no M draws from (0,0), as extractPolylines does.
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: Uint8Array.of(PATH_L, PATH_L),
+      coords: Float32Array.of(10, 10, 20, 0),
+      fillRule: 'nonzero',
+    };
+    expect(boundsOfPath(p)).toEqual({ kind: 'rect', x: 0, y: 0, width: 20, height: 10 });
+  });
 });

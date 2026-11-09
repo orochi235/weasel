@@ -27,7 +27,8 @@ export function boundsOfPath(path: Path): RectPath {
     seen = true;
   };
 
-  forEachSegment(commands, coords, (cmd, ci, px, py) => {
+  forEachSegment(commands, coords, (cmd, ci, px, py, _i, opens) => {
+    if (opens) include(px, py);
     switch (cmd) {
       case PATH_M:
       case PATH_L: {
