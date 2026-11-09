@@ -93,6 +93,14 @@ describe('a trial config write', () => {
     expect(undo()).not.toBeDisabled();
   });
 
+  it('records one entry for a write that both its events snapshot on', async () => {
+    await mount(['config.change', 'config.change:cellSize']);
+    click('wider');
+    fireEvent.click(undo());
+    expect(changes()).toBe('0');
+    expect(undo()).toBeDisabled();
+  });
+
   it('keeps a run of writes to one path in one undo entry, and ends it after a pause', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     await mount();

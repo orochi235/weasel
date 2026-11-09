@@ -135,8 +135,8 @@ export function useTrialMarks({
 /**
  * Save `annotations` on a trailing debounce rather than per notification: a
  * scene mutates every frame of a drag, and a zustand write per frame re-renders
- * every trial in the lab. The unmount flush is not an optimization — the last
- * mark before a trial closes is otherwise lost.
+ * every trial in the lab. The flushes on unmount and on the page hiding are not
+ * optimizations — the last mark before a trial or the page closes is otherwise lost.
  */
 function useSavedMarks(
   annotations: MarkStore,
@@ -158,6 +158,15 @@ function useSavedMarks(
       dirty = false;
       saveRef.current(annotations.toJSON());
     };
+    // Captured on the window, so it runs ahead of the lab storage's own flush on the same event.
+    const onLeave = (event: Event): void => {
+      if (event.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      flush();
+    };
+    window.addEventListener('pagehide', onLeave, true);
+    window.addEventListener('visibilitychange', onLeave, true);
     const off = annotations.subscribe(() => {
       dirty = true;
       if (timer) clearTimeout(timer);
@@ -168,6 +177,8 @@ function useSavedMarks(
     });
     return () => {
       off();
+      window.removeEventListener('pagehide', onLeave, true);
+      window.removeEventListener('visibilitychange', onLeave, true);
       if (timer) clearTimeout(timer);
       // A store the record's marks replaced lost to that write, unsaved marks and all.
       // eslint-disable-next-line react-hooks/exhaustive-deps -- read at cleanup on purpose: by then it is the store that took this one's place

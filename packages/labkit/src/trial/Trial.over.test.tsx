@@ -91,4 +91,15 @@ describe("an instrument's config drawn over another schema", () => {
     fireEvent.click(grid);
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).not.toBeChecked();
   });
+
+  it("undoes and redoes a write to the lab's `over` from the trial's Undo and Redo", async () => {
+    await mount();
+    const grid = () => screen.getByRole('checkbox', { name: 'Show grid' });
+    fireEvent.click(grid());
+    expect(grid()).not.toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(grid()).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Redo' }));
+    expect(grid()).not.toBeChecked();
+  });
 });
