@@ -53,7 +53,7 @@
     "longestFunction": 172
   },
   "packages/core/src/tools/builtin/slice/useSliceTool.ts": {
-    "longestFunction": 185
+    "longestFunction": 171
   },
   "packages/d3/src/bind.ts": {
     "longestFunction": 140
