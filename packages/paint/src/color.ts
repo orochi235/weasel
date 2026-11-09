@@ -10,7 +10,7 @@ import { byteHex, parseHexBytes } from './hex';
  *     percent alpha; commas or modern space-separated `R G B / A` syntax
  *   - `hsl()` / `hsla()` with hue as a unitless number (deg) or with `deg`,
  *     `rad`, `grad`, `turn` units; saturation/lightness as percent (or
- *     unitless in the modern syntax); same alpha rules and separator rules
+ *     unitless 0..100, as CSS Color 4 reads it); same alpha rules and separator rules
  *     as `rgb()`
  *   - The 148 CSS named colors plus `transparent`
  *   - `color(srgb …)` and `color(srgb-linear …)`; `oklab()` and `oklch()`, clamped into sRGB
@@ -207,8 +207,9 @@ function parseHslFunction(s: string): [number, number, number, number] | null {
   const channels = splitChannels(body);
   if (!channels) return null;
   const h = parseHue(channels.rgb[0]);
-  const sat = parsePercentOrNumber(channels.rgb[1]);
-  const lit = parsePercentOrNumber(channels.rgb[2]);
+  // CSS Color 4 reads a unitless saturation or lightness on the percent scale: 50 is 50%.
+  const sat = parseChannel(channels.rgb[1], 100);
+  const lit = parseChannel(channels.rgb[2], 100);
   const a = parseAlpha(channels.alpha);
   if (h === null || sat === null || lit === null || a === null) return null;
   const [r, g, b] = hslToSrgb(h, sat, lit);
@@ -256,7 +257,7 @@ function parseHue(tok: string): number | null {
   return ((deg % 360) + 360) % 360;
 }
 
-/** Saturation/lightness may be percent (CSS Color 3) or unitless number 0..1 (modern). */
+/** An OKLab lightness: a percent or a unitless number 0..1. */
 function parsePercentOrNumber(tok: string): number | null {
   return parseChannel(tok, 1);
 }

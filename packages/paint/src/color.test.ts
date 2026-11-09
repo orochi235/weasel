@@ -150,6 +150,11 @@ describe('parseColor', () => {
     expect(c[3]).toBe(0.5);
   });
 
+  it('reads a unitless hsl() saturation and lightness on the percent scale, as CSS Color 4 does', () => {
+    expect(parseColor('hsl(120 50 50)')).toEqual(parseColor('hsl(120 50% 50%)'));
+    expect(parseColor('hsl(0 100 50)')).toEqual([1, 0, 0, 1]);
+  });
+
   it('parses named colors', () => {
     expect(parseColor('red')).toEqual([1, 0, 0, 1]);
     expect(parseColor('lemonchiffon')).toEqual([1, 250 / 255, 205 / 255, 1]);
