@@ -65,6 +65,19 @@ describe('useCommand', () => {
     expect(found()).toBe(before);
   });
 
+  it('does not re-register for keys whose params are a new thunk each render, and reads the latest', () => {
+    let step = 1;
+    const options = (): CommandOptions => ({ keys: { spec: { kind: 'key', key: ']' }, opts: { params: () => ({ step }) } } });
+    const { found, registry, rerender } = mount({ label: 'A', run: () => {}, options: options() });
+    const register = vi.spyOn(registry, 'register');
+    step = 5;
+    rerender({ label: 'A', run: () => {}, options: options() });
+    rerender({ label: 'A', run: () => {}, options: options() });
+    expect(register).not.toHaveBeenCalled();
+    const params = actionBindings(found()!)[0]!.opts?.params;
+    expect(typeof params === 'function' ? params() : params).toEqual({ step: 5 });
+  });
+
   it('does not re-register for an inline icon with a mark, equal by value', () => {
     const { found, rerender } = mount({ label: 'A', run: () => {}, options: { icon: { name: toIconRef('ui:layers')!, mark: toIconRef('ui:markAdd')! } } });
     const before = found();

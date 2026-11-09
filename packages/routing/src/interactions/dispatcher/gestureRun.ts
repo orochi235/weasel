@@ -243,9 +243,17 @@ export function invokeAction(
     const pressCtx = ctxFor(run, event, deps, gestureId);
     const begin = () => invoker.start(pressCtx, match.binding.opts);
     const threshold = match.binding.opts?.dragThresholdPx ?? invoker.dragThresholdPx;
-    const handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
-      ? deferredStart(begin, threshold)
-      : begin();
+    let handle: OngoingHandle;
+    try {
+      handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
+        ? deferredStart(begin, threshold)
+        : begin();
+    } catch (err) {
+      // As an immediate action's throw: the press is spent, and nothing is in flight.
+      console.error(`weasel dispatcher: action "${action.id}" threw on start`, err);
+      run.facts.drop(gestureId);
+      return 'fired';
+    }
     // Empty handle = "matched at the binding level but decided at runtime
     // not to handle this gesture" (missing dep, wrong affordance, wrong
     // selection kind, etc.). The widely-used early-return-empty pattern

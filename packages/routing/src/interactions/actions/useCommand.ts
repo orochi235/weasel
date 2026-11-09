@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { IconSpec } from '@weasel-js/icons';
 import type { MenuGrade } from '@weasel-js/menu';
 import { useLatest, useStableByContent } from '@weasel-js/react';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, isPlainObject } from '@weasel-js/registry';
 import type { Action, ActionUnavailable, ActionVariant } from './action';
 import type { ActionSettings, ActionSettingsState } from './actionSettings';
 import type { BoundGesture } from './binding';
@@ -53,7 +53,8 @@ export interface CommandSettings extends Omit<ActionSettings, 'read'> {
  * latest are read when used, and the action is replaced only when `id`,
  * `label`, `icon`, `group`, `keys`, `tags`, `variants`, `shortcut`,
  * `description`, `grade` or the settings' schema change by value, or one of
- * `enabled`, `active`, `preview` and `settings` comes or goes.
+ * `enabled`, `active`, `preview` and `settings` comes or goes. A function in `keys` (thunked params, a target
+ * predicate) is read as the latest render passed it, and a new one in its place replaces nothing.
  */
 export function useCommand(
   id: string,
@@ -62,7 +63,7 @@ export function useCommand(
   options?: CommandOptions,
 ): void {
   const latest = useLatest({ run, options });
-  const keys = useStableByContent(options?.keys, deepEqual);
+  const keys = useStableByContent(options?.keys, sameKeys);
   const tags = useStableByContent(options?.tags, deepEqual);
   const variants = useStableByContent(options?.variants, deepEqual);
   const schema = useStableByContent(options?.settings?.schema, deepEqual);
@@ -79,7 +80,7 @@ export function useCommand(
       label,
       invoker: { timing: 'immediate', run: (_deps, params) => latest.current.run(params) },
     };
-    if (keys !== undefined) a.defaultBinding = bindingOf(keys);
+    if (keys !== undefined) a.defaultBinding = bindingOf(live(keys, () => read()?.keys));
     if (tags !== undefined) a.tags = tags;
     if (variants !== undefined) a.variants = variants;
     if (hasEnabled) a.enabled = (_deps, _at, _carried, params) => read()?.enabled?.(params) ?? true;
@@ -106,3 +107,35 @@ function bindingOf(keys: BoundGesture | readonly BoundGesture[]): Action['defaul
 }
 
 const isList = (keys: BoundGesture | readonly BoundGesture[]): keys is readonly BoundGesture[] => Array.isArray(keys);
+
+type Fn = (...args: unknown[]) => unknown;
+
+/** `keys` equal by value, any two functions in the same place counting as equal when their own fields are: thunked
+ *  params and target predicates are new on every render, and the registered binding calls the latest through
+ *  {@link live}. */
+function sameKeys(a: unknown, b: unknown): boolean {
+  if (typeof a === 'function' && typeof b === 'function') return sameKeys({ ...a }, { ...b });
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => sameKeys(v, b[i]));
+  }
+  if (!isPlainObject(a) || !isPlainObject(b)) return Object.is(a, b);
+  const names = Object.keys(a);
+  return names.length === Object.keys(b).length && names.every((k) => Object.hasOwn(b, k) && sameKeys(a[k], b[k]));
+}
+
+/** `value` with each function in it replaced by one calling the function at the same place in `at()`, its own
+ *  fields (a predicate's `readsAffordance`) kept. */
+function live<T>(value: T, at: () => unknown): T {
+  if (typeof value === 'function') {
+    const own = value as unknown as Fn;
+    return Object.assign((...args: unknown[]) => {
+      const now = at();
+      return (typeof now === 'function' ? (now as Fn) : own)(...args);
+    }, value) as T;
+  }
+  if (Array.isArray(value)) return value.map((v, i) => live(v, () => (at() as unknown[] | undefined)?.[i])) as T;
+  if (!isPlainObject(value)) return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([k, v]) => [k, live(v, () => (at() as Record<string, unknown> | undefined)?.[k])]),
+  ) as T;
+}
