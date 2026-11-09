@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { importSpecifiers, isBare, namedSpecifiers, packageOf, scanImports } from './imports.mjs';
+import { importSpecifiers, importedNames, isBare, namedSpecifiers, packageOf, scanImports } from './imports.mjs';
 
 describe('importSpecifiers', () => {
   it('reads imports, re-exports, side-effect imports, dynamic imports and require', () => {
@@ -69,6 +69,20 @@ describe('importSpecifiers', () => {
 
   it('names the file when it does not parse', () => {
     expect(() => importSpecifiers('import { from', 'broken.ts')).toThrow(/broken\.ts/);
+  });
+});
+
+describe('importedNames', () => {
+  it('names what each module must export: named and default imports and named re-exports', () => {
+    const names = importedNames(
+      'import a, { b as c, default as d } from "p";\nexport { e, f as g } from "q";\n' +
+        'export * from "r";\nimport * as t from "u";\nimport "v";\nimport { type T, w } from "p";\n',
+      'x.ts',
+    );
+    expect(Object.fromEntries([...names].map(([spec, set]) => [spec, [...set].sort()]))).toEqual({
+      p: ['b', 'default', 'w'],
+      q: ['e', 'f'],
+    });
   });
 });
 
