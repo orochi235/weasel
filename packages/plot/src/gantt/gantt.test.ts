@@ -115,6 +115,15 @@ describe('scheduleGantt', () => {
     expect(addGanttDuration(at('2026-01-05'), 1, 'y', none)).toBe(at('2027-01-05'));
     expect(addGanttDuration(at('2026-01-05'), 100, 'ms', none)).toBe(at('2026-01-05') + 100);
   });
+
+  it('counts days from a start past what a Date holds without walking them', () => {
+    const data: GanttData = {
+      kind: 'gantt', dateFormat: 'x', excludes: ['weekends'],
+      sections: [{ tasks: [{ name: 'far', start: { kind: 'date', date: '10000000000000000000000000' }, end: { kind: 'duration', amount: 30, unit: 'd' } }] }],
+    };
+    const [span] = scheduleGantt(data).spans[0]!;
+    expect(span!.end).toBeGreaterThan(span!.start);
+  });
 });
 
 describe('compileGantt', () => {
