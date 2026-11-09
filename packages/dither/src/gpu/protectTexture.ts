@@ -17,7 +17,9 @@ export async function protectTexture(mask: Uint8Array, width: number, height: nu
   if (mask.length !== width * height) {
     throw new RangeError(`protectTexture: mask holds ${mask.length} dots, ${width}×${height} needs ${width * height}`);
   }
-  const data = new Uint8ClampedArray(width * height * 4);
+  // A bitmap has at least one pixel; `width` and `height` still say the mask holds no dot.
+  const bw = Math.max(1, width), bh = Math.max(1, height);
+  const data = new Uint8ClampedArray(bw * bh * 4);
   for (let i = 0; i < width * height; i++) {
     const v = mask[i] ? 255 : 0;
     data[i * 4] = v;
@@ -25,7 +27,7 @@ export async function protectTexture(mask: Uint8Array, width: number, height: nu
     data[i * 4 + 2] = v;
     data[i * 4 + 3] = 255;
   }
-  const bitmap = await createImageBitmap(new ImageData(data, width, height));
+  const bitmap = await createImageBitmap(new ImageData(data, bw, bh));
   const texture = registerTexture(bitmap);
   return {
     texture, width, height,

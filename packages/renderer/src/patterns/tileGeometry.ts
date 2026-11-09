@@ -109,22 +109,28 @@ function wraps(c: number, r: number, s: number): number[] {
   return out;
 }
 
+/** How far past the tile a diagonal and its stubs run: far enough that a butt cap clears the corner its
+ *  line's width reaches across, which takes `width / (2√2)`. */
+const overrun = (width: number): number => Math.max(1, width / 2);
+
 /** The forward (`/`) diagonal, plus the two corner stubs that make it tile
  *  seamlessly across the edges. */
 function forwardDiagonals(s: number, width: number, color: string): TileShape[] {
+  const e = overrun(width);
   return [
-    { kind: 'line', x1: -1, y1: s + 1, x2: s + 1, y2: -1, width, color },
-    { kind: 'line', x1: -1, y1: 1, x2: 1, y2: -1, width, color },
-    { kind: 'line', x1: s - 1, y1: s + 1, x2: s + 1, y2: s - 1, width, color },
+    { kind: 'line', x1: -e, y1: s + e, x2: s + e, y2: -e, width, color },
+    { kind: 'line', x1: -e, y1: e, x2: e, y2: -e, width, color },
+    { kind: 'line', x1: s - e, y1: s + e, x2: s + e, y2: s - e, width, color },
   ];
 }
 
 /** The backward (`\`) diagonal and its two stubs. */
 function backwardDiagonals(s: number, width: number, color: string): TileShape[] {
+  const e = overrun(width);
   return [
-    { kind: 'line', x1: -1, y1: -1, x2: s + 1, y2: s + 1, width, color },
-    { kind: 'line', x1: s - 1, y1: -1, x2: s + 1, y2: 1, width, color },
-    { kind: 'line', x1: -1, y1: s - 1, x2: 1, y2: s + 1, width, color },
+    { kind: 'line', x1: -e, y1: -e, x2: s + e, y2: s + e, width, color },
+    { kind: 'line', x1: s - e, y1: -e, x2: s + e, y2: e, width, color },
+    { kind: 'line', x1: -e, y1: s - e, x2: e, y2: s + e, width, color },
   ];
 }
 

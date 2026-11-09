@@ -84,7 +84,8 @@ export function htmlToRuns(html: string): StyledRun[] {
       if (keep) { if (data.length > 0) write(data, style); return; }
       data.split(/[ \t\n\f]+/).forEach((word, i) => {
         // The space goes in with the text node that held it, as a browser draws it.
-        if (i > 0 && onLine && !spaced) { write(' ', style); spaced = true; }
+        // A cell's text opens after its tab, as a line's does after its start.
+        if (i > 0 && onLine && !spaced && !gap.tab) { write(' ', style); spaced = true; }
         if (word.length > 0) write(word, style);
       });
       return;
