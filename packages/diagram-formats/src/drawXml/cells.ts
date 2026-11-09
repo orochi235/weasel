@@ -67,15 +67,18 @@ export function cellsOf(model: Element): RawCell[] {
 }
 
 /** A cell's geometry. A missing one is an empty box at the origin. A negative width or height
- *  reaches back from `x` or `y`, as a draw app renders it, so it reads as that box. */
+ *  reaches back from `x` or `y`, as a draw app renders it, so it reads as that box; a relative
+ *  geometry's `x` and `y` place it along an edge, and stay as written. */
 export function geometryOf(cell: RawCell): CellGeometry {
   const g = cell.geometry;
   const width = numberAttr(g, 'width');
   const height = numberAttr(g, 'height');
+  const relative = g?.getAttribute('relative') === '1';
   return {
-    x: numberAttr(g, 'x') + Math.min(0, width), y: numberAttr(g, 'y') + Math.min(0, height),
+    x: numberAttr(g, 'x') + (relative ? 0 : Math.min(0, width)),
+    y: numberAttr(g, 'y') + (relative ? 0 : Math.min(0, height)),
     width: Math.abs(width), height: Math.abs(height),
-    relative: g?.getAttribute('relative') === '1',
+    relative,
   };
 }
 

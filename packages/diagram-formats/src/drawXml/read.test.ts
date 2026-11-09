@@ -198,6 +198,18 @@ describe('reading malformed files', () => {
     expect([neg.at!.x - ref.at!.x, neg.at!.y - ref.at!.y, neg.width, neg.height]).toEqual([60, 80, 40, 20]);
   });
 
+  it('keeps an edge label cell where its relative geometry puts it, whatever its size', async () => {
+    const { document } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+      <mxCell id="a" value="A" vertex="1" parent="1"><mxGeometry x="0" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="b" value="B" vertex="1" parent="1"><mxGeometry x="200" y="0" width="40" height="20" as="geometry"/></mxCell>
+      <mxCell id="e" edge="1" parent="1" source="a" target="b"><mxGeometry relative="1" as="geometry"/></mxCell>
+      <mxCell id="el" value="go" style="edgeLabel;" vertex="1" connectable="0" parent="e">
+        <mxGeometry x="-0.5" y="10" width="-20" height="-10" relative="1" as="geometry"/>
+      </mxCell>
+    </root></mxGraphModel>`);
+    expect(edges(document).get('e')).toMatchObject({ label: 'go', labelPlacement: { at: 0.25, offset: 10 } });
+  });
+
   it('reads cells whose parents run in a circle as sitting on the page', async () => {
     const { document } = await read(`<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>
       <mxCell id="a" value="A" vertex="1" parent="b"><mxGeometry x="10" y="10" width="40" height="20" as="geometry"/></mxCell>
