@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_MODES, byId } from './default';
+import { shortcutOn } from '../modeDefinition';
 
 describe('default mode preset', () => {
   it('includes the documented mode ids', () => {
@@ -29,6 +30,15 @@ describe('default mode preset', () => {
     expect(m.entry?.shortcut).toBe('Mod+Alt+T');
     expect(m.cancel?.shortcut).toBe('Escape');
     expect(m.discard).toBeUndefined();
+  });
+
+  it('path-edit and text-edit discard on Cmd+Escape on a Mac, and on no key elsewhere', () => {
+    for (const id of ['path-edit', 'text-edit']) {
+      const discard = byId(id).discard?.shortcut;
+      expect(shortcutOn(discard, true), id).toBe('Meta+Escape');
+      expect(shortcutOn(discard, false), id).toBeUndefined();
+      expect(shortcutOn(byId(id).exit?.shortcut, false), id).toBe('Escape');
+    }
   });
 
   it('normal has no workspace tint', () => {

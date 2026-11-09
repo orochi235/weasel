@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { actionBindings, browserReservedChord, modeShortcutSpec } from '@weasel-js/routing';
 import { key, type KeySpec } from '@weasel-js/gestures';
 import { DOC_CLIPBOARD_KEYS, EDITOR_PREFERENCES_KEY, FILE_KEYS, SNAPPING_KEY } from '@weasel-js/editor';
-import { DEFAULT_MODES } from '@weasel-js/modes';
+import { DEFAULT_MODES, shortcutOn } from '@weasel-js/modes';
 import * as pathTools from '@weasel-js/path-tools';
 import { LENS_KEYS, LOUPE_LEADER } from '@weasel-js/labkit/loupe';
 import * as defaults from './defaults';
@@ -11,12 +11,12 @@ import type { Action } from '@weasel-js/routing';
 
 // The menu bar's access keys are checked beside it, in `@weasel-js/ui`.
 
-/** `owner: mods+key` for each of `specs` a browser takes first. */
-function reserved(owner: string, specs: readonly unknown[]): string[] {
+/** `owner: mods+key` for each of `specs` a browser takes first, on an Apple platform or not (default: this one). */
+function reserved(owner: string, specs: readonly unknown[], apple?: boolean): string[] {
   return specs.flatMap((spec) => {
     const s = spec as KeySpec;
     if (s.kind !== 'key') return [];
-    const hit = browserReservedChord(s);
+    const hit = browserReservedChord(s, apple);
     return hit ? [`${owner}: ${JSON.stringify(s.mods ?? {})}+${hit.key}`] : [];
   });
 }
@@ -58,10 +58,10 @@ describe('kit key bindings a browser reserves', () => {
       ...reserved('SNAPPING_KEY', [SNAPPING_KEY]),
     ];
     const roles = ['entry', 'exit', 'discard', 'commit', 'cancel'] as const;
-    const modes = DEFAULT_MODES.flatMap((mode) => roles.flatMap((role) => {
-      const shortcut = mode[role]?.shortcut;
-      return shortcut ? reserved(`${mode.id}.${role}`, [modeShortcutSpec(shortcut)]) : [];
-    }));
+    const modes = [false, true].flatMap((apple) => DEFAULT_MODES.flatMap((mode) => roles.flatMap((role) => {
+      const shortcut = shortcutOn(mode[role]?.shortcut, apple);
+      return shortcut ? reserved(`${mode.id}.${role}`, [modeShortcutSpec(shortcut)], apple) : [];
+    })));
     expect([...editor, ...modes]).toEqual([]);
   });
 });

@@ -8,9 +8,19 @@ export interface WorkspaceVisual {
   intensity?: number;
 }
 
+/** A mode's key chord (`'Escape'`, `'Mod+Alt+T'`), or one per platform: `apple` on macOS and iOS, `other`
+ *  everywhere else. A platform left out has no key there, and the mode is left from a menu or the palette. */
+export type ModeShortcut = string | { readonly apple?: string; readonly other?: string };
+
+/** The chord `shortcut` names on an Apple platform or off one, or `undefined` for none. */
+export function shortcutOn(shortcut: ModeShortcut | undefined, apple: boolean): string | undefined {
+  if (shortcut === undefined || typeof shortcut === 'string') return shortcut;
+  return apple ? shortcut.apple : shortcut.other;
+}
+
 /** How a mode is entered. */
 export interface ModeEntry {
-  shortcut?: string;
+  shortcut?: ModeShortcut;
   /** `'double-click-target'`: double-clicking a node enters the mode on that node. Which nodes is
    *  `targets`; `modeTriggers` in `@weasel-js/core` turns the pair into a canvas binding. */
   trigger?: 'double-click-target';
@@ -31,7 +41,7 @@ export interface ModeEntry {
  * (free-transform, crop) is a transaction: the whole session collapses to one
  * undoable step and leaving requires an explicit `commit` or `cancel`.
  *
- * The shortcut fields (`entry`, `exit`, `discard`, `commit`, `cancel`) are key chords (`'Escape'`, `'Mod+Alt+T'`) that
+ * The shortcut fields (`entry`, `exit`, `discard`, `commit`, `cancel`) are {@link ModeShortcut}s that
  * `modeShortcuts` in `@weasel-js/routing` turns into dispatcher bindings,
  * each live only while the mode it acts on is (or, for `entry`, is not).
  */
@@ -49,12 +59,12 @@ export interface ModeDefinition {
   scoping: boolean;
   workspace?: WorkspaceVisual;
   entry?: ModeEntry;
-  exit?: { shortcut?: string };
-  commit?: { shortcut?: string };
-  cancel?: { shortcut?: string };
+  exit?: { shortcut?: ModeShortcut };
+  commit?: { shortcut?: ModeShortcut };
+  cancel?: { shortcut?: ModeShortcut };
   /** Leave a soft mode and throw its session away, where `exit` keeps it to
    *  resume. */
-  discard?: { shortcut?: string };
+  discard?: { shortcut?: ModeShortcut };
   /**
    * The tool the mode starts on. Entering the mode activates it and leaving
    * restores the tool active at entry; the key that leaves the mode, pressed

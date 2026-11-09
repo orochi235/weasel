@@ -27,7 +27,7 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 const ID = asNodeId('a');
 /** A soft mode that still lets a drag marquee, so a gesture can be in flight when Escape lands. */
@@ -115,13 +115,23 @@ describe('mode shortcuts', () => {
     expect(cancel).toHaveBeenCalledOnce();
   });
 
-  it('discard a soft mode on its modified shortcut, and only discard', () => {
+  it('discard a soft mode on Cmd+Escape on a Mac, and only discard', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
     const exit = vi.fn();
     const discard = vi.fn();
     const t = setup('path-edit', { exit, discard });
     t.key('Escape', { metaKey: true });
     expect(discard).toHaveBeenCalledOnce();
     expect(exit).not.toHaveBeenCalled();
+  });
+
+  it('bind no discard key off a Mac, where Ctrl+Escape is the Start menu', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Win32');
+    const discard = vi.fn();
+    const t = setup('path-edit', { discard });
+    t.key('Escape', { ctrlKey: true });
+    t.key('Escape', { metaKey: true });
+    expect(discard).not.toHaveBeenCalled();
   });
 
   it('enter a mode from another one, unless the handler says it cannot', () => {

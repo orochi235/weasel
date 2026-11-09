@@ -24,7 +24,7 @@ beforeAll(() => {
   proto.setPointerCapture = vi.fn();
   proto.releasePointerCapture = vi.fn();
 });
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 function fakeHistory() {
   return {
@@ -70,7 +70,8 @@ describe('modality shortcuts', () => {
     expect(t.scene.getSelection()).toEqual([ID]);
   });
 
-  it('Meta+Escape discards a soft mode', () => {
+  it('Cmd+Escape discards a soft mode on a Mac', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
     const t = setup();
     act(() => t.machine.enterMode('path-edit', { targetId: 'a' }));
     const discard = vi.spyOn(t.machine, 'discardMode');

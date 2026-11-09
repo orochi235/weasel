@@ -1,5 +1,5 @@
-import { modeLabel, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
-import { key, type KeySpec } from '@weasel-js/gestures';
+import { modeLabel, shortcutOn, type ModeDefinition, type ModeRegistry } from '@weasel-js/modes';
+import { isApplePlatform, key, type KeySpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../interactions/actions/action';
 import type { ActionDeps } from '../interactions/actions/invoker';
 import { returnToModeDefault } from '../tools/returnToModeDefault';
@@ -43,7 +43,7 @@ export function modeShortcutSpec(shortcut: string): KeySpec {
 
 /**
  * The registry's declared mode shortcuts as an always-on contribution: one
- * action per shortcut, bound to its chord and gated on the mode it acts on —
+ * action per shortcut this platform has a chord for, bound to its chord and gated on the mode it acts on —
  * `exit` / `discard` / `commit` / `cancel` while that mode is active, `entry`
  * while it is not. Install it with `<SceneCanvas ambient>`.
  *
@@ -66,8 +66,9 @@ export function modeShortcuts(
   handlers: ModeShortcutHandlers,
 ): Contribution<never> {
   const actions: Action[] = [];
+  const apple = isApplePlatform();
   for (const mode of registry.list()) {
-    const entry = mode.entry?.shortcut;
+    const entry = shortcutOn(mode.entry?.shortcut, apple);
     const enter = handlers.enter;
     if (entry && enter) {
       // Without `canEnter` an entry key is live in every other mode, so it does not yield there.
@@ -76,7 +77,7 @@ export function modeShortcuts(
         () => enter(mode.id), handlers.canEnter !== undefined));
     }
     for (const role of LEAVING) {
-      const shortcut = mode[role]?.shortcut;
+      const shortcut = shortcutOn(mode[role]?.shortcut, apple);
       const run = handlers[role];
       if (!shortcut || !run) continue;
       const backsOut = role === 'exit' || role === 'cancel';
