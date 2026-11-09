@@ -44,7 +44,7 @@ export function orbitZoomView(source: OrbitZoomSource): CameraView {
     },
     hostSize: source.hostSize,
     zoomOf: (view) => {
-      const camera = as3DView(view);
+      const camera = as3DView(view, source.limits());
       return camera ? orbitZoom(camera, source.home()) : null;
     },
     zoomRange: () => {

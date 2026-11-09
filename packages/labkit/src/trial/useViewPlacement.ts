@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import type { OrbitLimits } from '@weasel-js/kernel3d';
 import { type RefObject, useLayoutEffect, useRef } from 'react';
 import { layoutSize } from '../canvas/hostBox';
 import type { ViewportSize } from '../canvas/worldSpec';
@@ -14,15 +15,16 @@ function sizedInitialView(instrument: Instrument, size: ViewportSize): unknown {
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-6;
 
-/** Whether `view` is still where `placed` put it — either view shape. */
-function sitsAt(view: unknown, placed: unknown): boolean {
+/** Whether `view` is still where `placed` put it — either view shape, an
+ *  orbit read inside `limits`. */
+function sitsAt(view: unknown, placed: unknown, limits?: Partial<OrbitLimits>): boolean {
   const a2 = as2DView(view);
   const b2 = as2DView(placed);
   if (a2 && b2) {
     return near(a2.zoom, b2.zoom) && near(a2.pan.x, b2.pan.x) && near(a2.pan.y, b2.pan.y);
   }
-  const a3 = as3DView(view);
-  const b3 = as3DView(placed);
+  const a3 = as3DView(view, limits);
+  const b3 = as3DView(placed, limits);
   if (a3 && b3) {
     return (
       near(a3.yaw, b3.yaw) &&
@@ -106,7 +108,7 @@ export function useViewPlacement({
       measured.current = size;
       if (view != null) {
         if (!last || (last.width === size.width && last.height === size.height)) return;
-        if (!sitsAt(view, sizedInitialView(instrument, last))) return;
+        if (!sitsAt(view, sizedInitialView(instrument, last), instrument.orbit?.limits)) return;
       }
       const placed = sizedInitialView(instrument, size);
       if (placed) setView(placed);
