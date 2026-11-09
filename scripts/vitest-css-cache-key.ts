@@ -2,19 +2,19 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import type { Plugin } from 'vite';
+import { stripComments } from './lib/cssBlocks.ts';
 
 interface Alias {
   find: string | RegExp;
   replacement: string;
 }
 
-const COMMENT = /\/\*[\s\S]*?\*\//g;
 const IMPORT = /@import\s+(?:url\(\s*)?['"]([^'"]+)['"]/g;
 const COMPOSES = /composes\s*:[^;}]*?\bfrom\s+['"]([^'"]+)['"]/g;
 
 /** Every sheet `css` reads by `@import` or `composes … from`, as written. */
 export function cssDependencySpecifiers(css: string): string[] {
-  const source = css.replace(COMMENT, '');
+  const source = stripComments(css);
   return [...source.matchAll(IMPORT), ...source.matchAll(COMPOSES)].map((m) => m[1]);
 }
 
