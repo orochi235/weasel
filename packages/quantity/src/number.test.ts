@@ -57,6 +57,10 @@ describe('parseSignedNumber', () => {
   it('is NaN for text that names no number', () => {
     expect(parseSignedNumber('abc')).toBeNaN();
   });
+
+  it('reads U+2212 in the exponent as well as before the number', () => {
+    expect(parseSignedNumber('−1e−3')).toBe(-0.001);
+  });
 });
 
 describe('zoom display', () => {
@@ -114,6 +118,12 @@ describe('parseNumber', () => {
   it('reads what parseSignedNumber reads', () => {
     expect(parseNumber('−42')).toBe(-42);
     expect(parseNumber('-3.5')).toBe(-3.5);
+  });
+
+  it('reads U+2212 in the exponent as well as before the number, as a field that rewrites every hyphen sends it', () => {
+    expect(parseNumber('−1e−3')).toBe(-0.001);
+    expect(parseNumber('−2.5e−1')).toBe(-0.25);
+    expect(parseNumber('1−2')).toBeNaN();
   });
 
   it('reads a magnitude suffix in either case, without float noise', () => {
