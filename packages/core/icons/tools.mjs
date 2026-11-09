@@ -21,15 +21,10 @@ export const TOOLS = {
       <line x1="11" y1="7" x2="3" y2="15" stroke-linecap="round"/>
       <line x1="3" y1="15" x2="5" y2="17" stroke-linecap="round"/>
     </g>`,
+  // An open hand, after AppKit's current openHand cursor (not the older art in HIServices' cursors folder). The
+  // finger walls sit on pixel centers at a one-pixel stroke, so the fingers stay apart at 16px.
   hand: `
-    <g stroke-linecap="butt" stroke-linejoin="miter">
-      <rect x="5" y="10" width="10" height="7.5" rx="2"/>
-      <line x1="6.5" y1="10" x2="6.5" y2="4.5" stroke-linecap="round"/>
-      <line x1="9" y1="10" x2="9" y2="3" stroke-linecap="round"/>
-      <line x1="11.5" y1="10" x2="11.5" y2="3.5" stroke-linecap="round"/>
-      <line x1="14" y1="10" x2="14" y2="5.5" stroke-linecap="round"/>
-      <line x1="5" y1="12.5" x2="2.5" y2="14.5" stroke-linecap="round"/>
-    </g>`,
+    <path d="M 6.875 11.27 L 6.875 4.75 A 1.25 1.25 0 0 1 9.375 4.75 L 9.375 9 L 9.375 3.55 A 1.25 1.25 0 0 1 11.875 3.55 L 11.875 9.4 L 11.875 4.65 A 1.25 1.25 0 0 1 14.375 4.65 L 14.375 9.2 L 14.375 6.35 A 1.25 1.25 0 0 1 16.875 6.35 L 16.875 13.5 C 16.875 15.8 14.4 17.3 11.25 17.3 C 9 17.3 8.1 16 7.34 15.25 L 6.34 14.25 L 3.37 11.28 A 1.25 1.25 0 0 1 5.13 9.52 Z" stroke-width="1.25" stroke-linejoin="round"/>`,
   image: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
       <rect x="3" y="4" width="14" height="12" rx="1"/>
