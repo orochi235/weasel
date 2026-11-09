@@ -25,7 +25,7 @@ describe('importSpecifiers', () => {
     ]);
   });
 
-  it('erases type-only imports and re-exports', () => {
+  it('erases import type and export type, and keeps braces whose names are all marked type, which build to import {}', () => {
     const source = [
       "import type { A } from 'a';",
       "import { type B, type C } from 'bc';",
@@ -35,7 +35,7 @@ describe('importSpecifiers', () => {
       "export { type H } from 'h';",
       "import 'side';",
     ].join('\n');
-    expect(importSpecifiers(source, 'm.ts')).toEqual(['de', 'side']);
+    expect(importSpecifiers(source, 'm.ts')).toEqual(['bc', 'de', 'h', 'side']);
     expect(namedSpecifiers(source, 'm.ts')).toEqual(['a', 'bc', 'de', 'f', 'g', 'h', 'side']);
   });
 
