@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { stubDeps } from '../testUtils';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildDepsFromRequires, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
+import { buildDepsFromRequires, ActionDisabledReason, BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import type { DepRegistry } from '@weasel-js/routing/react';
 import { registerFontOutlines } from '@weasel-js/font';
 import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
@@ -55,7 +55,7 @@ describe('createOutlinesAction', () => {
   });
 
   it("binds Affinity's Mod+Enter", () => {
-    expect(createOutlinesAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'Enter', mods: { mod: true } }, opts: { id: 'createOutlines.key' } }]);
+    expect(createOutlinesAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'Enter', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'createOutlines.key' } }]);
   });
 });
 

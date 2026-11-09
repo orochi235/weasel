@@ -4,7 +4,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { clipboardCopyAction, clipboardCutAction, clipboardPasteAction } from './action';
 import type { ClipboardDep } from '../depSchema';
-import type { ImmediateInvoker } from '@weasel-js/routing';
+import { BETWEEN_GESTURES, type ImmediateInvoker } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -42,7 +42,7 @@ function makeSelection(ids: string[]) {
 describe('clipboardCopyAction (descriptor)', () => {
   it('is Cmd/Ctrl+C', () => {
     expect(clipboardCopyAction.id).toBe('clipboard.copy');
-    expect(clipboardCopyAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'c', mods: { mod: true } }, opts: { id: 'clipboard.copy.key' } }]);
+    expect(clipboardCopyAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'c', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'clipboard.copy.key' } }]);
   });
 
   it('delegates to the clipboard dep', () => {

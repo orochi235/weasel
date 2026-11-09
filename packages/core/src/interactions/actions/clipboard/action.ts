@@ -16,7 +16,7 @@ export const clipboardCopyAction: Action & { requires: string[] } = {
   label: 'Copy',
   icon: icon('copy'),
   group: 'clipboard',
-  defaultBinding: [{ spec: { kind: 'key', key: 'c', mods: { mod: true } }, opts: { id: 'clipboard.copy.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'c', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: 'clipboard.copy.key' } }],
   // Same gate as `duplicate`: a mode that can neither edit the page nor own a
   // selection has nothing to copy. Notably excludes `text-edit`, where Cmd+C
   // must stay the browser's own copy of the caret range.
