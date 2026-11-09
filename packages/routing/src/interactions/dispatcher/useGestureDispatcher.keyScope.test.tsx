@@ -18,8 +18,8 @@ import { heldKeySpec } from '../actions/toolOffhand';
 const NO_ENTRIES = new Map();
 const NO_POINTER = { pointer: false } as const;
 
-function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
-  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean; over?: boolean;
+function Canvas({ name, run, claimKeys, noCanvas, noPointer, over, keyboard }: {
+  name: string; run: () => void; claimKeys?: boolean; noCanvas?: boolean; noPointer?: boolean; over?: boolean; keyboard?: boolean;
 }): ReactNode {
   const registry = useActionsRegistry()!;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -33,6 +33,7 @@ function Canvas({ name, run, claimKeys, noCanvas, noPointer, over }: {
     canvasRef, actions: registry, entriesById: NO_ENTRIES,
     ...(claimKeys !== undefined ? { claimKeys } : {}),
     ...(noPointer ? { channels: NO_POINTER } : {}),
+    ...(keyboard !== undefined ? { keyboard } : {}),
   });
   return noCanvas ? null : <canvas ref={canvasRef} data-name={name} />;
 }
@@ -170,6 +171,23 @@ describe('a key that reaches the page', () => {
     press();
     press();
     expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 2]);
+  });
+
+  it('stays with the canvas that holds it when one with its keyboard channel off is pressed or scrolled in', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} /></InputScope>
+        <InputScope><Canvas name="b" run={b} keyboard={false} /></InputScope>
+      </Root>,
+    );
+    giveKeys(canvas('a'));
+    giveKeys(canvas('b'));
+    press();
+    act(() => { canvas('b').dispatchEvent(new WheelEvent('wheel', { deltaY: 1, bubbles: true })); });
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([2, 0]);
   });
 
   it('goes to a canvas scrolled in', () => {

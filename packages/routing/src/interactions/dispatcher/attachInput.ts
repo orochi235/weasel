@@ -63,6 +63,7 @@ export function attachInput(
     context: src.context,
     actions: src.actions,
     yieldKeys: src.yieldKeys,
+    keys: channels.keyboard !== false,
     uses: () => { redraw.sync(src.dispatchers()); },
     disposed: () => disposed,
   });

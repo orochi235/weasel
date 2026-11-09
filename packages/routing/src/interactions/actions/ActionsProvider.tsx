@@ -201,8 +201,8 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
 
   override mount(): () => void { const leave = super.mount(); return () => { dropKeysOf(this); leave(); }; }
 
-  override activate(): void {
-    takeKeys(this);
+  override activate(opts?: { keys?: boolean }): void {
+    if (opts?.keys !== false) takeKeys(this);
     super.activate();
     for (const f of this.onActivate) f();
   }
@@ -329,7 +329,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       if (!a || !disp) return null;
       return disp.beginUiOngoing(id, leaf.depsOf(a), params);
     },
-    activate: () => this.activate(),
+    activate: (opts?: { keys?: boolean }) => this.activate(opts),
     isActive: () => this.isActive(),
     holdsKeys: () => holdsKeysNow(this),
     dropKeys: () => dropKeysOf(this),
