@@ -204,7 +204,7 @@ describe('useGestureDispatcher — carry channel', () => {
     render(<Harness><Probe actions={[{ id: 'place', label: 'Place', defaultBinding: { kind: 'carry' }, enabled, invoker: { timing: 'immediate', run } }]} /></Harness>);
     carryFrom(source());
     move('pointerup', 150, 150);
-    expect(enabled).toHaveBeenCalledWith(expect.anything(), { x: 50, y: 50 }, { items: [], carry: PAYLOAD }, undefined);
+    expect(enabled).toHaveBeenCalledWith(expect.anything(), { x: 50, y: 50 }, { items: [], carry: PAYLOAD }, undefined, null);
     expect(run).not.toHaveBeenCalled();
   });
 });
