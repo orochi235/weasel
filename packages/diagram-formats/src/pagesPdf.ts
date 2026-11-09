@@ -1,7 +1,9 @@
 /**
  * Every page of a diagram as one PDF.
  */
-import { commandRasterizer, createRasterSession, planPixelRender, viewToMat3, warmRender } from '@weasel-js/core';
+import {
+  commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, viewToMat3, warmRender,
+} from '@weasel-js/core';
 import { registryFontSource, writePdf, type PdfPage, type PdfSkip } from '@weasel-js/pdf';
 import type { PageExportScene, PageRect } from './pageNodes';
 import { pageBackground } from './pageSvg';
@@ -37,6 +39,18 @@ export async function exportPagesPdf(
   opts: ExportPagesPdfOptions = {},
 ): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
   const background = pageBackground(scene, opts.background);
+  // A page's commands hold bitmaps while the next page's images load.
+  const release = holdImageBitmaps();
+  try {
+    return await writePages(scene, pages, background, opts);
+  } finally {
+    release();
+  }
+}
+
+async function writePages(
+  scene: PageExportScene, pages: readonly PageRect[], background: string | null, opts: ExportPagesPdfOptions,
+): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
   const out: PdfPage[] = [];
   for (const page of pages) {
     const args = {

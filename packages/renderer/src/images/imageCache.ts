@@ -7,14 +7,16 @@
  *
  * `src` is any browser-loadable image string: a remote URL, a `blob:` URL, or
  * a `data:image/…;base64,…` URI. The decoded bitmap lives only here, keyed by
- * `src` — never in node `data`.
+ * `src` — never in node `data`. The cache owns it, and closes it when it drops
+ * it, so a bitmap taken from the cache is valid only until then.
  */
 
 import { createEmitter } from '@weasel-js/registry';
 import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
+import { _resetBitmapHoldsForTests, closeDropped, holdImageBitmaps, reclaimed } from './bitmapHolds';
 import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
 
-export { isVectorImageSrc };
+export { holdImageBitmaps, isVectorImageSrc };
 
 /** Public shape of an image node's `data`. `src` round-trips through
  *  serialization; the decoded bitmap is held in this cache, not on the node. */
@@ -148,7 +150,11 @@ function startLoad(src: string): void {
     (bitmap) => {
       // The entry may have been replaced/cleared mid-flight (reset, etc.);
       // only commit if this src is still the one we started loading.
-      if (cache.get(src) !== entry) return;
+      if (cache.get(src) !== entry) {
+        closeDropped(bitmap);
+        return;
+      }
+      reclaimed(bitmap);
       cache.set(src, {
         status: 'ready',
         bitmap,
@@ -200,13 +206,17 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
   };
   loader(src, size).then(
     (bitmap) => {
-      if (cache.get(src) !== entry) return;
+      if (cache.get(src) !== entry) {
+        closeDropped(bitmap);
+        return;
+      }
       v.pending = undefined;
       const old = entry.bitmap;
+      reclaimed(bitmap);
       entry.bitmap = bitmap;
       v.shrunkTo = grow ? undefined : target;
       v.scale = target;
-      if (old && old !== bitmap) releaseImageSource(old);
+      if (old && old !== bitmap) closeDropped(old);
       enforceBudget(src);
       notify();
     },
@@ -227,7 +237,12 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
  *  `drawnAt` is the size in device pixels the image is about to cover. A
  *  vector source ({@link isVectorImageSrc}) uses it to re-rasterize in
  *  power-of-two steps — the current raster is returned until the sharper one
- *  is ready. Raster sources ignore it. */
+ *  is ready. Raster sources ignore it.
+ *
+ *  The bitmap is valid until the cache drops it: when a load lands and it
+ *  goes to fit the budget or gives way to a sharper raster, or on
+ *  {@link releaseImage}. Read it again each frame rather than keep it; work
+ *  holding it across an `await` takes a {@link holdImageBitmaps} hold. */
 export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBitmap | undefined {
   if (mintedHere(src)) return held.get(src)?.deref();
   const entry = cache.get(src);
@@ -260,8 +275,9 @@ export function isBitmapSrc(src: string): boolean {
 export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
   if (mintedHere(src)) throw new Error(`weasel imageCache: ${src} was minted here; there is nothing to adopt`);
   const old = cache.get(src)?.bitmap;
-  if (old && old !== bitmap) releaseImageSource(old);
+  reclaimed(bitmap);
   cache.set(src, { status: 'ready', bitmap, readAt: ++reads });
+  if (old && old !== bitmap) closeDropped(old);
   enforceBudget(src);
   notify();
 }
@@ -319,7 +335,7 @@ export function imageStatus(src: string): ImageStatus {
 }
 
 /**
- * Forget `src`: drop its decoded bitmap, its decoded SVG, and the texture every
+ * Forget `src`: close its decoded bitmap, drop its decoded SVG and the texture every
  * live renderer holds for it, and abandon a load in flight. The cache is keyed
  * by `src` across every scene on the page, so it cannot know when the last use
  * is gone; whoever does know calls this. A later {@link getImageBitmap} for the
@@ -336,7 +352,7 @@ export function releaseImage(src: string): void {
   const entry = cache.get(src);
   cache.delete(src);
   forgetDecodedVector(src);
-  if (entry?.bitmap) releaseImageSource(entry.bitmap);
+  if (entry?.bitmap) closeDropped(entry.bitmap);
 }
 
 /** Load a `src` whose last load failed again. Does nothing for a `src` in any
@@ -371,4 +387,5 @@ export function _resetImageCacheForTests(): void {
   budgetBytes = DEFAULT_BUDGET_BYTES;
   reads = 0;
   readsAtLastPass = 0;
+  _resetBitmapHoldsForTests();
 }

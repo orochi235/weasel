@@ -1,5 +1,5 @@
 import { type GlMat3, mat3 } from '@weasel-js/geom';
-import type { DrawCommand } from '@weasel-js/renderer';
+import { holdImageBitmaps, type DrawCommand } from '@weasel-js/renderer';
 import { ContentStream } from './content';
 import { deflate as zlibDeflate } from './deflate';
 import { type PageCtx, pageFlip, writeCommands } from './drawCommands';
@@ -75,6 +75,15 @@ export async function writePdfWith(
   deflate: Deflater,
 ): Promise<PdfResult> {
   if (pages.length === 0) throw new Error('pdf: a document needs at least one page');
+  const release = holdImageBitmaps();
+  try {
+    return await writePages(pages, opts, deflate);
+  } finally {
+    release();
+  }
+}
+
+async function writePages(pages: readonly PdfPage[], opts: WritePdfOptions, deflate: Deflater): Promise<PdfResult> {
   const objects = new PdfObjects();
   const catalog = objects.alloc();
   const tree = objects.alloc();

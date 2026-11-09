@@ -66,6 +66,7 @@ export type { InkExtents } from '../core/geometry/inkExtents';
 export {
   bitmapSrc,
   getImageBitmap,
+  holdImageBitmaps,
   imageStatus,
   subscribeImageReady,
   isVectorImageSrc,
