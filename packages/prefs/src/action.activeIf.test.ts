@@ -52,6 +52,28 @@ describe("an action leaf's activeIf", () => {
     expect([...at(false)]).toEqual([]);
   });
 
+  it("names no action of a list's item that reads its entry, which the schema's pass has none of", () => {
+    const rows = {
+      kind: 'list', name: 'Rows', description: '', default: [],
+      item: {
+        kind: 'object', name: 'Row', description: '', default: {},
+        children: { on: { kind: 'boolean', name: 'On', description: '', default: false }, go: { ...clear, activeIf: { from: 'item', path: 'on' } } },
+      },
+    } as PrefLeaf;
+    const s: PrefGroup = { name: '', children: { rows } };
+    expect([...applyPrefConditions(s, prefJudge(s, () => undefined)).active]).toEqual([]);
+  });
+
+  it("names in an entry only the actions whose activeIf reads it, the rest being the schema's pass's", () => {
+    const item = {
+      kind: 'object', name: 'Row', description: '', default: {},
+      children: { go: { ...clear, activeIf: { path: 'armed' } } },
+    } as PrefLeaf;
+    const s: PrefGroup = { name: '', children: {} };
+    const applied = applyPrefEntryConditions(item, 'rows.0', prefJudge(s, () => false, { item, value: {} }));
+    expect([...applied.active]).toEqual([]);
+  });
+
   it('is checked as the other conditions are: a path no leaf holds is a problem', () => {
     const s: PrefGroup = { name: '', children: { clear: { ...clear, activeIf: { path: 'nowhere' } } } };
     expect(checkPrefConditions(s).map((p) => [p.at, p.field, p.code])).toEqual([['clear', 'activeIf', 'no-leaf']]);

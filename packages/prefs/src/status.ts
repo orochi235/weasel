@@ -5,7 +5,7 @@
 
 import type { PrefAction } from './action';
 import type { PrefAlias } from './alias';
-import { prefConditionReadsItem } from './condition';
+import { type PrefCondition, prefConditionReadsItem } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection } from './helpers';
 import { deferEntryConditions, type PrefConditionJudge } from './judge';
@@ -66,10 +66,12 @@ interface WalkOptions {
   inItem: PrefConditionJudge;
   aliasOver?: PrefGroup | PrefSection;
   aliasHolds?: PrefConditionJudge;
+  /** Whether `holds` gives `condition` its real answer, rather than one deferred to another pass. */
+  answers: (condition: PrefCondition, holds: PrefConditionJudge) => boolean;
 }
 
 /** The walk over leaves and what is inside them, which the schema's pass and an entry's share. */
-function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: WalkOptions) {
+function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answers }: WalkOptions) {
   const disabled = new Set<string>();
   const hidden = new Set<string>();
   const active = new Set<string>();
@@ -86,7 +88,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds }: Walk
     if (!status.shown) hidden.add(path);
     if (!status.enabled) disabled.add(path);
     const { activeIf } = node as Partial<PrefAction>;
-    if (node.kind === 'action' && activeIf !== undefined && holds(activeIf, 'activeIf')) active.add(path);
+    if (node.kind === 'action' && activeIf !== undefined && answers(activeIf, holds) && holds(activeIf, 'activeIf')) active.add(path);
     const owner: PrefOwner = entry === undefined ? { node, status, above } : { node, status, above, entry };
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, owner, holds);
@@ -167,7 +169,9 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
   holds: PrefConditionJudge,
   { keepEmpty = false, keepHidden = false, aliasOver, aliasHolds }: PrefConditionsOptions = {},
 ): PrefConditionsApplied<T> {
-  const walk = leafWalk({ keepEmpty, keepHidden, inItem: deferEntryConditions(holds), aliasOver: aliasOver ?? schema, aliasHolds });
+  const inItem = deferEntryConditions(holds);
+  const answers = (condition: PrefCondition, by: PrefConditionJudge): boolean => by !== inItem || !prefConditionReadsItem(condition);
+  const walk = leafWalk({ keepEmpty, keepHidden, inItem, aliasOver: aliasOver ?? schema, aliasHolds, answers });
   const { disabled, hidden, active } = walk;
 
   const group = (node: PrefGroup, path: string, above: PrefStatus): PrefGroup | null => {
@@ -223,7 +227,8 @@ export function applyPrefEntryConditions(
   { keepEmpty = false, keepHidden = false }: Pick<PrefConditionsOptions, 'keepEmpty' | 'keepHidden'> = {},
 ): PrefEntryApplied {
   const asked: PrefConditionJudge = (condition, field) => !prefConditionReadsItem(condition) || holds(condition, field);
-  const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS });
+  const answers = (condition: PrefCondition, by: PrefConditionJudge): boolean => by === asked && prefConditionReadsItem(condition);
+  const walk = leafWalk({ keepEmpty, keepHidden, inItem: ALWAYS, answers });
   const status = prefStatusUnder(PREF_STATUS, { enableIf: item.enableIf }, asked);
   return { item: walk.inside(item, path, status, asked, PREF_STATUS, path), disabled: walk.disabled, hidden: walk.hidden, active: walk.active };
 }
