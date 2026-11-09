@@ -127,6 +127,8 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   setEvents(opts.events ?? [], opts.length);
 
   let running = false;
+  /** Counts starts, so a step that a stop and start in its `onStep` replaced books nothing. */
+  let run = 0;
   let inStep = false;
   /** Steps booked since `start`, not wrapped. */
   let count = 0;
@@ -170,13 +172,14 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     // Read before `onStep`: a tempo set there starts with the next step, and
     // this one keeps the length its events were gated by.
     const ms = stepMs();
+    const ran = run;
     inStep = true;
     try {
       opts.onStep?.(step, when);
     } finally {
       inStep = false;
       // Booked even when `onStep` throws, or `playing()` stays true over a silent player.
-      if (running) {
+      if (running && run === ran) {
         count += 1;
         lastAt = when;
         nextAt = when + ms;
@@ -191,6 +194,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       const at = when ?? engine.now();
       if (!Number.isFinite(at)) throw new RangeError(`@weasel-js/audio: a pattern starts at a finite time, not ${at}`);
       running = true;
+      run += 1;
       count = 0;
       lastAt = null;
       nextAt = at;

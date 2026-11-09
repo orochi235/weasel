@@ -265,4 +265,23 @@ describe('createPatternPlayer', () => {
     await run(0);
     expect(onStep).toHaveBeenCalledTimes(1);
   });
+
+  it('restarted from onStep, plays once from its new start', async () => {
+    const { engine, run, starts } = await harness();
+    let restarted = false;
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 4,
+      events: [{ step: 0, pitch: 'C4' }],
+      onStep: (step, when) => {
+        if (step !== 1 || restarted) return;
+        restarted = true;
+        player.stop();
+        player.start(when + 1000);
+      },
+    });
+    player.start(0);
+    await run(1600);
+    // Step 0 at 0, then the restart's own step 0s, a pass apart.
+    expect(starts()).toEqual([0, 1125, 1625]);
+  });
 });
