@@ -152,8 +152,9 @@ export interface TimelineOptions extends NestedTimeline {
 export interface TimelineHandle extends AnimationHandle {
   /** Move the playhead. Fires no event itself, at any depth; an event exactly
    *  at `t` fires when playback next advances. Sampled tracks are sampled at
-   *  `t` at once, so a target they hold reads the new value before the next frame. Throws on
-   *  a `t` that is not finite. */
+   *  `t` at once, so a target they hold reads the new value before the next frame. A `t` before
+   *  0 lands on 0, and one past `duration` on `duration` unless laps are left. Throws on a `t`
+   *  that is not finite. */
   seek(t: number): void;
   /** Change the loop policy. `true` loops forever, `n` allows n more laps,
    *  `false` stops at `duration`. Sets policy only — a timeline already parked

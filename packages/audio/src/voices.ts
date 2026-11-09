@@ -1,4 +1,4 @@
-import { checkGain } from './param';
+import { checkFinite, checkGain, checkPoint } from './param';
 import type { Scheduler } from './scheduler';
 import { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
@@ -177,18 +177,22 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       poolGain(voice);
     },
     setRate(value) {
+      checkFinite('voice rate', value);
       voice.rate = value;
       voice.retune?.();
     },
     setDetune(cents) {
+      checkFinite('voice detune', cents);
       voice.detune = cents;
       voice.retune?.();
     },
     setPan(value) {
+      checkFinite('voice pan', value);
       voice.position = undefined;
       voice.out?.pan(value);
     },
     setPosition(p) {
+      checkPoint('voice position', p);
       voice.position = p;
       applySpatial(voice);
     },
@@ -196,8 +200,18 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
   };
 }
 
+/** Throws on a number a voice could not play with. */
+export function checkVoice(common: VoiceOptions): void {
+  checkWhen(common.when);
+  if (common.gain !== undefined) checkGain('voice', common.gain);
+  checkFinite('voice rate', common.rate);
+  checkFinite('voice detune', common.detune);
+  checkFinite('voice pan', common.pan);
+  checkPoint('voice position', common.position);
+}
+
 /** Throws on a start time that could never come due. */
-export function checkWhen(when: number | undefined): void {
+function checkWhen(when: number | undefined): void {
   if (when !== undefined && !Number.isFinite(when)) {
     throw new RangeError(`@weasel-js/audio: a voice starts at a finite time, not ${when}`);
   }
@@ -238,7 +252,7 @@ export function createVoices(deps: VoicesDeps): Voices {
 
   return {
     launch(common, starter) {
-      checkWhen(common.when);
+      checkVoice(common);
       const id = nextVoiceId++;
 
       if (deps.disposed()) {

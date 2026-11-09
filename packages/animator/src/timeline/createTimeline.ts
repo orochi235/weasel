@@ -35,6 +35,14 @@ const finite = (t: number): number => {
   return t;
 };
 
+/** The laps a loop policy allows past the first pass. */
+const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : loop);
+
+/** Where a seek to `t` lands: not before 0, nor past `duration` unless laps are left, where it
+ *  lands in a later lap. */
+const landing = (t: number, duration: number, lapsLeft: number): number =>
+  Math.max(0, lapsLeft > 0 ? finite(t) : Math.min(finite(t), duration));
+
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
   switch (track.kind) {
@@ -97,8 +105,7 @@ export function createTimeline(
   const playback = createEmitter();
   const playbackChanged = playback.emit;
 
-  const loopOpt = opts.loop ?? false;
-  let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
+  let loopsLeft = lapsOf(opts.loop ?? false);
   let lap = 0;
 
   const booker = opts.booking
@@ -207,8 +214,9 @@ export function createTimeline(
     setTimeScale(s) { wantScale = s; base.setTimeScale(s); playbackChanged(); },
     timeScale: () => (live ? base.timeScale() : wantScale),
     isPaused: () => (live ? base.isPaused() : wantPaused),
-    seek(t) {
-      offset = finite(t) - lastVirtual;
+    seek(to) {
+      const t = landing(to, duration, loopsLeft);
+      offset = t - lastVirtual;
       booker?.retract();
       playhead = t;
       events.place(t, true);
@@ -221,7 +229,7 @@ export function createTimeline(
     duration: () => duration,
     tracks: () => opts.tracks,
     setLoop(loop) {
-      loopsLeft = loop === true ? Infinity : loop === false ? 0 : loop;
+      loopsLeft = lapsOf(loop);
       booker?.retract();
       playbackChanged();
     },

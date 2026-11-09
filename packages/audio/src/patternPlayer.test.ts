@@ -17,6 +17,16 @@ describe('createPatternPlayer', () => {
     expect(player.playing()).toBe(true);
   });
 
+  it('refuses a start time that is not finite and stays stopped, so it can still start', async () => {
+    const { engine, run, starts } = await harness();
+    const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
+    expect(() => player.start(Number.NaN)).toThrow(RangeError);
+    expect(player.playing()).toBe(false);
+    player.start(0);
+    await run(100);
+    expect(starts()).toEqual([0]);
+  });
+
   it('gates a note for its length in steps', async () => {
     const { ctx, engine, run } = await harness();
     createPatternPlayer(engine, {

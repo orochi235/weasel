@@ -3,6 +3,12 @@ import type { AnimationHandle, TweenOptions } from '../types';
 import { axesOf } from './axes';
 import type { AnimationContext } from './context';
 
+/** Refuses a tween's `ms` that is NaN at the call: the codec would throw it out of every frame
+ *  after, stopping every other animation. 0 or less finishes at once, and Infinity never does. */
+export function checkTweenMs(ms: number): void {
+  if (Number.isNaN(ms)) throw new RangeError('tween: ms is a time, not NaN');
+}
+
 /** A tween that hands each frame's value to the caller's `onTick`. */
 export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): AnimationHandle {
   const { codec } = ctx;

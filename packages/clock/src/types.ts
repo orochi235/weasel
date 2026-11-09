@@ -83,7 +83,7 @@ export interface Clock {
    *  line between two passes is the start of the later one; `'end'` stands at
    *  the end of the earlier, `phase` 1, until the clock next moves. */
   seek(elapsed: number, line?: 'start' | 'end'): void;
-  /** The frame loop reports the time, once a frame. */
+  /** The frame loop reports the time, once a frame. Throws a `RangeError` on one that is not finite. */
   sync(timestamp: number): void;
   /** The time between now and the next sync does not count. */
   rebase(): void;

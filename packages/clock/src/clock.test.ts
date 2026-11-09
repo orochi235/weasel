@@ -56,6 +56,16 @@ describe('createClock', () => {
     expect(clock.elapsed).toBe(16);
   });
 
+  it('refuses a sync to a time that is not finite and keeps its place', () => {
+    const { clock } = started({ rate: 1 });
+    clock.sync(10);
+    expect(() => clock.sync(Number.NaN)).toThrow(RangeError);
+    expect(() => clock.sync(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    expect(clock.elapsed).toBe(10);
+    clock.sync(20);
+    expect(clock.elapsed).toBe(20);
+  });
+
   it('plays backward at a negative rate', () => {
     const { clock } = started({ rate: -1 }, { elapsed: 500, rate: -1 });
     clock.sync(200);
