@@ -6,7 +6,6 @@ import { ControlPanel } from '../controls/ControlPanel';
 import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { undoCapability } from '../instrument/undo';
-import { MenuButton } from '../passthrough/weasel-ui';
 import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
@@ -93,6 +92,80 @@ function settingsWrites(ctx: TrialChromeContext) {
 
 const settingsAuto = (ctx: TrialChromeContext) => ({ auto: ctx.auto, reported: ctx.reported });
 
+/** The snapshot loader, once there is a snapshot to load, and the title bar's actions on the trial itself. */
+function trialActions(ctx: TrialChromeContext): TrialContribution[] {
+  const out: TrialContribution[] = [];
+  if (ctx.savedSnapshots.length > 0) {
+    out.push({
+      id: 'snapshot-load',
+      region: 'toolbar',
+      group: 'trial',
+      end: true,
+      item: {
+        kind: 'menu',
+        label: 'Load snapshot',
+        entries: (c) =>
+          c.savedSnapshots.map((sn) => ({
+            kind: 'item',
+            key: sn.id,
+            label: sn.name,
+            run: () => c.loadSnapshot(sn.id),
+          })),
+      },
+    });
+  }
+  if (ctx.canExpand) {
+    out.push({
+      id: 'expand',
+      region: 'titlebar',
+      end: true,
+      item: {
+        icon: icon('ui:fullscreen'),
+        label: 'Expand trial',
+        pressed: ctx.expanded,
+        onActivate: ctx.toggleExpanded,
+      },
+    });
+  }
+  out.push({
+    id: 'clone',
+    region: 'titlebar',
+    end: true,
+    item: { icon: icon('ui:clone'), label: 'Clone trial', onActivate: ctx.clone },
+  });
+  out.push({
+    id: 'reset',
+    region: 'titlebar',
+    end: true,
+    item: { icon: icon('ui:reset'), label: 'Reset trial', onActivate: ctx.reset },
+  });
+  out.push({
+    id: 'snapshot',
+    region: 'titlebar',
+    end: true,
+    item: {
+      icon: icon('ui:snapshot'),
+      label: 'Save snapshot',
+      shortcut: 'Mod+S',
+      onActivate: () => ctx.saveSnapshot(),
+    },
+  });
+  out.push({
+    id: 'close',
+    region: 'titlebar',
+    end: true,
+    item: {
+      icon: icon('ui:close'),
+      label: 'Close trial',
+      danger: true,
+      disabled: ctx.isLastTrial,
+      disabledReason: 'It is the last trial',
+      onActivate: ctx.close,
+    },
+  });
+  return out;
+}
+
 /** Built-in ids contributed only while runtime state says so — the loupe
  *  toggle appears once a lens mounts, after the trial's first render, the
  *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
@@ -164,7 +237,13 @@ export function builtinContributions(
       id: t.id,
       region: 'palette',
       group: t.group,
-      item: { icon: t.icon, label: t.label, shortcut: t.shortcut },
+      item: {
+        icon: t.icon,
+        label: t.label,
+        shortcut: t.shortcut,
+        disabled: t.disabled,
+        disabledReason: t.disabledReason,
+      },
     });
   }
 
@@ -223,8 +302,9 @@ export function builtinContributions(
   }
 
   if (instrument.annotations != null) {
-    // A popover, so it takes the `render` escape: the panel picks a target,
-    // and an icon button cannot ask which one.
+    // A panel rather than a menu, so it takes the `render` escape: it reads the
+    // marks store through a hook, which the chrome context does not carry, and
+    // holds a format and scale across the open and an error after it.
     out.push({
       id: 'export',
       region: 'toolbar',
@@ -263,70 +343,7 @@ export function builtinContributions(
     });
   }
 
-  if (ctx.savedSnapshots.length > 0) {
-    // A menu is not an icon button, so it takes the render escape.
-    out.push({
-      id: 'snapshot-load',
-      region: 'toolbar',
-      group: 'trial',
-      end: true,
-      render: (c) => (
-        <MenuButton
-          aria-label="Load snapshot"
-          label="Load…"
-          items={c.savedSnapshots.map((sn) => ({ value: sn.id, label: sn.name }))}
-          onAction={(id) => c.loadSnapshot(id)}
-        />
-      ),
-    });
-  }
-  if (ctx.canExpand) {
-    out.push({
-      id: 'expand',
-      region: 'titlebar',
-      end: true,
-      item: {
-        icon: ctx.expanded ? icon('ui:collapse') : icon('ui:fullscreen'),
-        label: ctx.expanded ? 'Close expanded view' : 'Expand trial',
-        onActivate: ctx.toggleExpanded,
-      },
-    });
-  }
-  out.push({
-    id: 'clone',
-    region: 'titlebar',
-    end: true,
-    item: { icon: icon('ui:clone'), label: 'Clone trial', onActivate: ctx.clone },
-  });
-  out.push({
-    id: 'reset',
-    region: 'titlebar',
-    end: true,
-    item: { icon: icon('ui:reset'), label: 'Reset trial', onActivate: ctx.reset },
-  });
-  out.push({
-    id: 'snapshot',
-    region: 'titlebar',
-    end: true,
-    item: {
-      icon: icon('ui:snapshot'),
-      label: 'Save snapshot',
-      shortcut: 'Mod+S',
-      onActivate: () => ctx.saveSnapshot(),
-    },
-  });
-  out.push({
-    id: 'close',
-    region: 'titlebar',
-    end: true,
-    item: {
-      icon: icon('ui:close'),
-      label: ctx.isLastTrial ? 'Cannot close the last trial' : 'Close trial',
-      danger: true,
-      disabled: ctx.isLastTrial,
-      onActivate: ctx.close,
-    },
-  });
+  out.push(...trialActions(ctx));
 
   return out;
 }

@@ -12,6 +12,10 @@ export interface TrialTool {
   icon: IconSpec;
   /** Shown in the tooltip. Not bound here — the instrument owns its keymap. */
   shortcut?: string;
+  /** Shown but cannot be chosen. */
+  disabled?: boolean;
+  /** Why it is disabled, read in its tooltip while it is. */
+  disabledReason?: string;
   /** Presentation grouping in the palette. Ungrouped tools sort after grouped. */
   group?: string;
 }

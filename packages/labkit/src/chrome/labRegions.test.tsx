@@ -6,6 +6,7 @@ import { icon } from '../icons.gen';
 import type { Instrument } from '../instrument/types';
 import { Lab } from '../lab/Lab';
 import { LabShell } from '../lab/LabShell';
+import { toolContributions } from './LabChrome';
 import type { LabChromeContext, LabContribution } from './labTypes';
 import { ToolbarRegion } from './regions/ToolbarRegion';
 
@@ -21,7 +22,36 @@ function silenceRenderError(): void {
   vi.spyOn(console, 'error').mockImplementation(() => {});
 }
 
+describe('toolContributions', () => {
+  it('carries a tool’s disabled state and reason onto its rail item', () => {
+    const [pen] = toolContributions([
+      { id: 'pen', label: 'Pen', icon: Glyph, disabled: true, disabledReason: 'Locked' },
+    ]);
+    expect(pen?.item).toMatchObject({ disabled: true, disabledReason: 'Locked' });
+  });
+});
+
 describe('lab-level chrome', () => {
+  it('renders a header menu that opens its entries', async () => {
+    const run = vi.fn();
+    const contribution: LabContribution = {
+      id: 'recent',
+      region: 'header',
+      item: {
+        kind: 'menu',
+        label: 'Recent',
+        entries: (c) => [{ kind: 'item', key: 'a', label: c.instruments[0]?.name ?? '', run }],
+      },
+    };
+    await renderSettled(
+      <Lab title="T" instruments={[bare]} defaultInstrument="Bare" labChrome={[contribution]} />,
+      { wrapper: withIcons },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Recent' }), { detail: 1 });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Bare' }));
+    expect(run).toHaveBeenCalledOnce();
+  });
+
   it('renders a header contribution beside the lab header', async () => {
     const contribution: LabContribution = {
       id: 'publish',

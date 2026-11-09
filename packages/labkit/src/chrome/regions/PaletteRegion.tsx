@@ -12,7 +12,7 @@ export interface PaletteRegionProps<TCtx extends ToolSlotContext = TrialChromeCo
 
 /** A rail of tools and commands: a trial's, or the lab's. Selection lives in
  *  whichever tool slot the context carries; this region only reflects it. A
- *  command presses, and never latches. */
+ *  command presses, and latches only while it is `pressed`. */
 export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>({
   contributions,
   ctx,
@@ -34,16 +34,18 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
           if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
           if (c.region !== region || !c.item) return null;
           const item = c.item as RailItem<TCtx>;
-          const { icon, label, shortcut, disabled } = item;
-          const run = 'onActivate' in item ? item.onActivate : null;
+          const { icon, label, shortcut, disabled, disabledReason } = item;
+          const command = 'onActivate' in item ? item : null;
+          const run = command?.onActivate ?? null;
           return (
             <ToolButton
               key={c.id}
               icon={<Icon name={icon} size={16} />}
               label={label}
               shortcut={shortcut}
-              active={run ? false : ctx.activeToolId === c.id}
+              active={command ? command.pressed === true : ctx.activeToolId === c.id}
               disabled={disabled}
+              disabledReason={disabledReason}
               onClick={run ? () => run(ctx) : () => ctx.setActiveTool(c.id)}
             />
           );

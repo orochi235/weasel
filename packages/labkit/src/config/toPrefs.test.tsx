@@ -4,6 +4,7 @@ import { PrefSchemaEditor } from '@weasel-js/ui/components/PrefSchemaEditor';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { icon } from '../icons.gen';
 import { f } from './builder';
 import { configFromPrefs } from './fromPrefs';
 import { resolveConfigSchema } from './resolve';
@@ -53,6 +54,25 @@ describe('prefsFromConfig', () => {
     expect(again.dialogs).toEqual(resolved.dialogs);
     expect(again.resettable).toEqual(resolved.resettable);
     expect(configFromPrefs(prefs).defaults()).toEqual(schema.defaults());
+  });
+
+  it('keeps a group’s glyph on its leaf and its lead in its look, and reads both back', () => {
+    const glyph = icon('ui:add');
+    const bar = resolveConfigSchema(
+      f.schema({
+        tools: f
+          .group({ snap: f.boolean(true) })
+          .as('bar')
+          .icon(glyph)
+          .lead('icon'),
+      }),
+      [],
+    );
+    const out = prefsFromConfig(bar).members.tools as PrefLeaf & { group: unknown };
+    expect(out.icon).toBe(glyph);
+    expect(out.group).toEqual({ as: 'bar', lead: 'icon' });
+    const again = resolveConfigSchema(configFromPrefs(prefsFromConfig(bar)), []);
+    expect(again.group).toEqual(bar.group);
   });
 });
 

@@ -31,15 +31,20 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
           );
         }
         if (c.region !== 'viewport' || !c.item) return null;
-        const { icon, label, disabled, onActivate } = c.item;
+        const { icon, label, shortcut, disabled, disabledReason, pressed, danger, onActivate } =
+          c.item;
         return (
           <Button
             key={c.id}
             variant="ghost"
             iconOnly
             ariaLabel={label}
-            tooltip={label}
+            tooltip={shortcut ? undefined : label}
+            shortcut={shortcut}
+            grade={danger ? 'danger' : undefined}
+            pressed={pressed}
             disabled={disabled}
+            disabledReason={disabledReason}
             onClick={() => onActivate(ctx)}
           >
             <Icon name={icon} size={16} />

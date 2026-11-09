@@ -2,6 +2,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import type {
   PrefActionContext,
   PrefAuto,
+  PrefBarLead,
   PrefBarOverflow,
   PrefCondition,
   PrefGroup,
@@ -34,6 +35,10 @@ export interface ConfigOption<V extends string = string> {
    *  place of `label`, which stays the accessible name and becomes the tooltip;
    *  a select draws it beside `label`. */
   icon?: IconSpec;
+  /** Shorter forms of `label`, longest first, for a segmented row too narrow for it. */
+  short?: readonly string[];
+  /** Shown but cannot be chosen: a value the control reports and cannot author. */
+  disabled?: boolean;
 }
 
 /** Everything a leaf can carry beyond its kind and default. A flat union of
@@ -48,6 +53,10 @@ export interface Annotations {
   enableIf?: PrefCondition;
   block?: boolean;
   pair?: PrefPair;
+  /** Glyph naming the leaf, drawn where its name has no room: a boolean's toggle, a `pair`ed field. */
+  icon?: IconSpec;
+  /** Shorter forms of `name`, longest first, for a surface short of room for it. */
+  short?: readonly string[];
   /** Draw the control in the title row of the section or group holding it. */
   heading?: boolean;
   min?: number;
@@ -262,6 +271,10 @@ export interface BranchAnnotations {
   description?: string;
   as?: PrefGroupAs;
   overflow?: PrefBarOverflow;
+  /** Drawn `as: 'bar'`: whether its line starts with its `icon` or its label. */
+  lead?: PrefBarLead;
+  /** Glyph naming the group. */
+  icon?: IconSpec;
   showIf?: PrefCondition;
   enableIf?: PrefCondition;
 }

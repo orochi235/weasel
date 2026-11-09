@@ -163,4 +163,56 @@ describe('ViewportRegion', () => {
     act(() => fit.focus());
     expect(screen.getByRole('tooltip').textContent).toContain('Fit');
   });
+
+  it('draws a viewport control pressed, as danger, and with its shortcut in the tooltip', () => {
+    renderWithIcons(
+      <ViewportRegion
+        contributions={[
+          {
+            id: 'grid',
+            region: 'viewport',
+            item: {
+              icon: Glyph,
+              label: 'Grid',
+              shortcut: 'G',
+              pressed: true,
+              danger: true,
+              onActivate: () => {},
+            },
+          },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const grid = screen.getByRole('button', { name: 'Grid' });
+    expect(grid).toHaveAttribute('aria-pressed', 'true');
+    expect(grid).toHaveAttribute('data-grade', 'danger');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => grid.focus());
+    expect(screen.getByRole('tooltip').textContent).toContain('Grid (G)');
+  });
+
+  it('keeps a disabled viewport control with a reason reachable, and says why', () => {
+    renderWithIcons(
+      <ViewportRegion
+        contributions={[
+          {
+            id: 'fit',
+            region: 'viewport',
+            item: {
+              icon: Glyph,
+              label: 'Fit',
+              disabled: true,
+              disabledReason: 'Nothing to fit',
+              onActivate: () => {},
+            },
+          },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const fit = screen.getByRole('button', { name: 'Fit' });
+    expect(fit).toHaveAttribute('aria-disabled', 'true');
+    expect(fit).toHaveAttribute('aria-description', 'Nothing to fit');
+  });
 });

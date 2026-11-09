@@ -18,22 +18,46 @@ export interface TitleBarRegionProps {
 function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
   if (c.render) return <span key={c.id}>{c.render(ctx)}</span>;
   if (c.region !== 'titlebar' || !c.item) return null;
-  const { icon, label, shortcut, disabled, danger, onActivate } = c.item;
+  const {
+    icon,
+    label,
+    shortcut,
+    disabled,
+    disabledReason,
+    danger,
+    pressed,
+    showLabel,
+    onActivate,
+  } = c.item;
+  // Natively disabled, a button gets no hover, so its tooltip could not say why.
+  const explained = disabled && disabledReason !== undefined;
+  const name = shortcut ? `${label} (${shortcut})` : label;
+  const className = [
+    'lk-titlebar-button',
+    danger && 'lk-titlebar-button--danger',
+    showLabel && 'lk-titlebar-button--label',
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
     <button
       key={c.id}
       type="button"
-      className={`lk-titlebar-button${danger ? ' lk-titlebar-button--danger' : ''}`}
-      disabled={disabled}
+      className={className}
+      disabled={disabled && !explained}
+      aria-disabled={explained || undefined}
+      aria-description={explained ? disabledReason : undefined}
+      aria-pressed={pressed}
       aria-label={label}
-      title={shortcut ? `${label} (${shortcut})` : label}
-      onClick={() => onActivate(ctx)}
+      title={explained ? `${label}: ${disabledReason}` : name}
+      onClick={explained ? undefined : () => onActivate(ctx)}
       // The bar behind these buttons is the window drag surface, so a press
       // that lands here must not also start a drag.
       onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
       <Icon name={icon} size={16} />
+      {showLabel ? <span>{label}</span> : null}
     </button>
   );
 }

@@ -1,5 +1,10 @@
 import { act, fireEvent } from '@testing-library/react';
-import { type ActionsRegistry, evaluateActive, useActionsRegistry } from '@weasel-js/core';
+import {
+  type ActionsRegistry,
+  evaluateActive,
+  evaluateEnabled,
+  useActionsRegistry,
+} from '@weasel-js/core';
 import { isApplePlatform } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -162,6 +167,44 @@ describe('a lab’s header commands', () => {
       fireEvent.keyDown(field, { key: 'j', ...MOD });
     });
     expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it('registers nothing for a header menu, which has no single action', async () => {
+    const labChrome: LabContribution[] = [
+      { id: 'x-menu', region: 'header', item: { kind: 'menu', label: 'Menu', entries: [] } },
+    ];
+    await renderSettled(
+      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+        <Grab />
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    expect(ids().filter((id) => id.includes('x-menu'))).toEqual([]);
+  });
+
+  it('reports a disabled header item’s reason as its command’s', async () => {
+    const labChrome: LabContribution[] = [
+      {
+        id: 'x-off',
+        region: 'header',
+        item: {
+          icon: icon('ui:add'),
+          label: 'Off',
+          disabled: true,
+          disabledReason: 'Nothing to publish',
+          onActivate: () => {},
+        },
+      },
+    ];
+    await renderSettled(
+      <Lab instruments={[Staged]} defaultInstrument="Staged" labChrome={labChrome}>
+        <Grab />
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    const off = registry?.list().find((a) => a.id === 'lab.item.x-off');
+    if (!off) throw new Error('no command');
+    expect(evaluateEnabled(off)).toEqual({ enabled: false, reason: 'Nothing to publish' });
   });
 
   it('registers nothing for a header render contribution', async () => {

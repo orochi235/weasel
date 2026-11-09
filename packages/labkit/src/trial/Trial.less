@@ -162,12 +162,25 @@
     color: var(--wzl-fg);
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     opacity: 0.4;
     cursor: default;
   }
 
-  &--danger:hover:not(:disabled) {
+  &[aria-pressed='true'] {
+    background: var(--wzl-surface-pressed);
+    color: var(--wzl-fg);
+  }
+
+  &--label {
+    width: auto;
+    gap: var(--wzl-space-1);
+    padding: 0 var(--wzl-space-1);
+    font-size: var(--wzl-font-size-sm);
+  }
+
+  &--danger:hover:not(:disabled, [aria-disabled='true']) {
     background: color-mix(in srgb, var(--wzl-danger) 15%, transparent);
     color: var(--wzl-danger);
   }

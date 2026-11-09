@@ -60,7 +60,17 @@ function defaultsOf(members: PrefSection['members']): Record<string, unknown> {
 }
 
 function groupOf(resolved: ResolvedConfig, group: PrefGroup, path: string): PrefLeaf {
-  const { children: _children, name, description, showIf, enableIf, as, overflow } = group;
+  const {
+    children: _children,
+    name,
+    description,
+    showIf,
+    enableIf,
+    as,
+    overflow,
+    lead,
+    icon,
+  } = group;
   const children = membersOf(resolved, group, path);
   const leaf = withExtras(
     {
@@ -71,6 +81,7 @@ function groupOf(resolved: ResolvedConfig, group: PrefGroup, path: string): Pref
       children,
     },
     {
+      icon,
       showIf,
       enableIf,
       showWhen: resolved.showIf.get(path),
@@ -82,6 +93,7 @@ function groupOf(resolved: ResolvedConfig, group: PrefGroup, path: string): Pref
     {
       as,
       overflow,
+      lead,
       resettable: resolved.resettable?.has(path) || undefined,
       motif: resolved.motifs?.get(path),
     },
@@ -121,7 +133,7 @@ function membersOf(
  * A resolved config as a property schema, the shape `PrefSchemaEditor` opens and `f.prefs` reads back: each
  * section a `PrefSection` over the nodes it heads, each `f.group` an `object` leaf holding its children at the
  * paths they had. What a `PrefLeaf` has no field for rides on the node, where the editor keeps it and its export
- * prints it: a group's `as`, `overflow`, `resettable`, and motif under `group` (which is what marks the leaf a
+ * prints it: a group's `as`, `overflow`, `lead`, `resettable`, and motif under `group` (which is what marks the leaf a
  * group), a section's `collapsed`, `layout`, `pack`, `className`, and motif (as `frame`), and a node's `.render`,
  * `.dialog`, and the `.showIf` and `.enableIf` written as functions (as `render`, `dialog`, `showWhen`, and
  * `enableWhen`).

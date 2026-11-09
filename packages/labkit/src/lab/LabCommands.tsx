@@ -36,7 +36,7 @@ export function LabCommands({
       ))}
       {takesMarks(lab.instruments) ? <MarksCommand /> : null}
       {contributions.map((c) =>
-        c.region === 'header' && c.item ? (
+        c.region === 'header' && c.item && c.item.kind !== 'menu' ? (
           <HeaderItemCommand key={c.id} id={c.id} item={c.item} />
         ) : null,
       )}
@@ -67,7 +67,8 @@ function MarksCommand() {
 function HeaderItemCommand({ id, item }: { id: string; item: LabHeaderItem }) {
   const ctx = useLabChromeContext();
   useCommand(`lab.item.${id}`, item.label, () => item.onActivate(ctx), {
-    enabled: () => (item.disabled ? ActionDisabledReason.NotApplicable : true),
+    enabled: () =>
+      item.disabled ? (item.disabledReason ?? ActionDisabledReason.NotApplicable) : true,
     ...(item.pressed === undefined ? {} : { active: () => item.pressed === true }),
     ...(item.keys === undefined ? {} : { keys: item.keys }),
   });

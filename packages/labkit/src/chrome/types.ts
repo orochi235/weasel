@@ -1,4 +1,5 @@
 import type { IconSpec } from '@weasel-js/icons';
+import type { MenuEntry } from '@weasel-js/menu';
 import type { AppearanceProps } from '@weasel-js/ui/appearance';
 import type { ReactNode } from 'react';
 import type { AutoReports } from '../config/autoReports';
@@ -19,6 +20,11 @@ export interface CommandItem<TCtx = TrialChromeContext> {
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
   disabled?: boolean;
+  /** Why it is disabled, read in its tooltip while it is. */
+  disabledReason?: string;
+  /** A toggle rather than a command: reads as held down while true. On a rail
+   *  it reads as current, as the current tool does. */
+  pressed?: boolean;
   /** Handed the chrome context it was declared against, so a contribution can
    *  reach `ctx.saveSnapshot()` and the rest without the `render` escape. A
    *  zero-argument handler stays valid. */
@@ -27,14 +33,33 @@ export interface CommandItem<TCtx = TrialChromeContext> {
 
 /** A command in a toolbar, with the looks a bar can give one. */
 export interface ToolbarItem<TCtx = TrialChromeContext> extends CommandItem<TCtx> {
+  kind?: 'command';
   /** Reddens on hover. For actions that discard work. */
   danger?: boolean;
-  /** A toggle rather than a command: renders `aria-pressed` and reads as held
-   *  down while true. */
-  pressed?: boolean;
   /** Render the label beside the glyph rather than only in the tooltip. */
   showLabel?: boolean;
 }
+
+/** A button in a toolbar that opens a menu. Its rows are `@weasel-js/menu`
+ *  entries, which run themselves; a function is handed the chrome context
+ *  each time the menu opens, so it lists what holds then. */
+export interface ToolbarMenuItem<TCtx = TrialChromeContext> {
+  kind: 'menu';
+  /** Absent, the button reads its label. */
+  icon?: IconSpec;
+  label: string;
+  /** Render the label beside the glyph rather than only in the tooltip. */
+  showLabel?: boolean;
+  /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
+  shortcut?: string;
+  disabled?: boolean;
+  /** Why it is disabled, read in its tooltip while it is. */
+  disabledReason?: string;
+  entries: readonly MenuEntry[] | ((ctx: TCtx) => readonly MenuEntry[]);
+}
+
+/** What a toolbar holds: commands and menus. */
+export type ToolbarEntry<TCtx = TrialChromeContext> = ToolbarItem<TCtx> | ToolbarMenuItem<TCtx>;
 
 /** A tool on a rail: pressing it writes the tool slot under the
  *  contribution's id, and it reads as current while the slot names it. */
@@ -44,10 +69,12 @@ export interface ToolItem {
   /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
   shortcut?: string;
   disabled?: boolean;
+  /** Why it is disabled, read in its tooltip while it is. */
+  disabledReason?: string;
 }
 
-/** What a rail holds: tools and commands. A command takes a slot, never
- *  writes the tool slot, and never reads as the current tool. */
+/** What a rail holds: tools and commands. A command takes a slot and never
+ *  writes the tool slot; it reads as current only while it is `pressed`. */
 export type RailItem<TCtx = TrialChromeContext> = ToolItem | CommandItem<TCtx>;
 
 /** A titled block in the sidebar. `stance` and `tint` work as on a
@@ -73,7 +100,15 @@ export interface SidebarSection extends AppearanceProps {
 export interface ViewportControl<TCtx = TrialChromeContext> {
   icon: IconSpec;
   label: string;
+  /** Shown in the tooltip. Not bound here — the trial owns its keymap. */
+  shortcut?: string;
   disabled?: boolean;
+  /** Why it is disabled, read in its tooltip while it is. */
+  disabledReason?: string;
+  /** A toggle rather than a command: reads as held down while true. */
+  pressed?: boolean;
+  /** Reddens on hover. For actions that discard work. */
+  danger?: boolean;
   /** Handed the trial's chrome context, as `ToolbarItem.onActivate` is. */
   onActivate: (ctx: TCtx) => void;
 }
@@ -103,7 +138,7 @@ export interface ContributionBase {
  */
 export type TrialContribution =
   | (ContributionBase & { region: 'titlebar'; item: ToolbarItem; render?: never })
-  | (ContributionBase & { region: 'toolbar'; item: ToolbarItem; render?: never })
+  | (ContributionBase & { region: 'toolbar'; item: ToolbarEntry; render?: never })
   | (ContributionBase & { region: 'palette'; item: RailItem; render?: never })
   | (ContributionBase & { region: 'sidebar'; item: SidebarSection; render?: never })
   | (ContributionBase & { region: 'viewport'; item: ViewportControl; render?: never })

@@ -1,3 +1,4 @@
+import type { IconSpec } from '@weasel-js/icons';
 import type { PrefCondition, PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { BaseNode, conditioned } from './baseNode';
@@ -167,6 +168,18 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
    *  keeps them all on it. Carried on the resolved `PrefGroup`. */
   overflow(mode: NonNullable<BranchAnnotations['overflow']>): GroupNode<S> {
     return this.with({ ...this.annotations, overflow: mode }, this.options);
+  }
+
+  /** A glyph naming the group. A bar drawn with `.lead('icon')` starts its
+   *  line with it; a menu row opening the group carries it beside its name. */
+  icon(icon: IconSpec): GroupNode<S> {
+    return this.with({ ...this.annotations, icon }, this.options);
+  }
+
+  /** Drawn `as('bar')`: whether its line starts with its `icon` or its label.
+   *  Unset, it starts with its first cell. Carried on the resolved `PrefGroup`. */
+  lead(lead: NonNullable<BranchAnnotations['lead']>): GroupNode<S> {
+    return this.with({ ...this.annotations, lead }, this.options);
   }
 
   /** Render this whole group under a named section heading. */

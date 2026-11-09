@@ -29,7 +29,6 @@ export type MenuButtonProps<T extends string = string> = {
   /** The label is a value the caller holds and has set from the last row
    *  chosen, so it reads as a value and not as a prompt. */
   current?: boolean;
-  items: ReadonlyArray<MenuButtonItem<T>>;
   /** Fired with the value of the row chosen. A menu of links can go without. */
   onAction?: (value: T) => void;
   /** Draws the trigger as its label and a caret in the type around it, with
@@ -43,7 +42,15 @@ export type MenuButtonProps<T extends string = string> = {
   'aria-label'?: string;
   /** Receives the trigger `<button>`, to move focus to it. */
   buttonRef?: Ref<HTMLButtonElement>;
-} & SegmentTooltipFields & OverlayPortalProps;
+} & MenuButtonRows<T> & SegmentTooltipFields & OverlayPortalProps;
+
+/** A {@link MenuButton}'s list: flat `items` it acts on through `onAction`, or `entries` in `@weasel-js/menu`'s
+ *  model, which run themselves and can hold separators, submenus and value rows. Given both, `entries` is drawn. A
+ *  function is called each time the menu opens, so it lists what holds then. */
+export interface MenuButtonRows<T extends string = string> {
+  items?: ReadonlyArray<MenuButtonItem<T>>;
+  entries?: ReadonlyArray<MenuEntry> | (() => ReadonlyArray<MenuEntry>);
+}
 
 /**
  * A button that opens a list and acts on the row chosen — "Add trial…",
@@ -58,6 +65,7 @@ export function MenuButton<T extends string = string>({
   label,
   current,
   items,
+  entries,
   onAction,
   isDisabled,
   bare,
@@ -78,8 +86,8 @@ export function MenuButton<T extends string = string>({
     },
     [triggerButtonRef, buttonRef],
   );
-  const entries = useMemo(
-    (): MenuEntry[] => items.map((item) => ({
+  const fromItems = useMemo(
+    (): MenuEntry[] | null => items ? items.map((item) => ({
       kind: 'item',
       key: item.value,
       label: item.label,
@@ -88,9 +96,11 @@ export function MenuButton<T extends string = string>({
       ...(item.isCurrent ? { current: true } : {}),
       ...(item.checked !== undefined ? { checked: item.checked } : {}),
       run: () => onAction?.(item.value),
-    })),
+    })) : null,
     [items, onAction],
   );
+  const build = (): ReadonlyArray<MenuEntry> =>
+    typeof entries === 'function' ? entries() : entries ?? fromItems ?? [];
   return (
     <>
       {trigger.anchor}
@@ -110,7 +120,7 @@ export function MenuButton<T extends string = string>({
           aria-haspopup="menu"
           aria-expanded={trigger.open}
           onPointerDown={trigger.press}
-          onClick={(e) => trigger.click(e, () => entries)}
+          onClick={(e) => trigger.click(e, build)}
           {...(current ? { 'data-current': '' } : {})}
         >
           <span className={s.label}>{label}</span>

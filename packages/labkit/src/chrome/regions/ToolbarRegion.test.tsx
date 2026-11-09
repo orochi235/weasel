@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
 import { icon } from '../../icons.gen';
@@ -80,5 +80,66 @@ describe('ToolbarRegion', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+
+  it('keeps a disabled button with a reason reachable, and says why', () => {
+    renderWithIcons(
+      <ToolbarRegion
+        contributions={[
+          item('close', {
+            item: {
+              icon: Glyph,
+              label: 'Close',
+              disabled: true,
+              disabledReason: 'Last one',
+              onActivate: () => {},
+            },
+          }),
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close).toHaveAttribute('aria-disabled', 'true');
+    expect(close).toHaveAttribute('aria-description', 'Last one');
+  });
+
+  it('opens a menu item’s entries, built from the chrome context', () => {
+    const run = vi.fn();
+    const entries = vi.fn((c: TrialChromeContext) => [
+      { kind: 'item' as const, key: 'a', label: `From ${c.trialId}`, run },
+    ]);
+    renderWithIcons(
+      <ToolbarRegion
+        contributions={[
+          { id: 'load', region: 'toolbar', item: { kind: 'menu', label: 'Load', entries } },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Load' });
+    expect(button).toHaveAttribute('aria-haspopup', 'menu');
+    expect(entries).not.toHaveBeenCalled();
+    fireEvent.click(button, { detail: 1 });
+    expect(entries).toHaveBeenCalledWith(ctx);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'From t1' }));
+    expect(run).toHaveBeenCalledOnce();
+  });
+
+  it('draws a menu item with an icon as the glyph alone, named by its label', () => {
+    renderWithIcons(
+      <ToolbarRegion
+        contributions={[
+          {
+            id: 'more',
+            region: 'toolbar',
+            item: { kind: 'menu', icon: Glyph, label: 'More', entries: [] },
+          },
+        ]}
+        ctx={ctx}
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'More' });
+    expect(button.textContent).not.toContain('More');
   });
 });

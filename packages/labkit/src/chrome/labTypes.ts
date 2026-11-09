@@ -7,6 +7,7 @@ import type {
   SidebarSection,
   StatusReadout,
   ToolbarItem,
+  ToolbarMenuItem,
   ToolSlotContext,
 } from './types';
 
@@ -46,7 +47,7 @@ export interface LabHeaderItem<TCtx = LabChromeContext> extends ToolbarItem<TCtx
 export type LabContribution<TCtx = LabChromeContext> =
   | (ContributionBase & {
       region: 'header';
-      item: LabHeaderItem<TCtx>;
+      item: LabHeaderItem<TCtx> | ToolbarMenuItem<TCtx>;
       render?: never;
     })
   | (ContributionBase & { region: 'palette'; item: RailItem<TCtx>; render?: never })

@@ -53,6 +53,7 @@ function nodeOf(leaf: PrefLeaf, given: NodeOptions): ConfigNode {
 interface GroupLook {
   as?: BranchAnnotations['as'];
   overflow?: BranchAnnotations['overflow'];
+  lead?: BranchAnnotations['lead'];
   resettable?: boolean;
   motif?: BranchOptions['motif'];
 }
@@ -135,14 +136,16 @@ function branchOf(
   leaves: Array<[string, PrefLeaf]>,
 ): ConfigBranch {
   const [fields, own] = optionsOn(leaf as unknown as Record<string, unknown>);
-  const { name, description, showIf, enableIf } = fields as unknown as PrefObject;
+  const { name, description, icon, showIf, enableIf } = fields as unknown as PrefObject;
   const annotations: Record<string, unknown> = {
     name,
     description: description || undefined,
+    icon,
     showIf,
     enableIf,
     as: look.as,
     overflow: look.overflow,
+    lead: look.lead,
   };
   for (const k of Object.keys(annotations)) if (annotations[k] === undefined) delete annotations[k];
   const options: BranchOptions = { ...given, ...own };

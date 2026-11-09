@@ -1,5 +1,6 @@
 import type { PrefGroup } from '@weasel-js/prefs';
 import { describe, expect, it } from 'vitest';
+import { icon } from '../icons.gen';
 import { auto } from './auto';
 import { f } from './builder';
 import { resolveConfigSchema } from './resolve';
@@ -19,6 +20,46 @@ describe('titleCase', () => {
 });
 
 describe('resolveConfigSchema', () => {
+  it('carries a leaf’s glyph and short forms onto the pref', () => {
+    const glyph = icon('ui:add');
+    const r = resolveConfigSchema(
+      f.schema({ snap: f.boolean(true).icon(glyph).short('Sn', 'S') }),
+      [],
+    );
+    expect(leafAt(r, 'snap')).toMatchObject({ icon: glyph, short: ['Sn', 'S'] });
+  });
+
+  it('carries a group’s glyph and lead onto the pref group', () => {
+    const glyph = icon('ui:add');
+    const r = resolveConfigSchema(
+      f.schema({
+        tools: f
+          .group({ snap: f.boolean(true) })
+          .as('bar')
+          .icon(glyph)
+          .lead('icon'),
+      }),
+      [],
+    );
+    expect(r.group.children.tools).toMatchObject({ as: 'bar', icon: glyph, lead: 'icon' });
+  });
+
+  it('carries an option’s short forms and disabled state onto the enum', () => {
+    const r = resolveConfigSchema(
+      f.schema({
+        mode: f.enum('fast', ['fast', 'legacy']).labels([
+          { value: 'fast', label: 'Fast', short: ['F'] },
+          { value: 'legacy', label: 'Legacy', disabled: true },
+        ]),
+      }),
+      [],
+    );
+    expect(leafAt(r, 'mode').options).toEqual([
+      { value: 'fast', label: 'Fast', short: ['F'] },
+      { value: 'legacy', label: 'Legacy', disabled: true },
+    ]);
+  });
+
   it('titleCases a missing label', () => {
     const r = resolveConfigSchema(f.schema({ cellSize: f.number(20) }), []);
     expect(leafAt(r, 'cellSize').name).toBe('Cell size');
