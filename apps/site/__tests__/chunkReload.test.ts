@@ -32,6 +32,13 @@ describe('reloadOnce', () => {
     expect(reloadOnce(store, 1_000 + RELOAD_WINDOW_MS)).toBe(true);
   });
 
+  it('reloads again once the clock has been set back past the last reload', () => {
+    const store = memory();
+    expect(reloadOnce(store, 10 * RELOAD_WINDOW_MS)).toBe(true);
+    expect(reloadOnce(store, 1_000)).toBe(true);
+    expect(reloadOnce(store, 1_001)).toBe(false);
+  });
+
   it('refuses when nothing can remember the last reload', () => {
     expect(reloadOnce(undefined, 1_000)).toBe(false);
     const denied: ReloadStore = {

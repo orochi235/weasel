@@ -29,7 +29,7 @@ export function reloadOnce(store: ReloadStore | undefined, now: number): boolean
   if (!store) return false;
   try {
     const last = Number(store.getItem(KEY));
-    if (last > 0 && now - last < RELOAD_WINDOW_MS) return false;
+    if (last > 0 && last <= now && now - last < RELOAD_WINDOW_MS) return false;
     store.setItem(KEY, String(now));
     return true;
   } catch {
