@@ -3,6 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useAnimator } from './useAnimator';
 import { linear } from '@weasel-js/geom';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
+import { createTarget } from './target';
 import type { Animator } from './types';
 import type { UseAnimatorOptions } from './useAnimatorOptions';
 
@@ -294,6 +295,10 @@ describe('physics constants no motion can follow', () => {
     expect(() => result.current.spring({ from: 0, to: 10, stiffness: Number.NaN, onTick })).toThrow(/mass is positive/);
     expect(() => result.current.decay({ ...coast, friction: 0 })).toThrow(/friction/);
     expect(() => result.current.decay({ ...coast, friction: 1.5 })).toThrow(/friction/);
+    // A coast on a target is solved in closed form, which needs some friction.
+    let v = 0;
+    const target = createTarget({ get: () => v, set: (n: number) => { v = n; } });
+    expect(() => result.current.decay({ target, velocity: 100, friction: 1 })).toThrow(/friction below 1/);
     expect(result.current.isActive()).toBe(false);
   });
 });
