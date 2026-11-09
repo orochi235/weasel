@@ -33,11 +33,8 @@ export const BOOLEAN = {
     </g>`,
   crop: `
     <g stroke-linecap="butt" stroke-linejoin="miter">
-      <defs><clipPath id="weasel-default-crop-mask"><rect x="9" y="5" width="8" height="10"/>
-      </clipPath>
-      </defs>
       <circle cx="9" cy="10" r="5"/>
-      <circle cx="9" cy="10" r="5" fill="currentColor" stroke="none" clip-path="url(#weasel-default-crop-mask)"/>
+      <path d="M 9 5 A 5 5 0 0 1 9 15 Z" fill="currentColor" stroke="none"/>
       <rect x="9" y="5" width="8" height="10"/>
     </g>`,
   trim: `
