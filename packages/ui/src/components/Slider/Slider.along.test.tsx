@@ -231,3 +231,34 @@ describe('Slider on a curve, right to left', () => {
     expect(values(onInput)).toEqual([26]);
   });
 });
+
+describe("Slider on an arc that runs right to left: values follow the arc, min at the run's start", () => {
+  // top's circle, drawn counterclockwise from its right end.
+  const ccw = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 60, end: 300, direction: 'ccw' });
+
+  test('its min sits at the right end, where the arc starts', () => {
+    const { thumbs } = mount({ shape: ccw });
+    const p = at(0.75);
+    expect(Number.parseFloat(placed(thumbs[0]!).x)).toBeCloseTo(p.x, 9);
+    expect(Number.parseFloat(placed(thumbs[0]!).y)).toBeCloseTo(p.y, 9);
+  });
+
+  test('a press on the band reads the value along the arc', () => {
+    const { band, onInput } = mount({ shape: ccw, step: 1 });
+    const p = at(0.25);
+    fireEvent.pointerDown(band, { clientX: p.x, clientY: p.y, pointerId: 1 });
+    expect(values(onInput)).toEqual([75]);
+  });
+
+  test('ArrowRight moves the thumb to the right on screen, stepping down', () => {
+    const { thumbs, onInput } = mount({ shape: ccw, step: 1 });
+    fireEvent.keyDown(thumbs[0]!, { key: 'ArrowRight' });
+    expect(values(onInput)).toEqual([24]);
+  });
+
+  test('a clockwise bottom arc runs from its right end too', () => {
+    const bottom = arcShape({ center: { x: 100, y: 100 }, radius: 80, start: 120, end: 240 });
+    const { thumbs } = mount({ shape: bottom, thumbs: [{ value: 0 }] });
+    expect(Number.parseFloat(placed(thumbs[0]!).x)).toBeCloseTo(bottom.at(0).point.x, 9);
+  });
+});

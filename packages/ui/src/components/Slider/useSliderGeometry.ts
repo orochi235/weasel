@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { lineShape, trackRun, type TrackRun, type TrackShape } from '@weasel-js/geom';
+import { rowRun } from '../Along/rowRun';
 import { curvedGeometry, lineGeometry, type SliderGeometry } from './sliderGeometry';
 import { fractionToPosition } from './stops';
 import type { TrackCtx } from './types';
@@ -20,17 +21,18 @@ export interface SliderGeometryArgs {
   band: () => SVGGraphicsElement | null;
 }
 
-/** The slider's geometry, one identity per shape, fit and thumb length, and along a shape the value span it runs over. */
+/** The slider's geometry, one identity per shape, fit and thumb length, and along a shape the value span it runs over:
+ *  from the shape's own start, as a row along it reads, or from its end under `'rtl'`. */
 export function useSliderGeometry(args: SliderGeometryArgs): { geometry: SliderGeometry; run: TrackRun | null } {
   const { shape, thumbFit, thumbLength, direction } = args;
   const [els] = useState(() => ({ rail: args.rail, railFrame: args.railFrame, band: args.band }));
   const line = useMemo(() => lineGeometry(els.rail, els.railFrame, direction), [els, direction]);
   const run = useMemo(() => {
     if (!shape) return null;
-    if (thumbFit === 'overhang') return trackRun(shape, 0, 1, { direction });
+    if (thumbFit === 'overhang') return rowRun(shape, direction);
     // Capped at the middle, so a shape shorter than a thumb collapses there instead of inverting.
     const i = Math.min(0.5, thumbLength / 2 / shape.length);
-    return trackRun(shape, i, 1 - i, { direction });
+    return rowRun(shape, direction, { from: i, to: 1 - i });
   }, [shape, thumbFit, thumbLength, direction]);
   const geometry = useMemo(() => (run ? curvedGeometry(run, els.band) : line), [run, els, line]);
   return { geometry, run };

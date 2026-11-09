@@ -383,11 +383,6 @@ Owner tags, after the priority (2026-10-26):
   `select.deep` moves to Cmd+Alt-click (Ctrl+Alt off macOS), and a range is every node whose center lies in the
   box the two span, with no same-kind filter. Closes when the select tool's bindings do both.
 
-- **(P3) [agent] A slider along an arc still runs min to max in reading order.** Rows follow the arc's direction
-  (2026-10-30); whether a slider's values should too, so a counterclockwise arc reads as a counterclockwise dial, is
-  undecided (`useSliderGeometry`).
-  Ruled (2026-11-07): they follow the arc, min at the run's start. Closes when `useSliderGeometry` does.
-
 - **(P3) [maintainer] The menu bar's default access chord, Alt, is unverified in Chrome on Windows, which may
   open its own menu on Alt+F; check there before relying on it.**
   Closes when the maintainer has pressed Alt and Alt+F with the menu bar mounted in Chrome on Windows and

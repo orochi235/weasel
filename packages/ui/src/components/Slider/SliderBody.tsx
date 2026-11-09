@@ -1,6 +1,7 @@
 import { useRef, type CSSProperties, type ReactElement } from 'react';
 import { useTrackShape } from '../Along/alongContext';
 import { useInlineDirection } from '../Along/useRowRun';
+import { screenDirection } from '../Along/rowRun';
 import { QuantityText } from '../QuantityText';
 import { ReadoutsAlong } from './ReadoutsAlong';
 import { ReadoutsBelow } from './ReadoutsBelow';
@@ -68,7 +69,7 @@ export function SliderBody<T extends Thumb = Thumb>(
   const regionAt = useSliderRegions<T>({ props, min, max, scale, geometry, direction });
 
   const pointer = useSliderPointer<T>({ thumbs, props, min, max, trackRef, geometry, valueAt, valueToFraction, onInput: props.onInput, drags });
-  const keyDown = onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction });
+  const keyDown = onThumbKeyDown<T>({ thumbs, stops, min, max, step, constraint, keyStep: props.keyStep, range: props.range, onInput: props.onInput, onChange: props.onChange, direction: run ? screenDirection(run) : direction });
 
   const placement = props.readoutPlacement ?? 'none';
   const { renderReadout, display } = props;
