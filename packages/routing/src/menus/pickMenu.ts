@@ -1,3 +1,4 @@
+import { freshId } from '@weasel-js/registry';
 import type { MenuDef, MenuHit, MenuWhen, OwnedMenuDef } from './types';
 
 const oneOf = <T>(want: T | readonly T[] | undefined, got: T | undefined) =>
@@ -11,7 +12,7 @@ function matches(when: MenuWhen, hit: MenuHit): boolean {
  *  an id become one menu: each contribution's children in turn, with a
  *  separator between contributions. Children stay at their own keys, so the
  *  paths their values are read at do not move; a key a previous contribution
- *  took gets `~n` appended. The first def of an id supplies the schema's
+ *  took gets `~n` appended, the first `n` from the contribution's place that no key holds. The first def of an id supplies the schema's
  *  name and the def's `when`. */
 export function mergeMenuDefs(defs: readonly OwnedMenuDef[], activeTool: string | null): MenuDef[] {
   const live = [
@@ -29,7 +30,7 @@ export function mergeMenuDefs(defs: readonly OwnedMenuDef[], activeTool: string 
     const children = prev.def.menu.children;
     children[`~sep${n}`] = { kind: 'separator', name: '', description: '', default: undefined };
     for (const [k, node] of Object.entries(def.menu.children)) {
-      children[Object.hasOwn(children, k) ? `${k}~${n}` : k] = node;
+      children[Object.hasOwn(children, k) ? freshId(k, { has: (id) => Object.hasOwn(children, id) }, { from: n, sep: '~' }) : k] = node;
     }
     if (!prev.def.when && def.when) prev.def.when = def.when;
   }

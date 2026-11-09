@@ -42,6 +42,13 @@ describe('mergeMenuDefs', () => {
     expect(new Set(resolveMenu(merged[0]!, src).map((e) => e.key)).size).toBe(3);
     expect(Object.keys(sel.menu.children)).toEqual(['cut']);
   });
+  it('renames a shared key past a key already spelled as its renamed form', () => {
+    const first: MenuDef = { id: 'sel', menu: pref.group('', { cut: pref.action('cut'), 'cut~1': pref.action('toolA') }) };
+    const again: MenuDef = { id: 'sel', menu: pref.group('', { cut: pref.action('toolB') }) };
+    const merged = mergeMenuDefs([{ def: first, owner: null }, { def: again, owner: null }], null);
+    expect(labels(merged[0]!)).toEqual(['cut', 'toolA', 'separator', 'toolB']);
+  });
+
   it('drops a tool def while another tool is active', () => {
     const tool: MenuDef = { id: 'sel', menu: one('toolA') };
     expect(labels(mergeMenuDefs([{ def: sel, owner: null }, { def: tool, owner: 'pen' }], 'select')[0]!)).toEqual(['cut']);
