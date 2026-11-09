@@ -28,7 +28,7 @@ describe('node raster host', () => {
       close: closeBrowser,
       newContext: async () => ({
         close: closeContext,
-        newPage: async () => ({ addScriptTag: async () => { throw new Error('bad script'); } }),
+        newPage: async () => ({ on: () => {}, addScriptTag: async () => { throw new Error('bad script'); } }),
       }),
     } as unknown as Browser;
     const host = createNodeRasterHost({ browser, pageScript: 'x' });
@@ -42,7 +42,7 @@ describe('node raster host', () => {
     const close = vi.fn(async () => {});
     let evaluated = 0;
     // The first evaluate is the open's check that the page script ran.
-    const page = { addScriptTag: async () => {}, evaluate: vi.fn(async () => (evaluated++ === 0 ? true : result)) };
+    const page = { on: () => {}, addScriptTag: async () => {}, evaluate: vi.fn(async () => (evaluated++ === 0 ? true : result)) };
     const browser = { close, newContext: async () => ({ close, newPage: async () => page }) } as unknown as Browser;
     return { browser, page };
   }
@@ -80,6 +80,7 @@ describe('node raster host', () => {
         return {
           close: closeContext,
           newPage: async () => ({
+            on: () => {},
             addScriptTag: async () => {},
             isClosed: () => closed,
             evaluate: async () => {
@@ -95,6 +96,41 @@ describe('node raster host', () => {
     await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/closed/);
     const image = await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
     expect(Array.from(image.data)).toEqual([9, 9, 9, 9]);
+    expect(pages).toBe(2);
+    expect(closeContext).toHaveBeenCalledTimes(1);
+    await host.dispose();
+  });
+
+  it('opens a new page for the next render once the one it had has crashed', async () => {
+    let pages = 0;
+    const closeContext = vi.fn(async () => {});
+    const browser = {
+      close: vi.fn(async () => {}),
+      isConnected: () => true,
+      newContext: async () => {
+        const n = ++pages;
+        let evaluated = 0;
+        let onCrash: (() => void) | null = null;
+        return {
+          close: closeContext,
+          newPage: async () => ({
+            on: (event: string, fn: () => void) => { if (event === 'crash') onCrash = fn; },
+            addScriptTag: async () => {},
+            // A crashed page is not closed: every call on it throws from then on.
+            isClosed: () => false,
+            evaluate: async () => {
+              if (evaluated++ === 0) return true;
+              if (n === 1) { onCrash?.(); throw new Error('Target crashed'); }
+              return { width: 1, height: 1, base64: Buffer.from([7, 7, 7, 7]).toString('base64') };
+            },
+          }),
+        };
+      },
+    } as unknown as Browser;
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    await expect(host.render({ scene: fixtureScene(), ...FIXTURE_RENDER })).rejects.toThrow(/crashed/);
+    const image = await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
+    expect(Array.from(image.data)).toEqual([7, 7, 7, 7]);
     expect(pages).toBe(2);
     expect(closeContext).toHaveBeenCalledTimes(1);
     await host.dispose();

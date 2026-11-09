@@ -48,6 +48,8 @@ interface Open {
   browser: Browser;
   context: BrowserContext;
   page: Page;
+  /** The page's renderer crashed: it stays open, and every call on it throws. */
+  crashed: boolean;
 }
 
 function defaultPageScript(): string {
@@ -67,10 +69,12 @@ async function open(options: NodeRasterHostOptions): Promise<Open> {
   try {
     context = await browser.newContext({ deviceScaleFactor: 1 });
     const page = await context.newPage();
+    const opened: Open = { browser, context, page, crashed: false };
+    page.on('crash', () => { opened.crashed = true; });
     await page.addScriptTag({ content: script });
     const ready = await page.evaluate((key) => key in globalThis, PAGE_GLOBAL);
     if (!ready) throw new Error('node raster host: the page script ran but set no render entry');
-    return { browser, context, page };
+    return opened;
   } catch (err) {
     if (!options.browser) await browser.close();
     else await context?.close();
@@ -107,8 +111,8 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
         [PAGE_GLOBAL, req] as const,
       );
     } catch (err) {
-      // A page or browser gone for good: the next render opens another rather than failing on it too.
-      if (opening === pending && (opened.page.isClosed() || !opened.browser.isConnected())) {
+      // A page crashed, or a page or browser gone for good: the next render opens another rather than failing on it too.
+      if (opening === pending && (opened.crashed || opened.page.isClosed() || !opened.browser.isConnected())) {
         opening = null;
         void close(opened).catch(() => undefined);
       }
