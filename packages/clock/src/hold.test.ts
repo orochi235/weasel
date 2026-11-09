@@ -83,16 +83,28 @@ describe('holdAt', () => {
   it('round-trips the time a looping clock shows within its pass', () => {
     const h = createClock({ duration: 3000, loop: true, origin: -500 });
     h.clock.seek(7600);
-    const shown = shownInPass(h.clock.origin, h.clock.elapsed, h.clock.duration);
+    const shown = shownInPass(h.clock);
     expect(shown).toBe(1100);
     const back = createClock({ duration: 3000, loop: true, origin: -500 });
     expect(holdAt(back, shown).pending()).toBeNull();
-    expect(shownInPass(back.clock.origin, back.clock.elapsed, back.clock.duration)).toBe(1100);
+    expect(shownInPass(back.clock)).toBe(1100);
     const end = createClock({ duration: 3000, loop: true });
     end.clock.seek(6000, 'end');
-    const atEnd = shownInPass(0, end.clock.elapsed, 3000);
+    const atEnd = shownInPass(end.clock);
     holdAt(back, atEnd - 500);
     expect([back.clock.pass, back.clock.phase]).toEqual([0, 1]);
+  });
+  it('shows a pass boundary as the pass the clock reads it in, as its phase does', () => {
+    const h = createClock({ duration: 100, loop: 3, origin: 10 });
+    h.clock.seek(200);
+    expect([h.clock.phase, shownInPass(h.clock)]).toEqual([0, 10]);
+    h.clock.seek(200, 'end');
+    expect([h.clock.phase, shownInPass(h.clock)]).toEqual([1, 110]);
+    h.clock.seek(300);
+    expect([h.clock.phase, shownInPass(h.clock)]).toEqual([1, 110]);
+    const open = createClock({ origin: 5 });
+    open.clock.seek(1234);
+    expect(shownInPass(open.clock)).toBe(1239);
   });
   it('holds a time on a pass boundary of a looping clock as the end of the pass before', () => {
     const h = createClock({ duration: 1000, loop: true });

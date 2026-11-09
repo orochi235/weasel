@@ -19,8 +19,9 @@ DOM. `useClockLoop`, the one frame loop that syncs a registry's clocks, is in
 
 A clock's shown time is `origin` plus how far it stands into its pass.
 `origin` (in `ClockSpec`) is where a pass starts on the timeline. On a looping
-clock the shown time is per pass: `shownInPass` reads it, and a time on a pass
-boundary reads as the end of the pass before.
+clock the shown time is per pass: `shownInPass(clock)` reads it, in the pass
+`clock.pass` names, so a time on a pass boundary shows as the end of the pass
+before only when the clock stands at that end (`phase` 1).
 
 `ClockHandle.declare(spec)` takes up a new `duration`, `origin` and `speed`,
 and `loop` when the declared `loop` changed since the last declaration, so a
