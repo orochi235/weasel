@@ -61,9 +61,10 @@ function buildPoints(
       const [j0, j1] = gridRange(Math.floor(bounds.height / gridSpacing), (near.y - bounds.y) / gridSpacing);
       // Written so a NaN range, which a non-finite container gives, offers nothing too.
       if (!(i1 - i0 <= 2 * GRID_REACH && j1 - j0 <= 2 * GRID_REACH)) return out;
-      for (let j = j0; j <= j1; j++) {
-        for (let i = i0; i <= i1; i++) {
-          out.push({ x: bounds.x + i * gridSpacing, y: bounds.y + j * gridSpacing });
+      // Counted from 0, since `i++` from an index past a safe integer never moves.
+      for (let dj = 0; dj <= j1 - j0; dj++) {
+        for (let di = 0; di <= i1 - i0; di++) {
+          out.push({ x: bounds.x + (i0 + di) * gridSpacing, y: bounds.y + (j0 + dj) * gridSpacing });
         }
       }
       return out;
