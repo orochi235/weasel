@@ -41,8 +41,8 @@ export interface DropIndent {
 
 /**
  * Where a pointer over `rows` would drop. A leaf splits at its midpoint; a branch keeps its middle half for a drop
- * into it. Below the last row of a subtree, `indent` lets the pointer's x choose how many levels to climb out;
- * without it the drop stays at the row's own level, which is all a flat list needs.
+ * into it. Below the last row of a subtree, an `indent` of positive width lets the pointer's x choose how many
+ * levels to climb out; without one the drop stays at the row's own level, which is all a flat list needs.
  */
 export function resolveDrop(
   rows: readonly DropRow[],
@@ -73,7 +73,7 @@ function gapAfter(rows: readonly DropRow[], i: number, x: number, indent: DropIn
   if (r.expanded && r.childCount > 0 && next) return before(next);
   const floor = next ? next.level : 1;
   let level = r.level;
-  if (indent && floor < r.level) {
+  if (indent && indent.indent > 0 && floor < r.level) {
     const want = Math.floor((x - indent.originX) / indent.indent) + 1;
     level = Math.max(floor, Math.min(r.level, want));
   }
