@@ -36,4 +36,34 @@ describe('node raster host', () => {
     expect(closeContext).toHaveBeenCalledTimes(1);
     expect(closeBrowser).not.toHaveBeenCalled();
   });
+
+  /** A browser whose one page answers every render with `result`. */
+  function fakeBrowser(result: { width: number; height: number; base64: string }) {
+    const close = vi.fn(async () => {});
+    let evaluated = 0;
+    // The first evaluate is the open's check that the page script ran.
+    const page = { addScriptTag: async () => {}, evaluate: vi.fn(async () => (evaluated++ === 0 ? true : result)) };
+    const browser = { close, newContext: async () => ({ close, newPage: async () => page }) } as unknown as Browser;
+    return { browser, page };
+  }
+
+  it('hands back pixels that own their buffer, however small', async () => {
+    const { browser } = fakeBrowser({ width: 1, height: 1, base64: Buffer.from([1, 2, 3, 4]).toString('base64') });
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    const image = await host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
+    expect(Array.from(image.data)).toEqual([1, 2, 3, 4]);
+    expect(image.data.byteOffset).toBe(0);
+    expect(image.data.buffer.byteLength).toBe(4);
+    await host.dispose();
+  });
+
+  it('refuses a render the host was disposed under while its page opened', async () => {
+    const { browser, page } = fakeBrowser({ width: 1, height: 1, base64: '' });
+    const host = createNodeRasterHost({ browser, pageScript: 'x' });
+    const rendering = host.render({ scene: fixtureScene(), ...FIXTURE_RENDER });
+    const disposing = host.dispose();
+    await expect(rendering).rejects.toThrow(/disposed/);
+    await disposing;
+    expect(page.evaluate).toHaveBeenCalledTimes(1);
+  });
 });
