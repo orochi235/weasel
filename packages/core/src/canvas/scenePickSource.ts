@@ -87,6 +87,8 @@ export function scenePickSource<TData, TLayer extends string, TPose>(
     const painted = paintedOf(node);
     if ((node as { dependsOn?: unknown }).dependsOn === undefined) return painted;
     if (!unoverridden && scene.overrides.read(node.id as NodeId)?.path !== undefined) return painted;
+    // One that derives only its pose, or no path this time, is drawn at its painted pose.
+    if (derivedPathOf(node) === null) return painted;
     return derivedFramePose(painted, effectivePose(scene, node as never));
   };
 

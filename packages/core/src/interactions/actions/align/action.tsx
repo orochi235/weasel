@@ -11,6 +11,7 @@ import type { PointerContextValue } from '@weasel-js/routing/react';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
 import { moveEachOps } from '../moveNodes';
+import { uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { commitTransformOps } from '../transformFinish';
 import type { Action, ActionDeps } from '@weasel-js/routing';
@@ -65,8 +66,8 @@ function alignSelection(
   pointer: PointerContextValue | undefined,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): void {
-  const ids = withoutPageStructure(scene, selection.get());
   const frame = scenePoseFrame(scene);
+  const ids = uncarried(frame, withoutPageStructure(scene, selection.get()));
   const boxes = boxesOver(frame);
   const poses = ids.map((id) => frame.world(id));
   const bounds = poses.map((p, i) => boxes.aabb(ids[i]!, p));

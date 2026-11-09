@@ -45,3 +45,18 @@ describe('a connector inside a turned group', () => {
     expect(pickAt(scene, 150, 100)).not.toContain(edge);
   });
 });
+
+describe('a node deriving only its pose inside a turned group', () => {
+  it('is picked where the group’s turn paints it', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const box = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 200, height: 200, rotation: Math.PI / 2 } });
+    const a = scene.add({ kind: 'mark', parent: box, layer: 'main', data: {}, pose: { x: 0, y: 0, width: 4, height: 4 } });
+    // A local bar along y = 100, which the quarter turn paints along x = 100.
+    const bar = scene.add({
+      kind: 'mark', parent: box, layer: 'main', data: {}, pose: { x: 0, y: 0, width: 0, height: 0 },
+      dependsOn: [a], derivePose: () => ({ x: 50, y: 95, width: 100, height: 10 }),
+    });
+    expect(pickAt(scene, 100, 60)).toContain(bar);
+    expect(pickAt(scene, 60, 100)).not.toContain(bar);
+  });
+});

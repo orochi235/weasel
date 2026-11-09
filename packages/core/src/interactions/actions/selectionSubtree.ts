@@ -2,7 +2,8 @@ import { outermost } from '@weasel-js/select';
 import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import { withoutPageStructure } from 'core/scene/nodeGates';
-import type { PoseFrame } from './poseFrame';
+import { scenePoseFrame, type PoseFrame } from './poseFrame';
+import { composesFrames } from 'core/scene/composeFrame';
 import { translatePoseViaDescriptor, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 
 type AnyScene = Scene<unknown, string, unknown>;
@@ -81,7 +82,23 @@ export function shapeSources(scene: AnyScene, ids: readonly string[]): string[] 
     else for (const dep of deps) visit(dep, true);
   };
   for (const id of ids) visit(id, false);
-  return [...out];
+  return uncarried(scenePoseFrame(scene), [...out]);
+}
+
+/** `ids` less each one stored, through any depth of frames, in the frame of
+ *  another of them: writing that one already carries it, and writing it too
+ *  would move it twice. */
+export function uncarried<T extends string>(frame: PoseFrame<unknown>, ids: readonly T[]): T[] {
+  if (ids.length < 2 || !composesFrames(frame.pc)) return [...ids];
+  const set = new Set<string>(ids);
+  return ids.filter((id) => {
+    const seen = new Set<string>();
+    for (let at = frame.frame(asNodeId(id)); at !== null && !seen.has(at); at = frame.frame(at)) {
+      if (set.has(at)) return false;
+      seen.add(at);
+    }
+    return true;
+  });
 }
 
 /** `id` and everything under it, a parent ahead of its children. */

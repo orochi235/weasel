@@ -5,6 +5,7 @@ import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
 import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { moveEachOps } from '../moveNodes';
+import { uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { commitTransformOps } from '../transformFinish';
 import type { Action, ActionDeps } from '@weasel-js/routing';
@@ -41,9 +42,9 @@ function distributeSelection(
   mode: DistributeMode,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
 ): void {
-  const ids = withoutPageStructure(scene, selection.get());
-  if (ids.length < 3) return;
   const frame = scenePoseFrame(scene);
+  const ids = uncarried(frame, withoutPageStructure(scene, selection.get()));
+  if (ids.length < 3) return;
   const boxes = boxesOver(frame);
 
   const items = ids.map((id) => {

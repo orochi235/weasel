@@ -1,6 +1,6 @@
 import type { NodeId, Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import { shapeSources } from '../selectionSubtree';
+import { shapeSources, uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import type { Op } from 'core/ops/types';
 import { multiply, rotate, translate, type Affine } from '@weasel-js/geom';
@@ -87,18 +87,19 @@ function flipSelection(
 
   // A group whose pose derives from its children mirrors by mirroring them,
   // about the group's own box where each selected node flips in place.
-  const ids: NodeId[] = [];
+  const reached: NodeId[] = [];
   const ownPivot = new Map<string, Bounds>();
   for (const id of selected) {
     const members = shapeSources(scene, [id]) as NodeId[];
     const stoodIn = members.length !== 1 || members[0] !== id;
     const box = stoodIn ? boxes.aabb(id, frame.world(id)) : null;
     for (const member of members) {
-      if (ids.includes(member)) continue;
-      ids.push(member);
+      if (reached.includes(member)) continue;
+      reached.push(member);
       if (box) ownPivot.set(member, box);
     }
   }
+  const ids = uncarried(frame, reached);
 
   const worlds = new Map<string, unknown>();
   for (const id of ids) {
