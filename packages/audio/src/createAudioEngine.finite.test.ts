@@ -53,4 +53,16 @@ describe('createAudioEngine refuses a voice number that is not finite', () => {
     const panner = ctx._sources[0].connectedTo[0] as unknown as { pan: { value: number } };
     expect(panner.pan.value).toBe(0.5);
   });
+
+  it('refuses a fade that is not finite and leaves the voice to a later stop', async () => {
+    const { engine, run } = await engineHarness();
+    const sound = await engine.load('/a.wav');
+    const voice = engine.play(sound, { loop: true });
+    await run(25);
+    expect(() => voice.stop(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    expect(voice.isPlaying()).toBe(true);
+    voice.stop(10);
+    await run(50);
+    expect(voice.isPlaying()).toBe(false);
+  });
 });

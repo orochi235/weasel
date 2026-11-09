@@ -46,7 +46,8 @@ export type VoiceDropReason = 'locked' | 'disposed' | 'stopped' | 'unready' | 'f
  *  every setter is then a no-op and `isPlaying()` is false. */
 export interface VoiceHandle {
   id: number;
-  /** `fadeMs` ramps the voice out and stops it at the end of the ramp. */
+  /** `fadeMs` ramps the voice out and stops it at the end of the ramp. Throws on one that is
+   *  not finite. */
   stop(fadeMs?: number): void;
   /** Note-off: a synth voice runs its envelope's release from whatever level it
    *  has reached. A buffer voice has no envelope, so this is `stop()`. Either

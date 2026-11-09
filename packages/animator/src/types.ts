@@ -147,7 +147,7 @@ export interface DecayOptions<T> {
   target?: undefined;
   from: T;
   velocity: T;
-  /** Per-second velocity multiplier in (0, 1). Default 0.95. */
+  /** Per-second velocity multiplier in (0, 1]; at 1 it coasts on for good. Default 0.95. */
   friction?: number;
   /** Velocity magnitude below which decay stops. Default 0.5. */
   threshold?: number;

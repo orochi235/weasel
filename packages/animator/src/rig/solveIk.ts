@@ -60,6 +60,15 @@ function clampAngle(v: number, limit: IkLimit | undefined): number {
   return Math.abs(wrapAngle(v - limit.min, 'min')) <= Math.abs(wrapAngle(v - limit.max, 'min')) ? limit.min : limit.max;
 }
 
+/** Throws on a target, tip or pole that is not finite: the chain would be posed NaN. */
+function checkPoints({ target, tip, pole }: SolveIkOptions): void {
+  for (const [what, p] of [['target', target], ['tip', tip], ['pole', pole]] as const) {
+    if (p && !(Number.isFinite(p.x) && Number.isFinite(p.y))) {
+      throw new RangeError(`solveIk: the ${what} is a finite point, not (${p.x}, ${p.y})`);
+    }
+  }
+}
+
 const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay * bx;
 
 /**
@@ -73,10 +82,12 @@ const cross = (ax: number, ay: number, bx: number, by: number) => ax * by - ay *
  * pose stores. A two-joint chain is solved analytically first: of the two bends
  * that reach the target it takes the one on `pole`'s side, or the input pose's
  * side, and falls back to the other bend and then to CCD when limits refuse it.
- * A target beyond the chain's reach straightens the chain toward it.
+ * A target beyond the chain's reach straightens the chain toward it. Throws on a `target`,
+ * `tip` or `pole` that is not finite.
  */
 export function solveIk(skeleton: Skeleton, pose: Pose, options: SolveIkOptions): IkResult {
   const { tip, target, limits } = options;
+  checkPoints(options);
   const maxIterations = options.iterations ?? 32;
   const tolerance = options.tolerance ?? 0.01;
 

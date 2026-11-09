@@ -88,8 +88,10 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
   };
 
   const pass = (): void => {
+    handle = null;
     fireDue();
-    if (running) handle = opts.setTimer(pass, interval);
+    // A callback that stopped and started the scheduler has armed the next pass already.
+    if (running && handle === null) handle = opts.setTimer(pass, interval);
   };
 
   // A microtask rather than firing inside `schedule()`: everything booked in
@@ -108,7 +110,7 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
     stop() {
       if (!running) return;
       running = false;
-      opts.clearTimer(handle);
+      if (handle !== null) opts.clearTimer(handle);
       handle = null;
     },
     schedule(when, fire, key, entryOpts) {

@@ -142,6 +142,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
   return {
     id: voice.id,
     stop(fadeMs) {
+      checkFinite('voice fade', fadeMs);
       voice.catchUp?.();
       if (fadeMs && fadeMs > 0 && voice.source && voice.out && !voice.canceled) {
         // Canceled but not torn down: the fade is what ends this voice, and

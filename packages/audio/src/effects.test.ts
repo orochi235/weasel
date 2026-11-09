@@ -58,6 +58,20 @@ describe('createReverbEffect', () => {
     expect(dryGain.gain.ramps.at(-1)).toEqual({ value: 0, at: 0.05 });
   });
 
+  it('refuses a ramp that is not finite, keeping its mix and the ramp in flight', () => {
+    const ctx = setup();
+    const fx = createReverbEffect(ctx as never, {
+      impulse: ctx.createBuffer(1, 1, 48000) as never, mix: 0.25,
+    });
+    const [, wetRoute] = allPaths(fake(fx.input), fake(fx.output));
+    const wetGain = wetRoute[2] as FakeGain;
+    fx.setMix(1, 50);
+    const cancels = wetGain.gain.cancels.length;
+    expect(() => fx.setMix(0.5, Number.POSITIVE_INFINITY)).toThrow(RangeError);
+    expect(fx.mix()).toBe(1);
+    expect(wetGain.gain.cancels).toHaveLength(cancels);
+  });
+
   it('passes normalize through', () => {
     const ctx = setup();
     const fx = createReverbEffect(ctx as never, {

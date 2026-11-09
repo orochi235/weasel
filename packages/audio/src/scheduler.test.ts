@@ -341,4 +341,13 @@ describe('createScheduler', () => {
       expect(inner).toHaveBeenCalledWith(20);
     });
   });
+
+  it('keeps one timer when a callback stops and starts it again', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.schedule(0, () => { h.scheduler.stop(); h.scheduler.start(); });
+    h.tick();
+    // The restart armed the next pass; the pass it ran in must not arm another.
+    expect(h.armCount()).toBe(2);
+  });
 });
