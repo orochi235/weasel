@@ -33,7 +33,7 @@ export function smudgeTargets(deps: ActionDeps | undefined): SmudgeTargets {
   if (picked.paths.length > 0 || picked.texts.length > 0) return picked;
   const all = scene?.renderOrderNodes?.() ?? [];
   return {
-    paths: scenePathNodes(deps).filter((n) => shown(scene, n.id)),
+    paths: scenePathNodes(deps),
     texts: all.filter((n) => n.kind === 'mark' && shown(scene, n.id) && isText(n.id)).map((n) => n.id as NodeId),
   };
 }

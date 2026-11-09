@@ -91,4 +91,14 @@ describe('trimPathAction', () => {
     run(trimPathAction, deps, { press: { x: 15, y: 50 } });
     expect(batches).toHaveLength(0);
   });
+
+  it('passes over a locked or hidden stroke for the one under it, and is not cut by a hidden one', () => {
+    const { deps, batches } = setup({ line: 'M0 0 H30', ...walls, top: 'M0 1 H30' });
+    const scene = (deps as { scene: Record<string, unknown> }).scene;
+    scene.isLocked = (id: string) => id === 'top';
+    scene.isHidden = (id: string) => id === 'w1';
+    run(trimPathAction, deps, { press: { x: 15, y: 2 }, radiusPx: 3 });
+    expect((batches[0].ops[0].args as { id: string }).id).toBe('line');
+    expect(poseOf(batches[0].ops[0])).toEqual([20, 0, 30, 0]);
+  });
 });

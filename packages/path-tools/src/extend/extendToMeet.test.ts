@@ -100,4 +100,14 @@ describe('extendToMeetAction', () => {
     const { deps } = setup({ seg: 'M13 0 H17', far: 'M0 40 H40' }, ['seg']);
     expect(extendToMeetAction.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);
   });
+
+  it('given a click, passes over a locked or hidden stroke, and runs on past a hidden one', () => {
+    const { deps, batches } = setup({ seg: 'M13 0 H17', w1: 'M10 -10 V10', w2: 'M20 -10 V10', top: 'M13 1 H17' });
+    const scene = (deps as { scene: Record<string, unknown> }).scene;
+    scene.isLocked = (id: string) => id === 'top';
+    scene.isHidden = (id: string) => id === 'w2';
+    run(extendToMeetAction, deps, { press: { x: 14, y: 0 }, radiusPx: 3 });
+    expect((batches[0].ops[0].args as { id: string }).id).toBe('seg');
+    expect(poseOf(batches[0].ops[0])).toEqual([10, 0, 17, 0]);
+  });
 });

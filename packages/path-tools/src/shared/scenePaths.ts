@@ -39,7 +39,11 @@ export function pressOf(deps: ActionDeps, params: unknown): StrokePress | null {
   return { at, radius };
 }
 
-type OrderedScene = Pick<Scene<unknown, string, unknown>, 'get'> & { renderOrderNodes?(): readonly AnyNode[] };
+type OrderedScene = Pick<Scene<unknown, string, unknown>, 'get'> & {
+  renderOrderNodes?(): readonly AnyNode[];
+  isLocked?(id: NodeId): boolean;
+  isHidden?(id: NodeId): boolean;
+};
 
 function renderOrder(deps: ActionDeps | undefined): readonly AnyNode[] {
   const scene = deps?.scene as OrderedScene | undefined;
@@ -58,19 +62,25 @@ export function leavesOf(scene: { childrenOf?(id: NodeId): readonly NodeId[] }, 
   return out;
 }
 
-/** Every leaf of the scene holding an editable path, back to front. */
+const drawn = (scene: OrderedScene | undefined, id: string) => !scene?.isHidden?.(id as NodeId);
+
+/** Every leaf of the scene holding an editable path that is drawn and not
+ *  locked, back to front: what a gesture with nothing selected may change. */
 export function scenePathNodes(deps: ActionDeps | undefined): PathNode[] {
   const scene = deps?.scene as OrderedScene | undefined;
-  return scene ? pathNodesOf(scene, renderOrder(deps).map((n) => n.id)) : [];
+  if (!scene) return [];
+  const ids = renderOrder(deps).flatMap((n) => (drawn(scene, n.id) && !scene.isLocked?.(n.id) ? [n.id] : []));
+  return pathNodesOf(scene, ids);
 }
 
-/** The drawn outline of every leaf but `id`: what a stroke is cut at or
- *  stopped by. */
+/** The drawn outline of every leaf but `id`, locked ones included: what a
+ *  stroke is cut at or stopped by. */
 export function strokesBesides(deps: ActionDeps | undefined, id: string): Path[] {
+  const scene = deps?.scene as OrderedScene | undefined;
   const out: Path[] = [];
   for (const node of renderOrder(deps)) {
-    if (node.kind !== 'mark' || node.id === id) continue;
-    const outline = nodeOutline(node, shownNodeOf(deps!.scene as OrderedScene, node.id)?.pose);
+    if (node.kind !== 'mark' || node.id === id || !drawn(scene, node.id)) continue;
+    const outline = nodeOutline(node, shownNodeOf(scene!, node.id)?.pose);
     if (outline) out.push(outline);
   }
   return out;
