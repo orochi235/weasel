@@ -224,6 +224,15 @@ describe('cycleVertexColors', () => {
     expect(result.current.colorOverrides.get('tri', 'fill')).toBe(later);
   });
 
+  it('refuses a cycle time that is not positive, before installing anything', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    for (const msPerCycle of [0, -300, Number.NaN]) {
+      expect(() => cycleVertexColors(result.current, { id: 'tri', channel: 'fill', msPerCycle })).toThrow(RangeError);
+    }
+    expect(result.current.colorOverrides.get('tri', 'fill')).toBeUndefined();
+  });
+
   it('direction: -1 rotates the other way', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));

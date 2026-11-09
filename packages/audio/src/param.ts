@@ -22,6 +22,14 @@ export function writeParam(
   }
 }
 
+/** Throws on a gain or ramp a caller would keep and an AudioParam refuses: kept, a NaN never
+ *  equals what was written, so every later write that recomputes it throws there. */
+export function checkGain(what: string, value: number, rampMs?: number): void {
+  if (!Number.isFinite(value) || (rampMs !== undefined && !Number.isFinite(rampMs))) {
+    throw new RangeError(`@weasel-js/audio: a ${what} gain is finite and ramps over a finite time, not ${value} over ${rampMs} ms`);
+  }
+}
+
 /**
  * Give a param nothing has scheduled yet its starting value. `.value` is
  * written as well, so a ramp `writeParam` anchors before the first render

@@ -313,6 +313,20 @@ describe('createAudioEngine', () => {
     expect(gain.gain.value).toBe(1);
   });
 
+  it('refuses a non-finite voice gain or ramp and keeps the level it had', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const voice = engine.play(sound, { loop: true });
+    tick();
+    const { gain } = chainOf(ctx._sources[0]);
+    voice.setGain(0.5);
+    expect(() => voice.setGain(Number.NaN)).toThrow(RangeError);
+    expect(() => voice.setGain(0.2, Infinity)).toThrow(RangeError);
+    voice.setPosition({ x: 0, y: 0 });
+    expect(gain.gain.value).toBe(0.5);
+  });
+
   it('applies a rate and detune set before a booked voice starts', async () => {
     const { ctx, engine, tick } = engineHarness();
     await engine.unlock();

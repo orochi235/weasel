@@ -20,6 +20,21 @@ describe('slewToward', () => {
     expect(slewToward(10, 0, 0.01, { rise: 1 })).toBe(0);
   });
 
+  it('jumps in a direction with no rate over a zero-length step', () => {
+    expect(slewToward(0, 10, 0, {})).toBe(10);
+    expect(slewToward(10, 0, 0, { rise: 1 })).toBe(0);
+  });
+
+  it('holds over a zero, negative or NaN step in a limited direction', () => {
+    expect(slewToward(0, 10, 0, { rise: 4 })).toBe(0);
+    expect(slewToward(0, 10, -1, { rise: 4 })).toBe(0);
+    expect(slewToward(10, 0, Number.NaN, { fall: 4 })).toBe(10);
+  });
+
+  it('holds with a zero rate over an endless step', () => {
+    expect(slewToward(3, 10, Infinity, { rise: 0 })).toBe(3);
+  });
+
   it('holds with a zero rate', () => {
     expect(slewToward(3, 10, 1, { rise: 0 })).toBe(3);
   });

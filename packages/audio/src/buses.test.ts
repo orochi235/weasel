@@ -141,6 +141,19 @@ describe('createBusGraph', () => {
     expect(sfx.audible()).toBe(true);
   });
 
+  it('refuses a non-finite gain or ramp and keeps the gain it had', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx', 'music']);
+    const sfx = graph.bus('sfx');
+    sfx.setGain(0.5);
+    expect(() => sfx.setGain(Number.NaN)).toThrow(RangeError);
+    expect(() => sfx.setGain(Infinity)).toThrow(RangeError);
+    expect(() => sfx.setGain(0.2, Infinity)).toThrow(RangeError);
+    expect(sfx.gain()).toBe(0.5);
+    graph.bus('music').mute(true);
+    expect((graph.node('sfx') as never as { gain: { value: number } }).gain.value).toBe(0.5);
+  });
+
   it('throws for an unknown bus name', () => {
     const ctx = createFakeAudioContext();
     const graph = createBusGraph(ctx as never, ['sfx']);

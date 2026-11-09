@@ -1,11 +1,12 @@
 import {
   createInsertChain, type InsertChain, type InsertChainOptions, type OwnedInsertChain,
 } from './inserts';
-import { writeParam } from './param';
+import { checkGain, writeParam } from './param';
 
 /** Controls for one named bus. `rampMs` slews a gain change over that many
  *  ms instead of stepping it. */
 export interface BusHandle {
+  /** Throws a `RangeError` on a value or ramp that is not finite. */
   setGain(value: number, rampMs?: number): void;
   mute(on: boolean): void;
   solo(on: boolean): void;
@@ -117,6 +118,7 @@ export function createBusGraph(
       const s = get(name);
       return {
         setGain(value, rampMs) {
+          checkGain('bus', value, rampMs);
           s.gain = value;
           apply(rampMs && rampMs > 0 ? { bus: s, ms: rampMs } : undefined);
         },

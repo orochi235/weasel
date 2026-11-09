@@ -94,6 +94,8 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
       throw err;
     });
     const { page } = await opening;
+    // Disposed while the page opened: the dispose closes it, and this render would fail as a closed page.
+    if (disposed) throw new Error('node raster host: render on a disposed host');
     const { scene, screen, ...rest } = args;
     const req: PageRequest = {
       ...rest, scene: sceneToWire(scene), format, ...(screen ? { screen: Array.from(screen) } : {}),
@@ -119,8 +121,10 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
   return {
     async render(args) {
       const { width, height, base64 } = await call(args, 'rgba');
+      // A small decode lands in Node's shared Buffer pool, so a view over it would hand the caller
+      // other buffers' memory as `data.buffer`.
       const bytes = Buffer.from(base64, 'base64');
-      return { width, height, data: new Uint8ClampedArray(bytes.buffer, bytes.byteOffset, bytes.byteLength) };
+      return { width, height, data: new Uint8ClampedArray(bytes) };
     },
     async renderPng(args) {
       const { width, height, base64 } = await call(args, 'png');
