@@ -7,6 +7,7 @@ import type { MenuShortcut } from '@weasel-js/menu';
 import type { Action } from './action';
 import { actionBindings } from './binding';
 import { resolveParams } from './bindingOpts';
+import { invokedParams } from './tuning';
 
 /** One keyboard shortcut, flattened for display: the chip a menu row draws
  *  (`MenuShortcut` in `@weasel-js/menu`, `ShortcutInput` in `@weasel-js/gestures`). */
@@ -45,7 +46,8 @@ export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
  * identical are emitted once; an action bound only to those returns empty.
  *
  * With `params` — an `ActionItem`'s — only the bindings that pass those same
- * values count, so each variant of `flip` gets its own key.
+ * values count, so each variant of `flip` gets its own key. A binding passes
+ * what the action runs with from it, a tuning's params included.
  */
 export function actionShortcuts(
   action: Action,
@@ -54,7 +56,7 @@ export function actionShortcuts(
   const out: ActionShortcut[] = [];
   const seen = new Set<string>();
   for (const { spec, opts } of actionBindings(action)) {
-    if (params && !paramsMatch(resolveParams(opts?.params), params)) continue;
+    if (params && !paramsMatch(invokedParams(action, resolveParams(opts?.params)), params)) continue;
     const shortcut = keySpecShortcut(spec);
     if (!shortcut) continue;
     const token = `${shortcut.key}|${shortcut.mod}|${shortcut.alt}|${shortcut.shift}`;
