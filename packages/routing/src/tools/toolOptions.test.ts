@@ -43,6 +43,15 @@ describe('steppedOption', () => {
     expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, 1)).toBe(0.4);
     expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, -1)).toBe(0.2);
   });
+
+  it('steps between an endless end and the infinity it stands for', () => {
+    const reach: PrefNumber = { kind: 'number', name: 'R', description: '', default: 10, min: 1, max: 100, step: 1, endless: 'max' };
+    const step = { option: 'r', times: 1.25 };
+    expect(steppedOption(reach, 100, step, 1)).toBe(Infinity);
+    expect(steppedOption(reach, Infinity, step, 1)).toBe(Infinity);
+    expect(steppedOption(reach, Infinity, step, -1)).toBe(100);
+    expect(steppedOption(reach, 1, step, -1)).toBe(1);
+  });
 });
 
 describe('toolOptionParams', () => {

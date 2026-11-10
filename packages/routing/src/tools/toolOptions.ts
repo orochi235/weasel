@@ -176,8 +176,11 @@ export function keepToolOptions(
 }
 
 /** `value` moved one step up (`dir` 1) or down (-1), within the leaf's bounds
- *  and rounded to its `step`. */
+ *  and rounded to its `step`. An endless end steps on to the infinity it stands for, and back. */
 export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionStep, dir: 1 | -1): number {
+  const end = dir === 1 ? leaf.max : leaf.min;
+  if (value === dir * Infinity || (value === end && endlessAllows(leaf.endless, dir * Infinity))) return dir * Infinity;
+  if (!Number.isFinite(value)) return (value > 0 ? leaf.max : leaf.min) ?? value;
   const moved = step.times !== undefined ? value * step.times ** dir : value + dir * (step.plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
   // A step that rounds back to where it began still moves one `step`.
