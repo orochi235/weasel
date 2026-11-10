@@ -38,6 +38,12 @@ describe('stickyData', () => {
     });
   });
 
+  it('paints a note no paper, or its text no ink, when the tool option is set to none', () => {
+    const data = stickyData({ paper: null, ink: null, background: { paint: solid('#a6e1ff') } });
+    expect(data.background).toBeNull();
+    expect(data.fill).toBeNull();
+  });
+
   it('carries none of the insert bookkeeping onto the node', () => {
     const data = stickyData({ kind: 'sticky', originMode: 'corner', size: { width: 1, height: 1 } } as never);
     expect(Object.keys(data).sort()).toEqual([

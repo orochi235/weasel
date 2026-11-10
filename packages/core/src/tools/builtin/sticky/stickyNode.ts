@@ -32,7 +32,11 @@ export interface StickyStyle {
 
 /** A sticky insert's extras: the tool's {@link StickyStyle}, and its `paper` and `ink` options, the paints that
  *  stand over `background` and `fill`. */
-export type StickyLook = StickyStyle & { paper?: Paint; ink?: Paint };
+export type StickyLook = StickyStyle & { paper?: Paint | null; ink?: Paint | null };
+
+/** `option`'s paint as a fill, `null` for none, else `fallback`. */
+const optionFill = (option: Paint | null | undefined, fallback: Fill): Fill | null =>
+  option === undefined ? fallback : option && { paint: option };
 
 /** The look a sticky note takes for any field its tool leaves out. */
 export const STICKY_DEFAULTS = {
@@ -58,7 +62,7 @@ export const STICKY_DEFAULTS = {
 export function stickyData(look: StickyLook & { text?: string }): TextNodeData & { minSize: MinSize } {
   return {
     text: look.text ?? '',
-    background: look.paper ? { paint: look.paper } : look.background ?? STICKY_DEFAULTS.background,
+    background: optionFill(look.paper, look.background ?? STICKY_DEFAULTS.background),
     padding: look.padding ?? STICKY_DEFAULTS.padding,
     style: look.style ?? STICKY_DEFAULTS.style,
     verticalAlign: look.verticalAlign ?? STICKY_DEFAULTS.verticalAlign,
@@ -66,7 +70,7 @@ export function stickyData(look: StickyLook & { text?: string }): TextNodeData &
     edge: look.edge ?? STICKY_DEFAULTS.edge,
     shadow: look.shadow ?? STICKY_DEFAULTS.shadow,
     minSize: look.minSize ?? STICKY_DEFAULTS.minSize,
-    fill: look.ink ? { paint: look.ink } : look.fill ?? STICKY_DEFAULTS.fill,
+    fill: optionFill(look.ink, look.fill ?? STICKY_DEFAULTS.fill),
   };
 }
 
