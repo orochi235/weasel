@@ -45,19 +45,23 @@ function both(s: TargetState, skip: HoldLayer, committed: readonly number[]) {
   const rest = { delta: new Array<number>(n), total: new Array<number>(n) };
   store.fold(row, committed, 0, null, all.delta, all.total);
   store.fold(row, committed, 0, skip, rest.delta, rest.total);
-  return { all, rest, own: store.valueOf(skip, row) };
+  return { all, rest, own: store.valueOf(skip, row), weighs: skip.weights[row]! > 0 };
 }
 
 /** How far the committed value moves as `leaving` goes, so the target shows what it did. */
 function settle(
   s: TargetState, f: ReturnType<typeof both>, covers: Uint8Array | null, committed: readonly number[],
 ): number[] {
-  const { all, rest, own } = f;
+  const { all, rest, own, weighs } = f;
   const angles = s.axes.angles ?? [];
   return committed.map((c, a) => {
     if (covers && !covers[a]) return 0;
-    // Holds that cover the committed value outright leave it nothing to show: it takes this one's.
-    if (rest.total[a]! >= 1 - 1e-9) return angles.includes(a) ? wrapAngle(own[a]! - c) : own[a]! - c;
+    // Holds that cover the committed value outright leave it nothing to show: it takes this one's,
+    // unless this one weighs nothing, and so showed nothing and was never asked its value.
+    if (rest.total[a]! >= 1 - 1e-9) {
+      if (!weighs) return 0;
+      return angles.includes(a) ? wrapAngle(own[a]! - c) : own[a]! - c;
+    }
     return (all.delta[a]! - rest.delta[a]!) / (1 - rest.total[a]!);
   });
 }
