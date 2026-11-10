@@ -7,7 +7,7 @@ import type { PrefAction } from './action';
 import type { PrefAlias } from './alias';
 import { type PrefCondition, prefConditionReadsItem } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { isPrefLeaf, isPrefSection } from './helpers';
+import { isPrefLeaf, isPrefSection, setOwnPrefValue } from './helpers';
 import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -110,7 +110,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
     for (const [key, variant] of Object.entries(variants)) {
       const children = members(variant.children, path, owner, holds);
       changed ||= children !== variant.children;
-      next[key] = children === variant.children ? variant : { ...variant, children };
+      setOwnPrefValue(next, key, children === variant.children ? variant : { ...variant, children });
     }
     return changed ? ({ ...node, variants: next } as PrefLeaf) : node;
   };
@@ -128,7 +128,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
         ? leaf(child, at, prefStatusIn(owner, at, holds), holds, owner.entry)
         : section(child, prefix, prefSectionPath(within, key), owner.status, holds, owner.entry);
       changed ||= kept !== child;
-      if (kept !== null) out[key] = kept;
+      if (kept !== null) setOwnPrefValue(out, key, kept);
     }
     return changed ? out : held;
   };
@@ -185,7 +185,7 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
       const at = under(path, key);
       const kept = isPrefLeaf(child) ? walk.leaf(child, at, prefStatusIn({ node, status, above }, at, holds), holds) : group(child, at, status);
       changed ||= kept !== child;
-      if (kept !== null) children[key] = kept;
+      if (kept !== null) setOwnPrefValue(children, key, kept);
     }
     if (!changed) return node;
     return Object.keys(children).length === 0 && !keepEmpty && path !== '' ? null : { ...node, children };
