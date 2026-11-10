@@ -1,4 +1,5 @@
 import { ellipsePath, worldCoords } from '@weasel-js/geom';
+import { jointShares } from '@weasel-js/animator';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from '@weasel-js/core';
 import { viewToTransform } from '@weasel-js/core';
@@ -42,20 +43,14 @@ export function createWeightOverlay(source: {
       const r = source.pointRadiusPx?.() ?? POINT_RADIUS_PX;
       const out: DrawCommand[] = [];
       for (const { path, skin } of source.paths()) {
-        const weights = active === null ? undefined : skin[active];
-        let total: number[] | undefined;
-        if (active !== null) {
-          total = new Array<number>(path.coords.length >> 1).fill(0);
-          for (const joint in skin) skin[joint].forEach((w, i) => { if (i < total!.length) total![i] += w; });
-        }
+        const shares = active === null ? null : jointShares(skin, active, path.coords.length >> 1);
         const at = worldCoords(path);
         for (let i = 0; 2 * i + 1 < at.length; i++) {
           const [x, y] = worldToScreen(at[2 * i], at[2 * i + 1], t);
-          const share = total && total[i] > 0 ? (weights?.[i] ?? 0) / total[i] : 0;
           out.push({
             kind: 'path',
             path: ellipsePath({ x: x - r, y: y - r, width: 2 * r, height: 2 * r }),
-            fill: { paint: { kind: 'solid', color: active === null ? IDLE : mix(share) } },
+            fill: { paint: { kind: 'solid', color: shares === null ? IDLE : mix(shares[i]) } },
             stroke: { paint: { color: RIM }, width: 1 },
           });
         }

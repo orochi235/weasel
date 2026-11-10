@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brushWeights, setWeights } from './weightEdits';
+import { brushWeights, jointShares, setWeights } from './weightEdits';
 
 const round = (skin: Record<string, readonly number[]>) =>
   Object.fromEntries(Object.entries(skin).map(([k, v]) => [k, v.map((n) => Math.round(n * 1000) / 1000)]));
@@ -52,5 +52,13 @@ describe('brushWeights', () => {
   it('answers only points whose weight changes', () => {
     expect(brushWeights(coords, 100, 100, 10, undefined, 'add').size).toBe(0);
     expect(brushWeights(coords, 0, 0, 10, undefined, 'remove').size).toBe(0);
+  });
+});
+
+describe('jointShares', () => {
+  it('answers each point\'s share of a joint as the skin is applied: its weight over the point\'s total', () => {
+    const skin = { a: [2, 0.2, 0, 3], b: [2, 0.6, 0, 0] };
+    expect(jointShares(skin, 'a', 5)).toEqual([0.5, 0.25, 0, 1, 0]);
+    expect(jointShares(skin, 'c', 2)).toEqual([0, 0]);
   });
 });

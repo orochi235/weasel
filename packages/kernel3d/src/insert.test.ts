@@ -17,6 +17,20 @@ function footprintOf(vp: Viewport3d, up: Vec3 | undefined): Footprint | null {
 }
 
 describe('createInsert', () => {
+  it('casts through the camera of the view it was built for, as the other dep factories do', () => {
+    const right: Viewport3d = { ...VP, camera: createCamera({ target: { x: 5, y: 0, z: 0 } }) };
+    const asked: (string | null | undefined)[] = [];
+    let seen: Footprint | null = null;
+    createInsert({
+      viewport: (viewId) => { asked.push(viewId); return viewId === 'right' ? right : VP; },
+      viewId: 'right',
+      up: { x: 0, y: 0, z: 1 },
+      mint: (f) => ((seen = f), 'n' as NodeId),
+    }).commit(DRAG, { kind: 'rect' } as never);
+    expect(asked).toEqual(['right']);
+    expect(seen!.center.x).toBeCloseTo(5, 6);
+  });
+
   it('lays a footprint on the plane at right angles to `up`, across the two axes it is not', () => {
     // The level default camera looks straight down a z-up world.
     const f = footprintOf(VP, { x: 0, y: 0, z: 1 })!;
