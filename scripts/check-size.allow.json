@@ -180,8 +180,8 @@
     "lines": 511
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 655,
-    "longestFunction": 362
+    "lines": 524,
+    "longestFunction": 361
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126

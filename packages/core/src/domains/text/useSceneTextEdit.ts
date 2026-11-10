@@ -66,8 +66,9 @@ export interface UseSceneTextEditOptions<TData> {
   getVerticalAlign?: (data: TData) => TextVerticalAlign | undefined;
   /** Read the inset from the node's box to its text from `data`. Default: `data.padding`. */
   getPadding?: (data: TData) => number | undefined;
-  /** Read whether the node cuts its text at its box from `data`, which the
-   *  overlay then does too. Default: `data.overflow`. */
+  /** Read whether the node cuts its text at its box from `data`. The overlay
+   *  then does too, and scrolls the text in the box while it is edited.
+   *  Default: `data.overflow`. */
   getOverflow?: (data: TData) => TextOverflow | undefined;
   /** Produce updated data with new text. Default: `{ ...data, text }`. */
   setText?: (data: TData, text: string) => TData;

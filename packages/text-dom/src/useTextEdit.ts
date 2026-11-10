@@ -8,21 +8,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import {
-  numericWeight, resolveRunFace, resolveTextStyle, scriptMetricsFor,
-} from '@weasel-js/text';
+import { numericWeight, resolveRunFace, resolveTextStyle } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
 import { editEnd, imeKey } from '@weasel-js/ui-logic';
-import { layoutTextPose } from '@weasel-js/text';
 import type { StyledRun } from '@weasel-js/text';
 import { charOffsetToDomPosition, domToRuns, type OverlayRunBase } from './domRuns';
 import {
   applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, setFlagOverRange,
   styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
-import { overlayAlignEdge } from './overlayDirection';
 import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
-import { applyOverlayTransform, overlayClipPath, overlayTop } from './overlayFrame';
+import { overlayTop } from './overlayFrame';
+import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
 import { applyOverlayStyle } from './overlayStyle';
 import { seedOverlay, type CaretHolder } from './overlaySeed';
@@ -34,7 +31,7 @@ import { toggleForKey } from './styleShortcuts';
 import { useEditingId } from './editSession';
 import { TEXT_EDIT_FONT_HOLD } from './textEditTypes';
 import type {
-  StartEditOptions, StyleToggle, TextEditClipRect, TextEditScreenPose, TextEditSelection, UseTextEditOptions,
+  StartEditOptions, StyleToggle, TextEditSelection, UseTextEditOptions,
   UseTextEditReturn,
 } from './textEditTypes';
 
@@ -329,14 +326,12 @@ export function useTextEdit(
     const hold = holdFor > 0 ? holdForFaces(style, initialRuns ?? []) : null;
     if (hold) overlay.style.opacity = '0';
     const styleEl = installSelectionStyle(overlayClass, style);
-    const clipBox = createClipBox();
-    clipBox.appendChild(overlay);
-    container.appendChild(clipBox);
+    const boxes = mountOverlayBoxes(container, overlay);
     overlayRef.current = overlay;
 
     const place = () => {
       const clip = optsRef.current.getClipRect?.() ?? null;
-      placeOverlay(overlay, clipBox, optsRef.current.getScreenPose(editingId), clip, style);
+      placeOverlay(overlay, boxes, optsRef.current.getScreenPose(editingId), clip, style);
     };
     place();
     // Measured again on release: the first `place` ran in the fallback face.
@@ -354,7 +349,7 @@ export function useTextEdit(
     const range = openingRange(overlay, initialCaretRef.current);
     // Focus first, then place the caret: focusing an editable host itself
     // moves the selection (jsdom collapses to the start; browsers vary).
-    overlay.focus();
+    boxes.scroller.focus();
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
@@ -395,6 +390,7 @@ export function useTextEdit(
       onEdited: () => {
         holderRef.current?.edited(overlay);
         place();
+        boxes.scroller.reveal();
         sendDraft(overlay);
       },
     });
@@ -404,7 +400,7 @@ export function useTextEdit(
     // runs ahead of whatever the click was aimed at.
     const onPointerDownOutside = (e: Event) => {
       const target = e.target;
-      if (!(target instanceof Node) || overlay.contains(target)) return;
+      if (!(target instanceof Node) || boxes.scroll.contains(target)) return;
       if (isChrome(optsRef.current, target)) return;
       commit();
     };
@@ -436,7 +432,7 @@ export function useTextEdit(
       for (const [type, fn] of listeners) overlay.removeEventListener(type, fn);
       document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
-      clipBox.remove();
+      boxes.remove();
       styleEl?.remove();
       overlayRef.current = null;
       holdNodeStyle(null);
@@ -504,18 +500,6 @@ function openingRange(overlay: HTMLElement, caret: number | 'all'): Range {
   return range;
 }
 
-/** The overlay's positioning parent. Passes pointer input through everywhere
- *  but the overlay itself, which spans no more than the canvas it covers. */
-function createClipBox(): HTMLDivElement {
-  const el = document.createElement('div');
-  el.style.position = 'absolute';
-  el.style.margin = '0';
-  el.style.padding = '0';
-  el.style.border = '0';
-  el.style.pointerEvents = 'none';
-  return el;
-}
-
 /**
  * Inject a `<style>` element scoped to `overlayClass` so the edit overlay's
  * `::selection` matches the configured colors, or `null` when none are set.
@@ -538,118 +522,3 @@ function installSelectionStyle(
   return el;
 }
 
-const ALIGN_ANCHOR = { left: 0, center: 0.5, right: 1 } as const;
-
-/**
- * The canvas and CSS both hang a line's baseline half the leading plus one
- * ascent below the line top, from the same ascent rule, but each engine
- * rounds the font's metrics and that leading its own way, and a face that
- * states no ascent and descent hangs from its ascent alone. So the difference
- * is read from both sides rather than predicted: the canvas's from its own layout, the
- * overlay's from a zero-height inline box on a hidden line set exactly as the
- * overlay is. Pre-scale; `0` when either side has nothing to measure.
- * @internal
- */
-export function baselineDrop(el: HTMLElement, style: ResolvedTextStyle, pose: TextEditScreenPose, lineHeight: number): number {
-  const canvas = layoutTextPose({
-    x: 0, y: 0, width: pose.width, height: pose.height, text: ' ',
-    style: {
-      fontFamily: style.fontFamily, fontWeight: style.fontWeight, fontStyle: style.fontStyle,
-      fontSize: pose.fontSize, lineHeight, script: style.script,
-    },
-  }).laid.lines[0]?.baselineY ?? 0;
-  const css = cssBaseline(el);
-  return canvas > 0 && css > 0 ? canvas - css : 0;
-}
-
-const CSS_BASELINES = new Map<string, number>();
-
-function cssBaseline(el: HTMLElement): number {
-  const parent = el.parentElement;
-  if (!parent) return 0;
-  const { fontFamily, fontWeight, fontStyle, fontSize, lineHeight, textRendering } = el.style;
-  const key = [fontFamily, fontWeight, fontStyle, fontSize, lineHeight, textRendering].join('|');
-  const cached = CSS_BASELINES.get(key);
-  if (cached !== undefined) return cached;
-  const line = document.createElement('div');
-  Object.assign(line.style, {
-    position: 'absolute', left: '0', top: '0', width: '100px', margin: '0', padding: '0', border: '0',
-    visibility: 'hidden', whiteSpace: 'pre', fontFamily, fontWeight, fontStyle, fontSize, lineHeight, textRendering,
-  });
-  const mark = document.createElement('span');
-  Object.assign(mark.style, { display: 'inline-block', width: '0', height: '0', verticalAlign: 'baseline' });
-  line.appendChild(mark);
-  parent.appendChild(line);
-  const box = line.getBoundingClientRect();
-  // Rect over layout width undoes any transform on an ancestor.
-  const scale = box.width / 100;
-  const baseline = scale > 0 ? (mark.getBoundingClientRect().top - box.top) / scale : 0;
-  line.remove();
-  // A web font still loading is measured as its fallback; ask again later.
-  if (baseline > 0 && document.fonts?.status !== 'loading') {
-    if (CSS_BASELINES.size >= 64) CSS_BASELINES.clear();
-    CSS_BASELINES.set(key, baseline);
-  }
-  return baseline;
-}
-
-function placeOverlay(
-  el: HTMLDivElement,
-  clipBox: HTMLDivElement,
-  pose: TextEditScreenPose | null,
-  clip: TextEditClipRect | null,
-  style: ResolvedTextStyle,
-): void {
-  if (!pose) {
-    el.style.display = 'none';
-    return;
-  }
-  // `clip` rather than `hidden`: a `hidden` box is still scrollable, and the
-  // browser scrolls it to keep the caret in view.
-  clipBox.style.overflow = clip ? 'clip' : 'visible';
-  clipBox.style.left = `${clip?.x ?? 0}px`;
-  clipBox.style.top = `${clip?.y ?? 0}px`;
-  clipBox.style.width = `${clip?.width ?? 0}px`;
-  clipBox.style.height = `${clip?.height ?? 0}px`;
-  el.style.display = '';
-  // An unwrapped line can be wider than its box, and the canvas aligns it
-  // about the box's left edge, center, or right edge regardless. `left` puts
-  // that anchor there and a trailing translate pulls the overlay back by that
-  // fraction of its own width.
-  const anchor = style.wrap ? 0 : ALIGN_ANCHOR[overlayAlignEdge(el, style)];
-  const left = pose.x + pose.width * (pose.zoom ?? 1) * anchor;
-  el.style.left = `${left - (clip?.x ?? 0)}px`;
-  el.style.width = style.wrap ? `${pose.width}px` : 'max-content';
-  el.style.minWidth = style.wrap ? '' : `${pose.width}px`;
-  // A node-level script draws the glyphs smaller and raised on the line the
-  // plain text would hold, so the line height is pinned in pixels of the
-  // unscripted size rather than left to scale with the font.
-  const script = style.script
-    ? scriptMetricsFor(style.fontFamily, numericWeight(style.fontWeight), style.fontStyle)[style.script]
-    : undefined;
-  const lineHeight = pose.lineHeight ?? style.lineHeight;
-  el.style.fontSize = `${pose.fontSize * (script?.size ?? 1)}px`;
-  el.style.lineHeight = script ? `${pose.fontSize * lineHeight}px` : String(lineHeight);
-  // A top-aligned overlay fills its box, so a click anywhere in it lands in
-  // the editor. Any other alignment needs the content's own height, which a
-  // min-height would mask; `offsetHeight` is pre-transform, in pose units.
-  const aligned = pose.verticalAlign !== undefined && pose.verticalAlign !== 'top';
-  el.style.minHeight = aligned ? '' : `${pose.height}px`;
-  const drop = baselineDrop(el, style, pose, lineHeight) - (script?.shift ?? 0) * pose.fontSize;
-  const top = overlayTop(pose, aligned ? el.offsetHeight : pose.height, drop);
-  el.style.top = `${top - (clip?.y ?? 0)}px`;
-  // A declared `zoom` means every size on the pose is pre-scale and the
-  // overlay carries the view scale as a transform. Anchored at the top-left so
-  // `left`/`top` stay screen pixels.
-  el.style.transformOrigin = '0 0';
-  applyOverlayTransform(el, pose, left, top, anchor);
-  el.style.clipPath = pose.clip ? overlayClipPath(el, pose, left, top, anchor, pose.clip) : '';
-  // `letter-spacing` is not part of the CSS `font` shorthand. Under a
-  // transform the world value is the value. Without one, `pose.fontSize` is
-  // `style.fontSize * zoom`, so their ratio is the world→screen factor; run
-  // overrides, which `runsToDom` writes in world units, then stay unscaled,
-  // so that path is only correct at zoom 1.
-  const scale =
-    pose.zoom !== undefined ? 1 : style.fontSize > 0 ? pose.fontSize / style.fontSize : 1;
-  el.style.letterSpacing = `${style.letterSpacing * scale}px`;
-}

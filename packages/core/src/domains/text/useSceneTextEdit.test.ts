@@ -366,7 +366,7 @@ describe('useSceneTextEdit — the canvas inside the container', () => {
     try {
       act(() => hook.result.current.startEdit('a'));
       const el = overlayOf(container);
-      const clip = el.parentElement!;
+      const clip = el.parentElement!.parentElement!;
       expect(clip).not.toBe(container);
       expect(clip.style.overflow).toBe('clip');
       expect([clip.style.left, clip.style.top, clip.style.width, clip.style.height])
