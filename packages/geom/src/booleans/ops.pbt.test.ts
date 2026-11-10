@@ -4,7 +4,7 @@ import { pathExclude, pathIntersect, pathSubtract, pathUnion } from './ops';
 import { pointInPath, strokeHitTest } from '../pathHitTest';
 import { PathBuilder } from '../paths/builder';
 import type { Path } from '../path';
-import { coord, runs, timeoutFor } from '../pbt.fixtures';
+import { coord, runs, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(60);
 const TIMEOUT = timeoutFor(60, 3);

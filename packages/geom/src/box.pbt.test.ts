@@ -6,7 +6,7 @@ import {
 } from './box';
 import { closestPointOnSegment, distance, pointSegmentDist } from './points';
 import { distance as distance2d, pointSegmentDist as segDist2d } from './points2';
-import { box, coord, runs } from './pbt.fixtures';
+import { box, coord, runs } from './pbt.fixture';
 
 const RUNS = runs(300);
 const rect: fc.Arbitrary<Rect> = fc.record({

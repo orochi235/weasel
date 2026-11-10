@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { applyToPoint, identity, invert, multiply, type Affine } from './affine';
-import { affine, conditioned, coord, decades, maxDiff, norm1, runs } from './pbt.fixtures';
+import { affine, conditioned, coord, decades, maxDiff, norm1, runs } from './pbt.fixture';
 
 const RUNS = runs(300);
 

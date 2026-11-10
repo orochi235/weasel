@@ -5,7 +5,7 @@ import { pathToD } from './pathToD';
 import { PathBuilder } from './builder';
 import { worldCoords } from './pathOrigin';
 import type { PolygonPath } from '../path';
-import { eighth, runs } from '../pbt.fixtures';
+import { eighth, runs } from '../pbt.fixture';
 
 const RUNS = runs(300);
 

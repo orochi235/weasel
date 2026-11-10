@@ -216,7 +216,7 @@ class Ungroup implements fc.Command<Model, Real> {
 class Select implements fc.Command<Model, Real> {
   constructor(readonly picks: number[]) {}
   check(): boolean { return true; }
-  run(m: Model, r: Real): void {
+  run(_m: Model, r: Real): void {
     const all = ids(r.scene);
     const at = r.scene.historyIndex();
     r.scene.setSelection([...new Set(this.picks.map((k) => pickFrom(all, k)).filter((id): id is NodeId => id !== undefined))]);
@@ -261,7 +261,7 @@ class Redo implements fc.Command<Model, Real> {
 class OpThenInverse implements fc.Command<Model, Real> {
   constructor(readonly which: number, readonly pick: number, readonly to: number | null, readonly pose: RectPose) {}
   check(): boolean { return true; }
-  run(m: Model, r: Real): void {
+  run(_m: Model, r: Real): void {
     const op = this.op(r);
     if (!op) return;
     const before = snap(r.scene);

@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { compose, identity, invert, multiply, perspective, transformPoint, type Mat4 } from './mat4';
 import { distance, len, quatFromAxisAngle, quatMultiply, quatRotate, vec3, type Quat, type Vec3 } from './vec3';
 import { intersectRayAabb, pointOnRay, transformAabb, type Aabb } from './ray3';
-import { coord, decades, maxDiff, runs } from '../pbt.fixtures';
+import { coord, decades, maxDiff, runs } from '../pbt.fixture';
 
 const RUNS = runs(200);
 
