@@ -71,4 +71,12 @@ describe('tileGeometry on sizes that draw nothing', () => {
       expect(tileGeometry({ kind: 'dots', color: 'red', radius }).shapes).toEqual([]);
     }
   });
+
+  it('draws no hatch line of a width that is not positive, which a canvas would draw at its last width', () => {
+    for (const kind of ['hatch', 'crosshatch'] as const) {
+      for (const lineWidth of [0, -1, NaN]) {
+        expect(tileGeometry({ kind, color: 'red', lineWidth }).shapes).toEqual([]);
+      }
+    }
+  });
 });

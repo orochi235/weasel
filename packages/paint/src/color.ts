@@ -242,7 +242,8 @@ function parseOkFunction(s: string): [number, number, number, number] | null {
   const third = lch !== null ? parseHue(channels.rgb[2]) : cssNumber(channels.rgb[2]);
   const alpha = parseAlpha(channels.alpha);
   if (L === null || second === null || third === null || alpha === null) return null;
-  const [, A, B] = lch !== null ? oklchToOklab(L, second, third * (Math.PI / 180)) : [L, second, third];
+  // CSS clamps a negative chroma to 0 rather than turning the hue half a turn.
+  const [, A, B] = lch !== null ? oklchToOklab(L, Math.max(0, second), third * (Math.PI / 180)) : [L, second, third];
   const [r, g, b] = oklabToLinearSrgb(L, A, B).map((c) => clamp01(linearToSrgb(c)));
   return [r as number, g as number, b as number, alpha];
 }
