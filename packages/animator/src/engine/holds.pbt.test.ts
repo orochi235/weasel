@@ -14,7 +14,8 @@ type V = { x: number; y: number };
 const AXES = ['x', 'y'] as const;
 
 interface ModelHold { value: V; weight: number; axes: readonly ('x' | 'y')[] }
-interface Model { committed: V; holds: (ModelHold | null)[] }
+interface ModelTween { from: V; to: V; start: number; ms: number }
+interface Model { committed: V; holds: (ModelHold | null)[]; tweens: ModelTween[]; now: number }
 interface Real {
   h: ReturnType<typeof clocked>;
   target: Target<V>;
@@ -31,10 +32,13 @@ function shown(m: Model): V {
     const on = m.holds.filter((h): h is ModelHold => h !== null && h.axes.includes(a) && share(h.weight) > 0);
     const total = on.reduce((s, h) => s + share(h.weight), 0);
     const c = m.committed[a];
-    out[a] = c + on.reduce((s, h) => s + share(h.weight) * (h.value[a] - c), 0) / Math.max(1, total);
+    const left = m.tweens.reduce((s, t) => s + (t.from[a] - t.to[a]) * (1 - Math.min(1, (m.now - t.start) / t.ms)), 0);
+    out[a] = c + on.reduce((s, h) => s + share(h.weight) * (h.value[a] - c), 0) / Math.max(1, total) + (1 - Math.min(1, total)) * left;
   }
   return out;
 }
+
+const moving = (m: Readonly<Model>): boolean => m.tweens.some((t) => m.now - t.start < t.ms);
 
 const tl = tally();
 
@@ -66,7 +70,8 @@ class Hold implements fc.Command<Model, Real> {
 
 class Release implements fc.Command<Model, Real> {
   constructor(readonly pick: number, readonly commit: boolean) {}
-  check = (m: Readonly<Model>) => m.holds.some((h) => h !== null);
+  // A release that commits under a move hands it a share of the move, which the model leaves out.
+  check = (m: Readonly<Model>) => m.holds.some((h) => h !== null) && !(this.commit && moving(m));
   run(m: Model, r: Real): void {
     const live = m.holds.flatMap((h, i) => (h ? [i] : []));
     const i = live[this.pick % live.length]!;
@@ -103,10 +108,24 @@ class Commit implements fc.Command<Model, Real> {
   toString = () => `commit(${JSON.stringify(this.value)})`;
 }
 
+class Tween implements fc.Command<Model, Real> {
+  constructor(readonly to: V, readonly ms: number) {}
+  check = () => true;
+  run(m: Model, r: Real): void {
+    m.tweens.push({ from: { ...m.committed }, to: this.to, start: m.now, ms: this.ms });
+    m.committed = { ...this.to };
+    r.h.animator.tween({ target: r.target, to: { ...this.to }, ms: this.ms, easing: 'linear' });
+    if (m.holds.some((h) => h !== null)) tl.count('tween under holds');
+    check(m, r);
+  }
+  toString = () => `tween(${JSON.stringify(this.to)}, ${this.ms})`;
+}
+
 class Frame implements fc.Command<Model, Real> {
   constructor(readonly dt: number) {}
   check = () => true;
   run(m: Model, r: Real): void {
+    m.now += this.dt;
     r.now += this.dt;
     r.h.at(r.now);
     check(m, r);
@@ -121,19 +140,34 @@ const commands = [
   fc.integer({ min: 0, max: 50 }).map((dt) => new Frame(dt)),
 ];
 
+const withTweens = [...commands, fc.tuple(point, fc.integer({ min: 1, max: 200 })).map(([to, ms]) => new Tween(to, ms))];
+
 const RUNS = 200;
+
+function start(p: V): { model: Model; real: Real } {
+  const model: Model = { committed: { ...p }, holds: [], tweens: [], now: 0 };
+  const real: Real = { h: clocked(), target: null as unknown as Target<V>, committed: { ...p }, handles: [], now: 0 };
+  real.target = createTarget<V>({ get: () => real.committed, set: (v) => { real.committed = { ...v }; } });
+  real.h.at(0);
+  return { model, real };
+}
 
 describe('holds on one target, stateful', () => {
   it('show the committed value folded with every hold by weight, axis by axis', () => {
-    fc.assert(fc.property(point, fc.commands(commands, { maxCommands: 30 }), (start, cmds) => {
-      const model: Model = { committed: { ...start }, holds: [] };
-      const real: Real = { h: clocked(), target: null as unknown as Target<V>, committed: { ...start }, handles: [], now: 0 };
-      real.target = createTarget<V>({ get: () => real.committed, set: (v) => { real.committed = { ...v }; } });
-      real.h.at(0);
-      fc.modelRun(() => ({ model, real }), cmds);
+    fc.assert(fc.property(point, fc.commands(commands, { maxCommands: 30 }), (p, cmds) => {
+      const s = start(p);
+      fc.modelRun(() => s, cmds);
     }), runs(RUNS));
     tl.atLeast('hold', 100);
     tl.atLeast('release, committing', 30);
     tl.atLeast('commit under holds', 30);
+  }, timeoutFor(RUNS, 30));
+
+  it('cover the moves of tweens by their weights, and show the rest of each', () => {
+    fc.assert(fc.property(point, fc.commands(withTweens, { maxCommands: 30 }), (p, cmds) => {
+      const s = start(p);
+      fc.modelRun(() => s, cmds);
+    }), runs(RUNS));
+    tl.atLeast('tween under holds', 50);
   }, timeoutFor(RUNS, 30));
 });
