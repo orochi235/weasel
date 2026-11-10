@@ -1,5 +1,6 @@
 import { createMoveToIndexOp } from 'core/ops/reorder';
 import type { Op } from 'core/ops/types';
+import { maxOf } from '@weasel-js/geom';
 import type { BooleanZOrder } from './booleans';
 
 /**
@@ -26,7 +27,7 @@ export function placementOps(
   const ops: Op[] = [];
   for (const [parentId, ids] of groups) {
     const indices = sourceSlots.flatMap((s) => (s && s.parentId === parentId ? [s.index] : []));
-    const top = Math.max(...indices);
+    const top = maxOf(indices);
     ops.push(createMoveToIndexOp({ ids, parentId, index: top - (indices.length - 1) }));
   }
   return ops;
