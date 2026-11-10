@@ -53,7 +53,12 @@ function mapDeep(value: unknown, leaf: (v: unknown) => unknown): unknown {
   if (Array.isArray(value)) return value.map((v) => mapDeep(v, leaf));
   if (!isPlain(value)) return value;
   const out: Record<string, unknown> = {};
-  for (const key of Object.keys(value)) out[key] = mapDeep(value[key], leaf);
+  for (const key of Object.keys(value)) {
+    const v = mapDeep(value[key], leaf);
+    // Assigned, an own `__proto__` as `JSON.parse` makes would set the copy's prototype instead.
+    if (key === '__proto__') Object.defineProperty(out, key, { value: v, enumerable: true, writable: true, configurable: true });
+    else out[key] = v;
+  }
   return out;
 }
 

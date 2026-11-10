@@ -53,6 +53,15 @@ describe('reviveTypedArrays', () => {
     back.forEach((a, i) => expect(Object.prototype.toString.call(a)).toBe(Object.prototype.toString.call(all[i])));
   });
 
+  it('copies an own `__proto__` field as a field, as JSON.parse made it (shrunk from the animator clip property)', () => {
+    const value = JSON.parse('{"__proto__":{"x":1},"y":[0]}') as object;
+    for (const copy of [reviveTypedArrays(value), tagTypedArrays(value)] as object[]) {
+      expect(Object.getPrototypeOf(copy)).toBe(Object.prototype);
+      expect(Object.keys(copy)).toEqual(['__proto__', 'y']);
+      expect(JSON.stringify(copy)).toBe('{"__proto__":{"x":1},"y":[0]}');
+    }
+  });
+
   it('leaves an object that only looks tagged alone', () => {
     expect(reviveTypedArrays({ __ta: 'nope', data: [1] })).toEqual({ __ta: 'nope', data: [1] });
     expect(untagTypedArray({ __ta: 'f32' })).toBeUndefined();
