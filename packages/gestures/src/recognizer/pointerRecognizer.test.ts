@@ -206,6 +206,13 @@ describe('a double click', () => {
     expect(h.kinds()).not.toContain('doubleclick');
   });
 
+  it('cancels a held pointer pressed again, as a lost release', () => {
+    const h = harness();
+    h.down(1, 0);
+    h.down(1, 50);
+    expect(h.kinds()).toEqual(['press', 'pointercancel', 'press']);
+  });
+
   it('is broken off by a canceled press between the clicks', () => {
     const h = harness();
     h.click(0);

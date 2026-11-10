@@ -91,7 +91,7 @@ function cancelHold(m: Model, id: number): void {
 export interface SampleIn extends EventModifiers { id: number; x: number; y: number; stamp: number | undefined }
 
 export function press(m: Model, s: SampleIn, pointerType: 'mouse' | 'touch' | 'pen'): Expected[] {
-  const out: Expected[] = [];
+  const out: Expected[] = cancel(m, s.id);
   const touch = pointerType === 'touch';
   m.held.set(s.id, { touch, press: { clientX: s.x, clientY: s.y, ...modsOf(s) }, pos: { x: s.x, y: s.y }, buffered: true });
   const hand = touch ? fingers(m).length : 0;

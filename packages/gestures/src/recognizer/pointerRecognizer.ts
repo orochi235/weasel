@@ -194,8 +194,10 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
     sink.dispatch(multiTouchEvent(hand.size, s, geometry()));
   };
 
-  return {
+  const recognizer: PointerRecognizer = {
     press(s) {
+      // A press on a pointer still held means its release was lost: end that one first.
+      if (held.has(s.pointerId)) recognizer.cancel(s.pointerId);
       const ev = pointerDownEvent(s);
       const rec: Held = { pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s), touch: s.pointerType === 'touch' };
       held.set(s.pointerId, rec);
@@ -285,4 +287,5 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       touches.abandon();
     },
   };
+  return recognizer;
 }

@@ -80,7 +80,7 @@ const wire = (s: SampleIn) => ({
 
 class Press implements fc.Command<Model, Real> {
   constructor(readonly id: number, readonly type: Kind, readonly x: number, readonly y: number, readonly mods: EventModifiers, readonly back: number) {}
-  check = (m: Readonly<Model>): boolean => !m.held.has(this.id);
+  check = (): boolean => true;
   run(m: Model, r: Real): void {
     const s = sampleOf(m, this.id, this.x, this.y, this.mods, this.back);
     const w = model.toWorld(s.x, s.y);

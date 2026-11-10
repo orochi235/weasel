@@ -33,6 +33,12 @@ describe('paintKey', () => {
     expect(paintKey({ color: 'rgba(255, 0, 0, 0.5)' })).toBe(paintKey({ color: '#f00', opacity: 0.5 }));
   });
 
+  it('keys every fully transparent solid as one, since none draws anything', () => {
+    expect(paintKey({ color: '#f00', opacity: 0 })).toBe(paintKey({ color: '#00f', opacity: 0 }));
+    expect(paintKey({ color: 'transparent' })).toBe(paintKey({ color: 'rgba(0, 255, 0, 0)' }));
+    expect(paintKey({ color: '#f00', opacity: 0 })).not.toBe(paintKey(null));
+  });
+
   it('keys two spellings of one solid color as one', () => {
     expect(paintKey({ color: '#fff' })).toBe(paintKey({ color: '#FFFFFF' }));
     expect(paintKey({ color: 'white' })).toBe(paintKey({ color: 'rgb(255 255 255)' }));

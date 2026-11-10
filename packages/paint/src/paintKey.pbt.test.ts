@@ -17,7 +17,7 @@ const spelled = triple.chain((c) => fc.constantFrom(...spellings(c)));
 /** Few enough values that two draws often coincide. */
 const small = fc.constantFrom(0, 0.5, 1);
 
-const solid = fc.record({ color: spelled, opacity: fc.option(fc.constantFrom(0.5, 1), { nil: undefined }), kind: fc.constantFrom(undefined, 'solid' as const) })
+const solid = fc.record({ color: spelled, opacity: fc.option(fc.constantFrom(0, 0.5, 1), { nil: undefined }), kind: fc.constantFrom(undefined, 'solid' as const) })
   .map((p) => p as Paint);
 const gradient = fc.record({
   kind: fc.constant('linear-gradient' as const),
@@ -45,11 +45,12 @@ function respelled<T>(value: T): T {
   return out as T;
 }
 
-/** What two solids draw: the same color at the same alpha. */
+/** What two solids draw: the same color at the same alpha, or nothing at all. */
 function drawsAs(p: Paint): string {
   const s = p as { color: string; opacity?: number };
   const [r, g, b, a] = parseColor(s.color);
-  return `${r},${g},${b},${a * (s.opacity ?? 1)}`;
+  const alpha = a * (s.opacity ?? 1);
+  return alpha === 0 ? 'clear' : `${r},${g},${b},${alpha}`;
 }
 /** Structural equality with undefined fields dropped. */
 const plain = (v: unknown): string => JSON.stringify(v, (_k, x: unknown) => (x && typeof x === 'object' && !Array.isArray(x)

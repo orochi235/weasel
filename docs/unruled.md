@@ -13,10 +13,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 - Ruled 2026-11-10: a release past the drag threshold from its press still clicks when no move crossed
   it first; only a move spends the buffered press.
-- Open (2026-11-10, property tests): whether a press on a pointer the recognizer already holds cancels
-  the stale one first. It replaces it silently, dispatching no `pointercancel`; the pointer channel cancels the
-  stale session before pressing, so only a host feeding the recognizer directly meets it. The model test never
-  presses a held pointer.
+- Ruled 2026-11-10: a press on a pointer the recognizer already holds reads as a lost release. It cancels
+  the stale press first (`pointercancel`, and a multitouch cancel if it was a finger of one), then presses.
 - Ruled 2026-11-10: `specificity` ranks a named channel at any phase (`[rect:*]`) 1, above `[*:*]`'s 0,
   though both match every context: naming the channel is the more specific route.
 - Open (2026-11-10, property tests): whether `keySpecRoute` should give `null` for a spec with a `code`
@@ -348,7 +346,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-10 (property tests): `hslToSrgb` reads a hue of any number of turns, as CSS `hsl()` does.
   `srgbToHsl` caps saturation at 1, so a color past sRGB's gamut, which its doc does not take, no
   longer reports more. `lerpPaint` and `lerpStroke` answer `b`'s numbers exactly at `t = 1`.
-- Open: `paintKey` keys two fully transparent solids of different colors apart, though both draw nothing.
+- Ruled 2026-11-10: `paintKey` keys every fully transparent solid as one, whatever its color; none draws anything.
+  It still keys apart from no paint (`'none'`).
 
 ## Text
 
@@ -597,8 +596,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   letter, as menus do. Jog and Transport stay left to right in every locale.
 - 2026-11-10 (property tests): A `duration` in the units form reads a seconds decimal in either mark, as the
   clock form does, so `1.500s` is a second and a half in `de-DE` though the locale groups with a period.
-  `parseUnitExpr` reads adjacent terms as one value only when every term carries a unit (`2 3` and `1ft 2`
-  throw, as `parseNumber` refuses `5ft 3`), and throws on a literal past the range of a number.
+  `parseUnitExpr` throws on a literal past the range of a number.
+- Ruled 2026-11-10: `parseUnitExpr` reads adjacent terms as one value only when every term carries a unit;
+  `2 3` and `1ft 2` throw, as `parseNumber` refuses `5ft 3`, rather than supply an operator nobody typed.
 - Ruled 2026-11-10: `resolveUnitExpr` throws on a division by zero, and on any result past the range of a
   number, as `parseUnitExpr` already did for a literal.
 
