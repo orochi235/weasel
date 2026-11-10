@@ -1,4 +1,5 @@
-import { hslToSrgb, linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
+import { linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
+import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
 
 /**
