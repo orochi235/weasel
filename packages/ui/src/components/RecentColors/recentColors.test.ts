@@ -41,6 +41,16 @@ describe('createRecentColorsStore', () => {
     expect(store.get()).toEqual(['#444444ff', '#333333ff', '#222222ff']);
   });
 
+  it('reads a NaN limit as the default and a fractional one as its whole part', () => {
+    const fill = (limit: number) => {
+      const store = createRecentColorsStore({ storage: null, limit });
+      for (let i = 0; i < 20; i++) store.record(`#0000${i.toString(16).padStart(2, '0')}`);
+      return store.get().length;
+    };
+    expect(fill(NaN)).toBe(12);
+    expect(fill(2.5)).toBe(2);
+  });
+
   it('defaults the cap to 12', () => {
     const store = createRecentColorsStore({ storage: null });
     for (let i = 0; i < 20; i++) store.record(`#0000${i.toString(16).padStart(2, '0')}`);
