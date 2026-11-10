@@ -84,6 +84,16 @@ describe('deriveAlignmentGuides', () => {
     expect(left.id).toBe('align:x:10.000');
   });
 
+  it('gives two guides apart by more than the merge tolerance different ids', () => {
+    // Edges at 0 and 0.0009 merge, named by the one found first; 0.0011 stands alone. Both round to 0.001.
+    const g = deriveAlignmentGuides(
+      [{ x: 0.0009, y: 0, width: 10, height: 10 }, { x: 0, y: 0, width: 10, height: 10 }, { x: 0.0011, y: 0, width: 10, height: 10 }],
+      { centers: false },
+    );
+    expect(g.filter((q) => q.axis === 'x' && q.offset < 1)).toHaveLength(2);
+    expect(new Set(g.map((q) => q.id)).size).toBe(g.length);
+  });
+
   it('derives guides from circles through a descriptor', () => {
     const guides = deriveAlignmentGuides([circle(10, 10, 5)], {
       poseDescriptor: CIRCLE_POSE_DESCRIPTOR,

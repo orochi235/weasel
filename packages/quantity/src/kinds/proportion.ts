@@ -159,15 +159,16 @@ function fractionPieces(value: number, d: FractionDisplay) {
   return { negative, whole, num: abs - whole * den, den, constant };
 }
 
-/** A fraction typed inline (`1 1/2`) or diagonally (`1¹⁄₂`), else a plain number. */
-function parseFraction(text: string): number {
+/** A fraction typed inline (`1 1/2`) or diagonally (`1¹⁄₂`), else a plain number in `locale`'s form. */
+function parseFraction(typed: string, locale: string): number {
+  const text = latinDigits(typed, locale);
   const inline = /^\s*([-−+]?)\s*(?:(\d+)\s+)?(\d+)\s*[/⁄]\s*(\d+)\s*$/.exec(text);
   const diagonal = /^\s*([-−+]?)\s*(\d+)?\s*([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*[/⁄]\s*([₀₁₂₃₄₅₆₇₈₉]+)\s*$/.exec(text);
   let magnitude: number;
   if (inline) magnitude = Number(inline[2] ?? 0) + Number(inline[3]) / Number(inline[4]);
   else if (diagonal) {
     magnitude = Number(diagonal[2] ?? 0) + fromDigits(diagonal[3]!, SUPERSCRIPT) / fromDigits(diagonal[4]!, SUBSCRIPT);
-  } else return parseNumber(text);
+  } else return parseNumber(text, undefined, locale);
   const sign = (inline ?? diagonal)![1];
   return sign === '-' || sign === MINUS_SIGN ? -magnitude : magnitude;
 }
@@ -217,15 +218,15 @@ export const fractionKind: DisplayKind<FractionDisplay> = {
     ].filter(Boolean);
     return `${negative ? 'minus ' : ''}${words.join(' ')}`;
   },
-  parse: (text, d) => {
+  parse: (text, d, ctx) => {
     const constant = constantOf(d);
-    if (!constant) return parseFraction(text);
+    if (!constant) return parseFraction(text, ctx.locale);
     const spellings = [constant.symbol, ...(constant.names ?? [])].sort((a, b) => b.length - a.length);
     const token = new RegExp(spellings.map(escape).join('|'), 'i');
-    if (!token.test(text)) return parseFraction(text);
+    if (!token.test(text)) return parseFraction(text, ctx.locale);
     // With the constant taken out, a bare `/2` or nothing at all counts one of it.
     const coefficient = text.replace(token, '').replace(/^(\s*[-−+]?\s*)(?=[/⁄]|\s*$)/, '$11');
-    return parseFraction(coefficient) * constant.value;
+    return parseFraction(coefficient, ctx.locale) * constant.value;
   },
   mathml: (value, d) => {
     if (!Number.isFinite(value)) return undefined;
@@ -273,9 +274,10 @@ export const ratioKind: DisplayKind<RatioDisplay> = {
     const [n, den] = readableFraction(value, d.maxDenominator ?? 64);
     return spokenSign(`${signed(String(n))} to ${den}`);
   },
-  parse: (text) => {
+  parse: (text, _d, ctx) => {
     const m = /^\s*(.+?)\s*:\s*(.+?)\s*$/.exec(text);
-    return m ? parseNumber(m[1]!) / parseNumber(m[2]!) : parseNumber(text);
+    const read = (t: string) => parseNumber(t, undefined, ctx.locale);
+    return m ? read(m[1]!) / read(m[2]!) : read(text);
   },
 };
 
