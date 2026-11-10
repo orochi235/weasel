@@ -95,6 +95,16 @@ describe('simplifyPath', () => {
     expect(subs[0].every((a) => !a.inHandle && !a.outHandle)).toBe(true);
   });
 
+  it('folds short straights in line with a long one into it, rather than keeping its ends', () => {
+    // The miter offset of a triangle, as the union leaves it: each long side has a short piece at either end.
+    const b = new PathBuilder();
+    b.moveTo(-3, -5.196152687072754); b.lineTo(-2.25, -4.763139724731445); b.lineTo(5.25, -0.4330126941204071);
+    b.lineTo(6, 0); b.lineTo(5.25, 0.4330126941204071); b.lineTo(-2.25, 4.763139724731445); b.lineTo(-3, 5.196152687072754);
+    b.close();
+    const subs = anchorsOf(simplifyPath(b.build(), 0.1));
+    expect(subs[0].map((a) => [a.x, a.y])).toEqual([[-3, -5.196152687072754], [6, 0], [-3, 5.196152687072754]]);
+  });
+
   it('keeps the ends of an open subpath in place', () => {
     const b = new PathBuilder();
     for (let i = 0; i <= 60; i++) {
