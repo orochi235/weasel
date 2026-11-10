@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { meshGuides, meshHandles, moveMeshHandle, type MeshHandle } from './handles';
-import { meshFromStops, seedMeshPatch, type MeshGradientPaint } from './meshPaint';
+import { meshFromStops, meshStops, seedMeshPatch, type MeshGradientPaint } from './meshPaint';
 import { evalPatch, type MeshPatch, type MeshPoint } from './surface';
 
 /** A straight-edged square patch over `[x0, x0+1] × [0, 1]`, controls at the thirds. */
@@ -161,5 +161,11 @@ describe('meshGuides', () => {
     const p = tensor().points;
     expect(arms).toContainEqual([p[3], p[13]]);
     expect(arms).toContainEqual([p[9], p[15]]);
+  });
+
+  it('reads the stops of a mesh of 600,000 patches without overflowing the call stack', () => {
+    const one = meshFromStops([{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }]);
+    const stops = meshStops({ ...one, patches: Array.from({ length: 600_000 }, () => one.patches[0]!) });
+    expect(stops).toEqual([{ offset: 0, color: '#000000ff' }, { offset: 1, color: '#ffffffff' }]);
   });
 });

@@ -8,9 +8,9 @@
  */
 
 import type { GradStop } from '@weasel-js/paint';
+import { DEG_TO_RAD, mat3, trimNumber, maxOf, minOf } from '@weasel-js/geom';
 import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, PaintTexture } from '../paintKinds';
 import { resolveColor, rgbaToHex } from '@weasel-js/paint';
-import { DEG_TO_RAD, mat3, trimNumber } from '@weasel-js/geom';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../fillInPoseFrame';
@@ -154,14 +154,18 @@ export function meshStops(mesh: MeshGradientPaint): GradStop[] {
   const valid = mesh.patches.filter(isValidPatch);
   if (valid.length === 0) return [];
   const xs = valid.flatMap((p) => [p.points[0].x, p.points[3].x]);
-  const lo = Math.min(...xs);
-  const span = Math.max(...xs) - lo;
+  const lo = minOf(xs);
+  const span = maxOf(xs) - lo;
   const offsetOf = (x: number) => (span > 0 ? (x - lo) / span : 0);
   const stops: GradStop[] = [];
+  const seen = new Set<string>();
   for (const patch of valid) {
     for (const [point, color] of [[patch.points[0], patch.colors[0]], [patch.points[3], patch.colors[1]]] as const) {
       const offset = offsetOf(point.x);
-      if (!stops.some((s) => s.offset === offset && s.color === color)) stops.push({ offset, color });
+      const key = `${offset} ${color}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      stops.push({ offset, color });
     }
   }
   return stops.sort((a, b) => a.offset - b.offset);
