@@ -1,4 +1,4 @@
-const NUMBER = /^(-?(?:\d+\.?\d*|\.\d+))([a-z%]*)$/i;
+const NUMBER = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)$/i;
 
 /** A CSS number and its unit (`''` for none), or `undefined` for text that is anything else: a `calc()`, a `var()`, a list. */
 export function readCssNumber(css: string): { value: number; unit: string } | undefined {
