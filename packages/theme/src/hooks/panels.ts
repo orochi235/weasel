@@ -66,11 +66,32 @@ export const PANEL_HOOKS: readonly TokenHook[] = [
     description: 'Width of a numeric field in the Properties panel.',
   },
   {
+    name: 'prop-field-min',
+    type: 'dimension',
+    value: '6ch',
+    description:
+      'Narrowest a field, select, or dialog trigger gets beside its label in an inline Properties row before the row puts it under the label.',
+  },
+  {
+    name: 'prop-readout-reserve',
+    type: 'dimension',
+    value: '3.5em',
+    description:
+      'Room an inline slider row keeps beside its track for the readout and the gap before it, when deciding whether the track fits beside the label. Raise it for readouts wider than four digits and a unit.',
+  },
+  {
     name: 'prop-row-h',
     type: 'dimension',
     value: '20px',
     description:
       'Floor under every Properties row, whatever control it holds. Unset, it is the panel’s own field height, so it follows density — 20px at the default one.',
+  },
+  {
+    name: 'prop-track-min',
+    type: 'dimension',
+    value: '64px',
+    description:
+      'Narrowest a slider’s track gets beside its label in an inline Properties row or a two-across PrefsForm pane before the row puts the slider under the label.',
   },
   {
     name: 'prop-text-width',

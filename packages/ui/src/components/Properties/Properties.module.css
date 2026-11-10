@@ -10,6 +10,7 @@
 @import './PropertyRow.css';
 @import './PropertyRow.inline.css';
 @import './unitAttach.css';
+@import './PropertyRow.fit.css';
 @import './PropertyRow.variants.css';
 @import './PropertyGroup.css';
 @import './Subpanel.css';

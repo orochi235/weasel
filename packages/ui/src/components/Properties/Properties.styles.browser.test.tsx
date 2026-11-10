@@ -36,6 +36,7 @@ test('a rule from every imported sheet reaches the class the module exports', ()
   expect(style('list').display).toBe('grid'); // PropertyList.css
   expect(style('row').display).not.toBe('inline'); // PropertyRow.css
   expect(style('label').whiteSpace).not.toBe(''); // PropertyRow.inline.css
+  expect(style('label').maxInlineSize).toBe('100%'); // PropertyRow.fit.css
   expect(style('color').display).not.toBe('inline'); // PropertyRow.variants.css
   expect(style('group').display).toBe('grid'); // PropertyGroup.css
   expect(style('subpanelBody').display).toBe('grid'); // Subpanel.css
