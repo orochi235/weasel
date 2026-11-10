@@ -216,4 +216,18 @@ describe('UnitField held stepper', () => {
     act(() => { vi.advanceTimersByTime(600); });
     expect(onInput).not.toHaveBeenCalled();
   });
+
+  // A secondary press opens a context menu, which keeps the release from the button: the repeat would run on.
+  it('steps on a primary press only', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    render(<UnitField value={1} steppers onChange={onChange} aria-label="Width" />);
+    const up = screen.getByRole('button', { name: 'Increment' });
+    fireEvent.pointerDown(up, { button: 2 });
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.pointerDown(up, { button: 0 });
+    fireEvent.pointerUp(up);
+    expect(onChange).toHaveBeenCalledWith(2);
+  });
 });
