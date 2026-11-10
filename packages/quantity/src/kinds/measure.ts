@@ -1,58 +1,51 @@
 import { intlParts, numberPart, plural, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
+import { catalogUnit, unitSymbol } from '../catalog';
 import { decimalOf, escapeClass, latinDigits, numberWithin, parseNumber, type UnitTable } from '../number';
 
 /**
- * Units `Intl` can name aloud, by the symbol a field shows. A unit outside it
- * speaks through the display's `spoken` names, else as its symbol.
+ * `value` in the unit `name` read aloud: through `Intl` where the catalog gives
+ * the unit an `Intl` name and no `spoken` names override it, else the number
+ * and the unit's singular or plural name, else its symbol.
  */
-const INTL_UNITS: Record<string, string> = {
-  mm: 'millimeter',
-  cm: 'centimeter',
-  m: 'meter',
-  km: 'kilometer',
-  in: 'inch',
-  '"': 'inch',
-  '″': 'inch',
-  ft: 'foot',
-  "'": 'foot',
-  '′': 'foot',
-  yd: 'yard',
-  mi: 'mile',
-  deg: 'degree',
-  '°': 'degree',
-  ms: 'millisecond',
-  s: 'second',
-  min: 'minute',
-  h: 'hour',
-  g: 'gram',
-  kg: 'kilogram',
-  L: 'liter',
-  '%': 'percent',
-};
-
-/** Names for common units `Intl` has none for. */
-const OWN_UNITS: Record<string, readonly [string, string]> = {
-  px: ['pixel', 'pixels'],
-  pt: ['point', 'points'],
-  rad: ['radian', 'radians'],
-  turn: ['turn', 'turns'],
-};
+export function speakUnit(
+  value: number,
+  name: string | undefined,
+  locale: string,
+  options: { places?: number; grouping?: boolean; spoken?: readonly [string, string] } = {},
+): string {
+  const { places = 2, grouping = false, spoken } = options;
+  const u = name === undefined ? undefined : catalogUnit(name);
+  if (u?.intl !== undefined && spoken === undefined) {
+    return spokenSign(
+      textOf(intlParts(value, locale, { style: 'unit', unit: u.intl, unitDisplay: 'long', maximumFractionDigits: places, useGrouping: grouping })),
+    );
+  }
+  const number = numberPart(value, locale, { maximumFractionDigits: places, useGrouping: grouping }).value;
+  const names = spoken ?? u?.spoken;
+  const word = names ? plural(Math.abs(parseNumber(number, undefined, locale)), locale, names[0], names[1]) : name;
+  return spokenSign(word ? `${number} ${word}` : number);
+}
 
 /**
  * A number with its unit: `12mm`, spoken `12 millimeters`. The unit is the
- * display's, else the one the value is tagged with. `accepts` is what a person
- * may type, each unit mapped to its conversion into the shown one; compound
- * text such as `5ft 3in` reads when every term's unit is accepted.
+ * display's, else the one the value is tagged with, and is written as the
+ * unit catalog writes it: `deg` shows `°`, and `compact` asks for a unit's
+ * short form, `″` for `in`. A unit whose symbol attaches is never spaced.
+ * `accepts` is what a person may type, each unit mapped to its conversion
+ * into the shown one; compound text such as `5ft 3in` reads when every
+ * term's unit is accepted, under any spelling the catalog knows.
  */
 export type UnitDisplay = {
   kind: 'unit';
   unit?: string;
   /** Most decimals, trailing zeros dropped. Default 2. */
   places?: number;
-  /** A space between number and unit. Default false. */
+  /** A space between number and a unit that does not attach. Default false. */
   space?: boolean;
+  /** The unit's compact form, where it has one. Default false. */
+  compact?: boolean;
   accepts?: UnitTable;
-  /** Singular and plural names, for a unit `Intl` cannot name. */
+  /** Singular and plural names, in place of the catalog's. */
   spoken?: readonly [string, string];
 };
 
@@ -68,25 +61,13 @@ export const unitKind: DisplayKind<UnitDisplay> = {
     const parts: Part[] = [numberPart(value, ctx.locale, { maximumFractionDigits: d.places ?? 2, useGrouping: false })];
     const name = d.unit ?? ctx.unit;
     if (name) {
-      if (d.space) parts.push({ type: 'literal', value: ' ' });
-      parts.push({ type: 'unit', value: name });
+      const shown = unitSymbol(name, { compact: d.compact });
+      if (d.space && !shown.attaches) parts.push({ type: 'literal', value: ' ' });
+      parts.push({ type: 'unit', value: shown.text });
     }
     return parts;
   },
-  speak: (value, d, ctx) => {
-    const places = d.places ?? 2;
-    const name = d.unit ?? ctx.unit;
-    const intl = name !== undefined && Object.hasOwn(INTL_UNITS, name) ? INTL_UNITS[name] : undefined;
-    if (intl !== undefined && d.spoken === undefined) {
-      return spokenSign(
-        textOf(intlParts(value, ctx.locale, { style: 'unit', unit: intl, unitDisplay: 'long', maximumFractionDigits: places })),
-      );
-    }
-    const number = numberPart(value, ctx.locale, { maximumFractionDigits: places, useGrouping: false }).value;
-    const names = d.spoken ?? (name !== undefined && Object.hasOwn(OWN_UNITS, name) ? OWN_UNITS[name] : undefined);
-    const word = names ? plural(value, ctx.locale, names[0], names[1]) : name;
-    return spokenSign(word ? `${number} ${word}` : number);
-  },
+  speak: (value, d, ctx) => speakUnit(value, d.unit ?? ctx.unit, ctx.locale, { places: d.places, spoken: d.spoken }),
   parse: (text, d, ctx) => {
     const name = d.unit ?? ctx.unit;
     return parseNumber(text, d.accepts ?? (name ? { [name]: 1 } : undefined), ctx.locale);
@@ -188,9 +169,10 @@ export const durationKind: DisplayKind<DurationDisplay> = {
     if (!Number.isFinite(value)) return String(value);
     const { negative, h, m, s } = hms(value, d.places ?? 0);
     const terms: string[] = [];
-    if (h > 0) terms.push(`${h} ${plural(h, ctx.locale, 'hour', 'hours')}`);
-    if (m > 0) terms.push(`${m} ${plural(m, ctx.locale, 'minute', 'minutes')}`);
-    if (s > 0 || terms.length === 0) terms.push(`${s} ${plural(s, ctx.locale, 'second', 'seconds')}`);
+    const term = (n: number, name: string) => speakUnit(n, name, ctx.locale, { places: 20 });
+    if (h > 0) terms.push(term(h, 'h'));
+    if (m > 0) terms.push(term(m, 'min'));
+    if (s > 0 || terms.length === 0) terms.push(term(s, 's'));
     return `${negative ? 'minus ' : ''}${terms.join(', ')}`;
   },
   parse: (text, _d, ctx) => {
@@ -205,8 +187,6 @@ export const durationKind: DisplayKind<DurationDisplay> = {
 
 const DECIMAL_BYTES = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'] as const;
 const BINARY_BYTES = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'] as const;
-const DECIMAL_NAMES = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte', 'petabyte'] as const;
-const BINARY_NAMES = ['byte', 'kibibyte', 'mebibyte', 'gibibyte', 'tebibyte', 'pebibyte'] as const;
 
 /** A byte count in the largest unit that keeps it at or above 1: `1.2 MB`,
  *  spoken `1.2 megabytes`. `base: 1024` uses `KiB`, `MiB`, … */
@@ -261,9 +241,8 @@ export const bytesKind: DisplayKind<BytesDisplay> = {
   },
   speak: (value, d, ctx) => {
     const { scaled, step, places } = byteScale(d, value);
-    const name = (d.base === 1024 ? BINARY_NAMES : DECIMAL_NAMES)[step]!;
-    const number = numberPart(scaled, ctx.locale, { maximumFractionDigits: places }).value;
-    return spokenSign(`${number} ${plural(Math.abs(parseNumber(number, undefined, ctx.locale)), ctx.locale, name, `${name}s`)}`);
+    const symbol = (d.base === 1024 ? BINARY_BYTES : DECIMAL_BYTES)[step]!;
+    return speakUnit(scaled, symbol, ctx.locale, { places, grouping: true });
   },
   parse: (text, _d, ctx) => parseNumber(text, BYTE_UNITS, ctx.locale),
 };

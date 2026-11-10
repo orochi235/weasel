@@ -10,7 +10,7 @@ import {
   prefVariantOf,
   resolvePrefUnit,
 } from '@weasel-js/prefs';
-import { qty } from '@weasel-js/quantity';
+import { qty, withUnit } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { stepDisplay } from '@weasel-js/ui/components/Properties';
 import { leafCanAuto } from '../config/autoConfig';
@@ -37,7 +37,9 @@ export function numberText(leaf: PrefNumber, value: number): string | undefined 
   const field = prefFieldProps(leaf, { value, setValue: () => {} });
   if (field?.kind !== 'number' || typeof field.value !== 'number') return undefined;
   const text = qty(field.value, field.display ?? stepDisplay(field.step)).text;
-  return Number.isFinite(value) && field.unit ? `${text}${field.unit}` : text;
+  return Number.isFinite(value) && typeof field.unit === 'string'
+    ? withUnit(text, field.unit)
+    : text;
 }
 
 /** `value` with each number that has a unit as its field writes it, at any depth of a compound leaf. */

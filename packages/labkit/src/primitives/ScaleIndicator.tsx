@@ -1,3 +1,4 @@
+import { speakUnit, withUnit } from '@weasel-js/quantity';
 import { useContext } from 'react';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 
@@ -42,10 +43,14 @@ export function ScaleIndicator({
   const niceUnits = niceNumber(targetUnits);
   const barWidth = niceUnits * effectivePxPerUnit;
   return (
-    <div className="lk-scale-indicator" role="img" aria-label={`Scale: ${niceUnits} ${unit}`}>
+    <div
+      className="lk-scale-indicator"
+      role="img"
+      aria-label={`Scale: ${speakUnit(niceUnits, unit, 'en-US')}`}
+    >
       <div className="lk-scale-indicator-bar" style={{ width: `${barWidth}px` }} />
       <span className="lk-scale-indicator-label">
-        {niceUnits} {unit}
+        {withUnit(String(niceUnits), unit, { space: true })}
       </span>
     </div>
   );

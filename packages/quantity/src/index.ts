@@ -73,6 +73,7 @@ export {
   currencyKind,
   duration,
   durationKind,
+  speakUnit,
   unit,
   unitKind,
   type BytesDisplay,
@@ -90,6 +91,19 @@ export {
   type OrdinalDisplay,
   type RomanDisplay,
 } from './kinds/numeral';
+export {
+  catalogUnit,
+  catalogUnits,
+  registerUnit,
+  unitSpellings,
+  unitSymbol,
+  withUnit,
+  type CatalogUnit,
+  type UnitDefinition,
+  type UnitForm,
+  type UnitFormDefinition,
+  type UnitSymbolOptions,
+} from './catalog';
 export { decimalPlaces, MAX_DECIMAL_PLACES } from './places';
 export {
   formatCompact,

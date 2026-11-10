@@ -1,4 +1,4 @@
-import { decimal, endless, qty, type Display } from '@weasel-js/quantity';
+import { decimal, endless, qty, withUnit, type Display } from '@weasel-js/quantity';
 import type { MenuNumberEntry } from './entries';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
@@ -14,5 +14,5 @@ export function menuNumberDisplay(e: Pick<MenuNumberEntry, 'display' | 'infinity
 export function menuNumberText(value: number | undefined, e: Pick<MenuNumberEntry, 'display' | 'infinity' | 'suffix'> = {}): string {
   if (value === undefined) return '—';
   const text = qty(value, menuNumberDisplay(e)).text;
-  return Number.isFinite(value) ? `${text}${e.suffix ?? ''}` : text;
+  return Number.isFinite(value) ? withUnit(text, e.suffix) : text;
 }

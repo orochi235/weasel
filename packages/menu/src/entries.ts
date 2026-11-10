@@ -90,7 +90,7 @@ export interface MenuNumberEntry {
   max?: number;
   /** What one step adds. Default 1. */
   step?: number;
-  /** Text after the value: `'°'`, `'px'`. */
+  /** The unit after the value, as the unit catalog writes it: `'°'`, `'px'`. */
   suffix?: string;
   /** How the value shows, and reads back where it is typed. Default: every decimal it has. */
   display?: Display;

@@ -17,9 +17,10 @@ const named = (rows: Accepted): Accepted => rows.filter(([name]) => name !== '')
 const sameRows = (a: Accepted, b: Accepted): boolean => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** `unit` less what says nothing, and `undefined` once nothing is left of it but a scale of 1. */
-function tidy({ suffix, scale, offset, accepts, precision }: PrefLinearUnit): PrefLinearUnit | undefined {
+function tidy({ suffix, compact, scale, offset, accepts, precision }: PrefLinearUnit): PrefLinearUnit | undefined {
   const out: PrefLinearUnit = {
     ...(suffix ? { suffix } : {}),
+    ...(compact ? { compact } : {}),
     scale,
     ...(offset ? { offset } : {}),
     ...(accepts && Object.keys(accepts).length > 0 ? { accepts } : {}),

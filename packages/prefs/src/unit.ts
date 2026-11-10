@@ -1,12 +1,15 @@
 // A number leaf's display unit: the stored value stays canonical (radians, millimeters), and a UI converts
 // at its edge. A unit is data where the conversion is linear, and a pair of functions where it is not.
 
-import { decimal, decimalPlaces, formatUnit, unitScale, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
+import { decimal, decimalPlaces, formatUnit, unitScale, unitSymbol, type Display, type Unit, type UnitEntry, type UnitScale, type UnitSystem, type UnitTable } from '@weasel-js/quantity';
 
 /** What both forms of a unit say about the text around the number. */
 interface PrefUnitText {
-  /** Shown after the input, e.g. `'°'`. */
+  /** The unit shown after the input, as the unit catalog writes it: `'deg'` and `'°'` both show `°`,
+   *  and text the catalog does not know shows as given. */
   suffix?: string;
+  /** Show the unit's compact form, where it has one: `″` for `in`. */
+  compact?: boolean;
   /** Suffixes a person may type, each mapped to the scale that turns a
    *  number in that unit into a display number: `{ mm: 0.1, cm: 1 }` for a
    *  field showing centimeters. A unit that disagrees with the display unit
@@ -45,7 +48,8 @@ export interface PrefFunctionUnit extends PrefUnitText {
  *  shown). Read one through {@link resolvePrefUnit}, which answers for both forms. */
 export type PrefNumberUnit = PrefLinearUnit | PrefFunctionUnit;
 
-/** A unit of either form as the functions that convert and format with it. */
+/** A unit of either form as the functions that convert and format with it. Its `suffix` is the text a field
+ *  shows, the catalog's form of the one written. */
 export interface ResolvedPrefUnit extends PrefFunctionUnit {
   format: (stored: number) => string;
   /** How a field shows the display number, where the unit fixes its places. */
@@ -87,10 +91,16 @@ function storedOf(shown: number, scale: number, offset: number): number {
 
 /** How to convert and format with `unit`, whichever form it was written in. */
 export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
+  const suffix = unit.suffix === undefined ? undefined : unitSymbol(unit.suffix, { compact: unit.compact }).text;
   if (!isPrefLinearUnit(unit)) {
-    return { ...unit, toDisplayExact: unit.toDisplay, format: unit.format ?? ((stored) => `${unit.toDisplay(stored)}${unit.suffix ?? ''}`) };
+    return {
+      ...unit,
+      ...(suffix === undefined ? {} : { suffix }),
+      toDisplayExact: unit.toDisplay,
+      format: unit.format ?? ((stored) => `${unit.toDisplay(stored)}${suffix ?? ''}`),
+    };
   }
-  const { scale, offset = 0, precision, suffix, accepts } = unit;
+  const { scale, offset = 0, precision, accepts } = unit;
   const system: UnitSystem = { base: 'stored', units: { [SHOWN]: { factor: scale, offset } } };
   const toDisplayExact = (stored: number): number => (stored - offset) / scale;
   return {
@@ -118,7 +128,7 @@ export function resolvePrefUnit(unit: PrefNumberUnit): ResolvedPrefUnit {
 export function prefUnit(
   system: UnitSystem,
   display: Unit,
-  opts?: { precision?: number; suffix?: string },
+  opts?: { precision?: number; suffix?: string; compact?: boolean },
 ): PrefLinearUnit {
   let self: Required<UnitScale>;
   try {
@@ -142,5 +152,6 @@ export function prefUnit(
     ...(self.offset === 0 ? {} : { offset: self.offset }),
     accepts,
     ...(opts?.precision === undefined ? {} : { precision: opts.precision }),
+    ...(opts?.compact ? { compact: true } : {}),
   };
 }
