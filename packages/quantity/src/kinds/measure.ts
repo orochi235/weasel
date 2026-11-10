@@ -133,6 +133,11 @@ function hms(value: number, places: number) {
   return { negative: value < 0 && total > 0, h, m, s };
 }
 
+function signedSeconds(sign: string, h: string | undefined, m: string | undefined, s: string): number {
+  const total = Number(h ?? 0) * 3600 + Number(m ?? 0) * 60 + Number(s);
+  return sign === '-' || sign === '−' ? -total : total;
+}
+
 const DURATION_UNITS: UnitTable = { h: 3600, m: 60, min: 60, s: 1, ms: 0.001 };
 
 /** The built-in `duration` kind, to spread into a `registerDisplayKind` replacement. */
@@ -178,10 +183,13 @@ export const durationKind: DisplayKind<DurationDisplay> = {
   parse: (text, _d, ctx) => {
     const d = escapeClass(decimalOf(ctx.locale));
     const clock = new RegExp(String.raw`^\s*([-−+]?)\s*(?:(\d+):)?(\d+):(\d+)(?:[.${d}](\d+))?\s*$`);
-    const m = clock.exec(latinDigits(text, ctx.locale));
-    if (!m) return parseNumber(text, DURATION_UNITS, ctx.locale);
-    const total = Number(m[2] ?? 0) * 3600 + Number(m[3]) * 60 + Number(`${m[4]}.${m[5] ?? 0}`);
-    return m[1] === '-' || m[1] === '−' ? -total : total;
+    const latin = latinDigits(text, ctx.locale);
+    const m = clock.exec(latin);
+    if (m) return signedSeconds(m[1]!, m[2], m[3], `${m[4]}.${m[5] ?? 0}`);
+    // The units form's seconds carry a decimal in either mark, as the clock's do: `0.010s` is never ten seconds.
+    const units = new RegExp(String.raw`^\s*([-−+]?)\s*(?:(\d+)\s*h\s*)?(?:(\d+)\s*m\s*)?(\d+)[.${d}](\d+)\s*s\s*$`).exec(latin);
+    if (units) return signedSeconds(units[1]!, units[2], units[3], `${units[4]}.${units[5]}`);
+    return parseNumber(text, DURATION_UNITS, ctx.locale);
   },
 };
 
