@@ -109,6 +109,14 @@ describe('readMermaidSequence', () => {
     expect(() => readMermaidSequence('sequenceDiagram\nA->>B: x\nalt y\nA->>B: z')).toThrow(/line 3: this alt is never closed/);
   });
 
+  it('refuses a participant id holding a space wherever a statement names one, as a declaration does', () => {
+    expect(() => readMermaidSequence('sequenceDiagram\nA B->>C: x')).toThrow('line 2: "A B" is not a participant id');
+    expect(() => readMermaidSequence('sequenceDiagram\nA->>B C: x')).toThrow('line 2: "B C" is not a participant id');
+    expect(() => readMermaidSequence('sequenceDiagram\n-->%% hi there')).toThrow('line 2: "%% hi there" is not a participant id');
+    expect(() => readMermaidSequence('sequenceDiagram\nA->>B: x\nactivate A B')).toThrow('line 3: "A B" is not a participant id');
+    expect(() => readMermaidSequence('sequenceDiagram\nNote over A B, C: x')).toThrow('line 2: "A B" is not a participant id');
+  });
+
   it('is what the Mermaid format reads a sequenceDiagram as', async () => {
     const read = await DIAGRAM_MERMAID.read!(CHECKOUT);
     expect(read.document.pages[0]!.kind).toBe('sequence');
