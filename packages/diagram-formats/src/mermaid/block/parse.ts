@@ -2,6 +2,7 @@
 import { lineError } from '../../lineError';
 import { SHAPES, type MermaidShape } from '../flowchart/lex';
 import { statementsOf, type MermaidSource, type Statement } from '../common/lines';
+import { numberAt } from '../common/number';
 
 /** A block: its id, its shape and text when it gives them, and the columns it spans. */
 export interface BlockItem {
@@ -56,7 +57,7 @@ class LineReader {
 
   span(): number | undefined {
     const m = this.sticky(SPAN);
-    return m === null ? undefined : Number(m[1]);
+    return m === null ? undefined : numberAt(m[1]!, this.line);
   }
 
   link(): BlockLink | null {
@@ -142,9 +143,9 @@ function block(lines: readonly Statement[], at: { i: number }, opened: number | 
     if (group !== null) {
       out.push({
         kind: 'group', line, stmts: block(lines, at, line),
-        ...(group[1] !== undefined ? { id: group[1] } : {}), ...(group[2] !== undefined ? { span: Number(group[2]) } : {}),
+        ...(group[1] !== undefined ? { id: group[1] } : {}), ...(group[2] !== undefined ? { span: numberAt(group[2], line) } : {}),
       });
-    } else if (columns !== null) out.push({ kind: 'columns', line, ...(columns[1] !== 'auto' ? { n: Number(columns[1]) } : {}) });
+    } else if (columns !== null) out.push({ kind: 'columns', line, ...(columns[1] !== 'auto' ? { n: numberAt(columns[1], line) } : {}) });
     else if (/^(classDef|class|style)\s/.test(text)) out.push({ kind: 'style', text, line });
     else if (/^(click|direction)\b/.test(text)) out.push({ kind: 'other', keyword: /^\w+/.exec(text)![0], line });
     else out.push(new LineReader(text, line).read());

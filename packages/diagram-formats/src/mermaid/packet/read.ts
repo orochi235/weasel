@@ -4,6 +4,7 @@ import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { pageNameOf, statementsOf, type Statement } from '../common/lines';
+import { numberAt } from '../common/number';
 import { unquote } from '../xychart/parse';
 
 /** The page a packet diagram is read onto. */
@@ -18,12 +19,12 @@ function fieldOf(s: Statement, after: number): PacketField {
   if (m === null) throw lineError('Mermaid', s.line, `"${s.text}" is not a packet field`);
   const label = unquote(m[4]!);
   if (m[3] !== undefined) {
-    const count = Number(m[3]);
+    const count = numberAt(m[3], s.line);
     if (count < 1) throw lineError('Mermaid', s.line, 'a field takes at least one bit');
     return { start: after + 1, end: after + count, label, relative: true };
   }
-  const start = Number(m[1]);
-  const end = m[2] !== undefined ? Number(m[2]) : start;
+  const start = numberAt(m[1]!, s.line);
+  const end = m[2] !== undefined ? numberAt(m[2], s.line) : start;
   if (end < start) throw lineError('Mermaid', s.line, `a field runs from its first bit to its last, and ${start}-${end} runs backward`);
   if (start <= after) throw lineError('Mermaid', s.line, `the field at ${start} overlaps the one before, which ends at bit ${after}`);
   return { start, end, label };
