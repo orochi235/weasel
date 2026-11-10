@@ -114,15 +114,9 @@ function propertyAtlas<F extends { chars: readonly object[] }>(base: F): F {
 export const splitsPair = (text: string, at: number): boolean =>
   at > 0 && at < text.length && /[\ud800-\udbff]/.test(text[at - 1]!) && /[\udc00-\udfff]/.test(text[at]!);
 
-/**
- * `text` cut into runs at the given UTF-16 offsets, each moved off the middle of a surrogate pair: what a
- * layout draws for a pair split across runs is open in `docs/unruled.md`.
- */
+/** `text` cut into runs at the given UTF-16 offsets, which may fall inside a surrogate pair. */
 export function cutInto(text: string, cuts: readonly number[]): string[] {
-  const at = [...new Set(cuts.map((c) => {
-    const k = c % (text.length + 1);
-    return splitsPair(text, k) ? k + 1 : k;
-  }))].sort((a, b) => a - b);
+  const at = [...new Set(cuts.map((c) => c % (text.length + 1)))].sort((a, b) => a - b);
   const out: string[] = [];
   let from = 0;
   for (const c of at) {

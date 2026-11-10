@@ -11,7 +11,7 @@ import { setFlagOverRange, type FlagKey } from './flagRange';
 import { isBoldWeight, resolveRuns } from './resolveRuns';
 import { resolveTextStyle, type TextStyle } from '../textStyle';
 import { runsToPlainText, type StyledRun } from '../runs';
-import { cutInto, mixedText, runs, tally, timeoutFor } from '../pbt.fixture';
+import { cutInto, mixedText, runs, splitsPair, tally, timeoutFor } from '../pbt.fixture';
 
 const RUNS = 150;
 const FLAGS: readonly FlagKey[] = ['bold', 'italic', 'underline', 'strikethrough', 'overline'];
@@ -49,6 +49,14 @@ function check(m: Model, r: Real): void {
 
 type Cmd = fc.Command<Model, Real>;
 
+/** `[start, end)` clamped to `text`, each end that falls inside a surrogate pair moved out to take it whole. */
+function snapped(text: string, start: number, end: number): [number, number] {
+  const lo = Math.max(0, start);
+  const hi = Math.min(text.length, end);
+  if (!(lo < hi)) return [lo, hi];
+  return [splitsPair(text, lo) ? lo - 1 : lo, splitsPair(text, hi) ? hi + 1 : hi];
+}
+
 /** Ends as percentages of the text, a little past either edge, so most ranges cover something. */
 const pct = fc.integer({ min: -5, max: 105 });
 const span = fc.oneof(
@@ -66,9 +74,9 @@ class SetFlag implements Cmd {
     const next = setFlagOverRange(r.runs, r.style, start, end, this.key, this.value);
     r.runs = next.runs;
     r.style = next.style;
-    const lo = Math.max(0, start);
-    const hi = Math.min(m.text.length, end);
+    const [lo, hi] = snapped(m.text, start, end);
     for (let i = lo; i < hi; i++) m.units[i] = { ...m.units[i]!, [this.key]: this.value };
+    if (lo < hi && (lo !== Math.max(0, start) || hi !== Math.min(m.text.length, end))) seen.count('snapped');
     seen.count(lo < hi ? `flag ${this.key} ${this.value}` : 'empty');
     check(m, r);
   }
@@ -82,8 +90,7 @@ class Apply implements Cmd {
     const start = at(this.start, m);
     const end = at(this.end, m);
     r.runs = applyStyleToRange(r.runs, start, end, this.patch);
-    const lo = Math.max(0, start);
-    const hi = Math.min(m.text.length, end);
+    const [lo, hi] = snapped(m.text, start, end);
     const nodeFamily = resolveTextStyle(r.style).fontFamily;
     for (let i = lo; i < hi; i++) {
       const u = { ...m.units[i]! };
@@ -147,6 +154,7 @@ describe('range styling, stateful', () => {
       fc.modelRun(() => ({ model, real }), cmds);
     }), runs(RUNS));
     seen.atLeast('apply', 50);
+    seen.atLeast('snapped', 5);
     for (const key of FLAGS) {
       seen.atLeast(`flag ${key} true`, 8);
       seen.atLeast(`flag ${key} false`, 8);

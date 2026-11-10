@@ -20,6 +20,7 @@ import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
 import { smallCapsScaleFor, smallCapsText } from './smallCaps';
+import { rejoinSplitPairs } from './codePointCuts';
 import { shapesWithFeature } from '../layout/shaperRegistry';
 
 /** A run with every style resolved against the node's text style — no
@@ -198,10 +199,11 @@ export function resolveRuns(
  */
 export function resolveRunsInto(
   out: ResolvedRun[],
-  runs: readonly StyledRun[],
+  authored: readonly StyledRun[],
   style: ResolvedTextStyle,
   viewScale = 1,
 ): ResolvedRun[] {
+  const runs = rejoinSplitPairs(authored);
   if (out.length !== runs.length) out.length = runs.length;
   let transformed = false;
   for (const r of runs) if ((r.textTransform ?? style.textTransform) !== 'none') transformed = true;
