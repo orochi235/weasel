@@ -1,0 +1,50 @@
+{
+  "name": "@weasel-js/brush",
+  "version": "1.18.2",
+  "description": "Brushes for weasel tools: one brush size shared across the tools that link to it, over the host's own tool option store.",
+  "weasel": {
+    "tier": "other"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/brush"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@weasel-js/prefs": "1.18.2",
+    "@weasel-js/routing": "1.18.2"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

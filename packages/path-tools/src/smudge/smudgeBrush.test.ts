@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { pathFromD, pathToAnchors, type PolygonPath } from '@weasel-js/geom';
 import type { InvocationCtx, OngoingInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
-import { brushRingCursor } from '../simplifyBrush/simplifyBrush';
+import { brushRing } from '@weasel-js/cursor';
 import { DEFAULT_SMUDGE_RADIUS_PX, smudgeBrushAction } from './smudgeBrush';
 
 /** One node storing its polygon as the pose, selected, at a view scale of `zoom`. */
@@ -54,15 +54,15 @@ describe('smudgeBrushAction', () => {
 
   it('shows a ring the size of the brush, before the press and through the stroke', () => {
     const cursor = smudgeBrushAction.cursor as (p?: Record<string, unknown>) => unknown;
-    expect(cursor({ radiusPx: 25 })).toEqual(brushRingCursor(25));
-    expect(cursor(undefined)).toEqual(brushRingCursor(DEFAULT_SMUDGE_RADIUS_PX));
+    expect(cursor({ radiusPx: 25 })).toEqual(brushRing(25));
+    expect(cursor(undefined)).toEqual(brushRing(DEFAULT_SMUDGE_RADIUS_PX));
     const { deps } = setup('M0 0 H100 V100 H0 Z');
     let radiusPx = 10;
     const handle = invoker.start(at(deps, 50, 0), { params: () => ({ radiusPx }) });
-    expect(handle.cursor!()).toEqual(brushRingCursor(10));
+    expect(handle.cursor!()).toEqual(brushRing(10));
     radiusPx = 30;
     handle.onMove!(at(deps, 50, -2));
-    expect(handle.cursor!()).toEqual(brushRingCursor(30));
+    expect(handle.cursor!()).toEqual(brushRing(30));
   });
 
   it('with nothing selected, pushes every path under the brush but locked and hidden ones', () => {
