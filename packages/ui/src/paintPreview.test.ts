@@ -13,6 +13,15 @@ describe('paintPreviewCss', () => {
     expect(paintPreviewCss({ color: '#abcdef' })).toBe('#abcdef');
   });
 
+  it('shows a paint at its opacity', () => {
+    expect(paintPreviewCss({ color: '#ff0000', opacity: 0.5 })).toBe('color-mix(in srgb, #ff0000 50%, transparent)');
+    const css = paintPreviewCss({
+      kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: STOPS, units: 'bounds', opacity: 0.25,
+    });
+    expect(css).toMatch(/^linear-gradient\(90\.0deg, color-mix\(in srgb, #ff0000 25%, transparent\) 0\.0%, /);
+  });
+
   it('has nothing to show for absence or for a pattern', () => {
     expect(paintPreviewCss(null)).toBeUndefined();
     expect(paintPreviewCss(undefined)).toBeUndefined();
