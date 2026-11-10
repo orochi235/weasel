@@ -65,3 +65,8 @@ export function runs(n: number): { numRuns: number } {
   const deep = Number(globalThis.process?.env?.WEASEL_PBT_RUNS);
   return { numRuns: deep > 0 ? deep : n };
 }
+
+/** A test timeout for a property costing about `msPerRun` a run, at the count {@link runs} settles on. */
+export function timeoutFor(n: number, msPerRun: number): number {
+  return Math.max(5_000, runs(n).numRuns * msPerRun);
+}

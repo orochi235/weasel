@@ -28,6 +28,8 @@ interface Entry { state: unknown; before: readonly NodeId[]; after: readonly Nod
 interface Model { entries: Entry[]; cursor: number }
 
 const RUNS = { numRuns: Number(globalThis.process?.env?.WEASEL_PBT_RUNS) || 100 };
+/** A deep run's time grows with its runs: about 2 ms each on the slowest node seen. */
+const TIMEOUT = Math.max(5_000, RUNS.numRuns * 5);
 
 function makeReal(): Real {
   const scene = createScene<Record<string, never>, 'main' | 'top'>({ systemLayers: [{ id: 'main' }, { id: 'top' }] }) as S;
@@ -360,5 +362,5 @@ describe('scene ops through history, stateful property', () => {
       'OpThenInverse:0', 'OpThenInverse:1', 'OpThenInverse:2', 'OpThenInverse:3']) {
       expect(tally.get(what) ?? 0, `${what} ran ${JSON.stringify([...tally])}`).toBeGreaterThan(RUNS.numRuns / 50);
     }
-  });
+  }, TIMEOUT);
 });

@@ -102,8 +102,10 @@ const inside = (b: Aabb, p: Vec3, slack: number): boolean =>
   p.x >= b.min.x - slack && p.x <= b.max.x + slack
   && p.y >= b.min.y - slack && p.y <= b.max.y + slack
   && p.z >= b.min.z - slack && p.z <= b.max.z + slack;
+/** The point `f` of the way across `b`, held inside it: at subnormal extents `min + (max - min)` rounds past `max`. */
+const across = (lo: number, hi: number, f: number): number => Math.min(hi, Math.max(lo, lo + (hi - lo) * f));
 const pointIn = (b: Aabb, f: readonly [number, number, number]): Vec3 => vec3(
-  b.min.x + (b.max.x - b.min.x) * f[0], b.min.y + (b.max.y - b.min.y) * f[1], b.min.z + (b.max.z - b.min.z) * f[2]);
+  across(b.min.x, b.max.x, f[0]), across(b.min.y, b.max.y, f[1]), across(b.min.z, b.max.z, f[2]));
 
 describe('rays and boxes, property', () => {
   it('transformAabb holds the image of every point of the box', () => {
