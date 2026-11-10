@@ -50,16 +50,3 @@ export const unit = fc.oneof(fc.double({ min: 0, max: 1, noNaN: true }), fc.cons
 /** `n` anchors' flat RGBA, 0..1. */
 export const rgbaArray = (n: number): fc.Arbitrary<number[]> => fc.array(unit, { minLength: 4 * n, maxLength: 4 * n });
 
-/** Cut points splitting `0..total` into frames, each at most `most` long, ascending and ending at `total`. */
-export function frames(total: number, most: number): fc.Arbitrary<number[]> {
-  return fc.array(fc.double({ min: 0.001, max: 1, noNaN: true }), { minLength: 1, maxLength: 40 }).map((ws) => {
-    const out: number[] = [];
-    let t = 0;
-    let i = 0;
-    while (t < total) {
-      t = Math.min(total, t + Math.max(1e-3, ws[i++ % ws.length]! * most));
-      out.push(t);
-    }
-    return out;
-  });
-}
