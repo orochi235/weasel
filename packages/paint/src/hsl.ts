@@ -5,7 +5,8 @@ export function hslToSrgb(h: number, s: number, l: number): [number, number, num
   if (s === 0) return [l, l, l];
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
   const p = 2 * l - q;
-  const hk = (((h / 360) % 1) + 1) % 1;
+  const turn = h / 360;
+  const hk = turn >= 0 && turn < 1 ? turn : turn - Math.floor(turn);
   return [hueToChannel(p, q, hk + 1 / 3), hueToChannel(p, q, hk), hueToChannel(p, q, hk - 1 / 3)];
 }
 

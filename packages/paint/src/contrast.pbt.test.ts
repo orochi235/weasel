@@ -60,16 +60,18 @@ describe('contrastRatio, property', () => {
 });
 
 describe('contrastLineColor, property', () => {
-  it('moves lightness away from the nearer end by at most strength, and writes #rrggbb', () => {
+  it('moves lightness strength away from the nearer end, to the byte, and writes #rrggbb', () => {
     fc.assert(fc.property(hexColor, unit, ({ text }, strength) => {
       const line = contrastLineColor(text, strength);
       expect(line).toMatch(/^#[0-9a-f]{6}$/);
       const [L] = srgbU8ToOklab(...(parseHexBytes(text)!.slice(0, 3) as [number, number, number]));
       const [M] = srgbU8ToOklab(...(parseHexBytes(line)!.slice(0, 3) as [number, number, number]));
-      // Toward the far end, or nowhere: bytes round the step, so allow a byte's worth of lightness.
-      if (L > 0.5) expect(M).toBeLessThanOrEqual(L + 0.01);
-      else expect(M).toBeGreaterThanOrEqual(L - 0.01);
-      expect(Math.abs(M - L)).toBeLessThanOrEqual(strength + 0.01);
+      // Bytes round the step: a byte is worth about 0.01 of lightness, but near black one byte spans 0.067.
+      const target = L > 0.5 ? Math.max(0, L - strength) : Math.min(1, L + strength);
+      const tol = target < 0.1 ? 0.07 : 0.01;
+      if (L > 0.5) expect(M).toBeLessThanOrEqual(L + tol);
+      else expect(M).toBeGreaterThanOrEqual(L - tol);
+      expect(Math.abs(M - target)).toBeLessThanOrEqual(tol);
     }), RUNS);
   });
 });
