@@ -24,11 +24,21 @@ export {
 } from './delete';
 export { groupAction, ungroupAction } from './group';
 export {
-  nudgeAnchorsUpAction, nudgeAnchorsDownAction,
-  nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
-  deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
-  anchorEditWouldChange, commitAnchorEdit, depOf, requiresAnchorSelection,
+  deleteAnchorsAction,
+  cutPathAtAnchorAction,
+  marqueeAnchorsAction,
+  selectAnchorAction,
+  anchorEditWouldChange,
+  commitAnchorEdit,
+  depOf,
+  requiresAnchorSelection,
 } from './anchorEditing';
+export {
+  nudgeAnchorsUpAction,
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+} from './anchorNudge';
 export { setAnchorFieldAction, type SetAnchorFieldParams } from './anchorFields';
 export {
   retractHandlesAction, makeHandlesSymmetricAction, makeHandleCommand, type HandleEdit, type HandleScope,

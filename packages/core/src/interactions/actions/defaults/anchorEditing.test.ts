@@ -9,10 +9,9 @@ import {
   cutPathAtAnchorAction,
   deleteAnchorsAction,
   marqueeAnchorsAction,
-  nudgeAnchorsUpAction,
-  nudgeAnchorsRightAction,
   selectAnchorAction,
 } from './anchorEditing';
+import { nudgeAnchorsUpAction, nudgeAnchorsRightAction } from './anchorNudge';
 import { createKitSettingsStore } from '@weasel-js/react';
 
 /** Closed triangle at (0,0)-(10,0)-(10,10). Three anchors, flat 0..2. */

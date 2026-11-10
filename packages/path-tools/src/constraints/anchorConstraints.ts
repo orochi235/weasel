@@ -144,7 +144,12 @@ function constraintCommand(
         if (dep && list) setConstraints(dep, list, label);
       },
     } as ImmediateInvoker,
-    enabled: (deps) => (ready(deps) ? true : ActionDisabledReason.SelectionRequired),
+    // An edit that would change nothing is disabled (ruled 2026-11-10), by the same `next` the run takes.
+    enabled: (deps, _at, _carried, params) => {
+      const dep = ready(deps);
+      if (!dep) return ActionDisabledReason.SelectionRequired;
+      return next(dep, params) ? true : ActionDisabledReason.NotApplicable;
+    },
   };
 }
 

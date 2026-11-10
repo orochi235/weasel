@@ -28,14 +28,12 @@ import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, roleMods, roleReader, type ModifierRoles } from '@weasel-js/routing';
 import type { ActionDeps } from '@weasel-js/routing';
 import type { ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
-import type { EditAnchorsDep, PathSymmetryDep } from '../depSchema';
-import { editedPathSymmetries } from '../edit-anchors/symmetry';
+import type { EditAnchorsDep } from '../depSchema';
 import {
   anchorsInRect,
   deleteAnchorsAt,
   editAnchorSetTracked,
   openSubpathAt,
-  translateAnchorsSymmetric,
   type AnchorSet,
 } from '@weasel-js/geom';
 import { pathToAnchors, type PolygonPath } from '@weasel-js/geom';
@@ -43,8 +41,6 @@ import { pxReach, rectBetween } from '@weasel-js/geom';
 import { selectionAfterAnchorPress } from '../edit-anchors/action';
 import { deleteSelectedMark, markUnder } from './pathEditMarks';
 import { inPlane, editingLayer } from '../planeInput';
-import { nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection } from './nudgeSteps';
-import { icon } from '../../../icons.gen';
 import { pathOperationTags } from '../pathGestureTags';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -171,54 +167,6 @@ export const selectAnchorAction: Action & { requires: string[] } = inPlane({
   enabled: plainAnchorEditing,
 }, editingLayer);
 
-const NUDGE_ICON = {
-  right: icon('nudgeAnchors'),
-  up: icon('nudgeAnchorsUp'),
-  down: icon('nudgeAnchorsDown'),
-  left: icon('nudgeAnchorsLeft'),
-} as const;
-
-/**
- * Move the selected anchors by one step. Shift multiplies the step. Every
- * keystroke is its own history entry.
- */
-function makeNudgeAnchorsAction(dir: NudgeDirection): Action & { requires: string[] } {
-  return {
-    id: `nudgeAnchors.${dir}`,
-    label: `Nudge Anchors ${NUDGE_LABEL[dir]}`,
-    group: 'nudgeAnchors',
-    icon: NUDGE_ICON[dir],
-    defaultBinding: [
-      { spec: nudgeSpec(dir, false), opts: { id: `nudgeAnchors.${dir}.small`, params: { magnitude: 'small' } } },
-      { spec: nudgeSpec(dir, true), opts: { id: `nudgeAnchors.${dir}.big`, params: { magnitude: 'big' } } },
-    ],
-    eligible: { capability: 'edits-anchors' },
-    requires: ['editAnchors', 'pathSymmetry'],
-    invoker: {
-      timing: 'immediate',
-      run: (deps, params) => {
-        const dep = depOf(deps);
-        if (!dep || dep.selectedAnchors.size === 0) return;
-        const { dx, dy } = nudgeDelta(dir, params?.magnitude);
-        const selected = [...dep.selectedAnchors];
-        const symmetry = (deps as { pathSymmetry?: PathSymmetryDep } | undefined)?.pathSymmetry;
-        commitAnchorEdit(dep, 'Nudge anchor', (set) => translateAnchorsSymmetric(
-          set, selected, dx, dy, editedPathSymmetries(symmetry, dep.editingId, set)));
-      },
-    } as ImmediateInvoker,
-    enabled: requiresAnchorSelection,
-  };
-}
-
-/** Move the selected anchors up one step; Shift for a big step. */
-export const nudgeAnchorsUpAction    = makeNudgeAnchorsAction('up');
-/** Move the selected anchors down one step; Shift for a big step. */
-export const nudgeAnchorsDownAction  = makeNudgeAnchorsAction('down');
-/** Move the selected anchors left one step; Shift for a big step. */
-export const nudgeAnchorsLeftAction  = makeNudgeAnchorsAction('left');
-/** Move the selected anchors right one step; Shift for a big step. */
-export const nudgeAnchorsRightAction = makeNudgeAnchorsAction('right');
-
 /**
  * Delete the selected anchors, refitting the surrounding curve through
  * each gap so the path keeps its shape.
@@ -254,7 +202,16 @@ export const deleteAnchorsAction: Action & { requires: string[] } = {
       if (changed) dep.setSelectedAnchors([]);
     },
   } as ImmediateInvoker,
-  enabled: (deps) => (depOf(deps)?.selectedMark ? true : requiresAnchorSelection(deps)),
+  // An edit that would change nothing is disabled (ruled 2026-11-10): a delete the path refuses, such as one
+  // that would leave a lone anchor.
+  enabled: (deps) => {
+    const dep = depOf(deps);
+    if (dep?.selectedMark) return true;
+    const selection = requiresAnchorSelection(deps);
+    if (selection !== true) return selection;
+    const doomed = [...dep!.selectedAnchors];
+    return anchorEditWouldChange(deps, (set) => deleteAnchorsAt(set, doomed)) ? true : ActionDisabledReason.NotApplicable;
+  },
 };
 
 /**

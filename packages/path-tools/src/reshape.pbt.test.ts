@@ -7,12 +7,12 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import {
-  anchorsToPath, PATH_C, PATH_CMD_LENGTHS, PATH_L, PATH_M, PATH_Q, PATH_Z, worldCoords, type PenAnchor, type PolygonPath,
+  anchorsToPath, pathToAnchors, PATH_C, PATH_CMD_LENGTHS, PATH_L, PATH_M, PATH_Q, PATH_Z, worldCoords, type PenAnchor, type PolygonPath,
 } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { deleteAnchorsAction, nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from '@weasel-js/core';
 import {
-  addExtremeAnchorsAction, bridgeAnchorsAction, CORNER_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleCornerShapeAction,
+  ANCHOR_SELECTION_GROUP, addExtremeAnchorsAction, bridgeAnchorsAction, CORNER_SHAPE_OPTIONS, constrainAnchorsAction, convertSegmentsAction, cycleCornerShapeAction,
   growAnchorSelectionAction, handleLockAngleAction, handleLockLengthAction, harmonizeAnchorsAction,
   invertAnchorSelectionAction, resamplePathAction, reversePathAction, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, setCornersAction, setPathStartAction,
@@ -74,13 +74,15 @@ class Run implements fc.Command<Model, H> {
   run(m: Model, h: H): void {
     const before = { path: snap(h.path()), selected: h.selected(), locks: JSON.stringify(h.locks()), at: h.scene.historyIndex() };
     const closed = closedCount(h.path());
-    const enabled = this.action.enabled ? this.action.enabled(h.deps()) : true;
+    const enabled = this.action.enabled ? this.action.enabled(h.deps(), undefined, undefined, this.params) : true;
     (this.action.invoker as ImmediateInvoker).run(h.deps(), this.params);
     const after = { path: snap(h.path()), selected: h.selected(), locks: JSON.stringify(h.locks()), at: h.scene.historyIndex() };
     const changed = JSON.stringify(after) !== JSON.stringify(before);
     // Disabled, it must do nothing. Enabled and doing nothing is counted, not failed: see the ruling it is waiting on.
-    if (enabled === true && (globalThis.process?.env?.PBT_STRICT ?? "").split(",").includes(this.action.id)) expect(changed, `${this.action.id} enabled and idle`).toBe(true);
+    // An action runs exactly when it says it is enabled: an edit that would change nothing is disabled (ruled
+    // 2026-11-10). A selection command may leave the selection as it was, and stays enabled.
     if (enabled !== true) expect(changed, `${this.action.id} is disabled (${String(enabled)}) and still changed something`).toBe(false);
+    else if (this.action.group !== ANCHOR_SELECTION_GROUP) expect(changed, `${this.action.id} is enabled and changed nothing`).toBe(true);
     count(`${this.action.id}:${enabled === true ? (changed ? "ran" : "idle") : "off"}`);
     checkPath(h.path());
     if (!RESTRUCTURES.has(this.action.id)) expect(closedCount(h.path()), `${this.action.id} keeps closed subpaths closed`).toBe(closed);
@@ -100,7 +102,7 @@ class Select implements fc.Command<Model, H> {
   constructor(readonly picks: number[]) {}
   check(): boolean { return true; }
   run(_m: Model, h: H): void {
-    const n = Array.from(h.path().commands).filter((c) => c !== PATH_Z).length;
+    const n = pathToAnchors(h.path()).anchors.reduce((sum, sub) => sum + sub.length, 0);
     h.setSelected([...new Set(this.picks.map((k) => k % Math.max(1, n)))]);
   }
   toString(): string { return `Select(${this.picks.join(',')})`; }
