@@ -149,6 +149,7 @@ function resolveNode(expr: UnitExpr, ctx: UnitExprContext): Resolved {
       return { n: l.n * r.n, measure: l.measure || r.measure, offset: false };
     case 'div':
       if (r.measure && !l.measure) throw new Error('unitExpr: cannot divide by a measure');
+      if (r.n === 0) throw new Error('unitExpr: cannot divide by zero');
       return { n: l.n / r.n, measure: l.measure && !r.measure, offset: false };
   }
 }
@@ -183,8 +184,11 @@ function resolveValue(value: number, unit: Unit | undefined, ctx: UnitExprContex
  * An expression's value in base units. A bare number beside `+` or `-` is
  * read as base units, as it is everywhere a `UnitValue` goes, and beside `*`
  * or `/` as a scalar. A measure over a measure is a scalar; a product of two
- * measures, or a scalar over a measure, throws.
+ * measures, or a scalar over a measure, throws, as do a division by zero and
+ * a result past the range of a number.
  */
 export function resolveUnitExpr(expr: UnitExpr | string, ctx: UnitExprContext = {}): number {
-  return resolveNode(typeof expr === 'string' ? parseUnitExpr(expr) : expr, ctx).n;
+  const n = resolveNode(typeof expr === 'string' ? parseUnitExpr(expr) : expr, ctx).n;
+  if (!Number.isFinite(n)) throw new Error('unitExpr: the result is past the range of a number');
+  return n;
 }

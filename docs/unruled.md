@@ -11,16 +11,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
-- Open (2026-11-10, property tests): whether the pointer recognizer clicks on a release past the
-  drag threshold from its press when no move crossed it first. It does now, since only a move spends the buffered
-  press; the model test releases where the last move left the pointer.
+- Ruled 2026-11-10: a release past the drag threshold from its press still clicks when no move crossed
+  it first; only a move spends the buffered press.
 - Open (2026-11-10, property tests): whether a press on a pointer the recognizer already holds cancels
   the stale one first. It replaces it silently, dispatching no `pointercancel`; the pointer channel cancels the
   stale session before pressing, so only a host feeding the recognizer directly meets it. The model test never
   presses a held pointer.
-- Open (2026-11-10, property tests): whether `specificity` should rank a named channel at any phase
-  (`[rect:*]`) as no phase constraint. It matches every context, as `[*:*]` does, but ranks 1 where `[*:*]` ranks 0.
-  No route in the repo writes one.
+- Ruled 2026-11-10: `specificity` ranks a named channel at any phase (`[rect:*]`) 1, above `[*:*]`'s 0,
+  though both match every context: naming the channel is the more specific route.
 - Open (2026-11-10, property tests): whether `keySpecRoute` should give `null` for a spec with a `code`
   or a `phase`, which the route it writes drops. It writes `[*:*]` and the key alone.
 
@@ -601,7 +599,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   clock form does, so `1.500s` is a second and a half in `de-DE` though the locale groups with a period.
   `parseUnitExpr` reads adjacent terms as one value only when every term carries a unit (`2 3` and `1ft 2`
   throw, as `parseNumber` refuses `5ft 3`), and throws on a literal past the range of a number.
-- Open: whether `resolveUnitExpr` throws on a division by zero; `1/0` resolves to `Infinity` and `0/0` to `NaN`.
+- Ruled 2026-11-10: `resolveUnitExpr` throws on a division by zero, and on any result past the range of a
+  number, as `parseUnitExpr` already did for a literal.
 
 ## Diagram, audio, and labkit
 

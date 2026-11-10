@@ -110,9 +110,7 @@ describe('parseUnitExpr and resolveUnitExpr, property', () => {
         return;
       }
       tally.read++;
-      // Open in docs/unruled.md: whether a division by zero throws. Until it is ruled, only a division may leave the finite.
-      if (!/[/÷]/.test(text)) expect(Number.isFinite(got.value), JSON.stringify(text)).toBe(true);
-      else expect(typeof got.value).toBe('number');
+      expect(Number.isFinite(got.value), JSON.stringify(text)).toBe(true);
     }), { numRuns: RUNS.numRuns * 3 });
     expect(tally.read).toBeGreaterThan(0);
   }, TIMEOUT * 3);

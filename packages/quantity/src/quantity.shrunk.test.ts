@@ -29,6 +29,12 @@ describe('counterexamples the property tests shrank to', () => {
     expect(() => resolveUnitExpr(`${'9'.repeat(400)}ft`, { unitSystem: IMPERIAL_INCHES })).toThrow(/past the range/);
   });
 
+  it('a unit expression refuses a division by zero, and a result past the range of a number', () => {
+    expect(() => resolveUnitExpr('1/0')).toThrow(/^unitExpr: cannot divide by zero/);
+    expect(() => resolveUnitExpr('0/0')).toThrow(/^unitExpr: cannot divide by zero/);
+    expect(() => resolveUnitExpr(`1${'0'.repeat(300)}*1${'0'.repeat(300)}`)).toThrow(/^unitExpr: the result is past the range/);
+  });
+
   it('a compound value in a unit expression is a run of measures only', () => {
     expect(() => parseUnitExpr('2 3')).toThrow(/not a complete expression/);
     expect(() => parseUnitExpr('1ft 2')).toThrow(/not a complete expression/);
