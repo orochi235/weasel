@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { bindingSpec, held, key, keySpecRoute, unbound } from './keySugar';
+import type { KeySpec } from './spec';
 
 describe('key', () => {
   it('reads modifiers and the key', () => {
@@ -68,6 +69,20 @@ describe('keySpecRoute', () => {
 
   it('writes the space bar by name', () => {
     expect(keySpecRoute(held('Mod+Space'))).toBe('[*:*] keyHeld(Space) +mod');
+  });
+
+  it('writes the phase a spec is live in', () => {
+    expect(keySpecRoute({ kind: 'key', key: 'Delete', phase: 'engaged' })).toBe('[engaged] keyDown(Delete)');
+    const spec: KeySpec = { kind: 'key', key: 'z', mods: { mod: true }, phase: [{ channel: 'rect', phase: 'engaged' }, { channel: '&', phase: 'initial' }] };
+    expect(keySpecRoute(spec)).toBe('[rect:engaged,initial] keyDown(z) +mod');
+    expect(bindingSpec(keySpecRoute(spec)!)).toEqual(spec);
+  });
+
+  it('gives null for a physical key code, several keys, or an empty phase list, which a route cannot spell', () => {
+    expect(keySpecRoute({ kind: 'key', key: 'p', code: 'KeyP', mods: { alt: true } })).toBeNull();
+    expect(keySpecRoute({ kind: 'key', key: [']', '‘'], mods: { mod: true, alt: true } })).toBeNull();
+    expect(keySpecRoute({ kind: 'key', key: ['z'] })).toBe('[*:*] keyDown(z)');
+    expect(keySpecRoute({ kind: 'key', key: 'z', phase: [] })).toBeNull();
   });
 
   it('writes an optional modifier into the key slot', () => {

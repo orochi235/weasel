@@ -107,22 +107,38 @@ describe('key sugar', () => {
     fc.constantFrom('a', 'Z', '?', ')', '(', ' ', '*', 'Escape', 'ArrowLeft', 'я', '=', '|'),
     fc.string({ unit: fc.constantFrom('a', 'Z', '1', ')', '(', '?', ' ', '*', '='), minLength: 1, maxLength: 4 }),
   );
+  const atom: fc.Arbitrary<PhaseAtom> = fc.record({
+    channel: fc.constantFrom('&', '*', 'rect'),
+    phase: fc.constantFrom('initial' as const, 'engaged' as const, '*' as const),
+  });
+  const phase = fc.option(fc.oneof(fc.constantFrom('initial' as const, 'engaged' as const, '*' as const), fc.array(atom, { maxLength: 2 })), { nil: undefined });
   const keySpec: fc.Arbitrary<KeySpec | KeyHeldSpec> = fc.record({
     kind: fc.constantFrom('key' as const, 'key-held' as const),
-    key: keyName,
+    key: fc.oneof({ weight: 4, arbitrary: keyName }, { weight: 1, arbitrary: fc.array(keyName, { minLength: 1, maxLength: 2 }) }),
+    code: fc.option(fc.constantFrom('KeyZ', 'Digit2'), { nil: undefined, freq: 4 }),
     mods: modSpec,
-  }).map(({ kind, key: k, mods }) => (Object.keys(mods).length > 0 ? { kind, key: k, mods } : { kind, key: k }));
+    phase,
+  }, { requiredKeys: ['kind', 'key', 'mods'] }).map((s) => (Object.keys(s.mods).length > 0 ? s : { ...s, mods: undefined }));
+  /** A phase spec as its atoms, as the matcher reads it. */
+  const atomsOf = (p: KeySpec['phase']): readonly PhaseAtom[] =>
+    p === undefined ? [{ channel: '*', phase: '*' }] : typeof p === 'string' ? [{ channel: '&', phase: p }] : p;
 
   it('writes a key spec as a route that reads back to a spec matching the same keystrokes, or as null', () => {
     let spelled = 0;
     let refused = 0;
     fc.assert(fc.property(keySpec, fc.boolean(), (spec, isMac) => {
       const route = keySpecRoute(spec);
+      const one = [spec.key].flat().length === 1;
+      if (spec.code !== undefined || !one || (Array.isArray(spec.phase) && spec.phase.length === 0)) {
+        expect(route).toBeNull();
+        return;
+      }
       if (route === null) { refused++; return; }
       spelled++;
       const back = bindingSpec(route);
-      expect(back).toMatchObject({ kind: spec.kind, key: spec.key });
-      const press = (e: EventModifiers) => ({ kind: spec.kind, key: spec.key as string, phase: 'down' as const, ...e });
+      expect(back).toMatchObject({ kind: spec.kind, key: [spec.key].flat()[0] });
+      expect(atomsOf(back!.phase)).toEqual(atomsOf(spec.phase));
+      const press = (e: EventModifiers) => ({ kind: spec.kind, key: [spec.key].flat()[0]!, phase: 'down' as const, ...e });
       for (const e of ALL_MODIFIER_STATES) {
         expect(matchSpec(press(e), back!, isMac), JSON.stringify(e)).toBe(matchSpec(press(e), spec, isMac));
       }

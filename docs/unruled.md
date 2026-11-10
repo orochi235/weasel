@@ -17,8 +17,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   the stale press first (`pointercancel`, and a multitouch cancel if it was a finger of one), then presses.
 - Ruled 2026-11-10: `specificity` ranks a named channel at any phase (`[rect:*]`) 1, above `[*:*]`'s 0,
   though both match every context: naming the channel is the more specific route.
-- Open (2026-11-10, property tests): whether `keySpecRoute` should give `null` for a spec with a `code`
-  or a `phase`, which the route it writes drops. It writes `[*:*]` and the key alone.
+- Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
+  spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
 - 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
   multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
