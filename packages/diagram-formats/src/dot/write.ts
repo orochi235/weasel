@@ -10,9 +10,10 @@ const KEYWORDS = new Set(['node', 'edge', 'graph', 'digraph', 'subgraph', 'stric
 const COMPASS = new Set(['n', 'e', 's', 'w']);
 const POINTS_PER_INCH = 72;
 
-/** `id` as DOT writes it: bare when it can be, else quoted. */
+/** `id` as DOT writes it: bare when it can be, else quoted. One holding a space past ASCII, such as a no-break space,
+ *  is quoted too, since {@link lexDot} reads every space as one. */
 export function dotId(id: string): string {
-  const bare = (/^[A-Za-z_\u0080-￿][\w\u0080-￿]*$/.test(id) && !KEYWORDS.has(id.toLowerCase()))
+  const bare = (/^[A-Za-z_\u0080-￿][\w\u0080-￿]*$/.test(id) && !/\s/.test(id) && !KEYWORDS.has(id.toLowerCase()))
     || /^-?(?:\.\d+|\d+(?:\.\d*)?)$/.test(id);
   return bare ? id : `"${id.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
