@@ -157,6 +157,24 @@ describe('timeline, property', () => {
     t.atLeast('sampled', 50);
   });
 
+  it('advances its playhead at the product of its own and the animator time scale', () => {
+    const scale = fc.constantFrom(0.25, 0.5, 1, 2, 4);
+    fc.assert(fc.property(plan, scale, scale, fc.array(fc.integer({ min: 1, max: 100 }), { minLength: 1, maxLength: 20 }), (p, own, global, ds) => {
+      const b = build(p);
+      const h = clocked();
+      const tl = h.animator.timeline({ tracks: b.tracks, duration: p.duration });
+      tl.setTimeScale(own);
+      h.animator.setTimeScale(global);
+      h.at(0);
+      let now = 0;
+      for (const d of ds) {
+        now += d;
+        h.at(now);
+        expect(tl.time()).toBeCloseTo(Math.min(now * own * global, tl.duration()), 6);
+      }
+    }), runs(RUNS));
+  });
+
   it('plays backward under a negative time scale, sampling where it stands, firing nothing, and ends at 0', () => {
     const t = tally();
     fc.assert(fc.property(plan, fc.integer({ min: 0, max: 1500 }), fc.constantFrom(-0.5, -1, -2, -3), steps, (p, from, rate, ws) => {
