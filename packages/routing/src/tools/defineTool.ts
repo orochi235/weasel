@@ -4,7 +4,7 @@ import type { ToolDef } from './routeTypes';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
 import type { CursorSpec } from '@weasel-js/cursor';
 import type { KernelOverlay } from '../index';
-import { toolOptionSteps } from './toolOptions';
+import { toolOptionSteps } from './toolOptionSteps';
 
 /** Validate that `id` is usable as a tool / channel id in the route
  *  grammar. Rejects ids that start with a reserved sigil (would shadow

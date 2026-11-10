@@ -28,7 +28,7 @@ import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { dropKeysOf, holdsKeysNow, takeKeys } from './keyOrder';
-import { tuneAction, tunedParams, type ActionTuning } from './tuning';
+import { tuneAction, tunedParams, underFirst, type ActionTuning } from './tuning';
 import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
 import type { History } from '@weasel-js/history';
@@ -101,7 +101,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     }
     const session = this.lastOperation.sessionTuning(id);
     if (session) tunings.unshift(session);
-    return tunings;
+    return underFirst(tunings);
   }
 
   /** `a` under every tuning for its id from the root down to here. */

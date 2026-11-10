@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
+import { shareToolOptions, type ToolOptionShare } from '@weasel-js/routing';
 import { icon } from '../icons.gen';
 import { SIMPLIFY_BRUSH_PARAMS } from './simplifyBrush';
 
@@ -12,6 +13,13 @@ export const SIMPLIFY_BRUSH_OPTIONS = {
   strength: { option: 'tolerance', times: 1.25 },
 } satisfies ToolOptions;
 
+/** Options for `useSimplifyBrushTool`. */
+export interface UseSimplifyBrushToolOptions {
+  /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
+   *  brush naming that key shares. Keep it stable across renders. */
+  share?: ToolOptionShare;
+}
+
 /**
  * The Simplify brush, a path-edit tool: a declarative shell whose one binding
  * routes a drag to the `simplifyBrush` action, which owns the stroke, its
@@ -20,13 +28,14 @@ export const SIMPLIFY_BRUSH_OPTIONS = {
  * `Shift+[` `Shift+]`. It carries `edits-anchors`, so it is usable only
  * where the mode allows anchor editing.
  */
-export function useSimplifyBrushTool(): Tool {
+export function useSimplifyBrushTool(options: UseSimplifyBrushToolOptions = {}): Tool {
+  const { share } = options;
   return useMemo(() => defineTool({
     id: 'simplifyBrush',
     capabilities: ['edits-anchors'],
     hookName: 'useSimplifyBrushTool',
     presentation: { label: 'Simplify brush', group: 'path-edit', icon: icon('core:simplifyBrush') },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'simplifyBrush', opts: { id: 'simplifyBrush.drag' } }],
-    options: SIMPLIFY_BRUSH_OPTIONS,
-  }), []);
+    options: shareToolOptions(SIMPLIFY_BRUSH_OPTIONS, share),
+  }), [share]);
 }

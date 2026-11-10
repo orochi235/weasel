@@ -12,7 +12,7 @@ import { dataRestPath } from '@weasel-js/core';
 import { brushWeights, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
-import { resolveParams, toolOptionParams, type BindingOpts, type ImmediateParams } from '@weasel-js/routing';
+import { resolveParams, type BindingOpts, type ImmediateParams } from '@weasel-js/routing';
 import { pref } from '@weasel-js/prefs';
 import { brushRing } from '@weasel-js/cursor';
 
@@ -70,9 +70,10 @@ export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
   }),
 }, { description: 'The size of the weight brush.' });
 
-/** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel. */
+/** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel, which a drag and a click's dab
+ *  both read. */
 export const WEIGHT_BRUSH_OPTIONS = {
-  actionId: 'weight.paint',
+  actionId: ['weight.paint', 'weight.click'],
   prefs: WEIGHT_BRUSH_PARAMS,
   size: { option: 'radiusPx', times: 1.25 },
 } as const;
@@ -81,10 +82,6 @@ const radiusOf = (params: Readonly<Record<string, unknown>> | undefined): number
   const r = params?.radiusPx;
   return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : DEFAULT_WEIGHT_RADIUS_PX;
 };
-
-/** The brush radius a click dabs with: what the host holds for the tool's size, as a drag reads it. */
-const heldRadius = (deps: ActionDeps): number =>
-  radiusOf(toolOptionParams('weight', WEIGHT_BRUSH_OPTIONS, deps.toolOptionValues));
 
 const activeJoint = (env: WeightEnv): string | null => {
   const name = env.state.active();
@@ -179,7 +176,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
             return;
           }
           const joint = activeJoint(env);
-          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, p?.mods?.alt ? 'remove' : 'add', heldRadius(deps));
+          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, p?.mods?.alt ? 'remove' : 'add', radiusOf(p as Readonly<Record<string, unknown>> | undefined));
           if (!next) return;
           env.paint(next);
           commitPainted(env, deps);

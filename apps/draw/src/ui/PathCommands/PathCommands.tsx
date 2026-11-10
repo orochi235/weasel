@@ -4,17 +4,22 @@
  * reads and writes that pref (`useSimplifyTolerance`), and the brush's options row moves with it.
  */
 import { useState, type ReactElement } from 'react';
-import { useOngoingAction } from '@weasel-js/core';
-import { usePref } from '../../prefs';
+import { setToolOption, useOngoingAction, useToolOptionParams } from '@weasel-js/core';
+import { SIMPLIFY_BRUSH_OPTIONS } from '@weasel-js/path-tools';
+import { drawToolOptionValues } from '../../toolOptions';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import s from './PathCommands.module.css';
 
 const readout = (t: { value: number }): string => t.value.toFixed(1);
 
 /** The Simplify tolerance and its setter: the Simplify brush's `tolerance` option. */
+const SIMPLIFY_BRUSH = { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_OPTIONS };
+
 export function useSimplifyTolerance(): [number, (tolerance: number) => void] {
-  const [tolerance, setTolerance] = usePref('tools.simplifyBrush.tolerance');
-  return [tolerance ?? 1, setTolerance];
+  const values = drawToolOptionValues();
+  const tolerance = useToolOptionParams(SIMPLIFY_BRUSH, values)?.tolerance;
+  const set = (t: number) => setToolOption(SIMPLIFY_BRUSH.id, SIMPLIFY_BRUSH.options, values, 'tolerance', t);
+  return [typeof tolerance === 'number' ? tolerance : 1, set];
 }
 
 /** Sizes a slider; without it, it is a popover's width. */

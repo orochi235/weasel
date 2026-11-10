@@ -171,6 +171,20 @@ describe('ActionsRegistry.tune', () => {
     expect(reg.paramsOf('flip')).toEqual({ axis: 'y', pivot: 'each' });
     expect(reg.paramsOf('untuned', { a: 1 })).toEqual({ a: 1 });
   });
+
+  it('lays an `under` tuning beneath the others, whenever it was added', () => {
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    const run = vi.fn();
+    act(() => {
+      reg.register(immediate(run));
+      reg.tune('flip', { params: { axis: 'y' } });
+      reg.tune('flip', { under: true, params: { axis: 'x', pivot: 'union' } });
+    });
+    reg.trigger('flip');
+    expect(run.mock.calls[0][1]).toEqual({ axis: 'y', pivot: 'union' });
+    expect(reg.paramsOf('flip')).toEqual({ axis: 'y', pivot: 'union' });
+  });
 });
 
 describe('invokedParams', () => {

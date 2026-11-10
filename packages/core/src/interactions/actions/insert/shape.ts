@@ -5,6 +5,7 @@ import { applyUserRotation, buildExtras } from './extras';
 import { computeBounds, effectiveOriginMode } from './geometry';
 import type { InsertFrame } from './session';
 import { minSizeOf, type MinSize } from 'core/scene/minSize';
+import { insertStyleOf, type InsertStyle } from './style';
 
 /** The node kind a binding's resolved params ask for. */
 export function insertKind(resolved: Record<string, unknown> | undefined): string {
@@ -87,6 +88,8 @@ export function insertShape(
   applyUserRotation(extras, userRotation);
   // The node keeps the minimum it was drawn to, whatever its kind's extras hold.
   if (min) (extras as { minSize?: MinSize }).minSize = min;
+  const style = insertStyleOf(resolved);
+  if (style) (extras as { style?: InsertStyle }).style = style;
   const drag: InsertEnds = {
     start: { x: start.x, y: start.y },
     end: { x: current.x, y: current.y },

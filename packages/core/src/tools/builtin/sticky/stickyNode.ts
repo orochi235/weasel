@@ -1,4 +1,4 @@
-import type { Fill } from '@weasel-js/paint';
+import type { Fill, Paint } from '@weasel-js/paint';
 import { DEFAULT_TEXT_FILL, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import type { InsertNodeFactory } from '../../../canvas/deps/insert';
 import type { TextNodeData, TextOverflow } from '../../../canvas/nodeShapes/textPainter';
@@ -30,6 +30,10 @@ export interface StickyStyle {
   size?: { width: number; height: number };
 }
 
+/** A sticky insert's extras: the tool's {@link StickyStyle}, and its `paper` and `ink` options, the paints that
+ *  stand over `background` and `fill`. */
+export type StickyLook = StickyStyle & { paper?: Paint; ink?: Paint };
+
 /** The look a sticky note takes for any field its tool leaves out. */
 export const STICKY_DEFAULTS = {
   background: { paint: { kind: 'solid', color: '#fff1a6ff' } },
@@ -51,10 +55,10 @@ export const STICKY_DEFAULTS = {
  * own. `look` is the `sticky` insert's extras, which carry the tool's
  * {@link StickyStyle}.
  */
-export function stickyData(look: StickyStyle & { text?: string }): TextNodeData & { minSize: MinSize } {
+export function stickyData(look: StickyLook & { text?: string }): TextNodeData & { minSize: MinSize } {
   return {
     text: look.text ?? '',
-    background: look.background ?? STICKY_DEFAULTS.background,
+    background: look.paper ? { paint: look.paper } : look.background ?? STICKY_DEFAULTS.background,
     padding: look.padding ?? STICKY_DEFAULTS.padding,
     style: look.style ?? STICKY_DEFAULTS.style,
     verticalAlign: look.verticalAlign ?? STICKY_DEFAULTS.verticalAlign,
@@ -62,12 +66,12 @@ export function stickyData(look: StickyStyle & { text?: string }): TextNodeData 
     edge: look.edge ?? STICKY_DEFAULTS.edge,
     shadow: look.shadow ?? STICKY_DEFAULTS.shadow,
     minSize: look.minSize ?? STICKY_DEFAULTS.minSize,
-    fill: look.fill ?? STICKY_DEFAULTS.fill,
+    fill: look.ink ? { paint: look.ink } : look.fill ?? STICKY_DEFAULTS.fill,
   };
 }
 
 /** The kit's `sticky` insert as an `InsertNodeFactory`, for a canvas that
  *  wraps it — to tag the data with a `kind`, say — under `insertNodeFactories`. */
 export const stickyNodeFactory: InsertNodeFactory = (_bounds, extras) => ({
-  data: stickyData(extras as StickyStyle & { text?: string }),
+  data: stickyData(extras as StickyLook & { text?: string }),
 });

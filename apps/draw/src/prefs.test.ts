@@ -10,6 +10,9 @@ import {
   openDrawPrefs,
   usePref,
 } from './prefs';
+import { drawToolOptionValues } from './toolOptions';
+import { INITIAL_FILL } from './newShapePaint';
+import { PEN_TOOL_OPTIONS, RECT_TOOL_OPTIONS, setToolOption, toolOptionParams } from '@weasel-js/core';
 
 // jsdom 26 + Node 26 currently leaves `window.localStorage` returning
 // `undefined` from its native getter. Swap in a plain in-memory Storage so
@@ -87,6 +90,15 @@ describe('openDrawPrefs', () => {
     expect([...backing.keys()].filter((k) => /^weaseldraw\.prefs\/(view\.path(Direction|Comb|Balance|Corners)|ui\.leftSidebarWidth)$/.test(k))).toEqual([]);
   });
 
+  it('carries the path fill rule into the shape tools’ shared option', () => {
+    const backing = new Map<string, unknown>([
+      [`${PREFS_PREFIX}drawing.pathFillRule`, 'evenodd'],
+      [`${PREFS_PREFIX}${VERSION_RECORD}`, 3],
+    ]);
+    const values = drawToolOptionValues(openDrawPrefs(createMemoryAdapter(backing)));
+    expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fillRule).toBe('evenodd');
+  });
+
   it('keeps a surface map already stored over an old panel map', () => {
     const backing = new Map<string, unknown>([
       [`${PREFS_PREFIX}ui.panels`, { layers: { hidden: true } }],
@@ -102,12 +114,21 @@ describe('openDrawPrefs', () => {
     expect(store.get('ui.surfaces')).toEqual({ colors: { hidden: true } });
   });
 
-  it('round-trips a tool-contributed pref at its composed path', async () => {
+  it('keeps a tool’s own option under its id and a shared one under the shared group', async () => {
     const backing = new Map<string, unknown>();
     const store = openDrawPrefs(createMemoryAdapter(backing));
-    store.set('tools.pen.autoCommitOnClose', false);
+    const values = drawToolOptionValues(store);
+    setToolOption('pen', PEN_TOOL_OPTIONS, values, 'autoCommitOnClose', false);
+    setToolOption('rect', RECT_TOOL_OPTIONS, values, 'fill', { kind: 'solid', color: '#123456ff' });
     await store.flush();
-    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 3, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.pen.autoCommitOnClose`)).toEqual({ $at: 4, value: false });
+    expect(backing.get(`${PREFS_PREFIX}tools.shared.fill`)).toEqual({ $at: 4, value: { kind: 'solid', color: '#123456ff' } });
+    expect(toolOptionParams('pen', PEN_TOOL_OPTIONS, values).fill).toEqual({ kind: 'solid', color: '#123456ff' });
+  });
+
+  it('draws a new shape in draw’s own starting fill until one is picked', () => {
+    const values = drawToolOptionValues(openDrawPrefs(createMemoryAdapter()));
+    expect(toolOptionParams('rect', RECT_TOOL_OPTIONS, values).fill).toEqual(INITIAL_FILL);
   });
 
   it('holds any tool id as the last tool', () => {
@@ -152,7 +173,7 @@ describe('importLegacyPrefs', () => {
     importLegacyPrefs(store, window.localStorage);
     expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).not.toBeNull();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 3, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 4, value: 40 });
   });
 
   it('leaves the blob in place when the store cannot persist', async () => {
@@ -187,7 +208,7 @@ describe('importLegacyPrefs', () => {
     away = false;
     await store.read();
     await vi.waitFor(() => expect(window.localStorage.getItem(LEGACY_PREFS_KEY)).toBeNull());
-    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 3, value: 40 });
+    expect(backing.get(`${PREFS_PREFIX}view.gridDensity`)).toEqual({ $at: 4, value: 40 });
     await store.close();
     warn.mockRestore();
   });

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import type { ToolKeybinding } from '@weasel-js/routing';
+import { shareToolOptions, type ToolKeybinding, type ToolOptionShare } from '@weasel-js/routing';
 import type { NodeId, Scene } from '@weasel-js/core';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
@@ -22,6 +22,9 @@ export interface UseWeightToolOptions {
   keybinding?: ToolKeybinding | null;
   /** Screen px around a joint within which a click picks it. Default 10. */
   reach?: number;
+  /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
+   *  brush naming that key shares. Keep it stable across renders. */
+  share?: ToolOptionShare;
 }
 
 /**
@@ -68,7 +71,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
     }),
   ], [env, state, kitSettings]);
 
-  const { keybinding } = options;
+  const { keybinding, share } = options;
   return useMemo(() => defineTool({
     id: 'weight',
     capabilities: ['edits-page'],
@@ -77,12 +80,12 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
     presentation: { label: 'Weight', icon: icon('weight'), group: 'shape' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W' } }),
     actions,
-    options: WEIGHT_BRUSH_OPTIONS,
+    options: shareToolOptions(WEIGHT_BRUSH_OPTIONS, share),
     overlay,
     onDeactivate: () => env.paint(null),
     bindings: [
       { spec: { kind: 'click', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'weight.click', opts: { id: 'weight.click' } },
       { spec: { kind: 'drag', mods: { shift: 'optional', alt: 'optional' } }, actionId: 'weight.paint', opts: { id: 'weight.paint' } },
     ],
-  }), [actions, overlay, keybinding, env]);
+  }), [actions, overlay, keybinding, env, share]);
 }

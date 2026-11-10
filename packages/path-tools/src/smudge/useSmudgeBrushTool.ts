@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ToolKeybinding } from '@weasel-js/routing';
+import { shareToolOptions, type ToolKeybinding, type ToolOptionShare } from '@weasel-js/routing';
 import { defineTool, type Tool, type ToolOptions } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import { SMUDGE_BRUSH_PARAMS } from './smudgeBrush';
@@ -17,6 +17,9 @@ export const SMUDGE_BRUSH_OPTIONS = {
 export interface UseSmudgeBrushToolOptions {
   /** Override the default keybinding (`{ key: 'S' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
+  /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
+   *  brush naming that key shares. Keep it stable across renders. */
+  share?: ToolOptionShare;
 }
 
 const SMUDGE_KEY: ToolKeybinding = { key: 'S' };
@@ -31,7 +34,7 @@ const SMUDGE_KEY: ToolKeybinding = { key: 'S' };
  * `toolOptionValues` dep.
  */
 export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Tool {
-  const { keybinding = SMUDGE_KEY } = options;
+  const { keybinding = SMUDGE_KEY, share } = options;
   return useMemo(() => defineTool({
     id: 'smudgeBrush',
     ...(keybinding ? { keybinding } : {}),
@@ -40,6 +43,6 @@ export function useSmudgeBrushTool(options: UseSmudgeBrushToolOptions = {}): Too
     cursor: 'crosshair',
     presentation: { label: 'Smudge brush', group: 'path', icon: icon('smudgeBrush') },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'smudgeBrush', opts: { id: 'smudgeBrush.drag' } }],
-    options: SMUDGE_BRUSH_OPTIONS,
-  }), [keybinding]);
+    options: shareToolOptions(SMUDGE_BRUSH_OPTIONS, share),
+  }), [keybinding, share]);
 }

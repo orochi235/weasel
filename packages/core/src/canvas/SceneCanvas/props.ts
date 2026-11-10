@@ -31,7 +31,7 @@ import type { SceneSlotConfig } from '../buildSceneLayer';
 import type { CanvasProps } from '../Canvas';
 import type { LayersMap } from '../layerSlots';
 import type { CanvasViewProps } from '../CanvasView';
-import type { InsertNodeFactory, InsertPaint } from '../deps';
+import type { InsertNodeFactory } from '../deps';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { SceneCameraProps } from './sceneViewBounds';
 import type { FeatureEntry } from './features';
@@ -195,12 +195,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `text`) adds insert support the kit doesn't ship. The dep supplies id,
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
-
-    /** The fill, stroke, and fill rule a kit-built shape is inserted with, by
-     *  tool `kind` and insert count; the kit keeps the geometry. Default
-     *  `paletteInsertPaint`, the kit palette in turn. A kind with a factory in
-     *  `insertNodeFactories` is not asked. */
-    insertPaint?: InsertPaint;
 
     /** External-content ingestion (OS drop / clipboard paste / picker).
      *

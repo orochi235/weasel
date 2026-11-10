@@ -210,8 +210,14 @@ export type {
 } from './tools/types';
 export type { ToolDef } from './tools/routeTypes';
 export { defineTool } from './tools/defineTool';
-export { createToolOptionValues, steppedOption, toolOptionParams, toolOptionSteps } from './tools/toolOptions';
-export type { ToolOptions, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
+export {
+  createToolOptionValues, heldToolOptions, keepToolOptions, setToolOption, shareToolOptions, SHARED_TOOL_OPTIONS,
+  steppedOption, toolOptionActionIds, toolOptionLeaf, toolOptionNumberLeaf, toolOptionParams, toolOptionSlot, withToolOptionDefault,
+} from './tools/toolOptions';
+export type { ToolOptions, ToolOptionShare, ToolOptionStep, ToolOptionValues } from './tools/toolOptions';
+export { toolOptionSteps } from './tools/toolOptionSteps';
+export { prefsToolOptionValues, toolOptionsPrefs } from './tools/toolOptionPrefs';
+export type { OptionedTool, ToolOptionPrefsStore, ToolOptionsPrefsSpec } from './tools/toolOptionPrefs';
 export { returnToModeDefault } from './tools/returnToModeDefault';
 export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas, toolStacksOf } from './tools/toolSet';
 export type { ToolSet, ToolSetOptions, ToolEntry } from './tools/toolSet';

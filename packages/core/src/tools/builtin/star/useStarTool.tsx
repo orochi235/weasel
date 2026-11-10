@@ -1,11 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
-import { SHAPE_COUNT_RANGE } from 'domains/paths/shapeGenerator';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
-import type { Action, WorldPoint } from '@weasel-js/routing';
-import { useLatest } from '@weasel-js/react';
+import { shareToolOptions, withToolOptionDefault, type Action, type WorldPoint } from '@weasel-js/routing';
+import { STAR_INSERT_PARAMS } from 'interactions/actions/insert/params';
+import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
+import { stepCountOption } from '../shared/countOption';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
@@ -16,14 +17,20 @@ export type StarPoint = WorldPoint;
 /** Options for `useStarTool`. */
 export interface UseStarToolOptions extends InsertToolOptions {
   label?: string;
-  /** Initial point count. Persists across gestures (Illustrator
-   *  convention), adjustable mid-drag via ArrowUp/Down or wheel
-   *  (range 3–32). */
+  /** The point count before its user changes it, the `points` option's
+   *  default. Persists across gestures (Illustrator convention), adjustable
+   *  mid-drag via ArrowUp/Down or wheel (range 3–32). */
   points?: number;
-  /** Inner-radius / outer-radius ratio. Default 0.5. Consumers wanting
-   *  per-instance ratios should override the `insert` dep. */
+  /** The inner-radius / outer-radius ratio before its user changes it, the
+   *  `innerRadiusRatio` option's default. Default 0.5. */
   innerRatio?: number;
 }
+
+/** The star tool's options: the style it draws with, shared with every shape tool, and its points and inner radius. */
+export const STAR_TOOL_OPTIONS = shapeToolOptions({
+  actionId: 'insert', name: 'Star', keys: ['fill', 'stroke', 'strokeWidth', 'fillRule'],
+  style: { fill: DEFAULT_SHAPE_PAINT, stroke: null }, own: STAR_INSERT_PARAMS.children,
+});
 
 /**
  * Drag-from-center star tool. Pointerdown sets center; drag determines
@@ -38,14 +45,12 @@ export interface UseStarToolOptions extends InsertToolOptions {
 export function useStarTool<TNode extends { id: string } = { id: string }>(
   options: UseStarToolOptions = {},
 ): Tool {
-  const {
-    points: initialPoints = 5,
-    innerRatio = 0.5,
-    label = 'Star',
-    behaviors,
-  } = options;
-  const pointsRef = useRef(initialPoints);
-  const innerRatioRef = useLatest(innerRatio);
+  const { points, innerRatio, label = 'Star', behaviors, share } = options;
+  const toolOptions = useMemo(
+    () => withToolOptionDefault(withToolOptionDefault(shareToolOptions(STAR_TOOL_OPTIONS, share), 'points', points),
+      'innerRadiusRatio', innerRatio),
+    [share, points, innerRatio],
+  );
   const [, setPointsTick] = useState(0);
   const bumpPoints = useCallback(() => setPointsTick((n) => n + 1), []);
 
@@ -55,25 +60,15 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
     () => ({
       id: 'star.adjustPoints',
       label: 'Star — adjust points',
+      requires: ['toolOptionValues'],
       invoker: {
         timing: 'immediate' as const,
-        run: (_deps, params) => {
-          const p = params as { deltaY?: number; delta?: number } | undefined;
-          // `delta` comes from the ArrowUp/ArrowDown key bindings; `deltaY`
-          // from the wheel. Wheel up (deltaY > 0 under natural scrolling)
-          // adds a point.
-          const step = p?.delta ?? (p?.deltaY !== undefined && p.deltaY !== 0
-            ? (p.deltaY > 0 ? 1 : -1)
-            : 0);
-          if (step === 0) return;
-          pointsRef.current = step > 0
-            ? Math.min(SHAPE_COUNT_RANGE.max, pointsRef.current + 1)
-            : Math.max(SHAPE_COUNT_RANGE.min, pointsRef.current - 1);
-          bumpPoints();
+        run: (deps, params) => {
+          if (stepCountOption('star', toolOptions, 'points', deps.toolOptionValues, params)) bumpPoints();
         },
       },
     }),
-    [bumpPoints],
+    [bumpPoints, toolOptions],
   );
 
   void ({} as TNode);
@@ -84,6 +79,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
         id: 'star',
         capabilities: ['creates-shapes'],
         hookName: 'useStarTool',
+        options: toolOptions,
         cursor: cursorFor('crosshair', { mark: 'star', fallback: 'crosshair' }),
         // Registered by <ToolActionsMounter>, inside the ActionsProvider —
         // see `ToolDef.actions` for why the hook can't register it itself.
@@ -99,15 +95,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           {
             spec: { kind: 'drag', mods: INSERT_DRAG_MODS },
             actionId: 'insert',
-            opts: {
-              id: 'star.drag',
-              params: () => ({
-                kind: 'star',
-                points: pointsRef.current,
-                innerRadiusRatio: innerRatioRef.current,
-              }),
-              ...insertBindingBehaviors(behaviors),
-            },
+            opts: { id: 'star.drag', params: { kind: 'star' }, ...insertBindingBehaviors(behaviors) },
           },
           INSERT_REPOSITION_BINDING,
           {
@@ -136,6 +124,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [adjustPointsAction, behaviors, label, innerRatioRef],
+    [adjustPointsAction, behaviors, label, toolOptions],
   );
 }

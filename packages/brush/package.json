@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/brush",
   "version": "1.18.2",
-  "description": "Brushes for weasel tools: one brush size shared across the tools that link to it, over the host's own tool option store.",
+  "description": "Brushes for weasel tools: the shared key a brush size is kept under, so the tools that name it share one size.",
   "weasel": {
     "tier": "other"
   },
@@ -32,7 +32,6 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@weasel-js/prefs": "1.18.2",
     "@weasel-js/routing": "1.18.2"
   },
   "files": [

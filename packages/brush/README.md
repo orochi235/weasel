@@ -5,15 +5,16 @@ Shift+wheel step. By default each tool keeps its own. This package is for an app
 across its brushes.
 
 ```ts
-import { createToolOptionValues } from '@weasel-js/core';
-import { linkBrushSize } from '@weasel-js/brush';
+import { shareBrushSize } from '@weasel-js/brush';
 
-const values = linkBrushSize(createToolOptionValues(), [smudgeTool, simplifyTool]);
-useToolOptionValues(values);
+const share = shareBrushSize(SMUDGE_BRUSH_OPTIONS); // { radiusPx: 'brushSizePx' }
+const smudge = useSmudgeBrushTool({ share });
+const simplify = useSimplifyBrushTool({ share: shareBrushSize(SIMPLIFY_BRUSH_OPTIONS) });
 ```
 
-`linkBrushSize` wraps the host's own option store, so the tunings, the step keys, the last-operation panel and an
-options row all see the shared size with no change of their own. Each tool reads it held to its own bounds; every
-other option stays per tool. Link only tools whose sizes measure the same thing.
+A shared option is an ordinary tool option kept under a shared key (`ToolOptions.share`), so the tunings, the step
+keys, the last-operation panel, and an options row all read the one size. Each tool reads it held to its own
+bounds; every other option stays its own. `BRUSH_SIZE_PX` is the key for a size in screen pixels; a brush sized in
+world units needs a key of its own.
 
 The ring cursor a brush shows is `brushRing` in `@weasel-js/cursor`.

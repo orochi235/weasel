@@ -26,6 +26,9 @@ export interface ActionTuning<P = Record<string, unknown>> {
    *  read on every call, and an ongoing action resolving its `opts.params`
    *  mid-gesture sees the value as it is then. */
   params?: ActionParams<P>;
+  /** Its params lie under every other tuning's, the last-operation panel's included: the values an action reads
+   *  where nothing more particular sets one, as a tool's options give their defaults. */
+  under?: boolean;
   /** Bindings added after the action's own `defaultBinding`. */
   bindings?: readonly TunedBinding<P>[];
   /** Keys for some of the action's `modifierRoles`, by role id. A binding's
@@ -133,6 +136,12 @@ function tuneOnce(action: Action, tuning: ActionTuning): Action {
     ...(active ? { active } : {}),
     ...(bindings ? { defaultBinding: bindings } : {}),
   };
+}
+
+/** `tunings` in the order they apply, those marked `under` first: a later tuning's params are laid over an earlier
+ *  one's. */
+export function underFirst(tunings: readonly ActionTuning[]): ActionTuning[] {
+  return [...tunings.filter((t) => t.under), ...tunings.filter((t) => !t.under)];
 }
 
 /** The params an invocation passing `given` starts with under `tunings`:

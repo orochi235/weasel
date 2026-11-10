@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
-import { actionCursor, createToolOptionValues, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
+import { actionCursor, createToolOptionValues, type Action, type ActionDeps, type ActionTuning, type InvocationCtx } from '@weasel-js/routing';
 import { brushRing } from '@weasel-js/cursor';
 import type { RenderLayer } from '@weasel-js/core';
-import { createScene } from '@weasel-js/core';
+import { createScene, tuneToolOptions } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
 import type { Skin } from '@weasel-js/animator';
 import { IDENTITY_JOINT, type Skeleton } from '@weasel-js/animator';
@@ -59,10 +59,10 @@ function setup(settings?: KitSettingsOverrides) {
     handle.onEnd?.({ ...ctx(0, 0, false), deps: {} as ActionDeps }, o.reason ?? 'commit');
     return true;
   };
-  const click = (x: number, y: number, alt = false) => {
+  const click = (x: number, y: number, alt = false, params: Record<string, unknown> = {}) => {
     const invoker = actionOf('weight.click').invoker;
     if (invoker?.timing !== 'immediate') throw new Error('weight.click is not immediate');
-    invoker.run(deps, { press: { x, y }, mods: { alt } });
+    invoker.run(deps, { ...params, press: { x, y }, mods: { alt } });
   };
   const skin = () => {
     const s = scene.get(sleeve)!.data.skin;
@@ -163,16 +163,24 @@ describe('useWeightTool', () => {
     expect(t.skin()?.a?.[0]).toBeGreaterThan(0);
   });
 
-  it('dabs a click with the radius the host holds for the tool', () => {
+  it('dabs a click with the radius the host holds for the tool, which its options tune the click with', () => {
     const t = setup();
     const values = createToolOptionValues();
     values.set('weight', 'radiusPx', 6);
-    (t.deps as { toolOptionValues?: unknown }).toolOptionValues = values;
+    const tuned = { params: {} as Record<string, unknown> };
+    const registry = { tune: (id: string, tuning: ActionTuning) => {
+      if (id === 'weight.click') tuned.params = (tuning.params as () => Record<string, unknown>)();
+      return () => {};
+    } };
+    const deps = { get: (name: string) => (name === 'toolOptionValues' ? values : name === 'activeTool' ? { active: 'weight' } : undefined) };
+    const read = () => tuneToolOptions(registry, deps as never, [t.tool]);
     t.state.setActive('a');
-    t.click(122, 120);
+    read();
+    t.click(122, 120, false, tuned.params);
     expect(t.skin()).toBeUndefined();
     values.set('weight', 'radiusPx', 30);
-    t.click(122, 120);
+    read();
+    t.click(122, 120, false, tuned.params);
     expect(t.skin()?.a?.[0]).toBeGreaterThan(0);
   });
 

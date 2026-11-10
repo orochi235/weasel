@@ -5,7 +5,7 @@ import { ThemeSwitcher } from '@weasel-js/ui/components/ThemeSwitcher';
 import { solidColorOf } from '@weasel-js/ui/paint-value';
 import type { ReactElement } from 'react';
 import { buildLabel, buildTitle } from '../../shared/buildInfo';
-import type { ActivePaint } from './ActiveSwatches';
+import type { ActivePaint } from './newShapePaint';
 import { useColorModeControl } from './colorMode';
 import type { DrawScene } from './drawDocument';
 import type { ModeMachine } from './modality';

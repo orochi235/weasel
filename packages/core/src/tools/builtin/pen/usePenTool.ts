@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
-import type { Action } from '@weasel-js/routing';
+import type { Action, ToolOptionShare } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import type { ActionDeps, ImmediateParams, InvocationCtx } from '@weasel-js/routing';
 import { pxExtent, withinPxRadius, nearestPathAnchor, reverseAnchors, type PathAnchorHit } from '@weasel-js/geom';
@@ -20,6 +19,7 @@ import type { ModifierState } from 'core/modifierState';
 import { cursorFor } from '@weasel-js/cursor';
 import { createPointerFollower } from '../shared/pointerFollower';
 import { icon } from '../../../icons.gen';
+import { penOptionValues, penToolOptions } from './penOptions';
 import { anchorCount, buildPath, freshScratch, resetScratch, startSubpath } from './penScratch';
 
 /**
@@ -100,8 +100,11 @@ export interface UsePenToolOptions {
    *  away. When false, the closed subpath stays in scratch so the user can
    *  start another subpath; commit then fires on Enter / ⌘-click /
    *  double-click, producing a compound path. Switching tools first discards
-   *  it, as Escape does. */
+   *  it, as Escape does. The `autoCommitOnClose` option's default. */
   autoCommitOnClose?: boolean;
+  /** Laid over the pen's own option shares: `{ fill: null }` keeps the pen's
+   *  fill its own. Keep it stable across renders. */
+  share?: ToolOptionShare;
   /** Screen-px hit radius for "click first anchor to close". Default the `targets.penCloseHitPx` kit setting, else `8`.
    *  Measured as a screen-space circle, so it stays round under non-uniform
    *  zoom; aligns with `useSelectTool.handleHitRadius`. */
@@ -121,14 +124,13 @@ export interface UsePenToolOptions {
 export function usePenTool(
   options: UsePenToolOptions = {},
 ): Tool {
-  const { autoSelect = true, autoCommitOnClose = true, closeHitRadius } = options;
+  const { autoSelect = true, autoCommitOnClose, closeHitRadius, share } = options;
+  const toolOptions = useMemo(() => penToolOptions(share, autoCommitOnClose), [share, autoCommitOnClose]);
 
   const scratchRef = useRef<PenScratch | null>(null);
   if (scratchRef.current === null) scratchRef.current = freshScratch();
 
-  // Latest options stashed so handlers see fresh values without rebuilding
-  // the Tool record.
-  const optsRef = useLatest({ autoSelect, autoCommitOnClose, closeHitRadius, kitSettings: useKitSettings() });
+  const optsRef = useLatest({ autoSelect, toolOptions, closeHitRadius, kitSettings: useKitSettings() });
   const [snaps] = useState(pointSnap);
 
   // Scratch mutations alone don't trigger React re-renders, so the preview
@@ -178,7 +180,7 @@ export function usePenTool(
       (open === null || open.closed);
     const path = buildPath(s.finishedSubpaths, open);
     const select = optsRef.current.autoSelect ? selectCommitted(deps.selection) : undefined;
-    deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed }, undefined, select);
+    deps.insert?.commit(boundsOfPath(path), { kind: 'path', path, closed: allClosed, style: penOptionValues(optsRef.current.toolOptions, deps).style }, undefined, select);
     resetScratch(s);
   }, [commitContinuation, optsRef]);
 
@@ -240,7 +242,7 @@ export function usePenTool(
       keptId = cont.id;
     } else {
       const path = anchorsToPath([...added, ...rest.anchors], [...addedClosed, ...rest.closed]);
-      const built = deps.insert!.build!(boundsOfPath(path), { kind: 'path', path, closed: false });
+      const built = deps.insert!.build!(boundsOfPath(path), { kind: 'path', path, closed: false, style: penOptionValues(optsRef.current.toolOptions, deps).style });
       if (built === null) return;
       ops.push(...built.ops);
       keptId = built.id;
@@ -333,7 +335,7 @@ export function usePenTool(
         id: 'pen.placeAnchor',
         label: 'Pen — place anchor',
         eligible: { capability: 'creates-paths' },
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap', 'toolOptionValues'],
         invoker: {
           timing: 'immediate' as const,
           run: (deps, params) => {
@@ -357,7 +359,7 @@ export function usePenTool(
                 scratch.finishedSubpaths.push(scratch.current);
                 scratch.current = null;
                 scratch.closeHintActive = false;
-                if (optsRef.current.autoCommitOnClose) { commit(scratch, deps); scratch.justClosed = true; }
+                if (penOptionValues(optsRef.current.toolOptions, deps).autoCommitOnClose) { commit(scratch, deps); scratch.justClosed = true; }
                 trail.update(deps);
                 return;
               }
@@ -376,7 +378,7 @@ export function usePenTool(
         id: 'pen.finishOpen',
         label: 'Pen — finish open path',
         eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'selection'],
+        requires: ['editAnchors', 'insert', 'selection', 'toolOptionValues'],
         // Needs a path, or a double click's own lone anchor, to take back. Declining lets a
         // ⌘-click with fewer than two anchors reach the plain-click binding.
         enabled: () => (anchorCount(s()) >= 2 || s().current?.followsClose ? true : ActionDisabledReason.NotApplicable),
@@ -407,7 +409,7 @@ export function usePenTool(
         label: 'Pen — drag out a bezier handle',
         eligible: { capability: 'creates-paths' },
         modifierRoles: PEN_HANDLE_ROLES,
-        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap'],
+        requires: ['view', 'pointer', 'areaSelect', 'editAnchors', 'scene', 'applyOps', 'insert', 'selection', 'snap', 'toolOptionValues'],
         invoker: {
           timing: 'ongoing' as const,
           start: (ctx: InvocationCtx) => {
@@ -472,7 +474,7 @@ export function usePenTool(
         id: 'pen.finish',
         label: 'Pen — finish path',
         eligible: { capability: 'creates-paths' },
-        requires: ['editAnchors', 'insert', 'selection'],
+        requires: ['editAnchors', 'insert', 'selection', 'toolOptionValues'],
         enabled: () => (anchorCount(s()) > 0 ? true : ActionDisabledReason.NotApplicable),
         invoker: {
           timing: 'immediate' as const,
@@ -513,6 +515,7 @@ export function usePenTool(
       keybinding: { key: 'P' },
       capabilities: ['creates-paths'],
       hookName: 'usePenTool',
+      options: toolOptions,
       cursor: () =>
         scratchRef.current?.closeHintActive
           ? 'pointer'
@@ -549,21 +552,9 @@ export function usePenTool(
         { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel', opts: { id: 'pen.cancel' } },
       ],
     });
-  }, [actions, trail, overlay]);
+  }, [actions, trail, overlay, toolOptions]);
 }
 
-usePenTool.prefs = {
-  name: 'Pen',
-  description: 'Pen-tool behavior.',
-  children: {
-    autoCommitOnClose: {
-      kind: 'boolean',
-      name: 'Auto-commit pen on close',
-      description: "When you click the pen tool's first anchor to close a region, commit immediately so it renders with its fill. Off: keep the path in preview until you press Enter (lets you build a compound path from multiple closed subpaths).",
-      default: true,
-    },
-  },
-} satisfies PrefGroup;
 
 const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: false };
 

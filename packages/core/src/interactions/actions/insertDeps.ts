@@ -16,7 +16,8 @@ import type { CommitSelection } from './defaultCommitAdapter';
  *
  * `bounds` is still passed alongside as a useful AABB pose hint — factories
  * may use it as the node's pose even when richer geometry is available. Any may carry a `minSize`
- * (`{ width, height }`), which the kit's factories keep as `data.minSize` so a resize holds to it.
+ * (`{ width, height }`), which the kit's factories keep as `data.minSize` so a resize holds to it, and a `style`
+ * (`InsertStyle`), the fill, stroke, and fill rule the kit's factories paint the node with.
  */
 export type InsertExtras =
   | { kind: 'rect' }

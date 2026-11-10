@@ -313,8 +313,8 @@ describe('<SceneCanvas features>', () => {
   });
 });
 
-describe('<SceneCanvas insertPaint>', () => {
-  it('paints the shape the insert dep builds', () => {
+describe('the insert dep’s paint', () => {
+  it('paints a kit shape with the style its extras carry', () => {
     let commit!: (bounds: unknown, extras: unknown) => NodeId | null;
     function Grab() {
       const deps = useDepRegistry();
@@ -325,12 +325,12 @@ describe('<SceneCanvas insertPaint>', () => {
     }
     const scene = createScene<Record<string, unknown>, L, P>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas scene={scene} width={200} height={200} insertPaint={() => ({ fill: null })}>
+      <SceneCanvas scene={scene} width={200} height={200}>
         <Grab />
       </SceneCanvas>,
     );
     let id: NodeId | null = null;
-    act(() => { id = commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' }); });
+    act(() => { id = commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect', style: { fill: null } }); });
     expect(scene.get(id!)!.data.fill).toBeNull();
   });
 
@@ -345,7 +345,7 @@ describe('<SceneCanvas insertPaint>', () => {
     }
     const scene = createScene<{ path: Record<string, unknown> }, L, P>({ systemLayers: [{ id: 'main' }] });
     render(
-      <SceneCanvas scene={scene} width={200} height={200} insertPaint={() => ({ fillRule: 'evenodd' })}>
+      <SceneCanvas scene={scene} width={200} height={200}>
         <Grab />
       </SceneCanvas>,
     );
@@ -353,8 +353,9 @@ describe('<SceneCanvas insertPaint>', () => {
     let trail: NodeId | null = null;
     let rect: NodeId | null = null;
     act(() => {
-      trail = commit(box, { kind: 'pencil', samples: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }] });
-      rect = commit(box, { kind: 'rect' });
+      const style = { fillRule: 'evenodd' };
+      trail = commit(box, { kind: 'pencil', samples: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }], style });
+      rect = commit(box, { kind: 'rect', style });
     });
     expect(scene.get(trail!)!.data.path.fillRule).toBe('evenodd');
     expect(scene.get(rect!)!.data.path).toEqual({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
