@@ -13,6 +13,7 @@ export {
   cssFontFamily,
   cssFontFamilyLoading,
   cullDrawCommands,
+  dropShadowCommand,
   enableLocalFontOutlines,
   fontOutlineRegistry,
   fontRegistry,

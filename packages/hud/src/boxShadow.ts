@@ -1,13 +1,8 @@
-import type { DrawCommand } from '@weasel-js/core/renderer';
-import { pathFromD, roundRectPath, type Path } from '@weasel-js/geom';
+import { dropShadowCommand, type DrawCommand } from '@weasel-js/core/renderer';
+import { pathFromD, roundRectPath } from '@weasel-js/geom';
 import { resolveCurrentColor, type BoxShadow } from '@weasel-js/theme';
 import type { WidgetBounds } from './widget';
 import { arcRectD } from './glyph';
-
-// A blurred layer is drawn as nested rounded rects reaching blur / 2 either side of its edge,
-// whose overlap builds the falloff.
-const BLUR_LAYERS = 7;
-const BLUR_LAYER_ALPHA = 0.16;
 
 const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
 
@@ -17,22 +12,7 @@ function roundRectD(x: number, y: number, w: number, h: number, r: number): stri
 }
 
 function outer(b: WidgetBounds, radius: number, s: BoxShadow, color: string): DrawCommand {
-  const rect = (e: number): Path | null => {
-    const w = b.w + e * 2;
-    const h = b.h + e * 2;
-    return w > 0 && h > 0 ? roundRectPath(b.x + s.x - e, b.y + s.y - e, w, h, Math.max(0, radius + e)) : null;
-  };
-  if (s.blur <= 0) {
-    const p = rect(s.spread);
-    return { kind: 'group', children: p ? [{ kind: 'path', path: p, fill: solid(color) }] : [] };
-  }
-  const children: DrawCommand[] = [];
-  const step = s.blur / (BLUR_LAYERS - 1);
-  for (let i = 0; i < BLUR_LAYERS; i++) {
-    const p = rect(s.spread + s.blur / 2 - i * step);
-    if (p) children.push({ kind: 'path', path: p, fill: solid(color) });
-  }
-  return { kind: 'group', alpha: BLUR_LAYER_ALPHA, children };
+  return dropShadowCommand({ x: b.x, y: b.y, width: b.w, height: b.h }, radius, s, color);
 }
 
 /** An inset layer, hard-edged whatever its blur: the box less itself moved by the offset and shrunk by the spread. */

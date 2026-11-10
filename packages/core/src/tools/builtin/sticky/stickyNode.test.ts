@@ -13,6 +13,8 @@ describe('stickyData', () => {
       overflow: 'clip',
       minSize: STICKY_DEFAULTS.minSize,
       fill: { paint: { kind: 'solid', color: '#000' } },
+      edge: STICKY_DEFAULTS.edge,
+      shadow: STICKY_DEFAULTS.shadow,
     });
   });
 
@@ -28,15 +30,19 @@ describe('stickyData', () => {
     expect(stickyData({
       background, fill, padding: 4, style: { fontSize: 12 }, verticalAlign: 'top', text: 'x',
       overflow: 'visible', minSize: { width: 30, height: 20 },
+      edge: { width: 3, shade: 0.5 }, shadow: { x: 1, y: 1, blur: 0, alpha: 0.5 },
     })).toEqual({
       text: 'x', background, fill, padding: 4, style: { fontSize: 12 }, verticalAlign: 'top',
       overflow: 'visible', minSize: { width: 30, height: 20 },
+      edge: { width: 3, shade: 0.5 }, shadow: { x: 1, y: 1, blur: 0, alpha: 0.5 },
     });
   });
 
   it('carries none of the insert bookkeeping onto the node', () => {
     const data = stickyData({ kind: 'sticky', originMode: 'corner', size: { width: 1, height: 1 } } as never);
-    expect(Object.keys(data).sort()).toEqual(['background', 'fill', 'minSize', 'overflow', 'padding', 'style', 'text', 'verticalAlign']);
+    expect(Object.keys(data).sort()).toEqual([
+      'background', 'edge', 'fill', 'minSize', 'overflow', 'padding', 'shadow', 'style', 'text', 'verticalAlign',
+    ]);
   });
 });
 

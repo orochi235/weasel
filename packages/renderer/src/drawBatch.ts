@@ -238,10 +238,9 @@ export class DrawBatch extends BatchStage {
    *
    * A synthetic oblique is sheared and the glyph's turn applied here, before
    * `m` (`placeGlyph`); `tanItalic` is 0 for an upright face. `grow` is the
-   * screen distance the quad grows by for area coverage, and a grown quad's
-   * corners ride `a_post` too (`shaders/glyphCell.ts`). Corners wind as
-   * `pushQuad`'s do. A grown quad the clip crosses is refused, not cut: its
-   * corner index is decoded with `floor`, so an interpolated one names the wrong corner.
+   * screen distance the quad grows by for area coverage, and a grown quad's corners ride `a_post`
+   * too (`shaders/glyphCell.ts`), so a clip that crosses one refuses it rather than interpolating
+   * them into the wrong corner. Corners wind as `pushQuad`'s do.
    */
   pushGlyph(
     quads: ArrayLike<number>, at: number, ox: number, oy: number, tanItalic: number, m: GlMat3,

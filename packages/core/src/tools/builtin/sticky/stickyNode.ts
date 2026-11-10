@@ -2,6 +2,7 @@ import type { Fill } from '@weasel-js/paint';
 import { DEFAULT_TEXT_FILL, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import type { InsertNodeFactory } from '../../../canvas/deps/insert';
 import type { TextNodeData, TextOverflow } from '../../../canvas/nodeShapes/textPainter';
+import type { TextEdge, TextShadow } from '../../../canvas/nodeShapes/textFrame';
 import type { MinSize } from '../../../core/scene/minSize';
 
 /** How a sticky note looks as it is made, named as the text node it becomes
@@ -18,6 +19,10 @@ export interface StickyStyle {
   verticalAlign?: TextVerticalAlign;
   /** What happens to text that outgrows the note. */
   overflow?: TextOverflow;
+  /** The rule round the note, in a darker shade of its paper. */
+  edge?: TextEdge;
+  /** The shadow the note casts. */
+  shadow?: TextShadow;
   /** The smallest note a drag makes or a resize leaves, in world units. */
   minSize?: MinSize;
   /** The note a click makes, centered on the click, in world units. A drag
@@ -33,6 +38,8 @@ export const STICKY_DEFAULTS = {
   style: { fontSize: 18, align: 'center', wrap: true },
   verticalAlign: 'center',
   overflow: 'clip',
+  edge: { width: 1, shade: 0.18 },
+  shadow: { x: 0, y: 2, blur: 6, alpha: 0.18 },
   // One line of the default type inside the default padding.
   minSize: { width: 48, height: 48 },
   size: { width: 160, height: 160 },
@@ -52,6 +59,8 @@ export function stickyData(look: StickyStyle & { text?: string }): TextNodeData 
     style: look.style ?? STICKY_DEFAULTS.style,
     verticalAlign: look.verticalAlign ?? STICKY_DEFAULTS.verticalAlign,
     overflow: look.overflow ?? STICKY_DEFAULTS.overflow,
+    edge: look.edge ?? STICKY_DEFAULTS.edge,
+    shadow: look.shadow ?? STICKY_DEFAULTS.shadow,
     minSize: look.minSize ?? STICKY_DEFAULTS.minSize,
     fill: look.fill ?? STICKY_DEFAULTS.fill,
   };

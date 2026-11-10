@@ -17,6 +17,7 @@ import { inkReach, strokeOutsetPerAxis } from './nodePaint';
 import { INHERIT, resolveFill, resolveStroke } from '@weasel-js/paint';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
 import { paintsPose } from './poseBox';
+import { textFrameOf, textShadowBox, type TextEdge, type TextShadow } from './textFrame';
 
 /** The `data` a `kit:text` node carries. */
 export interface TextNodeData {
@@ -35,6 +36,10 @@ export interface TextNodeData {
   /** What happens to text that runs past the pose box: `'visible'` (the
    *  default) draws it there, `'clip'` cuts it at the box's edge. */
   overflow?: TextOverflow;
+  /** A rule just inside the box in a shade of `background`. Needs a solid background. */
+  edge?: TextEdge;
+  /** The shadow `background` casts. Needs a background. */
+  shadow?: TextShadow;
 }
 
 /** How a text node treats lines that run past its box. */
@@ -101,10 +106,16 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const bg = resolveFill(d.background);
     if (!bg) return [text];
     const fill = commandFill(bg, pose);
-    return [
-      { kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, ...(fill ? { fill } : {}) },
-      text,
-    ];
+    const { shadow, edge } = textFrameOf(d, pose);
+    const out: DrawCommand[] = [];
+    if (shadow) {
+      const paint = { paint: { kind: 'solid' as const, color: shadow.color } };
+      out.push({ kind: 'group', alpha: shadow.opacity, children: shadow.paths.map((path) => ({ kind: 'path' as const, path, fill: paint })) });
+    }
+    out.push({ kind: 'path', path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height }, ...(fill ? { fill } : {}) });
+    if (edge) out.push({ kind: 'path', path: edge.path, stroke: { paint: { kind: 'solid', color: edge.color }, width: edge.width } });
+    out.push(text);
+    return out;
   }, ctx?.inherited),
   // The pose is a layout box, not a bounding box: the union of the line boxes is what
   // the node actually covers, so picking, lasso, and clipping stop grabbing blank space.
@@ -135,9 +146,16 @@ export const TEXT_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as TextNodeData;
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
-    return stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited)), strokeOutsetPerAxis(stroke, ctx)) : null;
+    const lines = stroke ? strokedLinesBox(pose, textLineBoxes(textPoseOf(d, pose, ctx?.inherited)), strokeOutsetPerAxis(stroke, ctx)) : null;
+    const shadow = textShadowBox(d, pose);
+    return shadow ? unionBox(lines ?? pose, shadow) : lines;
   },
 };
+
+function unionBox(a: Box, b: Box): Rect {
+  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
+}
 
 /** Each of `rects` cut to `box`, leaving out any it does not overlap. */
 function cutRects(rects: readonly Box[], box: Box): Box[] {

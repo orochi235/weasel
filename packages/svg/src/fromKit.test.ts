@@ -197,6 +197,22 @@ describe('svgLeafFromKit', () => {
     expect(g.children.map((c) => c.kind)).toEqual(['text']);
   });
 
+  it("writes a text leaf's edge over its box and its shadow under it, outside the clip", () => {
+    const node = svgLeafFromKit({
+      text: 'hi', overflow: 'clip', background: { paint: solid('#ffee00') },
+      edge: { width: 2, shade: 0.5 }, shadow: { x: 0, y: 3, blur: 6, alpha: 0.2 },
+    }, BOX) as SvgGroupNode;
+    const [shadow, framed] = node.children as [SvgGroupNode, SvgGroupNode];
+    expect(node.clip).toBeUndefined();
+    expect(shadow).toMatchObject({ kind: 'group', opacity: expect.closeTo(0.16) });
+    expect(shadow.children.length).toBeGreaterThan(1);
+    expect(framed.clip).toEqual(rect);
+    expect(framed.children.map((c) => c.kind)).toEqual(['path', 'path', 'text']);
+    const edge = framed.children[1] as SvgPathNode;
+    expect(edge.fill).toEqual({ kind: 'none' });
+    expect(edge.stroke).toMatchObject({ width: 2 });
+  });
+
   it('writes an image leaf, and null for data no built-in painter draws', () => {
     expect(svgLeafFromKit({ image: { src: 'a.png' } }, BOX)).toMatchObject({ kind: 'image', href: 'a.png' });
     expect(svgLeafFromKit({}, BOX)).toBeNull();
