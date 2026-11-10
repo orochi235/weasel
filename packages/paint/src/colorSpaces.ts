@@ -1,6 +1,7 @@
 // sRGB ↔ OKLab conversion. Reference: https://bottosson.github.io/posts/oklab/
 
 import { lerpHueDeg, type HueInterpolation } from './hue';
+import { lerp } from './lerp';
 import { byteHex, hexToRgbBytes } from './hex';
 import { hslToSrgb, srgbToHsl } from './hsl';
 import { shortArc } from './shortArc';
@@ -112,9 +113,9 @@ export function lerpOklab(
   t: number,
 ): [number, number, number] {
   return [
-    from[0] + (to[0] - from[0]) * t,
-    from[1] + (to[1] - from[1]) * t,
-    from[2] + (to[2] - from[2]) * t,
+    lerp(from[0], to[0], t),
+    lerp(from[1], to[1], t),
+    lerp(from[2], to[2], t),
   ];
 }
 
@@ -148,8 +149,8 @@ export function lerpOklch(
   const h2 = C2 < C_EPS ? h1Raw : h2Raw;
   const dh = shortArc(h2 - h1);
   return [
-    L1 + (L2 - L1) * t,
-    C1 + (C2 - C1) * t,
+    lerp(L1, L2, t),
+    lerp(C1, C2, t),
     h1 + dh * t,
   ];
 }
@@ -186,7 +187,7 @@ export function lerpColorArray(
     // Pure float lerp — no rounding (which previously discretized 0..1
     // inputs to 0/1, giving the cycle its 'choppy 8-corner' look).
     for (let i = 0; i < from.length; i++) {
-      out[i] = from[i] + (to[i] - from[i]) * t;
+      out[i] = lerp(from[i], to[i], t);
     }
     return out;
   }
@@ -203,7 +204,7 @@ export function lerpColorArray(
       out[k] = u2f(r);
       out[k + 1] = u2f(g);
       out[k + 2] = u2f(b);
-      out[k + 3] = from[k + 3] + (to[k + 3] - from[k + 3]) * t;
+      out[k + 3] = lerp(from[k + 3], to[k + 3], t);
     }
     return out;
   }
@@ -216,7 +217,7 @@ export function lerpColorArray(
     out[k] = u2f(r);
     out[k + 1] = u2f(g);
     out[k + 2] = u2f(b);
-    out[k + 3] = from[k + 3] + (to[k + 3] - from[k + 3]) * t;
+    out[k + 3] = lerp(from[k + 3], to[k + 3], t);
   }
   return out;
 }
@@ -298,15 +299,15 @@ type Polar = readonly [radius: number, hueDeg: number, axis: number];
 function lerpPolar(a: Polar, b: Polar, t: number, method: HueInterpolation, hueT: number): [number, number, number] {
   const h1 = a[0] < ACHROMATIC_EPS ? b[1] : a[1];
   const h2 = b[0] < ACHROMATIC_EPS ? a[1] : b[1];
-  return [a[0] + (b[0] - a[0]) * t, lerpHueDeg(h1, h2, hueT, method), a[2] + (b[2] - a[2]) * t];
+  return [lerp(a[0], b[0], t), lerpHueDeg(h1, h2, hueT, method), lerp(a[2], b[2], t)];
 }
 
 type Rgb = readonly [number, number, number];
 
 const lerp3 = (a: Rgb, b: Rgb, t: number): [number, number, number] => [
-  a[0] + (b[0] - a[0]) * t,
-  a[1] + (b[1] - a[1]) * t,
-  a[2] + (b[2] - a[2]) * t,
+  lerp(a[0], b[0], t),
+  lerp(a[1], b[1], t),
+  lerp(a[2], b[2], t),
 ];
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);

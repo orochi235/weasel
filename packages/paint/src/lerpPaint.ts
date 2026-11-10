@@ -8,6 +8,7 @@ import { parseColor, rgbaToHex } from './color';
 import { isSolidPaint } from './commandPaint';
 import { mixOklab } from './mix';
 import { isGradientPaint } from './gradient';
+import { lerp } from './lerp';
 import type { Fill, GradStop, GradientPaint, Paint, ScreenLength, Stroke } from './paint';
 
 type Rgba = [number, number, number, number];
@@ -32,9 +33,6 @@ function solidOf(rgba: Rgba): Paint {
 function solidRgba(paint: Paint): Rgba | null {
   return isSolidPaint(paint) ? rgbaOf(paint.color, paint.opacity) : null;
 }
-
-/** `a + (b - a) * t`, which can miss `b` by an ulp at `t = 1`, so that end is `b` itself. */
-const lerp = (a: number, b: number, t: number): number => (t === 1 ? b : a + (b - a) * t);
 
 /**
  * The paint `t` of the way from `a` to `b`.
