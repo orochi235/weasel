@@ -37,6 +37,12 @@ describe('steppedOption', () => {
   it('moves at least one step when rounding would undo it', () => {
     expect(steppedOption(leaf('radiusPx'), 3, OPTIONS.size!, 1)).toBe(4);
   });
+
+  it('moves at least one step on a fractional step, where rounding lands a float error away from the start', () => {
+    const tenths: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0.3, min: 0, max: 10, step: 0.1 };
+    expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, 1)).toBe(0.4);
+    expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, -1)).toBe(0.2);
+  });
 });
 
 describe('toolOptionParams', () => {

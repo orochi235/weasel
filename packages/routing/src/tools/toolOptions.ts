@@ -178,7 +178,7 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   const moved = step.times !== undefined ? value * step.times ** dir : value + dir * (step.plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
   // A step that rounds back to where it began still moves one `step`.
-  const next = snapped === value && leaf.step ? value + dir * leaf.step : snapped;
+  const next = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
   const clamped = Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, next));
   return Number(clamped.toFixed(6));
 }
