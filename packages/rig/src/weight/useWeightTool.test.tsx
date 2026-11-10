@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { polygonFromPoints, type Path } from '@weasel-js/geom';
-import type { Action, ActionDeps, InvocationCtx } from '@weasel-js/routing';
+import { actionCursor, createToolOptionValues, type Action, type ActionDeps, type InvocationCtx } from '@weasel-js/routing';
+import { brushRing } from '@weasel-js/cursor';
 import type { RenderLayer } from '@weasel-js/core';
 import { createScene } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core';
@@ -46,11 +47,13 @@ function setup(settings?: KitSettingsOverrides) {
     drag: { start: { x, y }, current: { x, y }, delta: { x: 0, y: 0 } },
   });
   /** Press at the first point and move through the rest. */
-  const stroke = (points: [number, number][], o: { alt?: boolean; reason?: 'commit' | 'cancel'; peek?: () => void } = {}) => {
+  const stroke = (points: [number, number][], o: {
+    alt?: boolean; reason?: 'commit' | 'cancel'; peek?: () => void; params?: Record<string, unknown>;
+  } = {}) => {
     const action = actionOf('weight.paint');
     if (action.enabled && action.enabled(deps) !== true) return false;
     if (action.invoker?.timing !== 'ongoing') throw new Error('weight.paint is not ongoing');
-    const handle = action.invoker.start(ctx(points[0][0], points[0][1], !!o.alt), undefined);
+    const handle = action.invoker.start(ctx(points[0][0], points[0][1], !!o.alt), o.params ? { params: o.params } : undefined);
     for (const [x, y] of points.slice(1)) handle.onMove?.(ctx(x, y, !!o.alt));
     o.peek?.();
     handle.onEnd?.({ ...ctx(0, 0, false), deps: {} as ActionDeps }, o.reason ?? 'commit');
@@ -67,7 +70,7 @@ function setup(settings?: KitSettingsOverrides) {
   };
   const layers = result.current.overlay as RenderLayer<unknown>[];
   const painted = (i: number) => layers[i].draw(undefined, VIEW, { width: 400, height: 400, dpr: 1 });
-  return { scene, state, stroke, click, skin, painted };
+  return { scene, state, stroke, click, skin, painted, deps, actionOf, tool: result.current };
 }
 
 describe('useWeightTool', () => {
@@ -142,6 +145,35 @@ describe('useWeightTool', () => {
     t.click(290, 120);
     expect(t.skin()).toEqual({ b: [0, 0, 1, 0] });
     expect(t.state.active()).toBe('b');
+  });
+
+  it('declares its radius as its size option, and draws a ring that size as its cursor', () => {
+    const t = setup();
+    expect(t.tool.options?.size?.option).toBe('radiusPx');
+    expect(actionCursor(t.actionOf('weight.paint'), { radiusPx: 30 })).toEqual(brushRing(30));
+  });
+
+  it('paints with the radius its params give', () => {
+    const t = setup();
+    t.state.setActive('a');
+    // 12 from the first point: outside a radius of 6, inside one of 30.
+    t.stroke([[122, 120]], { params: { radiusPx: 6 } });
+    expect(t.skin()).toBeUndefined();
+    t.stroke([[122, 120]], { params: { radiusPx: 30 } });
+    expect(t.skin()?.a?.[0]).toBeGreaterThan(0);
+  });
+
+  it('dabs a click with the radius the host holds for the tool', () => {
+    const t = setup();
+    const values = createToolOptionValues();
+    values.set('weight', 'radiusPx', 6);
+    (t.deps as { toolOptionValues?: unknown }).toolOptionValues = values;
+    t.state.setActive('a');
+    t.click(122, 120);
+    expect(t.skin()).toBeUndefined();
+    values.set('weight', 'radiusPx', 30);
+    t.click(122, 120);
+    expect(t.skin()?.a?.[0]).toBeGreaterThan(0);
   });
 
   it('declines to paint with no joint active', () => {

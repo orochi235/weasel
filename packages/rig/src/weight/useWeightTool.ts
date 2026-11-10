@@ -7,7 +7,7 @@ import type { Tool } from '@weasel-js/core';
 import { createBoneOverlay } from '../bone/boneOverlay';
 import { placedRig } from '../bone/placedRig';
 import { createRigEditState, type RigEditState } from '../bone/rigEditState';
-import { createWeightActions, weighedPaths, type WeightEnv } from './weightActions';
+import { createWeightActions, weighedPaths, WEIGHT_BRUSH_OPTIONS, type WeightEnv } from './weightActions';
 import { createWeightOverlay } from './weightOverlay';
 import { icon } from '../icons.gen';
 
@@ -20,8 +20,6 @@ export interface UseWeightToolOptions {
   state?: RigEditState;
   /** Override the default keybinding (`{ key: 'W' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
-  /** The brush's radius in screen px. Default 24. */
-  radius?: number;
   /** Screen px around a joint within which a click picks it. Default 10. */
   reach?: number;
 }
@@ -31,22 +29,22 @@ export interface UseWeightToolOptions {
  * their `data.skin`. A click on a joint makes it the active one. A drag is a round brush:
  * points under it follow the active joint more, the nearer the brush's center, and their
  * other joints give way; with Alt held they follow it less. A click away from any joint is
- * one dab. Every point shows as a dot colored by the active joint's share of it. A stroke is
- * one undo entry, and until it ends its weights are in `state.painted()`, which `useRigNode`
+ * one dab. Its size is its options' `radiusPx` ({@link WEIGHT_BRUSH_OPTIONS}), stepped by `[` `]`
+ * and Shift+wheel, and its cursor is a ring that size. Every point shows as a dot colored by
+ * the active joint's share of it. A stroke is one undo entry, and until it ends its weights are in `state.painted()`, which `useRigNode`
  * binds when given the same `state` as `painting`.
  */
 export function useWeightTool(options: UseWeightToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
   const opts = useLatest({
-    scene: options.scene, rig: options.rig, radius: options.radius ?? 24, reach: options.reach ?? 10,
+    scene: options.scene, rig: options.rig, reach: options.reach ?? 10,
   });
   const env = useMemo((): WeightEnv => ({
     state,
     scene: () => opts.current.scene,
     placed: () => placedRig(opts.current.scene, opts.current.rig()),
     reachPx: () => opts.current.reach,
-    radiusPx: () => opts.current.radius,
     painted: state.painted,
     paint: state.paint,
   }), [opts, state]);
@@ -79,6 +77,7 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
     presentation: { label: 'Weight', icon: icon('weight'), group: 'shape' },
     ...(keybinding === null ? {} : { keybinding: keybinding ?? { key: 'W' } }),
     actions,
+    options: WEIGHT_BRUSH_OPTIONS,
     overlay,
     onDeactivate: () => env.paint(null),
     bindings: [
