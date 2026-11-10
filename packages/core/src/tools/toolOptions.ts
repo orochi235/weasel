@@ -45,7 +45,8 @@ export function useFallbackToolOptionValues(): void {
  *  tool's bindings name none of its options. Several tools
  *  can bind one action (every shape tool binds `insert`), and only the active
  *  tool's options reach it. The options and the action's last-operation panel
- *  are one setting: a value the panel sets is written back to the dep.
+ *  are one setting: a value the panel sets is written back to the dep, for the
+ *  tool whose options the action last read, active or not.
  *  Returns a release. */
 export function tuneToolOptions(
   registry: Pick<ActionsRegistry, 'tune'>,
@@ -53,6 +54,8 @@ export function tuneToolOptions(
   tools: Iterable<Tool>,
 ): () => void {
   const releases: Array<() => void> = [];
+  // The tool whose options each action last read: the one a panel change to its last run belongs to.
+  const readBy = new Map<string, string>();
   for (const tool of tools) {
     const options = tool.options;
     if (!options) continue;
@@ -60,10 +63,14 @@ export function tuneToolOptions(
     for (const actionId of toolOptionActionIds(options)) {
       releases.push(registry.tune(actionId, {
         under: true,
-        params: () => (active() ? toolOptionParams(tool.id, options, deps?.get('toolOptionValues')) : {}),
+        params: () => {
+          if (!active()) return {};
+          readBy.set(actionId, tool.id);
+          return toolOptionParams(tool.id, options, deps?.get('toolOptionValues'));
+        },
         keep: (params) => {
           const values = deps?.get('toolOptionValues');
-          if (values && active()) keepToolOptions(tool.id, options, values, params);
+          if (values && (readBy.get(actionId) ?? (active() ? tool.id : null)) === tool.id) keepToolOptions(tool.id, options, values, params);
         },
       }));
     }
