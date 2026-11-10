@@ -9,7 +9,8 @@
  * cut each staged polygon to the rect before it joins the run.
  *
  * Exact, not approximate: every attribute a batch vertex carries is affine
- * across the polygon it belongs to, so interpolating along a cut edge gives
+ * across the polygon it belongs to, except a grown glyph's packed corner, which
+ * `pushGlyph` never lets a cut reach. So interpolating along a cut edge gives
  * the value the rasterizer would have produced there, and the cut polygon
  * covers the same pixel centers the stencil would have passed.
  *

@@ -86,9 +86,10 @@ export abstract class BatchStage {
    * a slanted edge, the quad's or a clip's, is cut only where the clip says so
    * (`BatchCut.slanted`, and `batchClip.ts` for why); otherwise the quad is
    * rolled back and refused, for the caller to clip another way
-   * (`enterUncut`).
+   * (`enterUncut`). So is any crossing when `cuttable` is false: a quad whose
+   * attributes a cut may not interpolate.
    */
-  protected fitQuad(v0: number, i0: number): boolean {
+  protected fitQuad(v0: number, i0: number, cuttable = true): boolean {
     const cut = this.clip;
     if (cut === null) return true;
     const v = this.verts;
@@ -100,6 +101,7 @@ export abstract class BatchStage {
     this.nVerts = v0;
     this.nIdx = i0;
     if (cutMisses(cut, v, at, 4, F)) return true;
+    if (!cuttable) return false;
     if (!cut.slanted) {
       const ax = v[at], ay = v[at + 1], bx = v[at + F], by = v[at + F + 1];
       const cx = v[at + 2 * F], cy = v[at + 2 * F + 1], dx = v[at + 3 * F], dy = v[at + 3 * F + 1];
