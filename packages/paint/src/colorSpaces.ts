@@ -277,12 +277,12 @@ export function linearToSrgb(c: number): number {
   return c < 0 ? -v : v;
 }
 
-/** HSL to sRGB. Hue in degrees, saturation, lightness and output all 0..1. */
+/** HSL to sRGB. Hue in degrees, any number of turns; saturation, lightness and output all 0..1. */
 export function hslToSrgb(h: number, s: number, l: number): [number, number, number] {
   if (s === 0) return [l, l, l];
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
   const p = 2 * l - q;
-  const hk = h / 360;
+  const hk = (((h / 360) % 1) + 1) % 1;
   return [hueToChannel(p, q, hk + 1 / 3), hueToChannel(p, q, hk), hueToChannel(p, q, hk - 1 / 3)];
 }
 
@@ -303,7 +303,8 @@ export function srgbToHsl(r: number, g: number, b: number): [number, number, num
   const l = (max + min) / 2;
   const d = max - min;
   if (d === 0) return [0, 0, l];
-  const s = d / (1 - Math.abs(2 * l - 1));
+  // Near white or black the denominator cancels to 0, or below d, while d does not.
+  const s = Math.min(1, d / (1 - Math.abs(2 * l - 1)));
   let h: number;
   if (max === r) h = ((g - b) / d) % 6;
   else if (max === g) h = (b - r) / d + 2;
