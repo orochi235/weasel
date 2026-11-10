@@ -36,8 +36,9 @@ export function setWeights(
 /**
  * What a round brush at `(x, y)` does to one joint's weights: for each point of `coords`
  * within `radius`, a weight falling off linearly from the center. `'add'` raises a point
- * toward 1 and `'remove'` lowers it toward 0; neither moves a point the other way. Answers
- * only the points that change, by index, for {@link setWeights}.
+ * toward 1 and `'remove'` lowers it toward 0; neither moves a point the other way. `current` is the joint's
+ * share of each point ({@link jointShares}), not its raw weight. Answers only the points that change, by index,
+ * for {@link setWeights}.
  */
 export function brushWeights(
   coords: ArrayLike<number>,
@@ -56,4 +57,18 @@ export function brushWeights(
     if (want !== had) out.set(i, want);
   }
   return out;
+}
+
+/**
+ * Each of `count` points' share of `joint`, as the skin is applied: its weight over the sum of the point's
+ * weights, 0 where nothing weighs it. What {@link brushWeights} compares against, since a skin's weights need
+ * not sum to 1.
+ */
+export function jointShares(skin: Skin, joint: string, count: number): number[] {
+  const own = Object.hasOwn(skin, joint) ? skin[joint] : undefined;
+  return Array.from({ length: count }, (_, i) => {
+    let total = 0;
+    for (const name in skin) total += skin[name][i] ?? 0;
+    return total > 0 ? (own?.[i] ?? 0) / total : 0;
+  });
 }

@@ -47,7 +47,7 @@ export { IDENTITY_JOINT, type Joint, type JointTransform, type Pose, type Skelet
 export { motionsFromRest, skinnable, skinPath, type Skin } from './rig/skin';
 export { autoSkin, type AutoSkinOptions } from './rig/autoSkin';
 export { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from './rig/skeletonEdits';
-export { brushWeights, setWeights } from './rig/weightEdits';
+export { brushWeights, jointShares, setWeights } from './rig/weightEdits';
 
 // `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are
 // intentionally NOT re-exported. They take internal seams (supervisor factory,

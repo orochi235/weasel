@@ -29,12 +29,12 @@ const ARM: Skeleton = {
   ],
 };
 
-function setup(settings?: KitSettingsOverrides) {
+function setup(settings?: KitSettingsOverrides, initialSkin?: Skin) {
   const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   const rig = scene.add({ kind: 'group', layer: 'main', pose: { x: 100, y: 100, width: 200, height: 100 }, data: { skeleton: ARM } });
   const sleeve = scene.add({
     kind: 'mark', layer: 'main', parent: rig, pose: { x: 110, y: 120, width: 180, height: 20 },
-    data: { path: polygonFromPoints([{ x: 110, y: 120 }, { x: 190, y: 120 }, { x: 290, y: 120 }, { x: 200, y: 140 }]) },
+    data: { path: polygonFromPoints([{ x: 110, y: 120 }, { x: 190, y: 120 }, { x: 290, y: 120 }, { x: 200, y: 140 }]), ...(initialSkin ? { skin: initialSkin } : {}) },
   });
   const state = createRigEditState();
   const { result } = renderHook(() => useWeightTool({ scene: scene as never, rig: () => rig, state }), {
@@ -91,6 +91,19 @@ describe('useWeightTool', () => {
     t.state.setActive('b');
     t.stroke([[122, 120]]);
     expect(t.skin()).toEqual({ a: [0.5, 0, 0, 0], b: [0.5, 0, 0, 0] });
+  });
+
+  it('brushes a skin whose weights do not sum to 1 by the share each joint shows, never moving it the wrong way', () => {
+    const t = setup(undefined, { a: [0.2, 0, 0, 0], b: [0.2, 0, 0, 0] });
+    t.state.setActive('a');
+    // 16.8 from the first point: a dab of 0.3 there, under a's share of 0.5.
+    t.stroke([[126.8, 120]]);
+    expect(t.skin()).toEqual({ a: [0.2, 0, 0, 0], b: [0.2, 0, 0, 0] });
+    // 19.2 from it: lowering to 0.8 is above a's share, so it stays.
+    t.stroke([[129.2, 120]], { alt: true });
+    expect(t.skin()).toEqual({ a: [0.2, 0, 0, 0], b: [0.2, 0, 0, 0] });
+    t.stroke([[110, 120]]);
+    expect(t.skin()).toEqual({ a: [1, 0, 0, 0] });
   });
 
   it('lowers the active joint with Alt held', () => {

@@ -9,7 +9,7 @@ import type { RigNodeData } from '@weasel-js/core';
 import { jointAt } from '@weasel-js/animator';
 import { skinnable, type Skin } from '@weasel-js/animator';
 import { dataRestPath } from '@weasel-js/core';
-import { brushWeights, setWeights } from '@weasel-js/animator';
+import { brushWeights, jointShares, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
 import { resolveParams, type BindingOpts, type ImmediateParams } from '@weasel-js/routing';
@@ -95,10 +95,11 @@ function dab(
   const radius = sceneReach(deps, radiusPx);
   let next: Map<NodeId, Skin> | null = null;
   for (const { id, path, skin } of weighedPaths(env)) {
-    const hits = brushWeights(worldCoords(path), x, y, radius, skin[joint], mode);
+    const count = path.coords.length >> 1;
+    const hits = brushWeights(worldCoords(path), x, y, radius, jointShares(skin, joint, count), mode);
     if (hits.size === 0) continue;
     next ??= new Map(env.painted());
-    next.set(id, setWeights(skin, path.coords.length >> 1, joint, hits));
+    next.set(id, setWeights(skin, count, joint, hits));
   }
   return next;
 }
