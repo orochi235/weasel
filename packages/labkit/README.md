@@ -87,6 +87,25 @@ names another substrate: `localStorageAdapter`, `sessionStorageAdapter`,
 `urlHashAdapter`, or your own `StorageAdapter` over a server. The lab renders
 `fallback` while it loads. Leave `storageKey` off and nothing persists.
 
+### A lab of several pages
+
+A lab served as several pages, each its own document, passes every page's `<Lab>`
+the same `pages`: each a `{ href, label }`, a relative `href` resolving against the
+open page as a link does, and a hash route (`#/dev/tools`) naming a page on one
+document. Given two or more, the header's title becomes a menu of the pages,
+marking the open one by the location, or by `path` when given; picking another
+opens it. Keep the list in one module every page imports, so no page lacks one
+the others offer.
+
+```tsx
+const PAGES = [
+  { href: './', label: 'Segmento' },
+  { href: 'snap.html', label: 'Snap' },
+];
+
+<Lab instruments={[snap]} title="segmento snap" pages={PAGES} />;
+```
+
 ### Presenting a lab
 
 `<Lab present>` shows one trial and nothing else — no lab chrome, no trial
