@@ -57,6 +57,12 @@ export function strokeEdgeNear(
 ): StrokeEdgeHit | null {
   const width = resolveStrokeWidth(stroke.width ?? 1, opts.scale ?? 1);
   if (!inkWidth(width)) return null;
+  // The flattening is in the path's offsets from its origin; the point and the hit are not.
+  if (path.kind === 'polygon' && path.origin) {
+    const { origin: { x: ox, y: oy }, ...offsets } = path;
+    const hit = strokeEdgeNear(offsets, stroke, x - ox, y - oy, opts);
+    return hit && { ...hit, x: hit.x + ox, y: hit.y + oy };
+  }
   const vw = stroke.vertexWidths && stroke.vertexWidths.length > 0 ? stroke.vertexWidths : null;
   const nibScale = stroke.nib ? nibWidthScale(stroke.nib) : null;
   const align = stroke.align ?? 'center';
