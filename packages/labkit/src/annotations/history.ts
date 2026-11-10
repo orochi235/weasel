@@ -1,4 +1,5 @@
 import type { Scene, SerializedHistory } from '@weasel-js/core';
+import { maxOf } from '@weasel-js/geom';
 import { editStamp, seedEditStamp } from '../undo/editStamp';
 
 /** What the ordering needs of a scene: its history entries and depth, and the two moves. */
@@ -134,7 +135,7 @@ export class MarkHistory {
     const order = saved as Partial<MarkOrder> | null | undefined;
     this.undoable = steps(order?.undoable);
     this.redoable = steps(order?.redoable);
-    seedEditStamp(Math.max(...[...this.undoable, ...this.redoable].map((s) => s.stamp)));
+    seedEditStamp(maxOf([...this.undoable, ...this.redoable], (s) => s.stamp));
   }
 }
 

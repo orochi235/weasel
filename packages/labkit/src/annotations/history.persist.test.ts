@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { withoutMarkHistory } from './history';
+import { MarkHistory, withoutMarkHistory } from './history';
 import { annotationsFromJSON, createAnnotationStore } from './store';
 
 const targets = () => [
@@ -35,5 +35,12 @@ describe('a mark set saved with its history', () => {
     const again = annotationsFromJSON(withoutMarkHistory(first.toJSON()), targets);
     expect(again.query()).toHaveLength(1);
     expect(again.canUndo()).toBe(false);
+  });
+
+  it('restores an order of a million changes without overflowing the call stack', () => {
+    const history = new MarkHistory();
+    const undoable = Array.from({ length: 1_000_000 }, (_, stamp) => ({ target: 'a', stamp }));
+    history.fromJSON({ undoable, redoable: [] });
+    expect(history.toJSON().undoable).toHaveLength(1_000_000);
   });
 });
