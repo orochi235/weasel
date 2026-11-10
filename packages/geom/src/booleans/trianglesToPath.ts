@@ -3,7 +3,7 @@
  * This is what turns a tessellated shape back into geometry, e.g. a stroke's
  * ribbon into the region the stroke covers.
  */
-import polygonClipping from 'polygon-clipping';
+import { clipper } from './clipper';
 import { multiPolygonToPath } from './adapter';
 import { junctionRings } from './meshJunctions';
 import { meshOutline } from './meshOutline';
@@ -26,5 +26,5 @@ export function trianglesToPath(vertices: ArrayLike<number>, indices: ArrayLike<
   }
   if (kept.length === 0) return multiPolygonToPath([]);
   const outline = meshOutline(junctionRings(vertices, kept));
-  return multiPolygonToPath(outline ? polygonClipping.union([[outline]]) : []);
+  return multiPolygonToPath(outline ? clipper.union([[outline]]) : []);
 }

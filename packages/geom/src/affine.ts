@@ -60,6 +60,7 @@ export function invert(m: Affine): Affine | null {
   // Translation never costs an inverse its precision, so only the linear part is judged.
   const norm = Math.max(Math.abs(m[0]) + Math.abs(m[1]), Math.abs(m[2]) + Math.abs(m[3]));
   if (!invertible(norm, Math.max(Math.abs(a) + Math.abs(b), Math.abs(c) + Math.abs(d)))) return null;
+  if (!Number.isFinite(m[4]) || !Number.isFinite(m[5])) return null;
   return [a, b, c, d, -(m[4] * a + m[5] * c), -(m[4] * b + m[5] * d)];
 }
 
