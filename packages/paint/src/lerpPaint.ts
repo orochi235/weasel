@@ -33,7 +33,8 @@ function solidRgba(paint: Paint): Rgba | null {
   return isSolidPaint(paint) ? rgbaOf(paint.color, paint.opacity) : null;
 }
 
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+/** `a + (b - a) * t`, which can miss `b` by an ulp at `t = 1`, so that end is `b` itself. */
+const lerp = (a: number, b: number, t: number): number => (t === 1 ? b : a + (b - a) * t);
 
 /**
  * The paint `t` of the way from `a` to `b`.
@@ -145,7 +146,7 @@ export function lerpStroke(a: Stroke | null | undefined, b: Stroke | null | unde
   void _p; void _w; void _vc; void _vw; void _o;
   // An offset slides the pattern, so it moves smoothly where the dash itself snaps.
   const from = a?.dashOffset, to = b?.dashOffset;
-  const dashOffset = from === undefined && to === undefined ? undefined : (from ?? 0) + ((to ?? 0) - (from ?? 0)) * t;
+  const dashOffset = from === undefined && to === undefined ? undefined : lerp(from ?? 0, to ?? 0, t);
   return {
     ...rest,
     ...(paint === undefined ? {} : { paint }),
