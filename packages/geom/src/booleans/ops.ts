@@ -18,7 +18,7 @@
  * This is the only geom module that depends on `polygon-clipping`; it lives in
  * the `@weasel-js/geom/booleans` subpath so the core stays `deps: {}`.
  */
-import polygonClipping from 'polygon-clipping';
+import { clipper } from './clipper';
 import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon } from './adapter';
 import { curveBoolean, writeLoops } from './curveBoolean';
 import { curveFaces, type FaceNeighbor } from './curveFaces';
@@ -49,22 +49,22 @@ const odd = (inside: boolean[]): boolean => inside.filter(Boolean).length % 2 ==
 
 /** Union of N paths. Commutative. Returns an empty path if all inputs are empty. */
 export function pathUnion(...paths: Path[]): PolygonPath {
-  return boolean(paths, any, polygonClipping.union);
+  return boolean(paths, any, clipper.union);
 }
 
 /** Intersection of N paths. Commutative. Empty result is an empty path. */
 export function pathIntersect(...paths: Path[]): PolygonPath {
-  return boolean(paths, all, polygonClipping.intersection);
+  return boolean(paths, all, clipper.intersection);
 }
 
 /** Asymmetric difference: returns `a − b`. */
 export function pathSubtract(a: Path, b: Path): PolygonPath {
-  return boolean([a, b], aNotB, polygonClipping.difference);
+  return boolean([a, b], aNotB, clipper.difference);
 }
 
 /** Symmetric difference (XOR) of N paths: what an odd number of them cover. Commutative. */
 export function pathExclude(...paths: Path[]): PolygonPath {
-  return boolean(paths, odd, polygonClipping.xor);
+  return boolean(paths, odd, clipper.xor);
 }
 
 /** One path of a result that keeps its pieces apart, and the inputs it came
@@ -181,9 +181,9 @@ export function pathTrim(...paths: Path[]): BooleanPiece[] {
   // Front to back, so the cover over each input is built once.
   let cover: (typeof mps)[number] | null = null;
   for (let i = mps.length - 1; i >= 0; i--) {
-    const shown = cover ? polygonClipping.difference(mps[i], cover) : mps[i];
+    const shown = cover ? clipper.difference(mps[i], cover) : mps[i];
     if (shown.length > 0) out.unshift({ path: toPath(shown, paths), sources: [i] });
-    cover = cover ? polygonClipping.union(cover, mps[i]) : mps[i];
+    cover = cover ? clipper.union(cover, mps[i]) : mps[i];
   }
   return out;
 }
