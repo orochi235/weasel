@@ -23,7 +23,35 @@ export const IGNORED_TAGS = new Set([
   'title', 'desc', 'metadata', 'style', 'symbol',
 ]);
 
+/** The geometry of a shape element, through `m`, or null for none. A shape the kernel cannot store, its
+ *  coordinates past float32's range from the path's origin, is dropped with a warning rather than kept as
+ *  `Infinity` and `NaN`. */
 export function lowerLeaf(
+  el: Element,
+  tag: string,
+  m: Matrix,
+  onWarn: (msg: string) => void,
+): Path | null {
+  return storable(lowerLeafPath(el, tag, m, onWarn), tag, onWarn);
+}
+
+/** `path`, or null with a warning when a number it stores is not finite: a `<tag>` whose geometry reaches
+ *  past float32's range from its origin, or a transform that carries it there. */
+export function storable(path: Path | null, tag: string, onWarn: (msg: string) => void): Path | null {
+  if (path === null || storedFinite(path)) return path;
+  onWarn(`<${tag}> reaches past the coordinates a path can store; it is dropped`);
+  return null;
+}
+
+/** Whether every number `path` stores is finite. */
+function storedFinite(path: Path): boolean {
+  if (path.kind === 'rect') return [path.x, path.y, path.width, path.height].every(Number.isFinite);
+  if (path.origin && !(Number.isFinite(path.origin.x) && Number.isFinite(path.origin.y))) return false;
+  for (let i = 0; i < path.coords.length; i++) if (!Number.isFinite(path.coords[i])) return false;
+  return true;
+}
+
+function lowerLeafPath(
   el: Element,
   tag: string,
   m: Matrix,

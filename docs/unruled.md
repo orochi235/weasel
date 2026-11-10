@@ -424,6 +424,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-26/27 (agent batches 2–10): `transformPath` gives a far-out result an origin by default
   (`autoOrigin: false` opts out).
 
+- 2026-11-09 (property tests): `parseSvg` drops a shape whose geometry it cannot store, a coordinate past
+  float32's range from the path's origin either as written or once a transform carries it there, with the
+  warning "reaches past the coordinates a path can store", as it drops a `<path>` with an empty `d`. Until
+  then such a shape was kept with `Infinity` and `NaN` in its coordinates.
+
 ## Animation
 
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
