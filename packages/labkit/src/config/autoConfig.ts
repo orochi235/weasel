@@ -141,7 +141,7 @@ function demand(
  *  the way down. A path that is not there comes back unchanged. */
 function dropAtPath(config: Record<string, unknown>, path: string): Record<string, unknown> {
   const [head, ...rest] = path.split('.');
-  if (head === undefined || !(head in config)) return config;
+  if (head === undefined || !Object.hasOwn(config, head)) return config;
   if (rest.length === 0) {
     const { [head]: _dropped, ...kept } = config;
     return kept;

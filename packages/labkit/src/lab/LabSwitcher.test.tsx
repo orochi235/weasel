@@ -26,6 +26,17 @@ describe('currentPage', () => {
     }
   });
 
+  it('matches a page at the root only on the root', () => {
+    const pages = [
+      { href: '/', label: 'Home' },
+      { href: '/stats', label: 'Dashboard' },
+    ];
+    expect(currentPage('/stats', pages)).toBe(1);
+    expect(currentPage('/', pages)).toBe(0);
+    expect(currentPage('/index.html', pages)).toBe(0);
+    expect(currentPage('/bench', pages)).toBe(-1);
+  });
+
   it('reports -1 for a page that is not one of them', () => {
     expect(currentPage('/bench', PAGES)).toBe(-1);
   });

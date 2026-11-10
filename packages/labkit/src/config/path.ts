@@ -12,13 +12,27 @@ import { isPlainObject } from '@weasel-js/registry';
  *  would rebuild it as a bare `{}`. */
 export const isRecord = isPlainObject;
 
+/** `record`'s own value at `key`: a key every object inherits, `constructor` or `toString`, is absent. */
+const ownAt = (record: Record<string, unknown>, key: string): unknown =>
+  Object.hasOwn(record, key) ? record[key] : undefined;
+
+/** Assignment would run `__proto__`'s setter and change the prototype instead. */
+const setOwn = (record: Record<string, unknown>, key: string, value: unknown): void => {
+  Object.defineProperty(record, key, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+};
+
 /** The value at a dotted path. `undefined` when a segment is missing or the
  *  walk hits something that is not a record. */
 export function valueAtPath(config: unknown, path: string): unknown {
   let cur = config;
   for (const segment of path.split('.')) {
     if (!isRecord(cur)) return undefined;
-    cur = cur[segment];
+    cur = ownAt(cur, segment);
   }
   return cur;
 }
@@ -28,7 +42,7 @@ export function valueAtPath(config: unknown, path: string): unknown {
 export function hasConfigPath(config: unknown, path: string): boolean {
   let cur = config;
   for (const segment of path.split('.')) {
-    if (!isRecord(cur) || !(segment in cur)) return false;
+    if (!isRecord(cur) || !Object.hasOwn(cur, segment)) return false;
     cur = cur[segment];
   }
   return true;
@@ -48,7 +62,7 @@ export function copyTree<T>(value: T, copies = new Map<object, unknown>()): T {
   }
   const out: Record<string, unknown> = {};
   copies.set(value, out);
-  for (const [key, v] of Object.entries(value)) out[key] = copyTree(v, copies);
+  for (const [key, v] of Object.entries(value)) setOwn(out, key, copyTree(v, copies));
   return out as T;
 }
 
@@ -56,7 +70,7 @@ function writeIn(node: unknown, segments: readonly string[], value: unknown): un
   const [head, ...rest] = segments;
   if (head === undefined) return value;
   const base = isRecord(node) ? node : {};
-  return { ...base, [head]: rest.length === 0 ? value : writeIn(base[head], rest, value) };
+  return { ...base, [head]: rest.length === 0 ? value : writeIn(ownAt(base, head), rest, value) };
 }
 
 /** A copy of `config` with `value` written at a dotted path. Every record on
@@ -79,7 +93,7 @@ export function fillConfigDefaults<T>(stored: unknown, defaults: T): T {
   const base = isRecord(stored) ? stored : {};
   const out: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(defaults)) {
-    out[key] = fillConfigDefaults(base[key], value);
+    setOwn(out, key, fillConfigDefaults(ownAt(base, key), value));
   }
   return out as T;
 }
@@ -91,7 +105,12 @@ export function schemaNodeAtPath(group: PrefGroup, path: string): PrefLeaf | Pre
   let node: PrefLeaf | PrefGroup | undefined = group;
   for (const segment of path.split('.')) {
     if (node === undefined || !('children' in node)) return undefined;
-    const next: PrefLeaf | PrefGroup | PrefSection | undefined = node.children[segment];
+    const next: PrefLeaf | PrefGroup | PrefSection | undefined = Object.hasOwn(
+      node.children,
+      segment,
+    )
+      ? node.children[segment]
+      : undefined;
     if (next !== undefined && 'members' in next) return undefined;
     node = next;
   }

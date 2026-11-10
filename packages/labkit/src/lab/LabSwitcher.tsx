@@ -21,12 +21,15 @@ export interface LabSwitcherProps {
 }
 
 /** A URL split into the document it names and the hash route on it, each
- *  without its query, trailing slash or `.html`. */
+ *  without its query, trailing slash or `.html`; a directory's `index.html`
+ *  names the directory. */
 function locate(url: string): { doc: string; route: string } {
   const hash = url.indexOf('#');
   const trim = (part: string) => part.replace(/\?.*$/, '').replace(/\/$/, '');
   return {
-    doc: trim(hash < 0 ? url : url.slice(0, hash)).replace(/\.html$/, ''),
+    doc: trim(hash < 0 ? url : url.slice(0, hash))
+      .replace(/\.html$/, '')
+      .replace(/\/index$/, ''),
     route: hash < 0 ? '' : trim(url.slice(hash + 1)),
   };
 }
@@ -53,7 +56,8 @@ export function currentPage(path: string, pages: readonly LabPage[]): number {
     const to = new URL(href, base);
     return to.origin === base.origin ? locate(to.pathname + to.search + to.hash) : undefined;
   };
-  const onDoc = (doc: string) => here.doc.endsWith(doc);
+  // Every other doc starts with `/`, so its suffix match ends on a segment; the root's is empty and would match all.
+  const onDoc = (doc: string) => (doc === '' ? here.doc === '' : here.doc.endsWith(doc));
   const routed = pages.findIndex((p) => {
     if (!p.href.includes('#')) return false;
     const page = target(p.href);
