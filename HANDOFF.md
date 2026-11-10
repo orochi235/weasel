@@ -63,6 +63,12 @@ For the session picking this up: what is in flight and what has no other home. O
   ruling) is on `main` at 84c3cb6b6 through `batch/2026-11-09d` (`test:fleet` full: 36604 passed after a loupe
   regression, a format fix and a size split; postbuild green), and the discard-key change through
   `batch/2026-11-09e`. Released and pushed with the version commit that follows.
+- Round fourteen (2026-11-10: ui, routing, core, render, the text stack, diagram, labkit, motion, the small packages;
+  about 38 fixes, plus a sweep replacing `Math.min/max(...xs)` over unbounded lists with geom's new `minOf`/`maxOf`)
+  is on `main` at d66392e69 through `batch/2026-11-10-audit14` (`test:fleet` 36952 passed, postbuild green, merged
+  with the svg/path-tools property passes). It fixes today's tool-options regression: a polygon's sides or a star's
+  points set after one shape didn't reach the next. Not pushed. Open questions are under "Audit round fourteen" in
+  `docs/unruled.md`.
 - astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
   1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
 - The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
