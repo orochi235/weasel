@@ -25,7 +25,7 @@ import {
 } from './cascade';
 import { mediaEnvironmentFor } from './media';
 import { readProperty } from './properties';
-import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf } from './lowerLeaf';
+import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf, storable } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { type ClipTable, collectClipPaths, clipFor } from './readClips';
 import { readPaint, readStroke, isNonScalingStroke } from './readPaint';
@@ -329,7 +329,9 @@ function parseLeaf(
       rotation = angle;
     } else {
       // Bake the matrix in — match legacy behavior.
-      path = transformPath(path, worldLocal);
+      const moved = storable(transformPath(path, worldLocal), tag, onWarn);
+      if (!moved) return null;
+      path = moved;
       baked = multiply(ctm, localTransform);
       const rotComp = rotationComponent(worldLocal);
       if (Math.abs(rotComp) > 1e-4) {

@@ -75,10 +75,13 @@ export {
   containerScrollAction, scrollRange, scrollableAt, type ScrollRange,
 } from '../interactions/actions/defaults/containerScroll';
 export { editAnchorsAction } from '../interactions/actions/edit-anchors/action';
+export { deleteAnchorsAction, selectAnchorAction } from '../interactions/actions/defaults/anchorEditing';
 export {
-  deleteAnchorsAction, nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
-  selectAnchorAction,
-} from '../interactions/actions/defaults/anchorEditing';
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+  nudgeAnchorsUpAction,
+} from '../interactions/actions/defaults/anchorNudge';
 export { lassoSelectAction } from '../interactions/actions/lasso-select/action';
 export { sliceAction } from '../interactions/actions/defaults/slice';
 export {

@@ -1,8 +1,15 @@
 import {
-  cutPathAtAnchorAction, deleteAnchorsAction, marqueeAnchorsAction,
-  nudgeAnchorsDownAction, nudgeAnchorsLeftAction, nudgeAnchorsRightAction, nudgeAnchorsUpAction,
+  cutPathAtAnchorAction,
+  deleteAnchorsAction,
+  marqueeAnchorsAction,
   selectAnchorAction,
 } from 'interactions/actions/defaults/anchorEditing';
+import {
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+  nudgeAnchorsUpAction,
+} from 'interactions/actions/defaults/anchorNudge';
 import { makeHandlesSymmetricAction, retractHandlesAction } from 'interactions/actions/defaults/anchorHandles';
 import { setAnchorFieldAction } from 'interactions/actions/defaults/anchorFields';
 import { averageAnchorsAction, joinAnchorsAction } from 'interactions/actions/defaults/anchorJoin';
