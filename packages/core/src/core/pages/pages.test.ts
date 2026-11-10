@@ -153,4 +153,11 @@ describe('pageHolding', () => {
   it('is null with no pages', () => {
     expect(pageHolding([], { x: 0, y: 0, width: 1, height: 1 })).toBeNull();
   });
+
+  it('lays out a million pages without overflowing the call stack', () => {
+    const many = Array.from({ length: 1_000_000 }, (_, i): Page => ({ id: `p${i}`, width: 10, height: i === 7 ? 30 : 20 }));
+    const placed = layoutPages(many, { gap: 0, align: 'end' });
+    expect(placed[0]).toMatchObject({ x: 0, y: 10 });
+    expect(placed[7]).toMatchObject({ x: 70, y: 0 });
+  });
 });

@@ -60,7 +60,7 @@ export function readKanban(text: string): ImportResult {
     return { id: lane, label: decodeEntities(c.text, true), size: COLUMN_WIDTH, ...(members.length > 0 ? { members } : {}) };
   });
   const board = freshId(BOARD_ID, ids, { from: 2, bare: true });
-  const tallest = Math.max(0, ...columns.map((c) => c.cards.reduce((h, card) => h + (wrapped(card.text, CARD_WRAP).length + card.meta.length) * ROW + 16 + GAP, 0)));
+  const tallest = columns.reduce((most, c) => Math.max(most, c.cards.reduce((h, card) => h + (wrapped(card.text, CARD_WRAP).length + card.meta.length) * ROW + 16 + GAP, 0)), 0);
   const name = pageNameOf(source, warnings);
   const pool: DataContainer = {
     id: board, role: 'pool', axis: 'x', lanes, ...(name !== undefined ? { label: name } : {}),

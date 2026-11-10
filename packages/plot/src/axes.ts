@@ -1,4 +1,5 @@
 /** Axes as marks: a rule along a scale's range, a tick and a label at each of its ticks, grid lines, a title. */
+import { maxOf } from '@weasel-js/geom';
 import { ruleMark } from './marks/paths';
 import { textMark } from './marks/text';
 import type { PlotMark } from './marks/types';
@@ -43,7 +44,7 @@ export function axisRoom<T>(opts: AxisOptions<T>): number {
   const { scale, side, theme, measure } = opts;
   const write = labelOf(opts);
   const sizes = scale.ticks(opts.ticks).map((t) => measure(write(t), theme.font));
-  const labels = sizes.length === 0 ? 0 : Math.max(...sizes.map((s) => (isHorizontal(side) ? s.height : s.width)));
+  const labels = sizes.length === 0 ? 0 : maxOf(sizes, (s) => (isHorizontal(side) ? s.height : s.width));
   const title = opts.title ? measure(opts.title, theme.font).height + GAP : 0;
   return TICK + GAP + labels + title;
 }

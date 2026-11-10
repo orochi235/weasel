@@ -4,6 +4,7 @@
  * indexed: every read answers null, so the caller scans.
  */
 import { createBvh, createSettledCache, type Bvh } from '@weasel-js/geom/nd';
+import { maxOf } from '@weasel-js/geom';
 
 export function keyedIndex<T>(key: () => readonly unknown[] | undefined, build: () => T): () => T | null {
   const cache = createSettledCache<T>();
@@ -35,7 +36,7 @@ export function boxIndex(boxes: readonly (readonly [number, number, number, numb
 export function boxesMeeting(index: BoxIndex, x0: number, y0: number, x1: number, y1: number): number[] | null {
   const q = [x0, y0, x1, y1];
   if (q.some(Number.isNaN)) return null;
-  const e = 1e-9 * (1 + Math.max(0, ...q.filter(Number.isFinite).map(Math.abs)));
+  const e = 1e-9 * (1 + Math.max(0, maxOf(q.filter(Number.isFinite), Math.abs)));
   const found = [...index.always];
   index.tree.queryBox([x0 - e, y0 - e, x1 + e, y1 + e], (i) => { found.push(i); });
   return found.sort((a, b) => a - b);

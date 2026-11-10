@@ -1,4 +1,4 @@
-import { clamp, type Rect } from '@weasel-js/geom';
+import { clamp, type Rect, maxOf } from '@weasel-js/geom';
 import {
   centeredBaseline, envNumber, envPx,
   type Constraints, type FontSpec, type MeasureEnv, type Measured,
@@ -120,7 +120,7 @@ export function measureRowList(face: RowListFace, c: Constraints, env: MeasureEn
   const extents = face.rows.map((r) => env.text(r.label, m.font));
   const side = (r: RowFace) => (r.leadingWidth != null ? r.leadingWidth + m.gap : 0)
     + (r.trailingWidth != null ? r.trailingWidth + m.gap : 0);
-  const intrinsic = Math.max(...face.rows.map((r, i) => m.padX * 2 + side(r) + extents[i]!.width));
+  const intrinsic = maxOf(face.rows, (r, i) => m.padX * 2 + side(r) + extents[i]!.width);
   const width = clamp(intrinsic, c.minWidth, c.maxWidth);
   const n = face.rows.length;
   const height = clamp(n * m.rowHeight + (n - 1) * ROW_GAP, c.minHeight, c.maxHeight);

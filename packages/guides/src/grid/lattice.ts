@@ -1,5 +1,5 @@
 import { resolveStrokeWidth, type CommandStroke, type DrawCommand, type View } from '@weasel-js/core';
-import { PATH_L, PATH_M, pxExtent, pxExtentInFrame, type Affine, type PolygonPath } from '@weasel-js/geom';
+import { PATH_L, PATH_M, pxExtent, pxExtentInFrame, type Affine, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import { linesIn, type AxisLines, type GridLines } from './axes';
 
 /** An axis-aligned rectangle, in whatever coordinates a lattice is drawn in. */
@@ -101,11 +101,9 @@ function thinned(at: readonly number[], gap: number): number[] {
 
 /** The axis-aligned box around `outline`. */
 export function outlineBox(outline: readonly Point[]): Rect {
-  const xs = outline.map((p) => p.x);
-  const ys = outline.map((p) => p.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  const x = minOf(outline, (p) => p.x);
+  const y = minOf(outline, (p) => p.y);
+  return { x, y, width: maxOf(outline, (p) => p.x) - x, height: maxOf(outline, (p) => p.y) - y };
 }
 
 /** Where `a` and `b` overlap; no area where they don't. */

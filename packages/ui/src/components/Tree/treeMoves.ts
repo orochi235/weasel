@@ -1,4 +1,5 @@
 import { isNoopDrop, nudgeGap } from '@weasel-js/ui-logic';
+import { minOf } from '@weasel-js/geom';
 import type { TreeDropTarget } from '../../dropTarget';
 import type { TreeNode } from './Tree';
 
@@ -85,7 +86,7 @@ export function keyboardTarget(
   const parentId = parents.get(ids[0]!) ?? null;
   const sibs = siblingsOf(nodes, parentId);
   const at = ids.map((id) => sibs.findIndex((n) => n.id === id));
-  const first = Math.min(...at);
+  const first = minOf(at);
   switch (move) {
     case 'up':
     case 'down': {

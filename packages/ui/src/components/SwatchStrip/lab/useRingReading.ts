@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
 import type { Point } from '@weasel-js/geom';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 /** One ring as the page draws it, read off the swatches' boxes. */
 export interface RingReading {
@@ -22,7 +23,7 @@ const centerOf = (el: Element, origin: DOMRect): Point => {
   return { x: r.left + r.width / 2 - origin.left, y: r.top + r.height / 2 - origin.top };
 };
 
-const spread = (xs: readonly number[]): number => (xs.length ? Math.max(...xs) - Math.min(...xs) : 0);
+const spread = (xs: readonly number[]): number => (xs.length ? maxOf(xs) - minOf(xs) : 0);
 const mean = (xs: readonly number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 /** Every ring under `root`, read again whenever anything under it moves. Swatches scrolled off a ring are left out. */

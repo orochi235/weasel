@@ -1,4 +1,5 @@
 /** The sizes a sequence is laid out with, and how its text is measured. */
+import { maxOf } from '@weasel-js/geom';
 import type { MeasureRowText, RowTextStyle } from '../body';
 import { DEFAULT_FONT } from '../edgeLabel';
 import { estimatedWidth } from '../rowMeasure';
@@ -67,7 +68,7 @@ export function seqMeasure(measure: MeasureRowText | undefined, font = DEFAULT_F
     text: (text, style = {}) => {
       const s = { ...style, fontFamily: style.fontFamily ?? font.fontFamily, fontSize: style.fontSize ?? font.fontSize };
       const sizes = text.split('\n').map((l) => line(l, s));
-      return { width: Math.max(0, ...sizes.map((z) => z.width)), height: sizes.reduce((h, z) => h + z.height, 0) };
+      return { width: Math.max(0, maxOf(sizes, (z) => z.width)), height: sizes.reduce((h, z) => h + z.height, 0) };
     },
   };
 }

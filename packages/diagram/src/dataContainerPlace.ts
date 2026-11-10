@@ -3,6 +3,7 @@
  * layout has run, and the specs the regions are drawn with.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { GroupInset } from './cluster';
 import { containerShape } from './containers/layouts';
 import { stackedLanes } from './containers/laneStack';
@@ -114,12 +115,12 @@ export function placeContainers(
     if (!r.fitted) continue;
     const rs = r.direct.map(footprint).filter((b): b is Rect => b !== undefined);
     const inset = fittedInset(pad);
-    const x = Math.min(...rs.map((b) => b.x)) - inset.left;
-    const y = Math.min(...rs.map((b) => b.y)) - inset.top;
+    const x = minOf(rs, (b) => b.x) - inset.left;
+    const y = minOf(rs, (b) => b.y) - inset.top;
     out.set(r.id, {
       x, y,
-      width: Math.max(...rs.map((b) => b.x + b.width)) + inset.right - x,
-      height: Math.max(...rs.map((b) => b.y + b.height)) + inset.bottom - y,
+      width: maxOf(rs, (b) => b.x + b.width) + inset.right - x,
+      height: maxOf(rs, (b) => b.y + b.height) + inset.bottom - y,
     });
   }
   return out;

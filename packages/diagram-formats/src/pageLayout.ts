@@ -83,10 +83,10 @@ export function laidOutPage(page: GraphPage, opts: { theme: DiagramTheme; measur
   const ids = [...data.nodes.map((n) => n.id), ...(data.containers ?? []).map((c) => c.id)];
   const boxes = ids.map((id) => boxOf(byId.get(id))).filter((b): b is Rect => b !== undefined);
   if (boxes.length === 0) return { ...page, data: laid };
-  const min: Vec2 = { x: Math.min(...boxes.map((b) => b.x)), y: Math.min(...boxes.map((b) => b.y)) };
+  const min: Vec2 = { x: boxes.reduce((m, b) => Math.min(m, b.x), Infinity), y: boxes.reduce((m, b) => Math.min(m, b.y), Infinity) };
   const by: Vec2 = placedAny ? { x: 0, y: 0 } : { x: PAGE_MARGIN - min.x, y: PAGE_MARGIN - min.y };
-  const right = Math.max(...boxes.map((b) => b.x + b.width)) + by.x + PAGE_MARGIN;
-  const bottom = Math.max(...boxes.map((b) => b.y + b.height)) + by.y + PAGE_MARGIN;
+  const right = boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) + by.x + PAGE_MARGIN;
+  const bottom = boxes.reduce((m, b) => Math.max(m, b.y + b.height), -Infinity) + by.y + PAGE_MARGIN;
   return {
     ...page,
     width: Math.max(page.width, Math.ceil(right)),

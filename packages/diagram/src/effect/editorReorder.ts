@@ -3,6 +3,7 @@
  *  and a group dragged along the line by its title. */
 import type { Contribution } from '@weasel-js/core';
 import { moveItems } from '@weasel-js/ui-logic';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain, moveRunInChain } from './chainEdit';
 import type { LookOrder } from './draw';
@@ -90,12 +91,12 @@ export function groupMove(doc: EffectDoc, order: LookOrder, units: readonly stri
     [...unitStages(doc, unit)].flatMap((s) => (chain.includes(s) && (!drawnOnly || drawn.has(s)) ? [chain.indexOf(s)] : []));
   const run = indices(move.id, false);
   if (run.length === 0) return null;
-  const [i, j] = [Math.min(...run), Math.max(...run)];
+  const [i, j] = [minOf(run), maxOf(run)];
   if (j - i + 1 !== run.length) return null;
   const before = units[move.to];
   const edge = before !== undefined ? indices(before, true) : indices(units[units.length - 1] ?? move.id, true).map((k) => k + 1);
   if (edge.length === 0) return null;
-  const to = before !== undefined ? Math.min(...edge) : Math.max(...edge);
+  const to = before !== undefined ? minOf(edge) : maxOf(edge);
   const wired = ensureWireIds(doc);
   return dropInGap(doc, chain, drawn, to, (t) => moveRunInChain(wired, chain[i]!, chain[j]!, t));
 }

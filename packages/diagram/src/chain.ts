@@ -7,6 +7,7 @@
  * two neighbors' hangers never share space, and each group's members hang in
  * one stretch of columns with room left for its box (`chainGroups`).
  */
+import { maxOf } from '@weasel-js/geom';
 import { groupHanging, levelGaps, lineGaps } from './chainGroups';
 import { inPortOrder, SIDE_TRACK_GAP, sideRoutes, tracksNeeded, type Hanging } from './chainRoutes';
 import type { Graph, GraphNode } from './graph';
@@ -99,7 +100,7 @@ function chainPlan(graph: Graph, opts: LayoutOptions = {}): LayoutPlan {
   const { owner, level } = hanging;
 
   const rows = new Map<string, GraphNode[][]>(line.map((n) => [n.id, []]));
-  const levelSize: number[] = [Math.max(...line.map((n) => extent(n.bounds, axes.cross)))];
+  const levelSize: number[] = [maxOf(line, (n) => extent(n.bounds, axes.cross))];
   for (const node of graph.nodes) {
     const at = level.get(node.id)!;
     if (at === 0) continue;

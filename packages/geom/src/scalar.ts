@@ -97,3 +97,28 @@ export function approxEq(a: number, b: number, eps: number = EPS): boolean {
   const scale = Math.max(1, Math.abs(a), Math.abs(b));
   return diff <= eps * scale;
 }
+
+/**
+ * The least of `values`, or with `of`, the least `of(item, index)` over `items` without building the mapped
+ * array. Answers as `Math.min(...values)` does, `Infinity` for none and `NaN` if any is `NaN`, but reads them
+ * in a loop: a spread passes every value as an argument, and past about 125,000 of them throws a `RangeError`.
+ */
+export function minOf(values: Iterable<number>): number;
+export function minOf<T>(items: Iterable<T>, of: (item: T, index: number) => number): number;
+export function minOf<T>(items: Iterable<T>, of?: (item: T, index: number) => number): number {
+  let least = Infinity;
+  let i = 0;
+  for (const item of items) least = Math.min(least, of ? of(item, i++) : (item as number));
+  return least;
+}
+
+/** The greatest of `values`, or of `of(item, index)` over `items`: {@link minOf}'s twin, answering as
+ *  `Math.max(...values)` does (`-Infinity` for none, `NaN` if any is `NaN`) without spreading them. */
+export function maxOf(values: Iterable<number>): number;
+export function maxOf<T>(items: Iterable<T>, of: (item: T, index: number) => number): number;
+export function maxOf<T>(items: Iterable<T>, of?: (item: T, index: number) => number): number {
+  let most = -Infinity;
+  let i = 0;
+  for (const item of items) most = Math.max(most, of ? of(item, i++) : (item as number));
+  return most;
+}

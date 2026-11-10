@@ -1,4 +1,4 @@
-import { unionRects } from '@weasel-js/geom';
+import { unionRects, maxOf } from '@weasel-js/geom';
 import type { Bounds } from '@weasel-js/routing';
 
 /** One page of a document: a sheet of a fixed size, in world units. */
@@ -43,7 +43,7 @@ const ALIGN = { start: 0, center: 0.5, end: 1 } as const;
 export function layoutPages(pages: readonly Page[], options: PageLayoutOptions = {}): PlacedPage[] {
   const { direction = 'row', gap = 40, align = 'start', origin = { x: 0, y: 0 } } = options;
   const row = direction === 'row';
-  const across = Math.max(0, ...pages.map((p) => (row ? p.height : p.width)));
+  const across = Math.max(0, maxOf(pages, (p) => (row ? p.height : p.width)));
   const seen = new Set<string>();
   let along = 0;
   return pages.map((page, index) => {

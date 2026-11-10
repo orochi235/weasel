@@ -1,6 +1,7 @@
 /**
  * How far group boxes reach past each rank's band along the rank axis.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import { rankInset } from '../cluster';
 import type { Graph, GraphNode } from '../graph';
 import type { LayoutAxes } from '../layout';
@@ -22,7 +23,7 @@ export function boxReach(
   const span = new Map<string, [number, number]>();
   for (const g of groups) {
     const rs = g.members.map((m) => rowOf.get(m)).filter((r): r is number => r !== undefined);
-    if (rs.length > 0) span.set(g.id, [Math.min(...rs), Math.max(...rs)]);
+    if (rs.length > 0) span.set(g.id, [minOf(rs), maxOf(rs)]);
   }
   for (const g of groups) {
     const own = span.get(g.id);

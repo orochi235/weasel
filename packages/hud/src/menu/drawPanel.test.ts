@@ -123,5 +123,11 @@ describe('drawPanel', () => {
     expect(glyphs(on)).toHaveLength(0);
     expect(drawPanel(ctx, b, [plain], null, m).filter((c) => c.kind === 'group' && c.transform)).toHaveLength(0);
   });
+
+  it('sizes a panel of a million rows without overflowing the call stack', () => {
+    const one: MenuEntry = { kind: 'item', key: 'a', label: 'A', run };
+    const many = Array.from({ length: 1_000_000 }, (): MenuEntry => one);
+    expect(panelSize(many, m, measure).w).toBe(panelSize([one], m, measure).w);
+  });
 });
 

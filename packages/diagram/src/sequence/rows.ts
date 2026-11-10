@@ -4,6 +4,7 @@
  * tracks what spans rows as it goes — open activations, heads created and
  * lifelines destroyed — and collects what each fragment's box must take in.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Columns } from './columns';
 import type {
   SeqActivationPlace, SeqFragmentPlace, SeqHeadPlace, SeqMessagePlace, SeqNotePlace, SeqSlot,
@@ -28,8 +29,8 @@ export interface Rows {
 type Lifeline = { id: string; x: number; y0: number; y1: number | null; destroyedBy?: StepPlace };
 
 const spanOf = (rects: readonly SeqRect[]) => {
-  const x0 = Math.min(...rects.map((r) => r.x));
-  return { x0, x1: Math.max(...rects.map((r) => r.x + r.width)) };
+  const x0 = minOf(rects, (r) => r.x);
+  return { x0, x1: maxOf(rects, (r) => r.x + r.width) };
 };
 
 class RowWalk {
@@ -50,7 +51,7 @@ class RowWalk {
     this.created = new Set(flatMarks(data.steps, 'create'));
     this.number = data.autonumber;
     const shown = data.participants.filter((p) => !this.created.has(p.id));
-    const tall = Math.max(SEQ.headMinHeight, ...shown.map((p) => cols.heads[this.index.get(p.id)!]!.height));
+    const tall = Math.max(SEQ.headMinHeight, maxOf(shown, (p) => cols.heads[this.index.get(p.id)!]!.height));
     for (const p of shown) this.placeHead(p.id, top + tall - cols.heads[this.index.get(p.id)!]!.height, false);
     for (const l of this.lifeline.values()) l.y0 = top + tall;
     this.y = top + tall;
@@ -156,7 +157,7 @@ class RowWalk {
     const width = Math.max(SEQ.noteMinWidth, t.width + SEQ.notePad * 2);
     const height = t.height + SEQ.notePad * 2;
     const xs = over.map((id) => this.cx(id));
-    const [lo, hi] = [Math.min(...xs), Math.max(...xs)];
+    const [lo, hi] = [minOf(xs), maxOf(xs)];
     const x = s.side === 'right' ? lo + SEQ.barWidth / 2 + SEQ.noteGap
       : s.side === 'left' ? lo - SEQ.barWidth / 2 - SEQ.noteGap - width
       : lo === hi ? lo - width / 2

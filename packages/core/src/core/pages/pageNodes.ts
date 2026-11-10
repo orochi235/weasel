@@ -2,6 +2,7 @@
  * Pages as scene nodes: a page run, the root that lays the document's pages
  * out, and one page node under it per page, framing what is on that page.
  */
+import { maxOf } from '@weasel-js/geom';
 import { composeWorldPose } from '../scene/composePose';
 import { scenePoseAdapter } from '../scene/scenePoseAdapter';
 import type { NodeId, RectPose, Scene } from '../scene/types';
@@ -134,8 +135,8 @@ export function placedPagesOf<TData, TLayer extends string, TPose>(scene: Scene<
 export function runPose(pages: readonly Page[], layout: PageLayoutOptions = {}): RectPose {
   const { x = 0, y = 0 } = layout.origin ?? {};
   const placed = layoutPages(pages, { ...layout, origin: { x, y } });
-  const right = Math.max(x, ...placed.map((p) => p.x + p.width));
-  const bottom = Math.max(y, ...placed.map((p) => p.y + p.height));
+  const right = Math.max(x, maxOf(placed, (p) => p.x + p.width));
+  const bottom = Math.max(y, maxOf(placed, (p) => p.y + p.height));
   return { x, y, width: right - x, height: bottom - y };
 }
 

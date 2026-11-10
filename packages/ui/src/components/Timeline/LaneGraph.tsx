@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { useElementSize, useLatest } from '@weasel-js/core';
 import { type Keyframe } from '@weasel-js/animator';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import {
   applyKeyframeDrag, createKeyframeLayer, type KeyframeLayerState,
@@ -38,8 +39,8 @@ export interface LaneGraphProps {
  *  the border. A flat track gets a unit span so it still has a middle. */
 function valueRange(keys: readonly Keyframe<number>[]): [number, number] {
   const values = keys.map((k) => k.value);
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
+  const lo = minOf(values);
+  const hi = maxOf(values);
   const span = hi - lo || 1;
   const pad = (span * V_INSET_PCT) / (100 - 2 * V_INSET_PCT);
   return [lo - pad, lo + span + pad];

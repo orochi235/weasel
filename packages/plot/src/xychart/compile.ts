@@ -1,4 +1,5 @@
 /** An xychart compiled to its scales and marks. */
+import { maxOf } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark } from '../marks/paths';
@@ -27,7 +28,7 @@ export interface XyLayout {
 const BAND_PADDING = 0.2;
 
 /** How many values the longest series holds. */
-export const xyLength = (data: XyChartData): number => Math.max(0, ...data.series.map((s) => s.values.length));
+export const xyLength = (data: XyChartData): number => Math.max(0, maxOf(data.series, (s) => s.values.length));
 
 /** The labels of the category bands, one per row: the axis's own, and past its last, numbers from 1. */
 function categoriesOf(data: XyChartData): string[] {

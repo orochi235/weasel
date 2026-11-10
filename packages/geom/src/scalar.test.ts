@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, trimNumber, EPS } from './scalar';
+import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, trimNumber, minOf, maxOf, EPS } from './scalar';
 
 describe('scalar primitives', () => {
   it('cross product is the 2D wedge', () => {
@@ -95,5 +95,24 @@ describe('trimNumber', () => {
     expect(trimNumber(-0.0000001)).toBe('0');
     expect(trimNumber(NaN)).toBe('0');
     expect(trimNumber(Infinity)).toBe('0');
+  });
+});
+
+describe('minOf and maxOf', () => {
+  it('answer as a spread of Math.min and Math.max would', () => {
+    expect(minOf([3, -1, 2])).toBe(-1);
+    expect(maxOf([3, -1, 2])).toBe(3);
+    expect(minOf([])).toBe(Infinity);
+    expect(maxOf([])).toBe(-Infinity);
+    expect(minOf([1, NaN, 0])).toBeNaN();
+    expect(maxOf(new Set([1, 5]))).toBe(5);
+    expect(maxOf([{ w: 4 }, { w: 9 }], (b) => b.w)).toBe(9);
+    expect(minOf(['a', 'b'], (_, i) => i + 10)).toBe(10);
+  });
+
+  it('read 200,000 values without overflowing the call stack', () => {
+    const many = Array.from({ length: 200_000 }, (_, i) => i - 7);
+    expect(minOf(many)).toBe(-7);
+    expect(maxOf(many, (v) => v * 2)).toBe(2 * (200_000 - 8));
   });
 });

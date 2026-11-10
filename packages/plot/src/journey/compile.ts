@@ -1,4 +1,5 @@
 /** A user journey compiled to its sections, scored steps and actor legend. */
+import { maxOf } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { pointMark, spanMark } from '../marks/boxes';
@@ -123,7 +124,7 @@ export function compileJourney(
   const { marks, top } = chartTitle(data.title, size.width, theme, measure);
   const names = journeyActors(data);
   const actors = ordinalScale({ domain: names, range: theme.series });
-  const legend = names.length === 0 ? 0 : 4 * DOT + GAP + Math.max(...names.map((n) => measure(n, theme.font).width));
+  const legend = names.length === 0 ? 0 : 4 * DOT + GAP + maxOf(names, (n) => measure(n, theme.font).width);
   const layout = journeyLayout(data, size, top, legend, theme, measure);
   marks.push(...axisMarks({ key: 'axis:score', scale: layout.score, side: 'left', at: layout.plot.x, gridTo: layout.plot.x + layout.plot.width, theme, measure }));
   marks.push(...sectionMarks(data, layout, theme, measure), ...stepMarks(data, layout, actors, theme, measure));

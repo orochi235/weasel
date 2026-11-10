@@ -64,4 +64,9 @@ describe('spellingsOf', () => {
     expect(spellingsOf('Insert', KEY_SPELLINGS)).toEqual(['Insert', 'Ins']);
     expect(spellingsOf('Q', KEY_SPELLINGS)).toEqual(['Q']);
   });
+
+  it('resolves a bank of a million members without overflowing the call stack', () => {
+    const members = Array.from({ length: 1_000_000 }, (_, i) => ({ scale: i === 9 ? 0.5 : 0.9, wrapped: false }));
+    expect(resolveBankScales(members, 0.1)[0]).toBe(0.5);
+  });
 });

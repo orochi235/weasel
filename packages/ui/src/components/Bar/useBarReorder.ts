@@ -4,6 +4,7 @@ import { isApplePlatform } from '@weasel-js/gestures';
 import { gapByMidpoint, isNoopDrop } from '@weasel-js/ui-logic';
 import type { PrefOrder } from '@weasel-js/prefs';
 import { useKitSetting, useLatest } from '@weasel-js/react';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { swallowNextClick } from '../../useReorderDragList';
 import { BAR_IN, BAR_UNIT, barUnitKey, movedOrder } from './barOrder';
 
@@ -143,7 +144,7 @@ export function containerUnits(root: HTMLElement, container: string, along: (p: 
       const box = el.getBoundingClientRect();
       return along({ clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 });
     });
-    return { key, els, at: (Math.min(...ats) + Math.max(...ats)) / 2 };
+    return { key, els, at: (minOf(ats) + maxOf(ats)) / 2 };
   });
 }
 

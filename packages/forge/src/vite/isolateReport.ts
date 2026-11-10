@@ -6,7 +6,7 @@ import type { IndexEntry } from '../story/types';
  */
 export function isolateReport(entries: readonly IndexEntry[], allowed: number): { lines: string[]; ok: boolean } {
   const isolated = entries.filter((entry): entry is IndexEntry & { isolate: string } => entry.isolate !== undefined);
-  const width = Math.max(0, ...isolated.map((entry) => entry.id.length));
+  const width = isolated.reduce((most, entry) => Math.max(most, entry.id.length), 0);
   const lines = isolated.map((entry) => `${entry.id.padEnd(width)}  ${entry.isolate}`);
   const count = isolated.length;
   lines.push(`${count} isolated ${count === 1 ? 'story' : 'stories'} (allowed: ${allowed})`);

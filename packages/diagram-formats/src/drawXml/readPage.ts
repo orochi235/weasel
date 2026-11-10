@@ -127,11 +127,11 @@ function fitted(data: DiagramData, src: PageSource): { data: DiagramData; width:
     ...(data.containers ?? []).map((c) => c.box!),
   ];
   if (boxes.length === 0) return { data, width: src.width ?? 2 * PAGE_MARGIN, height: src.height ?? 2 * PAGE_MARGIN };
-  const minX = Math.min(...boxes.map((b) => b.x));
-  const minY = Math.min(...boxes.map((b) => b.y));
+  const minX = boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
+  const minY = boxes.reduce((m, b) => Math.min(m, b.y), Infinity);
   const by = { x: minX < 0 ? PAGE_MARGIN - minX : 0, y: minY < 0 ? PAGE_MARGIN - minY : 0 };
-  const right = Math.max(...boxes.map((b) => b.x + b.width)) + by.x + PAGE_MARGIN;
-  const bottom = Math.max(...boxes.map((b) => b.y + b.height)) + by.y + PAGE_MARGIN;
+  const right = boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) + by.x + PAGE_MARGIN;
+  const bottom = boxes.reduce((m, b) => Math.max(m, b.y + b.height), -Infinity) + by.y + PAGE_MARGIN;
   return {
     data: shiftData(data, by),
     width: Math.max(src.width ?? 0, Math.ceil(right)),

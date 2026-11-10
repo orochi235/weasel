@@ -5,6 +5,7 @@
  * an authored waypoint stays put; the runs beside it stretch instead.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { simplifyStops } from '../polyline';
 import type { ObstacleIndex } from './obstacles';
 
@@ -133,8 +134,8 @@ function spread(bundle: readonly Run[], spacing: number, span: [number, number])
 function nudgeAxis(routes: Map<string, NudgeRoute>, axis: Axis, spacing: number, obstacles: ObstacleIndex): void {
   for (const bundle of bundlesOf(runsOf(routes, axis))) {
     bundle.sort(order);
-    const lo = Math.min(...bundle.map((r) => r.lo));
-    const hi = Math.max(...bundle.map((r) => r.hi));
+    const lo = minOf(bundle, (r) => r.lo);
+    const hi = maxOf(bundle, (r) => r.hi);
     const span = freeSpan(obstacles, axis, bundle[0]!.c, lo, hi, spacing * bundle.length, new Set(bundle.map((r) => r.edge)));
     spread(bundle, spacing, span).forEach((value, k) => {
       const run = bundle[k]!;

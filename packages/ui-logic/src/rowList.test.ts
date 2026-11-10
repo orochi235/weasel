@@ -68,4 +68,9 @@ describe('measureRowList', () => {
     expect(rowAtY(layout, 30)).toBe(1);
     expect(rowAtY(layout, 60)).toBeNull();
   });
+
+  it('measures a million rows without overflowing the call stack', () => {
+    const many = Array.from({ length: 1_000_000 }, (_, i) => ({ id: `r${i}`, label: i === 5 ? 'Longest' : 'A' }));
+    expect(measureRowList({ rows: many }, UNBOUNDED, env).width).toBe(measureRowList({ rows: [many[5]!] }, UNBOUNDED, env).width);
+  });
 });

@@ -1,5 +1,6 @@
 import { SCORE_BAR_STEPS, toFrequency, type PatternNote } from '@weasel-js/audio';
 import { PATH_L, PATH_M, type DrawCommand } from '@weasel-js/core';
+import { maxOf } from '@weasel-js/geom';
 
 /** The MIDI range the roll's height spans: every note `scoreBar` can write. */
 export const ROLL_PITCHES = { low: 20, high: 112 };
@@ -19,7 +20,7 @@ export function scoreRoll(
 ): DrawCommand[] {
   const stepWidth = size.width / SCORE_BAR_STEPS;
   const span = ROLL_PITCHES.high - ROLL_PITCHES.low;
-  const loudest = Math.max(0, ...notes.map((n) => n.gain ?? 1));
+  const loudest = Math.max(0, maxOf(notes, (n) => n.gain ?? 1));
   const commands: DrawCommand[] = [];
   for (let step = 4; step < SCORE_BAR_STEPS; step += 4) {
     commands.push({

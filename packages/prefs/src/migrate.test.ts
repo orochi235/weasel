@@ -230,4 +230,11 @@ describe('watchPrefsVersion', () => {
     await new Promise((r) => setTimeout(r, 10));
     expect(cache.writable).toBe(true);
   });
+
+  it('reads a store of a million records without overflowing the call stack', () => {
+    const records = Array.from({ length: 1_000_000 }, (_, i): [string, unknown] => [`r.${i}`, i]);
+    const cache = cacheWith([[VERSION_RECORD, 2], ...records]);
+    runPrefsMigrations(cache, [renameGrid, doubleDensity]);
+    expect(cache.get(VERSION_RECORD)).toBe(2);
+  });
 });

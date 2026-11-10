@@ -4,7 +4,7 @@
  * one by one, as text along a path does.
  */
 import { faceMetricsOf, glyphGeneration } from '@weasel-js/font';
-import { joinPaths, type PolygonPath } from '@weasel-js/geom';
+import { joinPaths, type PolygonPath, minOf } from '@weasel-js/geom';
 import type { Fill, Stroke } from '@weasel-js/paint';
 import { paintsOf, placedGlyphOutline } from './glyphOutlines';
 import { lineDecorations, type DecorationKind } from './layout/decorationMetrics';
@@ -114,7 +114,7 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
   });
 
   const slots = groups
-    .map((glyphs) => ({ glyphs, left: Math.min(...glyphs.map((g) => g.x)) }))
+    .map((glyphs) => ({ glyphs, left: minOf(glyphs, (g) => g.x) }))
     .sort((a, b) => a.left - b.left);
   return slots.map(({ glyphs, left }, i): TextCluster => {
     const right = i + 1 < slots.length ? slots[i + 1]!.left : line.x1;

@@ -1,3 +1,4 @@
+import { minOf } from '@weasel-js/geom';
 import { uniqueStages } from '../draw';
 import type { EffectPipeline } from '../types';
 
@@ -30,7 +31,7 @@ export function runOrder(pipeline: EffectPipeline): RunOrder {
   const ready = new Set(ids.flatMap((_, i) => (!onCycle[i] && waiting[i] === 0 ? [i] : [])));
   const order: string[] = [];
   while (ready.size > 0) {
-    const i = Math.min(...ready);
+    const i = minOf(ready);
     ready.delete(i);
     order.push(ids[i]!);
     for (const b of next[i]!) if (!onCycle[b] && --waiting[b]! === 0) ready.add(b);

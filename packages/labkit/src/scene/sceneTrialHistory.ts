@@ -1,4 +1,5 @@
 import type { Scene, SerializedSceneHistory } from '@weasel-js/core';
+import { maxOf } from '@weasel-js/geom';
 import { latestStamp } from '../state/savedUndo';
 import { TRIAL_EDIT_OP } from '../trial/trialEditOp';
 import type { TrialHistorySource } from '../trial/trialHistory';
@@ -82,7 +83,7 @@ export function sceneTrialHistory<TData, TLayer extends string, TPose>(
       scene.restoreHistory(saved.history);
       stamps.clear();
       for (const [id, stamp] of saved.stamps ?? []) stamps.set(id, stamp);
-      seedEditStamp(Math.max(...stamps.values(), latestStamp(saved.history)));
+      seedEditStamp(Math.max(maxOf(stamps.values()), latestStamp(saved.history)));
     },
   };
 }

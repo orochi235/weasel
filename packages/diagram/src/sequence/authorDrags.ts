@@ -6,6 +6,7 @@
  * commit, by default one undo entry in the scene.
  */
 import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay, Scene, Vec2 } from '@weasel-js/core';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow, type SeqArrowName } from './authorSteps';
 import { columnNear, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
 import { sameList } from './edit';
@@ -137,7 +138,7 @@ export function createWrapFragmentAction(opts: SequenceEditOptions = {}): Action
     const type = FRAGMENT_TYPES.has(params.type as string) ? params.type as SeqFragment['type'] : 'loop';
     const data = wrapSteps(press.data, first.place.parent, first.place.index, last.place.index, { type });
     const xs = press.root.geometry.columns.map((c) => c.x);
-    const [x0, x1] = [Math.min(...xs, press.local.x) - SEQ.fragmentPad, Math.max(...xs, press.local.x) + SEQ.fragmentPad];
+    const [x0, x1] = [Math.min(minOf(xs), press.local.x) - SEQ.fragmentPad, Math.max(maxOf(xs), press.local.x) + SEQ.fragmentPad];
     const [y0, y1] = [Math.min(first.y, last.y), Math.max(first.y, last.y, Math.min(first.y, last.y) + SEQ.rowGap)];
     return { data, label: 'Add fragment', overlay: [{ kind: 'polyline', points: outline(press, x0, y0, x1, y1), role: 'target' }] };
   });

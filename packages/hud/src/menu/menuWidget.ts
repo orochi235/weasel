@@ -2,6 +2,7 @@ import { createMenuController, withLinks, type MenuController, type Rect } from 
 import { faceGeneration } from '@weasel-js/font';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { createRevision, type HudAccessibleTree, type HudTextInput, type HudKeyEvent, type HudPointerEvent, type Widget, type WidgetBounds } from '../widget';
 import { accessibleMenu } from './accessibleMenu';
 import { DEFAULT_MENU_METRICS, drawPanel, rowAt, rowLayout, type MenuIcons, type MenuMetrics } from './drawPanel';
@@ -46,10 +47,10 @@ function underOnCanvas(r: Rect, toCanvas: (client: Point) => Point): Rect {
 
 /** The box around every panel. */
 function union(panels: readonly Rect[]): WidgetBounds {
-  const x0 = Math.min(...panels.map((p) => p.x));
-  const y0 = Math.min(...panels.map((p) => p.y));
-  const x1 = Math.max(...panels.map((p) => p.x + p.w));
-  const y1 = Math.max(...panels.map((p) => p.y + p.h));
+  const x0 = minOf(panels, (p) => p.x);
+  const y0 = minOf(panels, (p) => p.y);
+  const x1 = maxOf(panels, (p) => p.x + p.w);
+  const y1 = maxOf(panels, (p) => p.y + p.h);
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 

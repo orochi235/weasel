@@ -1,4 +1,5 @@
 /** A gantt's tasks resolved to instants: dependencies followed, durations counted past excluded days. */
+import { maxOf, minOf } from '@weasel-js/geom';
 import { GANTT_DATE_FORMAT, parseGanttDate } from './dates';
 import type { GanttData, GanttTask, GanttUnit } from './types';
 
@@ -101,7 +102,7 @@ export function scheduleGantt(data: GanttData, today = Date.now()): GanttSchedul
   });
   const written = flat.flatMap(({ task }) => (task.start.kind === 'date' ? [parseGanttDate(task.start.date, format)] : []))
     .filter((t): t is number => t !== null);
-  const first = written.length > 0 ? Math.min(...written) : dayOf(today) * DAY;
+  const first = written.length > 0 ? minOf(written) : dayOf(today) * DAY;
   const starts: number[] = [];
   const ends: number[] = [];
   const busy = new Set<string>();
@@ -120,7 +121,7 @@ export function scheduleGantt(data: GanttData, today = Date.now()): GanttSchedul
     if (start.kind === 'date') return parseGanttDate(start.date, format) ?? first;
     if (start.kind === 'previous') return i === 0 ? first : endOf(i - 1);
     const after = named(start.ids, endOf);
-    return after.length > 0 ? Math.max(...after) : first;
+    return after.length > 0 ? maxOf(after) : first;
   });
   const endOf = (i: number): number => memo(ends, i, 'e', () => {
     const start = startOf(i);
@@ -130,7 +131,7 @@ export function scheduleGantt(data: GanttData, today = Date.now()): GanttSchedul
     else if (end.kind === 'duration') at = addGanttDuration(start, end.amount, end.unit, excluded);
     else {
       const until = named(end.ids, startOf);
-      at = until.length > 0 ? Math.min(...until) : start;
+      at = until.length > 0 ? minOf(until) : start;
     }
     return Math.max(start, at);
   });
@@ -139,7 +140,7 @@ export function scheduleGantt(data: GanttData, today = Date.now()): GanttSchedul
   // A task inside a cycle may cache its end before its own start settles.
   flat.forEach(({ section }, i) => spans[section]!.push({ start: starts[i]!, end: Math.max(starts[i]!, ends[i]!) }));
   const all = spans.flat();
-  const lo = all.length > 0 ? Math.min(...all.map((s) => s.start)) : first;
-  const hi = all.length > 0 ? Math.max(...all.map((s) => s.end)) : first;
+  const lo = all.length > 0 ? minOf(all, (s) => s.start) : first;
+  const hi = all.length > 0 ? maxOf(all, (s) => s.end) : first;
   return { spans, domain: [lo, hi > lo ? hi : lo + DAY] };
 }

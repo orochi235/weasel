@@ -78,4 +78,9 @@ describe('patternVoicePeaks', () => {
   it('files an event with no bus under the one it is told', () => {
     expect(patternVoicePeaks([{ step: 0, pitch: 220 }], { ...base, bus: 'music' })).toEqual({ music: 1 });
   });
+
+  it('reads a pattern of a million events without overflowing the call stack', () => {
+    const events = Array.from({ length: 1_000_000 }, (_, i) => ({ step: i * 100, length: 1, pitch: 220, bus: 'music' }));
+    expect(patternVoicePeaks(events, { ...base, loop: false })).toEqual({ music: 1 });
+  });
 });

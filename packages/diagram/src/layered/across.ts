@@ -5,6 +5,7 @@
  * member out of it. A column holding a pin goes where its first pin puts it,
  * and widens to take in any other.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph, GraphGroup } from '../graph';
 import { extent, type LayoutAxes } from '../layout';
 import { crossInset } from '../cluster';
@@ -173,8 +174,8 @@ function itemsAt(ctx: Context, ids: readonly string[], depth: number, pref: Read
 
 /** Where `members` reach across at `at`, with `group`'s room around them. */
 function spanOf(ctx: Context, group: GraphGroup | undefined, members: readonly string[], at: ReadonlyMap<string, number>): { pref: number; width: number } {
-  const lo = Math.min(...members.map((id) => at.get(id)!));
-  const hi = Math.max(...members.map((id) => at.get(id)! + ctx.sizes.get(id)!));
+  const lo = minOf(members, (id) => at.get(id)!);
+  const hi = maxOf(members, (id) => at.get(id)! + ctx.sizes.get(id)!);
   const pad = group === undefined ? { lo: 0, hi: 0 } : padOf(group, ctx.groups, ctx.input.axes);
   return { pref: lo - pad.lo, width: hi - lo + pad.lo + pad.hi };
 }

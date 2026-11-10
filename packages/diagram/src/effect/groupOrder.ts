@@ -1,5 +1,6 @@
 /** Where each group sits along the main chain, and the sequence a group's title drags it along. */
 import type { Vec2 } from '@weasel-js/core';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { groupLabelIdOf } from '../dataGroups';
 import { sequenceSlots, type ReorderItem, type ReorderSlots } from '../reorder';
 import type { ReorderSource } from './editorReorder';
@@ -25,8 +26,8 @@ export function groupRuns(pipeline: EffectPipeline, chain: readonly string[]): M
   for (const g of pipeline.groups ?? []) {
     const on = [...groupContents(doc, g.id).stages].flatMap((s) => at.get(s) ?? []);
     if (on.length === 0) continue;
-    const first = Math.min(...on);
-    const last = Math.max(...on);
+    const first = minOf(on);
+    const last = maxOf(on);
     runs.set(g.id, last - first + 1 === on.length ? { first, last } : null);
   }
   return runs;
@@ -43,7 +44,7 @@ export function groupGripOf(doc: EffectDoc, group: string, boxOf: ReorderSource[
   const members = doc.pipeline.groups?.find((g) => g.id === group)?.members ?? [];
   const tops = members.flatMap((m) => boxOf(m)?.y ?? []);
   if (box === undefined || tops.length === 0) return undefined;
-  const height = Math.min(...tops) - box.y;
+  const height = minOf(tops) - box.y;
   return height > 0 ? { x: box.x, y: box.y, width: box.width, height } : undefined;
 }
 
@@ -93,7 +94,7 @@ export function groupSlotsAt(source: ReorderSource, at: Vec2): ReorderSlots | nu
   const placed = siblings.flatMap((id) => {
     const drawn = [...unitStages(doc, id)].flatMap((s) => drawnAt.get(s) ?? []);
     const bounds = boxOf(id);
-    return drawn.length === 0 || bounds === undefined ? [] : [{ id, bounds, first: Math.min(...drawn) }];
+    return drawn.length === 0 || bounds === undefined ? [] : [{ id, bounds, first: minOf(drawn) }];
   }).sort((a, b) => a.first - b.first);
   const isGroup = new Set(groups.map((g) => g.id));
   const items: ReorderItem[] = placed.map(({ id, bounds }) => {

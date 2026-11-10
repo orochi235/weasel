@@ -11,6 +11,7 @@
  *
  * A group may be a member of another: its column then sits inside its parent's.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph, GraphEdge, GraphGroup, GraphNode } from './graph';
 import { extent, type LayoutAxes } from './layout';
 
@@ -86,7 +87,7 @@ export function rankGaps(
   const reach = (span: Span, side: 'lo' | 'hi'): number => {
     const own = canonical(span.group.inset, axes)[side === 'lo' ? 'rankLo' : 'rankHi'];
     const flush = span.children.filter((c) => c[side] === span[side]);
-    return own + Math.max(0, ...flush.map((c) => reach(c, side)));
+    return own + Math.max(0, maxOf(flush, (c) => reach(c, side)));
   };
   for (const span of groupSpans(graph, rows)) {
     ends.set(span.hi, Math.max(ends.get(span.hi) ?? 0, reach(span, 'hi')));
@@ -116,7 +117,7 @@ function groupSpans(graph: Pick<Graph, 'groups'>, rows: readonly (readonly Pick<
   for (const group of graph.groups ?? []) {
     const ranks = group.members.map((id) => rankOf.get(id)).filter((r): r is number => r !== undefined);
     if (ranks.length === 0) continue;
-    const span: Span = { group, lo: Math.min(...ranks), hi: Math.max(...ranks), children: [] };
+    const span: Span = { group, lo: minOf(ranks), hi: maxOf(ranks), children: [] };
     spans.push(span);
     byId.set(group.id, span);
   }
@@ -232,7 +233,7 @@ export function packClusters(
     // columns and the gap only push things apart. A stretch no member covers
     // in any rank closes to `nodeGap`, so the box holds no empty room.
     const own = rows.flat().filter((n) => spanOf(n) === span);
-    const base = Math.min(...rows.flat().filter((n) => span.group.members.includes(n.id) || spanOf(n) === span).map(pref));
+    const base = minOf(rows.flat().filter((n) => span.group.members.includes(n.id) || spanOf(n) === span), pref);
     const childLo = new Map(span.children.map((c) => [c, Math.max(0, centerOf.get(c)! - outer(c) / 2 - base)]));
     const squeezed = closeGaps([
       ...own.map((n) => [pref(n) - base, pref(n) - base + width(n)] as const),
@@ -240,7 +241,7 @@ export function packClusters(
     ], nodeGap);
     const childAt = new Map<Span, number>(span.children.map((c) => [c, squeezed(childLo.get(c)!)]));
     const { nodeAt, ends } = settle(byRow, childAt, (n) => squeezed(pref(n) - base), 0);
-    const block: Block = { width: Math.max(0, ...ends), nodeAt, childAt };
+    const block: Block = { width: Math.max(0, maxOf(ends)), nodeAt, childAt };
     const slack = widen(block, span.group, insets.get(span)!, axes);
     for (const [id, x] of nodeAt) nodeAt.set(id, x + slack);
     blocks.set(span, block);

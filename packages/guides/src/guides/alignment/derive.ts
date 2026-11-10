@@ -1,3 +1,4 @@
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Guide } from '../types';
 import type { DeriveAlignmentGuidesOptions } from './types';
 import {
@@ -73,7 +74,7 @@ function merged(found: readonly Candidate[], axis: 'x' | 'y'): Guide[] {
   return runs
     .map((run) => {
       const first = run.reduce((a, b) => (b.order < a.order ? b : a));
-      const span = { min: Math.min(...run.map((c) => c.min)), max: Math.max(...run.map((c) => c.max)) };
+      const span = { min: minOf(run, (c) => c.min), max: maxOf(run, (c) => c.max) };
       // Runs more than EPS apart can still round to one name.
       const base = `align:${axis}:${first.offset.toFixed(3)}`;
       let id = base;

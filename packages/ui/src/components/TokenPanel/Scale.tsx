@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { decimalPlaces } from '@weasel-js/quantity';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { NumberField } from '../NumberField';
 import { Slider, type Thumb } from '../Slider';
 import { ToggleBar, type ToggleBarItem } from '../ToggleBar';
@@ -116,13 +117,13 @@ function ScaleSlider({
   onScaleChange?: (group: string, scale: TokenScale) => void;
 }) {
   const amounts = tokens.map((t) => splitUnit(t.value)?.amount ?? 0);
-  const places = Math.min(4, Math.max(0, ...amounts.map(decimalPlaces)));
+  const places = Math.min(4, Math.max(0, maxOf(amounts, decimalPlaces)));
   const round = (n: number) => Number(n.toFixed(places));
   // A key press moves a step by this much: a log track's own step is smaller than the scale can write.
   const finest = 10 ** -places;
   // Held from the first render: a range that followed the thumbs would move the track under the pointer.
-  const [range, setRange] = useState(() => [Math.log2(Math.min(...amounts) / MARGIN), Math.log2(Math.max(...amounts) * MARGIN)]);
-  const [min, max] = [Math.min(range[0]!, ...amounts.map(Math.log2)), Math.max(range[1]!, ...amounts.map(Math.log2))];
+  const [range, setRange] = useState(() => [Math.log2(minOf(amounts) / MARGIN), Math.log2(maxOf(amounts) * MARGIN)]);
+  const [min, max] = [Math.min(range[0]!, minOf(amounts, Math.log2)), Math.max(range[1]!, maxOf(amounts, Math.log2))];
   if (min !== range[0] || max !== range[1]) setRange([min, max]);
 
   const factors = generator?.rule.kind === 'factors' && onScaleChange ? generator.rule.factors : null;

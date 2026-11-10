@@ -1,4 +1,5 @@
 import type { Platform } from '@weasel-js/gestures';
+import { maxOf, minOf } from '@weasel-js/geom';
 
 /** One key of a {@link KeyboardLayout}, named by the `KeyboardEvent.code` it sends. A bare string is a one-unit key. */
 export type KeyboardKey = string | {
@@ -148,13 +149,13 @@ export function placeKeys(layout: KeyboardLayout, only?: ReadonlySet<string>): P
   }
   const all = banks.flatMap((b) => b.keys);
   if (all.length === 0) return { banks, width: 0, height: 0 };
-  const left = Math.min(...all.map((k) => k.x));
-  const top = Math.min(...all.map((k) => k.y));
+  const left = minOf(all, (k) => k.x);
+  const top = minOf(all, (k) => k.y);
   const moved = banks.map((b) => ({ id: b.id, keys: b.keys.map((k) => ({ ...k, x: k.x - left, y: k.y - top })) }));
   const keysMoved = moved.flatMap((b) => b.keys);
   return {
     banks: moved,
-    width: Math.max(...keysMoved.map((k) => k.x + k.width)),
-    height: Math.max(...keysMoved.map((k) => k.y + 1)),
+    width: maxOf(keysMoved, (k) => k.x + k.width),
+    height: maxOf(keysMoved, (k) => k.y + 1),
   };
 }

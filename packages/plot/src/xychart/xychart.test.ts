@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PLOT_THEME, seriesColor } from '../theme';
-import { compileXyChart, xyValueDomain } from './compile';
+import { compileXyChart, xyLength, xyValueDomain } from './compile';
 import { setXyValue, xyValueAt } from './edit';
 import { handlesOf } from '../editing/editors';
 import { xyEditor } from './editor';
@@ -136,5 +136,10 @@ describe('xychart edits', () => {
     expect(xyEditor.handle(SALES, { trait: get('line:1')!.data.plotMark, pose: get('line:1')!.pose })).toBeNull();
     const drag = xyEditor.drag(SALES, bar.data.plotMark, SIZE, PLOT_THEME, measure)!;
     expect(drag({ x: handle.at.x, y: layout.value.map(70) }).series[0]!.values).toEqual([20, 70, 80]);
+  });
+
+  it('counts the longest of a million series without overflowing the call stack', () => {
+    const series = Array.from({ length: 1_000_000 }, (_, i) => ({ kind: 'line' as const, values: i === 3 ? [1, 2, 3] : [] }));
+    expect(xyLength({ kind: 'xychart', series })).toBe(3);
   });
 });

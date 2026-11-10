@@ -1,4 +1,5 @@
 /** A gantt compiled to its marks: a row per task under its section, each task a span on a time axis. */
+import { maxOf } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { spanMark } from '../marks/boxes';
@@ -57,7 +58,7 @@ export function compileGantt(
   const { marks, top } = chartTitle(data.title, size.width, theme, measure);
   const schedule = scheduleGantt(data);
   const names = data.sections.map((s) => s.name ?? '');
-  const sectionWidth = names.some((n) => n !== '') ? Math.max(...names.map((n) => measure(n, theme.font).width)) + 2 * GAP : 0;
+  const sectionWidth = names.some((n) => n !== '') ? maxOf(names, (n) => measure(n, theme.font).width) + 2 * GAP : 0;
   const left = PAD + sectionWidth;
   const right = Math.max(left + 1, size.width - PAD);
   const axis = { theme, measure, side: 'bottom' as const };

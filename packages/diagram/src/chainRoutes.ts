@@ -4,6 +4,7 @@
  * between them, so a fan of them into one node's ports never crosses itself.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph, GraphEdge, GraphNode } from './graph';
 import type { LayoutAxes, LayoutResult } from './layout';
 
@@ -109,7 +110,7 @@ export function sideRoutes(
   for (const sides of sidesOf(graph, hanging, moves, axes, before).values()) {
     const [low, high] = turning(sides);
     const lineEdge = sides[0]!.lineEdge;
-    const hungEdge = before ? Math.max(...sides.map((s) => s.hungEdge)) : Math.min(...sides.map((s) => s.hungEdge));
+    const hungEdge = before ? maxOf(sides, (s) => s.hungEdge) : minOf(sides, (s) => s.hungEdge);
     const step = (hungEdge - lineEdge) / (Math.max(low.length, high.length) + 1);
     for (const run of [low, high]) {
       run.forEach((s, k) => {

@@ -47,7 +47,7 @@ export function patternVoicePeaks(
     return { bus: e.bus ?? opts.bus ?? 'sfx', from: at - lead, until: at + sounds };
   });
   // Enough passes that the last one meets every tail still ringing into it.
-  const longest = Math.max(0, ...spans.map((s) => s.until - s.from));
+  const longest = spans.reduce((most, s) => Math.max(most, s.until - s.from), 0);
   const passes = opts.loop === false ? 0 : Math.ceil(longest / passMs);
 
   const edges = new Map<string, { at: number; by: number }[]>();

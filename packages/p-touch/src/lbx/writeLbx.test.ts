@@ -200,4 +200,11 @@ describe('writeLbx', () => {
     expect(back.objects.map((o) => o.type)).toEqual(['rect', 'text']);
     expect((back.objects[1] as TextObject).data).toBe('Label');
   });
+
+  it('writes a polyline of a million points without overflowing the call stack', async () => {
+    const b = new PathBuilder().moveTo(0, 0);
+    for (let i = 1; i < 1_000_000; i++) b.lineTo(i % 60, i % 2 === 0 ? 0 : 10);
+    const { config } = await lbxConfig(page([{ kind: 'path', path: b.build(), stroke: { paint: { color: '#000' }, width: 1, cap: 'round' } }]));
+    expect((config.objects[0] as LineObject).position).toEqual({ x: 0, y: 0, width: 59, height: 10 });
+  });
 });

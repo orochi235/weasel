@@ -44,7 +44,7 @@ function itemOf(text: string, line: number): KanbanItem {
 export function parseKanban(text: string): KanbanBoard {
   const source = statementsOf(text);
   if (source.header.text !== 'kanban') throw lineError('Mermaid', source.header.line, `expected a kanban header, found "${source.header.text}"`);
-  const top = Math.min(...source.body.map((s) => s.indent));
+  const top = source.body.reduce((m, s) => Math.min(m, s.indent), Infinity);
   const columns: KanbanBoard['columns'] = [];
   for (const s of source.body) {
     const item = itemOf(s.text, s.line);

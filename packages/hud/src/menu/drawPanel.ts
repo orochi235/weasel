@@ -1,6 +1,6 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, textCommandFromRuns } from '@weasel-js/core';
-import { roundRectPath } from '@weasel-js/geom';
+import { roundRectPath, maxOf } from '@weasel-js/geom';
 import { formatShortcut } from '@weasel-js/gestures';
 import type { MenuEntry, MenuNumberEntry, MenuTextEntry } from '@weasel-js/menu';
 import { expandVars, GRADE_TOKENS, parseBoxShadow, resolveCurrentColor, tokenPx } from '@weasel-js/theme';
@@ -56,7 +56,7 @@ export function panelSize(
     const chip = shortcutOf(e);
     return measure(e.label, m.fontSize) + Math.max(m.rowHeight, chip ? m.padX + measure(chip, m.fontSize) : 0);
   };
-  const text = Math.max(0, ...entries.map(rowWidth));
+  const text = Math.max(0, maxOf(entries, rowWidth));
   return {
     w: Math.max(m.minWidth, Math.ceil(text) + m.padX * 2 + m.rowHeight),
     h: (last ? last.y + last.h : 0) + m.padY,

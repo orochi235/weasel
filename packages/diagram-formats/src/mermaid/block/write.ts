@@ -31,7 +31,8 @@ class BlockWriter {
   first(item: Item): number {
     if ('node' in item) return this.order.get(item.node.id)!;
     const c = item.cluster;
-    return Math.min(Infinity, ...c.nodes.map((id) => this.order.get(id)!), ...c.clusters.map((k) => this.first({ cluster: k })));
+    const nodes = c.nodes.reduce((m, id) => Math.min(m, this.order.get(id)!), Infinity);
+    return c.clusters.reduce((m, k) => Math.min(m, this.first({ cluster: k })), nodes);
   }
 
   span(id: string): string {

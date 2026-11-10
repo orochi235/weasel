@@ -3,6 +3,7 @@
  * that every message's text, every self-message's loop, and every note fits
  * between the lifelines it sits among.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import { SEQ, headSize, type SeqMeasure } from './metrics';
 import type { SeqStep, SequenceData } from './types';
 
@@ -19,7 +20,7 @@ export function* flatSteps(steps: readonly SeqStep[]): Iterable<SeqStep> {
 
 /** The room a note needs between lifelines, or past the first or last. */
 function noteNeeds(over: readonly number[], side: 'left' | 'right' | undefined, width: number, half: (i: number) => number): Need[] {
-  const [a, b] = [Math.min(...over), Math.max(...over)];
+  const [a, b] = [minOf(over), maxOf(over)];
   const room = width + SEQ.noteGap * 2;
   if (side === 'right') return [{ a, b: a + 1, room: room + half(a + 1) }];
   if (side === 'left') return [{ a: a - 1, b: a, room: room + half(a - 1) }];

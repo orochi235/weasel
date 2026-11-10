@@ -56,10 +56,13 @@ function parentsOf(data: DiagramData, known: ReadonlySet<string>, warn: Warn): M
 
 const union = (boxes: readonly Box[]): Box | undefined => {
   if (boxes.length === 0) return undefined;
-  const x = Math.min(...boxes.map((b) => b.x));
-  const y = Math.min(...boxes.map((b) => b.y));
+  const x = boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
+  const y = boxes.reduce((m, b) => Math.min(m, b.y), Infinity);
   return {
-    x, y, width: Math.max(...boxes.map((b) => b.x + b.width)) - x, height: Math.max(...boxes.map((b) => b.y + b.height)) - y,
+    x,
+    y,
+    width: boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) - x,
+    height: boxes.reduce((m, b) => Math.max(m, b.y + b.height), -Infinity) - y,
   };
 };
 

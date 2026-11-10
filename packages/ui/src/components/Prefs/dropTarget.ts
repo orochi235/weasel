@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { PrefDrop, PrefDropMark } from './drop';
 import { slidesIn } from './dropMotion';
 import { PATH_ATTR, RAIL_ATTR } from './selection';
@@ -119,10 +120,10 @@ function measure(form: Element): Frame {
 }
 
 const unionOf = (rects: readonly Rect[]): Rect => ({
-  left: Math.min(...rects.map((r) => r.left)),
-  top: Math.min(...rects.map((r) => r.top)),
-  right: Math.max(...rects.map((r) => r.right)),
-  bottom: Math.max(...rects.map((r) => r.bottom)),
+  left: minOf(rects, (r) => r.left),
+  top: minOf(rects, (r) => r.top),
+  right: maxOf(rects, (r) => r.right),
+  bottom: maxOf(rects, (r) => r.bottom),
 });
 
 const inside = (r: Rect, x: number, y: number): boolean => x >= r.left && x < r.right && y >= r.top && y < r.bottom;

@@ -33,4 +33,9 @@ describe('isolateReport', () => {
     expect(lines.slice(0, 2)).toEqual(['ui-x--a  why', '1 isolated story (allowed: 0)']);
     expect(lines[2]).toMatch(/^1 is above the 0 allowed\./);
   });
+
+  it('aligns a million isolated stories without overflowing the call stack', () => {
+    const entries = Array.from({ length: 1_000_000 }, (_, i) => entry(i === 4 ? 'ui-x--longest' : 'ui-x--a', 'why'));
+    expect(isolateReport(entries, 1_000_000).lines[0]).toBe('ui-x--a        why');
+  });
 });

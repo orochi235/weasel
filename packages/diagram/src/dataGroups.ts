@@ -2,6 +2,7 @@
  * `diagramScene`'s groups: which nodes each one holds, and the box and label
  * it draws around them.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { GroupInset } from './cluster';
 import type { DataGroup, DiagramSceneData, DiagramSpec, NodeStyle } from './dataTypes';
 import { ANCHOR_DERIVE_POSE, GROUP_DERIVE_POSE, boxAround, type DiagramAnchor } from './group';
@@ -115,13 +116,13 @@ export function groupBoxes(
     const g = byId.get(id)!;
     const rs = g.direct.map((m) => (byId.has(m) ? boxOf(m) : placedAt.get(m)!));
     for (const label of labels.get(id) ?? []) if (label.at !== null) rs.push(label.at);
-    const x = Math.min(...rs.map((r) => r.x));
-    const y = Math.min(...rs.map((r) => r.y));
+    const x = minOf(rs, (r) => r.x);
+    const y = minOf(rs, (r) => r.y);
     const box = boxAround({
       x,
       y,
-      width: Math.max(...rs.map((r) => r.x + r.width)) - x,
-      height: Math.max(...rs.map((r) => r.y + r.height)) - y,
+      width: maxOf(rs, (r) => r.x + r.width) - x,
+      height: maxOf(rs, (r) => r.y + r.height) - y,
     }, g);
     boxes.set(id, box);
     return box;

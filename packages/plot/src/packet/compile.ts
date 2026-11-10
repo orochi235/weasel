@@ -1,4 +1,5 @@
 /** A packet diagram compiled to rows of bit fields. */
+import { maxOf } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { spanMark } from '../marks/boxes';
 import { textMark } from '../marks/text';
@@ -65,7 +66,7 @@ export function packetPieces(field: PacketField, bitsPerRow: number): PacketPiec
 export function packetLayout(data: PacketData, size: { width: number; height: number }, top: number, theme: PlotTheme, measure: PlotMeasure): PacketLayout {
   const bitsPerRow = packetBitsPerRow(data);
   const ends = data.fields.map(lastBit).filter((end) => end !== null);
-  const rows = ends.length === 0 ? 0 : Math.floor(Math.max(...ends) / bitsPerRow) + 1;
+  const rows = ends.length === 0 ? 0 : Math.floor(maxOf(ends) / bitsPerRow) + 1;
   const line = measure('0', theme.font).height;
   const bits = bandScale({
     domain: Array.from({ length: bitsPerRow }, (_, i) => String(i)),

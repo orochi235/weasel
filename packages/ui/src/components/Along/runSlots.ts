@@ -1,6 +1,7 @@
 import { useContext, useLayoutEffect, useState, useSyncExternalStore, type Context, type CSSProperties, type RefObject } from 'react';
 import type { RunAlign, TrackRun } from '@weasel-js/geom';
 import { createEmitter } from '@weasel-js/registry';
+import { maxOf } from '@weasel-js/geom';
 import { insideOf } from './runBend';
 import { useItemLengths, type RunItemsOf, type RunKeyOf } from './useItemLengths';
 import { useRunRow, type RunItemPlace, type RunOverflow, type RunRow } from './useRunRow';
@@ -154,6 +155,6 @@ function seenUnder(el: HTMLElement | null, prev: Seen): Seen {
   if (el === null) return prev;
   const items = slotItems(el) as HTMLElement[];
   const keys = items.map((item) => keyOf(item)!);
-  const thickness = Math.max(0, ...items.map((item) => item.offsetHeight));
+  const thickness = Math.max(0, maxOf(items, (item) => item.offsetHeight));
   return prev.thickness === thickness && prev.keys.join('\n') === keys.join('\n') ? prev : { keys, thickness };
 }

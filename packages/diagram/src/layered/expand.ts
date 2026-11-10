@@ -3,6 +3,7 @@
  * ordering counts its crossings and placement leaves it room.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { EdgeLabelRoom, Graph, GraphEdge, GraphNode } from '../graph';
 import { portSitesOf } from '../ports';
 import { center, extent, graphOrder, seededOrder, type LayoutAxes } from '../layout';
@@ -125,7 +126,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   const spanIn = (id: string, ranks: ReadonlyMap<string, number>): [number, number] | null => {
     const ids = groups.get(id)?.members ?? [id];
     const rs = ids.map((m) => ranks.get(m)).filter((r): r is number => r !== undefined);
-    return rs.length === 0 ? null : [Math.min(...rs), Math.max(...rs)];
+    return rs.length === 0 ? null : [minOf(rs), maxOf(rs)];
   };
   const drawn = drawnEdges(graph.edges, back);
   const labeled = labelRowsOf(drawn, nodeRanks, spanIn);
@@ -217,7 +218,7 @@ export function expand(graph: Graph, nodeRanks: ReadonlyMap<string, number>, bac
   }
 
   const order = graphOrder(graph);
-  const top = Math.max(-1, ...byRank.keys());
+  const top = Math.max(-1, maxOf(byRank.keys()));
   const rows: Rows = [];
   for (let r = 0; r <= top; r++) {
     const row = byRank.get(r) ?? [];
@@ -264,5 +265,5 @@ function dedupe(hops: readonly Hop[]): Hop[] {
 
 /** A rank's extent along the rank axis: its deepest member's. */
 export function depthOf(row: readonly GraphNode[], axes: LayoutAxes): number {
-  return Math.max(0, ...row.map((n) => extent(n.bounds, axes.rank)));
+  return Math.max(0, maxOf(row, (n) => extent(n.bounds, axes.rank)));
 }

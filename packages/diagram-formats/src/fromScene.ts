@@ -35,10 +35,10 @@ interface PageBucket {
  *  at the origin, and draws between what it joins. */
 function contentPage(scene: AnyScene): PlacedPage {
   const boxes = scene.roots.map((id) => scene.get(id as never)!).filter((n) => kindOf(n) !== 'edge').map((n) => n.pose as RectPose);
-  const x = boxes.length === 0 ? 0 : Math.min(...boxes.map((b) => b.x));
-  const y = boxes.length === 0 ? 0 : Math.min(...boxes.map((b) => b.y));
-  const width = boxes.length === 0 ? 0 : Math.max(...boxes.map((b) => b.x + b.width)) - x;
-  const height = boxes.length === 0 ? 0 : Math.max(...boxes.map((b) => b.y + b.height)) - y;
+  const x = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.min(m, b.x), Infinity);
+  const y = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.min(m, b.y), Infinity);
+  const width = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.max(m, b.x + b.width), -Infinity) - x;
+  const height = boxes.length === 0 ? 0 : boxes.reduce((m, b) => Math.max(m, b.y + b.height), -Infinity) - y;
   return { id: 'page-1', x, y, width, height, index: 0 };
 }
 

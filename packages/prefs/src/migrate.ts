@@ -42,7 +42,7 @@ export function runPrefsMigrations(
     .entries()
     .filter(([name]) => name !== VERSION_RECORD)
     .map(([name, record]) => ({ name, ...readRecord(record, Math.min(stored, target)) }));
-  const newest = Math.max(stored, ...held.map((r) => r.at));
+  const newest = held.reduce((most, r) => Math.max(most, r.at), stored);
   if (newest > target) {
     console.warn(
       `[prefs] "${cache.prefix}" was written at version ${newest}, newer than this build's ${target}; opening read-only`,
@@ -55,7 +55,7 @@ export function runPrefsMigrations(
   // Where each record now stands, and the records that are behind.
   const at = new Map(held.filter((r) => r.at < target).map((r) => [r.name, r.at]));
   const records = new Map(held.filter((r) => at.has(r.name)).map((r): [string, unknown] => [r.name, structuredClone(r.value)]));
-  for (let v = Math.min(target, ...at.values()); v < target; v++) {
+  for (let v = [...at.values()].reduce((least, a) => Math.min(least, a), target); v < target; v++) {
     const due = new Map([...records].filter(([name]) => at.get(name)! <= v));
     const before = [...due.keys()];
     try {

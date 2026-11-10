@@ -152,4 +152,9 @@ describe('serializeSvg with a text layout', () => {
       { family: 'inter', weight: 700, style: 'normal' },
     ]);
   });
+
+  it('writes a line of a million cells without overflowing the call stack', () => {
+    const n = node('A'.repeat(1_000_000), { width: 1e9 });
+    expect(body(laidSvg(n))).toContain('A'.repeat(1_000_000));
+  });
 });

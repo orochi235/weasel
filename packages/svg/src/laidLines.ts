@@ -6,6 +6,7 @@
  * every word its own `x`, since `text-anchor` has no justify.
  */
 import type { LaidOutCell, LaidOutLineBox, TextPoseLayout } from '@weasel-js/core';
+import { maxOf, minOf } from '@weasel-js/geom';
 import { LINES_ATTR, type LinePiece } from './tspanLines';
 import { trimNumber } from './transform';
 import { escapeText } from './xmlEscape';
@@ -23,8 +24,8 @@ export function layoutMeasured(layout: TextPoseLayout, text: string): boolean {
 }
 
 function anchorX(cells: readonly LaidOutCell[], { anchor, rtl }: ChunkAnchor): number {
-  const left = Math.min(...cells.map((c) => c.x));
-  const right = Math.max(...cells.map((c) => c.x + c.advance));
+  const left = minOf(cells, (c) => c.x);
+  const right = maxOf(cells, (c) => c.x + c.advance);
   if (anchor === 'middle') return (left + right) / 2;
   return (anchor === 'start') === !rtl ? left : right;
 }
@@ -86,7 +87,7 @@ export function laidLinesXml(
   };
   for (const line of layout.laid.lines) {
     if (line.cells.length === 0) continue;
-    const start = Math.min(...line.cells.map((c) => c.srcIndex));
+    const start = minOf(line.cells, (c) => c.srcIndex);
     const stepped = breaksIn(text.slice(prevEnd, start));
     prevEnd = line.srcEnd;
     const starts = line.justified ? wordStarts(text, start, line.srcEnd) : [start];
