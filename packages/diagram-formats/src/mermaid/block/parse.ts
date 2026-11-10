@@ -91,10 +91,15 @@ class LineReader {
     }
     for (const [open, closers] of item.shape === undefined ? SHAPES : []) {
       if (!this.text.startsWith(open, this.i)) continue;
-      const found = closers.find(([close]) => this.text.indexOf(close, this.i + open.length) >= 0);
+      const from = this.i + open.length;
+      const quoted = /^\s*"[^"]*"\s*/.exec(this.text.slice(from));
+      const closeAt = (close: string) => (quoted === null ? this.text.indexOf(close, from)
+        : this.text.startsWith(close, from + quoted[0].length) ? from + quoted[0].length : -1);
+      const found = closers.map(([close, kind]) => ({ close, kind, at: closeAt(close) }))
+        .filter((f) => f.at >= 0).sort((a, b) => a.at - b.at)[0];
       if (found === undefined) throw lineError('Mermaid', this.line, `a shape opened with "${open}" is never closed`);
-      item.shape = found[1];
-      item.text = this.shapeText(open, found[0]);
+      item.shape = found.kind;
+      item.text = this.shapeText(open, found.close);
       break;
     }
     const span = this.span();

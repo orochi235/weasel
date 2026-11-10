@@ -49,10 +49,12 @@ export function mermaidIds(ids: readonly string[], { unicode = false } = {}): Ma
 }
 
 /** Text with the characters Mermaid reads as syntax spelled as entities, lines joined by `<br>`: an `&` only where
- *  it opens an entity, and a backtick only where the text opens and closes with one, as a markdown string does. */
-export function mermaidEscaped(lines: readonly string[]): string {
+ *  it opens an entity, counting one the `&` after it opens once spelled, and a backtick only where the text opens and
+ *  closes with one, as a markdown string does. `also` matches more characters for a kind to spell as entities. */
+export function mermaidEscaped(lines: readonly string[], { also }: { also?: RegExp } = {}): string {
   const text = lines.map((l) => l
-    .replace(/#/g, '#35;').replace(/&(?=(?:#x[\da-f]+|#\d+|[a-z]+);)/gi, '#38;')
+    .replace(/#/g, '#35;').replace(also ?? /(?!)/g, (c) => `#${c.codePointAt(0)};`)
+    .replace(/&(?=&*(?:#x[\da-f]+|#\d+|[a-z]+);)/gi, '#38;')
     .replace(/"/g, '#quot;').replace(/</g, '#lt;').replace(/>/g, '#gt;')).join('<br>');
   return /^`[\s\S]*`$/.test(text) ? `#96;${text.slice(1)}` : text;
 }

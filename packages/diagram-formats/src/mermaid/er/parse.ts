@@ -30,7 +30,8 @@ const LEFT: Readonly<Record<string, ErCardinality>> = { '|o': 'zero-one', '||': 
 const RIGHT: Readonly<Record<string, ErCardinality>> = { 'o|': 'zero-one', '||': 'one', 'o{': 'zero-many', '|{': 'one-many' };
 const RELATION = /^([\w-]+)\s*(\|o|\|\||\}o|\}\|)(--|\.\.)(o\||\|\||o\{|\|\{)\s*([\w-]+)\s*:\s*(.*)$/;
 const ENTITY = /^([\w-]+)(?:\s*\[\s*(?:"([^"]*)"|([^\]]*))\s*\])?(?::::([\w-]+))?\s*(\{\s*\}?)?$/;
-const ATTRIBUTE = /^(\S+)\s+(\S+)(?:\s+((?:PK|FK|UK)(?:\s*,\s*(?:PK|FK|UK))*))?(?:\s+"([^"]*)")?$/;
+/** An attribute line: a type, a name, keys, and a quoted comment. */
+export const ATTRIBUTE = /^(\S+)\s+(\S+)(?:\s+((?:PK|FK|UK)(?:\s*,\s*(?:PK|FK|UK))*))?(?:\s+"([^"]*)")?$/;
 
 function attributeOf({ text, line }: Statement): ErAttribute {
   const m = ATTRIBUTE.exec(text);

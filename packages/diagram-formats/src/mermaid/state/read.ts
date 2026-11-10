@@ -80,7 +80,7 @@ class StateReader {
   describe(id: string, text: string, scope: string | null): void {
     const comp = this.composites.get(id);
     if (comp !== undefined) {
-      comp.label = text;
+      comp.label = decodeEntities(text, true);
       return;
     }
     const d = this.draft(id, scope);
@@ -93,7 +93,7 @@ class StateReader {
   composite(s: Extract<StateStmt, { kind: 'composite' }>, scope: string | null): void {
     this.membership.openCluster(s.id, scope);
     const comp = this.composites.get(s.id) ?? { lanes: [] };
-    if (s.label !== undefined) comp.label = s.label;
+    if (s.label !== undefined) comp.label = decodeEntities(s.label, true);
     this.composites.set(s.id, comp);
     if (s.regions.length === 1) {
       this.walk(s.regions[0]!, s.id);

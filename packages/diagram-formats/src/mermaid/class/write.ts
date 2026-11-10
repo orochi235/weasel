@@ -3,7 +3,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataEdge, DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type Cluster, type GraphOut } from '../../graphWrite';
-import { titleLines } from '../common/lines';
+import { readsAsStatement, titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
 import { mermaidIds } from '../common/text';
 
@@ -59,7 +59,10 @@ class ClassWriter {
     const head = name === node.id ? id
       : generic !== null && generic[1] === node.id ? `${id}~${generic[2]}~`
         : `${id}["${name.replace(/"/g, '#quot;')}"]`;
-    const body = [...annotations.map((a) => `<<${a}>>`), ...attributes, ...methods];
+    const members = [...attributes, ...methods].map((m) => m.trim());
+    const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
+    if (kept.length < members.length) this.out.warnings.add('Mermaid class members are lines of text; blank ones, and ones it reads as comments or a closing brace, were dropped.');
+    const body = [...annotations.map((a) => `<<${a}>>`), ...kept];
     if (body.length === 0) {
       this.lines.push(`${indent}class ${head}`);
       return;

@@ -51,7 +51,9 @@ class StateWriter {
     } else if (lines.length === 0 || (lines.length === 1 && lines[0] === node.id)) {
       this.lines.push(`${indent}${id}`);
     } else {
-      this.lines.push(`${indent}state "${mermaidEscaped([lines[0]!])}" as ${id}`, ...lines.slice(1).map((l) => `${indent}${id} : ${mermaidEscaped([l])}`));
+      const described = lines.slice(1).filter((l) => l.trim() !== '');
+      if (described.length < lines.length - 1) this.out.warnings.add('Mermaid states describe themselves in lines of text; blank lines past a name were dropped.');
+      this.lines.push(`${indent}state "${mermaidEscaped([lines[0]!])}" as ${id}`, ...described.map((l) => `${indent}${id} : ${mermaidEscaped([l])}`));
     }
     if (node.outline !== undefined && !['roundRect', 'bar', 'diamond'].includes(node.outline as string)) {
       this.out.warnings.add('Mermaid draws every state alike; their outlines were dropped.');
