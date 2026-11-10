@@ -13,6 +13,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from './test-seams';
 import { fitTextPose } from './fitTextPose';
+import { layoutTextPose } from './layout/textPoseLayout';
 import type { TextPose } from './pose';
 
 const SIZE = 32;
@@ -107,5 +108,13 @@ describe('fitTextPose', () => {
     // 'B' doubles from 22 to 44, so the line is 22 wider than the plain one.
     expect(plain.width).toBe(44);
     expect(mixed.width).toBe(66);
+  });
+
+  it('fits a wrapping text in a box it lays out in without wrapping again', () => {
+    // At this size and tracking the wrap's width for 'AB AB AB' and the line's
+    // own sum differ in the last bits; the box is the line's.
+    const pose = textPose({ text: 'AB AB AB', style: { ...WRAP, fontSize: 11, letterSpacing: 0.01 } });
+    const fit = fitTextPose(pose, { axis: 'both' });
+    expect(layoutTextPose(fit).laid.lines).toHaveLength(1);
   });
 });

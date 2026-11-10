@@ -62,8 +62,8 @@ export function pointInTextPose(
 /**
  * Map a world-space point inside `pose` to a character offset into the pose's
  * text (0..length). Clicks above the first line clamp to 0; clicks below the
- * last line clamp to the end. Within a line, the caret lands between two
- * glyphs at whichever side of the advance cell's midpoint `x` falls on.
+ * last line clamp to the end. Within a line, the caret lands on whichever
+ * side of the character under `x` its advance cell's midpoint puts it.
  *
  * Honors `pose.runs` (a mixed-size line snaps on the cells each run actually
  * produced) and `pose.verticalAlign`. The offset is into the runs'
@@ -92,10 +92,13 @@ export function caretIndexAt(x: number, y: number, pose: TextPose): number {
 
   for (const i of visual) {
     const c = cells[i];
-    if (x >= dx + c.x + c.advance / 2) continue;
-    // A right-to-left cell reads the other way, so its visually-leading half
-    // is the character's logical end.
-    return c.level % 2 === 1 ? c.srcEnd : c.srcIndex;
+    const rtl = c.level % 2 === 1;
+    // A right-to-left cell reads the other way, so its left half is the
+    // character's logical end. The right half answers from the cell itself,
+    // not from the next one along: where the direction changes, the two
+    // name different offsets.
+    if (x < dx + c.x + c.advance / 2) return rtl ? c.srcEnd : c.srcIndex;
+    if (x < dx + c.x + c.advance) return rtl ? c.srcIndex : c.srcEnd;
   }
   const trailing = cells[visual[visual.length - 1]];
   return trailing.level % 2 === 1 ? trailing.srcIndex : trailing.srcEnd;

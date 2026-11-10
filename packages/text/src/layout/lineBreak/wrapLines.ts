@@ -75,6 +75,11 @@ export function wrapSpans(
   }
 }
 
+/** How far past `maxWidth`, as a fraction of it, a line still fits: a width
+ *  summed in another order than the layout's own differs from it in the last
+ *  bits, and a box fitted to a line must not wrap it. */
+const FIT_SLACK = 1e-9;
+
 function wrapAt(
   cps: ArrayLike<number>,
   box: { readonly maxWidth: number },
@@ -83,6 +88,7 @@ function wrapAt(
   breaks: Uint8Array | null,
 ): void {
   const n = cps.length;
+  const fits = box.maxWidth + Math.abs(box.maxWidth) * FIT_SLACK;
   let start = 0;
   let i = 0;
   while (i < n) {
@@ -101,7 +107,7 @@ function wrapAt(
       if (!hangs(cps[j])) ink = j + 1;
       j++;
     }
-    if (breaks && i > start && widthOf(start, ink) > box.maxWidth) {
+    if (breaks && i > start && widthOf(start, ink) > fits) {
       emit(start, i, true);
       start = i;
     }
