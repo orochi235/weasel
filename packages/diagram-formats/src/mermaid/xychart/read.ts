@@ -41,7 +41,7 @@ export function readMermaidXychart(text: string): ImportResult {
     }
   }
   if (x?.kind === 'band' && x.categories.length > 0) {
-    const longest = Math.max(0, ...series.map((s) => s.values.length));
+    const longest = series.reduce((m, s) => Math.max(m, s.values.length), 0);
     if (longest > x.categories.length) warn(`${longest - x.categories.length} value(s) past the last category are not drawn.`);
   }
   const data: XyChartData = {

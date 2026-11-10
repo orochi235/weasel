@@ -155,6 +155,9 @@ function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   };
 }
 
+const least = (m: number, v: number) => Math.min(m, v);
+const most = (m: number, v: number) => Math.max(m, v);
+
 /** Each node's place from its `pos`, and the page's size, when every node has one; else `null`. */
 function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: string | undefined) {
   const centers = nodes.map((n) => str(attrs.get(n.id)!, 'pos')?.replace(/!$/, '').split(',').map(Number));
@@ -164,7 +167,7 @@ function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: str
   const xs = nodes.flatMap((n, i) => [centers[i]![0]! - size(n).w / 2, centers[i]![0]! + size(n).w / 2]);
   const ys = nodes.flatMap((n, i) => [centers[i]![1]! - size(n).h / 2, centers[i]![1]! + size(n).h / 2]);
   const [llx, lly, right, top] = box?.length === 4 && box.every(Number.isFinite)
-    ? box : [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+    ? box : [xs.reduce(least, Infinity), ys.reduce(least, Infinity), xs.reduce(most, -Infinity), ys.reduce(most, -Infinity)];
   const placed = nodes.map((n, i) => ({
     ...n, at: { x: round(centers[i]![0]! - llx! - size(n).w / 2), y: round(top - centers[i]![1]! - size(n).h / 2) },
   }));

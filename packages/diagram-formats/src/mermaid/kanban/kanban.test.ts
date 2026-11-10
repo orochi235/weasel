@@ -81,4 +81,9 @@ describe('writing a Mermaid kanban board', () => {
     }] });
     expect(warnings).toEqual(['Mermaid kanban cards sit in columns; shapes in none were dropped.', 'Mermaid kanban boards have no connectors; they were dropped.']);
   });
+
+  it('reads a board of a million columns without overflowing the call stack', () => {
+    const text = `kanban\n${Array.from({ length: 1_000_000 }, (_, i) => `  c${i}[Column]`).join('\n')}`;
+    expect(() => readKanban(text)).not.toThrow();
+  });
 });
