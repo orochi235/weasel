@@ -17,7 +17,7 @@ import { TokenLayer } from './TokenLayer';
 import type { ThemeApi } from './theme/api';
 import { PinRepair } from './PinRepair';
 import { deriveDraft, type DerivedDraft } from './theme/draft';
-import { clearDraft, persistDraft, type StoredDraft } from './theme/draftStorage';
+import { clearDraft, draftHistory, persistDraft, type StoredDraft } from './theme/draftStorage';
 import { EXPORTS, download, exportFile } from './theme/exportFiles';
 import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
@@ -85,7 +85,7 @@ function SaveReport({ report, onReload, onDismiss }: { report: PutResult; onRelo
 }
 
 export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, onReload, onDiscard, onNew }: WorkbenchProps) {
-  const history = useLabHistory<ThemeDefinition>(start.definition);
+  const history = useLabHistory<ThemeDefinition>(start.definition, draftHistory(stored.name));
   const { state: draft, canUndo, canRedo } = history;
   const [saved, setSaved] = useState<ThemeDefinition>(() => (sameJson(start.definition, stored.definition) ? start.definition : stored.definition));
   const [baseHash, setBaseHash] = useState(start.baseHash);

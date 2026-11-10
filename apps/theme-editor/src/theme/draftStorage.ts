@@ -1,4 +1,5 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
+import { clearSavedHistory, type LabHistoryStore, localHistoryStore } from '../historyStorage';
 
 export interface StoredDraft {
   readonly definition: ThemeDefinition;
@@ -9,6 +10,15 @@ export interface StoredDraft {
 const DRAFT_PREFIX = 'weasel.theme-editor.draft.';
 const draftKey = (name: string) => `${DRAFT_PREFIX}${name}`;
 const LAST_KEY = 'weasel.theme-editor.theme';
+// Not under DRAFT_PREFIX, which `draftNames` reads as the drafts.
+const historyKey = (name: string) => `weasel.theme-editor.draft-history.${name}`;
+
+/** Where theme `name`'s undo history is kept, beside its draft. */
+export const draftHistory = (name: string): LabHistoryStore<ThemeDefinition> =>
+  localHistoryStore(historyKey(name));
+
+/** Forget theme `name`'s undo history, as discarding its draft does. */
+export const clearDraftHistory = (name: string): void => clearSavedHistory(historyKey(name));
 
 export function parseDraft(raw: string | null, name: string): StoredDraft | null {
   if (!raw) return null;

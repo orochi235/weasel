@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PaletteLab } from './PaletteLab';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 
@@ -11,7 +11,19 @@ import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
  * still defines it.
  */
 describe('<PaletteLab> action rail', () => {
-  afterEach(cleanup);
+  // The lab keeps its state and history in storage: each test starts with none.
+  beforeEach(() => {
+    const items = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => items.get(k) ?? null,
+      setItem: (k: string, v: string) => void items.set(k, v),
+      removeItem: (k: string) => void items.delete(k),
+    });
+  });
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
 
   function rail(): HTMLElement {
     return screen.getByRole('toolbar', { name: 'Lab actions' });

@@ -6,6 +6,7 @@ import { PresetBar } from './PresetBar';
 import { SwatchPanel } from './SwatchPanel';
 import {
   INITIAL,
+  liveHistory,
   loadLive,
   loadSaved,
   persistLive,
@@ -28,7 +29,7 @@ export function PaletteLab() {
   // Restored once, at mount: an HMR bounce or a reload should not cost the
   // configuration someone was in the middle of building.
   const [initial] = useState<LabState>(() => loadLive() ?? INITIAL);
-  const history = useLabHistory<LabState>(initial);
+  const history = useLabHistory<LabState>(initial, liveHistory);
   const { state, update, canUndo, canRedo } = history;
   const [saved, setSaved] = useState<readonly Preset[]>(loadSaved);
   const { c, surfaceKey, anchors } = state;

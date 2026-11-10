@@ -1,4 +1,5 @@
 import { DEFAULT_CONSTRAINTS, type Anchor, type Constraints } from '@weasel-js/theme/engine';
+import { type LabHistoryStore, localHistoryStore } from './historyStorage';
 
 export type SurfaceKey = 'dark' | 'light';
 
@@ -126,6 +127,9 @@ export function loadLive(): LabState | null {
     return null;
   }
 }
+
+/** Where the palette lab keeps its undo history, beside the state it ends on. */
+export const liveHistory: LabHistoryStore<LabState> = localHistoryStore(`${LIVE_KEY}.history`);
 
 export function persistLive(state: LabState): void {
   try {

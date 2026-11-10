@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import styles from './ThemeEditor.module.css';
 import { ThemeWorkbench } from './ThemeWorkbench';
 import { bundledThemeApi, httpThemeApi, type ThemeApi } from './theme/api';
-import { clearDraft, draftNames, loadDraft, loadLastTheme, persistLastTheme } from './theme/draftStorage';
+import { clearDraft, clearDraftHistory, draftNames, loadDraft, loadLastTheme, persistLastTheme } from './theme/draftStorage';
 import { starterDefinition, themeNameProblem } from './theme/starter';
 import type { StoredTheme } from '@weasel-js/theme/engine';
 
@@ -65,6 +65,7 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
   const reload = async () => {
     const fresh = await loaded.api.get(current.name);
     clearDraft(current.name);
+    clearDraftHistory(current.name);
     replace(fresh);
     setGeneration((g) => g + 1);
   };
@@ -80,6 +81,7 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
   const onDisk = current.hash !== '' || loaded.listed.has(current.name);
   const discard = () => {
     clearDraft(current.name);
+    clearDraftHistory(current.name);
     setLoaded((l) => l && { ...l, themes: l.themes.filter((t) => t.name !== current.name) });
   };
 

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeEditor } from './ThemeEditor';
 import type { ThemeApi } from './theme/api';
-import { loadDraft, persistDraft, persistLastTheme } from './theme/draftStorage';
+import { draftHistory, loadDraft, persistDraft, persistLastTheme } from './theme/draftStorage';
 import { weasel } from './theme/fixtures';
 import { starterDefinition } from './theme/starter';
 import type { PutResult, StoredTheme } from '@weasel-js/theme/engine';
@@ -91,10 +91,11 @@ describe('<ThemeEditor>', () => {
     expect(loadDraft('weasel')?.definition).toEqual(edited);
   });
 
-  it('lets a never-saved theme whose draft does not derive be discarded, with no file to reload', async () => {
+  it('lets a never-saved theme whose draft does not derive be discarded, its undo history too, with no file to reload', async () => {
     stubStorage();
     const broken = { ...starterDefinition('harbor'), pins: { fg: '{nope}' } };
     persistDraft({ definition: broken, baseHash: null });
+    draftHistory('harbor').save({ state: broken, history: { version: 1, undoStack: [], redoStack: [], nextEntryId: 1, droppedEntries: 0 } });
     persistLastTheme('harbor');
     const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
     const get = vi.fn(() => Promise.reject(new Error('404 Not Found')));
@@ -104,6 +105,7 @@ describe('<ThemeEditor>', () => {
     expect(await screen.findByText('23 of 181 overridden')).toBeInTheDocument();
     expect(get).not.toHaveBeenCalled();
     expect(loadDraft('harbor')).toBeNull();
+    expect(draftHistory('harbor').load()).toBeNull();
   });
 
   it('offers the other themes beside a draft that does not derive', async () => {
