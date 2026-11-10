@@ -1,13 +1,17 @@
 /**
- * State-holding provider for the active paints (fill / stroke / focus).
+ * Provider for the active paints (fill / stroke / focus). The fill and stroke
+ * are the shape tools' shared `fill` and `stroke` options, held in a
+ * `ToolOptionValues`, so a swatch pick is what the next shape is drawn with.
  * Mount once near the root and read it below with `useColorContext()`; its
  * keys are `colorContribution`, in `contribution.ts`.
  */
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import type { ActivePaint } from '../../ActiveSwatches';
-import { DEFAULT_FILL, DEFAULT_STROKE } from '../../ActiveSwatches';
+import { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { DEFAULT_FILL, DEFAULT_STROKE, type ActivePaint } from '../../newShapePaint';
 import { solidColorOf } from '@weasel-js/ui/paint-value';
-import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, useLatest, withAlpha01 } from '@weasel-js/core';
+import {
+  createToolOptionValues, DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, SHARED_TOOL_OPTIONS,
+  toHex8, useLatest, withAlpha01, type ToolOptionValues,
+} from '@weasel-js/core';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -35,6 +39,10 @@ export interface ColorContextValue {
 }
 
 export interface ColorContextProviderProps {
+  /** Where the fill and stroke are kept, as the shared `fill` and `stroke` tool options. Default: a store of its
+   *  own, starting at `initialFill` and `initialStroke`. */
+  values?: ToolOptionValues;
+  /** The fill while `values` holds none. */
   initialFill?: ActivePaint;
   initialStroke?: ActivePaint;
   initialFocus?: 'fill' | 'stroke';
@@ -72,40 +80,50 @@ export const ColorContextContext = createContext<ColorContextValue | null>(null)
 // Provider
 // ---------------------------------------------------------------------------
 
+const paintOf = (held: unknown, fallback: ActivePaint): ActivePaint => (held === undefined ? fallback : (held as ActivePaint));
+
 export function ColorContextProvider({
+  values: given,
   initialFill,
   initialStroke,
   initialFocus,
   children,
 }: ColorContextProviderProps) {
-  // Combine fill+stroke into one state so `swap` can atomically exchange
-  // them via a functional updater — this ensures swap composes correctly
-  // when batched with setFillColor/setStrokeColor in the same act() call.
-  const [paints, setPaints] = useState<Paints>({
-    fill: initialFill ?? DEFAULT_FILL,
-    stroke: initialStroke ?? DEFAULT_STROKE,
-  });
+  const [own] = useState(createToolOptionValues);
+  const values = given ?? own;
+  const startFill = initialFill ?? DEFAULT_FILL;
+  const startStroke = initialStroke ?? DEFAULT_STROKE;
+  const shared = useSyncExternalStore(values.subscribe, () => values.get(SHARED_TOOL_OPTIONS));
+  const fill = paintOf(shared.fill, startFill);
+  const stroke = paintOf(shared.stroke, startStroke);
   const [focused, setFocus] = useState<'fill' | 'stroke'>(initialFocus ?? 'fill');
 
-  const { fill, stroke } = paints;
+  /** Write the paints `next` makes of the ones held now: an updater reads the store, so two in one act() compose. */
+  const setPaints = useCallback((next: Paints | ((cur: Paints) => Paints)) => {
+    const held = values.get(SHARED_TOOL_OPTIONS);
+    const cur = { fill: paintOf(held.fill, startFill), stroke: paintOf(held.stroke, startStroke) };
+    const out = typeof next === 'function' ? next(cur) : next;
+    if (out.fill !== cur.fill) values.set(SHARED_TOOL_OPTIONS, 'fill', out.fill);
+    if (out.stroke !== cur.stroke) values.set(SHARED_TOOL_OPTIONS, 'stroke', out.stroke);
+  }, [values, startFill, startStroke]);
 
   const focusedRef = useLatest(focused);
 
   const setFill = useCallback((p: ActivePaint) => {
     setPaints((cur) => ({ ...cur, fill: p }));
-  }, []);
+  }, [setPaints]);
   const setStroke = useCallback((p: ActivePaint) => {
     setPaints((cur) => ({ ...cur, stroke: p }));
-  }, []);
+  }, [setPaints]);
 
   const setFocused = useCallback((p: ActivePaint) => {
     if (focusedRef.current === 'fill') setPaints((cur) => ({ ...cur, fill: p }));
     else setPaints((cur) => ({ ...cur, stroke: p }));
-  }, [focusedRef]);
+  }, [focusedRef, setPaints]);
 
   const setSlotColor = useCallback((slot: PaintSlot, color: string) => {
     setPaints((cur) => ({ ...cur, [slot]: { kind: 'solid', color: colorKeepingAlpha(slot, cur[slot], color) } }));
-  }, []);
+  }, [setPaints]);
   const setFillColor = useCallback((color: string) => setSlotColor('fill', color), [setSlotColor]);
   const setStrokeColor = useCallback((color: string) => setSlotColor('stroke', color), [setSlotColor]);
   const setFocusedColor = useCallback((color: string) => setSlotColor(focusedRef.current, color), [setSlotColor, focusedRef]);
@@ -122,14 +140,14 @@ export function ColorContextProvider({
       const next: ActivePaint = { kind: 'solid', color: withAlpha01(toHex8(color), alpha01) };
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
-  }, [focusedRef]);
+  }, [focusedRef, setPaints]);
 
   const swap = useCallback(() => {
     setPaints((cur) => ({ fill: cur.stroke, stroke: cur.fill }));
-  }, []);
+  }, [setPaints]);
   const swapFocus = useCallback(() => {
     setFocus((cur) => (cur === 'fill' ? 'stroke' : 'fill'));
-  }, []);
+  }, [setFocus]);
   const toggleFocusedNone = useCallback(() => {
     setPaints((cur) => {
       const which = focusedRef.current;
@@ -137,10 +155,10 @@ export function ColorContextProvider({
       const next: ActivePaint = paint === null ? (which === 'fill' ? DEFAULT_FILL : DEFAULT_STROKE) : null;
       return which === 'fill' ? { ...cur, fill: next } : { ...cur, stroke: next };
     });
-  }, [focusedRef]);
+  }, [focusedRef, setPaints]);
   const reset = useCallback(() => {
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
-  }, []);
+  }, [setPaints]);
 
   const value = useMemo<ColorContextValue>(() => ({
     fill, stroke, focused,
@@ -150,7 +168,7 @@ export function ColorContextProvider({
     swap, swapFocus, toggleFocusedNone, reset,
   }), [
     fill, stroke, focused,
-    setFill, setStroke, setFocused,
+    setFill, setStroke, setFocused, setFocus,
     setFillColor, setStrokeColor, setFocusedColor,
     focusedAlpha, setFocusedAlpha,
     swap, swapFocus, toggleFocusedNone, reset,

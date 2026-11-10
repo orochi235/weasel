@@ -10,18 +10,10 @@
  *   /        set the last-focused swatch to none
  */
 import type { ReactElement } from 'react';
-import {
-  DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, useOngoingAction,
-  type Paint,
-} from '@weasel-js/core';
+import { useOngoingAction } from '@weasel-js/core';
 import { FillStrokeSwatch } from '@weasel-js/ui/components/FillStrokeSwatch';
 import { colorKeepingAlpha, useColorContext } from './tools/colorContext';
-
-/** The paint a new shape takes, as a node holds one: `null` is none. */
-export type ActivePaint = Paint | null;
-
-export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: DEFAULT_FILL_COLOR };
-export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
+import { DEFAULT_FILL, DEFAULT_STROKE } from './newShapePaint';
 
 export function ActiveSwatches(): ReactElement {
   const colors = useColorContext();

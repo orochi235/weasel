@@ -115,6 +115,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/StickyNotesDemo.tsx',
   },
   {
+    id: 'shared-brush-size',
+    title: 'Shared brush size',
+    category: 'Tools',
+    description: 'Two round brushes, each a `defineTool` whose `options` name a `radiusPx` as its `size`: Dots stamps a dot per radius of travel and Erase removes the dots it passes over, each as one undo entry. A brush\'s cursor is `brushRing` at its size, and the dispatcher\'s `brush` overlay draws the swept band while it drags. `[` and `]` and Shift+wheel step the active tool\'s size, which the host keeps in a `ToolOptionValues` store published with `useToolOptionValues`. Each brush keeps its own size; with Share brush size on, each brush\'s `share` names its size under `@weasel-js/brush`\'s `BRUSH_SIZE_PX` key (`shareBrushSize`), and a size either brush sets is both brushes\' size.',
+    hint: 'Drag to stamp dots, then press <kbd>[</kbd> or <kbd>]</kbd>, or hold <kbd>Shift</kbd> and scroll, to resize the brush. Pick Erase and drag over dots to remove them. Turn on Share brush size and resize one brush to resize both.',
+    load: () => import('./demos/SharedBrushSizeDemo').then((m) => m.SharedBrushSizeDemo),
+    path: 'apps/site/demos/SharedBrushSizeDemo.tsx',
+  },
+  {
     id: 'slice',
     title: 'Slice',
     category: 'Tools',

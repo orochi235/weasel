@@ -16,7 +16,8 @@ import type { Op } from 'core/ops/types';
 import { insertAction } from 'interactions/actions/insert/action';
 import type { InsertDep } from 'interactions/actions/depSchema';
 import { insertPreviewExtent } from '../insertPreviewExtent';
-import { paletteInsertPaint, useInsertDepSource } from './insert';
+import { useInsertDepSource } from './insert';
+import { cycleFill, solid } from '../../util/paint';
 
 const GRID: OutputGrid = { pitch: 0.4, origin: { x: 0, y: 0 } };
 type S = Scene<unknown, 'main', RectPose>;
@@ -87,7 +88,7 @@ describe('an insert preview under a quantize rule', () => {
     drag(scene, dep, { x: 0, y: 0 }, many);
     drag(scene, dep, { x: 100, y: 0 }, many.map((p) => ({ x: p.x + 100, y: p.y })));
     const fills = [0, 1].map((n) => (onlyNode(scene, n).data as { fill?: unknown }).fill);
-    expect(fills).toEqual([paletteInsertPaint('rect', 1).fill, paletteInsertPaint('rect', 2).fill]);
+    expect(fills).toEqual([{ paint: solid(cycleFill(1)) }, { paint: solid(cycleFill(2)) }]);
   });
 
   it('answers the node a release would make, minting nothing', () => {

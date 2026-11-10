@@ -52,7 +52,7 @@ import { useViewportActions, viewportZoomOption } from './useViewportActions';
 export type StandardActionsProps = Pick<
   SceneCanvasProps<unknown, string, unknown>,
   | 'actions' | 'tune' | 'bindingOverrides' | 'geometry' | 'viewport' | 'layoutDropTarget'
-  | 'reflowTransition' | 'insertNodeFactories' | 'insertPaint' | 'ingestion' | 'snap'
+  | 'reflowTransition' | 'insertNodeFactories' | 'ingestion' | 'snap'
 >;
 
 /** What `<SceneCanvas>` hands {@link useSceneStandardActions}. */
@@ -195,7 +195,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(scene, props.layoutDropTarget, reflowTransition);
   useEnteredGroupApiSource(enteredGroup);
-  useInsertDepSource(scene, adapter, props.insertNodeFactories, props.insertPaint);
+  useInsertDepSource(scene, adapter, props.insertNodeFactories);
   usePathLeafDepSources(scene, selection, adapter, poseDescriptor);
   useSnapDepSource(
     currentViewRef,

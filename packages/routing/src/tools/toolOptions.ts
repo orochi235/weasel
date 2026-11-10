@@ -1,18 +1,15 @@
 /**
  * Tool options: the settings a tool's user adjusts while it is active, such as
- * a brush's size and strength. A tool declares them as a prefs group whose
- * number leaves are params of the action it binds; the host holds their values
- * (`toolOptionValues` dep) and `<SceneCanvas>` tunes the action from them. A tool
- * whose options name a size or a strength also gets step actions for them,
- * bound to `[` `]` and `Shift+[` `Shift+]` while it is the active tool, and a
- * size also steps with Shift+wheel.
+ * a brush's size or a shape's fill. A tool declares them as a prefs group whose
+ * leaves are params of the actions it binds; the host holds their values
+ * (`toolOptionValues` dep) and `<SceneCanvas>` tunes those actions from them
+ * while the tool is active. An option may name a shared key, and every tool
+ * naming that key reads and writes one value. A tool whose options name a size
+ * or a strength also gets step actions for them (`toolOptionSteps`).
  */
-import type { PrefGroup, PrefNumber } from '@weasel-js/prefs';
-import type { KeySpec } from '@weasel-js/gestures';
-import { createEmitter } from '@weasel-js/registry';
-import { ActionDisabledReason, type Action } from '../interactions/actions/action';
-import type { ActionDeps, ImmediateInvoker } from '../interactions/actions/invoker';
-import type { GestureBinding } from '../interactions/actions/binding';
+import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs';
+import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs';
+import { createEmitter, deepEqual } from '@weasel-js/registry';
 
 /** How a step action moves one option: by a factor, or by an amount. */
 export interface ToolOptionStep {
@@ -24,65 +21,155 @@ export interface ToolOptionStep {
   plus?: number;
 }
 
+/** For some of a tool's options, the shared key each reads and writes, or
+ *  `null` for one kept per tool, overriding a share the tool's def names. */
+export type ToolOptionShare = Readonly<Record<string, string | null>>;
+
 /** What a tool declares about its options. See {@link ToolDef.options}. */
 export interface ToolOptions {
-  /** The action the options are params of: each leaf of `prefs` is the param
-   *  of the same key. */
-  actionId: string;
-  /** The options, as number leaves keyed by param, with their bounds and
-   *  defaults. A host draws them from this (a group drawn `as: 'bar'` makes an
-   *  options row) and keeps their values in its prefs. */
+  /** The action, or actions, the options are params of: each leaf of `prefs`
+   *  is the param of the same key. */
+  actionId: string | readonly string[];
+  /** The options, keyed by param, with their bounds and defaults. A host draws
+   *  them from this (a group drawn `as: 'bar'` makes an options row) and keeps
+   *  their values in its prefs. */
   prefs: PrefGroup;
+  /** Options whose value is shared with every tool naming the same key: a
+   *  shape tool's `fill`, which every shape tool reads. An option left out is
+   *  the tool's own. A tool's user lays a share over this with
+   *  {@link shareToolOptions}. */
+  share?: ToolOptionShare;
   /** The option `[` and `]` step: how large the tool acts. */
   size?: ToolOptionStep;
   /** The option `Shift+[` and `Shift+]` step: how hard it acts. */
   strength?: ToolOptionStep;
 }
 
-/** Where a host keeps tool options' values: the `toolOptionValues` dep. */
+/** The owner shared options are kept under in a {@link ToolOptionValues}, beside each tool's own. */
+export const SHARED_TOOL_OPTIONS = 'shared';
+
+/** Where a host keeps tool options' values: the `toolOptionValues` dep. Values
+ *  are kept by owner, a tool's id or {@link SHARED_TOOL_OPTIONS}. */
 export interface ToolOptionValues {
-  /** `toolId`'s values, sparse: an option missing from it reads its default.
+  /** `owner`'s values, sparse: an option missing from it reads its default.
    *  The same object until one of them changes. */
-  get(toolId: string): Readonly<Record<string, number>>;
-  set(toolId: string, option: string, value: number): void;
+  get(owner: string): Readonly<Record<string, unknown>>;
+  set(owner: string, key: string, value: unknown): void;
   subscribe(listener: () => void): () => void;
 }
 
-const NONE: Readonly<Record<string, number>> = Object.freeze({});
+const NONE: Readonly<Record<string, unknown>> = Object.freeze({});
 
 /** A {@link ToolOptionValues} held in memory, for a host that keeps no prefs. */
 export function createToolOptionValues(): ToolOptionValues {
-  const values = new Map<string, Record<string, number>>();
+  const values = new Map<string, Record<string, unknown>>();
   const changed = createEmitter();
   return {
-    get: (toolId) => values.get(toolId) ?? NONE,
-    set(toolId, option, value) {
-      values.set(toolId, { ...values.get(toolId), [option]: value });
+    get: (owner) => values.get(owner) ?? NONE,
+    set(owner, key, value) {
+      values.set(owner, { ...values.get(owner), [key]: value });
       changed.emit();
     },
     subscribe: changed.subscribe,
   };
 }
 
-function leafOf(options: ToolOptions, option: string): PrefNumber | undefined {
+/** `options` with `share` laid over its own: what a tool hook's `share` option does. */
+export function shareToolOptions(options: ToolOptions, share: ToolOptionShare | undefined): ToolOptions {
+  if (!share || Object.keys(share).length === 0) return options;
+  return { ...options, share: { ...options.share, ...share } };
+}
+
+/** `options` with `option`'s default made `value`: a tool hook's way to take a starting value from its caller.
+ *  `undefined`, or an option it does not declare, leaves `options` as they are. */
+export function withToolOptionDefault(options: ToolOptions, option: string, value: unknown): ToolOptions {
+  const leaf = value === undefined ? undefined : toolOptionLeaf(options, option);
+  if (!leaf) return options;
+  return { ...options, prefs: { ...options.prefs, children: { ...options.prefs.children, [option]: { ...leaf, default: value } as PrefLeaf } } };
+}
+
+/** The actions `options` are params of. */
+export function toolOptionActionIds(options: ToolOptions): readonly string[] {
+  return typeof options.actionId === 'string' ? [options.actionId] : options.actionId;
+}
+
+/** Where `toolId`'s option `option` is kept: under the tool, or under its shared key. */
+export function toolOptionSlot(toolId: string, options: ToolOptions, option: string): { owner: string; key: string } {
+  const shared = options.share && Object.hasOwn(options.share, option) ? options.share[option] : null;
+  return shared ? { owner: SHARED_TOOL_OPTIONS, key: shared } : { owner: toolId, key: option };
+}
+
+/** `option`'s leaf in `options`, if it has one. */
+export function toolOptionLeaf(options: ToolOptions, option: string): PrefLeaf | undefined {
   const children = options.prefs.children;
   const leaf = (Object.hasOwn(children, option) ? children[option] : undefined) as { kind?: string } | undefined;
+  return leaf && typeof leaf.kind === 'string' ? (leaf as PrefLeaf) : undefined;
+}
+
+/** `option`'s leaf when it is a number. */
+export function toolOptionNumberLeaf(options: ToolOptions, option: string): PrefNumber | undefined {
+  const leaf = toolOptionLeaf(options, option);
   return leaf?.kind === 'number' ? (leaf as PrefNumber) : undefined;
 }
 
-/** Every option's value for `toolId`: what `values` holds when it is a finite number, else its default. */
-export function toolOptionParams(
-  toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
-): Record<string, number> {
-  const held = values?.get(toolId) ?? {};
-  const out: Record<string, number> = {};
+/** What `held` reads as for `leaf`, or `undefined` for nothing it can read. */
+function readHeld(leaf: PrefLeaf, held: unknown): unknown {
+  if (prefValueAbsent(leaf, held)) return undefined;
+  if (leaf.kind === 'number' && !(typeof held === 'number' && Number.isFinite(held))) return undefined;
+  const repaired = repairPrefValue(leaf, held);
+  return repaired === (leaf as { default?: unknown }).default && !deepEqual(repaired, held) ? undefined : repaired;
+}
+
+function* optionKeys(options: ToolOptions): Iterable<[string, PrefLeaf]> {
   for (const key of Object.keys(options.prefs.children)) {
-    const leaf = leafOf(options, key);
-    const own = Object.hasOwn(held, key) ? held[key] : undefined;
-    const v = typeof own === 'number' && Number.isFinite(own) ? own : leaf?.default;
-    if (typeof v === 'number') out[key] = v;
+    const leaf = toolOptionLeaf(options, key);
+    if (leaf && 'default' in leaf) yield [key, leaf];
+  }
+}
+
+/** The options `values` holds for `toolId`, each read from its slot: only those held, so an option it does not
+ *  hold leaves whatever else sets it in place. */
+export function heldToolOptions(
+  toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!values) return out;
+  for (const [key, leaf] of optionKeys(options)) {
+    const slot = toolOptionSlot(toolId, options, key);
+    const own = values.get(slot.owner);
+    const v = Object.hasOwn(own, slot.key) ? readHeld(leaf, own[slot.key]) : undefined;
+    if (v !== undefined) out[key] = v;
   }
   return out;
+}
+
+/** Every option's value for `toolId`: what its slot in `values` holds, else its default. */
+export function toolOptionParams(
+  toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, leaf] of optionKeys(options)) out[key] = (leaf as { default?: unknown }).default;
+  return { ...out, ...heldToolOptions(toolId, options, values) };
+}
+
+/** Write `value` as `toolId`'s option `option`, into its slot. */
+export function setToolOption(
+  toolId: string, options: ToolOptions, values: ToolOptionValues, option: string, value: unknown,
+): void {
+  const slot = toolOptionSlot(toolId, options, option);
+  values.set(slot.owner, slot.key, value);
+}
+
+/** Write each of `toolId`'s options that `params` sets to a new value into its slot. */
+export function keepToolOptions(
+  toolId: string, options: ToolOptions, values: ToolOptionValues, params: Readonly<Record<string, unknown>>,
+): void {
+  const now = toolOptionParams(toolId, options, values);
+  for (const [key, leaf] of optionKeys(options)) {
+    if (!Object.hasOwn(params, key)) continue;
+    const v = readHeld(leaf, params[key]);
+    if (v !== undefined && !deepEqual(v, now[key])) setToolOption(toolId, options, values, key, v);
+  }
 }
 
 /** `value` moved one step up (`dir` 1) or down (-1), within the leaf's bounds
@@ -94,125 +181,4 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   const next = snapped === value && leaf.step ? value + dir * leaf.step : snapped;
   const clamped = Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, next));
   return Number(clamped.toFixed(6));
-}
-
-/** The keys each step action is bound to while its tool is active. */
-type StepName = 'grow' | 'shrink' | 'raise' | 'lower';
-const STEP_KEYS: Record<StepName, KeySpec> = {
-  grow: { kind: 'key', key: ']', code: 'BracketRight' },
-  shrink: { kind: 'key', key: '[', code: 'BracketLeft' },
-  raise: { kind: 'key', key: [']', '}'], code: 'BracketRight', mods: { shift: true } },
-  lower: { kind: 'key', key: ['[', '{'], code: 'BracketLeft', mods: { shift: true } },
-};
-
-interface StepSpec { name: StepName; which: 'size' | 'strength'; dir: 1 | -1; label: (tool: string, option: string) => string }
-
-const STEPS: readonly StepSpec[] = [
-  { name: 'grow', which: 'size', dir: 1, label: (t) => `Grow ${t}` },
-  { name: 'shrink', which: 'size', dir: -1, label: (t) => `Shrink ${t}` },
-  { name: 'raise', which: 'strength', dir: 1, label: (t, o) => `Raise ${t} ${o}` },
-  { name: 'lower', which: 'strength', dir: -1, label: (t, o) => `Lower ${t} ${o}` },
-];
-
-/** Move `toolId`'s `step` option one step in `dir`, in `values`. */
-function stepOption(
-  toolId: string, options: ToolOptions, values: ToolOptionValues, step: ToolOptionStep, leaf: PrefNumber, dir: 1 | -1,
-): void {
-  const current = toolOptionParams(toolId, options, values)[step.option] ?? leaf.default ?? 0;
-  values.set(toolId, step.option, steppedOption(leaf, current, step, dir));
-}
-
-const enabledFor = (toolId: string) => (deps?: ActionDeps) =>
-  deps?.activeTool?.active === toolId && deps.toolOptionValues ? true : ActionDisabledReason.NotApplicable;
-
-function stepAction(toolId: string, toolLabel: string, options: ToolOptions, spec: StepSpec): Action | null {
-  const step = options[spec.which];
-  const leaf = step ? leafOf(options, step.option) : undefined;
-  if (!step || !leaf) return null;
-  return {
-    id: `${toolId}.${spec.name}`,
-    label: spec.label(toolLabel, leaf.name.toLowerCase()),
-    group: 'tool',
-    requires: ['activeTool', 'toolOptionValues'],
-    invoker: {
-      timing: 'immediate',
-      run: (deps) => {
-        if (deps.toolOptionValues) stepOption(toolId, options, deps.toolOptionValues, step, leaf, spec.dir);
-      },
-    } satisfies ImmediateInvoker,
-    enabled: enabledFor(toolId),
-  };
-}
-
-/** Wheel travel, in px of delta, that moves the size one more step within a burst. */
-export const WHEEL_SIZE_STEP_PX = 60;
-/** How long the wheel rests, in ms, before its next event starts a new burst. */
-export const WHEEL_SIZE_BURST_MS = 150;
-
-const finite = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
-
-/**
- * The size, stepped by the wheel: up grows it, down shrinks it. The first event
- * of a burst steps at once, so one notch of a mouse wheel is one step, and a
- * trackpad's stream of small deltas steps once per {@link WHEEL_SIZE_STEP_PX}.
- * Reads `deltaX` when `deltaY` is 0, because macOS turns a Shift+wheel into a
- * horizontal one.
- */
-function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions): Action | null {
-  const step = options.size;
-  const leaf = step ? leafOf(options, step.option) : undefined;
-  if (!step || !leaf) return null;
-  let travel = 0;
-  let last = -Infinity;
-  return {
-    id: `${toolId}.wheelSize`,
-    label: `Resize ${toolLabel} with the wheel`,
-    group: 'tool',
-    requires: ['activeTool', 'toolOptionValues'],
-    invoker: {
-      timing: 'immediate',
-      run: (deps, params) => {
-        const values = deps.toolOptionValues;
-        const dy = finite(params?.deltaY);
-        const d = dy !== 0 ? dy : finite(params?.deltaX);
-        if (!values || d === 0) return;
-        const now = Date.now();
-        const fresh = now - last > WHEEL_SIZE_BURST_MS || (travel !== 0 && Math.sign(travel) !== Math.sign(d));
-        last = now;
-        const dir: 1 | -1 = d < 0 ? 1 : -1;
-        if (fresh) {
-          travel = 0;
-          stepOption(toolId, options, values, step, leaf, dir);
-          return;
-        }
-        travel += d;
-        while (Math.abs(travel) >= WHEEL_SIZE_STEP_PX) {
-          travel -= Math.sign(travel) * WHEEL_SIZE_STEP_PX;
-          stepOption(toolId, options, values, step, leaf, dir);
-        }
-      },
-    } satisfies ImmediateInvoker,
-    enabled: enabledFor(toolId),
-  };
-}
-
-/** The step actions for `toolId`'s size and strength options, and the key and
- *  wheel bindings that reach them. */
-export function toolOptionSteps(
-  toolId: string, toolLabel: string, options: ToolOptions,
-): { actions: Action[]; bindings: GestureBinding[] } {
-  const actions: Action[] = [];
-  const bindings: GestureBinding[] = [];
-  for (const spec of STEPS) {
-    const action = stepAction(toolId, toolLabel, options, spec);
-    if (!action) continue;
-    actions.push(action);
-    bindings.push({ spec: STEP_KEYS[spec.name], actionId: action.id, opts: { id: `${action.id}.key` } });
-  }
-  const wheel = wheelSizeAction(toolId, toolLabel, options);
-  if (wheel) {
-    actions.push(wheel);
-    bindings.push({ spec: { kind: 'wheel', mods: { shift: true } }, actionId: wheel.id, opts: { id: `${wheel.id}.shiftWheel` } });
-  }
-  return { actions, bindings };
 }

@@ -35,14 +35,19 @@ export type { PressTargetTree } from './pressTarget';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
 export { useHandTool, dragPanContribution, DRAG_PAN_ID } from './hand';
 export { anchorsTool, ANCHORS_TOOL_ID } from './anchors';
-export { useTextTool } from './text';
+export { useTextTool, TEXT_TOOL_OPTIONS } from './text';
 export {
-  useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS,
-  type UseStickyToolOptions, type StickyStyle,
+  useStickyTool, stickyData, stickyNodeFactory, STICKY_DEFAULTS, STICKY_TOOL_OPTIONS,
+  type UseStickyToolOptions, type StickyLook, type StickyStyle,
 } from './sticky';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.
 // Viewport zoom and pan are now handled by the viewport.zoom and viewport.pan
 // action descriptors registered via useStandardActions + useGestureDispatcher.
+export { PEN_TOOL_OPTIONS } from './pen/penOptions';
+export {
+  DEFAULT_SHAPE_PAINT, DEFAULT_STROKE_WIDTH, shapeToolOptions, STYLE_OPTION_KEYS, styleOptionLeaves,
+  type InsertStyle, type ShapeToolOptionsSpec, type StyleOptionKey,
+} from './shared/styleOptions';
 export {
   usePenTool,
   type UsePenToolOptions,
@@ -51,19 +56,19 @@ export {
   type PenAnchor,
   type PenSubpath,
 } from './pen';
-export { useRectTool } from './rect';
+export { useRectTool, RECT_TOOL_OPTIONS } from './rect';
 export type { InsertToolOptions } from './shared/insertToolOptions';
 export { createPointerFollower, type PointerFollower } from './shared/pointerFollower';
-export { useEllipseTool } from './ellipse';
+export { useEllipseTool, ELLIPSE_TOOL_OPTIONS } from './ellipse';
 export { useImageTool, type UseImageToolOptions } from './image';
 export {
   useEyedropperTool,
   type UseEyedropperToolOptions,
 } from './eyedropper';
-export { useLineTool, type LinePoint } from './line';
+export { useLineTool, LINE_TOOL_OPTIONS, type LinePoint } from './line';
 export { useLassoTool, type UseLassoToolOptions } from './lasso';
-export { usePolygonTool, type UsePolygonToolOptions } from './polygon';
-export { useStarTool, type UseStarToolOptions } from './star';
-export { usePencilTool, type PencilPoint } from './pencil';
+export { usePolygonTool, POLYGON_TOOL_OPTIONS, type UsePolygonToolOptions } from './polygon';
+export { useStarTool, STAR_TOOL_OPTIONS, type UseStarToolOptions } from './star';
+export { usePencilTool, PENCIL_TOOL_OPTIONS, type PencilPoint } from './pencil';
 export { useSliceTool, type UseSliceToolOptions, type SliceScratch } from './slice';
 export { useMeasureTool, type UseMeasureToolOptions } from './measure';

@@ -45,7 +45,7 @@ export type { ActionParamSchema } from './actionParamSchema';
 export {
   SIMPLIFY_BRUSH_PARAMS, SIMPLIFY_BRUSH_RADIUS_PX, simplifyBrushAction, type SimplifyBrushParams,
 } from './simplifyBrush/simplifyBrush';
-export { SIMPLIFY_BRUSH_OPTIONS, useSimplifyBrushTool } from './simplifyBrush/useSimplifyBrushTool';
+export { SIMPLIFY_BRUSH_OPTIONS, useSimplifyBrushTool, type UseSimplifyBrushToolOptions } from './simplifyBrush/useSimplifyBrushTool';
 export { handleLockAngleAction, handleLockLengthAction } from './handleLocks/handleLocks';
 export {
   BRIDGE_PARAMS, bridgeAnchorsAction, bridgePathsAction, bridgeTensionOf, DEFAULT_BRIDGE_TENSION,

@@ -31,3 +31,13 @@ export const pathAidsToGroup: PrefsMigration = (records) => {
   }
   records.delete('ui.leftSidebarWidth');
 };
+
+/** Version 3 to 4: the path fill rule became the shape tools' shared `fillRule` option, and the drawing group
+ *  that held it went away. */
+export const fillRuleToToolOptions: PrefsMigration = (records) => {
+  const from = 'drawing.pathFillRule';
+  if (!records.has(from)) return;
+  const to = 'tools.shared.fillRule';
+  if (!records.has(to)) records.set(to, records.get(from));
+  records.delete(from);
+};

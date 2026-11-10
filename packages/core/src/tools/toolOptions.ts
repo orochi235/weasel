@@ -1,9 +1,10 @@
 /**
  * The canvas side of tool options (`ToolDef.options`): publishing where their
- * values live, and tuning each tool's action from them.
+ * values live, and tuning each tool's actions from them.
  */
-import { useEffect } from 'react';
-import { toolOptionParams, type ToolOptions, type ToolOptionValues } from '@weasel-js/routing';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { deepEqual } from '@weasel-js/registry';
+import { createToolOptionValues, keepToolOptions, toolOptionActionIds, toolOptionParams, type ToolOptionValues } from '@weasel-js/routing';
 import { useDepSource, useOptionalDepRegistry, type DepRegistry } from '@weasel-js/routing/react';
 import type { ActionsRegistry } from '@weasel-js/routing';
 import type { Tool } from './overlayBinding';
@@ -14,28 +15,38 @@ export function useToolOptionValues(values: ToolOptionValues): void {
   useDepSource('toolOptionValues', () => values);
 }
 
-function heldOptions(toolId: string, options: ToolOptions, values: ToolOptionValues | undefined): Record<string, number> {
-  const held = values?.get(toolId) ?? {};
-  const out: Record<string, number> = {};
-  for (const key of Object.keys(options.prefs.children)) if (typeof held[key] === 'number') out[key] = held[key];
-  return out;
+/** Every option's value for `tool` in `values`, each read from its slot (`toolOptionParams`): what an options row
+ *  draws. Re-renders when any of them changes, a shared one set by another tool included, and is the same object
+ *  until one does. `null` for no tool, or one with no options. */
+export function useToolOptionParams(
+  tool: Pick<Tool, 'id' | 'options'> | undefined, values: ToolOptionValues,
+): Readonly<Record<string, unknown>> | null {
+  const last = useRef<Readonly<Record<string, unknown>> | null>(null);
+  const read = useCallback(() => {
+    const next = tool?.options ? toolOptionParams(tool.id, tool.options, values) : null;
+    if (next === null || last.current === null || !deepEqual(next, last.current)) last.current = next;
+    return last.current;
+  }, [tool, values]);
+  return useSyncExternalStore(values.subscribe, read, read);
 }
 
-/** Write each of `toolId`'s options that `params` sets to a new value into `values`. */
-function keepOptions(toolId: string, options: ToolOptions, values: ToolOptionValues | undefined, params: Readonly<Record<string, unknown>>): void {
-  if (!values) return;
-  const now = toolOptionParams(toolId, options, values);
-  for (const key of Object.keys(options.prefs.children)) {
-    const v = params[key];
-    if (typeof v === 'number' && Number.isFinite(v) && v !== now[key]) values.set(toolId, key, v);
-  }
+/** Hold tool option values in memory under whatever store the host publishes, so a canvas whose host keeps none
+ *  still has its tools' options: the store the host publishes, else this one. */
+export function useFallbackToolOptionValues(): void {
+  const registry = useOptionalDepRegistry();
+  const [fallback] = useState(createToolOptionValues);
+  useEffect(() => registry?.register('toolOptionValues', (below) => below() ?? fallback), [registry, fallback]);
 }
 
-/** Tune each tool's options action with the values the `toolOptionValues` dep
- *  holds, read on every invocation: only those it holds, so an option it does
- *  not leaves the action's own default, or another tuning's value, in place.
- *  The options and the action's last-operation panel are one setting: a value
- *  the panel sets is written back to the dep. Returns a release. */
+/** Tune the actions each tool's options are params of with every option's
+ *  value, from the `toolOptionValues` dep or its default, while that tool is
+ *  the active one, read on every invocation. The tuning lies under every other
+ *  (`ActionTuning.under`), so a host's own tuning of a param still wins. A
+ *  tool's bindings name none of its options. Several tools
+ *  can bind one action (every shape tool binds `insert`), and only the active
+ *  tool's options reach it. The options and the action's last-operation panel
+ *  are one setting: a value the panel sets is written back to the dep.
+ *  Returns a release. */
 export function tuneToolOptions(
   registry: Pick<ActionsRegistry, 'tune'>,
   deps: Pick<DepRegistry, 'get'> | null,
@@ -45,10 +56,17 @@ export function tuneToolOptions(
   for (const tool of tools) {
     const options = tool.options;
     if (!options) continue;
-    releases.push(registry.tune(options.actionId, {
-      params: () => heldOptions(tool.id, options, deps?.get('toolOptionValues')),
-      keep: (params) => keepOptions(tool.id, options, deps?.get('toolOptionValues'), params),
-    }));
+    const active = () => deps?.get('activeTool')?.active === tool.id;
+    for (const actionId of toolOptionActionIds(options)) {
+      releases.push(registry.tune(actionId, {
+        under: true,
+        params: () => (active() ? toolOptionParams(tool.id, options, deps?.get('toolOptionValues')) : {}),
+        keep: (params) => {
+          const values = deps?.get('toolOptionValues');
+          if (values && active()) keepToolOptions(tool.id, options, values, params);
+        },
+      }));
+    }
   }
   return () => { for (const r of releases) r(); };
 }

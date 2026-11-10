@@ -108,14 +108,11 @@ describe('useInsertDepSource', () => {
     expect(applyOps.mock.calls[0][0][0].args.node.data).toEqual({ text: 'hello', fill: { paint: { kind: 'solid', color: '#000' } } });
   });
 
-  it('paints a kit shape from the `paint` option, keeping the kit geometry', () => {
+  it('paints a kit shape from the style its extras carry, keeping the kit geometry', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
-    const paint = vi.fn((kind: string, _seq: number) =>
-      kind === 'line' ? { stroke: { paint: { color: '#00f' }, width: 3 } } : { fill: null, stroke: { paint: { color: '#f00' }, width: 1 } },
-    );
     function Wire() {
-      useInsertDepSource(makeScene(), { applyOps }, undefined, paint);
+      useInsertDepSource(makeScene(), { applyOps });
       return null;
     }
     render(
@@ -125,15 +122,17 @@ describe('useInsertDepSource', () => {
       </DepRegistryProvider>,
     );
     const dep = (reg.get as any)('insert');
-    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' });
-    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line' });
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect', style: { fill: null, stroke: { color: '#f00' }, strokeWidth: 1 } });
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line', style: { stroke: { color: '#00f' }, strokeWidth: 3 } });
+    dep.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect', style: { stroke: { color: '#00f' } } });
     const data = (call: number) => applyOps.mock.calls[call][0][0].args.node.data;
     expect(data(0)).toEqual({ path: expect.anything(), fill: null, stroke: { paint: { color: '#f00' }, width: 1 } });
     expect(data(1)).toEqual({ path: expect.anything(), fill: null, stroke: { paint: { color: '#00f' }, width: 3 } });
-    expect(paint.mock.calls.map(([kind, seq]) => [kind, seq])).toEqual([['rect', 1], ['line', 2]]);
+    // A style naming no fill leaves none on the node.
+    expect(data(2)).toEqual({ path: expect.anything(), stroke: { paint: { color: '#00f' }, width: 2 } });
   });
 
-  it('cycles the palette when no `paint` is given: a fill on a shape, a stroke alone on a line or a pencil trail', () => {
+  it('cycles the palette when the extras carry no style: a fill on a shape, a stroke alone on a line or a pencil trail', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
     function Wire() {
@@ -158,11 +157,11 @@ describe('useInsertDepSource', () => {
     expect(applyOps.mock.calls[1][0][0].args.node.data.stroke.width).toBe(2);
   });
 
-  it('leaves a line unfilled whatever the `paint` option gives it, so an action reading its paint finds a stroke alone', () => {
+  it('leaves a line unfilled whatever fill its style names, so an action reading its paint finds a stroke alone', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;
     function Wire() {
-      useInsertDepSource(makeScene(), { applyOps }, undefined, () => ({ fill: { paint: { color: '#0f0' } }, stroke: { paint: { color: '#00f' }, width: 3 } }));
+      useInsertDepSource(makeScene(), { applyOps });
       return null;
     }
     render(
@@ -171,7 +170,8 @@ describe('useInsertDepSource', () => {
         <Capture onR={(r) => { reg = r; }} />
       </DepRegistryProvider>,
     );
-    (reg.get as any)('insert').commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line' });
+    const style = { fill: { color: '#0f0' }, stroke: { color: '#00f' }, strokeWidth: 3 };
+    (reg.get as any)('insert').commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'line', style });
     const { data } = applyOps.mock.calls[0][0][0].args.node;
     expect(pathPaintOf(data)).toEqual({ fill: null, stroke: { paint: { color: '#00f' }, width: 3 } });
   });

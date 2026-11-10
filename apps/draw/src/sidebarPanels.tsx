@@ -4,7 +4,7 @@ import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import { SwatchStrip } from '@weasel-js/ui/components/SwatchStrip';
 import { solidColorOf } from '@weasel-js/ui/paint-value';
 import { type ReactElement, useCallback, useSyncExternalStore } from 'react';
-import type { ActivePaint } from './ActiveSwatches';
+import type { ActivePaint } from './newShapePaint';
 import { DOCUMENT_UNITS } from './documentUnits';
 import { LayersContent } from './LayersPanel';
 import { DRAW_NODE_ROUTING, drawKindLabel } from './nodeKinds';

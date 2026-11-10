@@ -2,9 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrefNumber } from '@weasel-js/prefs';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { defineTool } from './defineTool';
-import {
-  createToolOptionValues, steppedOption, toolOptionParams, toolOptionSteps, WHEEL_SIZE_BURST_MS, WHEEL_SIZE_STEP_PX, type ToolOptions,
-} from './toolOptions';
+import { createToolOptionValues, steppedOption, toolOptionParams, type ToolOptions } from './toolOptions';
+import { toolOptionSteps, WHEEL_SIZE_BURST_MS, WHEEL_SIZE_STEP_PX } from './toolOptionSteps';
 
 const OPTIONS: ToolOptions = {
   actionId: 'brush',

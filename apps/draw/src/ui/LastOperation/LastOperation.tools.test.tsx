@@ -14,6 +14,7 @@ import { usePathToolsTools } from '@weasel-js/path-tools';
 import { DRAW_FEATURES } from '../../drawFeatures';
 import { ToolOptionsPublisher } from '../../adapterPublishers';
 import { drawPrefs } from '../../prefs';
+import { drawToolOptionValues } from '../../toolOptions';
 import { LastOperation } from '.';
 
 beforeAll(() => {
@@ -78,7 +79,7 @@ describe('the last-operation panel in draw', () => {
     act(() => { fireEvent.change(screen.getByRole('slider', { name: /Size/ }), { target: { value: '90' } }); });
     expect(pathOf(scene)).not.toBe(first);
     expect(scene.history.undoDepth()).toBe(depth + 1);
-    expect(drawPrefs().get('tools.smudgeBrush.radiusPx')).toBe(90);
+    expect(drawToolOptionValues().get('smudgeBrush').radiusPx).toBe(90);
     expect(registry().paramsOf('smudgeBrush')).toMatchObject({ radiusPx: 90 });
   });
 

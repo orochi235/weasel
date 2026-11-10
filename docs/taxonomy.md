@@ -166,12 +166,25 @@ owned by the selection (`selectionMoveContribution`,
 under any tool that leaves the gesture unclaimed.
 
 A tool's **options** (`ToolDef.options`) are the settings its user adjusts while
-it is active — a brush's size and strength — declared as a prefs group of the
-params of the one action it binds. The host keeps their values (the
-`toolOptionValues` dep), `<SceneCanvas>` tunes the action from them, and a host draws
-the active tool's options row from the same schema. Naming a size or a strength
-gives the tool step actions on `[` `]` and `Shift+[` `Shift+]`, bound at active
-scope so they hold those keys only while it is the active tool. See
+it is active — a brush's size, a shape's fill — declared as a prefs group whose
+leaves, of any kind, are params of the actions it binds. The host keeps their
+values (the `toolOptionValues` dep; a canvas whose host publishes none holds them
+in memory), `<SceneCanvas>` tunes those actions from them while the tool is
+active, beneath any other tuning, and a host draws the options row from the same
+schema. Naming a size or a strength gives the tool step actions on `[` `]`,
+`Shift+[` `Shift+]`, and Shift+wheel, bound at active scope.
+
+An option is kept per tool unless it names a **shared key** (`ToolOptions.share`),
+and every tool naming that key reads and writes one value. Every read and write
+goes through the slot `toolOptionSlot` resolves. The shape tools share `fill`,
+`stroke`, `strokeWidth`, and `fillRule`, and text its `textFill`. A brush's size
+is its own until a use site shares it (`@weasel-js/brush`'s `shareBrushSize`). A
+tool's def names its shares; a use site lays its own over them with the hook's
+`share` option, `null` keeping an option per tool. A prefs-backed host keeps the
+values at `<base>.<owner>.<key>` (`toolOptionsPrefs`, `prefsToolOptionValues`),
+the owner a tool's id or `shared`, and its schema gives a shared key its default.
+Ruled 2026-11-09: style is ordinary tool options, with no separate store for
+color, and shared brush settings stay out of core. See
 `packages/routing/src/tools/toolOptions.ts`.
 
 A tool **hides** chrome its own controls stand in for (`ToolDef.hides`, a list

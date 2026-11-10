@@ -55,7 +55,6 @@ export function NoticesPublisher(): null {
 
 /** Publishes draw's prefs as where tools keep their options (`toolOptionValues`). */
 export function ToolOptionsPublisher(): null {
-  const values = useMemo(() => drawToolOptionValues(), []);
-  useToolOptionValues(values);
+  useToolOptionValues(drawToolOptionValues());
   return null;
 }

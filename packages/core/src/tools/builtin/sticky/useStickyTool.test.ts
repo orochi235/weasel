@@ -5,6 +5,7 @@ import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 import { solid } from '../../../util/paint';
 import { STICKY_DEFAULTS } from './stickyNode';
 import { useStickyTool } from './useStickyTool';
+import { toolOptionParams, toolOptionSlot } from '@weasel-js/routing';
 
 const bindingFor = (tool: ReturnType<typeof useStickyTool>, kind: string, target?: string) =>
   tool.bindings!.find((b) => b.spec.kind === kind && (b.spec as { target?: string }).target === target);
@@ -46,9 +47,12 @@ describe('useStickyTool', () => {
     const size = { width: 90, height: 60 };
     const minSize = { width: 30, height: 20 };
     const { result } = renderHook(() => useStickyTool({ background, padding: 6, size, minSize, overflow: 'visible' }));
-    const look = { kind: 'sticky', minSize, background, padding: 6, overflow: 'visible' };
+    const look = { kind: 'sticky', minSize, padding: 6, overflow: 'visible' };
     expect(bindingFor(result.current, 'drag')?.opts?.params).toEqual(look);
     expect(bindingFor(result.current, 'click')?.opts?.params).toEqual({ ...look, size });
+    // The paper is the tool's own option, defaulting to the background it is given.
+    expect(toolOptionParams('sticky', result.current.options!, undefined).paper).toEqual(background.paint);
+    expect(toolOptionSlot('sticky', result.current.options!, 'paper').owner).toBe('sticky');
   });
 
   it('passes insert behaviors to the drag', () => {

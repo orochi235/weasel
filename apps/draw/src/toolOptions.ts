@@ -1,17 +1,10 @@
-import type { ToolOptionValues } from '@weasel-js/core';
-import { drawPrefs, type DrawPrefPath } from './prefs';
+import { prefsToolOptionValues, type ToolOptionPrefsStore, type ToolOptionValues } from '@weasel-js/core';
+import { drawPrefs } from './prefs';
 
-const NONE: Readonly<Record<string, number>> = Object.freeze({});
-const pathOf = (toolId: string, option: string) => `tools.${toolId}.${option}` as DrawPrefPath;
+let held: { store: unknown; values: ToolOptionValues } | null = null;
 
-/** Draw's tool option values: each a pref under `tools.<tool id>`, so they persist per tool. */
+/** Draw's tool option values: each a pref under `tools.<owner>`, so they persist. One store per prefs store. */
 export function drawToolOptionValues(prefs = drawPrefs()): ToolOptionValues {
-  return {
-    get(toolId) {
-      const held = (prefs.values() as { tools?: Record<string, unknown> }).tools?.[toolId];
-      return (held && typeof held === 'object' ? held : NONE) as Record<string, number>;
-    },
-    set: (toolId, option, value) => prefs.set(pathOf(toolId, option), value as never),
-    subscribe: (listener) => prefs.subscribe(() => listener()),
-  };
+  if (held?.store !== prefs) held = { store: prefs, values: prefsToolOptionValues(prefs as ToolOptionPrefsStore, 'tools') };
+  return held.values;
 }

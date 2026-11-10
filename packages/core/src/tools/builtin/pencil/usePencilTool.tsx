@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
+import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
+import { shareToolOptions } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
@@ -29,6 +31,11 @@ export interface PencilPoint {
   tiltY?: number;
 }
 
+/** The pencil tool's options: the stroke it draws with, shared with every shape tool. */
+export const PENCIL_TOOL_OPTIONS = shapeToolOptions({
+  actionId: 'insert', name: 'Pencil', keys: ['stroke', 'strokeWidth'], style: { stroke: DEFAULT_SHAPE_PAINT },
+});
+
 /**
  * Freehand pencil tool. The `drag` binding routes to `insertAction`,
  * which accumulates the pointer trail and commits it as
@@ -36,7 +43,7 @@ export interface PencilPoint {
  * `schneiderFit` over the samples to produce a cubic-Bezier path.
  */
 export function usePencilTool(options: InsertToolOptions = {}): Tool {
-  const { behaviors } = options;
+  const { behaviors, share } = options;
   return useMemo(
     () =>
       defineTool({
@@ -44,6 +51,7 @@ export function usePencilTool(options: InsertToolOptions = {}): Tool {
         keybinding: { key: 'N' },
         capabilities: ['creates-paths'],
         hookName: 'usePencilTool',
+        options: shareToolOptions(PENCIL_TOOL_OPTIONS, share),
         cursor: cursorFor('pencil', { fallback: 'crosshair' }),
         presentation: {
           label: 'Pencil',
@@ -58,6 +66,6 @@ export function usePencilTool(options: InsertToolOptions = {}): Tool {
           },
         ],
       }),
-    [behaviors],
+    [behaviors, share],
   );
 }

@@ -26,7 +26,6 @@ import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { type ReactElement, type RefObject, useMemo } from 'react';
 import { BooleansAdapterPublisher, CreateOutlinesAdapterPublisher, NoticesPublisher, ToolOptionsPublisher } from './adapterPublishers';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { useInsertPaint } from './insertPaint';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { canvasAlphaFor, useDrawEnteredGroup, useEnteredGroupLabel } from './modality/enteredGroup';
 import { useCanvasModes, useModeTargetLabel } from './modality/useCanvasModes';
@@ -138,7 +137,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
     setView: onViewChange,
     openPalette: props.openPalette,
   });
-  const insertPaint = useInsertPaint();
   const pathToolsTools = usePathToolsTools();
   const { measurements } = props;
   const measureTool = useMeasureTool({ measurements });
@@ -222,7 +220,6 @@ export function Workspace(props: WorkspaceProps): ReactElement {
             sampleLayers={props.sampleLayers}
             ingestion={DRAW_INGESTION}
             tune={DRAW_TUNE}
-            insertPaint={insertPaint}
             // Pick on the drawn shape, not the bounding box: clicking the blank right half of a
             // text box, or the notch of a star, should reach whatever is behind it.
             geometry={{ picking: 'shape' }}

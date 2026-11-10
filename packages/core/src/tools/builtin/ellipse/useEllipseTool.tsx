@@ -3,9 +3,16 @@ import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { INSERT_REPOSITION_BINDING } from 'interactions/actions/insert/repositionAction';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
+import { DEFAULT_SHAPE_PAINT, shapeToolOptions } from '../shared/styleOptions';
+import { shareToolOptions } from '@weasel-js/routing';
 import { cursorFor } from '@weasel-js/cursor';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
+
+/** The ellipse tool's options: the style it draws with, shared with every shape tool. */
+export const ELLIPSE_TOOL_OPTIONS = shapeToolOptions({
+  actionId: 'insert', name: 'Ellipse', keys: ['fill', 'stroke', 'strokeWidth'], style: { fill: DEFAULT_SHAPE_PAINT, stroke: null },
+});
 
 /**
  * Drag-to-draw ellipse tool. Mirrors `useRectTool`: the `drag` binding
@@ -14,7 +21,7 @@ import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
  * mid-drag via the action's live modifier read.
  */
 export function useEllipseTool(options: InsertToolOptions = {}): Tool {
-  const { behaviors } = options;
+  const { behaviors, share } = options;
   return useMemo(
     () =>
       defineTool({
@@ -22,6 +29,7 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool {
         keybinding: { key: 'E' },
         capabilities: ['creates-shapes'],
         hookName: 'useEllipseTool',
+        options: shareToolOptions(ELLIPSE_TOOL_OPTIONS, share),
         cursor: cursorFor('crosshair', { mark: 'ellipse', fallback: 'crosshair' }),
         presentation: {
           label: 'Ellipse',
@@ -37,6 +45,6 @@ export function useEllipseTool(options: InsertToolOptions = {}): Tool {
           INSERT_REPOSITION_BINDING,
         ],
       }),
-    [behaviors],
+    [behaviors, share],
   );
 }

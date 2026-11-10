@@ -22,7 +22,7 @@
     "longestFunction": 232
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 516
+    "lines": 510
   },
   "packages/core/src/core/scene/kitOps.ts": {
     "longestFunction": 179
@@ -43,11 +43,8 @@
     "lines": 420
   },
   "packages/core/src/tools/builtin/pen/usePenTool.ts": {
-    "lines": 608,
+    "lines": 599,
     "longestFunction": 433
-  },
-  "packages/core/src/tools/builtin/polygon/usePolygonTool.tsx": {
-    "longestFunction": 122
   },
   "packages/core/src/tools/builtin/select/useSelectToolWith.ts": {
     "longestFunction": 144

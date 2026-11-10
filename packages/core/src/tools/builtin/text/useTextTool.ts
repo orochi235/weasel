@@ -4,6 +4,9 @@ import type { PrefGroup } from '@weasel-js/prefs';
 import { defineTool } from '../../overlayBinding';
 import type { Tool } from '../../overlayBinding';
 import { insertBindingBehaviors, type InsertToolOptions } from '../shared/insertToolOptions';
+import { shapeToolOptions } from '../shared/styleOptions';
+import { shareToolOptions } from '@weasel-js/routing';
+import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
 import { icon } from '../../../icons.gen';
 import { INSERT_DRAG_MODS } from 'interactions/actions/insert/action';
 
@@ -12,6 +15,12 @@ const PRESENTATION = {
   icon: icon('text'),
   group: 'type',
 };
+
+/** The text tool's options: the fill new text is set in, shared under `textFill`. Not the shapes' `fill`: a white
+ *  shape fill would set white text on a white page. */
+export const TEXT_TOOL_OPTIONS = shareToolOptions(shapeToolOptions({
+  actionId: 'insert', name: 'Text', keys: ['fill'], style: { fill: DEFAULT_TEXT_FILL.paint },
+}), { fill: 'textFill' });
 
 /** Text tool. Drag-rect insertion is owned end-to-end by the dispatcher's
  *  `insertAction` (kind: `'text'`); click-on-selected-text-node enters edit
@@ -23,7 +32,7 @@ const PRESENTATION = {
  *  `src/interactions/actions/defaults/enterTextEdit.ts`). Custom node
  *  factories and hit gating belong on those deps, not on the tool. */
 export function useTextTool(options: InsertToolOptions = {}): Tool {
-  const { behaviors } = options;
+  const { behaviors, share } = options;
   return useMemo<Tool>(
     () =>
       defineTool({
@@ -31,6 +40,7 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
         keybinding: { key: 'T' },
         capabilities: ['creates-text'],
         hookName: 'useTextTool',
+        options: shareToolOptions(TEXT_TOOL_OPTIONS, share),
         cursor: 'text',
         presentation: PRESENTATION,
         bindings: [
@@ -38,7 +48,7 @@ export function useTextTool(options: InsertToolOptions = {}): Tool {
           { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit', opts: { id: 'text.editText' } },
         ],
       }),
-    [behaviors],
+    [behaviors, share],
   );
 }
 

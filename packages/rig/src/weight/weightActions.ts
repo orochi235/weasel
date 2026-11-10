@@ -12,7 +12,9 @@ import { dataRestPath } from '@weasel-js/core';
 import { brushWeights, setWeights } from '@weasel-js/animator';
 import { sceneReach, type PlacedRig } from '../bone/placedRig';
 import type { RigEditState } from '../bone/rigEditState';
-import type { ImmediateParams } from '@weasel-js/routing';
+import { resolveParams, type BindingOpts, type ImmediateParams } from '@weasel-js/routing';
+import { pref } from '@weasel-js/prefs';
+import { brushRing } from '@weasel-js/cursor';
 
 /** One path under the rig node, where it is drawn, with the weights now showing. */
 export interface WeighedPath {
@@ -28,8 +30,6 @@ export interface WeightEnv {
   state: RigEditState;
   /** Screen px around a joint within which a click picks it. */
   reachPx(): number;
-  /** The brush's radius in screen px. */
-  radiusPx(): number;
   /** Weights a stroke has painted and not yet committed, by node. */
   painted(): ReadonlyMap<NodeId, Skin>;
   paint(next: ReadonlyMap<NodeId, Skin> | null): void;
@@ -60,14 +60,39 @@ export function weighedPaths(env: Pick<WeightEnv, 'scene' | 'placed' | 'painted'
 
 const eligible = { capability: 'edits-page' } as const;
 
+/** The brush's radius in screen px when no option gives one. */
+export const DEFAULT_WEIGHT_RADIUS_PX = 24;
+
+/** The weight brush's size: the `weight.paint` action's params, and the tool's options. */
+export const WEIGHT_BRUSH_PARAMS = pref.group('Weight brush', {
+  radiusPx: pref.number('Size', DEFAULT_WEIGHT_RADIUS_PX, {
+    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',
+  }),
+}, { description: 'The size of the weight brush.' });
+
+/** The weight tool's options: its brush size, stepped by `[` `]` and Shift+wheel, which a drag and a click's dab
+ *  both read. */
+export const WEIGHT_BRUSH_OPTIONS = {
+  actionId: ['weight.paint', 'weight.click'],
+  prefs: WEIGHT_BRUSH_PARAMS,
+  size: { option: 'radiusPx', times: 1.25 },
+} as const;
+
+const radiusOf = (params: Readonly<Record<string, unknown>> | undefined): number => {
+  const r = params?.radiusPx;
+  return typeof r === 'number' && Number.isFinite(r) && r > 0 ? r : DEFAULT_WEIGHT_RADIUS_PX;
+};
+
 const activeJoint = (env: WeightEnv): string | null => {
   const name = env.state.active();
   return name !== null && env.placed()?.skeleton.joints.some((j) => j.name === name) ? name : null;
 };
 
 /** One dab of the brush at `(x, y)`: what `env.painted()` becomes, or `null` if no point moved. */
-function dab(env: WeightEnv, deps: ActionDeps, joint: string, x: number, y: number, mode: 'add' | 'remove'): Map<NodeId, Skin> | null {
-  const radius = sceneReach(deps, env.radiusPx());
+function dab(
+  env: WeightEnv, deps: ActionDeps, joint: string, x: number, y: number, mode: 'add' | 'remove', radiusPx: number,
+): Map<NodeId, Skin> | null {
+  const radius = sceneReach(deps, radiusPx);
   let next: Map<NodeId, Skin> | null = null;
   for (const { id, path, skin } of weighedPaths(env)) {
     const hits = brushWeights(worldCoords(path), x, y, radius, skin[joint], mode);
@@ -102,20 +127,27 @@ export function createWeightActions(env: WeightEnv): Action[] {
       label: 'Weight — paint the active joint\'s weights',
       eligible,
       requires: ['view', 'selection', 'applyOps'],
+      params: WEIGHT_BRUSH_PARAMS,
+      cursor: (params) => brushRing(radiusOf(params)),
       enabled: () => (activeJoint(env) !== null ? true : ActionDisabledReason.NotApplicable),
       invoker: {
         timing: 'ongoing',
-        start: ({ deps, drag, world, modifiers }: InvocationCtx) => {
+        start: ({ deps, drag, world, modifiers }: InvocationCtx, opts?: BindingOpts) => {
           const joint = activeJoint(env);
           if (joint === null) return {};
+          let radiusPx = radiusOf(resolveParams(opts?.params));
           const stroke = (x: number, y: number, alt: boolean): void => {
-            const next = dab(env, deps, joint, x, y, alt ? 'remove' : 'add');
+            const next = dab(env, deps, joint, x, y, alt ? 'remove' : 'add', radiusPx);
             if (next) env.paint(next);
           };
           const press = drag?.start ?? world;
           stroke(press.x, press.y, modifiers.alt);
           return {
-            onMove: (move: InvocationCtx) => stroke(move.world.x, move.world.y, move.modifiers.alt),
+            cursor: () => brushRing(radiusPx),
+            onMove: (move: InvocationCtx) => {
+              radiusPx = radiusOf({ ...resolveParams(opts?.params), ...move.params });
+              stroke(move.world.x, move.world.y, move.modifiers.alt);
+            },
             // The dispatcher hands `onEnd` a context with empty deps.
             onEnd: (_end: InvocationCtx, reason: 'commit' | 'cancel') => {
               if (reason === 'cancel') env.paint(null);
@@ -144,7 +176,7 @@ export function createWeightActions(env: WeightEnv): Action[] {
             return;
           }
           const joint = activeJoint(env);
-          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, p?.mods?.alt ? 'remove' : 'add');
+          const next = joint === null ? null : dab(env, deps, joint, press.x, press.y, p?.mods?.alt ? 'remove' : 'add', radiusOf(p as Readonly<Record<string, unknown>> | undefined));
           if (!next) return;
           env.paint(next);
           commitPainted(env, deps);

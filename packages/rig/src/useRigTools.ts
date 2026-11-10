@@ -40,8 +40,6 @@ export interface UseRigToolsOptions {
   state?: RigEditState;
   /** Screen px around a joint within which a press takes it. */
   reach?: number;
-  /** The weight tool's brush radius, in screen px. */
-  radius?: number;
 }
 
 /**
@@ -58,8 +56,8 @@ export function useRigTools(options: UseRigToolsOptions): Record<RigToolId, Tool
   }, [latest]);
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
-  const { reach, radius } = options;
+  const { reach } = options;
   const bone = useBoneTool({ scene, rig, state, reach });
-  const weight = useWeightTool({ scene, rig, state, reach, radius });
+  const weight = useWeightTool({ scene, rig, state, reach });
   return useMemo(() => ({ bone, weight }), [bone, weight]);
 }

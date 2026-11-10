@@ -4,7 +4,7 @@ type Props = SceneCanvasProps<unknown, string, unknown>;
 
 /** Every prop `<SceneCanvas>` reads itself instead of handing to `<Canvas>`. */
 const OWN_PROPS = [
-  'scene', 'geometry', 'poseDescriptor', 'selectTool', 'insertNodeFactories', 'insertPaint',
+  'scene', 'geometry', 'poseDescriptor', 'selectTool', 'insertNodeFactories',
   'ingestion', 'layoutDropTarget', 'reflowTransition', 'poseTransition', 'geometryProjection', 'routing',
   'selection', 'selectionOptions', 'selectable', 'tools', 'features', 'enableKeybindings',
   'claimKeys', 'enableGestureDispatcher', 'onToolsCreated', 'defaultTools', 'toolOptions',

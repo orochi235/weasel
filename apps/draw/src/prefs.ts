@@ -1,8 +1,12 @@
 // WeaselDraw's per-user preferences: the schema, and the store over
 // localStorage that holds them, one record per leaf.
 
-import { usePenTool } from '@weasel-js/core';
+import {
+  ELLIPSE_TOOL_OPTIONS, LINE_TOOL_OPTIONS, PEN_TOOL_OPTIONS, PENCIL_TOOL_OPTIONS, POLYGON_TOOL_OPTIONS, RECT_TOOL_OPTIONS,
+  STAR_TOOL_OPTIONS, TEXT_TOOL_OPTIONS, toolOptionsPrefs, type OptionedTool,
+} from '@weasel-js/core';
 import { SIMPLIFY_BRUSH_OPTIONS, SMUDGE_BRUSH_OPTIONS } from '@weasel-js/path-tools';
+import { INITIAL_FILL, INITIAL_STROKE } from './newShapePaint';
 import {
   flattenPrefValues,
   openPrefsSync,
@@ -18,7 +22,7 @@ import { usePref as usePrefOf } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RegistryEnumFilter } from './registry/types';
-import { dropPathToolsChrome, panelsToSurfaces, pathAidsToGroup } from './surfaces/prefsMigration';
+import { dropPathToolsChrome, fillRuleToToolOptions, panelsToSurfaces, pathAidsToGroup } from './surfaces/prefsMigration';
 import type { SurfacesValue } from './surfaces/types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -38,15 +42,21 @@ export interface WeaselDrawPrefRegistryEnum extends PrefBase<'registry-enum', st
  *  editor (`ui.surfaces`). Unlike the built-in `object`, it has no `children`. */
 export type WeaselDrawPrefData<T = unknown> = PrefBase<'data', T>;
 
-/**
- * Compose tool-contributed pref groups into a `Record<string, PrefGroup>`
- * keyed by tool id. The function is the identity at runtime — its only job
- * is to capture each contribution's literal type so `typeof PREFS` still
- * drives `DrawPrefPath` after composition.
- */
-function composeToolPrefs<T extends Record<string, PrefGroup>>(t: T): T {
-  return t;
-}
+/** Every draw tool with options, as its prefs keep them: each tool's own under its id, and the shared ones once. */
+export const DRAW_OPTIONED_TOOLS: readonly OptionedTool[] = [
+  { id: 'rect', options: RECT_TOOL_OPTIONS },
+  { id: 'ellipse', options: ELLIPSE_TOOL_OPTIONS },
+  { id: 'line', options: LINE_TOOL_OPTIONS },
+  { id: 'polygon', options: POLYGON_TOOL_OPTIONS },
+  { id: 'star', options: STAR_TOOL_OPTIONS },
+  { id: 'pencil', options: PENCIL_TOOL_OPTIONS },
+  { id: 'pen', options: PEN_TOOL_OPTIONS },
+  { id: 'text', options: TEXT_TOOL_OPTIONS },
+  { id: 'smudgeBrush', options: SMUDGE_BRUSH_OPTIONS },
+  { id: 'simplifyBrush', options: SIMPLIFY_BRUSH_OPTIONS },
+];
+
+const TOOL_OPTION_PREFS = toolOptionsPrefs(DRAW_OPTIONED_TOOLS, { shared: { fill: INITIAL_FILL, stroke: INITIAL_STROKE } });
 
 // Declared apart: inline, the schema's open `kind: string` leaf widens the literal
 // `kind` (dropping the path from `DrawPrefPath`) and rejects `source`.
@@ -219,22 +229,6 @@ export const PREFS = {
         },
       },
     },
-    drawing: {
-      name: 'Drawing',
-      description: 'Defaults applied to newly-created paths and shapes.',
-      children: {
-        pathFillRule: {
-          kind: 'enum',
-          name: 'Path fill rule',
-          description: 'How a path fills where its outline crosses itself. A region the outline circles twice the same way is filled under nonzero (SVG default) and left empty under even-odd. Under both, a region circled once either way is filled, and one circled once each way is empty.',
-          default: 'nonzero',
-          options: [
-            { value: 'nonzero', label: 'Nonzero (SVG default)' },
-            { value: 'evenodd', label: 'Even-odd' },
-          ],
-        },
-      },
-    },
     modes: {
       name: 'Modes',
       description: 'Path edit, text edit, and the other modes you work inside.',
@@ -273,11 +267,7 @@ export const PREFS = {
       description: 'Tool memory and per-tool settings.',
       children: {
         lastTool: LAST_TOOL,
-        ...composeToolPrefs({
-          pen: usePenTool.prefs,
-          smudgeBrush: SMUDGE_BRUSH_OPTIONS.prefs,
-          simplifyBrush: SIMPLIFY_BRUSH_OPTIONS.prefs,
-        }),
+        ...TOOL_OPTION_PREFS.children,
       },
     },
   },
@@ -307,7 +297,7 @@ const VALIDATORS: Record<string, PrefValidator> = {
 };
 
 /** `MIGRATIONS[i]` takes stored records from version `i` to `i + 1`. */
-const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup];
+const MIGRATIONS = [panelsToSurfaces, dropPathToolsChrome, pathAidsToGroup, fillRuleToToolOptions];
 
 /** The app's prefs over `storage`. Tests pass a memory adapter. */
 export function openDrawPrefs(storage: SyncStorageAdapter): PrefsStore<typeof PREFS> {
