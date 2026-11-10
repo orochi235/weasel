@@ -15,7 +15,6 @@ import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresContent, selectedContent } from './requiresSelection';
-import { ungroupReach, ungroupTouches, type UngroupReach } from './ungroupReach';
 import { scenePoseFrame } from '../poseFrame';
 import { commitOps } from '../defaultCommitAdapter';
 import { inPaintOrder, slotAbove } from '../groupSlot';
@@ -128,20 +127,49 @@ const dissolves = (node: { kind: string; consumesChildren?: boolean } | undefine
 
 type AnyScene = Scene<unknown, string, unknown>;
 
-/** The selected containers ungrouping dissolves, what dissolving them reaches, and whether it can: not while it
- *  would move, rewrite, or remove a locked node (ruled 2026-11-09). `enabled` and `run` both read this, so they
- *  agree. */
-function ungroupTargets(scene: AnyScene | undefined, ids: readonly NodeId[]): { containers: NodeId[]; reach: UngroupReach | null; locked: boolean } {
-  if (!scene) return { containers: [], reach: null, locked: false };
-  const containers = ids.filter((id) => dissolves(scene.get(id)));
-  if (containers.length === 0) return { containers, reach: null, locked: false };
-  const reach = ungroupReach(scene, containers);
-  return { containers, reach, locked: ungroupTouches(reach).some((id) => scene.isLocked(id)) };
+/** What ungrouping `containers` touches besides moving their children: the nodes that derive from one of them,
+ *  each with the `dependsOn` it keeps. Ungroup removes the containers from every such list, so deleting a container
+ *  takes nothing with it (ruled 2026-11-09). */
+function releasedDerivations(scene: AnyScene, containers: readonly NodeId[]): Map<NodeId, readonly NodeId[] | undefined> {
+  const dissolving = new Set<NodeId>(containers);
+  const out = new Map<NodeId, readonly NodeId[] | undefined>();
+  for (const node of scene.nodes.values()) {
+    const from = node.dependsOn;
+    if (dissolving.has(node.id) || !Array.isArray(from) || !from.some((id) => dissolving.has(id))) continue;
+    const kept = (from as readonly NodeId[]).filter((id) => !dissolving.has(id));
+    out.set(node.id, kept.length > 0 ? kept : undefined);
+  }
+  return out;
 }
 
-/** The batch dissolving `containers`, outermost first: each child moved up and re-expressed in its new frame,
- *  every derivation `reach` cuts, then the containers removed. */
-function ungroupOps(scene: AnyScene, containers: readonly NodeId[], reach: UngroupReach): Op[] {
+interface UngroupPlan {
+  containers: NodeId[];
+  /** The children ungrouping frees, outermost container first. */
+  freed: NodeId[];
+  released: Map<NodeId, readonly NodeId[] | undefined>;
+  /** A node it would move, rewrite, or remove is locked: then it is disabled (ruled 2026-11-09). */
+  locked: boolean;
+}
+
+/** What ungrouping the selected `ids` does, or null when none dissolves. `enabled` and `run` both read this, so
+ *  they agree. */
+function ungroupPlan(scene: AnyScene | undefined, ids: readonly NodeId[]): UngroupPlan | null {
+  if (!scene) return null;
+  const containers = ids.filter((id) => dissolves(scene.get(id)));
+  if (containers.length === 0) return null;
+  const dissolving = new Set(containers);
+  const depth = (id: NodeId): number => scene.ancestorsOf(id).length;
+  const freed = [...containers].sort((x, y) => depth(x) - depth(y))
+    .flatMap((id) => scene.childrenOf(id).filter((kid) => !dissolving.has(kid)));
+  const released = releasedDerivations(scene, containers);
+  const touched = [...containers, ...freed, ...released.keys()];
+  return { containers, freed, released, locked: touched.some((id) => scene.isLocked(id)) };
+}
+
+/** The batch dissolving `plan`'s containers, outermost first: each child moved up and re-expressed in its new
+ *  frame, every derivation from a container dropped, then the containers removed. */
+function ungroupOps(scene: AnyScene, plan: UngroupPlan): Op[] {
+  const { containers } = plan;
   const frame = scenePoseFrame(scene);
   const dissolving = new Set<string>(containers);
   const depth = (id: string): number => scene.ancestorsOf(id as NodeId).length;
@@ -176,11 +204,8 @@ function ungroupOps(scene: AnyScene, containers: readonly NodeId[], reach: Ungro
     }
     removals.push(createDeleteOp({ node: { ...container, parent }, index, label: 'Ungroup' }));
   }
-  const cuts = [...reach.released].map(([id, sources]) => {
-    const from = scene.get(id)!.dependsOn as readonly NodeId[];
-    const to = from.filter((source) => !sources.has(source));
-    return createSetDependsOnOp({ id, from, to: to.length > 0 ? to : undefined, label: 'Ungroup' });
-  });
+  const cuts = [...plan.released].map(([id, to]) =>
+    createSetDependsOnOp({ id, from: scene.get(id)!.dependsOn as readonly NodeId[], to, label: 'Ungroup' }));
   return [...moves, ...cuts, ...removals];
 }
 
@@ -189,8 +214,9 @@ function ungroupOps(scene: AnyScene, containers: readonly NodeId[], reach: Ungro
  * container's own parent (preserving z-order) and removing the now-empty
  * container, as a single undoable batch. Selected marks, children or not, are
  * ignored. The freed children become the new selection, and nothing moves on
- * screen. A child, or an ancestor it lands in, that the containers' removal would take as a dependent loses
- * the removed sources instead (`ungroupReach`). Disabled while any node it would touch is locked.
+ * screen. Every node deriving from a dissolved container, a freed child or not, drops that container from its
+ * `dependsOn`, so the batch removes the containers and nothing else. Disabled while any node it would move,
+ * rewrite, or remove is locked.
  */
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
@@ -205,14 +231,14 @@ export const ungroupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const scene = deps.scene;
       if (!deps.selection || !scene) return;
-      const { containers, reach, locked } = ungroupTargets(scene, selectedContent(deps));
-      if (!reach || locked) return;
-      commitOps(deps, ungroupOps(scene, containers, reach), 'Ungroup', { select: reach.freed });
+      const plan = ungroupPlan(scene, selectedContent(deps));
+      if (!plan || plan.locked) return;
+      commitOps(deps, ungroupOps(scene, plan), 'Ungroup', { select: plan.freed });
     },
   },
   enabled: (deps) => {
-    const { reach, locked } = ungroupTargets(deps?.scene, selectedContent(deps));
-    if (!reach) return ActionDisabledReason.NotApplicable;
-    return locked ? ActionDisabledReason.Locked : true;
+    const plan = ungroupPlan(deps?.scene, selectedContent(deps));
+    if (!plan) return ActionDisabledReason.NotApplicable;
+    return plan.locked ? ActionDisabledReason.Locked : true;
   },
 };

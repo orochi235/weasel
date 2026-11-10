@@ -254,13 +254,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-11-09 (ruled by the maintainer through weasel-8f): Ungroup, Delete, and Cut are disabled, with
   `ActionDisabledReason.Locked` ("Contains a locked item"), while any node they would move, rewrite, or
-  remove is locked, and their `run` reads the same answer. Ungroup keeps a freed child that derives from
-  the container it dissolves, removing the container from the child's `dependsOn` in the same batch.
-- 2026-11-09 (property tests, extending that ruling, unconfirmed): Ungroup keeps every node its removal
-  of the containers would otherwise cascade to among the children it frees, their subtrees, and the
-  ancestors they land in, which covers a transitive derivation and an outer group deriving from the inner
-  one. Each such node drops the removed sources from its `dependsOn` instead (`ungroupReach`). Any other
-  dependent still goes with the container, as Delete takes it.
+  remove is locked, and their `run` reads the same answer.
+- 2026-11-09 (ruled by the maintainer through weasel-8f): Ungroup never deletes anything through a dissolved
+  group's dependents. It removes the dissolved group from every dependent's `dependsOn`, as undoable
+  `setDependsOn` ops in the same batch, whether or not the dependent holds a freed child. A node elsewhere
+  that derives from the group now survives too, where before it was deleted.
 
 ## Rendering, canvas, and paint
 

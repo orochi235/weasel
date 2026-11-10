@@ -195,8 +195,7 @@ class Ungroup implements fc.Command<Model, Real> {
     const id = pickFrom(groups(r.scene), this.pick);
     if (id) r.scene.setSelection([id]);
     const before = [...r.scene.getSelection()];
-    const freed = id ? [...r.scene.childrenOf(id)] : [];
-    const ancestors = id ? [...r.scene.ancestorsOf(id)] : [];
+    const present = ids(r.scene);
     const deps = { scene: r.scene, selection: selectionOf(r.scene) };
     const enabled = id ? ungroupAction.enabled?.(deps as never) : undefined;
     const at = r.scene.historyIndex();
@@ -205,11 +204,8 @@ class Ungroup implements fc.Command<Model, Real> {
     if (id) {
       expect(r.scene.historyIndex() > at, `ungroup ran exactly when enabled (${String(enabled)})`).toBe(enabled === true);
       if (enabled !== true) count(`disabled:Ungroup:${String(enabled)}`);
-      // The children it frees all survive, and so does every ancestor they land in.
-      if (enabled === true) {
-        for (const kid of freed) expect(r.scene.get(kid), `freed ${kid} survives`).toBeDefined();
-        for (const a of ancestors) expect(r.scene.get(a), `ancestor ${a} survives`).toBeDefined();
-      }
+      // It removes exactly the dissolved container: nothing goes with it, dependents included.
+      if (enabled === true) expect(present.filter((n) => !r.scene.get(n))).toEqual([id]);
     }
     settle(m, r, before, 'Ungroup');
   }

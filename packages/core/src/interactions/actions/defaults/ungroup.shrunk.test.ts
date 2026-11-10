@@ -1,7 +1,7 @@
 /**
  * Counterexamples `sceneHistory.pbt.test.ts` shrank to, kept as examples. Ruled 2026-11-09: ungroup and delete
- * are disabled while a node they would move, rewrite, or remove is locked, and ungroup keeps every child it
- * frees, cutting a derivation its removal of the container would otherwise follow.
+ * are disabled while a node they would move, rewrite, or remove is locked, and ungroup removes a dissolved group
+ * from every dependent's `dependsOn`, so it deletes nothing but the group.
  */
 import { describe, expect, it } from 'vitest';
 import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
@@ -77,5 +77,16 @@ describe('ungroup over a derivation from the container', () => {
     expect(scene.get(mark)?.parent).toBe(outer);
     expect(scene.get(outer)?.dependsOn).toBeUndefined();
     expect(scene.getSelection()).toEqual([mark]);
+  });
+
+  it('keeps a node elsewhere that derives from the group, with no derivation left', () => {
+    const { scene, run, grouped } = setup();
+    const { mark, group } = grouped();
+    const follower = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: {}, dependsOn: [group, mark] });
+    scene.setSelection([group]);
+
+    run(ungroupAction);
+    expect(scene.get(group)).toBeUndefined();
+    expect(scene.get(follower)?.dependsOn).toEqual([mark]);
   });
 });
