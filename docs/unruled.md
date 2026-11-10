@@ -633,6 +633,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-18: Audio's `Scheduler.schedule` takes a fourth argument, `{ reportLate: false }`, so
   `onLate` stays quiet for a worklet voice: the scheduler reaching it late does not make it sound late.
 
+- 2026-11-10 (property tests): A Mermaid writer drops, with a warning, a row its kind would not read back: an ER
+  row that is not a type and a name, a class member that is blank or a lone `}`, a blank line past a state's
+  name, and a timeline period with no label, whose line would add its events to the period above. A mind map
+  node's text that would not read as a node is quoted instead. A sequence participant id that is not a plain
+  name, or is `title`, is renamed, its text kept as its label, as the graph kinds rename one.
+- 2026-11-10 (property tests): Draw-style XML numbers on an edge's cell id (`edge:a->b-2`) when another cell has
+  it, where two edges with the same ends, ports, and label were written under one id. The Diagram JSON reader
+  refuses a page that is not an object or whose `kind` it does not know.
+
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`
   set the clock's rate to `speed` or 0, and `runner.reset()` resets only the runner, which the next
