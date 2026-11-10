@@ -14,6 +14,8 @@ import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from './test-seams';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { TextPose } from './pose';
+import { bidi } from '@weasel-js/bidi';
+import { registerBidi } from './layout/bidiRegistry';
 
 const pose: TextPose = { x: 10, y: 20, width: 100, height: 40, text: 'hi' };
 
@@ -238,5 +240,35 @@ describe('caretIndexAt', () => {
     expect(caretIndexAt(10.75, 5, p)).toBe(0);
     expect(caretIndexAt(11.25, 5, p)).toBe(2);
   });
-});
 
+  it('stops on the side of the character under the pointer where the direction changes', async () => {
+    // The fixture plus א and ב, advance 20 each. 'AאבB' paints A 0..23, then
+    // ב 23..43 and א 43..63, then B 63..85.
+    const hebrew = {
+      ...FIXTURE_FONT,
+      chars: [
+        ...FIXTURE_FONT.chars,
+        { ...FIXTURE_FONT.chars[0], id: 0x5d0, xadvance: 20 },
+        { ...FIXTURE_FONT.chars[0], id: 0x5d1, xadvance: 20 },
+      ],
+    };
+    const prior = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(hebrew) })
+      : prior(url))) as typeof fetch;
+    await registerFont('hebrew', {}, '/fonts/hebrew.json', '/fonts/hebrew.png');
+    const unregister = registerBidi(bidi);
+    try {
+      const p = textPose({ text: 'A\u05d0\u05d1B', style: { fontFamily: 'hebrew', fontSize: SIZE } });
+      // A's right half is after A; א's right half is before א. Both are 1,
+      // which a sweep that looked only at the next cell never answered.
+      expect(caretIndexAt(18, 5, p)).toBe(1);
+      expect(caretIndexAt(25, 5, p)).toBe(3);
+      expect(caretIndexAt(45, 5, p)).toBe(2);
+      expect(caretIndexAt(58, 5, p)).toBe(1);
+      expect(caretIndexAt(66, 5, p)).toBe(3);
+    } finally {
+      unregister();
+    }
+  });
+});
