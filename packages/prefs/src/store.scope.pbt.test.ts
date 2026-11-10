@@ -154,20 +154,23 @@ class Weigh implements Cmd {
     t.count('weigh');
     const modeW = { a: this.wa, b: this.wb };
     const sizeW = { s: 1, l: this.wl };
-    let sum = 0;
-    let total = 0;
+    const members: { v: number; w: number }[] = [];
     for (const [mode, wm] of Object.entries(modeW) as [Mode, number][]) {
       if (wm <= 0) continue;
       const bySize = this.path === 'pad' && mode === 'b' && m.held.pad.bySize;
       for (const [size, ws] of bySize ? (Object.entries(sizeW) as [Size, number][]) : [[m.size, 1] as const]) {
-        if (ws <= 0) continue;
-        sum += read(m, this.path, mode, size) * wm * ws;
-        total += wm * ws;
+        if (ws > 0) members.push({ v: read(m, this.path, mode, size), w: wm * ws });
       }
     }
+    // Ruled 2026-11-10: members weighing infinitely, an overflowed product among them, share the whole blend equally.
+    const heaviest = members.some((x) => x.w === Infinity) ? members.filter((x) => x.w === Infinity).map((x) => ({ ...x, w: 1 })) : members;
+    if (members.some((x) => x.w === Infinity)) t.count('infinite weight');
+    const scale = Math.max(...heaviest.map((x) => x.w));
+    const total = heaviest.reduce((n, x) => n + x.w / scale, 0);
     const got = r.store.get(this.path, { weights: { mode: modeW, size: sizeW } });
-    if (total === 0) expect(got).toBe(DEFAULT[this.path]);
-    else expect(got).toBeCloseTo(sum / total, 9);
+    expect(Number.isNaN(got)).toBe(false);
+    if (heaviest.length === 0) expect(got).toBe(DEFAULT[this.path]);
+    else expect(got).toBeCloseTo(heaviest.reduce((n, x) => n + x.v * (x.w / scale / total), 0), 9);
   }
   toString = (): string => `weigh(${this.path}, a ${this.wa}, b ${this.wb}, l ${this.wl})`;
 }
@@ -181,7 +184,7 @@ const commands = fc.commands([
   fc.tuple(fc.constantFrom<'gap' | 'tint'>('gap', 'tint'), fc.dictionary(anyMode, value, { maxKeys: 3 }), fc.option(value, { nil: undefined }))
     .map(([p, own, shared]) => new WriteScope(p, own, shared)),
   fc.constantFrom<Split | 'mode' | 'size' | undefined>(...SPLIT, 'mode', 'size', undefined).map((p) => new Reset(p)),
-  fc.tuple(anySplit, fc.constantFrom(0, 1, 2, 0.5), fc.constantFrom(0, 1, 3), fc.constantFrom(0, 1, 0.25)).map(([p, a, b, l]) => new Weigh(p, a, b, l)),
+  fc.tuple(anySplit, fc.constantFrom(0, 1, 2, 0.5, 1e200, Infinity), fc.constantFrom(0, 1, 3, Infinity), fc.constantFrom(0, 1, 0.25, 1e200)).map(([p, a, b, l]) => new Weigh(p, a, b, l)),
 ], { maxCommands: 30 });
 
 describe('split values in a store, against a model', () => {
@@ -199,5 +202,6 @@ describe('split values in a store, against a model', () => {
     );
     for (const what of ['selector', 'write', 'write at', 'whole scope', 'reset', 'weigh']) t.atLeast(what, 30);
     t.atLeast('heard a change', 100);
+    t.atLeast('infinite weight', 20);
   }, timeoutFor(150, 40));
 });

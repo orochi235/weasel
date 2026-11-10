@@ -617,10 +617,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `2 3` and `1ft 2` throw, as `parseNumber` refuses `5ft 3`, rather than supply an operator nobody typed.
 - Ruled 2026-11-10: `resolveUnitExpr` throws on a division by zero, and on any result past the range of a
   number, as `parseUnitExpr` already did for a literal.
-- Open (2026-11-10, property tests): a split number pref read under `weights` holding an infinite
-  weight, or two nested weights whose product passes the range of a number, blends to `NaN`. Whether
-  an infinite weight takes all of the blend, is refused, or is left to the caller is unruled; prefs'
-  blend properties draw finite weights only.
+- Ruled 2026-11-10: a split pref read under `weights` gives an infinite weight the whole blend, the
+  limit of an ever-heavier weight. Several infinite weights, a nested product that overflows to
+  `Infinity` among them, blend among themselves at equal weight, and the finite ones drop out; the
+  blend is never `NaN`. Members whose nested product underflows to 0 everywhere share it equally.
 
 ## Diagram, audio, and labkit
 
