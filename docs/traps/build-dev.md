@@ -73,6 +73,11 @@ on 2026-10-21 a forge load fell from 1,624 requests to 1,270 and, at 20 ms of em
 re-bundle and reload. Whatever source imports from a bundled package by relative path is left out of
 the bundle and served from source, so it loads once. A stack trace into a bundled package points at
 `node_modules/.vite-*/deps`. `WEASEL_DEV_SOURCE=1` serves every package file by file again.
+The re-bundle does not always reach the page. On 2026-11-09, in a worktree's site server, an edit to
+`packages/renderer` was written to a new chunk (`scripts/is-it-stale.mjs` reported every layer fresh), yet the
+reloaded page went on importing the old chunk under its old `?v=` hash, and screenshots showed the old
+renderer. Before trusting a before/after, fetch the chunks the page loaded and look for the edit; restarting
+the server with `--force` (or serving with `WEASEL_DEV_SOURCE=1`) is what took the edit.
 The `browser` vitest project bundles them the same way under `vitest run`, all but what its test files
 reach by path (`scripts/vitest-browser-prebundle.ts`); watch mode and `WEASEL_DEV_SOURCE=1` serve them
 from source. So a browser test imports its own package by specifier wherever the package exports what it
