@@ -454,6 +454,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Animation
 
+- Ruled 2026-11-10: a hold of weight 0 released with a commit commits nothing, even under holds that
+  cover the target outright, where a hold that weighs anything gives the committed value its own.
+
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.
 - 2026-10-11 (targets): a coast commits where it stops; `from` defaults to the committed value; an
@@ -485,9 +488,6 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   carries `targetName` and `interpolateName`, and a `TimelineEvent` a `name` and `data`; `toClip`
   throws on an `onTick`. A node holding a skeleton does not stop clipping its children by itself:
   a rig node sets `clipFromPose: () => null`.
-- 2026-11-10 (property tests): A hold of weight 0 released with a commit leaves the committed value
-  alone even under holds that cover the target outright, where a hold that weighs anything gives the
-  committed value its own: it showed nothing, so it commits nothing.
 - 2026-10-12: `rewind` on the pose animations.
 - 2026-10-13: A rig posed with `rig.pose` stays posed across a `useRigNode` rebind. `RigEditState`
   gained `painted()` and `paint(next)`. A spring or coast with no `onTick` is not ticked every
