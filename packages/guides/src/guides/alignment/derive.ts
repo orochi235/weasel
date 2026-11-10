@@ -69,11 +69,17 @@ function merged(found: readonly Candidate[], axis: 'x' | 'y'): Guide[] {
     if (run && c.offset - run[0]!.offset <= EPS) run.push(c);
     else runs.push([c]);
   }
+  const ids = new Set<string>();
   return runs
     .map((run) => {
       const first = run.reduce((a, b) => (b.order < a.order ? b : a));
       const span = { min: Math.min(...run.map((c) => c.min)), max: Math.max(...run.map((c) => c.max)) };
-      return { order: first.order, guide: { id: `align:${axis}:${first.offset.toFixed(3)}`, axis, offset: first.offset, span } };
+      // Runs more than EPS apart can still round to one name.
+      const base = `align:${axis}:${first.offset.toFixed(3)}`;
+      let id = base;
+      for (let n = 2; ids.has(id); n++) id = `${base}~${n}`;
+      ids.add(id);
+      return { order: first.order, guide: { id, axis, offset: first.offset, span } };
     })
     .sort((a, b) => a.order - b.order)
     .map((r) => r.guide);
