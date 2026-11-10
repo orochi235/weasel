@@ -9,8 +9,9 @@ import { resolveStrokeWidth } from './tessellate/stroke';
  */
 export function strokeAtScale(stroke: Stroke, scale: number): Stroke & { width: number } {
   const width = resolveStrokeWidth(stroke.width ?? 1, scale);
-  const out: Stroke & { width: number } = typeof stroke.width === 'object' && scale > 0
-    ? { ...scaledDash(stroke, 1 / scale), width } : { ...stroke, width };
+  // Dashes resolve as the width does, a non-finite or zero scale leaving both as given.
+  const out: Stroke & { width: number } = typeof stroke.width === 'object'
+    ? { ...scaledDash(stroke, resolveStrokeWidth({ px: 1 }, scale)), width } : { ...stroke, width };
   for (const role of ['markerStart', 'markerMid', 'markerEnd'] as const) {
     const ref: MarkerRef | undefined = stroke[role];
     if (typeof ref === 'object' && typeof ref.size === 'object') {

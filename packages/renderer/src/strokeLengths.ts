@@ -52,7 +52,7 @@ export function resolveStrokeLengths(
   if (typeof stroke.width === 'object') {
     const pxPerUnit = snap(stroke.width.px, scale);
     resolved.width = resolveStrokeWidth(stroke.width, pxPerUnit);
-    if (pxPerUnit > 0) resolved = scaledDash(resolved, 1 / pxPerUnit);
+    resolved = scaledDash(resolved, resolveStrokeWidth({ px: 1 }, pxPerUnit));
     ribbon = screen(pxPerUnit);
   }
   const head = (ref: MarkerRef | undefined): ScreenSpace | undefined => {
