@@ -4,7 +4,7 @@ import type { PrefGroup } from './groups';
 import { orderPrefGroup, resolveOrder } from './order';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
-const name = fc.constantFrom('a', 'b', 'c', 'd', 'e', '__proto__', 'constructor');
+const name: fc.Arbitrary<string> = fc.constantFrom('a', 'b', 'c', 'd', 'e', '__proto__', 'constructor');
 
 describe('prefs order, properties', () => {
   it('resolves to every key once, the stored ones in their stored order', () => {

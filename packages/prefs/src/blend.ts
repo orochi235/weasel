@@ -29,7 +29,7 @@ const blendNumber: PrefBlend = (members, leaf) => {
   let total = 0;
   for (const { weight } of members) total += weight / most;
   let sum = 0;
-  for (const { value, weight } of members) sum += value * (weight / most / total);
+  for (const { value, weight } of members) sum += (value as number) * (weight / most / total);
   return Math.min(hi, Math.max(lo, sum));
 };
 
