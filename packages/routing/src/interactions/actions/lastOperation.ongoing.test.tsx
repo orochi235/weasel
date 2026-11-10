@@ -149,6 +149,21 @@ describe('a gesture as the last operation', () => {
     expect(kept).toEqual([{ factor: 3 }]);
   });
 
+  it('leaves the params of an action a tuning keeps to that tuning, so a later change to its store reaches the next drag', () => {
+    const { doc, registry, store, drag } = setup({ replays: true });
+    const held = { factor: 2 };
+    act(() => {
+      registry.tune('stretch', { under: true, params: () => ({ ...held }), keep: (p) => { held.factor = p.factor as number; } });
+    });
+    drag(4);
+    expect(store.get()?.values).toEqual({ factor: 2 });
+    act(() => { store.adjust({ factor: 3 }); });
+    expect(held.factor).toBe(3);
+    held.factor = 5;
+    drag(1);
+    expect(doc.width).toBe(10 + 4 * 3 + 5);
+  });
+
   it('holds nothing for a drag whose handle cannot replay', () => {
     const { store, drag } = setup({ replays: false });
     drag(4);

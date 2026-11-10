@@ -99,7 +99,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const stack = n.tunings.get(id);
       if (stack) tunings.unshift(...stack);
     }
-    const session = this.lastOperation.sessionTuning(id);
+    const session = tunings.some((t) => t.keep) ? null : this.lastOperation.sessionTuning(id);
     if (session) tunings.unshift(session);
     return underFirst(tunings);
   }

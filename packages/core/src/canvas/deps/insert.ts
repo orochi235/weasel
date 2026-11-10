@@ -114,7 +114,8 @@ function boxKindData(
       // `extras` carries no content. The kit:text painter matches on
       // `data.text != null` and applies style defaults at render time.
       const e = extras as Partial<{ text: string; style: InsertStyle }>;
-      return { text: e.text ?? '', fill: e.style?.fill ? { paint: e.style.fill } : DEFAULT_TEXT_FILL };
+      const fill = e.style?.fill;
+      return { text: e.text ?? '', fill: fill === undefined ? DEFAULT_TEXT_FILL : fill && { paint: fill } };
     }
     case 'sticky':
       return stickyData(extras as StickyLook & { text?: string });

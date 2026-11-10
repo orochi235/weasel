@@ -71,4 +71,20 @@ describe('tuneToolOptions', () => {
     expect(values.get('b')).toEqual({ radiusPx: 10 });
     expect(values.get('c')).toEqual({ radiusPx: 30 });
   });
+
+  it('keeps a panel change made after a tool switch in the options of the tool its operation ran with', () => {
+    const tunings: ActionTuning[] = [];
+    const registry = { tune: (_id: string, t: ActionTuning) => { tunings.push(t); return () => {}; } };
+    const values = createToolOptionValues();
+    const active = { active: 'c' as string | null };
+    tuneToolOptions(registry, depsOf(values, active) as never, [
+      defineTool({ id: 'b', options: OPTIONS }), defineTool({ id: 'c', options: OPTIONS }),
+    ]);
+    // The operation reads its params while `c` is active; the user then switches tools and adjusts it.
+    for (const t of tunings) (t.params as () => Record<string, unknown>)();
+    active.active = 'select';
+    for (const t of tunings) t.keep!({ radiusPx: 30 });
+    expect(values.get('b')).toEqual({});
+    expect(values.get('c')).toEqual({ radiusPx: 30 });
+  });
 });

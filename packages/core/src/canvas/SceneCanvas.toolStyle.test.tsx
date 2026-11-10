@@ -32,7 +32,7 @@ function Publish({ values }: { values: ToolOptionValues }) {
   return null;
 }
 
-function drawWith(tool: string, values?: ToolOptionValues): Scene<D, L, P> {
+function mount(tool: string, values?: ToolOptionValues) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   const { container } = render(
     <SceneCanvas scene={scene} width={200} height={200} defaultTools={['rect', 'polygon', 'line', 'sticky']} initialActiveTool={tool}>
@@ -41,11 +41,17 @@ function drawWith(tool: string, values?: ToolOptionValues): Scene<D, L, P> {
   );
   const canvas = container.querySelector('canvas')!;
   const at = (x: number, y: number) => ({ bubbles: true, clientX: x, clientY: y, pointerId: 1, button: 0 });
-  act(() => {
+  const drag = () => act(() => {
     canvas.dispatchEvent(new PointerEvent('pointerdown', at(20, 20)));
     canvas.dispatchEvent(new PointerEvent('pointermove', at(120, 100)));
     canvas.dispatchEvent(new PointerEvent('pointerup', at(120, 100)));
   });
+  return { scene, drag };
+}
+
+function drawWith(tool: string, values?: ToolOptionValues): Scene<D, L, P> {
+  const { scene, drag } = mount(tool, values);
+  drag();
   return scene;
 }
 
@@ -84,6 +90,17 @@ describe('a shape tool’s style', () => {
     const values = createToolOptionValues();
     values.set('polygon', 'sides', 5);
     expect(only(drawWith('polygon', values)).generator?.sides).toBe(5);
+  });
+
+  it('gives the next polygon a side count its option took after the last one committed', () => {
+    const values = createToolOptionValues();
+    values.set('polygon', 'sides', 5);
+    const { scene, drag } = mount('polygon', values);
+    drag();
+    act(() => values.set('polygon', 'sides', 8));
+    drag();
+    const sides = scene.renderOrderNodes().map((n) => (n.data as { generator?: { sides: number } }).generator?.sides);
+    expect(sides).toEqual([5, 8]);
   });
 
   it('gives a sticky note the paper its own option holds, not the shapes’ fill', () => {

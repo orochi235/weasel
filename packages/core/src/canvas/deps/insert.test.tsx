@@ -72,6 +72,27 @@ describe('useInsertDepSource', () => {
     expect(ops[0].args.node.pose).toEqual({ x: 2, y: 3, width: 40, height: 20 });
   });
 
+  it('sets new text in the fill its style names, none included', () => {
+    const applyOps = vi.fn();
+    let reg!: DepRegistry;
+    function Wire() {
+      useInsertDepSource(makeScene(), { applyOps });
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+    const dep = (reg.get as any)('insert');
+    dep.commit({ x: 0, y: 0, width: 40, height: 20 }, { kind: 'text', style: { fill: { color: '#f00' } } });
+    dep.commit({ x: 0, y: 0, width: 40, height: 20 }, { kind: 'text', style: { fill: null } });
+    const data = (call: number) => applyOps.mock.calls[call][0][0].args.node.data;
+    expect(data(0)).toEqual({ text: '', fill: { paint: { color: '#f00' } } });
+    expect(data(1)).toEqual({ text: '', fill: null });
+  });
+
   it('keeps the minimum an insert was drawn to on a kit-built node', () => {
     const applyOps = vi.fn();
     let reg!: DepRegistry;

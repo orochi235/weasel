@@ -36,7 +36,8 @@ export interface ActionTuning<P = Record<string, unknown>> {
   roles?: RoleRebinds;
   /** Told the params the last-operation panel just set for the action, which hold for the rest of the session.
    *  A tuning whose `params` thunk reads a host's store writes the ones it supplies back there, so the store, and
-   *  whatever draws it, says what the next run will use rather than overriding it. */
+   *  whatever draws it, says what the next run will use rather than overriding it. An action with such a tuning
+   *  keeps no session params of its own. */
   keep?(params: Readonly<Record<string, unknown>>): void;
 }
 
