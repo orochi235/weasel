@@ -99,7 +99,6 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       const stack = n.tunings.get(id);
       if (stack) tunings.unshift(...stack);
     }
-    // A tuning that keeps the panel's params holds them in its own store, which the session copy would freeze.
     const session = tunings.some((t) => t.keep) ? null : this.lastOperation.sessionTuning(id);
     if (session) tunings.unshift(session);
     return underFirst(tunings);
