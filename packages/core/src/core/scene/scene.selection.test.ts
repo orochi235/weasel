@@ -19,7 +19,9 @@ const ids = (list: string[]): NodeId[] => list.map(asNodeId);
 
 describe('Scene — selection', () => {
   it('round-trips and notifies', () => {
-    const { scene } = makeScene();
+    const { scene, add } = makeScene();
+    add('a');
+    add('b');
     const listener = vi.fn();
     scene.subscribe(listener);
 
@@ -27,6 +29,14 @@ describe('Scene — selection', () => {
 
     expect(scene.getSelection()).toEqual(ids(['a', 'b']));
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds only ids in the scene (shrunk counterexample: an ungroup selected a child its container took with it)', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    scene.setSelection(ids(['a', 'gone']));
+
+    expect(scene.getSelection()).toEqual(ids(['a']));
   });
 
   it('a selection change is not an undo step', () => {
@@ -61,6 +71,8 @@ describe('Scene — selection', () => {
   it('undo restores the selection an applyBatch was made under', () => {
     const { scene, add } = makeScene();
     add('a');
+    add('b');
+    add('other');
     scene.setSelection(ids(['a', 'b']));
 
     scene.applyBatch(
@@ -94,6 +106,7 @@ describe('Scene — selection', () => {
   it('redo returns the selection the user had before undoing', () => {
     const { scene, add } = makeScene();
     add('a');
+    add('after');
     scene.setSelection(ids(['a']));
     scene.setPose(asNodeId('a'), { ...POSE, x: 50 });
     scene.setSelection(ids(['after']));
@@ -107,16 +120,18 @@ describe('Scene — selection', () => {
   it('jumpToHistoryIndex restores the selection of the entry it lands on', () => {
     const { scene, add } = makeScene();
     add('a');
+    add('first');
+    add('second');
     scene.setSelection(ids(['first']));
     scene.setPose(asNodeId('a'), { ...POSE, x: 10 });
     scene.setSelection(ids(['second']));
     scene.setPose(asNodeId('a'), { ...POSE, x: 20 });
 
-    // Landing after entry 2 undoes only entry 3, whose selection was 'second'.
-    scene.jumpToHistoryIndex(2);
+    // Landing after entry 4 undoes only entry 5, whose selection was 'second'.
+    scene.jumpToHistoryIndex(4);
     expect(scene.getSelection()).toEqual(ids(['second']));
 
-    scene.jumpToHistoryIndex(1);
+    scene.jumpToHistoryIndex(3);
     expect(scene.getSelection()).toEqual(ids(['first']));
   });
 
