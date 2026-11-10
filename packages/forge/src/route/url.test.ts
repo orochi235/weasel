@@ -174,6 +174,12 @@ describe('paramsToKnobs', () => {
     ).toEqual({ size: 20, dark: true, 'look.px': 9, 'look.inner.name': 'z' });
   });
 
+  it('reads a knob named for a key every object inherits only from a param of that name', () => {
+    const odd = f.schema({ constructor: f.number(1), toString: f.string('s') });
+    expect(paramsToKnobs(odd, parseRoute('#/x').params)).toEqual({});
+    expect(paramsToKnobs(odd, parseRoute('#/x?constructor=4').params)).toEqual({ constructor: 4 });
+  });
+
   it('round-trips with knobsToParams', () => {
     const config = { ...schema.defaults(), label: 'a=b&c', ink: '#ff0000', look: { px: 0, round: true, inner: { name: 'x' } } };
     const knobs = paramsToKnobs(schema, knobsToParams(schema, config));

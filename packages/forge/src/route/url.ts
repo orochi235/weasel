@@ -36,8 +36,7 @@ export function parseRoute(hash: string): ForgeRoute {
   } catch {
     story = null;
   }
-  const params: Record<string, string> = {};
-  if (at !== -1) for (const [key, value] of new URLSearchParams(body.slice(at + 1))) params[key] = value;
+  const params: Record<string, string> = at === -1 ? {} : Object.fromEntries(new URLSearchParams(body.slice(at + 1)));
   return { story, params };
 }
 
@@ -210,7 +209,7 @@ export function paramsToKnobs(
 ): Record<string, unknown> {
   const knobs: Record<string, unknown> = {};
   for (const { path, leaf } of knobPaths(schema)) {
-    const raw = params[path];
+    const raw = Object.hasOwn(params, path) ? params[path] : undefined;
     if (raw === undefined) continue;
     const decoded = decodeKnob(raw, leaf);
     if (decoded) knobs[path] = decoded.value;
