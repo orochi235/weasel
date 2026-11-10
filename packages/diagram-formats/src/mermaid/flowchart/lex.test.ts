@@ -20,6 +20,11 @@ describe('lexFlowchart', () => {
     expect(() => lexFlowchart('flowchart LR\naccDescr {\nnever')).toThrow('Mermaid, line 2: an accDescr block is never closed');
   });
 
+  it('ends a keyword line at a semicolon outside quotes only, so a quoted title may hold a character reference', () => {
+    expect(lex('subgraph s ["a #quot; b"]; A')).toEqual(['word:subgraph', 'rest:s ["a #quot; b"]', ';', 'word:A']);
+    expect(lex('click A "https://x" "one; two"')).toEqual(['word:click', 'rest:A "https://x" "one; two"']);
+  });
+
   it('reads front matter, directives, and comments apart from the statements', () => {
     const out = lexFlowchart('---\ntitle: "A: b"\n---\n%%{init: {}}%%\nflowchart TD\n%% note\nA');
     expect(out.title).toBe('A: b');

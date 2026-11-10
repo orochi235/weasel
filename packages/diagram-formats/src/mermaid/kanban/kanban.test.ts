@@ -67,6 +67,13 @@ describe('writing a Mermaid kanban board', () => {
     expect(text).toContain('    tests[Create parsing tests]@{ ticket: \'MC-2038\', assigned: \'K.Sveidqvist\', priority: \'High\' }\n');
   });
 
+  it('writes a closing bracket and character references in text as Mermaid references, so they read back as written', () => {
+    const first = page('kanban\n  col[Todo #93; now]\n    t1[a #quot;b#quot; #35;lt;]');
+    const text = writeKanban({ pages: [first] }).text;
+    expect(text).toContain('col[Todo #93; now]\n    t1[a #quot;b#quot; #35;lt;]');
+    expect(sortedPage(page(text))).toEqual(sortedPage(first));
+  });
+
   it('warns of what a board does not hold', () => {
     const { warnings } = writeKanban({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100,

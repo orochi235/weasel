@@ -39,13 +39,18 @@ const MESSAGE = new RegExp(`^(.+?)\\s*(${ARROWS.map(([a]) => escape(a)).join('|'
 const NOTE = /^note\s+(left of|right of|over)\s+([^:]+?)\s*:(.*)$/i;
 const DECLARE = /^(create\s+)?(participant|actor)\s+(.+)$/i;
 
+/** `text` as a participant id: one word, as a declaration takes it. Throws, naming `line`, on anything else. */
+function idAt(text: string, line: number, shown = text): string {
+  if (text === '' || /\s/.test(text)) throw lineError('Mermaid', line, `"${shown}" is not a participant id`);
+  return text;
+}
+
 /** A declaration's id, its `@{ ... }` type and alias, and its `as` label. */
 function declaration(rest: string, word: string, create: boolean, line: number): SeqStmt {
   const as = /\s+as\s+(.+)$/i.exec(rest);
   const head = (as === null ? rest : rest.slice(0, as.index)).trim();
   const meta = /^([^@\s]+)\s*@\{(.*)\}$/.exec(head);
-  const id = meta === null ? head : meta[1]!;
-  if (id === '' || /\s/.test(id)) throw lineError('Mermaid', line, `"${head}" is not a participant id`);
+  const id = idAt(meta === null ? head : meta[1]!, line, head);
   const type = (meta && /"type"\s*:\s*"([^"]*)"/.exec(meta[2]!)?.[1]) ?? word.toLowerCase();
   const alias = meta ? /"alias"\s*:\s*"([^"]*)"/.exec(meta[2]!)?.[1] : undefined;
   const label = as?.[1]!.trim() ?? alias;
@@ -54,7 +59,8 @@ function declaration(rest: string, word: string, create: boolean, line: number):
 
 /** One line's statement, or `null` for a blank or a comment. */
 function statementOf(text: string, line: number, dropped: string[]): SeqStmt | null {
-  const t = text.trim().replace(/;$/, '').trim();
+  // A line may end in a `;`, but not the one closing a `#quot;` or `&amp;` reference.
+  const t = text.trim().replace(/(?<!(?:#|&#?)[\da-z]+);$/i, '').trim();
   if (t === '' || t.startsWith('%%')) {
     if (/^%%\{.*\}%%$/.test(t)) dropped.push('Mermaid configuration directives were dropped.');
     return null;
@@ -68,20 +74,20 @@ function statementOf(text: string, line: number, dropped: string[]): SeqStmt | n
   if (word === 'else' || word === 'and' || word === 'option') return { kind: 'section', word, label: rest, line };
   if (word === 'rect') return { kind: 'rect', color: rest, line };
   if (word === 'box') return { kind: 'box', rest, line };
-  if (word === 'activate' || word === 'deactivate' || word === 'destroy') return { kind: word, participant: rest, line };
+  if (word === 'activate' || word === 'deactivate' || word === 'destroy') return { kind: word, participant: idAt(rest, line), line };
   if (word === 'autonumber') return { kind: 'autonumber', args: rest === '' ? [] : rest.split(/\s+/), line };
   if (/^title\b/i.test(t)) return { kind: 'title', text: t.replace(/^title\s*:?\s*/i, ''), line };
   if (/^acc(Title|Descr)\b/.test(t)) return { kind: 'dropped', what: 'Accessibility titles and descriptions were dropped.', line };
   if (/^(links?|properties|details)\b/i.test(t)) return { kind: 'dropped', what: 'Participant menus (links, properties, details) were dropped.', line };
   const note = NOTE.exec(t);
   if (note) {
-    const over = note[2]!.split(',').map((s) => s.trim()).filter((s) => s !== '');
+    const over = note[2]!.split(',').map((s) => s.trim()).filter((s) => s !== '').map((s) => idAt(s, line));
     return { kind: 'note', place: note[1]!.toLowerCase() as 'over', over, text: note[3]!, line };
   }
   const msg = MESSAGE.exec(t);
   if (msg) {
     const arrow = ARROWS.find(([a]) => a === msg[2])![1];
-    return { kind: 'message', from: msg[1]!.trim(), to: msg[4]!.trim(), arrow, mark: msg[3] as '+' | '-' | '', text: msg[5] ?? '', line };
+    return { kind: 'message', from: idAt(msg[1]!.trim(), line), to: idAt(msg[4]!.trim(), line), arrow, mark: msg[3] as '+' | '-' | '', text: msg[5] ?? '', line };
   }
   throw lineError('Mermaid', line, `"${t}" is not a sequence diagram statement`);
 }

@@ -66,6 +66,13 @@ describe('linearScale', () => {
     expect(niceDomain([-13, 42])).toEqual([-20, 50]);
     expect(linearScale({ domain: [0.12, 0.88], range: [0, 1], nice: 5 }).domain).toEqual([0, 1]);
   });
+
+  it('keeps an end where its whole step would overflow to infinity or round in to nothing', () => {
+    expect(niceDomain([0, 1.7e308])).toEqual([0, 1.7e308]);
+    expect(niceDomain([-1.7e308, 1.7e308])).toEqual([-1.7e308, 1.7e308]);
+    expect(niceDomain([0, 5e-324])).toEqual([0, 5e-324]);
+    expect(linearScale({ domain: [0, 1.7e308], range: [0, 100], nice: 5 }).map(1e308)).toBeCloseTo(58.8, 1);
+  });
 });
 
 describe('logScale', () => {

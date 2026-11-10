@@ -2,7 +2,7 @@
 import type { DataEdge, DataNode, EdgeStyle, NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { mermaidIds } from '../common/text';
+import { mermaidIds, mermaidQuoted } from '../common/text';
 import { elementParts, hasTechnology, macroOf } from './kinds';
 import { C4_HEADERS } from './parse';
 import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
@@ -10,14 +10,14 @@ import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
 const BY_TYPE = new Map(Object.entries(BOUNDARY_TYPES).filter(([, t]) => t !== null).map(([macro, t]) => [t!, macro]));
 const REL_WAYS: Readonly<Record<string, string>> = { 'n s': 'U', 's n': 'D', 'w e': 'L', 'e w': 'R' };
 
-/** An argument in quotes, its own quotes made single. */
+/** A color argument in quotes, its own quotes made single. */
 const quoted = (s: string): string => `"${s.replace(/"/g, "'")}"`;
 
-/** Positional arguments, the first `bare` as ids and the rest quoted, trailing empty ones left off. */
+/** Positional arguments, the first `bare` as ids and the rest quoted text, trailing empty ones left off. */
 function args(list: readonly (string | undefined)[], bare = 1): string {
   const out = list.map((s) => s ?? '');
   while (out.length > bare + 1 && out.at(-1) === '') out.pop();
-  return out.map((s, i) => (i < bare ? s : quoted(s))).join(', ');
+  return out.map((s, i) => (i < bare ? s : mermaidQuoted(s))).join(', ');
 }
 
 class C4Writer {

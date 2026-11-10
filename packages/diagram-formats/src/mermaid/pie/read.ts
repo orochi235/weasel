@@ -4,6 +4,7 @@ import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { pageNameOf, statementsOf } from '../common/lines';
+import { numberAt } from '../common/number';
 import { unquote } from '../xychart/parse';
 
 /** The page a pie is read onto. */
@@ -11,7 +12,6 @@ export const PIE_PAGE = { width: 640, height: 400 } as const;
 
 const HEADER = /^pie(\s+showData)?(?:\s+title(?:\s+(.*))?)?$/;
 const SLICE = /^("[^"]*"|'[^']*')\s*:\s*(\S+)$/;
-const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 
 /** Reads a Mermaid `pie`. Throws, naming the line, on text that is not one or a value that is not a non-negative number. */
 export function readMermaidPie(text: string): ImportResult {
@@ -30,8 +30,7 @@ export function readMermaidPie(text: string): ImportResult {
     }
     const m = SLICE.exec(s.text);
     if (m === null) throw lineError('Mermaid', s.line, `"${s.text}" is not a pie slice`);
-    if (!NUMBER.test(m[2]!)) throw lineError('Mermaid', s.line, `"${m[2]}" is not a number`);
-    const value = Number(m[2]);
+    const value = numberAt(m[2]!, s.line);
     if (value < 0) throw lineError('Mermaid', s.line, `a slice's value must not be negative, and ${m[2]} is`);
     const label = unquote(m[1]!);
     if (labels.has(label)) {

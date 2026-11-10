@@ -118,7 +118,10 @@ export function niceDomain(domain: readonly [number, number], count = DEFAULT_TI
   const step = tickStep(lo, hi, count);
   const down = (v: number) => onGrid(Math.floor(v / step + 1e-9), step);
   const up = (v: number) => onGrid(Math.ceil(v / step - 1e-9), step);
-  return lo < hi ? [down(lo), up(hi)] : [up(lo), down(hi)];
+  // An end whose whole step overflows stays where it is, and so does a span too fine for its step to cut.
+  const [a, b] = lo < hi ? [down(lo), up(hi)] : [up(lo), down(hi)];
+  const out: [number, number] = [Number.isFinite(a) ? a : lo, Number.isFinite(b) ? b : hi];
+  return out[0] === out[1] ? [lo, hi] : out;
 }
 
 /** A linear scale from `domain` onto `range`. */
