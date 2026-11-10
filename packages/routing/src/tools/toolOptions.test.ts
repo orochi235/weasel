@@ -61,6 +61,19 @@ describe('toolOptionParams', () => {
     expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 40, strength: 0.6 });
   });
 
+  it('reads the infinity an endless end stands for as held', () => {
+    const endless: ToolOptions = {
+      ...OPTIONS,
+      prefs: {
+        ...OPTIONS.prefs,
+        children: { reach: { kind: 'number', name: 'Reach', description: '', default: 10, min: 0, max: 100, endless: 'max' } },
+      },
+    };
+    const values = createToolOptionValues();
+    values.set('b', 'reach', Infinity);
+    expect(toolOptionParams('b', endless, values)).toEqual({ reach: Infinity });
+  });
+
   it('reads the default of an option named like an Object.prototype member', () => {
     const named: ToolOptions = {
       ...OPTIONS,

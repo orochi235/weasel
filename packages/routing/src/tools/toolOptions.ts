@@ -9,6 +9,7 @@
  */
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs';
 import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs';
+import { endlessAllows } from '@weasel-js/quantity';
 import { createEmitter, deepEqual } from '@weasel-js/registry';
 
 /** How a step action moves one option: by a factor, or by an amount. */
@@ -115,7 +116,9 @@ export function toolOptionNumberLeaf(options: ToolOptions, option: string): Pref
 /** What `held` reads as for `leaf`, or `undefined` for nothing it can read. */
 function readHeld(leaf: PrefLeaf, held: unknown): unknown {
   if (prefValueAbsent(leaf, held)) return undefined;
-  if (leaf.kind === 'number' && !(typeof held === 'number' && Number.isFinite(held))) return undefined;
+  if (leaf.kind === 'number' && !(typeof held === 'number' && (Number.isFinite(held) || endlessAllows((leaf as PrefNumber).endless, held)))) {
+    return undefined;
+  }
   const repaired = repairPrefValue(leaf, held);
   return repaired === (leaf as { default?: unknown }).default && !deepEqual(repaired, held) ? undefined : repaired;
 }
