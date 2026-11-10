@@ -350,9 +350,10 @@ Owner tags, after the priority (2026-10-26):
   `sceneHistory.pbt.test.ts` (2026-11-09). Ungrouping an unlocked group whose child is locked: `enabled`
   says true, and `run` throws `cannot move … — it is locked`; delete has the same shape. Ungrouping a
   group a child derives from (`dependsOn: [group]`) deletes the child with the container, against
-  ungroup's doc. Both roll back or leave a valid tree. Asked weasel-8f: disable, skip, or carry the
+  ungroup's doc, and leaves the deleted child selected. Both roll back or leave a valid tree. Asked weasel-8f: disable, skip, or carry the
   descendant (locks); drop the dependency, skip, or delete (derivation). Closes when both are ruled, the
-  actions follow the rulings, and the model test asserts them instead of counting the throws.
+  actions follow the rulings, and the model test asserts them in place of counting the throws and
+  excusing `takenByUngroup`.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
