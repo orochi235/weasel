@@ -1,0 +1,83 @@
+/* ── Fit: an inline row puts its control under the label when the label leaves it too little. ──
+   Each control kind breaks the line at the narrowest width it is still usable at and grows from there to
+   the width it takes anyway, so a row that fits lays out as it did. Only rows holding a kind named here
+   wrap: a textarea or a renderer's own control sits beside its label however wide it is. */
+.rowInline:has(
+    > input[type='range'],
+    > .numberField,
+    > .fieldUnitGroup,
+    > .textField,
+    > input[type='text'],
+    > input[type='number'],
+    > .select,
+    > select,
+    > .toggleBar,
+    > .dialogTrigger
+  ) {
+  flex-wrap: wrap;
+  row-gap: var(--wzl-space-1);
+}
+
+/* Alone on its line, a label longer than the row breaks between its words. */
+.rowInline > .rowLabel {
+  max-inline-size: 100%;
+}
+
+/* The track breaks the line at its floor, and grows no wider than the track a row draws beside a short label. */
+.row.rowInline > input[type='range'] {
+  flex: 1 1 calc(var(--wzl-prop-track-min, 64px) + 2 * var(--wzl-slider-track-slop));
+  min-inline-size: min(100%, calc(var(--wzl-prop-track-min, 64px) + 2 * var(--wzl-slider-track-slop)));
+  max-inline-size: max-content;
+  /* Draws no text: this only sets the em the readout's reserve below is measured in to the readout's own. */
+  font-size: inherit;
+}
+
+/* A line breaks before the first item that does not fit, so a track that just fits would leave its
+   readout to fall onto a line alone. The track's margin counts the readout's room in its own share,
+   and the readout's negative margin hands it back: the boxes land where they did, and the two break
+   together. */
+.row.rowInline:has(> .readoutAfter) > input[type='range'] {
+  margin-inline-end: calc(var(--wzl-prop-readout-reserve, 3.5em) - var(--wzl-slider-track-slop));
+}
+
+.row.rowInline:has(> input[type='range']) > .readoutAfter {
+  margin-inline-start: calc(-1 * var(--wzl-prop-readout-reserve, 3.5em));
+}
+
+/* A surface that wraps a slider's track and readout in a slot of its own (PrefsForm's) gives the slot both. */
+.rowInline > :not(.rowLabel):has(> input[type='range']) {
+  min-inline-size: min(100%, calc(var(--wzl-prop-track-min, 64px) + var(--wzl-prop-readout-reserve, 3.5em)));
+}
+
+.rowInline > .numberField,
+.rowInline > input[type='number']:not(.readoutInput) {
+  flex: 1 1 var(--wzl-prop-field-min, 6ch);
+  min-inline-size: min(100%, var(--wzl-prop-field-min, 6ch));
+  max-inline-size: min(100%, var(--wzl-prop-number-width, 9ch));
+}
+
+.rowInline > .textField,
+.rowInline > input[type='text']:not(.readoutInput) {
+  flex: 1 1 var(--wzl-prop-field-min, 6ch);
+  min-inline-size: min(100%, var(--wzl-prop-field-min, 6ch));
+  max-inline-size: min(100%, var(--wzl-prop-text-width, 16ch));
+}
+
+.rowInline > .fieldUnitGroup {
+  flex: 1 1 var(--wzl-prop-field-min, 6ch);
+  min-inline-size: min(100%, var(--wzl-prop-field-min, 6ch));
+  max-inline-size: max-content;
+}
+
+/* These fill what the label leaves, as they did; only where the line breaks moves. */
+.rowInline > .select,
+.rowInline > select,
+.rowInline > .dialogTrigger {
+  flex-basis: var(--wzl-prop-field-min, 6ch);
+  min-inline-size: min(100%, var(--wzl-prop-field-min, 6ch));
+}
+
+/* A segmented toggle is usable at the width its segments set, and squeezes only once it has a line of its own. */
+.rowInline > .toggleBar {
+  flex-basis: max-content;
+}

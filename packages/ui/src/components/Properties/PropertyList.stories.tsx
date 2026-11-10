@@ -82,3 +82,32 @@ export const ColorPairingBrokenBySlider: Story = {
     </div>
   ),
 };
+
+const MODES = [{ value: 'px', label: 'Pixels' }, { value: 'mm', label: 'Millimeters' }];
+const ENDS = [{ value: 'butt', label: 'Butt' }, { value: 'round', label: 'Round' }, { value: 'square', label: 'Square' }];
+
+/** Inline rows two to a line in a sidebar. A label that would leave its control less than the control can be used
+ *  at — Shift angle step's track, the long-named field, select, and toggle — puts the control under it, its
+ *  readout still beside the track; Spacing and Units keep theirs beside the label. */
+export const PairsLongLabels: Story = {
+  render: (args) => {
+    const [spacing, setSpacing] = useState(20);
+    const [angle, setAngle] = useState(15);
+    const [tolerance, setTolerance] = useState(6);
+    const [units, setUnits] = useState('px');
+    const [mode, setMode] = useState('px');
+    const [ends, setEnds] = useState('round');
+    return (
+      <div style={{ width: 320 }}>
+        <PropertyList pack="pairs" {...args}>
+          <PropertyField kind="number" control="slider" layout="inline" label="Spacing" value={spacing} min={5} max={80} step={5} onChange={setSpacing} />
+          <PropertyField kind="number" control="slider" layout="inline" label="Shift angle step" value={angle} min={5} max={90} step={5} onChange={setAngle} />
+          <PropertyField kind="enum" layout="inline" label="Units" value={units} options={MODES} onChange={setUnits} />
+          <PropertyField kind="enum" layout="inline" label="Readout units shown" value={mode} options={MODES} onChange={setMode} />
+          <PropertyField kind="number" layout="inline" label="Snap tolerance" value={tolerance} min={0} max={40} onChange={setTolerance} />
+          <PropertyField kind="enum" control="toggle" layout="inline" label="Line ends" value={ends} options={ENDS} onChange={setEnds} />
+        </PropertyList>
+      </div>
+    );
+  },
+};

@@ -432,8 +432,8 @@ const sidebarSliders = f.schema({
   minimapSize: f.number(280).range(120, 600).step(20).label('Minimap size'),
 });
 
-/** astv's sidebar sliders paired two to a row, at the narrowest width a two-up sidebar should support:
- *  300px at compact and comfortable. Roomy needs 352px; at 300 its longest labels push readouts out of the row. */
+/** astv's sidebar sliders paired two to a row in a 300px sidebar. A label that would leave its track narrower
+ *  than `--wzl-prop-track-min` puts the track and its readout under the label. */
 export const SidebarSliders: Story = {
   args: { layout: 'inline', align: 'center', pack: 'pairs' },
   render: (args) => {
