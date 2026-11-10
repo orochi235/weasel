@@ -26,10 +26,12 @@ export function multiTouchGeometry(positions: Iterable<Point>): MultiTouchGeomet
   }
   const dx = pts[1]!.x - pts[0]!.x;
   const dy = pts[1]!.y - pts[0]!.y;
+  // atan2 gives -180 for a dy of -0 or one too small to move it off -180.
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
   return {
     centroid: { x: sumX / pts.length, y: sumY / pts.length },
     spread: Math.sqrt(dx * dx + dy * dy),
-    angle: (Math.atan2(dy, dx) * 180) / Math.PI,
+    angle: angle === -180 ? 180 : angle,
   };
 }
 
