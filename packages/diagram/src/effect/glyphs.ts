@@ -1,6 +1,7 @@
 /** The branch symbols beyond the flowchart's own: a hexagon, a step glyph, a
  *  comparator, a crossover, and a bare fork. */
 import { polygonFromPoints } from '@weasel-js/core/math';
+import { maxOf } from '@weasel-js/geom';
 import type { DataMark } from '../marks';
 import type { Outline } from '../outline';
 import type { PortSpec } from '../types';
@@ -69,7 +70,7 @@ const stepAlong = (titleGap: number): BranchSymbol => (stage, pipeline, options)
 export const step: BranchSymbol = (stage, pipeline, options) => {
   if (options?.direction !== 'down') return stepAlong(18)(stage, pipeline, options);
   if (options.controlSide === 'right') return flowing(stepAlong(18))(stage, pipeline, options);
-  const widest = Math.max(0, ...(stage.split?.at ?? []).map((cut) => String(cut).length * CUT_CHAR));
+  const widest = Math.max(0, maxOf(stage.split?.at ?? [], (cut) => String(cut).length * CUT_CHAR));
   return flowing(stepAlong(Math.max(18, CUT_GAP + widest + 4)))(stage, pipeline, options);
 };
 

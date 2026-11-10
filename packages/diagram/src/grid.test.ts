@@ -79,4 +79,10 @@ describe('grid', () => {
     expect(pinned.has('b')).toBe(false);
     expect(pinned.get('a')!.y).toBe(1);
   });
+
+  it('lays out a million nodes without overflowing the call stack', () => {
+    const sizes = Object.fromEntries(Array.from({ length: 1_000_000 }, (_, i) => [`n${i}`, [10, 10] as const]));
+    const moves = grid(graphOf(sizes), { nodeGap: 10, ...of(1000) });
+    expect(moves.size).toBeGreaterThan(0);
+  });
 });

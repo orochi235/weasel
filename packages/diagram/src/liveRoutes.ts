@@ -20,7 +20,7 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
-import { lerpPoint } from '@weasel-js/geom';
+import { lerpPoint, maxOf, minOf } from '@weasel-js/geom';
 import { diagramEdgeOf, layoutWritesRoute, type DiagramEdge } from './edgeTrait';
 import type { Graph } from './graph';
 import { routeWrites, type LayoutRoutes } from './routeWrites';
@@ -79,10 +79,10 @@ export function routeEasings<TPose>(
     const ids = graph.node(id) !== undefined ? [id] : graph.groups?.find((g) => g.id === id)?.members ?? [];
     const boxes = ids.flatMap((m) => graph.node(m)?.bounds ?? []);
     if (boxes.length === 0) return null;
-    const x0 = Math.min(...boxes.map((b) => b.x));
-    const y0 = Math.min(...boxes.map((b) => b.y));
-    const x1 = Math.max(...boxes.map((b) => b.x + b.width));
-    const y1 = Math.max(...boxes.map((b) => b.y + b.height));
+    const x0 = minOf(boxes, (b) => b.x);
+    const y0 = minOf(boxes, (b) => b.y);
+    const x1 = maxOf(boxes, (b) => b.x + b.width);
+    const y1 = maxOf(boxes, (b) => b.y + b.height);
     return { x: (x0 + x1) / 2, y: (y0 + y1) / 2 };
   };
   const writes = routeWrites(scene as never, routes);

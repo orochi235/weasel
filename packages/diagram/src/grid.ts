@@ -14,6 +14,7 @@
  * every other layout.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph, GraphGroup } from './graph';
 import { DEFAULT_NODE_GAP, graphOrder, pinnedSet, translated, type LayoutFn } from './layout';
 
@@ -41,10 +42,14 @@ interface Cells {
 function levels(graph: Graph): Map<string | null, string[]> {
   const order = graphOrder(graph);
   const groups = graph.groups ?? [];
-  const first = new Map<string, number>(groups.map((g) => [g.id, Math.min(...g.members.map(order))]));
+  const first = new Map<string, number>(groups.map((g) => [g.id, minOf(g.members, order)]));
   const at = (id: string) => first.get(id) ?? order(id);
   const out = new Map<string | null, string[]>();
-  const add = (level: string | null, id: string) => out.set(level, [...(out.get(level) ?? []), id]);
+  const add = (level: string | null, id: string) => {
+    const ids = out.get(level);
+    if (ids) ids.push(id);
+    else out.set(level, [id]);
+  };
   for (const n of graph.nodes) add(n.group ?? null, n.id);
   for (const g of groups) add(g.parent ?? null, g.id);
   for (const ids of out.values()) ids.sort((a, b) => at(a) - at(b));
@@ -73,7 +78,7 @@ function deal(ids: readonly string[], sizeOf: (id: string) => Size, columns: num
 
 /** The grid's column width, each row's height, and where each item's top-left sits from the grid's corner. */
 function place(cells: Cells, gap: number, rowGap: number): { at: Map<string, Vec2>; size: Size } {
-  const width = Math.max(0, ...cells.items.map((i) => (i.size.width - (i.span - 1) * gap) / i.span));
+  const width = Math.max(0, maxOf(cells.items, (i) => (i.size.width - (i.span - 1) * gap) / i.span));
   const rows: number[] = [];
   for (const i of cells.items) rows[i.row] = Math.max(rows[i.row] ?? 0, i.size.height);
   const tops: number[] = [];
@@ -87,7 +92,7 @@ function place(cells: Cells, gap: number, rowGap: number): { at: Map<string, Vec
     const across = i.span * width + (i.span - 1) * gap;
     at.set(i.id, { x: i.col * (width + gap) + (across - i.size.width) / 2, y: tops[i.row]! + ((rows[i.row] ?? 0) - i.size.height) / 2 });
   }
-  const used = Math.max(0, ...cells.items.map((i) => i.col + i.span));
+  const used = Math.max(0, maxOf(cells.items, (i) => i.col + i.span));
   return { at, size: { width: used === 0 ? 0 : used * width + (used - 1) * gap, height: rows.length === 0 ? 0 : y - rowGap } };
 }
 

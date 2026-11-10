@@ -9,6 +9,7 @@
  * The line's order is the signal's order, so a group whose line members a
  * non-member splits keeps its box over that non-member.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Hanging } from './chainRoutes';
 import { rankGaps, rankInset } from './cluster';
 import type { Graph, GraphGroup, GraphNode } from './graph';
@@ -113,8 +114,8 @@ function clearColumns(
     const clear = (g: GraphGroup, fixed: ReadonlySet<string>) => {
       const members = new Set(g.members);
       const own = hung.filter((id) => members.has(id)).map((id) => level.get(id)!);
-      const low = members.has(lineId) ? 0 : Math.min(...own);
-      const deep = Math.max(0, ...own);
+      const low = members.has(lineId) ? 0 : minOf(own);
+      const deep = Math.max(0, maxOf(own));
       const movers = hung.filter((id) => !members.has(id) && !fixed.has(id) && level.get(id)! >= low);
       if (!movers.some((id) => level.get(id)! <= deep)) return;
       const steps = [...new Set(movers.map((id) => level.get(id)!))].sort((p, q) => p - q);
@@ -219,8 +220,8 @@ export function bandGaps(
       ...(g.minWidth !== undefined ? { minWidth: g.minWidth } : {}),
       inset: rankInset(g.inset, axes),
       children: children.get(g.id) ?? [],
-      before: placed.length === 0 ? -1 : Math.min(...placed) - 1,
-      after: placed.length === 0 ? -1 : Math.max(...placed),
+      before: placed.length === 0 ? -1 : minOf(placed) - 1,
+      after: placed.length === 0 ? -1 : maxOf(placed),
     };
   }), out, span);
   return out;

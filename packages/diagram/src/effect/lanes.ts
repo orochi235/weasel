@@ -1,3 +1,4 @@
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { insetOf } from '../cluster';
 import { groupLabelIdOf } from '../dataGroups';
@@ -58,7 +59,7 @@ function laneTypes(stages: readonly EffectStage[], first: readonly string[] = []
 
 function spanOf(stage: EffectStage, lane: ReadonlyMap<string, number>): Span {
   const at = [...(stage.inputs ?? []), ...(stage.outputs ?? [])].map((p) => lane.get(p.type)!);
-  return at.length === 0 ? [0, 0] : [Math.min(...at), Math.max(...at)];
+  return at.length === 0 ? [0, 0] : [minOf(at), maxOf(at)];
 }
 
 /** Lane heights from `least`, each grown until every stage fits the lanes it
@@ -121,10 +122,10 @@ function sizesOf(nodes: readonly DataNode[], groups: readonly EffectGroup[], mea
     const box = pose.get(n.id)!;
     const ink = inkOf(n.id, specs);
     const over = {
-      left: box.x - Math.min(...ink.map((b) => b.x)),
-      top: box.y - Math.min(...ink.map((b) => b.y)) + boxed(n.id, 'top'),
-      right: Math.max(...ink.map((b) => b.x + b.width)) - box.x - box.width,
-      bottom: Math.max(...ink.map((b) => b.y + b.height)) - box.y - box.height + boxed(n.id, 'bottom'),
+      left: box.x - minOf(ink, (b) => b.x),
+      top: box.y - minOf(ink, (b) => b.y) + boxed(n.id, 'top'),
+      right: maxOf(ink, (b) => b.x + b.width) - box.x - box.width,
+      bottom: maxOf(ink, (b) => b.y + b.height) - box.y - box.height + boxed(n.id, 'bottom'),
     };
     return [n.id, { box, over }];
   }));
@@ -237,9 +238,9 @@ export const lanes: EffectLook<LanesOptions> = (pipeline, options = {}) => {
   const { column, blocks } = laneColumns(stages, drawableWires(pipeline), spans, groups, titles);
   const plan: Plan = {
     stages, drawn, size, spans, column, blocks, lane, rows: rows.length,
-    least: Math.max(options.laneHeight ?? 48, ...labels.map((l) => size.get(l.id)!.box.height)),
+    least: Math.max(options.laneHeight ?? 48, maxOf(labels, (l) => size.get(l.id)!.box.height)),
     gap: options.rankGap ?? 40,
-    start: 2 * MARGIN + Math.max(0, ...labels.map((l) => size.get(l.id)!.box.width)),
+    start: 2 * MARGIN + Math.max(0, maxOf(labels, (l) => size.get(l.id)!.box.width)),
   };
   const router = options.router ?? 'bezier';
   const wires = wireEdges(pipeline, color);

@@ -3,6 +3,7 @@
  * room between columns, with each group's members holding a run of columns
  * no other stage stands in, so the box drawn around them covers nothing else.
  */
+import { maxOf, minOf } from '@weasel-js/geom';
 import { widenForMinWidth } from '../chainGroups';
 import { DEFAULT_GROUP_INSET, insetOf, rankGaps } from '../cluster';
 import { groupMinWidth } from '../dataGroups';
@@ -50,7 +51,7 @@ export function laneColumns(
   const nested = nestGroups(groups, (id) => order.has(id));
   const byId = new Map(nested.map((g) => [g.id, g]));
   const grouped = new Set(nested.flatMap((g) => g.members));
-  const first = (id: string) => Math.min(...(byId.get(id)?.members ?? [id]).map((m) => order.get(m)!));
+  const first = (id: string) => minOf((byId.get(id)?.members ?? [id]), (m) => order.get(m)!);
   const itemsOf = (ids: readonly string[], depth: number): Item[] => [...ids].sort((a, b) => first(a) - first(b)).map((id) => {
     const g = byId.get(id);
     if (g === undefined) return { stages: [id] };
@@ -90,7 +91,7 @@ function place(items: readonly Item[], wires: readonly DrawableWire[], spans: Re
     const i = Math.max(0, left.findIndex((k) => [...feeds[k]!].every((f) => column.has(f))));
     const k = left.splice(i, 1)[0]!;
     const item = items[k]!;
-    let c = Math.max(0, ...[...feeds[k]!].flatMap((f) => (column.has(f) ? [column.get(f)! + 1] : [])));
+    let c = Math.max(0, maxOf([...feeds[k]!].flatMap((f) => (column.has(f) ? [column.get(f)! + 1] : []))));
     while (!fits(item, c)) c++;
     if (item.inner === undefined) {
       (held[c] ??= []).push(spans.get(item.stages[0]!)!);
@@ -101,7 +102,7 @@ function place(items: readonly Item[], wires: readonly DrawableWire[], spans: Re
     for (const [id, at] of item.inner.column) column.set(id, c + at);
     for (const b of item.inner.blocks) blocks.push({ ...b, first: b.first + c, last: b.last + c });
   }
-  return { width: Math.max(0, ...column.values()) + (column.size > 0 ? 1 : 0), column, blocks };
+  return { width: Math.max(0, maxOf(column.values())) + (column.size > 0 ? 1 : 0), column, blocks };
 }
 
 /**

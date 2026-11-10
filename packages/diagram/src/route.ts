@@ -8,6 +8,7 @@
  * waypoints `layeredPlan` placed for it.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { Graph } from './graph';
 import type { LayoutDirection, LayoutPorts } from './layout';
 import { COMPASS, DEFAULT_PORTS } from './ports';
@@ -68,7 +69,7 @@ export function layeredRoutes(input: LayeredRouteInput): Map<string, LayeredRout
   const faces = FACES[input.direction ?? 'down'];
   const span = (id: string): [number, number] | null => {
     const rs = (members.get(id) ?? [id]).map((m) => ranks.get(m)).filter((r): r is number => r !== undefined);
-    return rs.length === 0 ? null : [Math.min(...rs), Math.max(...rs)];
+    return rs.length === 0 ? null : [minOf(rs), maxOf(rs)];
   };
 
   const routes = new Map<string, LayeredRoute>();

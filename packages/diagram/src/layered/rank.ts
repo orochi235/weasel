@@ -1,5 +1,6 @@
 /** Ranking by network simplex (Gansner, Koutsofios, North and Vo, 1993: "A
  *  Technique for Drawing Directed Graphs", the ranking Graphviz dot uses). */
+import { minOf } from '@weasel-js/geom';
 import type { Graph } from '../graph';
 
 /** An edge between two nodes of one component, by their index in it: at
@@ -76,7 +77,7 @@ export function ranksByLength(graph: Graph, back: ReadonlySet<string>): Map<stri
     const rank = part.nodes.map((g) => start[g]!);
     simplex(part.arcs, rank);
     const own = part.nodes.flatMap((g, i) => (g < real ? [i] : []));
-    const min = Math.min(...own.map((i) => rank[i]!));
+    const min = minOf(own, (i) => rank[i]!);
     for (const i of own) ranks.set(graph.nodes[part.nodes[i]!]!.id, rank[i]! - min);
   }
   return ranks;

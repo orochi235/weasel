@@ -17,6 +17,7 @@
  * ignored; pins and `tolerance` behave as in every other layout.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { maxOf } from '@weasel-js/geom';
 import type { GraphNode } from './graph';
 import { DEFAULT_NODE_GAP, DEFAULT_RANK_GAP, graphOrder, pinnedSet, translated, type LayoutFn } from './layout';
 import { forestOf, subtreeBlocks } from './tree';
@@ -113,7 +114,7 @@ function sideColumns(
   const xs = new Map<string, number>();
   let start = from;
   for (const row of rows) {
-    const band = Math.max(...row.map((n) => n.bounds.width));
+    const band = maxOf(row, (n) => n.bounds.width);
     for (const node of row) {
       const near = start + (band - node.bounds.width) / 2;
       xs.set(node.id, sign === 1 ? near : -near - node.bounds.width);

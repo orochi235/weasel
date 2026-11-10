@@ -3,7 +3,7 @@
  * diagram's own frame (its top-left at the origin). Pure geometry: the specs
  * draw it, the editing reads it back to place a drop.
  */
-import { unionRects } from '@weasel-js/geom';
+import { unionRects, maxOf } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { columnsOf } from './columns';
 import { SEQ, seqMeasure, type SeqRect } from './metrics';
@@ -64,7 +64,7 @@ export interface SequenceLayout {
  */
 export function sequenceLayout(data: SequenceData, opts: SequenceLayoutOptions = {}): SequenceLayout {
   const m = seqMeasure(opts.measure, opts.font);
-  const boxLabelHeight = Math.max(0, ...(data.boxes ?? []).map((b) => ((b.label ?? '') === '' ? 0 : m.text(b.label!).height + 4)));
+  const boxLabelHeight = Math.max(0, maxOf(data.boxes ?? [], (b) => ((b.label ?? '') === '' ? 0 : m.text(b.label!).height + 4)));
   const cols = columnsOf(data, m, SEQ.margin);
   const top = SEQ.margin + (data.boxes?.length ? SEQ.boxPad : 0) + boxLabelHeight;
   const rows = walkRows(data, m, cols, top);

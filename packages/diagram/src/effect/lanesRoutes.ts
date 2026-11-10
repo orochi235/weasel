@@ -4,6 +4,7 @@
  *  covers no stage. */
 import { IDENTITY_POSE_COMPOSITION, pointAlongPath, type Path } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
+import { rectsOverlap, worldCoords, maxOf, minOf } from '@weasel-js/geom';
 import type { MeasureRowText } from '../body';
 import { SIDE_TRACK_GAP } from '../chainRoutes';
 import { EDGE_DERIVE_PATH } from '../edge';
@@ -13,7 +14,6 @@ import { type DataEdge, type DataGroup, type DataNode, type DiagramData, type Di
 import { nestGroups } from '../groupTree';
 import { labelCenter } from '../label';
 import { portSitesOf } from '../ports';
-import { rectsOverlap, worldCoords } from '@weasel-js/geom';
 
 export type Box = { x: number; y: number; width: number; height: number };
 
@@ -289,7 +289,7 @@ export function routeWires(
   const walls = nestGroups(laid.groups ?? [], (id) => ink.has(id)).flatMap((g): Wall[] => {
     const box = spec.get(g.id)?.pose as Box | undefined;
     const at = g.members.flatMap((m) => (laid.column.has(m) ? [laid.column.get(m)!] : []));
-    return box === undefined || at.length === 0 ? [] : [{ box, first: Math.min(...at), last: Math.max(...at), holds: new Set(g.members) }];
+    return box === undefined || at.length === 0 ? [] : [{ box, first: minOf(at), last: maxOf(at), holds: new Set(g.members) }];
   });
   const grids = wires.map(({ edge }) => walledIn(grid, walls.filter((w) => !w.holds.has(edge.from) && !w.holds.has(edge.to))));
   const courses = wires.map(({ edge }, w) => (edge.from === edge.to ? undefined : laneCourse(grids[w]!, end(edge.from, edge.fromPort!), end(edge.to, edge.toPort!))));

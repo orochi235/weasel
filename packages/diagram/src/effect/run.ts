@@ -4,6 +4,7 @@
  * had, so a chart fed a run every frame repaints only what changed.
  */
 import { RIGID_POSE_COMPOSITION, worldPosesOf, bitmapSrc } from '@weasel-js/core';
+import { minOf } from '@weasel-js/geom';
 import type { DiagramSpec } from '../dataTypes';
 import { estimatedWidth } from '../rowMeasure';
 import {
@@ -163,10 +164,10 @@ function costSpec(stage: DiagramSpec, own: readonly DiagramSpec[], of: EffectSta
   const world = worldPosesOf([stage, ...own], RIGID_POSE_COMPOSITION);
   const box = world.get(stage.id as string) as { x: number; y: number; width: number };
   // Above the stage's own text standing over the box too, as a symbol's title does with control from below.
-  const top = Math.min(box.y, ...own.flatMap((s) => {
+  const top = Math.min(box.y, minOf(own.flatMap((s) => {
     const p = world.get(s.id as string) as { y: number; height: number } | undefined;
     return s !== stage && p !== undefined && p.y + p.height <= box.y ? [p.y] : [];
-  }));
+  })));
   return {
     id: `${stage.id as string}/cost` as never,
     kind: 'mark',

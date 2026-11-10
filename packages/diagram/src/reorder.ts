@@ -19,7 +19,7 @@ import {
   type TargetPredicate,
   type Vec2,
 } from '@weasel-js/core';
-import { rectContainsPoint } from '@weasel-js/geom';
+import { rectContainsPoint, maxOf, minOf } from '@weasel-js/geom';
 import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-logic';
 import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
@@ -99,8 +99,8 @@ export function sequenceSlots(axis: 'x' | 'y', items: readonly ReorderItem[]): R
   const lo = (b: Box) => b[along];
   const hi = (b: Box) => b[along] + b[size];
   const bar = (at: number, boxes: readonly Box[]): Pick<ReorderGap, 'a' | 'b'> => {
-    const from = Math.min(...boxes.map((b) => b[across]));
-    const to = Math.max(...boxes.map((b) => b[across] + b[depth]));
+    const from = minOf(boxes, (b) => b[across]);
+    const to = maxOf(boxes, (b) => b[across] + b[depth]);
     const point = (c: number) => (axis === 'x' ? { x: at, y: c } : { x: c, y: at });
     return { a: point(from), b: point(to) };
   };
