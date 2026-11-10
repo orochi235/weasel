@@ -8,12 +8,12 @@ const pageOf = (data: TimelineData): PlotPage => ({ kind: 'plot', id: 'p', width
 const back = (data: TimelineData) => (readMermaidTimeline(writeMermaidTimeline(pageOf(data)).text).document.pages[0] as PlotPage).data as TimelineData;
 
 describe('Mermaid timeline, shrunk counterexamples', () => {
-  it('drops, with a warning, a period with no label rather than writing a line that reads as more events or fails', () => {
+  it('labels a period with no label "(untitled)", with a warning, keeping it and its events', () => {
     const data: TimelineData = { kind: 'timeline', sections: [{ name: '', periods: [{ label: '', events: ['a'] }, { label: 'b', events: [] }] }] };
     expect(writeMermaidTimeline(pageOf(data)).warnings).toContain(
-      'Mermaid reads a line with no period as more events for the period above it; periods with no label were dropped.',
+      'Mermaid reads a line with no period as more events for the period above it; periods with no label were labeled "(untitled)".',
     );
-    expect(back(data).sections.map((s) => s.periods.map((p) => p.label))).toEqual([['b']]);
+    expect(back(data).sections[0]!.periods).toEqual([{ label: '(untitled)', events: ['a'] }, { label: 'b', events: [] }]);
   });
 
   it('keeps a "#58;" written as text, and a period labeled like a keyword or a comment', () => {
