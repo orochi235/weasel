@@ -24,6 +24,8 @@ type Token = { kind: 'value'; value: number; unit?: Unit } | { kind: 'op'; op: s
 const TOKEN = /\s*(?:(\d+(?:\.\d+)?|\.\d+)\s*([^\s\d.+\-−*×/÷()]+)?|([+\-−*×/÷()]))/y;
 const OPS: Record<string, string> = { [MINUS_SIGN]: '-', '×': '*', '÷': '/' };
 
+const hasUnit = (t: Token | undefined): boolean => t?.kind === 'value' && t.unit !== undefined;
+
 function tokenize(text: string): Token[] {
   const tokens: Token[] = [];
   let at = 0;
@@ -32,9 +34,13 @@ function tokenize(text: string): Token[] {
     const m = TOKEN.exec(text);
     if (!m) throw new Error(`unitExpr: cannot read '${text.slice(at).trim()}' in '${text}'`);
     at = TOKEN.lastIndex;
-    if (m[1] === undefined) tokens.push({ kind: 'op', op: OPS[m[3]!] ?? m[3]! });
-    else if (m[2] === undefined) tokens.push({ kind: 'value', value: Number(m[1]) });
-    else tokens.push({ kind: 'value', value: Number(m[1]), unit: m[2] });
+    if (m[1] === undefined) {
+      tokens.push({ kind: 'op', op: OPS[m[3]!] ?? m[3]! });
+      continue;
+    }
+    const value = Number(m[1]);
+    if (!Number.isFinite(value)) throw new Error(`unitExpr: '${m[1]}' is past the range of a number, in '${text}'`);
+    tokens.push(m[2] === undefined ? { kind: 'value', value } : { kind: 'value', value, unit: m[2] });
   }
   return tokens;
 }
@@ -42,8 +48,9 @@ function tokenize(text: string): Token[] {
 /**
  * Parse arithmetic over unit-tagged numbers: `+ - * /` (also `− × ÷`),
  * parentheses, and adjacent terms read as one compound value (`5ft 3in`),
- * with a leading sign carried across all of them. Throws on text it cannot
- * read. Unit names are not checked here — resolving does that.
+ * with a leading sign carried across all of them; every term of one carries a
+ * unit. Throws on text it cannot read, and on a literal past the range of a
+ * number. Unit names are not checked here — resolving does that.
  */
 export function parseUnitExpr(text: string): UnitExpr {
   const tokens = tokenize(text);
@@ -93,8 +100,13 @@ export function parseUnitExpr(text: string): UnitExpr {
       i++;
       return inner;
     }
+    const first = tokens[i];
     let left = literal();
-    while (tokens[i]?.kind === 'value') left = { op: 'add', left, right: literal() };
+    // A compound value is a run of measures: `5ft 3in`, never `5ft 3` or `2 3`.
+    while (tokens[i]?.kind === 'value') {
+      if (!hasUnit(first) || !hasUnit(tokens[i])) fail();
+      left = { op: 'add', left, right: literal() };
+    }
     return left;
   };
   const literal = (): UnitExpr => {
