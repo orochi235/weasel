@@ -579,6 +579,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   its path, as `PrefsForm` does.
 - 2026-10-26/27 (agent batches 2–10): `Tree`, `ItemList` and `LayerList` typeahead cycles on a repeated
   letter, as menus do. Jog and Transport stay left to right in every locale.
+- 2026-11-10 (property tests): A `duration` in the units form reads a seconds decimal in either mark, as the
+  clock form does, so `1.500s` is a second and a half in `de-DE` though the locale groups with a period.
+  `parseUnitExpr` reads adjacent terms as one value only when every term carries a unit (`2 3` and `1ft 2`
+  throw, as `parseNumber` refuses `5ft 3`), and throws on a literal past the range of a number.
+- Open: whether `resolveUnitExpr` throws on a division by zero; `1/0` resolves to `Infinity` and `0/0` to `NaN`.
 
 ## Diagram, audio, and labkit
 
