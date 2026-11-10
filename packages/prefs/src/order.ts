@@ -1,6 +1,6 @@
 import type { PrefActions } from './action';
 import type { PrefGroup } from './groups';
-import { isPrefLeaf } from './helpers';
+import { isPrefLeaf, setOwnPrefValue } from './helpers';
 import type { PrefLeaf } from './schema';
 
 /**
@@ -51,7 +51,7 @@ export function orderPrefGroup(group: PrefGroup, order: PrefOrder | undefined, p
     const child = group.children[key]!;
     const next = orderChild(child, order, join(path, key));
     if (next !== child) changed = true;
-    children[key] = next;
+    setOwnPrefValue(children, key, next);
   }
   return changed ? { ...group, children } : group;
 }

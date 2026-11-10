@@ -15,14 +15,22 @@ export type PrefBlend = (members: readonly PrefWeighted[], leaf: PrefLeaf) => un
 const heaviest: PrefBlend = (members) => members.reduce((most, m) => (m.weight > most.weight ? m : most)).value;
 
 const blendNumber: PrefBlend = (members, leaf) => {
-  let sum = 0;
-  let total = 0;
+  let most = 0;
+  let lo = Infinity;
+  let hi = -Infinity;
   for (const { value, weight } of members) {
     if (typeof value !== 'number' || !Number.isFinite(value)) return heaviest(members, leaf);
-    sum += value * weight;
-    total += weight;
+    most = Math.max(most, weight);
+    lo = Math.min(lo, value);
+    hi = Math.max(hi, value);
   }
-  return sum / total;
+  // Scaled to the heaviest so no product or total overflows, and held to the
+  // members' range, which rounding would otherwise leave by an ulp.
+  let total = 0;
+  for (const { weight } of members) total += weight / most;
+  let sum = 0;
+  for (const { value, weight } of members) sum += (value as number) * (weight / most / total);
+  return Math.min(hi, Math.max(lo, sum));
 };
 
 const blendColor: PrefBlend = (members, leaf) => {

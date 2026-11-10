@@ -4,7 +4,7 @@
 
 import type { OwnedRecordCache } from '@weasel-js/storage';
 import { blendPref, type PrefBlend } from './blend';
-import { assignPrefValueAtPath } from './helpers';
+import { assignPrefValueAtPath, setOwnPrefValue } from './helpers';
 import { overridesOfPref, prefScopedDefault } from './scopeSpec';
 import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope, type PrefScope, type PrefSelection, type PrefWeights } from './scope';
 import { type PrefValidator, repairPrefValue } from './repair';
@@ -94,7 +94,7 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     previous = { raw, held };
 
     const selection: Record<string, string> = {};
-    for (const path of selectors.keys()) selection[path] = held.get(path) as string;
+    for (const path of selectors.keys()) setOwnPrefValue(selection, path, held.get(path) as string);
     const weights = selectionWeights(selection);
     const byPath = new Map<string, unknown>();
     const splitUnder = new Map<string, string[]>();
@@ -135,13 +135,13 @@ export function weightsUnder(
   const out: Record<string, Record<string, number>> = {};
   for (const [path, options] of selectors) {
     const own = Object.hasOwn(given, path) ? given[path] : undefined;
-    out[path] = own
+    setOwnPrefValue(out, path, own
       ? Object.fromEntries(options.filter((option) => (own[option] ?? 0) > 0).map((option) => [option, own[option]!]))
-      : { [selection[path]!]: 1 };
+      : { [selection[path]!]: 1 });
   }
   for (const path of admitted) {
-    if (Object.hasOwn(given, path)) out[path] = { ...given[path] };
-    else if (selection[path] !== undefined) out[path] = { [selection[path]]: 1 };
+    if (Object.hasOwn(given, path)) setOwnPrefValue(out, path, { ...given[path] });
+    else if (selection[path] !== undefined) setOwnPrefValue(out, path, { [selection[path]]: 1 });
   }
   return out;
 }
@@ -155,7 +155,7 @@ export function selectionAt(
 ): PrefSelection {
   const out: Record<string, string> = { ...selection };
   for (const [path, option] of Object.entries(at)) {
-    if (selectors.get(path)?.includes(option) || (admitted.has(path) && typeof option === 'string')) out[path] = option;
+    if (selectors.get(path)?.includes(option) || (admitted.has(path) && typeof option === 'string')) setOwnPrefValue(out, path, option);
   }
   return out;
 }

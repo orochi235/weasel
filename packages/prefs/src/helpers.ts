@@ -109,11 +109,11 @@ function visibleFields(fields: PrefObject['children'], keepEmpty: boolean): Pref
   for (const [key, child] of Object.entries(fields)) {
     if (isPrefLeaf(child)) {
       const kept = visiblePrefSubtree(child, false, keepEmpty);
-      if (kept) out[key] = kept;
+      if (kept) setOwnPrefValue(out, key, kept);
       continue;
     }
     const members = visibleFields(child.members, keepEmpty);
-    if (Object.keys(members).length > 0 || keepEmpty) out[key] = { ...child, members };
+    if (Object.keys(members).length > 0 || keepEmpty) setOwnPrefValue(out, key, { ...child, members });
   }
   return out;
 }
@@ -138,7 +138,7 @@ export function visiblePrefSubtree<T extends PrefLeaf | PrefGroup>(
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {
     const kept = visiblePrefSubtree(child, showHidden, keepEmpty);
-    if (kept) children[key] = kept;
+    if (kept) setOwnPrefValue(children, key, kept);
   }
   if (Object.keys(children).length === 0 && !keepEmpty) return null;
   return { ...node, children };
@@ -231,7 +231,7 @@ export function filterPrefSubtree<T extends PrefLeaf | PrefGroup>(
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   for (const [key, child] of Object.entries(group.children)) {
     const kept = filterPrefSubtree(child, q, path === '' ? key : `${path}.${key}`, within);
-    if (kept) children[key] = kept;
+    if (kept) setOwnPrefValue(children, key, kept);
   }
   if (Object.keys(children).length === 0) return null;
   return { ...node, children };
