@@ -372,7 +372,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (2026-11-10, property tests): a surrogate pair split across two runs, which `applyStyleToRange`
   allows since its offsets are UTF-16 units, lays out as two lone-surrogate cells rather than one
   character (`🇫🇷` styled over its first unit). Whether a style range snaps to code points, or layout joins
-  the pair, is unruled; the layout properties cut runs only between code points.
+  the pair, is unruled; the layout properties cut runs only between code points. A combining mark opening
+  a run is the same question for case mapping: when the locale drops it (`tr`'s dot after `I`), the
+  paragraph falls back to mapping code point by code point.
 
 ## SVG and paths
 

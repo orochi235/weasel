@@ -44,7 +44,7 @@ export const ATOMS = [
   // Indic, Thai, Arabic prepend
   'क\u094dष\u093f', 'ह\u093fन\u094dद\u0940', 'ไทย', '\u0600' + '1',
   // case mappings that change length or depend on context
-  'ß', 'ﬁ', 'ΟΔΟΣ', 'İ', 'ǆ', 'ῳ',
+  'ß', 'ﬁ', 'ΟΔΟΣ', 'Σ', 'İ', 'I\u0307', 'iI', 'ŉ', 'ǆ', 'ῳ',
   // astral letters
   '𝐀', '𐐀',
 ];
