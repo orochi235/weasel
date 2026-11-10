@@ -9,6 +9,7 @@
  */
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs';
 import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs';
+import { endlessAllows } from '@weasel-js/quantity';
 import { createEmitter, deepEqual } from '@weasel-js/registry';
 
 /** How a step action moves one option: by a factor, or by an amount. */
@@ -115,7 +116,9 @@ export function toolOptionNumberLeaf(options: ToolOptions, option: string): Pref
 /** What `held` reads as for `leaf`, or `undefined` for nothing it can read. */
 function readHeld(leaf: PrefLeaf, held: unknown): unknown {
   if (prefValueAbsent(leaf, held)) return undefined;
-  if (leaf.kind === 'number' && !(typeof held === 'number' && Number.isFinite(held))) return undefined;
+  if (leaf.kind === 'number' && !(typeof held === 'number' && (Number.isFinite(held) || endlessAllows((leaf as PrefNumber).endless, held)))) {
+    return undefined;
+  }
   const repaired = repairPrefValue(leaf, held);
   return repaired === (leaf as { default?: unknown }).default && !deepEqual(repaired, held) ? undefined : repaired;
 }
@@ -173,12 +176,15 @@ export function keepToolOptions(
 }
 
 /** `value` moved one step up (`dir` 1) or down (-1), within the leaf's bounds
- *  and rounded to its `step`. */
+ *  and rounded to its `step`. An endless end steps on to the infinity it stands for, and back. */
 export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionStep, dir: 1 | -1): number {
+  const end = dir === 1 ? leaf.max : leaf.min;
+  if (value === dir * Infinity || (value === end && endlessAllows(leaf.endless, dir * Infinity))) return dir * Infinity;
+  if (!Number.isFinite(value)) return (value > 0 ? leaf.max : leaf.min) ?? value;
   const moved = step.times !== undefined ? value * step.times ** dir : value + dir * (step.plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
   // A step that rounds back to where it began still moves one `step`.
-  const next = snapped === value && leaf.step ? value + dir * leaf.step : snapped;
+  const next = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
   const clamped = Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, next));
   return Number(clamped.toFixed(6));
 }

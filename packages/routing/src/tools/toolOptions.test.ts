@@ -37,6 +37,21 @@ describe('steppedOption', () => {
   it('moves at least one step when rounding would undo it', () => {
     expect(steppedOption(leaf('radiusPx'), 3, OPTIONS.size!, 1)).toBe(4);
   });
+
+  it('moves at least one step on a fractional step, where rounding lands a float error away from the start', () => {
+    const tenths: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0.3, min: 0, max: 10, step: 0.1 };
+    expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, 1)).toBe(0.4);
+    expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, -1)).toBe(0.2);
+  });
+
+  it('steps between an endless end and the infinity it stands for', () => {
+    const reach: PrefNumber = { kind: 'number', name: 'R', description: '', default: 10, min: 1, max: 100, step: 1, endless: 'max' };
+    const step = { option: 'r', times: 1.25 };
+    expect(steppedOption(reach, 100, step, 1)).toBe(Infinity);
+    expect(steppedOption(reach, Infinity, step, 1)).toBe(Infinity);
+    expect(steppedOption(reach, Infinity, step, -1)).toBe(100);
+    expect(steppedOption(reach, 1, step, -1)).toBe(1);
+  });
 });
 
 describe('toolOptionParams', () => {
@@ -53,6 +68,19 @@ describe('toolOptionParams', () => {
     values.set('b', 'radiusPx', Number.NaN);
     values.set('b', 'strength', Infinity);
     expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 40, strength: 0.6 });
+  });
+
+  it('reads the infinity an endless end stands for as held', () => {
+    const endless: ToolOptions = {
+      ...OPTIONS,
+      prefs: {
+        ...OPTIONS.prefs,
+        children: { reach: { kind: 'number', name: 'Reach', description: '', default: 10, min: 0, max: 100, endless: 'max' } },
+      },
+    };
+    const values = createToolOptionValues();
+    values.set('b', 'reach', Infinity);
+    expect(toolOptionParams('b', endless, values)).toEqual({ reach: Infinity });
   });
 
   it('reads the default of an option named like an Object.prototype member', () => {
