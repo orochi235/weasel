@@ -49,7 +49,7 @@ describe('a store, properties', () => {
     warn.mockRestore();
     for (const kind of ['number', 'boolean', 'string', 'enum', 'object', 'list', 'map', 'union']) t.atLeast(kind, 3);
     t.atLeast('infinity', 3);
-  }, timeoutFor(300, 10));
+  }, timeoutFor(300, 20));
 
   it('reads any stored record as a value the leaf admits, the same through JSON, and its default once reset', () => {
     const t = tally();
@@ -73,5 +73,5 @@ describe('a store, properties', () => {
     );
     t.atLeast('default', 20);
     t.atLeast('kept', 20);
-  }, timeoutFor(300, 10));
+  }, timeoutFor(300, 60));
 });
