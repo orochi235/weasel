@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fitted, type LabHistoryStore, type SavedLabHistory } from './historyStorage';
 import { PaletteLab } from './PaletteLab';
 import { ThemeWorkbench } from './ThemeWorkbench';
+import { clearDraftHistory, draftHistory } from './theme/draftStorage';
 import { weasel } from './theme/fixtures';
 import { removePin, setPin } from './theme/model';
 import { useLabHistory } from './useLabHistory';
@@ -135,5 +136,48 @@ describe('a reload', () => {
     expect(undo).toBeEnabled();
     fireEvent.click(undo);
     expect(screen.getByRole('button', { name: 'Pin gray-800' })).toBeInTheDocument();
+  });
+});
+
+describe("a theme draft's history, once the draft is discarded", () => {
+  const stored: StoredTheme = { name: 'weasel', hash: 'h1', emits: true, definition: weasel };
+  const props = {
+    api: { list: async () => [stored], get: async () => stored, put: vi.fn() },
+    themes: [stored],
+    stored,
+    start: { definition: removePin(weasel, 'gray-800'), baseHash: 'h1' },
+    onPick: vi.fn(),
+    onSaved: vi.fn(),
+    onReload: vi.fn(async () => {}),
+    onDiscard: vi.fn(),
+    onNew: vi.fn(() => null),
+  };
+
+  it('is not written back by the save pending when the editor unmounts', async () => {
+    stubStorage();
+    const bench = renderWithIcons(<ThemeWorkbench {...props} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Pin gray-800' }));
+    clearDraftHistory('weasel');
+    bench.unmount();
+    expect(draftHistory('weasel').load()).toBeNull();
+  });
+
+  it('is not written back when the page hides', async () => {
+    stubStorage();
+    renderWithIcons(<ThemeWorkbench {...props} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Pin gray-800' }));
+    clearDraftHistory('weasel');
+    window.dispatchEvent(new Event('pagehide'));
+    expect(draftHistory('weasel').load()).toBeNull();
+  });
+
+  it('is saved again for an edit made after', async () => {
+    stubStorage();
+    const bench = renderWithIcons(<ThemeWorkbench {...props} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Pin gray-800' }));
+    clearDraftHistory('weasel');
+    fireEvent.click(within(screen.getByRole('toolbar', { name: 'Theme actions' })).getByRole('button', { name: 'Undo' }));
+    bench.unmount();
+    expect(draftHistory('weasel').load()?.history.redoStack).toHaveLength(1);
   });
 });
