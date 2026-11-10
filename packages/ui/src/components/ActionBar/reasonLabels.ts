@@ -7,6 +7,7 @@ export const DEFAULT_REASON_LABELS: Readonly<Record<string, string>> = {
   [ActionDisabledReason.SelectionRequired]: 'Selection required',
   [ActionDisabledReason.SceneEmpty]: 'Scene is empty',
   [ActionDisabledReason.NotApplicable]: 'Not applicable here',
+  [ActionDisabledReason.Locked]: 'Contains a locked item',
   [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
 };
 

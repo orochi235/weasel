@@ -1,5 +1,5 @@
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
-import { commitDeleteToScene } from '../defaults/delete';
+import { commitDeleteToScene, deleteEnabled } from '../defaults/delete';
 import type { NodeId } from 'core/scene/types';
 import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
@@ -54,13 +54,13 @@ export const clipboardCutAction: Action & { requires: string[] } = {
     run: (deps) => {
       if (!deps.clipboard || !deps.selection || !deps.scene) return;
       const ids = deps.selection.get() as readonly NodeId[];
-      if (ids.length === 0) return;
+      if (ids.length === 0 || deleteEnabled(deps) !== true) return;
       // Snapshot before removal — `snapshotSelection` reads live nodes.
       deps.clipboard.copy();
       commitDeleteToScene(ids, deps, 'Cut');
     },
   },
-  enabled: requiresSelection,
+  enabled: deleteEnabled,
 };
 
 /**

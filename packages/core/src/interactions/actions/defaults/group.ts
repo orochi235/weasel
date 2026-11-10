@@ -1,8 +1,9 @@
-import type { Node, NodeId } from 'core/scene/types';
+import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { createReparentOp } from 'core/ops/reparent';
 import { createDeleteOp } from 'core/ops/delete';
+import { createSetDependsOnOp } from 'core/ops/setDependsOn';
 import { withoutPageStructure } from 'core/scene/nodeGates';
 import { groupingSite } from 'core/pages/pagePlacement';
 import { pageOfNode } from 'core/pages/pageNodes';
@@ -14,6 +15,7 @@ import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresContent, selectedContent } from './requiresSelection';
+import { ungroupReach, ungroupTouches, type UngroupReach } from './ungroupReach';
 import { scenePoseFrame } from '../poseFrame';
 import { commitOps } from '../defaultCommitAdapter';
 import { inPaintOrder, slotAbove } from '../groupSlot';
@@ -124,12 +126,71 @@ export const groupAction: Action & { requires: string[] } = {
 const dissolves = (node: { kind: string; consumesChildren?: boolean } | undefined): boolean =>
   node?.kind === 'group' || node?.consumesChildren === true;
 
+type AnyScene = Scene<unknown, string, unknown>;
+
+/** The selected containers ungrouping dissolves, what dissolving them reaches, and whether it can: not while it
+ *  would move, rewrite, or remove a locked node (ruled 2026-11-09). `enabled` and `run` both read this, so they
+ *  agree. */
+function ungroupTargets(scene: AnyScene | undefined, ids: readonly NodeId[]): { containers: NodeId[]; reach: UngroupReach | null; locked: boolean } {
+  if (!scene) return { containers: [], reach: null, locked: false };
+  const containers = ids.filter((id) => dissolves(scene.get(id)));
+  if (containers.length === 0) return { containers, reach: null, locked: false };
+  const reach = ungroupReach(scene, containers);
+  return { containers, reach, locked: ungroupTouches(reach).some((id) => scene.isLocked(id)) };
+}
+
+/** The batch dissolving `containers`, outermost first: each child moved up and re-expressed in its new frame,
+ *  every derivation `reach` cuts, then the containers removed. */
+function ungroupOps(scene: AnyScene, containers: readonly NodeId[], reach: UngroupReach): Op[] {
+  const frame = scenePoseFrame(scene);
+  const dissolving = new Set<string>(containers);
+  const depth = (id: string): number => scene.ancestorsOf(id as NodeId).length;
+  // Where a container's children go: its parent, or past it when that dissolves too, which an
+  // outer container, handled first, has by then.
+  const landing = (id: string): NodeId | null => {
+    let at = scene.get(id as NodeId)!.parent ?? null;
+    while (at !== null && dissolving.has(at)) at = scene.get(at)!.parent ?? null;
+    return at;
+  };
+  const moves: Op[] = [];
+  const removals: Op[] = [];
+  for (const containerId of [...containers].sort((x, y) => depth(x) - depth(y))) {
+    const container = scene.get(containerId)!;
+    const parent = landing(containerId);
+    const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(containerId);
+    // Each child lands just under the container, in order, wherever the container then sits.
+    for (const childId of scene.childrenOf(containerId)) {
+      moves.push(createReparentOp({
+        id: childId as string,
+        fromParentId: containerId as string,
+        toParentId: parent as string | null,
+        toSlot: { index, before: containerId as string },
+        label: 'Ungroup',
+      }));
+      moves.push(createTransformOp<unknown>({
+        id: childId as string,
+        from: scene.get(childId)!.pose,
+        to: frame.localUnder(parent, frame.world(childId)),
+        label: 'Ungroup',
+      }));
+    }
+    removals.push(createDeleteOp({ node: { ...container, parent }, index, label: 'Ungroup' }));
+  }
+  const cuts = [...reach.released].map(([id, sources]) => {
+    const from = scene.get(id)!.dependsOn as readonly NodeId[];
+    const to = from.filter((source) => !sources.has(source));
+    return createSetDependsOnOp({ id, from, to: to.length > 0 ? to : undefined, label: 'Ungroup' });
+  });
+  return [...moves, ...cuts, ...removals];
+}
+
 /**
  * Dissolves each selected group, or boolean group, by reparenting its children up to the
  * container's own parent (preserving z-order) and removing the now-empty
  * container, as a single undoable batch. Selected marks, children or not, are
  * ignored. The freed children become the new selection, and nothing moves on
- * screen.
+ * screen. A child, or an ancestor it lands in, that the containers' removal would take as a dependent loses
+ * the removed sources instead (`ungroupReach`). Disabled while any node it would touch is locked.
  */
 export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
@@ -142,57 +203,16 @@ export const ungroupAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const selection = deps.selection;
       const scene = deps.scene;
-      if (!selection || !scene) return;
-
-      const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
-      if (ids.length === 0) return;
-
-      const containers = ids.filter((id) => dissolves(scene.get(id as NodeId)));
-      if (containers.length === 0) return;
-
-      const frame = scenePoseFrame(scene);
-      const dissolving = new Set<string>(containers);
-      const depth = (id: string): number => scene.ancestorsOf(id as NodeId).length;
-      // Where a container's children go: its parent, or past it when that dissolves too, which an
-      // outer container, handled first, has by then.
-      const landing = (id: string): NodeId | null => {
-        let at = scene.get(id as NodeId)!.parent ?? null;
-        while (at !== null && dissolving.has(at)) at = scene.get(at)!.parent ?? null;
-        return at;
-      };
-      const ops: Op[] = [];
-      const freed: NodeId[] = [];
-      for (const containerId of [...containers].sort((x, y) => depth(x) - depth(y))) {
-        const container = scene.get(containerId as NodeId)!;
-        const parent = landing(containerId);
-        const index = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(containerId as NodeId);
-        // Each child lands just under the container, in order, wherever the container then sits.
-        for (const childId of scene.childrenOf(containerId as NodeId)) {
-          ops.push(createReparentOp({
-            id: childId as string,
-            fromParentId: containerId as string,
-            toParentId: parent as string | null,
-            toSlot: { index, before: containerId as string },
-            label: 'Ungroup',
-          }));
-          ops.push(createTransformOp<unknown>({
-            id: childId as string,
-            from: scene.get(childId)!.pose,
-            to: frame.localUnder(parent, frame.world(childId)),
-            label: 'Ungroup',
-          }));
-          if (!dissolving.has(childId)) freed.push(childId);
-        }
-        ops.push(createDeleteOp({ node: { ...container, parent }, index, label: 'Ungroup' }));
-      }
-      commitOps(deps, ops, 'Ungroup', { select: freed });
+      if (!deps.selection || !scene) return;
+      const { containers, reach, locked } = ungroupTargets(scene, selectedContent(deps));
+      if (!reach || locked) return;
+      commitOps(deps, ungroupOps(scene, containers, reach), 'Ungroup', { select: reach.freed });
     },
   },
   enabled: (deps) => {
-    const scene = deps?.scene;
-    const any = selectedContent(deps).some((id) => dissolves(scene?.get(id)));
-    return any ? true : ActionDisabledReason.NotApplicable;
+    const { reach, locked } = ungroupTargets(deps?.scene, selectedContent(deps));
+    if (!reach) return ActionDisabledReason.NotApplicable;
+    return locked ? ActionDisabledReason.Locked : true;
   },
 };
