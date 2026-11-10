@@ -209,6 +209,10 @@ describe('parseColor: color() and the OK spaces', () => {
     close(parseColor('oklch(62.796% 0.25768 29.2339deg)'), [1, 0, 0, 1]);
   });
 
+  it('reads a negative oklch() chroma as no chroma, as CSS clamps it', () => {
+    close(parseColor('oklch(0.6 -0.1 30)'), parseColor('oklch(0.6 0 30)'));
+  });
+
   it('still rejects a color space it does not convert', () => {
     expect(() => parseColor('color(display-p3 1 0 0)')).toThrow();
   });
