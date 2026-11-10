@@ -123,6 +123,7 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
   const duration = span.duration ?? Infinity;
   if (!(duration >= 0)) throw new RangeError(`a run lasts 0 ms or more, not ${duration}`);
   const loop = span.loop ?? false;
+  if (typeof loop === 'number' && !(loop >= 0)) throw new RangeError(`a run loops 0 times or more, not ${loop}`);
   const passes = loop === true ? Infinity : loop === false ? 1 : loop;
   const walked = options.passes === 'all' ? passes : 1;
   // No length times no end is no length, where the product is NaN.

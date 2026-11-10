@@ -81,6 +81,9 @@ describe('frames', () => {
     expect(stepsOf(frames({ loop: 0 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
     expect(() => frames({ duration: NaN }, { every: 10 })).toThrow(RangeError);
     expect(() => frames({ duration: -100 }, { every: 10 })).toThrow(RangeError);
+    // A NaN count of passes walked forever; a negative one ended on a frame before the run began.
+    expect(() => frames({ duration: 100, loop: NaN }, { every: 10 })).toThrow(RangeError);
+    expect(() => frames({ duration: 100, loop: -3 }, { every: 7 })).toThrow(RangeError);
   });
 
   it('labels a frame with the time it shows, origin included', () => {
