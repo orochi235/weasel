@@ -13,12 +13,13 @@ import { prefUnit, type PrefLinearUnit } from './unit';
  */
 export function scopedPrefUnit(
   scopes: readonly UnitScope[],
-  opts?: { display?: Unit; precision?: number; suffix?: string },
+  opts?: { display?: Unit; precision?: number; suffix?: string; compact?: boolean },
 ): PrefLinearUnit {
   const system = scopes[scopes.length - 1]!.system;
   const own = prefUnit(system, opts?.display ?? system.base, {
     ...(opts?.precision === undefined ? {} : { precision: opts.precision }),
     ...(opts?.suffix === undefined ? {} : { suffix: opts.suffix }),
+    ...(opts?.compact ? { compact: true } : {}),
   });
   // `toRoot` is affine: world = inner * k + c.
   const c = toRoot(0, scopes);

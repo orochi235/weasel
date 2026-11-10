@@ -36,7 +36,7 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
     return this.ann({ step });
   }
 
-  /** A display suffix for the value — `'px'`, `'ms'`, `'°'`. Presentation only:
+  /** The unit shown after the value, as the unit catalog writes it — `'px'`, `'ms'`, `'°'`. Presentation only:
    *  it is never parsed, and the stored value stays a plain number. */
   suffix(suffix: string): this {
     return this.ann({ suffix });

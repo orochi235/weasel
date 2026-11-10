@@ -1,4 +1,4 @@
-import { decimalPlaces } from '@weasel-js/quantity';
+import { decimalPlaces, withUnit } from '@weasel-js/quantity';
 import type { EffectParam, EffectParamControl, EffectPort, EffectStage } from './types';
 
 /** A palette entry: a stage's ports and params, ready to be copied into a pipeline. */
@@ -26,7 +26,7 @@ export function formatParam(control: EffectParamControl): string {
   switch (control.kind) {
     case 'number': {
       const n = control.value.toFixed(control.step === undefined ? 1 : decimalPlaces(control.step)).replace(/^-(?=[0.]*$)/, '');
-      return control.unit ? `${n} ${control.unit}` : n;
+      return withUnit(n, control.unit, { space: true });
     }
     case 'enum':
       return control.options.find((x) => x.value === control.value)?.label ?? control.value;

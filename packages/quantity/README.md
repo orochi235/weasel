@@ -98,6 +98,19 @@ non-literal part in a `<span data-part>`, which is the whole styling surface.
 `IMPERIAL_INCHES`, `ANGLE_RADIANS`, `PIXELS`). `qty(tag(12, unit(), 'mm')).to('cm', METRIC_MM)`
 is `1.2cm`. `parseNumber('5ft 3in', { in: 1, ft: 12 })` is 63.
 
+The unit catalog says everything else a unit's name decides: its symbol, a compact form for tight
+spaces, the aliases that read as it, its spoken names, and whether its glyph attaches to the number.
+
+```ts
+unitSymbol('deg')                     // { text: '°', attaches: true, … }
+unitSymbol('in', { compact: true })   // { text: '″', attaches: true, … }
+present(3, unit('in', { compact: true })).text   // '3″', spoken '3 inches'
+parseNumber('5’ 3”', { in: 1, ft: 12 })          // 63: any spelling the catalog knows
+registerUnit({ name: 'furlong', symbol: 'fur', spoken: ['furlong', 'furlongs'] })
+```
+
+A field or readout in `@weasel-js/ui` keeps an attaching unit on the value's line and out of flow.
+
 A `UnitScope` nests one system in another: a sub-assembly measured in millimeters inside a
 drawing measured in inches, with `scale` saying what one millimeter is worth in inches. A chain
 of scopes runs outermost first, and `resolveScoped` and `formatScoped` convert across it:

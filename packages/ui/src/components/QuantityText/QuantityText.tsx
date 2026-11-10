@@ -1,4 +1,4 @@
-import { amount, present, presentRange, presentVector, type Display, type Presentation, type Quantity } from '@weasel-js/quantity';
+import { amount, present, presentRange, presentVector, unitSymbol, type Display, type Presentation, type Quantity } from '@weasel-js/quantity';
 import s from './QuantityText.module.css';
 
 /** Props for {@link QuantityText}: one of `value`, `range`, `vector`, and `unit`. */
@@ -13,8 +13,11 @@ export type QuantityTextProps = {
 } & (
     | { value: Quantity; range?: undefined; vector?: undefined; unit?: undefined }
     | {
-        /** A unit with no number: what a field holding the number shows after it. */
+        /** A unit with no number: what a field holding the number shows after it, written as the unit
+         *  catalog writes it. A form that attaches to the number is marked `data-attach`. */
         unit: string;
+        /** The unit's compact form, where it has one. */
+        compact?: boolean;
         value?: undefined;
         range?: undefined;
         vector?: undefined;
@@ -65,7 +68,8 @@ function presented(props: Exclude<QuantityTextProps, { unit: string }>): Present
 export function QuantityText(props: QuantityTextProps) {
   const className = [s.quantity, props.className].filter(Boolean).join(' ');
   if (props.unit !== undefined) {
-    return <span className={className}><span data-part="unit">{props.unit}</span></span>;
+    const shown = unitSymbol(props.unit, { compact: props.compact });
+    return <span className={className}><span data-part="unit" data-attach={shown.attaches ? '' : undefined}>{shown.text}</span></span>;
   }
   const { text, spoken, html, mathml, stacked } = presented(props);
   const reads = !props.mute && spoken !== text;

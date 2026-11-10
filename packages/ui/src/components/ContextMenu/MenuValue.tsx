@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore } from 'react';
 import {
   menuNumberDisplay, type MenuController, type MenuNumberEntry, type MenuTextEntry,
 } from '@weasel-js/menu';
+import { unitSymbol } from '@weasel-js/quantity';
 import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-logic';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField/UnitField';
@@ -16,6 +17,7 @@ export function MenuNumberValue({ entry: e, rowId, controller: c }: {
   entry: MenuNumberEntry; rowId: string; controller: MenuController;
 }) {
   const value = useSyncExternalStore(c.subscribe, () => c.numberValue(e), () => c.numberValue(e));
+  const unit = e.suffix === undefined ? undefined : unitSymbol(e.suffix);
   return (
     <span className={s.value}>
       <UnitField
@@ -33,7 +35,9 @@ export function MenuNumberValue({ entry: e, rowId, controller: c }: {
         ghost
         width="fit"
       />
-      {e.suffix !== undefined && (value === undefined || Number.isFinite(value)) && <span className={s.unit}>{e.suffix}</span>}
+      {unit !== undefined && (value === undefined || Number.isFinite(value)) && (
+        <span className={unit.attaches ? s.unitAttached : s.unit}>{unit.text}</span>
+      )}
     </span>
   );
 }

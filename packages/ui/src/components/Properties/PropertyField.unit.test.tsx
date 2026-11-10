@@ -31,6 +31,64 @@ describe('number field unit', () => {
   });
 });
 
+describe('a unit whose glyph attaches', () => {
+  const attached = (root: HTMLElement) => root.querySelector('[class*="unitAttached"]');
+
+  it('is placed out of flow against the field, the field holding room for it', () => {
+    const { container } = render(
+      <PropertyField kind="number" label="Angle" value={90} unit="°" onChange={() => {}} />,
+    );
+    const glyph = attached(container);
+    expect(glyph?.textContent).toBe('°');
+    expect(glyph?.querySelector('[data-part="unit"]')?.hasAttribute('data-attach')).toBe(true);
+    expect(glyph?.parentElement?.className).toMatch(/fieldUnitGroup/);
+    expect(glyph?.parentElement?.className).toMatch(/unitHost/);
+  });
+
+  it('is decided by the catalog, so a unit named by its alias attaches too', () => {
+    const { container } = render(
+      <PropertyField kind="number" label="Angle" value={90} unit="deg" onChange={() => {}} />,
+    );
+    expect(attached(container)?.textContent).toBe('°');
+  });
+
+  it('stays on the readout\'s line where an inline row hangs word units below it', () => {
+    const { container } = render(
+      <PropertyField kind="number" control="slider" layout="inline" label="Angle" value={45} min={0} max={90} unit="°" onChange={() => {}} />,
+    );
+    expect(container.querySelector('[class*="readoutAfter"]')).not.toBeNull();
+    const glyph = attached(container);
+    expect(glyph?.textContent).toBe('°');
+    expect(glyph?.querySelector('[class*="readoutUnit"]')).toBeNull();
+    expect(glyph?.parentElement?.className).toMatch(/unitHost/);
+  });
+
+  it('attaches in a read-only readout', () => {
+    const { container } = render(
+      <PropertyField kind="number" label="Angle" value={45} unit="%" readOnly onChange={() => {}} />,
+    );
+    const glyph = attached(container);
+    expect(glyph?.textContent).toBe('%');
+    expect(glyph?.parentElement?.className).toMatch(/unitHost/);
+  });
+
+  it('leaves a word unit in flow', () => {
+    const { container } = render(
+      <PropertyField kind="number" control="slider" layout="inline" label="Width" value={20} min={0} max={100} unit="px" onChange={() => {}} />,
+    );
+    expect(attached(container)).toBeNull();
+    expect(container.querySelector('[class*="readoutUnit"]')?.textContent).toBe('px');
+    expect(container.querySelector('[class*="unitHost"]')).toBeNull();
+  });
+
+  it('is positioned out of flow by the stylesheet, at the value\'s end', () => {
+    const sheet = readModuleCss(resolve(process.cwd(), 'packages/ui/src/components/Properties/Properties.module.css'));
+    expect(sheet).toMatch(/\.unitHost \{[^}]*position: relative;/);
+    expect(sheet).toMatch(/\.unitAttached \{[^}]*position: absolute;[^}]*inset-inline-start: 100%;/);
+    expect(sheet).toMatch(/\.fieldUnitGroup\.unitHost input \{[^}]*padding-inline-end:/);
+  });
+});
+
 describe('number field spin buttons', () => {
   // Chrome reserves the spin-button gutter at the right edge whether or not it
   // paints the arrows, which is what pushed a right-aligned value clear of its

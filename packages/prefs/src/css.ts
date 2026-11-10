@@ -1,6 +1,7 @@
 // A store's values as CSS custom properties: one block for what every choice
 // of the selectors shares, and one for each choice a split value tells apart.
 
+import { catalogUnit } from '@weasel-js/quantity';
 import type { PrefGroup } from './groups';
 import { prefHoldsValue, prefLeaves, prefValueAtPath } from './helpers';
 import { isPrefScope, scopeOptionValue, type PrefScope, type OverridesOf, type PrefSelection } from './scope';
@@ -34,12 +35,6 @@ export interface PrefsCssSource {
 /** A path as the default names spell it: `look.gridGap` is `look-grid-gap`. */
 export const kebab = (path: string): string => path.replace(/\./g, '-').replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
-/** The CSS unit a number leaf's suffix names, for the suffixes that name one. */
-const CSS_UNITS: Readonly<Record<string, string>> = {
-  px: 'px', '%': '%', em: 'em', rem: 'rem', ch: 'ch', pt: 'pt', vw: 'vw', vh: 'vh',
-  ms: 'ms', s: 's', '°': 'deg', deg: 'deg', rad: 'rad', turn: 'turn',
-};
-
 const IDENT = /^-?[A-Za-z_][\w-]*$/;
 /** Text no CSS color holds, which would end a declaration, a block, or the rest of the sheet. */
 const UNSAFE_COLOR = /[;{}'"\\\n\r\f]|\/\*/;
@@ -53,7 +48,7 @@ function cssValue(leaf: PrefLeaf, value: unknown): string | null {
       const { unit } = leaf as PrefNumber;
       const resolved = unit ? resolvePrefUnit(unit) : undefined;
       const shown = resolved ? resolved.toDisplay(value) : value;
-      const suffix = resolved?.suffix !== undefined && Object.hasOwn(CSS_UNITS, resolved.suffix) ? CSS_UNITS[resolved.suffix] : '';
+      const suffix = (resolved?.suffix === undefined ? undefined : catalogUnit(resolved.suffix)?.css) ?? '';
       return `${Number(shown.toFixed(6))}${suffix}`;
     }
     case 'boolean':

@@ -328,7 +328,7 @@ function BodyPanel() {
           min={-25}
           max={25}
           step={0.5}
-          unit={<sup>°</sup>}
+          unit="°"
           onChange={setLean}
         />
         <PropertyField
@@ -378,7 +378,7 @@ function TailBody() {
         value={angle}
         min={0}
         max={359}
-        unit={<sup>°</sup>}
+        unit="°"
         onChange={setAngle}
       />
       <PropertyField
@@ -388,7 +388,7 @@ function TailBody() {
         value={outAngle}
         min={-90}
         max={90}
-        unit={<sup>°</sup>}
+        unit="°"
         onChange={setOutAngle}
       />
       <PropertyField

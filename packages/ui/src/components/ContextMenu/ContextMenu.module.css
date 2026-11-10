@@ -77,10 +77,23 @@ a.row {
   align-items: center;
   gap: var(--wzl-space-1);
   justify-self: end;
+  position: relative;
 }
 
 .unit {
   color: var(--wzl-fg-muted);
+}
+
+/* A unit whose glyph attaches to the number (`°`, `″`, `%`) hugs the field's end, out of flow, so the field sits
+   where it would with no unit at all. */
+.unitAttached {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 100%;
+  display: inline-flex;
+  align-items: center;
+  color: var(--wzl-fg-muted);
+  pointer-events: none;
 }
 
 /* A text row's field draws no box until it is focused, as a number row's ghost field does. */

@@ -12,13 +12,13 @@ import { decimal, decimalPlaces, endlessTrack, parseAs, qty, spinKey, type Displ
 import { dlog } from '../../dlog';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
-import { QuantityText } from '../QuantityText';
 import shared from '../range.module.css';
 import type { PropertyNumberFieldProps } from './fieldTypes';
 import { PropertyRow } from './PropertyRow';
 import s from './Properties.module.css';
 import { trackPlace } from './sliderScale';
 import { catchStop, useTrackStops } from './sliderStops';
+import { attachesUnit, UnitSuffix } from './unitSuffix';
 
 /**
  * A slider's props with its drag held locally. A caller taking settled values
@@ -99,15 +99,6 @@ function useCommitListener(
   return ref;
 }
 
-function unitSuffix(unit: ReactNode, className: string): ReactNode {
-  if (unit == null) return null;
-  return (
-    <span className={s.unitMark} data-wzl-subordinate="">
-      {typeof unit === 'string' ? <QuantityText unit={unit} className={className} /> : unit}
-    </span>
-  );
-}
-
 export const ignore = (): void => {};
 
 export function NumberInput(p: PropertyNumberFieldProps) {
@@ -138,9 +129,9 @@ export function NumberInput(p: PropertyNumberFieldProps) {
   );
   if (p.unit == null || (known && !Number.isFinite(p.value))) return input;
   return (
-    <span className={s.fieldUnitGroup}>
+    <span className={attachesUnit(p.unit) ? `${s.fieldUnitGroup} ${s.unitHost}` : s.fieldUnitGroup}>
       {input}
-      {unitSuffix(p.unit, s.readoutUnit)}
+      <UnitSuffix unit={p.unit} className={s.readoutUnit} />
     </span>
   );
 }
@@ -318,7 +309,7 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, stops =
   };
 
   return (
-    <span className={s.readoutGroup}>
+    <span className={attachesUnit(unit) ? `${s.readoutGroup} ${s.unitHost}` : s.readoutGroup}>
       <input
         type="text"
         role="spinbutton"
@@ -366,7 +357,7 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, stops =
         }}
       />
       {/* A word for infinity stands alone: `never`, not `never ms`. */}
-      {Number.isFinite(value) && unitSuffix(unit, s.readoutUnit)}
+      {Number.isFinite(value) && <UnitSuffix unit={unit} className={s.readoutUnit} />}
     </span>
   );
 }

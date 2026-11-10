@@ -1,4 +1,5 @@
 import { entryScale, type UnitEntry } from './units';
+import { unitSpellings } from './catalog';
 
 /**
  * The real MINUS SIGN (U+2212), which display formatting uses instead of the
@@ -216,24 +217,16 @@ export const decimalOf = (locale: string): string => shapeOf(locale).decimal;
 export type UnitTable = Record<string, UnitEntry>;
 
 /**
- * Units that are written more than one way. A table accepting any spelling
- * accepts them all: `"` wherever `in` is, `ft` wherever `'` is. The primes and
- * curly quotes are there because a keyboard substitutes them for the marks.
+ * `units` with every other spelling the unit catalog knows for each of its
+ * units: `"` wherever `in` is, `ft` wherever `'` is.
  */
-const SPELLINGS: readonly (readonly string[])[] = [
-  ['in', '"', '″', '”'],
-  ['ft', "'", '′', '’'],
-];
-
 export function withSpellings(units: Readonly<UnitTable>): Readonly<UnitTable> {
   let out: UnitTable | undefined;
-  for (const group of SPELLINGS) {
-    const known = group.find((n) => units[n] !== undefined);
-    if (known === undefined) continue;
-    for (const n of group) {
-      if (units[n] !== undefined) continue;
+  for (const [known, entry] of Object.entries(units)) {
+    for (const n of unitSpellings(known)) {
+      if (units[n] !== undefined || out?.[n] !== undefined) continue;
       out ??= { ...units };
-      out[n] = units[known]!;
+      out[n] = entry;
     }
   }
   return out ?? units;

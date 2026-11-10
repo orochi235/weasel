@@ -1,3 +1,4 @@
+import { withUnit } from '@weasel-js/quantity';
 import { range, type Sweep, values } from '@weasel-js/ui/components/Sequence';
 import type { ConfigNode } from './types';
 
@@ -28,8 +29,7 @@ export function fieldSweep<T>(node: ConfigNode<T>, options: FieldSweepOptions = 
     throw new TypeError(
       `a field sweeps when it is a number, an enum or a boolean, not ${node.kind ?? 'a value'}`,
     );
-  const suffix = ann.suffix ? ` ${ann.suffix}` : '';
-  const label = (v: number): string => `${v}${suffix}`;
+  const label = (v: number): string => withUnit(String(v), ann.suffix, { space: true });
   if (ann.stops && options.step === undefined && options.count === undefined)
     return values(ann.stops, label) as Sweep<unknown> as Sweep<T>;
   const { min, max } = ann;
