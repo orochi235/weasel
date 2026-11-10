@@ -252,10 +252,6 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   answers with a projected screen rectangle that no scene could own. A 2D scene whose poses are not
   rects still states both.
 
-- 2026-11-09 (property tests): The scene's selection holds only ids in the scene: `setSelection`
-  drops an id that names no node, as it drops a locked or hidden one, so `getSelection` never
-  returns an id `get` cannot resolve. Until then a selection could be written ahead of its nodes.
-
 ## Rendering, canvas, and paint
 
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
