@@ -45,6 +45,17 @@ describe('ColorField', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the exact alpha byte through a color edit, where the slider reads only whole percents', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<ColorField value="#11223302" alpha onInput={onInput} onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#445566' } });
+    expect(onInput).toHaveBeenCalledWith('#44556602');
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('#44556602');
+  });
+
   it('does not commit on blur with no preceding input (no-op-blur guard)', () => {
     const onChange = vi.fn();
     render(<ColorField value="#112233ff" alpha onChange={onChange} aria-label="Fill" />);

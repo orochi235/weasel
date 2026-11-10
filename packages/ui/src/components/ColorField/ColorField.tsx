@@ -60,14 +60,14 @@ export function ColorField(props: ColorFieldProps) {
   const hex8 = hex8Of(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
-  const alphaPct = Math.round(alpha01 * 100);
 
   // Drafts track the control during a gesture (the committed prop only
   // updates after onChange), then reset to follow the prop again.
   const [colorDraft, setColorDraft] = useState<string | null>(null);
   const [alphaDraft, setAlphaDraft] = useState<number | null>(null);
   const visibleRgb = colorDraft ?? rgb6;
-  const visibleAlphaPct = alphaDraft ?? alphaPct;
+  // The slider moves in whole percents; an alpha it has not moved keeps its exact byte.
+  const visibleAlpha = alphaDraft ?? alpha01;
 
   const compose = (rgb: string, a01: number): string =>
     alpha ? withAlpha01(rgb, a01) : rgb;
@@ -89,7 +89,7 @@ export function ColorField(props: ColorFieldProps) {
     setAlphaDraft(null);
   };
 
-  const swatch = usePickerClose(() => commit(visibleRgb, visibleAlphaPct / 100));
+  const swatch = usePickerClose(() => commit(visibleRgb, visibleAlpha));
 
   return (
     <span
@@ -108,18 +108,18 @@ export function ColorField(props: ColorFieldProps) {
           onInput={(e) => {
             const rgb = (e.target as HTMLInputElement).value;
             setColorDraft(rgb);
-            onInput?.(compose(rgb, visibleAlphaPct / 100));
+            onInput?.(compose(rgb, visibleAlpha));
           }}
-          onBlur={() => commit(visibleRgb, visibleAlphaPct / 100)}
+          onBlur={() => commit(visibleRgb, visibleAlpha)}
         />
       </span>
       {alpha && (
         <OpacityRange
-          value={visibleAlphaPct / 100}
+          value={visibleAlpha}
           disabled={alphaLocked || alphaDisabled || disabled}
           aria-label={props['aria-label']}
           onInput={(a01) => {
-            setAlphaDraft(Math.round(a01 * 100));
+            setAlphaDraft(a01);
             onInput?.(compose(visibleRgb, a01));
           }}
           onChange={(a01) => commit(visibleRgb, a01)}
