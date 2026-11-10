@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { snapToStep } from '@weasel-js/quantity';
-import { clamp } from '@weasel-js/geom';
+import { clamp, maxOf, minOf } from '@weasel-js/geom';
 import { DROP_OFF, type SliderGeometry } from './sliderGeometry';
 import { clampOrdered } from '@weasel-js/ui-logic';
 import { resolveBounds } from './stops';
@@ -114,7 +114,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         // equal value offsets would pull the thumbs apart; move them by track distance.
         if (even || props.scale) {
           const starts = startValues.map(valueToFraction);
-          const df = clamp(dxFraction, -Math.min(...starts), 1 - Math.max(...starts));
+          const df = clamp(dxFraction, -minOf(starts), 1 - maxOf(starts));
           for (let i = 0; i < buffer.length; i++) {
             buffer[i] = { ...buffer[i], value: fractionToValue(starts[i] + df) };
           }

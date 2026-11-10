@@ -1,3 +1,4 @@
+import { minOf } from '@weasel-js/geom';
 /** Other spellings a legend may take when it overflows its key, keyed by the
  *  legend, in order of preference. A spelling with a `\n` prints on two lines. */
 export type KeySpellings = Readonly<Record<string, readonly string[]>>;
@@ -62,6 +63,6 @@ export function pickSpelling<T extends LegendFit>(
  */
 export function resolveBankScales(members: readonly BankMember[], minScale: number): number[] {
   const single = members.filter((m) => !m.wrapped).map((m) => m.scale);
-  const shared = clampScale(Math.min(1, ...single), minScale);
+  const shared = clampScale(Math.min(1, minOf(single)), minScale);
   return members.map((m) => (m.wrapped ? clampScale(m.scale, minScale) : shared));
 }

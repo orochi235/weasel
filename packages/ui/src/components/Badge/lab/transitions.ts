@@ -1,5 +1,6 @@
 import { cssColorLiteral } from '@weasel-js/paint';
 import type { BadgeBase, BadgeEffect, BadgeEffectSpec } from '@weasel-js/ui/components/Badge';
+import { maxOf } from '@weasel-js/geom';
 import { defaultsOf } from '../shapeControls';
 import { BASE_LAB_CONTROLS, EFFECT_LAB_CONTROLS, isColorParam } from './controls';
 import { effectLabel } from './effectKinds';
@@ -74,7 +75,7 @@ export function setEffectType(effects: readonly LabEffect[], id: number, type: B
  * carries the id `nextId` gave it, so `nextId` moves past every id in the list.
  */
 export function setEffects(shape: Pick<Shape, 'nextId'>, labEffects: LabEffect[]): Pick<Shape, 'labEffects' | 'nextId'> {
-  return { labEffects, nextId: Math.max(shape.nextId, ...labEffects.map((e) => e.id + 1)) };
+  return { labEffects, nextId: Math.max(shape.nextId, maxOf(labEffects, (e) => e.id + 1)) };
 }
 
 /** The lab's effects that are on, as `<Badge effects>` takes them: a color control's hex string becomes a color literal. */

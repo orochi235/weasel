@@ -1,3 +1,4 @@
+import { maxOf } from '@weasel-js/geom';
 import {
   KEY_MIN_SCALE, KEY_SPELLINGS, pickSpelling, resolveBankScales, spellingsOf,
   type KeySpellings, type LegendFit,
@@ -60,7 +61,7 @@ function fitForms(ctx: CanvasRenderingContext2D, room: Room, forms: readonly str
   if ('letterSpacing' in ctx) ctx.letterSpacing = room.letterSpacing === 'normal' ? '0px' : room.letterSpacing;
   return forms.map((label) => {
     const lines = label.split('\n');
-    const wide = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    const wide = maxOf(lines, (l) => ctx.measureText(l).width);
     const tall = lines.length * room.size * (lines.length > 1 ? room.lineHeight : 1);
     return { label, lines: lines.length, scale: Math.min(room.width / wide, room.height / tall) };
   });

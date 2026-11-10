@@ -1,4 +1,5 @@
 import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'react';
+import { maxOf } from '@weasel-js/geom';
 import s from './Slider.module.css';
 import { GAP, staggerRows } from './staggerRows';
 
@@ -17,10 +18,10 @@ function stagger(row: HTMLElement): void {
   const boxes = items.map((item) => ({ start: item.offsetLeft - item.offsetWidth / 2, width: item.offsetWidth, height: item.offsetHeight }));
   // With no layout to measure (jsdom, a hidden panel) there is nothing to avoid.
   if (boxes.every((b) => b.width === 0)) return;
-  const rowHeight = Math.max(...boxes.map((b) => b.height));
+  const rowHeight = maxOf(boxes, (b) => b.height);
   const rows = staggerRows(boxes.map((b) => ({ start: b.start, end: b.start + b.width })), GAP);
   rows.forEach((at, i) => { items[i]!.style.top = `${at * rowHeight}px`; });
-  row.style.height = `${(Math.max(...rows) + 1) * rowHeight}px`;
+  row.style.height = `${(maxOf(rows) + 1) * rowHeight}px`;
 }
 
 /**

@@ -1,4 +1,5 @@
 import { isPrefLeaf, type PrefAction, type PrefGroup } from '@weasel-js/prefs';
+import { minOf } from '@weasel-js/geom';
 import { actionLeaf, actionLeafKey, type EditorAction } from './editorActions';
 import { childrenOf, joinPath, keyOf, nodeAt, outermost, parentPath, removeNode, uniqueKey, type ChildMap, type SchemaNode } from './schemaEdit';
 import { editChildren, insertAt } from './schemaTree';
@@ -75,7 +76,7 @@ export function keyTails(catalog: PrefGroup): Map<string, string> {
       if (!childrenOf(child)) continue;
       const keys = keysUnder(child);
       // Short of a whole key: every pref keeps a part of its own to show.
-      const most = Math.min(...keys.map((parts) => parts.length - 1));
+      const most = minOf(keys, (parts) => parts.length - 1);
       let shared = said;
       while (keys.length > 0 && shared < most && keys.every((parts) => parts[shared] === keys[0]![shared])) shared++;
       out.set(at, keys.length === 0 ? '' : keys[0]!.slice(said, shared).join('').replace(/[.:]$/, ''));

@@ -1,4 +1,5 @@
 import { isPrefLeaf, isPrefSection, type PrefGroup, type PrefLeaf, type PrefList, type PrefMap, type PrefSection } from '@weasel-js/prefs';
+import { maxOf } from '@weasel-js/geom';
 import { heirOf, type FocusRow } from '../../useRemovedRowFocus';
 
 /** A schema the editor opens: a preferences schema, or a node's property schema. */
@@ -83,7 +84,7 @@ export function fitsUnder(parent: SchemaNode, node: SchemaNode): boolean {
 /** How many levels of groups `node` adds where it sits: none for a leaf or a section, one for a group and one more for each level inside it. */
 export function levelsOf(node: SchemaNode): number {
   if (isPrefLeaf(node) || isPrefSection(node)) return 0;
-  return 1 + Math.max(0, ...Object.values(node.children).map(levelsOf));
+  return 1 + Math.max(0, maxOf(Object.values(node.children), levelsOf));
 }
 
 /** Whether `nodes` set under the group at `parent` keep the schema within `maxDepth` levels of groups. */
