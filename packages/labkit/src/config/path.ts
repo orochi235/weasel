@@ -18,7 +18,12 @@ const ownAt = (record: Record<string, unknown>, key: string): unknown =>
 
 /** Assignment would run `__proto__`'s setter and change the prototype instead. */
 const setOwn = (record: Record<string, unknown>, key: string, value: unknown): void => {
-  Object.defineProperty(record, key, { value, writable: true, enumerable: true, configurable: true });
+  Object.defineProperty(record, key, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
 };
 
 /** The value at a dotted path. `undefined` when a segment is missing or the
@@ -100,7 +105,10 @@ export function schemaNodeAtPath(group: PrefGroup, path: string): PrefLeaf | Pre
   let node: PrefLeaf | PrefGroup | undefined = group;
   for (const segment of path.split('.')) {
     if (node === undefined || !('children' in node)) return undefined;
-    const next: PrefLeaf | PrefGroup | PrefSection | undefined = Object.hasOwn(node.children, segment)
+    const next: PrefLeaf | PrefGroup | PrefSection | undefined = Object.hasOwn(
+      node.children,
+      segment,
+    )
       ? node.children[segment]
       : undefined;
     if (next !== undefined && 'members' in next) return undefined;
