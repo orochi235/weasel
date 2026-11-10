@@ -33,12 +33,15 @@ export interface KeySequenceProps {
   /** The keymaps leading to the keys, outermost first, each drawn by its label
    *  before them: `Loupe ▸ 2`. `formatShortcutParts` gives these. */
   leader?: readonly { label: string }[];
+  /** Sits in a line of prose: the row rests on the text's baseline, and its
+   *  keys are shorter so they do not push the line apart. */
+  inline?: boolean;
   className?: string;
 }
 
 /** Renders a shortcut as a row of `KeyCap` chips, one per key. Optional
  *  keys render inverted to distinguish them from required ones. */
-export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'default', font, leader, className }: KeySequenceProps) {
+export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'default', font, leader, inline = false, className }: KeySequenceProps) {
   if (!keys || keys.length === 0) {
     return <span className={[s.keysEmpty, className].filter(Boolean).join(' ')}>—</span>;
   }
@@ -54,7 +57,7 @@ export function KeySequence({ keys, separator = '+', joins = 'key', variant = 'd
     i > 0 &&
     (joins === 'all' || (joins === 'key' && inferKeycapKind(ordered[i]!.label) !== 'modifier'));
   return (
-    <span className={[s.keys, className].filter(Boolean).join(' ')}>
+    <span className={[s.keys, className].filter(Boolean).join(' ')} data-inline={inline || undefined}>
       {leader?.map((step, i) => (
         <Fragment key={`leader-${i}`}>
           <span className={s.leader}>{step.label}</span>
