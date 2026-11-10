@@ -4,4 +4,4 @@
  * @packageDocumentation
  */
 
-export { baselineDrop } from '../useTextEdit';
+export { baselineDrop } from '../overlayBaseline';

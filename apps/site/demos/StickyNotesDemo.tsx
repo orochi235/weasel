@@ -17,7 +17,7 @@ const note = (id: string, x: number, y: number, text: string, color?: string) =>
 const INITIAL = [
   note('a', 30, 30, 'Drag to draw a note, or click to place one'),
   note('b', 200, 60, 'Double-click to edit', '#c8ecffff'),
-  note('c', 30, 188, 'A note cuts its text at its edge, so this sentence, which runs on well past the bottom of the paper, is clipped there.', '#ffd6e0ff'),
+  note('c', 30, 188, 'A note cuts its text at its edge. Double-click this one and scroll, or move the caret down, to reach the rest of a sentence that runs on well past the bottom of the paper.', '#ffd6e0ff'),
 ];
 
 export function StickyNotesDemo() {

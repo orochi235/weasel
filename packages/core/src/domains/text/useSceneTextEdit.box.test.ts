@@ -52,17 +52,23 @@ describe('useSceneTextEdit — padding', () => {
     expect(hook.result.current.editingId).toBe('s');
   });
 
-  it('cuts the overlay to the whole box when the node clips, padding included', () => {
+  it('scrolls the overlay in the whole box when the node clips, padding included', () => {
     const { hook, container } = mount({ ...STICKY, overflow: 'clip' });
     act(() => hook.result.current.startEdit('s'));
-    // The overlay's own box is the inset one at (110, 60), 180 × 100.
-    expect(overlayOf(container).style.clipPath).toBe('polygon(-10px -10px, 190px -10px, 190px 110px, -10px 110px)');
+    const el = overlayOf(container);
+    const box = el.parentElement!;
+    expect(box.style.overflow).toBe('auto');
+    expect([box.style.left, box.style.top, box.style.width, box.style.height])
+      .toEqual(['100px', '50px', '200px', '120px']);
+    // The padding is the overlay's own, so its text sits in the inset box.
+    expect([el.style.left, el.style.paddingLeft, el.style.paddingTop, el.style.width])
+      .toEqual(['0px', '10px', '10px', '200px']);
   });
 
-  it('leaves the overlay uncut when the node does not clip', () => {
+  it('leaves the overlay unscrolled when the node does not clip', () => {
     const { hook, container } = mount(STICKY);
     act(() => hook.result.current.startEdit('s'));
-    expect(overlayOf(container).style.clipPath).toBe('');
+    expect(overlayOf(container).parentElement!.style.overflow).toBe('visible');
   });
 
   it('opens on no double-click outside the box', () => {

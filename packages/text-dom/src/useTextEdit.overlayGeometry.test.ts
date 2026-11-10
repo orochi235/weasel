@@ -95,7 +95,7 @@ describe('useTextEdit — clip rect', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const el = getOverlay(h.container)!;
-    const clip = el.parentElement!;
+    const clip = el.parentElement!.parentElement!;
     expect(clip.parentElement).toBe(h.container);
     expect(clip.style.overflow).toBe('clip');
     expect(clip.style.pointerEvents).toBe('none');
@@ -112,7 +112,7 @@ describe('useTextEdit — clip rect', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const el = getOverlay(h.container)!;
-    expect(el.parentElement!.style.overflow).toBe('visible');
+    expect(el.parentElement!.parentElement!.style.overflow).toBe('visible');
     expect(el.style.left).toBe('0px');
   });
 

@@ -71,9 +71,12 @@ export interface TextEditScreenPose {
   frame?: readonly [a: number, b: number, c: number, d: number];
   /**
    * Cut the overlay's text at the box `x`/`y`/`width`/`height` name, grown by
-   * these on each side, in the same pre-scale units. It turns with `frame`,
-   * so it holds to the box as the canvas draws it. Absent, the text may run
-   * past the box, cut only by `getClipRect`.
+   * these on each side, in the same pre-scale units, and scroll the text
+   * inside that box when it runs past it: the wheel scrolls it, and a caret
+   * the user moves out of it brings it back. The box turns with `frame`, so
+   * it holds to the box as the canvas draws it. It opens scrolled to where
+   * `verticalAlign` puts the text, and the scroll ends with the edit. Absent,
+   * the text may run past the box, cut only by `getClipRect`.
    */
   clip?: { top: number; right: number; bottom: number; left: number };
 }
