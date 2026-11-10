@@ -8,6 +8,7 @@ import { doubles, truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
 import type { Entry } from './layoutEntries';
 import { hangs, wrapSpans } from './lineBreak/wrapLines';
+import { lineBreakOpportunities, NO_BREAK } from './lineBreak/lineBreaks';
 import { tabAdvance, widthWithTabs } from './tabStops';
 
 /** What breaking and placing lines read of the layout's options. Handed over
@@ -30,6 +31,11 @@ export interface Line {
    *  has run out to its stop. */
   entries: Entry[];
   width: number;
+  /** The widest the line measures to its ink before any break opportunity,
+   *  as the wrap measures it, when that is past `width` less its hung space:
+   *  a cluster narrower than the negative tracking after it pulls the end
+   *  back. 0 otherwise. */
+  reach: number;
   height: number;
   /** Line top to baseline. */
   ascent: number;
@@ -83,11 +89,11 @@ function pushSpan(start: number, end: number, wrapped: boolean): void {
   const i = brokenCount++;
   let line = linePool[i];
   if (line === undefined) {
-    line = { start: 0, entries: [], width: 0.5, height: 0.5, ascent: 0.5, wrapped: false, srcEnd: 0, end: 0 };
+    line = { start: 0, entries: [], width: 0.5, reach: 0.5, height: 0.5, ascent: 0.5, wrapped: false, srcEnd: 0, end: 0 };
     if (i < LINE_POOL_MAX) linePool[i] = line;
   }
   line.start = start; line.end = end; line.wrapped = wrapped;
-  line.width = 0; line.height = 0; line.ascent = 0; line.srcEnd = 0;
+  line.width = 0; line.reach = 0; line.height = 0; line.ascent = 0; line.srcEnd = 0;
   broken[i] = line;
 }
 
@@ -124,6 +130,7 @@ export function breakLines(
   cur = NONE;
   broken.length = brokenCount;
 
+  let breaks: Uint8Array | null = null;
   for (let i = 0; i < broken.length; i++) {
     const line = broken[i];
     if (line.start === line.end) {
@@ -136,21 +143,40 @@ export function breakLines(
     }
     const out = line.entries;
     let below = -Infinity;
+    let dips = false;
     for (let k = line.start; k < line.end; k++) {
       const e = entries[k];
       if (k === line.start) e.kerningBefore = 0;
       if (e.tab) e.advance = tabAdvance(line.width, e.tab.stop, e.tab.min);
       out[k - line.start] = e;
-      line.width += e.kerningBefore + e.advance + e.tracking;
+      const step = e.kerningBefore + e.advance + e.tracking;
+      line.width += step;
+      if (step < 0) dips = true;
       const above = aboveBaseline(e, lineHeight);
       line.ascent = Math.max(line.ascent, above);
       below = Math.max(below, e.lineSize * lineHeight - above);
     }
     line.height = line.ascent + below;
+    if (dips) line.reach = reachOf(entries, line.start, line.end, breaks ??= lineBreakOpportunities(cps));
     out.length = line.end - line.start;
     line.srcEnd = entries[line.end - 1].srcEnd;
   }
   return broken;
+}
+
+/** The widest `entries[start, end)` measures to its ink before each break
+ *  opportunity and at its end. */
+function reachOf(entries: readonly Entry[], start: number, end: number, breaks: Uint8Array): number {
+  let w = 0;
+  let ink = 0;
+  let reach = 0;
+  for (let k = start; k < end; k++) {
+    if (k > start && breaks[k] !== NO_BREAK) reach = Math.max(reach, ink);
+    const e = entries[k];
+    w += e.kerningBefore + e.advance + e.tracking;
+    if (!hangs(e.cp)) ink = w;
+  }
+  return Math.max(reach, ink);
 }
 
 /** Width of the white space a line ends in. CSS aligns a line on its ink, so
@@ -193,7 +219,7 @@ const NO_GAPS: ReadonlySet<number> = new Set();
 export interface PlacedLine {
   box: LineBox;
   /** Width of the line's ink, hung white space left out and any justified
-   *  spread counted. */
+   *  spread counted: the farthest it reaches, so a box this wide holds it. */
   inkWidth: number;
 }
 
@@ -268,6 +294,6 @@ export function placeLine(
   placed.box = prior !== undefined
     ? prior.refill(left, y, x1, y1, lineBaselineY, line.srcEnd, spread > 0, start, entries.length)
     : (cols.boxes[at] = new LineBox(left, y, x1, y1, lineBaselineY, line.srcEnd, spread > 0, cols, start, entries.length));
-  placed.inkWidth = inkWidth + spread;
+  placed.inkWidth = Math.max(inkWidth, line.reach) + spread;
   return placed;
 }

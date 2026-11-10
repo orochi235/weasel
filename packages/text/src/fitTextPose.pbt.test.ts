@@ -35,4 +35,14 @@ describe('fitTextPose, property', () => {
     }), runs(RUNS));
     t.atLeast('wide', 50);
   }, timeoutFor(RUNS, 20));
+
+  it('fits a line whose last cluster is narrower than its negative tracking (shrunk counterexample)', () => {
+    // A mark after a zero-width space is a cluster of its own, and its tracking pulls the line's end back.
+    const p: TextPose = {
+      x: 5, y: 7, width: 100, height: 10, text: '\u{1f1fa}\u{1f1f8}\u{1f1eb}\u{1f1f7}\u200b\u0301',
+      style: { fontFamily: 'inter', fontSize: 13, letterSpacing: -0.6, align: 'left' },
+    };
+    const fitted = fitTextPose(p, { axis: 'both' });
+    expect(layoutTextPose({ ...fitted, style: { ...p.style, wrap: true } }).laid.lines).toHaveLength(1);
+  });
 });

@@ -144,8 +144,9 @@ describe('wrapLines, property', () => {
         if (ink > l.start && width(l.start, ink) > maxWidth) {
           t.count('overfull');
           for (let k = l.start + 1; k < ink; k++) {
+            // A wrapped line never opens on white space that hangs.
             const leading = cps.slice(l.start, k).every(hangs);
-            if (!leading) expect(breaks[k], `unused opportunity at ${k} of ${JSON.stringify(text)}`).toBe(NO_BREAK);
+            if (!leading && !hangs(cps[k]!)) expect(breaks[k], `unused opportunity at ${k} of ${JSON.stringify(text)}`).toBe(NO_BREAK);
           }
         }
       }

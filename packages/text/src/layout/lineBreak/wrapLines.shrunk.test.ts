@@ -15,6 +15,10 @@ describe('wrapLines, shrunk counterexamples', () => {
     ]);
   });
 
+  it('keeps a tab that follows a zero-width space on its line, with what no line may start with after it', () => {
+    expect(wrapLines(cps('\u200b\t!'), 1, tens)).toEqual([{ start: 0, end: 3, wrapped: false }]);
+  });
+
   it('still wraps after opening spaces where a line may break', () => {
     expect(wrapLines(cps(' AB'), 5, tens)).toEqual([
       { start: 0, end: 1, wrapped: true },
