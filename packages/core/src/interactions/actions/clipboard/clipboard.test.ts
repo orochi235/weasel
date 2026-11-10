@@ -20,6 +20,7 @@ function makeStubScene(ids: string[]) {
       get: (id: NodeId) => nodes.get(id),
       childrenOf: () => [],
       get roots() { return [...nodes.keys()].map(asNodeId); },
+      isLocked: () => false,
       removalClosure: (want: readonly NodeId[]) => [...want],
       remove: vi.fn(),
       applyBatch: vi.fn((ops: Op[], label: string) => { applyBatchLog.push({ ops, label }); }),

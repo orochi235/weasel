@@ -9,7 +9,7 @@ import { deleteAction } from './delete';
 import { nudgeRightAction } from './nudge';
 import { groupAction, ungroupAction } from './group';
 import { reorderForwardAction } from './reorder';
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 
 type Layer = 'base' | 'art';
 const POSE = { x: 0, y: 0, width: 10, height: 10 };
@@ -35,13 +35,22 @@ const run = (action: Action, deps: Record<string, unknown>, params?: unknown): v
 
 const snapshot = (scene: ReturnType<typeof fixture>['scene']) => JSON.stringify(scene.toJSON());
 
-const cases: Array<[string, Action, (f: ReturnType<typeof fixture>) => NodeId[], unknown?]> = [
-  ['delete', deleteAction, (f) => [f.free, f.art]],
+type Case = [string, Action, (f: ReturnType<typeof fixture>) => NodeId[], unknown?];
+
+/** Actions the scene refuses mid-batch, by throwing. */
+const refused: Case[] = [
   ['nudge', nudgeRightAction, (f) => [f.free, f.art]],
   ['reorder', reorderForwardAction, (f) => [f.art]],
   ['group', groupAction, (f) => [f.art, f.top]],
+];
+
+/** Actions disabled while a node they would move or remove is locked (ruled 2026-11-09). */
+const disabled: Case[] = [
+  ['delete', deleteAction, (f) => [f.free, f.art]],
   ['ungroup', ungroupAction, (f) => [f.box]],
 ];
+
+const cases = [...refused, ...disabled];
 
 describe('kit actions on a locked layer', () => {
   it.each(cases)('%s edits the scene while the layer is unlocked', (_name, action, pick, params) => {
@@ -51,13 +60,26 @@ describe('kit actions on a locked layer', () => {
     expect(snapshot(f.scene)).not.toEqual(before);
   });
 
-  it.each(cases)('%s refuses once the layer is locked and leaves nothing half-done', (_name, action, pick, params) => {
+  it.each(refused)('%s refuses once the layer is locked and leaves nothing half-done', (_name, action, pick, params) => {
     const f = fixture();
     const ids = pick(f);
     f.scene.setLayerLocked('art', true);
     const before = snapshot(f.scene);
     const depth = f.scene.historyIndex();
     expect(() => run(action, { scene: f.scene, selection: heldSelection(ids) }, params)).toThrow(/locked/);
+    expect(snapshot(f.scene)).toEqual(before);
+    expect(f.scene.historyIndex()).toBe(depth);
+  });
+
+  it.each(disabled)('%s reports the lock as its disabled reason and runs as a no-op', (_name, action, pick, params) => {
+    const f = fixture();
+    const ids = pick(f);
+    f.scene.setLayerLocked('art', true);
+    const before = snapshot(f.scene);
+    const depth = f.scene.historyIndex();
+    const deps = { scene: f.scene, selection: heldSelection(ids) };
+    expect(action.enabled?.(deps as never)).toBe(ActionDisabledReason.Locked);
+    run(action, deps, params);
     expect(snapshot(f.scene)).toEqual(before);
     expect(f.scene.historyIndex()).toBe(depth);
   });

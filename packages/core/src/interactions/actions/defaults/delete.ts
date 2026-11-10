@@ -2,8 +2,9 @@ import type { Node, NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createDeleteOp } from 'core/ops/delete';
 import { commitOps } from '../defaultCommitAdapter';
-import type { Action, ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
 import { requiresSelection } from './requiresSelection';
+import { reachesLocked } from './lockedReach';
 import { icon } from '../../../icons.gen';
 import { hiddenSourcesTakenWith } from 'domains/pathEffects/hiddenSources';
 import { withoutPageStructure } from 'core/scene/nodeGates';
@@ -62,8 +63,7 @@ export function buildDeleteOps(
   label: string,
   opts: BuildDeleteOptions = {},
 ): Op[] {
-  const own = withoutPageStructure(scene, ids);
-  const all = opts.takeHiddenSources ? [...own, ...hiddenSourcesTakenWith(scene, own as readonly NodeId[])] : own;
+  const all = deleteTargets(scene, ids, opts);
   const covered = new Set<string>();
   const ops: Op[] = [];
   for (const id of all) {
@@ -78,6 +78,26 @@ export function buildDeleteOps(
     }));
   }
   return ops;
+}
+
+/** What {@link buildDeleteOps} deletes for `ids`: less page structure, plus the hidden sources when asked. */
+function deleteTargets(scene: Scene<unknown, string, unknown>, ids: readonly string[], opts: BuildDeleteOptions): readonly string[] {
+  const own = withoutPageStructure(scene, ids);
+  return opts.takeHiddenSources ? [...own, ...hiddenSourcesTakenWith(scene, own as readonly NodeId[])] : own;
+}
+
+/** Whether deleting `ids` as Delete does would remove a locked node, which disables it (ruled 2026-11-09): a
+ *  selected group holding a locked child, or a node a locked one derives from. */
+function deleteReachesLocked(deps: ActionDeps, ids: readonly NodeId[]): boolean {
+  const scene = deps.scene;
+  return scene ? reachesLocked(scene, deleteTargets(scene, ids, { takeHiddenSources: true }) as readonly NodeId[]) : false;
+}
+
+/** Delete's `enabled`, and Cut's: a selection, none of whose removal would take a locked node. */
+export function deleteEnabled(deps?: ActionDeps): true | ActionDisabledReason {
+  const needs = requiresSelection(deps);
+  if (needs !== true) return needs;
+  return deleteReachesLocked(deps!, deps!.selection!.get() as readonly NodeId[]) ? ActionDisabledReason.Locked : true;
 }
 
 /** Options for {@link createDeleteAction}. */
@@ -120,11 +140,11 @@ export function createDeleteAction(opts: DeleteActionOptions = {}): Action & { r
       run: (deps) => {
         if (!deps.selection || !deps.scene) return;
         const ids = deps.selection.get() as readonly NodeId[];
-        if (ids.length === 0) return;
+        if (ids.length === 0 || deleteEnabled(deps) !== true) return;
         commit(ids, deps);
       },
     },
-    enabled: requiresSelection,
+    enabled: deleteEnabled,
   };
 }
 

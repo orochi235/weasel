@@ -252,6 +252,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   answers with a projected screen rectangle that no scene could own. A 2D scene whose poses are not
   rects still states both.
 
+- 2026-11-09 (ruled by the maintainer through weasel-8f): Ungroup, Delete, and Cut are disabled, with
+  `ActionDisabledReason.Locked` ("Contains a locked item"), while any node they would move, rewrite, or
+  remove is locked, and their `run` reads the same answer.
+- 2026-11-09 (ruled by the maintainer through weasel-8f): Ungroup never deletes anything through a dissolved
+  group's dependents. It removes the dissolved group from every dependent's `dependsOn`, as undoable
+  `setDependsOn` ops in the same batch, whether or not the dependent holds a freed child. A node elsewhere
+  that derives from the group now survives too, where before it was deleted.
+
 ## Rendering, canvas, and paint
 
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws

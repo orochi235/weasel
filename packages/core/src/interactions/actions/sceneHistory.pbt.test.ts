@@ -57,16 +57,9 @@ function checkTree(scene: S): void {
   expect(seen.size).toBe(scene.nodes.size);
 }
 
-/** Children an ungroup deleted with their container because they derive from it, which leaves them selected.
- *  Waiting on a ruling (docs/TODO.md, "Ungroup and delete over a locked or derived descendant"); ids are minted
- *  once, so holding them for the whole run excuses nothing else. */
-const takenByUngroup = new Set<NodeId>();
-
 function checkInvariants(scene: S): void {
   checkTree(scene);
-  for (const id of scene.getSelection()) {
-    if (!takenByUngroup.has(id)) expect(scene.get(id), `selected ${id} exists`).toBeDefined();
-  }
+  for (const id of scene.getSelection()) expect(scene.get(id), `selected ${id} exists`).toBeDefined();
 }
 
 /** How many of each command did something, so a run that exercised nothing fails rather than passes. */
@@ -202,11 +195,17 @@ class Ungroup implements fc.Command<Model, Real> {
     const id = pickFrom(groups(r.scene), this.pick);
     if (id) r.scene.setSelection([id]);
     const before = [...r.scene.getSelection()];
-    // Ungroup deletes only the container, so a freed child gone afterward went with it as a dependent.
-    const freed = id ? [...r.scene.childrenOf(id)] : [];
-    if (id) invoke(ungroupAction, r);
-    for (const kid of freed) {
-      if (!r.scene.get(kid)) { takenByUngroup.add(kid); count('takenByUngroup'); }
+    const present = ids(r.scene);
+    const deps = { scene: r.scene, selection: selectionOf(r.scene) };
+    const enabled = id ? ungroupAction.enabled?.(deps as never) : undefined;
+    const at = r.scene.historyIndex();
+    // Never throws: an ungroup the scene would refuse is disabled, and `run` agrees with `enabled`.
+    if (id) (ungroupAction.invoker as ImmediateInvoker).run(deps as never, undefined as never);
+    if (id) {
+      expect(r.scene.historyIndex() > at, `ungroup ran exactly when enabled (${String(enabled)})`).toBe(enabled === true);
+      if (enabled !== true) count(`disabled:Ungroup:${String(enabled)}`);
+      // It removes exactly the dissolved container: nothing goes with it, dependents included.
+      if (enabled === true) expect(present.filter((n) => !r.scene.get(n))).toEqual([id]);
     }
     settle(m, r, before, 'Ungroup');
   }
@@ -236,7 +235,7 @@ class Undo implements fc.Command<Model, Real> {
     count('Undo');
     m.cursor--;
     expect(snap(r.scene)).toEqual(m.entries[m.cursor]!.state);
-    expect([...r.scene.getSelection()]).toEqual(undone.before.filter((id) => r.scene.get(id) || takenByUngroup.has(id)));
+    expect([...r.scene.getSelection()]).toEqual(undone.before.filter((id) => r.scene.get(id)));
     checkInvariants(r.scene);
   }
   toString(): string { return 'Undo'; }
@@ -251,7 +250,7 @@ class Redo implements fc.Command<Model, Real> {
     count('Redo');
     m.cursor++;
     expect(snap(r.scene)).toEqual(redone.state);
-    expect([...r.scene.getSelection()]).toEqual(redone.after.filter((id) => r.scene.get(id) || takenByUngroup.has(id)));
+    expect([...r.scene.getSelection()]).toEqual(redone.after.filter((id) => r.scene.get(id)));
     checkInvariants(r.scene);
   }
   toString(): string { return 'Redo'; }
@@ -299,14 +298,9 @@ class OpThenInverse implements fc.Command<Model, Real> {
   toString(): string { return `OpThenInverse(${['insert', 'delete', 'transform', 'reparent'][this.which % 4]}, ${this.pick}, ${this.to})`; }
 }
 
-/** Run a default action. One that throws (it would move or remove a locked descendant, which the scene refuses)
- *  must still leave the scene as it was, which `settle` checks. */
+/** Run a default action, which must not throw. */
 function invoke(action: typeof groupAction, r: Real): void {
-  try {
-    (action.invoker as ImmediateInvoker).run({ scene: r.scene, selection: selectionOf(r.scene) } as never, undefined as never);
-  } catch {
-    count(`refused:${action.id}`);
-  }
+  (action.invoker as ImmediateInvoker).run({ scene: r.scene, selection: selectionOf(r.scene) } as never, undefined as never);
 }
 
 /** Save the scene and its history as a page reload would, through JSON, and carry on in the scene rebuilt from

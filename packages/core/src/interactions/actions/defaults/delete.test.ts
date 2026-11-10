@@ -53,6 +53,7 @@ function makeStubScene(
       [...nodes.values()].filter((n) => n.parent === id).map((n) => n.id),
     get roots() { return roots(); },
     // The stub cascades along the subtree only — it has no `dependsOn`.
+    isLocked: () => false,
     removalClosure: (ids: readonly NodeId[]): NodeId[] => {
       const out: NodeId[] = [];
       const walk = (id: NodeId): void => {
