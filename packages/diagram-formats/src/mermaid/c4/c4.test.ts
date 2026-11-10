@@ -76,6 +76,13 @@ describe('writing a Mermaid C4 diagram', () => {
     expect(writeC4({ pages: [page(text)] }).text).toBe(text);
   });
 
+  it('writes quotes and character references in text as Mermaid references, so they read back as written', () => {
+    const first = page('C4Context\n  Person(a, "say #quot;hi#quot;", "#35;lt; is #lt;")\n  System(b, "B")\n  Rel(a, b, "uses #quot;x#quot;")');
+    const text = writeC4({ pages: [first] }).text;
+    expect(text).toContain('Person(a, "say #quot;hi#quot;", "#35;lt; is #lt;")');
+    expect(sortedPage(page(text))).toEqual(sortedPage(first));
+  });
+
   it('writes each element by its kind row, boundaries by their type, and relationships by their ends and ports', () => {
     const text = writeC4({ pages: [page(BANKING)] }).text;
     expect(text).toContain('C4Container\n  title Internet banking\n  Person(customer, "Customer", "A customer of the bank, with personal bank accounts.")\n');

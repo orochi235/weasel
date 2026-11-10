@@ -3,15 +3,15 @@ import type { DataContainer, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { graphOut, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { mermaidIds } from '../common/text';
+import { mermaidEscaped, mermaidIds } from '../common/text';
 
 const GENERATED = /^(?:column|card)-\d+$/;
 
 /** A metadata value, quoted with whichever quote it does not hold. */
 const metaValue = (v: string): string => (v.includes("'") ? `"${v.replace(/"/g, "'")}"` : `'${v}'`);
 
-/** Text in a column's or card's brackets: one line, no closing bracket. */
-const bracketed = (text: string): string => `[${text.replace(/\]/g, ')')}]`;
+/** Text in a column's or card's brackets: one line, a closing bracket written as a reference. */
+const bracketed = (text: string): string => `[${mermaidEscaped([text]).replace(/\]/g, '#93;')}]`;
 
 class KanbanWriter {
   readonly lines: string[] = [];
