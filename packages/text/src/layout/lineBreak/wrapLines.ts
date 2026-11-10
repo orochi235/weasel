@@ -107,7 +107,8 @@ function wrapAt(
       if (!hangs(cps[j])) ink = j + 1;
       j++;
     }
-    if (breaks && i > start && widthOf(start, ink) > fits) {
+    // Past spaces opening a paragraph, `i` need not be an opportunity.
+    if (breaks && i > start && breaks[i] !== NO_BREAK && widthOf(start, ink) > fits) {
       emit(start, i, true);
       start = i;
     }
