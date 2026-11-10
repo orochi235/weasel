@@ -6,7 +6,7 @@ import {
 import type { AffordanceHit, ImmediateInvoker, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { makeEditAnchorsDep, stubDeps } from '../testUtils';
 import { editAnchorsAction } from './action';
-import { nudgeAnchorsRightAction } from '../defaults/anchorEditing';
+import { nudgeAnchorsRightAction } from '../defaults/anchorNudge';
 
 /** A kite symmetric about x = 50: top and bottom on the axis, wings either side. */
 const kite = (): PolygonPath =>

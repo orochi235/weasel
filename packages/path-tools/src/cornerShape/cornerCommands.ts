@@ -109,17 +109,38 @@ export const setCornersAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const shape = isCornerShape(params?.shape) ? params.shape : undefined;
-      const radius = typeof params?.radius === 'number' && Number.isFinite(params.radius) ? params.radius : undefined;
-      if (shape === undefined && radius === undefined) return;
-      commitChange(deps, 'Set corners', () => ({
-        ...(shape !== undefined ? { shape } : {}),
-        ...(radius !== undefined ? { radius } : {}),
-      }));
+      const edit = setCornersEdit(deps, params);
+      if (edit) edit.dep.applyEdit(edit.dep.editingId, edit.path, 'Set corners');
     },
   } as ImmediateInvoker,
-  enabled: cornersSelected,
+  // An edit that would change nothing is disabled (ruled 2026-11-10): no shape or radius to set, or the ones
+  // the corners already have.
+  enabled: (deps, _at, _carried, params) => {
+    const selected = cornersSelected(deps);
+    if (selected !== true) return selected;
+    return setCornersEdit(deps, params) ? true : ActionDisabledReason.NotApplicable;
+  },
 };
+
+/** The path `setCorners` would commit for `params`, or null when it would change nothing. */
+function setCornersEdit(
+  deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined,
+): { dep: EditAnchorsDep; path: PolygonPath } | null {
+  const shape = isCornerShape(params?.shape) ? params.shape : undefined;
+  const radius = typeof params?.radius === 'number' && Number.isFinite(params.radius) ? params.radius : undefined;
+  if (shape === undefined && radius === undefined) return null;
+  const dep = depOf(deps);
+  const path = dep && editedPath(dep);
+  if (!dep || !path) return null;
+  const frames = selectedCorners(dep, path);
+  if (frames.length === 0) return null;
+  const next = changeCorners(path, frames, { ...(shape !== undefined ? { shape } : {}), ...(radius !== undefined ? { radius } : {}) });
+  return frames.some((f) => !sameCorner(cornerSpecAt(path, f.index), cornerSpecAt(next, f.index))) ? { dep, path: next } : null;
+}
+
+function sameCorner(a: ReturnType<typeof cornerSpecAt>, b: ReturnType<typeof cornerSpecAt>): boolean {
+  return (a?.shape ?? null) === (b?.shape ?? null) && (a?.radius ?? 0) === (b?.radius ?? 0);
+}
 
 /**
  * Step the selected corners to the next `corner-shape` keyword, keeping

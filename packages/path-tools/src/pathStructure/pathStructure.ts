@@ -6,7 +6,7 @@
 import { ActionDisabledReason, type Action, type ActionDeps, type ImmediateInvoker } from '@weasel-js/routing';
 import {
   editAnchorSetTracked, flatIndexesAfterReverse, locateAnchor, reverseSubpaths, setSubpathStart, subpathsOfAnchors,
-  type PolygonPath,
+  type AnchorSet, type PolygonPath,
 } from '@weasel-js/geom';
 import { anchorEditWouldChange, commitAnchorEdit, commitOps, depOf, pathOperationTags, type Op } from '@weasel-js/core';
 import { icon } from '../icons.gen';
@@ -66,17 +66,20 @@ function selectedPaths(deps: ActionDeps | undefined): { id: string; path: Polygo
   });
 }
 
+/** Reverse the subpaths of `set` holding `selected`, or all of them; `onAfter` hears where the selection goes. */
+function reverseSelected(set: AnchorSet, selected: readonly number[], onAfter?: (after: number[]) => void): boolean {
+  const subs = selected.length > 0 ? subpathsOfAnchors(set, selected) : undefined;
+  onAfter?.(flatIndexesAfterReverse(set, selected, subs));
+  return reverseSubpaths(set, subs);
+}
+
 /** Reverse the subpaths holding the selected anchors, or all of them, keeping the selection on its anchors. */
 function reverseInPathEdit(deps: ActionDeps): boolean {
   const dep = depOf(deps);
   if (!dep) return false;
   const selected = [...dep.selectedAnchors];
   let after: number[] = [];
-  const changed = commitAnchorEdit(dep, REVERSE_LABEL, (set) => {
-    const subs = selected.length > 0 ? subpathsOfAnchors(set, selected) : undefined;
-    after = flatIndexesAfterReverse(set, selected, subs);
-    return reverseSubpaths(set, subs);
-  });
+  const changed = commitAnchorEdit(dep, REVERSE_LABEL, (set) => reverseSelected(set, selected, (a) => { after = a; }));
   if (changed) dep.setSelectedAnchors(after);
   return true;
 }
@@ -109,8 +112,16 @@ export const reversePathAction: Action & { requires: string[] } = {
       commitOps(deps, ops, REVERSE_LABEL);
     },
   } as ImmediateInvoker,
+  // An edit that would change nothing is disabled (ruled 2026-11-10): a path that reads the same either way.
   enabled: (deps) => {
-    if (depOf(deps)) return true;
-    return selectedPaths(deps).length > 0 ? true : ActionDisabledReason.SelectionRequired;
+    const dep = depOf(deps);
+    if (dep) {
+      const selected = [...dep.selectedAnchors];
+      return anchorEditWouldChange(deps, (set) => reverseSelected(set, selected)) ? true : ActionDisabledReason.NotApplicable;
+    }
+    const paths = selectedPaths(deps);
+    if (paths.length === 0) return ActionDisabledReason.SelectionRequired;
+    return paths.some(({ path }) => editAnchorSetTracked(path, (set) => reverseSubpaths(set)) !== null)
+      ? true : ActionDisabledReason.NotApplicable;
   },
 };

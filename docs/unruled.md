@@ -260,6 +260,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `setDependsOn` ops in the same batch, whether or not the dependent holds a freed child. A node elsewhere
   that derives from the group now survives too, where before it was deleted.
 
+- 2026-11-10 (ruled by the maintainer through weasel-8f): An edit action that would change nothing is
+  disabled with `ActionDisabledReason.NotApplicable`, and its `enabled` asks the same question its `run`
+  answers. So `deleteAnchors` is off where the path refuses the delete (a two-anchor line keeps its two),
+  `constrainAnchors` where the selection makes no constraint of its kind, `unconstrainAnchors` where there
+  is none to remove, `setCorners` without a shape or radius or with the corners' own, and `nudgeAnchors`
+  and `reversePath` where the selection names no anchor of the path (as an undo that shortened the path
+  can leave it). A selection command stays enabled when its result is the selection already held.
+
 ## Rendering, canvas, and paint
 
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
@@ -423,6 +431,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-10-26/27 (agent batches 2–10): `transformPath` gives a far-out result an origin by default
   (`autoOrigin: false` opts out).
+
+- 2026-11-09 (property tests): `parseSvg` drops a shape whose geometry it cannot store, a coordinate past
+  float32's range from the path's origin either as written or once a transform carries it there, with the
+  warning "reaches past the coordinates a path can store", as it drops a `<path>` with an empty `d`. Until
+  then such a shape was kept with `Infinity` and `NaN` in its coordinates.
 
 ## Animation
 
