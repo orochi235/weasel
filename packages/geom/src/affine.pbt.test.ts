@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { applyToPoint, identity, invert, multiply, type Affine } from './affine';
-import { affine, conditioned, coord, decades, maxDiff, norm1 } from './pbt.fixtures';
+import { affine, conditioned, coord, decades, maxDiff, norm1, runs } from './pbt.fixtures';
 
-const RUNS = { numRuns: 300 };
+const RUNS = runs(300);
 
 /** How far `m · inv` may sit from the identity: rounding grows with the condition number. */
 function residualLimit(m: Affine, inv: Affine): number {

@@ -53,9 +53,15 @@ export function norm1(m: Affine): number {
   return Math.max(Math.abs(m[0]) + Math.abs(m[1]), Math.abs(m[2]) + Math.abs(m[3]));
 }
 
-/** The largest entry of `m - n`, measured against `scale`. */
+/** The largest entry of `m - n`. */
 export function maxDiff(m: ArrayLike<number>, n: ArrayLike<number>): number {
   let most = 0;
   for (let i = 0; i < m.length; i++) most = Math.max(most, Math.abs(m[i]! - n[i]!));
   return most;
+}
+
+/** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
+export function runs(n: number): { numRuns: number } {
+  const deep = Number(globalThis.process?.env?.WEASEL_PBT_RUNS);
+  return { numRuns: deep > 0 ? deep : n };
 }
