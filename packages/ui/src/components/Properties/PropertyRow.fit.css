@@ -77,7 +77,13 @@
   min-inline-size: min(100%, var(--wzl-prop-field-min, 6ch));
 }
 
-/* A segmented toggle is usable at the width its segments set, and squeezes only once it has a line of its own. */
+/* A segmented toggle shortens its labels beside the row's label first (FitLabel), and takes a line of its own
+   only once its shortest labels still overflow, which its fit scope marks `data-fit-spent`. */
 .rowInline > .toggleBar {
-  flex-basis: max-content;
+  flex: 1 1 0;
+  min-inline-size: 0;
+}
+
+.rowInline > .toggleBar[data-fit-spent] {
+  flex-basis: 100%;
 }

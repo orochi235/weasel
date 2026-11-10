@@ -50,6 +50,10 @@ const overflows = (el: Element | null): boolean => el !== null && el.scrollWidth
  *
  * A scope nested in another steps at least as far as the outer one, so a
  * control inside a strip shortens along with the strip.
+ *
+ * Once every label is at its last form and the room still overflows, the
+ * element carries `data-fit-spent`, for a layout to give it more room, until its
+ * parent grows wider than it was then.
  */
 export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
   const outer = useContext(FitContext);
@@ -59,6 +63,8 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
   // Room sizes when the last step was taken: growing past them retries the
   // full forms, while the shrink a step itself causes does not.
   const steppedAt = useRef<{ self: number; parent: number } | null>(null);
+  // The parent's width when the labels ran out of forms, while the element is marked spent.
+  const spentAt = useRef<number | null>(null);
 
   const depth = labels.reduce((max, d) => Math.max(max, d), 0);
   const outerRegister = outer?.register;
@@ -91,6 +97,17 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
     return true;
   }, [ref, depth]);
 
+  /** Marks the element spent when no label has a shorter form left and the room still overflows. */
+  const markSpent = useCallback((): void => {
+    const el = ref.current;
+    // Before its labels register, a scope has no forms to run out of.
+    if (!el || depth < 1 || spentAt.current !== null || ownRef.current < depth - 1) return;
+    const parent = el.parentElement;
+    if (!overflows(el) && !overflows(parent)) return;
+    spentAt.current = parent?.clientWidth ?? 0;
+    el.setAttribute('data-fit-spent', '');
+  }, [ref, depth]);
+
   // A label set that changed may fit at a longer form than the old one did.
   const fittedFor = useRef(labels);
   useLayoutEffect(() => {
@@ -104,13 +121,22 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
       }
     }
     if (shouldStep()) setOwn(own + 1);
-  }, [labels, own, shouldStep]);
+    else markSpent();
+  }, [labels, own, shouldStep, markSpent]);
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el || depth < 2 || typeof ResizeObserver === 'undefined') return;
+    if (!el || typeof ResizeObserver === 'undefined') return;
     const parent = el.parentElement;
     const observer = new ResizeObserver(() => {
+      if (spentAt.current !== null && parent !== null && parent.clientWidth > spentAt.current + 0.5) {
+        spentAt.current = null;
+        el.removeAttribute('data-fit-spent');
+      }
+      if (depth < 2) {
+        markSpent();
+        return;
+      }
       const at = steppedAt.current;
       const grew =
         at !== null &&
@@ -120,12 +146,14 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
         flushSync(() => setOwn(0));
       } else if (shouldStep()) {
         flushSync(() => setOwn((s) => s + 1));
+      } else {
+        markSpent();
       }
     });
     observer.observe(el);
     if (parent) observer.observe(parent);
     return () => observer.disconnect();
-  }, [ref, depth, shouldStep]);
+  }, [ref, depth, shouldStep, markSpent]);
 
   const step = Math.max(own, outer?.step ?? 0);
   return useMemo(() => ({ step, register }), [step, register]);

@@ -116,8 +116,55 @@ test.each(['block', 'inline'] as const)('a %s enum toggle row shortens its segme
       />
     </div>,
   );
-  expect(shown()).toEqual(tier(2));
   const bar = screen.getByRole('radiogroup', { name: 'Case' });
+  expect(shown()).toEqual(tier(2));
+  if (layout === 'inline') {
+    // Shortened beside its label, not moved to a line of its own.
+    expect(bar.hasAttribute('data-fit-spent')).toBe(false);
+    expect(bar.getBoundingClientRect().top).toBeLessThan(screen.getByText('Case').getBoundingClientRect().bottom);
+  }
+  expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth);
+});
+
+test('an inline enum toggle row too narrow beside its label even at its shortest takes a line of its own', async () => {
+  render(
+    <div style={{ width: 150 }}>
+      <PropertyField
+        kind="enum"
+        control="toggle"
+        label="Letter casing"
+        layout="inline"
+        value="none"
+        options={OPTIONS}
+        onChange={() => {}}
+      />
+    </div>,
+  );
+  await frames();
+  const bar = screen.getByRole('radiogroup', { name: 'Letter casing' });
+  expect(bar.hasAttribute('data-fit-spent')).toBe(true);
+  expect(bar.getBoundingClientRect().top).toBeGreaterThanOrEqual(screen.getByText('Letter casing').getBoundingClientRect().bottom - 0.5);
+  expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth);
+});
+
+test('an inline enum toggle row whose label leaves it no room takes a line of its own', async () => {
+  render(
+    <div style={{ width: 120 }}>
+      <PropertyField
+        kind="enum"
+        control="toggle"
+        label="A label long enough to crowd it"
+        layout="inline"
+        value="none"
+        options={OPTIONS}
+        onChange={() => {}}
+      />
+    </div>,
+  );
+  await frames();
+  const bar = screen.getByRole('radiogroup', { name: 'A label long enough to crowd it' });
+  const label = screen.getByText('A label long enough to crowd it').getBoundingClientRect();
+  expect(bar.getBoundingClientRect().top).toBeGreaterThanOrEqual(label.bottom - 0.5);
   expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth);
 });
 
