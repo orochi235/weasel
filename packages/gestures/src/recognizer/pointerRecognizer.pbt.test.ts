@@ -117,7 +117,7 @@ class Release implements fc.Command<Model, Real> {
 /** A press released where it landed: the quickest way to a double click. */
 class Tap implements fc.Command<Model, Real> {
   constructor(readonly press: Press, readonly release: Release) {}
-  check = (m: Readonly<Model>): boolean => this.press.check(m);
+  check = (): boolean => true;
   run(m: Model, r: Real): void {
     this.press.run(m, r);
     this.release.run(m, r);
