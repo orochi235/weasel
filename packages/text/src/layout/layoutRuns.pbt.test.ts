@@ -9,7 +9,7 @@ import { layoutRuns, type LaidOutRuns } from './layoutRuns';
 import { NO_BREAK, isHardLineBreak, lineBreakOpportunities } from './lineBreak/lineBreaks';
 import { RUN_PLAIN } from './testing/fontFixtures';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { cutInto, mixedText, registerPropertyFont, runs, tally, timeoutFor } from '../pbt.fixture';
+import { cutInto, mixedText, registerPropertyFont, runs, splitsPair, tally, timeoutFor } from '../pbt.fixture';
 
 const RUNS = 150;
 
@@ -66,9 +66,17 @@ describe('layoutRuns, property', () => {
         expect(l.srcEnd >= 0 && l.srcEnd <= text.length).toBe(true);
       }
       if (laid.lines.length > 1) t.count('lines');
+      let cut = 0;
+      for (const r of rs.slice(0, -1)) { cut += r.text.length; if (splitsPair(text, cut)) t.count('split pair'); }
     }), runs(RUNS));
     t.atLeast('lines', 30);
+    t.atLeast('split pair', 5);
   }, timeoutFor(RUNS, 20));
+
+  it('sets a surrogate pair two runs split as one character (shrunk counterexample)', () => {
+    const laid = lay([{ ...RUN_PLAIN('\ud800'), fontSize: 16 }, RUN_PLAIN('\udc00')], 20);
+    expect(laid.lines.flatMap((l) => l.cells).map((c) => [c.cp, c.srcIndex, c.srcEnd])).toEqual([[0x10000, 0, 2]]);
+  });
 
   it('keeps each line within the box unless it holds no break opportunity', () => {
     const t = tally();

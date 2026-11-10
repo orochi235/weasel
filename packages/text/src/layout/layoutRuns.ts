@@ -39,6 +39,7 @@ import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
 import { breakLines, placeLine, type LineOpts } from './layoutLines';
 import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import { rejoinSplitPairs } from '../runs/codePointCuts';
 import type { BidiResolver } from './bidiSeam';
 import type { ShapedCluster } from './shaperSeam';
 
@@ -211,13 +212,16 @@ function mirrorLine(
 }
 
 /**
- * Lay out `runs` into lines of placed glyphs. Wrapping, baselines and tracking
- * follow the rules in this file's module doc.
+ * Lay out `authored` into lines of placed glyphs. Wrapping, baselines and
+ * tracking follow the rules in this file's module doc. A surrogate pair two
+ * runs split is set as one character, in the style of the run holding its
+ * high surrogate.
  */
 export function layoutRuns(
-  runs: readonly ResolvedRun[],
+  authored: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
 ): LaidOutRuns {
+  const runs = rejoinSplitPairs(authored);
   const {
     maxWidth, alignWidth, lineHeight, align, justify, bidi, shaper, direction, tabSize,
   } = resolveLayoutOpts(opts, OPTS);

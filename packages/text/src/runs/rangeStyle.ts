@@ -4,7 +4,8 @@
  * Character offsets index the concatenated run text (`runsToPlainText`), and
  * a range is half-open: `[start, end)`. Ranges are clamped, never wrapped,
  * and a collapsed or inverted range (`start >= end`) is empty. Offsets are
- * UTF-16 code units, so a boundary can bisect a surrogate pair.
+ * UTF-16 code units, and an end that falls inside a surrogate pair widens to
+ * take the whole character; one between a letter and its mark does not.
  *
  * **Run-level flags are additive over the node's `TextStyle`: a run can
  * turn `bold` / `italic` / `underline` / `strikethrough` on, never off.**
@@ -23,6 +24,7 @@
 import { MIXED, deepEqual } from '@weasel-js/registry';
 import type { Mixed } from '@weasel-js/registry';
 import type { StyledRun } from '../runs';
+import { snapToCodePoints } from './codePointCuts';
 
 export { MIXED };
 export type { Mixed };
@@ -117,11 +119,10 @@ export function styleAtRange(
   start: number,
   end: number,
 ): RangeStyle {
-  const lo = Math.max(0, start);
-  const hi = end;
   // Negated `<` rather than `>=` so a non-numeric offset reads as empty
   // instead of matching every run.
-  if (!(lo < hi)) return {};
+  if (!(Math.max(0, start) < end)) return {};
+  const [lo, hi] = snapToCodePoints(runs, Math.max(0, start), end);
 
   const first = new Map<StyleKey, unknown>();
   const mixed = new Set<StyleKey>();
@@ -243,9 +244,8 @@ export function applyStyleToRange(
   end: number,
   patch: RunStylePatch,
 ): StyledRun[] {
-  const lo = Math.max(0, start);
-  const hi = Math.min(totalLength(runs), end);
-  if (!(lo < hi)) return coalesceRuns(runs);
+  if (!(Math.max(0, start) < Math.min(totalLength(runs), end))) return coalesceRuns(runs);
+  const [lo, hi] = snapToCodePoints(runs, Math.max(0, start), Math.min(totalLength(runs), end));
 
   const out: StyledRun[] = [];
   let pos = 0;

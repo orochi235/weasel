@@ -52,7 +52,7 @@ function inRangeOnBoundaries(): void {
     const at = caretIndexAt(x, y, p);
     expect(at >= 0 && at <= p.text.length, `${at} in ${JSON.stringify(p.text)}`).toBe(true);
     const { lines } = layoutTextPose(p).laid;
-    // A wrap can open a line between a space and a mark or ZWJ on it, which is open in docs/unruled.md.
+    // A wrap can open a line between a space and a mark or ZWJ on it, as UAX #14 allows (ruled 2026-11-10).
     const lineStarts = lines.map((l) => l.cells[0]?.srcIndex);
     expect(boundaries(p.text).has(at) || lineStarts.includes(at), `${at} splits a cluster of ${JSON.stringify(p.text)}`).toBe(true);
     const levels = lines.flatMap((l) => l.cells.map((c) => c.level));
