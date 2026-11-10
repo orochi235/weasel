@@ -11,6 +11,19 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 ## Input, tools, and gestures
 
+- Open (2026-11-10, property tests): whether the pointer recognizer clicks on a release past the
+  drag threshold from its press when no move crossed it first. It does now, since only a move spends the buffered
+  press; the model test releases where the last move left the pointer.
+- Open (2026-11-10, property tests): whether a press on a pointer the recognizer already holds cancels
+  the stale one first. It replaces it silently, dispatching no `pointercancel`; the pointer channel cancels the
+  stale session before pressing, so only a host feeding the recognizer directly meets it. The model test never
+  presses a held pointer.
+- Open (2026-11-10, property tests): whether `specificity` should rank a named channel at any phase
+  (`[rect:*]`) as no phase constraint. It matches every context, as `[*:*]` does, but ranks 1 where `[*:*]` ranks 0.
+  No route in the repo writes one.
+- Open (2026-11-10, property tests): whether `keySpecRoute` should give `null` for a spec with a `code`
+  or a `phase`, which the route it writes drops. It writes `[*:*]` and the key alone.
+
 - 2026-10-20 (overnight pass): The pointer recognizer measures the double-click window and the
   multitouch tap's hold from a sample's `timeStamp` (the pointer channel passes `e.timeStamp`),
   falling back to handling time when the stamp is missing, 0, or later than the clock (jsdom stamps
