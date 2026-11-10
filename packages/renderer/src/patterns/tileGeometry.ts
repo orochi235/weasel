@@ -115,8 +115,10 @@ function wraps(c: number, r: number, s: number): number[] {
 const overrun = (width: number): number => Math.max(1, width / 2);
 
 /** The forward (`/`) diagonal, plus the two corner stubs that make it tile
- *  seamlessly across the edges. */
+ *  seamlessly across the edges. None for a width that is not positive, which a
+ *  canvas ignores, stroking at the last width it was given. */
 function forwardDiagonals(s: number, width: number, color: string): TileShape[] {
+  if (!(width > 0)) return [];
   const e = overrun(width);
   return [
     { kind: 'line', x1: -e, y1: s + e, x2: s + e, y2: -e, width, color },
@@ -127,6 +129,7 @@ function forwardDiagonals(s: number, width: number, color: string): TileShape[] 
 
 /** The backward (`\`) diagonal and its two stubs. */
 function backwardDiagonals(s: number, width: number, color: string): TileShape[] {
+  if (!(width > 0)) return [];
   const e = overrun(width);
   return [
     { kind: 'line', x1: -e, y1: -e, x2: s + e, y2: s + e, width, color },
