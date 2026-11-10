@@ -369,6 +369,19 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-10-26/27 (agent batches 2–10): A run's `lang` reaches SVG (`xml:lang`), the edit overlay, and
   `textTransform`. A multi-cluster ligature's advance is split evenly, not by the face's caret list.
+- 2026-11-10 (property tests): The wrap breaks only at a UAX #14 opportunity, so a tab that a line may
+  break before (after a space or a zero-width space) opens the wrapped line when ink follows it with no
+  opportunity between (`\t!`), instead of the line breaking between the tab and the `!`.
+- Open (2026-11-10, property tests): UAX #14 lets a line break between a space and a combining mark or
+  ZWJ set on it, which one grapheme cluster holds, and the wrap takes it: the next line opens mid-cluster,
+  and a caret placed at its start answers an offset inside the cluster (`\n \u200d🇯🇵` at width 40).
+  Whether the wrap keeps such a cluster whole is unruled; the caret property accepts a line's start.
+- Open (2026-11-10, property tests): a surrogate pair split across two runs, which `applyStyleToRange`
+  allows since its offsets are UTF-16 units, lays out as two lone-surrogate cells rather than one
+  character (`🇫🇷` styled over its first unit). Whether a style range snaps to code points, or layout joins
+  the pair, is unruled; the layout properties cut runs only between code points. A combining mark opening
+  a run is the same question for case mapping: when the locale drops it (`tr`'s dot after `I`), the
+  paragraph falls back to mapping code point by code point.
 
 ## SVG and paths
 

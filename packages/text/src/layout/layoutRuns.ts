@@ -180,9 +180,10 @@ export interface LaidOutRuns {
   /** Per-line boxes in layout order: where the text actually sits inside its
    *  wrap box. */
   lines: LaidOutLineBox[];
-  /** The text's box. `width` is the widest line measured to its last
-   *  non-space cell — a trailing space hangs past the aligned edge, so a
-   *  block wrapped at `maxWidth` never reports wider than it. `height` is the
+  /** The text's box. `width` is the widest line measured to the farthest
+   *  its non-space cells reach — a trailing space hangs past the aligned edge,
+   *  so a block wrapped at `maxWidth` never reports wider than it, and a box
+   *  this wide wraps no line. `height` is the
    *  line boxes stacked. Not an ink box: a decoration rule, or a run shifted
    *  off the baseline, can fall outside it. */
   bounds: { width: number; height: number };
