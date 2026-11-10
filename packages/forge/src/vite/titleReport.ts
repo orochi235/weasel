@@ -15,7 +15,7 @@ export function titleReport(entries: readonly IndexEntry[], root = ''): { lines:
     files.set(entry.id, [...(files.get(entry.id) ?? []), under(entry.file)]);
   }
   const shared = [...files].filter(([, of]) => of.length > 1);
-  const width = Math.max(0, ...[...spaced.keys()].map((file) => file.length));
+  const width = [...spaced.keys()].reduce((most, file) => Math.max(most, file.length), 0);
   const lines = [
     ...[...spaced].map(([file, title]) => `${file.padEnd(width)}  '${title}'`),
     ...shared.map(([id, of]) => `${id}  declared by ${of.join(', ')}`),
