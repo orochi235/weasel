@@ -55,6 +55,8 @@ function footprintPoints(
  */
 export function createInsert(opts: {
   viewport: ViewportSource;
+  /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
+  viewId?: string | null;
   up?: Vec3;
   /** Smallest footprint a click-sized drag produces. Default 0.25. */
   minExtent?: number;
@@ -68,7 +70,7 @@ export function createInsert(opts: {
 
   return {
     commit(bounds, extras, ends, select) {
-      const vp = opts.viewport();
+      const vp = opts.viewport(opts.viewId);
       const hits = footprintPoints(bounds, ends, (p) => groundHit(vp, p, up));
       if (hits.length === 0) return null;
 
