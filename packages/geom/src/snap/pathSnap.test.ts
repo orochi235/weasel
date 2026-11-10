@@ -36,6 +36,16 @@ describe('findPathSnap', () => {
     expect(right?.y).toBeCloseTo(0, 6);
   });
 
+  it('finds the quadrant points of a closed outline of 200,000 segments', () => {
+    const n = 200_000;
+    let d = 'M10 0';
+    for (let i = 1; i < n; i++) d += ` L${10 * Math.cos((2 * Math.PI * i) / n)} ${10 * Math.sin((2 * Math.PI * i) / n)}`;
+    const ring = createPathSnapIndex([pathFromD(`${d} Z`)]);
+    const right = findPathSnap(ring, { x: 11, y: 0 }, { radius: 3, kinds: ['quadrant'] });
+    expect(right?.x).toBeCloseTo(10, 6);
+    expect(right?.y).toBeCloseTo(0, 6);
+  });
+
   it('finds the tangent point from the origin', () => {
     // From 20 below the center of a radius-10 circle, the tangent touches 60° off
     // the axis — to within how closely four cubics follow a circle.

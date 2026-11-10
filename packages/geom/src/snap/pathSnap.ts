@@ -12,6 +12,7 @@ import { intersectSegments } from '../intersect/segmentIntersections';
 import { pathSegments, type PathSegment } from '../intersect/pathSegments';
 import { perpendicularTsFrom, segmentExtremaT, segmentMidT, tangentTsFrom } from './segmentFeatures';
 import { createBvh, type Bvh } from '../bvh/bvh';
+import { maxOf, minOf } from '../scalar';
 
 /**
  * What a snap target is.
@@ -147,10 +148,15 @@ export function createPathSnapIndex(paths: readonly Path[], extra: readonly Path
 function quadrantPoints(segs: readonly PathSegment[]): Point[] {
   const out: Point[] = [];
   const subs = new Map<number, PathSegment[]>();
-  for (const s of segs) if (s.closed) subs.set(s.sub, [...(subs.get(s.sub) ?? []), s]);
+  for (const s of segs) {
+    if (!s.closed) continue;
+    const sub = subs.get(s.sub);
+    if (sub) sub.push(s);
+    else subs.set(s.sub, [s]);
+  }
   for (const sub of subs.values()) {
-    const x0 = Math.min(...sub.map((s) => s.box.x0)), x1 = Math.max(...sub.map((s) => s.box.x1));
-    const y0 = Math.min(...sub.map((s) => s.box.y0)), y1 = Math.max(...sub.map((s) => s.box.y1));
+    const x0 = minOf(sub, (s) => s.box.x0), x1 = maxOf(sub, (s) => s.box.x1);
+    const y0 = minOf(sub, (s) => s.box.y0), y1 = maxOf(sub, (s) => s.box.y1);
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
     const across: Seg[] = [[{ x: x0 - 1, y: cy }, { x: x1 + 1, y: cy }], [{ x: cx, y: y0 - 1 }, { x: cx, y: y1 + 1 }]];
     for (const line of across) {
