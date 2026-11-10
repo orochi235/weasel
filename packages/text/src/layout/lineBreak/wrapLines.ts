@@ -16,8 +16,10 @@ export interface WrappedLine {
   wrapped: boolean;
 }
 
-/** White space that hangs at a line's end and never opens a wrapped line: a
- *  space or a tab. */
+/** White space that hangs at a line's end: a space or a tab. A space never
+ *  opens a wrapped line; a tab does only where UAX #14 breaks before it (after
+ *  a space or a zero-width space) and ink follows it with no opportunity
+ *  between. */
 export const hangs = (cp: number): boolean => cp === 32 || cp === 9;
 
 /**
@@ -99,16 +101,14 @@ function wrapAt(
       start = i;
       continue;
     }
-    // A space here opens the text or follows a hard break: it never wraps.
-    if (hangs(cp)) { i++; continue; }
     let j = i + 1;
-    let ink = i + 1;
+    // A word of hanging white space alone has no ink to fit; a mark on a tab is ink.
+    let ink = hangs(cp) ? 0 : i + 1;
     while (j < n && !isHardLineBreak(cps[j]) && (!breaks || breaks[j] === NO_BREAK)) {
       if (!hangs(cps[j])) ink = j + 1;
       j++;
     }
-    // Past spaces opening a paragraph, `i` need not be an opportunity.
-    if (breaks && i > start && breaks[i] !== NO_BREAK && widthOf(start, ink) > fits) {
+    if (breaks && i > start && ink > 0 && widthOf(start, ink) > fits) {
       emit(start, i, true);
       start = i;
     }

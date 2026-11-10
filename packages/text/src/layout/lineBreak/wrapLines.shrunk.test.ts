@@ -15,8 +15,19 @@ describe('wrapLines, shrunk counterexamples', () => {
     ]);
   });
 
-  it('keeps a tab that follows a zero-width space on its line, with what no line may start with after it', () => {
-    expect(wrapLines(cps('\u200b\t!'), 1, tens)).toEqual([{ start: 0, end: 3, wrapped: false }]);
+  it('wraps before a tab after a zero-width space when what follows the tab is ink', () => {
+    // The opportunity is before the tab: none falls between it and the `!`.
+    expect(wrapLines(cps('\u200b\t!'), 1, tens)).toEqual([
+      { start: 0, end: 1, wrapped: true },
+      { start: 1, end: 3, wrapped: false },
+    ]);
+  });
+
+  it('wraps before a tab carrying a mark, which is ink and does not hang', () => {
+    expect(wrapLines(cps('A A  \t\u0301'), 10, (s, e) => cps('A A  \t\u0301').slice(s, e).reduce((w, c) => w + (c === 32 || c === 9 ? 8 : 1), 0))).toEqual([
+      { start: 0, end: 5, wrapped: true },
+      { start: 5, end: 7, wrapped: false },
+    ]);
   });
 
   it('still wraps after opening spaces where a line may break', () => {

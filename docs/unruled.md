@@ -369,6 +369,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-10-26/27 (agent batches 2–10): A run's `lang` reaches SVG (`xml:lang`), the edit overlay, and
   `textTransform`. A multi-cluster ligature's advance is split evenly, not by the face's caret list.
+- 2026-11-10 (property tests): The wrap breaks only at a UAX #14 opportunity, so a tab that a line may
+  break before (after a space or a zero-width space) opens the wrapped line when ink follows it with no
+  opportunity between (`\t!`), instead of the line breaking between the tab and the `!`.
 - Open (2026-11-10, property tests): a surrogate pair split across two runs, which `applyStyleToRange`
   allows since its offsets are UTF-16 units, lays out as two lone-surrogate cells rather than one
   character (`🇫🇷` styled over its first unit). Whether a style range snaps to code points, or layout joins
