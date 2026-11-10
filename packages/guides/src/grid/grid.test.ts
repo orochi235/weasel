@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { roundToCell } from '.';
+import { outlineBox } from './lattice';
 
 describe('roundToCell', () => {
   it('snaps to nearest grid cell', () => {
@@ -17,5 +18,12 @@ describe('roundToCell', () => {
     expect(roundToCell(0, 1)).toBe(0);
     expect(roundToCell(-0.3, 1)).toBe(0);
     expect(roundToCell(-0.7, 1)).toBe(-1);
+  });
+});
+
+describe('outlineBox', () => {
+  it('boxes an outline of a million points without overflowing the call stack', () => {
+    const outline = Array.from({ length: 1_000_000 }, (_, i) => ({ x: i % 1000, y: -(i % 7) }));
+    expect(outlineBox(outline)).toEqual({ x: 0, y: -6, width: 999, height: 6 });
   });
 });
