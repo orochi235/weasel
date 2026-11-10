@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrefGroup } from './groups';
 import { admits, leaf, runs, sameValue, stored, tally, timeoutFor, valueOf } from './pbt.fixture';
 import type { PrefLeaf } from './schema';
+import { isStampedRecord } from './stamp';
 import { createPrefsStore } from './store';
 
 const schemaOf = (l: PrefLeaf, m: PrefLeaf): PrefGroup => ({ name: 'S', children: { g: { name: 'G', children: { l } }, m } });
@@ -54,6 +55,8 @@ describe('a store, properties', () => {
     const t = tally();
     fc.assert(
       fc.property(leaf(), stored, (l, s) => {
+        // A bare record shaped like a stamp is read as one: a build from before stamps wrote no such value.
+        if (isStampedRecord(s)) return;
         const schema = schemaOf(l, l);
         const { cache, store } = open(schema, [['g.l', s], ['m', { $at: 1, value: s }]]);
         const read = store.get('g.l' as never);
