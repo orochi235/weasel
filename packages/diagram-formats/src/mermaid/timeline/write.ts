@@ -8,6 +8,9 @@ function timelineText(s: string, warnings: Warnings): string {
   return s.replace(/\s*[\r\n]+\s*/g, ' ').replace(/#/g, '#35;').replace(/:/g, '#58;');
 }
 
+/** The label a period with none is written with, since a line with no label adds events to the period above. */
+const UNTITLED = '(untitled)';
+
 /** A period's label as it opens a line: its first character spelled out where the line would otherwise read as a
  *  title, a section, a comment, or accessibility text. */
 const periodLabel = (label: string): string =>
@@ -31,13 +34,13 @@ export function writeMermaidTimeline(page: PlotPage): ExportResult {
     }
     const indent = named ? '    ' : '  ';
     for (const period of section.periods) {
-      if (period.label.trim() === '') {
-        warnings.add('Mermaid reads a line with no period as more events for the period above it; periods with no label were dropped.');
-        continue;
+      const blank = period.label.trim() === '';
+      if (blank) {
+        warnings.add(`Mermaid reads a line with no period as more events for the period above it; periods with no label were labeled "${UNTITLED}".`);
       }
       const events = period.events.filter((e) => e.trim() !== '');
       if (events.length < period.events.length) warnings.add('Mermaid holds no empty events; they were dropped.');
-      lines.push(`${indent}${[periodLabel(text(period.label).trim()), ...events.map(text)].join(' : ')}`);
+      lines.push(`${indent}${[blank ? UNTITLED : periodLabel(text(period.label).trim()), ...events.map(text)].join(' : ')}`);
     }
   });
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

@@ -50,15 +50,17 @@ describe('Mermaid charts, property', () => {
     }), RUNS);
   }, TIMEOUT);
 
-  it('reads back a timeline\'s title, sections, periods, and events', () => {
+  it('reads back a timeline\'s title, sections, periods, and events, a period with no label as "(untitled)"', () => {
+    const tally = { untitled: 0 };
     fc.assert(fc.property(timeline, (data) => {
+      tally.untitled += data.sections.flatMap((s) => s.periods).filter((q) => q.label.trim() === '').length;
       const p = back(data) as TimelineData;
       expect([p.title, p.sections.map((s) => [s.name, s.periods.map((q) => [q.label, q.events])])]).toEqual([
         trimmed(data.title),
-        // A period with no label is dropped, since a line with none adds events to the period above it.
-        data.sections.map((s) => [(s.name ?? '').trim(), s.periods.filter((q) => q.label.trim() !== '').map((q) => [q.label.trim(), q.events.map((e) => e.trim())])]),
+        data.sections.map((s) => [(s.name ?? '').trim(), s.periods.map((q) => [q.label.trim() === '' ? '(untitled)' : q.label.trim(), q.events.map((e) => e.trim())])]),
       ]);
     }), RUNS);
+    expect(tally.untitled).toBeGreaterThan(0);
   }, TIMEOUT);
 
   it('writes what it read as it was written, for every chart', () => {
