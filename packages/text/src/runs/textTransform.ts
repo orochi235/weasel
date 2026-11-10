@@ -17,7 +17,9 @@ export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
  * Where each UTF-16 unit of a transformed run's text came from in its source,
  * as run-relative offsets. `starts[i]` / `ends[i]` bound the source code point
  * that produced output unit `i`, so the two units `ß` uppercases to share one
- * span. `length` is the source run's own length.
+ * span. A code point the mapping drops joins the span before it: under `tr`,
+ * the `i` that `I` and a combining dot lowercase to spans both. `length` is
+ * the source run's own length.
  */
 export interface RunSourceMap {
   length: number;
@@ -89,14 +91,44 @@ function wordStarts(text: string): Set<number> {
   return out;
 }
 
-/** Whether mapping `full` per code point, run by run, produces exactly the
- *  units `whole` does — true unless a mapping spans a run boundary. */
-function alignsPerCodePoint(
-  texts: readonly string[], whole: string, map: (ch: string) => string,
-): boolean {
+/**
+ * `whole`, the paragraph `texts` mapped by `map` as one string, cut into the
+ * piece each code point produced, in order. A contextual mapping can change a
+ * code point's length (final sigma keeps it, but `tr` drops the dot after an
+ * `I` and `el` an uppercased accent), so where the code points mapped alone
+ * miss `whole`'s length each one's share is read off the mapped prefixes.
+ * Null when a dropped code point opens a run, which has no piece before it
+ * to join.
+ */
+function piecesOf(texts: readonly string[], whole: string, map: (s: string) => string): string[] | null {
+  const out: string[] = [];
   let n = 0;
   for (const t of texts) for (const ch of t) n += map(ch).length;
-  return n === whole.length;
+  let at = 0;
+  if (n === whole.length) {
+    for (const t of texts) {
+      for (const ch of t) {
+        const len = map(ch).length;
+        out.push(whole.slice(at, at + len));
+        at += len;
+      }
+    }
+    return out;
+  }
+  const full = texts.join('');
+  let prefix = 0;
+  for (const t of texts) {
+    let opening = true;
+    for (const ch of t) {
+      prefix += ch.length;
+      const upto = map(full.slice(0, prefix)).length;
+      if (upto < at || (upto === at && opening)) return null;
+      out.push(whole.slice(at, upto));
+      at = upto;
+      opening = false;
+    }
+  }
+  return at === whole.length ? out : null;
 }
 
 /**
@@ -127,16 +159,16 @@ export function transformRunTexts(
   const full = texts.join('');
   // Lowercasing is contextual (final sigma), so the per-code-point pieces are
   // read out of the whole paragraph's mapping wherever the two align.
-  const wholeUpper = transforms.includes('uppercase') ? full.toLocaleUpperCase(shared) : '';
-  const wholeLower = transforms.includes('lowercase') ? full.toLocaleLowerCase(shared) : '';
-  const upperAligned = wholeUpper !== '' && alignsPerCodePoint(texts, wholeUpper, upper);
-  const lowerAligned = wholeLower !== '' && alignsPerCodePoint(texts, wholeLower, lower);
+  const upperPieces = transforms.includes('uppercase')
+    ? piecesOf(texts, full.toLocaleUpperCase(shared), (ch) => upper(ch)) : null;
+  const lowerPieces = transforms.includes('lowercase')
+    ? piecesOf(texts, full.toLocaleLowerCase(shared), (ch) => lower(ch)) : null;
   const starts = transforms.includes('capitalize') ? wordStarts(full) : null;
 
   const out: TransformedRunText[] = [];
   let base = 0;
-  let upOff = 0;
-  let lowOff = 0;
+  /** Index of the code point under way in the whole paragraph. */
+  let cp = 0;
   for (let i = 0; i < texts.length; i++) {
     const source = texts[i];
     const t = transforms[i] ?? 'none';
@@ -147,24 +179,28 @@ export function transformRunTexts(
     const srcEnds: number[] = [];
     let resized = false;
     let local = 0;
+    /** Units the last code point that drew anything produced. */
+    let last = 0;
     for (const ch of source) {
-      const up = upper(ch);
-      const lo = lower(ch);
       let piece = ch;
       if (t === 'uppercase') {
-        piece = upperAligned && own ? wholeUpper.slice(upOff, upOff + up.length) : upper(ch, locale);
+        piece = upperPieces && own ? upperPieces[cp] : upper(ch, locale);
       } else if (t === 'lowercase') {
-        piece = lowerAligned && own ? wholeLower.slice(lowOff, lowOff + lo.length) : lower(ch, locale);
+        piece = lowerPieces && own ? lowerPieces[cp] : lower(ch, locale);
       } else if (t === 'capitalize' && starts!.has(base + local) && upper(ch, locale) !== ch) {
         piece = titlecase(ch, locale);
       }
-      upOff += up.length;
-      lowOff += lo.length;
+      cp++;
       if (piece.length !== ch.length) resized = true;
       text += piece;
-      for (let k = 0; k < piece.length; k++) {
-        srcStarts.push(local);
-        srcEnds.push(local + ch.length);
+      if (piece.length === 0) {
+        for (let k = srcEnds.length - last; k < srcEnds.length; k++) srcEnds[k] = local + ch.length;
+      } else {
+        for (let k = 0; k < piece.length; k++) {
+          srcStarts.push(local);
+          srcEnds.push(local + ch.length);
+        }
+        last = piece.length;
       }
       local += ch.length;
     }
