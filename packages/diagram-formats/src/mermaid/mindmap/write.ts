@@ -2,8 +2,8 @@
 import type { DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { graphOut, nodeLines } from '../../graphWrite';
-import { titleLines } from '../common/lines';
-import { mermaidEscaped } from '../common/text';
+import { readsAsStatement, titleLines } from '../common/lines';
+import { mermaidEscaped, mermaidIds } from '../common/text';
 import { mindmapIds } from './read';
 
 const BRACKETS: Readonly<Record<string, readonly [string, string]>> = {
@@ -37,14 +37,17 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
   if (roots[0] !== undefined) visit(roots[0].id, 0);
   if (seen.size < page.data.nodes.length) warnings.add('Mermaid mind maps hold one tree; shapes outside the first root\'s were dropped.');
   const generated = mindmapIds(order.map(() => ({})));
+  const ids = mermaidIds(order.map(({ node }) => node.id));
   const lines = [...titleLines(page.name), 'mindmap'];
   order.forEach(({ node, depth }, k) => {
-    const text = mermaidEscaped(nodeLines(node, warnings, 'Mermaid'));
+    // Trimmed as the reader trims them, before escaping, so a trim cannot make a markdown string of the text.
+    const text = mermaidEscaped(nodeLines(node, warnings, 'Mermaid').map((l) => l.trim()), { also: /[()[\]{}]/g });
     const outline = typeof node.outline === 'string' ? node.outline : undefined;
     const brackets = outline === undefined ? undefined : BRACKETS[outline];
     if (node.outline !== undefined && brackets === undefined) warnings.add('Mermaid mind maps have five shapes; others were written plain.');
-    const id = node.id === generated[k] ? '' : node.id;
-    const plain = text.replace(/[()[\]{}]/g, (c) => `#${c.charCodeAt(0)};`);
+    const own = /^[\w-]+$/.test(node.id) ? node.id : ids.get(node.id)!;
+    const id = own === generated[k] ? '' : own;
+    const plain = readsAsStatement(text) && !text.startsWith(':::') ? text : `"${text}"`;
     lines.push(`${'  '.repeat(depth + 1)}${brackets === undefined ? plain : `${id}${brackets[0]}${text}${brackets[1]}`}`);
   });
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

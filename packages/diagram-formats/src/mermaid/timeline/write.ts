@@ -2,11 +2,16 @@
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 
-/** `s` on one line, the colon Mermaid splits on written as `#58;`. */
+/** `s` on one line, the colon Mermaid splits on written as `#58;` and a `#` as `#35;`. */
 function timelineText(s: string, warnings: Warnings): string {
   if (/[\r\n]/.test(s)) warnings.add('Mermaid timeline text holds one line; line breaks were written as spaces.');
-  return s.replace(/\s*[\r\n]+\s*/g, ' ').replace(/:/g, '#58;');
+  return s.replace(/\s*[\r\n]+\s*/g, ' ').replace(/#/g, '#35;').replace(/:/g, '#58;');
 }
+
+/** A period's label as it opens a line: its first character spelled out where the line would otherwise read as a
+ *  title, a section, a comment, or accessibility text. */
+const periodLabel = (label: string): string =>
+  (/^(?:title|section)(?:\s|$)|^%%|^acc(?:Title|Descr)\s*[:{]/.test(label) ? `#${label.codePointAt(0)};${label.slice(1)}` : label);
 
 /** Writes `page`'s timeline as Mermaid. Throws on a page holding another kind of chart. */
 export function writeMermaidTimeline(page: PlotPage): ExportResult {
@@ -26,9 +31,13 @@ export function writeMermaidTimeline(page: PlotPage): ExportResult {
     }
     const indent = named ? '    ' : '  ';
     for (const period of section.periods) {
+      if (period.label.trim() === '') {
+        warnings.add('Mermaid reads a line with no period as more events for the period above it; periods with no label were dropped.');
+        continue;
+      }
       const events = period.events.filter((e) => e.trim() !== '');
       if (events.length < period.events.length) warnings.add('Mermaid holds no empty events; they were dropped.');
-      lines.push(`${indent}${[text(period.label), ...events.map(text)].join(' : ')}`);
+      lines.push(`${indent}${[periodLabel(text(period.label).trim()), ...events.map(text)].join(' : ')}`);
     }
   });
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

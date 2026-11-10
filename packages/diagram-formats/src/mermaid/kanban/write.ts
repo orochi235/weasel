@@ -11,7 +11,7 @@ const GENERATED = /^(?:column|card)-\d+$/;
 const metaValue = (v: string): string => (v.includes("'") ? `"${v.replace(/"/g, "'")}"` : `'${v}'`);
 
 /** Text in a column's or card's brackets: one line, a closing bracket written as a reference. */
-const bracketed = (text: string): string => `[${mermaidEscaped([text]).replace(/\]/g, '#93;')}]`;
+const bracketed = (text: string): string => `[${mermaidEscaped([text], { also: /\]/g })}]`;
 
 class KanbanWriter {
   readonly lines: string[] = [];

@@ -79,6 +79,13 @@ export function statementsOf(text: string): MermaidSource {
   };
 }
 
+/** Whether `text`, written as a line of its own, reads back as a statement rather than as a blank line, a comment, a
+ *  directive, or an accessible title or description, which {@link statementsOf} reads off first. */
+export function readsAsStatement(text: string): boolean {
+  const t = text.trim();
+  return t !== '' && !t.startsWith('%%') && !/^acc(?:Title|Descr)\s*[:{]/.test(t);
+}
+
 /** The page name `src` gives: its title, else its accessible title. Warns of what a page does not hold. */
 export function pageNameOf(src: MermaidSource, warnings: Warnings): string | undefined {
   if (src.directives > 0) warnings.add('Mermaid configuration directives were dropped.');

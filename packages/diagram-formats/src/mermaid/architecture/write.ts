@@ -3,15 +3,15 @@ import type { DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { mermaidIds } from '../common/text';
+import { mermaidEscaped, mermaidIds } from '../common/text';
 import type { ArchSide } from './parse';
 import { ICON_OUTLINES, SIDE_PORTS } from './read';
 
 const OUTLINE_ICONS = new Map(Object.entries(ICON_OUTLINES).map(([icon, outline]) => [outline, icon]));
 const PORT_SIDES = new Map(Object.entries(SIDE_PORTS).map(([side, port]) => [port, side as ArchSide]));
 
-/** A title as Mermaid's brackets hold it: one line, no closing bracket. */
-const title = (lines: readonly string[]): string => lines.join(' ').replace(/\]/g, ')');
+/** A title as Mermaid's brackets hold it: one line, escaped, its closing brackets spelled as entities. */
+const title = (lines: readonly string[]): string => mermaidEscaped([lines.join(' ')], { also: /\]/g });
 
 class ArchWriter {
   readonly lines: string[] = [];

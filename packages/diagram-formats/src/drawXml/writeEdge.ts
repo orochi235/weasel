@@ -3,6 +3,7 @@ import type { Vec2 } from '@weasel-js/core/math';
 import {
   DEFAULT_PORTS, edgeIdOf, endLabelIdOf, type DataEdge, type DataNode, type DiagramLabel, type DiagramTheme,
 } from '@weasel-js/diagram';
+import { freshId } from '@weasel-js/registry';
 import type { Box } from './pageCells';
 import type { Warn } from './readStyle';
 import { writeStyle, type StylePart } from './style';
@@ -16,6 +17,8 @@ export interface EdgePage {
   nodes: ReadonlyMap<string, DataNode>;
   /** The box of every shape, region, lane, and group, by id. */
   boxes: ReadonlyMap<string, Box>;
+  /** The cell ids already written. An edge takes its own id, numbered on when another cell has it. */
+  taken: Set<string>;
   warn: Warn;
 }
 
@@ -70,7 +73,8 @@ export function writeEdge(edge: DataEdge, page: EdgePage): string | null {
     ...portParts(page, edge.to, edge.toPort ?? edge.routedPorts?.to, 'entry'),
   ]);
   const label = labelGeometry(edge.labelPlacement, [center(from), ...points, center(to)]);
-  const id = edge.id ?? edgeIdOf(edge);
+  const id = freshId(edgeIdOf(edge), page.taken, { from: 2, bare: true });
+  page.taken.add(id);
   const ends = (['from', 'to'] as const).filter((end) => edge.endLabels?.[end])
     .map((end) => endLabelXml({ id: endLabelIdOf(id, end), value: edge.endLabels![end]!, parent: id }, end === 'from' ? -1 : 1));
   return edgeXml({ id, value: edge.label ?? '', style, parent: page.layer, source: edge.from, target: edge.to }, label, points)

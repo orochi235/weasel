@@ -3,9 +3,10 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type GraphOut } from '../../graphWrite';
-import { titleLines } from '../common/lines';
+import { readsAsStatement, titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
 import { mermaidEscaped, mermaidIds } from '../common/text';
+import { ATTRIBUTE } from './parse';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
 
@@ -14,13 +15,19 @@ const ENDS: Readonly<Record<string, readonly [string, string]>> = {
   'crow-zero-one': ['|o', 'o|'], 'crow-one': ['||', '||'], 'crow-zero-many': ['}o', 'o{'], 'crow-one-many': ['}|', '|{'], 'crow-many': ['}|', '|{'],
 };
 
-/** An entity's name and attribute lines. A row past the name with no field is written as it reads. */
-function entityParts(node: DataNode): { name: string; attributes: string[] } {
+/** An entity's name and attribute lines. A row past the name with no field is written as it reads, and dropped, with a
+ *  warning, when it would not read as an attribute. */
+function entityParts(out: GraphOut, node: DataNode): { name: string; attributes: string[] } {
   const rows: readonly Row[] = node.rows ?? (node.lines ?? []).map((text) => ({ kind: 'label', text }));
   const text = rows.filter((r) => r.kind === 'label' || r.kind === 'field');
   const [first, ...rest] = text;
   const name = first === undefined ? node.id : first.kind === 'label' ? first.text : `${first.label} ${first.value}`;
-  return { name, attributes: rest.map((r) => (r.kind === 'field' ? `${r.label} ${r.value}` : (r as { text: string }).text)) };
+  const lines = rest.map((r) => (r.kind === 'field' ? `${r.label} ${r.value}` : (r as { text: string }).text).trim());
+  const attributes = lines.filter((l) => ATTRIBUTE.test(l) && readsAsStatement(l));
+  if (attributes.length < lines.length) {
+    out.warnings.add('Mermaid ER attributes are a type, a name, keys, and a quoted comment; rows that are not were dropped.');
+  }
+  return { name, attributes };
 }
 
 function end(out: GraphOut, marker: MarkerRef | null | undefined, side: 0 | 1): string {
@@ -40,7 +47,7 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
   const lines = [...titleLines(page.name), 'erDiagram'];
   if (page.direction !== undefined && page.direction !== 'down') lines.push(`  direction ${HEADER[page.direction]}`);
   for (const n of page.data.nodes) {
-    const { name, attributes } = entityParts(n);
+    const { name, attributes } = entityParts(out, n);
     const head = name === n.id ? ids.get(n.id)! : `${ids.get(n.id)!}["${mermaidEscaped([name])}"]`;
     if (attributes.length === 0) lines.push(`  ${head}`);
     else lines.push(`  ${head} {`, ...attributes.map((a) => `    ${a}`), '  }');

@@ -34,9 +34,11 @@ export function labelLines(label: DotValue, self: string, graph: string, edge?: 
   return lines.length === 1 && lines[0] === '' ? [] : lines;
 }
 
-/** `text` as a quoted DOT string: backslashes and quotes escaped, line breaks as `\n`. */
+/** `text` as a quoted DOT string: backslashes and quotes escaped, line breaks as `\n`, and a last line left empty
+ *  closed by one more, since {@link labelLines} reads a final `\n` as ending the line before it. */
 export function quoteLabel(lines: readonly string[]): string {
-  return `"${lines.map((l) => l.replace(/\\/g, '\\\\').replace(/"/g, '\\"')).join('\\n')}"`;
+  const close = lines.length > 1 && lines.at(-1) === '' ? '\\n' : '';
+  return `"${lines.map((l) => l.replace(/\\/g, '\\\\').replace(/"/g, '\\"')).join('\\n')}${close}"`;
 }
 
 function hsvHex(h: number, s: number, v: number): string {

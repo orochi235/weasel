@@ -132,7 +132,7 @@ export function writePage(page: GraphPage, index: number, theme: DiagramTheme, w
     }
   };
   emit(undefined, layer, { x: 0, y: 0 });
-  const edgePage = { theme, layer, nodes, boxes, warn };
+  const edgePage = { theme, layer, nodes, boxes, taken: new Set([...ids, root, layer]), warn };
   for (const edge of data.edges) cells += writeEdge(edge, edgePage) ?? '';
 
   const model = attrs([
