@@ -10,9 +10,10 @@ import { cycleVertexColors } from './colorCycle';
 import { staggerVertexColors } from './colorHelpers';
 import type { ColorOverrideFn } from './colorRegistry';
 import { resolveInterpolator } from './colorInterpolate';
-import { clocked, rgbaArray, runs, tally, unit } from './pbt.fixture';
+import { clocked, rgbaArray, runs, tally, timeoutFor, unit } from './pbt.fixture';
 
-const RUNS = runs(300);
+const N = 300;
+const RUNS = runs(N);
 
 const anchors = fc.integer({ min: 1, max: 6 });
 const pair = anchors.chain((n) => fc.tuple(rgbaArray(n), rgbaArray(n)));
@@ -56,7 +57,7 @@ describe('rainbowVertexColors and solidVertexColors, property', () => {
         }
       }
     }), RUNS);
-  });
+  }, timeoutFor(N, 5));
 });
 
 /** The override a cycle installs. */
@@ -136,5 +137,5 @@ describe('staggerVertexColors, property', () => {
         expect(h.animator.colorOverrides.get('a', 'fill')).toBeUndefined();
       }), RUNS);
     t.atLeast('frame', 100);
-  });
+  }, timeoutFor(N, 12));
 });

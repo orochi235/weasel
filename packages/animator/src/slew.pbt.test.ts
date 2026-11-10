@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createSlew, slewToward, type SlewRates } from './slew';
-import { moderate, runs, tally } from './pbt.fixture';
+import { moderate, runs, tally, timeoutFor } from './pbt.fixture';
 
-const RUNS = runs(500);
+const N = 500;
+const RUNS = runs(N);
 
 const rate = fc.oneof(fc.double({ min: 0, max: 1e4, noNaN: true }), fc.constantFrom(0, 1, Infinity), fc.constant(undefined));
 const rates: fc.Arbitrary<SlewRates> = fc.record({ rise: rate, fall: rate }, { requiredKeys: [] });
@@ -28,7 +29,7 @@ describe('slewToward, property', () => {
     }), RUNS);
     t.atLeast('reached', 10);
     t.atLeast('short', 10);
-  });
+  }, timeoutFor(N, 2));
 
   it('is mirrored by negation with rise and fall swapped', () => {
     fc.assert(fc.property(moderate(), moderate(), dt, rates, (value, target, step, r) => {
@@ -36,7 +37,7 @@ describe('slewToward, property', () => {
       const b = slewToward(-value, -target, step, { rise: r.fall, fall: r.rise });
       expect(b + 0).toBe(-a + 0);
     }), RUNS);
-  });
+  }, timeoutFor(N, 2));
 
   it('commutes with a shift of value and target together', () => {
     fc.assert(fc.property(fc.integer({ min: -1000, max: 1000 }), fc.integer({ min: -1000, max: 1000 }),
@@ -45,7 +46,7 @@ describe('slewToward, property', () => {
         const at = slewToward(value, target, step / 4, { rise: r, fall: r });
         expect(slewToward(value + shift, target + shift, step / 4, { rise: r, fall: r })).toBe(at + shift);
       }), RUNS);
-  });
+  }, timeoutFor(N, 2));
 });
 
 describe('createSlew, property', () => {
@@ -68,7 +69,7 @@ describe('createSlew, property', () => {
         if (need > 1) t.count('several steps');
       }), RUNS);
     t.atLeast('several steps', 10);
-  });
+  }, timeoutFor(N, 2));
 
   it('takes one long step as it takes the same time in short ones, short of the target', () => {
     fc.assert(fc.property(fc.integer({ min: -1000, max: 1000 }), fc.integer({ min: 1, max: 20 }), fc.integer({ min: 1, max: 8 }),
@@ -79,5 +80,5 @@ describe('createSlew, property', () => {
         for (let i = 0; i < parts; i++) many.step(1);
         expect(many.value).toBe(one.value);
       }), RUNS);
-  });
+  }, timeoutFor(N, 2));
 });

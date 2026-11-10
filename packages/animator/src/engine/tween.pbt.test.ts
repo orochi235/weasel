@@ -39,7 +39,7 @@ describe('animator.tween, property', () => {
       expect(done).toBe(1);
     }), runs(RUNS));
     t.atLeast('midway', 50);
-  });
+  }, timeoutFor(RUNS, 5));
 
   it('runs at the product of its own and the animator time scale', () => {
     const scale = fc.constantFrom(0.25, 0.5, 1, 2, 4);
@@ -55,7 +55,7 @@ describe('animator.tween, property', () => {
         expect(last).toBeCloseTo(lerp(from, to, (at * own * global) / ms), 6);
       }
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 5));
 
   it('retraces its values played backward on a followed clock', () => {
     const t = tally();
@@ -76,7 +76,7 @@ describe('animator.tween, property', () => {
         }
       }), runs(RUNS));
     t.atLeast('backward', 30);
-  });
+  }, timeoutFor(RUNS, 5));
 });
 
 interface Start { at: number; to: number; ms: number }
@@ -132,7 +132,7 @@ describe('tweens on one target, property', () => {
       h.at(when + 1000);
       expect(target.read()).toBeCloseTo(shown, 9);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 5));
 });
 
 describe('animator.spring on a target, property', () => {
@@ -191,7 +191,7 @@ describe('animator.stagger, property', () => {
         if (delays.filter((d) => d > 0).length > 1) t.count('waited');
       }), runs(RUNS));
     t.atLeast('waited', 30);
-  });
+  }, timeoutFor(RUNS, 5));
 });
 
 describe('animator.tweenLoop, property', () => {
@@ -209,5 +209,5 @@ describe('animator.tweenLoop, property', () => {
         const flipped = direction === 'reverse' || (direction === 'alternate' && (count - 1) % 2 === 1);
         expect(last).toBe(flipped ? from : to);
       }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 5));
 });
