@@ -152,6 +152,16 @@ function fitProblems(fixture: Fixture, viewport: keyof typeof VIEWPORTS): string
     problems.push(
       `menu bar ${bar.top}–${bar.bottom} outside header ${header.top}–${header.bottom}`,
     );
+  // One bar: the title, the menus and the controls share a row, and none of them is clipped.
+  const title = document.querySelector('.lk-shell-title')?.getBoundingClientRect();
+  if (!title) return [...problems, 'no title'];
+  for (const child of document.querySelector('.lk-shell-header')?.children ?? []) {
+    const box = child.getBoundingClientRect();
+    if (box.top >= title.bottom || box.bottom <= title.top)
+      problems.push(`${child.className} ${box.top}–${box.bottom} off the title's row`);
+    if (box.right > header.right + 1)
+      problems.push(`${child.className} ends at ${box.right}, past the header's ${header.right}`);
+  }
 
   if (fixture === 'framed') {
     const frame = document.querySelector('.lk-fit-frame');

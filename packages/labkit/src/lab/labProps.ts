@@ -90,8 +90,10 @@ export interface LabBaseProps {
   /** Menus added to the lab's menu bar, between its built-in Lab and View. A menu keyed `lab`
    *  or `view` adds its rows to that built-in menu instead. Memoize or hoist. */
   menus?: LabMenus;
-  /** Draw the lab's menu bar above its header. Default `true`. Dropped with the header
-   *  (`header={false}`) and while presenting. */
+  /** Draw the lab's menus in its header, between the title and the controls. Default `true`.
+   *  In a header too narrow for every control, those the menus also hold (add trial, zoom and
+   *  the theme switch) give way to them. Dropped with the header (`header={false}`) and while
+   *  presenting. */
   menuBar?: boolean;
   /** Whether marks show at first, in a lab with an instrument declaring
    *  `annotations`: its targets' overlays, each trial's Marks section and
