@@ -46,8 +46,8 @@ const { tracks } = fc.letrec<{ tracks: ClipTrack[]; track: ClipTrack }>((tie) =>
   track: fc.oneof({ depthSize: 'small', withCrossShrink: true }, onTarget, offTarget, events,
     fc.record({ kind: fc.constant('timeline' as const), label, at: t, timeline: fc.record({ tracks: tie('tracks'), duration: opt(t) }, { requiredKeys: ['tracks'] }) },
       { requiredKeys: ['kind', 'at', 'timeline'] }) as fc.Arbitrary<ClipTrack>),
-  tracks: fc.array(tie('track') as fc.Arbitrary<ClipTrack>, { maxLength: 3 }) as unknown as fc.Arbitrary<ClipTrack>,
-})) as unknown as { tracks: fc.Arbitrary<ClipTrack[]> };
+  tracks: fc.array(tie('track'), { maxLength: 3 }),
+}));
 
 const clip: fc.Arbitrary<Clip> = fc.record({ version: fc.constant(1 as const), tracks, duration: opt(t) }, { requiredKeys: ['version', 'tracks'] });
 

@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
+import type { SpringPresetName } from '@weasel-js/geom';
 import { createTarget } from '../target';
 import { clocked, runs, tally, timeoutFor } from '../pbt.fixture';
 
@@ -136,7 +137,7 @@ describe('tweens on one target, property', () => {
 
 describe('animator.spring on a target, property', () => {
   it('comes to rest exactly on `to`', () => {
-    fc.assert(fc.property(value, value, fc.constantFrom('default', 'gentle', 'wobbly', 'stiff', 'slow') as fc.Arbitrary<'default'>, fc.integer({ min: 4, max: 40 }),
+    fc.assert(fc.property(value, value, fc.constantFrom<SpringPresetName | undefined>(undefined, 'gentle', 'wobbly', 'stiff', 'slow'), fc.integer({ min: 4, max: 40 }),
       (initial, to, preset, step) => {
         const h = clocked();
         let committed = initial;
@@ -166,10 +167,10 @@ describe('animator.stagger, property', () => {
         let finished = 0;
         let now = 0;
         h.at(0);
-        const handle = h.animator.stagger(delays, (i) => delays[i]!, (_d, i) => {
+        h.animator.stagger(delays, (i) => delays[i]!, (_d, i) => {
           started.push({ i, at: now });
           return h.animator.tween({ from: 0, to: 1, ms, onTick: () => {}, onDone: () => { finished++; } });
-        });
+        }, { cancelKey: 'wave' });
         while (now < 2000 && finished < delays.length) {
           now += step;
           h.at(now);
@@ -186,7 +187,7 @@ describe('animator.stagger, property', () => {
         const order = [...started].sort((a, b) => a.at - b.at || 0);
         for (let k = 1; k < order.length; k++) expect(Math.max(0, delays[order[k - 1]!.i]!)).toBeLessThanOrEqual(Math.max(0, delays[order[k]!.i]!) + step);
         h.at(now + ms + step);
-        expect(h.animator.isActive(handle)).toBe(false);
+        expect(h.animator.isActive('wave')).toBe(false);
         if (delays.filter((d) => d > 0).length > 1) t.count('waited');
       }), runs(RUNS));
     t.atLeast('waited', 30);
@@ -195,7 +196,7 @@ describe('animator.stagger, property', () => {
 
 describe('animator.tweenLoop, property', () => {
   it('runs `count` passes and ends where its direction puts the last', () => {
-    fc.assert(fc.property(value, value, fc.integer({ min: 1, max: 5 }), fc.constantFrom('restart', 'reverse', 'alternate') as fc.Arbitrary<'restart'>,
+    fc.assert(fc.property(value, value, fc.integer({ min: 1, max: 5 }), fc.constantFrom<'restart' | 'reverse' | 'alternate'>('restart', 'reverse', 'alternate'),
       fc.integer({ min: 10, max: 200 }), fc.integer({ min: 1, max: 60 }),
       (from, to, count, direction, ms, step) => {
         const h = clocked();
