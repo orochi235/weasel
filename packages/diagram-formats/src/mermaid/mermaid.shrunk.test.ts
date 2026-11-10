@@ -58,4 +58,8 @@ describe('Mermaid, shrunk counterexamples', () => {
     expect(p.data.nodes.map((n) => [n.lines, n.outline])).toEqual([[['/]'], 'trapezoid']]);
     expect(page('block-beta\n  a[/"x"\\] b[/y/]').data.nodes.map((n) => n.outline)).toEqual(['trapezoid', 'parallelogram']);
   });
+
+  it('keeps mind map text whose lines, trimmed, open and close with a backtick', () => {
+    expect(back({ nodes: [{ id: 'a', lines: ['`', '` '] }], edges: [] }, 'mindmap').data.nodes[0]!.lines).toEqual(['`', '`']);
+  });
 });

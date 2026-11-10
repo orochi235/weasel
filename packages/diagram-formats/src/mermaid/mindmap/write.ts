@@ -40,13 +40,14 @@ export function writeMindmap(doc: DiagramDocument, opts?: WriteOptions): ExportR
   const ids = mermaidIds(order.map(({ node }) => node.id));
   const lines = [...titleLines(page.name), 'mindmap'];
   order.forEach(({ node, depth }, k) => {
-    const text = mermaidEscaped(nodeLines(node, warnings, 'Mermaid'), { also: /[()[\]{}]/g });
+    // Trimmed as the reader trims them, before escaping, so a trim cannot make a markdown string of the text.
+    const text = mermaidEscaped(nodeLines(node, warnings, 'Mermaid').map((l) => l.trim()), { also: /[()[\]{}]/g });
     const outline = typeof node.outline === 'string' ? node.outline : undefined;
     const brackets = outline === undefined ? undefined : BRACKETS[outline];
     if (node.outline !== undefined && brackets === undefined) warnings.add('Mermaid mind maps have five shapes; others were written plain.');
     const own = /^[\w-]+$/.test(node.id) ? node.id : ids.get(node.id)!;
     const id = own === generated[k] ? '' : own;
-    const plain = readsAsStatement(text) && !text.trim().startsWith(':::') ? text.trim() : `"${text}"`;
+    const plain = readsAsStatement(text) && !text.startsWith(':::') ? text : `"${text}"`;
     lines.push(`${'  '.repeat(depth + 1)}${brackets === undefined ? plain : `${id}${brackets[0]}${text}${brackets[1]}`}`);
   });
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

@@ -56,7 +56,7 @@ describe('Mermaid charts, property', () => {
       expect([p.title, p.sections.map((s) => [s.name, s.periods.map((q) => [q.label, q.events])])]).toEqual([
         trimmed(data.title),
         // A period with no label is dropped, since a line with none adds events to the period above it.
-        data.sections.map((s) => [s.name.trim(), s.periods.filter((q) => q.label.trim() !== '').map((q) => [q.label.trim(), q.events.map((e) => e.trim())])]),
+        data.sections.map((s) => [(s.name ?? '').trim(), s.periods.filter((q) => q.label.trim() !== '').map((q) => [q.label.trim(), q.events.map((e) => e.trim())])]),
       ]);
     }), RUNS);
   }, TIMEOUT);
