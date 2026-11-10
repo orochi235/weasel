@@ -178,6 +178,8 @@ function placeScrolled(
   });
   // A scroll bar would take its width from the text's and wrap it short of the canvas's lines.
   box.style.setProperty('scrollbar-width', 'none');
+  // Scroll anchoring would read a reflow, such as the face arriving, as a scroll to keep.
+  box.style.setProperty('overflow-anchor', 'none');
   Object.assign(el.style, {
     left: '0', transform: 'none', transformOrigin: '', padding: '0', minHeight: '', minWidth: '',
     width: style.wrap ? `${pose.width}px` : 'max-content',

@@ -114,7 +114,8 @@ describe('editing a clipped node whose text overflows', () => {
 
   it('keeps the caret in view while typing at the end of the text', async () => {
     const { box } = await open({ text: 'short', caret: 5 });
-    await userEvent.keyboard(' and then a good deal more text, enough to run past the bottom of a small note');
+    const more = ' and then a good deal more text, enough to run past the bottom of a small note';
+    await userEvent.keyboard(more + more + more);
     await frame();
     expect(box.scrollTop).toBeGreaterThan(0);
     const c = caretRect();
@@ -135,7 +136,8 @@ describe('editing a clipped node whose text overflows', () => {
   it('opens a bottom-aligned note on its last line, as the canvas shows it', async () => {
     const { box } = await open({ text: LONG, caret: 0, pose: { verticalAlign: 'bottom' } });
     await frame();
-    expect(box.scrollTop).toBeCloseTo(box.scrollHeight - box.clientHeight, 0);
+    // Within the baseline correction, which sets the overlay a fraction of a pixel low, and scrollHeight's rounding.
+    expect(Math.abs(box.scrollTop - (box.scrollHeight - box.clientHeight))).toBeLessThanOrEqual(1.5);
   });
 
   it('scales the box with the view and still scrolls the caret into it', async () => {

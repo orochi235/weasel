@@ -100,6 +100,7 @@ describe('useTextEdit — a clipped node scrolls in its box', () => {
     const size = { width: 0, height: 300 };
     const spy = stubSizes(size);
     const { box, el } = open({ ...POSE, verticalAlign: 'bottom' });
+    box.dispatchEvent(new Event('wheel'));
     box.scrollTop = 150;
     box.dispatchEvent(new Event('scroll'));
     size.height = 340;
@@ -107,6 +108,15 @@ describe('useTextEdit — a clipped node scrolls in its box', () => {
     spy.mockRestore();
     // Rest moved from 200 to 240; the user was 50 above it.
     expect(box.scrollTop).toBe(190);
+  });
+
+  it('puts back a scroll the browser makes before the user has touched the text', () => {
+    const spy = stubSizes({ width: 0, height: 300 });
+    const { box } = open({ ...POSE, verticalAlign: 'bottom' });
+    spy.mockRestore();
+    box.scrollTop = 181;
+    box.dispatchEvent(new Event('scroll'));
+    expect(box.scrollTop).toBe(200);
   });
 
   it('opens an unwrapped centered line wider than the box scrolled to its middle', () => {

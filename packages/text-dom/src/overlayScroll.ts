@@ -38,13 +38,20 @@ export function overlayScroll(box: HTMLElement, overlay: HTMLElement): OverlaySc
   let frame: ScrollFrame | null = null;
   let base = { x: 0, y: 0 };
   let offset = { x: 0, y: 0 };
-  // The caret the edit opens with is where the user double-clicked, or the
-  // whole text: neither is a reason to move what the canvas showed.
+  // Until the user touches the text, it stays where the canvas showed it: the
+  // caret it opens with is not a reason to move it, and Chromium scrolls a
+  // freshly focused box by itself.
   let armed = false;
   const arm = () => { armed = true; };
   const read = () => { offset = { x: box.scrollLeft - base.x, y: box.scrollTop - base.y }; };
-  const onScroll = () => { if (frame) read(); };
+  const onScroll = () => {
+    if (!frame) return;
+    if (armed) return read();
+    box.scrollLeft = base.x + offset.x;
+    box.scrollTop = base.y + offset.y;
+  };
   box.addEventListener('scroll', onScroll);
+  box.addEventListener('wheel', arm, { passive: true });
   for (const type of ['keydown', 'pointerdown', 'beforeinput']) overlay.addEventListener(type, arm);
 
   const api: OverlayScroll = {
@@ -86,6 +93,7 @@ export function overlayScroll(box: HTMLElement, overlay: HTMLElement): OverlaySc
     },
     dispose() {
       box.removeEventListener('scroll', onScroll);
+      box.removeEventListener('wheel', arm);
       document.removeEventListener('selectionchange', reveal);
       for (const type of ['keydown', 'pointerdown', 'beforeinput']) overlay.removeEventListener(type, arm);
     },
