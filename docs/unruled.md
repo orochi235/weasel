@@ -347,6 +347,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-26/27 (agent batches 2–10): The default retain budget is 384 MiB (was 256), with surfaces drawn
   in 1024-px tiles. Rect clips on a single-sampled target snap to 1/16 px.
 
+- 2026-11-10 (property tests): `hslToSrgb` reads a hue of any number of turns, as CSS `hsl()` does.
+  `srgbToHsl` caps saturation at 1, so a color past sRGB's gamut, which its doc does not take, no
+  longer reports more. `lerpPaint` and `lerpStroke` answer `b`'s numbers exactly at `t = 1`.
+- Open: `paintKey` keys two fully transparent solids of different colors apart, though both draw nothing.
+
 ## Text
 
 - 2026-10-11: `BidiResolver.baseLevel` is required; an omitted `direction` is `'auto'`.

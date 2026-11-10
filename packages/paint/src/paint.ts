@@ -323,7 +323,10 @@ export function dashPhase(pattern: readonly number[], phase: number): number {
   const cycle = pattern.reduce((a, b) => a + b, 0) * (pattern.length % 2 + 1);
   if (!(cycle > 0)) return 0;
   const wrapped = phase % cycle;
-  return wrapped < 0 ? wrapped + cycle : wrapped;
+  if (wrapped >= 0) return wrapped;
+  // A phase just below 0 wraps to the cycle itself once rounded, which is 0 again.
+  const up = wrapped + cycle;
+  return up < cycle ? up : 0;
 }
 
 /** `stroke`'s dash and dash offset, each length multiplied by `k`: the two move together. */

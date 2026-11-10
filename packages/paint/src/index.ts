@@ -82,13 +82,12 @@ export {
   linearToSrgb,
   linearSrgbToOklab,
   oklabToLinearSrgb,
-  srgbToHsl,
-  hslToSrgb,
   interpolateSrgb,
   type ColorInterpolationSpace,
   type ColorSpace,
   type OklchDeg,
 } from './colorSpaces';
+export { hslToSrgb, srgbToHsl } from './hsl';
 export { lerpHueDeg, type HueInterpolation } from './hue';
 export { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 export { contrastLineColor, contrastRatio, luminanceContrast, relativeLuminance, wcagLevels } from './contrast';

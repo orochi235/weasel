@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  hslToSrgb,
   interpolateSrgb,
   linearSrgbToOklab,
   linearToSrgb,
   oklabToLinearSrgb,
-  srgbToHsl,
   srgbToLinear,
   type ColorInterpolationSpace,
 } from './colorSpaces';
+import { hslToSrgb, srgbToHsl } from './hsl';
 
 type Rgb = [number, number, number];
 

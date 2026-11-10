@@ -34,8 +34,9 @@ export function composePatternTransform(parts: Partial<PatternTransformParts>): 
 }
 
 /**
- * Inverse of {@link composePatternTransform}. Any 2×2 matrix decomposes this
- * way; a reflection comes back as a negative `scaleY`. `undefined` reads as the
+ * Inverse of {@link composePatternTransform}. Any invertible 2×2 matrix decomposes
+ * this way; a reflection comes back as a negative `scaleY`. A singular one whose
+ * second column is a nonzero multiple of its first comes back without that column. `undefined` reads as the
  * identity, which is what an absent `transform` means.
  */
 export function decomposePatternTransform(t: PatternTransform | undefined): PatternTransformParts {

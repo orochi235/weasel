@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { hslToSrgb } from './colorSpaces';
+import { hslToSrgb } from './hsl';
 import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
