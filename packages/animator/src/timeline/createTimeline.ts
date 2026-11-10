@@ -155,7 +155,9 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
-    const sought = !held && events.to(opts.tracks, playhead);
+    // A frame played backward fires nothing, not even an event a seek left the playhead on.
+    const sought = rate > 0 && events.to(opts.tracks, playhead);
+    if (rate < 0) events.back(playhead);
     booker?.tick(virtualNow, rate);
 
     if ((finished || rewound) && !done && !sought) { done = true; opts.onDone?.(); playbackChanged(); }

@@ -119,11 +119,12 @@ describe('timeline, property', () => {
     t.atLeast('nested events', 10);
   }, timeoutFor(RUNS, 40));
 
-  it('samples its track where the playhead stands, after any frames and seeks', () => {
+  it('samples its track where the playhead stands, after any frames, seeks, and rates', () => {
     const t = tally();
     const op = fc.oneof(
       fc.record({ seek: fc.integer({ min: -50, max: 1600 }) }),
       fc.record({ dt: fc.integer({ min: 0, max: 300 }) }),
+      fc.record({ rate: fc.constantFrom(-2, -1, 0, 0.5, 1, 2) }),
     );
     fc.assert(fc.property(plan, fc.constantFrom<boolean | number>(false, true, 2), fc.array(op, { minLength: 1, maxLength: 25 }), (p, loop, ops) => {
       const b = build(p);
@@ -138,6 +139,8 @@ describe('timeline, property', () => {
           tl.seek(o.seek);
           if (loop === false) expect(tl.time()).toBe(Math.min(Math.max(o.seek, 0), d));
           t.count('seek');
+        } else if ('rate' in o) {
+          tl.setTimeScale(o.rate);
         } else {
           now += o.dt;
           h.at(now);
@@ -152,6 +155,28 @@ describe('timeline, property', () => {
     }), runs(RUNS));
     t.atLeast('seek', 50);
     t.atLeast('sampled', 50);
+  });
+
+  it('plays backward under a negative time scale, sampling where it stands, firing nothing, and ends at 0', () => {
+    const t = tally();
+    fc.assert(fc.property(plan, fc.integer({ min: 0, max: 1500 }), fc.constantFrom(-0.5, -1, -2, -3), steps, (p, from, rate, ws) => {
+      const b = build(p);
+      const h = clocked();
+      let done = 0;
+      const tl = h.animator.timeline({ tracks: b.tracks, duration: p.duration, onDone: () => { done++; } });
+      h.at(0);
+      tl.seek(from);
+      tl.setTimeScale(rate);
+      b.fired.length = 0;
+      if (tl.time() > 0) t.count('ran back');
+      const end = play(h, 0, ws, 100, () => done > 0, 1000);
+      if (done === 0) h.at(end + 100_000);
+      expect(done).toBe(1);
+      expect(tl.time()).toBe(0);
+      expect(b.fired).toEqual([]);
+      expect(b.ticks.at(-1)).toBeCloseTo(sampleTrack(b.sampled, 0)!, 9);
+    }), runs(RUNS));
+    t.atLeast('ran back', 30);
   });
 
   it('plays on from a seek as a fresh timeline sought there does', () => {

@@ -16,6 +16,8 @@ export interface EventCursor {
   /** Stands at `t`. With `open`, an event exactly at `t` fires on the next move: where a seek
    *  lands, or a new lap starts. */
   place(t: number, open: boolean): void;
+  /** Played backward to `t`: fires nothing, and stands there if it is behind the cursor. */
+  back(t: number): void;
 }
 
 export function createEventCursor(fire: FireEvents): EventCursor {
@@ -35,6 +37,11 @@ export function createEventCursor(fire: FireEvents): EventCursor {
       at = t;
       open = o;
       places += 1;
+    },
+    back(t) {
+      if (!(t < at)) return;
+      at = t;
+      open = false;
     },
   };
 }
