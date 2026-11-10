@@ -160,14 +160,25 @@ class MermaidLexer {
       return;
     }
     if (start && REST_KEYWORDS.has(word[0]) && /^(?:[ \t:]|$|\n)/.test(this.text.slice(this.i, this.i + 1))) {
-      const semi = this.text.indexOf(';', this.i);
-      const stop = Math.min(this.lineEnd(), semi < 0 ? this.text.length : semi);
+      const stop = this.statementEnd();
       const rest = this.text.slice(this.i, stop).replace(/^[ \t]*:?/, '').trim();
       if (rest !== '') this.push({ kind: 'rest', value: rest, line: this.line });
       this.i = stop;
       return;
     }
     this.shape();
+  }
+
+  /** Where the statement from here ends: the line's end, or a `;` outside a quoted string. */
+  statementEnd(): number {
+    const end = this.lineEnd();
+    let quoted = false;
+    for (let k = this.i; k < end; k++) {
+      const c = this.text[k];
+      if (c === '"') quoted = !quoted;
+      else if (c === ';' && !quoted) return k;
+    }
+    return end;
   }
 
   /** An `accDescr { … }` block's text, which may run over several lines, as one `rest` token. */
