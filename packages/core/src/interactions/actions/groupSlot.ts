@@ -9,9 +9,12 @@ export function inPaintOrder<N extends { id: string }>(scene: AnyScene, nodes: r
 }
 
 /** The slot among `parent`'s children a new container takes to stand in `front`'s place: just
- *  above it, so what stacked above every member still does. Undefined, the end, when `front` is
- *  not one of those children. */
+ *  above `front`, or above the child of `parent` that `front` lies under, so what stacked above every
+ *  member still does. Undefined, the end, when `front` is not under `parent`. */
 export function slotAbove(scene: AnyScene, parent: NodeId | null, front: string): number | undefined {
-  const at = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(front as NodeId);
+  let branch: NodeId | null = front as NodeId;
+  while (branch !== null && (scene.get(branch)?.parent ?? null) !== parent) branch = scene.get(branch)?.parent ?? null;
+  if (branch === null) return undefined;
+  const at = (parent === null ? scene.roots : scene.childrenOf(parent)).indexOf(branch);
   return at >= 0 ? at + 1 : undefined;
 }

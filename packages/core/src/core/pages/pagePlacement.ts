@@ -200,7 +200,7 @@ export interface GroupingSite {
 
 /**
  * The container for a new grouping of `ids`, whose members' union in the
- * world is `bounds`: the parent they share, unless it is the page run; else,
+ * world is `bounds`: their lowest common ancestor, unless it is the page run; else,
  * in a paged scene, the page that union overlaps most (`pageForBounds`), with
  * the pasteboard off moved so part of it is on that page (`keepOnPage`); else
  * the top of the tree, which is also where the union goes with the
@@ -214,11 +214,25 @@ export function groupingSite<TData, TLayer extends string, TPose>(
 ): GroupingSite {
   const still = { dx: 0, dy: 0 };
   const run = pageRunOf(scene);
-  const parents = new Set(ids.map((id) => scene.get(id)?.parent ?? null));
-  const [only] = parents;
-  if (parents.size === 1 && only !== run) return { parent: only ?? null, shift: still };
+  const shared = commonAncestor(scene, ids);
+  const allAtTop = ids.every((id) => (scene.get(id)?.parent ?? null) === null);
+  if (shared !== run && (shared !== null || allAtTop)) return { parent: shared, shift: still };
   if (run === null || bounds === null) return { parent: null, shift: still };
   const page = pageForBounds(scene, bounds);
   if (page === null) return { parent: null, shift: still };
   return { parent: pageNodeOf(scene, page.id), shift: pasteboardOn(scene) ? still : keepOnPage(page, bounds) };
+}
+
+/** The deepest node every one of `ids` lies under, a member itself excluded; `null` for the top of
+ *  the tree. */
+export function commonAncestor(scene: PageTreeReader, ids: readonly NodeId[]): NodeId | null {
+  const chainOf = (id: NodeId): NodeId[] => {
+    const chain: NodeId[] = [];
+    for (let at = scene.get(id)?.parent ?? null; at !== null; at = scene.get(at)?.parent ?? null) chain.push(at);
+    return chain;
+  };
+  const [first, ...rest] = ids;
+  if (first === undefined) return null;
+  const others = rest.map((id) => new Set(chainOf(id)));
+  return chainOf(first).find((at) => others.every((chain) => chain.has(at))) ?? null;
 }
