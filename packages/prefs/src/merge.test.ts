@@ -29,6 +29,12 @@ describe('mergePrefGroups', () => {
     expect(() => mergePrefGroups('Kit', ui, clash)).toThrow('"tree.typeaheadMs"');
   });
 
+  it('merges a leaf at a key every object inherits', () => {
+    const odd = pref.group('Odd', { constructor: pref.number('C', 1), toString: pref.group('T', { a: pref.number('A', 2) }) });
+    const merged = mergePrefGroups('Kit', odd);
+    expect([...prefLeaves(merged).keys()]).toEqual(['constructor', 'toString.a']);
+  });
+
   it('leaves its inputs as they were', () => {
     mergePrefGroups('Kit', ui, core);
     expect(Object.keys(ui.children.targets.children)).toEqual(['curveHitPx']);

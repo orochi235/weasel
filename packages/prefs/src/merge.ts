@@ -1,5 +1,5 @@
 import type { PrefGroup } from './groups';
-import { isPrefLeaf } from './helpers';
+import { isPrefLeaf, setOwnPrefValue } from './helpers';
 import type { PrefLeaf } from './schema';
 
 type Child = PrefLeaf | PrefGroup;
@@ -7,13 +7,13 @@ type Child = PrefLeaf | PrefGroup;
 function mergeChildren(into: Record<string, Child>, from: Record<string, Child>, at: string): void {
   for (const [key, child] of Object.entries(from)) {
     const path = at === '' ? key : `${at}.${key}`;
-    const held = into[key];
+    const held = Object.hasOwn(into, key) ? into[key] : undefined;
     if (held === undefined) {
-      into[key] = child;
+      setOwnPrefValue(into, key, child);
     } else if (!isPrefLeaf(held) && !isPrefLeaf(child)) {
       const children = { ...held.children };
       mergeChildren(children, child.children, path);
-      into[key] = { ...held, children };
+      setOwnPrefValue(into, key, { ...held, children });
     } else {
       throw new Error(`mergePrefGroups: two groups give "${path}", and one of them is a leaf`);
     }
