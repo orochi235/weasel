@@ -1,4 +1,5 @@
 /** A gitgraph compiled to its scales and marks. */
+import { maxOf } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark, ruleMark } from '../marks/paths';
@@ -117,7 +118,7 @@ export function compileGitGraph(
   const lr = dir === 'LR';
   const history = replayGitGraph(data);
   const names = history.branches.map((b) => measure(b.name, theme.font));
-  const labelRoom = GAP + Math.max(0, ...names.map((s) => (lr ? s.width : s.height)));
+  const labelRoom = GAP + Math.max(0, maxOf(names, (s) => (lr ? s.width : s.height)));
   const box = { x: PAD, y: top, width: Math.max(1, size.width - 2 * PAD), height: Math.max(1, size.height - PAD - top) };
   const layout = place(data, history, box, labelRoom);
   marks.push(...lines(layout, lr, theme));

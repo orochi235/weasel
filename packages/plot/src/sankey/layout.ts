@@ -1,4 +1,5 @@
 /** Where a sankey's nodes and ribbons stand: columns by depth, heights by flow, ordered to cross less. */
+import { maxOf, minOf } from '@weasel-js/geom';
 import type { SankeyData } from './types';
 
 /** One node, placed. */
@@ -100,14 +101,14 @@ export function sankeyLayout(data: SankeyData, box: { x: number; y: number; widt
   const ins = labels.map((_, k) => edges.filter(([, t]) => t === k).reduce((a, [, , w]) => a + w, 0));
   const outs = labels.map((_, k) => edges.filter(([s]) => s === k).reduce((a, [, , w]) => a + w, 0));
   const value = labels.map((_, k) => Math.max(ins[k]!, outs[k]!));
-  const count = labels.length === 0 ? 0 : Math.max(...column) + 1;
+  const count = labels.length === 0 ? 0 : maxOf(column) + 1;
   const columns: number[][] = Array.from({ length: count }, (_, c) => labels.flatMap((_, k) => (column[k] === c ? [k] : [])));
-  const tallest = Math.max(1, ...columns.map((c) => c.length));
+  const tallest = Math.max(1, maxOf(columns, (c) => c.length));
   const gap = Math.min(NODE_GAP, box.height / 2 / tallest);
-  const ky = Math.max(0, Math.min(...columns.map((c) => {
+  const ky = Math.max(0, minOf(columns, (c) => {
     const total = c.reduce((a, k) => a + value[k]!, 0);
     return total > 0 ? (box.height - gap * (c.length - 1)) / total : Number.POSITIVE_INFINITY;
-  })));
+  }));
   const scale = Number.isFinite(ky) ? ky : 0;
   const y = new Array<number>(labels.length).fill(0);
   const stack = (col: number[]) => {

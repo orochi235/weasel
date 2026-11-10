@@ -1,4 +1,5 @@
 /** A pie compiled to its slices and legend. */
+import { maxOf } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { spanMark } from '../marks/boxes';
 import { arcMark } from '../marks/paths';
@@ -79,10 +80,10 @@ function legendMarks(data: PieData, x: number, midY: number, theme: PlotTheme, m
 /** How wide the legend is: its swatch, its widest label, and with `showData` its widest value. */
 function legendWidth(data: PieData, theme: PlotTheme, measure: PlotMeasure): number {
   if (data.slices.length === 0) return 0;
-  const widest = Math.max(...data.slices.map((s) => {
+  const widest = maxOf(data.slices, (s) => {
     const label = measure(s.label, theme.font).width;
     return data.showData ? label + GAP + measure(pieValueText(s.value), theme.font).width : label;
-  }));
+  });
   return SWATCH + GAP + widest;
 }
 

@@ -1,4 +1,5 @@
 /** A radar compiled to its scales and marks. */
+import { maxOf } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { pointMark } from '../marks/boxes';
 import { areaMark, lineMark, ruleMark } from '../marks/paths';
@@ -41,7 +42,7 @@ const labelOf = (item: { id: string; label?: string }): string => item.label ?? 
 function legend(data: RadarData, top: number, width: number, theme: PlotTheme, measure: PlotMeasure): { marks: PlotMark[]; width: number } {
   if (data.showLegend === false || data.curves.length === 0) return { marks: [], width: 0 };
   const sizes = data.curves.map((c) => measure(labelOf(c), theme.font));
-  const room = SWATCH + GAP + Math.max(...sizes.map((s) => s.width));
+  const room = SWATCH + GAP + maxOf(sizes, (s) => s.width);
   const x = width - PAD - room;
   const marks: PlotMark[] = [];
   let y = top;
@@ -123,8 +124,8 @@ export function compileRadar(
   const { marks, top } = chartTitle(data.title, size.width, theme, measure);
   const key = legend(data, top, size.width, theme, measure);
   const labels = data.axes.map((a) => measure(labelOf(a), theme.font));
-  const across = GAP + Math.max(0, ...labels.map((l) => l.width));
-  const down = GAP + Math.max(0, ...labels.map((l) => l.height));
+  const across = GAP + Math.max(0, maxOf(labels, (l) => l.width));
+  const down = GAP + Math.max(0, maxOf(labels, (l) => l.height));
   const box = { x: PAD, y: top, width: size.width - 2 * PAD - key.width, height: size.height - PAD - top };
   const outer = Math.max(1, Math.min(box.width / 2 - across, box.height / 2 - down));
   const scale = polarScale({
