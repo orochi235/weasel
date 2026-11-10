@@ -27,6 +27,9 @@ import {
   type Inherit,
   INHERIT,
   isSolidPaint,
+  textFrameOf,
+  type TextEdge,
+  type TextShadow,
 } from '@weasel-js/core';
 import { mapFillPaint } from './fillPaint';
 import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
@@ -54,6 +57,10 @@ export interface SvgKitLeafData {
   padding?: number;
   /** `'clip'` cuts a text node's text at its box. */
   overflow?: 'visible' | 'clip';
+  /** A text node's rule round its box, in a shade of its background. */
+  edge?: TextEdge;
+  /** The shadow a text node's background casts. */
+  shadow?: TextShadow;
   image?: ImageNodeData['image'];
 }
 
@@ -114,7 +121,18 @@ export function svgLeafFromKit(
     const clip = data.overflow === 'clip' ? { clip: pathThroughPoseFrame(boxPath, pose) } : {};
     if (!resolveFill(data.background)) return clip.clip ? { kind: 'group', children: [text], ...clip } : text;
     const box = svgLeafFromKit({ path: boxPath, fill: data.background }, pose) as SvgPathNode;
-    return { kind: 'group', children: [box, text], ...clip };
+    const frame = textFrameOf(data, pose);
+    const solid = (color: string) => ({ paint: { kind: 'solid' as const, color } });
+    const under: SvgNode[] = frame.shadow ? [{
+      kind: 'group',
+      opacity: frame.shadow.opacity,
+      children: frame.shadow.paths.map((path) => svgLeafFromKit({ path, fill: solid(frame.shadow!.color) }, pose) as SvgPathNode),
+    }] : [];
+    const over: SvgNode[] = frame.edge
+      ? [svgLeafFromKit({ path: frame.edge.path, fill: null, stroke: { ...solid(frame.edge.color), width: frame.edge.width } }, pose) as SvgPathNode]
+      : [];
+    const framed: SvgNode = { kind: 'group', children: [box, ...over, text], ...clip };
+    return under.length > 0 ? { kind: 'group', children: [...under, framed] } : framed;
   }
   if (!data.path) return null;
   const stroke = svgStrokeFromKit(resolveStroke(data.stroke), pose);

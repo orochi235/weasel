@@ -30,6 +30,11 @@ describe('InlineMarkdown', () => {
     expect(inlineMarkdownText('Press <kbd>Mod+Z</kbd>.')).toBe('Press Mod+Z.');
   });
 
+  it('sets a shortcut as inline keys, which sit on the line\'s baseline', () => {
+    const row = html('Press <kbd>N</kbd>.').querySelector('kbd')!.parentElement!;
+    expect(row.dataset.inline).toBe('true');
+  });
+
   it('renders marks inside marks', () => {
     const c = html('**never `eval`** it');
     expect(c.querySelector('strong code')?.textContent).toBe('eval');

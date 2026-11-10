@@ -30,6 +30,23 @@
   flex-wrap: wrap;
 }
 
+/* In a line of prose: shorter keys, and the row on the text's baseline rather
+   than its bottom edge. Every key takes a zero-width character first, so a key
+   whose legend is an icon has the same text baseline as one with a letter. */
+.keys[data-inline],
+.keys[data-inline] .key {
+  --key-h: calc(var(--wzl-control-h-xs) - 4px);
+}
+
+.keys[data-inline] {
+  align-items: baseline;
+  vertical-align: baseline;
+}
+
+.keys[data-inline] .key:not([data-wrapped])::before {
+  content: '\200b';
+}
+
 .keysEmpty {
   color: var(--wzl-fg-muted);
 }

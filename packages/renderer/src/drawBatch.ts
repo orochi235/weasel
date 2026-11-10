@@ -238,9 +238,9 @@ export class DrawBatch extends BatchStage {
    *
    * A synthetic oblique is sheared and the glyph's turn applied here, before
    * `m` (`placeGlyph`); `tanItalic` is 0 for an upright face. `grow` is the
-   * screen distance the quad grows by for area coverage, and a grown quad's
-   * corners ride `a_post` too (`shaders/glyphCell.ts`). Corners wind as
-   * `pushQuad`'s do.
+   * screen distance the quad grows by for area coverage, and a grown quad's corners ride `a_post`
+   * too (`shaders/glyphCell.ts`), so a clip that crosses one refuses it rather than interpolating
+   * them into the wrong corner. Corners wind as `pushQuad`'s do.
    */
   pushGlyph(
     quads: ArrayLike<number>, at: number, ox: number, oy: number, tanItalic: number, m: GlMat3,
@@ -258,7 +258,7 @@ export class DrawBatch extends BatchStage {
     i = this.writeVertex(i, c[4], c[5], r, g, b, a, t[2], t[3], synthBold + k[2], P);
     this.writeVertex(i, c[6], c[7], r, g, b, a, t[0], t[3], synthBold + k[3], P);
     this.pushQuadIndices();
-    return this.fitQuad(this.nVerts - 4, this.nIdx - 6);
+    return this.fitQuad(this.nVerts - 4, this.nIdx - 6, grow <= 0);
   }
 
   /**

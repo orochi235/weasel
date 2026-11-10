@@ -27,7 +27,7 @@ export interface UseStickyToolOptions extends InsertToolOptions, StickyStyle {}
 export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
   const {
     behaviors, size = STICKY_DEFAULTS.size, minSize = STICKY_DEFAULTS.minSize,
-    background, fill, padding, style, verticalAlign, overflow,
+    background, fill, padding, style, verticalAlign, overflow, edge, shadow,
   } = options;
   return useMemo(() => {
     // `minSize` rides on both inserts: the drag grows to it, and the note
@@ -41,6 +41,8 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
       ...(style !== undefined ? { style } : {}),
       ...(verticalAlign !== undefined ? { verticalAlign } : {}),
       ...(overflow !== undefined ? { overflow } : {}),
+      ...(edge !== undefined ? { edge } : {}),
+      ...(shadow !== undefined ? { shadow } : {}),
     };
     return defineTool({
       id: 'sticky',
@@ -60,5 +62,5 @@ export function useStickyTool(options: UseStickyToolOptions = {}): Tool {
         INSERT_REPOSITION_BINDING,
       ],
     });
-  }, [behaviors, size, minSize, background, fill, padding, style, verticalAlign, overflow]);
+  }, [behaviors, size, minSize, background, fill, padding, style, verticalAlign, overflow, edge, shadow]);
 }

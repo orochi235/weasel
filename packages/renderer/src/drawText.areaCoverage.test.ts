@@ -93,6 +93,21 @@ describe('drawText — which batch build a run of atlas glyphs draws with', () =
     expect(small[1].x - small[0].x).toBeCloseTo(cellPx + 2 * GLYPH_AREA_MARGIN, 6);
   });
 
+  it('never cuts a grown quad, whose corner index an interpolated cut would misname', () => {
+    const { ctx, calls } = createRecorderCtx();
+    // A clip whose bottom edge runs through the middle of 12px glyphs.
+    dispatch(ctx, { kind: 'group', clip: { kind: 'rect', x: -50, y: -50, width: 200, height: 55 }, children: [text(12)] });
+    flushBatch(ctx);
+    const posts: number[] = [];
+    for (const c of calls) {
+      if (c.name !== 'bufferSubData' || c.args[0] !== ARRAY_BUFFER) continue;
+      const data = c.args[2] as Float32Array, n = c.args[4] as number;
+      for (let at = 0; at < n; at += FLOATS_PER_VERTEX) posts.push(data[at + POST_OFFSET]);
+    }
+    expect(posts.length).toBeGreaterThan(0);
+    for (const post of posts) expect([0, 2, 4, 6]).toContain(post);
+  });
+
   it('starts the next run without them', () => {
     const { ctx, calls } = createRecorderCtx();
     dispatch(ctx, text(12));

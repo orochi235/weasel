@@ -224,6 +224,7 @@ export type {
 } from '../domains/text/useSceneTextEdit';
 export type { EditingDrawOne } from '../domains/text/editingDrawOne';
 export { textBoxOf, type TextNodeData, type TextOverflow } from '../canvas/nodeShapes/textPainter';
+export { edgeColor, textFrameOf, type TextEdge, type TextFrame, type TextShadow } from '../canvas/nodeShapes/textFrame';
 export type { StyleToggle } from '@weasel-js/text-dom';
 export type { Vec2 } from '../core/geometry/vec2';
 export type { Rect } from '@weasel-js/geom';
