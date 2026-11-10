@@ -30,10 +30,12 @@ const ASCII = { id: /^[A-Za-z_]\w*$/, other: /\W+/g };
 const UNICODE = { id: /^[\p{L}_][\p{L}\p{N}_]*$/u, other: /[^\p{L}\p{N}_]+/gu };
 
 /** An id Mermaid reads for each of `ids`: itself where it can be, else a cleaned spelling no other id takes. `unicode`
- *  says the kind reads letters and digits of any script in an id, as a flowchart does; else only ASCII ones. */
-export function mermaidIds(ids: readonly string[], { unicode = false } = {}): Map<string, string> {
+ *  says the kind reads letters and digits of any script in an id, as a flowchart does; else only ASCII ones. `reserved`
+ *  names more words a kind reads as keywords. */
+export function mermaidIds(ids: readonly string[], { unicode = false, reserved = [] as readonly string[] } = {}): Map<string, string> {
   const chars = unicode ? UNICODE : ASCII;
-  const valid = (id: string) => chars.id.test(id) && !RESERVED.has(id.toLowerCase());
+  const more = new Set(reserved.map((w) => w.toLowerCase()));
+  const valid = (id: string) => chars.id.test(id) && !RESERVED.has(id.toLowerCase()) && !more.has(id.toLowerCase());
   const out = new Map<string, string>();
   const taken = new Set(ids.filter(valid));
   for (const id of ids) {

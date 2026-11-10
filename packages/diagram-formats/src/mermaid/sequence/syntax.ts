@@ -44,6 +44,7 @@ export const plainText = (text: string): string => markupLines(text.trim(), true
 const ENTITIES: Readonly<Record<string, string>> = { '#': '#35;', ';': '#59;', '<': '#lt;', '>': '#gt;', '&': '#38;' };
 
 /** Text as Mermaid writes it in a sequence: line breaks as `<br>`, and what it reads as syntax as entities. An `&` is
- *  one only before a `#`, which `#35;` would otherwise turn into an HTML reference. */
+ *  one only before a `#`, a `;`, or an `&` that is one, whose `#35;`, `#59;`, or `#38;` would otherwise make an HTML
+ *  reference of it. */
 export const mermaidSeqText = (text: string): string =>
-  text.split('\n').map((l) => l.replace(/[#;<>]|&(?=#)/g, (c) => ENTITIES[c]!)).join('<br>');
+  text.split('\n').map((l) => l.replace(/[#;<>]|&(?=&*[#;])/g, (c) => ENTITIES[c]!)).join('<br>');

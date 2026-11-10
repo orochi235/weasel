@@ -2,15 +2,41 @@
 import type { SeqParticipant, SeqStep, SequenceData } from '@weasel-js/diagram';
 import type { ExportResult, SequencePage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { mermaidIds } from '../common/text';
 import { arrowOf, mermaidSeqText, typeOf } from './syntax';
 
 const SECTION_WORDS = { loop: null, alt: 'else', opt: null, par: 'and', critical: 'option', break: null, region: null } as const;
 
+/** Words a sequence reads as a statement when a line opens with one, however the line goes on. */
+const SEQUENCE_WORDS = ['title', 'accTitle', 'accDescr'];
+
+/** Every participant id `data` names: declared, and named by a step. */
+function namedIds(data: SequenceData): string[] {
+  const ids = new Set(data.participants.map((p) => p.id));
+  const visit = (steps: readonly SeqStep[]) => {
+    for (const s of steps) {
+      if (s.kind === 'message') ids.add(s.from).add(s.to);
+      else if (s.kind === 'note') for (const id of s.over) ids.add(id);
+      else if (s.kind === 'fragment') for (const sec of s.sections) visit(sec.steps);
+      else ids.add(s.participant);
+    }
+  };
+  visit(data.steps);
+  return [...ids];
+}
+
 class SequenceWriter {
   readonly lines: string[] = ['sequenceDiagram'];
   readonly warnings = new Warnings();
+  readonly ids: Map<string, string>;
 
-  constructor(readonly data: SequenceData) {}
+  constructor(readonly data: SequenceData) {
+    this.ids = mermaidIds(namedIds(data), { unicode: true, reserved: SEQUENCE_WORDS });
+  }
+
+  id(id: string): string {
+    return this.ids.get(id) ?? id;
+  }
 
   out(depth: number, text: string): void {
     this.lines.push(`${'  '.repeat(depth)}${text}`);
@@ -24,8 +50,11 @@ class SequenceWriter {
       type = 'participant';
     }
     if (p.colors !== undefined || p.style !== undefined) this.warnings.add('Participants\' colors and roles were dropped.');
-    const head = type === 'participant' || type === 'actor' ? `${type} ${p.id}` : `participant ${p.id}@{ "type" : "${type}" }`;
-    const label = p.label !== undefined && p.label !== p.id ? ` as ${mermaidSeqText(p.label)}` : '';
+    const id = this.id(p.id);
+    const head = type === 'participant' || type === 'actor' ? `${type} ${id}` : `participant ${id}@{ "type" : "${type}" }`;
+    if (p.label !== undefined && p.label.trim() === '') this.warnings.add('Blank participant labels were dropped; those participants show their ids.');
+    const text = p.label !== undefined && p.label.trim() !== '' ? p.label : p.id;
+    const label = text !== id && text.trim() !== '' ? ` as ${mermaidSeqText(text)}` : '';
     return `${create ? 'create ' : ''}${head}${label}`;
   }
 
@@ -57,13 +86,14 @@ class SequenceWriter {
         const { arrow, dropsBoth } = arrowOf(s);
         if (dropsBoth) this.warnings.add('A second head on a message whose head is not an arrow was dropped.');
         const mark = s.activate === 'to' ? '+' : s.deactivate === 'from' ? '-' : '';
-        this.out(depth, `${s.from}${arrow}${mark}${s.to}: ${mermaidSeqText(s.text ?? '')}`.trimEnd());
-        if (s.activate === 'from') this.out(depth, `activate ${s.from}`);
-        if (s.deactivate === 'to') this.out(depth, `deactivate ${s.to}`);
-        if (s.activate === 'to' && s.deactivate === 'from') this.out(depth, `deactivate ${s.from}`);
+        const [from, to] = [this.id(s.from), this.id(s.to)];
+        this.out(depth, `${from}${arrow}${mark}${to}: ${mermaidSeqText(s.text ?? '')}`.trimEnd());
+        if (s.activate === 'from') this.out(depth, `activate ${from}`);
+        if (s.deactivate === 'to') this.out(depth, `deactivate ${to}`);
+        if (s.activate === 'to' && s.deactivate === 'from') this.out(depth, `deactivate ${from}`);
       } else if (s.kind === 'note') {
         const place = s.side === 'left' ? 'left of' : s.side === 'right' ? 'right of' : 'over';
-        this.out(depth, `Note ${place} ${s.over.join(',')}: ${mermaidSeqText(s.text)}`);
+        this.out(depth, `Note ${place} ${s.over.map((id) => this.id(id)).join(',')}: ${mermaidSeqText(s.text)}`);
       } else if (s.kind === 'create') {
         const p = this.data.participants.find((q) => q.id === s.participant);
         if (p !== undefined) this.out(depth, this.declaration(p, true));
@@ -86,7 +116,7 @@ class SequenceWriter {
         });
         this.out(depth, 'end');
       } else {
-        this.out(depth, `${s.kind} ${s.participant}`);
+        this.out(depth, `${s.kind} ${this.id(s.participant)}`);
       }
     }
   }
@@ -104,7 +134,8 @@ function createdIn(steps: readonly SeqStep[], out = new Set<string>()): Set<stri
 /** Writes a sequence page as Mermaid. Its name is the diagram's title. */
 export function writeMermaidSequence(page: SequencePage): ExportResult {
   const w = new SequenceWriter(page.data);
-  if (page.name !== undefined) w.out(1, `title ${mermaidSeqText(page.name)}`);
+  // A colon after `title` is read as part of the keyword, so one opening the name is spelled out.
+  if (page.name !== undefined) w.out(1, `title ${mermaidSeqText(page.name.trim()).replace(/^:/, '#58;')}`);
   if (page.data.autonumber !== undefined) w.out(1, page.data.autonumber === 1 ? 'autonumber' : `autonumber ${page.data.autonumber}`);
   w.participants(createdIn(page.data.steps));
   w.steps(page.data.steps, 1);
