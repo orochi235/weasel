@@ -369,6 +369,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-10-26/27 (agent batches 2–10): A run's `lang` reaches SVG (`xml:lang`), the edit overlay, and
   `textTransform`. A multi-cluster ligature's advance is split evenly, not by the face's caret list.
+- Open (2026-11-10, property tests): a surrogate pair split across two runs, which `applyStyleToRange`
+  allows since its offsets are UTF-16 units, lays out as two lone-surrogate cells rather than one
+  character (`🇫🇷` styled over its first unit). Whether a style range snaps to code points, or layout joins
+  the pair, is unruled; the layout properties cut runs only between code points.
 
 ## SVG and paths
 
