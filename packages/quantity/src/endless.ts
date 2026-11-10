@@ -1,3 +1,5 @@
+import { decimalPlaces } from './places';
+
 /** Which ends of a number's range stand for infinity. */
 export type Endless = 'min' | 'max' | 'both';
 
@@ -28,8 +30,8 @@ export interface EndlessTrack {
  *  range where the track has no step, or 1 where the range has no width either. */
 export function endlessTrack(min: number, max: number, step: number | undefined, endless: Endless | undefined): EndlessTrack {
   const gap = step !== undefined && step > 0 ? step : (max - min) / 20 || 1;
-  const lo = endlessAt(endless, -1) ? min - gap : min;
-  const hi = endlessAt(endless, 1) ? max + gap : max;
+  const lo = endlessAt(endless, -1) ? beside(min, -gap) : min;
+  const hi = endlessAt(endless, 1) ? beside(max, gap) : max;
   return {
     min: lo,
     max: hi,
@@ -39,4 +41,9 @@ export function endlessTrack(min: number, max: number, step: number | undefined,
       : at < min ? (lo < min && min - at >= gap / 2 ? -Infinity : min)
       : at,
   };
+}
+
+/** `end + gap` written with the places the two carry, so a stop a step past 4.1 is 4.2 and not 4.199999999999999. */
+function beside(end: number, gap: number): number {
+  return Number.isFinite(end) ? Number((end + gap).toFixed(Math.max(decimalPlaces(end), decimalPlaces(gap)))) : end + gap;
 }
