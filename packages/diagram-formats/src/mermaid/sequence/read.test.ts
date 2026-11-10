@@ -117,6 +117,11 @@ describe('readMermaidSequence', () => {
     expect(() => readMermaidSequence('sequenceDiagram\nNote over A B, C: x')).toThrow('line 2: "A B" is not a participant id');
   });
 
+  it('keeps the semicolon closing a character reference that ends a line, dropping only a bare one', () => {
+    const steps = dataOf('sequenceDiagram\nA->>B: say #quot;hi#quot;\nA->>B: two#lt;\nNote over A: a#35;;\nA->>B: plain;').steps;
+    expect(steps.map((s) => (s as SeqMessage).text)).toEqual(['say "hi"', 'two<', 'a#', 'plain']);
+  });
+
   it('is what the Mermaid format reads a sequenceDiagram as', async () => {
     const read = await DIAGRAM_MERMAID.read!(CHECKOUT);
     expect(read.document.pages[0]!.kind).toBe('sequence');

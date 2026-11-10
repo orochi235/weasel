@@ -59,7 +59,8 @@ function declaration(rest: string, word: string, create: boolean, line: number):
 
 /** One line's statement, or `null` for a blank or a comment. */
 function statementOf(text: string, line: number, dropped: string[]): SeqStmt | null {
-  const t = text.trim().replace(/;$/, '').trim();
+  // A line may end in a `;`, but not the one closing a `#quot;` or `&amp;` reference.
+  const t = text.trim().replace(/(?<!(?:#|&#?)[\da-z]+);$/i, '').trim();
   if (t === '' || t.startsWith('%%')) {
     if (/^%%\{.*\}%%$/.test(t)) dropped.push('Mermaid configuration directives were dropped.');
     return null;
