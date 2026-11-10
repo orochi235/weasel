@@ -7,6 +7,7 @@ import { insertParent } from './parent';
 import { insertKind } from './shape';
 import { clearedSelection } from './session';
 import { minSizeOf } from 'core/scene/minSize';
+import { insertStyleOf } from './style';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** What the dispatcher lays under an immediate action's params for a click. */
@@ -22,7 +23,8 @@ const NO_KEYS: ModifierState = { alt: false, ctrl: false, meta: false, shift: fa
  * through the same `insert` dep a drag commits through. The rest of the
  * binding's params are the insert's extras, as a drag's are.
  *
- * A `minSize` in the params floors the size, and goes on to the node.
+ * A `minSize` in the params floors the size, and goes on to the node. Style
+ * params (a shape tool's fill, stroke, …) reach the dep as `extras.style`.
  *
  * A binding with no `size` places nothing: the kind's extent is the tool's to
  * name, and a click has none of its own.
@@ -57,6 +59,8 @@ export const placeAction: Action & { requires: string[] } = inPlane({
       snap?.end();
       const extras: Record<string, unknown> = { ...params, kind: insertKind(params) };
       for (const k of [...CLICK_FIELDS, 'size']) delete extras[k];
+      const style = insertStyleOf(params);
+      if (style) extras['style'] = style;
       const bounds = { x: at.x - size.width / 2, y: at.y - size.height / 2, width: size.width, height: size.height };
       const ends = { start: at, end: { x: at.x + size.width / 2, y: at.y + size.height / 2 }, fromCenter: true };
       const id = dep.commit(bounds, extras as InsertExtras, ends, clearedSelection(prior));

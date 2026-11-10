@@ -61,6 +61,13 @@ describe('placeAction', () => {
     expect(insert.calls[0].extras).toEqual({ kind: 'sticky', padding: 4 });
   });
 
+  it('hands the style its params carry on as extras.style, as a drag does', () => {
+    const insert = makeInsertDep();
+    const fill = { kind: 'solid', color: '#123456' };
+    click({ kind: 'rect', size: { width: 40, height: 20 }, fill, strokeWidth: 3 }, { insert });
+    expect(insert.calls[0].extras.style).toEqual({ fill, strokeWidth: 3 });
+  });
+
   it('snaps the center through the snap dep', () => {
     const insert = makeInsertDep();
     const snap: SnapDep = sessionDep(createScene({ systemLayers: [{ id: 'main' }] }) as never, [gridSource(25)]);
