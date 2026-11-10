@@ -1,4 +1,4 @@
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { StickyNotesDemo } from '../StickyNotesDemo';
 
@@ -35,9 +35,22 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
+/** The demo opens on Select; pick the sticky tool from its palette. */
+function renderOnSticky() {
+  const out = render(<StickyNotesDemo />);
+  fireEvent.click(screen.getByRole('button', { name: /sticky note/i }));
+  return out;
+}
+
 describe('StickyNotesDemo', () => {
-  it('places a default-size note centered on a click, and opens its editor', () => {
+  it('opens on the select tool, where a click on empty paper makes no note', () => {
     const { container } = render(<StickyNotesDemo />);
+    click(container.querySelector('canvas')!, 420, 260);
+    expect(added()).toHaveLength(0);
+  });
+
+  it('places a default-size note centered on a click, and opens its editor', () => {
+    const { container } = renderOnSticky();
     const canvas = container.querySelector('canvas')!;
     click(canvas, 420, 260);
     expect(added()).toHaveLength(1);
@@ -48,7 +61,7 @@ describe('StickyNotesDemo', () => {
   });
 
   it('draws a note the size of a drag', () => {
-    const { container } = render(<StickyNotesDemo />);
+    const { container } = renderOnSticky();
     const canvas = container.querySelector('canvas')!;
     drag(canvas, [380, 220], [480, 300]);
     expect(added()).toHaveLength(1);
