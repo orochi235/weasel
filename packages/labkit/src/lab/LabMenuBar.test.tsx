@@ -225,4 +225,22 @@ describe('the lab’s menu bar', () => {
     expect(header.contains(screen.getByRole('toolbar', { name: 'Zoom' }))).toBe(true);
     expect(header.contains(screen.getByRole('button', { name: /^Theme: / }))).toBe(true);
   });
+
+  // The narrow header hides these by a container query only a browser runs; LabFit checks that.
+  it('marks the header controls the menus also hold, and only while there are menus', async () => {
+    const yielding = () =>
+      [...document.querySelectorAll('.lk-lab-header__in-menus')].map((el) =>
+        [...el.querySelectorAll('[aria-label], button')].map(
+          (c) => c.getAttribute('aria-label') ?? c.textContent,
+        ),
+      );
+    const { unmount } = await mount();
+    expect(yielding().flat()).toEqual(
+      expect.arrayContaining(['Zoom', 'Add trial', expect.stringMatching(/^Theme: /)]),
+    );
+    unmount();
+    await mount({ menuBar: false });
+    expect(yielding()).toEqual([]);
+    expect(screen.getByRole('toolbar', { name: 'Zoom' })).toBeInTheDocument();
+  });
 });

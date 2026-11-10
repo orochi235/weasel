@@ -7,7 +7,7 @@ import { useLabMarks } from '../annotations/labMarks';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraGesturesContext } from '../canvas/cameraGestures';
 import { CameraRegistryContext, createCameraRegistry } from '../canvas/cameraRegistry';
-import { LabFooterRegion, LabHeaderRegion } from '../chrome/LabChrome';
+import { LabFooterRegion } from '../chrome/LabChrome';
 import { ClockRegistryContext } from '../clock/contexts';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
@@ -18,14 +18,12 @@ import { Trial } from '../trial/Trial';
 import { useLabFitWarning } from './fitCheck';
 import { LabCommands } from './LabCommands';
 import { trialIdsOf } from './LabContext';
-import { LabHeader, LabThemeSwitcher } from './LabHeader';
-import { LabMenuBar } from './LabMenuBar';
+import { labBar } from './LabHeader';
 import { LabPalette } from './LabPalette';
 import { LabPanes } from './LabPanes';
 import { LabProviders } from './LabProviders';
 import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
-import { LabZoom } from './LabZoom';
 import { useLabChromeAll } from './labChromeAll';
 import type { LabBaseProps, LabProps } from './labProps';
 import { nebulaStyle } from './nebula';
@@ -212,6 +210,16 @@ function LabRuntime({
     setMarks: setMarksShown,
   });
 
+  const bar = labBar({
+    header,
+    menuBar,
+    presenting,
+    menus,
+    zoom,
+    children,
+    addTrial: addTrial ?? true,
+    contributions: labChromeAll,
+  });
   const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
 
   const workspace = (
@@ -256,16 +264,7 @@ function LabRuntime({
                     <LabShell
                       title={title ?? 'Labkit'}
                       bar={header}
-                      menuBar={
-                        menuBar && !presenting ? (
-                          <LabMenuBar
-                            menus={menus}
-                            contributions={labChromeAll}
-                            addTrial={addTrial ?? true}
-                            zoom={zoom}
-                          />
-                        ) : null
-                      }
+                      menuBar={bar.menuBar}
                       mode={modeValue}
                       {...(documentTitle !== undefined ? { documentTitle } : {})}
                       {...(pages ? { pages } : {})}
@@ -280,17 +279,7 @@ function LabRuntime({
                           footer
                         )
                       }
-                      header={
-                        header && (
-                          <>
-                            <LabHeader {...(addTrial !== undefined ? { addTrial } : {})} />
-                            {zoom && !presenting ? <LabZoom /> : null}
-                            {children}
-                            <LabHeaderRegion contributions={labChromeAll} />
-                            <LabThemeSwitcher />
-                          </>
-                        )
-                      }
+                      header={bar.header}
                     >
                       <UnreadableRecords />
                       <PanelHostContext.Provider value={panelHosts}>

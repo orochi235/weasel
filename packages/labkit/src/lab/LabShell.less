@@ -18,34 +18,47 @@
   background: transparent;
 }
 
-.lk-shell-menubar {
-  flex: none;
-}
-
 .lk-shell-header {
+  container: lk-shell-header / inline-size;
   display: flex;
   // Baseline, not center: the title is `--wzl-font-size-xl` and the controls
   // beside it are not, so centering them leaves every label sitting off the
   // title's baseline by half the difference in leading.
   align-items: baseline;
-  // With a menu bar beside the title, a narrow lab runs out of room: the actions take a row of
-  // their own rather than widening the page.
+  // A last resort: actions too wide for the row take one of their own, since clipping them would
+  // leave controls out of reach. The title never causes it (see below).
   flex-wrap: wrap;
   gap: var(--wzl-space-md);
   padding: var(--wzl-space-sm) var(--wzl-space-md);
+  overflow-x: clip;
   background: var(--wzl-surface-raised);
   border-bottom: 1px solid var(--wzl-border);
   z-index: var(--wzl-z-toolbar);
 }
 
+// A zero basis keeps a long title from pushing the menus onto a second row: the row breaks as if
+// the title were `min-width` wide, and the title then grows into what is left, up to its own
+// width, truncating past that.
 .lk-shell-title {
+  flex: 1 1 0;
+  min-width: 3em;
+  max-width: max-content;
   margin: 0;
   font-size: var(--wzl-font-size-xl);
   font-weight: var(--wzl-font-weight-bold);
   color: var(--wzl-fg);
+  white-space: nowrap;
+  // `clip`, not `hidden`: a scroll container hands the row a synthesized baseline.
+  overflow-x: clip;
+  text-overflow: ellipsis;
+}
+
+.lk-shell-menubar {
+  flex: none;
 }
 
 .lk-shell-header-actions {
+  flex: none;
   margin-left: auto;
   display: flex;
   // Every control here runs at the one control height and shares a middle.
@@ -164,6 +177,18 @@
 
 .lk-lab-header__add > svg {
   align-self: center;
+}
+
+// The header controls the menus also hold: add trial (Lab), zoom and the theme (View). A bar too
+// narrow for them leaves them to the menus; they stay mounted, so their keys still answer.
+.lk-lab-header__in-menus {
+  display: contents;
+}
+
+@container lk-shell-header (max-width: 39.98rem) {
+  .lk-lab-header__in-menus {
+    display: none;
+  }
 }
 
 // The readout's digit count changes as the zoom does (80% to 125%), so it sits

@@ -128,7 +128,7 @@
     "longestFunction": 206
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 191
+    "longestFunction": 182
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
