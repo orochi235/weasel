@@ -1,10 +1,12 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { INHERIT, paintKindOf } from '@weasel-js/core';
-import { qty } from '@weasel-js/quantity';
+import { qty, unitSymbol } from '@weasel-js/quantity';
 import { solidColorOf } from '../paintValue';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
+import family from './Properties.module.css';
 import s from './PropertyReadout.module.css';
+import { attachesUnit, UnitSuffix } from './unitSuffix';
 
 /**
  * A field shown as its value and nothing to edit it with: what a `readOnly`
@@ -63,7 +65,8 @@ function numberText(p: PropertyNumberFieldProps): ReactNode {
   if (typeof p.value !== 'number' || Number.isNaN(p.value)) return none();
   const text = p.format ? p.format(p.value) : qty(p.value, p.display ?? stepDisplay(p.step)).text;
   if (p.unit == null || !Number.isFinite(p.value)) return text;
-  return <>{text}<span className={s.unit} data-wzl-subordinate="">{p.unit}</span></>;
+  if (attachesUnit(p.unit)) return <span className={family.unitHost}>{text}<UnitSuffix unit={p.unit} /></span>;
+  return <>{text}<span className={s.unit} data-wzl-subordinate="">{typeof p.unit === 'string' ? unitSymbol(p.unit).text : p.unit}</span></>;
 }
 
 /** A chip of `color`, which is data and so reaches the stylesheet as a custom property. Also what a menu color row shows. */

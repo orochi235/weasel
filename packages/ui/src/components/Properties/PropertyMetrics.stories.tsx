@@ -115,7 +115,7 @@ export const NumberUnits: Story = {
         <PropertyList>
           <PropertyField kind="number" label="Radius" value={px} onChange={setPx} unit="px" />
           <PropertyField kind="number" label="Duration" value={ms} onChange={setMs} unit="ms" />
-          <PropertyField kind="number" label="Angle" value={deg} onChange={setDeg} unit={<sup>°</sup>} />
+          <PropertyField kind="number" label="Angle" value={deg} onChange={setDeg} unit="°" />
           <PropertyField kind="number" label="Count" value={plain} onChange={setPlain} />
         </PropertyList>
       </PropertyPanel>

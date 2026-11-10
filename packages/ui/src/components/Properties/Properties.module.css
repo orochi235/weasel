@@ -9,6 +9,7 @@
 @import './PropertyList.css';
 @import './PropertyRow.css';
 @import './PropertyRow.inline.css';
+@import './unitAttach.css';
 @import './PropertyRow.variants.css';
 @import './PropertyGroup.css';
 @import './Subpanel.css';

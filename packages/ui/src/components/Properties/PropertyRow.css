@@ -250,7 +250,7 @@
   min-width: 0;
 }
 
-/* Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
+/* A unit given as a `<sup>` node leans on the browser's native super
    positioning in a readout. Just dim them to match — do NOT set
    line-height: 0, that would re-collapse the glyph onto the baseline. A flex
    item ignores `vertical-align`, so beside a field the glyph rides the top of

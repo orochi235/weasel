@@ -56,7 +56,7 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows }: Cons
           step={0.01}
           onChange={(v) => onSet('hueFloor', v)}
           format={(v) => ((v * 360) / Math.max(1, c.count)).toFixed(0)}
-          unit={<sup>°</sup>}
+          unit="°"
           description={`A share of the even ${(360 / Math.max(1, c.count)).toFixed(1)}° this many colors would get. Held as a share so the floor means the same thing at any count. 0 turns it off.`}
         />
         <PropertyField

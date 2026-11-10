@@ -1,0 +1,27 @@
+/* A unit whose glyph attaches to the number (`°`, `″`, `%`: the unit catalog says which) stays on the value's
+   line in every layout, one that hangs other units below the value included. It is out of flow, so a field with
+   one is the size of a field without, and nothing after it moves. */
+.unitHost {
+  position: relative;
+}
+
+.unitAttached {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 100%;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Beside a boxed field the glyph sits inside the box, in end padding widened by a digit to hold it. */
+.fieldUnitGroup > .unitAttached {
+  inset-inline-start: auto;
+  inset-inline-end: calc(var(--wzl-field-pad-x) + 1px);
+  inline-size: 1ch;
+}
+
+.fieldUnitGroup.unitHost input {
+  padding-inline-end: calc(var(--wzl-field-pad-x) + 1ch);
+}

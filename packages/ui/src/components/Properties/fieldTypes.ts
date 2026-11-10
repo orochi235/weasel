@@ -113,8 +113,9 @@ export interface PropertyNumberFieldProps extends FieldBase {
    *  arrow keys stay in value units. Default linear. */
   scale?: ContinuousScaleFactory;
   /**
-   * Suffix after the value. A string becomes a dim word unit (`px`); pass JSX
-   * like `<sup>°</sup>` for a symbol. Display only — the value stays a number.
+   * The unit after the value. A string is written as the unit catalog writes it (`deg` shows `°`): a dim
+   * word unit (`px`), or a glyph that attaches to the number (`°`, `″`, `%`), which stays on the value's line
+   * in every layout and takes no room in it. Other JSX is drawn as given. Display only — the value stays a number.
    */
   unit?: ReactNode;
   /** Units a person may type into a typed field, each mapped to the factor

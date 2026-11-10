@@ -104,11 +104,36 @@ export const SliderReadouts: Story = {
   render: (args) => (
     <div className={s.column}>
       <Slider args={args} initial={12} label="Radius" min={0} max={64} unit="px" />
-      <Slider args={args} initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
+      <Slider args={args} initial={45} label="Angle" min={-180} max={180} unit="°" />
       <Slider args={args} initial={200_000} label="Glyphs" min={0} max={200_000} step={1000} />
       <Slider args={args} initial={2_000_000} label="Glyphs" min={0} max={2_000_000} step={1000} display={compact()} />
     </div>
   ),
+};
+
+function AttachingUnits({ args, layout }: { args: Story['args']; layout?: 'block' | 'inline' }) {
+  const [angle, setAngle] = useState(30);
+  const [length, setLength] = useState(12);
+  const shared = { ...(args as Shared), layout };
+  return (
+    <PropertyList pack="one-up">
+      <PropertyField {...shared} kind="number" control="slider" label="Angle" value={angle} min={0} max={360} unit="deg" onChange={setAngle} />
+      <PropertyField {...shared} kind="number" control="slider" label="Mix" value={65} min={0} max={100} unit="%" onChange={() => {}} />
+      <PropertyField {...shared} kind="number" control="slider" label="Inset" value={length} min={0} max={48} unit="″" onChange={setLength} />
+      <PropertyField {...shared} kind="number" control="slider" label="Radius" value={length} min={0} max={48} unit="px" onChange={setLength} />
+      <PropertyField {...shared} kind="number" label="Rotate" value={angle} unit="°" onChange={setAngle} />
+      <PropertyField {...shared} kind="number" label="Rise" value={length} unit="′" onChange={setLength} />
+      <PropertyField {...shared} kind="number" label="Width" value={length} unit="in" onChange={setLength} />
+      <PropertyField {...shared} kind="number" label="Heading" value={angle} unit="°" readOnly onChange={() => {}} />
+    </PropertyList>
+  );
+}
+
+/** Units whose glyph attaches to the number — `°`, `′`, `″`, `%`, as the unit catalog says — stay on the
+ *  value's line in both layouts, out of flow, where a word unit such as `px` hangs below an inline slider's
+ *  readout. A field is the same size with one as without. */
+export const AttachedUnits: Story = {
+  render: (args) => <SideBySide block={<AttachingUnits args={args} />} inline={<AttachingUnits args={args} layout="inline" />} />,
 };
 
 /** An end that stands for infinity: drag to the top and the value is
