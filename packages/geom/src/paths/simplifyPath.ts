@@ -53,7 +53,7 @@ export function simplifySubpath(
 ): PenAnchor[] {
   const { tol, cosCorner } = fitParams(tolerance, opts);
   const n = sub.length;
-  const corners = [...breaksOf(sub, closed, cosCorner)].sort((a, b) => a - b);
+  const corners = [...breaksOf(sub, closed, cosCorner, tol)].sort((a, b) => a - b);
   const result: PenAnchor[] = [];
   if (closed && corners.length === 0) {
     const pts = sampleRun(sub, 0, n, tol);
@@ -85,7 +85,7 @@ export function simplifySpan(
 ): PenAnchor[] {
   const { tol, cosCorner } = fitParams(tolerance, opts);
   const n = sub.length;
-  const breaks = breaksOf(sub, closed, cosCorner);
+  const breaks = breaksOf(sub, closed, cosCorner, tol);
   const stops = [from];
   for (let k = from + 1; k < to; k++) if (breaks.has(k % n)) stops.push(k);
   stops.push(to);
@@ -106,15 +106,13 @@ function fitParams(tolerance: number, opts: SimplifyPathOptions): { tol: number;
 }
 
 /** The anchors a refit must keep: corners, and both ends of a long straight. */
-function breaksOf(sub: PenAnchor[], closed: boolean, cosCorner: number): Set<number> {
+function breaksOf(sub: PenAnchor[], closed: boolean, cosCorner: number, tol: number): Set<number> {
   const n = sub.length;
   const breaks = new Set<number>();
-  for (let i = 0; i < n; i++) {
-    if (isCorner(sub, i, closed, cosCorner)) breaks.add(i);
-    if (isLongStraight(sub, i, closed)) {
-      breaks.add(i);
-      breaks.add((i + 1) % n);
-    }
+  for (let i = 0; i < n; i++) if (isCorner(sub, i, closed, cosCorner)) breaks.add(i);
+  for (const [from, to] of longStraights(sub, closed, tol)) {
+    breaks.add(from);
+    breaks.add(to);
   }
   return breaks;
 }
@@ -149,22 +147,41 @@ function isCorner(sub: PenAnchor[], i: number, closed: boolean, cosCorner: numbe
   return d1.x * d2.x + d1.y * d2.y < cosCorner;
 }
 
-/** Whether the segment leaving `sub[i]` is straight and far longer than the
- *  segments either side: a flat between curves, kept whole rather than folded
- *  into a curve fitted across it. */
-function isLongStraight(sub: PenAnchor[], i: number, closed: boolean): boolean {
+/**
+ * The straights far longer than the segments either side, as the anchors they
+ * run between: flats between curves, kept whole rather than folded into a
+ * curve fitted across them. Straight segments that carry on in one line within
+ * `tol` count as one straight, so a flat drawn in several pieces is measured
+ * whole and its inner anchors are not kept.
+ */
+function longStraights(sub: PenAnchor[], closed: boolean, tol: number): [number, number][] {
   const n = sub.length;
+  const segs = closed ? n : n - 1;
+  const has = (k: number): boolean => closed || (k >= 0 && k < segs);
   const len = (k: number): number => {
-    if (!closed && (k < 0 || k >= n - 1)) return 0;
+    if (!has(k)) return 0;
     const a = sub[(k + n) % n];
     const b = sub[(k + 1) % n];
     return Math.hypot(b.x - a.x, b.y - a.y);
   };
-  if (!closed && i >= n - 1) return false;
-  const a = sub[i];
-  const b = sub[(i + 1) % n];
-  if (a.outHandle || b.inHandle) return false;
-  return len(i) >= LONG_STRAIGHT * Math.max(len(i - 1), len(i + 1));
+  const straight = (k: number): boolean => has(k) && !sub[(k + n) % n].outHandle && !sub[(k + 1) % n].inHandle;
+  /** Whether segment `k` carries on segment `k - 1`'s line. */
+  const continues = (k: number): boolean => {
+    if (!straight(k) || !straight(k - 1)) return false;
+    const a = sub[(k - 1 + n) % n], m = sub[k % n], b = sub[(k + 1) % n];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const span = Math.hypot(dx, dy);
+    if (span === 0 || (m.x - a.x) * dx + (m.y - a.y) * dy <= 0 || (b.x - m.x) * dx + (b.y - m.y) * dy <= 0) return false;
+    return Math.abs((m.x - a.x) * dy - (m.y - a.y) * dx) / span <= tol;
+  };
+  const out: [number, number][] = [];
+  for (let s = 0; s < segs; s++) {
+    if (!straight(s) || continues(s)) continue;
+    let e = s, total = len(s);
+    while (e + 1 - s < segs && continues(e + 1)) total += len(++e);
+    if (total >= LONG_STRAIGHT * Math.max(len(s - 1), len(e + 1))) out.push([s, (e + 1) % n]);
+  }
+  return out;
 }
 
 /** Points along the anchors from index `from` to `to` (mod length), both
