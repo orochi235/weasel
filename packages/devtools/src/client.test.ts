@@ -80,6 +80,16 @@ describe('connectDevtools', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it('rejects a request whose send throws, and holds nothing for it', async () => {
+    const t = setup();
+    let fail = false;
+    const client = connectDevtools({ ...t.transport, send: (m) => { if (fail) throw new Error('port gone'); t.transport.send(m); } });
+    fail = true;
+    await expect(client.request(t.root.id, { type: 'get-state' })).rejects.toThrow('port gone');
+    fail = false;
+    await expect(client.request(t.root.id, { type: 'get-state' })).resolves.toMatchObject({ activeTool: 'select' });
+  });
+
   it('rejects a request the page refuses, with its message', async () => {
     const t = setup();
     const client = connectDevtools(t.transport);

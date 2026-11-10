@@ -126,7 +126,12 @@ export function createDevtoolsClient(transport: PanelTransport): DevtoolsClient 
       const requestId = nextId++;
       return new Promise((resolve, reject) => {
         pending.set(requestId, { rootId, resolve: resolve as (r: unknown) => void, reject });
-        transport.send({ ...body, protocol: DEVTOOLS_PROTOCOL, requestId, rootId } as DevtoolsRequest);
+        try {
+          transport.send({ ...body, protocol: DEVTOOLS_PROTOCOL, requestId, rootId } as DevtoolsRequest);
+        } catch (err) {
+          pending.delete(requestId);
+          reject(err);
+        }
       });
     },
     open() {
