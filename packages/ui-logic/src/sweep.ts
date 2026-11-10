@@ -16,8 +16,9 @@ export interface Sweep<V> {
 /** How many steps `stepsOf` takes from a sweep that has not ended by then. */
 export const SWEEP_CAP = 256;
 
-/** The first `cap` steps of `sweep`, and whether it had more. */
+/** The first `cap` steps of `sweep`, and whether it had more. `cap` is a whole number, 0 or more. */
 export function stepsOf<V>(sweep: Sweep<V>, cap = SWEEP_CAP): { steps: V[]; capped: boolean } {
+  if (!(Number.isInteger(cap) && cap >= 0)) throw new RangeError(`a cap is a whole number of steps, not ${cap}`);
   const steps: V[] = [];
   for (const value of sweep.walk()) {
     if (steps.length === cap) return { steps, capped: true };
@@ -122,6 +123,7 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
   const duration = span.duration ?? Infinity;
   if (!(duration >= 0)) throw new RangeError(`a run lasts 0 ms or more, not ${duration}`);
   const loop = span.loop ?? false;
+  if (typeof loop === 'number' && !(loop >= 0)) throw new RangeError(`a run loops 0 times or more, not ${loop}`);
   const passes = loop === true ? Infinity : loop === false ? 1 : loop;
   const walked = options.passes === 'all' ? passes : 1;
   // No length times no end is no length, where the product is NaN.

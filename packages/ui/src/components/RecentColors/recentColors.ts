@@ -24,7 +24,7 @@ export interface RecentColorsStore {
 
 /** Options for {@link createRecentColorsStore}. */
 export interface RecentColorsStoreOptions {
-  /** Most colors kept. Default 12. */
+  /** Most colors kept: a whole number, at least 1. Default 12, which a NaN reads as. */
   limit?: number;
   /** Where the list persists. Default: `localStorage`, when the environment
    *  has one and lets it be read. `null` keeps the list in memory only. */
@@ -81,7 +81,8 @@ function read(storage: RecentColorsStorage | null, key: string, limit: number): 
  * accessor or is out of quota gets a store that works for the session.
  */
 export function createRecentColorsStore(options: RecentColorsStoreOptions = {}): RecentColorsStore {
-  const limit = Math.max(1, options.limit ?? DEFAULT_LIMIT);
+  const asked = options.limit ?? DEFAULT_LIMIT;
+  const limit = Number.isNaN(asked) ? DEFAULT_LIMIT : Math.max(1, Math.floor(asked));
   const key = options.key ?? DEFAULT_KEY;
   const storage = options.storage === undefined ? defaultStorage() : options.storage;
   const changed = createEmitter();

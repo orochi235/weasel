@@ -57,8 +57,9 @@ export function rampColor(from: string, to: string, t: number, options: ColorRam
   return oklchToHex(s.L, chromaAt(s.L, chroma), H);
 }
 
-/** `steps` evenly spaced samples from `from` to `to`, both ends included. */
+/** `steps` evenly spaced samples from `from` to `to`, both ends included. A fractional count takes its whole steps. */
 export function colorRamp(from: string, to: string, steps: number, options: ColorRampOptions = {}): string[] {
-  if (steps <= 1) return steps === 1 ? [rampColor(from, to, 0, options)] : [];
-  return Array.from({ length: steps }, (_, i) => rampColor(from, to, i / (steps - 1), options));
+  const n = Math.floor(steps);
+  if (!(n > 1)) return n === 1 ? [rampColor(from, to, 0, options)] : [];
+  return Array.from({ length: n }, (_, i) => rampColor(from, to, i / (n - 1), options));
 }

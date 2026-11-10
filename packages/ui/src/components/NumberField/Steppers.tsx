@@ -50,6 +50,7 @@ function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperPr
       disabled={disabled}
       // Keeps focus in the input, where a press on the button would take it.
       onPointerDown={(e) => {
+        if (e.button !== 0) return;
         e.preventDefault();
         onHold();
       }}

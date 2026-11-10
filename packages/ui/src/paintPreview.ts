@@ -7,9 +7,15 @@
 // `sampleGradientStops` in the paint's own space puts the curve into the
 // stops themselves, and the browser only interpolates the short hops between.
 
-import { sampleGradientStops, type Paint } from '@weasel-js/core';
+import { paintAlpha, sampleGradientStops, type Paint } from '@weasel-js/core';
 import { RAD_TO_DEG } from '@weasel-js/geom';
 import { solidColorOf } from './components/paintValue';
+
+/** `color` at `alpha`, as the renderer multiplies a paint's `opacity` into it: a `color-mix` with `transparent`,
+ *  so a named or packed-alpha color works without being parsed here. */
+function faded(color: string, alpha: number): string {
+  return alpha >= 1 ? color : `color-mix(in srgb, ${color} ${Number((Math.max(0, alpha) * 100).toFixed(1))}%, transparent)`;
+}
 
 /** Sample count along a previewed gradient. Enough that a hue arc reads as a
  *  curve at chip size; a straight sRGB ramp would need a fraction of it. */
@@ -25,9 +31,10 @@ const SAMPLES = 24;
  * written as `color-mix` with `transparent` so a named or packed-alpha color
  * works without being parsed here.
  */
-function meshPreview(paint: { patches?: { colors: string[] }[] }): string | undefined {
-  const colors = paint.patches?.[0]?.colors;
-  if (!colors || colors.length < 4) return undefined;
+function meshPreview(paint: { patches?: { colors: string[] }[] }, alpha: number): string | undefined {
+  const given = paint.patches?.[0]?.colors;
+  if (!given || given.length < 4) return undefined;
+  const colors = given.map((c) => faded(c, alpha));
   const fade = (c: string): string => `color-mix(in srgb, ${c} 0%, transparent)`;
   const at: [string, string][] = [
     ['0% 0%', colors[0]], ['100% 0%', colors[1]],
@@ -53,7 +60,8 @@ export function sampledCssStops(colorAt: (t: number) => string, samples: number,
 /** CSS color stops across the whole ramp, in the gradient's own blend space. */
 function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
   const space = paint.interpolate ?? 'rgb';
-  return sampledCssStops((t) => sampleGradientStops(paint.stops, t, space), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
+  const alpha = paintAlpha(paint);
+  return sampledCssStops((t) => faded(sampleGradientStops(paint.stops, t, space), alpha), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
 }
 
 /** A fraction of the box as a CSS percentage. A gradient in absolute units has
@@ -68,14 +76,15 @@ function pct(v: number): string {
  * a placeholder rather than as an invented color.
  *
  * Gradient geometry is honored as far as CSS can carry it: the angle of a
- * linear gradient, the center of a radial or conic one. A paint in `'world'`
+ * linear gradient, the center of a radial or conic one. A paint's `opacity` fades its colors, though not an
+ * image's, which a `background` value cannot fade. A paint in `'world'`
  * or `'local'` units is measured in the scene rather than in the chip, so its
  * preview shows the ramp and not the placement.
  */
 export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
   const solid = solidColorOf(paint);
-  if (solid !== undefined) return solid;
+  if (solid !== undefined) return faded(solid, paintAlpha(paint));
 
   if (paint.kind === 'linear-gradient') {
     const dx = paint.to.x - paint.from.x;
@@ -90,7 +99,7 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
     return `radial-gradient(circle ${at}, ${sampledStops(paint)})`;
   }
   if ((paint.kind as string) === 'mesh-gradient') {
-    return meshPreview(paint as unknown as { patches?: { colors: string[] }[] });
+    return meshPreview(paint as unknown as { patches?: { colors: string[] }[] }, paintAlpha(paint));
   }
   // The picture whole, rather than a chip-sized corner of one tile.
   if (paint.kind === 'image') return `url(${JSON.stringify(paint.src)}) center / cover no-repeat`;

@@ -23,6 +23,12 @@ describe('colorRamp', () => {
     }
   });
 
+  it('ends a ramp of a fractional step count on its last color, taking the whole steps', () => {
+    const r = colorRamp('#000000', '#ffffff', 3.5, { space: 'srgb' });
+    expect(r).toHaveLength(3);
+    expect(r[2]).toBe('#ffffff');
+  });
+
   it.each([
     ['srgb',        '#800080'],
     ['srgb-linear', '#bc00bc'],

@@ -44,6 +44,12 @@ describe('range', () => {
   it('walks an endless range as far as it is asked', () => {
     expect(stepsOf(range({ from: 0, to: Infinity, step: 2 }), 3)).toEqual({ steps: [0, 2, 4], capped: true });
   });
+
+  it('refuses a cap that is not a whole number of steps, which never matched the count and walked an endless sweep forever', () => {
+    const endless = range({ from: 0, to: Infinity, step: 1 });
+    for (const cap of [2.5, -1, NaN]) expect(() => stepsOf(endless, cap)).toThrow(RangeError);
+    expect(stepsOf(endless, 0)).toEqual({ steps: [], capped: true });
+  });
 });
 
 describe('values', () => {
@@ -75,6 +81,9 @@ describe('frames', () => {
     expect(stepsOf(frames({ loop: 0 }, { every: 10, passes: 'all' }))).toEqual({ steps: [0], capped: false });
     expect(() => frames({ duration: NaN }, { every: 10 })).toThrow(RangeError);
     expect(() => frames({ duration: -100 }, { every: 10 })).toThrow(RangeError);
+    // A NaN count of passes walked forever; a negative one ended on a frame before the run began.
+    expect(() => frames({ duration: 100, loop: NaN }, { every: 10 })).toThrow(RangeError);
+    expect(() => frames({ duration: 100, loop: -3 }, { every: 7 })).toThrow(RangeError);
   });
 
   it('labels a frame with the time it shows, origin included', () => {
