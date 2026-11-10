@@ -16,8 +16,9 @@ export interface Sweep<V> {
 /** How many steps `stepsOf` takes from a sweep that has not ended by then. */
 export const SWEEP_CAP = 256;
 
-/** The first `cap` steps of `sweep`, and whether it had more. */
+/** The first `cap` steps of `sweep`, and whether it had more. `cap` is a whole number, 0 or more. */
 export function stepsOf<V>(sweep: Sweep<V>, cap = SWEEP_CAP): { steps: V[]; capped: boolean } {
+  if (!(Number.isInteger(cap) && cap >= 0)) throw new RangeError(`a cap is a whole number of steps, not ${cap}`);
   const steps: V[] = [];
   for (const value of sweep.walk()) {
     if (steps.length === cap) return { steps, capped: true };

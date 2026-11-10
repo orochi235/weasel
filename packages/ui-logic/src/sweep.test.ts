@@ -44,6 +44,12 @@ describe('range', () => {
   it('walks an endless range as far as it is asked', () => {
     expect(stepsOf(range({ from: 0, to: Infinity, step: 2 }), 3)).toEqual({ steps: [0, 2, 4], capped: true });
   });
+
+  it('refuses a cap that is not a whole number of steps, which never matched the count and walked an endless sweep forever', () => {
+    const endless = range({ from: 0, to: Infinity, step: 1 });
+    for (const cap of [2.5, -1, NaN]) expect(() => stepsOf(endless, cap)).toThrow(RangeError);
+    expect(stepsOf(endless, 0)).toEqual({ steps: [], capped: true });
+  });
 });
 
 describe('values', () => {
