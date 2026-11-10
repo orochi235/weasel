@@ -2,7 +2,7 @@
  * Draw commands as native `.lbx` objects: rectangles, open polylines, plain text boxes. Each mapper
  * returns undefined for a command it cannot state exactly, and the writer rasterizes that one.
  */
-import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath } from '@weasel-js/geom';
+import { mat3, PATH_CMD_LENGTHS, PATH_L, PATH_M, type PolygonPath, maxOf, minOf } from '@weasel-js/geom';
 import type { PathDrawCommand, TextDrawCommand } from '@weasel-js/renderer';
 import type { ArrowStyle, HorizontalAlignment, LineObject, RectObject, TextObject, VerticalAlignment } from 'bil-lbx';
 import { axisMap, fillColor, plainStroke, uniformScale, type DrawState } from './style';
@@ -76,12 +76,12 @@ export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject |
   });
   const xs = points.map((p) => p.x);
   const ys = points.map((p) => p.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
+  const x = minOf(xs);
+  const y = minOf(ys);
   const arrow = ARROW_FOR_CAP[stroke.cap];
   return {
     type: 'line',
-    position: { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y },
+    position: { x, y, width: maxOf(xs) - x, height: maxOf(ys) - y },
     points,
     arrowBegin: arrow,
     arrowEnd: arrow,
