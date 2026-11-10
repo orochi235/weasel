@@ -3,29 +3,19 @@
  * text, a caret moves only forward along a left-to-right line, and a point in either half of a character's
  * cell answers that character's start or end.
  */
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
-import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import { caretIndexAt } from './hitTest';
 import { layoutTextPose } from './layout/textPoseLayout';
 import { registerBidi, registeredBidi } from './layout/bidiRegistry';
 import type { LaidOutCell } from './layout/layoutRuns';
 import type { TextPose } from './pose';
-import { mixedText, propertyAtlas, runs, segmenterEnds, tally, timeoutFor } from './pbt.fixture';
+import { mixedText, registerPropertyFont, runs, segmenterEnds, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 150;
 
-beforeAll(async () => {
-  _resetFontRegistryForTests();
-  const font = propertyAtlas(FIXTURE_FONT);
-  global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
-    ? Promise.resolve({ ok: true, json: () => Promise.resolve(font) })
-    : Promise.resolve({ ok: true, blob: () => Promise.resolve(new Blob(['PNG'])) }))) as typeof fetch;
-  global.createImageBitmap = vi.fn().mockResolvedValue({ width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap);
-  await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
-});
+beforeAll(registerPropertyFont);
 
 const pose = fc.record({
   text: mixedText(16),

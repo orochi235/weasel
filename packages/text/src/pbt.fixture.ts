@@ -2,6 +2,9 @@
  * fast-check arbitraries shared by text's property tests. Test-only: nothing in the package imports it.
  */
 import fc from 'fast-check';
+import { vi } from 'vitest';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
@@ -93,7 +96,7 @@ export function atlasAdvance(cp: number): number {
 
 /** A BMFont document with a glyph for every code point in {@link ATOMS} and printable ASCII. Anything else
  *  has no glyph, and lays out as an empty slot. */
-export function propertyAtlas<F extends { chars: readonly object[] }>(base: F): F {
+function propertyAtlas<F extends { chars: readonly object[] }>(base: F): F {
   const cps = new Set<number>();
   for (let c = 33; c < 127; c++) cps.add(c);
   for (const a of ATOMS) for (const ch of a) cps.add(ch.codePointAt(0)!);
@@ -128,4 +131,15 @@ export function cutInto(text: string, cuts: readonly number[]): string[] {
   }
   if (from < text.length || out.length === 0) out.push(text.slice(from));
   return out;
+}
+
+/** Register {@link propertyAtlas} as the `inter` family, with fetch and image decoding stubbed. */
+export async function registerPropertyFont(): Promise<void> {
+  _resetFontRegistryForTests();
+  const font = propertyAtlas(FIXTURE_FONT);
+  global.fetch = vi.fn().mockImplementation((url: string) => (url.endsWith('.json')
+    ? Promise.resolve({ ok: true, json: () => Promise.resolve(font) })
+    : Promise.resolve({ ok: true, blob: () => Promise.resolve(new Blob(['PNG'])) }))) as typeof fetch;
+  global.createImageBitmap = vi.fn().mockResolvedValue({ width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap);
+  await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
 }
