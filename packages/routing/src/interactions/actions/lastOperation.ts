@@ -31,9 +31,9 @@ export interface LastOperationStore {
   /**
    * Undo the operation's entry, put back the selection it ran on, and run it again with `patch` laid over its
    * values (a gesture is replayed by its handle), keeping the entry that makes in place of the old one: the
-   * history, or the journal open on it, still holds one entry for it. The merged values become the action's
-   * params for the rest of the session, under any tuning, and each tuning that keeps them is handed them
-   * (`ActionTuning.keep`). Returns whether it ran.
+   * history, or the journal open on it, still holds one entry for it. Each tuning that keeps the merged values is
+   * handed them (`ActionTuning.keep`); for an action none keeps, they become its params for the rest of the
+   * session, under any tuning. Returns whether it ran.
    */
   adjust(patch: Readonly<Record<string, unknown>>): boolean;
   /** Forget the operation; the scene and the history stay as they are. */
