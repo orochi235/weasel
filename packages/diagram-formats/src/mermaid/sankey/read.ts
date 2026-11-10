@@ -4,11 +4,11 @@ import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { pageNameOf, statementsOf } from '../common/lines';
+import { mermaidNumber } from '../common/number';
 
 /** The page a sankey is read onto. */
 export const SANKEY_PAGE = { width: 900, height: 540 } as const;
 
-const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 
 /** One CSV row's fields, RFC 4180 quoting read: `"a, b"` holds its comma, and `""` inside quotes is one quote. */
 export function csvFields(row: string, line: number): string[] {
@@ -46,8 +46,9 @@ export function readMermaidSankey(text: string): ImportResult {
     const fields = csvFields(row, line);
     if (fields.length !== 3) throw lineError('Mermaid', line, `a row is source,target,value; this one has ${fields.length} field(s)`);
     const [source, target, value] = fields as [string, string, string];
-    if (!NUMBER.test(value) || Number(value) < 0) throw lineError('Mermaid', line, `"${value}" is not a flow; it is a number not below zero`);
-    return { source, target, value: Number(value) };
+    const flow = mermaidNumber(value);
+    if (flow === undefined || flow < 0) throw lineError('Mermaid', line, `"${value}" is not a flow; it is a number not below zero`);
+    return { source, target, value: flow };
   });
   const warnings = new Warnings();
   const name = pageNameOf(src, warnings);

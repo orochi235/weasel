@@ -1,6 +1,7 @@
 /** A Mermaid xychart's text as statements, each with the line it came from. */
 import { decodeEntities } from '../../graphRead';
 import { lineError } from '../../lineError';
+import { numberAt } from '../common/number';
 import { frontTitle } from '../common/header';
 
 /** One statement of an xychart, by the keyword that starts it. */
@@ -23,7 +24,6 @@ export interface XyChartText {
 
 const FORMAT = 'Mermaid';
 const HEADER = /^xychart(?:-beta)?(?:\s+(horizontal|vertical))?\s*$/;
-const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 
 /** A quoted string's text, its Mermaid and HTML references read, as `mermaidQuoted` writes them. */
 export const unquote = (s: string): string => decodeEntities(s.slice(1, -1), true);
@@ -44,10 +44,6 @@ function listItems(list: string): string[] {
   return out.length === 1 && out[0] === '' ? [] : out;
 }
 
-function numberAt(text: string, line: number): number {
-  if (!NUMBER.test(text)) throw lineError(FORMAT, line, `"${text}" is not a number`);
-  return Number(text);
-}
 
 /** A leading quoted title off `rest`, and what follows it. */
 function leadingTitle(rest: string): { title?: string; rest: string } {

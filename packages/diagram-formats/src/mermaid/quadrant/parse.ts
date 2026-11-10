@@ -1,10 +1,10 @@
 /** A Mermaid quadrant chart's statements read into the parts of its spec. */
 import type { QuadrantAxis, QuadrantPoint, QuadrantPointStyle } from '@weasel-js/plot';
 import { lineError } from '../../lineError';
+import { numberAt } from '../common/number';
 import type { Statement } from '../common/lines';
 import { unquote } from '../xychart/parse';
 
-const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 
 /** Text bare or in double quotes, its quotes and Mermaid's `#quot;` read. */
 export const textOf = (s: string): string => {
@@ -12,10 +12,6 @@ export const textOf = (s: string): string => {
   return t.length > 1 && t.startsWith('"') && t.endsWith('"') ? unquote(t) : t;
 };
 
-function numberAt(text: string, line: number): number {
-  if (!NUMBER.test(text)) throw lineError('Mermaid', line, `"${text}" is not a number`);
-  return Number(text);
-}
 
 /** `Low --> High`, `Low -->` or `Low` as an axis's ends. */
 export function axisOf(rest: string): QuadrantAxis {

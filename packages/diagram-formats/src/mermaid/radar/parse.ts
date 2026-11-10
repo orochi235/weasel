@@ -1,10 +1,10 @@
 /** A Mermaid radar's statements, read into the chart they describe. */
 import type { RadarAxis, RadarCurve, RadarData } from '@weasel-js/plot';
 import { lineError } from '../../lineError';
+import { numberAt } from '../common/number';
 import type { Statement } from '../common/lines';
 
 const FORMAT = 'Mermaid';
-const NUMBER = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
 /** An axis or a curve: its id, then an optional quoted label in brackets. */
 const ITEM = /\s*([A-Za-z_][\w-]*)\s*(?:\[\s*"([^"]*)"\s*\])?\s*/y;
 
@@ -15,10 +15,6 @@ interface PendingCurve {
   line: number;
 }
 
-function numberAt(text: string, line: number): number {
-  if (!NUMBER.test(text)) throw lineError(FORMAT, line, `"${text}" is not a number`);
-  return Number(text);
-}
 
 /** An id and its label off `text` at `at`, and where it ends; `null` when no id starts there. */
 function itemAt(text: string, at: number): { id: string; label?: string; end: number } | null {
