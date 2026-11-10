@@ -8,8 +8,9 @@ import { pageNameOf, statementsOf } from '../common/lines';
 /** The page a timeline is read onto. */
 export const TIMELINE_PAGE = { width: 900, height: 500 } as const;
 
-/** Text as a timeline writes it, `#58;` read back as the colon Mermaid splits on. */
-export const timelineText = (s: string): string => s.trim().replace(/#58;/g, ':');
+/** Text as a timeline writes it, Mermaid's `#58;` and the other numbered references read back as their characters. */
+export const timelineText = (s: string): string =>
+  s.trim().replace(/#(\d+);/g, (whole, n: string) => (Number(n) <= 0x10ffff ? String.fromCodePoint(Number(n)) : whole));
 
 /** Reads a Mermaid `timeline`. Throws, naming the line, on text that is not one. */
 export function readMermaidTimeline(text: string): ImportResult {
