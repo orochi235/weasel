@@ -4,10 +4,13 @@
 
 import type { PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-import { prefLeafHolding, prefLeafHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
+import { prefLeavesHolding, prefLeavesHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
 import type { PrefBoolean, PrefEnum, PrefLeaf } from './schema';
 
 type Siblings = Record<string, unknown> | undefined;
+
+const variantOf = (value: unknown, tag: string): unknown =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>)[tag] : undefined;
 
 /** What the control over `leaf` shows for `stored`: what its `encoding` reads it as, else `stored` itself.
  *  `siblings` is the object the leaf is a field of. */
@@ -30,8 +33,10 @@ export function prefShownReader(
 ): PrefConditionReader {
   return (path, from) => {
     const stored = read(path, from);
-    const held = from === 'item' ? item && prefLeafHoldingIn(item, path) : prefLeafHolding(prefSchemaHolding(schema, path, over), path);
-    if (held === undefined || held === UNSEEN) return stored;
+    const found = from === 'item' ? item && prefLeavesHoldingIn(item, path) : prefLeavesHolding(prefSchemaHolding(schema, path, over), path);
+    if (found === undefined || found === UNSEEN) return stored;
+    const held = found.find((each) => (each.variants ?? []).every((v) => variantOf(read(v.at, from), v.tag) === v.key));
+    if (held === undefined) return stored;
     const object = held.within === undefined ? undefined : read(held.within, from);
     return prefShownValue(held.leaf, stored, typeof object === 'object' && object !== null ? (object as Siblings) : undefined);
   };

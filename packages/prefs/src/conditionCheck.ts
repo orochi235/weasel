@@ -4,7 +4,7 @@
 import { formOf, ORDERINGS, partsOf, type PrefConditionValue, type PrefTest } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
-import { prefLeafHolding, prefLeafHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
+import { prefLeavesHolding, prefLeavesHoldingIn, prefSchemaHolding, UNSEEN } from './holding';
 import { PREF_CONDITION_FIELDS, type PrefConditionField } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -86,23 +86,27 @@ function testProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, o
 function leafProblems(test: PrefTest, schema: Schema, site: PrefConditionSite, over: Schema | undefined): PrefConditionProblem[] {
   const { path } = test;
   const inEntry = test.from === 'item';
-  const held = inEntry ? prefLeafHoldingIn(site.within!.item, path) : prefLeafHolding(prefSchemaHolding(schema, path, over), path);
-  if (held === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"${inEntry ? ' in the entry' : ''}` }];
-  if (held === UNSEEN) return [];
-  const { leaf } = held;
+  const found = inEntry ? prefLeavesHoldingIn(site.within!.item, path) : prefLeavesHolding(prefSchemaHolding(schema, path, over), path);
+  if (found === undefined) return [{ code: 'no-leaf', path, problem: `no leaf holds a value at "${path}"${inEntry ? ' in the entry' : ''}` }];
+  if (found === UNSEEN) return [];
+  // A field of a union may be described by each variant differently: a problem holds only where it holds for all of them.
+  const leaves = found.map((held) => held.leaf);
+  const { leaf } = found[0]!;
   const named = inEntry ? (path === '' ? 'the entry' : `the entry's "${path}"`) : `"${path}"`;
-  if (!prefHoldsValue(leaf)) return [{ code: 'no-value', path, problem: `${named} is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind === 'actions' ? 'actions leaf' : leaf.kind}, which holds no value` }];
+  if (!leaves.some(prefHoldsValue)) return [{ code: 'no-value', path, problem: `${named} is a${leaf.kind === 'separator' || leaf.kind === 'label' ? '' : 'n'} ${leaf.kind === 'actions' ? 'actions leaf' : leaf.kind}, which holds no value` }];
+  const valued = leaves.filter(prefHoldsValue);
+  const first = valued[0]!;
   const out: PrefConditionProblem[] = [];
   const compared = [test.is, test.isNot, ...(test.in ?? [])].filter((value) => value !== undefined);
   for (const value of compared) {
-    const why = neverHolds(leaf, value);
-    if (why === undefined) continue;
-    const code = leaf.kind === 'enum' && typeof value === 'string' ? 'option' : 'value';
-    out.push({ code, path, problem: `${named} never holds ${show(value)}: ${why}` });
+    const whys = valued.map((each) => neverHolds(each, value));
+    if (whys.some((why) => why === undefined)) continue;
+    const code = valued.every((each) => each.kind === 'enum') && typeof value === 'string' ? 'option' : 'value';
+    out.push({ code, path, problem: `${named} never holds ${show(value)}: ${whys[0]}` });
   }
   const ordering = ORDERINGS.find((op) => test[op] !== undefined);
-  if (ordering !== undefined && isBuiltinPref(leaf) && leaf.kind !== 'number') {
-    out.push({ code: 'value', path, problem: `${named} is a${leaf.kind === 'object' || leaf.kind === 'enum' ? 'n' : ''} ${leaf.kind}, and "${ordering}" compares numbers` });
+  if (ordering !== undefined && valued.every((each) => isBuiltinPref(each) && each.kind !== 'number')) {
+    out.push({ code: 'value', path, problem: `${named} is a${first.kind === 'object' || first.kind === 'enum' ? 'n' : ''} ${first.kind}, and "${ordering}" compares numbers` });
   }
   return out;
 }
