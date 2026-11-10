@@ -3,6 +3,7 @@ import type { PathFillRule } from '@weasel-js/geom';
 
 /** The style params an insert reads, each a shape tool's option of the same name. */
 export const STYLE_OPTION_KEYS = ['fill', 'stroke', 'strokeWidth', 'fillRule'] as const;
+/** One of {@link STYLE_OPTION_KEYS}. */
 export type StyleOptionKey = (typeof STYLE_OPTION_KEYS)[number];
 
 /** The stroke width a new shape is drawn with, in world units, when nothing names one. */
