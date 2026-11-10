@@ -85,21 +85,25 @@ export function axesOf<T>(sample: T): Axes<T> | null {
   if (!isPlainObject(sample)) return null;
   const keys = Object.keys(sample).sort();
   if (keys.length === 0 || !keys.every((k) => typeof sample[k] === 'number')) return null;
+  // An own `__proto__`, as `JSON.parse` makes, assigned would set the prototype: build on none, then spread.
+  const proto = keys.includes('__proto__');
+  const make = (): Fields => (proto ? Object.create(null) as Fields : {});
+  const plain = (o: Fields): Fields => (proto ? { ...o } : o);
   return {
     count: keys.length,
     shape: `object:${JSON.stringify(keys)}`,
     names: keys,
     to: (v) => keys.map((k) => (v as Record<string, number>)[k]!),
     from: (a, at = 0) => {
-      const out: Record<string, number> = {};
+      const out = make();
       for (let i = 0; i < keys.length; i++) out[keys[i]!] = a[at + i]!;
-      return out as T;
+      return plain(out) as T;
     },
     ...(fieldByField(keys) ?? {
       add: (v: Fields, delta: ArrayLike<number>) => {
-        const out: Fields = {};
+        const out = make();
         for (let i = 0; i < keys.length; i++) out[keys[i]!] = v[keys[i]!]! + delta[i]!;
-        return out;
+        return plain(out);
       },
       write: (v: Fields, out: Buffer, at: number) => {
         for (let i = 0; i < keys.length; i++) out[at + i] = v[keys[i]!]!;
