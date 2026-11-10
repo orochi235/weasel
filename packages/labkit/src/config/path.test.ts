@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { fillConfigDefaults, hasConfigPath, valueAtPath, withValueAtPath } from './path';
+import {
+  fillConfigDefaults,
+  hasConfigPath,
+  schemaNodeAtPath,
+  valueAtPath,
+  withValueAtPath,
+} from './path';
 
 describe('valueAtPath', () => {
   it('reads a single segment', () => {
@@ -105,5 +111,38 @@ describe('fillConfigDefaults', () => {
   it('fills from defaults when the stored config is not a record', () => {
     expect(fillConfigDefaults(undefined, { a: 1 })).toEqual({ a: 1 });
     expect(fillConfigDefaults(7, { a: 1 })).toEqual({ a: 1 });
+  });
+});
+
+describe('keys every object inherits', () => {
+  it('reads a missing `constructor` or `toString` as absent, not as what Object.prototype holds', () => {
+    expect(valueAtPath({}, 'constructor')).toBeUndefined();
+    expect(valueAtPath({ grid: {} }, 'grid.toString')).toBeUndefined();
+    expect(hasConfigPath({}, 'constructor')).toBe(false);
+    expect(hasConfigPath({ grid: {} }, 'grid.valueOf')).toBe(false);
+  });
+
+  it('finds no schema node at a key the children only inherit', () => {
+    expect(schemaNodeAtPath({ name: 'G', children: {} }, 'constructor')).toBeUndefined();
+  });
+
+  it('fills a `constructor` leaf from its default', () => {
+    expect(fillConfigDefaults({}, { constructor: 5, grid: { toString: 'x' } })).toEqual({
+      constructor: 5,
+      grid: { toString: 'x' },
+    });
+  });
+
+  it('writes under a `constructor` branch the config does not hold', () => {
+    expect(withValueAtPath({} as Record<string, unknown>, 'constructor.size', 4)).toEqual({
+      constructor: { size: 4 },
+    });
+  });
+
+  it('keeps a `__proto__` key as data, without changing the prototype', () => {
+    const defaults = JSON.parse('{"__proto__": {"polluted": 1}}') as Record<string, unknown>;
+    const out = fillConfigDefaults({}, defaults) as Record<string, unknown>;
+    expect(Object.getPrototypeOf(out)).toBe(Object.prototype);
+    expect(Object.hasOwn(out, '__proto__')).toBe(true);
   });
 });
