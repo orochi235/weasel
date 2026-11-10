@@ -12,6 +12,7 @@
  * and the parts composite as one layer.
  */
 import type { Stroke, StyledRun, TextPoseLayout } from '@weasel-js/core';
+import { maxOf } from '@weasel-js/geom';
 import type { PaintServerRegistry } from './gradients';
 import { WEASEL_NS_PREFIX } from './gradients';
 import { boxTransformAttr } from './placeBox';
@@ -98,7 +99,7 @@ export function alignedTextXml(
   const write = (n: SvgTextNode): string => textXml(n, registry, namespaces, warn, layout);
   const parts = [write(flat)];
   const glyphs = repainted(flat, BLACK, () => undefined);
-  const widest = Math.max(0, ...[node.stroke, ...(node.runs ?? []).map((r) => r.stroke)].map((s) => (s ? widthOf(s) : 0)));
+  const widest = Math.max(0, maxOf([node.stroke, ...(node.runs ?? []).map((r) => r.stroke)], (s) => (s ? widthOf(s) : 0)));
   for (const align of aligns) {
     const id = cutId(registry);
     const copy = write(repainted(flat, null, (s) => strokeFor(s, align)));
