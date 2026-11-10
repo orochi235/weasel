@@ -957,3 +957,31 @@ Key rulings and the per-view camera TODO landed in the same batch.
   opens the Windows Start menu; Ctrl+Esc is a reserved chord off a Mac (Mike, 2026-11-09). A mode shortcut can
   name a key per platform (`{ apple?, other? }`).
 - Open: whether a scope below a `mute` may re-register the muted id.
+
+## Audit round fourteen (2026-11-10)
+
+Calls the lanes made without a ruling:
+
+- A tool-option tuning that keeps its params (`keep`) owns them: the last-operation panel stores no session params
+  for that action, so a value set in the options row after a run reaches the next run. Rejected: laying session
+  params under every `under` tuning, which contradicts tool options lying under the panel's params.
+- A last-operation change made after a tool switch is written to the tool whose options the operation read. Open: an
+  enabled check that reads the action's params while another tool is active makes that tool the last reader.
+- An `endless` number tool option holds Infinity; `[`/`]` step from `max` to ∞ and back.
+- Text fill, sticky paper, and sticky ink set to none draw none, which can leave a shape invisible, rather than
+  falling back to the defaults.
+- Painting skin weights compares the falloff against each joint's share (`jointShares`, animator), not its raw weight.
+- Fraction and ratio displays parse in their locale; `compact` and `zoom` still parse `en-US`, as they display it.
+- Alignment guides whose offsets round to one 3-decimal name get a `~2` suffix rather than longer names.
+- A lab page whose `href` is a directory's `index.html` counts as that directory.
+- A sweep cap or a `frames` loop count that isn't a whole non-negative number throws `RangeError`; a NaN recent-colors
+  limit falls back to 12. An image pattern's preview ignores `opacity`, which a CSS background can't fade.
+- Text wraps with a relative tolerance of 1e-9, so a box sized to fit its text doesn't wrap it.
+- A Mermaid flowchart keyword line's `;` inside double quotes doesn't end the line. Sequence participant ids hold no
+  whitespace in messages, notes, and activations, as in declarations. Numbers past the double range are refused at
+  read; `niceDomain` keeps an end that would overflow, and a span too fine to cut.
+- Open: `lerpStroke` drops `vertexWidths` and `vertexColors`, since the two strokes can differ in anchor count.
+- Open: a clearable number pref with a numeric default reads back as the default once cleared in a store.
+- Open: negative stroke widths pass through the draw.io, DOT, and Mermaid readers unchanged.
+- Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
+- Open: which edge an RTL menu favors when it fits on neither side.
