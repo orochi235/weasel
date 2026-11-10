@@ -1,10 +1,12 @@
 import type { TrialHistorySource } from '../trial/trialHistory';
+import { onTrialRestart } from './trialRestarts';
 
 interface Held {
   /** The history each trial's instrument has mounted now. */
   sources: Map<string, TrialHistorySource>;
-  /** What each trial's last unmounted history saved, until another mounts. */
-  parked: Map<string, unknown>;
+  /** What each trial's last unmounted history saved, until another mounts or the trial restarts
+   *  its undo, with the stop of the restart listener that drops it. */
+  parked: Map<string, { data: unknown; off: () => void }>;
   listeners: Set<(trialId: string) => void>;
 }
 
@@ -17,6 +19,11 @@ function held(store: object): Held {
   const fresh: Held = { sources: new Map(), parked: new Map(), listeners: new Set() };
   byStore.set(store, fresh);
   return fresh;
+}
+
+function unpark(h: Held, trialId: string): void {
+  h.parked.get(trialId)?.off();
+  h.parked.delete(trialId);
 }
 
 /** What a source's subscribers hear that its saved form could change on: a
@@ -37,7 +44,7 @@ export function holdOwnUndo(
 ): () => void {
   const h = held(store);
   h.sources.set(trialId, source);
-  h.parked.delete(trialId);
+  unpark(h, trialId);
   let key = stepKey(source);
   const off = source.subscribe(() => {
     const next = stepKey(source);
@@ -50,7 +57,9 @@ export function holdOwnUndo(
     off();
     if (h.sources.get(trialId) !== source) return;
     h.sources.delete(trialId);
-    if (source.serialize) h.parked.set(trialId, source.serialize());
+    if (!source.serialize) return;
+    const offRestart = onTrialRestart(store, trialId, () => unpark(h, trialId));
+    h.parked.set(trialId, { data: source.serialize(), off: offRestart });
   };
 }
 
@@ -61,7 +70,8 @@ export function ownUndoOf(store: object, trialId: string): { data: unknown } | u
   const h = byStore.get(store);
   const source = h?.sources.get(trialId);
   if (source) return { data: source.serialize?.() };
-  return h?.parked.has(trialId) ? { data: h.parked.get(trialId) } : undefined;
+  const parked = h?.parked.get(trialId);
+  return parked && { data: parked.data };
 }
 
 /** Hear each time a history held for one of `store`'s trials steps. Returns the stop. */
