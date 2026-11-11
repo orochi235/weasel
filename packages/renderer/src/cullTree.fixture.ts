@@ -68,9 +68,11 @@ const { tree: rawTree } = fc.letrec<{ tree: DrawCommand[]; node: DrawCommand }>(
 /** Each command tagged apart, so a group the cull copies is still told from its neighbors. */
 export const tree = rawTree.map((cmds) => {
   let n = 0;
-  const tag = (list: DrawCommand[]): DrawCommand[] => list.map((c) => ({
-    ...c, pbt: n++, ...(c.kind === 'group' ? { children: tag(c.children) } : {}),
-  }) as DrawCommand);
+  const tag = (list: DrawCommand[]): DrawCommand[] => list.map((c): DrawCommand => {
+    const tagged: DrawCommand & { pbt: number } = { ...c, pbt: n++ };
+    if (tagged.kind === 'group') tagged.children = tag(tagged.children);
+    return tagged;
+  });
   return tag(cmds);
 });
 
