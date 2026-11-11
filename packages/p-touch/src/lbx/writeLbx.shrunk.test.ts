@@ -26,3 +26,11 @@ describe('shrunk counterexamples', () => {
     }
   });
 });
+
+describe('shrunk counterexamples: length', () => {
+  it('refuses a label length that is not a positive finite number', async () => {
+    for (const length of [Number.NaN, Infinity, 0, -5]) {
+      await expect(writeLbx({ length, tape: t, commands: [] })).rejects.toThrow(RangeError);
+    }
+  });
+});

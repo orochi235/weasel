@@ -228,6 +228,9 @@ function innermost(cmd: DrawCommand): DrawCommand {
 
 /** The `.lbx` label `page` describes, without the file: its paper, cuts and objects. */
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
+  if (!Number.isFinite(page.length) || page.length <= 0) {
+    throw new RangeError(`writeLbx: a label's length must be a positive finite number of points, got ${page.length}`);
+  }
   const items: Item[] = [];
   const skipped: LbxSkip[] = [];
   collect(page.commands, { transform: mat3.identity(), alpha: 1 }, [], items, skipped);

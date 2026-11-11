@@ -6,42 +6,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { decodeBmp32, parseLbx, type ImageObject, type LabelObject } from 'bil-lbx';
+import { decodeBmp32, parseLbx, type ImageObject } from 'bil-lbx';
 import { PathBuilder } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { Printers } from 'obwat';
 import { labelGrid, labelRenderPlan, printableBand } from '../render';
 import { TAPES, tapeForWidthMm, tapeNamed } from '../tape';
-import { coord, objectCommand, runs, tape, timeoutFor } from '../pbt.fixture';
+import { coord, finiteDeep, objectCommand, runs, shape, tape, timeoutFor } from '../pbt.fixture';
 import { lbxConfig, writeLbx } from './writeLbx';
-
-/** A pen or brush that draws nothing reads back as none. */
-const drawn = <T extends { style: string }>(v: T | undefined): T | undefined => (v?.style === 'NULL' ? undefined : v);
-
-/** What of an object a P-touch round trip has to keep. */
-function shape(o: LabelObject): Record<string, unknown> {
-  const common = { type: o.type, position: o.position };
-  switch (o.type) {
-    case 'text':
-      return {
-        ...common, data: o.data, font: { name: o.font.name, size: o.font.size, ...(o.font.weight !== 400 && o.font.weight !== undefined ? { weight: o.font.weight } : {}), ...(o.font.italic ? { italic: true } : {}) },
-        color: o.textStyle?.color ?? '#000000', underline: o.textStyle?.underline ?? 0,
-        horizontalAlignment: o.horizontalAlignment ?? 'LEFT', autoLF: !!o.autoLF,
-      };
-    case 'rect':
-      return { ...common, pen: drawn(o.pen), brush: drawn(o.brush) };
-    case 'line':
-      return { ...common, points: o.points, pen: drawn(o.pen), arrowBegin: o.arrowBegin, arrowEnd: o.arrowEnd };
-    default:
-      return common;
-  }
-}
-
-const finiteDeep = (v: unknown): boolean =>
-  typeof v === 'number' ? Number.isFinite(v)
-  : Array.isArray(v) ? v.every(finiteDeep)
-  : v !== null && typeof v === 'object' && !(v instanceof Uint8Array) ? Object.values(v).every(finiteDeep)
-  : true;
 
 describe('writeLbx read back', () => {
   it('reads back every object, the paper, and the cuts it wrote', async () => {
