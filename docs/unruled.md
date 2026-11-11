@@ -647,6 +647,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   limit of an ever-heavier weight. Several infinite weights, a nested product that overflows to
   `Infinity` among them, blend among themselves at equal weight, and the finite ones drop out; the
   blend is never `NaN`. Members whose nested product underflows to 0 everywhere share it equally.
+- 2026-11-10 (property tests): `blendTheme` follows the split-pref ruling above: an infinite share takes its
+  whole axis, split equally among several infinite ones, and the finite shares on that axis drop out. It
+  used to blend to `NaN`. Not ruled: chosen to match prefs.
 
 ## Diagram, audio, and labkit
 

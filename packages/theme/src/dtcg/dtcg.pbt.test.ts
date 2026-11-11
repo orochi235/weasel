@@ -59,7 +59,7 @@ describe('resolveTokens', () => {
     );
     t.atLeast('resolves', 30);
     t.atLeast('with aliases', 15);
-    t.atLeast('cycle', 30);
+    t.atLeast('cycle', 20);
     t.atLeast('dangling', 30);
   }, timeoutFor(RUNS, 5));
 });

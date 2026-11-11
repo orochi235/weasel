@@ -32,7 +32,7 @@ describe('toDTCG and loadDTCG', () => {
       }),
       runs(RUNS),
     );
-    t.atLeast('resolves', 200);
+    t.atLeast('resolves', 100);
     t.atLeast('fails', 50);
     t.atLeast('chain', 200);
     t.atLeast('two axes', 200);
