@@ -35,9 +35,13 @@ export const setQuadrantPointStyle = <K extends keyof QuadrantPointStyle>(
   data: QuadrantData, point: number, key: K, value: QuadrantPointStyle[K] | undefined,
 ): QuadrantData => withPoint(data, point, (p) => (p.style?.[key] === value ? p : withOptional(p, 'style', restyled(p.style, key, value))), 'setQuadrantPointStyle');
 
+/** The style of the chart's class `name`, or `undefined` for a name it holds no class for: `constructor` included. */
+export const quadrantClassOf = (data: Pick<QuadrantData, 'classes'>, name: string): QuadrantPointStyle | undefined =>
+  (data.classes !== undefined && Object.hasOwn(data.classes, name) ? data.classes[name] : undefined);
+
 /** `data` with a point drawn in class `className`; `undefined` drops it. Throws on a class the chart does not hold. */
 export function setQuadrantPointClass(data: QuadrantData, point: number, className: string | undefined): QuadrantData {
-  if (className !== undefined && data.classes?.[className] === undefined) throw new Error(`setQuadrantPointClass: no class "${className}"`);
+  if (className !== undefined && quadrantClassOf(data, className) === undefined) throw new Error(`setQuadrantPointClass: no class "${className}"`);
   return withPoint(data, point, (p) => (p.className === className ? p : withOptional(p, 'className', className)), 'setQuadrantPointClass');
 }
 

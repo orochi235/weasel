@@ -3,7 +3,7 @@ import { numberOf, textOf, titleField } from '../editing/schemaKit';
 import type { PlotColumn, PlotField, PlotSchema } from '../editing/schemaTypes';
 import { setQuadrantAxisLabel, setQuadrantLabel, setQuadrantPoint, setQuadrantPointName } from './edit';
 import {
-  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassEntries, quadrantClassNames,
+  insertQuadrantClass, insertQuadrantPoint, moveQuadrantClass, moveQuadrantPoint, quadrantClassEntries, quadrantClassNames, quadrantClassOf,
   removeQuadrantClass, removeQuadrantPoint, renameQuadrantClass, setQuadrantClassStyle, setQuadrantPointClass, setQuadrantPointStyle,
 } from './structure';
 import type { QuadrantData, QuadrantPointStyle } from './types';
@@ -73,7 +73,7 @@ export const quadrantSchema: PlotSchema<QuadrantData> = {
         {
           key: 'className', label: 'Class', type: { kind: 'enum', options: quadrantClassNames(d) }, optional: true,
           get: (data, _, r) => data.points[r]?.className,
-          set: (data, _, r, v) => (v === undefined || (typeof v === 'string' && data.classes?.[v] !== undefined)
+          set: (data, _, r, v) => (v === undefined || (typeof v === 'string' && quadrantClassOf(data, v) !== undefined)
             ? setQuadrantPointClass(data, r, v as string | undefined) : data),
         },
         ...styleColumns((data, r) => data.points[r]?.style, (data, r, key, v) => setQuadrantPointStyle(data, r, key, v as never)),
