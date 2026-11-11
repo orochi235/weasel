@@ -22,6 +22,10 @@ describe('runPlaces', () => {
       { center: -30, clipped: 'past' }, { center: 10, clipped: 'part' }, { center: 50, clipped: 'none' }, { center: 90, clipped: 'part' },
     ]);
   });
+  test('an item meeting an end to within rounding lies inside it', () => {
+    expect(runPlaces([0, 0], 0.1 * 3, 0.3, 'start', 0, 0).map((s) => s.clipped)).toEqual(['none', 'none']);
+    expect(runPlaces([10], 0, 100, 'end', 0, 100 + 1e-12)[0]!.clipped).toBe('none');
+  });
   test('no items is no places', () => expect(runPlaces([], 4, 100, 'center', 0)).toEqual([]));
   test("'at' anchors the sequence whether or not it fits", () => {
     expect(runPlaces([40, 40], 0, 100, 'center', 0, 30)).toEqual([

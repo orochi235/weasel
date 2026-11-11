@@ -94,10 +94,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
-- **(P3) [agent] Repeat Along does not use `placeAlongRun`.** Its count and spacing semantics differ from the
-  primitive's, and moving it changes the output of saved documents. Ruled (2026-11-07): move it, and let saved
-  output change. Closes when Repeat Along places through `placeAlongRun`.
-
 - **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
   (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
 
