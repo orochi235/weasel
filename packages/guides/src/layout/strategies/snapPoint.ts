@@ -14,7 +14,8 @@ export interface SnapPointOptions<TPose> {
   pattern: SnapPattern;
   /** Spacing for the 'grid' pattern, in world units. Default 50; one that is
    *  not a positive finite number offers no points. A grid of more than 129 × 129 points
-   *  offers only the 129 × 129 around the dragged child's pose. */
+   *  offers only the 129 × 129 around the dragged child's pose, none past
+   *  its far edges. */
   gridSpacing?: number;
   /** Tolerance for the default snap policy (nearestWithin). Default Infinity. */
   tolerance?: number;
@@ -64,7 +65,9 @@ function buildPoints(
       // Counted from 0, since `i++` from an index past a safe integer never moves.
       for (let dj = 0; dj <= j1 - j0; dj++) {
         for (let di = 0; di <= i1 - i0; di++) {
-          out.push({ x: bounds.x + (i0 + di) * gridSpacing, y: bounds.y + (j0 + dj) * gridSpacing });
+          const p = { x: bounds.x + (i0 + di) * gridSpacing, y: bounds.y + (j0 + dj) * gridSpacing };
+          // Far along an axis cut finer than a double counts, the last index rounds past the far edge.
+          if (p.x <= bounds.x + bounds.width && p.y <= bounds.y + bounds.height) out.push(p);
         }
       }
       return out;
