@@ -168,6 +168,11 @@ describe('quaternions and normalize, property', () => {
     }), RUNS);
   }, TIMEOUT);
 
+  it('normalize keeps a vector whose square is subnormal on its axis (shrunk counterexample)', () => {
+    // Its square, 5.9e-310, kept too few bits for a root to divide by: z came out 1 + 1.7e-15.
+    expect(normalize(vec3(0, 0, 0.0010000000000000002 * 2.4299586463497805e-152))).toEqual(vec3(0, 0, 1));
+  });
+
   it('compose associatively', () => {
     fc.assert(fc.property(quat, quat, quat, v3(), (a, b, c, v) => {
       const left = quatRotate(quatMultiply(quatMultiply(a, b), c), v);

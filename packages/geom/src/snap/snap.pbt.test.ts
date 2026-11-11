@@ -57,8 +57,18 @@ describe('flats, property', () => {
       fc.pre(x.every(Number.isFinite));
       const got = rhs.map((_, i) => cs.reduce((s, c, j) => s + x[j]! * c[i]!, 0));
       const want = closestOnFlat({ at: rhs.map(() => 0), dirs: cs }, rhs);
-      // Where the columns are nearly dependent the coefficients are ill-conditioned; compare the points they reach.
-      expect(dist(got, want)).toBeLessThan(1e-6 * (Math.hypot(...rhs) + 1));
+      // The normal equations square the columns' conditioning: a column keeping only a fraction `r` of its
+      // length outside the ones before it costs up to an ulp over r² of the answer.
+      let r = 1;
+      const kept: Vec[] = [];
+      for (const col of cs) {
+        const n = Math.hypot(...col);
+        if (!(n > 0)) continue;
+        const unit = col.map((v) => v / n);
+        const left = dist(closestOnFlat({ at: unit.map(() => 0), dirs: kept }, unit), unit);
+        if (left > 1e-6) { r = Math.min(r, left); kept.push(unit); }
+      }
+      expect(dist(got, want)).toBeLessThan((1e-6 + 1e-14 / (r * r)) * (Math.hypot(...rhs) + 1));
     }), RUNS);
   }, TIMEOUT);
 
