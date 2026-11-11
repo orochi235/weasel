@@ -141,3 +141,19 @@ describe('describeLens', () => {
     expect(describeLens(dpr, lab('light'), {}, true)).toBe('DPR 2×');
   });
 });
+
+describe('comparisons on names every object answers to (found by conditions.pbt)', () => {
+  it('leaves a mode named like an Object.prototype member with no opposite', () => {
+    expect(resolveComparison(OPPOSITE, { mode: 'hasOwnProperty' }, ctx()).globals).toEqual({ mode: 'hasOwnProperty' });
+    expect(describeComparison(OPPOSITE, DECLARATIONS, { base: { mode: 'constructor' }, ctx: ctx() })).toBe("Opposite mode: no opposite for 'constructor'");
+  });
+
+  it('reads no mode where the globals do not hold the mode global as their own', () => {
+    expect(describeComparison(OPPOSITE, DECLARATIONS, { base: {}, ctx: ctx({ modeGlobal: 'toString' }) })).toBe("Opposite mode: no opposite for ''");
+  });
+
+  it('names a global the lab does not declare by its key, whatever the key', () => {
+    const globals = JSON.parse('{"__proto__": "x", "constructor": "y"}') as Record<string, string>;
+    expect(describeComparison({ kind: 'custom', globals }, DECLARATIONS)).toBe('__proto__: x, constructor: y');
+  });
+});
