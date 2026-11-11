@@ -487,6 +487,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   entries are not finite numbers, whose `screen` is not nine of them, or whose `format`, `background`,
   `annotations`, or `overlay` has the wrong type, with an error naming the field. Fields it does not know
   pass through.
+- 2026-11-11 (my call, icons second property pass): headless also refuses in Node a `sourceRect` whose width or
+  height is zero or less and a `scale` with a zero axis, which the page's `renderSceneToPixels` refuses, so such a
+  request no longer starts Chromium to fail there.
+- 2026-11-11 (my call, icons second property pass): the `.lbx` writer rasterizes a command whose object would hold a
+  number that is not finite (a group transform with `NaN` or `Infinity`, an infinite stroke width, a scale past the
+  double range) and skips such `lbxObjects` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
+  is not a positive finite number. A `-0` position is written and reads back as `0`.
 
 ## Text
 
@@ -1152,6 +1159,16 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   chunk holding any `\u` or `\x` escape is parsed for refs rather than passed over for not spelling one.
 - Ruled 2026-11-10 (my call, overnight sweep): the icon registry's `add([])`, and a `provideVariants` naming no
   variant it does not already know, change nothing: no version step, no notice, the same `entries()` array.
+- 2026-11-11 (my call, icons second property pass): the icon registry's `add` refuses with a `TypeError` a batch
+  holding a table without a string namespace and owner and an object (not an array) of icons, checked before any
+  claim. An app build reads its tables in module id order, so where two tables of one namespace and owner disagree
+  on a glyph, the one beside the later module id wins every build; a virtual module's variant name is written
+  `%uXXXX` per code unit outside `[A-Za-z0-9_.-]` in its placeholder.
+- Open (icons second property pass, 2026-11-11): the registry and icons-plugin take a table whose namespace, or a
+  glyph's name, holds a colon or whitespace, which no `splitIconRef` reads: namespace `a` with glyph `b:c` and
+  namespace `a:b` with glyph `c` share the slot `a:b:c` under two owners. Whether such a table is refused.
+- Open (icons second property pass, 2026-11-11): in dev, icons-plugin's tables still follow the order modules were
+  transformed in, so `virtual:weasel-icons/all` lists them in that order; the build path sorts by module id.
 - 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
