@@ -77,7 +77,12 @@ const SHAPE_CACHE_LIMIT = 512;
  *  which an SVG path tokenizer would read as a command. */
 const PRECISION = 1e5;
 
-const fmt = (v: number): string => String(Math.round(v * PRECISION) / PRECISION);
+const fmt = (v: number): string => {
+  const scaled = v * PRECISION;
+  const r = Number.isFinite(scaled) ? Math.round(scaled) / PRECISION : v;
+  // `String` switches to exponent notation from 1e21; a double that large is an integer, which BigInt spells out.
+  return Math.abs(r) < 1e21 ? String(r) : BigInt(r).toString();
+};
 
 class HarfBuzzShaper implements Shaper {
   readonly #hb: HarfBuzz;
