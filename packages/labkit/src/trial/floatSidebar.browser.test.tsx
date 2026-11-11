@@ -5,8 +5,8 @@ import '../lab/presentation.browser.test.less';
 import { cleanup } from '@testing-library/react';
 import { defineInstrument, f, Lab } from '@weasel-js/labkit';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
-import { userEvent } from 'vitest/browser';
 import { afterEach, expect, test } from 'vitest';
+import { userEvent } from 'vitest/browser';
 
 // Whether the panel takes no width from the body, and lies over it, is layout: only a browser can say.
 

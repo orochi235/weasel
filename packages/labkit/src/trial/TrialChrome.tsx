@@ -269,8 +269,8 @@ export function TrialChrome({
   const inRegion = (region: TrialRegion): TrialContribution[] =>
     shown.filter((c) => c.region === region);
   const sections = inRegion('sidebar');
-  const docked = <SidebarRegion contributions={sections} ctx={ctx} />;
-  const undocked = <Undocked sections={sections} ctx={ctx} />;
+  const docked = <SidebarRegion key="docked" contributions={sections} ctx={ctx} />;
+  const undocked = <Undocked key="undocked" sections={sections} ctx={ctx} />;
 
   const handleKeyDown = (e: KeyboardEvent): void => {
     // A presented trial has no chrome, so nothing the chrome's keys act on.
@@ -319,7 +319,7 @@ export function TrialChrome({
           width={record.sidebarWidth}
           onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
           contentClassName={contentClassOf(instrument, presented)}
-          sidebar={floating || sections.length === 0 ? null : <>{docked}{undocked}</>}
+          sidebar={floating || sections.length === 0 ? null : [docked, undocked]}
         >
           <Titled title={title}>{children}</Titled>
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />

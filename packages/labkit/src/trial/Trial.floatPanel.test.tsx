@@ -7,8 +7,8 @@ import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
-import { f } from '../config/builder';
 import type { TrialContribution } from '../chrome/types';
+import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 
@@ -127,6 +127,8 @@ describe('a floating trial sidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Undock Notes' }));
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(container.querySelector('.lk-panel-tile')).toContainElement(screen.getByTestId('notes-body'));
+    expect(container.querySelector('.lk-panel-tile')).toContainElement(
+      screen.getByTestId('notes-body'),
+    );
   });
 });
