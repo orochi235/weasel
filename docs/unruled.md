@@ -762,6 +762,17 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `Map`, a `Date`) read back unchanged reports as a remote change of the same value.
 - Open (2026-11-11): a record cache with `retryMs: 0`, or a negative one, tries a failed read or write again every
   tick for as long as storage fails, since doubling 0 leaves 0; nothing floors the backoff.
+- 2026-11-11 (my call, modes/registry/select/menu second property pass): `matchQuery`, a menu's access letters,
+  and ui-logic's typeahead compare text composed (NFC), so `é` and `e` followed by U+0301 read alike. A query that
+  is a lone combining mark no longer finds one the text composed into the letter before it.
+- 2026-11-11 (my call, same pass): select's presses, ranges, and store read ids as a `Set` does, `NaN` one id and
+  `-0` the same as `0`, as ui-logic's selection values do.
+- Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
+- Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
+  stack rather than answer.
+- Open (2026-11-11): `holderOf` and `outermost` never return on a `parentOf` whose parents loop without reaching a
+  selected id.
+- Open (2026-11-11): a range whose `between` lists an id twice selects it twice; a selection store holds it once.
 - 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
