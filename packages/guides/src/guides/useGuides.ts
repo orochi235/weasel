@@ -1,5 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
-import { useLatest } from '@weasel-js/core';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createEmitter } from '@weasel-js/registry';
 import type { Guide } from './types';
 
@@ -16,8 +15,9 @@ function sameGuide(a: Guide, b: Guide): boolean {
 export interface UseGuidesReturn {
   /** Live list (state). Re-renders when guides change. */
   guides: Guide[];
-  /** Stable getter; reads the latest list without forcing a re-render.
-   *  Pass to `guideSnapSource` and `createGuidesLayer`. */
+  /** Stable getter; reads the latest list without forcing a re-render, a
+   *  change included as soon as it is made. Pass to `guideSnapSource` and
+   *  `createGuidesLayer`. */
   getGuides: () => Guide[];
   /** Add a guide, at `index` when given, else at the end. If a guide with the
    *  same id already exists it is replaced where it stands; one equal to it
@@ -42,45 +42,45 @@ export interface UseGuidesReturn {
  */
 export function useGuides(initial: Guide[] = []): UseGuidesReturn {
   const [guides, setGuides] = useState<Guide[]>(initial);
-  const ref = useLatest(guides);
-
-  const getGuides = useCallback(() => ref.current, [ref]);
+  // The list as last written, ahead of the render that shows it: an op in a batch reads what the one before it wrote.
+  const ref = useRef(guides);
   const changed = useMemo(() => createEmitter(), []);
+  const write = useCallback((next: Guide[]) => {
+    if (next === ref.current) return;
+    ref.current = next;
+    setGuides(next);
+    changed.emit();
+  }, [changed]);
+
+  const getGuides = useCallback(() => ref.current, []);
   const subscribe = useCallback((listener: () => void) => changed.subscribe(listener), [changed]);
-  const [first] = useState(guides);
-  useLayoutEffect(() => {
-    if (guides !== first) changed.emit();
-  }, [changed, guides, first]);
 
   const addGuide = useCallback((guide: Guide, index?: number) => {
-    setGuides((prev) => {
-      const idx = prev.findIndex((g) => g.id === guide.id);
-      if (idx === -1) {
-        if (index === undefined || index >= prev.length) return [...prev, guide];
-        const next = prev.slice();
-        next.splice(Math.max(0, index), 0, guide);
-        return next;
-      }
-      if (sameGuide(prev[idx]!, guide)) return prev;
+    const prev = ref.current;
+    const idx = prev.findIndex((g) => g.id === guide.id);
+    if (idx === -1) {
+      if (index === undefined || index >= prev.length) return write([...prev, guide]);
       const next = prev.slice();
-      next[idx] = guide;
-      return next;
-    });
-  }, []);
+      next.splice(Math.max(0, index), 0, guide);
+      return write(next);
+    }
+    if (sameGuide(prev[idx]!, guide)) return;
+    const next = prev.slice();
+    next[idx] = guide;
+    write(next);
+  }, [write]);
 
   const removeGuide = useCallback((id: string) => {
-    setGuides((prev) => {
-      const idx = prev.findIndex((g) => g.id === id);
-      if (idx === -1) return prev;
-      const next = prev.slice();
-      next.splice(idx, 1);
-      return next;
-    });
-  }, []);
+    const idx = ref.current.findIndex((g) => g.id === id);
+    if (idx === -1) return;
+    const next = ref.current.slice();
+    next.splice(idx, 1);
+    write(next);
+  }, [write]);
 
   const clearGuides = useCallback(() => {
-    setGuides((prev) => (prev.length === 0 ? prev : []));
-  }, []);
+    if (ref.current.length > 0) write([]);
+  }, [write]);
 
   return { guides, getGuides, addGuide, removeGuide, clearGuides, subscribe };
 }

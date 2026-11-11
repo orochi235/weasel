@@ -31,11 +31,13 @@ export function nearest<TPose>(): LayoutSnap<TPose> {
 }
 
 /** Snap policy that picks the closest target, but only within `tolerance`
- *  world units — beyond that the drop is rejected. */
+ *  world units — beyond that the drop is rejected, as is every drop under a
+ *  tolerance that is negative or `NaN`. */
 export function nearestWithin<TPose>(opts: { tolerance: number }): LayoutSnap<TPose> {
   const tol2 = opts.tolerance * opts.tolerance;
   return {
     pickTarget(targets, pointer) {
+      if (!(opts.tolerance >= 0)) return null;
       const got = nearestOf(targets, pointer);
       if (got === null) return null;
       return distance2(got.origin, pointer) <= tol2 ? got : null;

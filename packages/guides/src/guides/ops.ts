@@ -30,24 +30,43 @@ export function addGuideOp(store: GuideStore, guide: Guide, index?: number): Op 
 }
 
 /** Put `to` in place of `from`, the guide with the same id, as an op: a
- *  guide moved. Its inverse puts `from` back. */
+ *  guide moved. Once applied, its inverse puts back the guide it replaced,
+ *  which a store changed since `from` was read may hold in place of `from`,
+ *  and removes `to` from a store that held no guide with its id; before, it
+ *  puts `from` back. */
 export function replaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
+  let applied = false;
+  let held: Guide | undefined;
   return {
     label: 'Move Guide',
-    apply: () => { store.addGuide(to); },
-    invert: () => replaceGuideOp(store, to, from),
+    apply: () => {
+      held = store.getGuides().find((g) => g.id === to.id);
+      applied = true;
+      store.addGuide(to);
+    },
+    invert: () => (!applied ? replaceGuideOp(store, to, from) : held ? replaceGuideOp(store, to, held) : removeGuideOp(store, to)),
   };
 }
 
-/** Remove `guide` from `store` as an op; its inverse adds it back where it stood. */
+/** Remove the guide with `guide`'s id from `store` as an op, a no-op when it
+ *  holds none. Once applied, its inverse adds back the guide it removed, where
+ *  it stood; before, it adds `guide`. */
 export function removeGuideOp(store: GuideStore, guide: Guide): Op {
+  let applied = false;
   let at = -1;
-  return {
+  let held: Guide | undefined;
+  const op: Op = {
     label: 'Remove Guide',
     apply: () => {
-      at = store.getGuides().findIndex((g) => g.id === guide.id);
+      const list = store.getGuides();
+      at = list.findIndex((g) => g.id === guide.id);
+      held = list[at];
+      applied = true;
+      if (held === undefined) return 'noop';
       store.removeGuide(guide.id);
+      return undefined;
     },
-    invert: () => addGuideOp(store, guide, at < 0 ? undefined : at),
+    invert: () => (!applied ? addGuideOp(store, guide) : held ? addGuideOp(store, held, at) : { label: op.label, apply: () => 'noop', invert: () => op }),
   };
+  return op;
 }

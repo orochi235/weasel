@@ -221,6 +221,30 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, kernel3d second property pass): kernel3d's `groundGridSource` offers no line along an axis
   whose line index (the probe's coordinate over the step) is past a safe integer, as guides' `linesIn` lists none
   there: lines a step apart are one number, or none is finite.
+- 2026-11-11 (my call, guides second property pass): `roundToCell` leaves a value as it was on a cell size that is not
+  a positive finite number, the rule a grid pitch already follows (such a pitch gives an axis no lines). Before, a
+  zero, `NaN`, or infinite cell sent every value to 0, and a negative one rounded on its size, ties the other way.
+- 2026-11-11 (my call, guides second property pass): `useGuides` is a store that reads its own writes: `getGuides`
+  answers a change as soon as it is made, and `subscribe` hears it then, rather than once React commits the render
+  showing it. A history step running several guide ops (a jump, a batch) read the list from before the first, so
+  undo put back the wrong guides. It reverses the 2026-09-28 rule that `getGuides` answers the committed list over
+  one a suspended transition rendered: a write in such a transition is now in the list, as `useSelection`'s store
+  holds a selection set in one.
+- 2026-11-11 (my call, guides second property pass): `gridSlots` rounds `cols` and `rows` down, and a grid of
+  under one column, or of columns that are not finite, has no slots, so `slots` refuses every child; rows under one, or
+  not finite, are the default 1. A negative column count placed slots outside the container, and zero or `NaN`
+  placed them at `NaN`.
+- Open, 2026-11-11 (guides second property pass): snapping a point already snapped can move it again, because reach
+  is a disc about the pointer, not about where it lands. A pointer whose two axes are each in reach of a guide but
+  whose crossing is not snaps one axis; snapped again from there, the other comes in reach and snaps too. A grid
+  fallback can carry a pointer into a guide's reach on its own axis (a guide 18.06 out of 18, the grid moving the
+  point 0.125 toward it), and the second snap takes the guide. An axis that comes in reach this way can also carry a
+  box off the equal gap its other axis snapped to, so that axis moves too. Otherwise an axis a snap took stays
+  (property tested); whether a snap should be a fixed point everywhere, reach measured from the landing, is undecided.
+- Open, 2026-11-11 (guides second property pass): the alignment and spacing tolerances are world lengths, not
+  relative ones: lines within 0.001 merge, and gaps or overlaps under 1e-6 count as none. A scene snaps alike moved
+  anywhere and scaled by 1/4 to 8 (property tested), but drawn at a millionth of its size its lines merge and its
+  gaps vanish. Whether they should scale with the boxes, or the view, is undecided.
 
 ## Scene, move, and history
 

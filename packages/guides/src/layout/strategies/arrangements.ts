@@ -48,23 +48,28 @@ export function rowSlots(opts: RowSlotsOptions = {}): Arrangement {
 
 /** Options for `gridSlots`. */
 export interface GridSlotsOptions {
+  /** Columns, rounded down; under one, or not finite, the grid has no slots. */
   cols: number;
-  /** Rows the grid has before any child needs one. Default 1. */
+  /** Rows the grid has before any child needs one, rounded down. Default 1,
+   *  as is any count under one. */
   rows?: number;
 }
 
 /** Slots at the centers of a grid that fills row by row, adding a row when the
  *  last fills; the rows always divide the container's height. */
 export function gridSlots(opts: GridSlotsOptions): Arrangement {
+  const cols = Math.floor(opts.cols);
+  const least = Math.floor(opts.rows ?? 1);
   return (bounds, count) => {
-    const rows = Math.max(opts.rows ?? 1, Math.ceil(count / opts.cols));
-    const cw = bounds.width / opts.cols;
+    if (!(cols >= 1 && cols < Infinity)) return [];
+    const rows = Math.max(least >= 1 && least < Infinity ? least : 1, Math.ceil(count / cols));
+    const cw = bounds.width / cols;
     const ch = bounds.height / rows;
     const out: Slot[] = [];
     for (let i = 0; i < count; i++) {
       out.push({
-        x: bounds.x + ((i % opts.cols) + 0.5) * cw,
-        y: bounds.y + (Math.floor(i / opts.cols) + 0.5) * ch,
+        x: bounds.x + ((i % cols) + 0.5) * cw,
+        y: bounds.y + (Math.floor(i / cols) + 0.5) * ch,
       });
     }
     return out;

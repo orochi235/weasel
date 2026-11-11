@@ -74,3 +74,33 @@ describe('measureDistances, property', () => {
     expect(measureDistances({ x: 0, y: 5, width: 4, height: 0 }, { x: 10, y: 0, width: 5, height: 10 }).leaders).toEqual([]);
   });
 });
+
+describe('measureDistances, metamorphic', () => {
+  const shift = fc.record({ x: eighth(1 << 20), y: eighth(1 << 20) });
+  const moved = (b: Bounds, t: { x: number; y: number }): Bounds => ({ ...b, x: b.x + t.x, y: b.y + t.y });
+
+  it('two boxes moved together measure the same distances, moved with them', () => {
+    fc.assert(fc.property(rect, rect, shift, (a, b, t) => {
+      const want = measureDistances(a, b);
+      const got = measureDistances(moved(a, t), moved(b, t));
+      const back = (g: { axis: Axis; min: number; max: number; at: number }) =>
+        ({ ...g, min: g.min - t[g.axis], max: g.max - t[g.axis], at: g.at - t[g.axis === 'x' ? 'y' : 'x'] });
+      expect(got.gaps.map(back)).toEqual(want.gaps);
+      expect(got.leaders.map((l) => ({ ...l, offset: l.offset - t[l.axis], span: { min: l.span!.min - t[l.axis === 'x' ? 'y' : 'x'], max: l.span!.max - t[l.axis === 'x' ? 'y' : 'x'] } }))).toEqual(want.leaders);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('two boxes scaled together by a power of two measure the same distances, scaled', () => {
+    fc.assert(fc.property(rect, rect, fc.integer({ min: -4, max: 6 }).map((k) => 2 ** k), (a, b, s) => {
+      const sc = (r: Bounds): Bounds => ({ x: r.x * s, y: r.y * s, width: r.width * s, height: r.height * s });
+      const want = measureDistances(a, b).gaps.map((g) => ({ ...g, min: g.min * s, max: g.max * s, at: g.at * s }));
+      expect(measureDistances(sc(a), sc(b)).gaps).toEqual(want);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('swapping the boxes measures the same spans on each axis', () => {
+    fc.assert(fc.property(rect, rect, (a, b) => {
+      expect(spans(measureDistances(b, a).gaps)).toEqual(spans(measureDistances(a, b).gaps));
+    }), RUNS);
+  }, TIMEOUT);
+});

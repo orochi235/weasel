@@ -182,4 +182,15 @@ describe('createSession2d', () => {
     session({ sources: [spy] }).s.at({ x: 1, y: 1 }, FREE);
     expect(seen).toEqual([['a', 'b'], undefined]);
   });
+
+  it('resolves again without a member whose `holds` the result breaks', () => {
+    // Held, the point target would win; it says it does not hold at TARGET, so the grid takes the pointer.
+    const fickle: SnapSource = {
+      id: 'fickle', roles: ['pointer'],
+      *collect(q) { for (const p of q.probes) yield { probe: p.id, locus: { at: TARGET, dirs: [] }, holds: () => false }; },
+    };
+    expect(session({ sources: [grid, fickle] }).s.at({ x: 52, y: 46 }, FREE).point).toEqual({ x: 50, y: 50 });
+    const steady: SnapSource = { ...fickle, *collect(q) { for (const p of q.probes) yield { probe: p.id, locus: { at: TARGET, dirs: [] }, holds: () => true }; } };
+    expect(session({ sources: [grid, steady] }).s.at({ x: 52, y: 46 }, FREE).point).toEqual(TARGET);
+  });
 });

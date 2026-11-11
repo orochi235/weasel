@@ -176,6 +176,10 @@ Rules a source follows:
   tangent) is emitted as a point locus for the probe's current position.
 - **Marks are world coordinates.** A mark that depends on where the probe lands is a function of
   the resolved `δ`: `mark: (delta) => ({ kind: 'point', at: { x: p.at.x - q.delta0.x + delta.x, … }, glyph: 'center' })`.
+- **A target that depends on the rest of the subject says whether it holds.** `holds: (delta) => boolean`
+  on a candidate is asked at the resolved `δ`; a member that answers `false` is dropped and the move
+  resolved again, as `spacingSnapSource` drops an equal gap another axis's snap carries the box away
+  from (2026-11-11).
 - **Angle targets** come from `angles(q)` on a source whose `gestures` include `'rotate'` or
   `'handle'`, yielding `{ angle, required?, mark? }` in radians.
 
@@ -245,8 +249,8 @@ sharing an id throw, as on a canvas:
   for the host to draw.
 
 A host with neither `<SceneCanvas>` nor kernel3d builds its session from `gatherSnapCandidates`
-(asks the sources) and `resolvedSnapMarks` (the marks of what the result met) around
-`resolveSnap`.
+(asks the sources), `resolveHolding` (runs `resolveSnap` again without members that do not hold),
+and `resolvedSnapMarks` (the marks of what the result met).
 
 ## Decisions
 
