@@ -4,6 +4,7 @@ import {
   leadUnder, translatePoseViaDescriptor, type PoseDescriptor, type TranslateLead,
 } from 'core/geometry/poseDescriptor';
 import { createTransformOp } from 'core/ops/transform';
+import { sameValue } from 'core/scene/sameValue';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import { geometryDataOp, type GeometryProjection } from './geometryProjection';
@@ -23,7 +24,8 @@ export const MOVE_NODES_REQUIRES = [
  * One transform op per id, translating its authored pose by the stored-frame
  * delta `deltaOf` gives it, plus its data-held geometry's op when a
  * `geometryProjection` is wired. An id `deltaOf` answers null for is skipped,
- * and one it answers with a `lead` is translated with it.
+ * as is one the translation leaves where it was, and one it answers with a
+ * `lead` is translated with it.
  * Every translate commit — a drag, a nudge, {@link moveNodes} — builds its ops here.
  */
 export function translateNodeOps(
@@ -45,6 +47,8 @@ export function translateNodeOps(
     // placeholder undo restores.
     const from = node.pose;
     const to = translatePoseViaDescriptor(from, l.dx, l.dy, descriptorOf(id), l.lead);
+    // A step rounding absorbs, as one far out near the double range is, moves nothing.
+    if (sameValue(from, to)) continue;
     ops.push(createTransformOp<unknown>({ id: id as string, from, to, label }));
     const m: Affine = [1, 0, 0, 1, l.dx, l.dy];
     const dataOp = geometryDataOp(geometryProjection, { id: id as string, data: node.data, pose: from }, m, to, label);
