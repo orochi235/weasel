@@ -1,5 +1,10 @@
-/** Encode a string for the URL fragment. */
+/** Encode a string for the URL fragment. A lone surrogate, which the encoding has no form for, is written as
+ *  U+FFFD, with a warning. */
 export function encodeUrlHash(value: string): string {
+  if (!value.isWellFormed()) {
+    console.warn('[storage] a URL fragment holds a lone surrogate; it is written as U+FFFD');
+    return btoa(encodeURIComponent(value.toWellFormed()));
+  }
   return btoa(encodeURIComponent(value));
 }
 
