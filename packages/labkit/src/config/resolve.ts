@@ -110,7 +110,8 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
     setOwn(children, key, resolveEntry(entry, key, path, sink));
 
     const { section, showIf: predicate, enableIf } = entry.options;
-    if (section !== undefined) {
+    // An empty label is no section, as `f.prefs` reads a `PrefSection` named ''.
+    if (section !== undefined && section.label !== '') {
       let spec = sections.get(section.label);
       if (!spec) {
         spec = { at, label: section.label, paths: [] };

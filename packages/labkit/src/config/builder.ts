@@ -183,7 +183,7 @@ export class GroupNode<S extends ConfigShape> implements ConfigBranch<S> {
     return this.with({ ...this.annotations, lead }, this.options);
   }
 
-  /** Render this whole group under a named section heading. */
+  /** Render this whole group under a named section heading. An empty `label` is no section. */
   section(label: string, opts: Omit<SectionOption, 'label'> = {}): GroupNode<S> {
     return this.with(this.annotations, { ...this.options, section: { label, ...opts } });
   }

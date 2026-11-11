@@ -2,10 +2,12 @@
  * Stateful property test of a trial's config writes and its undo: random writes to a few paths, pauses, undos,
  * and redos through `useTrialWrites` over a real lab store, against a model of the steps. A run of writes to one
  * path, each within the gesture window of the last, is one step; any other write is a step of its own and drops
- * what Redo could make again; Undo returns the config and the state to what they were before the step, and Redo
- * to what they were after it. Checked after every command.
+ * what Redo could make again; a write of the value a path holds does nothing, and a gesture back where it began
+ * leaves no step; Undo returns the config and the state to what they were before the step, and Redo to what they
+ * were after it. Checked after every command.
  */
 import { act, renderHook } from '@testing-library/react';
+import { deepEqual } from '@weasel-js/registry';
 import fc from 'fast-check';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
@@ -20,12 +22,16 @@ import { type TrialWrites, useTrialWrites } from './useTrialWrites';
 const RUNS = 60;
 const GESTURE_MS = 500;
 
+/** The state the instrument derives from its config, so a config back where it was is a trial back where it was. */
+const sumOf = (c: { a: number; b: number; g: { c: boolean } }): number =>
+  c.a + c.b + (c.g.c ? 10 : 0);
+
 const instrument = defineInstrument({
   name: 'Model',
   config: f.schema({ a: f.number(0), b: f.number(0), g: f.group({ c: f.boolean(false) }) }),
-  initialState: () => ({ writes: 0 }),
+  initialState: (config) => ({ sum: sumOf(config) }),
   undo: {},
-  onConfigChange: (_config, _prev, state) => ({ writes: state.writes + 1 }),
+  onConfigChange: (config) => ({ sum: sumOf(config) }),
   render: () => null,
 });
 const schema = unruledConfigSchema(instrument);
@@ -33,7 +39,6 @@ if (!schema) throw new Error('the instrument declares a schema');
 
 interface Snap {
   config: unknown;
-  writes: number;
 }
 
 interface Model {
@@ -41,7 +46,7 @@ interface Model {
   undo: { before: Snap; after?: Snap }[];
   redo: { before: Snap; after: Snap }[];
   /** The write a next one to the same path continues, while nothing has been undone or redone since. */
-  last: { path: string; at: number } | null;
+  last: { path: string; at: number; start: Snap } | null;
   clock: number;
 }
 
@@ -57,7 +62,7 @@ function check(m: Model, r: Real): void {
   const record = r.store.getState().trials.find((x) => x.id === r.trialId);
   if (!record) throw new Error('the trial is open');
   expect(record.config).toEqual(m.now.config);
-  expect((record.state as { writes: number }).writes).toBe(m.now.writes);
+  expect(record.state).toEqual({ sum: sumOf(m.now.config as Parameters<typeof sumOf>[0]) });
   const history = record.history;
   expect(history?.undoDepth() ?? 0).toBe(m.undo.length);
   expect(history?.redoDepth() ?? 0).toBe(m.redo.length);
@@ -73,16 +78,28 @@ class Write implements fc.Command<Model, Real> {
   check = (): boolean => true;
   run(m: Model, r: Real): void {
     const value = this.path === 'g.c' ? this.n % 2 === 1 : this.n;
-    const same = m.last !== null && m.last.path === this.path && m.clock - m.last.at < GESTURE_MS;
+    act(() => r.writes().setConfig(this.path, value));
+    if (valueAtPath(m.now.config, this.path) === value) {
+      t.count('wrote what it held');
+      check(m, r);
+      return;
+    }
+    const last = m.last;
+    const same = last !== null && last.path === this.path && m.clock - last.at < GESTURE_MS;
+    const start = same ? last.start : m.now;
     if (same) t.count('continued a gesture');
     else {
-      t.count(valueAtPath(m.now.config, this.path) === value ? 'wrote what it held' : 'new step');
+      t.count('new step');
       m.undo.push({ before: m.now });
       m.redo = [];
     }
-    m.now = { config: withValueAtPath(m.now.config, this.path, value), writes: m.now.writes + 1 };
-    m.last = { path: this.path, at: m.clock };
-    act(() => r.writes().setConfig(this.path, value));
+    m.now = { config: withValueAtPath(m.now.config, this.path, value) };
+    m.last = { path: this.path, at: m.clock, start };
+    if (same && deepEqual(m.now, start)) {
+      t.count('a gesture back where it began');
+      m.undo.pop();
+      m.last = null;
+    }
     check(m, r);
   }
   toString = (): string => `write(${this.path}, ${this.n})`;
@@ -185,7 +202,7 @@ describe('a trial’s config writes and its undo', () => {
             useTrialWrites({ store, trialId: record.id, instrument, schema }),
           );
           const model: Model = {
-            now: { config: record.config, writes: 0 },
+            now: { config: record.config },
             undo: [],
             redo: [],
             last: null,
@@ -205,7 +222,15 @@ describe('a trial’s config writes and its undo', () => {
         }),
         runs(RUNS),
       );
-      for (const what of ['continued a gesture', 'new step', 'undo', 'redo']) t.atLeast(what, 30);
+      for (const what of [
+        'continued a gesture',
+        'new step',
+        'wrote what it held',
+        'a gesture back where it began',
+        'undo',
+        'redo',
+      ])
+        t.atLeast(what, 20);
     },
     timeoutFor(RUNS, 60),
   );
