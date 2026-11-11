@@ -152,4 +152,16 @@ describe('useGuides, stateful', () => {
     }), RUNS);
     for (const what of ['add', 'move', 'remove', 'undo', 'redo']) t.atLeast(what, 10);
   }, TIMEOUT);
+
+  it('hears no change when a guide is added again as it stands (shrunk counterexample)', () => {
+    // A second add of an equal guide made a new list and told every subscriber.
+    const r = setup();
+    act(() => { r.hook.current.addGuide({ id: 'd', axis: 'x', offset: 19.875 }); });
+    const list = r.hook.current.guides;
+    const heard = r.heard.n;
+    act(() => { r.hook.current.addGuide({ id: 'd', axis: 'x', offset: 19.875 }); });
+    expect(r.heard.n).toBe(heard);
+    expect(r.hook.current.guides).toBe(list);
+  });
 });
+

@@ -3,6 +3,15 @@ import { useLatest } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
 import type { Guide } from './types';
 
+/** Field by field, `span` by its ends. */
+function sameGuide(a: Guide, b: Guide): boolean {
+  const keys = Object.keys(a) as (keyof Guide)[];
+  if (keys.length !== Object.keys(b).length) return false;
+  return keys.every((k) => (k === 'span'
+    ? a.span?.min === b.span?.min && a.span?.max === b.span?.max && (a.span === undefined) === (b.span === undefined)
+    : Object.is(a[k], b[k])));
+}
+
 /** Return shape for `useGuides`. */
 export interface UseGuidesReturn {
   /** Live list (state). Re-renders when guides change. */
@@ -10,7 +19,8 @@ export interface UseGuidesReturn {
   /** Stable getter; reads the latest list without forcing a re-render.
    *  Pass to `guideSnapSource` and `createGuidesLayer`. */
   getGuides: () => Guide[];
-  /** Add a guide. If a guide with the same id already exists it is replaced. */
+  /** Add a guide. If a guide with the same id already exists it is replaced;
+   *  one equal to it changes nothing. */
   addGuide: (guide: Guide) => void;
   /** Remove a guide by id. No-op when missing. */
   removeGuide: (id: string) => void;
@@ -45,6 +55,7 @@ export function useGuides(initial: Guide[] = []): UseGuidesReturn {
     setGuides((prev) => {
       const idx = prev.findIndex((g) => g.id === guide.id);
       if (idx === -1) return [...prev, guide];
+      if (sameGuide(prev[idx]!, guide)) return prev;
       const next = prev.slice();
       next[idx] = guide;
       return next;
