@@ -102,11 +102,14 @@ function graticule(data: RadarData, scale: PolarScale, theme: PlotTheme, measure
 /** Each curve's filled polygon, its outline, and a point on each of its values. */
 function curveMarks(data: RadarData, scale: PolarScale, theme: PlotTheme): PlotMark[] {
   const marks: PlotMark[] = [];
+  const [d0, d1] = scale.domain;
+  // A value short of the center's sits at the center, as a drag holds it there.
+  const held = (v: number) => (d0 <= d1 ? Math.max(d0, v) : Math.min(d0, v));
   data.curves.forEach((curve, c) => {
     const color = seriesColor(theme, c);
     const placed = data.axes.flatMap((_, i) => {
       const v = curve.values[i];
-      return v !== undefined && Number.isFinite(v) ? [{ i, at: scale.point(i, v) }] : [];
+      return v !== undefined && Number.isFinite(v) ? [{ i, at: scale.point(i, held(v)) }] : [];
     });
     if (placed.length === 0) return;
     const ring = placed.map((p) => p.at);
