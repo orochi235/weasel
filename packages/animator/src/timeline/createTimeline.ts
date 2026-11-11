@@ -38,12 +38,19 @@ const finite = (t: number): number => {
 /** The laps a loop policy allows past the first pass. */
 const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : loop);
 
+/** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
+ *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
+function lessLaps(t: number, laps: number, duration: number): number {
+  const span = laps * duration;
+  return Number.isFinite(span) ? t - span : ((t % duration) + duration) % duration;
+}
+
 /** Where a seek to `t` lands: not before 0, nor past `duration` unless laps are left, where it
  *  lands in a later lap, `laps` on, and a time on a seam is the end of the lap before. */
 function landing(t: number, duration: number, lapsLeft: number): { at: number; laps: number } {
   const to = Math.max(0, finite(t));
   const laps = duration > 0 && to > duration ? Math.min(Math.ceil(to / duration) - 1, lapsLeft) : 0;
-  return { at: Math.min(to - laps * duration, duration), laps };
+  return { at: Math.min(lessLaps(to, laps, duration), duration), laps };
 }
 
 /** End time of a track: its last key/event, or a nested timeline's own end. */
@@ -143,7 +150,9 @@ export function createTimeline(
       playhead = virtualNow + offset;
       crossLaps(playhead, duration, loopsLeft, lap, (laps) => {
         takeLaps(laps);
-        offset -= laps * duration; playhead -= laps * duration;
+        const next = lessLaps(playhead, laps, duration);
+        offset += Number.isFinite(laps * duration) ? -laps * duration : next - playhead;
+        playhead = next;
         onWrap(laps);
       });
     }

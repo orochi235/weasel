@@ -14,4 +14,17 @@ describe('timelines, shrunk from the property tests', () => {
     expect(fired).toEqual([0]);
     expect(tl.time()).toBe(0);
   });
+
+  it('keep an endless timeline\'s playhead finite where its laps pass the double range', () => {
+    const h = clocked();
+    h.at(-Number.MAX_VALUE);
+    const tl = h.animator.timeline({ duration: 3, loop: true, tracks: [] });
+    h.at(Number.MAX_VALUE);
+    h.at(Number.MAX_VALUE);
+    expect(tl.time()).toBeGreaterThanOrEqual(0);
+    expect(tl.time()).toBeLessThanOrEqual(3);
+    tl.seek(Number.MAX_VALUE);
+    expect(tl.time()).toBeGreaterThanOrEqual(0);
+    expect(tl.time()).toBeLessThanOrEqual(3);
+  });
 });
