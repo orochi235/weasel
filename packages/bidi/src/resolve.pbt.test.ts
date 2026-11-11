@@ -89,6 +89,19 @@ describe('analyze, property', () => {
   }, timeoutFor(RUNS, 2));
 });
 
+describe('analyze, paragraph separators', () => {
+  it('ends an isolate at a paragraph separator, so the PDI after it is unmatched and resolves (shrunk)', () => {
+    const a = analyze([0x2066, 0x0a, 0x61, 0x2069], 'ltr');
+    expect([...a.levels]).toEqual([0, 0, 0, 0]);
+    expect(a.classes).toEqual(['L', 'L', 'L', 'L']);
+  });
+
+  it('ends embeddings at a paragraph separator, and reads auto from before it', () => {
+    expect([...analyze([0x202b, 0x61, 0x0a, 0x61], 'ltr').levels]).toEqual([0, 2, 0, 0]);
+    expect(analyze([0x0a, 0x5d0], 'auto').paragraphLevel).toBe(0);
+  });
+});
+
 const NOT_B = Object.keys(BY_CLASS).filter((c) => c !== 'B') as BidiClass[];
 const part = fc.array(ofClasses(NOT_B), { maxLength: 24 });
 const PDI = 0x2069;

@@ -37,7 +37,7 @@ describe('reorder, property', () => {
       for (const [s, e] of lines(cps.length, cuts)) {
         const { order, levels } = reorder(a, s, e);
         expect(levels.length).toBe(e - s);
-        const kept = [];
+        const kept: number[] = [];
         for (let i = s; i < e; i++) {
           if (a.removed[i]) expect(levels[i - s]).toBe(-1);
           else kept.push(i);

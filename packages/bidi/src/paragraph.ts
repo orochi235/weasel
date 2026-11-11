@@ -18,7 +18,8 @@ export function isIsolateInitiator(c: BidiClass): boolean {
  * it has none.
  *
  * Depth-counted rather than nearest-match: a nested isolate consumes its own
- * PDI, so the first PDI encountered is usually not the answer.
+ * PDI, so the first PDI encountered is usually not the answer. A paragraph
+ * separator ends the search unmatched: no isolate outlives its paragraph.
  */
 export function matchingPDI(
   classes: readonly BidiClass[],
@@ -30,6 +31,7 @@ export function matchingPDI(
     const c = classes[i];
     if (isIsolateInitiator(c)) depth++;
     else if (c === 'PDI' && --depth === 0) return i;
+    else if (c === 'B') return end;
   }
   return end;
 }
@@ -42,7 +44,8 @@ export function matchingPDI(
  * definition, so a Latin word quoted inside a Hebrew paragraph cannot flip the
  * paragraph. An unmatched initiator therefore swallows everything after it,
  * which is why an all-RTL text opening with a stray `LRI` still reports 0 —
- * no strong character was ever reached, and P3's default is 0.
+ * no strong character was ever reached, and P3's default is 0. The search
+ * stops at a paragraph separator, which ends the paragraph it is reading.
  */
 export function paragraphLevelOf(
   classes: readonly BidiClass[],
@@ -57,6 +60,7 @@ export function paragraphLevelOf(
     }
     if (c === 'L') return 0;
     if (c === 'R' || c === 'AL') return 1;
+    if (c === 'B') return 0;
   }
   return 0;
 }
