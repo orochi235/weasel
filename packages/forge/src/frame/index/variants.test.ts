@@ -73,3 +73,11 @@ describe('withValueAt', () => {
     expect(config.grid.snap).toBe(false);
   });
 });
+
+describe('mergeConfig on a key named __proto__ (found by variants.pbt)', () => {
+  it('keeps it as an own key rather than setting the prototype', () => {
+    const got = mergeConfig({}, JSON.parse('{"__proto__": ""}')) as Record<string, unknown>;
+    expect(Object.keys(got)).toEqual(['__proto__']);
+    expect(Object.getPrototypeOf(got)).toBe(Object.prototype);
+  });
+});
