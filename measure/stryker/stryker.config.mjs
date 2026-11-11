@@ -18,5 +18,5 @@ export default {
   dryRunTimeoutMinutes: 30,
   reporters: ['json', 'progress-append-only', 'clear-text'],
   clearTextReporter: { reportMutants: false, reportTests: false, reportScoreTable: true },
-  jsonReporter: { fileName: `measure/out/${pkg}/mutation.json` },
+  jsonReporter: { fileName: `${process.env.MEASURE_OUT ?? `measure/out/${pkg}`}/mutation.json` },
 };
