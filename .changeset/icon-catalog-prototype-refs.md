@@ -2,4 +2,6 @@
 "@weasel-js/icons-plugin": patch
 ---
 
-An app build refuses an icon ref naming an `Object.prototype` member (`core:toString`, `core:hasOwnProperty`) that its table does not hold, as it refuses any other missing glyph. Such a ref had passed the check and reached the bundle naming nothing.
+An app build refuses an icon ref such as `core:toString` that names an `Object.prototype` member its table does not hold.
+
+<!-- entry: rank=-5 fix -->

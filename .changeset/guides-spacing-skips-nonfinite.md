@@ -2,4 +2,6 @@
 "@weasel-js/guides": patch
 ---
 
-`measureGaps`, `matchSpacing`, and `spacingSnapSource` take a box with a coordinate that is not finite for nothing. Among siblings, one with a `NaN` width changed where a move was spaced.
+`measureGaps`, `matchSpacing`, and `spacingSnapSource` ignore a box with a coordinate that is not finite.
+
+<!-- entry: rank=-5 fix -->
