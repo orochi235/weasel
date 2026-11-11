@@ -55,24 +55,37 @@ export function spatialize(
   const rolloffFactor = opts.rolloffFactor ?? 1;
   const panWidth = opts.panWidth ?? 500;
 
-  const dx = source.x - listener.x;
-  const dy = source.y - listener.y;
-  const dz = (source.z ?? 0) - (listener.z ?? 0);
+  let dx = source.x - listener.x;
+  let dy = source.y - listener.y;
+  let dz = (source.z ?? 0) - (listener.z ?? 0);
   // hypot(dx, dy, 0) rounds differently from hypot(dx, dy) in ~1% of inputs.
-  const distance = dz === 0 ? Math.hypot(dx, dy) : Math.hypot(dx, dy, dz);
+  let distance = dz === 0 ? Math.hypot(dx, dy) : Math.hypot(dx, dy, dz);
+  let scale = 1;
+  if (!Number.isFinite(distance)) {
+    // An offset past the double range: halved, its pan still projects, where Infinity - Infinity would be NaN.
+    dx = source.x / 2 - listener.x / 2;
+    dy = source.y / 2 - listener.y / 2;
+    dz = (source.z ?? 0) / 2 - (listener.z ?? 0) / 2;
+    distance = Infinity;
+    scale = 2;
+  }
 
   let gain: number;
   if (distance <= refDistance) {
     gain = 1;
   } else if (rolloff === 'linear') {
-    const span = maxDistance - refDistance;
-    gain = span <= 0 ? 0 : 1 - rolloffFactor * ((distance - refDistance) / span);
+    // Halved, so neither difference overflows.
+    const span = maxDistance / 2 - refDistance / 2;
+    gain = span <= 0 ? 0
+      : rolloffFactor === 0 ? 1
+      : 1 - rolloffFactor * ((distance / 2 - refDistance / 2) / span);
   } else {
-    gain = refDistance / (refDistance + rolloffFactor * (distance - refDistance));
+    const fall = rolloffFactor === 0 ? 0 : rolloffFactor * (distance - refDistance);
+    gain = refDistance === 0 ? 0 : refDistance / (refDistance + fall);
   }
   gain = Math.min(1, Math.max(0, gain));
 
-  const lateral = lateralOffset(dx, dy, dz, opts.right);
+  const lateral = scale * lateralOffset(dx, dy, dz, opts.right);
   const pan = panWidth <= 0 ? 0 : Math.min(1, Math.max(-1, lateral / panWidth));
 
   return { gain, pan };
@@ -81,8 +94,9 @@ export function spatialize(
 /** The offset projected onto the unit `right`; 0 for a zero-length `right`. */
 function lateralOffset(dx: number, dy: number, dz: number, right?: SpatialPoint): number {
   if (!right) return dx;
-  const rz = right.z ?? 0;
-  const len = Math.hypot(right.x, right.y, rz);
-  if (len === 0) return 0;
-  return (dx * right.x + dy * right.y + dz * rz) / len;
+  // Scaled to its largest component first, so a long `right` cannot overflow its length or the products.
+  const big = Math.max(Math.abs(right.x), Math.abs(right.y), Math.abs(right.z ?? 0));
+  if (big === 0) return 0;
+  const [rx, ry, rz] = [right.x / big, right.y / big, (right.z ?? 0) / big];
+  return (dx * rx + dy * ry + dz * rz) / Math.hypot(rx, ry, rz);
 }
