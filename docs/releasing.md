@@ -186,9 +186,3 @@ a fresh upload for 55 minutes, and republishing it fails with E409 — so check 
 at 16:23 and listed at 17:15. It is the only package whose JavaScript inlines a
 base64 PNG (its default font atlas, ~196 KB of `createLoupe-*.js`); that npm's
 scan is slower for it is a guess nobody has tested.
-
-## Notes
-
-- The Release workflow's push trigger is path-filtered to `.changeset/*.md`, so
-  a fix touching only a manifest cannot retrigger a publish. `workflow_dispatch`
-  is the escape hatch.
