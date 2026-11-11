@@ -107,16 +107,17 @@ function standingScale(source: ScaleSource, amounts: readonly number[]): TokenSc
 }
 
 /**
- * The edited scales a save writes. A scale is saved only while every one of its steps still holds what its edit
- * generated: a step edited by hand after the scale is an override the scale has no place for.
+ * The edited scales a save writes, each with the steps that still hold what its edit generated. A step edited by hand
+ * after its scale is left to be pinned over the scale. A scale with a step reset to the theme's value is not saved,
+ * since the step would then show the edit's value where the trial showed the theme's.
  */
 function unsavedScales(edited: Readonly<Record<string, TokenScale>>, overrides: Readonly<Record<string, string>>): UnsavedScale[] {
   return SCALE_SOURCES.flatMap((source): UnsavedScale[] => {
     const edit = edited[source.group];
-    if (!edit || !source.tokens.some((name) => overrides[name] !== undefined)) return [];
-    const { name, group, tokens } = source;
-    const clean = scaleValues(source, edit).every(([token, value]) => overrides[token] === value);
-    return clean ? [{ name, group, tokens, edit: { base: edit.base, rule: edit.rule } }] : [];
+    if (!edit || !source.tokens.every((name) => overrides[name] !== undefined)) return [];
+    const { name, group } = source;
+    const tokens = scaleValues(source, edit).filter(([token, value]) => overrides[token] === value).map(([token]) => token);
+    return [{ name, group, tokens, edit: { base: edit.base, rule: edit.rule } }];
   });
 }
 

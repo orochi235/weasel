@@ -1,52 +1,108 @@
 import { isPlainObject } from '@weasel-js/core';
-import type { Selection, ThemeDefinition } from '@weasel-js/theme';
+import { type AxisDefs, isByAxis, type Selection, type ThemeDefinition } from '@weasel-js/theme';
+import { axisDependencies } from '@weasel-js/theme/engine';
 import { branchOf, EditError, type Holder, type ScaleEditResult, type Slot } from './saveScales';
 
 const REFERENCE = /\{[^}]+\}/;
 /** The layers a token's value can be written out in, in the order the definition resolves a name. */
 const LAYERS = ['pins', 'semantics', 'components'] as const;
 
-/** A written-out value, or what makes `entry` something the theme works out instead. */
-function derivation(entry: unknown): string | null {
+/** Whether `entry` is something the theme works out rather than a value written out. */
+function derived(entry: unknown): boolean {
   const value = isPlainObject(entry) ? entry.value : entry;
-  if (isPlainObject(entry) && value === undefined) return 'follows a rule';
-  if (isPlainObject(entry) && entry.alpha !== undefined) return 'is drawn at an alpha';
-  if (typeof value === 'string' && REFERENCE.test(value)) return `follows ${REFERENCE.exec(value)?.[0]}`;
-  return typeof value === 'string' || typeof value === 'number' ? null : 'is a list';
+  if (isPlainObject(entry) && (value === undefined || entry.alpha !== undefined)) return true;
+  if (typeof value === 'string') return REFERENCE.test(value);
+  return typeof value !== 'number';
 }
 
-/** The place `definition` writes `token`'s value out for `selection`. Throws when it has none. */
-function literalSlot(definition: ThemeDefinition, token: string, selection: Selection): Slot {
+/** The axis value `selection` reads for `axis`. Throws when it does not say. */
+function picked(selection: Selection, axis: string, where: string): string {
+  const value = selection[axis];
+  if (value === undefined || value === 'by') {
+    throw new EditError(`${where} differs by ${axis}, and which ${axis} this trial shows is not known`);
+  }
+  return value;
+}
+
+/** `holder[key]` through its per-axis branches; undefined where a pin leaves the selection out, so it overrides nothing. */
+function pinBranch(holder: Holder, key: string, selection: Selection): Slot | undefined {
+  let slot: Slot = { holder, key, where: `pins.${key}` };
+  for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
+    const at = picked(selection, value.by, slot.where);
+    if (!(at in value)) return undefined;
+    slot = { holder: value as unknown as Holder, key: at, where: `${slot.where}.${at}` };
+  }
+  return slot;
+}
+
+/** The place `definition` writes `token`'s value out for `selection`, or null when the theme derives it there. */
+function writtenSlot(definition: ThemeDefinition, token: string, selection: Selection): Slot | null {
   for (const layer of LAYERS) {
     const entries = definition[layer] as Holder | undefined;
     if (!entries || !(token in entries)) continue;
-    const slot = branchOf(entries, token, `${layer}.${token}`, selection);
-    const why = derivation(slot.holder[slot.key]);
-    if (why) throw new EditError(`${slot.where} ${why}, and only a value written out in the theme can be saved`);
-    return slot;
+    const slot = layer === 'pins' ? pinBranch(entries, token, selection) : branchOf(entries, token, `${layer}.${token}`, selection);
+    if (slot === undefined) continue;
+    return derived(slot.holder[slot.key]) ? null : slot;
   }
-  for (const layer of ['ramps', 'scales'] as const) {
-    const from = Object.keys(definition[layer] ?? {}).find((name) => token.startsWith(`${name}-`));
-    if (from) throw new EditError(`${token} is a step ${layer}.${from} generates, and the theme pins no value over it`);
-  }
-  throw new EditError(`the theme defines no token "${token}"`);
+  return null;
 }
 
-/** Whether a save has a place for `token`: the definition writes its value out for `selection`. */
-export function writtenOut(definition: ThemeDefinition, token: string, selection: Selection): boolean {
-  try {
-    literalSlot(definition, token, selection);
-    return true;
-  } catch (e) {
-    if (e instanceof EditError) return false;
-    throw e;
-  }
+/** The axes `token`'s value can change with, its pin's and the derivation's under it both. */
+function dependentAxes(definition: ThemeDefinition, token: string): string[] {
+  const { [token]: _pin, ...pins } = definition.pins ?? {};
+  const axes = new Set([
+    ...(axisDependencies(definition)[token]?.all ?? []),
+    ...(axisDependencies({ ...definition, pins })[token]?.all ?? []),
+  ]);
+  return Object.keys(definition.axes ?? {}).filter((axis) => axes.has(axis));
+}
+
+/** A written-out pin value in place of `old`, keeping its type and description and dropping what derived it. */
+function literal(old: unknown, value: string): unknown {
+  if (!isPlainObject(old)) return value;
+  const { alpha: _alpha, value: _value, ...kept } = old;
+  return { ...kept, value };
 }
 
 /**
- * `definition` with each edited token's value written where the definition holds it: a pin, a component or a literal
- * semantic, and only the branch for `selection`. `edits` is keyed by token name, without the `--wzl-` prefix. A token
- * whose value the theme derives is refused, since writing a value over it would drop the derivation.
+ * `entry`, a pin or nothing, made to give `value` wherever the axes the token varies on read as `selection` does,
+ * and what it gave before everywhere else. A pin branch it leaves out keeps overriding nothing.
+ */
+function pinOver(entry: unknown, axes: readonly string[], selection: Selection, value: string, defs: AxisDefs, where: string): unknown {
+  if (isByAxis(entry)) {
+    const at = picked(selection, entry.by, where);
+    const rest = axes.filter((axis) => axis !== entry.by);
+    return { ...entry, [at]: pinOver(entry[at], rest, selection, value, defs, `${where}.${at}`) };
+  }
+  const [axis, ...rest] = axes;
+  if (axis === undefined) return literal(entry, value);
+  const at = picked(selection, axis, where);
+  const others = entry === undefined ? [] : Object.keys(defs[axis]?.values ?? {}).filter((v) => v !== at);
+  return {
+    by: axis,
+    ...Object.fromEntries(others.map((v) => [v, entry])),
+    [at]: pinOver(entry, rest, selection, value, defs, `${where}.${at}`),
+  };
+}
+
+/** Writes one edit into `root`, which it mutates. */
+function writeEdit(root: ThemeDefinition, token: string, value: string, selection: Selection): void {
+  if (!(token in axisDependencies(root))) throw new EditError(`the theme defines no token "${token}"`);
+  const slot = writtenSlot(root, token, selection);
+  if (slot) {
+    const entry = slot.holder[slot.key];
+    slot.holder[slot.key] = isPlainObject(entry) ? { ...entry, value } : value;
+    return;
+  }
+  const pins = ((root as { pins?: Holder }).pins ??= {});
+  pins[token] = pinOver(pins[token], dependentAxes(root, token), selection, value, root.axes ?? {}, `pins.${token}`);
+}
+
+/**
+ * `definition` with each edited token saved for `selection`. `edits` is keyed by token name, without the `--wzl-`
+ * prefix. A value the definition writes out (a pin, a component or a literal semantic) is replaced in the branch the
+ * selection reads. A token the theme derives gets a pin instead, over only the axis values that select the edited
+ * value, so the derivation still gives every other token, and this one everywhere else.
  */
 export function applyTokenEdits(
   definition: ThemeDefinition,
@@ -55,14 +111,15 @@ export function applyTokenEdits(
 ): ScaleEditResult {
   const root = structuredClone(definition);
   try {
-    for (const [token, value] of Object.entries(edits)) {
-      const { holder, key } = literalSlot(root, token, selection);
-      const entry = holder[key];
-      holder[key] = isPlainObject(entry) ? { ...entry, value } : value;
-    }
+    for (const [token, value] of Object.entries(edits)) writeEdit(root, token, value, selection);
   } catch (e) {
     if (e instanceof EditError) return { ok: false, message: `Cannot save: ${e.message}.` };
     throw e;
   }
   return { ok: true, definition: root };
+}
+
+/** Whether a save has a place for `token` under `selection`. */
+export function canSave(definition: ThemeDefinition, token: string, selection: Selection): boolean {
+  return applyTokenEdits(definition, { [token]: '' }, selection).ok;
 }
