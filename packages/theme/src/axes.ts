@@ -71,9 +71,14 @@ export function axisScheme(axes: AxisDefs, axis: string, value: string): string 
   return def.values[value].scheme ?? (Object.values(def.values).some((v) => v.scheme) ? 'normal' : undefined);
 }
 
-/** The selector matching `data-wzl-<attr>` equal to `value`, quoted so any theme name or axis value reads as itself. */
+/** A theme name or axis value as its `data-wzl-*` attribute holds it: NUL as U+FFFD, which is how CSS reads one, escaped or not. */
+export function wzlValue(value: string): string {
+  return value.replace(/\0/g, '\uFFFD');
+}
+
+/** The selector matching `data-wzl-<attr>` equal to `wzlValue(value)`, quoted so any theme name or axis value reads as itself. */
 export function wzlAttr(attr: string, value: string): string {
-  return `[data-wzl-${attr}='${value.replace(/[\\']/g, '\\$&').replace(/[\n\r\f]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}']`;
+  return `[data-wzl-${attr}='${wzlValue(value).replace(/[\\']/g, '\\$&').replace(/[\n\r\f]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}']`;
 }
 
 /** `mode=dark,density=compact`, axes in declaration order. */

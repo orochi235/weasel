@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useLayo
 import { applyTheme } from './applyTheme';
 import { themeTints, type ColorList } from './colorListItems';
 import { colorSourceCss, colorSourceLiteral } from './colorSource';
-import { fullSelection, selectionKey, type Selection } from './axes';
+import { fullSelection, selectionKey, wzlValue, type Selection } from './axes';
 import { resolveTheme, themeAxes, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 import { useResolvedColorMode } from './useColorMode';
@@ -93,10 +93,10 @@ export function ThemeProvider({
   }, [theme, value]);
   useLayoutEffect(() => () => release.current?.(), []);
 
-  const attrs = Object.fromEntries(Object.keys(axes).map((a) => [`data-wzl-${a}`, full[a]]));
+  const attrs = Object.fromEntries(Object.keys(axes).map((a) => [`data-wzl-${a}`, wzlValue(full[a])]));
   return (
     <ThemeContext.Provider value={value}>
-      <div ref={ref} className={className} style={style} data-wzl-theme={theme.name} {...attrs}>
+      <div ref={ref} className={className} style={style} data-wzl-theme={wzlValue(theme.name)} {...attrs}>
         {children}
       </div>
     </ThemeContext.Provider>

@@ -1,4 +1,4 @@
-import { axisScheme, fullSelection, wzlAttr, type Selection } from './axes';
+import { axisScheme, fullSelection, wzlAttr, wzlValue, type Selection } from './axes';
 import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
@@ -87,8 +87,8 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
   const { variant, release: releaseRule } = holdRule(styleRootOf(el), selector, body);
   holds.get(el)?.();
 
-  el.setAttribute('data-wzl-theme', theme.name);
-  for (const a of names) el.setAttribute(`data-wzl-${a}`, sel[a]);
+  el.setAttribute('data-wzl-theme', wzlValue(theme.name));
+  for (const a of names) el.setAttribute(`data-wzl-${a}`, wzlValue(sel[a]));
   if (variant === 0) el.removeAttribute('data-wzl-variant');
   else el.setAttribute('data-wzl-variant', String(variant));
 
