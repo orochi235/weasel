@@ -6,9 +6,10 @@ export interface BandScaleOptions {
   /** The categories, one band each, in order; a category named twice keeps its first band. */
   domain: readonly string[];
   range: readonly [number, number];
-  /** The share of each step left empty between bands, 0 to 1. Default 0.2. */
+  /** The share of each step left empty between bands, held to 0 to 1. Default, and for `NaN`, 0.2. */
   paddingInner?: number;
-  /** The room before the first band and after the last, in steps. Default half of `paddingInner`. */
+  /** The room before the first band and after the last, in steps. Default, and for one that is not finite, half of
+   *  `paddingInner`. */
   paddingOuter?: number;
 }
 
@@ -31,8 +32,9 @@ export interface BandScale extends Scale<string> {
 export function bandScale(opts: BandScaleOptions): BandScale {
   const domain = [...new Set(opts.domain)];
   const [r0, r1] = opts.range;
-  const inner = Math.min(1, Math.max(0, opts.paddingInner ?? 0.2));
-  const outer = Math.max(0, opts.paddingOuter ?? inner / 2);
+  // A padding that is not a number takes its default, as an absent one does.
+  const inner = Math.min(1, Math.max(0, Number.isNaN(opts.paddingInner) ? 0.2 : opts.paddingInner ?? 0.2));
+  const outer = Number.isFinite(opts.paddingOuter) ? Math.max(0, opts.paddingOuter!) : inner / 2;
   const n = domain.length;
   const step = n === 0 ? 0 : (r1 - r0) / Math.max(1e-9, n - inner + 2 * outer);
   const bandwidth = Math.abs(step * (1 - inner));

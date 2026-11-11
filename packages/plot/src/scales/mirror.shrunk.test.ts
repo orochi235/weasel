@@ -13,4 +13,12 @@ describe('scales, shrunk (second pass)', () => {
     expect(b.domain).toEqual(['a']);
     expect(b.bandwidth).toBe(100);
   });
+
+  it('lays bands with the default padding where a padding is not a number', () => {
+    const plain = bandScale({ domain: ['a', 'b'], range: [0, 100] });
+    for (const [paddingInner, paddingOuter] of [[undefined, Number.NaN], [Number.NaN, undefined], [undefined, Infinity]]) {
+      const s = bandScale({ domain: ['a', 'b'], range: [0, 100], paddingInner, paddingOuter });
+      expect([s.start('a'), s.start('b'), s.bandwidth]).toEqual([plain.start('a'), plain.start('b'), plain.bandwidth]);
+    }
+  });
 });
