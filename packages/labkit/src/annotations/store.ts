@@ -1,5 +1,6 @@
 import { asNodeId, createScene, type Scene, sceneFromJSON } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
+import { ownAt, setOwn } from '../config/path';
 import { captureTarget } from './capture';
 import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';
 import type { WorldRect } from './frac';
@@ -143,7 +144,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   const sceneFor = (target: string): MarkScene => {
     const known = scenes.get(target);
     if (known) return known;
-    const raw = restore?.[target];
+    const raw = restore ? ownAt(restore, target) : undefined;
     const scene = raw
       ? sceneFromJSON<AnnotationData, 'marks', MarkPose>(
           migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
@@ -387,7 +388,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
     toJSON(): SerializedAnnotations {
       const out: Record<string, unknown> = {};
-      for (const [target, scene] of scenes) out[target] = scene.toJSON();
+      for (const [target, scene] of scenes) setOwn(out, target, scene.toJSON());
       return { version: 1, scenes: out, history: markHistoryOf(history, scenes) };
     },
   };

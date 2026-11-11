@@ -1,5 +1,6 @@
 import type { Scene, SerializedHistory } from '@weasel-js/core';
 import { maxOf } from '@weasel-js/geom';
+import { isRecord, ownAt, setOwn } from '../config/path';
 import { editStamp, seedEditStamp } from '../undo/editStamp';
 
 /** What the ordering needs of a scene: its history entries and depth, and the two moves. */
@@ -160,13 +161,16 @@ export function markHistoryOf(
   scenes: ReadonlyMap<string, SavedScene>,
 ): SerializedMarkHistory {
   const out: Record<string, SerializedHistory> = {};
-  for (const [target, scene] of scenes) out[target] = scene.serializeHistory();
+  for (const [target, scene] of scenes) setOwn(out, target, scene.serializeHistory());
   return { scenes: out, ...history.toJSON() };
 }
 
 /** Restore `target`'s scene history from `saved`, over the marks it was saved beside. */
 export function restoreSceneHistory(scene: SavedScene, target: string, saved: unknown): void {
-  const held = (saved as Partial<SerializedMarkHistory> | null | undefined)?.scenes?.[target];
+  const scenes = (saved as Partial<SerializedMarkHistory> | null | undefined)?.scenes;
+  const held = isRecord(scenes)
+    ? (ownAt(scenes, target) as SerializedHistory | undefined)
+    : undefined;
   if (held) scene.restoreHistory(held);
 }
 
