@@ -46,6 +46,8 @@ describe('createClockSteps', () => {
         const at = ahead * s;
         steps.owed(at, s);
         const to = at * back;
+        // Back into an earlier step than the one paid up to; within that step nothing was owed anyway.
+        fc.pre(Math.floor(to / s) < Math.floor(at / s));
         expect(steps.owed(to, s)).toBe(0);
         const fresh = createClockSteps();
         fresh.rebase(to);

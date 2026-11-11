@@ -74,7 +74,7 @@ describe('computeFitView, property', () => {
       const maxY = Math.max(...poses.map((p) => p.y + p.height));
       if (maxX - minX === 0 && maxY - minY === 0) { expect(v.scale).toEqual({ x: 1, y: 1 }); return; }
       expect(v.scale.x).toBe(v.scale.y);
-      const eps = 1e-6 * Math.max(d.width, d.height);
+      const eps = 1e-6 * Math.max(d.width, d.height) + 8 * Number.EPSILON * Math.max(Math.abs(minX), Math.abs(maxX), Math.abs(minY), Math.abs(maxY)) * v.scale.x;
       const a = viewWorldToScreen(v, { x: minX, y: minY });
       const b = viewWorldToScreen(v, { x: maxX, y: maxY });
       for (const s of [a, b]) {
@@ -83,8 +83,10 @@ describe('computeFitView, property', () => {
         expect(s.y).toBeGreaterThanOrEqual(PADDING - eps);
         expect(s.y).toBeLessThanOrEqual(d.height - PADDING + eps);
       }
-      expect((a.x + b.x) / 2).toBeCloseTo(d.width / 2, 4);
-      expect((a.y + b.y) / 2).toBeCloseTo(d.height / 2, 4);
+      // The world coordinates' own rounding, magnified by the fit's scale.
+      const slack = 1e-6 + 8 * Number.EPSILON * Math.max(Math.abs(minX), Math.abs(maxX), Math.abs(minY), Math.abs(maxY)) * v.scale.x;
+      expect(Math.abs((a.x + b.x) / 2 - d.width / 2)).toBeLessThanOrEqual(slack);
+      expect(Math.abs((a.y + b.y) / 2 - d.height / 2)).toBeLessThanOrEqual(slack);
       // The fit is tight on one axis.
       const fillX = (b.x - a.x) / (d.width - 2 * PADDING);
       const fillY = (b.y - a.y) / (d.height - 2 * PADDING);
@@ -147,7 +149,7 @@ describe('minimap mapping and indicator, property', () => {
     fc.assert(fc.property(view, measured, view, fc.double({ min: 0.5, max: 8, noNaN: true }), (main, d, fit, px) => {
       const cmd = computeIndicatorCommand(main, d, { width: px, dash: [2, 3] }, fit);
       expect(cmd.path).toEqual({ kind: 'rect', ...viewportWorldRect(main, d) });
-      expect(cmd.stroke!.width * fit.scale.x).toBeCloseTo(px, 9);
+      expect((cmd.stroke!.width as number) * fit.scale.x).toBeCloseTo(px, 9);
       const dash = cmd.stroke!.dash!;
       expect(dash[0]! * fit.scale.x).toBeCloseTo(2, 9);
       expect(dash.every(Number.isFinite)).toBe(true);
