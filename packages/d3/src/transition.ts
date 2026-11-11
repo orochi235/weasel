@@ -1,6 +1,6 @@
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
-import { after } from './after';
+import { after } from '@weasel-js/registry';
 import { pendingFor, unregisterRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
 
