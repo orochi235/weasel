@@ -61,17 +61,35 @@ export const orthogonal: Router = (req) => {
     // came when the last stop overshot this one; turning at once does not.
     const prev = out.length > 1 ? out[out.length - 2]! : null;
     if (leaveHorizontal) {
-      const mid = (a.x + b.x) / 2;
+      const mid = midway(a.x, b.x);
       if (prev !== null && (mid - a.x) * (a.x - prev.x) < 0) out.push({ x: a.x, y: b.y }, b);
       else out.push({ x: mid, y: a.y }, { x: mid, y: b.y }, b);
     } else {
-      const mid = (a.y + b.y) / 2;
+      const mid = midway(a.y, b.y);
       if (prev !== null && (mid - a.y) * (a.y - prev.y) < 0) out.push({ x: b.x, y: a.y }, b);
       else out.push({ x: a.x, y: mid }, { x: b.x, y: mid }, b);
     }
   }
   return out;
 };
+
+/** Halfway from `a` to `b`, finite wherever both are. */
+function midway(a: number, b: number): number {
+  const m = (a + b) / 2;
+  return Number.isFinite(m) ? m : a / 2 + b / 2;
+}
+
+/** The unit vector from `a` to `b`, or null where they coincide; finite wherever both are. */
+function direction(a: Vec2, b: Vec2): Vec2 | null {
+  let dx = b.x - a.x;
+  let dy = b.y - a.y;
+  let len = Math.hypot(dx, dy);
+  if (!Number.isFinite(len)) {
+    [dx, dy] = [b.x / 4 - a.x / 4, b.y / 4 - a.y / 4];
+    len = Math.hypot(dx, dy);
+  }
+  return len === 0 ? null : { x: dx / len, y: dy / len };
+}
 
 /** Which axis a port faces. A port with no facing counts as horizontal. */
 function isHorizontal(normal: Vec2 | null | undefined): boolean {
@@ -117,12 +135,17 @@ const BEZIER_SAMPLES = 16;
  * it left.
  */
 function legReach(a: Vec2, b: Vec2, outN: Vec2 | null | undefined, inN: Vec2 | null | undefined): number {
+  if (outN == null || inN == null || outN.x * inN.x + outN.y * inN.y > -0.999) return PORT_REACH;
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const chord = Math.hypot(dx, dy);
-  if (outN == null || inN == null || chord === 0 || outN.x * inN.x + outN.y * inN.y > -0.999) return PORT_REACH;
-  const along = dx * outN.x + dy * outN.y;
-  return along > 0 ? Math.min(PORT_REACH, along / chord) : PORT_REACH;
+  if (chord === 0) return PORT_REACH;
+  let along = (dx * outN.x + dy * outN.y) / chord;
+  if (!Number.isFinite(along)) {
+    const d = direction(a, b);
+    along = d === null ? 0 : d.x * outN.x + d.y * outN.y;
+  }
+  return along > 0 ? Math.min(PORT_REACH, along) : PORT_REACH;
 }
 
 /**
@@ -135,10 +158,7 @@ function through(stops: readonly Vec2[], i: number): Vec2 | null {
   const last = stops.length - 1;
   const run = (a: number, b: number) => a >= 1 && b <= last - 1 && (stops[a]!.x === stops[b]!.x || stops[a]!.y === stops[b]!.y);
   const [from, to] = run(i, i + 1) ? [i, i + 1] : run(i - 1, i) ? [i - 1, i] : [i - 1, i + 1];
-  const dx = stops[to]!.x - stops[from]!.x;
-  const dy = stops[to]!.y - stops[from]!.y;
-  const len = Math.hypot(dx, dy);
-  return len === 0 ? null : { x: dx / len, y: dy / len };
+  return direction(stops[from]!, stops[to]!);
 }
 
 const negated = (v: Vec2 | null): Vec2 | null => (v === null ? null : { x: -v.x, y: -v.y });
