@@ -184,7 +184,12 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   const moved = step.times !== undefined ? value * step.times ** dir : value + dir * (step.plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
   // A step that rounds back to where it began still moves one `step`.
-  const next = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
-  const clamped = Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, next));
-  return Number(clamped.toFixed(6));
+  const stepped = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
+  // Past the double range a finite option has nowhere further to go than the largest double.
+  const next = Number.isFinite(stepped) ? stepped : dir * Number.MAX_VALUE;
+  const clamp = (n: number): number => Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, n));
+  const clamped = clamp(next);
+  // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step.
+  const tidy = Number(clamped.toPrecision(12));
+  return clamped !== value && (tidy - value) * dir > 0 && clamp(tidy) === tidy ? tidy : clamped;
 }
