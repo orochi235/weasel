@@ -43,7 +43,7 @@ describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
     ]);
   });
 
-  it('pending style clears after one inserted character', () => {
+  it('pending style is spent on the first character, which the next one follows', () => {
     const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
@@ -52,11 +52,11 @@ describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
     act(() => pressKey(overlay, 'b', { meta: true }));
     act(() => dispatchBeforeInput(overlay, 'X'));
     act(() => dispatchBeforeInput(overlay, 'Y'));
+    expect(result.current.pendingStyle).toEqual({});
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
-      { text: 'X', bold: true },
-      { text: 'Y' },
+      { text: 'XY', bold: true },
     ]);
   });
 });

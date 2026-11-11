@@ -27,8 +27,6 @@ interface Model {
   sel: { start: number; end: number };
   /** The whole style the next typed character takes, when one is armed. */
   armed: RunStylePatch | null;
-  /** Whether the caret sits between two run spans, where the hook gives typing a text node of its own. */
-  between: boolean;
 }
 
 interface Real {
@@ -120,10 +118,29 @@ class Select implements fc.AsyncCommand<Model, Real> {
     t.count(start === end ? 'caret' : 'select');
     if (!keeps) m.armed = null;
     m.sel = { start, end };
-    m.between = false;
     check(m, r);
   }
   toString(): string { return `select(${this.a}, ${this.b})`; }
+}
+
+/** A caret between two run spans, or before the first, as a click can leave one: an element position in the overlay. */
+class CaretBetween implements fc.AsyncCommand<Model, Real> {
+  constructor(readonly k: number) {}
+  check(): boolean { return true; }
+  async run(m: Model, r: Real): Promise<void> {
+    const kids = [...r.overlay.childNodes];
+    const index = this.k % (kids.length + 1);
+    const at = kids.slice(0, index).reduce((n, kid) => n + (kid.textContent ?? '').length, 0);
+    await act(async () => {
+      window.getSelection()!.collapse(r.overlay, index);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    t.count('caret between');
+    if (!(m.sel.start === at && m.sel.end === at)) m.armed = null;
+    m.sel = { start: at, end: at };
+    check(m, r);
+  }
+  toString(): string { return `caretBetween(${this.k})`; }
 }
 
 const KEYS: Record<StyleToggle, { key: string; shift: boolean }> = {
@@ -158,25 +175,16 @@ class Patch implements fc.AsyncCommand<Model, Real> {
   toString(): string { return `patch(${JSON.stringify(this.patch)})`; }
 }
 
-/** After `units`, whether `at` falls where one run ends and the next begins (or at the end). */
-const atRunEnd = (units: readonly Unit[], at: number): boolean => {
-  let acc = 0;
-  for (const run of fromUnits(units)) { acc += run.text.length; if (acc === at) return true; }
-  return false;
-};
-
 class Type implements fc.AsyncCommand<Model, Real> {
   constructor(readonly ch: string) {}
   check(m: Readonly<Model>): boolean { return m.sel.start === m.sel.end; }
   async run(m: Model, r: Real): Promise<void> {
     const at = m.sel.start;
-    // Open: what a character typed between run spans with nothing armed takes. Put the caret in a text node instead.
-    if (m.between && !m.armed) { await placeCaretAndSettle(r.overlay, at); m.between = false; }
+    if (window.getSelection()!.getRangeAt(0).startContainer.nodeType !== Node.TEXT_NODE && !m.armed) t.count('type between');
     act(() => dispatchBeforeInput(r.overlay, this.ch));
     const style = m.armed ?? caretStyle(m.units, at);
     m.units = [...m.units.slice(0, at), ...this.ch.split('').map((ch) => ({ ch, style })), ...m.units.slice(at)];
     const after = at + this.ch.length;
-    m.between = m.armed !== null && atRunEnd(m.units, after);
     t.count(m.armed ? 'type armed' : 'type');
     m.armed = null;
     m.sel = { start: after, end: after };
@@ -198,7 +206,6 @@ class Paste implements fc.AsyncCommand<Model, Real> {
     const after = start + this.text.length;
     t.count(start === end ? 'paste' : 'paste over');
     m.armed = null;
-    m.between = false;
     m.sel = { start: after, end: after };
     check(m, r);
   }
@@ -217,6 +224,7 @@ const PATCHES: RunStylePatch[] = [
 const commands = [
   fc.tuple(fc.nat(40), fc.nat(40)).map(([a, b]) => new Select(a, b)),
   fc.nat(40).map((a) => new Select(a, a)),
+  fc.nat(6).map((k) => new CaretBetween(k)),
   fc.constantFrom<Exclude<StyleToggle, 'overline'>>('bold', 'italic', 'underline', 'strikethrough', 'super', 'sub').map((x) => new Toggle(x)),
   fc.constantFrom(...PATCHES).map((p) => new Patch(p)),
   fc.constantFrom(...TYPED).map((ch) => new Type(ch)),
@@ -238,7 +246,7 @@ describe('useTextEdit session (stateful)', () => {
       act(() => result.current.startEdit('a'));
       const overlay = getOverlay(h.container)!;
       const units = toUnits(rs);
-      const m: Model = { units, sel: { start: 0, end: units.length }, armed: null, between: false };
+      const m: Model = { units, sel: { start: 0, end: units.length }, armed: null };
       check(m, { edit: () => result.current, overlay });
       await fc.asyncModelRun(() => ({ model: m, real: { edit: () => result.current, overlay } }), cmds);
       const opened = keyed(fromUnits(toUnits(rs)));
@@ -253,7 +261,7 @@ describe('useTextEdit session (stateful)', () => {
       }
       unmount();
     }), runs(RUNS));
-    for (const what of ['caret', 'select', 'toggle at caret', 'toggle range', 'patch at caret', 'patch range', 'type', 'type armed', 'paste', 'paste over', 'commit']) {
+    for (const what of ['caret', 'select', 'toggle at caret', 'toggle range', 'patch at caret', 'patch range', 'type', 'type armed', 'paste', 'paste over', 'commit', 'caret between', 'type between']) {
       t.atLeast(what, 10);
     }
   }, timeoutFor(RUNS, 400));

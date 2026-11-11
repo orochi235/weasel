@@ -41,7 +41,7 @@ describe('useTextEdit — superscript and subscript', () => {
     expect(h.runCommits[0].runs).toEqual([{ text: 'x' }, { text: '2', script: 'sub' }]);
   });
 
-  it('superscript at a collapsed caret styles only the next typed character', () => {
+  it('superscript at a collapsed caret styles what is typed until it is pressed again', () => {
     const h = makeRichHarness({ a: { text: 'x', runs: [{ text: 'x' }] } });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
@@ -49,6 +49,7 @@ describe('useTextEdit — superscript and subscript', () => {
     placeCaretAtChar(overlay, 1);
     act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
     act(() => dispatchBeforeInput(overlay, '2'));
+    act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
     act(() => dispatchBeforeInput(overlay, 'y'));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([
@@ -210,7 +211,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     expect(h.runCommits[0].runs).toEqual([{ text: 'abc', strikethrough: true }]);
   });
 
-  it('Cmd-U at a collapsed caret underlines the next typed character only', () => {
+  it('Cmd-U at a collapsed caret underlines what is typed after it', () => {
     const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
@@ -222,8 +223,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
-      { text: 'X', underline: true },
-      { text: 'Y' },
+      { text: 'XY', underline: true },
     ]);
   });
 

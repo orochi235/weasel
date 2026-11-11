@@ -447,10 +447,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   styling the caret sits in, so it can take a flag, a script, or a valued key off (`pendingStyle` holds that key as
   `false` or `undefined`), and the character typed under it lands as a write of the same patch would, bold and a
   weight each dropping the other. Cmd+B at the end of a bold word used to arm nothing (d13b75728).
-- Open (2026-11-10, property tests): a character typed with nothing armed at a caret between two run spans, where the
-  caret sits after a character typed under an armed style, gets a text node of its own and so no run styling at all,
-  while `rangeStyle` at that caret reports the character before it. After an armed character in a bold run, the next
-  one comes out plain. The session model test puts the caret into a text node before typing there.
+- Ruled 2026-11-11 (my call, overnight sweep): a character typed at a collapsed caret with nothing armed takes the
+  styling `rangeStyle` reports there, the character before it or the first at the start, by one rule both read
+  (`runStyleAt`), a caret between two run spans included. An armed style is spent on its first character and the
+  ones typed after follow it, so Cmd+B then a word bolds the word; Cmd+B again ends it. It used to style the first
+  character alone and type the rest with no run styling at all.
 
 ## SVG and paths
 

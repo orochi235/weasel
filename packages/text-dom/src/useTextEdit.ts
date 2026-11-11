@@ -58,13 +58,9 @@ function patchForToggle(
   return { [toggle]: !on };
 }
 
-/**
- * The styling at a collapsed caret: the run to its left, or — at the very
- * start of the text — the run to its right. This is what the next typed
- * character inherits.
- */
+/** The styling at a collapsed caret, read as a range: `runStyleAt`'s, which the next typed character takes. */
 function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
-  return at > 0 ? styleAtRange(runs, at - 1, at) : styleAtRange(runs, 0, 1);
+  return runs.some((r) => r.text.length > 0) ? styleAtRange([{ ...runStyleAt(runs, at), text: ' ' }], 0, 1) : {};
 }
 
 /** No pending style. One frozen object so re-publishing an already-empty
