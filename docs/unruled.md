@@ -362,8 +362,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, kernel3d second property pass): `POSE3_COMPOSITION.decompose` reads a frame axis whose
   quotient is not finite, a subnormal scale say, as collapsed, the rule it had for a scale of 0. A world pose rebased
   into such a frame lands on the frame's origin along that axis when composed back, not where it was.
-
-## Rendering, canvas, and paint
+- 2026-11-11 (my call, core canvas second pass): `reconcileSpecs` puts a group's member back on its own layer after
+  the group's spec changes layer and the member's does not, wherever the group's new layer allows; `setLayer` alone
+  still carries the whole subtree (fef31b751). The member's spec says where it stands, which is what the render
+  worker's copy needs, but a consumer reconciling to specs that expected the old carry would see members stay put.
 
 - Ruled 2026-11-10 (my call, overnight sweep): a marquee or lasso takes a node under several clips only where
   the clips' common part meets it and the region (`PickQuery.intersectClips`), not where each clip alone does:
@@ -524,6 +526,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   through any of them, so it draws what nothing can pick. Whether projection should refuse those cameras too, or
   `rayAt` cast from the eye for a near plane at 0, is unsettled. A near plane past the far one draws depth mirrored,
   and its rays run back toward the eye.
+- 2026-11-11 (my call, core canvas second pass): a marquee rect with a negative width or height (`rectRegion`,
+  `hitTestArea`) is the same rect named from its other corner, as the marquee drag's `rectBetween` already makes it,
+  rather than an empty area (5f06b1f0d).
 
 ## Text
 
