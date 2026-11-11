@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { type MeasureEnv } from './measure';
-import { runs, tally } from './pbt.fixture';
+import { runs, tally, timeoutFor } from './pbt.fixture';
 import { ROW_GAP, dropSide, listMode, measureRowList, rowAtY } from './rowList';
 
 const RUNS = 300;
@@ -59,7 +59,7 @@ describe('measureRowList', () => {
     t.atLeast('rows', RUNS / 2);
     t.atLeast('empty', RUNS / 20);
     t.atLeast('fits', RUNS / 4);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('dropSide seams exactly one row for each gap, and none for no drop', () => {
     fc.assert(fc.property(fc.integer({ min: 1, max: 8 }), fc.option(fc.integer({ min: 0, max: 10 }), { nil: null }), (count, gap) => {
@@ -69,11 +69,11 @@ describe('measureRowList', () => {
       if (gap !== null && gap < count) expect(sides[gap]).toBe('before');
       if (gap !== null && gap >= count) expect(sides[count - 1]).toBe('after');
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('listMode is a grid for controls or activation alone, a listbox for selection, else a list', () => {
     fc.assert(fc.property(fc.record({ selection: fc.option(fc.constantFrom('single', 'multi' as const), { nil: undefined }), activatable: fc.boolean(), controls: fc.boolean() }), (o) => {
       expect(listMode(o)).toBe(o.controls || (o.activatable && !o.selection) ? 'grid' : o.selection ? 'listbox' : 'list');
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });

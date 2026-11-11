@@ -89,7 +89,7 @@ describe('holdElapsed', () => {
     }), runs(RUNS));
     t.atLeast('later pass', RUNS / 20);
     t.atLeast('first pass', RUNS / 4);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('createClockRegistry — stateful model', () => {
@@ -149,7 +149,7 @@ describe('createClockRegistry — stateful model', () => {
       reg.subscribe(() => { real.notified++; });
       fc.modelRun(() => ({ model: { entries: new Map(), notified: 0, next: 0 }, real }), cmds);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {

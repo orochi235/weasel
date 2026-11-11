@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { runs, tally } from './pbt.fixture';
+import { runs, tally, timeoutFor } from './pbt.fixture';
 import { gapByMidpoint, isNoopDrop, moveItems, movedIndex, nearestGap, nudgeGap } from './reorder';
 
 const RUNS = 400;
@@ -44,7 +44,7 @@ describe('moveItems', () => {
     }), runs(RUNS));
     t.atLeast('noop', RUNS / 20);
     t.atLeast('moved', RUNS / 8);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('nudges a run one place along, or nowhere at an end', () => {
     const t = tally();
@@ -65,7 +65,7 @@ describe('moveItems', () => {
     }), runs(RUNS));
     t.atLeast('nudged', RUNS / 4);
     t.atLeast('end', RUNS / 20);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('gap pickers', () => {
@@ -82,7 +82,7 @@ describe('gap pickers', () => {
         if (mids.length > 1) expect(got).toBe(backward ? mids.filter((m) => m >= p).length : forwardGap);
       },
     ), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('nearestGap picks a gap no farther than any other, and -1 for none', () => {
     fc.assert(fc.property(fc.array(fc.double({ min: -1e6, max: 1e6, noNaN: true }), { maxLength: 8 }), fc.double({ min: -1e6, max: 1e6, noNaN: true }), (gaps, p) => {
@@ -90,5 +90,5 @@ describe('gap pickers', () => {
       if (gaps.length === 0) { expect(k).toBe(-1); return; }
       for (const g of gaps) expect(Math.abs(gaps[k]! - p)).toBeLessThanOrEqual(Math.abs(g - p));
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });

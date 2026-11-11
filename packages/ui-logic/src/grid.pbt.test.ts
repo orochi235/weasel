@@ -28,7 +28,7 @@ describe('tileRows', () => {
         expect(row.length).toBeLessThanOrEqual(across);
       });
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('tileGrid', () => {
@@ -129,7 +129,7 @@ describe('tileKey and rovingGridTarget', () => {
       }
     }), runs(RUNS));
     t.atLeast('round trip', RUNS / 3);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {

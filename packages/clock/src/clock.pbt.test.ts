@@ -268,7 +268,7 @@ describe('clock laws', () => {
       apply(y, after);
       expect(reading(x.clock)).toEqual(reading(y.clock));
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('time scaling composes: many frames move the clock as one frame over the same time does', () => {
     const t2 = tally();
@@ -293,7 +293,7 @@ describe('clock laws', () => {
       },
     ), runs(RUNS));
     t2.atLeast('ramp', RUNS / 4);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('a ramp reaches its rate exactly once its time is up, passing only between its ends', () => {
     fc.assert(fc.property(rate, rate, fc.double({ min: 1, max: 1000, noNaN: true }), fc.array(fc.double({ min: 0, max: 100, noNaN: true }), { minLength: 1, maxLength: 30 }), (from, to, over, frames) => {
@@ -312,7 +312,7 @@ describe('clock laws', () => {
       clock.sync(Math.max(now, over));
       expect(clock.rate).toBe(to);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('a recorded position reopens where the clock stood', () => {
     const t3 = tally();
@@ -328,7 +328,7 @@ describe('clock laws', () => {
     }), runs(RUNS));
     t3.atLeast('plain', RUNS / 10);
     t3.atLeast('redurated', RUNS / 10);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('refuses a declaration it cannot run with a RangeError, never another error', () => {
     const bad = fc.record({
@@ -344,7 +344,7 @@ describe('clock laws', () => {
     fc.assert(fc.property(bad, (s) => {
       try { checkInvariants(createClock(s as ClockSpec)); } catch (e) { expect(e).toBeInstanceOf(RangeError); }
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {

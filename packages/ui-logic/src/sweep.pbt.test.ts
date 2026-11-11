@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { runs, tally } from './pbt.fixture';
+import { runs, tally, timeoutFor } from './pbt.fixture';
 import { frames, range, stepsOf, until, values } from './sweep';
 
 const RUNS = 400;
@@ -40,7 +40,7 @@ describe('range', () => {
       t.count(steps.length > 1 ? 'walked' : 'one');
     }), runs(RUNS));
     t.atLeast('walked', RUNS / 3);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('with a count, walks that many evenly, both ends exact, and `at` runs continuously between them', () => {
     const t = tally();
@@ -60,7 +60,7 @@ describe('range', () => {
       t.count(count > 1 ? 'many' : 'one');
     }), runs(RUNS));
     t.atLeast('many', RUNS / 2);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('values, until, and stepsOf', () => {
@@ -72,7 +72,7 @@ describe('values, until, and stepsOf', () => {
       const c = Math.min(1, Math.max(0, u));
       expect(s.at(u)).toBe(list[Math.round(c * (list.length - 1))]);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('until walks the prefix before the first step it accepts, and stepsOf the first cap', () => {
     fc.assert(fc.property(fc.array(fc.integer({ min: 0, max: 9 }), { maxLength: 12 }), fc.integer({ min: 0, max: 9 }), fc.integer({ min: 0, max: 14 }), (list, stop, cap) => {
@@ -81,7 +81,7 @@ describe('values, until, and stepsOf', () => {
       expect([...until(values([0, ...list]), (v, i) => i > 0 && v === stop).walk()]).toEqual([0, ...prefix]);
       expect(stepsOf(values([0, ...list]), cap)).toEqual({ steps: [0, ...list].slice(0, cap), capped: list.length + 1 > cap });
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('frames', () => {
@@ -115,7 +115,7 @@ describe('frames', () => {
     ), runs(RUNS));
     t.atLeast('ends', RUNS / 4);
     t.atLeast('loops', RUNS / 10);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {

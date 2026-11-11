@@ -40,7 +40,7 @@ describe('stepStop and rovingKey', () => {
     t.atLeast('stay', 10);
     t.atLeast('none', 10);
     t.atLeast('wrapped', 10);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('Home and End land on the first and last stop; arrows step along the orientation only', () => {
     const t = tally();
@@ -66,7 +66,7 @@ describe('stepStop and rovingKey', () => {
     ), runs(RUNS));
     t.atLeast('arrow', RUNS / 4);
     t.atLeast('unhandled', RUNS / 4);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('rowKey moves where rovingKey does, extending with Shift, and takes Mod+A only on its own platform', () => {
     const t = tally();
@@ -96,7 +96,7 @@ describe('stepStop and rovingKey', () => {
     ), runs(RUNS));
     for (const k of ['move', 'enter', 'null']) t.atLeast(k, 20);
     for (const k of ['selectAll', 'type']) t.atLeast(k, 2);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 const labelShape = { canStop: (i: Item) => i.stop, label: (i: Item) => i.label };
@@ -120,7 +120,7 @@ describe('typeahead', () => {
     t.atLeast('hit', RUNS / 4);
     t.atLeast('miss', 10);
     t.atLeast('same', 10);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('a buffer grows inside the pause, starts over past it, and a repeated letter cycles', () => {
     const t = tally();
@@ -147,7 +147,7 @@ describe('typeahead', () => {
       },
     ), runs(RUNS));
     for (const k of ['cycle', 'fresh', 'grow']) t.atLeast(k, RUNS / 5);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 /** A row of a tree as shown: its depth, and whether it is a branch, open, and can toggle. */

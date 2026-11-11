@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { tabSort, tabStep } from './focus';
 import { COARSE_STEPS, arrowMove, arrowSteps, rangeKey } from './keySteps';
-import { runs, tally } from './pbt.fixture';
+import { runs, tally, timeoutFor } from './pbt.fixture';
 import { editEnd, imeKey } from './textCommit';
 
 const RUNS = 400;
@@ -29,7 +29,7 @@ describe('key steps', () => {
       else if (key === 'ArrowLeft' || key === 'ArrowRight') expect(move).toEqual({ dx: ltr, dy: 0 });
       else expect(move).toEqual({ dx: 0, dy: -ltr });
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('text commit', () => {
@@ -44,7 +44,7 @@ describe('text commit', () => {
         expect(editEnd(cause, shape)).toBe(want);
       },
     ), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('an input method owns a composing key, keyCode 229, Process, and Dead, and nothing else', () => {
     fc.assert(fc.property(
@@ -53,7 +53,7 @@ describe('text commit', () => {
         expect(imeKey({ key, isComposing, keyCode })).toBe(isComposing === true || keyCode === 229 || key === 'Process' || key === 'Dead');
       },
     ), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('tab order', () => {
@@ -70,7 +70,7 @@ describe('tab order', () => {
       ];
       expect(got).toEqual(want);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('tabStep walks the order, blurs past either end, and steps from where a target that left it sat', () => {
     const t = tally();
@@ -97,5 +97,5 @@ describe('tab order', () => {
       },
     ), runs(RUNS));
     for (const k of ['step', 'blur', 'enter', 'left']) t.atLeast(k, RUNS / 20);
-  });
+  }, timeoutFor(RUNS, 3));
 });

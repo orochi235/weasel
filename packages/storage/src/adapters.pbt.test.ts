@@ -139,7 +139,7 @@ describe('urlHashAdapter — a fragment it did not write', () => {
       await urlHashAdapter.delete(k);
       expect(window.location.hash).toBe(before);
     }), runs(200));
-  });
+  }, timeoutFor(200, 3));
 });
 
 describe('shrunk counterexamples', () => {

@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { isJsonSafe, parse } from './json';
-import { cloneValue, jsonValue, runs, same, tally } from './pbt.fixture';
+import { cloneValue, jsonValue, runs, same, tally, timeoutFor } from './pbt.fixture';
 import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 const RUNS = 500;
@@ -51,7 +51,7 @@ describe('isJsonSafe', () => {
     }), runs(RUNS));
     t.atLeast('safe', RUNS / 4);
     t.atLeast('unsafe', RUNS / 8);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('parse', () => {
@@ -64,7 +64,7 @@ describe('parse', () => {
       try { want = JSON.parse(raw); } catch { want = raw; }
       expect(same(parse(raw), want)).toBe(true);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('URL fragment encoding', () => {
@@ -74,7 +74,7 @@ describe('URL fragment encoding', () => {
       expect(encoded).toMatch(/^[A-Za-z0-9+/=]*$/);
       expect(decodeUrlHash(encoded)).toBe(s === '' ? null : s);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('writes a lone surrogate as U+FFFD with a warning, rather than throwing', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -85,14 +85,14 @@ describe('URL fragment encoding', () => {
     }), runs(RUNS));
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('answers a string or null for any fragment, never throwing', () => {
     fc.assert(fc.property(fc.oneof(fc.string(), fc.base64String(), fc.string({ unit: 'binary' }), fc.constantFrom('JUQ4MDA=', '%', 'JQ==')), (hash) => {
       const got = decodeUrlHash(hash);
       expect(got === null || typeof got === 'string').toBe(true);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {

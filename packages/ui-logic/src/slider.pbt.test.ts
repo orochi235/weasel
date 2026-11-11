@@ -100,7 +100,7 @@ describe('sliderKey', () => {
       },
     ), runs(RUNS));
     t.atLeast('moved', RUNS / 3);
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('stops', () => {
@@ -117,7 +117,7 @@ describe('stops', () => {
         .map((value) => ({ value, label: all.find((s) => s.value === value && s.label !== undefined)?.label }));
       expect(got.map((s) => ({ value: s.value, label: s.label }))).toEqual(want);
     }), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('attract snaps to the nearest stop within reach, else stays', () => {
     const t = tally();
@@ -132,7 +132,7 @@ describe('stops', () => {
     }), runs(RUNS));
     t.atLeast('snapped', RUNS / 10);
     t.atLeast('stayed', RUNS / 10);
-  });
+  }, timeoutFor(RUNS, 3));
 
   it('stepStops goes count stops along, saturating at the ends', () => {
     fc.assert(fc.property(
@@ -144,7 +144,7 @@ describe('stops', () => {
         expect(stepStops(stops, v, dir, count)).toBe(want);
       },
     ), runs(RUNS));
-  });
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {
