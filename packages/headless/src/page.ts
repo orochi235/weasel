@@ -4,7 +4,7 @@ import {
   createRasterSession, rasterToPng, sceneFromJSON, warmRender, type RasterRenderArgs, type SavedScene,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { PAGE_GLOBAL, sceneFromWire, type PageApi, type PageRequest, type PageResult } from './protocol';
+import { PAGE_GLOBAL, readPageRequest, sceneFromWire, type PageApi, type PageRequest, type PageResult } from './protocol';
 
 const session = createRasterSession();
 
@@ -16,8 +16,8 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-async function render(req: PageRequest): Promise<PageResult> {
-  const { scene, screen, format, overlay, ...rest } = req;
+async function render(sent: PageRequest): Promise<PageResult> {
+  const { scene, screen, format, overlay, ...rest } = readPageRequest(sent);
   const args: RasterRenderArgs<unknown, string, unknown> = {
     ...rest,
     scene: sceneFromJSON(sceneFromWire(scene) as SavedScene<unknown, string, unknown>),

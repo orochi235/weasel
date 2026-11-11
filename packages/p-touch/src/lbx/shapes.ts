@@ -90,6 +90,13 @@ export function lineObject(cmd: PathDrawCommand, state: DrawState): LineObject |
   };
 }
 
+// UAX #14's mandatory breaks, which P-touch writes as one `\n` each.
+const HARD_BREAK = /\r\n|[\r\u000b\u000c\u0085\u2028\u2029]/g;
+// What XML 1.0 cannot carry even escaped: most C0 controls, lone surrogates, U+FFFE and U+FFFF.
+const NOT_XML = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]|[\ud800-\udfff]/u;
+// In an attribute, which a font name is written in, a reader also turns a tab or a break into a space.
+const NOT_XML_ATTR = /[\u0000-\u001f\ufffe\uffff]|[\ud800-\udfff]/u;
+
 const H_ALIGN: Record<string, HorizontalAlignment> = { left: 'LEFT', start: 'LEFT', center: 'CENTER', right: 'RIGHT', end: 'RIGHT', justify: 'JUSTIFY' };
 const V_ALIGN: Record<string, VerticalAlignment> = { top: 'TOP', center: 'CENTER', bottom: 'BOTTOM' };
 
@@ -115,6 +122,8 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     if (!hex || (color !== undefined && hex !== color)) return undefined;
     color = hex;
   }
+  const data = cmd.runs.map((run) => run.text).join('').replace(HARD_BREAK, '\n');
+  if (NOT_XML.test(data) || NOT_XML_ATTR.test(first!.fontFamily)) return undefined;
   const align = cmd.justify ? 'justify' : (cmd.align ?? cmd.style.align ?? 'left');
   return {
     type: 'text',
@@ -126,6 +135,6 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
     autoLF: cmd.maxWidth !== undefined,
     horizontalAlignment: H_ALIGN[align] ?? 'LEFT',
     verticalAlignment: V_ALIGN[cmd.verticalAlign ?? 'top'] ?? 'TOP',
-    data: cmd.runs.map((run) => run.text).join(''),
+    data,
   };
 }

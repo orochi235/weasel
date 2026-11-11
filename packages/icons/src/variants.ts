@@ -17,11 +17,15 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
 
   return {
     provide(next: Readonly<Record<string, IconVariantLoader>>): void {
+      let fresh = false;
       for (const [name, loader] of Object.entries(next)) {
         loaders.set(name, loader);
-        if (!states.has(name)) states.set(name, 'idle');
+        if (!states.has(name)) {
+          states.set(name, 'idle');
+          fresh = true;
+        }
       }
-      changed();
+      if (fresh) changed();
     },
     state(name: string): IconVariantState {
       return states.get(name) ?? 'unknown';

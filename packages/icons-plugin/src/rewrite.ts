@@ -5,6 +5,7 @@ import { unshadowedCalls } from './scope.ts';
 
 const ICONS_GEN = /icons\.gen(?:\.[cm]?[jt]sx?)?$/;
 const NAME = /^[^'"`\s\\]+$/;
+const LONE_SURROGATE = /[\uD800-\uDFFF]/gu;
 
 export interface RewriteResult {
   readonly code: string;
@@ -89,7 +90,9 @@ export function rewriteIconCalls(
       dynamic++;
       return;
     }
-    s.overwrite(node.start as number, node.end as number, `/* @icon */ '${qualify(locals.get(callee)!, name)}'`);
+    // A lone surrogate written bare reaches the bundler's UTF-8 output as U+FFFD, naming another glyph.
+    const ref = qualify(locals.get(callee)!, name).replace(LONE_SURROGATE, (c) => `\\u${c.charCodeAt(0).toString(16)}`);
+    s.overwrite(node.start as number, node.end as number, `/* @icon */ '${ref}'`);
   });
   return { code: s.toString(), map: s.generateMap({ source: id, hires: true }), dynamic };
 }

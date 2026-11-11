@@ -17,11 +17,15 @@ export type TypedArrayTag = keyof typeof TYPED_ARRAY_CONSTRUCTORS;
 /** A typed array of numbers: what a `Path` keeps its commands and coords in. */
 export type NumberTypedArray = InstanceType<(typeof TYPED_ARRAY_CONSTRUCTORS)[TypedArrayTag]>;
 
-/** A typed array as JSON holds it: its type's tag and its numbers. */
+/** A typed array as JSON holds it: its type's tag and its numbers, each non-finite one and `-0` by name,
+ *  since JSON writes those as `null` and `0`. */
 export interface TaggedTypedArray {
   __ta: TypedArrayTag;
-  data: number[];
+  data: (number | 'NaN' | 'Infinity' | '-Infinity' | '-0')[];
 }
+
+const written = (n: number): TaggedTypedArray['data'][number] =>
+  Object.is(n, -0) ? '-0' : Number.isFinite(n) ? n : (String(n) as 'NaN');
 
 const TAGS = new Map<string, TypedArrayTag>(
   (Object.keys(TYPED_ARRAY_CONSTRUCTORS) as TypedArrayTag[]).map((tag) => [TYPED_ARRAY_CONSTRUCTORS[tag].name, tag]),
@@ -34,7 +38,7 @@ const classOf = (value: unknown): string => Object.prototype.toString.call(value
 export function tagTypedArray(value: unknown): TaggedTypedArray | undefined {
   if (!ArrayBuffer.isView(value)) return undefined;
   const tag = TAGS.get(classOf(value));
-  return tag && { __ta: tag, data: Array.from(value as NumberTypedArray) };
+  return tag && { __ta: tag, data: Array.from(value as NumberTypedArray, written) };
 }
 
 /** The typed array a `TaggedTypedArray` describes, or `undefined` for anything else. */
@@ -42,7 +46,7 @@ export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const { __ta: tag, data } = value as Partial<TaggedTypedArray>;
   if (typeof tag !== 'string' || !Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
-  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data);
+  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map(Number));
 }
 
 const isPlain = (value: unknown): value is Record<string, unknown> => classOf(value) === 'Object';

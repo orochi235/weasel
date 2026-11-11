@@ -165,6 +165,9 @@ function isClipValue(v: unknown): v is ClipValue {
   if (typeof v === 'number') return Number.isFinite(v);
   if (Array.isArray(v)) return v.every(isClipValue);
   if (typeof v !== 'object' || Object.prototype.toString.call(v) !== '[object Object]') return false;
+  // A tagged typed array names its non-finite numbers, which a clip refuses as it does a bare one.
+  const { __ta, data } = v as { __ta?: unknown; data?: unknown };
+  if (typeof __ta === 'string' && Array.isArray(data)) return data.every((d) => d === '-0' || (typeof d === 'number' && Number.isFinite(d)));
   return Object.values(v as object).every((member) => member === undefined || isClipValue(member));
 }
 

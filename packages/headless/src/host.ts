@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { Browser, BrowserContext, LaunchOptions, Page } from 'playwright-core';
-import { PAGE_GLOBAL, sceneToWire, type PageApi, type PageRequest, type PageResult, type SerializableRenderArgs } from './protocol';
+import { PAGE_GLOBAL, readPageRequest, sceneToWire, type PageApi, type PageRequest, type PageResult, type SerializableRenderArgs } from './protocol';
 
 /** Where a {@link NodeRasterHost} renders. */
 export interface NodeRasterHostOptions {
@@ -93,6 +93,11 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
 
   async function call(args: NodeRenderArgs, format: PageRequest['format']): Promise<PageResult> {
     if (disposed) throw new Error('node raster host: render on a disposed host');
+    const { scene, screen, ...rest } = args;
+    // Refused here, a bad request rejects before any browser starts.
+    const req = readPageRequest({
+      ...rest, scene: sceneToWire(scene), format, ...(screen ? { screen: Array.from(screen) } : {}),
+    });
     opening ??= open(options).catch((err: unknown) => {
       opening = null;
       throw err;
@@ -101,10 +106,6 @@ export function createNodeRasterHost(options: NodeRasterHostOptions = {}): NodeR
     const opened = await pending;
     // Disposed while the page opened: the dispose closes it, and this render would fail as a closed page.
     if (disposed) throw new Error('node raster host: render on a disposed host');
-    const { scene, screen, ...rest } = args;
-    const req: PageRequest = {
-      ...rest, scene: sceneToWire(scene), format, ...(screen ? { screen: Array.from(screen) } : {}),
-    };
     try {
       return await opened.page.evaluate(
         ([key, r]) => ((globalThis as unknown as Record<string, PageApi>)[key]!).render(r),
