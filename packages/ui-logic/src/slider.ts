@@ -151,7 +151,8 @@ export function sliderKey(key: string, shift: boolean, shape: SliderKeyShape): n
     const range = shape.range ?? [min, max];
     const stepSize = defaultStep(step, range[0], range[1]);
     const delta = move * stepSize;
-    v = crossEnd(from, delta, stepSize, range, [min, max]) ?? snapToStep(from + delta, step, min);
+    // The step grid starts at the range's start: an endless low end's stop sits off it, at whatever distance it is drawn.
+    v = crossEnd(from, delta, stepSize, range, [min, max]) ?? snapToStep(from + delta, step, range[0]);
   }
   v = clamp(v, lo, hi);
   return shape.ordered ? clampOrdered(v, thumbs, index, lo, hi, step) : v;

@@ -20,6 +20,8 @@ export function useSpan(props: Pick<SliderProps, 'stops' | 'min' | 'max' | 'spac
 export interface ScaleOptions {
   scale?: ContinuousScaleFactory;
   stopSnapPx?: number;
+  /** Where the step grid starts. Default the span's `min`; an endless low end's stop sits off the grid, before it. */
+  stepOrigin?: number;
 }
 
 /** The two-way map between a value and its 0..1 place along `span`, and the
@@ -27,6 +29,7 @@ export interface ScaleOptions {
 export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step: number | undefined, options: ScaleOptions = {}) {
   const { stops, even, min, max } = span;
   const { scale = linearScale } = options;
+  const origin = options.stepOrigin ?? min;
   const kitSnapPx = useKitSetting('targets.sliderStopSnapPx');
   const stopSnapPx = options.stopSnapPx ?? kitSnapPx ?? STOP_SNAP_PX;
 
@@ -65,10 +68,10 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
     (f: number, length: number, free = false): number => {
       const v = fractionToValue(f);
       if (strict) return attract(v, stops, Infinity, valueToFraction);
-      const q = clamp(snapToStep(v, step, min), min, max);
+      const q = clamp(snapToStep(v, step, origin), min, max);
       return stops.length > 0 && !free ? attract(q, stops, stopSnapPx / length, valueToFraction) : q;
     },
-    [fractionToValue, valueToFraction, strict, stops, step, min, max, stopSnapPx],
+    [fractionToValue, valueToFraction, strict, stops, step, origin, min, max, stopSnapPx],
   );
 
   return { valueToFraction, fractionToValue, valueAt };

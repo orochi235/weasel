@@ -153,3 +153,41 @@ describe('shrunk counterexamples', () => {
     expect(sliderKey('ArrowUp', false, shape)).toBe(0);
   });
 });
+
+describe('sliderKey with an endless end', () => {
+  it('rests in the range on its step grid or on an end stop, and reaches an end stop one press past the range', () => {
+    const t = tally();
+    fc.assert(fc.property(
+      fc.integer({ min: -50, max: 50 }), fc.integer({ min: 1, max: 200 }), fc.constantFrom(1, 3, 7, 10),
+      fc.integer({ min: 1, max: 40 }), fc.integer({ min: 1, max: 40 }), fc.constantFrom('min', 'max', 'both' as const),
+      fc.nat(), fc.constantFrom('ArrowUp', 'ArrowDown', 'PageUp', 'PageDown'),
+      (lo, width, s, gapLo, gapHi, ends, pick, key) => {
+        const hi = lo + width;
+        const min = ends === 'max' ? lo : lo - gapLo;
+        const max = ends === 'min' ? hi : hi + gapHi;
+        // Thumbs rest on the grid from the range's start, on the range's ends, or on an end stop.
+        const rests = [...Array.from({ length: Math.floor(width / s) + 1 }, (_, k) => lo + k * s), hi];
+        const from = rests[pick % rests.length]!;
+        const v = sliderKey(key, false, { thumbs: [{ value: from }], index: 0, min, max, step: s, range: [lo, hi] })!;
+        const onGrid = v >= lo && v <= hi && (Number.isInteger((v - lo) / s) || v === hi);
+        expect(onGrid || v === min || v === max).toBe(true);
+        const up = key.endsWith('Up');
+        if (up && from === hi && max > hi) { expect(v).toBe(max); t.count('to end stop'); }
+        if (!up && from === lo && min < lo) { expect(v).toBe(min); t.count('to end stop'); }
+        if (from === max && max > hi && !up) expect(v).toBeLessThanOrEqual(hi);
+        if (from === min && min < lo && up) expect(v).toBeGreaterThanOrEqual(lo);
+        t.count(v > min && v < max ? 'in range' : 'end');
+      },
+    ), runs(RUNS));
+    t.atLeast('to end stop', RUNS / 20);
+    t.atLeast('in range', RUNS / 4);
+  }, timeoutFor(RUNS, 1));
+});
+
+describe('shrunk counterexamples, endless end', () => {
+  it('a key steps on the range\'s grid when an endless low end\'s stop sits off it', () => {
+    const shape = { thumbs: [{ value: 30 }], index: 0, min: -7, max: 100, step: 10, range: [0, 100] as const };
+    expect(sliderKey('ArrowUp', false, shape)).toBe(40);
+    expect(sliderKey('ArrowDown', false, shape)).toBe(20);
+  });
+});

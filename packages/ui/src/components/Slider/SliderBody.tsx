@@ -63,7 +63,7 @@ export function SliderBody<T extends Thumb = Thumb>(
     shape, thumbFit: props.thumbFit ?? 'inside', thumbLength, direction,
     rail: () => railRef.current, railFrame: () => railFrameRef.current, band: () => bandRef.current,
   });
-  const scale = useScale(span, strict, step, { scale: props.scale, stopSnapPx: props.stopSnapPx });
+  const scale = useScale(span, strict, step, { scale: props.scale, stopSnapPx: props.stopSnapPx, stepOrigin: props.range?.[0] });
   const { valueToFraction, valueAt } = scale;
   const drags = useThumbDrags<T>({ props, span, scale, geometry });
   const regionAt = useSliderRegions<T>({ props, min, max, scale, geometry, direction });
