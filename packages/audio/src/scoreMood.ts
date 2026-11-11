@@ -66,7 +66,8 @@ export function readScoreCue(mood: ScoreMood): ScoreCueReading {
   // Valence spans twice what the other axes do.
   const distance = scoreCues.map((cue) =>
     ((m.valence - cue.mood.valence) / 2) ** 2 + (m.tension - cue.mood.tension) ** 2 + (m.urgency - cue.mood.urgency) ** 2);
-  const exact = distance.indexOf(0);
+  // A mood within rounding of a cue is at it: past there, 1/d overflows and every weight is NaN.
+  const exact = distance.findIndex((d) => 1 / d === Infinity);
   const raw = distance.map((d, i) => (exact >= 0 ? Number(i === exact) : 1 / d));
   const total = raw.reduce((sum, w) => sum + w, 0);
   const weights = {} as Record<ScoreCueName, number>;
