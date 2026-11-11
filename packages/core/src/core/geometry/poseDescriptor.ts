@@ -1,6 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { multiply, poseLinearOf, rotate, wrapAngle } from '@weasel-js/geom';
+import { extentScale, multiply, poseLinearOf, rotate, wrapAngle } from '@weasel-js/geom';
 import type { TargetAxes } from '@weasel-js/animator';
 import type { PoseComposition } from 'core/scene/composeFrame';
 
@@ -97,8 +97,8 @@ export function poseDescriptorForNode<TPose, TNode>(
 export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
   getBounds: (p) => p,
   remapBounds: (p, src, dst) => {
-    const sx = src.width === 0 ? 1 : dst.width / src.width;
-    const sy = src.height === 0 ? 1 : dst.height / src.height;
+    const sx = extentScale(src.width, dst.width);
+    const sy = extentScale(src.height, dst.height);
     return {
       ...p,
       x: dst.x + (p.x - src.x) * sx,
@@ -192,8 +192,8 @@ export function remapRotatedLeaf<TPose extends RotatedPose>(
   src: Bounds,
   dst: Bounds,
 ): TPose {
-  const sx = src.width === 0 ? 1 : dst.width / src.width;
-  const sy = src.height === 0 ? 1 : dst.height / src.height;
+  const sx = extentScale(src.width, dst.width);
+  const sy = extentScale(src.height, dst.height);
   const theta = pose.rotation ?? 0;
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);

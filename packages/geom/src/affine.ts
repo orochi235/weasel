@@ -69,13 +69,20 @@ export function applyToPoint(m: Affine, x: number, y: number): [number, number] 
   return [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
 }
 
+/** The factor taking an extent of `from` to one of `to`: 1 where there is none to read, `from` being 0, or so
+ *  small (subnormal) that the ratio overflows, so a collapsed axis keeps its scale rather than turning infinite. */
+export function extentScale(from: number, to: number): number {
+  const k = to / from;
+  return from !== 0 && Number.isFinite(k) ? k : 1;
+}
+
 /** Affine that maps source box (sx,sy,sw,sh) onto destination box (dx,dy,dw,dh). */
 export function boxToBox(
   sx: number, sy: number, sw: number, sh: number,
   dx: number, dy: number, dw: number, dh: number,
 ): Affine {
-  const kx = sw === 0 ? 1 : dw / sw;
-  const ky = sh === 0 ? 1 : dh / sh;
+  const kx = extentScale(sw, dw);
+  const ky = extentScale(sh, dh);
   // translate(dx,dy) · scale(kx,ky) · translate(-sx,-sy)
   return [kx, 0, 0, ky, dx - sx * kx, dy - sy * ky];
 }
