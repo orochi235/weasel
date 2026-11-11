@@ -122,8 +122,8 @@ describe('serializeTrials and deserializeTrials', () => {
     () => {
       const serializers = {
         A: {
-          serialize: (s: unknown) => JSON.stringify(s),
-          deserialize: (raw: unknown) => JSON.parse(raw as string),
+          serialize: (s: unknown) => ({ wrapped: s }),
+          deserialize: (raw: unknown) => (raw as { wrapped: unknown }).wrapped,
         },
       };
       fc.assert(
@@ -133,7 +133,7 @@ describe('serializeTrials and deserializeTrials', () => {
             const live = trials as unknown as TrialRecord[];
             const stored = serializeTrials(live, serializers);
             for (const [i, s] of stored.entries())
-              if (s.instrumentName === 'A') expect(typeof s.state).toBe('string');
+              if (s.instrumentName === 'A') expect(s.state).toEqual({ wrapped: live[i]?.state });
               else expect(s.state).toEqual(live[i]?.state);
             expect(deserializeTrials(structuredClone(stored), serializers)).toEqual(live);
           },
