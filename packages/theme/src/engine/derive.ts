@@ -413,7 +413,7 @@ export function derive(definition: ThemeDefinition, selection: Selection = {}, l
     return undefined;
   };
   const pinned = (name: string): PinObject | undefined => {
-    const v = def.pins?.[name];
+    const v = def.pins && has(def.pins, name) ? def.pins[name] : undefined;
     const picked = v === undefined ? undefined : pick(v, sel);
     if (!picked?.ok) return undefined;
     return seeded(isPinObject(picked.value) ? picked.value : { value: picked.value });
