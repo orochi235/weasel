@@ -44,7 +44,7 @@ describe('easedProducer', () => {
       const pins = new Map(pinned.map((id) => [id as NodeId, { x: 0, y: 0, width: 1, height: 1 } as RectPose]));
       const produce = easedProducer<RectPose>(graph, fixed(targets), { frames });
       const start = new Map(graph.nodes.map((n) => [n.id, n.bounds]));
-      let last = new Map(graph.nodes.map((n) => [n.id, { x: n.bounds.x, y: n.bounds.y }]));
+      const last = new Map(graph.nodes.map((n) => [n.id, { x: n.bounds.x, y: n.bounds.y }]));
       for (let frame = 0; frame < frames; frame++) {
         const { result, done } = produce({ pinned: pins, frame });
         expect(done).toBe(frame === frames - 1);
