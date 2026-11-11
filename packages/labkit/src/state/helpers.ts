@@ -1,3 +1,4 @@
+import { ownAt } from '../config/path';
 import { savedTrialHistory } from './savedUndo';
 import type { InstrumentSerializers, SerializedTrial, TrialRecord } from './types';
 
@@ -36,7 +37,7 @@ export function serializeTrials(
   own: (trialId: string) => { data: unknown } | undefined = () => undefined,
 ): SerializedTrial[] {
   return trials.map(({ history, undo, ...w }) => {
-    const s = serializers[w.instrumentName];
+    const s = ownAt(serializers, w.instrumentName);
     const trial = history ? savedTrialHistory(history, s) : undo?.trial;
     const mine = own(w.id);
     const ownData = mine ? mine.data : undo?.own;
@@ -64,7 +65,7 @@ export function deserializeTrials(
     return [];
   }
   return records.map((r) => {
-    const d = deserializers[r.instrumentName];
+    const d = ownAt(deserializers, r.instrumentName);
     return {
       ...r,
       state: d?.deserialize ? d.deserialize(r.state, r.config) : r.state,

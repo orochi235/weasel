@@ -955,6 +955,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   edit that would change nothing does nothing. A gesture whose writes bring the trial's config and state back to
   where it began takes back the step its first write recorded, where that step is the trial's own snapshot; an
   instrument's own history and the lab's `over` keep theirs, since the trial cannot take back their steps.
+- Ruled 2026-11-10 (my call, overnight sweep): a mark's share of a side too short to divide by, 0 or so small the
+  share overflows a double, reads 0, in its content-box fractions and in its shape alike, as a side of no length
+  already did: no `NaN` or `Infinity` from finite input.
+- Ruled 2026-11-10 (my call, overnight sweep): `validateConfigSchema` refuses a slider whose `min` or `max` is not a
+  finite number, and a number field whose bounds are `NaN`, whose `min` is above its `max`, or whose default lies
+  outside them; an absent bound is unbounded. Its own doc names fields whose constraints do not hold as what it is
+  for, and a slider's range check already caught the finite cases.
 - Ruled 2026-11-10 (my call, overnight sweep): `Hud.add` of a widget already in the HUD changes nothing, and does not
   move it to the top: an edit that would change nothing does nothing.
 - Ruled 2026-11-10 (my call, overnight sweep): a HUD menu's text row types any key that is one grapheme cluster, a

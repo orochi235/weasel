@@ -1,3 +1,4 @@
+import { setOwn } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import type { ResolvedConfig } from '../config/types';
 import type { InstrumentSerializers } from '../state/types';
@@ -24,7 +25,7 @@ export function configSchemasOf(instruments: InstrumentList): Record<string, Res
   const out: Record<string, ResolvedConfig> = {};
   for (const instrument of instruments) {
     const schema = unruledConfigSchema(instrument);
-    if (schema) out[instrument.name] = schema;
+    if (schema) setOwn(out, instrument.name, schema);
   }
   return out;
 }
@@ -36,7 +37,8 @@ export function configSchemasOf(instruments: InstrumentList): Record<string, Res
  */
 export function configDefaultsOf(instruments: InstrumentList): Record<string, () => unknown> {
   const out: Record<string, () => unknown> = {};
-  for (const instrument of instruments) out[instrument.name] = () => instrument.defaultConfig();
+  for (const instrument of instruments)
+    setOwn(out, instrument.name, () => instrument.defaultConfig());
   return out;
 }
 
@@ -46,7 +48,7 @@ export function configMigrationsOf(
 ): Record<string, (stored: unknown) => unknown> {
   const out: Record<string, (stored: unknown) => unknown> = {};
   for (const { name, migrateConfig } of instruments) {
-    if (migrateConfig) out[name] = (stored) => migrateConfig(stored);
+    if (migrateConfig) setOwn(out, name, (stored: unknown) => migrateConfig(stored));
   }
   return out;
 }
@@ -64,12 +66,12 @@ export function serializersOf(instruments: InstrumentList): InstrumentSerializer
   for (const instrument of instruments) {
     const { name, serialize, deserialize } = instrument;
     if (!serialize && !deserialize) continue;
-    out[name] = {
+    setOwn(out, name, {
       ...(serialize ? { serialize: (state: unknown) => serialize(state) } : {}),
       ...(deserialize
         ? { deserialize: (data: unknown, config: unknown) => deserialize(data, config) }
         : {}),
-    };
+    });
   }
   return out;
 }

@@ -13,6 +13,12 @@ export type WorldRect = Rect;
 
 const boxOfFrac = (f: FracRect): Box => [f.x, f.y, f.x + f.w, f.y + f.h];
 
+/** `n` as a share of `side`. A side too short to divide by, 0 or so small the share overflows, gives 0. */
+function share(n: number, side: number): number {
+  const q = side === 0 ? 0 : n / side;
+  return Number.isFinite(q) ? q : 0;
+}
+
 /** Where a fraction lands on a content box of this size. */
 export function fracToWorld(f: FracRect, content: { w: number; h: number }): WorldRect {
   return {
@@ -29,9 +35,12 @@ export function fracToWorld(f: FracRect, content: { w: number; h: number }): Wor
  *  stored position with `NaN` — which compares false against everything and so
  *  fails silently rather than loudly. Zero sides give zeros. */
 export function worldToFrac(r: WorldRect, content: { w: number; h: number }): FracRect {
-  const sx = content.w === 0 ? 0 : 1 / content.w;
-  const sy = content.h === 0 ? 0 : 1 / content.h;
-  return { x: r.x * sx, y: r.y * sy, w: r.width * sx, h: r.height * sy };
+  return {
+    x: share(r.x, content.w),
+    y: share(r.y, content.h),
+    w: share(r.width, content.w),
+    h: share(r.height, content.h),
+  };
 }
 
 const DP = 10_000;
@@ -72,10 +81,7 @@ export function boundsOf(points: readonly FracPoint[]): FracRect | null {
  *  it. Unit-agnostic: `points` and `box` only have to share one. A box with no
  *  width or height puts every point on its edge along that axis. */
 export function toShape(points: readonly FracPoint[], box: FracRect): FracPoint[] {
-  return points.map((p) => ({
-    x: box.w === 0 ? 0 : (p.x - box.x) / box.w,
-    y: box.h === 0 ? 0 : (p.y - box.y) / box.h,
-  }));
+  return points.map((p) => ({ x: share(p.x - box.x, box.w), y: share(p.y - box.y, box.h) }));
 }
 
 /** `toShape`'s inverse: a shape placed in `box`, in `box`'s units. */

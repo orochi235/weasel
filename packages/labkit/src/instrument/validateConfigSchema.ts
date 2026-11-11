@@ -35,7 +35,9 @@ export function validateConfigSchema(fields: ConfigField[]): ValidationResult {
       if (!Number.isFinite(field.default)) {
         errors.push(`Field "${field.key}": default must be a finite number`);
       }
-      if (field.min >= field.max) {
+      if (!Number.isFinite(field.min) || !Number.isFinite(field.max)) {
+        errors.push(`Slider "${field.key}": min and max must be finite numbers`);
+      } else if (field.min >= field.max) {
         errors.push(`Slider "${field.key}": min must be < max`);
       } else if (field.default < field.min || field.default > field.max) {
         errors.push(`Slider "${field.key}": default ${field.default} is outside [min, max]`);
@@ -43,6 +45,14 @@ export function validateConfigSchema(fields: ConfigField[]): ValidationResult {
     } else if (field.type === 'number') {
       if (!Number.isFinite(field.default)) {
         errors.push(`Field "${field.key}": default must be a finite number`);
+      }
+      const { min = -Infinity, max = Infinity } = field;
+      if (Number.isNaN(min) || Number.isNaN(max)) {
+        errors.push(`Number "${field.key}": min and max must be numbers`);
+      } else if (min > max) {
+        errors.push(`Number "${field.key}": min must be <= max`);
+      } else if (field.default < min || field.default > max) {
+        errors.push(`Number "${field.key}": default ${field.default} is outside [min, max]`);
       }
     } else if (field.type === 'select') {
       if (field.options.length === 0) {

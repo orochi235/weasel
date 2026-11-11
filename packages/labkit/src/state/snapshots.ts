@@ -1,3 +1,4 @@
+import { ownAt } from '../config/path';
 import { newId } from './helpers';
 import type { InstrumentHooks, SavedSnapshot, TrialRecord } from './types';
 
@@ -8,7 +9,7 @@ export function snapshotOf(
   hooks: InstrumentHooks,
   saved: readonly SavedSnapshot[],
 ): SavedSnapshot {
-  const reg = hooks.serializers[trial.instrumentName];
+  const reg = ownAt(hooks.serializers, trial.instrumentName);
   const lastAt = saved.reduce((m, sn) => (sn.savedAt > m ? sn.savedAt : m), 0);
   return {
     id: newId(),
@@ -29,7 +30,7 @@ export function loadedFrom(
   snapshot: SavedSnapshot,
   hooks: InstrumentHooks,
 ): TrialRecord {
-  const reg = hooks.serializers[snapshot.instrumentName];
+  const reg = ownAt(hooks.serializers, snapshot.instrumentName);
   const state = reg?.deserialize
     ? reg.deserialize(snapshot.state, snapshot.config)
     : snapshot.state;

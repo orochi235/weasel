@@ -112,7 +112,7 @@
     "longestFunction": 126
   },
   "packages/labkit/src/annotations/store.ts": {
-    "lines": 407,
+    "lines": 402,
     "longestFunction": 296
   },
   "packages/labkit/src/chrome/builtins.tsx": {

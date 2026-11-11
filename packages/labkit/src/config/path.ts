@@ -13,7 +13,7 @@ import { isPlainObject, setOwn } from '@weasel-js/registry';
 export const isRecord = isPlainObject;
 
 /** `record`'s own value at `key`: a key every object inherits, `constructor` or `toString`, is absent. */
-export const ownAt = (record: Record<string, unknown>, key: string): unknown =>
+export const ownAt = <T>(record: Readonly<Record<string, T>>, key: string): T | undefined =>
   Object.hasOwn(record, key) ? record[key] : undefined;
 
 export { setOwn };

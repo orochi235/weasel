@@ -1,8 +1,8 @@
 import { asNodeId, createScene, type Scene, sceneFromJSON } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
+import { ownAt, setOwn } from '../config/path';
 import { captureTarget } from './capture';
 import { type MarkDrawOptions, resolveMarkStyle } from './drawOne';
-import type { WorldRect } from './frac';
 import {
   boundsOf,
   fracContains,
@@ -11,9 +11,11 @@ import {
   fromShape,
   roundFrac,
   roundPoints,
+  type WorldRect,
   worldToFrac,
 } from './frac';
 import { MarkHistory, markHistoryOf, markUndo, restoreSceneHistory } from './history';
+import { markIdOf, splitMarkId } from './markId';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { matchesQuery } from './query';
 import { isStale as isStaleAgainst, seenFrom } from './staleness';
@@ -79,13 +81,6 @@ export interface CaptureDeps {
 
 const NO_CONTENT = { w: 0, h: 0 };
 
-/** A mark's id is its target and its node. One scene per target, so a node id
- *  is only unique within one — and an annotation is addressed by both. */
-function splitId(id: string): { target: string; node: string } | undefined {
-  const at = id.lastIndexOf('/');
-  return at <= 0 ? undefined : { target: id.slice(0, at), node: id.slice(at + 1) };
-}
-
 /**
  * A facade over one weasel scene per target: the scenes are the truth, this
  * answers questions about them. Everything crossing this boundary is in
@@ -143,7 +138,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
   const sceneFor = (target: string): MarkScene => {
     const known = scenes.get(target);
     if (known) return known;
-    const raw = restore?.[target];
+    const raw = restore ? ownAt(restore, target) : undefined;
     const scene = raw
       ? sceneFromJSON<AnnotationData, 'marks', MarkPose>(
           migrateLegacyPoints(raw as SerializedMarks, contentOf(target)),
@@ -203,7 +198,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       data.kind === 'point'
         ? [{ x: frac.x, y: frac.y }]
         : shape && roundPoints(fromShape(shape, frac));
-    return { ...data, target, id: `${target}/${node}`, frac, ...(points ? { points } : {}) };
+    return { ...data, target, id: markIdOf(target, node), frac, ...(points ? { points } : {}) };
   };
 
   /** Every target with a scene, in declaration order — then any whose target
@@ -229,7 +224,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
   /** The node behind a public id, or undefined. */
   const nodeOf = (id: string) => {
-    const parts = splitId(id);
+    const parts = splitMarkId(id);
     if (!parts) return undefined;
     const scene = scenes.get(parts.target);
     const node = scene?.get(asNodeId(parts.node));
@@ -242,7 +237,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
     targets,
 
     get(id) {
-      const parts = splitId(id);
+      const parts = splitMarkId(id);
       return parts ? project(parts.target, parts.node) : undefined;
     },
 
@@ -273,7 +268,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         const scene = scenes.get(target);
         if (!scene) continue;
         for (const node of scene.getSelection()) {
-          if (scene.get(node)) out.push(`${target}/${String(node)}`);
+          if (scene.get(node)) out.push(markIdOf(target, node));
         }
       }
       return out;
@@ -323,7 +318,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         pose: fracToWorld(frac, target?.content ?? NO_CONTENT),
         data,
       });
-      return `${init.target}/${String(node)}`;
+      return markIdOf(init.target, node);
     },
 
     update(id, patch: AnnotationPatch) {
@@ -387,7 +382,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
 
     toJSON(): SerializedAnnotations {
       const out: Record<string, unknown> = {};
-      for (const [target, scene] of scenes) out[target] = scene.toJSON();
+      for (const [target, scene] of scenes) setOwn(out, target, scene.toJSON());
       return { version: 1, scenes: out, history: markHistoryOf(history, scenes) };
     },
   };
