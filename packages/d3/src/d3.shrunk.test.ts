@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { asNodeId } from '@weasel-js/core';
 import { d3Bind } from './bind';
 import { makeAnimator, makeScene } from './pbt.fixture';
@@ -56,5 +56,23 @@ describe('shrunk from the d3 properties', () => {
     const t = d3Bind(scene, [{ id: 'a' }], { key: (d) => d.id, animator: clock.animator }).pose(() => box(1)).join().transition();
     expect(() => t.duration(NaN)).toThrow(/d3Bind\.transition\.duration: ms is a time, not NaN/);
     clock.dispose();
+  });
+
+  it('waits out a delay longer than one timer can hold', async () => {
+    vi.useFakeTimers();
+    const scene = makeScene();
+    const clock = makeAnimator();
+    d3Bind(scene, [{ id: 'a' }], { key: (d) => d.id }).pose(() => box(0)).join();
+    void d3Bind(scene, [{ id: 'a' }], { key: (d) => d.id, animator: clock.animator }).pose(() => box(10)).join()
+      .transition().duration(0).delay(2 ** 31).end();
+    vi.advanceTimersByTime(20);
+    clock.advance(20);
+    expect(scene.get(asNodeId('a'))!.pose.x).toBe(0);
+    vi.advanceTimersByTime(2 ** 31);
+    clock.advance(2 ** 31);
+    clock.advance(16);
+    expect(scene.get(asNodeId('a'))!.pose.x).toBe(10);
+    clock.dispose();
+    vi.useRealTimers();
   });
 });

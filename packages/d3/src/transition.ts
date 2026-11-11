@@ -83,6 +83,20 @@ export function cancelPendingRemoval(scene: object, id: NodeId): void {
   for (const cancel of [...set]) cancel();
 }
 
+/** The longest wait one `setTimeout` keeps; past it, a timer fires at once. */
+const LONGEST_TIMER = 2 ** 31 - 1;
+
+/** Run `fn` once `ms` have passed, never for an infinite `ms`, and answer what cancels it. */
+function after(ms: number, fn: () => void): () => void {
+  if (ms === Infinity) return () => {};
+  let timer: ReturnType<typeof setTimeout>;
+  const wait = (left: number): void => {
+    timer = setTimeout(() => (left > LONGEST_TIMER ? wait(left - LONGEST_TIMER) : fn()), Math.min(left, LONGEST_TIMER));
+  };
+  wait(ms);
+  return () => clearTimeout(timer);
+}
+
 /** One transition in a chain, as the transition chained after it sees it. */
 interface Stage {
   /** The first transition in this one's chain. */
@@ -151,11 +165,10 @@ function makeStage<TData, TPose>(
     resolveEnd = resolve;
   });
   const handles = new Map<number, AnimationHandle[]>();
-  const pendingDelays = new Map<number, ReturnType<typeof setTimeout>>();
+  const pendingDelays = new Map<number, () => void>();
 
   const stopItem = (i: number): void => {
-    const timer = pendingDelays.get(i);
-    if (timer !== undefined) clearTimeout(timer);
+    pendingDelays.get(i)?.();
     pendingDelays.delete(i);
     for (const h of handles.get(i) ?? []) h.cancel();
     handles.delete(i);
@@ -293,11 +306,10 @@ function makeStage<TData, TPose>(
     };
     const delayMs = delayFn ? Math.max(0, delayFn(d, i)) : 0;
     if (delayMs > 0) {
-      const timer = setTimeout(() => {
+      pendingDelays.set(i, after(delayMs, () => {
         pendingDelays.delete(i);
         spawn();
-      }, delayMs);
-      pendingDelays.set(i, timer);
+      }));
     } else {
       spawn();
     }
