@@ -41,8 +41,9 @@ function expectRectNear(got: Path, want: { x: number; y: number }[]): void {
   const b = got as { kind: string; x: number; y: number; width: number; height: number };
   expect(b.kind).toBe('rect');
   const xs = want.map((p) => p.x), ys = want.map((p) => p.y);
-  const tol = (v: number) => 1e-9 * Math.max(1, Math.abs(v));
-  const close = (a: number, e: number) => expect(Math.abs(a - e)).toBeLessThanOrEqual(tol(e) * 10);
+  // A carried rect passes through float32 maps; a value near 0 keeps the error of the terms that cancelled to it.
+  const span = Math.max(1, ...xs.map(Math.abs), ...ys.map(Math.abs), b.width, b.height);
+  const close = (a: number, e: number) => expect(Math.abs(a - e)).toBeLessThanOrEqual(1e-5 * span);
   close(b.x, Math.min(...xs));
   close(b.y, Math.min(...ys));
   close(b.x + b.width, Math.max(...xs));
@@ -107,7 +108,8 @@ describe('pathFromPlane and planeTransform', () => {
         return;
       }
       const id = mat3.multiply(back, there);
-      [1, 0, 0, 0, 1, 0, 0, 0, 1].forEach((v, i) => expect(id[i]!).toBeCloseTo(v, 9));
+      const span = Math.max(1, ...there.map(Math.abs), ...back.map(Math.abs));
+      [1, 0, 0, 0, 1, 0, 0, 0, 1].forEach((v, i) => expect(Math.abs(id[i]! - v)).toBeLessThanOrEqual(1e-5 * span));
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
 });
