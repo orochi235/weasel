@@ -94,8 +94,26 @@ function matchKeyOrCode(
 ): boolean {
   if (spec.code !== undefined && e.code !== undefined && [spec.code].flat().includes(e.code)) return true;
   if (matchKey(e.key, spec.key)) return true;
-  const latin = chordTypedNoLatin(e) ? /^(?:Key|Digit)(.)$/.exec(e.code ?? '')?.[1] : undefined;
+  const latin = chordTypedNoLatin(e) ? latinOfCode(e.code ?? '') : undefined;
   return latin !== undefined && matchKey(latin, spec.key);
+}
+
+/** The modifiers any one of which makes a keystroke a chord, which {@link chordTypedNoLatin} reads. */
+export const CHORD_MODIFIERS = ['alt', 'ctrl', 'meta'] as const;
+
+/** The letter or digit the physical key `code` bears (`KeyZ`, `Digit1`), or undefined for any other key. */
+function latinOfCode(code: string): string | undefined {
+  const m = /^(?:Key([A-Z])|Digit([0-9]))$/.exec(code);
+  return m ? m[1] ?? m[2] : undefined;
+}
+
+/** The physical keys whose chord, typing no Latin character, matches a spec naming `key`: `KeyA` for
+ *  `'a'` or `'A'`, `Digit1` for `'1'`, none for any other key. */
+export function chordCodesFor(key: string): string[] {
+  return [`Key${key.toUpperCase()}`, `Digit${key}`].filter((c) => {
+    const latin = latinOfCode(c);
+    return latin !== undefined && matchKey(latin, key);
+  });
 }
 
 /** Whether a chord typed no Latin letter or digit: a non-Latin layout's letter
@@ -104,7 +122,7 @@ function matchKeyOrCode(
  *  pressed alone, or AltGr's character with its Ctrl and Alt taken off, is
  *  what it typed. */
 function chordTypedNoLatin(e: { key: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }): boolean {
-  if (!e.altKey && !e.ctrlKey && !e.metaKey) return false;
+  if (!CHORD_MODIFIERS.some((m) => e[`${m}Key`])) return false;
   return e.key === 'Dead' || (oneCodePoint(e.key) && !/[\x20-\x7e]/.test(e.key));
 }
 
