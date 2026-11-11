@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isChangesetFile, readBumps } from './changeset-bumps.mjs';
+import { isChangesetFile, readBumps } from './bumps.mjs';
 
 const levels = (text: string) => readBumps(text).unapproved.map((b) => b.level);
 

@@ -26,7 +26,7 @@ declare module 'virtual:demo-sources' {
   export default sources;
 }
 
-/** Provided by the `changelogs` vite plugin (`scripts/vite-changelogs.ts`).
+/** Provided by the `changelogs` vite plugin (`scripts/release/changelogs.ts`).
  *  Every published release, newest first. */
 declare module 'virtual:changelogs' {
   const releases: import('../shared/releases').Release[];

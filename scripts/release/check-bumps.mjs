@@ -14,10 +14,10 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isChangesetFile, readBumps } from './lib/changeset-bumps.mjs';
+import { isChangesetFile, readBumps } from './bumps.mjs';
 
 // From the script's own place, so a run from another directory still looks.
-const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '.changeset');
+const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.changeset');
 
 if (!existsSync(DIR)) {
   console.log('[changeset-bumps] no .changeset directory — nothing to check.');

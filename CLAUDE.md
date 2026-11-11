@@ -138,6 +138,11 @@ be raised deliberately later. Don't otherwise discuss the number.
 
 Whether a publish really landed, and how to check: `docs/releasing.md` ("Checking a publish").
 
+**Read "Writing a changeset" in `docs/releasing.md` before writing one.** One change per changeset,
+a title saying what a consumer sees, and a closing `<!-- entry: … -->` marker naming its tags;
+`npm run check:changesets` fails without them. An audit or TODO pass that fixes five things writes
+five changesets. Leave `pick` alone: highlights are chosen at release time with `release:pick`.
+
 
 ## Package manager
 

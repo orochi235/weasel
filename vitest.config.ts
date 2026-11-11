@@ -12,7 +12,7 @@ import { ownEntries as forgeOwnEntries } from './packages/forge/src/vite/ownEntr
 import { weaselDefines } from './scripts/vite-build-info.ts';
 import { demoTimestamps } from './scripts/vite-demo-timestamps.ts';
 import { demoSources } from './scripts/vite-demo-sources.ts';
-import { changelogs } from './scripts/vite-changelogs.ts';
+import { changelogs } from './scripts/release/changelogs.ts';
 import { getStarted } from './scripts/vite-get-started.ts';
 import { packageDocs } from './scripts/vite-package-docs.ts';
 import { weaselIcons } from './packages/icons-plugin/src/index.ts';

@@ -2,7 +2,7 @@
  * The shape of the release history the demo site's Releases view renders.
  *
  * Produced at build time by the `changelogs` vite plugin
- * (`scripts/vite-changelogs.ts`) from the packages' CHANGELOG files, and
+ * (`scripts/release/changelogs.ts`) from the packages' CHANGELOG files, and
  * consumed through the `virtual:changelogs` module. The types live here rather
  * than in the plugin because the site's tsconfig covers `apps/` but not
  * `scripts/`, so a type imported from the plugin resolves to `any`.

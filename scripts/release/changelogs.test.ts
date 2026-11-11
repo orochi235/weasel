@@ -8,8 +8,8 @@ import {
   parseChangeset,
   readPendingChangesets,
   releasesFromChangelogs,
-  splitSummary,
-} from './vite-changelogs';
+} from './changelogs';
+import { splitSummary } from './summary';
 
 const CORE = `# @weasel-js/core
 
