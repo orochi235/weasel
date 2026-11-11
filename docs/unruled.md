@@ -136,10 +136,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   (`&:engaged` against `&:initial`) conflict, and `findConflicts` reports them.
 - Ruled 2026-11-10: key bindings whose `code`s overlap fire on one keystroke whatever their `key`s, and
   `findConflicts` reports them.
-- Open (2026-11-10, property tests): a chord typing no Latin letter matches by its code's letter, so
-  Alt with `code: 'KeyA'` on a non-Latin layout fires both `{ key: 'a', mods: { alt: true } }` and a
-  binding naming `code: 'KeyA'` under another key; `findConflicts` does not report that pair. The
-  property's keystrokes by code type a Latin key no spec names.
+- Ruled 2026-11-10: anything one keystroke can fire twice is a conflict. A chord typing no Latin
+  character matches by its code's letter or digit, so `findConflicts` reports a modified `key: 'a'`
+  binding against one naming `code: 'KeyA'` (and `Digit*` likewise) wherever both take a chord.
 
 ## Snapping
 

@@ -1,4 +1,4 @@
-import { matchPhase, type PhaseSpec } from '@weasel-js/gestures';
+import { CHORD_MODIFIERS, chordCodesFor, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
 import { PREDICATE_TARGET, type RegistryEntry } from './registry';
@@ -39,13 +39,14 @@ function sameParams(a: unknown, b: unknown): boolean {
  *  they share a state and that count, since the matcher ranks a required
  *  modifier above an optional one. `mod` is read as the key it resolves to on
  *  `platform`, so it meets a `ctrl` or `meta` spelled out beside it. */
-export function modifierTieKeys(entry: RegistryEntry, platform: Platform): string[] {
+export function modifierTieKeys(entry: RegistryEntry, platform: Platform, chordsOnly = false): string[] {
   const mods = resolveMod(entry.modifiers, platform);
   const optional = VALID_MOD_NAMES.filter((k) => mods[k] === 'optional');
   const required = VALID_MOD_NAMES.filter((k) => mods[k] === 'required');
   const keys: string[] = [];
   for (let bits = 0; bits < 1 << optional.length; bits++) {
     const held = [...required, ...optional.filter((_, i) => (bits & (1 << i)) !== 0)].sort();
+    if (chordsOnly && !held.some((m) => (CHORD_MODIFIERS as readonly string[]).includes(m))) continue;
     keys.push(`${held.join('+')}:${required.length}`);
   }
   return keys;
@@ -71,6 +72,15 @@ export function argKeysOf(entry: RegistryEntry): readonly string[] {
   const args = alts && alts.length > 0 ? [...new Set(alts.map((a) => a.toLowerCase()))] : [(entry.arg ?? '').toLowerCase()];
   const code = 'code' in entry.spec ? entry.spec.code : undefined;
   return code === undefined ? args : [...args, ...[code].flat().map((c) => `code:${c}`)];
+}
+
+/** The `code` args a key spec meets only as a chord: the physical keys bearing its letters or
+ *  digits, which match it when a chord types no Latin character (Ctrl+я is Ctrl+Z). Read with
+ *  `modifierTieKeys(…, true)`. */
+export function chordArgsOf(entry: RegistryEntry): readonly string[] {
+  if (entry.spec.kind !== 'key' && entry.spec.kind !== 'key-held') return [];
+  const own = argKeysOf(entry);
+  return [...new Set([entry.spec.key].flat().flatMap(chordCodesFor).map((c) => `code:${c}`))].filter((a) => !own.includes(a));
 }
 
 const phaseOf = (e: RegistryEntry): PhaseSpec | undefined => ('phase' in e.spec ? e.spec.phase : undefined);

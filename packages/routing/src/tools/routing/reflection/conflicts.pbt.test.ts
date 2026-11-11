@@ -11,12 +11,12 @@ import type { Contribution } from '../../../contributions/types';
 import { keyEvents, modSpec, runs, tally, timeoutFor } from '../../../pbt.fixture';
 import { findConflicts } from './conflicts';
 
-const KEYS = ['a', 'A', 'b', ['a', 'Enter'], 'Enter', '+'] as const;
-const EVENT_KEYS = ['a', 'b', 'Enter', '+'];
+const KEYS = ['a', 'A', 'b', '1', ['a', 'Enter'], 'Enter', '+'] as const;
+const EVENT_KEYS = ['a', 'b', '1', 'Enter', '+'];
 const CODES = ['KeyA', 'Enter', 'Digit1'];
-/** What no spec's `key` names, so a keystroke typing it matches by `code` alone. Latin, so a chord typing it
- *  is not read as its code's letter (see `docs/unruled.md`). */
-const UNNAMED = '~';
+/** What no spec's `key` names: alone it matches by `code`, and as a chord, typing no Latin character, by the
+ *  letter or digit its code bears too. */
+const UNNAMED = 'я';
 const PHASES: (PhaseSpec | undefined)[] = [
   undefined, 'initial', 'engaged', '*',
   [{ channel: '*', phase: 'initial' }], [{ channel: '*', phase: 'engaged' }], [{ channel: '*', phase: '*' }],
@@ -95,6 +95,7 @@ describe('findConflicts', () => {
           if (want) t.hit('tie');
           if (want && a.owner !== b.owner && !tieOnKeysTogether(a, b)) t.hit('tie apart');
           if (want && a.spec.code !== undefined && b.spec.code !== undefined && !sharesKey(a, b)) t.hit('tie by code');
+          if (want && (a.spec.code === undefined) !== (b.spec.code === undefined) && !sharesKey(a, b)) t.hit('tie by chord');
           // A conflict names every member of a shared bucket that ties with another, so only a pair
           // standing alone says it does not tie.
           if (bound.length === 2) {
@@ -104,6 +105,6 @@ describe('findConflicts', () => {
         }
       }
     }), runs(400));
-    t.expectHit('tie', 'apart alone', 'tie apart', 'tie by code');
+    t.expectHit('tie', 'apart alone', 'tie apart', 'tie by code', 'tie by chord');
   }, timeoutFor(400, 10));
 });

@@ -8,7 +8,7 @@ import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
-import { argKeysOf, modifierTieKeys, objectId, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { argKeysOf, chordArgsOf, modifierTieKeys, objectId, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple, so slot order alone picks one. */
@@ -83,11 +83,12 @@ function findConflictsKeyed(
     // way, one per state the spec accepts, so an optional Shift meets a forbidden one.
     // The matcher ranks by specificity before declaration order, so only equal ranks tie. Phases are
     // compared pair by pair (`phasesTie`), since whether two meet depends on whose channel each reads.
-    for (const arg of argKeysOf(entry)) {
+    const args = [...argKeysOf(entry).map((arg) => ({ arg, chord: false })), ...chordArgsOf(entry).map((arg) => ({ arg, chord: true }))];
+    for (const { arg, chord } of args) {
       const base = `${entry.gesture}|${arg}|${targetKey(entry)}`;
       for (const platform of PLATFORMS) {
         const rank = specificity(entry.spec, platform === 'mac').join();
-        for (const state of modifierTieKeys(entry, platform)) {
+        for (const state of modifierTieKeys(entry, platform, chord)) {
           const key = `${platform}|${base}|${state}|${rank}`;
           const bucket = groups.get(key);
           if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
