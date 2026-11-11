@@ -80,12 +80,12 @@ export const sceneSpec: fc.Arbitrary<SceneSpec> = fc.record({
  *  below it, which the scene refuses. */
 function resolveParents(nodes: readonly NodeSpec[]): NodeSpec[] {
   const out: NodeSpec[] = [];
-  nodes.forEach((n, i) => {
+  for (const n of nodes) {
     const groups = out.flatMap((m, k) => (m.group ? [k] : []));
     const parent = n.parent === null || groups.length === 0 ? null : groups[n.parent % groups.length]!;
     const floor = parent === null ? 0 : LAYERS.indexOf(out[parent]!.layer);
     out.push({ ...n, parent, layer: LAYERS[Math.max(floor, LAYERS.indexOf(n.layer))]! });
-  });
+  }
   return out;
 }
 
