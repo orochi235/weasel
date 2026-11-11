@@ -64,10 +64,8 @@ export const anyFinite = fc.oneof(
 /** Any number a spec could hold, the non-finite ones included. */
 export const anyNumber = fc.oneof({ weight: 6, arbitrary: anyFinite }, { weight: 1, arbitrary: fc.constantFrom(Number.NaN, Infinity, -Infinity) });
 
-/** A modest finite value, for data held against fixed ends. */
-const modest = fc.oneof(fc.integer({ min: -1000, max: 1000 }), fc.double({ min: -1e6, max: 1e6, noNaN: true }));
-/** A fixed axis end, whole so a span between two is at least 1. */
-const end = fc.integer({ min: -1000, max: 1000 });
+/** A fixed axis end: small and whole, or any size. */
+const end = fc.oneof(fc.integer({ min: -1000, max: 1000 }), anyFinite);
 
 /** A box a chart is laid out in, from nothing to large. */
 export const size = fc.record({
@@ -104,11 +102,10 @@ const xyOf = (y: fc.Arbitrary<XyChartData['y']>, values: fc.Arbitrary<number>): 
   series: list(fc.record({ kind: fc.constantFrom('bar' as const, 'line' as const), values: list(values, 8) }), 4),
 }, { requiredKeys: ['kind', 'series'] });
 
-/** Values of any size on an axis that fits them, else modest values against fixed ends: a value far past a fixed
- *  end is drawn as far past the plot, which is open in `docs/unruled.md`. */
+/** Values of any size, on an axis that fits them or against fixed ends they may lie far past. */
 export const xyData: fc.Arbitrary<XyChartData> = fc.oneof(
   xyOf(fc.constant(undefined), anyNumber),
-  xyOf(fc.record({ min: end, max: end }, { requiredKeys: [] }), modest),
+  xyOf(fc.record({ min: end, max: end }, { requiredKeys: [] }), anyNumber),
 );
 
 const radarOf = (ends: fc.Arbitrary<{ min?: number; max?: number }>, values: fc.Arbitrary<number>): fc.Arbitrary<RadarData> =>
@@ -128,10 +125,10 @@ const radarOf = (ends: fc.Arbitrary<{ min?: number; max?: number }>, values: fc.
     return d;
   }));
 
-/** Values of any size out to a rim they set, else modest values against a fixed rim, for the same reason as {@link xyData}. */
+/** Values of any size, out to a rim they set or against a fixed rim they may lie far past. */
 export const radarData: fc.Arbitrary<RadarData> = fc.oneof(
   radarOf(fc.record({ min: anyFinite }, { requiredKeys: [] }), anyNumber),
-  radarOf(fc.record({ min: end, max: end }, { requiredKeys: [] }), modest),
+  radarOf(fc.record({ min: end, max: end }, { requiredKeys: [] }), anyNumber),
 );
 
 export const quadrantData: fc.Arbitrary<QuadrantData> = fc.record({

@@ -1,11 +1,12 @@
 /** A radar compiled to its scales and marks. */
 import { maxOf } from '@weasel-js/geom';
-import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
+import { CHART_OVERSHOOT, CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import { pointMark } from '../marks/boxes';
 import { areaMark, lineMark, ruleMark } from '../marks/paths';
 import { textMark } from '../marks/text';
 import type { PlotMark, PlotPoint } from '../marks/types';
 import type { PlotMeasure } from '../measure';
+import { linearScale } from '../scales/linear';
 import { polarScale, type PolarScale } from '../scales/polar';
 import { seriesColor, type PlotTheme } from '../theme';
 import type { RadarData } from './types';
@@ -103,8 +104,10 @@ function graticule(data: RadarData, scale: PolarScale, theme: PlotTheme, measure
 function curveMarks(data: RadarData, scale: PolarScale, theme: PlotTheme): PlotMark[] {
   const marks: PlotMark[] = [];
   const [d0, d1] = scale.domain;
-  // A value short of the center's sits at the center, as a drag holds it there.
-  const held = (v: number) => (d0 <= d1 ? Math.max(d0, v) : Math.min(d0, v));
+  // A value short of the center's sits at the center, as a drag holds it there, and one past the rim just past it.
+  const [inner, outer] = scale.radius;
+  const rim = linearScale({ domain: scale.domain, range: [inner, outer] }).invert(outer + CHART_OVERSHOOT);
+  const held = (v: number) => (d0 <= d1 ? Math.min(rim, Math.max(d0, v)) : Math.max(rim, Math.min(d0, v)));
   data.curves.forEach((curve, c) => {
     const color = seriesColor(theme, c);
     const placed = data.axes.flatMap((_, i) => {

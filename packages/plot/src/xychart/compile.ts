@@ -3,7 +3,7 @@ import { maxOf } from '@weasel-js/geom';
 import { axisMarks, axisRoom } from '../axes';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark } from '../marks/paths';
-import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
+import { CHART_OVERSHOOT, CHART_PAD as PAD, chartTitle } from '../chartTitle';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
 import { bandScale } from '../scales/band';
@@ -103,7 +103,9 @@ export function compileXyChart(
 function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): PlotMark[] {
   const { value, slots, slotWidth } = layout;
   const vertical = layout.orientation === 'vertical';
-  const at = (along: number, v: number) => (vertical ? { x: along, y: value.map(v) } : { x: value.map(v), y: along });
+  const [lo, hi] = [Math.min(...value.range) - CHART_OVERSHOOT, Math.max(...value.range) + CHART_OVERSHOOT];
+  const place = (v: number) => Math.min(hi, Math.max(lo, value.map(v)));
+  const at = (along: number, v: number) => (vertical ? { x: along, y: place(v) } : { x: place(v), y: along });
   const [d0, d1] = value.domain;
   const baseline = value.map(Math.min(Math.max(0, Math.min(d0, d1)), Math.max(d0, d1)));
   const bars = data.series.filter((s) => s.kind === 'bar');
@@ -118,7 +120,7 @@ function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): Plo
       const j = bars.indexOf(series);
       for (const { v, i } of placed) {
         marks.push(barMark({
-          key: `bar:${s}:${i}`, x: slots[i]! - slotWidth / 2 + j * barWidth, width: barWidth, from: baseline, to: value.map(v), color,
+          key: `bar:${s}:${i}`, x: slots[i]! - slotWidth / 2 + j * barWidth, width: barWidth, from: baseline, to: place(v), color,
           datum: datum(i), orient: layout.orientation,
         }));
       }
