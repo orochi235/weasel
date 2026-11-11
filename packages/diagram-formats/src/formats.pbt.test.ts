@@ -41,7 +41,15 @@ describe('formats, property', () => {
       version: fc.oneof(fc.constantFrom(0, 1, 2, -1, 1.5), fc.jsonValue()),
       pages: fc.oneof(fc.array(fc.oneof(fc.jsonValue(), fc.record({ id: fc.string(), kind: fc.constantFrom('graph', 'plot', 'x') }))), fc.jsonValue()),
     }, { requiredKeys: ['format'] });
-    const text = fc.oneof(claim.map((c) => JSON.stringify(c)), fc.string({ maxLength: 40 }), fc.jsonValue().map((v) => JSON.stringify(v)));
+    const readable = fc.record({
+      format: fc.constant('weasel-diagram'),
+      version: fc.constantFrom(0, 1),
+      pages: fc.array(fc.record({ id: fc.string(), kind: fc.constantFrom('graph', 'plot') }, { requiredKeys: ['id'] }), { maxLength: 3 }),
+    });
+    const text = fc.oneof(
+      claim.map((c) => JSON.stringify(c)), readable.map((c) => JSON.stringify(c)),
+      fc.string({ maxLength: 40 }), fc.jsonValue().map((v) => JSON.stringify(v)),
+    );
     fc.assert(fc.property(text, (t) => {
       const r = outcome(() => DIAGRAM_JSON.read!(t) as { document: DiagramDocument });
       if ('error' in r) {

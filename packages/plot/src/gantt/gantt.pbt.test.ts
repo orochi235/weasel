@@ -11,7 +11,7 @@ import { compileGantt } from './compile';
 import { formatGanttDate, parseGanttDate } from './dates';
 import { DAY, addGanttDuration, ganttTasks, scheduleGantt } from './schedule';
 import { formatGanttEnd, formatGanttStart, parseGanttEnd, parseGanttStart } from './text';
-import type { GanttEnd, GanttStart, GanttUnit } from './types';
+import type { GanttData, GanttEnd, GanttStart, GanttUnit } from './types';
 
 const RUNS = 300;
 
@@ -77,9 +77,22 @@ describe('gantt start and end text', () => {
 });
 
 describe('scheduleGantt', () => {
+  /** The same chart with every link cut: `after` starts become `previous`, `until` ends two hours long. */
+  const unlinked = (data: GanttData): GanttData => ({
+    ...data,
+    sections: data.sections.map((s) => ({
+      ...s,
+      tasks: s.tasks.map((t) => ({
+        ...t,
+        start: t.start.kind === 'after' ? { kind: 'previous' as const } : t.start,
+        end: t.end.kind === 'until' ? { kind: 'duration' as const, amount: 2, unit: 'h' as const } : t.end,
+      })),
+    })),
+  });
+
   it('schedules each task forward inside the domain, as its start and end are written', () => {
     const seen = tally();
-    fc.assert(fc.property(ganttData, (data) => {
+    fc.assert(fc.property(fc.oneof(ganttData, ganttData.map(unlinked)), (data) => {
       const { spans, domain } = scheduleGantt(data, Date.UTC(2024, 0, 1));
       expect(spans.map((s) => s.length)).toEqual(data.sections.map((s) => s.tasks.length));
       expect(domain[0]).toBeLessThan(domain[1]);
