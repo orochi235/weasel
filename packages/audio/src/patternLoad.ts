@@ -34,12 +34,14 @@ export function patternVoicePeaks(
   checkSteps('steps per beat', stepsPerBeat);
   if (opts.length !== undefined) checkSteps('length', opts.length);
   const stepMs = 60_000 / opts.tempo / stepsPerBeat;
-  const passMs = (opts.length ?? patternLength(events, stepsPerBeat)) * stepMs;
+  const length = opts.length ?? patternLength(events, stepsPerBeat);
+  const passMs = length * stepMs;
   // The engine takes a voice's slot when its booking fires, which is up to a
   // lookahead before the voice sounds.
   const lead = opts.lookahead ?? 100;
 
-  const spans = events.map((e) => {
+  // The player books an event only on a step inside the pass.
+  const spans = events.filter((e) => e.step >= 0 && Math.floor(e.step) < length).map((e) => {
     const sounds = 'sound' in e
       ? (opts.hitMs?.(e) ?? stepMs)
       : (e.length ?? 1) * stepMs + resolveEnvelope(e.envelope).release;
