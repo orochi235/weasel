@@ -1,8 +1,8 @@
 /**
- * Write, read, and write again: any value `PdfObjects` writes, read back and written once more, is the
- * same bytes, and so is a whole file `writePdf` wrote, rebuilt object by object from what a reader
- * finds at each xref offset. A second write that differs means an offset, a `/Length`, an escape, or a
- * number that does not read back as itself.
+ * Write, read, and write again: any value `PdfObjects` writes, read back and written once more, reads
+ * as the same value, and so does a whole file `writePdf` wrote, rebuilt object by object from what a
+ * reader finds at each xref offset; written a third time, either is the second's bytes. A difference
+ * means an offset, a `/Length`, an escape, or a number that does not read back as itself.
  */
 import { deflateSync } from 'node:zlib';
 import fc from 'fast-check';
@@ -17,7 +17,9 @@ import { writePdfWith } from './writePdf';
 
 const RUNS = 200;
 
-/** The fewest decimals that spell `n` exactly: the spelling it was read from, which has no trailing zero. */
+/** The fewest decimals that spell `n` exactly. The writer may spell a large number with a digit past the
+ *  double's own (`toFixed` writes `…1362` for the `…136` it reads back as), so a second write can be shorter
+ *  than the first; the third is the same as the second. */
 function decimalsOf(n: number): number {
   if (Math.abs(n) >= 1e21) return 0;
   let d = 0;
@@ -65,14 +67,16 @@ function value(): fc.Arbitrary<PdfValue> {
 }
 
 describe('values, written twice', () => {
-  it('writes the same bytes again from what it reads back', () => {
+  it('reads back as itself, and writes the same bytes from the second write on', () => {
     fc.assert(
       fc.property(fc.dictionary(key, value(), { maxKeys: 6 }), (d) => {
         const once = writeDict(d);
         const read = new Lexer(latin1Bytes(once));
-        const again = writeDict(toPdf(read.value()) as PdfDict);
+        const value = read.value();
         expect(read.done()).toBe(true);
-        expect(again).toBe(once);
+        const again = writeDict(toPdf(value) as PdfDict);
+        expect(new Lexer(latin1Bytes(again)).value()).toEqual(value);
+        expect(writeDict(toPdf(new Lexer(latin1Bytes(again)).value()) as PdfDict)).toBe(again);
       }),
       runs(RUNS),
     );
@@ -103,7 +107,7 @@ afterAll(() => unregisterTexture(texture));
 const zlib = async (d: Uint8Array) => new Uint8Array(deflateSync(d));
 
 describe('whole files, written twice', () => {
-  it('rebuilds any file object by object from its xref into the same bytes', async () => {
+  it('rebuilds any file object by object from its xref into the same objects, and the same bytes from then on', async () => {
     const seen = tally();
     const page = fc.record({
       width: fc.integer({ min: 1, max: 600 }),
@@ -117,7 +121,9 @@ describe('whole files, written twice', () => {
         fc.option(fc.string({ unit: 'binary', maxLength: 12 }), { nil: undefined }),
         async (pages, compress, title) => {
           const { bytes: file } = await writePdfWith(pages, { fonts: NO_FONTS, readPixels: readFakePixels, compress, title }, zlib);
-          expect(latin1(rebuild(file))).toBe(latin1(file));
+          const once = rebuild(file);
+          expect(readPdf(once).objects).toEqual(readPdf(file).objects);
+          expect(latin1(rebuild(once))).toBe(latin1(once));
           const n = readPdf(file).objects.size;
           seen.count(n > 10 ? 'many objects' : 'few objects');
           if (compress) seen.count('compressed');
