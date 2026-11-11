@@ -24,6 +24,7 @@ describe('matchQuery', () => {
       (pre, q, post, how, others) => {
         if (q.trim() === '') return;
         const text = `${pre}${flip(q, how)}${post}`;
+        if (!text.normalize('NFC').includes(flip(q, how).normalize('NFC'))) return;
         expect(matchQuery(q, { text: [...others, undefined, text] })).toEqual({ by: 'text' });
         t.count(/[Σσς]/.test(q) ? 'sigma' : 'other');
       }), runs(RUNS));
@@ -33,6 +34,8 @@ describe('matchQuery', () => {
 
   it('matches a field holding the query exactly, whatever its letters', () => {
     fc.assert(fc.property(anyWord, anyWord, anyWord, (pre, q, post) => {
+      // A leading combining mark can compose with the letter before it, and the text then no longer holds it.
+      if (!`${pre}${q}${post}`.normalize('NFC').includes(q.normalize('NFC'))) return;
       expect(matchQuery(q, { text: [`${pre}${q}${post}`] })).toEqual({ by: 'text' });
       expect(matchQuery(`  ${q}\t`, { text: [], tags: ['', `${pre}${q}${post}`] })).toEqual(q.trim() === '' ? { by: 'text' } : { by: 'tag', tag: `${pre}${q}${post}` });
     }), runs(RUNS));
@@ -59,6 +62,27 @@ describe('matchQuery', () => {
     fc.assert(fc.property(fc.stringMatching(/^[ \t\n  ]*$/), fc.array(anyWord, { maxLength: 2 }), (q, text) => {
       expect(matchQuery(q, { text })).toEqual({ by: 'text' });
     }), runs(RUNS));
+  }, timeoutFor(RUNS, 1));
+});
+
+/** Letters with a precomposed form, written either way, and marks that compose with them. */
+const composable = fc.constantFrom('e', 'é', 'E', 'É', 'a', 'ä', 'Å', 'ñ', 'ǟ', 'Ǟ', 'ṩ', 'ḗ', 'ὧ', 'ΐ', 'Ω', 'ь', 'й', 'ё', 'x', ' ');
+const form = fc.constantFrom<'NFC' | 'NFD' | 'none'>('NFC', 'NFD', 'none');
+const written = (s: string, f: 'NFC' | 'NFD' | 'none') => (f === 'none' ? s : s.normalize(f));
+
+describe('matchQuery across normalization forms', () => {
+  it('answers the same for a query and text written composed or decomposed', () => {
+    const t = tally();
+    fc.assert(fc.property(word(composable, 1), word(composable), word(composable), form, form, form, fc.boolean(),
+      (q, pre, post, qf, tf, gf, holds) => {
+        const text = holds ? `${pre}${q}${post}` : `${pre}${post}`;
+        const base = matchQuery(q.normalize('NFC'), { text: [text.normalize('NFC')], tags: [text.normalize('NFC')] });
+        expect(matchQuery(written(q, qf), { text: [written(text, tf)] })).toEqual(base === null ? null : { by: 'text' });
+        expect(matchQuery(written(q, qf), { text: [], tags: [written(text, gf)] })).toEqual(base === null ? null : base.by === 'text' && q.trim() === '' ? { by: 'text' } : { by: 'tag', tag: written(text, gf) });
+        t.count(base === null ? 'miss' : qf === tf ? 'same form' : 'other form');
+      }), runs(RUNS));
+    t.atLeast('other form', RUNS / 10);
+    t.atLeast('miss', RUNS / 20);
   }, timeoutFor(RUNS, 1));
 });
 
