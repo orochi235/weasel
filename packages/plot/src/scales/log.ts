@@ -29,8 +29,8 @@ export function logScale(opts: LogScaleOptions): LogScale {
   const log = (v: number) => Math.log(v) / Math.log(base);
   const l0 = log(d0);
   const l1 = log(d1);
-  // Ends too near for their logarithms to differ are told apart by their ratio.
-  const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log(v / d0) / Math.log(d1 / d0);
+  // Ends too near for their logarithms to differ are told apart by their distance, which a ratio rounds away.
+  const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log1p((v - d0) / d0) / Math.log1p((d1 - d0) / d0);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
   const ticks = (count = 5): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];

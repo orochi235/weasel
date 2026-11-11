@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { bandScale } from './band';
 import { formatNumber, linearScale } from './linear';
+import { logScale } from './log';
 import { ordinalScale } from './ordinal';
 import { formatTick } from './tickFormat';
 
@@ -28,5 +29,13 @@ describe('scales, shrunk (second pass)', () => {
     const { values, step, decimals } = linearScale({ domain: [0, 3e-323], range: [0, 2] }).spacedTicks({ minSpacing: 1 });
     expect(values.map((v) => formatTick(v, { decimals, step }))).toEqual(['0', '2e-323']);
     expect(formatNumber(1.5e-300, 1e-300)).toBe('1.5e-300');
+  });
+
+  it('places a value between log ends whose logarithms round together by its distance, either way round', () => {
+    // Three doubles apart, with the value two from the first.
+    const [d0, d1] = [999999999.9999981, 999999999.9999977];
+    const v = 999999999.9999979;
+    expect(logScale({ domain: [d0, d1], range: [0, 1] }).map(v)).toBeCloseTo(2 / 3, 9);
+    expect(logScale({ domain: [d1, d0], range: [1, 0] }).map(v)).toBeCloseTo(2 / 3, 9);
   });
 });
