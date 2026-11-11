@@ -89,8 +89,8 @@ describe('snap sources through a session, metamorphic', () => {
       }
       const a = drive({ sources: [guideSnapSource(() => gs)], ...v }).at({ x, y }).point;
       const b = drive({ sources: [guideSnapSource(() => shuffled)], ...v }).at({ x, y }).point;
-      expect(Math.abs(b.x - x)).toBe(Math.abs(a.x - x));
-      expect(Math.abs(b.y - y)).toBe(Math.abs(a.y - y));
+      // Coincident guides, or one on each axis as near, tie; either may win.
+      expect(Math.hypot(b.x - x, b.y - y)).toBe(Math.hypot(a.x - x, a.y - y));
     }), RUNS);
   }, TIMEOUT);
 
