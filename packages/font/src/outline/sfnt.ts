@@ -166,8 +166,12 @@ function membersOf(bytes: ArrayBuffer): Member[] | null {
   if (!isFontCollection(bytes)) return null;
 
   const view = new DataView(bytes);
+  if (bytes.byteLength < 12) throw new Error('font collection is truncated: its header runs past the end of the file');
   const numFonts = view.getUint32(8);
   if (numFonts === 0) throw new Error('font collection contains no fonts');
+  if (12 + numFonts * 4 > bytes.byteLength) {
+    throw new Error('font collection is truncated: its member offsets run past the end of the file');
+  }
 
   const members: Member[] = [];
   for (let i = 0; i < numFonts; i++) {
