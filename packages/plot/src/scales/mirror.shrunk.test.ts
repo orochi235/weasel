@@ -4,7 +4,7 @@ import { bandScale } from './band';
 import { formatNumber, linearScale } from './linear';
 import { logScale } from './log';
 import { ordinalScale } from './ordinal';
-import { formatTick } from './tickFormat';
+import { formatTick, toFixedPlain } from './tickFormat';
 
 describe('scales, shrunk (second pass)', () => {
   it('keeps a key the domain names twice at its first place, listed once', () => {
@@ -43,5 +43,10 @@ describe('scales, shrunk (second pass)', () => {
     const { values, step } = linearScale({ domain: [0, -Number.MAX_VALUE], range: [1, 0] }).spacedTicks({ minSpacing: 1 });
     expect(step).toBe(Number.MAX_VALUE);
     expect(values).toEqual([-Number.MAX_VALUE, 0]);
+  });
+
+  it('writes a tick to the places toFixed takes, rather than throwing past them', () => {
+    expect(toFixedPlain(0, -1)).toBe('0');
+    expect(formatTick(1, { decimals: 101, step: 0 })).toBe(`1.${'0'.repeat(100)}`);
   });
 });
