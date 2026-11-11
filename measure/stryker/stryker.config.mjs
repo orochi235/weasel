@@ -3,7 +3,8 @@ const tools = new URL('../../node_modules/.stryker-tools/node_modules/', import.
 
 export default {
   testRunner: 'vitest',
-  plugins: [`${tools}@stryker-mutator/vitest-runner`],
+  plugins: [`${tools}@stryker-mutator/vitest-runner/dist/src/index.js`],
+  disableTypeChecks: `packages/${pkg}/src/**/*.{ts,tsx}`,
   vitest: { configFile: 'measure/stryker/vitest.config.ts', related: false },
   mutate: [`packages/${pkg}/src/**/*.{ts,tsx}`, '!**/*.test.{ts,tsx}', '!**/*.d.ts'],
   coverageAnalysis: 'perTest',
