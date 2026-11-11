@@ -99,7 +99,7 @@ describe('the render worker scene copy over a run of edits', () => {
   it('matches the page after every sync', () => {
     let syncs = 0;
     fc.assert(fc.property(fc.commands([...commands, commands.at(-1)!, commands.at(-1)!, commands[0]!], { maxCommands: 60, size: 'large' }), (cmds) => {
-      const page = createScene<unknown, string, unknown>({ systemLayers: LAYERS.map((l) => ({ id: l })) }) as AnyScene;
+      const page = createScene<unknown, string, RectPose>({ systemLayers: LAYERS.map((l) => ({ id: l })) }) as unknown as AnyScene;
       const real: Real = { page, diff: createSceneDiff(), mirror: createSceneMirror(), syncs: 0 };
       sync(real);
       fc.modelRun(() => ({ model: {}, real }), cmds);

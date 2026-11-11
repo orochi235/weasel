@@ -43,7 +43,7 @@ const transform = fc.constantFrom([1, 0.6, -0.3, 1.4], [0, 0, 0, 0], [1, 0, 0, 0
 const pose: fc.Arbitrary<Pose> = fc.record({
   x: coord, y: coord, width: size, height: size,
   rotation: fc.option(fc.constantFrom(0, 0.3, Math.PI / 2, Math.PI, 2.5, NaN), { nil: undefined }),
-  transform: fc.option(transform, { nil: undefined, freq: 4 }),
+  transform: fc.option(transform.map((t) => [...t]), { nil: undefined, freq: 4 }),
 }).map(({ rotation, transform: t, ...p }) => ({ ...p, ...(rotation !== undefined ? { rotation } : {}), ...(t ? { transform: t } : {}) }));
 const id = fc.constantFrom(...IDS).map(asNodeId);
 const layer = fc.constantFrom(...LAYERS);
@@ -154,7 +154,7 @@ const commands = [
   )),
   fc.tuple(pose, fc.constantFrom<LassoHitMode>('intersect', 'enclosed', 'centers'), fc.boolean()).map(([m, mode, groups]) => cmd(
     `marquee ${JSON.stringify(m)} ${mode}`,
-    (r) => same(r, regionPick(rectRegion(m), mode, d, groups), `marquee ${mode}`),
+    (r) => same(r, regionPick(rectRegion({ x: m.x, y: m.y, width: m.width, height: m.height }), mode, d, groups), `marquee ${mode}`),
   )),
 ];
 
