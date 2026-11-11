@@ -14,6 +14,9 @@ export interface RunSpot {
   clipped: 'none' | 'part' | 'past';
 }
 
+/** Items laid to meet a run's end land on it only to within rounding, so ends are judged within this of exact. */
+const endHair = (length: number): number => 1e-9 * Math.max(1, length);
+
 const clipOf = (lo: number, hi: number, start: number, end: number, hair = 0): RunSpot['clipped'] =>
   lo >= start - hair && hi <= end + hair ? 'none' : hi <= start + hair || lo >= end - hair ? 'past' : 'part';
 
@@ -34,11 +37,12 @@ export function runPlaces(
   const fits = at === undefined && total <= room;
   const lead = align === 'start' ? 0 : align === 'end' ? total : total / 2;
   let lo = at !== undefined ? at - offset - lead : !fits ? -offset : align === 'start' ? 0 : align === 'end' ? room - total : (room - total) / 2;
+  const hair = endHair(room);
   return lengths.map((length) => {
     const start = lo;
     const hi = start + length;
     lo = hi + gap;
-    return { center: start + length / 2, clipped: fits ? 'none' : clipOf(start, hi, 0, room) };
+    return { center: start + length / 2, clipped: fits ? 'none' : clipOf(start, hi, 0, room, hair) };
   });
 }
 
@@ -113,9 +117,8 @@ export function placeAlongRun(run: TrackRun, lengths: readonly number[], options
   });
 }
 
-/** The lap a wrapped sequence fills, from the first item's start. Items meet that lap's end exactly whenever they fill it,
- *  so it is judged within a `hair` of rounding error. */
+/** The lap a wrapped sequence fills, from the first item's start. */
 function wrapWindow(first: RunSpot, firstLength: number, length: number) {
   const start = first.center - firstLength / 2;
-  return { start, end: start + length, hair: 1e-9 * Math.max(1, length) };
+  return { start, end: start + length, hair: endHair(length) };
 }

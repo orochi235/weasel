@@ -26,6 +26,22 @@ describe('stationsAlongPath', () => {
     expect(at({ count: 3, offset: 10 })).toEqual([10, 60]);
   });
 
+  it('lays copies of a size as items: within the ends, spaced edge to edge', () => {
+    const sized = (opts: RepeatAlongPathOptions) => stationsAlongPath(line, opts, 10).map((s) => s.distance);
+    expect(sized({ count: 3 })).toEqual([5, 50, 95]);
+    expect(sized({ spacing: 20 })).toEqual([5, 35, 65, 95]);
+    expect(sized({ spacing: 20, align: 'center', count: 2 })).toEqual([35, 65]);
+    expect(stationsAlongPath(rectPath(0, 0, 10, 10), { count: 4 }, 4).map((s) => s.distance)).toEqual([2, 12, 22, 32]);
+  });
+
+  it('keeps a copy slid partly off an open end, and drops one slid wholly off', () => {
+    expect(stationsAlongPath(line, { count: 2, offset: 95 }, 10).map((s) => s.distance)).toEqual([100]);
+  });
+
+  it('wraps a slid copy round a closed path', () => {
+    expect(stationsAlongPath(rectPath(0, 0, 10, 10), { count: 4, offset: 15 }).map((s) => s.distance)).toEqual([15, 25, 35, 5]);
+  });
+
   it('reports the heading', () => {
     const [s] = stationsAlongPath(linePath({ x: 0, y: 0 }, { x: 0, y: 10 }), { count: 1 });
     expect(s!.angle).toBeCloseTo(Math.PI / 2);
@@ -35,7 +51,7 @@ describe('stationsAlongPath', () => {
 describe('repeatAlongPath', () => {
   it('centers each copy on its station', () => {
     const copies = repeatAlongPath(rectPath(-100, -100, 4, 2), line, { count: 3, orient: false });
-    expect(copies.map((c) => boundsOfPath(c).x)).toEqual([-2, 48, 98]);
+    expect(copies.map((c) => boundsOfPath(c).x)).toEqual([0, 48, 96]);
   });
 
   it('turns copies to the heading when oriented', () => {

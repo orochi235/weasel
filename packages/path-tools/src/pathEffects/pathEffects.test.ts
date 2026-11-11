@@ -196,7 +196,7 @@ describe('bend and repeat along a path', () => {
     const { scene, deps, selected } = setup(['a', 'spine']);
     run(repeatAlongAction, deps, { count: 3, orient: false });
     const xs = partsOf(scene, selected()[0]!).map((p) => boundsOfPath(p.path).x);
-    expect(xs).toEqual([-10, 90, 190]);
+    expect(xs).toEqual([0, 90, 180]);
   });
 });
 
@@ -247,7 +247,7 @@ describe('expand', () => {
     expect(made).toHaveLength(3);
     expect(made.every((n) => n.dependsOn === undefined)).toBe(true);
     expect(made[0]!.data).toMatchObject({ fill: { paint: { color: '#ff0000' } } });
-    expect(made.map((n) => n.pose.x)).toEqual([-10, 90, 190]);
+    expect(made.map((n) => n.pose.x)).toEqual([0, 90, 180]);
     scene.undo();
     expect(scene.get(effect as NodeId)).toBeDefined();
   });
