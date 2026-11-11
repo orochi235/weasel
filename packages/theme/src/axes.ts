@@ -28,17 +28,28 @@ export type Varying<T> = T | ByAxis<T>;
 
 export type Picked<T> = { ok: true; value: T } | { ok: false; axis: string; value: string };
 
+/** Attribute names `applyTheme` stamps beside the axes', which an axis of the same name would overwrite. */
+const RESERVED_AXES = ['theme', 'variant'];
+
+/** Why `name` cannot name an axis, or undefined when it can. */
+export function axisNameProblem(name: string): string | undefined {
+  if (name === '__proto__') return '"__proto__" cannot name an axis';
+  if (RESERVED_AXES.includes(name)) return `"${name}" is reserved and cannot name an axis: its data-wzl-${name} attribute is the theme's own`;
+  return undefined;
+}
+
 /** Whether `v` is a {@link ByAxis} value. */
 export function isByAxis(v: unknown): v is ByAxis<unknown> {
   return isPlainObject(v) && typeof v.by === 'string';
 }
 
-/** Every axis given a known value; anything missing or unknown takes its default. */
+/** Every axis given a known value; anything missing or unknown takes its default. An axis loaded with a default that is not a string is left out. */
 export function fullSelection(axes: AxisDefs, selection: Selection = {}): Selection {
   const out: Record<string, string> = {};
   for (const [name, def] of Object.entries(axes)) {
-    const v = selection[name];
-    out[name] = v !== undefined && Object.hasOwn(def.values, v) ? v : def.default;
+    const v = Object.hasOwn(selection, name) ? selection[name] : undefined;
+    if (v !== undefined && Object.hasOwn(def.values ?? {}, v)) out[name] = v;
+    else if (typeof def.default === 'string') out[name] = def.default;
   }
   return out;
 }
@@ -52,11 +63,11 @@ export function mergeAxes(parent: AxisDefs, child: AxisDefs): AxisDefs {
   return out;
 }
 
-/** Every full combination of axis values, the first axis varying slowest. */
+/** Every full combination of axis values, the first axis varying slowest. An axis loaded with no values has none. */
 export function enumerateSelections(axes: AxisDefs): Selection[] {
   let out: Record<string, string>[] = [{}];
   for (const [name, def] of Object.entries(axes)) {
-    out = out.flatMap((s) => Object.keys(def.values).map((v) => ({ ...s, [name]: v })));
+    out = out.flatMap((s) => Object.keys(def.values ?? {}).map((v) => ({ ...s, [name]: v })));
   }
   return out;
 }

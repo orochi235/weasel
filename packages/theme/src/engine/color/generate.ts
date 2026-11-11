@@ -193,7 +193,7 @@ function equalizeChroma(hexes: string[], k: number, anchored: boolean[]): string
  * not three neighbors.
  */
 function farthestFirst(hues: number[]): number[] {
-  const order = [0];
+  const order = hues.length === 0 ? [] : [0];
   while (order.length < hues.length) {
     let best = -1;
     let bestGap = -1;

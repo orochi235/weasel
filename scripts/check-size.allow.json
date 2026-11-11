@@ -185,7 +185,6 @@
     "longestFunction": 208
   },
   "packages/theme/src/engine/derive.ts": {
-    "lines": 474,
     "longestFunction": 172
   },
   "packages/ui/src/components/Badge/Badge.tsx": {

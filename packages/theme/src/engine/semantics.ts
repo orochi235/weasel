@@ -4,6 +4,7 @@ import type { PinObject, SemanticRule } from '../definition.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import { contrast, toLch } from './color/oklch.ts';
+import { checkProblem, ruleProblem } from './ruleShape.ts';
 import type { Issue } from './types.ts';
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -43,6 +44,8 @@ interface Env {
 }
 
 const isRecord = isPlainObject;
+/** `record[key]` when `record` holds it itself, so a name like `toString` never reads `Object.prototype`. */
+const own = <T>(record: Readonly<Record<string, T>>, key: string): T | undefined => (Object.hasOwn(record, key) ? record[key] : undefined);
 
 
 export function deriveSemantics(
@@ -79,7 +82,7 @@ export function deriveSemantics(
     const v = value.trim();
     const m = refTarget(v);
     if (m === null) return HEX.test(v) ? v.toLowerCase() : undefined;
-    return solid(ctx.pinned(m) ?? ctx.tokens[m] ?? get(m)?.token ?? ctx.component(m), depth + 1);
+    return solid(ctx.pinned(m) ?? own(ctx.tokens, m) ?? get(m)?.token ?? ctx.component(m), depth + 1);
   };
   const solid = (t: { readonly value: TokenValue; readonly alpha?: number } | undefined, depth = 0) =>
     t && t.alpha === undefined ? color(t.value, depth) : undefined;
@@ -122,12 +125,15 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     return undefined;
   };
 
+  const problem = ruleProblem(r as unknown as Record<string, unknown>);
+  if (problem) return invalid(problem);
+
   if ('value' in r) {
     return { rule: 'value', token: { type: r.type ?? 'unknown', value: r.value, alpha: undefined, description } };
   }
 
   if ('ref' in r) {
-    const type = r.type ?? ctx.tokens[r.ref]?.type ?? env.get(r.ref)?.token.type ?? 'unknown';
+    const type = r.type ?? own(ctx.tokens, r.ref)?.type ?? env.get(r.ref)?.token.type ?? 'unknown';
     return { rule: 'ref', position: env.positionAt(r.ref), token: { type, value: `{${r.ref}}`, alpha: r.alpha, description } };
   }
 
@@ -137,7 +143,7 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
       ctx.issues.push({ kind: 'missing-axis-value', path: `semantics.${name}.step`, axis: picked.axis, value: picked.value });
       return undefined;
     }
-    return atStep(name, r.ramp, (ctx.ramps[r.ramp] ?? []).indexOf(picked.value), 'step', description, ctx);
+    return atStep(name, r.ramp, (own(ctx.ramps, r.ramp) ?? []).indexOf(picked.value), 'step', description, ctx);
   }
 
   const rampColor = (ramp: string, step: string) => env.color(`{${ramp}-${step}}`);
@@ -153,7 +159,7 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     const from = env.positionOf(r.from);
     if (!from) return invalid(`"${r.from}" does not end on a ramp step`);
     const { ramp, index } = from;
-    const steps = ctx.ramps[ramp];
+    const steps = own(ctx.ramps, ramp)!;
     const last = steps.length - 1;
     let sign: number;
     if (r.dir === 'darker' || r.dir === 'lighter') {
@@ -170,7 +176,7 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
 
   if ('contrast' in r) {
     for (const a of r.contrast.against) requireKnown(name, a, ctx.known);
-    const steps = ctx.ramps[r.ramp];
+    const steps = own(ctx.ramps, r.ramp);
     if (!steps) return invalid(`no ramp "${r.ramp}"`);
     if (r.contrast.against.length === 0) return invalid('contrast needs at least one surface');
     const colors = steps.map((s) => rampColor(r.ramp, s));
@@ -248,7 +254,8 @@ export function checkSemantics(
   for (const name of Object.keys(rules)) {
     const p = pick(rules[name], sel);
     const check = p.ok && isRecord(p.value) ? (p.value as SemanticRule).check : undefined;
-    if (!check) continue;
+    // A malformed check was reported with its rule.
+    if (!check || checkProblem(check)) continue;
     for (const a of check.against) requireKnown(name, a, known);
     if (!Object.hasOwn(tokens, name)) continue;
     const path = `semantics.${name}.check`;
@@ -283,7 +290,7 @@ export function atStep(
   description: string | undefined,
   ctx: SemanticContext,
 ): DerivedSemantic | undefined {
-  const steps = ctx.ramps[ramp];
+  const steps = own(ctx.ramps, ramp);
   if (!steps || index < 0 || index >= steps.length) {
     ctx.issues.push({ kind: 'invalid', path: `semantics.${name}`, message: `no such step on ramp "${ramp}"` });
     return undefined;

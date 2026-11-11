@@ -1,7 +1,9 @@
-import { isByAxis } from '../axes.ts';
+import { isPlainObject } from '@weasel-js/registry';
+import { enumerateSelections, isByAxis, pick, type Selection } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
+import { ruleProblem } from './ruleShape.ts';
 import { declaredSteps } from './steps.ts';
 
 /** The axes one token's value can change with. */
@@ -59,10 +61,45 @@ function scanSteps(entry: unknown, into: Node): void {
 /** Node key for a ramp's step list. `derive` rejects a token name containing a dot, so it never collides with one. */
 const stepsKey = (ramp: string) => `ramps.${ramp}`;
 
+/** Whether a pin replaces what it pins at `sel`: it has a value there, and any whole-value seed it names does too. */
+function pinApplies(pin: unknown, sel: Selection, seeds: Readonly<Record<string, unknown>>): boolean {
+  const picked = pick(pin, sel);
+  if (!picked.ok) return false;
+  const value = isPlainObject(picked.value) && 'value' in picked.value ? picked.value.value : picked.value;
+  const seed = typeof value === 'string' ? SEED_REF.exec(value.trim()) : null;
+  return seed === null || (Object.hasOwn(seeds, seed[1]) && pick(seeds[seed[1]], sel).ok);
+}
+
 /** The non-`by` values under a possibly nested `by` object. */
 function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
 }
+
+/** Each node's axes with everything its edges reach. */
+function closure(nodes: ReadonlyMap<string, Node>, ownSets: ReadonlyMap<string, Set<string>>): Map<string, Set<string>> {
+  // `all[n] = own[n] ∪ ⋃ all[edge]`, iterated to a fixpoint instead of walked recursively —
+  // a per-path `visiting` guard would memoize the empty answer for whichever cycle node it
+  // revisits first. This converges because every step only adds axes, which are finite.
+  const all = new Map<string, Set<string>>();
+  for (const [name, own] of ownSets) all.set(name, new Set(own));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [name, n] of nodes) {
+      const out = all.get(name)!;
+      for (const e of n.edges) {
+        const from = all.get(e);
+        if (!from) continue;
+        for (const a of from) if (!out.has(a)) { out.add(a); changed = true; }
+      }
+    }
+  }
+  return all;
+}
+
+/** The rules under a possibly `by`-varying semantic that `derive` can read; it reports the rest. */
+const readableRules = (rule: unknown): SemanticRule[] =>
+  leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
 
 /** Every token of the definition, `extends` chain included, mapped to the axes it depends on, in axis declaration order. */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
@@ -96,10 +133,8 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const add = (from: string) => {
       for (const r of rampsOf(from, seen)) out.add(r);
     };
-    const rule = def.semantics?.[name];
-    for (const leaf of rule === undefined ? [] : leaves(rule)) {
-      if (typeof leaf !== 'object' || leaf === null) continue;
-      const l = leaf as SemanticRule;
+    const rule = def.semantics && Object.hasOwn(def.semantics, name) ? def.semantics[name] : undefined;
+    for (const l of rule === undefined ? [] : readableRules(rule)) {
       if ('ramp' in l) out.add(l.ramp);
       else if ('from' in l) add(l.from);
       else if ('ref' in l) add(l.ref);
@@ -115,7 +150,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, rule] of Object.entries(def.semantics ?? {})) {
     const n = node();
     scan(rule, n);
-    for (const leaf of leaves(rule) as SemanticRule[]) {
+    for (const leaf of readableRules(rule)) {
       if ('ref' in leaf) n.edges.add(leaf.ref);
       if ('from' in leaf) {
         n.edges.add(leaf.from);
@@ -137,12 +172,21 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     }
     nodes.set(name, n);
   }
-  for (const layer of [def.components, def.pins]) {
-    for (const [name, v] of Object.entries(layer ?? {})) {
-      const n = node();
-      scan(v, n);
-      nodes.set(name, n);
+  for (const [name, v] of Object.entries(def.components ?? {})) {
+    const n = node();
+    scan(v, n);
+    nodes.set(name, n);
+  }
+  const selections = enumerateSelections(def.axes ?? {});
+  for (const [name, v] of Object.entries(def.pins ?? {})) {
+    const n = node();
+    scan(v, n);
+    // Where the pin has no value, what it pins shows through, so the token depends on that too.
+    const under = nodes.get(name);
+    if (under && !selections.every((sel) => pinApplies(v, sel, def.seeds ?? {}))) {
+      for (const k of ['axes', 'seeds', 'edges'] as const) for (const x of under[k]) n[k].add(x);
     }
+    nodes.set(name, n);
   }
 
   const order = Object.keys(def.axes ?? {});
@@ -160,23 +204,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   const ownSets = new Map<string, Set<string>>();
   for (const [name, n] of nodes) ownSets.set(name, ownOf(n));
 
-  // `all[n] = own[n] ∪ ⋃ all[edge]`, iterated to a fixpoint instead of walked recursively —
-  // a per-path `visiting` guard would memoize the empty answer for whichever cycle node it
-  // revisits first. This converges because every step only adds axes, which are finite.
-  const all = new Map<string, Set<string>>();
-  for (const [name, own] of ownSets) all.set(name, new Set(own));
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const [name, n] of nodes) {
-      const out = all.get(name)!;
-      for (const e of n.edges) {
-        const from = all.get(e);
-        if (!from) continue;
-        for (const a of from) if (!out.has(a)) { out.add(a); changed = true; }
-      }
-    }
-  }
+  const all = closure(nodes, ownSets);
 
   const result: Record<string, AxisDependency> = {};
   for (const name of nodes.keys()) if (!name.includes('.')) result[name] = { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };

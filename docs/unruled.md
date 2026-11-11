@@ -909,6 +909,22 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the whole count below it and a `NaN` or infinite one as 1; `sampleEasing` takes a fraction the same way and a
   negative or non-finite count as 0. Why: the count is of samples, and a fraction dropped every anchor after the
   first, `NaN` gave no points, and a negative count threw.
+- Ruled 2026-11-11 (my call, theme second pass): `theme` and `variant` cannot name an axis. `defineTheme` throws and
+  `derive` reports it, because `applyTheme` stamps `data-wzl-theme` and `data-wzl-variant` itself and such an axis's
+  rule matched nothing. `applyTheme` does not check a `Theme` built by hand. Renaming the attributes instead was
+  the other way out.
+- Ruled 2026-11-11 (my call, theme second pass): axes loaded malformed are reported, and the rest derives: an axis
+  named `__proto__` (a selection cannot hold it, as a record cannot hold a token of that name), and one whose
+  default is not a string, which gets no value in a full selection, so a `by` on it reports a missing axis value.
+  An axis with no values enumerates no selections, so it bakes nothing.
+- 2026-11-11 (theme second pass): `derive` reports a semantic rule whose fields have the wrong types as `invalid`
+  (`engine/ruleShape.ts`), and `axisDependencies` leaves it out, where both threw. A categorical ramp's `surface`
+  gate takes a 6-digit hex only, as its anchors do. Not ruled: chosen to match the shape checks derive already made.
+- Open (2026-11-11, theme second pass): a token a theme produces at only some selections still shows at the others
+  in the stylesheet, which cannot unset it: a reference to it there reads the value from where it is declared, while
+  `resolveTheme` has no token. Only a definition with issues does this. The same holds across `extends`: a child
+  that redefines a ramp with fewer steps still shows the parent's dropped steps at runtime, and `derive` of the
+  child lists none of them, with no issue. Whether derive should report a step it drops from the parent is open.
 
 ## Diagram, audio, and labkit
 

@@ -4,5 +4,5 @@ const MERGED_GROUPS: Readonly<Record<string, string>> = { danger: 'status', warn
 /** The group a token is listed under, from its name without `--wzl-`: its first word, or the group that word merges into. */
 export function tokenGroupOf(name: string): string {
   const prefix = name.includes('-') ? name.slice(0, name.indexOf('-')) : name;
-  return MERGED_GROUPS[prefix] ?? prefix;
+  return Object.hasOwn(MERGED_GROUPS, prefix) ? MERGED_GROUPS[prefix]! : prefix;
 }

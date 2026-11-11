@@ -79,7 +79,10 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
   const axes = merged.axes ?? {};
   const own = table(definition, axes, lookup);
 
-  const at = (sel: Selection, name: string) => own.get(selectionKey(axes, sel))?.[name];
+  const at = (sel: Selection, name: string) => {
+    const tokens = own.get(selectionKey(axes, sel));
+    return tokens && Object.hasOwn(tokens, name) ? tokens[name] : undefined;
+  };
   /** What the runtime shows for `name` from the themes above. */
   const inherited = (sel: Selection, name: string) => tokenAt(above, name, fullSelection(axes, sel));
 
