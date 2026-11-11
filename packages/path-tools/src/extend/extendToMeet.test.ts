@@ -50,6 +50,19 @@ const run = (a: { invoker?: unknown }, deps: never, params?: Record<string, unkn
   (a.invoker as ImmediateInvoker).run(deps, params);
 
 describe('extendToMeetAction', () => {
+  it('asks the run its params make whether it would change anything', () => {
+    // Shrunk by the scene-command property: the default ease meets a stroke here, and a tighter one does not.
+    const { deps, batches } = setup({ dot: 'M0 0 L0 0', dot2: 'M0 0 L0 0', bend: 'M-1 0 C-0.75 -0.5 0 0 0 0 L0 19' }, ['bend']);
+    const eased = { easeTurn: 0.2 };
+    expect(extendToMeetAction.enabled!(deps, undefined, undefined, eased)).toBe(ActionDisabledReason.NotApplicable);
+    run(extendToMeetAction, deps, eased);
+    expect(batches).toHaveLength(0);
+    expect(extendToMeetAction.enabled!(deps)).toBe(true);
+    expect(extendToMeetAction.enabled!(deps, undefined, undefined, {})).toBe(true);
+    run(extendToMeetAction, deps, {});
+    expect(batches).toHaveLength(1);
+  });
+
   it("carries a selected path's open ends to the strokes they point at", () => {
     const { deps, batches } = setup({ seg: 'M13 0 H17', w1: 'M10 -10 V10', w2: 'M20 -10 V10' }, ['seg']);
     expect(extendToMeetAction.enabled!(deps)).toBe(true);

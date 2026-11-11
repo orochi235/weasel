@@ -160,9 +160,10 @@ export const extendToMeetAction: Action & { requires: string[] } = {
       commitOps(deps, ops, EXTEND_LABEL);
     },
   } satisfies ImmediateInvoker,
-  // A click's point arrives here without the binding's reach, so `run` decides there. `enabled` is not
-  // handed the params a run would use, so either shape reaching a stroke enables it.
-  enabled: (deps?: ActionDeps, at?: { x: number; y: number }) =>
-    (at || planExtend(deps).size > 0 || planExtend(deps, { shape: 'straight' }).size > 0
+  // A click's point arrives here without the binding's reach, so `run` decides there. Handed no params, either
+  // shape reaching a stroke enables it, since the last-operation panel can switch shapes; handed params, the
+  // run they make does.
+  enabled: (deps?: ActionDeps, at?: { x: number; y: number }, _carried?: unknown, params?: unknown) =>
+    (at || planExtend(deps, params).size > 0 || (params === undefined && planExtend(deps, { shape: 'straight' }).size > 0)
       ? true : ActionDisabledReason.NotApplicable),
 };

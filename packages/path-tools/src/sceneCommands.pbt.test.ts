@@ -65,7 +65,7 @@ class Extend implements fc.Command<Model, H> {
     const params = this.press ? { ...this.params, press: this.press } : this.params;
     // A click's point enables it outright, and the run decides; without one, `enabled` asks what `run` would do.
     const on = this.press ? isOn(extendToMeetAction, h.deps, this.press, this.params) : isOn(extendToMeetAction, h.deps, undefined, params);
-    step(m, h, 'extendToMeet', on, () => { if (on) (extendToMeetAction.invoker as ImmediateInvoker).run(h.deps, params); }, { idleOk: !!this.press || this.params.shape !== undefined });
+    step(m, h, 'extendToMeet', on, () => { if (on) (extendToMeetAction.invoker as ImmediateInvoker).run(h.deps, params); }, { idleOk: !!this.press });
   }
   toString(): string { return `Extend(${JSON.stringify(this.params)} ${JSON.stringify(this.press)})`; }
 }

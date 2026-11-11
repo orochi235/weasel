@@ -197,7 +197,7 @@ describe('anchorNormals, property', () => {
       const set = pathToAnchors(path);
       expect(normals.length).toBe(set.anchors.flat().length);
       for (const n of normals) expect(Math.abs(Math.hypot(n.x, n.y) - 1)).toBeLessThan(1e-9);
-      // A quarter turn and a move by whole units are exact, so the normals come out exactly turned.
+      // A quarter turn is exact, but the move rounds a float32 coordinate again, so the normals turn to within that.
       const moved = anchorsToPath(set.anchors.map((sub) => sub.map((a) => {
         const f = (p: { x: number; y: number }) => { const r = rot90(p); return { x: r.x + dx, y: r.y + dy }; };
         return { ...f(a), ...(a.inHandle ? { inHandle: f(a.inHandle) } : {}), ...(a.outHandle ? { outHandle: f(a.outHandle) } : {}) };
@@ -207,8 +207,8 @@ describe('anchorNormals, property', () => {
         const r = rot90(n);
         // An anchor with no direction at all has no normal to turn; it takes the default.
         if (turned[i]!.x === 0 && turned[i]!.y === 1 && n.x === 0 && n.y === 1) { t.count('normals:none'); return; }
-        expect(turned[i]!.x).toBeCloseTo(r.x, 6);
-        expect(turned[i]!.y).toBeCloseTo(r.y, 6);
+        expect(turned[i]!.x).toBeCloseTo(r.x, 4);
+        expect(turned[i]!.y).toBeCloseTo(r.y, 4);
         t.count('normals:turned');
       });
     }), runs(300));
