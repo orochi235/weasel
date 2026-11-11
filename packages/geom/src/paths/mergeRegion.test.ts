@@ -85,4 +85,30 @@ describe('mergeRegion', () => {
     expect(edgesInsideFill(m, 0.002)).toBe(0);
     expectSameRegion(grown, m, 0.13);
   });
+
+  it('keeps an edge two contours share once, and none inside the fill (shrunk from text\'s synthetic bold property)', () => {
+    for (const d of [
+      'M0 0 L2 0 L2 3 L0 3 Z M0 0 L2 0 L2 2 L0 2 Z',
+      'M0 0 L2 0 L2 1 L0 1 Z M1 0 L3 0 L3 1 L1 1 Z',
+      'M0.0000001 0 L2 0 L2 2 L0.0000001 2 Z M0 0 L2 0 L2 3 L0 3 Z',
+    ]) {
+      const src = pathFromD(d);
+      const m = mergeRegion(src);
+      expect(contourCount(m), d).toBe(1);
+      expect(edgesInsideFill(m, 0.01), d).toBe(0);
+      // The near-shared corner welds within the snap, which moves the region by 1e-7 there.
+      if (!d.startsWith('M0.0000001')) expectSameRegion(src, m, 0.29);
+    }
+  });
+
+  it('merges a contour drawn twice, and drops the spike two nearly tangent arcs leave (shrunk from text\'s property)', () => {
+    const twice = growRegion(pathFromD('M0 0 L0.02 0 L0.02 0.02 L0 0.02 Z M0 0 L0.02 0 L0.02 0.02 L0 0.02 Z'), 0.01,
+      { join: 'round', tolerance: 0.0005 });
+    const once = mergeRegion(twice, { tolerance: 0.0005 });
+    expect(contourCount(once)).toBe(1);
+    expect(edgesInsideFill(once, 1e-3)).toBe(0);
+    const offset = growRegion(pathFromD('M0.09 -0.005 L0.19 -0.005 L0.19 0.095 L0.09 0.095 Z M0.1 0 L0.2 0 L0.2 0.1 L0.1 0.1 Z'),
+      1 / 75, { join: 'round', tolerance: 0.0005 });
+    expect(edgesInsideFill(mergeRegion(offset, { tolerance: 0.0005 }), 1e-3)).toBe(0);
+  });
 });
