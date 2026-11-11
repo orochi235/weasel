@@ -16,3 +16,30 @@ describe('shrunk counterexamples', () => {
     expect(r.getVersion()).toBe(0);
   });
 });
+
+describe('shrunk counterexamples: variants', () => {
+  it('starts a fresh load when a listener retries a variant from its failure notice', async () => {
+    const r = createIconRegistry();
+    let calls = 0;
+    r.provideVariants({
+      v: async () => {
+        if (++calls === 1) throw new Error('offline');
+        return { default: [{ namespace: 'v', owner: '@v', icons: { a: { body: 'va', group: 'g', tags: [] } } }] };
+      },
+    });
+    let retry: Promise<void> | undefined;
+    r.subscribe(() => {
+      if (r.variantState('v') === 'failed' && !retry) retry = r.loadVariant('v');
+    });
+    const errors = console.error;
+    console.error = () => {};
+    try {
+      await r.loadVariant('v');
+      await retry;
+    } finally {
+      console.error = errors;
+    }
+    expect(calls).toBe(2);
+    expect(r.variantState('v')).toBe('loaded');
+  });
+});
