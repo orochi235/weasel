@@ -381,9 +381,7 @@ async function readSource(source: OutlineSource): Promise<ArrayBuffer> {
 }
 
 /** Bytes from any realm: an iframe's, or Node's beside jsdom's, fail `instanceof ArrayBuffer`. */
-function isArrayBuffer(source: unknown): source is ArrayBuffer {
-  return Object.prototype.toString.call(source) === '[object ArrayBuffer]';
-}
+const isArrayBuffer = (x: unknown): x is ArrayBuffer => Object.prototype.toString.call(x) === '[object ArrayBuffer]';
 
 // Loading and glyph lookup both run off the render loop, so an unguarded warn
 // would repeat every frame.
