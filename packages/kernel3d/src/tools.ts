@@ -36,7 +36,8 @@ function screenDelta(move: InvocationCtx): { x: number; y: number } | undefined 
  * dolly during an orbit, a home), the gesture rebases onto that camera from
  * the input it had reached, rather than undoing the write on its next move.
  * A dep still answering with the camera from before this gesture's last write,
- * as a host whose state lands on its next render does, was not replaced.
+ * as a host whose state lands on its next render does, was not replaced; one
+ * that showed that write at once was, whatever camera it answers with.
  */
 function cameraStepper<P>(
   dep: Camera3dDep | undefined,
@@ -49,10 +50,13 @@ function cameraStepper<P>(
   let reached = zero;
   let written = origin;
   let prior = origin;
+  // A host that answered with this gesture's write at once has nothing still to land, so anything else it answers
+  // with is another writer's, even the camera it answered with before.
+  let caughtUp = false;
   return (at) => {
     if (!dep || !origin) return;
     const now = dep.get();
-    if (now !== written && now !== prior) {
+    if (now !== written && (caughtUp || now !== prior)) {
       origin = now;
       from = reached;
     }
@@ -60,6 +64,7 @@ function cameraStepper<P>(
     written = step(origin, relative(at, from), dep);
     reached = at;
     dep.set(written);
+    caughtUp = dep.get() === written;
   };
 }
 

@@ -133,6 +133,17 @@ describe('a camera drag the camera changes under', () => {
     expect(camera().distance).toBeCloseTo(2.5);
   });
 
+  it('turns on from a home set mid-orbit that is the camera the orbit began on (shrunk)', () => {
+    const home = createCamera({ distance: 10 });
+    const { deps, camera } = depsFor({}, { home: () => home });
+    run(homeAction, deps);
+    const handle = (orbitAction.invoker as OngoingInvoker).start(ctxOf(deps), undefined);
+    handle.onMove?.(dragTo(deps, 10));
+    run(homeAction, deps);
+    handle.onMove?.(dragTo(deps, 30));
+    expect(camera().yaw).toBeCloseTo(-20 * 0.006);
+  });
+
   it('reads a host that has not yet caught up with its own last set as unchanged', () => {
     let held = createCamera({ distance: 10 });
     let pending: ReturnType<typeof createCamera> | null = null;

@@ -1,9 +1,9 @@
 /**
  * The camera actions through long runs of gestures, stateful: orbit, pan, and pinch drags of many moves, with wheel
- * dollies, homes, and cameras set from outside landing between them, against a host whose camera lands at once and
- * one whose camera lands only on its next render. After every move the gesture has written its step of the camera
- * it began on, rebased onto any camera another writer set that the host has shown it, and a gesture nothing else
- * wrote during ends where one move to its last input would have put it.
+ * dollies, homes (one camera, set again and again), and cameras set from outside landing between them, against a
+ * host whose camera lands at once and one whose camera lands only on its next render. After every move the gesture
+ * has written its step of the camera it began on, rebased onto any camera another writer set that the host has shown
+ * it, and a gesture nothing else wrote during ends where one move to its last input would have put it.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -60,12 +60,16 @@ interface Model {
   origin: Camera3d;
   from: { x: number; y: number } | number;
   reached: { x: number; y: number } | number;
+  start: Camera3d;
+  /** The cameras this gesture wrote. The one it began on is not among them: another writer may set it again. */
   mine: Set<Camera3d>;
   /** What the host showed at the previous move, or at the start. */
   shown: Camera3d;
   at: { x: number; y: number };
   startSpread: number;
   touched: boolean;
+  /** Whether another writer set the camera since the last move. */
+  outside: boolean;
 }
 
 function stepOf(m: Model, input: { x: number; y: number } | number): Camera3d {
@@ -93,19 +97,22 @@ describe('the camera actions through long runs of gestures, stateful', () => {
           const start = host.dep.get();
           handle = (action.invoker as OngoingInvoker).start(ctxOf(deps, c.kind === 'pinch' ? { multiTouch: { spread: c.spread, centroid: c.at } } as Partial<InvocationCtx> : {})) as typeof handle;
           const zero = c.kind === 'pinch' ? 1 : { x: 0, y: 0 };
-          m = { kind: c.kind, origin: start, from: zero, reached: zero, mine: new Set([start]), shown: start, at: c.at, startSpread: c.spread, touched: false };
+          m = { kind: c.kind, origin: start, from: zero, reached: zero, start, mine: new Set(), shown: start, at: c.at, startSpread: c.spread, touched: false, outside: false };
           seen.count(`start ${c.kind}`);
         } else if (c.t === 'move' && handle && m) {
           const now = host.dep.get();
           const input = m.kind === 'pinch' ? m.startSpread / c.spread : { x: c.x, y: c.y };
-          // A camera this gesture did not write, and the host had not shown at the last move, is another writer's.
-          if (!m.mine.has(now) && now !== m.shown) {
+          // A host that shows every set at once was written by another since the last move exactly when it says so;
+          // one that lags can only be read by what it shows: a camera this gesture did not write and it had not
+          // shown at the last move.
+          if (lagging ? !m.mine.has(now) && now !== m.shown : m.outside) {
             m.origin = now;
             m.from = m.reached;
             m.touched = true;
             seen.count('rebased');
           }
           m.shown = now;
+          m.outside = false;
           handle.onMove!(ctxOf(deps, m.kind === 'pinch'
             ? { multiTouch: { pinch: { currentSpread: c.spread } } } as Partial<InvocationCtx>
             : { drag: { screenDelta: { x: c.x, y: c.y } } } as Partial<InvocationCtx>));
@@ -115,7 +122,7 @@ describe('the camera actions through long runs of gestures, stateful', () => {
           m.reached = input;
           if (!m.touched) {
             // Nothing else wrote: one move straight to this input, from the camera it began on, lands the same.
-            const fresh = hostOf(m.mine.values().next().value!, false, homeCam);
+            const fresh = hostOf(m.start, false, homeCam);
             const freshDeps = { camera3d: fresh.dep } as unknown as ActionDeps;
             const action = m.kind === 'orbit' ? orbitAction : m.kind === 'pan' ? panAction : pinchDollyAction;
             const one = (action.invoker as OngoingInvoker).start(ctxOf(freshDeps, m.kind === 'pinch' ? { multiTouch: { spread: m.startSpread, centroid: m.at } } as Partial<InvocationCtx> : {})) as { onMove(m: InvocationCtx): void };
@@ -126,11 +133,13 @@ describe('the camera actions through long runs of gestures, stateful', () => {
             seen.count('untouched move');
           }
         } else if (c.t === 'wheel') {
-          (dollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: c.deltaY, clientX: c.x, clientY: c.y });
+          if ((dollyAction.invoker as ImmediateInvoker).run(deps, { deltaY: c.deltaY, clientX: c.x, clientY: c.y }) !== 'pass' && m) m.outside = true;
         } else if (c.t === 'home') {
           (homeAction.invoker as ImmediateInvoker).run(deps);
+          if (m) m.outside = true;
         } else if (c.t === 'set') {
           host.dep.set(c.camera);
+          if (m) m.outside = true;
         } else if (c.t === 'render') {
           host.render();
         } else if (c.t === 'end') {
