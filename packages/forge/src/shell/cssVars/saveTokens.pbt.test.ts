@@ -122,7 +122,8 @@ describe('applyTokenEdits', () => {
           if (!result.ok) return;
           const next = result.definition;
           expect(valueOf(next, at, token)).toEqual(value);
-          const deps = axisDependencies(t)[token]?.all ?? [];
+          // The axes its own entry varies on: a branch written in place may be a literal under one that varies more.
+          const deps = axisDependencies(t)[token]?.own ?? [];
           for (const s of selections(t.axes ?? {})) {
             for (const other of Object.keys(derive(t, s).tokens)) {
               if (other !== token) expect(valueOf(next, s, other)).toEqual(valueOf(t, s, other));
