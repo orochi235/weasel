@@ -63,10 +63,11 @@ async function main(): Promise<void> {
     console.error(`${unmarked.length} changeset(s) have no valid marker and cannot be picked; run npm run check:changesets.`);
   }
   const width = String(pending.length).length;
+  const tagWidth = Math.max(0, ...pending.map((p) => p.meta.tags.join(' ').length));
   pending.forEach((p, i) => {
     const mark = p.meta.pick ? '*' : ' ';
     const rank = String(p.meta.rank).padStart(4);
-    console.log(`${mark}${String(i + 1).padStart(width)} ${rank}  ${p.meta.tags.join(' ').padEnd(18)} ${p.title}`);
+    console.log(`${mark}${String(i + 1).padStart(width)} ${rank}  ${p.meta.tags.join(' ').padEnd(tagWidth)} ${p.title}`);
   });
   if (args.includes('--list')) return;
 
