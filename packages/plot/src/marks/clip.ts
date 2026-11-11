@@ -158,7 +158,9 @@ export function clipPolygon(area: ConvexArea, points: readonly PlotPoint[]): Plo
       if (sp >= 0) out.push(p);
       if ((sp >= 0) !== (sq >= 0)) {
         const [a, b] = nearSegment(area, reach, p, q);
-        out.push(crossing(a, b, sideOf(area, sign, i, a), sideOf(area, sign, i, b)));
+        const [sa, sb] = [sideOf(area, sign, i, a), sideOf(area, sign, i, b)];
+        // An edge the segment crosses only past the reach its ends were moved in to is crossed as it lies.
+        out.push((sa >= 0) !== (sb >= 0) ? crossing(a, b, sa, sb) : crossing(p, q, sp, sq));
       }
     });
   }
