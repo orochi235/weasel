@@ -11,10 +11,10 @@ const TEXT_LINE_HEIGHT = 1.2;
 /** Advance width per character, in font sizes, where nothing measures text. */
 export const GLYPH = 0.6;
 
-/** `text`'s width where nothing measures it: {@link GLYPH} font sizes a character, and its tracking. `style.fontSize`
+/** `text`'s width where nothing measures it: {@link GLYPH} font sizes a code point, and its tracking. `style.fontSize`
  *  unset counts as {@link FALLBACK_LINE}. */
 export function estimatedWidth(text: string, style: RowTextStyle | undefined): number {
-  return text.length * (style?.fontSize ?? FALLBACK_LINE) * GLYPH + trackingWidth(text, style);
+  return Array.from(text).length * (style?.fontSize ?? FALLBACK_LINE) * GLYPH + trackingWidth(text, style);
 }
 
 /** The advance `style.tracking` adds to `text`: one em-fraction after every
@@ -57,7 +57,7 @@ export function canvasMeasure(
     const out = { width: ctx.measureText(text).width + trackingWidth(text, style), height: Math.ceil(size * TEXT_LINE_HEIGHT) };
     const h = ctx.measureText('H');
     if (h.fontBoundingBoxAscent === undefined || h.fontBoundingBoxDescent === undefined || h.actualBoundingBoxAscent === undefined) return out;
-    const em = (v: number) => v / size;
+    const em = (v: number) => (size === 0 ? 0 : v / size);
     return { ...out, capCenter: capCenterFrom({ ascent: em(h.fontBoundingBoxAscent), descent: em(h.fontBoundingBoxDescent), capHeight: em(h.actualBoundingBoxAscent) }, size) };
   };
 }

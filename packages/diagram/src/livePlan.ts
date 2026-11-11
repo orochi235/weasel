@@ -13,9 +13,9 @@ import type { LayoutPlan } from './layout';
 
 /** The shape of a graph, as a string that changes when a node or edge does. */
 export function shapeOf(graph: Graph): string {
-  const nodes = graph.nodes.map((n) => n.id).sort().join(',');
-  const edges = graph.edges.map((e) => `${e.from}>${e.to}`).sort().join(',');
-  return `${nodes}|${edges}`;
+  const nodes = graph.nodes.map((n) => JSON.stringify(n.id)).sort();
+  const edges = graph.edges.map((e) => JSON.stringify([e.from, e.to])).sort();
+  return `[${nodes.join(',')}]|[${edges.join(',')}]`;
 }
 
 /** Whether `b` is `a` again: the same nodes and edges, every node in the same box. */

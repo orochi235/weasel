@@ -88,11 +88,12 @@ function boxOf(g: GroupBodies): Box {
 /** How far `b` has to move to clear `a` by `padding`, along whichever axis is
  *  shorter, or `null` when they are already clear. */
 function clearance(a: Box, b: Box, padding: number): { x: number; y: number } | null {
-  const gapX = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + padding;
-  const gapY = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0) + padding;
-  if (gapX <= 0 || gapY <= 0) return null;
   const dx = (b.x0 + b.x1) - (a.x0 + a.x1);
   const dy = (b.y0 + b.y1) - (a.y0 + a.y1);
+  // From the centers, so a box inside the other is pushed past its far edge, not by its own width.
+  const gapX = (a.x1 - a.x0 + b.x1 - b.x0 - Math.abs(dx)) / 2 + padding;
+  const gapY = (a.y1 - a.y0 + b.y1 - b.y0 - Math.abs(dy)) / 2 + padding;
+  if (gapX <= 0 || gapY <= 0) return null;
   return gapX < gapY
     ? { x: (Math.sign(dx) || 1) * gapX, y: 0 }
     : { x: 0, y: (Math.sign(dy) || 1) * gapY };

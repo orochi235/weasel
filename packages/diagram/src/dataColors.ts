@@ -24,7 +24,10 @@ export function ownEdgeStyle(colors: Partial<EdgeStyle> | undefined): { ownStyle
 export function withColors<T extends object>(style: T, colors: Partial<T> | undefined): T {
   if (colors === undefined) return style;
   const out = { ...style };
-  for (const [k, v] of Object.entries(colors)) if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+  for (const [k, v] of Object.entries(colors)) {
+    // Defined, not assigned, so a `__proto__` key read from JSON stays a key.
+    if (v !== undefined) Object.defineProperty(out, k, { value: v, writable: true, enumerable: true, configurable: true });
+  }
   return out;
 }
 
