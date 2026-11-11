@@ -28,9 +28,8 @@ describe('compilePlot, any chart', () => {
     seen.atLeast('marks', RUNS / 2);
   }, timeoutFor(RUNS, 5));
 
-  it('cuts an xychart\'s and a radar\'s data to the plot area, whatever the values and fixed ends', () => {
+  const cutToPlot = (box: fc.Arbitrary<{ width: number; height: number }>) => () => {
     const seen = tally();
-    const box = fc.record({ width: fc.integer({ min: 100, max: 2000 }), height: fc.integer({ min: 100, max: 2000 }) });
     fc.assert(fc.property(fc.oneof(xyData, radarData), box, (data, b) => {
       // Within a sliver of the area, for the float32 a path stores.
       const eps = 1e-3;
@@ -67,5 +66,9 @@ describe('compilePlot, any chart', () => {
     }), runs(RUNS));
     seen.atLeast('xy', RUNS / 4);
     seen.atLeast('radar', RUNS / 4);
-  }, timeoutFor(RUNS, 5));
+  };
+  it('cuts an xychart\'s and a radar\'s data to the plot area, whatever the values and fixed ends',
+    cutToPlot(fc.record({ width: fc.integer({ min: 100, max: 2000 }), height: fc.integer({ min: 100, max: 2000 }) })), timeoutFor(RUNS, 5));
+  it('cuts the data to the plot area of a box with little room or none',
+    cutToPlot(fc.record({ width: fc.integer({ min: 0, max: 100 }), height: fc.integer({ min: 0, max: 100 }) })), timeoutFor(RUNS, 5));
 });
