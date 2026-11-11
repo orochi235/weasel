@@ -103,7 +103,10 @@ describe('aimOf3d drawn into 2D, property', () => {
       seen.count('panned');
       const now = aimSpace3d(moved!.viewport, 'v').unproject(from);
       expect(now).not.toBeNull();
-      const tol = 1e-8 * (1 + Math.abs(ends.x) + Math.abs(ends.y) + vp.camera.distance);
+      // A grazing ray's hit moves by its rounding times how far out it lands over how high the eye stands.
+      const eye = cameraEye(vp.camera);
+      const out = Math.hypot(ends.x - eye.x, ends.y - eye.z) + Math.hypot(now!.x - eye.x, now!.y - eye.z);
+      const tol = 1e-12 * (1 + out + Math.abs(ends.x) + Math.abs(ends.y)) * (1 + out / Math.max(Math.abs(eye.y), 1e-9));
       expect(Math.abs(now!.x - ends.x)).toBeLessThanOrEqual(tol);
       expect(Math.abs(now!.y - ends.y)).toBeLessThanOrEqual(tol);
     }), runs(RUNS));
