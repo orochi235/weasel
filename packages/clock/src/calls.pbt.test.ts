@@ -236,4 +236,20 @@ describe('shrunk counterexamples, under an override', () => {
     h.override(null);
     expect(h.clock.duration).toBe(Infinity);
   });
+
+  it('an endless clock synced across a gap past the double range stays finite', () => {
+    const { clock } = createClock({ rate: 2 });
+    clock.sync(-1e308);
+    clock.sync(0);
+    expect(clock.elapsed).toBe(Number.MAX_VALUE);
+    expect(clock.rate).toBe(2);
+  });
+
+  it('a ramp to rest across a gap past the double range does not make the playhead NaN', () => {
+    const { clock } = createClock({ duration: 1000, rate: 1 });
+    clock.sync(-1e308);
+    clock.ramp(0, 10);
+    clock.sync(1e308);
+    expect(clock.elapsed).toBe(5);
+  });
 });

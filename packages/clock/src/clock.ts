@@ -169,8 +169,9 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   const wasChanged = run.changed;
   const before = run.elapsed;
   if (!Number.isNaN(run.last) && !run.slept) {
-    const moved = advance(run, hub, Math.max(0, timestamp - run.last));
-    run.elapsed += moved;
+    // Between frame times far apart, the gap and the move overflow; an endless run stops at the largest time it holds.
+    const moved = advance(run, hub, Math.min(Number.MAX_VALUE, Math.max(0, timestamp - run.last)));
+    run.elapsed = Math.min(Number.MAX_VALUE, run.elapsed + moved);
     // A ramp that turns back within the frame still reached the end on its way there.
     if (run.elapsed >= run.span && (run.rate > 0 || moved > 0)) {
       run.elapsed = run.span;
