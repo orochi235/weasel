@@ -53,6 +53,13 @@ describe('reviveTypedArrays', () => {
     back.forEach((a, i) => expect(Object.prototype.toString.call(a)).toBe(Object.prototype.toString.call(all[i])));
   });
 
+  it('writes non-finite numbers and -0 by name, and reads them back (shrunk from the headless protocol property)', () => {
+    const tagged = tagTypedArrays(Float64Array.of(Infinity, -Infinity, Number.NaN, -0, 1));
+    expect(tagged).toEqual({ __ta: 'f64', data: ['Infinity', '-Infinity', 'NaN', '-0', 1] });
+    const back = reviveTypedArrays(JSON.parse(JSON.stringify(tagged))) as Float64Array;
+    expect(Array.from(back)).toEqual([Infinity, -Infinity, Number.NaN, -0, 1]);
+  });
+
   it('copies an own `__proto__` field as a field, as JSON.parse made it (shrunk from the animator clip property)', () => {
     const value = JSON.parse('{"__proto__":{"x":1},"y":[0]}') as object;
     for (const copy of [reviveTypedArrays(value), tagTypedArrays(value)] as object[]) {
