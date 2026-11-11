@@ -83,15 +83,18 @@ function snapped(path: Path, m: GlMat3, map: WindowMap): number[] {
 /** Whether pixel `(px, py)`'s center is inside the convex ring `p`, by the rasterizer's tie rule. */
 function inRing(p: readonly number[], px: number, py: number): boolean {
   const X = px * U + U / 2, Y = py * U + U / 2;
+  let edges = 0;
   for (let i = 0; i < p.length; i += 2) {
     const vx = p[i]!, vy = p[i + 1]!;
     const dx = p[(i + 2) % p.length]! - vx, dy = p[(i + 3) % p.length]! - vy;
     if (dx === 0 && dy === 0) continue;
+    edges++;
     const a = -dy, b = dx;
     const side = a * (X - vx) + b * (Y - vy);
     if (side < 0 || (side === 0 && !(a > 0 || (a === 0 && b > 0)))) return false;
   }
-  return true;
+  // A clip snapped to one point holds nothing.
+  return edges > 0;
 }
 
 /** Whether pixel `(px, py)`'s center passes every plane of `set`, as the shader tests it. */

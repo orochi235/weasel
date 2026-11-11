@@ -39,7 +39,7 @@ const command = fc.record({
   maxWidth: fc.option(spread(20, 400), { nil: undefined }),
   align: fc.constantFrom('left' as const, 'center' as const, 'right' as const, 'justify' as const),
   height: fc.option(spread(0, 300), { nil: undefined }),
-  verticalAlign: fc.option(fc.constantFrom('top' as const, 'middle' as const, 'bottom' as const), { nil: undefined }),
+  verticalAlign: fc.option(fc.constantFrom('top' as const, 'center' as const, 'bottom' as const), { nil: undefined }),
 }).map((c) => textCommandFromRuns(c.x, c.y, c.runs, { fontFamily: 'inter', fontSize: 16, align: c.align }, c.maxWidth, c.height, c.verticalAlign, { fill: { paint: { kind: 'solid', color: '#000' } } }) as TextDrawCommand);
 
 /** Every screen point `cmd` paints a glyph quad or a rule through under `m`. */
