@@ -74,8 +74,10 @@ function indexRange(a: { pitch: number; offset: number; from: number; to: number
 
 /** The line at or before `v` and the one after it, nearer first, the upper
  *  on a tie; at an end of the lines, the two nearest. Empty where the axis
- *  has no line. */
+ *  has no line, for a value that is not finite, and where a pitch is too fine
+ *  to count its lines out to `v`. */
 export function linesNear(a: AxisLines, v: number): number[] {
+  if (!Number.isFinite(v)) return [];
   let pair: number[];
   if ('at' in a) {
     const i = Math.min(Math.max(0, lastAtOrBefore(a.at, v)), Math.max(0, a.at.length - 2));
@@ -85,6 +87,7 @@ export function linesNear(a: AxisLines, v: number): number[] {
     if (lo > hi) return [];
     const k = Math.min(Math.max(Math.floor((v - a.offset) / a.pitch), lo), Math.max(lo, hi - 1));
     pair = k + 1 <= hi ? [a.offset + k * a.pitch, a.offset + (k + 1) * a.pitch] : [a.offset + k * a.pitch];
+    if (!pair.every(Number.isFinite)) return [];
   }
   return pair.length === 2 && v - pair[0]! >= pair[1]! - v ? [pair[1]!, pair[0]!] : pair;
 }
@@ -110,8 +113,10 @@ export function linesIn(a: AxisLines, lo: number, hi: number): number[] {
 
 /** The cell holding `v`: the gap between two adjacent lines, numbered from
  *  the line through the offset (or the first explicit line). An axis with
- *  no lines is one cell, `0`, without end. `null` outside the lines. */
+ *  no lines is one cell, `0`, without end. `null` outside the lines, and for
+ *  a value that is not finite. */
 export function cellOf(a: AxisLines | null, v: number): { index: number; lo: number; hi: number } | null {
+  if (!Number.isFinite(v)) return null;
   if (!a) return { index: 0, lo: -Infinity, hi: Infinity };
   if ('at' in a) {
     const i = lastAtOrBefore(a.at, v);
