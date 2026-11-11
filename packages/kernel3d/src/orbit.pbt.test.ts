@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { add, scale, type Vec3 } from '@weasel-js/geom/3d';
+import { add, len, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { dollyBy, dollyToward, orbitBy, panBy, type Camera3d } from './camera';
-import { camera, isFinite3, maxDiff3, runs, tally, timeoutFor, v3, viewport } from './pbt.fixture';
+import { camera, isFinite3, maxDiff3, paneAt, paneFractions, runs, tally, timeoutFor, v3, viewport } from './pbt.fixture';
 import { projectPoint, rayAt } from './project';
 
 const RUNS = 300;
@@ -96,15 +96,25 @@ describe('orbit camera gestures, property', () => {
 });
 
 describe('the picture, metamorphic', () => {
-  it('is the same with the world and the camera moved together', () => {
-    fc.assert(fc.property(viewport, v3(200), v3(1e4), (vp, p, by) => {
+  it('is the same with the world and the camera moved together, however far, and casts the same rays moved', () => {
+    const far = fc.oneof(v3(1e4), v3(1e9));
+    fc.assert(fc.property(viewport, v3(200), far, paneFractions(), (vp, p, by, f) => {
       const moved = { ...vp, camera: { ...vp.camera, target: add(vp.camera.target, by) } };
+      const reach = 1 + Math.abs(by.x) + Math.abs(by.y) + Math.abs(by.z);
       const a = projectPoint(p, vp);
       const b = projectPoint(add(p, by), moved);
-      if (a === null || b === null) return;
-      const tol = 1e-7 * (1 + Math.abs(a.x) + Math.abs(a.y)) * (1 + Math.abs(by.x) + Math.abs(by.y) + Math.abs(by.z));
-      near(b.x, a.x, tol);
-      near(b.y, a.y, tol);
+      if (a !== null && b !== null) {
+        const tol = 1e-7 * (1 + Math.abs(a.x) + Math.abs(a.y)) * reach;
+        near(b.x, a.x, tol);
+        near(b.y, a.y, tol);
+      }
+      const at = paneAt(vp, f);
+      const ra = rayAt(vp, at)!;
+      const rb = rayAt(moved, at);
+      expect(rb).not.toBeNull();
+      const span = len(ra.direction);
+      expect(maxDiff3(sub(rb!.origin, by), ra.origin)).toBeLessThanOrEqual(1e-13 * reach + 1e-9 * span);
+      expect(maxDiff3(rb!.direction, ra.direction)).toBeLessThanOrEqual(1e-13 * reach * span + 1e-9 * span);
     }), runs(RUNS));
   }, T);
 
