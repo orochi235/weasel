@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DropTarget } from '@weasel-js/core';
 import { nearestWithin } from './snaps';
 import { gridSlots } from './strategies/arrangements';
+import { snapPoint } from './strategies/snapPoint';
 
 type P = { x: number; y: number };
 const at = (x: number, y: number): DropTarget<P> => ({ pose: { x, y }, origin: { x, y } });
@@ -20,5 +21,12 @@ describe('drop-target pickers, shrunk from the property tests', () => {
     expect(gridSlots({ cols: 0 })(b, 2)).toEqual([]);
     expect(gridSlots({ cols: 2.5 })(b, 3)).toEqual(gridSlots({ cols: 2 })(b, 3));
     expect(gridSlots({ cols: 2, rows: NaN })(b, 1)).toEqual(gridSlots({ cols: 2 })(b, 1));
+  });
+
+  it('snapPoint offers no grid points on an infinite spacing', () => {
+    // It offered one at (NaN, NaN): the corner plus 0 × Infinity.
+    const layout = snapPoint<{ x: number; y: number; width: number; height: number }>({ pattern: 'grid', gridSpacing: Infinity });
+    const pose = { x: 0, y: 0, width: 1, height: 1 };
+    expect(layout.getDropTargets({ id: 'C', bounds: { x: 0, y: 0, width: 0.125, height: 0.125 } }, [], { id: 'z', originPose: pose, pose, sourceContainerId: null })).toEqual([]);
   });
 });

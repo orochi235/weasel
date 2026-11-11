@@ -13,7 +13,7 @@ export type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
 export interface SnapPointOptions<TPose> {
   pattern: SnapPattern;
   /** Spacing for the 'grid' pattern, in world units. Default 50; one that is
-   *  not positive offers no points. A grid of more than 129 × 129 points
+   *  not a positive finite number offers no points. A grid of more than 129 × 129 points
    *  offers only the 129 × 129 around the dragged child's pose. */
   gridSpacing?: number;
   /** Tolerance for the default snap policy (nearestWithin). Default Infinity. */
@@ -56,7 +56,7 @@ function buildPoints(
       return [{ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }];
     case 'grid': {
       const out: Vec2[] = [];
-      if (!(gridSpacing > 0)) return out;
+      if (!(gridSpacing > 0 && gridSpacing < Infinity)) return out;
       const [i0, i1] = gridRange(Math.floor(bounds.width / gridSpacing), (near.x - bounds.x) / gridSpacing);
       const [j0, j1] = gridRange(Math.floor(bounds.height / gridSpacing), (near.y - bounds.y) / gridSpacing);
       // Written so a NaN range, which a non-finite container gives, offers nothing too.
