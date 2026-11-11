@@ -1,4 +1,4 @@
-import { jsonLossWarner, parse } from './json';
+import { jsonLossWarner, parse, toJson } from './json';
 import type { SyncStorageAdapter } from './types';
 
 function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean): SyncStorageAdapter {
@@ -41,7 +41,7 @@ function webStorageAdapter(area: () => Storage, name: string, crossTab: boolean)
     set: async (key, value) => {
       if (value === undefined) return adapter.delete(key);
       warnLoss(key, value);
-      area().setItem(key, JSON.stringify(value));
+      area().setItem(key, toJson(value));
       note(key, true);
     },
     delete: async (key) => {

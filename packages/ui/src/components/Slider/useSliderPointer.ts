@@ -85,7 +85,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
     const next = thumbs.map(t => ({ ...t })) as T[];
     const [bLo, bHi] = resolveBounds(next[index], { thumbs: next, index }, min, max);
     let moved = clamp(v, bLo, bHi);
-    if (constraint === 'ordered') moved = clampOrdered(moved, next, index, min, max, step);
+    if (constraint === 'ordered') moved = clampOrdered(moved, next, index, bLo, bHi, step);
     next[index] = { ...next[index], value: moved };
     onInput(next);
     // preventDefault above suppresses the focus the press would give; the arrow keys are on the thumb.

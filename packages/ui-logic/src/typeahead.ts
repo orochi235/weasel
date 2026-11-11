@@ -30,7 +30,7 @@ export function typeaheadMatch<T>(
 ): number | null {
   const q = query.toLowerCase();
   const n = items.length;
-  const start = from == null ? 0 : isOneChar(q) ? from + 1 : from;
+  const start = from == null ? 0 : isOneChar(query) ? from + 1 : from;
   for (let k = 0; k < n; k++) {
     const i = (start + k) % n;
     const item = items[i]!;

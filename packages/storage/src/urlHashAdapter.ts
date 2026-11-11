@@ -1,4 +1,4 @@
-import { jsonLossWarner, parse } from './json';
+import { jsonLossWarner, parse, toJson } from './json';
 import type { StorageAdapter, StorageChange } from './types';
 import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
@@ -54,11 +54,13 @@ export const urlHashAdapter: StorageAdapter = {
     if (value === undefined) return urlHashAdapter.delete(key);
     warnLoss(key, value);
     const map = readHashMap();
-    map[key] = JSON.stringify(value);
+    map[key] = toJson(value);
     writeHashMap(map);
   },
   delete: async (key) => {
     const map = readHashMap();
+    // Nothing to remove: a fragment someone else wrote, an anchor say, stays as it is.
+    if (!(key in map)) return;
     delete map[key];
     writeHashMap(map);
   },

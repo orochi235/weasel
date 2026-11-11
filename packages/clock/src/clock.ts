@@ -70,8 +70,14 @@ function passOf(run: Run): { pass: number; into: number } {
 function placeIn(run: Run, pass: number, into: number): void {
   const last = Math.ceil(passesOf(run.loop)) - 1;
   const within = Math.min(Math.max(0, into), run.duration);
-  run.elapsed = clamp(run, Math.min(pass, last) * run.duration + within);
-  run.edge = within > 0 && run.elapsed > 0 && run.elapsed % run.duration === 0;
+  const at = Math.min(pass, last);
+  // A pass's end is written as the next pass's start, which is how `placeOf` finds the line. A sum from the later
+  // half of a pass that rounds onto or past that line stands at its end.
+  const line = (at + 1) * run.duration;
+  const sum = at * run.duration + within;
+  const end = within > 0 && (within === run.duration || (within > run.duration / 2 && sum >= line));
+  run.elapsed = clamp(run, end ? line : sum);
+  run.edge = run.elapsed > 0 && end;
 }
 
 function change(run: Run, hub: Hub): void {
@@ -86,10 +92,13 @@ function setDuration(run: Run, hub: Hub, next: number): void {
   if (next === run.duration) return;
   if (Number.isFinite(run.duration) && Number.isFinite(next)) {
     const ended = run.elapsed >= run.span;
-    const at = passAt(run) + phaseAt(run);
+    const pass = passAt(run);
+    const phase = phaseAt(run);
     run.duration = next;
     run.span = run.duration * passesOf(run.loop);
-    run.elapsed = ended ? run.span : clamp(run, at * run.duration);
+    // Not `(pass + phase) * next`: far out, the sum rounds a phase near 1 up into the next pass.
+    if (ended) run.elapsed = run.span;
+    else placeIn(run, pass, phase * next);
   } else {
     run.duration = next;
     run.span = run.duration * passesOf(run.loop);
@@ -130,15 +139,16 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   checkLoop(declared.loop);
   const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
   const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
-  const shown = run.origin + into;
+  // Moved by the change of origin alone, so an unchanged origin leaves the time within the pass exactly as it was.
+  const within = into + (run.origin - origin);
   run.duration = duration;
   run.loop = declared.loop;
   run.span = duration * passesOf(run.loop);
   run.origin = origin;
   run.speed = declared.speed;
-  if (Number.isFinite(duration)) placeIn(run, pass, shown - origin);
+  if (Number.isFinite(duration)) placeIn(run, pass, within);
   else {
-    run.elapsed = clamp(run, shown - origin);
+    run.elapsed = clamp(run, within);
     run.edge = false;
   }
   change(run, hub);
@@ -242,7 +252,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
         clock.rate = to;
         return;
       }
-      run.ramp = { to, left: over };
+      run.ramp = { to, left: over, over };
       change(run, hub);
       hub.subs.emit();
     },

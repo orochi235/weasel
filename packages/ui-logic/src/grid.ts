@@ -13,7 +13,7 @@ export type LastRow = 'start' | 'center' | 'end' | 'fill';
 
 /** How a run of items tiles. */
 export interface Tiling {
-  /** Items per row: a whole number, one for anything below one. */
+  /** Items per row: a whole number, one for anything below one, and at most 2^24. */
   columns: number;
   /** Where a last row shorter than `columns` sits. Default `'start'`. */
   lastRow?: LastRow;
@@ -48,8 +48,12 @@ export interface TileGrid {
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
-/** A column count as a grid can lay out: its whole part, and one for anything below one or not a number. */
-const wholeColumns = (columns: number): number => (columns >= 1 ? Math.floor(columns) : 1);
+/** The most columns a grid lays out: past it the tracks a stretched row needs stop being whole numbers. */
+const MAX_COLUMNS = 2 ** 24;
+
+/** A column count as a grid can lay out: its whole part, one for anything below one or not a number, and
+ *  {@link MAX_COLUMNS} for anything past it, `Infinity` included. */
+const wholeColumns = (columns: number): number => (columns >= 1 ? Math.min(Math.floor(columns), MAX_COLUMNS) : 1);
 
 /** How `count` items tile under `spec`. */
 export function tileGrid(count: number, spec: Tiling): TileGrid {

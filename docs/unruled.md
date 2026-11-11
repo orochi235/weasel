@@ -596,6 +596,24 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- Ruled 2026-11-10 (my call, overnight sweep): a tiling's `columns` is held to at most 2^24, so an `Infinity`
+  count lays its items out in one row with finite, whole tracks; past that, a stretched row's tracks stop being
+  whole numbers. Why: an input past the double range is handled at its limit.
+- Ruled 2026-11-10 (my call, overnight sweep): an ordered slider thumb whose neighbor leaves no room for the gap
+  it keeps sits between its neighbors, and failing that inside its bounds, never past them; a drag and a track
+  click clamp it to the thumb's own bounds as its keys already did. Why: the bounds are the thumb's limits, and
+  the old answer, a gap past the neighbor, left them.
+- Ruled 2026-11-10 (my call, overnight sweep): a `range` sweep rounds a step to twelve digits only where that
+  is within float drift of it, and walks its ends exactly, so a start of `123456.7890123` is not shortened.
+  Labels still show twelve digits, and `frames` of a run that ends always shows that end. Why: "both ends
+  included" names the ends given.
+- Ruled 2026-11-10 (my call, overnight sweep): `encodeUrlHash` writes a lone surrogate as U+FFFD with a
+  warning, and the JSON adapters write a `bigint` as its decimal digits with their usual loss warning. Why: a
+  writer writes a placeholder and warns rather than throw on a value it cannot keep.
+- Ruled 2026-11-10 (my call, overnight sweep): `urlHashAdapter.delete` of a key the fragment does not hold
+  leaves the fragment alone, and `RecordCache.delete` of a record whose delete is still queued does nothing
+  and reports nothing. Why: an edit that would change nothing does nothing.
+
 - 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than
