@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { aimSpace2d, type AimPoint } from '@weasel-js/core';
 import { dot, normalize, sub } from '@weasel-js/geom/3d';
-import { aimOf3d, aimSpace3d } from './aim';
+import { aimOf3d, aimSpace3d, type Aim3d } from './aim';
 import { cameraEye } from './camera';
 import { groundHit } from './ground';
 import { maxDiff3, paneAt, paneFractions, runs, tally, timeoutFor, viewport } from './pbt.fixture';
@@ -78,12 +78,12 @@ describe('aimOf3d drawn into 2D, property', () => {
       fc.record({ x: fc.double({ min: -500, max: 500, noNaN: true }), y: fc.double({ min: -500, max: 500, noNaN: true }) }),
       (vp, from, to) => {
         const aim = aimOf3d(vp, 'v');
-        const moved = aim.pannedIn(FLAT, from, to);
+        const moved = aim.pannedIn(FLAT, from, to) as Aim3d | null;
         expect(moved).not.toBeNull();
         const c = moved!.viewport.camera;
         const tol = 1e-12 * (1 + Math.abs(from.x) + Math.abs(from.y) + Math.abs(to.x) + Math.abs(to.y) + 100);
         expect(maxDiff3(c.target, { x: vp.camera.target.x + to.x - from.x, y: vp.camera.target.y, z: vp.camera.target.z + to.y - from.y })).toBeLessThanOrEqual(tol);
-        const back = moved!.pannedIn(FLAT, to, from)!;
+        const back = moved!.pannedIn(FLAT, to, from) as Aim3d;
         expect(maxDiff3(back.viewport.camera.target, vp.camera.target)).toBeLessThanOrEqual(2 * tol);
       }), runs(RUNS));
   }, T);
@@ -95,7 +95,7 @@ describe('aimOf3d drawn into 2D, property', () => {
       const from = { x: a.fx * vp.width, y: a.fy * vp.height };
       const to = { x: b.fx * vp.width, y: b.fy * vp.height };
       const ends = space.unproject(to);
-      const moved = aimOf3d(vp, 'v').pannedIn(space, from, to);
+      const moved = aimOf3d(vp, 'v').pannedIn(space, from, to) as Aim3d | null;
       if (!space.unproject(from) || !ends) {
         expect(moved).toBeNull();
         return;

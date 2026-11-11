@@ -31,7 +31,7 @@ const signed = fc.tuple(magnitude, fc.boolean(), fc.double({ min: 0, max: 1, noN
 function collectOf(probes: { id: string; at: Vec3; role: 'pointer' }[], reach = Infinity): SnapCollect<Vec3> {
   return {
     gesture: 'point', probes, delta0: { x: 0, y: 0, z: 0 }, exclude: [],
-    reachWorld: (px) => px * reach, reachPx: 1,
+    reachWorld: (px: number) => px * reach, reachPx: 1,
   } as unknown as SnapCollect<Vec3>;
 }
 

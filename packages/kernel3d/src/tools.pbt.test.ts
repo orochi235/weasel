@@ -80,6 +80,8 @@ function stepOf(m: Model, input: { x: number; y: number } | number): Camera3d {
   return m.kind === 'orbit' ? orbitBy(m.origin, -dx * ORBIT_RATE, dy * ORBIT_RATE) : panBy(m.origin, dx, dy, PANE.height);
 }
 
+type Handle = { onMove?(m: InvocationCtx): void };
+
 const ctxOf = (deps: ActionDeps, more: Partial<InvocationCtx> = {}) =>
   ({ world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: NO_MODS, deps, ...more }) as InvocationCtx;
 
@@ -89,13 +91,13 @@ describe('the camera actions through long runs of gestures, stateful', () => {
     fc.assert(fc.property(camera, camera, fc.boolean(), fc.array(cmd, { minLength: 10, maxLength: 80 }), (c0, homeCam, lagging, cmds) => {
       const host = hostOf(c0, lagging, homeCam);
       const deps = { camera3d: host.dep } as unknown as ActionDeps;
-      let handle: { onMove?(m: InvocationCtx): void } | null = null;
+      let handle: Handle | null = null;
       let m: Model | null = null;
       for (const c of cmds) {
         if (c.t === 'start') {
           const action = c.kind === 'orbit' ? orbitAction : c.kind === 'pan' ? panAction : pinchDollyAction;
           const start = host.dep.get();
-          handle = (action.invoker as OngoingInvoker).start(ctxOf(deps, c.kind === 'pinch' ? { multiTouch: { spread: c.spread, centroid: c.at } } as Partial<InvocationCtx> : {})) as typeof handle;
+          handle = (action.invoker as OngoingInvoker).start(ctxOf(deps, c.kind === 'pinch' ? { multiTouch: { spread: c.spread, centroid: c.at } } as Partial<InvocationCtx> : {})) as unknown as Handle;
           const zero = c.kind === 'pinch' ? 1 : { x: 0, y: 0 };
           m = { kind: c.kind, origin: start, from: zero, reached: zero, start, mine: new Set(), shown: start, at: c.at, startSpread: c.spread, touched: false, outside: false };
           seen.count(`start ${c.kind}`);
