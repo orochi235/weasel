@@ -106,14 +106,20 @@ describe('projectAabbToScreen, property', () => {
   it('covers the screen point of every point of the box the camera draws', () => {
     const seen = tally();
     fc.assert(fc.property(
-      viewport, paneFractions(), fc.double({ min: 0, max: 0.05, noNaN: true }), v3(5), v3(5), fc.tuple(unit, unit, unit),
-      (vp, f, t, a, b, [u, v, w]) => {
-        const box = boxNear(vp, drawn(vp, f.fx, f.fy, t), a, b);
-        const inside: Vec3 = {
+      viewport, paneFractions(), fc.integer({ min: 1, max: 60 }).map((n) => n / 10_000), v3(5), v3(5), fc.tuple(unit, unit, unit), fc.oneof(unit, fc.constant(0)),
+      (vp, f, t, a, b, [u, v, w], k) => {
+        // A box holding a point the camera draws, and a point on the way from it to somewhere else in the box.
+        const p = drawn(vp, f.fx, f.fy, t);
+        const box: Aabb = {
+          min: { x: p.x - Math.abs(a.x), y: p.y - Math.abs(a.y), z: p.z - Math.abs(a.z) },
+          max: { x: p.x + Math.abs(b.x), y: p.y + Math.abs(b.y), z: p.z + Math.abs(b.z) },
+        };
+        const q: Vec3 = {
           x: box.min.x + (box.max.x - box.min.x) * u,
           y: box.min.y + (box.max.y - box.min.y) * v,
           z: box.min.z + (box.max.z - box.min.z) * w,
         };
+        const inside = add(p, scale(sub(q, p), k));
         const rect = projectAabbToScreen(box, viewProjectionOf(vp), rectOf(vp));
         const depth = depthOf(vp, inside);
         const s = depth >= vp.camera.near * 1.001 && depth <= vp.camera.far * 0.999 ? projectPoint(inside, vp) : null;
@@ -121,17 +127,37 @@ describe('projectAabbToScreen, property', () => {
           seen.count('not drawn');
           return;
         }
-        seen.count(depthOf(vp, box.min) < vp.camera.near || depthOf(vp, box.max) < vp.camera.near ? 'straddling' : 'drawn');
+        const corners = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({ x: i & 1 ? box.max.x : box.min.x, y: i & 2 ? box.max.y : box.min.y, z: i & 4 ? box.max.z : box.min.z }));
+        seen.count(corners.some((c) => depthOf(vp, c) < 0) ? 'behind the eye' : 'drawn');
         expect(rect).not.toBeNull();
         const tol = 1e-6 * (1 + Math.abs(rect!.x) + Math.abs(rect!.y) + rect!.width + rect!.height);
         expect(s.x).toBeGreaterThanOrEqual(rect!.x - tol);
         expect(s.x).toBeLessThanOrEqual(rect!.x + rect!.width + tol);
         expect(s.y).toBeGreaterThanOrEqual(rect!.y - tol);
         expect(s.y).toBeLessThanOrEqual(rect!.y + rect!.height + tol);
+        // Where each edge crosses just in front of the near plane: the points corner-dropping loses.
+        const front = vp.camera.near * 1.01;
+        for (let i = 0; i < 8; i++) {
+          for (const bit of [1, 2, 4]) {
+            if (i & bit) continue;
+            const [c0, c1] = [corners[i]!, corners[i | bit]!];
+            const [d0, d1] = [depthOf(vp, c0), depthOf(vp, c1)];
+            if ((d0 - front) * (d1 - front) >= 0) continue;
+            const e = projectPoint(add(c0, scale(sub(c1, c0), (front - d0) / (d1 - d0))), vp);
+            if (!e) continue;
+            seen.count('edge crossing');
+            const big = 1e-6 * (1 + Math.abs(e.x) + Math.abs(e.y)) + tol;
+            expect(e.x).toBeGreaterThanOrEqual(rect!.x - big);
+            expect(e.x).toBeLessThanOrEqual(rect!.x + rect!.width + big);
+            expect(e.y).toBeGreaterThanOrEqual(rect!.y - big);
+            expect(e.y).toBeLessThanOrEqual(rect!.y + rect!.height + big);
+          }
+        }
       },
     ), runs(RUNS));
     seen.atLeast('drawn', 30);
-    seen.atLeast('straddling', 10);
+    seen.atLeast('edge crossing', 30);
+    seen.atLeast('behind the eye', 8);
   }, T);
 
   it('reports a point box drawn as the point itself', () => {
