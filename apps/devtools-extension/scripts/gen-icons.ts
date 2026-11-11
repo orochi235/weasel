@@ -1,5 +1,5 @@
 // Renders the extension's icons into public/icons/: the wordmark's "w", carrying the wordmark's whole
-// gradient left to right, centered on a transparent square.
+// gradient left to right, stretched to fill a transparent square edge to edge.
 // Rerun after the wordmark changes: `npm run gen:devtools-extension-icons`.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -16,8 +16,6 @@ const W_PATH =
   'L1391 -1118H1710L1378 0H1073L949 -431Q931 -496 913 -574.5Q895 -653 878 -734.5Q861 -816 843 -887H896' +
   'Q879 -816 861.5 -734.5Q844 -653 826 -574Q808 -495 790 -431L666 0Z';
 const W_BOX = { x: 31, y: -1118, w: 1679, h: 1118 };
-/** Space left on each side, as a share of the icon's edge. */
-const MARGIN = 1 / 32;
 
 /** The wordmark's gradient stops, read from its stylesheet so the two can't drift apart. */
 function wordmarkStops(): { color: string; offset: string }[] {
@@ -34,14 +32,12 @@ function wordmarkStops(): { color: string; offset: string }[] {
 }
 
 function iconSvg(): string {
-  const side = W_BOX.w / (1 - 2 * MARGIN);
-  const x = W_BOX.x - (side - W_BOX.w) / 2;
-  const y = W_BOX.y - (side - W_BOX.h) / 2;
   const stops = wordmarkStops()
     .map((s) => `<stop offset="${s.offset}" stop-color="${s.color}"/>`)
     .join('');
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${side} ${side}">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W_BOX.w}" height="${W_BOX.w}" ` +
+    `viewBox="${W_BOX.x} ${W_BOX.y} ${W_BOX.w} ${W_BOX.h}" preserveAspectRatio="none">` +
     `<defs><linearGradient id="mark" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient></defs>` +
     `<path d="${W_PATH}" fill="url(#mark)"/></svg>`
   );
