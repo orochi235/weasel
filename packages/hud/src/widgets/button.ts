@@ -1,3 +1,4 @@
+import { createEmitter, type Emitter } from '@weasel-js/registry';
 import { createRevision } from '../widget';
 import type { Widget, WidgetBounds, HudDrawCtx, HudKeyEvent, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
@@ -129,12 +130,10 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
   let label = opts.label;
   let press: PressState = IDLE_PRESS;
 
-  const handlers: Record<ButtonEvent, Set<ButtonHandler>> = {
-    press: new Set(),
-    hover: new Set(),
-    leave: new Set(),
-  };
-  const emit = (e: ButtonEvent) => { for (const h of handlers[e]) h(); };
+  // Each report goes to the listeners held as it starts, and one that throws leaves the rest heard.
+  const reports: Record<ButtonEvent, Emitter> = { press: createEmitter(), hover: createEmitter(), leave: createEmitter() };
+  const offs: Record<ButtonEvent, Map<ButtonHandler, () => void>> = { press: new Map(), hover: new Map(), leave: new Map() };
+  const emit = (e: ButtonEvent) => { reports[e].emit(); };
 
   const isInside = (x: number, y: number) =>
     x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
@@ -160,8 +159,8 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; rev.changed(); },
     setHidden(h) { assertNotDisposed(); hidden = h; rev.changed(); },
     setLabel(l) { assertNotDisposed(); label = l; rev.changed(); },
-    on(event, handler) { assertNotDisposed(); handlers[event].add(handler); },
-    off(event, handler) { assertNotDisposed(); handlers[event].delete(handler); },
+    on(event, handler) { assertNotDisposed(); offs[event].set(handler, reports[event].subscribe(handler)); },
+    off(event, handler) { assertNotDisposed(); offs[event].get(handler)?.(); offs[event].delete(handler); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       return hudButton.draw({ label, size: opts.size, press }, {
         bounds, ctx, fill: opts.fill, hoverFill: opts.hoverFill, pressedFill: opts.pressedFill,
@@ -192,7 +191,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
       if (disposed) return;
       disposed = true;
       opts.removeFromHud?.();
-      for (const set of Object.values(handlers)) set.clear();
+      for (const held of Object.values(offs)) { for (const off of held.values()) off(); held.clear(); }
     },
   };
 }
