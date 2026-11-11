@@ -15,6 +15,7 @@ import { createSceneSelection } from './sceneSelection';
 import { createSceneState } from './sceneState';
 import { systemLayerRecord } from './layerStack';
 import { layerFromSerialized, specsFromSerialized, type SpecsFromSerializedOptions } from './serialization';
+import { assertSnapshotShape } from './snapshotShape';
 import { resolveLayoutFrame, runLayoutPass, sceneLayoutSource } from './layoutPass';
 import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
@@ -209,6 +210,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     quantize?: SceneOptions<TData, TLayer, TPose>['quantize'];
   } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
+  assertSnapshotShape(json);
   return buildScene(
     options,
     json.systemLayers.map(layerFromSerialized),

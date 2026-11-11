@@ -11,6 +11,7 @@ import type { PoseComposition } from './composeFrame';
 import { RIGID_POSE_COMPOSITION } from './composePose';
 import { localizeWorldPoses } from './worldSave';
 import { withKitRegistry } from './kitRegistry';
+import { assertSnapshotShape } from './snapshotShape';
 import type {
   AddNodeSpec, LayerRecord, Node, NodeId, SavedScene, SceneRegistry, SerializedLayer, SerializedNode, SerializedNodeV1,
   SerializedScene,
@@ -136,13 +137,14 @@ export interface SkippedKey {
  *  (new instance) and `Scene.loadState` (in-place). Validates version and
  *  resolves every `NODE_FN_FIELDS` key → function via the registry, with the
  *  kit's own entries under it as every scene has them;
- *  throws on an unsupported version, and on an unknown registry key unless
- *  `opts.unknownKeys` is `'skip'`. */
+ *  throws on a snapshot of the wrong shape (`SnapshotShapeError`), on an unsupported version, and on an unknown
+ *  registry key unless `opts.unknownKeys` is `'skip'`. */
 export function specsFromSerialized<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry: SceneRegistry<TPose, TData, TLayer>,
   opts: SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
+  assertSnapshotShape(json);
   const specs = currentSpecs(json, withKitRegistry(registry), opts);
   if (json.version === 3) return specs;
   return localizeWorldPoses(specs, opts.composition ?? (RIGID_POSE_COMPOSITION as PoseComposition<TPose>));
