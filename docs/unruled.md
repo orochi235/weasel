@@ -700,6 +700,24 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-10 (property tests): `blendTheme` follows the split-pref ruling above: an infinite share takes its
   whole axis, split equally among several infinite ones, and the finite shares on that axis drop out. It
   used to blend to `NaN`. Not ruled: chosen to match prefs.
+- Ruled 2026-11-10 (my call, overnight sweep): registry's `isPlainObject` takes a prototype from another realm
+  as its `Object.prototype` only when it holds its own `hasOwnProperty` and `isPrototypeOf`, so a bare
+  `Object.create(null)` standing in as a prototype is not one. storage's JSON check had the stricter test; the two
+  are now one definition.
+- Ruled 2026-11-10 (my call, overnight sweep): `deepEqual` reads an array's hole as `undefined`, so `[, 1]` equals
+  `[undefined, 1]`: a hole reads as `undefined`, and JSON cannot tell the two apart either.
+- Ruled 2026-11-10 (my call, overnight sweep): `matchQuery` folds `ς` to `σ`, as Unicode case folding does, so a
+  text holding the query exactly matches it wherever the sigma falls.
+- Ruled 2026-11-10 (my call, overnight sweep): an emitter's unsubscribe releases only the subscription it came
+  from: called again after its listener subscribed anew, it does nothing.
+- Ruled 2026-11-10 (my call, overnight sweep): a listener subscribed both to a mode registry and to a
+  `createScopingDim` or `createModeDecorations` built on it holds two subscriptions, so it hears a mode change
+  from each, and leaving one keeps the other. Sharing one subscription is what let leaving one drop both.
+- Ruled 2026-11-10 (my call, overnight sweep): `freshId` throws a `RangeError` when counting from `from` would run
+  past the largest number, rather than loop.
+- Ruled 2026-11-10 (my call, overnight sweep): a menu number row's default display stops at 20 decimal places,
+  quantity's cap, so a value with more reads back within half the twentieth place, and one under 5e-21 as 0. Left
+  as is: a row that needs finer values names its own display.
 
 ## Diagram, audio, and labkit
 
@@ -1169,4 +1187,5 @@ Calls the lanes made without a ruling:
 - Open: a clearable number pref with a numeric default reads back as the default once cleared in a store.
 - Open: negative stroke widths pass through the draw.io, DOT, and Mermaid readers unchanged.
 - Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
-- Open: which edge an RTL menu favors when it fits on neither side.
+- Open: which edge an RTL menu favors when it fits on neither side, or is wider than the viewport. menu's placement
+  property skips both cases (2026-11-10).
