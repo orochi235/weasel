@@ -323,8 +323,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   plane keeps its own copies of `pan`, `zoom`, and `anchor` pairs, so a caller's later edit to an object it
   passed is not a change the plane misses.
 - Ruled 2026-11-10 (my call, overnight sweep): loupe's `placeBand` never answers a factor below `ZOOM_FLOOR`, the
-  floor the loupe model holds its own factor to: on a host with no room it gives a lens a few billionths of a pixel
-  across rather than a factor of 0 that a point in the lens could not be mapped back through.
+  floor the loupe model holds its own factor to: on a host with no room it gives a lens of no size rather than a
+  factor of 0 that a point in the lens could not be mapped back through.
 - Ruled 2026-11-10 (my call, overnight sweep): the loupe model's `setFactor` asks the surface for no redraw when the
   factor it clamps to is the one it has, as `setMode` already did.
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws

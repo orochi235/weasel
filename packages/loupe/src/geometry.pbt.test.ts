@@ -95,14 +95,19 @@ describe('placeBand', () => {
       expect(got.factor).toBeGreaterThan(0);
       expect(got.factor).toBeLessThanOrEqual(Math.max(f, ZOOM_FLOOR));
       expect(got.shows).toEqual({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
-      expect(got.width).toBe(b.w * got.factor);
-      expect(got.height).toBe(b.h * got.factor);
+      expect(got.width).toBe(Math.min(b.w * got.factor, maxWidth));
+      expect(got.height).toBe(maxHeight === undefined ? b.h * got.factor : Math.min(b.h * got.factor, maxHeight));
       seen.count(got.factor < f ? 'shrunk' : 'full');
-      const ulp = (n: number) => n * 1e-15;
-      // A host with no room for the band at ZOOM_FLOOR gets the band at ZOOM_FLOOR.
-      if (b.w > 0) expect(got.width).toBeLessThanOrEqual(Math.max(maxWidth + ulp(maxWidth), b.w * ZOOM_FLOOR));
-      if (b.h > 0 && maxHeight !== undefined) expect(got.height).toBeLessThanOrEqual(Math.max(maxHeight + ulp(maxHeight), b.h * ZOOM_FLOOR));
-      if (got.width <= maxWidth) {
+      const ulp = (n: number) => Math.max(n * 1e-15, 1e-320);
+      expect(got.width).toBeLessThanOrEqual(maxWidth);
+      if (maxHeight !== undefined) expect(got.height).toBeLessThanOrEqual(maxHeight);
+      // Shrunk only as far as the host needs: the lens touches it on the axis that held it.
+      if (got.factor < f && got.factor > ZOOM_FLOOR) {
+        const touches = (b.w > 0 && Math.abs(b.w * got.factor - maxWidth) <= ulp(maxWidth) * 4)
+          || (maxHeight !== undefined && b.h > 0 && Math.abs(b.h * got.factor - maxHeight) <= ulp(maxHeight) * 4);
+        expect(touches).toBe(true);
+      }
+      {
         seen.count('on host');
         expect(got.center.x - got.width / 2).toBeGreaterThanOrEqual(-ulp(maxWidth + Math.abs(got.center.x)));
         expect(got.center.x + got.width / 2).toBeLessThanOrEqual(maxWidth + ulp(maxWidth + Math.abs(got.center.x)));

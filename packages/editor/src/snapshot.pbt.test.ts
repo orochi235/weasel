@@ -12,11 +12,12 @@ import { dataKey, dataValue, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
 
-/** `a` and `b` alike to the last bit: typed arrays of one type and contents, plain objects with the same own keys. */
+/** `a` and `b` alike to the last bit, but for the sign of a zero, which JSON does not write: typed arrays of one type
+ *  and contents, plain objects with the same own keys. */
 function same(a: unknown, b: unknown, at = '$'): string[] {
   if (ArrayBuffer.isView(a) || ArrayBuffer.isView(b)) {
     const ok = Object.prototype.toString.call(a) === Object.prototype.toString.call(b)
-      && Array.from(a as Float64Array).every((v, i) => Object.is(v, (b as Float64Array)[i])) && (a as Float64Array).length === (b as Float64Array).length;
+      && Array.from(a as Float64Array).every((v, i) => Object.is(v + 0, (b as Float64Array)[i]! + 0)) && (a as Float64Array).length === (b as Float64Array).length;
     return ok ? [] : [`${at}: ${String(a)} / ${String(b)}`];
   }
   if (Array.isArray(a) || Array.isArray(b)) {
@@ -30,7 +31,7 @@ function same(a: unknown, b: unknown, at = '$'): string[] {
     if (ka.join() !== kb.join()) return [`${at}: keys ${ka} / ${kb}`];
     return ka.flatMap((k) => same((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k], `${at}.${k}`));
   }
-  return Object.is(a, b) ? [] : [`${at}: ${String(a)} / ${String(b)}`];
+  return Object.is(typeof a === 'number' ? a + 0 : a, typeof b === 'number' ? b + 0 : b) ? [] : [`${at}: ${String(a)} / ${String(b)}`];
 }
 
 const hop = (v: unknown): unknown => reviveTypedArrays(JSON.parse(JSON.stringify(v, serializeReplacer)));

@@ -11,6 +11,11 @@ describe('shrunk from the loupe properties', () => {
     expect(Number.isFinite(q.x) && Number.isFinite(q.y)).toBe(true);
   });
 
+  it('never places a lens wider than the host, where rounding the band width up would', () => {
+    const got = placeBand({ band: { x: 0, y: 0, w: 5e-324, h: 0 }, factor: 32, maxWidth: 7.4e-323 });
+    expect(got.width).toBeLessThanOrEqual(7.4e-323);
+  });
+
   it('asks for no redraw when a factor write clamps to the factor it has', () => {
     const changed = vi.fn();
     const loupe = createLoupeModel({

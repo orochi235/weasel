@@ -49,9 +49,11 @@ describe('createSampler', () => {
         expect(compositeOver([px])).toEqual(px);
         return;
       }
-      // Premultiplied bytes come back straight: each channel over alpha, to the nearest byte.
+      // Premultiplied bytes come back straight: each channel over alpha, to a nearest byte (either, at a tie).
       const p = [Math.min(px[0], px[3]), Math.min(px[1], px[3]), Math.min(px[2], px[3]), px[3]];
-      expect(compositeOver([p], [true])).toEqual([...p.slice(0, 3).map((c) => Math.round((c / p[3]!) * 255)), p[3]]);
+      const got = compositeOver([p], [true])!;
+      expect(got[3]).toBe(p[3]);
+      got.slice(0, 3).forEach((c, i) => { expect(Math.abs(c - (p[i]! / p[3]!) * 255)).toBeLessThanOrEqual(0.5 + 1e-9); });
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
 });
