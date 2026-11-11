@@ -108,6 +108,8 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
   return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
 }
 
+const sameBounds = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+
 export function createWindow(opts: WindowOptions): WindowWidget {
   const chrome = opts.titlebar ?? true;
   const passing = opts.interior === 'pass';
@@ -283,7 +285,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           break;
         }
         case 'move': {
-          if (!dragZone) break;
+          if (!dragZone || !Number.isFinite(evt.x) || !Number.isFinite(evt.y)) break;
           if (pastDragThreshold(
             { clientX: dragOrigin.x, clientY: dragOrigin.y },
             { clientX: evt.x, clientY: evt.y },
@@ -296,7 +298,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           // Only 'title' translates without resizing (zones.ts), so it is the
           // one drag where pulling the window back cannot fight the gesture.
           const next = dragZone === 'title' ? clampOnHost(dragged) : dragged;
-          if (next.x !== bounds.x || next.y !== bounds.y || next.w !== bounds.w || next.h !== bounds.h) {
+          if (!sameBounds(next, bounds)) {
             bounds = next;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
             rev.changed();
@@ -306,7 +308,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         case 'up': {
           if (dragZone === 'close' && zoneAt(bounds, m, evt.x, evt.y) === 'close') {
             opts.onClose?.();
-          } else if (pressZone === 'content' && !pressMoved) {
+          } else if (pressZone === 'content' && !pressMoved && Number.isFinite(evt.x) && Number.isFinite(evt.y)) {
             opts.onContentClick?.({ x: evt.x, y: evt.y });
           }
           dragZone = null;
@@ -314,7 +316,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           break;
         }
         case 'cancel': {
-          if (dragZone && bounds !== dragStart) {
+          if (dragZone && !sameBounds(bounds, dragStart)) {
             bounds = dragStart;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
             rev.changed();

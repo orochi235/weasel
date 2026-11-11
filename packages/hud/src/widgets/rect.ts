@@ -36,7 +36,7 @@ export interface RectWidget extends Widget {
 }
 
 export function createRect(opts: RectOptions): RectWidget {
-  if (opts.w <= 0 || opts.h <= 0) {
+  if (!(opts.w > 0 && opts.h > 0)) {
     throw new Error(`createRect: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
   }
   let disposed = false;

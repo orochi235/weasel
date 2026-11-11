@@ -11,7 +11,7 @@ export type AttachMenuHostOptions =
 /** Draw `host`'s open menu as a widget on `hud`, focused while open. A press
  *  anywhere else takes focus from it, which closes the menu, as do a wheel
  *  outside it, the window losing focus and a resize. Closing any other way
- *  gives focus back to the widget that held it when the menu opened. Returns a detach. */
+ *  gives focus back to the widget that held it when the menu opened, and so does the detach this returns. */
 export function attachMenuHost(hud: Hud, host: MenuHost, opts: AttachMenuHostOptions): () => void {
   let widget: Widget | null = null;
   let returnTo: { widget: Widget | null; visible: boolean } = { widget: null, visible: false };
@@ -69,6 +69,8 @@ export function attachMenuHost(hud: Hud, host: MenuHost, opts: AttachMenuHostOpt
     unsubscribe();
     unfocus();
     undismiss();
+    const held = widget !== null && hud.focused === widget;
     drop();
+    if (held) giveBack();
   };
 }

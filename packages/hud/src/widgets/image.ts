@@ -47,7 +47,7 @@ export interface ImageWidget extends Widget {
 }
 
 export function createImage(opts: ImageOptions): ImageWidget {
-  if (opts.w <= 0 || opts.h <= 0) {
+  if (!(opts.w > 0 && opts.h > 0)) {
     throw new Error(`createImage: bounds must have positive w/h (got ${opts.w}x${opts.h})`);
   }
   let disposed = false;

@@ -40,12 +40,16 @@ export function withColorPickers(
     const alpha = e.alpha === true;
     const rows: MenuEntry[] = palette.map((color) => {
       const value = hexColor(color, alpha, e.value) ?? color;
+      const writes = (held: string | undefined) => hexColor(color, alpha, held) ?? color;
       const row: MenuEntry = {
         kind: 'item', key: `${e.key}/${color}`, label: color,
         keepOpen: true,
         // Checked when choosing it would write the color held now.
-        get checked() { return hexColor(now() ?? '', alpha) === hexColor(color, alpha, now()); },
-        run: () => c().setColor(e, hexColor(color, alpha, now()) ?? color),
+        get checked() {
+          const held = now();
+          return held !== undefined && (hexColor(held, alpha) ?? held) === writes(held);
+        },
+        run: () => c().setColor(e, writes(now())),
       };
       swatches.set(row, () => value);
       return row;
