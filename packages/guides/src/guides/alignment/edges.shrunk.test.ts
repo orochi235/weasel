@@ -35,4 +35,10 @@ describe('alignment and spacing at the edges, shrunk from the property tests', (
     expect(matchSpacing({ x: 3, y: 0, width: 1, height: 1 }, [{ x: 0, y: 0, width: 1, height: 1 }, { x: 1.5, y: 0, width: 1, height: 1 }, worse], { x: 8, y: 8 }).dx)
       .toBe(matchSpacing({ x: 3, y: 0, width: 1, height: 1 }, [{ x: 0, y: 0, width: 1, height: 1 }, { x: 1.5, y: 0, width: 1, height: 1 }], { x: 8, y: 8 }).dx);
   });
+
+  it('spaces nowhere under a NaN tolerance', () => {
+    // A comparison with NaN is false, so no placement was too far, and the box moved 1 to the gap.
+    const out = matchSpacing({ x: 0, y: 0, width: 1, height: 1 }, [{ x: 0, y: 0, width: 1, height: 1 }, { x: -1.125, y: 0, width: 1, height: 1 }], { x: NaN, y: NaN });
+    expect(out).toEqual({ dx: 0, dy: 0, gapsX: [], gapsY: [] });
+  });
 });

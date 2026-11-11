@@ -130,7 +130,7 @@ export function spacingOffers(
   return out;
 }
 
-/** The nearest equal-spacing placement on one axis within `tol`, or null. */
+/** The nearest equal-spacing placement on one axis within `tol`, or null; none within a `tol` that is not a length. */
 function bestAxis(
   b: Bounds,
   axis: Axis,
@@ -141,7 +141,7 @@ function bestAxis(
 ): SpacingOffer | null {
   let best: SpacingOffer | null = null;
   for (const o of spacingOffers(b, axis, edge, targets, refs)) {
-    if (Math.abs(o.delta) > tol) continue;
+    if (!(Math.abs(o.delta) <= tol)) continue;
     if (best === null || Math.abs(o.delta) < Math.abs(best.delta)) best = o;
   }
   return best;
