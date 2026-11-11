@@ -70,7 +70,7 @@ describe('groundGridSource, property', () => {
   it('leaves a box edge in reach to snap to, however fine the grid beside it', () => {
     const seen = tally();
     const fine = fc.constantFrom(1e-300, 1e-200, 5e-324, 1e-20);
-    fc.assert(fc.property(fine, fc.double({ min: 1e6, max: 1e9, noNaN: true }), fc.integer({ min: 0, max: 7 }), (step, far, corner) => {
+    fc.assert(fc.property(fine, fc.double({ min: 1e6, max: 1e13, noNaN: true }), fc.integer({ min: 0, max: 7 }), (step, far, corner) => {
       // Where one of the box's upright edges crosses the ground, which a point gesture on the ground can reach.
       const at = { x: far, y: 0, z: 0 };
       const p: Pose3 = { position: at, rotation: [0, 0, 0, 1], scale: { x: 1, y: 1, z: 1 } };
