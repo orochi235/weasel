@@ -85,8 +85,10 @@ function faceFor(
       if (!index) return null;
       // Unoptimized: opentype.js's optimizer drops a contour's last line when it ends within one *unit* of the
       // start, and at one unit per em that is every last line; a CFF contour, which closes implicitly, loses a vertex.
-      const d = (font.glyphs.get(index).getPath(0, 0, 1) as unknown as PathData)
-        .toPathData({ decimalPlaces: OUTLINE_PRECISION, optimize: false, flipY: false });
+      const path = font.glyphs.get(index).getPath(0, 0, 1) as unknown as PathData;
+      // A damaged CFF charstring reads past its operand stack, and opentype.js writes the coordinates it lacks as NaN.
+      if (!path.commands.every(finiteCommand)) throw new Error('its outline holds a coordinate that is not a finite number');
+      const d = path.toPathData({ decimalPlaces: OUTLINE_PRECISION, optimize: false, flipY: false });
       // A glyph with no contours (a space) serializes to the empty string.
       return d.length > 0 ? d : null;
     },
@@ -95,7 +97,15 @@ function faceFor(
 
 /** opentype.js 2's `toPathData`, which the 1.x typings declare as taking only a precision. */
 interface PathData {
+  commands: readonly Record<string, unknown>[];
   toPathData(options: { decimalPlaces: number; optimize: boolean; flipY: boolean }): string;
+}
+
+const COORDINATES = ['x', 'y', 'x1', 'y1', 'x2', 'y2'];
+
+/** Every coordinate a path command carries is a finite number. */
+function finiteCommand(cmd: Record<string, unknown>): boolean {
+  return COORDINATES.every((k) => cmd[k] === undefined || Number.isFinite(cmd[k]));
 }
 
 interface EmbedTables {
