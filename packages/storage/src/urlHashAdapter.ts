@@ -59,6 +59,8 @@ export const urlHashAdapter: StorageAdapter = {
   },
   delete: async (key) => {
     const map = readHashMap();
+    // Nothing to remove: a fragment someone else wrote, an anchor say, stays as it is.
+    if (!(key in map)) return;
     delete map[key];
     writeHashMap(map);
   },
