@@ -34,7 +34,8 @@ export interface LinearScale extends ContinuousScale {
   /** The distance between ticks when about `count` are asked for. */
   tickStep(count?: number): number;
   /** Ticks on the finest 1/2/5 step that keeps neighbors `minSpacing` apart along the range, so a longer axis
-   *  gets more of them. Empty for an empty domain or range. */
+   *  gets more of them. Empty for an empty domain or range, and where `minSpacing` spans more of the domain than
+   *  the largest double. */
   spacedTicks(options: SpacedTickOptions): TickSet;
   tickFormat(count?: number): (value: number) => string;
 }
@@ -100,6 +101,8 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   if (!(span > 0) || !Number.isFinite(span) || !(length > 0) || !(minSpacing > 0)) return { values: [], step: 0, decimals: 0 };
   const perUnit = span / length;
   const step = niceStep(minSpacing * perUnit);
+  // A spacing whose step in domain units is past the double range is wider than the axis.
+  if (!Number.isFinite(step)) return { values: [], step: 0, decimals: 0 };
   const decimals = decimalsOf(step);
   const first = Math.ceil((lo + inset * perUnit) / step - 1e-9);
   const last = Math.floor((hi - inset * perUnit) / step + 1e-9);
