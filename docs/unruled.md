@@ -310,6 +310,16 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- Ruled 2026-11-10 (my call, overnight sweep): a marquee or lasso takes a node under several clips only where
+  the clips' common part meets it and the region (`PickQuery.intersectClips`), not where each clip alone does:
+  the walk's own rule is that a pick never answers for a node the renderer put nothing of on screen.
+- Ruled 2026-11-10 (my call, overnight sweep): `markerReach` is a head's farthest box corner from its vertex in
+  any direction, since a head turns with its segment. Grab reach and paint boxes for marked strokes grow to
+  match; an axis-aligned head reads larger than before by up to √2.
+- Open (2026-11-10, property tests): an ellipse a few pixels across flattens, at the renderer's half-pixel
+  tolerance, to a few facets whose miters stand off its even outset by up to a pixel, and its drawn box follows
+  the true curve instead. Whether the drawn box should follow the mesh at that size is unsettled; the property
+  holds the drawn box to the mesh only for ellipses at least 8 px across.
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `headFor` gives a head whose `maxShare` is 0 no length
   on a line of unknown (infinite) length, reading `0 · ∞` at its limit: a head allowed no share of the line has none.
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
