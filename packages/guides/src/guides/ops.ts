@@ -30,12 +30,21 @@ export function addGuideOp(store: GuideStore, guide: Guide, index?: number): Op 
 }
 
 /** Put `to` in place of `from`, the guide with the same id, as an op: a
- *  guide moved. Its inverse puts `from` back. */
+ *  guide moved. Once applied, its inverse puts back the guide it replaced,
+ *  which a store changed since `from` was read may hold in place of `from`,
+ *  and removes `to` from a store that held no guide with its id; before, it
+ *  puts `from` back. */
 export function replaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
+  let applied = false;
+  let held: Guide | undefined;
   return {
     label: 'Move Guide',
-    apply: () => { store.addGuide(to); },
-    invert: () => replaceGuideOp(store, to, from),
+    apply: () => {
+      held = store.getGuides().find((g) => g.id === to.id);
+      applied = true;
+      store.addGuide(to);
+    },
+    invert: () => (!applied ? replaceGuideOp(store, to, from) : held ? replaceGuideOp(store, to, held) : removeGuideOp(store, to)),
   };
 }
 
