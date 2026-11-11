@@ -2,6 +2,6 @@
 "@weasel-js/font": patch
 ---
 
-A glyph in a CFF face whose charstring reads past its operands is refused, and costs that glyph alone, as any glyph
-the outline parser cannot read does. opentype.js writes the coordinates such a charstring lacks as `NaN`, and the
-outline tier handed out path data holding them.
+A CFF glyph whose outline holds a non-finite coordinate is drawn from the SDF tier, as any glyph the outline parser cannot read is.
+
+<!-- entry: fix -->

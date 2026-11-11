@@ -2,5 +2,6 @@
 "@weasel-js/font": patch
 ---
 
-`faceMetricsFromTables` checks each metric after dividing it by the em, so a table holding values at a magnitude no
-16-bit field holds leaves that metric out rather than stating it as `Infinity`, or a rule 0 ems thick.
+`faceMetricsFromTables` leaves out a metric whose value, divided by the em, is not finite or is a rule 0 ems thick.
+
+<!-- entry: fix -->
