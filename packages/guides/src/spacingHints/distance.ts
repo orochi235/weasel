@@ -50,11 +50,9 @@ function measureAxis(from: Bounds, to: Bounds, axis: Axis, out: DistanceReadout)
     if (max - min <= EPS) return;
     const at = shares ? (sharedMin + sharedMax) / 2 : mid(from, c);
     push(min, max, at);
-    if (!shares) {
-      const edge = before ? lo(to, axis) : hi(to, axis);
-      const span = at < lo(to, c) ? { min: at, max: lo(to, c) } : { min: hi(to, c), max: at };
-      out.leaders.push({ id: `distance:${axis}`, axis, offset: edge, span });
-    }
+    // A box with no extent across shares nothing, yet its gap can still meet the other box.
+    const span = shares ? null : at < lo(to, c) ? { min: at, max: lo(to, c) } : at > hi(to, c) ? { min: hi(to, c), max: at } : null;
+    if (span) out.leaders.push({ id: `distance:${axis}`, axis, offset: before ? lo(to, axis) : hi(to, axis), span });
     return;
   }
   if (!shares) return;
