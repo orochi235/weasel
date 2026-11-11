@@ -1,5 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import type { PanelTransport } from '@weasel-js/core/devtools-protocol';
+import { Icon } from '@weasel-js/ui/components/Icon';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { useDevtoolsClient } from './hooks';
 import { RootPicker } from './RootPicker';
@@ -42,7 +43,12 @@ export function DevtoolsPanel({ transport, tabs, defaultTab, className }: Devtoo
       ) : rootId ? (
         <Tabs className={s.tabs} selectedKey={tab} onSelectionChange={(k) => setTab(k as DevtoolsTabId)}>
           <TabList aria-label="Devtools areas" className={s.tabList}>
-            {shown.map((t) => <Tab key={t.id} id={t.id}>{t.label}</Tab>)}
+            {shown.map((t) => (
+              <Tab key={t.id} id={t.id} className={s.tab}>
+                <Icon name={t.icon} size={16} />
+                {t.label}
+              </Tab>
+            ))}
           </TabList>
           {shown.map(({ id, View }) => (
             <TabPanel key={id} id={id} className={s.tabPanel}>

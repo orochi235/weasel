@@ -60,6 +60,13 @@ describe('DevtoolsPanel', () => {
     expect(await screen.findByRole('button', { name: /board\s*2d/ })).toBeTruthy();
   });
 
+  it('shows an icon beside each tab’s label, leaving the label as its name', async () => {
+    mount();
+    const tab = await screen.findByRole('tab', { name: 'Scene' });
+    expect(tab.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(screen.getAllByRole('tab').every((t) => t.querySelector('svg') !== null)).toBe(true);
+  });
+
   it('lists the top level of the scene, each row with its kind, layer and child count', async () => {
     mount();
     const group = await waitFor(() => row('group'));
