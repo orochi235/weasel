@@ -83,9 +83,11 @@ describe('linearScale.spacedTicks', () => {
         const lo = Math.min(d0, d1);
         const hi = Math.max(d0, d1);
         const perUnit = (hi - lo) / Math.abs(r1 - r0);
+        // Within a sliver of the domain, for a tick's rounding.
+        const sliver = 1e-9 * Math.max(1, Math.abs(lo), Math.abs(hi), hi - lo);
         for (const v of values) {
-          expect(v).toBeGreaterThanOrEqual(lo + inset * perUnit - 1e-9 * Math.max(1, Math.abs(v)));
-          expect(v).toBeLessThanOrEqual(hi - inset * perUnit + 1e-9 * Math.max(1, Math.abs(v)));
+          expect(v).toBeGreaterThanOrEqual(lo + inset * perUnit - sliver);
+          expect(v).toBeLessThanOrEqual(hi - inset * perUnit + sliver);
         }
         values.slice(1).forEach((v, i) => {
           expect(v).toBeGreaterThan(values[i]!);
