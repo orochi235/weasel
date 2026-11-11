@@ -649,6 +649,11 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
+- **(P3) [waiting] labkit's `JobProgress.browser.test.tsx` missed its width check once by 0.5 px under load.**
+  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11); it passed
+  3/3 alone on the fleet and in the rerun. The check allows 0.05 px, which a busy node's font rasterizing can
+  exceed. Closes when it is seen a second time (then widen or rework the check), or on 2026-11-30 with none, delete it.
+
 
 - **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
   fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
