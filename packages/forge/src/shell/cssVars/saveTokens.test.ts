@@ -142,7 +142,7 @@ describe('applyTokenEdits on a written-out entry with no branch for the selectio
     const axes = { mode: { default: 'a-b', values: { 'a-b': {} } } };
     const next = saved(applyTokenEdits({ name: 't', axes, components: { constructor: { by: 'mode' } }, pins: {} }, { constructor: '#111111' }, { mode: 'a-b' }));
     expect(next.pins?.constructor).toEqual({ by: 'mode', 'a-b': '#111111' });
-    expect(derive(next, { mode: 'a-b' }).tokens.constructor?.value).toBe('#111111');
+    expect(new Map(Object.entries(derive(next, { mode: 'a-b' }).tokens)).get('constructor')?.value).toBe('#111111');
   });
 });
 
