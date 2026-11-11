@@ -1,6 +1,7 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { type Globals, stableStringify } from '../protocol/messages';
+import { setOwn } from '../ownKey';
 import { GLOBALS_KEY } from '../shell/globals';
 
 /**
@@ -40,10 +41,11 @@ export function parseRoute(hash: string): ForgeRoute {
   return { story, params };
 }
 
-/** The hash for `route`, with its leading `#`. The inverse of `parseRoute`. */
+/** The hash for `route`, with its leading `#`. The inverse of `parseRoute`. A lone surrogate, which no URL can
+ *  carry, is written as U+FFFD, as `URLSearchParams` writes one in a param. */
 export function formatRoute(route: ForgeRoute): string {
   const query = new URLSearchParams(Object.entries(route.params)).toString();
-  return `#/${encodeURIComponent(route.story ?? '')}${query ? `?${query}` : ''}`;
+  return `#/${encodeURIComponent((route.story ?? '').replace(/\p{Cs}/gu, '\uFFFD'))}${query ? `?${query}` : ''}`;
 }
 
 /** Whether a param name can be a knob: not reserved and not one of forge's own config keys. */
@@ -164,12 +166,14 @@ export interface KnobPath {
   leaf: KnobLeaf;
 }
 
-/** Every leaf of `schema` a param can carry, in schema order, reserved names left out, with branches flattened into dotted paths. */
+/** Every leaf of `schema` a param can carry, in schema order, reserved names and keys a dotted path cannot address
+ *  (empty, or holding a dot) left out, with branches flattened into dotted paths. */
 export function knobPaths(schema: Pick<ConfigSchema<unknown>, 'nodes'>): KnobPath[] {
   const out: KnobPath[] = [];
   const walk = (shape: ConfigShape, at: string): void => {
     for (const [key, entry] of Object.entries(shape)) {
-      if (key.startsWith(INTERNAL_PREFIX) || key.includes('.')) continue;
+      // An empty key's path would read as its parent's, so like a dotted one it has no param.
+      if (key === '' || key.startsWith(INTERNAL_PREFIX) || key.includes('.')) continue;
       const path = at === '' ? key : `${at}.${key}`;
       if (isConfigBranch(entry)) walk(entry.children, path);
       else if (codecOf(entry) !== null && isKnobParam(path)) out.push({ path, leaf: entry });
@@ -194,7 +198,7 @@ export function knobsToParams(schema: Pick<ConfigSchema<unknown>, 'nodes'>, conf
     const value = valueAtPath(config, path);
     if (value === undefined || sameKnob(value, leaf.default)) continue;
     const encoded = encodeKnob(value);
-    if (encoded !== undefined) params[path] = encoded;
+    if (encoded !== undefined) setOwn(params, path, encoded);
   }
   return params;
 }
@@ -212,7 +216,7 @@ export function paramsToKnobs(
     const raw = Object.hasOwn(params, path) ? params[path] : undefined;
     if (raw === undefined) continue;
     const decoded = decodeKnob(raw, leaf);
-    if (decoded) knobs[path] = decoded.value;
+    if (decoded) setOwn(knobs, path, decoded.value);
   }
   return knobs;
 }
@@ -229,7 +233,7 @@ export function storyHref(
   const encoded: Record<string, string> = {};
   for (const [path, value] of Object.entries(knobs)) {
     const raw = encodeKnob(value);
-    if (raw !== undefined && isKnobParam(path)) encoded[path] = raw;
+    if (raw !== undefined && isKnobParam(path)) setOwn(encoded, path, raw);
   }
   return formatRoute({ story, params: { ...encoded, ...reservedParams(params) } });
 }
