@@ -183,9 +183,36 @@ describe('<ControlMatrix>', () => {
     fireEvent.click(cell('Window Shading'));
     const dialog = screen.getByRole('dialog', { name: 'Window Shading' });
     expect(within(dialog).queryByRole('button', { name: /Shading/ })).toBeNull();
+    expect(dialog.querySelectorAll('input[type="radio"]')).toHaveLength(2);
     fireEvent.click(within(dialog).getByRole('radio', { name: 'Soft' }));
     expect(setConfig).toHaveBeenCalledWith('looks.window.shading', 'soft');
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('draws an enum cell asking for segments as segments in its popover', () => {
+    const segmented = resolveConfigSchema(
+      f.schema({
+        looks: f.group({
+          window: f.group({ side: f.enum('left', ['left', 'right']).toggle().label('Side') }),
+        }),
+      }),
+      [],
+    );
+    const setConfig = vi.fn();
+    render(
+      <ControlMatrix
+        schema={segmented}
+        columns={[{ key: 'looks.window', label: 'Win', title: 'Window' }]}
+        rows={[{ key: 'side' }]}
+        config={{ looks: { window: { side: 'left' } } }}
+        setConfig={setConfig}
+      />,
+    );
+    fireEvent.click(cell('Window Side'));
+    const dialog = screen.getByRole('dialog', { name: 'Window Side' });
+    expect(dialog.querySelector('input[type="radio"]')).toBeNull();
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'right' }));
+    expect(setConfig).toHaveBeenCalledWith('looks.window.side', 'right');
   });
 
   it('unpins from the popover with Inherit, disabled while already inherited', () => {

@@ -51,6 +51,20 @@ describe('<ControlPanel> schema', () => {
     expect(screen.getByLabelText('B')).toHaveAttribute('role', 'spinbutton');
   });
 
+  it('slides a number asked for as a slider with one bound, its track open past the other', () => {
+    const setConfig = vi.fn();
+    const schema = resolveConfigSchema(f.schema({ gap: f.number(20).min(10).slider() }), []);
+    render(<ControlPanel schema={schema} config={{ gap: 20 }} setConfig={setConfig} />);
+    const track = screen.getByRole('slider', { name: 'Gap' });
+    expect(track).toHaveAttribute('min', '10');
+    expect(track).toHaveAttribute('max', '110');
+    const readout = screen.getByRole('spinbutton', { name: 'Gap' });
+    fireEvent.focus(readout);
+    fireEvent.change(readout, { target: { value: '500' } });
+    fireEvent.blur(readout);
+    expect(setConfig).toHaveBeenLastCalledWith('gap', 500);
+  });
+
   it('falls back to the leaf default when config holds no value', () => {
     const schema = resolveConfigSchema(f.schema({ tint: f.color('#123456') }), []);
     render(<ControlPanel schema={schema} config={{}} setConfig={vi.fn()} />);

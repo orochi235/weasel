@@ -147,21 +147,41 @@ export function stepDisplay(step = 1): Display {
   return decimal({ places: step > 0 ? decimalPlaces(step) : 0, grouping: false });
 }
 
-/** A slider's track, with the 0..100 fallback for an unbounded one: `min` and
- *  `max` are the track's ends, one stop beyond the range at an endless end.
- *  `settle` turns a track position or a typed number into a value, ±Infinity
- *  at that stop, and `onTrack` puts a value back on the track. */
+/** How far a slider's track runs from the one end it has, or from 0 with neither. */
+const OPEN_SPAN = 100;
+
+/** A slider's track: `min` and `max` are the track's ends, one stop beyond the
+ *  range at an endless end, and `OPEN_SPAN` from the other where an end is
+ *  missing. `settle` turns a track position or a typed number into a value,
+ *  ±Infinity at that stop, and `onTrack` puts a value back on the track.
+ *  `reach` is how far a typed or stepped value goes: an open end, one missing
+ *  with no stop for infinity, holds none back, and `held` keeps a value in it. */
 function sliderBounds(p: PropertyNumberFieldProps): {
   min: number;
   max: number;
   step: number;
   settle: (v: number) => number;
   onTrack: (v: number) => number;
+  held: (v: number) => number;
+  reach: { min?: number; max?: number };
 } {
   const step = p.step ?? 1;
-  const track = endlessTrack(p.min ?? 0, p.max ?? 100, step, p.endless);
-  const onTrack = (v: number) => Math.min(track.max, Math.max(track.min, track.toTrack(v)));
-  return { min: track.min, max: track.max, step, settle: track.fromTrack, onTrack };
+  const lo = p.min ?? (p.max === undefined ? 0 : p.max - OPEN_SPAN);
+  const hi = p.max ?? lo + OPEN_SPAN;
+  const track = endlessTrack(lo, hi, step, p.endless);
+  const openMin = p.min === undefined && track.min === lo;
+  const openMax = p.max === undefined && track.max === hi;
+  const within = (a: number, b: number) => (v: number) => Math.min(b, Math.max(a, track.toTrack(v)));
+  const settle = (v: number) => ((openMax && v > hi) || (openMin && v < lo) ? v : track.fromTrack(v));
+  return {
+    min: track.min,
+    max: track.max,
+    step,
+    settle,
+    onTrack: within(track.min, track.max),
+    held: within(openMin ? -Infinity : track.min, openMax ? Infinity : track.max),
+    reach: { min: openMin ? undefined : track.min, max: openMax ? undefined : track.max },
+  };
 }
 
 /** `keyed`: the track is the keyboard's way in, where the row's readout is not an editable one. */
@@ -216,7 +236,7 @@ function SliderTrack({ keyed: tabbable = false, ...p }: PropertyNumberFieldProps
 }
 
 function SliderReadout(p: PropertyNumberFieldProps) {
-  const { min, max, step, settle, onTrack } = sliderBounds(p);
+  const { min, max, step, settle, held, reach } = sliderBounds(p);
   if (!isKnown(p)) return <>{boxedReadout('—')}</>;
   return (
     <EditableReadout
@@ -225,8 +245,9 @@ function SliderReadout(p: PropertyNumberFieldProps) {
       min={min}
       max={max}
       step={step}
+      reach={reach}
       settle={settle}
-      onTrack={onTrack}
+      onTrack={held}
       stops={p.stops}
       display={p.display ?? stepDisplay(step)}
       format={p.format}
@@ -265,6 +286,8 @@ interface EditableReadoutProps {
   min: number;
   max: number;
   step: number;
+  /** The bounds a typed or stepped value is held within; one absent holds none back. */
+  reach: { min?: number; max?: number };
   /** The value a track position or a typed number stands for: ±Infinity at an
    *  endless end's stop. */
   settle: (v: number) => number;
@@ -284,7 +307,7 @@ interface EditableReadoutProps {
  * cancels on Escape, and steps like the track beside it. Clicks are stopped so
  * a wrapping <label> doesn't forward focus to the slider thumb.
  */
-function EditableReadout({ name, value, min, max, step, settle, onTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
+function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, stops = [], display, format, unit, disabled, onCommit }: EditableReadoutProps) {
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
@@ -316,8 +339,8 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, stops =
         aria-label={name}
         aria-valuenow={onTrack(value)}
         aria-valuetext={format ? text(value) : qty(value, display).spoken}
-        aria-valuemin={min}
-        aria-valuemax={max}
+        aria-valuemin={reach.min}
+        aria-valuemax={reach.max}
         inputMode="decimal"
         className={s.readoutInput}
         style={fit as CSSProperties}
@@ -346,7 +369,7 @@ function EditableReadout({ name, value, min, max, step, settle, onTrack, stops =
           } else {
             const typed = draft === null ? value : read(draft);
             const from = onTrack(Number.isNaN(typed) ? value : typed);
-            const spun = spinKey(e.key, from, { step, min, max });
+            const spun = spinKey(e.key, from, { step, ...reach });
             if (spun === null) return;
             const next = catchStop(from, spun, stops);
             e.preventDefault();
