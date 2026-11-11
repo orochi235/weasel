@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runInNewContext } from 'node:vm';
 import { deepEqual } from './deepEqual';
 
 describe('deepEqual', () => {
@@ -13,7 +14,8 @@ describe('deepEqual', () => {
   it('holds across realms', () => {
     const value = { a: [1, { b: 2 }] };
     expect(deepEqual(structuredClone(value), value)).toBe(true);
-    expect(deepEqual(Object.create(Object.create(null)), {})).toBe(true);
+    expect(deepEqual(runInNewContext('({ a: [1] })'), { a: [1] })).toBe(true);
+    expect(deepEqual(Object.create(Object.create(null)), {})).toBe(false);
   });
 
   it('compares functions, class instances, dates and maps by identity', () => {

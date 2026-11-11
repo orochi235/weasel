@@ -19,22 +19,30 @@ export interface Emitter<TArgs extends unknown[] = []> {
  *   whatever caused the notify: the error goes to `console.error`.
  */
 export function createEmitter<TArgs extends unknown[] = []>(): Emitter<TArgs> {
-  const listeners = new Set<(...args: TArgs) => void>();
+  type Listener = (...args: TArgs) => void;
+  /** Each listener held, by the subscription holding it: a token that a pass and an unsubscribe check against. */
+  const listeners = new Map<Listener, object>();
   /** `listeners` as an array, rebuilt only after it changes: an emit walks this one. */
-  let held: ((...args: TArgs) => void)[] | null = null;
+  let held: (readonly [Listener, object])[] | null = null;
   return {
     subscribe(listener) {
-      listeners.add(listener);
-      held = null;
+      let token = listeners.get(listener);
+      if (token === undefined) {
+        token = {};
+        listeners.set(listener, token);
+        held = null;
+      }
+      const mine = token;
       return () => {
+        if (listeners.get(listener) !== mine) return;
         listeners.delete(listener);
         held = null;
       };
     },
     emit(...args) {
       if (listeners.size === 0) return;
-      for (const listener of (held ??= [...listeners])) {
-        if (!listeners.has(listener)) continue;
+      for (const [listener, token] of (held ??= [...listeners])) {
+        if (listeners.get(listener) !== token) continue;
         try {
           listener(...args);
         } catch (err) {

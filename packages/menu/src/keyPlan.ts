@@ -38,10 +38,15 @@ export function planKey(
     // A value row has nothing to run: its letter highlights it, where Enter edits it.
     const opened = e === undefined || e.kind === 'separator' || e.disabled ? stack
       : e.kind === 'submenu' ? [...stack.slice(0, level), letter, firstRow(e.entries)]
-        : [...stack.slice(0, level), letter];
+        : highlight(stack, letter);
     return { stack: opened, typed: EMPTY_TYPEAHEAD, effect: { kind: 'none' } };
   }
   const t = typeaheadStep(rows, stack[level] ?? null, typed, key, now);
-  const next = t.hit === null ? stack : [...stack.slice(0, level), t.hit];
+  const next = t.hit === null ? stack : highlight(stack, t.hit);
   return { stack: next, typed: t.buffer, effect: { kind: 'none' } };
+}
+
+/** `stack` with its top level's highlight on `index`: `stack` itself when it is there already. */
+function highlight(stack: MenuStack, index: number): MenuStack {
+  return stack.at(-1) === index ? stack : [...stack.slice(0, -1), index];
 }

@@ -43,6 +43,10 @@ export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
   const given = opts.dimAlpha ?? OUT_OF_SCOPE_ALPHA;
   const dim = Number.isNaN(given) ? OUT_OF_SCOPE_ALPHA : Math.min(1, Math.max(0, given));
   const listeners = createEmitter();
+  // One relay of the registry's changes for every listener, so a listener this shares with the registry, or with
+  // another of its readers, keeps its subscription there when it leaves here.
+  const relay = (): void => { listeners.emit(); };
+  let offMode: (() => void) | null = null;
   let invalidations = 0;
   return {
     alphaFor(id) {
@@ -62,10 +66,13 @@ export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
     getVersion: () => registry.getVersion() + invalidations,
     subscribe(listener) {
       const off = listeners.subscribe(listener);
-      const offMode = registry.subscribe(listener);
+      offMode ??= registry.subscribe(relay);
       return () => {
         off();
-        offMode();
+        if (listeners.size === 0) {
+          offMode?.();
+          offMode = null;
+        }
       };
     },
   };

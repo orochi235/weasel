@@ -1,3 +1,5 @@
+import { isPlainObject } from '@weasel-js/registry';
+
 /** Raw strings written before records existed come back as the string they
  *  are. */
 export function parse(raw: string): unknown {
@@ -42,7 +44,7 @@ export function isJsonSafe(value: unknown, seen: Set<object> = new Set()): boole
       seen.add(value);
       const ok = Array.isArray(value)
         ? isDenseList(value) && value.every((v) => isJsonSafe(v, seen))
-        : isPlain(value) && Object.values(value).every((v) => v === undefined || isJsonSafe(v, seen));
+        : isPlainObject(value) && Object.values(value).every((v) => v === undefined || isJsonSafe(v, seen));
       seen.delete(value);
       return ok;
     }
@@ -55,13 +57,4 @@ export function isJsonSafe(value: unknown, seen: Set<object> = new Set()): boole
 function isDenseList(list: unknown[]): boolean {
   const keys = Object.keys(list);
   return keys.length === list.length && keys.every((k, i) => k === String(i));
-}
-
-/** An object with no prototype, or with any realm's `Object.prototype`: a value from an iframe, or one
- *  `structuredClone` built, is as plain as one made here. */
-function isPlain(value: object): boolean {
-  const proto: unknown = Object.getPrototypeOf(value);
-  return proto === null || proto === Object.prototype
-    || (Object.getPrototypeOf(proto) === null && Object.prototype.toString.call(value) === '[object Object]'
-      && Object.prototype.hasOwnProperty.call(proto, 'hasOwnProperty'));
 }

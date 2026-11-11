@@ -19,11 +19,17 @@ const BY_TEXT: QueryMatch = { by: 'text' };
  *  contains the query, ignoring case; text is tried before tags. An empty or
  *  whitespace query matches everything, by text. */
 export function matchQuery(query: string, entry: Findable): QueryMatch | null {
-  const q = query.trim().toLowerCase();
+  const q = fold(query.trim());
   if (q === '') return BY_TEXT;
-  if (entry.text.some((t) => t !== undefined && t.toLowerCase().includes(q))) return BY_TEXT;
-  const tag = entry.tags?.find((t) => t.toLowerCase().includes(q));
+  if (entry.text.some((t) => t !== undefined && fold(t).includes(q))) return BY_TEXT;
+  const tag = entry.tags?.find((t) => fold(t).includes(q));
   return tag === undefined ? null : { by: 'tag', tag };
+}
+
+/** `s` lowercased, with final sigma folded to `σ`: the one letter `toLowerCase` spells by its place in a word,
+ *  so a text holding the query exactly could otherwise miss it. */
+function fold(s: string): string {
+  return s.toLowerCase().replaceAll('ς', 'σ');
 }
 
 /** Whether `tags` holds `tag` exactly: the test for gathering every entry

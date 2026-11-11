@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runInNewContext } from 'node:vm';
 import { isPlainObject } from './isPlainObject';
 
 describe('isPlainObject', () => {
@@ -8,10 +9,12 @@ describe('isPlainObject', () => {
   });
 
   it('accepts a plain object from another realm', () => {
-    // A foreign realm's Object.prototype: a prototype whose own prototype is null.
-    const foreign = Object.create(Object.create(null));
-    expect(isPlainObject(foreign)).toBe(true);
+    expect(isPlainObject(runInNewContext('({ a: 1 })'))).toBe(true);
     expect(isPlainObject(structuredClone({ a: 1 }))).toBe(true);
+  });
+
+  it('rejects an object whose prototype is a bare null-prototype object', () => {
+    expect(isPlainObject(Object.create(Object.create(null)))).toBe(false);
   });
 
   it('rejects arrays, null, primitives, and class instances', () => {
