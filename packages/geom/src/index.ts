@@ -9,7 +9,7 @@
 export { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, lerp, trimNumber, minOf, maxOf, EPS } from './scalar';
 export { DEG_TO_RAD, RAD_TO_DEG, wrapAngle, wrapPositive, type HalfTurn } from './angle';
 export { normalizeZoom, viewRectToScreen, viewScreenToWorld, viewWorldToScreen, ZOOM_FLOOR, type View } from './view';
-export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Affine } from './affine';
+export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, extentScale, rotateAboutPoint, type Affine } from './affine';
 export {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
   rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, unionRects,
@@ -84,7 +84,7 @@ export { composePath, decomposePath } from './paths/compose';
 export { splitSubpaths } from './paths/splitSubpaths';
 export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
-export { pathFromD } from './paths/pathFromD';
+export { pathFromD, tokenizePathData, type PathDataCommand } from './paths/pathFromD';
 export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { measurePath, type MeasurePathOptions, type PathMeasure, type PathNearestStation } from './paths/pathMeasure';

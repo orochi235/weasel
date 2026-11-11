@@ -19,3 +19,9 @@ export function treePreorder<TData, TLayer extends string, TPose>(
   }
   return out;
 }
+
+/** Where `index` places a node among `length` siblings: truncated, held to the ends, `NaN` at the start.
+ *  Payloads record it so, since JSON writes `Infinity` as `null`, which a reloaded history places at the start. */
+export function slotIndex(index: number, length: number): number {
+  return index > 0 ? Math.min(Math.trunc(index), length) : 0;
+}

@@ -1,5 +1,7 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
-`typeaheadMatch` cycles past the highlight for a typed letter whose lowercase takes two code points, such as `İ`. It counted the lowercased query, which reads as two characters, so typing `İ` again stayed on the item it had found.
+`typeaheadMatch` moves to the next match when a letter whose lowercase takes two code points, such as `İ`, is typed again.
+
+<!-- entry: rank=-5 fix -->

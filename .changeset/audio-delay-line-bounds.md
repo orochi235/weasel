@@ -2,4 +2,6 @@
 "@weasel-js/audio": patch
 ---
 
-A delay insert, and `delayNode`, throw their own `RangeError` for a longest time of 180000 ms or more or one that rounds to no time at all in seconds. Both were handed to `createDelay`, which a browser refuses with its own `NotSupportedError`; `delayNode({ time: 200000 })` reached it through its default.
+A delay insert and `delayNode` throw a `RangeError` for a longest time they cannot hold. That is 180000 ms or more, or a time that rounds to nothing in seconds; the browser's `NotSupportedError` no longer reaches the caller.
+
+<!-- entry: rank=-5 fix -->

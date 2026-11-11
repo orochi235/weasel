@@ -9,12 +9,18 @@ export interface ZoomClampOpts {
   max?: ZoomBound;
 }
 
-/** Bound a scale's *magnitude*, keeping its direction. `scale.y < 0` is how a
- *  `View` spells a y-up camera, so clamping the signed value against positive
- *  bounds would flip the axis and collapse the zoom rather than limit it. */
-function clampScale(scale: number, min: number, max: number): number {
-  const magnitude = normalizeZoom(Math.min(max, Math.max(min, Math.abs(scale))));
+/** Bound the *magnitude* of `scale × factor`, keeping the direction of `scale`.
+ *  `scale.y < 0` is how a `View` spells a y-up camera, so clamping the signed
+ *  value would flip the axis, and so would reading the sign of a product a
+ *  factor of 0 made `-0`. */
+function clampScale(scale: number, factor: number, min: number, max: number): number {
+  const magnitude = normalizeZoom(Math.min(max, Math.max(min, Math.abs(scale * factor))));
   return scale < 0 ? -magnitude : magnitude;
+}
+
+/** A factor that is no magnitude, `NaN` or negative, zooms nothing: a negative one would turn the axis over. */
+function zoomBy(factor: number): number {
+  return factor >= 0 ? factor : 1;
 }
 
 /** Which axes a zoom scales. */
@@ -45,21 +51,27 @@ export function zoomAt(
   opts?: ZoomClampOpts,
 ): View {
   const view = normalizeView(input);
-  const fx = typeof factor === 'number' ? factor : factor.x;
-  const fy = typeof factor === 'number' ? factor : factor.y;
+  const fx = zoomBy(typeof factor === 'number' ? factor : factor.x);
+  const fy = zoomBy(typeof factor === 'number' ? factor : factor.y);
   const minX = typeof opts?.min === 'number' ? opts.min : opts?.min?.x ?? DEFAULT_MIN_ZOOM;
   const minY = typeof opts?.min === 'number' ? opts.min : opts?.min?.y ?? DEFAULT_MIN_ZOOM;
   const maxX = typeof opts?.max === 'number' ? opts.max : opts?.max?.x ?? DEFAULT_MAX_ZOOM;
   const maxY = typeof opts?.max === 'number' ? opts.max : opts?.max?.y ?? DEFAULT_MAX_ZOOM;
 
-  const nextX = clampScale(view.scale.x * fx, minX, maxX);
-  const nextY = clampScale(view.scale.y * fy, minY, maxY);
+  const nextX = clampScale(view.scale.x, fx, minX, maxX);
+  const nextY = clampScale(view.scale.y, fy, minY, maxY);
 
   // An axis whose scale does not change keeps its translation exactly, rather than one a round trip has rounded.
   const world = viewScreenToWorld(view, anchor);
   return {
     scale: { x: nextX, y: nextY },
-    x: nextX === view.scale.x ? view.x : world.x - anchor.x / nextX,
-    y: nextY === view.scale.y ? view.y : world.y - anchor.y / nextY,
+    x: nextX === view.scale.x ? view.x : anchored(view.x, world.x - anchor.x / nextX),
+    y: nextY === view.scale.y ? view.y : anchored(view.y, world.y - anchor.y / nextY),
   };
+}
+
+/** The translation that holds the anchor, or, when the anchor is not finite or the world point under it overflows,
+ *  the one holding the canvas's own corner: what a zoom about `{ x: 0, y: 0 }` leaves. */
+function anchored(corner: number, held: number): number {
+  return Number.isFinite(held) ? held : corner;
 }

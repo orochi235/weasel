@@ -79,6 +79,19 @@ export const FIXTURE_FONT = {
   ],
 };
 
+const CHAR_FIELDS = ['id', 'x', 'y', 'width', 'height', 'xoffset', 'yoffset', 'xadvance', 'page'] as const;
+const KERNING_FIELDS = ['first', 'second', 'amount'] as const;
+
+/** Throws, naming the field, unless `entry` is an object whose every one of `fields` is a finite number: layout and
+ *  the quads it draws read each of them. */
+function checkFinite(name: string, entry: unknown, fields: readonly string[]): void {
+  if (typeof entry !== 'object' || entry === null) throw new Error(`parseBmFont: ${name} must be an object`);
+  for (const f of fields) {
+    const v = (entry as Record<string, unknown>)[f];
+    if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error(`parseBmFont: ${name}.${f} must be a finite number`);
+  }
+}
+
 /** Validate a BmFont JSON document and build its lookup maps. Throws with the
  *  missing or malformed field named. */
 export function parseBmFont(raw: unknown): BmFont {
@@ -107,6 +120,9 @@ export function parseBmFont(raw: unknown): BmFont {
   const kernings: BmFontKerning[] = Array.isArray(r.kernings)
     ? (r.kernings as BmFontKerning[])
     : [];
+
+  chars.forEach((ch, i) => checkFinite(`chars[${i}]`, ch, CHAR_FIELDS));
+  kernings.forEach((k, i) => checkFinite(`kernings[${i}]`, k, KERNING_FIELDS));
 
   const charMap = new Map<number, BmFontChar>();
   for (const ch of chars) charMap.set(ch.id, ch);

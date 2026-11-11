@@ -1,4 +1,5 @@
-import { tabSort, tabStep, type FocusScope, type FocusScopeOptions } from '@weasel-js/ui-logic';
+import { tabSort, tabStep } from '@weasel-js/ui-input';
+import { type FocusScope, type FocusScopeOptions } from '@weasel-js/ui-logic';
 
 const TABBABLE = 'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]:not([contenteditable="false"])';
 

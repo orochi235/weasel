@@ -6,7 +6,7 @@
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 165
+    "longestFunction": 160
   },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 231
@@ -28,7 +28,7 @@
     "longestFunction": 179
   },
   "packages/core/src/core/scene/nodeStore.ts": {
-    "longestFunction": 203
+    "longestFunction": 201
   },
   "packages/core/src/core/scene/renderOrder.ts": {
     "longestFunction": 164
@@ -60,7 +60,7 @@
     "longestFunction": 335
   },
   "packages/font/src/registerFont.ts": {
-    "lines": 797
+    "lines": 722
   },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 135
@@ -254,7 +254,7 @@
     "longestFunction": 133
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
-    "longestFunction": 185
+    "longestFunction": 130
   },
   "packages/ui/src/components/Timeline/Timeline.tsx": {
     "longestFunction": 178

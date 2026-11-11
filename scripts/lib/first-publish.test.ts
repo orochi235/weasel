@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — plain .mjs with no typings; `scripts/` is outside tsconfig's include.
-import { addPending, classify, hasTrustedPublish, readStates } from './first-publish.mjs';
+import { addPending, classify, hasTrustedPublish, listsPublisher, readStates } from './first-publish.mjs';
 
 // The shapes below are copied from the registry's packuments for
 // `@weasel-js/menu` and `@weasel-js/core` as served on 2026-10-19.
@@ -73,6 +73,15 @@ describe('classify', () => {
   it('still reports a pending package missing when it was never published', () => {
     const result = classify([{ name: '@weasel-js/new', packument: null }], ['@weasel-js/new']);
     expect(result.missing).toEqual(['@weasel-js/new']);
+  });
+});
+
+describe('listsPublisher', () => {
+  it('needs both the repository and the workflow in what npm lists', () => {
+    const out = 'type: github\nrepository: orochi235/weasel\nfile: release.yml\n';
+    expect(listsPublisher(out, 'orochi235/weasel', 'release.yml')).toBe(true);
+    expect(listsPublisher(out, 'orochi235/other', 'release.yml')).toBe(false);
+    expect(listsPublisher('', 'orochi235/weasel', 'release.yml')).toBe(false);
   });
 });
 

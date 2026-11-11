@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { moveItems, movedIndex } from '@weasel-js/ui-logic';
+import { moveItems, movedIndex } from '@weasel-js/ui-input';
 import { useReorderDragList, type ReorderItem } from '../../useReorderDragList';
 import { wrapLine } from '../../wrapLine';
 

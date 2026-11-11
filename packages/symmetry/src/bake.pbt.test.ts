@@ -1,6 +1,7 @@
 /**
  * Property tests of baking: `carryPose` lands a box where the copy's transform takes it, and a baked group holds
- * exactly the shapes its live copies drew, each where it drew, as one undo step that puts the scene back.
+ * exactly the shapes its live copies drew, each where it drew, as one undo step that puts the scene back; and a group
+ * holding a symmetry group bakes both, each copy of a copy where the two drew it, and leaves no symmetry group behind.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -9,9 +10,9 @@ import { asNodeId, createScene, type NodeId, type RectPose, type SceneRegistry }
 import { carryPose, bakeSymmetry, type BoxPose } from './bake';
 import { createSymmetry } from './controller';
 import { worldPoseOf } from './frames';
-import { readGroup, symmetryRegistry } from './group';
+import { isSymmetryGroup, readGroup, symmetryRegistry } from './group';
 import { symmetryTransforms } from './kinds';
-import { angle, coord, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
+import { ID, angle, coord, near, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 150;
 
@@ -130,5 +131,41 @@ describe('bakeSymmetry', () => {
     for (const k of ['mirror', 'radial', 'repeat', 'kaleidoscope', 'wallpaper']) t.atLeast(k, 6);
     t.atLeast('copies', 60);
     t.atLeast('in a frame', 30);
+  }, timeoutFor(RUNS, 40));
+});
+
+describe('bakeSymmetry of a symmetry group inside another', () => {
+  const small = spec({ maxCount: 4 }).filter((s) => symmetryTransforms(s, { x: 0, y: 0 }).length <= 6);
+  const world = fc.record({ outer: small, inner: small, co: point(300), ci: point(300), leaves: fc.array(boxPose, { minLength: 1, maxLength: 2 }) });
+
+  it('draws every copy of a copy where the outer copy took the inner one, and leaves no symmetry group to bake again', () => {
+    const t = tally();
+    fc.assert(fc.property(world, ({ outer, inner, co, ci, leaves }) => {
+      const scene = setupScene();
+      const sym = createSymmetry(scene as never);
+      const g = sym.create({ center: co, symmetry: outer });
+      const h = sym.create({ center: ci, symmetry: inner, parent: g });
+      leaves.forEach((pose, k) => {
+        scene.add({ kind: 'mark', layer: 'main', parent: h, id: asNodeId(`leaf${k}`), pose: pose as RectPose, data: { k } });
+      });
+      const o = readGroup(scene as never, g)!;
+      const i = readGroup(scene as never, h)!;
+      const drawn = frames(scene, leavesUnder(scene, g));
+      const outerCopies = [ID, ...symmetryTransforms(o.spec, o.center)];
+      const innerCopies = [ID, ...symmetryTransforms(i.spec, i.center)];
+      const want = outerCopies.flatMap((a) => innerCopies.flatMap((b) => drawn.map((f) => multiply(a, multiply(b, f)))));
+
+      const out = bakeSymmetry(scene as never, g)!;
+      expect(out.skipped).toEqual([]);
+      expect(scene.get(h)).toBeUndefined();
+      expect(sameSet(frames(scene, leavesUnder(scene, out.group)), want)).toBe(true);
+      const all: NodeId[] = [];
+      const walk = (n: NodeId): void => { all.push(n); scene.childrenOf(n).forEach(walk); };
+      walk(out.group);
+      expect(all.filter((n) => isSymmetryGroup(scene as never, n))).toEqual([]);
+      expect(bakeSymmetry(scene as never, out.group)).toBeNull();
+      if (outerCopies.length > 1 && innerCopies.length > 1) t.count('copies of copies');
+    }), runs(RUNS));
+    t.atLeast('copies of copies', 40);
   }, timeoutFor(RUNS, 40));
 });

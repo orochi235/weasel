@@ -2,4 +2,6 @@
 "@weasel-js/forge": patch
 ---
 
-A CSF story's args and argTypes keyed like an `Object.prototype` member are read as the story's own. An argType keyed `__proto__` gets its control rather than replacing the schema's prototype; an argTypes-only key named `toString` or `constructor` gets a control rather than being skipped as an arg holding a function; an arg named `constructor` with no argType is no longer labeled `Object`; and the part of an arg the frame puts back after a control edit keeps a `__proto__` key as a key. Parameters keyed `__proto__` merge as own keys too.
+A CSF story's args, argTypes and parameters read a key named like an `Object.prototype` member as the story's own. That includes `__proto__`, `toString` and `constructor`.
+
+<!-- entry: rank=-5 fix -->

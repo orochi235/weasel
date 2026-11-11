@@ -2,7 +2,8 @@ import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactEl
 import { openPointerSession, useElementSize, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { decimalsOf, type TickSet } from '@weasel-js/plot/scales';
-import { panWindow, TICK_SPACING_PX, toPercent, windowScale, zoomWindow, type TimeWindow } from './timeScale';
+import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
+import { MIN_SPAN_MS, TICK_SPACING_PX, toPercent, windowScale, type TimeWindow } from './timeScale';
 
 /** One wheel notch's zoom factor. */
 const ZOOM_STEP = 0.0015;
@@ -42,9 +43,8 @@ export function Ruler(props: RulerProps): ReactElement {
   const widthOf = (): number => trackRef.current?.getBoundingClientRect().width ?? 0;
   const msAt = (clientX: number): number => {
     const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect) return win.from;
-    const raw = windowScale(win, rect.width).invert(clientX - rect.left);
-    return Math.min(win.to, Math.max(win.from, raw));
+    if (!rect || rect.width === 0) return win.from;
+    return sliderAt((clientX - rect.left) / rect.width, { min: win.from, max: win.to, ...spanMap(win) });
   };
 
   // `capture: false`: the session tracks the pointer off the ruler on its own,
@@ -66,13 +66,13 @@ export function Ruler(props: RulerProps): ReactElement {
   const onWheel = useLatest((e: WheelEvent): void => {
     if (e.ctrlKey) {
       e.preventDefault();
-      onWindowChange(zoomWindow(win, msAt(e.clientX), Math.exp(e.deltaY * ZOOM_STEP), bounds));
+      onWindowChange(spanZoom(win, msAt(e.clientX), Math.exp(e.deltaY * ZOOM_STEP), bounds, MIN_SPAN_MS));
       return;
     }
     const width = widthOf();
     const perPx = width === 0 ? 0 : (win.to - win.from) / width;
     const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-    const next = panWindow(win, delta * perPx, bounds);
+    const next = spanPan(win, delta * perPx, bounds);
     // At either end the wheel goes back to scrolling the page.
     if (next.from === win.from && next.to === win.to) return;
     e.preventDefault();

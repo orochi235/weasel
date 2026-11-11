@@ -3,7 +3,7 @@ import { openPointerSession, type PointerSession } from '@weasel-js/core';
 import { snapToStep } from '@weasel-js/quantity';
 import { clamp, maxOf, minOf } from '@weasel-js/geom';
 import { DROP_OFF, type SliderGeometry } from './sliderGeometry';
-import { clampOrdered } from '@weasel-js/ui-logic';
+import { clampOrdered } from '@weasel-js/ui-input';
 import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale, useSpan } from './useSpan';

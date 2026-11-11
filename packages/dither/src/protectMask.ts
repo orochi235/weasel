@@ -10,6 +10,7 @@ const far = (at: number, size: number): number => (size === Infinity && at < Inf
 export function protectMask(rects: Iterable<Rect>, width: number, height: number): Uint8Array {
   checkImageSize('protectMask', width, height);
   const mask = new Uint8Array(width * height);
+  if (mask.length === 0) return mask;
   for (const r of rects) {
     const x0 = Math.max(0, Math.floor(r.x));
     const y0 = Math.max(0, Math.floor(r.y));

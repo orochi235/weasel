@@ -55,7 +55,8 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
     settle(ctx: object) {
       tables.clear();
       refs.clear();
-      const all = [...uses.values()];
+      // By module id, not transform order, which a bundler does not fix: the same modules write the same bundle.
+      const all = [...uses].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).map(([, use]) => use);
       const pkgs = new Set(all.flatMap((u) => (u.pkg ? [u.pkg] : [])));
       for (const t of tablesFrom(new Set(all.flatMap((u) => u.gens)), pkgs)) add(ctx, t);
       for (const u of all) for (const ref of u.refs) if (!refs.has(ref)) refs.set(ref, u.file);
@@ -63,7 +64,7 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
         const parts = splitIconRef(ref);
         const table = parts && tables.get(parts.namespace);
         if (!parts || !table) fail(ctx, `no package in this build provides the icon namespace "${parts?.namespace ?? ref}" (named in ${from})`);
-        if (!table.icons[parts.name]) fail(ctx, `icon "${ref}" is not in ${table.owner}'s table (named in ${from})`);
+        if (!Object.hasOwn(table.icons, parts.name)) fail(ctx, `icon "${ref}" is not in ${table.owner}'s table (named in ${from})`);
       }
     },
     /** The tables a variant holds; in dev the used variant holds every table. */

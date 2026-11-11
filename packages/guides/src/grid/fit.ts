@@ -25,7 +25,8 @@ export function gridFit(
       if (!a) continue;
       const near = nearestLine(a, p[axis]);
       const distance = near === null ? Infinity : Math.abs(p[axis] - near);
-      if (distance > tolerance) misses.push({ index, axis, distance });
+      // Written so a NaN tolerance, or a point no line is near, misses too.
+      if (!(distance <= tolerance) || distance === Infinity) misses.push({ index, axis, distance });
     }
   });
   return { fits: misses.length === 0, misses };

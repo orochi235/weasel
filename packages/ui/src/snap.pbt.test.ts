@@ -1,33 +1,15 @@
 /**
- * Property tests of the snapping helpers: `snapToNearest`, the slider track's `catchStop`, and `trackPlace`, the
+ * Property tests of the snapping helpers: the slider track's `catchStop`, and `trackPlace`, the
  * native range input laid over a linear, log, or square-root scale.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { linearScale, logScale, powScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
-import { snapToNearest } from './snap';
 import { catchStop } from './components/Properties/sliderStops';
 import { trackPlace } from './components/Properties/sliderScale';
 import { finite, runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
-
-describe('snapToNearest', () => {
-  it('answers the value, or the nearest candidate within the tolerance', () => {
-    const t = tally();
-    const near = fc.double({ min: -100, max: 100, noNaN: true });
-    fc.assert(fc.property(near, fc.array(near, { maxLength: 8 }), fc.double({ min: 0, max: 50, noNaN: true }), (v, cs, tol) => {
-      const out = snapToNearest(v, cs, tol);
-      const inside = cs.filter((c) => Math.abs(c - v) <= tol);
-      if (inside.length === 0) { expect(out).toBe(v); t.count('free'); return; }
-      t.count('snapped');
-      expect(cs).toContain(out);
-      expect(Math.abs(out - v)).toBe(Math.min(...inside.map((c) => Math.abs(c - v))));
-    }), runs(RUNS));
-    t.atLeast('free', 20);
-    t.atLeast('snapped', 20);
-  }, timeoutFor(RUNS, 1));
-});
 
 describe('catchStop', () => {
   it('lands on the first stop the move crosses, else where it was headed', () => {

@@ -1,3 +1,4 @@
+import { extentScale } from '@weasel-js/geom';
 import type { PoseDescriptor } from './poseDescriptor';
 
 /** Test-only pose that is neither a rect nor a Path, so nothing built in can
@@ -9,8 +10,8 @@ export const circle = (cx: number, cy: number, r: number): CirclePose => ({ cx, 
 export const CIRCLE_POSE_DESCRIPTOR: PoseDescriptor<CirclePose> = {
   getBounds: (p) => ({ x: p.cx - p.r, y: p.cy - p.r, width: 2 * p.r, height: 2 * p.r }),
   remapBounds: (p, src, dst) => {
-    const sx = src.width === 0 ? 1 : dst.width / src.width;
-    const sy = src.height === 0 ? 1 : dst.height / src.height;
+    const sx = extentScale(src.width, dst.width);
+    const sy = extentScale(src.height, dst.height);
     return {
       cx: dst.x + (p.cx - src.x) * sx,
       cy: dst.y + (p.cy - src.y) * sy,

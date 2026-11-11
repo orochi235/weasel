@@ -48,6 +48,9 @@ export interface PaintedCursorState {
   subscribe(fn: () => void): () => void;
 }
 
+/** `===`, but `NaN` is itself: a write of the same `NaN` changes nothing drawn. */
+const sameNumber = (a: number | undefined, b: number | undefined): boolean => a === b || (a !== a && b !== b);
+
 /**
  * Structural, not `Object.is`. Both writers rebuild their cursor object from a
  * spec every time they run — the pump on every pointermove, `<Canvas>` on
@@ -60,9 +63,9 @@ function same(a: PaintedCursor | 'none' | null, b: PaintedCursor | 'none' | null
   return (
     a.glyph === b.glyph &&
     a.mark === b.mark &&
-    a.angle === b.angle &&
-    a.size === b.size &&
-    a.worldRadius === b.worldRadius
+    sameNumber(a.angle, b.angle) &&
+    sameNumber(a.size, b.size) &&
+    sameNumber(a.worldRadius, b.worldRadius)
   );
 }
 
@@ -90,7 +93,7 @@ export function createPaintedCursorState(): PaintedCursorState {
       // A moved pointer only matters while something is being painted; a
       // notify per pointermove otherwise would request a redraw per event
       // for a cursor the compositor is drawing itself.
-      if (at && at.x === x && at.y === y) return;
+      if (at && sameNumber(at.x, x) && sameNumber(at.y, y)) return;
       at = { x, y };
       if (shown()) notify();
     },

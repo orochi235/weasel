@@ -88,10 +88,12 @@ export function verticalMetricsFromTables(t: FaceMetricTables): { ascent: number
   const upem = t.unitsPerEm;
   if (!finite(upem) || upem <= 0) return undefined;
   const os2 = t.os2;
-  const pair = (a: unknown, d: unknown, down: boolean) =>
-    finite(a) && finite(d) && a + (down ? d : -d) > 0
-      ? { ascent: a / upem, descent: (down ? d : -d) / upem }
-      : undefined;
+  const pair = (a: unknown, d: unknown, down: boolean) => {
+    if (!finite(a) || !finite(d)) return undefined;
+    const ascent = a / upem;
+    const descent = (down ? d : -d) / upem;
+    return finite(ascent) && finite(descent) && ascent + descent > 0 ? { ascent, descent } : undefined;
+  };
   const typo = pair(os2?.sTypoAscender, os2?.sTypoDescender, false);
   const hhea = pair(t.hhea?.ascender, t.hhea?.descender, false);
   const win = pair(os2?.usWinAscent, os2?.usWinDescent, true);
@@ -117,14 +119,17 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
     superscript?: FaceScriptMetrics; subscript?: FaceScriptMetrics;
     xHeight?: number; capHeight?: number;
   } = {};
-  const rule = (position: unknown, thickness: unknown): FaceRuleMetrics | undefined =>
-    finite(position) && finite(thickness) && thickness > 0
-      ? { offset: -position / upem, thickness: thickness / upem }
-      : undefined;
-  const script = (size: unknown, shift: unknown): FaceScriptMetrics | undefined =>
-    finite(size) && finite(shift) && size > 0
-      ? { size: size / upem, shift: shift / upem }
-      : undefined;
+  // Checked as em fractions, not as table values: at a magnitude no 16-bit field holds, the division alone can
+  // overflow to Infinity or underflow to 0.
+  const em = (n: unknown): number | undefined => (finite(n) && finite(n / upem) ? n / upem : undefined);
+  const rule = (position: unknown, thickness: unknown): FaceRuleMetrics | undefined => {
+    const offset = em(position), weight = em(thickness);
+    return offset !== undefined && weight !== undefined && weight > 0 ? { offset: -offset, thickness: weight } : undefined;
+  };
+  const script = (size: unknown, shift: unknown): FaceScriptMetrics | undefined => {
+    const scale = em(size), rise = em(shift);
+    return scale !== undefined && rise !== undefined && scale > 0 ? { size: scale, shift: rise } : undefined;
+  };
   const underline = rule(t.post?.underlinePosition, t.post?.underlineThickness);
   const strikethrough = rule(t.os2?.yStrikeoutPosition, t.os2?.yStrikeoutSize);
   const superscript = script(t.os2?.ySuperscriptYSize, t.os2?.ySuperscriptYOffset);
@@ -138,8 +143,9 @@ export function faceMetricsFromTables(t: FaceMetricTables): FaceMetrics | undefi
   if (subscript) out.subscript = subscript;
   const xHeight = t.os2?.sxHeight;
   const capHeight = t.os2?.sCapHeight;
-  if (finite(xHeight) && xHeight > 0) out.xHeight = xHeight / upem;
-  if (finite(capHeight) && capHeight > 0) out.capHeight = capHeight / upem;
+  const x = em(xHeight), cap = em(capHeight);
+  if (x !== undefined && x > 0) out.xHeight = x;
+  if (cap !== undefined && cap > 0) out.capHeight = cap;
   return Object.keys(out).length > 0 ? out : undefined;
 }
 

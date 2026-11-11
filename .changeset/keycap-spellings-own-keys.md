@@ -2,4 +2,6 @@
 "@weasel-js/ui": patch
 ---
 
-A keycap whose legend is named like an `Object.prototype` member (`constructor`, `toString`) prints it, where looking up its alternate spellings threw a `TypeError`.
+A keycap whose legend is named like an `Object.prototype` member, such as `constructor` or `toString`, prints it instead of throwing.
+
+<!-- entry: rank=-5 fix -->

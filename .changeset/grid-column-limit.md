@@ -1,5 +1,7 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
-A tiling's `columns` is held to at most 2^24. `tileRows` and `tileKey` gave no rows for an `Infinity` column count, so the arrows went nowhere; `tileGrid` overflowed the stack on one with a stretched last row, and gave `Infinity` tracks for a count near the double range.
+A tiling's `columns` is held to at most 2^24, so `tileRows`, `tileKey` and `tileGrid` work for an `Infinity` or huge column count.
+
+<!-- entry: rank=-5 fix -->

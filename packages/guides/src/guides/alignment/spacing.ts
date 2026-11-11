@@ -1,5 +1,6 @@
 import type { Bounds } from '@weasel-js/core';
 import type { SpacingGap } from '../types';
+import { isFiniteBox } from './finite';
 import type { SpacingEdge, SpacingMatchResult } from './types';
 
 const EPS = 1e-6;
@@ -38,7 +39,8 @@ function hitsStrip(g: SpacingGap, b: Bounds, span: [number, number]): boolean {
  * and the nearest box to its right that shares some of its vertical range
  * (every one tied for nearest), as long as no third box stands in the strip
  * between them. These are the gaps an
- * equal-spacing snap can reproduce.
+ * equal-spacing snap can reproduce. A box with a coordinate that is not
+ * finite has no gaps.
  */
 export function measureGaps(targets: readonly Bounds[], axis: 'x' | 'y'): SpacingGap[] {
   return measureGapSpans(targets, axis).map((m) => m.gap);
@@ -51,11 +53,12 @@ export interface MeasuredGap { gap: SpacingGap; span: [number, number] }
  *  filters. Quadratic in `targets`, so a caller matching every frame keeps
  *  the result while the targets stand still. */
 export function measureGapSpans(targets: readonly Bounds[], axis: Axis): MeasuredGap[] {
+  const finite = targets.filter(isFiniteBox);
   const out: MeasuredGap[] = [];
-  for (const a of targets) {
+  for (const a of finite) {
     // Every box tied for nearest, so the gaps found never depend on the order the boxes come in.
     let nearest: Bounds[] = [];
-    for (const c of targets) {
+    for (const c of finite) {
       if (c === a || lo(c, axis) < hi(a, axis) + EPS) continue;
       if (overlap(a, c, cross(axis)) === null) continue;
       if (nearest.length === 0 || lo(c, axis) < lo(nearest[0]!, axis)) nearest = [c];
@@ -64,7 +67,7 @@ export function measureGapSpans(targets: readonly Bounds[], axis: Axis): Measure
     for (const next of nearest) {
       const gap = gapBetween(a, next, axis)!;
       const span = overlap(a, next, cross(axis))!;
-      if (targets.some((t) => t !== a && t !== next && hitsStrip(gap, t, span))) continue;
+      if (finite.some((t) => t !== a && t !== next && hitsStrip(gap, t, span))) continue;
       out.push({ gap, span });
     }
   }
@@ -101,7 +104,7 @@ export function spacingOffers(
   const moving = { x: axis === 'x' ? edge : null, y: axis === 'y' ? edge : null };
   // Only where the placed box really has the gap: no sibling, one overlapping it included, blocks it.
   const offer = (delta: number, gap: number): void => {
-    if (gap > EPS && hasGap(applyEdges(b, axis === 'x' ? delta : 0, axis === 'y' ? delta : 0, moving), axis, gap, targets)) {
+    if (gap > EPS && hasGap(applyEdges(b, axis === 'x' ? delta : 0, axis === 'y' ? delta : 0, moving), axis, gap, targets, refs)) {
       out.push({ delta, size: gap });
     }
   };
@@ -127,7 +130,7 @@ export function spacingOffers(
   return out;
 }
 
-/** The nearest equal-spacing placement on one axis within `tol`, or null. */
+/** The nearest equal-spacing placement on one axis within `tol`, or null; none within a `tol` that is not a length. */
 function bestAxis(
   b: Bounds,
   axis: Axis,
@@ -138,7 +141,7 @@ function bestAxis(
 ): SpacingOffer | null {
   let best: SpacingOffer | null = null;
   for (const o of spacingOffers(b, axis, edge, targets, refs)) {
-    if (Math.abs(o.delta) > tol) continue;
+    if (!(Math.abs(o.delta) <= tol)) continue;
     if (best === null || Math.abs(o.delta) < Math.abs(best.delta)) best = o;
   }
   return best;
@@ -146,7 +149,8 @@ function bestAxis(
 
 /** Every gap of `size` on `axis` once the box sits at `b`: the matching
  *  reference gaps, plus the box's own gaps to its two neighbors; none when
- *  the box has no gap of that size. */
+ *  the box has no gap of that size, or when it is the only gap of that size,
+ *  which spaces nothing equally. */
 export function equalGaps(
   b: Bounds,
   axis: Axis,
@@ -156,13 +160,14 @@ export function equalGaps(
 ): SpacingGap[] {
   const eq = (g: SpacingGap) => Math.abs(g.max - g.min - size) < 1e-3;
   const own = ownGaps(b, axis, targets).filter(eq);
+  const all = [...refs.filter(eq), ...own];
   // Equal to nothing the box has, the reference gaps would mark a spacing it does not keep.
-  return own.length === 0 ? [] : [...refs.filter(eq), ...own];
+  return own.length === 0 || all.length < 2 ? [] : all;
 }
 
-/** Whether the box at `b` has a gap of `size` to a neighbor on `axis`. */
-function hasGap(b: Bounds, axis: Axis, size: number, targets: readonly Bounds[]): boolean {
-  return ownGaps(b, axis, targets).some((g) => Math.abs(g.max - g.min - size) < 1e-3);
+/** Whether the box at `b` keeps an equal spacing of `size` on `axis`. */
+function hasGap(b: Bounds, axis: Axis, size: number, targets: readonly Bounds[], refs: readonly SpacingGap[]): boolean {
+  return equalGaps(b, axis, size, targets, refs).length > 0;
 }
 
 /** The box's gaps to its neighbors on `axis`, the nearest sharing some of its
@@ -202,7 +207,8 @@ export function referenceGaps(bounds: Bounds, measured: readonly MeasuredGap[]):
  * for a translate, `'min'`/`'max'` for a resize dragging that edge, `null` to
  * leave the axis alone. Default `'both'` on each axis.
  *
- * Targets should exclude the box itself. A reference gap the box now stands
+ * Targets should exclude the box itself; one with a coordinate that is not
+ * finite counts for nothing. A reference gap the box now stands
  * inside no longer counts, and no placement is offered across a gap another
  * box blocks. A snap on one axis that the other's carries away from the gap
  * it reproduced is dropped, so every gap marked is one the box has. The returned gaps are every gap equal to the one
@@ -215,16 +221,17 @@ export function matchSpacing(
   worldTolerance: { x: number; y: number },
   moving: { x: SpacingEdge | null; y: SpacingEdge | null } = { x: 'both', y: 'both' },
 ): SpacingMatchResult {
-  const refsX = referenceGaps(bounds, measureGapSpans(targets, 'x'));
-  const refsY = referenceGaps(bounds, measureGapSpans(targets, 'y'));
-  let x = moving.x === null ? null : bestAxis(bounds, 'x', moving.x, targets, refsX, worldTolerance.x);
-  let y = moving.y === null ? null : bestAxis(bounds, 'y', moving.y, targets, refsY, worldTolerance.y);
+  const finite = targets.filter(isFiniteBox);
+  const refsX = referenceGaps(bounds, measureGapSpans(finite, 'x'));
+  const refsY = referenceGaps(bounds, measureGapSpans(finite, 'y'));
+  let x = moving.x === null ? null : bestAxis(bounds, 'x', moving.x, finite, refsX, worldTolerance.x);
+  let y = moving.y === null ? null : bestAxis(bounds, 'y', moving.y, finite, refsY, worldTolerance.y);
   // Each axis placed the box from where it started; a snap the other axis's move undoes is dropped,
   // and dropping it can undo the other, so check again until both stand.
   let final = applyEdges(bounds, x?.delta ?? 0, y?.delta ?? 0, moving);
   for (;;) {
-    const keepX = x === null || hasGap(final, 'x', x.size, targets);
-    const keepY = y === null || hasGap(final, 'y', y.size, targets);
+    const keepX = x === null || hasGap(final, 'x', x.size, finite, refsX);
+    const keepY = y === null || hasGap(final, 'y', y.size, finite, refsY);
     if (keepX && keepY) break;
     if (!keepX) x = null;
     if (!keepY) y = null;
@@ -235,8 +242,8 @@ export function matchSpacing(
   return {
     dx,
     dy,
-    gapsX: x === null ? [] : equalGaps(final, 'x', x.size, targets, refsX),
-    gapsY: y === null ? [] : equalGaps(final, 'y', y.size, targets, refsY),
+    gapsX: x === null ? [] : equalGaps(final, 'x', x.size, finite, refsX),
+    gapsY: y === null ? [] : equalGaps(final, 'y', y.size, finite, refsY),
   };
 }
 

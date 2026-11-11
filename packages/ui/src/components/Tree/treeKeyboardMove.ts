@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import type { TreeDropTarget } from '../../dropTarget';
-import { arrowDir, isNudgeChord } from '@weasel-js/ui-logic';
+import { arrowDir, isNudgeChord } from '@weasel-js/ui-input';
 import { inlineDirection } from '../../useRovingTabIndex';
 import type { TreeNode } from './Tree';
 import { draggedIdsFor, isNoopMove, keyboardTarget, landsInside, parentsOf, type KeyboardMove } from './treeMoves';

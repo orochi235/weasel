@@ -1,5 +1,5 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { selectionOfEach, type OwnSelection } from '@weasel-js/ui-logic';
+import { selectionOfEach, type OwnSelection } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from '../segmentSweep';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';

@@ -1,4 +1,5 @@
-import { tabSort, tabStep, type FocusScope, type FocusScopeOptions } from '@weasel-js/ui-logic';
+import { tabSort, tabStep } from '@weasel-js/ui-input';
+import { type FocusScope, type FocusScopeOptions } from '@weasel-js/ui-logic';
 import { createEmitter } from '@weasel-js/registry';
 import { isFocusable, type Widget } from './widget';
 import type { HudHost } from './host';

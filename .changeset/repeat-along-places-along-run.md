@@ -4,6 +4,8 @@
 "@weasel-js/path-tools": patch
 ---
 
-Repeat Along now lays its copies through `placeAlongRun`, and its placement changed, so a saved document's repeats land in different places. Each copy is an item as long along the path as the shape is wide: a count with no spacing spreads the copies so the first starts at the path's start and the last ends at its end (they used to be centered on the ends), and `spacing` is the space between one copy's end and the next one's start rather than the distance between their centers. On an open path a copy slid partly off an end by `offset` is kept, and only one slid wholly off is dropped. `stationsAlongPath` takes the copies' length as a third argument, 0 by default.
+Repeat Along lays its copies end to end along the path, so a saved document's repeats land in new places.
 
-`runPlaces` and `placeAlongRun` judge an item against a run's ends within rounding error, as they already did round a wrapped closed run, so an item laid to meet an end exactly is no longer marked past it.
+Each copy is as long along the path as the shape is wide. A count with no spacing puts the first copy's start at the path's start and the last copy's end at its end, rather than centering them on the ends, and `spacing` is the gap between one copy's end and the next one's start, not between their centers. On an open path a copy that `offset` slides partly off an end is kept; one slid wholly off is dropped. `stationsAlongPath` takes the copies' length as a third argument, 0 by default.
+
+<!-- entry: rank=10 behavior data visual api -->

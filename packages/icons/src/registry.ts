@@ -92,6 +92,12 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
   const add = (tables: IconTable | readonly IconTable[]): (() => void) => {
     const list = Array.isArray(tables) ? tables : [tables as IconTable];
     if (list.length === 0) return () => {};
+    for (const t of list) {
+      const icons: unknown = t?.icons;
+      if (typeof t?.namespace !== 'string' || typeof t.owner !== 'string' || icons === null || typeof icons !== 'object' || Array.isArray(icons)) {
+        throw new TypeError(`an icon table needs a string namespace and owner and an object of icons, got ${String(t?.namespace)}`);
+      }
+    }
     // Check every claim, those within the batch included, before writing any: a refused batch registers nothing.
     const pending = new Map<string, string>();
     for (const t of list) {

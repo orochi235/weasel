@@ -1,6 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { BindingOpts, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
+import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { rotateCursorAt } from 'affordances/rotateCursor';
@@ -50,7 +51,7 @@ export const rotateAction: Action & { requires: string[] } = inPlane({
         },
         onMove(moveCtx: InvocationCtx): void {
           pointer = moveCtx.world;
-          frame = nextFrame(session, readers, moveCtx, frame.swept);
+          frame = finiteFrame(frame, moveCtx, () => nextFrame(session, readers, moveCtx, frame.swept), (f) => f.previews);
           hold.set(preview.poses());
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

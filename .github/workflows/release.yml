@@ -49,6 +49,8 @@ jobs:
       # checks this on the PR, but the release path accepts
       # `workflow_dispatch`, which bypasses that entirely.
       - run: npm run check:bumps
+      # Every pending changeset carries a valid entry marker. See docs/releasing.md.
+      - run: npm run check:changesets
       # A package missing from the `fixed` group versions on its own, which the
       # release path would then publish as a sibling that disagrees.
       - run: npm run check:lockstep
@@ -82,14 +84,14 @@ jobs:
           version-script: npm run version-packages
           commit-message: "chore: version packages"
           pr-title: "chore: version packages"
-          # scripts/github-releases.mjs writes them, in the next step: the action
+          # scripts/release/github-releases.mjs writes them, in the next step: the action
           # sends each changelog section whole, and GitHub refuses a body over
           # 125,000 characters. 1.10.0's core section was 135,412, so this step
           # failed with every package already on npm and the checks below skipped.
           create-github-releases: false
       - name: Write a GitHub release for each package
         if: steps.changesets.outputs.published == 'true'
-        run: node scripts/github-releases.mjs
+        run: node scripts/release/github-releases.mjs
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISHED: ${{ steps.changesets.outputs.published-packages }}

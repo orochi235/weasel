@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { EMPTY_TYPEAHEAD, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-logic';
+import { EMPTY_TYPEAHEAD, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { spinKey } from '@weasel-js/quantity';
 import { accessLetter } from './access';
 import { createMenuController, SUBMENU_OPEN_MS, type MenuController, type MenuScheduler } from './controller';

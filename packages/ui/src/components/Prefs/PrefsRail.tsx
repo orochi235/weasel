@@ -1,5 +1,5 @@
 import { Fragment, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { arrowDir } from '@weasel-js/ui-logic';
+import { arrowDir } from '@weasel-js/ui-input';
 import { inlineDirection, useRovingTabIndex } from '../../useRovingTabIndex';
 import { Disclosure } from '../Disclosure';
 import { dropSlot, isDropPath } from './drop';

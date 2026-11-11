@@ -152,7 +152,8 @@ export interface MoveToIndexArgs {
 
 /** Op: move all `ids` to a contiguous block starting at `index` within `parentId`'s child order. */
 export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
-  const { ids, parentId, index, label } = args;
+  const { ids, parentId, label } = args;
+  const index = serialIndex(args.index);
   // Outer args record we'll mutate so the captured `before` lands in the
   // serialized form. `prevPositions` arrives populated when reconstructed
   // from a snapshot; otherwise it's filled in on first apply.
@@ -200,3 +201,10 @@ export function createMoveToIndexOp(args: MoveToIndexArgs): Op {
 }
 
 registerOpFactory<MoveToIndexArgs>('moveToIndex', (args) => createMoveToIndexOp(args));
+
+/** `index` as a finite integer `moveToIndex` places alike, since JSON writes `Infinity` and `NaN` as `null`, which
+ *  a rebuilt op reads as 0: a move to the top would reload as a move to the bottom. */
+function serialIndex(index: number): number {
+  if (index === Infinity) return Number.MAX_SAFE_INTEGER;
+  return Number.isFinite(index) ? Math.trunc(index) : 0;
+}

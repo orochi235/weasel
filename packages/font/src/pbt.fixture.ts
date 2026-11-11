@@ -88,3 +88,24 @@ export function mutate(bytes: ArrayBuffer, edits: readonly Mutation[], from = 0,
   }
   return out;
 }
+
+/** `bytes`, a single font, with table `tag` added holding `data`, after every table it had. */
+export function withTable(bytes: ArrayBuffer, tag: string, data: Uint8Array): ArrayBuffer {
+  const tables = tablesOf(bytes);
+  const pad = (n: number) => (n + 3) & ~3;
+  const dir = 12 + (tables.length + 1) * 16;
+  const out = new Uint8Array(dir + tables.reduce((n, t) => n + pad(t.length), 0) + pad(data.length));
+  const v = new DataView(out.buffer);
+  out.set(new Uint8Array(bytes, 0, 12));
+  v.setUint16(4, tables.length + 1);
+  let cursor = dir;
+  [...tables.map((t) => ({ tag: t.tag, data: new Uint8Array(bytes, t.offset, t.length) })), { tag, data }].forEach((t, i) => {
+    const rec = 12 + i * 16;
+    for (let c = 0; c < 4; c++) out[rec + c] = t.tag.charCodeAt(c);
+    v.setUint32(rec + 8, cursor);
+    v.setUint32(rec + 12, t.data.length);
+    out.set(t.data, cursor);
+    cursor += pad(t.data.length);
+  });
+  return out.buffer;
+}

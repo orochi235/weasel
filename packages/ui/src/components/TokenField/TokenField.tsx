@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
-import { arrowDir, imeKey } from '@weasel-js/ui-logic';
+import { arrowDir, imeKey } from '@weasel-js/ui-input';
 import { inlineDirection } from '../../useRovingTabIndex';
 import f from '../field.module.css';
 import { TokenChip } from './TokenChip';

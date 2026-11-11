@@ -2,5 +2,6 @@
 '@weasel-js/routing': patch
 ---
 
-A held press's `progress()` reads 0 at a clock or start that is not a number, rather than `NaN`, so it always lies
-between 0 and 1.
+A held press's `progress()` reads 0 rather than `NaN` when the clock or start is not a number.
+
+<!-- entry: rank=-5 fix -->

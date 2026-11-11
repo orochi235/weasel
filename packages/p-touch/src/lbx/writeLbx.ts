@@ -103,6 +103,13 @@ function insideClips(objects: readonly LabelObject[], clips: readonly Clip[]): b
   });
 }
 
+/** Whether every number an object holds is finite: what a file can say and P-touch can place. */
+function finiteObject(v: unknown): boolean {
+  if (typeof v === 'number') return Number.isFinite(v);
+  if (v === null || typeof v !== 'object' || ArrayBuffer.isView(v)) return true;
+  return Object.values(v).every(finiteObject);
+}
+
 function collect(commands: readonly DrawCommand[], state: DrawState, clips: readonly Clip[], out: Item[], skipped: LbxSkip[]): void {
   const raster = (cmd: DrawCommand) => {
     const at = placed(cmd, state, clips);
@@ -113,6 +120,7 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
     if (carried) {
       const placed = placeCarried(carried, state);
       if (typeof placed === 'string') skipped.push({ kind: 'group', detail: placed });
+      else if (!placed.every(finiteObject)) skipped.push({ kind: 'group', detail: 'lbxObjects placed at a position no number can say' });
       else if (placed.length > 0 && !insideClips(placed, clips)) {
         skipped.push({ kind: 'group', detail: 'lbxObjects not wholly inside an axis-aligned rect clip' });
       } else for (const object of placed) out.push({ object });
@@ -142,7 +150,8 @@ function collect(commands: readonly DrawCommand[], state: DrawState, clips: read
       cmd.kind === 'path' ? (rectObject(cmd, state) ?? lineObject(cmd, state)) :
       cmd.kind === 'text' ? textObject(cmd, state) :
       undefined;
-    if (mapped === undefined) raster(cmd);
+    // A position past the double range, under a scale or a stroke that overflows it, is the rasterizer's to draw.
+    if (mapped === undefined || !(Array.isArray(mapped) ? mapped : [mapped]).every(finiteObject)) raster(cmd);
     else for (const object of Array.isArray(mapped) ? mapped : [mapped]) out.push({ object });
   }
 }
@@ -219,6 +228,9 @@ function innermost(cmd: DrawCommand): DrawCommand {
 
 /** The `.lbx` label `page` describes, without the file: its paper, cuts and objects. */
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
+  if (!Number.isFinite(page.length) || page.length <= 0) {
+    throw new RangeError(`writeLbx: a label's length must be a positive finite number of points, got ${page.length}`);
+  }
   const items: Item[] = [];
   const skipped: LbxSkip[] = [];
   collect(page.commands, { transform: mat3.identity(), alpha: 1 }, [], items, skipped);

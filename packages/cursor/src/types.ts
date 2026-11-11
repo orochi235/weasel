@@ -1,3 +1,5 @@
+import { tokenizePathData } from '@weasel-js/geom';
+
 /**
  * A cursor glyph: SVG path `d` strings tagged with a paint role, plus the
  * hotspot in glyph units. The same record feeds both the data-URI baker and
@@ -90,15 +92,14 @@ export const CURSOR_MAX_CSS_PX = 128;
 function walk(d: string, see: (x: number, y: number) => void): void {
   let cx = 0;
   let cy = 0;
-  for (const [, cmd, args] of d.matchAll(/([A-Za-z])([^A-Za-z]*)/g)) {
+  for (const { cmd, args: nums } of tokenizePathData(d)) {
     if (cmd !== cmd.toUpperCase()) {
       throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
     }
-    const nums = (args.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
     if (cmd === 'Z') continue;
     if (cmd === 'A') {
       for (let i = 0; i + 7 <= nums.length; i += 7) {
-        const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7);
+        const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7) as [number, number, number, number, number, number, number];
         const r = Math.max(rx, ry);
         const dx = x - cx;
         const dy = y - cy;
@@ -121,8 +122,8 @@ function walk(d: string, see: (x: number, y: number) => void): void {
     }
     // M and L: plain coordinate pairs.
     for (let i = 0; i + 2 <= nums.length; i += 2) {
-      cx = nums[i];
-      cy = nums[i + 1];
+      cx = nums[i]!;
+      cy = nums[i + 1]!;
       see(cx, cy);
     }
   }

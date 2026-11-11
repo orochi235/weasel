@@ -14,7 +14,7 @@ import {
   type Scene,
   type Vec2,
 } from '@weasel-js/core';
-import { moveItems, nudgeGap } from '@weasel-js/ui-logic';
+import { moveItems, nudgeGap } from '@weasel-js/ui-input';
 import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
 import type { DiagramSceneData } from './dataTypes';

@@ -2,6 +2,8 @@
 '@weasel-js/routing': patch
 ---
 
-Modifier roles named like an `Object.prototype` member resolve by their own keys. A role named `__proto__` was
-dropped from `roleKeysOf`, `resolveRoles`, `platformRoleKeys`, and `rebindRoles`, and one named `toString` read the
-prototype's method as its keys, so `roleReader` answered a function and resolving it threw.
+A modifier role named like an `Object.prototype` member, such as `__proto__` or `toString`, resolves by its own keys.
+
+`roleKeysOf`, `resolveRoles`, `platformRoleKeys`, `rebindRoles` and `roleReader` all read it that way.
+
+<!-- entry: rank=-5 fix -->

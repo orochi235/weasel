@@ -28,7 +28,11 @@ describe('placeCursorPath', () => {
 
   it('refuses numbers it cannot read as whole points, rather than drop or merge one', () => {
     expect(() => placeCursorPath('M 1 2 3', 1, 0, 0)).toThrow(/3 numbers/);
-    expect(() => placeCursorPath('M 0 0 A 5 5 0 015 5', 1, 0, 0)).toThrow(/'A'/);
+    expect(() => placeCursorPath('M 0 0 A 5 5 0 0 1 5', 1, 0, 0)).toThrow(/'A'/);
+  });
+
+  it("reads an arc's flags as SVG does, each one digit needing no separator", () => {
+    expect(placeCursorPath('M 0 0 A 5 5 0 015 5', 1, 0, 0)).toBe('M 0 0 A 5 5 0 0 1 5 5');
   });
 });
 

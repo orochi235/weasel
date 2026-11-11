@@ -11,6 +11,7 @@ import type { createNodeStore } from './nodeStore';
 import type { Recorder } from './recorder';
 import { SceneMembershipError } from './staleReplay';
 import { statedFields } from './statedFields';
+import { slotIndex } from './treeOrder';
 import { isPageStructure } from './nodeGates';
 import type { AddNodeSpec, Node, NodeId, Scene } from './types';
 
@@ -42,7 +43,7 @@ export interface TreeEdits<TData, TLayer extends string, TPose>
  *  once taken out: the end when `index` is omitted, clamped to the ends as `kit:move` places it. */
 function staysPut(siblings: readonly NodeId[], id: NodeId, index: number | undefined): boolean {
   const last = siblings.length - 1;
-  return siblings.indexOf(id) === Math.max(0, Math.min(index ?? last, last));
+  return siblings.indexOf(id) === slotIndex(index ?? last, last);
 }
 
 /** What `kit:remove` carries for the nodes `ids`, read before any of them
@@ -99,7 +100,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       parent: NodeId | null; index: number; dependsOn?: AddNodeSpec<TData, TLayer, TPose>['dependsOn'];
     } = {
       id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
-      parent, index: spec.index ?? siblingsOf(parent).length,
+      parent, index: slotIndex(spec.index ?? Infinity, siblingsOf(parent).length),
     };
     if (spec.dependsOn !== undefined) payload.dependsOn = spec.dependsOn;
     // Assigned rather than spread into the literal: a spread after named fields is V8's slow clone.
@@ -166,7 +167,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       if (parent === fromParent && staysPut(siblingsOf(parent), id, index)) return;
       edit('move', parent !== null || fromParent !== null, () => {
         const fromIndex = siblingsOf(fromParent).indexOf(id);
-        const toIndex = index ?? siblingsOf(parent).length;
+        const toIndex = slotIndex(index ?? Infinity, siblingsOf(parent).length);
         noteArrival(id, parent, fromParent);
         noteDeparture(id, fromParent, parent);
         noteChange(fromParent);
@@ -182,7 +183,7 @@ export function createTreeEdits<TData, TLayer extends string, TPose>(
       edit('reorder', parent !== null, () => {
         noteChange(parent);
         const fromIndex = siblingsOf(parent).indexOf(id);
-        record('kit:move', { id, fromParent: parent, fromIndex, toParent: parent, toIndex: index }, 'reorder');
+        record('kit:move', { id, fromParent: parent, fromIndex, toParent: parent, toIndex: slotIndex(index, siblingsOf(parent).length) }, 'reorder');
       });
     },
   };

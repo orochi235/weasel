@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { moveItems } from '@weasel-js/ui-logic';
+import { moveItems } from '@weasel-js/ui-input';
 import { isPrefLeaf, type PrefGroup, type PrefLeaf, type PrefOrder } from '@weasel-js/prefs';
 
 /** Marks a bar's DOM unit a reorder can move, with the unit's key inside its container. */

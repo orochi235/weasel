@@ -1,5 +1,6 @@
 [
   "@weasel-js/brush",
   "@weasel-js/dither",
-  "@weasel-js/p-touch"
+  "@weasel-js/p-touch",
+  "@weasel-js/ui-input"
 ]

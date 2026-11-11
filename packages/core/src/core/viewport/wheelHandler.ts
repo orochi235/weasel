@@ -67,9 +67,15 @@ export function wheelPan(
   const screenY = swapped ? 0 : delta.deltaY;
   return {
     scale: view.scale,
-    x: view.x + (axis === 'y' ? 0 : screenX / view.scale.x),
-    y: view.y + (axis === 'x' ? 0 : screenY / view.scale.y),
+    x: axis === 'y' ? view.x : panned(view.x, screenX / view.scale.x),
+    y: axis === 'x' ? view.y : panned(view.y, screenY / view.scale.y),
   };
+}
+
+/** `at` moved by `by`, or left where it is when the move is not finite or carries it past the double range. */
+function panned(at: number, by: number): number {
+  const next = at + by;
+  return Number.isFinite(next) ? next : at;
 }
 
 /** Pure reducer: the whole wheel convention in one call. */

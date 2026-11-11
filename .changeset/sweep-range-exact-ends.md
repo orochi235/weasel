@@ -1,5 +1,9 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
-A `range` sweep walks and reads its ends exactly, and keeps a value's own digits past the twelfth. It rounded every step to twelve digits to drop float drift, so a range from `123456.7890123` started at `123456.789012`, and one given a `count` could read `at` a hair outside its ends. Drift (`0.1 * 3` as `0.30000000000000004`) is still dropped; labels still show twelve digits.
+A `range` sweep walks its ends exactly and keeps a value's digits past the twelfth.
+
+Float drift, such as `0.1 * 3` reading `0.30000000000000004`, is still dropped, and labels still show twelve digits.
+
+<!-- entry: fix -->

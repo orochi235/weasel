@@ -59,6 +59,7 @@ export const RULES = [
   ['packages/history/src', 'History'],
   ['packages/icons/src', 'Extension points'],
   ['packages/ui-logic/src', 'Menu'],
+  ['packages/ui-input/src', 'Tools & gestures'],
   ['packages/menu/src', 'Menu'],
   ['packages/paint/src', 'Paint & fills'],
   ['packages/quantity/src', 'Scene'],

@@ -1,4 +1,4 @@
-import { closestOnFlat, resolveSnap, type SnapCandidate } from '@weasel-js/geom/nd';
+import { closestOnFlat, resolveSnap } from '@weasel-js/geom/nd';
 import type { View, Point } from '@weasel-js/geom';
 import type { DebugSink } from '@weasel-js/routing';
 import type { Scene } from 'core/scene/types';
@@ -7,7 +7,7 @@ import type { PlaneMap } from 'core/viewport/parallax';
 import type { SnapBegin, SnapOutcome, SnapSession } from 'interactions/actions/snapDep';
 import { angleAt } from './angle2d';
 import { inputFlat } from './inputSubspace';
-import { gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor, type SnapCandidateMark } from './gather';
+import { gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor, type GatheredCandidate } from './gather';
 import { recordSnapCandidates } from './debugCandidates';
 import { markFromPlane } from './marks';
 import { createSnapOutcomeStore, type SnapOutcomeStore } from './outcomeStore';
@@ -68,13 +68,10 @@ export function createSession2d(given: Session2dInputs): SnapSession {
       const plane = req.plane?.() ?? null;
       const subject = subjectAt(inputs, delta0);
       const candidates = collectAll(sources, inputs.probes, { ...fixed, ...subject }, { delta0, view, plane }, inputs.reachPx);
-      const res = resolveSnap({
-        probes: inputs.probes.map((q) => ({ id: q.id, at: [q.at.x, q.at.y], role: q.role })),
-        input,
-        delta0: [delta0.x, delta0.y],
-        candidates,
-        toScreen: screenOf(view, plane),
-      });
+      const probes = inputs.probes.map((q) => ({ id: q.id, at: [q.at.x, q.at.y], role: q.role }));
+      const res = resolveHolding(candidates, (kept) => resolveSnap({
+        probes, input, delta0: [delta0.x, delta0.y], candidates: kept, toScreen: screenOf(view, plane),
+      }), (d) => ({ x: d[0]!, y: d[1]! }));
       if (inputs.debug) recordSnapCandidates(inputs.debug, candidates, res.satisfied, inputs.probes, delta0, plane);
       const delta = { x: res.delta[0], y: res.delta[1] };
       const marks = resolvedSnapMarks(res.satisfied, delta);
@@ -121,7 +118,7 @@ function collectAtPress(inputs: Session2dInputs): FixedCollect {
 function collectAll(
   sources: readonly SnapSource[], probesAtPress: readonly SnapProbeAt[],
   fixed: FixedCollect & Pick<SnapCollect, 'box' | 'sides' | 'boxAt'>, { delta0, view, plane }: Frame, reachPx: number,
-): SnapCandidate<SnapCandidateMark<Point>>[] {
+): GatheredCandidate<Point>[] {
   const camera = view ? Math.min(Math.abs(view.scale.x), Math.abs(view.scale.y)) : 1;
   // A camera unit is `plane.scale` plane units.
   const scale = plane ? camera / Math.max(Math.abs(plane.scale.x), Math.abs(plane.scale.y)) : camera;

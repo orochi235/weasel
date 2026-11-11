@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { MenuController, MenuEntry, MenuSide, Rect } from '@weasel-js/menu';
 import { placeMenu, placeMenuUnder, placeSubmenu } from '@weasel-js/menu';
 import { inlineDirection } from '../../useRovingTabIndex';
-import { imeKey } from '@weasel-js/ui-logic';
+import { imeKey } from '@weasel-js/ui-input';
 import { blockFrame, clientToBlock, containingBlock } from '../../overlays/blockFrame';
 import { MenuRow, rowTipText } from './MenuRow';
 import { MenuRowTip } from './MenuRowTip';

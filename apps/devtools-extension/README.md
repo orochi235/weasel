@@ -21,7 +21,7 @@ From the repo root:
 | `npm run zip:devtools-extension:chrome` | `dist/weasel-devtools-chrome.zip`, for the Chrome Web Store or Edge Add-ons |
 | `npm run zip:devtools-extension:firefox` | `dist/weasel-devtools-firefox.zip`, for addons.mozilla.org |
 | `npm run safari:devtools-extension` | an Xcode project in `apps/devtools-extension/safari/` (gitignored) |
-| `npm run gen:devtools-extension-icons` | `public/icons/icon-{16,32,48,128}.png`, rendered from the site's logo (`apps/site/assets/weasel-logo.svg`); rerun after the logo changes |
+| `npm run gen:devtools-extension-icons` | `public/icons/icon-{16,32,48,128}.png`, the wordmark's "w" in the wordmark's full gradient (stops read from `apps/site/FrontPage/Wordmark.module.css`); rerun after the wordmark changes |
 
 Each build replaces the one before it, in `dist/` (gitignored).
 

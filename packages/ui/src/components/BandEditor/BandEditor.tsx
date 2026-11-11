@@ -14,7 +14,8 @@ import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
-import { snapToNearest, useSnapRadiusPx } from '../../snap';
+import { attract } from '@weasel-js/ui-input';
+import { useSnapRadiusPx } from '../../snap';
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { clamp01 } from '@weasel-js/geom';
 import { prefNumberScale } from '../Prefs/prefNumberScale';
@@ -181,7 +182,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   const snapped = (unit: number, altKey: boolean): number => {
     if (!snap || altKey || !ticks || ticks.length === 0) return unit;
     const width = trackWidth();
-    return width === 0 ? unit : snapToNearest(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
+    return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
   // An edge drag. One that ends without a release commits nothing.

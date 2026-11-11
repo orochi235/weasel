@@ -1,7 +1,9 @@
 import type { Affine, Point } from '@weasel-js/geom';
 import { clipNothing, type AddNodeSpec, type CopiesFromPoseFn, type NodeId, type Scene, type SceneRegistry } from '@weasel-js/core';
 import { localPoseUnder, shownWorldPoseOf } from './frames';
-import { DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetrySpec } from './kinds';
+import {
+  DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetryExtent, type SymmetrySpec, type WallpaperCell,
+} from './kinds';
 
 /** What a symmetry group keeps in its `data`. Its center is its pose. */
 export interface SymmetryGroupData {
@@ -32,10 +34,28 @@ export function centerUnder(scene: Scene<unknown, string, unknown>, center: Poin
   return parent === null ? center : centerOfPose(localPoseUnder(scene, poseAtCenter(center), parent));
 }
 
-/** The spec a group's `data` holds, with any field it lacks at its default. */
+const CELL_KINDS: readonly string[] = ['none', 'mirror', 'both', 'point', 'radial', 'kaleidoscope'] satisfies WallpaperCell[];
+
+const isExtent = (v: unknown): v is SymmetryExtent =>
+  typeof v === 'object' && v !== null && (['x', 'y', 'width', 'height'] as const)
+    .every((k) => typeof (v as Record<string, unknown>)[k] === 'number');
+
+/**
+ * The spec a group's `data` holds, with any field it lacks at its default, and any it holds of the wrong type, as a
+ * file can: a kind or a cell the table does not name as its own, an extent that is not a box of numbers, or a number
+ * or a flag that is not one.
+ */
 export function specOfData(data: unknown): SymmetrySpec {
-  const s = (data as Partial<SymmetryGroupData> | null | undefined)?.symmetry;
-  return { ...DEFAULT_SYMMETRY, ...s };
+  const s: unknown = (data as Partial<SymmetryGroupData> | null | undefined)?.symmetry;
+  if (typeof s !== 'object' || s === null) return { ...DEFAULT_SYMMETRY };
+  const out: Record<string, unknown> = { ...DEFAULT_SYMMETRY };
+  for (const [k, v] of Object.entries(s)) {
+    if (k === 'glideRows' ? typeof v === 'boolean' : Object.hasOwn(DEFAULT_SYMMETRY, k) && typeof v === typeof out[k]) out[k] = v;
+  }
+  if (!Object.hasOwn(SYMMETRY_KINDS, out.kind as string)) out.kind = DEFAULT_SYMMETRY.kind;
+  if (!CELL_KINDS.includes(out.cell as string)) out.cell = DEFAULT_SYMMETRY.cell;
+  if (!isExtent(out.extent)) out.extent = { ...DEFAULT_SYMMETRY.extent };
+  return out as unknown as SymmetrySpec;
 }
 
 /** A symmetry group's copies: the `copiesFromPose` every group carries. */

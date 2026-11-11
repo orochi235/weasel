@@ -11,7 +11,7 @@ import { Diamond } from './Diamond';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { isHiddenAnchor, isPinnedEndpointAt } from './anchorRules';
-import { arrowMove } from '@weasel-js/ui-logic';
+import { arrowMove } from '@weasel-js/ui-input';
 import { handleHalf } from '../../handles';
 import { dlog } from '../../dlog';
 import s from './CurveEditor.module.css';

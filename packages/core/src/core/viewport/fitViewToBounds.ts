@@ -108,10 +108,11 @@ export function fitViewToBounds(
   };
 }
 
-/** Whether `bounds` holds something to fit: finite, with extent on at least one axis. The one
+/** Whether `bounds` holds something to fit: finite to its far edges, with extent on at least one axis. The one
  *  rule for an empty fit, which {@link fitViewToBounds} and `fitZoom` both answer by. */
 export function hasExtent(bounds: { x?: number; y?: number; width: number; height: number }): boolean {
   const { x = 0, y = 0, width, height } = bounds;
-  if (![x, y, width, height].every(Number.isFinite)) return false;
+  // The far edges too: a box whose edge overflows the double range has no center to put in view.
+  if (![x, y, width, height, x + width, y + height].every(Number.isFinite)) return false;
   return width > 0 || height > 0;
 }

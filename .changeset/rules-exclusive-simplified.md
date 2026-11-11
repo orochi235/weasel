@@ -2,4 +2,6 @@
 '@weasel-js/routing': patch
 ---
 
-`rulesExclusive` simplifies both rules before proving them apart, so a rule written as a constant the long way (`{ not: { any: [ALWAYS] } }`, a one-member `all`, `not` of `not`) is read as that constant. The route-conflict check no longer reports bindings whose rules can never hold together only because one was written that way.
+The route-conflict check no longer reports bindings whose rules exclude each other but are written the long way. `rulesExclusive` simplifies both rules first, reading `{ not: { any: [ALWAYS] } }`, a one-member `all`, or `not` of `not` as the constant it is.
+
+<!-- entry: fix -->

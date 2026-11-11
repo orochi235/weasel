@@ -2,4 +2,6 @@
 '@weasel-js/theme': patch
 ---
 
-`expandVars` reads a `var()` named like an `Object.prototype` member (`var(__proto__)`, `var(constructor)`) as a name the theme does not have: it takes the fallback, or throws its usual error. It used to fail with a `TypeError`.
+`expandVars` treats a `var()` named like an `Object.prototype` member as a name the theme lacks, taking the fallback or throwing its usual error.
+
+<!-- entry: rank=-5 fix -->

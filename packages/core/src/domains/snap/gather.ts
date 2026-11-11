@@ -1,4 +1,4 @@
-import type { SnapCandidate, Vec } from '@weasel-js/geom/nd';
+import type { SnapCandidate, SnapResolution, Vec } from '@weasel-js/geom/nd';
 import { distinct } from './marks';
 import type { SnapCollect, SnapGesture, SnapMark, SnapProbeAt, SnapSource, SourceCandidate } from './types';
 
@@ -22,6 +22,9 @@ export function assertSnapSourceIds(sources: readonly Pick<SnapSource<unknown>, 
 
 /** What a candidate draws when the result meets it. */
 export type SnapCandidateMark<P> = NonNullable<SourceCandidate<P>['mark']>;
+
+/** A resolver candidate as a source offered it, with its `holds` check. */
+export type GatheredCandidate<P> = SnapCandidate<SnapCandidateMark<P>> & Pick<SourceCandidate<P>, 'holds'>;
 
 /** How near `origin` a point target counts as on it, relative to its magnitude. */
 const ORIGIN_EPS = 1e-9;
@@ -49,9 +52,9 @@ export function gatherSnapCandidates<P>(
   probes: readonly SnapProbeAt<P>[],
   ask: (source: SnapSource<P>, offered: SnapProbeAt<P>[], reachPx: number) => SnapCollect<P>,
   opts: GatherSnapOptions<P>,
-): SnapCandidate<SnapCandidateMark<P>>[] {
+): GatheredCandidate<P>[] {
   const origin = opts.origin === undefined ? null : opts.toVec(opts.origin);
-  const out: SnapCandidate<SnapCandidateMark<P>>[] = [];
+  const out: GatheredCandidate<P>[] = [];
   let order = 0;
   for (const source of sources) {
     const offered = probes.filter((q) => source.roles.includes(q.role));
@@ -68,10 +71,33 @@ export function gatherSnapCandidates<P>(
         source: source.id, order: order++, tier: source.tier ?? 'target', reachPx,
         ...(c.required ? { required: true } : {}),
         ...(c.mark ? { mark: c.mark } : {}),
+        ...(c.holds ? { holds: c.holds } : {}),
       });
     }
   }
   return out;
+}
+
+/**
+ * `resolve` over `candidates`, then again without each member whose `holds`
+ * the resolved move breaks, until every member holds: the result a host's
+ * session takes. `toPoint` reads the resolver's move as the host's point.
+ */
+export function resolveHolding<P>(
+  candidates: readonly GatheredCandidate<P>[],
+  resolve: (candidates: readonly GatheredCandidate<P>[]) => SnapResolution<SnapCandidateMark<P>>,
+  toPoint: (delta: Vec) => P,
+): SnapResolution<SnapCandidateMark<P>> {
+  let kept = candidates;
+  let res = resolve(kept);
+  // Each pass drops at least one candidate, so this ends.
+  for (;;) {
+    const delta = toPoint(res.delta);
+    const broken = new Set(res.members.filter((c) => (c as GatheredCandidate<P>).holds?.(delta) === false));
+    if (broken.size === 0) return res;
+    kept = kept.filter((c) => !broken.has(c));
+    res = resolve(kept);
+  }
 }
 
 function same(a: Vec, b: Vec): boolean {

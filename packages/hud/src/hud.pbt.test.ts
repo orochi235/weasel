@@ -5,7 +5,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { tabSort, tabStep } from '@weasel-js/ui-logic';
+import { tabSort, tabStep } from '@weasel-js/ui-input';
 import { createHud, type Hud } from './hud';
 import { isFocusable, type Widget } from './widget';
 import { runs, tally, timeoutFor } from './pbt.fixture';
