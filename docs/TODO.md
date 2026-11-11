@@ -30,6 +30,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P2) [agent] A key pressed right after a click acts before the click's selection lands.** Measured in
+  collego (2026-11-10): its `watch.spec` clicks a node and presses Backspace at once. On 1.17.3 the node was
+  deleted; on 1.18.2 nothing is deleted, though the node shows as selected within 100 ms. The selection comes
+  from `@weasel-js/core`'s select binding. Inferred, not traced: since 1.18 a press is dispatched again as the
+  click it settles into, so the selection commits on release (or later) instead of on press, and a key
+  pressed in between finds the old selection. A person clicking then typing quickly hits it too. Closes when a
+  key pressed straight after a click acts on what the click selected, or the delay is ruled acceptable.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
