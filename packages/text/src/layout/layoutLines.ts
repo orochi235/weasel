@@ -6,8 +6,8 @@
 import type { LineOrder } from './bidiLines';
 import { doubles, truncate } from './arrayPool';
 import { LineBox, type LayoutColumns } from './layoutColumns';
-import type { Entry } from './layoutEntries';
-import { hangs, wrapSpans } from './lineBreak/wrapLines';
+import { hyphenate, type Entry } from './layoutEntries';
+import { endsHyphenated, hangs, wrapSpans } from './lineBreak/wrapLines';
 import { lineBreakOpportunities, NO_BREAK } from './lineBreak/lineBreaks';
 import { tabAdvance, widthWithTabs } from './tabStops';
 
@@ -84,6 +84,12 @@ const stopOf = (k: number) => cur[k].tab!;
 function tabbedWidth(start: number, end: number): number {
   return widthWithTabs(start, end, tabs, stopOf, flatWidth);
 }
+function hyphenWidth(start: number, k: number): number {
+  const e = cur[k];
+  const h = e.hyphen;
+  if (h === null) return 0;
+  return h.advance - e.advance + (k === start ? 0 : h.kerningBefore - e.kerningBefore);
+}
 
 function pushSpan(start: number, end: number, wrapped: boolean): void {
   const i = brokenCount++;
@@ -105,8 +111,9 @@ function pushSpan(start: number, end: number, wrapped: boolean): void {
  * ascents, so a `baselineShift` cannot drag the rest of the line with it. A blank line takes both from the hard break that closed
  * it, the only carrier of a size it has.
  *
- * The entry opening each line has its kerning zeroed, and each tab its
- * advance set, in place. The lines and their `entries` arrays are reused by
+ * The entry opening each line has its kerning zeroed, each tab its advance
+ * set, and a soft hyphen closing a line the wrap ended there its hyphen, in
+ * place. The lines and their `entries` arrays are reused by
  * the next call, so they are valid only until then.
  */
 export function breakLines(
@@ -126,7 +133,7 @@ export function breakLines(
   }
   tabs.length = tabCount;
   cur = entries;
-  wrapSpans(cps, opts, tabCount === 0 ? flatWidth : tabbedWidth, pushSpan);
+  wrapSpans(cps, opts, tabCount === 0 ? flatWidth : tabbedWidth, pushSpan, hyphenWidth);
   cur = NONE;
   broken.length = brokenCount;
 
@@ -142,6 +149,9 @@ export function breakLines(
       continue;
     }
     const out = line.entries;
+    if (endsHyphenated(cps, line.end, line.wrapped) && entries[line.end - 1].hyphen !== null) {
+      hyphenate(entries[line.end - 1], line.end - 1 === line.start);
+    }
     let below = -Infinity;
     let dips = false;
     for (let k = line.start; k < line.end; k++) {

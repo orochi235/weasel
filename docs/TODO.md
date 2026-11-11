@@ -270,14 +270,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
-- **(P2) [agent] A line the canvas breaks at a soft hyphen (U+00AD) draws no hyphen.** The wrap takes
-  the break (UAX #14 class BA) and the soft hyphen draws nothing as a default-ignorable, while the edit
-  overlay's CSS (`hyphens: manual`) draws a hyphen there, so the two disagree on which line is longer.
-  Fixing it reaches the wrap's width measure (a line ending at one has to fit the hyphen), the entry's
-  glyph and advance once its line is known, outline and cluster lookups that key on the code point,
-  and shaped runs. Too big for the 2026-11-07 audit pass. Closes when a line wrapped at a soft hyphen
-  draws a hyphen at its end on every tier, and one not wrapped there draws nothing.
-
 - **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
   and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
   in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter

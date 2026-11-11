@@ -22,6 +22,13 @@ export interface WrappedLine {
  *  between. */
 export const hangs = (cp: number): boolean => cp === 32 || cp === 9;
 
+/** U+00AD: invisible unless a line wraps at it, when it draws as a hyphen. */
+export const SOFT_HYPHEN = 0xad;
+
+/** The width a line `[start, k + 1)` gains when it wraps at the soft hyphen
+ *  at `k` and draws a hyphen there. */
+export type HyphenWidth = (start: number, k: number) => number;
+
 /**
  * Greedy wrap of `cps` at its UAX #14 break opportunities. A line ends at
  * every hard break (CRLF counts once, and neither code point lands on a
@@ -29,6 +36,12 @@ export const hangs = (cp: number): boolean => cp === 32 || cp === 9;
  * after it included — whose ink would take the line past `maxWidth`. Only
  * ink has to fit: trailing spaces and tabs hang. A word wider than the line is never
  * split. `Infinity` breaks at hard breaks alone.
+ *
+ * A line the wrap ends at a soft hyphen draws a hyphen there, as CSS's
+ * `hyphens: manual` does, so it ends there only if it fits with
+ * `hyphenOf`'s width added; else it ends at the opportunity before. A soft
+ * hyphen the line runs on past adds nothing. Without `hyphenOf`, a hyphen
+ * takes no room.
  *
  * `widthOf(start, end)` is the width of code points `[start, end)` set on a
  * line of their own starting at `start`; `end` is always one past a
@@ -38,11 +51,16 @@ export function wrapLines(
   cps: ArrayLike<number>,
   maxWidth: number,
   widthOf: (start: number, end: number) => number,
+  hyphenOf: HyphenWidth | null = null,
 ): WrappedLine[] {
   const lines: WrappedLine[] = [];
-  wrapSpans(cps, { maxWidth }, widthOf, (start, end, wrapped) => { lines.push({ start, end, wrapped }); });
+  wrapSpans(cps, { maxWidth }, widthOf, (start, end, wrapped) => { lines.push({ start, end, wrapped }); }, hyphenOf);
   return lines;
 }
+
+/** Whether a line wrapped to end at `end` draws a hyphen at its end. */
+export const endsHyphenated = (cps: ArrayLike<number>, end: number, wrapped: boolean): boolean =>
+  wrapped && end > 0 && cps[end - 1] === SOFT_HYPHEN;
 
 /** The opportunities of the wrap under way, kept for the next. A wrap that
  *  starts inside another's `widthOf` or `emit` finds them taken and builds its own. */
@@ -60,17 +78,18 @@ export function wrapSpans(
   box: { readonly maxWidth: number },
   widthOf: (start: number, end: number) => number,
   emit: (start: number, end: number, wrapped: boolean) => void,
+  hyphenOf: HyphenWidth | null = null,
 ): void {
   const n = cps.length;
   if (!Number.isFinite(box.maxWidth)) {
-    wrapAt(cps, box, widthOf, emit, null);
+    wrapAt(cps, box, widthOf, emit, null, hyphenOf);
   } else if (breakScratchTaken || n >= BREAK_SCRATCH_MAX) {
-    wrapAt(cps, box, widthOf, emit, lineBreakOpportunities(cps));
+    wrapAt(cps, box, widthOf, emit, lineBreakOpportunities(cps), hyphenOf);
   } else {
     if (breakScratch.length < n + 1) breakScratch = new Uint8Array(Math.max(n + 1, breakScratch.length * 2));
     breakScratchTaken = true;
     try {
-      wrapAt(cps, box, widthOf, emit, lineBreakOpportunitiesInto(cps, breakScratch));
+      wrapAt(cps, box, widthOf, emit, lineBreakOpportunitiesInto(cps, breakScratch), hyphenOf);
     } finally {
       breakScratchTaken = false;
     }
@@ -88,10 +107,13 @@ function wrapAt(
   widthOf: (start: number, end: number) => number,
   emit: (start: number, end: number, wrapped: boolean) => void,
   breaks: Uint8Array | null,
+  hyphenOf: HyphenWidth | null,
 ): void {
   const n = cps.length;
   const fits = box.maxWidth + Math.abs(box.maxWidth) * FIT_SLACK;
   let start = 0;
+  /** The last opportunity past `start` the line can end at and fit, hyphen included. */
+  let fitEnd = 0;
   let i = 0;
   while (i < n) {
     const cp = cps[i];
@@ -108,10 +130,25 @@ function wrapAt(
       if (!hangs(cps[j])) ink = j + 1;
       j++;
     }
-    if (breaks && i > start && ink > 0 && widthOf(start, ink) > fits) {
-      emit(start, i, true);
-      start = i;
+    if (breaks && i > start && ink > 0) {
+      const w = widthOf(start, ink);
+      if (w > fits) {
+        // Back to the last end that fits: the words after it ran on past a
+        // soft hyphen whose hyphen would not have fit, and start the next line.
+        const end = fitEnd > start ? fitEnd : i;
+        emit(start, end, true);
+        start = end;
+        if (end < i) {
+          i = end;
+          continue;
+        }
+      } else if (hyphenOf !== null && ink === j && j < n && cps[j - 1] === SOFT_HYPHEN
+        && !isHardLineBreak(cps[j]) && w + hyphenOf(start, j - 1) > fits) {
+        i = j;
+        continue;
+      }
     }
+    fitEnd = j;
     i = j;
   }
   if (start < n) emit(start, n, false);

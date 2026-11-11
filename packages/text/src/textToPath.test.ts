@@ -94,6 +94,15 @@ describe('textToPath', () => {
     expect(boundsOfPath(path).width).toBeCloseTo(near.width, 4);
   });
 
+  it('outlines a hyphen where a line wraps at a soft hyphen, and nothing for one mid-line', () => {
+    expect(boundsOfPath(textToPath(text('H\u00adH'), POSE))).toEqual(boundsOfPath(textToPath(text('HH'), POSE)));
+    // `HH` and its hyphen fit in 200, and `HHHH` does not; the subset's hyphen is U+002D.
+    const narrow = { ...POSE, width: 200 };
+    const wrapped = boundsOfPath(textToPath(text('HH\u00adHH', { wrap: true }), narrow));
+    const dashed = boundsOfPath(textToPath(text('HH-\nHH', { wrap: true }), narrow));
+    expect(wrapped).toEqual(dashed);
+  });
+
   it('fills the stems and leaves the gap between them empty', () => {
     const path = textToPath(text('H'), POSE);
     const b = boundsOfPath(path);

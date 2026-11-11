@@ -53,12 +53,18 @@ describe('layoutRuns, property', () => {
     fc.assert(fc.property(styledRuns, fc.integer({ min: 20, max: 400 }), ({ text, runs: rs }, maxWidth) => {
       const { cps, at } = offsets(text);
       const laid = lay(rs, maxWidth);
+      // A soft hyphen closing a line the wrap ended there draws as a hyphen.
+      const hyphenated = new Set(laid.lines.filter((l, i) => i < laid.lines.length - 1 && l.cells.length > 0
+        && text.codePointAt(l.cells.at(-1)!.srcIndex) === 0xad && text.codePointAt(l.srcEnd) !== undefined
+        && !isHardLineBreak(text.codePointAt(l.srcEnd)!)).map((l) => l.cells.at(-1)!));
       const cells = laid.lines.flatMap((l) => l.cells);
+      const source = (c: (typeof cells)[number]) => (hyphenated.has(c) ? 0xad : c.cp);
+      for (const c of hyphenated) expect([0x2010, 0x2d]).toContain(c.cp);
       const kept = cps.map((cp, i) => ({ cp, at: at[i]! })).filter(({ cp }) => !isHardLineBreak(cp));
-      expect(cells.map((c) => c.cp), JSON.stringify(text)).toEqual(kept.map((k) => k.cp));
+      expect(cells.map(source), JSON.stringify(text)).toEqual(kept.map((k) => k.cp));
       cells.forEach((c, i) => {
         expect(c.srcIndex).toBe(kept[i]!.at);
-        expect(text.slice(c.srcIndex, c.srcEnd)).toBe(String.fromCodePoint(c.cp));
+        expect(text.slice(c.srcIndex, c.srcEnd)).toBe(String.fromCodePoint(source(c)));
         expect(Number.isFinite(c.x) && Number.isFinite(c.advance)).toBe(true);
       });
       for (const l of laid.lines) {

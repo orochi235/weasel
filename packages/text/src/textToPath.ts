@@ -137,6 +137,8 @@ function walkOutlines(
       deco.add(g);
       // Asked before the quad: an emoji still waiting for its bake has none.
       if (g.glyph?.color) throw colorGlyphError(runs[g.run], 'textToPath');
+      // A slot the layout left empty, such as a soft hyphen mid-line, though its face has a glyph.
+      if (!line.cells[g.cell].drawsInk) continue;
       const glyph = placedGlyphOutline(g, dx, dy, 'textToPath');
       if (glyph) parts[paintOf[g.run]]!.push(glyph);
     }

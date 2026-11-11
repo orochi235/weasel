@@ -10,13 +10,16 @@
  * A tab runs to its next stop and `fillText` draws one as a single space, so
  * paint a line from `spans[i]` and not from `lines[i]`.
  *
+ * A line wrapped at a soft hyphen ends in U+2010 in place of it, which
+ * `fillText` would otherwise draw as nothing.
+ *
  * The caller owns the `ctx.font` setup — pass a context whose `font`
  * already matches `style` (use `fontString(style)`).
  */
 
 import type { ResolvedTextStyle } from '../textStyle';
 import { graphemeCount } from './graphemes';
-import { hangs, wrapLines } from '../layout/lineBreak/wrapLines';
+import { endsHyphenated, hangs, wrapLines, type HyphenWidth } from '../layout/lineBreak/wrapLines';
 import { widthWithTabs, type TabStop } from '../layout/tabStops';
 
 /**
@@ -51,6 +54,8 @@ export interface MeasuredText {
   height: number;
 }
 
+const HYPHEN = '\u2010';
+
 /** Wrap `text` against `maxWidth` at the break opportunities `layoutRuns` wraps at, measuring with `ctx`. */
 export function measureText(
   ctx: CanvasRenderingContext2D,
@@ -79,15 +84,21 @@ export function measureText(
     start: number, end: number, piece?: (start: number, end: number, x: number) => void,
   ): number => widthWithTabs(start, end, tabs, () => tab, flatWidth, piece);
 
-  const wrapped = wrapLines(cps, maxWidth, (start, end) => widthOf(start, end));
+  const hyphenOf: HyphenWidth = (start, k) =>
+    measuredWidth(ctx, text.slice(at[start], at[k]) + HYPHEN, style) - flatWidth(start, k + 1);
+  const wrapped = wrapLines(cps, maxWidth, (start, end) => widthOf(start, end), hyphenOf);
   const lines: string[] = [];
   const spans: MeasuredSpan[][] = [];
   for (const l of wrapped) {
     let end = l.end;
     while (end > l.start && hangs(cps[end - 1])) end--;
-    lines.push(text.slice(at[l.start], at[end]));
+    const hyphenated = endsHyphenated(cps, l.end, l.wrapped);
+    const drawn = (from: number, to: number): string => (hyphenated && to === end
+      ? text.slice(at[from], at[to - 1]) + HYPHEN
+      : text.slice(at[from], at[to]));
+    lines.push(drawn(l.start, end));
     const row: MeasuredSpan[] = [];
-    widthOf(l.start, end, (from, to, x) => row.push({ text: text.slice(at[from], at[to]), x }));
+    widthOf(l.start, end, (from, to, x) => row.push({ text: drawn(from, to), x }));
     spans.push(row);
   }
   const lineStarts = wrapped.map((l) => at[l.start]);
