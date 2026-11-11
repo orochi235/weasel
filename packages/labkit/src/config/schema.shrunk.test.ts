@@ -39,7 +39,7 @@ describe('a schema keyed __proto__', () => {
 describe('a leaf keyed as something every object inherits', () => {
   it('is drawn by no renderer it did not declare', () => {
     const resolved = resolveConfigSchema(f.schema({ toString: f.string('') }));
-    const leaf = resolved.group.children.toString;
+    const leaf = Object.values(resolved.group.children)[0];
     expect(leaf && isPrefLeaf(leaf) && drawsOwn(resolved, {}, 'toString', leaf)).toBe(false);
   });
 
