@@ -76,7 +76,7 @@ void main() {
   if (wanted > 0.0 && density > 0.0) {
     headPx = max(0.0, min(wanted, a_shape.z * density * total));
     headHalf = headPx * a_shape.w;
-    shaft = min(shaftHalf * headPx / wanted, headHalf);
+    shaft = min(shaftHalf * (headPx / wanted), headHalf);
     shaftEnd = total - headPx / density * (1.0 - OVERDRAW);
   }
 

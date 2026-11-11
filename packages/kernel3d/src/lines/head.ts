@@ -46,9 +46,11 @@ export interface HeadSize {
  */
 export function headFor(shaftHalf: number, linePx = Number.POSITIVE_INFINITY, head: HeadShape = HEAD): HeadSize {
   const wanted = shaftHalf * head.lenRatio;
-  const headLen = Math.max(0, Math.min(wanted, head.maxShare * linePx));
+  // A head allowed no share of the line has none, however long the line: 0 · ∞ is no cap to lift.
+  const cap = head.maxShare === 0 ? 0 : head.maxShare * linePx;
+  const headLen = Math.max(0, Math.min(wanted, cap));
   const headHalf = headLen * head.aspect;
-  const shrunk = wanted > 0 ? (shaftHalf * headLen) / wanted : shaftHalf;
+  const shrunk = wanted > 0 ? shaftHalf * (headLen / wanted) : shaftHalf;
   return { headLen, headHalf, shaftHalf: wanted > 0 ? Math.min(shrunk, headHalf) : shrunk };
 }
 

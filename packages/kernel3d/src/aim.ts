@@ -143,7 +143,8 @@ export function aimSpace3d(viewport: Viewport3d, viewId: string | null, opts: Ai
     },
     unproject(px) {
       const hit = groundHit(viewport, { x: px.x + ox, y: px.y + oy }, up);
-      return hit && toAimPoint(hit, axes);
+      // On the ground by construction: rounding left in a near-axis `up` is no height.
+      return hit && { ...toAimPoint(hit, axes), z: 0 };
     },
   };
 }
