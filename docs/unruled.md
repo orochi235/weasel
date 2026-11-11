@@ -208,6 +208,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is always one the box has.
 - Ruled 2026-11-10: no equal-spacing placement is offered across a gap another box blocks, a sibling
   the box overlaps included.
+- 2026-11-11 (my call, guides second property pass): `roundToCell` leaves a value as it was on a cell size that is not
+  a positive finite number, the rule a grid pitch already follows (such a pitch gives an axis no lines). Before, a
+  zero, `NaN`, or infinite cell sent every value to 0, and a negative one rounded on its size, ties the other way.
 
 ## Scene, move, and history
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cellOf, linesNear, resolveGridLines } from './axes';
 import { gridFit } from './fit';
 import { pointToGridCell } from './pointToGridCell';
+import { roundToCell } from './roundToCell';
 
 describe('grid readers at the edges, shrunk from the property tests', () => {
   it('puts a non-finite value in no cell, and near no line', () => {
@@ -23,5 +24,16 @@ describe('grid readers at the edges, shrunk from the property tests', () => {
     expect(gridFit([{ x: NaN, y: 0 }], lines).fits).toBe(false);
     expect(gridFit([{ x: 3, y: 0 }], lines, NaN).fits).toBe(false);
     expect(gridFit([{ x: Infinity, y: 0 }], lines).fits).toBe(false);
+  });
+
+  it('leaves a value as it was rather than round it to zero, to infinity, or on a cell that is no length', () => {
+    // NaN came back 0, the largest double came back Infinity, and a zero or NaN cell sent every value to 0.
+    expect(roundToCell(NaN, 0)).toBeNaN();
+    expect(roundToCell(NaN, 10)).toBeNaN();
+    expect(roundToCell(Number.MAX_VALUE, 991.875)).toBe(Number.MAX_VALUE);
+    expect(roundToCell(5, 0)).toBe(5);
+    expect(roundToCell(5, -2)).toBe(5);
+    expect(roundToCell(5, Infinity)).toBe(5);
+    expect(roundToCell(-0, 0)).toBe(0);
   });
 });
