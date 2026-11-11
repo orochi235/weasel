@@ -59,8 +59,7 @@ function generatedColors({ generate: g }: GeneratedColors): readonly string[] {
 /** `rampSteps`, answering `undefined` for a ramp the chain lacks. */
 export function findRampSteps(theme: Theme, ramp: string): readonly string[] | undefined {
   for (const t of themeChain(theme).reverse()) {
-    const steps = t.ramps?.[ramp];
-    if (steps) return steps;
+    if (t.ramps && Object.hasOwn(t.ramps, ramp)) return t.ramps[ramp];
   }
   return undefined;
 }

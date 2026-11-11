@@ -39,10 +39,24 @@ function readLayer(src: { primitives?: unknown; modes?: unknown }): Layer {
 function readAxesExtension(raw: unknown): DtcgAxesExtension | undefined {
   if (raw === undefined) return undefined;
   if (!isRecord(raw) || !isRecord(raw.axes)) throw new Error(`DTCG "$extensions.${AXES_EXT}" needs an "axes" object`);
+  for (const [name, def] of Object.entries(raw.axes)) {
+    const ok = isRecord(def) && typeof def.default === 'string' && isRecord(def.values) && Object.values(def.values).every(isRecord);
+    if (!ok) throw new Error(`DTCG "$extensions.${AXES_EXT}" axis "${name}" needs a string "default" and an object of "values"`);
+  }
+  const varies = isRecord(raw.varies) ? raw.varies : {};
+  for (const [name, axes] of Object.entries(varies)) {
+    if (!Array.isArray(axes) || !axes.every((a) => typeof a === 'string')) {
+      throw new Error(`DTCG "$extensions.${AXES_EXT}" varies "${name}" needs a list of axis names`);
+    }
+  }
+  const overrides = isRecord(raw.overrides) ? raw.overrides : {};
+  for (const [key, layer] of Object.entries(overrides)) {
+    if (!isRecord(layer)) throw new Error(`DTCG "$extensions.${AXES_EXT}" override "${key}" needs an object of "primitives" and "modes"`);
+  }
   return {
     axes: raw.axes as AxisDefs,
-    varies: (isRecord(raw.varies) ? raw.varies : {}) as DtcgAxesExtension['varies'],
-    overrides: (isRecord(raw.overrides) ? raw.overrides : {}) as DtcgAxesExtension['overrides'],
+    varies: varies as DtcgAxesExtension['varies'],
+    overrides: overrides as DtcgAxesExtension['overrides'],
   };
 }
 

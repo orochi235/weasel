@@ -647,6 +647,16 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   limit of an ever-heavier weight. Several infinite weights, a nested product that overflows to
   `Infinity` among them, blend among themselves at equal weight, and the finite ones drop out; the
   blend is never `NaN`. Members whose nested product underflows to 0 everywhere share it equally.
+- 2026-11-10 (property tests): `parseTokenValue` unwraps a font family only from a matched pair of quotes, so
+  a half-typed `'Open Sans` keeps its quote rather than losing it. Not ruled: chosen so a stack read back
+  from what it wrote is unchanged.
+- Open (2026-11-10, property tests): a theme name or axis value holding U+0000 cannot be selected: CSS
+  reads a NUL in a selector as U+FFFD, escaped or not, so `applyTheme` stamps an attribute no rule of its
+  own matches and the theme silently does nothing. Refuse such a name, rewrite it, or leave it? The
+  property test leaves NUL out.
+- 2026-11-10 (property tests): `blendTheme` follows the split-pref ruling above: an infinite share takes its
+  whole axis, split equally among several infinite ones, and the finite shares on that axis drop out. It
+  used to blend to `NaN`. Not ruled: chosen to match prefs.
 
 ## Diagram, audio, and labkit
 

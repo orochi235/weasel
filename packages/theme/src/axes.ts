@@ -73,7 +73,7 @@ export function axisScheme(axes: AxisDefs, axis: string, value: string): string 
 
 /** The selector matching `data-wzl-<attr>` equal to `value`, quoted so any theme name or axis value reads as itself. */
 export function wzlAttr(attr: string, value: string): string {
-  return `[data-wzl-${attr}='${value.replace(/[\\']/g, '\\$&').replace(/\n/g, '\\a ')}']`;
+  return `[data-wzl-${attr}='${value.replace(/[\\']/g, '\\$&').replace(/[\n\r\f]/g, (c) => `\\${c.charCodeAt(0).toString(16)} `)}']`;
 }
 
 /** `mode=dark,density=compact`, axes in declaration order. */

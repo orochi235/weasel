@@ -58,7 +58,7 @@ export function expandVars(value: string, tokens: Readonly<Record<string, string
     const name = (comma < 0 ? inner : inner.slice(0, comma)).trim();
     const fallback = comma < 0 ? undefined : inner.slice(comma + 1).trim();
     if (seen.includes(name)) throw new Error(`expandVars: ${name} refers to itself`);
-    const own = tokens[name];
+    const own = Object.hasOwn(tokens, name) ? tokens[name] : undefined;
     const raw = own ?? fallback;
     if (raw === undefined) throw new Error(`expandVars: ${name} is not in the theme and has no fallback`);
     out += value.slice(i, at) + expandVars(raw, tokens, own === undefined ? seen : [...seen, name]);
