@@ -25,6 +25,7 @@ export type HudFocusOptions = FocusScopeOptions;
  * Its keyboard focus is a headless `FocusScope` over its widgets, the contract a DOM subtree's focus answers too.
  */
 export interface Hud extends FocusScope<Widget> {
+  /** Add `widget` on top of the others. A widget already in the HUD stays where it is. */
   add(widget: Widget): void;
   remove(widget: Widget): void;
   widgets(): readonly Widget[];
@@ -127,6 +128,7 @@ export function createHud(): Hud {
       console.warn(`weasel-hud: ${from} called on a detached HUD; ignored.`);
       return;
     }
+    if (list.includes(widget)) return;
     list.push(widget);
     requestRedraw();
   };
