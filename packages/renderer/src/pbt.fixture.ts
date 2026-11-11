@@ -35,9 +35,9 @@ export function eighth(limit = 200): fc.Arbitrary<number> {
   return fc.integer({ min: -limit * 8, max: limit * 8 }).map((n) => n / 8);
 }
 
-/** A number in `[min, max]` on a 1/64 grid, spread across the range: `fc.double` crowds its ends and zero. */
+/** A number in `[min, max]` on a 1/64 grid, spread evenly across the range: `fc.double` crowds its ends and zero. */
 export function spread(min: number, max: number): fc.Arbitrary<number> {
-  return fc.integer({ min: Math.ceil(min * 64), max: Math.floor(max * 64) }).map((n) => n / 64);
+  return fc.noBias(fc.integer({ min: Math.ceil(min * 64), max: Math.floor(max * 64) })).map((n) => n / 64);
 }
 
 export function point(limit = 200): fc.Arbitrary<Pt> {

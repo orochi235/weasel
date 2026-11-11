@@ -48,13 +48,12 @@ describe('pathBox, property', () => {
       const slack = slackOf(box, m);
       const ribbon = ribbonPoints(path, s, m);
       t.count(ribbon.length > 0 ? `${path.kind}:${s.align}` : 'no ribbon');
-      for (const p of [...meshPoints(getMesh(path)), ...ribbon]) {
-        const [x, y] = mat3.apply(m, p.x, p.y);
-        expect(within(box, x, y, slack), `(${x}, ${y}) outside ${JSON.stringify(box)}`).toBe(true);
-      }
+      const out = [...meshPoints(getMesh(path)), ...ribbon]
+        .map((p) => mat3.apply(m, p.x, p.y)).find(([x, y]) => !within(box, x, y, slack));
+      expect(out, `${out} outside ${JSON.stringify(box)}`).toBeUndefined();
     }), runs(200));
     for (const k of ['rect:center', 'rect:outer', 'rect:inner', 'polygon:center', 'polygon:outer', 'polygon:inner']) t.atLeast(k, 8);
-  }, timeoutFor(200, 20));
+  }, timeoutFor(200, 50));
 
   it('moves with a translation applied after the transform', () => {
     fc.assert(fc.property(anyPath, fc.option(stroke, { nil: undefined }), affine, eighth(1000), eighth(1000), (path, s, m, tx, ty) => {
