@@ -70,8 +70,12 @@ function passOf(run: Run): { pass: number; into: number } {
 function placeIn(run: Run, pass: number, into: number): void {
   const last = Math.ceil(passesOf(run.loop)) - 1;
   const within = Math.min(Math.max(0, into), run.duration);
-  run.elapsed = clamp(run, Math.min(pass, last) * run.duration + within);
-  run.edge = within > 0 && run.elapsed > 0 && run.elapsed % run.duration === 0;
+  const at = Math.min(pass, last);
+  // A pass's end is written as the next pass's start, which is how `placeOf` finds the line. A sum that rounds
+  // onto a line stands at the end of the pass only from the later half of it.
+  const end = within === run.duration;
+  run.elapsed = clamp(run, end ? (at + 1) * run.duration : at * run.duration + within);
+  run.edge = run.elapsed > 0 && (end || (within > run.duration / 2 && run.elapsed % run.duration === 0));
 }
 
 function change(run: Run, hub: Hub): void {
