@@ -42,5 +42,6 @@ export type {
   TrialChromeContext,
   TrialContribution,
   TrialRegion,
+  TrialSidebar,
   ViewportControl,
 } from './types';

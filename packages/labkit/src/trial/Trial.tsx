@@ -29,7 +29,7 @@ import { DEFAULT_VIEW } from '../state/view';
 import { resolveLabTool } from '../tools/labTool';
 import { LoupeSwitchContext, useLoupeSwitch } from './loupeSwitch';
 import { MissingTrial } from './MissingTrial';
-import { TrialChrome } from './TrialChrome';
+import { TrialChrome, type TrialChromeOptions } from './TrialChrome';
 import { TrialLayerList, useTrialLayerState } from './TrialLayerList';
 import { TrialHistoryContext, useHistoryVersion, useMountedHistory } from './trialHistory';
 import { useKeptMarks } from './useKeptMarks';
@@ -40,19 +40,14 @@ import { useTrialMarks } from './useTrialMarks';
 import { useTrialUndo } from './useTrialUndo';
 import { useTrialWrites } from './useTrialWrites';
 
-/** Props for `<Trial>`. */
-export interface TrialProps {
+/** Props for `<Trial>`: the trial, and how the lab dresses its chrome. */
+export interface TrialProps extends TrialChromeOptions {
   id: string;
-  /** Contributions the lab adds to this trial's chrome, merged after the
-   *  instrument's own. */
-  chrome?: readonly TrialContribution[];
-  /** Built-in contribution ids to drop. Throws on an id that is not there. */
-  suppress?: readonly string[];
 }
 
 /** Renders one trial from the lab store: looks up its record and
  *  instrument, and mounts the instrument inside the trial chrome. */
-export const Trial = memo(function Trial({ id, chrome, suppress }: TrialProps) {
+export const Trial = memo(function Trial({ id, ...options }: TrialProps) {
   const lab = useLabCommands();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
@@ -71,8 +66,7 @@ export const Trial = memo(function Trial({ id, chrome, suppress }: TrialProps) {
       instrument={instrument}
       instruments={instruments}
       store={storeCtx.store}
-      chrome={chrome}
-      suppress={suppress}
+      options={options}
     />
   );
 });
@@ -85,8 +79,7 @@ interface TrialRuntimeProps {
   /** The lab's instruments as the store holds them now. */
   instruments: InstrumentList;
   store: LabStore;
-  chrome?: readonly TrialContribution[];
-  suppress?: readonly string[];
+  options: TrialChromeOptions;
 }
 
 function TrialRuntime({
@@ -95,8 +88,7 @@ function TrialRuntime({
   instrument,
   instruments,
   store,
-  chrome,
-  suppress,
+  options,
 }: TrialRuntimeProps) {
   const wheelSlot = useRef<CameraWheelSlot['current']>(null);
   const cameras = useContext(CameraRegistryContext);
@@ -378,8 +370,7 @@ function TrialRuntime({
                   setConfig={setConfig}
                   reported={reports}
                   trialChrome={extraChrome}
-                  chrome={chrome}
-                  suppress={suppress}
+                  {...options}
                   activeToolId={resolvedToolId}
                   setActiveTool={setActiveTool}
                 >

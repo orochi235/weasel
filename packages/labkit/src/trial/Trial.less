@@ -168,7 +168,8 @@
     cursor: default;
   }
 
-  &[aria-pressed='true'] {
+  &[aria-pressed='true'],
+  &[aria-expanded='true'] {
     background: var(--wzl-surface-pressed);
     color: var(--wzl-fg);
   }
@@ -204,4 +205,24 @@
   white-space: nowrap;
   color: color-mix(in srgb, var(--wzl-warning) 40%, var(--wzl-fg));
   background: color-mix(in srgb, var(--wzl-warning) 15%, transparent);
+}
+
+// A floating sidebar's panel: the sections a docked sidebar would hold, over the trial's body.
+.lk-float-sidebar {
+  z-index: var(--wzl-z-popover);
+  outline: none;
+}
+
+.lk-float-sidebar__body {
+  display: flex;
+  flex-direction: column;
+  inline-size: 300px;
+  max-block-size: inherit;
+  overflow-y: auto;
+  background: var(--wzl-surface-popover);
+  border: var(--wzl-border-w) solid var(--wzl-border-strong);
+  border-radius: var(--wzl-radius-md);
+  box-shadow: 0 8px 24px var(--wzl-shadow);
+  color: var(--wzl-fg);
+  outline: none;
 }
