@@ -61,10 +61,13 @@ export interface RawWrapper {
 
 /** Whether `value` is a `{ "__raw": … }` wrapper: a plain object with that one own key. */
 export function isRawWrapper(value: unknown): value is RawWrapper {
-  if (!isPlain(value)) return false;
+  return isPlain(value) && onlyRawKey(value);
+}
+
+const onlyRawKey = (value: object): boolean => {
   const keys = Object.keys(value);
   return keys.length === 1 && keys[0] === RAW;
-}
+};
 
 /** Whether the reader would take the plain value for something the writer wrote: a tagged array or a wrapper. */
 const misread = (value: unknown): boolean => isPlain(value) && (isRawWrapper(value) || untagTypedArray(value) !== undefined);
@@ -118,7 +121,9 @@ export function typedArrayReplacerWrapping(
     const tagged = tagTypedArray(value);
     if (tagged) return tagged;
     if (value === null || typeof value !== 'object' || wrappers.has(this as object)) return value;
-    if (!misread(value) && !alsoWrap?.(key, value)) return value;
+    // Any object JSON writes with its own keys reads back as a plain one, a class instance's included.
+    const misreadAsWritten = !Array.isArray(value) && (onlyRawKey(value) || untagTypedArray(value) !== undefined);
+    if (!misreadAsWritten && !alsoWrap?.(key, value)) return value;
     const wrapper = { [RAW]: value };
     wrappers.add(wrapper);
     return wrapper;
