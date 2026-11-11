@@ -45,7 +45,7 @@ describe('createModeRegistry, construction', () => {
       expect(reg.list()).toEqual(registered);
       expect(() => reg.byId('later')).toThrow(/Unknown mode id/);
       for (const id of [...MODE_IDS, 'toString', 'hasOwnProperty', 'valueOf']) {
-        if (!list.includes(id)) {
+        if (!(list as readonly string[]).includes(id)) {
           expect(() => reg.byId(id)).toThrow(/Unknown mode id/);
           expect(reg.reflection.has(id)).toBe(false);
         }
