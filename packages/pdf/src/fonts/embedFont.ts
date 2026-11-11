@@ -1,7 +1,7 @@
 import type { FaceEmbedding, FontStyle } from '@weasel-js/font';
 import { name, type PdfName, type PdfObjects, type PdfRef, text } from '../objects';
 import type { PdfFontSource } from './fontSource';
-import { glyphCount, subsetTrueType } from './subset';
+import { checkTrueType, glyphCount, subsetTrueType } from './subset';
 import { toUnicodeCMap } from './toUnicode';
 
 export interface EmbeddedFont {
@@ -207,6 +207,11 @@ export class DocumentFonts {
       return null;
     }
     if (!emb || emb.outlines !== 'truetype' || !emb.embeddable) return null;
+    try {
+      checkTrueType(emb.sfnt);
+    } catch {
+      return null;
+    }
     return new Face(this.objects, emb, baseFontName(emb, family, weight, style), this.subset);
   }
 
