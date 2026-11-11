@@ -128,9 +128,7 @@ export function createHud(): Hud {
       console.warn(`weasel-hud: ${from} called on a detached HUD; ignored.`);
       return;
     }
-    if (list.includes(widget)) return;
-    list.push(widget);
-    requestRedraw();
+    if (!list.includes(widget)) { list.push(widget); requestRedraw(); }
   };
 
   return {
