@@ -80,7 +80,7 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
   const children: Record<string, PrefGroup> = { [THEME_PREFS_AXIS]: { name: 'Axes', children: axes } };
   for (const row of table.rows) {
     const key = groupKey(row.group);
-    children[key] ??= { name: labeled(row.group), children: {} };
+    if (!Object.hasOwn(children, key)) children[key] = { name: labeled(row.group), children: {} };
     children[key].children[row.name] = tokenLeaf(row, table);
   }
   return { name: `${labeled(theme.name)} theme`, children };
