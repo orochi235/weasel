@@ -1,12 +1,15 @@
 /** Options for `impulseResponse`: the tail's decay, channel count and noise seed. */
 export interface ImpulseResponseOptions {
-  /** How far the tail falls by its end, dB. Default 60 (an RT60). */
+  /** How far the tail falls by its end, dB. Default 60 (an RT60). Finite and at least -770, the most a tail can rise inside float32. */
   decayDb?: number;
   /** Default 2. */
   channels?: number;
   /** Seed for the noise, so the same call makes the same buffer. Default 1. */
   seed?: number;
 }
+
+/** The most a tail can rise, dB, and end inside float32's range. */
+const MOST_RISE_DB = -770;
 
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
@@ -25,9 +28,18 @@ export function impulseResponse(
   seconds: number,
   opts: ImpulseResponseOptions = {},
 ): AudioBuffer {
-  if (!(seconds > 0)) throw new RangeError(`@weasel-js/audio: impulse length ${seconds} s must be above 0`);
+  if (!(seconds > 0) || !Number.isFinite(seconds)) {
+    throw new RangeError(`@weasel-js/audio: impulse length ${seconds} s must be finite and above 0`);
+  }
   const decayDb = opts.decayDb ?? 60;
   const channels = opts.channels ?? 2;
+  // A tail rising further than this ends past float32's range, and stores as Infinity.
+  if (!(decayDb >= MOST_RISE_DB) || !Number.isFinite(decayDb)) {
+    throw new RangeError(`@weasel-js/audio: impulse decay ${decayDb} dB must be finite and at least ${MOST_RISE_DB}`);
+  }
+  if (!Number.isInteger(channels) || channels < 1) {
+    throw new RangeError(`@weasel-js/audio: impulse channels ${channels} must be a whole number above 0`);
+  }
   const seed = opts.seed ?? 1;
   const length = Math.max(1, Math.round(seconds * ctx.sampleRate));
   const buffer = ctx.createBuffer(channels, length, ctx.sampleRate);
