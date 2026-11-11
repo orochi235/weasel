@@ -196,9 +196,6 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the box no longer has.
 - Open (2026-11-10, property tests): a box overlapping a sibling is offered equal-spacing placements
   across a gap that sibling blocks.
-- Open (2026-11-10, property tests): `addGuideOp` for an id the store already holds replaces that
-  guide, and its undo removes the id rather than restoring the old guide (read from the code; the
-  property test adds only new ids). Undoing a removal puts the guide back at the end of the list.
 
 ## Scene, move, and history
 

@@ -19,9 +19,10 @@ export interface UseGuidesReturn {
   /** Stable getter; reads the latest list without forcing a re-render.
    *  Pass to `guideSnapSource` and `createGuidesLayer`. */
   getGuides: () => Guide[];
-  /** Add a guide. If a guide with the same id already exists it is replaced;
-   *  one equal to it changes nothing. */
-  addGuide: (guide: Guide) => void;
+  /** Add a guide, at `index` when given, else at the end. If a guide with the
+   *  same id already exists it is replaced where it stands; one equal to it
+   *  changes nothing. */
+  addGuide: (guide: Guide, index?: number) => void;
   /** Remove a guide by id. No-op when missing. */
   removeGuide: (id: string) => void;
   /** Drop all guides. */
@@ -36,8 +37,8 @@ export interface UseGuidesReturn {
  * lines that callers can pass to `guideSnapSource` (snap source) and
  * `createGuidesLayer` (render layer).
  *
- * It keeps no history of its own and persists nothing: `addGuideOp` and
- * `removeGuideOp` make a change an undo step on a canvas's history.
+ * It keeps no history of its own and persists nothing: `addGuideOp`,
+ * `replaceGuideOp`, and `removeGuideOp` make a change an undo step on a canvas's history.
  */
 export function useGuides(initial: Guide[] = []): UseGuidesReturn {
   const [guides, setGuides] = useState<Guide[]>(initial);
@@ -51,10 +52,15 @@ export function useGuides(initial: Guide[] = []): UseGuidesReturn {
     if (guides !== first) changed.emit();
   }, [changed, guides, first]);
 
-  const addGuide = useCallback((guide: Guide) => {
+  const addGuide = useCallback((guide: Guide, index?: number) => {
     setGuides((prev) => {
       const idx = prev.findIndex((g) => g.id === guide.id);
-      if (idx === -1) return [...prev, guide];
+      if (idx === -1) {
+        if (index === undefined || index >= prev.length) return [...prev, guide];
+        const next = prev.slice();
+        next.splice(Math.max(0, index), 0, guide);
+        return next;
+      }
       if (sameGuide(prev[idx]!, guide)) return prev;
       const next = prev.slice();
       next[idx] = guide;

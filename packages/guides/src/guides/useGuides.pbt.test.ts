@@ -77,8 +77,6 @@ function setup(): Real {
   return { hook: result, heard };
 }
 
-/** The list as a set of guides by id: an undo restores which guides there are, not where in the list. */
-const byId = (list: readonly Guide[]) => [...list].sort((a, b) => (a.id < b.id ? -1 : 1));
 
 describe('useGuides, stateful', () => {
   it('holds the list a plain model holds through any adds, removes, and clears', () => {
@@ -95,18 +93,21 @@ describe('useGuides, stateful', () => {
     for (const what of ['add', 'replace', 'remove', 'remove missing', 'clear']) seen.atLeast(what, 15);
   }, TIMEOUT);
 
-  it('undoing guide ops in reverse returns each earlier list, and redoing them returns each later one', () => {
+  it('undoing guide ops in reverse returns each earlier list, in order, and redoing them returns each later one', () => {
     const t = tally();
-    // Each step: add a new guide, move or remove one there is, or undo / redo.
+    // Each step: add a new guide or one over an id there is, move or remove one there is, or undo / redo.
     const action = fc.oneof(
-      { arbitrary: fc.record({ kind: fc.constant('add' as const), axis: fc.constantFrom<'x' | 'y'>('x', 'y'), offset: eighth(100) }), weight: 3 },
+      { arbitrary: fc.record({ kind: fc.constant('add' as const), over: fc.option(fc.nat(), { freq: 3 }), axis: fc.constantFrom<'x' | 'y'>('x', 'y'), offset: eighth(100) }), weight: 3 },
       { arbitrary: fc.record({ kind: fc.constant('move' as const), pick: fc.nat(), offset: eighth(100) }), weight: 3 },
-      { arbitrary: fc.record({ kind: fc.constant('remove' as const), pick: fc.nat() }), weight: 1 },
+      { arbitrary: fc.record({ kind: fc.constant('remove' as const), pick: fc.nat() }), weight: 2 },
       { arbitrary: fc.constant({ kind: 'undo' as const }), weight: 2 },
       { arbitrary: fc.constant({ kind: 'redo' as const }), weight: 2 },
     );
     fc.assert(fc.property(fc.array(action, { minLength: 5, maxLength: 30 }), (actions) => {
       const r = setup();
+      // A few guides before any op, so removals come from the middle of the list too.
+      const seeded: Guide[] = [0, 1, 2, 3].map((i) => ({ id: `s${i}`, axis: i % 2 ? 'y' : 'x', offset: i * 10 }));
+      act(() => { for (const g of seeded) r.hook.current.addGuide(g); });
       const store = r.hook.current;
       const done: { op: Op; before: Guide[] }[] = [];
       const undone: { op: Op; after: Guide[] }[] = [];
@@ -115,15 +116,20 @@ describe('useGuides, stateful', () => {
       for (const a of actions) {
         const list = now();
         let op: Op | null = null;
-        if (a.kind === 'add') op = addGuideOp(store, { id: `n${fresh++}`, axis: a.axis, offset: a.offset });
+        if (a.kind === 'add') {
+          const over = a.over !== null && list.length > 0 ? list[a.over % list.length]!.id : null;
+          if (over !== null) t.count('add over');
+          op = addGuideOp(store, { id: over ?? `n${fresh++}`, axis: a.axis, offset: a.offset });
+        }
         else if ((a.kind === 'move' || a.kind === 'remove') && list.length > 0) {
           const g = list[a.pick % list.length]!;
           op = a.kind === 'move' ? replaceGuideOp(store, g, { ...g, offset: a.offset }) : removeGuideOp(store, g);
+          if (a.kind === 'remove' && a.pick % list.length < list.length - 1) t.count('remove inside');
         } else if (a.kind === 'undo' && done.length > 0) {
           const { op: last, before } = done.pop()!;
           const after = list;
           act(() => { last.invert().apply(null); });
-          expect(byId(now())).toEqual(byId(before));
+          expect(now()).toEqual(before);
           undone.push({ op: last, after });
           t.count('undo');
           continue;
@@ -131,7 +137,7 @@ describe('useGuides, stateful', () => {
           const { op: last, after } = undone.pop()!;
           const before = list;
           act(() => { last.invert().invert().apply(null); });
-          expect(byId(now())).toEqual(byId(after));
+          expect(now()).toEqual(after);
           done.push({ op: last, before });
           t.count('redo');
           continue;
@@ -146,11 +152,12 @@ describe('useGuides, stateful', () => {
       while (done.length > 0) {
         const { op, before } = done.pop()!;
         act(() => { op.invert().apply(null); });
-        expect(byId(now())).toEqual(byId(before));
+        expect(now()).toEqual(before);
       }
-      expect(now()).toEqual([]);
+      expect(now()).toEqual(seeded);
     }), RUNS);
-    for (const what of ['add', 'move', 'remove', 'undo', 'redo']) t.atLeast(what, 10);
+    for (const what of ['add', 'add over', 'move', 'remove', 'undo', 'redo']) t.atLeast(what, 10);
+    t.atLeast('remove inside', 20);
   }, TIMEOUT);
 
   it('hears no change when a guide is added again as it stands (shrunk counterexample)', () => {
@@ -162,6 +169,24 @@ describe('useGuides, stateful', () => {
     act(() => { r.hook.current.addGuide({ id: 'd', axis: 'x', offset: 19.875 }); });
     expect(r.heard.n).toBe(heard);
     expect(r.hook.current.guides).toBe(list);
+  });
+
+  it('undoing an add over a guide puts that guide back, and undoing a removal puts it back where it stood (shrunk counterexample)', () => {
+    // The add's undo removed the id outright; the removal's undo appended the guide at the end.
+    const r = setup();
+    const store = r.hook.current;
+    const a = { id: 'a', axis: 'x' as const, offset: 1 };
+    const b = { id: 'b', axis: 'y' as const, offset: 2 };
+    const c = { id: 'c', axis: 'x' as const, offset: 3 };
+    act(() => { for (const g of [a, b, c]) store.addGuide(g); });
+    const over = addGuideOp(store, { ...a, offset: 9 });
+    act(() => { over.apply(null); });
+    act(() => { over.invert().apply(null); });
+    expect(r.hook.current.getGuides()).toEqual([a, b, c]);
+    const remove = removeGuideOp(store, b);
+    act(() => { remove.apply(null); });
+    act(() => { remove.invert().apply(null); });
+    expect(r.hook.current.getGuides()).toEqual([a, b, c]);
   });
 });
 

@@ -18,8 +18,12 @@ function store() {
   return {
     list,
     getGuides: () => list,
-    // As `useGuides` does: an id already held is replaced in place.
-    addGuide: (g: Guide) => { const i = list.findIndex((h) => h.id === g.id); if (i >= 0) list[i] = g; else list.push(g); },
+    // As `useGuides` does: an id already held is replaced in place, a new one goes in at `index`.
+    addGuide: (g: Guide, index?: number) => {
+      const i = list.findIndex((h) => h.id === g.id);
+      if (i >= 0) list[i] = g;
+      else list.splice(index ?? list.length, 0, g);
+    },
     removeGuide: (id: string) => { const i = list.findIndex((g) => g.id === id); if (i >= 0) list.splice(i, 1); },
   };
 }

@@ -15,7 +15,7 @@ type Point = { x: number; y: number };
 export interface RulersOptions {
   /** The guides a drag off a ruler adds to, and a drag on one moves or
    *  removes: `useGuides()` is one. */
-  guides: GuideStore & { getGuides(): readonly Guide[] };
+  guides: GuideStore;
   /** The document's unit scope: what the labels read in outside every frame
    *  that declares its own. */
   root: UnitScope;
