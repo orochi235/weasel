@@ -68,7 +68,9 @@ lists an entry under the first of Breaking, New, Changed, Performance, Fixes and
 Internal that its tags reach, and folds Fixes and Internal away.
 
 `rank=N` is a suggestion of how far up its release the entry sorts, read like a
-z-index: unset is 0, higher sorts first, negative sinks. Ranks from different
+z-index: unset is 0, higher sorts first, negative sinks. Rough anchors: 0 for an
+ordinary change, 10 for one a reader of the release should notice, 20 or more
+for one that could headline it, below 0 for one nobody would miss. Ranks from different
 authors are not comparable and do not need to be; the release pick settles what
 leads. The tags and the parser are in `scripts/release/entry-marker.ts`.
 

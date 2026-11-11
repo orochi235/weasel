@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import RELEASES from 'virtual:changelogs';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
+import { matches } from '../shared/releases';
 import { ReleaseSection } from './ReleaseSection';
+import './Releases.css';
 
 /** The filter lives in the query string, not the hash: the hash is the app's
  *  router and it rewrites itself to the bare view id on every change. */
@@ -24,7 +26,8 @@ function writeParam(names: readonly string[]): void {
 
 /** Release history for every published package, newest first. The entries come
  *  from the packages' CHANGELOG files via the `changelogs` vite plugin, merged
- *  across the fixed version group so each change is stated once. */
+ *  across the fixed version group so each change is stated once; each release's
+ *  entries load when it is opened. */
 export function Releases() {
   const [selected, setSelected] = useState<string[]>(readParam);
   const [linked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
@@ -50,7 +53,7 @@ export function Releases() {
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     for (const release of RELEASES) {
-      for (const entry of release.entries) {
+      for (const entry of release.shape) {
         for (const name of entry.packages) map.set(name, (map.get(name) ?? 0) + 1);
       }
     }
@@ -60,13 +63,10 @@ export function Releases() {
   /** An entry survives if it names any selected package — union, not
    *  intersection: one changeset rarely touches two packages for the same
    *  reason, so intersecting almost always empties the list. */
-  const shown = useMemo(() => {
-    if (selected.length === 0) return RELEASES;
-    return RELEASES.map((release) => ({
-      ...release,
-      entries: release.entries.filter((e) => e.packages.some((p) => selected.includes(p))),
-    })).filter((release) => release.entries.length > 0);
-  }, [selected]);
+  const shown = useMemo(
+    () => RELEASES.filter((release) => release.shape.some((e) => matches(e.packages, selected))),
+    [selected],
+  );
 
   if (RELEASES.length === 0) {
     return (
@@ -80,7 +80,10 @@ export function Releases() {
     );
   }
 
-  const matched = shown.reduce((n, r) => n + r.entries.length, 0);
+  const matched = shown.reduce(
+    (n, r) => n + r.shape.filter((e) => matches(e.packages, selected)).length,
+    0,
+  );
 
   return (
     <article className="ckd-demo ckd-releases">
@@ -90,7 +93,9 @@ export function Releases() {
         <p className="ckd-desc">
           Every published version, newest first. All packages release together, so one
           version number moves the whole kit — each change below names the packages it
-          touched. Anything merged but not yet on npm leads the list as unreleased.
+          touched and what kind of change it is. Each release leads with its highlights,
+          then lists breaking changes, new features and other changes, with fixes folded
+          away. Anything merged but not yet on npm leads the list as unreleased.
         </p>
 
         <div className="ckd-release-filter" role="group" aria-label="Filter by package">

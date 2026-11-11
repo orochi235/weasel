@@ -9,33 +9,9 @@
  * into the published history, where markdown renders it as nothing. Guide: `docs/releasing.md`.
  */
 
-/** Each tag answers one yes-or-no question about the change; an entry carries every one that holds. */
-export const TAGS = {
-  breaking: 'consumer code or saved data has to change',
-  deprecates: 'marks something deprecated; it still works',
-  api: 'adds public surface: an export, a prop, an option, an action id',
-  new: 'a capability a user can see, with or without new API',
-  behavior: 'existing code acts differently with no code change, on purpose and not as a fix',
-  data: 'changes serialized output or how saved documents load',
-  visual: 'rendered pixels differ',
-  perf: 'measurably faster or leaner',
-  fix: 'corrects a defect',
-  internal: 'nothing a consumer can observe',
-} as const;
+import { TAGS, type Tag } from '../../apps/shared/releases.ts';
 
-export type Tag = keyof typeof TAGS;
-
-/** Where an entry is listed in its release: the first group, in this order, that its tags reach. */
-export const GROUPS = [
-  { id: 'breaking', label: 'Breaking', tags: ['breaking'] },
-  { id: 'new', label: 'New', tags: ['new', 'api'] },
-  { id: 'changed', label: 'Changed', tags: ['behavior', 'deprecates', 'data'] },
-  { id: 'perf', label: 'Performance', tags: ['perf'] },
-  { id: 'fix', label: 'Fixes', tags: ['fix', 'visual'] },
-  { id: 'internal', label: 'Internal', tags: ['internal'] },
-] as const satisfies readonly { id: string; label: string; tags: readonly Tag[] }[];
-
-export type GroupId = (typeof GROUPS)[number]['id'];
+export { GROUPS, groupOf, TAGS, type GroupId, type Tag } from '../../apps/shared/releases.ts';
 
 export interface EntryMeta {
   tags: Tag[];
@@ -85,11 +61,6 @@ export function writeMarker(meta: EntryMeta): string {
 export function setMarker(body: string, meta: EntryMeta): string {
   const without = body.replace(MARKER, '').replace(/\s+$/, '');
   return `${without}\n\n${writeMarker(meta)}\n`;
-}
-
-export function groupOf(tags: readonly Tag[]): GroupId {
-  for (const group of GROUPS) if (group.tags.some((t: Tag) => tags.includes(t))) return group.id;
-  return 'internal';
 }
 
 function sortTags(tags: readonly Tag[]): Tag[] {

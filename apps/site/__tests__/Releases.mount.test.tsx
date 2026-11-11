@@ -13,15 +13,20 @@ const RELEASES: Release[] = Array.from({ length: 40 }, (_, r) => ({
     packages: ['core'],
     titleHtml: `change ${r}-${e}`,
     bodyHtml: `<p>account of ${r}-${e}</p>`,
-    level: 'patch' as const,
+    tags: ['new' as const], rank: 0, pick: false,
   })),
 }));
 
-vi.mock('virtual:changelogs', () => ({ default: RELEASES }));
+vi.mock('virtual:changelogs', async () => ({
+  default: (await import('../../shared/releases')).indexReleases(RELEASES),
+}));
 
 const { Releases } = await import('../Releases');
 
 const entries = () => document.querySelectorAll('.ckd-release-entry');
+// Long releases show their top entries again as highlights, so look only among the entries.
+const entry = (title: string) =>
+  screen.findByText(title, { selector: '.ckd-release-entry .ckd-release-title span' });
 const release = (version: string) =>
   screen.getByRole('heading', { level: 3, name: version }).closest('details')!;
 
@@ -31,17 +36,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('what the Releases view mounts', () => {
-  it('mounts only the open release, not the whole history', () => {
+  it('mounts only the open release, not the whole history', async () => {
     render(<Releases />);
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(40);
+    await entry('change 0-0');
     expect(entries()).toHaveLength(60);
     expect(screen.queryByText('change 5-0')).toBeNull();
   });
 
   it("leaves an entry's folded body out until its title is opened", async () => {
     render(<Releases />);
-    expect(screen.queryByText('account of 0-3')).toBeNull();
-    await userEvent.click(screen.getByText('change 0-3'));
+    await userEvent.click(await entry('change 0-3'));
     expect(screen.getByText('account of 0-3')).toBeTruthy();
   });
 
@@ -49,12 +54,12 @@ describe('what the Releases view mounts', () => {
     render(<Releases />);
     await userEvent.click(screen.getByRole('heading', { level: 3, name: '1.30.0' }));
     expect(release('1.30.0').open).toBe(true);
-    expect(screen.getByText('change 9-0')).toBeTruthy();
+    expect(await entry('change 9-0')).toBeTruthy();
   });
 });
 
 describe('a link to one version', () => {
-  it('opens that release and scrolls it into view', () => {
+  it('opens that release and scrolls it into view', async () => {
     const scrolled: Element[] = [];
     const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (
       this: Element,
@@ -65,7 +70,7 @@ describe('a link to one version', () => {
     render(<Releases />);
     const target = release('1.2.0');
     expect(target.open).toBe(true);
-    expect(screen.getByText('change 37-0')).toBeTruthy();
+    expect(await entry('change 37-0')).toBeTruthy();
     expect(scrolled).toEqual([target]);
     spy.mockRestore();
   });
