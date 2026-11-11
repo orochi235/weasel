@@ -129,8 +129,8 @@ describe('flipAction (axis param)', () => {
   // -------------------------------------------------------------------------
 
   it('with no applyOps, applies one batch labeled "Flip" to the scene', () => {
-    // Asymmetric pose so the flip produces an observable, deterministic change.
-    const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40 } });
+    // A turned rect, so the flip in place changes it: the turn reverses.
+    const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40, rotation: 0.5 } });
     const selection = makeSelection(['a']);
 
     runFlip({ selection, scene }, { axis: 'x' });
@@ -139,12 +139,19 @@ describe('flipAction (axis param)', () => {
     expect(scene.batchLog[0].label).toBe('Flip');
     expect(scene.batchLog[0].ops).toHaveLength(1);
     expect(scene.batchLog[0].ops[0].id).toBe('a');
-    // Flipping a rect about its own AABB returns the same canonical pose.
-    expect(scene.poses.get('a')).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+    expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 20, width: 30, height: 40, rotation: -0.5 });
+  });
+
+  it('commits nothing for a flip in place of an upright rect, which is its own mirror', () => {
+    const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40 } });
+    const applyOps = vi.fn();
+    runFlip({ selection: makeSelection(['a']), scene, applyOps }, { axis: 'x' });
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(scene.batchLog).toHaveLength(0);
   });
 
   it('routes the commit through the consumer applyOps hook when present', () => {
-    const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40 } });
+    const scene = makeStubScene({ a: { x: 10, y: 20, width: 30, height: 40, rotation: 0.5 } });
     const selection = makeSelection(['a']);
     const applyOps = vi.fn();
 
@@ -161,13 +168,13 @@ describe('flipAction (axis param)', () => {
     expect(ops[0].args.id).toBe('a');
     // `from` is the pre-flip pose captured before mutation.
     expect(ops[0].args.from).toMatchObject({ x: 10, y: 20, width: 30, height: 40 });
-    expect(ops[0].args.to).toMatchObject({ x: 10, y: 20, width: 30, height: 40 });
+    expect(ops[0].args.to).toMatchObject({ x: 10, y: 20, width: 30, height: 40, rotation: -0.5 });
   });
 
   it('emits one op per selected node, capturing each pre-mutation pose', () => {
     const scene = makeStubScene({
-      a: { x: 0, y: 0, width: 10, height: 10 },
-      b: { x: 5, y: 5, width: 20, height: 20 },
+      a: { x: 0, y: 0, width: 10, height: 10, rotation: 0.5 },
+      b: { x: 5, y: 5, width: 20, height: 20, rotation: 0.25 },
     });
     const selection = makeSelection(['a', 'b']);
     const applyOps = vi.fn();

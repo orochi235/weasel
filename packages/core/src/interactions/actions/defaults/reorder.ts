@@ -1,9 +1,12 @@
 import { createReorderOp } from 'core/ops/reorder';
-import type { Scene } from 'core/scene/types';
+import type { NodeId, Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
-import type { Action } from '@weasel-js/routing';
+import type { Action, ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import { sameList } from '@weasel-js/registry';
+import { bringForward, bringToFront, sendBackward, sendToBack } from 'core/ops/reorder/algorithms';
 import { requiresSelection } from './requiresSelection';
 import { icon } from '../../../icons.gen';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -32,10 +35,8 @@ function reorderSelection(
   const ids = selection.get() as string[];
   if (ids.length === 0) return;
 
-  const reorderDir =
-    direction === 'forward'
-      ? distance === 'extreme' ? 'front' : 'forward'
-      : distance === 'extreme' ? 'back' : 'backward';
+  const reorderDir = reorderDirection(direction, distance);
+  if (reorderPlan(scene, ids, reorderDir) !== 'moves') return;
 
   // `createReorderOp` partitions `ids` by their current parent and rewrites
   // each affected parent's child order via the adapter's `getChildren` /
@@ -44,6 +45,49 @@ function reorderSelection(
 
   if (applyOps) applyOps([op], 'Reorder');
   else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene, selection.adapterMethods));
+}
+
+const ORDER_FNS = { forward: bringForward, backward: sendBackward, front: bringToFront, back: sendToBack } as const;
+
+/** What a reorder of `ids` would do, as `createReorderOp` partitions them by parent: nothing, or change some
+ *  child order; `'locked'` when that shifts a locked node, which keeps its place in the stack (my call,
+ *  2026-11-10, after the 2026-11-09 locked ruling). */
+function reorderPlan(scene: Scene<unknown, string, unknown>, ids: readonly string[], direction: keyof typeof ORDER_FNS): 'none' | 'moves' | 'locked' {
+  const a = defaultCommitAdapter(scene);
+  const byParent = new Map<string | null, string[]>();
+  for (const id of ids) {
+    if (!scene.get(id as NodeId)) continue;
+    const parent = a.getParent(id);
+    byParent.set(parent, [...byParent.get(parent) ?? [], id]);
+  }
+  let plan: 'none' | 'moves' = 'none';
+  for (const [parent, moving] of byParent) {
+    const before = a.getChildren(parent);
+    const after = ORDER_FNS[direction](before, moving);
+    if (sameList(before, after)) continue;
+    plan = 'moves';
+    if (before.some((id, i) => after[i] !== id && scene.isLocked(id as NodeId))) return 'locked';
+  }
+  return plan;
+}
+
+function reorderDirection(direction: 'forward' | 'backward', distance: ReorderDistance): keyof typeof ORDER_FNS {
+  return direction === 'forward'
+    ? distance === 'extreme' ? 'front' : 'forward'
+    : distance === 'extreme' ? 'back' : 'backward';
+}
+
+/** `enabled` for a reorder: a selection, and one the reorder would move. */
+function reorderEnabled(direction: 'forward' | 'backward') {
+  return (deps?: ActionDeps, _at?: unknown, _carried?: unknown, params?: Readonly<Record<string, unknown>>): true | ActionDisabledReason => {
+    const needs = requiresSelection(deps);
+    if (needs !== true) return needs;
+    const scene = deps!.scene as Scene<unknown, string, unknown> | undefined;
+    if (!scene) return true;
+    const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
+    const plan = reorderPlan(scene, deps!.selection!.get() as string[], reorderDirection(direction, distance));
+    return plan === 'moves' ? true : plan === 'locked' ? ActionDisabledReason.Locked : ActionDisabledReason.NotApplicable;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -105,7 +149,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       reorderSelection(selection, scene, 'forward', distance, applyOps);
     },
   },
-  enabled: requiresSelection,
+  enabled: reorderEnabled('forward'),
 };
 
 /**
@@ -152,6 +196,6 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
       reorderSelection(selection, scene, 'backward', distance, applyOps);
     },
   },
-  enabled: requiresSelection,
+  enabled: reorderEnabled('backward'),
 };
 

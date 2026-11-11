@@ -7,9 +7,9 @@ import {
   type AlignReference,
 } from './align';
 import { actionReferenceSources } from '../spatialReference';
-import type { PointerContextValue } from '@weasel-js/routing/react';
-import { scenePoseFrame, type PoseFrame } from '../poseFrame';
-import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
+import { scenePoseFrame } from '../poseFrame';
+import type { Op } from 'core/ops/types';
+import { drawnBoxes } from '../drawnBoxes';
 import { moveEachOps } from '../moveNodes';
 import { uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
@@ -49,36 +49,34 @@ const ICON_FOR: Record<AlignEdge, IconRef> = {
 // ---------------------------------------------------------------------------
 
 /**
- * Apply an align operation to the current selection via the Scene API.
- * Reads poses through the `poseDescriptor` dep; what the selection aligns to
- * comes from `params.to` (an `AlignReference`, default `'union'`).
+ * The ops an align of the current selection commits, read through the
+ * `poseDescriptor` dep; what the selection aligns to comes from `params.to`
+ * (an `AlignReference`, default `'union'`). Empty when nothing would move.
  *
  * The edge every member lines up on is a world edge, so the bounds are read
  * and translated in world and each result is stored back in its own parent's
  * frame.
  */
-function alignSelection(
+function alignOps(
   deps: ActionDeps,
-  selection: SelectionApi,
+  selection: Pick<SelectionApi, 'get'>,
   scene: Scene<unknown, string, unknown>,
   edge: AlignEdge,
-  params: Record<string, unknown> | undefined,
-  pointer: PointerContextValue | undefined,
-  boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
-): void {
+  params: Readonly<Record<string, unknown>> | undefined,
+): Op[] {
   const frame = scenePoseFrame(scene);
   const ids = uncarried(frame, withoutPageStructure(scene, selection.get()));
-  const boxes = boxesOver(frame);
+  const boxes = drawnBoxes(deps, frame);
   const poses = ids.map((id) => frame.world(id));
   const bounds = poses.map((p, i) => boxes.aabb(ids[i]!, p));
   const target = alignTargetBounds(
     bounds,
     params?.to as AlignReference | undefined,
-    actionReferenceSources(params, pointer, scene, frame, boxes),
+    actionReferenceSources(params as Record<string, unknown> | undefined, deps.pointer, scene, frame, boxes),
   );
-  if (target === null) return;
+  if (target === null) return [];
   const moves = ids.map((id, i) => ({ ids: [id], ...alignDeltaFor(bounds[i], target, edge) }));
-  commitTransformOps(deps, moveEachOps(scene, moves, deps, 'Align'), 'Align');
+  return moveEachOps(scene, moves, deps, 'Align');
 }
 
 // ---------------------------------------------------------------------------
@@ -101,17 +99,14 @@ function makeAlignAction(edge: AlignEdge): Action {
         const selection = deps.selection;
         const scene = deps.scene;
         if (!selection || !scene) return;
-        alignSelection(deps, selection, scene, edge, params, deps.pointer, (frame) => drawnBoxes(deps, frame));
+        commitTransformOps(deps, alignOps(deps, selection, scene, edge, params), 'Align');
       },
     } satisfies ImmediateInvoker,
-    // One item is enough: `enabled` cannot see the binding's `to`, and every
-    // reference but `'union'` aligns a single item. Deps-aware, since a
-    // constant disabled reason greys the entry out forever (see
-    // `requiresSelection`).
-    enabled: (deps) => {
+    enabled: (deps, _at, _carried, params) => {
       const selection = deps?.selection;
-      const count = selection?.get().length ?? 0;
-      return count >= 1 ? true : ActionDisabledReason.SelectionRequired;
+      const scene = deps?.scene;
+      if (!selection || !scene || selection.get().length === 0) return ActionDisabledReason.SelectionRequired;
+      return alignOps(deps, selection, scene, edge, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
     },
   };
 }

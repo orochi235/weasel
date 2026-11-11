@@ -1,3 +1,4 @@
+import { settleWithinRounding } from '../settleWithinRounding';
 import type { DistributeAxis, DistributeMode } from './distribute';
 
 /** Axis-aligned box a distribute plan is computed from. Pass the *visual*
@@ -13,10 +14,13 @@ export interface DistributeBounds {
 /**
  * Where each box's min edge along `axis` should land. Result is parallel to
  * `bounds`. The two extreme boxes stay put in both modes; `'centers'` spaces
- * centers evenly between them, `'gaps'` spaces the empty runs evenly.
+ * centers evenly between the outermost two centers, `'gaps'` spaces the empty
+ * runs evenly between the boxes that start first and last.
  *
  * Callers translate by `target - currentMin`, so the plan is expressed in the
- * same frame as the bounds it was given.
+ * same frame as the bounds it was given. A target within rounding of where a
+ * box already starts is where it starts, so a distributed selection plans no
+ * move when distributed again.
  */
 export function planDistribute(
   bounds: readonly DistributeBounds[],
@@ -27,19 +31,24 @@ export function planDistribute(
   const size = (b: DistributeBounds): number => (axis === 'x' ? b.width : b.height);
   const center = (b: DistributeBounds): number => min(b) + size(b) / 2;
 
-  const order = bounds.map((b, i) => ({ b, i })).sort((p, q) => min(p.b) - min(q.b));
+  const key = mode === 'centers' ? center : min;
+  const order = bounds.map((b, i) => ({ b, i })).sort((p, q) => key(p.b) - key(q.b));
   const n = order.length;
   const targets = new Array<number>(n);
   if (n === 0) return targets;
   const first = order[0].b;
   const last = order[n - 1].b;
 
+  let scale = 0;
+  for (const { b } of order) scale = Math.max(scale, Math.abs(min(b)), Math.abs(min(b) + size(b)));
+  const settle = (b: DistributeBounds, target: number): number => settleWithinRounding(min(b), target, scale);
+
   if (mode === 'centers') {
     const c0 = center(first);
-    const stride = (center(last) - c0) / (n - 1);
+    const stride = n === 1 ? 0 : (center(last) - c0) / (n - 1);
     for (let i = 0; i < n; i++) {
       const { b, i: orig } = order[i];
-      targets[orig] = c0 + stride * i - size(b) / 2;
+      targets[orig] = settle(b, c0 + stride * i - size(b) / 2);
     }
     return targets;
   }
@@ -47,11 +56,11 @@ export function planDistribute(
   const span = (min(last) + size(last)) - min(first);
   let sumSizes = 0;
   for (const { b } of order) sumSizes += size(b);
-  const gap = (span - sumSizes) / (n - 1);
+  const gap = n === 1 ? 0 : (span - sumSizes) / (n - 1);
   let cursor = min(first);
   for (let i = 0; i < n; i++) {
     const { b, i: orig } = order[i];
-    targets[orig] = cursor;
+    targets[orig] = settle(b, cursor);
     cursor += size(b) + gap;
   }
   return targets;

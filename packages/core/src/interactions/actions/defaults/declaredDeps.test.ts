@@ -33,8 +33,10 @@ function makeDeps() {
     get: (id: string) => ({ id: asNodeId(id), pose: { x: 0, y: 0, width: 10, height: 10 }, parent: null }),
     overrides: createPoseOverrides<unknown>(() => undefined),
     composition: IDENTITY_POSE_COMPOSITION,
-    roots: IDS.map(asNodeId),
+    // Unselected ends, so a reorder of the selection either way moves something.
+    roots: ['below', ...IDS, 'above'].map(asNodeId),
     childrenOf: () => [],
+    isLocked: () => false,
     setPose: vi.fn(),
     batch: (_label: string, fn: () => unknown) => fn(),
     applyBatch: vi.fn(),

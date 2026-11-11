@@ -13,6 +13,7 @@ import { IDENTITY_POSE_COMPOSITION, type PoseComposition } from 'core/scene/comp
 import { usePointerContext } from '@weasel-js/routing/react';
 import type { Scale2 } from '@weasel-js/geom';
 import { drawnAABBOf, type DrawnBoundsOptions, type DrawnBoundsScene } from 'canvas/drawnBounds';
+import { settleWithinRounding } from '../settleWithinRounding';
 import { resolveSpatialReference, type SpatialReference, type SpatialReferenceSources } from '../spatialReference';
 
 export { visualBoundsViaDescriptor, translatePoseViaDescriptor } from '../resize/geometry';
@@ -82,13 +83,17 @@ export interface UseAlignReturn {
 /** Compute the (dx, dy) translation that moves AABB `b` so that the requested
  *  `edge`/center matches the corresponding feature of the union AABB `u`. */
 export function alignDeltaFor(b: Bounds, u: Bounds, edge: AlignEdge): { dx: number; dy: number } {
+  const scaleX = Math.max(Math.abs(b.x), Math.abs(b.x + b.width), Math.abs(u.x), Math.abs(u.x + u.width));
+  const scaleY = Math.max(Math.abs(b.y), Math.abs(b.y + b.height), Math.abs(u.y), Math.abs(u.y + u.height));
+  const x = (from: number, to: number): number => settleWithinRounding(from, to, scaleX) - from;
+  const y = (from: number, to: number): number => settleWithinRounding(from, to, scaleY) - from;
   switch (edge) {
-    case 'left':     return { dx: u.x - b.x, dy: 0 };
-    case 'right':    return { dx: (u.x + u.width) - (b.x + b.width), dy: 0 };
-    case 'top':      return { dx: 0, dy: u.y - b.y };
-    case 'bottom':   return { dx: 0, dy: (u.y + u.height) - (b.y + b.height) };
-    case 'center-x': return { dx: (u.x + u.width / 2) - (b.x + b.width / 2), dy: 0 };
-    case 'center-y': return { dx: 0, dy: (u.y + u.height / 2) - (b.y + b.height / 2) };
+    case 'left':     return { dx: x(b.x, u.x), dy: 0 };
+    case 'right':    return { dx: x(b.x + b.width, u.x + u.width), dy: 0 };
+    case 'top':      return { dx: 0, dy: y(b.y, u.y) };
+    case 'bottom':   return { dx: 0, dy: y(b.y + b.height, u.y + u.height) };
+    case 'center-x': return { dx: x(b.x + b.width / 2, u.x + u.width / 2), dy: 0 };
+    case 'center-y': return { dx: 0, dy: y(b.y + b.height / 2, u.y + u.height / 2) };
   }
 }
 

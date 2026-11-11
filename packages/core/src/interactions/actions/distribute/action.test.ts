@@ -116,11 +116,16 @@ describe('distributeHorizontalAction descriptor', () => {
     expect(distributeHorizontalAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('enabled is true once three nodes are selected', () => {
-    const two = { selection: makeSelection(['a', 'b']) };
-    const three = { selection: makeSelection(['a', 'b', 'c']) };
-    expect(distributeHorizontalAction.enabled!(two as never)).toBe(ActionDisabledReason.SelectionRequired);
-    expect(distributeHorizontalAction.enabled!(three as never)).toBe(true);
+  it('enabled is true exactly when three or more nodes would move', () => {
+    const { scene } = makeScene({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 15, y: 0, width: 10, height: 10 },
+      c: { x: 100, y: 0, width: 10, height: 10 },
+    });
+    const deps = (ids: string[]) => stubDeps({ selection: makeSelection(ids), scene });
+    expect(distributeHorizontalAction.enabled!(deps(['a', 'b']))).toBe(ActionDisabledReason.SelectionRequired);
+    expect(distributeHorizontalAction.enabled!(deps(['a', 'b', 'c']))).toBe(true);
+    expect(distributeVerticalAction.enabled!(deps(['a', 'b', 'c']))).toBe(ActionDisabledReason.NotApplicable);
   });
 });
 

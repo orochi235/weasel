@@ -1,9 +1,10 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { Scene } from 'core/scene/types';
-import { drawnBoxes, type DrawnBoxes } from '../drawnBoxes';
+import { drawnBoxes } from '../drawnBoxes';
 import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
-import { scenePoseFrame, type PoseFrame } from '../poseFrame';
+import { scenePoseFrame } from '../poseFrame';
+import type { Op } from 'core/ops/types';
 import { moveEachOps } from '../moveNodes';
 import { uncarried } from '../selectionSubtree';
 import { withoutPageStructure } from 'core/scene/nodeGates';
@@ -26,26 +27,25 @@ const ICON_FOR: Record<DistributeAxis, IconRef> = {
 // ---------------------------------------------------------------------------
 
 /**
- * Apply a distribute operation to the current selection via the Scene API.
- * Reads poses through the `poseDescriptor` dep; `mode` comes from the
- * binding's `params.mode`.
+ * The ops a distribute of the current selection commits, read through the
+ * `poseDescriptor` dep. Empty with fewer than three members, or when they
+ * are spaced already.
  *
  * The span being divided is a world span, so the bounds are read and
  * translated in world and each result is stored back in its own parent's
  * frame.
  */
-function distributeSelection(
+function distributeOps(
   deps: ActionDeps,
-  selection: SelectionApi,
+  selection: Pick<SelectionApi, 'get'>,
   scene: Scene<unknown, string, unknown>,
   axis: DistributeAxis,
   mode: DistributeMode,
-  boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
-): void {
+): Op[] {
   const frame = scenePoseFrame(scene);
   const ids = uncarried(frame, withoutPageStructure(scene, selection.get()));
-  if (ids.length < 3) return;
-  const boxes = boxesOver(frame);
+  if (ids.length < 3) return [];
+  const boxes = drawnBoxes(deps, frame);
 
   const items = ids.map((id) => {
     const pose = frame.world(id);
@@ -57,8 +57,11 @@ function distributeSelection(
     const delta = targets[i] - (axis === 'x' ? it.b.x : it.b.y);
     return { ids: [it.id], dx: axis === 'x' ? delta : 0, dy: axis === 'y' ? delta : 0 };
   });
-  commitTransformOps(deps, moveEachOps(scene, moves, deps, 'Distribute'), 'Distribute');
+  return moveEachOps(scene, moves, deps, 'Distribute');
 }
+
+const modeOf = (params: Readonly<Record<string, unknown>> | undefined): DistributeMode =>
+  (params?.mode as DistributeMode | undefined) ?? 'centers';
 
 // ---------------------------------------------------------------------------
 // Static descriptors
@@ -79,17 +82,14 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const selection = deps.selection;
         const scene = deps.scene;
         if (!selection || !scene) return;
-        const mode = (params?.mode as DistributeMode | undefined) ?? 'centers';
-        distributeSelection(deps, selection, scene, axis, mode, (frame) => drawnBoxes(deps, frame));
+        commitTransformOps(deps, distributeOps(deps, selection, scene, axis, modeOf(params)), 'Distribute');
       },
     } satisfies ImmediateInvoker,
-    // Deps-aware, matching `distributeSelection`'s own `ids.length < 3` guard:
-    // a constant disabled reason greys the entry out forever (see
-    // `requiresSelection`).
-    enabled: (deps) => {
+    enabled: (deps, _at, _carried, params) => {
       const selection = deps?.selection;
-      const count = selection?.get().length ?? 0;
-      return count >= 3 ? true : ActionDisabledReason.SelectionRequired;
+      const scene = deps?.scene;
+      if (!selection || !scene || selection.get().length < 3) return ActionDisabledReason.SelectionRequired;
+      return distributeOps(deps, selection, scene, axis, modeOf(params)).length > 0 ? true : ActionDisabledReason.NotApplicable;
     },
   };
 }

@@ -114,11 +114,13 @@ describe('alignLeftAction descriptor', () => {
     expect(alignLeftAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
   });
 
-  it('enabled is true once a node is selected', () => {
-    const none = { selection: makeSelection([]) };
-    const one = { selection: makeSelection(['a']) };
-    expect(alignLeftAction.enabled!(none as never)).toBe(ActionDisabledReason.SelectionRequired);
-    expect(alignLeftAction.enabled!(one as never)).toBe(true);
+  it('enabled is true exactly when the align would move something', () => {
+    const { scene } = makeScene({ a: { x: 0, y: 0, width: 10, height: 10 }, b: { x: 5, y: 0, width: 10, height: 10 } });
+    const deps = (ids: string[]) => stubDeps({ selection: makeSelection(ids), scene });
+    expect(alignLeftAction.enabled!(deps([]))).toBe(ActionDisabledReason.SelectionRequired);
+    expect(alignLeftAction.enabled!(deps(['a']))).toBe(ActionDisabledReason.NotApplicable);
+    expect(alignLeftAction.enabled!(deps(['a', 'b']))).toBe(true);
+    expect(alignTopAction.enabled!(deps(['a', 'b']))).toBe(ActionDisabledReason.NotApplicable);
   });
 });
 
