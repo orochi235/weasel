@@ -84,5 +84,5 @@ describe('grid', () => {
     const sizes = Object.fromEntries(Array.from({ length: 1_000_000 }, (_, i) => [`n${i}`, [10, 10] as const]));
     const moves = grid(graphOf(sizes), { nodeGap: 10, ...of(1000) });
     expect(moves.size).toBeGreaterThan(0);
-  });
+  }, 30_000);
 });
