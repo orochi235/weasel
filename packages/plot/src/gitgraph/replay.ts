@@ -50,7 +50,10 @@ const headOf = (s: ReplayState, branch: string): string | undefined => {
 /** Adds a commit to the current branch. Returns why it cannot, or `null`. */
 function add(s: ReplayState, command: number, id: string | undefined, rest: Omit<GitCommit, 'command' | 'id' | 'branch' | 'seq'>): string | null {
   const seq = s.history.commits.length;
-  const name = id ?? `#${seq}`;
+  // A commit given no id takes the first `#n` from its place on that no commit holds.
+  let n = seq;
+  while (id === undefined && s.byId.has(`#${n}`)) n++;
+  const name = id ?? `#${n}`;
   if (s.byId.has(name)) return `a commit "${name}" already exists`;
   const commit: GitCommit = { command, id: name, branch: s.current, seq, ...rest };
   s.history.commits.push(commit);
