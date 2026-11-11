@@ -16,6 +16,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
+import { setOwn } from '../ownKey';
 import { API_EXPORT } from '../story/api';
 import { PROP_ARG_TYPES_EXPORT } from './propArgTypes';
 import { timelineOf } from '../timeline/declare';
@@ -69,7 +70,8 @@ function combineParameters(...sources: (Record<string, unknown> | undefined)[]):
   for (const source of sources) {
     for (const [key, value] of Object.entries(source ?? {})) {
       if (value === undefined) continue;
-      out[key] = isPlainObject(value) && isPlainObject(out[key]) ? combineParameters(out[key], value) : value;
+      const held = Object.hasOwn(out, key) ? out[key] : undefined;
+      setOwn(out, key, isPlainObject(value) && isPlainObject(held) ? combineParameters(held, value) : value);
     }
   }
   return out;
@@ -179,7 +181,7 @@ export function loadCsfModule(
 
     const withArgs = (config: Args): Args =>
       Object.fromEntries(
-        Object.entries(withoutUndefined(config)).map(([key, value]) => [key, key in args ? withUnsent(value, args[key]) : value]),
+        Object.entries(withoutUndefined(config)).map(([key, value]) => [key, Object.hasOwn(args, key) ? withUnsent(value, args[key]) : value]),
       );
     const csfContext = (config: unknown, globals: Globals, local: LocalArgs = {}): CsfContext => ({
       args: withoutUndefined({ ...args, ...withArgs(config as Args), ...appliedLocal(local, config as Args) }),

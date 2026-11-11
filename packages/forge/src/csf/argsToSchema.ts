@@ -2,6 +2,7 @@ import { type ConfigNode, type ConfigSchema, type ConfigShape, f, ObjectNode, Un
 import { isPlainObject } from '@weasel-js/core';
 import { iconFromData } from '@weasel-js/ui/components/Icon';
 import { sameKnob } from '../route/url';
+import { setOwn } from '../ownKey';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */
@@ -95,7 +96,7 @@ function variantsOf(members: readonly ArgShape[]): { tag: string; variants: Map<
   const objects = members.filter((m): m is ObjectShape => m.name === 'object');
   if (objects.length !== members.length || objects.length === 0) return null;
   const pinned = (m: ObjectShape, key: string) => {
-    const field = m.value[key];
+    const field = Object.hasOwn(m.value, key) ? m.value[key] : undefined;
     return field?.name === 'enum' && field.value.length === 1 ? field.value[0] : undefined;
   };
   const tag = Object.keys(objects[0]!.value).find((key) => objects.every((m) => pinned(m, key) !== undefined));
@@ -104,7 +105,7 @@ function variantsOf(members: readonly ArgShape[]): { tag: string; variants: Map<
   for (const member of objects) {
     const name = pinned(member, tag)!;
     const held = variants.get(name)?.value ?? {};
-    const added = Object.entries(member.value).filter(([key]) => !(key in held));
+    const added = Object.entries(member.value).filter(([key]) => !Object.hasOwn(held, key));
     variants.set(name, { name: 'object', value: { ...held, ...Object.fromEntries(added) } });
   }
   return { tag, variants };
@@ -115,8 +116,8 @@ function fieldsOf(shape: ObjectShape, value: unknown, omit?: string): Record<str
   const fields: Record<string, Leaf> = {};
   for (const [key, field] of Object.entries(shape.value)) {
     if (key === omit) continue;
-    const leaf = shaped(field, held[key]);
-    if (leaf) fields[key] = leaf;
+    const leaf = shaped(field, Object.hasOwn(held, key) ? held[key] : undefined);
+    if (leaf) setOwn(fields, key, leaf);
   }
   return Object.keys(fields).length > 0 ? fields : null;
 }
@@ -146,7 +147,7 @@ function shaped(shape: ArgShape, value: unknown): Leaf | null {
       const union = variantsOf(shape.value);
       if (!union) return null;
       const { tag, variants } = union;
-      const held = isPlainObject(value) ? value[tag] : undefined;
+      const held = isPlainObject(value) && Object.hasOwn(value, tag) ? value[tag] : undefined;
       const nodes = Object.fromEntries(
         [...variants].map(([name, member]) => [name, f.object(fieldsOf(member, held === name ? value : undefined, tag) ?? {})]),
       );
@@ -219,7 +220,7 @@ function conditionOf(condition: ArgCondition): ((config: Record<string, unknown>
   if (!('arg' in condition)) return null;
   const { arg } = condition;
   return (config) => {
-    const value = config[arg];
+    const value = Object.hasOwn(config, arg) ? config[arg] : undefined;
     if (condition.exists !== undefined) return (value !== undefined) === condition.exists;
     if ('eq' in condition) return sameKnob(value, condition.eq);
     if ('neq' in condition) return !sameKnob(value, condition.neq);
@@ -248,12 +249,12 @@ export function argsToSchema(
 ): ConfigSchema<unknown> {
   const nodes: Record<string, Leaf> = {};
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
-    const has = key in args;
+    const has = Object.hasOwn(args, key);
     // A control carries only what crosses the port; the frame puts the rest back from `args` (`withUnsent`).
     const part = has ? portSafePart(args[key]) : null;
     if (has && !part) continue;
     const value = part?.value;
-    const argType = argTypes[key];
+    const argType = Object.hasOwn(argTypes, key) ? argTypes[key] : undefined;
     const control = argType ? controlOf(argType) : false;
 
     let node: Leaf | null =
@@ -265,7 +266,7 @@ export function argsToSchema(
     if (argType?.name) node = node.label(argType.name);
     const shownWhen = argType?.if ? conditionOf(argType.if) : null;
     if (shownWhen) node = node.showIf(shownWhen);
-    nodes[key] = node;
+    setOwn(nodes, key, node);
   }
   return f.schema(nodes as ConfigShape);
 }
