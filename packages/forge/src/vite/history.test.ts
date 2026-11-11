@@ -35,6 +35,22 @@ describe('fileDates', () => {
   });
 });
 
+describe('fileDates of a file deleted or renamed away since (found by history.pbt)', () => {
+  it('gives nothing to a path whose committed file was deleted, as the file there now is uncommitted', () => {
+    const log = [commit('c1', '2026-02-01T00:00:00Z', 'D\ta.ts'), commit('c0', '2026-01-01T00:00:00Z', 'A\ta.ts')].join('\n');
+    expect(fileDates(log, ['a.ts']).has('a.ts')).toBe(false);
+  });
+
+  it('gives nothing to a path whose committed file was renamed away', () => {
+    const log = [
+      commit('c2', '2026-03-01T00:00:00Z', 'D\tb.ts'),
+      commit('c1', '2026-02-01T00:00:00Z', 'R050\ta.ts\tb.ts'),
+      commit('c0', '2026-01-01T00:00:00Z', 'A\ta.ts'),
+    ].join('\n');
+    expect(fileDates(log, ['a.ts', 'b.ts'])).toEqual(new Map());
+  });
+});
+
 describe('versionOf', () => {
   it('reads the version off a scoped tag, a v tag and a bare one, past the distance git appends', () => {
     expect(versionOf('@weasel-js/ui@0.5.0~301^2~6\n')).toBe('0.5.0');
