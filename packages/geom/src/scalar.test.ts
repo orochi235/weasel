@@ -96,6 +96,10 @@ describe('trimNumber', () => {
     expect(trimNumber(NaN)).toBe('0');
     expect(trimNumber(Infinity)).toBe('0');
   });
+  it('writes a number too large to scale by its places as it is (shrunk from svg\'s exporter property)', () => {
+    expect(trimNumber(1e303)).toBe('1e+303');
+    expect(trimNumber(-Number.MAX_VALUE)).toBe(String(-Number.MAX_VALUE));
+  });
 });
 
 describe('minOf and maxOf', () => {
