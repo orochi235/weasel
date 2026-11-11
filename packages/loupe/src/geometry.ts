@@ -1,4 +1,4 @@
-import type { View } from '@weasel-js/geom';
+import { normalizeZoom, type View } from '@weasel-js/geom';
 
 /** A point on the magnified surface, in its own CSS pixels. */
 export interface LoupePoint {
@@ -87,13 +87,18 @@ export interface BandPlacement {
  * A lens showing all of `band`: magnified by `factor`, or by less where that
  * would make the lens wider than `maxWidth` or taller than `maxHeight`, and
  * drawn over the band except as far as it must move to stay on the host.
+ * The factor is never below `ZOOM_FLOOR`, so a host with no room at all gets
+ * a lens of no size rather than one that magnifies by 0.
  */
 export function placeBand({ band, factor, maxWidth, maxHeight }: PlaceBandArgs): BandPlacement {
   let fit = factor;
   if (band.w > 0) fit = Math.min(fit, maxWidth / band.w);
   if (maxHeight !== undefined && band.h > 0) fit = Math.min(fit, maxHeight / band.h);
-  const width = band.w * fit;
-  const height = band.h * fit;
+  // A host with no room still gets a factor a point in the lens can be divided back by.
+  fit = normalizeZoom(fit);
+  // Held to the host, which rounding in `band.w * fit` can pass by an ulp.
+  const width = Math.min(band.w * fit, maxWidth);
+  const height = maxHeight === undefined ? band.h * fit : Math.min(band.h * fit, maxHeight);
   const shows = { x: band.x + band.w / 2, y: band.y + band.h / 2 };
   const within = (c: number, half: number, max: number): number =>
     Math.min(Math.max(c, half), Math.max(half, max - half));

@@ -138,7 +138,9 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
 
     setFactor(next) {
       if (disposed) return;
-      factor = clamp(next);
+      const clamped = clamp(next);
+      if (clamped === factor) return;
+      factor = clamped;
       surface.changed();
     },
 

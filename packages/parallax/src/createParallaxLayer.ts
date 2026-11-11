@@ -32,6 +32,9 @@ export interface CreateParallaxLayerOpts<TData> {
  * that should be clickable belongs on a scene layer carrying `parallax`
  * instead, which `<SceneCanvas>` renders and picks through the same view.
  *
+ * A plane so deep, or zoomed so far, that its view has no finite transform
+ * is infinitely far away: its world sources draw nothing.
+ *
  * **Screen-space source layers don't compose meaningfully** — they ignore
  * the derived view by definition. Same constraint as `createViewportLayer`.
  */
@@ -54,7 +57,13 @@ export function createParallaxLayer<TData>(
       : fromSources,
     draw: (data, outer, dims) => {
       const inner = deriveParallaxView(getOuterView?.() ?? outer, read());
-      return source.flatMap((layer) => drawOneLayer(layer, data, inner, dims));
+      const far = !reachable(inner);
+      return source.flatMap((layer) => (far && (layer.space ?? 'world') === 'world' ? [] : drawOneLayer(layer, data, inner, dims)));
     },
   };
+}
+
+/** Whether the transform a world layer is drawn through for `v` is finite. */
+function reachable(v: View): boolean {
+  return [v.x, v.y, v.x * v.scale.x, v.y * v.scale.y].every(Number.isFinite);
 }

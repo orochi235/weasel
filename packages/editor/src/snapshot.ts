@@ -3,34 +3,60 @@
 // A path keeps its commands and coords in typed arrays, which `JSON.stringify`
 // writes as `{"0":1,"1":2,...}`. Saves tag them with `@weasel-js/geom`'s
 // encoding; loads read the tags back, and also the untagged shapes older saves
-// wrote, which is why the walk here is our own.
+// wrote, which is why the walk here is our own. A value of the consumer's that
+// the load would take for one of those is written inside a `{ "__raw": … }`
+// wrapper, which the load takes off and reads nothing into.
 
 import type {
   AddNodeSpec, PagesDoc, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
 import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, setPages, specsFromSerialized } from '@weasel-js/core';
-import { typedArrayReplacer, untagTypedArray } from '@weasel-js/geom';
+import { tagTypedArray, untagTypedArray } from '@weasel-js/geom';
 
-/** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
-export const serializeReplacer = typedArrayReplacer;
+const RAW = '__raw';
+const wrappers = new WeakSet<object>();
+
+/** Whether `v` is a `{ "__raw": … }` wrapper: a plain object with that one own key. */
+function isRaw(v: unknown): v is { [RAW]: unknown } {
+  if (v === null || typeof v !== 'object' || Array.isArray(v)) return false;
+  const keys = Object.keys(v);
+  return keys.length === 1 && keys[0] === RAW;
+}
+
+const isPathKey = (k: string): k is 'commands' | 'coords' => k === 'commands' || k === 'coords';
+
+/** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip, and wrap any other value
+ *  {@link reviveTypedArrays} would read as something else. */
+export function serializeReplacer(this: unknown, key: string, value: unknown): unknown {
+  const tagged = tagTypedArray(value);
+  if (tagged) return tagged;
+  if (value === null || typeof value !== 'object' || wrappers.has(this as object)) return value;
+  if (isRaw(value) || untagTypedArray(value) || (isPathKey(key) && legacyNumbers(value))) {
+    const wrapper = { [RAW]: value };
+    wrappers.add(wrapper);
+    return wrapper;
+  }
+  return value;
+}
 
 /** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
- *  place. Returns the same node for call-site convenience. */
+ *  place. Returns the same node for call-site convenience, unless the node itself is one. */
 export function reviveTypedArrays<T>(node: T): T {
   if (node == null || typeof node !== 'object') return node;
+  if (isRaw(node)) return reviveWithin(node[RAW]) as T;
   const tagged = untagTypedArray(node);
   if (tagged) return tagged as unknown as T;
+  return reviveWithin(node);
+}
+
+/** {@link reviveTypedArrays} on everything `node` holds, but not `node` itself. */
+function reviveWithin<T>(node: T): T {
+  if (node == null || typeof node !== 'object' || ArrayBuffer.isView(node)) return node;
   const obj = node as Record<string, unknown>;
   for (const k of Object.keys(obj)) {
     const v = obj[k];
-    if ((k === 'commands' || k === 'coords') && !(v instanceof Uint8Array || v instanceof Float32Array)) {
-      const legacy = legacyNumbers(v);
-      if (legacy) {
-        obj[k] = k === 'commands' ? Uint8Array.from(legacy) : Float32Array.from(legacy);
-        continue;
-      }
-    }
-    obj[k] = reviveTypedArrays(v);
+    const legacy = isPathKey(k) && !ArrayBuffer.isView(v) ? legacyNumbers(v) : undefined;
+    obj[k] = legacy ? (k === 'commands' ? Uint8Array.from(legacy) : Float32Array.from(legacy)) : reviveTypedArrays(v);
   }
   return node;
 }
@@ -63,7 +89,7 @@ export function snapshotRebuildsTree(
   json: Pick<SavedScene<unknown, string, unknown>, 'nodes' | 'doc'>,
   opts: { pages?: PagesDoc } = {},
 ): boolean {
-  if (json.nodes.some((n) => n.pageRun !== undefined)) return false;
+  if (json.nodes.some((n) => (n as unknown) !== null && typeof n === 'object' && n.pageRun !== undefined)) return false;
   return json.doc?.[PAGES_DOC_KEY] !== undefined || opts.pages !== undefined;
 }
 
@@ -81,8 +107,10 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): SavedScene<TData, TLayer, TPose> {
   if (!snapshotRebuildsTree(json as never, opts)) return json;
+  const saved = json.doc?.[PAGES_DOC_KEY];
+  if (saved !== undefined) checkPagesDoc(saved);
   const { descriptor, pages, ...read } = opts;
-  const taken = new Set<string>(json.nodes.map((n) => n.id));
+  const taken = new Set<unknown>(json.nodes.map((n) => (n as { id?: unknown } | null)?.id));
   let n = 0;
   // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
   const generateId = () => {
@@ -95,6 +123,21 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   const place = descriptor ? { descriptor } : {};
   if (!adoptLegacyPages(scene, place)) scene.untracked(() => setPages(scene, pages!, 'Adopt pages', place));
   return scene.toJSON();
+}
+
+/** Throws, saying what is wrong, on a saved `core:pages` value that is not a `PagesDoc`. */
+function checkPagesDoc(value: unknown): void {
+  const fail = (what: string): never => { throw new Error(`adoptSnapshotPages: the snapshot's ${PAGES_DOC_KEY} value ${what}`); };
+  if (value === null || typeof value !== 'object') fail('is not an object');
+  const { pages, layout } = value as { pages?: unknown; layout?: unknown };
+  if (!Array.isArray(pages)) fail('has no list of pages');
+  (pages as unknown[]).forEach((p, i) => {
+    if (p === null || typeof p !== 'object') fail(`has page ${i} that is not an object`);
+    const { id, width, height } = p as { id?: unknown; width?: unknown; height?: unknown };
+    if (typeof id !== 'string') fail(`has page ${i} without a string id`);
+    if (![width, height].every((n) => typeof n === 'number' && Number.isFinite(n) && n >= 0)) fail(`has page "${String(id)}" without a finite size`);
+  });
+  if (layout !== undefined && (layout === null || typeof layout !== 'object' || Array.isArray(layout))) fail('has a layout that is not an object');
 }
 
 /** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or

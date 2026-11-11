@@ -54,7 +54,8 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
       if (axes) {
         value = ends ? (atStart ? o.from : o.to) : axes.from(reader.cols, reader.at);
       } else {
-        const eased = ends ? easing(t) : reader.cols[reader.at]!;
+        // An end is the end of the curve whatever the easing answers there, as the axes path above ends at `to`.
+        const eased = ends ? (atStart ? 0 : 1) : reader.cols[reader.at]!;
         value = factoryFn ? factoryFn(eased) : o.interpolate!(o.from, o.to, eased);
       }
       o.onTick(value);

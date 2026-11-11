@@ -211,6 +211,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- Ruled 2026-11-10 (my call, overnight sweep): the editor's `serializeReplacer` writes a value of the document's
+  that `reviveTypedArrays` would take for something it wrote (a plain object shaped like a tagged typed array, plain
+  numbers under `commands` or `coords` as an older save's path wrote them, or a `{ "__raw": … }` object) inside a
+  `{ "__raw": … }` wrapper, which the reader takes off and reads nothing into. Those had come back as typed arrays.
+- Ruled 2026-11-10 (my call, overnight sweep): a save whose node is not an object, or has no string `id` or
+  `layer`, or (from version 2) a `kind` other than `mark` or `group`, is refused by `specsFromSerialized` with an
+  error naming the node; `sceneFromJSON` refuses `systemLayers` that are not a list of layers with string ids, and
+  the editor's `adoptSnapshotPages` a `core:pages` value that is not a `PagesDoc`. Each had failed with a
+  `TypeError`. A pose's shape is still not checked: it is the app's pose descriptor's to read.
 - 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
   scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
   and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
@@ -310,6 +319,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   5e-324 long) at the largest double scale, as an input past the double range is handled at its limit. It was
   fitted at the zoom floor, 1e-9, because an infinite scale normalizes to the floor.
 
+- Ruled 2026-11-10 (my call, overnight sweep): a parallax plane whose view has no finite transform (a `pan` or
+  `zoom` so large the camera's offset overflows) draws none of its world sources, tiled ones included: a plane
+  that far away is infinitely far, and its screen sources still draw.
+- Ruled 2026-11-10 (my call, overnight sweep): `createParallaxPlane`'s `set` with a patch that changes nothing
+  neither notifies nor replaces the object `get` returns, as an edit that changes nothing does nothing; the
+  plane keeps its own copies of `pan`, `zoom`, and `anchor` pairs, so a caller's later edit to an object it
+  passed is not a change the plane misses.
+- Ruled 2026-11-10 (my call, overnight sweep): loupe's `placeBand` never answers a factor below `ZOOM_FLOOR`, the
+  floor the loupe model holds its own factor to: on a host with no room it gives a lens of no size rather than a
+  factor of 0 that a point in the lens could not be mapped back through.
+- Ruled 2026-11-10 (my call, overnight sweep): the loupe model's `setFactor` asks the surface for no redraw when the
+  factor it clamps to is the one it has, as `setMode` already did.
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
   nothing there and is reported once, mirroring a WGSL-only program on WebGL; the canvas is never
   swapped for one of the other context kind, which would lose its listeners and layout.
@@ -542,6 +563,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): a simulation's alpha decays toward `alphaTarget` without passing it.
   An `alphaDecay` above 1 acts as 1 and lands on the target, and a negative one as 0, which never moves it; d3-force
   takes either unchecked, and above 2 alpha grew without bound to `Infinity`, which no finite input may give.
+- Ruled 2026-11-10 (my call, overnight sweep): a tween with its own `interpolate` or `interpolator` is handed exactly
+  1 on its last frame (0 when it ends at its start, played backward), whatever its easing answers there, as a tween
+  of numbers already ends at `to`: an easing such as `1 - cos(t π/2)` gives 0.9999999999999999 at 1. A d3
+  transition's pose and numeric tweens then end exactly at their targets rather than at `a + (b - a) · 1`.
+- Ruled 2026-11-10 (my call, overnight sweep): `d3Bind`'s `join` refuses a key the scene already gives a node other
+  than a mark on the binding's layer with an error naming the key and the node, before changing anything, where it
+  had failed partway with core's "id collision".
 
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.

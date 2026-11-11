@@ -55,9 +55,7 @@ export function d3Bind<
     },
     join() {
       const layer = (options.layer ?? scene.layers[0]?.id) as TLayer;
-      if (!layer) {
-        throw new Error('d3Bind: scene has no layers; pass `layer` in options');
-      }
+      if (!layer) throw new Error('d3Bind: scene has no layers; pass `layer` in options');
 
       // Compute the diff.
       const dataKeys = keysOf(data, options.key);
@@ -74,6 +72,7 @@ export function d3Bind<
           enterIndices.push(i);
         }
       });
+      refuseHeldKeys(scene, enterIndices.map((i) => dataKeys[i]), layer);
       for (const node of scene.nodesOnLayer(layer)) {
         if (node.kind === 'mark' && !dataKeySet.has(node.id)) exitIds.push(node.id);
       }
@@ -160,6 +159,17 @@ export function d3Bind<
   };
 
   return binding;
+}
+
+/** Throws on an entering key the scene already gives a node, which is not one of the binding's marks. */
+function refuseHeldKeys(scene: Scene<unknown, string, unknown>, ids: readonly NodeId[], layer: string): void {
+  for (const id of ids) {
+    const held = scene.get(id);
+    if (!held) continue;
+    throw new Error(
+      `d3Bind.join: key "${id}" is held by a ${held.kind} on layer "${held.layer}", not a mark on "${layer}"; a bound key must be free or one of the binding's own marks`,
+    );
+  }
 }
 
 /** Each datum's node id; throws on two data sharing one. */

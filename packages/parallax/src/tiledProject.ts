@@ -20,8 +20,15 @@ export function tiledProject(
   bleed = 0,
 ): TileRange {
   if (!Number.isFinite(period) || period <= 0) return { from: 0, to: 0 };
-  return {
-    from: Math.floor((visStart - bleed) / period),
-    to: Math.floor((visEnd + bleed) / period),
-  };
+  const start = visStart - bleed;
+  const end = visEnd + bleed;
+  let from = Math.floor(start / period);
+  let to = Math.floor(end / period);
+  // The quotient rounds, so a cell can start a hair past the range or end a hair short of it:
+  // test the products the copies are placed at.
+  if (from * period > start) from--;
+  else if ((from + 1) * period <= start) from++;
+  if (to * period > end) to--;
+  else if ((to + 1) * period <= end) to++;
+  return { from: from + 0, to: to + 0 };
 }
