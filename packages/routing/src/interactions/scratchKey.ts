@@ -11,6 +11,7 @@
  * const vertices = getScratch(ctx.scratch, LASSO_VERTICES) ?? [];
  * ```
  */
+import { setOwn } from '@weasel-js/registry';
 
 /** Phantom-typed key for a scratch slot. The `__scratchKeyPayload` phantom
  *  field carries the value type without occupying any runtime memory. */
@@ -49,7 +50,7 @@ export function setScratch<T>(
   key: ScratchKey<T>,
   value: T,
 ): void {
-  store[key.name] = value;
+  setOwn(store, key.name, value);
 }
 
 /** Remove a slot from the scratch store. Returns `true` if it was set,
