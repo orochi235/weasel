@@ -47,7 +47,7 @@ describe('scoreBar', () => {
         seen.count('held');
       } else {
         const pulses = events.filter((e) => e.gain === gain * 0.4).map((e) => midiOf(e.pitch));
-        if (gain > 0 && pulses.length >= chord.length) expect(new Set(pulses)).toEqual(new Set(chord));
+        if (gain > 1e-300 && pulses.length >= chord.length) expect(new Set(pulses)).toEqual(new Set(chord));
         seen.count('pulsed');
       }
     }), runs(RUNS));

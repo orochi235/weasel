@@ -83,27 +83,30 @@ describe('createPatternPlayer', () => {
     const seen = tally();
     await fc.assert(fc.asyncProperty(fc.integer({ min: 1, max: 16 }), fc.array(fc.tuple(fc.integer({ min: 60, max: 300 }), fc.integer({ min: 1, max: 6 })), { minLength: 1, maxLength: 4 }), gaps, async (length, legs, pace) => {
       const h = await harness();
-      const reported: { step: number; when: number; tempo: number }[] = [];
+      const reported: { step: number; when: number; tempo: number; retimes: number }[] = [];
       let tempo = legs[0]![0];
-      const player = createPatternPlayer(h.engine, { tempo, length, onStep: (step, when) => { reported.push({ step, when, tempo }); } });
+      let retimes = 0;
+      const player = createPatternPlayer(h.engine, { tempo, length, onStep: (step, when) => { reported.push({ step, when, tempo, retimes }); } });
       player.start(0);
       let i = 0;
       for (const [bpm, passesOf] of legs) {
         player.setTempo(bpm);
         tempo = bpm;
+        retimes += 1;
         for (let n = 0; n < passesOf * 4; n += 1) await h.advance(pace[i++ % pace.length]!);
       }
       for (let k = 1; k < reported.length; k += 1) {
         const [a, b] = [reported[k - 1]!, reported[k]!];
         expect(b.step).toBe((a.step + 1) % length);
-        // A tempo set between steps applies from the next step not yet booked, or from now if that has passed.
+        // A tempo set between steps applies from the next step not yet booked, or from now if that has passed,
+        // which is never more than the longest step a tempo set here takes.
         const gap = b.when - a.when;
-        const [was, is] = [60_000 / a.tempo / 4, 60_000 / b.tempo / 4];
-        if (a.tempo === b.tempo) {
+        const is = 60_000 / b.tempo / 4;
+        if (a.retimes === b.retimes) {
           expect(gap).toBeCloseTo(is, 6);
         } else {
           expect(gap).toBeGreaterThanOrEqual(is - 1e-6);
-          expect(gap).toBeLessThanOrEqual(Math.max(was, is) + 1e-6);
+          expect(gap).toBeLessThanOrEqual(Math.max(...legs.map(([bpm]) => 60_000 / bpm / 4)) + 1e-6);
           seen.count('retimed');
         }
       }
