@@ -35,8 +35,9 @@ function hitsStrip(g: SpacingGap, b: Bounds, span: [number, number]): boolean {
 
 /**
  * The visible gaps between neighboring boxes along `axis`: for `'x'`, each box
- * and the nearest box to its right that shares some of its vertical range, as
- * long as no third box stands in the strip between them. These are the gaps an
+ * and the nearest box to its right that shares some of its vertical range
+ * (every one tied for nearest), as long as no third box stands in the strip
+ * between them. These are the gaps an
  * equal-spacing snap can reproduce.
  */
 export function measureGaps(targets: readonly Bounds[], axis: 'x' | 'y'): SpacingGap[] {
@@ -52,17 +53,20 @@ export interface MeasuredGap { gap: SpacingGap; span: [number, number] }
 export function measureGapSpans(targets: readonly Bounds[], axis: Axis): MeasuredGap[] {
   const out: MeasuredGap[] = [];
   for (const a of targets) {
-    let next: Bounds | null = null;
+    // Every box tied for nearest, so the gaps found never depend on the order the boxes come in.
+    let nearest: Bounds[] = [];
     for (const c of targets) {
       if (c === a || lo(c, axis) < hi(a, axis) + EPS) continue;
       if (overlap(a, c, cross(axis)) === null) continue;
-      if (next === null || lo(c, axis) < lo(next, axis)) next = c;
+      if (nearest.length === 0 || lo(c, axis) < lo(nearest[0]!, axis)) nearest = [c];
+      else if (lo(c, axis) === lo(nearest[0]!, axis)) nearest.push(c);
     }
-    if (next === null) continue;
-    const gap = gapBetween(a, next, axis)!;
-    const span = overlap(a, next, cross(axis))!;
-    if (targets.some((t) => t !== a && t !== next && hitsStrip(gap, t, span))) continue;
-    out.push({ gap, span });
+    for (const next of nearest) {
+      const gap = gapBetween(a, next, axis)!;
+      const span = overlap(a, next, cross(axis))!;
+      if (targets.some((t) => t !== a && t !== next && hitsStrip(gap, t, span))) continue;
+      out.push({ gap, span });
+    }
   }
   return out.sort((p, q) => p.gap.min - q.gap.min || p.gap.at - q.gap.at);
 }
