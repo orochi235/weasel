@@ -39,15 +39,24 @@ export function replaceGuideOp(store: GuideStore, from: Guide, to: Guide): Op {
   };
 }
 
-/** Remove `guide` from `store` as an op; its inverse adds it back where it stood. */
+/** Remove the guide with `guide`'s id from `store` as an op, a no-op when it
+ *  holds none. Once applied, its inverse adds back the guide it removed, where
+ *  it stood; before, it adds `guide`. */
 export function removeGuideOp(store: GuideStore, guide: Guide): Op {
+  let applied = false;
   let at = -1;
-  return {
+  let held: Guide | undefined;
+  const op: Op = {
     label: 'Remove Guide',
     apply: () => {
-      at = store.getGuides().findIndex((g) => g.id === guide.id);
+      const list = store.getGuides();
+      at = list.findIndex((g) => g.id === guide.id);
+      held = list[at];
+      applied = true;
+      if (held === undefined) return 'noop';
       store.removeGuide(guide.id);
     },
-    invert: () => addGuideOp(store, guide, at < 0 ? undefined : at),
+    invert: () => (!applied ? addGuideOp(store, guide) : held ? addGuideOp(store, held, at) : { label: op.label, apply: () => 'noop', invert: () => op }),
   };
+  return op;
 }
