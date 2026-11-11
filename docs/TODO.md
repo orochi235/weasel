@@ -652,12 +652,6 @@ only story runner in the repo.
 
 ## Devtools
 
-- **(P3) [agent] The devtools extension's 16 px icon is the whole site logo shrunk.**
-  `apps/devtools-extension/scripts/gen-icons.ts` renders the full mark at every size, and at 16 px
-  1x it reads as an orange and dark blob. A crop to the head for the 16 and 32 px sizes would read
-  better; that is a call on the mark, not made (2026-10-19).
-  Ruled (2026-11-07): crop to the head at 16 and 32 px. Closes when `gen-icons.ts` draws those two sizes so.
-
 - **(P3) [agent] The devtools extension's panel appears only when the top frame has a weasel hook.** The relay
   handles weasel inside iframes, but the presence probe evaluates the top window alone. Closes when the panel shows
   for a page whose weasel runs only in an iframe (found in audit round nine, 2026-11-08).
