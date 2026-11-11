@@ -93,15 +93,22 @@ export function createKeymapStack(): KeymapStack {
     else op();
   };
 
+  /** Count input against every held level; true when one had none yet. */
+  const markUsed = (): boolean => {
+    if (!levels.some((l) => l.heldBy !== undefined && !l.usedWhileHeld)) return false;
+    levels = levels.map((l) => (l.heldBy === undefined ? l : { ...l, usedWhileHeld: true }));
+    return true;
+  };
+
   const settle = (): void => {
     const before = levels;
     // Levels opened by this very input are exempt: the leader that opened one
     // is part of the input, not the input it was opened for.
     const opened = (l: Level) => l.openedIn === serial && depth > 0;
     if (levels.some(opened)) return;
-    for (const l of levels) if (l.heldBy !== undefined) l.usedWhileHeld = true;
+    const used = markUsed();
     while (levels.length > 0 && levels.at(-1)!.heldBy === undefined) levels = levels.slice(0, -1);
-    if (levels !== before) notify();
+    if (used || levels !== before) notify();
   };
 
   return {
@@ -155,7 +162,7 @@ export function createKeymapStack(): KeymapStack {
       later(settle);
     },
     swallowed: () => {
-      for (const l of levels) if (l.heldBy !== undefined) l.usedWhileHeld = true;
+      if (markUsed()) notify();
     },
     verdict: () => verdict,
     closeAll: () => {
