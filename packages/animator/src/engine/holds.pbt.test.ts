@@ -136,11 +136,13 @@ class Frame implements fc.Command<Model, Real> {
 const commands = [
   fc.tuple(point, weight, axes).map(([v, w, a]) => new Hold(v, w, a)),
   fc.tuple(fc.nat(8), fc.boolean()).map(([p, c]) => new Release(p, c)),
+  fc.nat(8).map((p) => new Release(p, true)),
   point.map((v) => new Commit(v)),
   fc.integer({ min: 0, max: 50 }).map((dt) => new Frame(dt)),
 ];
 
-const withTweens = [...commands, fc.tuple(point, fc.integer({ min: 1, max: 200 })).map(([to, ms]) => new Tween(to, ms))];
+const tween = fc.tuple(point, fc.integer({ min: 1, max: 200 })).map(([to, ms]) => new Tween(to, ms));
+const withTweens = [...commands, tween, tween];
 
 const RUNS = 200;
 

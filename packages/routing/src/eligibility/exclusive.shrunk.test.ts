@@ -25,4 +25,10 @@ describe('rulesExclusive, shrunk', () => {
     expect(rulesExclusive(a, b)).toBe(true);
     expect(rulesExclusive(b, a)).toBe(true);
   });
+
+  it('proves a rule written in a roundabout way as the constant it is', () => {
+    expect(rulesExclusive({ all: [{ not: { any: [ALWAYS] } }, {}] }, { any: [ALWAYS] })).toBe(true);
+    expect(rulesExclusive({ all: [{ all: [NEVER] }] }, { focused: true })).toBe(true);
+    expect(rulesExclusive({ not: { not: { focused: true } } }, { focused: false })).toBe(true);
+  });
 });

@@ -39,7 +39,11 @@ function brute(a: Periodic, v: number, reach: number): number[] {
 describe('grid axes, property', () => {
   it('linesNear answers the nearest line first, the upper on a tie, and a line either side inside the range', () => {
     const t = tally();
-    fc.assert(fc.property(exactAxis, eighth(400), (a, v) => {
+    // Half the points sit midway between two lines, so ties come up.
+    const axisAndPoint = exactAxis.chain((a) => fc.tuple(fc.constant(a), fc.oneof(
+      eighth(400), fc.integer({ min: -20, max: 20 }).map((k) => a.offset + (k + 0.5) * a.pitch),
+    )));
+    fc.assert(fc.property(axisAndPoint, ([a, v]) => {
       const got = linesNear(a, v);
       const all = brute(a, v, a.pitch * 3 + 1000);
       if (all.length === 0) {

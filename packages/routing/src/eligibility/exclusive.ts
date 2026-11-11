@@ -1,5 +1,5 @@
 import type { ActiveMode, CapabilityTag } from '@weasel-js/modes';
-import { checkCapability, checkMode, isAllRule, isAnyRule, isNotRule, isWhenRule, type Rule, type Selector } from './rule';
+import { ALWAYS, NEVER, checkCapability, checkMode, isAllRule, isAnyRule, isNotRule, isWhenRule, type Rule, type Selector } from './rule';
 
 /**
  * Whether two rules can never hold at once — no `RuleCtx` passes both.
@@ -12,16 +12,45 @@ import { checkCapability, checkMode, isAllRule, isAnyRule, isNotRule, isWhenRule
  * that share a tuple but are never eligible together.
  */
 export function rulesExclusive(a: Rule, b: Rule): boolean {
+  return exclusive(simplified(a), simplified(b));
+}
+
+const isAlways = (r: Rule): boolean => isAllRule(r) && r.all.length === 0;
+const isNever = (r: Rule): boolean => isAnyRule(r) && r.any.length === 0;
+
+/** `r` with constants folded, nested `all`s and `any`s flattened, one-member lists unwrapped, and `not not` canceled,
+ *  so one rule written two ways meets the prover as one. */
+function simplified(r: Rule): Rule {
+  if (isAllRule(r)) {
+    const parts = r.all.map(simplified).flatMap((p) => (isAllRule(p) ? p.all : [p])).filter((p) => !isAlways(p));
+    if (parts.some(isNever)) return NEVER;
+    return parts.length === 1 ? parts[0]! : { all: parts };
+  }
+  if (isAnyRule(r)) {
+    const parts = r.any.map(simplified).flatMap((p) => (isAnyRule(p) ? p.any : [p])).filter((p) => !isNever(p));
+    if (parts.some(isAlways)) return ALWAYS;
+    return parts.length === 1 ? parts[0]! : { any: parts };
+  }
+  if (isNotRule(r)) {
+    const inner = simplified(r.not);
+    if (isAlways(inner)) return NEVER;
+    if (isNever(inner)) return ALWAYS;
+    return isNotRule(inner) ? inner.not : { not: inner };
+  }
+  return r;
+}
+
+function exclusive(a: Rule, b: Rule): boolean {
   // Before `all` and `any` are taken apart, or `not` of a compound rule never meets the rule itself.
   if (isNotRule(a) && rulesEqual(a.not, b)) return true;
   if (isNotRule(b) && rulesEqual(b.not, a)) return true;
   // `any` splits exactly and `all` only sufficiently, so `any` goes first, and two `all`s each get a turn:
   // a proof can need each alternative met by a different part, or a part of either side.
-  if (isAnyRule(a)) return a.any.every((r) => rulesExclusive(r, b));
-  if (isAnyRule(b)) return b.any.every((r) => rulesExclusive(a, r));
+  if (isAnyRule(a)) return a.any.every((r) => exclusive(r, b));
+  if (isAnyRule(b)) return b.any.every((r) => exclusive(a, r));
   if (isAllRule(a) || isAllRule(b)) {
-    return (isAllRule(a) && a.all.some((r) => rulesExclusive(r, b)))
-      || (isAllRule(b) && b.all.some((r) => rulesExclusive(a, r)));
+    return (isAllRule(a) && a.all.some((r) => exclusive(r, b)))
+      || (isAllRule(b) && b.all.some((r) => exclusive(a, r)));
   }
   if (isNotRule(a) || isNotRule(b)) return false;
   if (isWhenRule(a) || isWhenRule(b)) return false;
