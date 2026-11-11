@@ -1,5 +1,5 @@
 import type { RenderLayer } from '../core/layers/render';
-import { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
+import { STANDARD_SLOTS, isCustomEntry, type CustomLayerEntry } from './layerSlots';
 import type { OverlayPosition } from '@weasel-js/routing';
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
@@ -91,31 +91,33 @@ export function composeOrderedLayers(
 
   for (const t of tail) emitChild(t);
 
+  // What placed each custom above: `after` when it names one, else `before`.
   const anchorOf = (key: string): string | undefined => {
-    const value = layersMap[key];
-    return isCustomEntry(value) ? value.after ?? value.before : undefined;
+    const value = Object.hasOwn(layersMap, key) ? layersMap[key] : undefined;
+    return isCustomEntry(value) ? value.after || value.before || undefined : undefined;
   };
-  const inCycle = (key: string): boolean => {
-    let at = anchorOf(key);
-    for (let hops = 0; at !== undefined && hops < allCustomKeys.size; hops++) {
-      if (at === key) return true;
-      at = anchorOf(at);
+  /** Where the chain of anchors from `key` goes wrong: the key nothing defines that it ends on, or null when it loops. */
+  const deadEnd = (key: string): string | null => {
+    const seen = new Set<string>();
+    for (let at = key; !seen.has(at); ) {
+      seen.add(at);
+      const next = anchorOf(at)!;
+      if (!allCustomKeys.has(next)) return next;
+      at = next;
     }
-    return false;
+    return null;
   };
 
   // Orphans: customs that declared an `after`/`before` but never got emitted,
   // because the chain of anchors loops or ends on a key nothing defines.
   for (const key of allCustomKeys) {
     if (emitted.has(key)) continue;
-    const value = layersMap[key];
-    if (!isCustomEntry(value)) continue;
-    const ref = value.after ?? value.before;
-    console.warn(inCycle(key)
+    const end = deadEnd(key);
+    console.warn(end === null
       ? `composeOrderedLayers: cycle detected involving custom layer "${key}" — falling back to tail`
-      : `composeOrderedLayers: dangling reference "${ref}" from custom layer "${key}" — falling back to tail`);
+      : `composeOrderedLayers: dangling reference "${end}" from custom layer "${key}" — falling back to tail`);
     emitted.add(key);
-    out.push(value.layer);
+    out.push((layersMap[key] as CustomLayerEntry).layer);
   }
 
   return out;

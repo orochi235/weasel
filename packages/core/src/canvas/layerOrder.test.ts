@@ -219,6 +219,31 @@ describe('composeOrderedLayers', () => {
     warn.mockRestore();
   });
 
+  // Found by the property tests: each layer's warning named its own anchor, defined or not.
+  it('names, for every layer on a dangling chain, the key the chain ends on', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    composeOrderedLayers(
+      { k0: { layer: L('k0'), before: 'constructor' }, constructor: { layer: L('constructor'), after: 'scene:s1', before: 'grid' } },
+      {},
+    );
+    expect(warn.mock.calls.map(([m]) => m)).toEqual([
+      expect.stringContaining('dangling reference "scene:s1" from custom layer "k0"'),
+      expect.stringContaining('dangling reference "scene:s1" from custom layer "constructor"'),
+    ]);
+    warn.mockRestore();
+  });
+
+  it('reports a cycle for a layer anchored onto one it is not part of', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    composeOrderedLayers(
+      { a: { layer: L('a'), after: 'b' }, b: { layer: L('b'), after: 'c' }, c: { layer: L('c'), after: 'b' } },
+      { scene: L('scene') },
+    );
+    expect(warn).toHaveBeenCalledTimes(3);
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('dangling'));
+    warn.mockRestore();
+  });
+
   it('emits cellHighlight between grid and scene when present', () => {
     const out = composeOrderedLayers(
       {},
