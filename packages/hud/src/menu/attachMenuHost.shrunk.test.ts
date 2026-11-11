@@ -33,3 +33,27 @@ describe('attachMenuHost, shrunk', () => {
     detach();
   });
 });
+
+describe('attachMenuHost under a focus listener that opens a menu, shrunk', () => {
+  it('keeps a menu opened by a focus listener heard ahead of the host', () => {
+    const hud = createHud();
+    const host = createMenuHost({
+      actions: () => [{ id: 'cut', label: 'Cut', invoker: { timing: 'immediate' as const, run: () => {} } }],
+      depsFor: () => undefined, trigger: () => true, activeTool: () => null,
+    });
+    host.define({ id: 'row', menu: pref.group('', { cut: pref.action('cut') }) });
+    const p: Widget = {
+      id: 'p', bounds: { x: 700, y: 0, w: 20, h: 20 }, hidden: false, focusable: true,
+      draw: () => [], hitTest: () => false, onPointer: () => {}, dispose: () => {},
+    };
+    hud.add(p);
+    // Subscribed before the host attaches, so it hears each focus report first.
+    hud.subscribeFocus((f) => { if (f === p) host.open({ menu: 'row', client: { x: 5, y: 5 } }); });
+    const detach = attachMenuHost(hud, host, opts);
+    hud.focus(p);
+    expect(host.current()).not.toBeNull();
+    expect(hud.widgets()).toHaveLength(2);
+    expect(hud.focused).toBe(hud.widgets()[1]);
+    detach();
+  });
+});

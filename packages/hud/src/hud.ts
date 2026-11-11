@@ -76,6 +76,8 @@ export function createHud(): Hud {
   let focused: Widget | null = null;
   let focusVisible = false;
   const focusSubs = createEmitter<[Widget | null]>();
+  // A report a listener moved focus past is not passed on: the newer one has reached every listener already.
+  const reporters = new WeakMap<(w: Widget | null) => void, (w: Widget | null) => void>();
 
   const setFocus = (next: Widget | null, visible: boolean): void => {
     const was = focused;
@@ -157,7 +159,11 @@ export function createHud(): Hud {
       return next;
     },
     tabOrder,
-    subscribeFocus: focusSubs.subscribe,
+    subscribeFocus(fn) {
+      let w = reporters.get(fn);
+      if (!w) { const r = (next: Widget | null) => { if (next === focused) fn(next); }; reporters.set(fn, r); w = r; }
+      return focusSubs.subscribe(w);
+    },
     markDirty() { requestRedraw(); },
     bind(h) {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
