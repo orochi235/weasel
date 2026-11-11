@@ -12,10 +12,12 @@ const files = [];
 const owners = new Map();
 for (const entry of readdirSync(dir)) {
   const report = join(dir, entry, 'coverage-final.json');
-  if (!existsSync(report)) continue;
+  const keyFile = join(dir, entry, 'keys.txt');
+  if (!existsSync(report) && !existsSync(keyFile)) continue;
   const file = readFileSync(join(dir, entry, 'file.txt'), 'utf8').trim();
   const keys = new Set();
-  for (const [src, c] of Object.entries(JSON.parse(readFileSync(report, 'utf8')))) {
+  if (existsSync(keyFile)) for (const k of readFileSync(keyFile, 'utf8').split('\n')) k && keys.add(k);
+  else for (const [src, c] of Object.entries(JSON.parse(readFileSync(report, 'utf8')))) {
     const s = root ? relative(root, src) : src;
     for (const [id, n] of Object.entries(c.s)) if (n > 0) keys.add(`${s}:s${id}`);
     for (const [id, arms] of Object.entries(c.b)) arms.forEach((n, k) => n > 0 && keys.add(`${s}:b${id}.${k}`));
