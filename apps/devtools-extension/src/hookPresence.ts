@@ -3,9 +3,8 @@
  * An app installs its hook when its first canvas mounts, which can be well
  * after load, so the check repeats until a hook turns up.
  */
-import { evalInInspectedWindow, type ExtensionApi } from './browserApi';
-
-export const HOOK_PROBE = 'typeof window.__weaselDevtools__ === "object" && window.__weaselDevtools__ !== null';
+import type { ExtensionApi } from './browserApi';
+import { probeRequest } from './envelope';
 
 export interface PresenceOptions {
   /** Answer the probe in the inspected page. */
@@ -59,10 +58,12 @@ export function watchHookPresence(opts: PresenceOptions, report: (present: boole
   };
 }
 
-/** {@link watchHookPresence}'s inputs in a devtools page. */
+/** {@link watchHookPresence}'s inputs in a devtools page. The background probes every frame of the tab, since
+ *  `inspectedWindow.eval` reaches only one frame and weasel may run in an iframe alone. */
 export function inspectedPresence(api: ExtensionApi): PresenceOptions {
+  const tabId = api.devtools!.inspectedWindow.tabId;
   return {
-    probe: () => evalInInspectedWindow(api, HOOK_PROBE).then(Boolean),
+    probe: () => api.runtime.sendMessage(probeRequest(tabId)).then((present) => present === true),
     onNavigated(listener) {
       const onNavigated = api.devtools!.network.onNavigated;
       onNavigated.addListener(listener);

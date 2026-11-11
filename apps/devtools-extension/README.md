@@ -59,7 +59,7 @@ The project copies the built files, so rerun the script after each build.
 |---|---|---|
 | content script, every frame | `src/content/` | As it loads, asks the background whether a panel is open on its tab, and connects if so; otherwise it stays idle until the background asks it to connect. Once connected it carries devtools envelopes between the page's `window.postMessage` and a port to the background. It never touches page objects. |
 | background | `src/background/` | Pairs each panel with the content scripts of the tab it inspects, by tab id. Either side may connect first. When the panel goes, it sends the page `bye` so the page drops its overlays and stops tracing. |
-| devtools page | `src/devtools/` | Adds the **weasel** panel the first time the inspected page has a hook. |
+| devtools page | `src/devtools/` | Adds the **weasel** panel the first time any frame of the inspected page has a hook. It asks the background, which reads every frame the way the toolbar button does, since `inspectedWindow.eval` reaches one frame only. |
 | toolbar button | `src/tabWeasel.ts`, `src/background/badge.ts`, `src/popup/` | Reads each frame's hook in the page's own world with `scripting.executeScript`, when a tab finishes loading and again 1 s and 3 s later (a hook can arrive after load), on install for every open tab, and when the popup opens. Sets that tab's badge; the popup shows the same answer. |
 | panel page | `src/panel/` | Renders the panel over a `PanelTransport` on its port, or "No weasel on this page" while there is no hook. A new page gets a fresh panel. |
 
