@@ -211,6 +211,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, guides second property pass): `roundToCell` leaves a value as it was on a cell size that is not
   a positive finite number, the rule a grid pitch already follows (such a pitch gives an axis no lines). Before, a
   zero, `NaN`, or infinite cell sent every value to 0, and a negative one rounded on its size, ties the other way.
+- 2026-11-11 (my call, guides second property pass): `useGuides` is a store that reads its own writes: `getGuides`
+  answers a change as soon as it is made, and `subscribe` hears it then, rather than once React commits the render
+  showing it. A history step running several guide ops (a jump, a batch) read the list from before the first, so
+  undo put back the wrong guides. It reverses the 2026-09-28 rule that `getGuides` answers the committed list over
+  one a suspended transition rendered: a write in such a transition is now in the list, as `useSelection`'s store
+  holds a selection set in one.
 
 ## Scene, move, and history
 

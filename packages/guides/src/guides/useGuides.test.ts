@@ -84,7 +84,7 @@ describe('useGuides', () => {
 });
 
 describe('useGuides — abandoned renders', () => {
-  it('getGuides answers with the committed list, not one a suspended transition rendered', () => {
+  it('getGuides and subscribers hold a write a suspended transition has not yet rendered', () => {
     let api: ReturnType<typeof useGuides> | null = null;
     let hang: (h: boolean) => void = () => {};
     function Host(): ReturnType<typeof createElement> {
@@ -95,13 +95,26 @@ describe('useGuides — abandoned renders', () => {
     }
     render(createElement(Host));
     const committed = api!;
+    let heard = 0;
+    committed.subscribe(() => { heard++; });
     act(() => {
       startTransition(() => {
         committed.addGuide({ id: 'g', axis: 'x', offset: 5 });
         hang(true);
       });
     });
-    expect(committed.getGuides()).toEqual([]);
+    expect(committed.getGuides()).toEqual([{ id: 'g', axis: 'x', offset: 5 }]);
+    expect(heard).toBe(1);
+  });
+
+  it('getGuides reads each write at once, so an op in a batch sees the one before it', () => {
+    const { result } = renderHook(() => useGuides());
+    let seen: unknown;
+    act(() => {
+      result.current.addGuide({ id: 'a', axis: 'x', offset: 1 });
+      seen = result.current.getGuides();
+    });
+    expect(seen).toEqual([{ id: 'a', axis: 'x', offset: 1 }]);
   });
 
   it('tells subscribers of each change once getGuides returns it, and not of the initial list', () => {
