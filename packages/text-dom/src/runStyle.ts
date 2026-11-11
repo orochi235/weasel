@@ -20,6 +20,12 @@ export const ROTATE_ATTR = 'data-rotate';
 export const FONT_SIZE_PX_ATTR = 'data-font-size-px';
 export const LETTER_SPACING_PX_ATTR = 'data-letter-spacing-px';
 
+/** A run's `bold` beside its own `fontWeight`, which wins the CSS `font-weight` but must not lose the flag. */
+export const BOLD_ATTR = 'data-bold';
+
+/** A run's `fontScale` beside an absolute `fontSize`, which wins the CSS `font-size` but must not lose the scale. */
+export const FONT_SCALE_ATTR = 'data-font-scale';
+
 /** Significant digits a run's `fontScale` keeps through its CSS percentage, which drops the float noise of
  *  scaling by 100 (`0.07 * 100` is `7.000000000000001`). */
 const SCALE_DIGITS = 12;
@@ -136,7 +142,7 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
     if (el.hasAttribute('data-font-weight') || !['', '700', 'bold', '400', 'normal'].includes(fw)) {
       if (Number.isFinite(ownWeight) && ownWeight > 0) {
         next.fontWeight = ownWeight;
-        next.bold = false;
+        next.bold = el.hasAttribute(BOLD_ATTR);
       }
     } else if (fw !== '') {
       next.bold = fw === '700' || fw === 'bold';
@@ -168,6 +174,8 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
         else next.fontSize = size;
       }
     }
+    const heldScale = parseFloat(el.getAttribute(FONT_SCALE_ATTR) ?? '');
+    if (Number.isFinite(heldScale)) next.fontScale = heldScale;
     const va = el.style.verticalAlign;
     if (va === 'super' || va === 'sub') next.script = va === 'super' ? 'super' : 'sub';
     if (va === 'baseline') next.script = undefined;
