@@ -13,14 +13,12 @@ import { subpathOf } from '../subpaths';
 
 const NAMED = { start: 0, mid: 0.5, end: 1 } as const;
 
-/** The point on `path` nearest `near`, and the heading of the path there;
- *  `null` for a path with no segment to stand on. */
-function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } | null {
-  if (path.kind !== 'polygon') return null;
+/** The point on each segment of `path` nearest `near`, how far it is, and the heading of the path there. */
+function segmentStations(path: Path, near: Vec2): { point: Vec2; tangent: Vec2; dist: number }[] {
+  if (path.kind !== 'polygon') return [];
   const { commands } = path;
   const coords = worldCoords(path);
-  let best: CurveNearest | null = null;
-  let heading: Vec2 = { x: 1, y: 0 };
+  const out: { point: Vec2; tangent: Vec2; dist: number }[] = [];
   forEachSegment(commands, coords, (cmd, ci, x0, y0) => {
     let hit: CurveNearest;
     let d: Vec2;
@@ -47,12 +45,18 @@ function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } 
       };
     } else return;
     const len = Math.hypot(d.x, d.y);
-    if (len === 0 || (best !== null && hit.dist >= best.dist)) return;
-    best = hit;
-    heading = { x: d.x / len, y: d.y / len };
+    if (len === 0) return;
+    out.push({ point: { x: hit.x, y: hit.y }, tangent: { x: d.x / len, y: d.y / len }, dist: hit.dist });
   });
-  const found = best as CurveNearest | null;
-  return found === null ? null : { point: { x: found.x, y: found.y }, tangent: heading };
+  return out;
+}
+
+/** The point on `path` nearest `near`, and the heading of the path there;
+ *  `null` for a path with no segment to stand on. */
+function nearestStation(path: Path, near: Vec2): { point: Vec2; tangent: Vec2 } | null {
+  let best: { point: Vec2; tangent: Vec2; dist: number } | null = null;
+  for (const s of segmentStations(path, near)) if (best === null || s.dist < best.dist) best = s;
+  return best === null ? null : { point: best.point, tangent: best.tangent };
 }
 
 /** Where the center of a label `size` big sits along `whole`, on its first
@@ -97,11 +101,40 @@ const NUDGE = 1e-9;
 
 /** The inverse of `labelCenter`: the route fraction and offset a label `size`
  *  big stands at when its center is at `center`, measured on the first
- *  subpath. `null` for a path with no points. */
+ *  subpath. `null` for a path with no points. Where several stretches of the
+ *  route are nearest alike, the reading that stands the label nearest
+ *  `center` wins. */
 export function labelSpotAt(whole: Path, center: Vec2, size: { width: number; height: number }): LabelSpot | null {
-  const measure = measurePath(subpathOf(whole, 0) ?? whole);
+  const path = subpathOf(whole, 0) ?? whole;
+  const measure = measurePath(path);
   if (measure === null) return null;
   const station = measure.nearest(center);
+  const first = spotFrom(measure, station, center, size);
+  if (measure.length === 0) return first;
+  const miss = (spot: LabelSpot) => {
+    const back = labelCenter(path, spot, size);
+    return back === null ? Infinity : Math.hypot(back.x - center.x, back.y - center.y);
+  };
+  const tie = 1e-9 * Math.max(1, Math.abs(center.x), Math.abs(center.y), measure.length);
+  let best = first;
+  let bestMiss = miss(first);
+  if (bestMiss <= tie) return first;
+  for (const other of segmentStations(path, center)) {
+    if (other.dist > station.dist + tie) continue;
+    const spot = spotFrom(measure, measure.nearest(other.point), center, size);
+    const m = miss(spot);
+    if (m < bestMiss - tie) [best, bestMiss] = [spot, m];
+  }
+  return best;
+}
+
+/** The spot read at `station`, the point on the route measured as nearest `center`. */
+function spotFrom(
+  measure: NonNullable<ReturnType<typeof measurePath>>,
+  station: { s: number; point: Vec2; tangent: Vec2 },
+  center: Vec2,
+  size: { width: number; height: number },
+): LabelSpot {
   if (measure.length === 0) return { at: 0.5, offset: offsetFrom(station.point, station.tangent, center, size) };
   const at = station.s / measure.length;
   const step = NUDGE * measure.length;
@@ -121,7 +154,7 @@ export function labelSpotAt(whole: Path, center: Vec2, size: { width: number; he
     const dist = Math.hypot(back.x - center.x, back.y - center.y);
     if (dist >= bestDist) continue;
     const onLeg = reads.x === tangent.x && reads.y === tangent.y;
-    best = { at: onLeg ? at : at + side * NUDGE, offset };
+    best = { at: onLeg ? at : Math.min(1, Math.max(0, at + side * NUDGE)), offset };
     bestDist = dist;
   }
   return best;
