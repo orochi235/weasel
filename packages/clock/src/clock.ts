@@ -350,15 +350,20 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       change(run, hub);
       hub.subs.emit();
     },
+    // `applyRun` checks before it writes, so a declaration or override it refuses is not kept either.
     declare(next) {
-      const was = declared.loop;
-      declared = declaredOf(run, next);
+      const taken = declaredOf(run, next);
+      // Checked under an override too, which would otherwise hand a bad duration to the call that lifts it.
+      checkDuration(taken.duration);
+      checkOrigin(taken.origin);
       // A declaration that keeps its loop leaves one set since, as a transport's toggle.
-      applyRun(run, hub, { ...declared, loop: declared.loop !== was ? declared.loop : run.loop }, override);
+      applyRun(run, hub, { ...taken, loop: taken.loop !== declared.loop ? taken.loop : run.loop }, override);
+      declared = taken;
     },
     override(next) {
-      override = next ? { ...next } : null;
-      applyRun(run, hub, { ...declared, loop: run.loop }, override);
+      const taken = next ? { ...next } : null;
+      applyRun(run, hub, { ...declared, loop: run.loop }, taken);
+      override = taken;
     },
     onFrame: hub.frames.subscribe,
   };
