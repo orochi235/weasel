@@ -192,7 +192,7 @@ describe('cachedPaintRuns', () => {
   it('bounds the paintings held for one layout', () => {
     const laid = cachedLayoutRuns([run('AB')], OPTS);
     const colored = (i: number): ResolvedRun[] =>
-      [{ ...run('AB'), fill: { paint: { kind: 'solid', color: `#00${i}` } } }];
+      [{ ...run('AB'), fill: { paint: { kind: 'solid', color: `#${i.toString(16).padStart(6, '0')}` } } }];
     const first = cachedPaintRuns(laid, colored(0));
     for (let i = 1; i <= PAINT_CACHE_VARIANT_LIMIT; i++) cachedPaintRuns(laid, colored(i));
     expect(cachedPaintRuns(laid, colored(0))).not.toBe(first);
