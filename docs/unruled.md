@@ -521,6 +521,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## SVG and paths
 
+- Ruled 2026-11-10 (my call, overnight sweep): `serializeSvg` writes a character XML 1.0 cannot hold (a
+  control, U+FFFE, U+FFFF, or half a surrogate pair) as U+FFFD and warns once, where it used to drop it
+  silently: a writer never silently loses data.
+- Ruled 2026-11-10 (my call, overnight sweep): `parseSvg` draws at most 100,000 elements through `<use>`
+  references per document (`USE_ELEMENT_BUDGET`), and walks elements at most 512 deep (`NESTING_LIMIT`),
+  warning once at each; a doubling chain of references hung, and a deep chain overflowed the stack. Both
+  numbers are mine.
 - 2026-10-11: SVG import drops hidden content, and `pathFromD` stops at a malformed command.
 - 2026-10-12: Trim and Merge are new.
 - 2026-10-13: Under `openFill: 'none'` an open subpath is no longer closed by import, export, or
