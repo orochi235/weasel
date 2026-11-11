@@ -27,7 +27,7 @@ export const part: fc.Arbitrary<string> = fc.oneof(
 /** Any short string, colons and whitespace weighted in. */
 export const anyText: fc.Arbitrary<string> = fc.oneof(
   fc.string({ maxLength: 12 }),
-  fc.array(fc.constantFrom('a', ':', ' ', '\n', ' ', ' ', 'é', '😀', '\t', ''), { maxLength: 6 }).map((a) => a.join('')),
+  fc.array(fc.constantFrom('a', ':', ' ', '\n', ' ', '\u2028', 'é', '😀', '\t', ''), { maxLength: 6 }).map((a) => a.join('')),
   fc.tuple(part, part).map(([a, b]) => `${a}:${b}`),
 );
 

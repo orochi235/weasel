@@ -2,9 +2,12 @@ import MagicString from 'magic-string';
 import { annotatedLiterals, stringLiterals } from './collect.ts';
 import { parseModule } from './parse.ts';
 
+const ESCAPE = /\\[ux]/;
+
 /** The start and value of each string literal in a chunk that is one of `refs` and has no `@icon` annotation. */
 function unannotated(code: string, id: string, refs: ReadonlySet<string>): [number, string][] {
-  if (![...refs].some((r) => code.includes(r))) return [];
+  // A literal can spell a ref with escapes, as a bundler writing ASCII-only output does.
+  if (!ESCAPE.test(code) && ![...refs].some((r) => code.includes(r))) return [];
   const parsed = parseModule(code, id);
   if ('error' in parsed) throw new Error(`${id}: cannot check its @icon annotations, the chunk did not parse: ${parsed.error}`);
   const literals = stringLiterals(parsed);
