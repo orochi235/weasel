@@ -51,4 +51,13 @@ describe('useTextEdit armed style (shrunk)', () => {
     act(() => edit().commit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'b', bold: true }]);
   });
+
+  it('takes the null fill of an unfilled run off the next character', () => {
+    const { h, edit, overlay } = editAtEnd([{ text: 'a', fill: null }]);
+    placeCaretAtChar(overlay, 0);
+    act(() => edit().applyStyleToSelection({ fill: undefined }));
+    act(() => dispatchBeforeInput(overlay, 'a'));
+    act(() => edit().commit());
+    expect(h.runCommits[0]!.runs).toEqual([{ text: 'a' }, { text: 'a', fill: null }]);
+  });
 });

@@ -30,8 +30,10 @@ export function armPatch(caret: RunStylePatch, armed: RunStylePatch, patch: RunS
   const from = caret as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const key of new Set([...Object.keys(from), ...Object.keys(target)])) {
-    if (JSON.stringify(from[key] ?? false) === JSON.stringify(target[key] ?? false)) continue;
-    out[key] = key in target ? target[key] : (FLAGS.has(key) ? false : undefined);
+    const flag = FLAGS.has(key);
+    // `null` is a value here (no fill), not the absence of one.
+    if (flag ? (from[key] ?? false) === (target[key] ?? false) : JSON.stringify(from[key]) === JSON.stringify(target[key])) continue;
+    out[key] = key in target ? target[key] : (flag ? false : undefined);
   }
   return out as RunStylePatch;
 }
