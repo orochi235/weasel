@@ -12,6 +12,14 @@ const cmds = (p: PolygonPath) => Array.from(p.commands);
 const walls = [pathFromD('M10 -10 V10'), pathFromD('M20 -10 V10')];
 
 describe('extendToMeet', () => {
+  it('meets nothing more from an end its last extension left on a stroke, a float32 rounding off it', () => {
+    // Shrunk by path-tools' scene-command property: the end carried on to meet the path's own curve.
+    const p = { kind: 'polygon', commands: Uint8Array.from([PATH_M, PATH_C, PATH_L]), coords: Float32Array.from([-44, -28, -49.5, -20, 0, 95, 0, 95, -73, -123]), fillRule: 'nonzero' } as PolygonPath;
+    const once = extendToMeet(p, [], { sub: 0, end: 'first' })!;
+    expect(once.distance).toBeGreaterThan(1);
+    expect(extendToMeet(once.path, [], { sub: 0, end: 'first' })).toBeNull();
+  });
+
   it('lengthens a straight end to the stroke it points at', () => {
     const r = extendToMeet(pathFromD('M0 0 H5'), walls, { sub: 0, end: 'last' })!;
     expect(r.distance).toBeCloseTo(5, 9);

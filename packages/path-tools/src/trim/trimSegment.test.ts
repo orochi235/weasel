@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { pathFromD, type PolygonPath } from '@weasel-js/geom';
-import type { ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { asNodeId, type NodeId, type Op } from '@weasel-js/core';
 import { planTrim, trimPathAction } from './trimSegment';
 
@@ -39,6 +39,16 @@ describe('trimPathAction', () => {
     expect(batches).toHaveLength(1);
     expect(batches[0].label).toBe('Trim segment');
     expect(poseOf(batches[0].ops[0])).toEqual([0, 0, 10, 0, 20, 0, 30, 0]);
+  });
+
+  it('is disabled with no press to cut at, and enabled by a click or a press that reaches a piece', () => {
+    // Shrunk by the scene-command property: two strokes, and the command run with no click.
+    const { deps } = setup({ a: 'M-100 0 H-90', b: 'M-100 0 H-90' });
+    expect(trimPathAction.enabled!(deps)).toBe(ActionDisabledReason.NotApplicable);
+    expect(trimPathAction.enabled!(deps, undefined, undefined, { press: { x: 500, y: 500 } })).toBe(ActionDisabledReason.NotApplicable);
+    expect(trimPathAction.enabled!(deps, { x: 500, y: 500 })).toBe(true);
+    const walled = setup({ line: 'M0 0 H30', ...walls });
+    expect(trimPathAction.enabled!(walled.deps, undefined, undefined, { press: { x: 15, y: 2 }, radiusPx: 3 })).toBe(true);
   });
 
   it('trims the topmost stroke under the click', () => {

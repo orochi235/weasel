@@ -1,5 +1,5 @@
 /** Trim segment: cut a stroke back to the crossings on either side of a click. */
-import type { Action, ActionDeps, ImmediateInvoker } from '@weasel-js/routing';
+import { type Action, type ActionDeps, ActionDisabledReason, type ImmediateInvoker } from '@weasel-js/routing';
 import { trimPathAt, type TrimResult } from '@weasel-js/geom';
 import { commitOps, deleteNode, reshapeOps, type PathNode, pathOperationTags } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
@@ -61,5 +61,7 @@ export const trimPathAction: Action & { requires: string[] } = {
       commitOps(deps, ops, TRIM_LABEL, gone ? { select: (deps.selection?.get() ?? []).filter((id) => id !== target.id) } : {});
     },
   } satisfies ImmediateInvoker,
-  enabled: () => true,
+  // A click's point enables it, as Extend to next path's does, and the run decides; without one, the press in its params does.
+  enabled: (deps?: ActionDeps, at?: { x: number; y: number }, _carried?: unknown, params?: unknown) =>
+    (at || (deps?.scene && planTrim(deps, params)) ? true : ActionDisabledReason.NotApplicable),
 };
