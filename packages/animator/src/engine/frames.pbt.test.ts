@@ -27,7 +27,7 @@ function start(h: ReturnType<typeof clocked>, k: Kind, from: number, to: number,
   const onDone = (): void => { seen.done++; };
   if (k === 'tween') seen.handle = h.animator.tween({ from, to, ms, easing: 'easeInOutQuad', onTick, onDone });
   else if (k === 'spring') seen.handle = h.animator.spring({ from, to, velocity: ms / 10, stiffness: 120, damping: 14, onTick, onDone });
-  else seen.handle = h.animator.decay({ from, velocity: ms * 2, onTick, onDone });
+  else seen.handle = h.animator.decay({ from, velocity: ms * 2, add: (a, b) => a + b, scale: (v, k) => v * k, magnitude: Math.abs, onTick, onDone });
   return seen;
 }
 
