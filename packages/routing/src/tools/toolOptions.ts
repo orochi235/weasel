@@ -10,7 +10,7 @@
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs';
 import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs';
 import { endlessAllows } from '@weasel-js/quantity';
-import { createEmitter, deepEqual } from '@weasel-js/registry';
+import { createEmitter, deepEqual, setOwn } from '@weasel-js/registry';
 
 /** How a step action moves one option: by a factor, or by an amount. */
 export interface ToolOptionStep {
@@ -141,7 +141,7 @@ export function heldToolOptions(
     const slot = toolOptionSlot(toolId, options, key);
     const own = values.get(slot.owner);
     const v = Object.hasOwn(own, slot.key) ? readHeld(leaf, own[slot.key]) : undefined;
-    if (v !== undefined) out[key] = v;
+    if (v !== undefined) setOwn(out, key, v);
   }
   return out;
 }
@@ -151,7 +151,7 @@ export function toolOptionParams(
   toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [key, leaf] of optionKeys(options)) out[key] = (leaf as { default?: unknown }).default;
+  for (const [key, leaf] of optionKeys(options)) setOwn(out, key, (leaf as { default?: unknown }).default);
   return { ...out, ...heldToolOptions(toolId, options, values) };
 }
 
