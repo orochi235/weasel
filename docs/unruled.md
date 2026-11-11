@@ -225,8 +225,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is a disc about the pointer, not about where it lands. A pointer whose two axes are each in reach of a guide but
   whose crossing is not snaps one axis; snapped again from there, the other comes in reach and snaps too. A grid
   fallback can carry a pointer into a guide's reach on its own axis (a guide 18.06 out of 18, the grid moving the
-  point 0.125 toward it), and the second snap takes the guide. An axis a snap took always stays (property tested);
-  whether a snap should be a fixed point everywhere, reach measured from the landing, is undecided.
+  point 0.125 toward it), and the second snap takes the guide. An axis that comes in reach this way can also carry a
+  box off the equal gap its other axis snapped to, so that axis moves too. Otherwise an axis a snap took stays
+  (property tested); whether a snap should be a fixed point everywhere, reach measured from the landing, is undecided.
 - Open, 2026-11-11 (guides second property pass): the alignment and spacing tolerances are world lengths, not
   relative ones: lines within 0.001 merge, and gaps or overlaps under 1e-6 count as none. A scene snaps alike moved
   anywhere and scaled by 1/4 to 8 (property tested), but drawn at a millionth of its size its lines merge and its
