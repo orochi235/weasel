@@ -122,6 +122,7 @@ export function projectAabbToScreen(
   viewProjection: Mat4,
   rect: ScreenBox,
 ): ScreenBox | null {
+  if (!(rect.width > 0 && rect.height > 0)) return null;
   const corners: Clip[] = [];
   for (let i = 0; i < 8; i++) {
     const corner: Vec3 = {
@@ -158,7 +159,8 @@ export function projectAabbToScreen(
       for (const side of CLIP_SIDES) {
         const da = side(a);
         const db = side(b);
-        if (da < 0 && db < 0) { t0 = 1; t1 = 0; break; }
+        // A side that is NaN, as every depth is under planes with no depth between them, draws nothing.
+        if (Number.isNaN(da) || Number.isNaN(db) || (da < 0 && db < 0)) { t0 = 1; t1 = 0; break; }
         if (da < 0) t0 = Math.max(t0, da / (da - db));
         else if (db < 0) t1 = Math.min(t1, da / (da - db));
       }
@@ -169,5 +171,6 @@ export function projectAabbToScreen(
   }
 
   if (!any) return null;
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  const out = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  return Number.isFinite(out.x + out.y + out.width + out.height) ? out : null;
 }

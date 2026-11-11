@@ -51,12 +51,13 @@ export function rayAt(viewport: Viewport3d, point: Point): Ray | null {
   return rayThroughScreenPoint(point, rectOf(viewport), viewProjectionOf(viewport));
 }
 
-/** Where `p` draws in the viewport, or null when it is behind the near plane
- *  or projects to nothing finite. */
+/** Where `p` draws in the viewport, or null when it is behind the near plane,
+ *  the pane has no area, or it projects to nothing finite. */
 export function projectPoint(p: Vec3, viewport: Viewport3d): Point | null {
+  if (!(viewport.width > 0 && viewport.height > 0)) return null;
   const [x, y, z, w] = transformPoint4(viewProjectionOf(viewport), p);
-  // GL's near plane is z = -w.
-  if (!(w > 0) || z < -w) return null;
+  // GL's near plane is z = -w. A NaN depth, as planes with no depth between them give, draws nowhere.
+  if (!(w > 0) || !(z >= -w)) return null;
   const screen = ndcToScreen({ x: x / w, y: y / w }, rectOf(viewport));
   return Number.isFinite(screen.x) && Number.isFinite(screen.y) ? screen : null;
 }
