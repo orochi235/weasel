@@ -14,4 +14,13 @@ describe('shrunk from the autosave property', () => {
     vi.advanceTimersByTime(2 ** 31);
     expect(writes).toEqual(['a']);
   });
+
+  it('writes a save flushed when the page went away once, not again when its timer runs', () => {
+    vi.useFakeTimers();
+    const onSaved = vi.fn();
+    renderHook(() => useAutosave(() => ({ primary: ['doc', 'a'] }), { onSaved }));
+    window.dispatchEvent(new Event('pagehide'));
+    vi.advanceTimersByTime(300);
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
 });

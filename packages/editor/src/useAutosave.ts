@@ -33,6 +33,8 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
 
   useEffect(() => {
     const save = (): void => {
+      // A save the page going away has already written must not be written again when its timer runs.
+      if (pendingRef.current !== save) return;
       pendingRef.current = null;
       const { onSaved } = optsRef.current;
       try {
