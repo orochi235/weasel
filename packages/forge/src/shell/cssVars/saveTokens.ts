@@ -29,7 +29,7 @@ function pinBranch(holder: Holder, key: string, selection: Selection): Slot | un
   let slot: Slot = { holder, key, where: `pins.${key}` };
   for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
     const at = picked(selection, value.by, slot.where);
-    if (!(at in value)) return undefined;
+    if (!Object.hasOwn(value, at)) return undefined;
     slot = { holder: value as unknown as Holder, key: at, where: `${slot.where}.${at}` };
   }
   return slot;
@@ -39,7 +39,7 @@ function pinBranch(holder: Holder, key: string, selection: Selection): Slot | un
 function writtenSlot(definition: ThemeDefinition, token: string, selection: Selection): Slot | null {
   for (const layer of LAYERS) {
     const entries = definition[layer] as Holder | undefined;
-    if (!entries || !(token in entries)) continue;
+    if (!entries || !Object.hasOwn(entries, token)) continue;
     const slot = layer === 'pins' ? pinBranch(entries, token, selection) : branchOf(entries, token, `${layer}.${token}`, selection);
     if (slot === undefined) continue;
     return derived(slot.holder[slot.key]) ? null : slot;
@@ -72,7 +72,7 @@ function pinOver(entry: unknown, axes: readonly string[], selection: Selection, 
   if (isByAxis(entry)) {
     const at = picked(selection, entry.by, where);
     const rest = axes.filter((axis) => axis !== entry.by);
-    return { ...entry, [at]: pinOver(entry[at], rest, selection, value, defs, `${where}.${at}`) };
+    return { ...entry, [at]: pinOver(Object.hasOwn(entry, at) ? entry[at] : undefined, rest, selection, value, defs, `${where}.${at}`) };
   }
   const [axis, ...rest] = axes;
   if (axis === undefined) return literal(entry, value);
@@ -87,7 +87,7 @@ function pinOver(entry: unknown, axes: readonly string[], selection: Selection, 
 
 /** Writes one edit into `root`, which it mutates. */
 function writeEdit(root: ThemeDefinition, token: string, value: string, selection: Selection): void {
-  if (!(token in axisDependencies(root))) throw new EditError(`the theme defines no token "${token}"`);
+  if (!Object.hasOwn(axisDependencies(root), token)) throw new EditError(`the theme defines no token "${token}"`);
   const slot = writtenSlot(root, token, selection);
   if (slot) {
     const entry = slot.holder[slot.key];
@@ -95,7 +95,7 @@ function writeEdit(root: ThemeDefinition, token: string, value: string, selectio
     return;
   }
   const pins = ((root as { pins?: Holder }).pins ??= {});
-  pins[token] = pinOver(pins[token], dependentAxes(root, token), selection, value, root.axes ?? {}, `pins.${token}`);
+  pins[token] = pinOver(Object.hasOwn(pins, token) ? pins[token] : undefined, dependentAxes(root, token), selection, value, root.axes ?? {}, `pins.${token}`);
 }
 
 /**
