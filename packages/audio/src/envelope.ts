@@ -40,7 +40,7 @@ const heldLevel = (e: ResolvedEnvelope, t: number): number => {
  *  ms in, from whatever level the envelope had reached. */
 export function envelopeLevel(e: ResolvedEnvelope, t: number, gate?: number): number {
   if (gate === undefined || t <= gate) return heldLevel(e, t);
-  if (e.release === 0) return 0;
+  if (t >= gate + e.release) return 0;
   return Math.max(0, heldLevel(e, gate) * (1 - (t - gate) / e.release));
 }
 
