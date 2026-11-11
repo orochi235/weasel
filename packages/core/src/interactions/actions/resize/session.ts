@@ -100,7 +100,7 @@ export type ResizePlace = Pick<
 >;
 
 /** Capture what resizing `ids` from `anchor` acts on. Null when nothing it
- *  would write exists. */
+ *  would write exists, or something it would rewrite is locked. */
 export function captureResize(
   scene: Scene<unknown, string, unknown>,
   ids: readonly NodeId[],
@@ -130,9 +130,13 @@ export function captureResize(
   const starts = captureStarts(scene, writeIds, geometryOf, poseFrame, view, boxes);
   if (starts.startPoses.size === 0) return null;
 
+  const written = writeIds.filter((id) => starts.startPoses.has(id));
+  const held = captureHeld(scene, written, poseFrame);
+  // A resize rewrites what it holds as well as what it writes: one that would rewrite a locked node does not
+  // start (ruled 2026-11-09 for the commands, 2026-11-11 for the drag).
+  if ([...written, ...held.keys()].some((id) => scene.isLocked(id))) return null;
   const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);
   const sharedBox = isGroupPath || writeIds.length > 1;
-  const written = writeIds.filter((id) => starts.startPoses.has(id));
   return {
     place: {
       scene,
@@ -142,7 +146,7 @@ export function captureResize(
       box,
       startPoses: starts.startPoses,
       startWorlds: starts.startWorlds,
-      held: captureHeld(scene, written, poseFrame),
+      held,
       geometryOf,
       poseFrame,
       view,
