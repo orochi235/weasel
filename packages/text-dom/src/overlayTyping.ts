@@ -2,8 +2,8 @@
  * Text entering the edit overlay. The browser inserts a typed character
  * itself, which keeps the keystroke on its undo stack and lets input that
  * names its own range (a text replacement, the double-space period) land
- * there. The hook inserts by hand only where the character has to open a run
- * of its own: under an armed style, and at a caret between two run spans.
+ * there. The hook inserts by hand only where the browser would pick the wrong
+ * run: under an armed style, and at a caret between two run spans.
  *
  * A paste or a drop is never the browser's to insert: it would land as
  * whatever markup the clipboard held. It is read into runs and written
@@ -17,31 +17,6 @@ import { withArmed } from './armedStyle';
 import { clipboardRuns } from './pasteRuns';
 import { replaceRunRange, runStyleAt } from './runSplice';
 import type { TextEditSelection } from './textEditTypes';
-
-/**
- * Put the caret *between* two run spans when `offset` falls on the boundary
- * of one, rather than at the same offset inside the left span's text node.
- * A caret inside a span has the next character absorbed by that run —
- * otherwise the character after a superscript is superscript too. Leaves the
- * selection alone when the offset falls mid-run.
- */
-function placeCaretBetweenRuns(overlay: HTMLElement, runs: readonly StyledRun[], offset: number): void {
-  let acc = 0;
-  let index = -1;
-  for (let i = 0; i < runs.length; i++) {
-    acc += runs[i].text.length;
-    if (acc === offset) { index = i; break; }
-    if (acc > offset) return;
-  }
-  const span = index >= 0 ? overlay.children[index] : null;
-  const sel = window.getSelection();
-  if (!span || !sel) return;
-  const range = document.createRange();
-  range.setStartAfter(span);
-  range.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
 
 /** Put small-caps letters back in the pieces their case belongs in after
  *  an edit, keeping the caret. Never mid-composition: rewriting the DOM
@@ -136,37 +111,24 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     const caret = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
     if (caret && namesItsRange(ie, caret)) return;
 
+    // A browser types into the text node holding the caret, which is the run `runStyleAt` names. Anywhere else
+    // it would pick a span of its own, so the character is written through the runs: under an armed style, and at
+    // a caret between two run spans or in an overlay with no text yet, where it takes the run before it, as the
+    // caret's `rangeStyle` reports. Rebuilt from the runs rather than spliced into the DOM: `insertNode` inside a
+    // run span nests a new span within it, and `domToRuns` reads styling down the ancestor chain.
     const pending = host.pending();
-    if (Object.keys(pending).length > 0) {
-      // Rebuild from the runs rather than splicing a span into the DOM.
-      // `insertNode` at a caret sitting inside a run span nests the new
-      // span *within* it, and `domToRuns` reads styling down the ancestor
-      // chain — so a pending style that has to shed the surrounding run's
-      // flag would inherit it.
-      const at = readSelectionOffsets(overlay) ?? host.lastRange();
-      if (!at || at.start !== at.end) return;
-      ie.preventDefault();
-      const runs = domToRuns(overlay);
-      const next = replaceRunRange(runs, at.start, at.start, styledForRange([{ text: ie.data }], runs, at, pending));
-      const after = at.start + ie.data.length;
-      writeRunsPreservingSelection(overlay, next, after, after, host.base());
-      placeCaretBetweenRuns(overlay, next, after);
-      host.onWritten(after);
-      host.onEdited();
-      return;
-    }
-
-    // A caret between two run spans, or in an overlay with no text yet. A
-    // browser types into the span before it; a text node of its own keeps
-    // the character out of that run, and the caret left inside the node
-    // hands the characters after it back to the browser.
-    if (!sel || !caret || !caret.collapsed || caret.startContainer.nodeType === Node.TEXT_NODE) return;
-    if (!overlay.contains(caret.startContainer)) return;
+    const armed = Object.keys(pending).length > 0;
+    if (!armed && (!caret || !caret.collapsed || caret.startContainer.nodeType === Node.TEXT_NODE)) return;
+    if (!armed && !overlay.contains(caret!.startContainer)) return;
+    const at = readSelectionOffsets(overlay) ?? host.lastRange();
+    if (!at || at.start !== at.end) return;
     ie.preventDefault();
-    const textNode = document.createTextNode(ie.data);
-    caret.insertNode(textNode);
-    sel.collapse(textNode, ie.data.length);
-    edited();
+    const runs = domToRuns(overlay);
+    const next = replaceRunRange(runs, at.start, at.start, styledForRange([{ text: ie.data }], runs, at, pending));
+    const after = at.start + ie.data.length;
+    writeRunsPreservingSelection(overlay, next, after, after, host.base());
+    host.onWritten(after);
+    host.onEdited();
   };
 
   /** Where a composition opened and the style armed there: the caret moving
@@ -191,7 +153,6 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     const runs = replaceRunRange(domToRuns(overlay), armed.start, end, []);
     const next = replaceRunRange(runs, armed.start, armed.start, styledForRange([{ text: typed }], runs, at, armed.pending));
     writeRunsPreservingSelection(overlay, next, end, end, host.base());
-    placeCaretBetweenRuns(overlay, next, end);
     host.onWritten(end);
     host.onEdited();
   };

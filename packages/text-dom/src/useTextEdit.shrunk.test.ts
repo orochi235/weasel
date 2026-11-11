@@ -70,4 +70,26 @@ describe('useTextEdit armed style (shrunk)', () => {
     act(() => edit().commit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'a', bold: true }]);
   });
+
+  it('types after an armed character in the style the caret reports', () => {
+    const { h, edit, overlay } = editAtEnd([{ text: 'a' }]);
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
+    act(() => dispatchBeforeInput(overlay, 'a'));
+    expect(edit().rangeStyle?.bold).toBe(true);
+    act(() => dispatchBeforeInput(overlay, 'a'));
+    act(() => edit().commit());
+    expect(h.runCommits[0]!.runs).toEqual([{ text: 'a' }, { text: 'aa', bold: true }]);
+  });
+
+  it('types at a caret between run spans in the style the caret reports', async () => {
+    const { h, edit, overlay } = editAtEnd([{ text: 'a', italic: true }, { text: 'b' }]);
+    await act(async () => {
+      window.getSelection()!.collapse(overlay, 1);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(edit().rangeStyle?.italic).toBe(true);
+    act(() => dispatchBeforeInput(overlay, 'X'));
+    act(() => edit().commit());
+    expect(h.runCommits[0]!.runs).toEqual([{ text: 'aX', italic: true }, { text: 'b' }]);
+  });
 });

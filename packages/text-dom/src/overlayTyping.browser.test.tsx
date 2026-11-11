@@ -111,10 +111,10 @@ describe('typing into the edit overlay', () => {
     expect(committed().text).toBe('xy');
   });
 
-  it('gives an armed style to the next character alone', async () => {
+  it('gives an armed style to what is typed after it', async () => {
     await open({ text: 'abc', runs: [{ text: 'abc' }], caret: 3 });
     await userEvent.keyboard('{Control>}b{/Control}XYZ');
-    expect(committed().runs).toEqual([{ text: 'abc' }, { text: 'X', bold: true }, { text: 'YZ' }]);
+    expect(committed().runs).toEqual([{ text: 'abc' }, { text: 'XYZ', bold: true }]);
   });
 
   it('types into an empty overlay', async () => {

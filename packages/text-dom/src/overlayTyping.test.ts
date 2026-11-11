@@ -41,19 +41,27 @@ describe('typingHandlers', () => {
     expect(host.onEdited).not.toHaveBeenCalled();
   });
 
-  it('gives a character typed between two run spans a text node of its own, and the caret to it', () => {
+  it('gives a character typed between two run spans the run before it, as the caret reports, and the caret after it', () => {
     const { overlay, host, onBeforeInput } = mount();
     runsToDom([{ text: 'a', bold: true }, { text: 'b' }], overlay);
     caretAt(overlay, 1);
     const ev = insertText('X');
     onBeforeInput(ev);
     expect(ev.defaultPrevented).toBe(true);
-    expect(domToRuns(overlay)).toEqual([{ text: 'a', bold: true }, { text: 'Xb' }]);
+    expect(domToRuns(overlay)).toEqual([{ text: 'aX', bold: true }, { text: 'b' }]);
     const sel = window.getSelection()!;
-    expect(sel.anchorNode).toBe(overlay.childNodes[1]);
     expect(sel.anchorNode!.nodeType).toBe(Node.TEXT_NODE);
-    expect(sel.anchorOffset).toBe(1);
+    expect(sel.anchorNode!.parentElement!.closest('[data-run]')).toBe(overlay.children[0]);
+    expect(host.onWritten).toHaveBeenCalledWith(2);
     expect(host.onEdited).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives a character typed before the first run span that run', () => {
+    const { overlay, onBeforeInput } = mount();
+    runsToDom([{ text: 'a', italic: true }, { text: 'b' }], overlay);
+    caretAt(overlay, 0);
+    onBeforeInput(insertText('X'));
+    expect(domToRuns(overlay)).toEqual([{ text: 'Xa', italic: true }, { text: 'b' }]);
   });
 
   it('writes an armed style into a run of its own', () => {
