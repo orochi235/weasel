@@ -133,10 +133,12 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
     let tag: string | undefined = parent ? undefined : row.library;
     for (let i = 0; i < labels.length - 1; i++) {
       const path = title.slice(0, title.length - labels.length + i + 1).join('/');
-      let folder = folders.get(path);
+      // Per library: a folder another library's labels opened at the same path is not this one's.
+      const key = `${row.library}\0${path}`;
+      let folder = folders.get(key);
       if (!folder) {
         folder = { kind: 'folder', label: labels[i], path, tag, children: [] };
-        folders.set(path, folder);
+        folders.set(key, folder);
         siblings.push(folder);
       }
       siblings = folder.children;

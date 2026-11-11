@@ -33,7 +33,14 @@ export interface StoryTreeProps {
 type StoryFolder = Extract<StoryNode, { kind: 'folder' }>;
 
 const keyOf = (node: StoryNode): string => (node.kind === 'folder' ? `folder:${node.path}` : `story:${node.entry.id}`);
-const pathOf = (folderKey: string): string => folderKey.slice('folder:'.length);
+const pathOf = (byId: ReadonlyMap<string, StoryNode>, id: string): string => (byId.get(id) as StoryFolder).path;
+
+/** `node`'s key, numbered past those `ids` holds: folders of two libraries can share a path in the components view. */
+function freshKey(node: StoryNode, ids: ReadonlyMap<string, unknown>): string {
+  let id = keyOf(node);
+  for (let n = 2; ids.has(id); n++) id = `${keyOf(node)}#${n}`;
+  return id;
+}
 const hrefOf = (entry: IndexEntry): string => formatRoute({ story: entry.id, params: {} });
 
 /** The folder paths above a story's component, and the component's own. */
@@ -119,7 +126,7 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     const folders: string[] = [];
     const convert = (list: readonly StoryNode[]): UiTreeNode[] =>
       list.map((node) => {
-        const id = keyOf(node);
+        const id = freshKey(node, ids);
         ids.set(id, node);
         if (node.kind === 'folder') {
           folders.push(id);
@@ -145,15 +152,15 @@ export function StoryTree({ ctx, index }: StoryTreeProps) {
     return { nodes: convert(shown), byId: ids, folders };
   }, [shown, openIds]);
   const expanded = useMemo(
-    () => new Set(folderIds.filter((id) => filtering || (folds[pathOf(id)] ?? routeAncestors.has(pathOf(id))))),
-    [folderIds, filtering, folds, routeAncestors],
+    () => new Set(folderIds.filter((id) => filtering || (folds[pathOf(byId, id)] ?? routeAncestors.has(pathOf(byId, id))))),
+    [folderIds, byId, filtering, folds, routeAncestors],
   );
 
   // A filter forces every folder open, so a toggle then would change state nobody can see.
   const onExpandedChange = (next: Set<string>): void => {
     if (filtering) return;
     const changed = folderIds.filter((id) => next.has(id) !== expanded.has(id));
-    if (changed.length) setFolds((prev) => ({ ...prev, ...Object.fromEntries(changed.map((id) => [pathOf(id), next.has(id)])) }));
+    if (changed.length) setFolds((prev) => ({ ...prev, ...Object.fromEntries(changed.map((id) => [pathOf(byId, id), next.has(id)])) }));
   };
 
   const activate = (entry: IndexEntry, another: boolean): void => {

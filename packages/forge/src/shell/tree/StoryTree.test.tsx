@@ -613,3 +613,31 @@ describe('StoryTree labs', () => {
     expect(item(button, 'Primary').querySelector('.fg-tree__lab')).toBeNull();
   });
 });
+
+describe('StoryTree folders sharing a path', () => {
+  it('lists the folders two libraries open at one path as rows of their own (found by buildComponents.pbt)', async () => {
+    const at = (title: string, file: string): IndexEntry => ({ ...entry(title, 'Default'), file });
+    const ui = '/packages/ui/x.stories.tsx';
+    const labkit = '/packages/labkit/x.stories.tsx';
+    const shared = [at('ui/x', ui), at('x', ui), at('ui/Gallery', labkit), at('Gallery', labkit)];
+    const chrome: LabContribution[] = [{ id: 'fg-stories', region: 'sidebar', render: (ctx) => <StoryTree ctx={ctx} index={shared} /> }];
+    function Shared() {
+      const { instruments } = useStoryRegistry([...shared, ...indexEntries(shared)], { frameUrl: '/frame.html' });
+      return <Lab instruments={instruments} defaultInstrument={shared[0]!.id} labChrome={chrome} addTrial={false} storageKey="tree-shared" storage={createMemoryAdapter()} />;
+    }
+    const libraries = librariesFrom([{ path: '/packages/ui/', label: 'ui' }, { path: '/packages/labkit/', label: 'labkit' }]);
+    const error = vi.spyOn(console, 'error');
+    renderWithIcons(
+      <LibrariesContext.Provider value={libraries}>
+        <Shared />
+      </LibrariesContext.Provider>,
+    );
+    const treeEl = await screen.findByRole('tree', { name: 'Stories' });
+    const folders = within(treeEl).getAllByRole('treeitem', { name: named('ui') }).filter((el) => el.getAttribute('aria-level') === '1');
+    expect(folders).toHaveLength(2);
+    for (const folder of folders) if (folder.getAttribute('aria-expanded') !== 'true') fireEvent.click(foldOf(folder));
+    const held = folders.map((folder) => within(within(folder).getByRole('group')).getAllByRole('treeitem', { name: /^(x|Gallery)/ }).map((el) => named('x').test(el.textContent ?? '') ? 'x' : 'Gallery'));
+    expect(held.flat().sort()).toEqual(['Gallery', 'x']);
+    expect(error.mock.calls.filter(([m]) => String(m).includes('same key'))).toEqual([]);
+  });
+});

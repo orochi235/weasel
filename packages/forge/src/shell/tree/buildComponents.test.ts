@@ -173,6 +173,22 @@ describe('componentNodes', () => {
   });
 });
 
+describe('componentNodes across libraries', () => {
+  it("keeps each library's widened labels in its own folders, though their paths agree (found by buildComponents.pbt)", () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('ui/x', 'Default', UI),
+        entry('x', 'Default', UI),
+        entry('ui/Gallery', 'Default', LABKIT),
+        entry('Gallery', 'Default', LABKIT),
+      ]),
+    );
+    const tops = nodes.flatMap((n) => (n.kind === 'folder' && n.label === 'ui' ? [{ tag: n.tag, holds: n.children.map((c) => (c.kind === 'story' ? c.label : c.label)) }] : []));
+    expect(tops).toHaveLength(2);
+    expect(tops).toEqual(expect.arrayContaining([{ tag: 'labkit', holds: ['Gallery'] }, { tag: 'ui', holds: ['x'] }]));
+  });
+});
+
 describe('componentNodes sub-pages', () => {
   const shape = (list: readonly TreeNode[]): unknown[] =>
     list.map((n) =>
