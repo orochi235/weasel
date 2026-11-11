@@ -53,7 +53,7 @@
     "longestFunction": 171
   },
   "packages/d3/src/bind.ts": {
-    "longestFunction": 140
+    "longestFunction": 139
   },
   "packages/d3/src/transition.ts": {
     "lines": 451,

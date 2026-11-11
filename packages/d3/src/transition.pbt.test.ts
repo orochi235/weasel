@@ -24,7 +24,7 @@ const eases: Record<string, (t: number) => number> = {
 const easeName = fc.constantFrom(...Object.keys(eases));
 
 interface Datum { id: string; from: Pose; to: Pose; next: Pose; v0: number; v1: number; delay: number }
-const datum = fc.record({
+const datum: fc.Arbitrary<Datum> = fc.record({
   id: fc.constantFrom('a', 'b', 'c', 'd', '__proto__'),
   from: pose, to: pose, next: pose, v0: num, v1: num,
   delay: fc.oneof(fc.constant(0), fc.integer({ min: 0, max: 400 })),

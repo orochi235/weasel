@@ -261,7 +261,6 @@ function makeStage<TData, TPose>(
               ? undefined
               : ((a, b, t) => {
                   // Fallback per-tick interpolator for numeric values when no factory is given.
-                  // Ends exactly, which `a + (b - a) * 1` does not.
                   if (typeof a === 'number' && typeof b === 'number') {
                     return t === 1 ? b : t === 0 ? a : a + (b - a) * t;
                   }
