@@ -126,7 +126,7 @@ export type Track = SampledTrack<any> | EventTrack | TimelineTrack;
  *  `autoplay`, `onDone` and `cancelKey` have no meaning below the root. */
 export interface NestedTimeline {
   tracks: Track[];
-  /** Defaults to the largest end time across `tracks`. `NaN` throws a `RangeError`. */
+  /** Defaults to the largest end time across `tracks`. Below 0 it is 0; `NaN` throws a `RangeError`. */
   duration?: number;
 }
 

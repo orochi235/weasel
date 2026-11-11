@@ -44,4 +44,17 @@ describe('timelines, shrunk from the property tests', () => {
     expect(() => h.animator.timeline({ tracks: [{ kind: 'timeline', at: 0, timeline: { duration: Number.NaN, tracks: [] } }] })).toThrow(RangeError);
     expect(h.animator.isActive()).toBe(false);
   });
+
+  it('play a negative duration as none, its playhead at 0', () => {
+    const h = clocked();
+    h.at(0);
+    let done = 0;
+    const tl = h.animator.timeline({ duration: -5, tracks: [], onDone: () => { done++; } });
+    expect(tl.duration()).toBe(0);
+    h.at(5);
+    expect(tl.time()).toBe(0);
+    expect(done).toBe(1);
+    tl.seek(3);
+    expect(tl.time()).toBe(0);
+  });
 });
