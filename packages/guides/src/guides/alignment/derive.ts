@@ -1,5 +1,6 @@
 import { maxOf, minOf } from '@weasel-js/geom';
 import type { Guide } from '../types';
+import { isFiniteBox } from './finite';
 import type { DeriveAlignmentGuidesOptions } from './types';
 import {
   type Bounds,
@@ -20,7 +21,8 @@ const EPS = 1e-3;
  *  The moving selection is measured with its stroke (`drawnBoundsOf`), so
  *  pass each sibling's `drawnAABBOf` box as its target for the two to agree.
  *  The lines are in the camera's world: a sibling on a parallax layer needs
- *  `planeOf` to say which plane its pose is in. */
+ *  `planeOf` to say which plane its pose is in. A box with a coordinate that
+ *  is not finite offers no lines. */
 export function deriveAlignmentGuides<TPose = Bounds>(
   targets: readonly TPose[],
   opts: DeriveAlignmentGuidesOptions<TPose> = {},
@@ -36,6 +38,7 @@ export function deriveAlignmentGuides<TPose = Bounds>(
   };
 
   const emit = (b: Bounds): void => {
+    if (!isFiniteBox(b)) return;
     if (edges) {
       add('x', b.x, b);
       add('x', b.x + b.width, b);
