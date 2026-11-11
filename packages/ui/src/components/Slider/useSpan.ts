@@ -1,8 +1,7 @@
 import { useCallback, useMemo } from 'react';
-import { snapToStep } from '@weasel-js/quantity';
 import { clamp } from '@weasel-js/geom';
 import { useKitSetting } from '@weasel-js/react';
-import { attract, usableStops } from '@weasel-js/ui-logic';
+import { evenMap, sliderAt, usableStops, type TrackMap } from '@weasel-js/ui-logic';
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { STOP_SNAP_PX } from './stops';
 import type { SliderProps } from './types';
@@ -33,44 +32,21 @@ export function useScale(span: ReturnType<typeof useSpan>, strict: boolean, step
   const kitSnapPx = useKitSetting('targets.sliderStopSnapPx');
   const stopSnapPx = options.stopSnapPx ?? kitSnapPx ?? STOP_SNAP_PX;
 
-  // Not built under `even`: the stops place values there, and a log scale would throw on a first stop of 0.
-  const unit = useMemo(
-    () => (even ? undefined : scale({ domain: [min, max], range: [0, 1] })),
-    [scale, even, min, max],
-  );
+  // No scale is built under `even`: the stops place values there, and a log scale would throw on a first stop of 0.
+  const map = useMemo((): TrackMap => {
+    if (even) return evenMap(stops);
+    const unit = scale({ domain: [min, max], range: [0, 1] });
+    return { toFraction: (v) => clamp(unit.map(v), 0, 1), toValue: (f) => unit.invert(clamp(f, 0, 1)) };
+  }, [scale, even, stops, min, max]);
 
-  const valueToFraction = useCallback(
-    (v: number): number => {
-      if (max === min) return 0;
-      if (unit) return clamp(unit.map(v), 0, 1);
-      const gaps = stops.length - 1;
-      const x = clamp(v, min, max);
-      let i = 0;
-      while (i < gaps - 1 && x > stops[i + 1]) i++;
-      return (i + (x - stops[i]) / (stops[i + 1] - stops[i])) / gaps;
-    },
-    [min, max, stops, unit],
-  );
-
-  const fractionToValue = useCallback(
-    (f: number): number => {
-      const c = clamp(f, 0, 1);
-      if (unit) return unit.invert(c);
-      const gaps = stops.length - 1;
-      const i = Math.min(gaps - 1, Math.floor(c * gaps));
-      return stops[i] + (c * gaps - i) * (stops[i + 1] - stops[i]);
-    },
-    [stops, unit],
-  );
+  const valueToFraction = useCallback((v: number): number => (max === min ? 0 : map.toFraction(v)), [map, min, max]);
+  const fractionToValue = map.toValue;
 
   /** The value a pointer at track fraction `f` chooses, before bounds. `free` passes magnetic stops by. */
   const valueAt = useCallback(
-    (f: number, length: number, free = false): number => {
-      const v = fractionToValue(f);
-      if (strict) return attract(v, stops, Infinity, valueToFraction);
-      const q = clamp(snapToStep(v, step, origin), min, max);
-      return stops.length > 0 && !free ? attract(q, stops, stopSnapPx / length, valueToFraction) : q;
-    },
+    (f: number, length: number, free = false): number => sliderAt(f, {
+      min, max, step, origin, stops, strict, free, pull: stopSnapPx / length, toFraction: valueToFraction, toValue: fractionToValue,
+    }),
     [fractionToValue, valueToFraction, strict, stops, step, origin, min, max, stopSnapPx],
   );
 

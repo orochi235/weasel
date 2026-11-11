@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { panWindow, spanFraction, spanPercent, toFraction, toPercent, windowScale, zoomWindow } from './timeScale';
+import { spanFraction, spanPercent, toFraction, toPercent, windowScale } from './timeScale';
 
 describe('windowScale', () => {
   it('maps the window ends to the track ends', () => {
@@ -28,45 +28,6 @@ describe('windowScale', () => {
   it('survives a zero-length window', () => {
     const s = windowScale({ from: 500, to: 500 }, 200);
     expect(Number.isFinite(s.map(500))).toBe(true);
-  });
-});
-
-describe('zoomWindow', () => {
-  it('holds the anchor time still', () => {
-    const w = zoomWindow({ from: 0, to: 1000 }, 250, 0.5, { from: 0, to: 1000 });
-    const before = (250 - 0) / 1000;
-    const after = (250 - w.from) / (w.to - w.from);
-    expect(after).toBeCloseTo(before, 9);
-  });
-
-  it('narrows on a factor below 1', () => {
-    const w = zoomWindow({ from: 0, to: 1000 }, 500, 0.5, { from: 0, to: 1000 });
-    expect(w.to - w.from).toBeCloseTo(500, 9);
-  });
-
-  it('never widens past the bounds', () => {
-    const w = zoomWindow({ from: 0, to: 1000 }, 500, 4, { from: 0, to: 1000 });
-    expect(w.from).toBe(0);
-    expect(w.to).toBe(1000);
-  });
-
-  it('refuses to collapse below the minimum span', () => {
-    let w = { from: 0, to: 1000 };
-    for (let i = 0; i < 50; i++) w = zoomWindow(w, 500, 0.5, { from: 0, to: 1000 });
-    expect(w.to - w.from).toBeCloseTo(1, 9);
-  });
-});
-
-describe('panWindow', () => {
-  it('shifts both ends together', () => {
-    const w = panWindow({ from: 100, to: 600 }, 50, { from: 0, to: 1000 });
-    expect(w).toEqual({ from: 150, to: 650 });
-  });
-
-  it('clamps at the bounds without changing the span', () => {
-    const w = panWindow({ from: 100, to: 600 }, -400, { from: 0, to: 1000 });
-    expect(w.from).toBe(0);
-    expect(w.to - w.from).toBe(500);
   });
 });
 

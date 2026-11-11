@@ -1,14 +1,12 @@
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
-import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
-import { useKitSetting } from '@weasel-js/react';
+import { useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
 import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
-import { spanPercent, toPercent, windowScale, type TimeWindow } from './timeScale';
-import { snapToNearest, useSnapRadiusPx } from '../../snap';
+import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/ui-logic';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
+import { useKeyDrag } from './useKeyDrag';
 
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP_MS = 10;
@@ -46,80 +44,21 @@ function entryTimes(row: LaneRow): number[] {
   return [];
 }
 
-/** `px` along `el`, with `win` laid across it, as a span of ms. */
-function pxToMs(el: HTMLElement | null, win: TimeWindow, px: number): number {
-  const scale = windowScale(win, el?.getBoundingClientRect().width ?? 0);
-  return scale.invert(px) - scale.invert(0);
-}
-
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onSelect, onKeyInput, onKeyCommit, onInsert, onToggleExpand, expanded, snapTimes,
     selectedSegment = null, onSelectSegment, onPressEmpty, onKeysInput, onKeysCommit,
   } = props;
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const sessionRef = useRef<PointerSession | null>(null);
-  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
-
-  // Where the dragged key would land. Owned here rather than derived from the
-  // tracks prop, so a drag previews whether or not the consumer wires
-  // `onKeyInput` — the committed key stays put underneath as the origin.
-  const [drag, setDrag] = useState<{ keyIndex: number; t: number } | null>(null);
-
-  const snapRadiusPx = useSnapRadiusPx();
-  const dragPx = useKitSetting('gestures.dragPx');
+  const times = entryTimes(row);
+  const { drag, msAt, onKeyPointerDown } = useKeyDrag({
+    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyCommit,
+  });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
-
-  const msAt = (clientX: number): number => {
-    const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect) return win.from;
-    return windowScale(win, rect.width).invert(clientX - rect.left) - row.offset;
-  };
-
-  const snapPxToMs = (): number => pxToMs(trackRef.current, win, snapRadiusPx);
 
   // Only a numeric sampled row has an honest value axis to graph.
   const graph = mode === 'graph' && row.numeric;
   const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
-
-  const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    onSelect(i);
-
-    // `snapTimes` are ruler times and `msAt` is track-local, so a nested row
-    // has to cross into ruler space to snap and back out to commit.
-    const at = (ev: { clientX: number; altKey: boolean }): number => {
-      const raw = Math.max(0, msAt(ev.clientX));
-      return ev.altKey ? raw : snapToNearest(raw + row.offset, snapTimes, snapPxToMs()) - row.offset;
-    };
-
-    setDrag({ keyIndex: i, t: times[i] });
-
-    // A press that never travels is a click: it selects and moves nothing.
-    const start = { clientX: e.clientX, clientY: e.clientY };
-    let dragging = false;
-    const travelled = (ev: PointerEvent): boolean => (dragging ||= pastDragThreshold(start, ev, dragPx));
-
-    const end = (): void => {
-      setDrag(null);
-      sessionRef.current = null;
-    };
-    // No pointer capture — see `Ruler`, same idiom across the timeline.
-    sessionRef.current?.cancel();
-    sessionRef.current = openPointerSession(e.currentTarget, e, {
-      onMove: (ev) => {
-        if (!travelled(ev)) return;
-        setDrag({ keyIndex: i, t: at(ev) });
-        onKeyInput(i, at(ev));
-      },
-      onEnd: (ev) => {
-        if (travelled(ev)) onKeyCommit(i, at(ev));
-        end();
-      },
-      onCancel: end,
-    }, { capture: false });
-  };
 
   const { keyEls, refocus } = useFocusFollowsKey(selection);
 
@@ -134,8 +73,6 @@ export function Lane(props: LaneProps): ReactElement {
     // The timeline deletes the selected key as this bubbles up; focus goes to the key selected after it.
     if (e.key === 'Delete' || e.key === 'Backspace') refocus.current = true;
   };
-
-  const times = entryTimes(row);
 
   return (
     <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
@@ -166,7 +103,7 @@ export function Lane(props: LaneProps): ReactElement {
         onDoubleClick={(e) => {
           if (row.kind !== 'sampled') return;
           if ((e.target as Element).closest('[data-keyframe-index], [data-handle-index]')) return;
-          onInsert(Math.max(0, msAt(e.clientX)));
+          onInsert(msAt(e.clientX));
         }}
       >
         <AfterEnd end={row.end} win={win} />

@@ -164,5 +164,3 @@ export function setKeyValue(
   keys[sel.keyIndex] = { ...keys[sel.keyIndex], value };
   return replaceAtPath(tracks, sel.trackPath, withKeys(track, keys));
 }
-
-export { snapToNearest as snapTime } from '../../snap';
