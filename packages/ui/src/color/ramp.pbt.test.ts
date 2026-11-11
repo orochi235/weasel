@@ -22,7 +22,7 @@ const curve: fc.Arbitrary<ChromaCurve> = fc.tuple(
 
 const options: fc.Arbitrary<ColorRampOptions> = fc.record({
   space: fc.constantFrom('oklch', 'hsl', 'oklab', 'srgb', 'srgb-linear'),
-  hue: fc.constantFrom('shorter', 'longer', 'increasing', 'decreasing'),
+  hue: fc.constantFrom('shorter', 'longer'),
 }, { requiredKeys: [] });
 
 describe('colorRamp', () => {

@@ -39,7 +39,8 @@ describe('catchStop', () => {
       const crossed = stops.filter((s) => s > lo && s < hi);
       if (crossed.length === 0) { expect(out).toBe(to); t.count('clear'); return; }
       t.count('caught');
-      expect(out).toBe(from < to ? Math.min(...crossed) : Math.max(...crossed));
+      // 0 and -0 are one stop.
+      expect(out === (from < to ? Math.min(...crossed) : Math.max(...crossed))).toBe(true);
     }), runs(RUNS));
     t.atLeast('clear', 20);
     t.atLeast('caught', 20);
@@ -118,5 +119,11 @@ describe('trackPlace, shrunk', () => {
     const SQ: ContinuousScaleFactory = (o) => powScale({ ...o, exponent: 0.5 });
     const place = trackPlace(SQ, 0.01, 1.01, 0.001, [0.010000000000000004, 0.01]);
     expect(place.fromInput(place.toInput(0.010000000000000004))).toBe(0.010000000000000004);
+  });
+});
+
+describe('catchStop, shrunk', () => {
+  it('catches 0 and -0 as one stop', () => {
+    expect(catchStop(-1, 5e-324, [0, -0]) === 0).toBe(true);
   });
 });
