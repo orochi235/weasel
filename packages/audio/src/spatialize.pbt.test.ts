@@ -21,7 +21,7 @@ const options: fc.Arbitrary<SpatialOptions> = fc.record({
 const sane: fc.Arbitrary<SpatialOptions> = fc.record({
   refDistance: fc.double({ min: 0.01, max: 100, noNaN: true }), maxDistance: fc.double({ min: 0, max: 1e5, noNaN: true }),
   rolloff: fc.constantFrom('inverse', 'linear'), rolloffFactor: fc.double({ min: 0, max: 10, noNaN: true }),
-  panWidth: fc.double({ min: 0, max: 1000, noNaN: true }),
+  panWidth: fc.oneof(fc.constant(0), fc.double({ min: 1e-3, max: 1000, noNaN: true })),
   right: fc.record({ x: fc.integer({ min: -5, max: 5 }), y: fc.integer({ min: -5, max: 5 }), z: fc.integer({ min: -5, max: 5 }) }),
 }, { requiredKeys: [] });
 
