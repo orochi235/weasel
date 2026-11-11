@@ -33,8 +33,9 @@ export function createPanNode(ctx: BaseAudioContext, opts: { pan?: number } = {}
 export function createMixNode(ctx: BaseAudioContext, opts: { inputs: readonly string[] }): GraphNodeDef {
   if (opts.inputs.length === 0) throw new RangeError('@weasel-js/audio: a mix needs at least one input');
   const output = ctx.createGain();
-  const inputs: Record<string, AudioNode> = {};
-  const params: Record<string, (value: number, rampMs: number) => void> = {};
+  // No prototype: an input named `__proto__` is an input like any other.
+  const inputs: Record<string, AudioNode> = Object.create(null);
+  const params: Record<string, (value: number, rampMs: number) => void> = Object.create(null);
   for (const name of opts.inputs) {
     if (Object.prototype.hasOwnProperty.call(inputs, name)) {
       throw new RangeError(`@weasel-js/audio: a mix has two inputs named "${name}"`);
