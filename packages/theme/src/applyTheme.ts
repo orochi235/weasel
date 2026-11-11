@@ -12,8 +12,9 @@ const CLOSER: Readonly<Record<string, string>> = { '(': ')', '[': ']' };
 /**
  * Whether `value` can stand as a declaration's value: no `;`, `{`, `}` or comment opener outside a
  * quoted string, no line break inside one (CSS ends the string there), no quote or bracket left
- * open (an open `(` or `[` runs on through every later rule), and no backslash escaping the
- * declaration's own `;`.
+ * open (an open `(` or `[` runs on through every later rule), no `)` or `]` closing nothing (a
+ * custom property holding one is invalid, so the declaration drops), and no backslash escaping
+ * the declaration's own `;`.
  */
 function declarable(value: string): boolean {
   let quote: string | null = null;
@@ -28,7 +29,9 @@ function declarable(value: string): boolean {
     } else if (c === '"' || c === "'") quote = c;
     else if (c === ';' || c === '{' || c === '}' || (c === '/' && value[i + 1] === '*')) return false;
     else if (CLOSER[c]) open.push(CLOSER[c]);
-    else if (c === open[open.length - 1]) open.pop();
+    else if (c === ')' || c === ']') {
+      if (open.pop() !== c) return false;
+    }
   }
   return quote === null && open.length === 0;
 }

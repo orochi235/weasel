@@ -68,7 +68,7 @@ describe('useTextEdit — a clipped node scrolls in its box', () => {
     // The inset is pre-scale: the box's corner is 20 screen pixels out from the text's.
     expect([box.style.left, box.style.top]).toEqual(['90px', '40px']);
     expect(box.style.transform).toBe('scale(2)');
-    expect(box.style.transformOrigin).toBe('0 0');
+    expect(box.style.transformOrigin).toMatch(/^0(px)? 0(px)?$/);
     expect(el.style.transform).toBe('none');
   });
 
