@@ -42,7 +42,8 @@ function copySubtree(
 /**
  * Insert ops copying each of `ids` with its whole subtree, so copying a group
  * produces a populated group. Ops are in pre-order: a parent is inserted
- * before its children. A copied root keeps its source's parent.
+ * before its children. A copied root goes under `rootParent`, or keeps its
+ * source's parent when that is undefined.
  *
  * A copy that derives from an id list follows the copy of each node in the
  * list that was copied with it, and the original of each that was not: the
@@ -53,13 +54,14 @@ export function copySelection(
   ids: readonly string[],
   poseOf: CopyPose,
   label: string,
+  rootParent?: NodeId | null,
 ): { ops: Op[]; copies: NodeId[] } {
   const ops: Op[] = [];
   const copies: NodeId[] = [];
   const copyOf = new Map<NodeId, NodeId>();
   const relock: NodeId[] = [];
   for (const id of copiedRoots(scene, ids)) {
-    const newId = copySubtree(scene, id, scene.get(id)?.parent ?? null, true, poseOf, label, ops, copyOf, relock);
+    const newId = copySubtree(scene, id, rootParent !== undefined ? rootParent : scene.get(id)?.parent ?? null, true, poseOf, label, ops, copyOf, relock);
     if (newId) copies.push(newId);
   }
   for (const op of ops) {

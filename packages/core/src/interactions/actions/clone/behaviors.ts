@@ -2,12 +2,13 @@ import type { ActionDeps, BindingOpts, InvocationCtx } from '@weasel-js/routing'
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import { gestureReaders, type GestureReaders } from '../../gestures/shared/screenTolerance';
-import type { CloneBehavior, CloneBehaviorResult, GestureContext, GroupTransform } from '../../gestures/types';
+import type { CloneBehavior, CloneBehaviorResult, CloneEnd, GestureContext, GroupTransform } from '../../gestures/types';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { sceneGestureFrames } from '../gestureFrames';
 import { reduceBehaviorEnd } from '../gestureLifecycle';
 import { pointerStateOf } from '../pointerState';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
+import { boundsOffset, poseDescriptorOf } from '../poseDescriptorDep';
 
 type Delta = { dx: number; dy: number };
 
@@ -18,7 +19,7 @@ export interface CloneBehaviors {
   /** The drag's delta as the behaviors reshape it, each seeing the one before. */
   shape(moveCtx: InvocationCtx, raw: Delta): Delta;
   /** What the behaviors answer for the commit; see `reduceBehaviorEnd`. */
-  end(delta: Delta): Op[] | null | undefined;
+  end(delta: Delta, copyOps: CloneEnd['copyOps']): Op[] | null | undefined;
 }
 
 /**
@@ -47,6 +48,7 @@ export function startCloneBehaviors(
     plane: readers.plane(),
     kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
+    offset: boundsOffset(poseDescriptorOf(ctx.deps.poseDescriptor)),
     adapter: defaultCommitAdapter(scene, ctx.deps.selection?.adapterMethods) as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };
@@ -75,9 +77,9 @@ export function startCloneBehaviors(
       }
       return { dx: transform.dx, dy: transform.dy };
     },
-    end(delta) {
+    end(delta, copyOps) {
       place(delta);
-      return reduceBehaviorEnd(list, gctx);
+      return reduceBehaviorEnd<GestureContext<unknown>, CloneEnd>(list, gctx, { copyOps });
     },
   };
 }

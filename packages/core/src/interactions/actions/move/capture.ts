@@ -10,7 +10,7 @@ import type { ReflowTransition } from '../../../layout/types';
 import type { GestureContext } from '../../gestures/types';
 import { invertPlane, planeOf } from '../planeInput';
 import { sceneGestureFrames } from '../gestureFrames';
-import { poseDescriptorOf } from '../poseDescriptorDep';
+import { boundsOffset, poseDescriptorOf } from '../poseDescriptorDep';
 import { scenePoseFrame } from '../poseFrame';
 import { translateTargets } from '../selectionSubtree';
 import type { MoveGestureAdapter } from './gestureAdapter';
@@ -137,11 +137,7 @@ export function buildGestureContext(
     plane: readers.plane(),
     kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
-    offset: (from, to) => {
-      const a = projection.getBounds(from);
-      const b = projection.getBounds(to);
-      return { dx: b.x - a.x, dy: b.y - a.y };
-    },
+    offset: boundsOffset(projection),
     followerOps: (landed, label) => followerMoveOps(followerMoves(scene, landed), label),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},

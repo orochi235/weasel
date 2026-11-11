@@ -156,7 +156,7 @@ export type {
   UseDistributeOptions,
   UseDistributeReturn,
 } from '../interactions/actions/distribute';
-export type { CloneBehavior, CloneBehaviorResult } from '../interactions/gestures/types';
+export type { CloneBehavior, CloneBehaviorResult, CloneEnd } from '../interactions/gestures/types';
 // snapToContainer / snapBackOrDelete are NOT re-exported at top level —
 // import them from '@weasel-js/core/move'.
 

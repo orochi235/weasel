@@ -91,7 +91,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'move-snap',
     title: 'Move + Snap (planting)',
     category: 'Tools',
-    description: 'snapToContainer + snapBackOrDelete behaviors wired via selectTool={{ move: { behaviors } }}. Drag the green token over a bin and dwell 250 ms to plant it (reparent + snap to slot). Release on empty canvas within 30 px of the start to snap back; farther than 30 px also snaps back (onFreeRelease: "snap-back").',
+    description: 'snapToContainer + snapBackOrDelete behaviors wired via selectTool={{ move: { behaviors } }}. Drag the green token over a bin and dwell 250 ms to plant it (reparent + snap to slot). Release on empty canvas within 30 px of the start to snap back; farther than 30 px also snaps back (onFreeRelease: "snap-back"). Alt+drag plants a copy the same way, through each behavior\'s `clone` part, and a copy released off a bin is never made.',
     hint: 'Drag the token into a bin and hold to plant it.',
     load: () => import('./demos/MoveSnapDemo').then((m) => m.MoveSnapDemo),
     path: 'apps/site/demos/MoveSnapDemo.tsx',

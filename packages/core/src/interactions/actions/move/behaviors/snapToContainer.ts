@@ -3,7 +3,7 @@ import { definesFrame } from 'core/scene/effectivePose';
 import { createReparentOp } from 'core/ops/reparent';
 import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
-import type { BehaviorResult, MoveBehavior, GestureContext } from '../../../gestures/types';
+import type { BehaviorResult, CloneBehavior, MoveBehavior, GestureContext } from '../../../gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import { holderOf } from '@weasel-js/select';
 
@@ -48,7 +48,8 @@ function clearTimer<TPose>(s: SnapState<TPose>) {
  * that container rides along with the first, at its offset from it.
  *
  * The dwell is what keeps a drag that merely passes over a container from
- * being captured by it.
+ * being captured by it. On an Alt-drag clone the copies drop in the same way
+ * and the originals stay put.
  */
 export function snapToContainer<TPose>(args: {
   dwellMs: number;
@@ -75,10 +76,11 @@ export function snapToContainer<TPose>(args: {
     return slots;
   };
   // A slot is a world pose; a preview shows it in the frame the node is stored in now.
-  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> => {
+  // A move's origin is as stored and a clone's is in world.
+  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>, originInWorld: boolean): BehaviorResult<TPose> => {
     const id = ctx.draggedIds[0];
     const start = ctx.origin.get(id);
-    const startWorld = start === undefined ? undefined : ctx.frames?.toWorld(id, start) ?? start;
+    const startWorld = start === undefined || originInWorld ? start : ctx.frames?.toWorld(id, start) ?? start;
     const toSlot = startWorld !== undefined ? ctx.offset?.(startWorld, snap.slotPose) : undefined;
     const poses = new Map<string, TPose>();
     for (const [at, slot] of slotsFor(ctx, snap)) poses.set(at, ctx.frames?.toLocal(at, slot) ?? slot);
@@ -89,43 +91,58 @@ export function snapToContainer<TPose>(args: {
     };
   };
 
-  return {
-    onMove(ctx, _proposed) {
-      const s = getState<TPose>(ctx);
-      const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
-      const target = found && !intoDragged(ctx, found) ? found : null;
+  const track = (ctx: GestureContext<TPose>, originInWorld: boolean): BehaviorResult<TPose> | undefined => {
+    const s = getState<TPose>(ctx);
+    const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
+    const target = found && !intoDragged(ctx, found) ? found : null;
 
-      if (s.committedSnap) {
-        if (target && target.parentId === s.committedSnap.parentId) {
-          return snapped(ctx, s.committedSnap);
-        }
-        s.committedSnap = null;
+    if (s.committedSnap) {
+      if (target && target.parentId === s.committedSnap.parentId) {
+        return snapped(ctx, s.committedSnap, originInWorld);
       }
+      s.committedSnap = null;
+    }
 
-      if (!target) {
-        clearTimer(s);
-        return;
-      }
-
-      if (isInstant?.(target)) {
-        clearTimer(s);
-        s.committedSnap = target;
-        return snapped(ctx, target);
-      }
-
-      if (s.pendingTargetId === target.parentId) {
-        return;
-      }
+    if (!target) {
       clearTimer(s);
-      s.pendingTargetId = target.parentId;
-      s.pendingTimer = setTimeout(() => {
-        s.committedSnap = target;
-        s.pendingTimer = null;
-      }, dwellMs);
       return;
-    },
+    }
 
-    onCancel(ctx) { clearTimer(getState<TPose>(ctx)); },
+    if (isInstant?.(target)) {
+      clearTimer(s);
+      s.committedSnap = target;
+      return snapped(ctx, target, originInWorld);
+    }
+
+    if (s.pendingTargetId === target.parentId) {
+      return;
+    }
+    clearTimer(s);
+    s.pendingTargetId = target.parentId;
+    s.pendingTimer = setTimeout(() => {
+      s.committedSnap = target;
+      s.pendingTimer = null;
+    }, dwellMs);
+    return;
+  };
+  const cancel = (ctx: GestureContext<TPose>): void => { clearTimer(getState<TPose>(ctx)); };
+
+  const clone: CloneBehavior<TPose> = {
+    onMove: (ctx) => track(ctx, true),
+    onCancel: cancel,
+    onEnd(ctx, end) {
+      const s = getState<TPose>(ctx);
+      clearTimer(s);
+      const snap = s.committedSnap ?? ctx.snap;
+      if (!snap || intoDragged(ctx, snap)) return;
+      return end.copyOps({ parentId: snap.parentId, poses: slotsFor(ctx, snap) });
+    },
+  };
+
+  return {
+    clone,
+    onMove: (ctx) => track(ctx, false),
+    onCancel: cancel,
 
     onEnd(ctx, end) {
       const s = getState<TPose>(ctx);

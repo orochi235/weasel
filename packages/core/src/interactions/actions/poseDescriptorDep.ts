@@ -7,6 +7,16 @@ export function poseDescriptorOf(dep: unknown): PoseDescriptor<unknown> {
   return (dep as PoseDescriptor<unknown> | undefined) ?? AUTO_POSE_DESCRIPTOR;
 }
 
+/** The translation carrying one pose's bounds onto another's, as `projection`
+ *  measures them: a gesture context's `offset`. */
+export function boundsOffset(projection: PoseDescriptor<unknown>): (from: unknown, to: unknown) => { dx: number; dy: number } {
+  return (from, to) => {
+    const a = projection.getBounds(from);
+    const b = projection.getBounds(to);
+    return { dx: b.x - a.x, dy: b.y - a.y };
+  };
+}
+
 /**
  * A reader of each node's own descriptor (`PoseDescriptor.forNode`), resolved
  * once per id. An action builds one where it captures its start poses and
