@@ -24,6 +24,7 @@ import {
   axesFor,
   extent,
   graphOrder,
+  pinnedSet,
   seededOrder,
   settle,
   untilSettled,
@@ -118,7 +119,7 @@ export function subtreeBlocks(
  *  rank per depth. A graph that is not a tree lays out as the forest
  *  {@link forestOf} reads from it. */
 export const tree: LayoutFn = (graph, opts = {}) =>
-  ((graph.groups?.length ?? 0) > 0 ? untilSettled(treeOnce, graph, opts) : treeOnce(graph, opts));
+  ((graph.groups?.length ?? 0) > 0 || pinnedSet(graph, opts).size > 1 ? untilSettled(treeOnce, graph, opts) : treeOnce(graph, opts));
 
 const treeOnce: LayoutFn = (graph, opts = {}) => {
   const axes = axesFor(opts.direction);

@@ -19,14 +19,16 @@
 import type { Vec2 } from '@weasel-js/core/math';
 import { maxOf } from '@weasel-js/geom';
 import type { GraphNode } from './graph';
-import { DEFAULT_NODE_GAP, DEFAULT_RANK_GAP, graphOrder, pinnedSet, translated, type LayoutFn } from './layout';
+import { DEFAULT_NODE_GAP, DEFAULT_RANK_GAP, graphOrder, pinnedSet, translated, untilSettled, type LayoutFn } from './layout';
 import { forestOf, subtreeBlocks } from './tree';
 
 type Children = ReadonlyMap<string, readonly GraphNode[]>;
 
 /** The mind-map layout: the first root in the middle, its branches balanced
  *  to its right and its left, any further trees stacked below. */
-export const radial: LayoutFn = (graph, opts = {}) => {
+export const radial: LayoutFn = (graph, opts = {}) => untilSettled(radialOnce, graph, opts);
+
+const radialOnce: LayoutFn = (graph, opts = {}) => {
   const nodeGap = opts.nodeGap ?? DEFAULT_NODE_GAP;
   const rankGap = opts.rankGap ?? DEFAULT_RANK_GAP;
   const { roots, children } = forestOf(graph, 'y');
