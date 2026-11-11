@@ -48,7 +48,7 @@ describe('ContentStream precision', () => {
           ? { kind: 'linear-gradient' as const, from: { x, y }, to: { x: x2, y: y2 }, units: 'local' as const, stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }] }
           : { color: '#000' };
         const leaf: DrawCommand = { kind: 'path', path: { kind: 'rect', x, y, width: x2 - x, height: y2 - y }, fill: { paint: fill } };
-        let cmd = leaf;
+        let cmd: DrawCommand = leaf;
         for (const m of [...chain].reverse()) cmd = { kind: 'group', transform: mat3.fromAffine(m), children: [cmd] };
         const { bytes } = await writePdf([{ width: 100, height: 100, commands: [cmd] }], { fonts: NO_FONTS, compress: false });
         const { pdf } = checkPdf(bytes);
