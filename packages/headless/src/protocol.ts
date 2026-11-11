@@ -44,7 +44,8 @@ export interface PageApi {
 export function sceneToWire(scene: object): object {
   if (!isRecord(scene)) refuse('scene', 'an object', scene);
   const toJSON = (scene as { toJSON?: unknown }).toJSON;
-  return tagTypedArrays(typeof toJSON === 'function' ? toJSON.call(scene) : scene) as object;
+  // Read back first, so arrays the snapshot holds already tagged are tagged once rather than escaped as data.
+  return tagTypedArrays(reviveTypedArrays(typeof toJSON === 'function' ? toJSON.call(scene) : scene)) as object;
 }
 
 /** The snapshot `sceneToWire` sent, its typed arrays restored. */

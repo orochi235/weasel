@@ -51,14 +51,25 @@ export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
 
 const isPlain = (value: unknown): value is Record<string, unknown> => classOf(value) === 'Object';
 
-function mapDeep(value: unknown, leaf: (v: unknown) => unknown): unknown {
-  const swapped = leaf(value);
-  if (swapped !== undefined) return swapped;
-  if (Array.isArray(value)) return value.map((v) => mapDeep(v, leaf));
+const RAW = '__raw';
+
+/** Whether `value` is a `{ "__raw": … }` wrapper: a plain object with that one own key. */
+const isRaw = (value: unknown): value is { [RAW]: unknown } => {
+  if (!isPlain(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length === 1 && keys[0] === RAW;
+};
+
+/** Whether the reader would take the plain value for something the writer wrote: a tagged array or a wrapper. */
+const misread = (value: unknown): boolean => isPlain(value) && (isRaw(value) || untagTypedArray(value) !== undefined);
+
+/** A copy of an array or a plain object, `each` applied to what it holds; anything else as it is. */
+function within(value: unknown, each: (v: unknown) => unknown): unknown {
+  if (Array.isArray(value)) return value.map(each);
   if (!isPlain(value)) return value;
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(value)) {
-    const v = mapDeep(value[key], leaf);
+    const v = each(value[key]);
     // Assigned, an own `__proto__` as `JSON.parse` makes would set the copy's prototype instead.
     if (key === '__proto__') Object.defineProperty(out, key, { value: v, enumerable: true, writable: true, configurable: true });
     else out[key] = v;
@@ -69,19 +80,33 @@ function mapDeep(value: unknown, leaf: (v: unknown) => unknown): unknown {
 /**
  * A copy of `value` that `JSON.stringify` writes whole: every typed array in it, at any
  * depth of arrays and plain objects, becomes a `TaggedTypedArray`. A `Path` goes through it
- * to be saved, and `reviveTypedArrays` reads it back.
+ * to be saved, and `reviveTypedArrays` reads it back. A plain object `reviveTypedArrays`
+ * would take for one of those, or for a `{ "__raw": … }` wrapper, is written inside such a
+ * wrapper, which the reader takes off and reads nothing into.
  */
 export function tagTypedArrays(value: unknown): unknown {
-  return mapDeep(value, tagTypedArray);
+  const tagged = tagTypedArray(value);
+  if (tagged) return tagged;
+  const copy = within(value, tagTypedArrays);
+  return misread(value) ? { [RAW]: copy } : copy;
 }
 
-/** A copy of `value` with every `TaggedTypedArray` in it a typed array again: what
- *  `JSON.parse` answered for something `tagTypedArrays` or `typedArrayReplacer` wrote. */
+/** A copy of `value` with every `TaggedTypedArray` in it a typed array again, and every
+ *  `{ "__raw": … }` wrapper taken off: what `JSON.parse` answered for something
+ *  `tagTypedArrays` or `typedArrayReplacer` wrote. */
 export function reviveTypedArrays(value: unknown): unknown {
-  return mapDeep(value, untagTypedArray);
+  if (isRaw(value)) return within(value[RAW], reviveTypedArrays);
+  return untagTypedArray(value) ?? within(value, reviveTypedArrays);
 }
+
+const wrappers = new WeakSet<object>();
 
 /** `tagTypedArrays` as a `JSON.stringify` replacer. */
-export function typedArrayReplacer(_key: string, value: unknown): unknown {
-  return tagTypedArray(value) ?? value;
+export function typedArrayReplacer(this: unknown, _key: string, value: unknown): unknown {
+  const tagged = tagTypedArray(value);
+  if (tagged) return tagged;
+  if (!misread(value) || wrappers.has(this as object)) return value;
+  const wrapper = { [RAW]: value };
+  wrappers.add(wrapper);
+  return wrapper;
 }

@@ -211,6 +211,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- Ruled 2026-11-10 (my call, overnight sweep): geom's `tagTypedArrays` and `typedArrayReplacer` escape a plain object
+  `reviveTypedArrays` would read as a tagged typed array or a wrapper by writing it inside a `{ "__raw": … }` wrapper,
+  the one the editor's snapshots use, since a writer must not write what its reader misreads. The cost: an older
+  file holding a plain object whose only key is `__raw` now reads as what that key holds. headless's `sceneToWire`
+  reads a snapshot back before tagging it, so one already tagged is still taken as tagged.
 - Ruled 2026-11-10 (my call, overnight sweep): the editor's `serializeReplacer` writes a value of the document's
   that `reviveTypedArrays` would take for something it wrote (a plain object shaped like a tagged typed array, plain
   numbers under `commands` or `coords` as an older save's path wrote them, or a `{ "__raw": … }` object) inside a
