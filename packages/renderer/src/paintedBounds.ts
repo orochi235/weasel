@@ -152,8 +152,12 @@ function strokeReach(stroke: Stroke, m: GlMat3): number {
  */
 export function strokeReachAt(stroke: Stroke, scale: number, least = scale): number {
   const at = least > 0 ? least : scale;
-  const base = resolveStrokeWidth(stroke.width ?? 1, typeof stroke.width === 'object' ? at : scale);
-  const width = widestStrokeWidth(base, stroke.vertexWidths);
+  const px = typeof stroke.width === 'object';
+  const base = resolveStrokeWidth(stroke.width ?? 1, px ? at : scale);
+  // A `{ px }` ribbon is built in the transform's stretch, where the miter of a world per-vertex width is limited
+  // across its edge and can reach (scale / least)² as far in world along the axis the transform shrinks most.
+  const stretch = px && least > 0 ? (scale / least) ** 2 : 1;
+  const width = Math.max(Math.abs(base), widestStrokeWidth(0, stroke.vertexWidths) * stretch);
   const spike = Math.max(stroke.miterLimit ?? DEFAULT_MITER_LIMIT, Math.SQRT2);
   const heads = markerReach(stroke);
   return Math.max(Math.abs(width) * spike, heads.world, resolveScreenLength({ px: heads.px }, at));
