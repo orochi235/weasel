@@ -26,4 +26,20 @@ describe('the render worker scene copy', () => {
     expect(page.get(id('m'))!.layer).toBe('top');
     expect(mirror.scene!.toJSON()).toEqual(page.toJSON());
   });
+
+  it('takes a node into a group on a higher layer in the same sync that raises it there', () => {
+    const page = createScene<unknown, string, unknown>({ systemLayers: [{ id: 'low' }, { id: 'high' }] }) as AnyScene;
+    const diff = createSceneDiff(), mirror = createSceneMirror();
+    const sync = () => {
+      const delta = diff.next(page);
+      if (delta) mirror.apply(structuredClone(delta));
+    };
+    page.add({ id: id('g'), kind: 'group', layer: 'high', pose: box, data: null } as never);
+    page.add({ id: id('n'), kind: 'mark', layer: 'low', pose: box, data: null } as never);
+    sync();
+    page.setLayer(id('n'), 'high');
+    page.move(id('n'), id('g'));
+    sync();
+    expect(mirror.scene!.toJSON()).toEqual(page.toJSON());
+  });
 });

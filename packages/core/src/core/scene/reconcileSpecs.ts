@@ -52,9 +52,14 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
         continue;
       }
       const parent = spec.parent ?? null;
-      if (parent !== (before.parent ?? null)) scene.move(id, parent);
-      if (spec.layer !== before.layer) scene.setLayer(id, spec.layer);
-      else restoreLayer(scene, id, startLayer.get(id));
+      const moves = parent !== (before.parent ?? null);
+      const relayers = spec.layer !== before.layer;
+      // A child may not sit below its parent's layer, so the layer goes first unless the old parent forbids it.
+      const layerFirst = relayers && moves && allowedUnder(scene, scene.get(id)!.parent, spec.layer);
+      if (layerFirst) scene.setLayer(id, spec.layer);
+      if (moves) scene.move(id, parent);
+      if (relayers && !layerFirst) scene.setLayer(id, spec.layer);
+      else if (!relayers) restoreLayer(scene, id, startLayer.get(id));
       if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
       if (!same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
@@ -80,9 +85,19 @@ function restoreLayer<TData, TLayer extends string, TPose>(
 ): void {
   const node = scene.get(id)!;
   if (layer === undefined || node.layer === layer) return;
+  if (allowedUnder(scene, node.parent, layer)) scene.setLayer(id, layer);
+}
+
+/** Whether a child of `parent` may stand on `layer`: not below the parent's own. */
+function allowedUnder<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  parent: NodeId | null,
+  layer: TLayer,
+): boolean {
+  const p = parent === null ? undefined : scene.get(parent);
+  if (p === undefined) return true;
   const rank = (l: TLayer) => scene.layers.findIndex((r) => r.id === l);
-  const parent = node.parent === null ? undefined : scene.get(node.parent);
-  if (parent === undefined || rank(layer) >= rank(parent.layer)) scene.setLayer(id, layer);
+  return rank(layer) >= rank(p.layer);
 }
 
 /** Each parent whose spec children `next` lists differently from `prev` gets
