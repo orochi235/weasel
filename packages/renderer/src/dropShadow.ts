@@ -16,6 +16,15 @@ const BLUR_LAYERS = 7;
 const BLUR_LAYER_ALPHA = 0.16;
 
 /**
+ * The corner radius of a box whose corners are `radius`, grown by `by` on every side (shrunk, for a negative `by`), as
+ * CSS spreads a shadow: a corner sharper than the growth stays sharper, so a square box casts a square shadow.
+ */
+export function spreadRadius(radius: number, by: number): number {
+  if (by <= 0 || radius >= by) return Math.max(0, radius + by);
+  return Math.max(0, radius + by * (1 + (radius / by - 1) ** 3));
+}
+
+/**
  * The shadow `box` casts with corner `radius`, as the shapes to fill and the
  * opacity of each: one hard-edged shape for no blur, else stacked translucent
  * ones whose overlap builds the falloff. No blur pass, so it costs a few fills.
@@ -26,10 +35,11 @@ export function dropShadowLayers(
   s: DropShadow,
 ): { paths: Path[]; alpha: number } {
   const spread = s.spread ?? 0;
+  const spreadR = spreadRadius(radius, spread);
   const rect = (e: number): Path | null => {
     const w = box.width + e * 2;
     const h = box.height + e * 2;
-    return w > 0 && h > 0 ? roundRectPath(box.x + s.x - e, box.y + s.y - e, w, h, Math.max(0, radius + e)) : null;
+    return w > 0 && h > 0 ? roundRectPath(box.x + s.x - e, box.y + s.y - e, w, h, Math.max(0, spreadR + e - spread)) : null;
   };
   if (s.blur <= 0) {
     const p = rect(spread);

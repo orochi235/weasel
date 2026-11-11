@@ -1,4 +1,4 @@
-import { dropShadowCommand, type DrawCommand } from '@weasel-js/core/renderer';
+import { dropShadowCommand, spreadRadius, type DrawCommand } from '@weasel-js/core/renderer';
 import { pathFromD, roundRectPath } from '@weasel-js/geom';
 import { resolveCurrentColor, type BoxShadow } from '@weasel-js/theme';
 import type { WidgetBounds } from './widget';
@@ -22,7 +22,7 @@ function inset(b: WidgetBounds, radius: number, s: BoxShadow, color: string): Dr
   const h = b.h - s.spread * 2;
   // A spread past the middle leaves no inner box, and the layer covers the whole box.
   const hole = w > 0 && h > 0
-    ? roundRectD(b.x + s.x + s.spread, b.y + s.y + s.spread, w, h, Math.max(0, radius - s.spread))
+    ? roundRectD(b.x + s.x + s.spread, b.y + s.y + s.spread, w, h, spreadRadius(radius, -s.spread))
     : '';
   const ring = pathFromD(`${roundRectD(b.x - margin, b.y - margin, b.w + margin * 2, b.h + margin * 2, 0)} ${hole}`);
   return {

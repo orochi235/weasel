@@ -31,14 +31,21 @@ export function editMods(
 
 const WORD = /[\p{L}\p{N}\p{M}_]/u;
 
-/** The start of the word before `from` (dir -1) or the end of the word after it (dir 1), skipping what lies between. */
+/** The start of the word before `from` (dir -1) or the end of the word after it (dir 1), skipping what lies between,
+ *  widened to the cluster boundary past it, so a cluster mixing word and other code points is never split. */
 export function wordStop(chars: readonly string[], from: number, dir: -1 | 1): number {
   const at = (i: number) => WORD.test(chars[dir < 0 ? i - 1 : i] ?? '');
   const inside = (i: number) => (dir < 0 ? i > 0 : i < chars.length);
   let i = from;
   while (inside(i) && !at(i)) i += dir;
   while (inside(i) && at(i)) i += dir;
-  return i;
+  const stops = clusterStops(chars.join(''));
+  if (dir < 0) {
+    for (let k = stops.length - 1; k >= 0; k--) if (stops[k]! <= i) return stops[k]!;
+    return 0;
+  }
+  for (const stop of stops) if (stop >= i) return stop;
+  return chars.length;
 }
 
 let segmenter: Intl.Segmenter | null | undefined;
@@ -149,7 +156,7 @@ export function editKey(edit: HudTextEdit, key: string, mods: EditMods = {}): { 
     return { edit: splice(edit, from, mods.line ? chars.length : mods.word ? wordStop(chars, from, 1) : clusterStep(edit.draft, from, 1), '') };
   }
   if (mods.mod) return { edit: key.toLowerCase() === 'a' ? { ...edit, anchor: 0, caret: chars.length } : edit };
-  if (Array.from(key).length === 1) return { edit: splice(edit, from, end, key) };
+  if (key !== '' && clusterStops(key).length === 2) return { edit: splice(edit, from, end, key) };
   return { edit };
 }
 
