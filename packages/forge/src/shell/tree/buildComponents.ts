@@ -72,7 +72,7 @@ function disambiguate(rows: readonly ComponentRow[]): void {
       // One more segment at a time, stopping at the full title.
       for (let take = 2; take <= segments.length; take++) {
         row.label = segments.slice(-take).join('/');
-        if (group.every((other) => other === row || !other.path.endsWith(`/${row.label}`))) break;
+        if (group.every((other) => other === row || (other.path !== row.label && !other.path.endsWith(`/${row.label}`)))) break;
       }
     }
   }

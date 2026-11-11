@@ -142,6 +142,11 @@ describe('label disambiguation', () => {
     ]);
   });
 
+  it('widens a label past a whole title of its library, not only past one ending in it (found by buildComponents.pbt)', () => {
+    const rows = buildComponents([entry('ui/Gallery/a', 'Default', UI), entry('Gallery/a', 'Default', UI2)]);
+    expect(rows.map((r) => r.label).sort()).toEqual(['Gallery/a', 'ui/Gallery/a']);
+  });
+
   it('leaves a unique label alone', () => {
     const rows = buildComponents([entry('ui/Foundations/Button', 'Default', UI)]);
     expect(rows[0].label).toBe('Button');
