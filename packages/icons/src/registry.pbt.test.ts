@@ -111,7 +111,7 @@ class Add implements Cmd {
 
 class ReleaseAdd implements Cmd {
   constructor(readonly pick: number, readonly twice: boolean) {}
-  check = (m: Readonly<Model>) => true;
+  check = () => true;
   run(m: Model, real: Real): void {
     if (real.adds.length === 0) return;
     const at = this.pick % real.adds.length;

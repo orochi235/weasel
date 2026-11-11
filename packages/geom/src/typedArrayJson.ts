@@ -46,7 +46,7 @@ export function untagTypedArray(value: unknown): NumberTypedArray | undefined {
   if (value === null || typeof value !== 'object') return undefined;
   const { __ta: tag, data } = value as Partial<TaggedTypedArray>;
   if (typeof tag !== 'string' || !Object.hasOwn(TYPED_ARRAY_CONSTRUCTORS, tag) || !Array.isArray(data)) return undefined;
-  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data, Number);
+  return TYPED_ARRAY_CONSTRUCTORS[tag].from(data.map(Number));
 }
 
 const isPlain = (value: unknown): value is Record<string, unknown> => classOf(value) === 'Object';

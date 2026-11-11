@@ -46,14 +46,15 @@ function check<T>(
       act(() => set(s.value));
       for (const r of readers) if (r.follow) r.saw = value(pref);
     } else if (s.op === 'mount') {
-      seen.add(s.follow ? 'mount-follow' : 'mount-still');
+      const { follow } = s;
+      seen.add(follow ? 'mount-follow' : 'mount-still');
       let shown: T;
       function Probe(): null {
-        shown = useValue(s.follow);
+        shown = useValue(follow);
         return null;
       }
       const view = render(<Probe />);
-      readers.push({ shown: () => shown, unmount: view.unmount, follow: s.follow, saw: value(pref) });
+      readers.push({ shown: () => shown, unmount: view.unmount, follow, saw: value(pref) });
     } else if (readers.length > 0) {
       seen.add('unmount');
       const [r] = readers.splice(s.pick % readers.length, 1);

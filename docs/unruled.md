@@ -396,6 +396,21 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   to 1e-4 of a page unit. A group scaled to 1e-5 was written as a singular matrix and drew nothing, which loses
   data. Texture tiles are a unit square scaled by the pattern matrix. Dictionary numbers outside a pattern or a
   shading (a form's `/BBox`, `/MediaBox`) keep four decimals.
+- Ruled 2026-11-10 (my call, overnight sweep): the `.lbx` writer writes each of UAX #14's hard breaks in a text
+  box (`\r\n`, `\r`, VT, FF, NEL, U+2028, U+2029) as one `\n`, the break P-touch reads; a bare `\r` read back
+  as a second line feed.
+- Ruled 2026-11-10 (my call, overnight sweep): text an XML document cannot hold even escaped (C0 controls
+  other than tab and the breaks, a lone surrogate, U+FFFE, U+FFFF), or a font name holding any control
+  character, makes the `.lbx` writer rasterize that text box, or report it skipped without a rasterizer,
+  rather than write a placeholder: the box is still drawn, and nothing reads back changed.
+- Ruled 2026-11-10 (my call, overnight sweep): `tagTypedArrays` writes a typed array's `NaN`, `Infinity`,
+  `-Infinity`, and `-0` as those strings, since JSON writes them as `null` and `0`; older files, holding
+  `null`, read as before. An animation clip still refuses a non-finite typed array value, as it does a number.
+- Ruled 2026-11-10 (my call, overnight sweep): headless refuses a render request (in Node before a browser
+  starts, and again in the page) whose scene is not an object, whose `sourceRect`, `scale`, or `screen`
+  entries are not finite numbers, whose `screen` is not nine of them, or whose `format`, `background`,
+  `annotations`, or `overlay` has the wrong type, with an error naming the field. Fields it does not know
+  pass through.
 
 ## Text
 
@@ -887,6 +902,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   Node's native loader does not map `.js` to a `.ts` file, so `.js` would silence vite's warning
   and still fail `configLoader: 'native'`. tsup bundles them away, as with forge's. An eslint rule
   on `packages/icons-plugin/src` requires the extension.
+- Ruled 2026-11-10 (my call, overnight sweep): icons-plugin writes a lone surrogate in an `icon()` name as a
+  `\u` escape, since written bare it reaches a bundle's UTF-8 as U+FFFD and names another glyph. A library
+  chunk holding any `\u` or `\x` escape is parsed for refs rather than passed over for not spelling one.
+- Ruled 2026-11-10 (my call, overnight sweep): the icon registry's `add([])`, and a `provideVariants` naming no
+  variant it does not already know, change nothing: no version step, no notice, the same `entries()` array.
 - 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose

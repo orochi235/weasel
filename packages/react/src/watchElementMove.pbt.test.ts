@@ -93,13 +93,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-type Op =
-  | { op: 'move'; dx: number; dy: number }
-  | { op: 'resize'; dw: number; dh: number }
-  | { op: 'collapse' }
-  | { op: 'turns'; n: number }
-  | { op: 'wait' };
-
 const step = fc.oneof(
   { weight: 4, arbitrary: fc.record({ op: fc.constant('move' as const), dx: fc.oneof(fc.integer({ min: -40, max: 40 }), fc.double({ min: -3, max: 3, noNaN: true })), dy: fc.oneof(fc.integer({ min: -40, max: 40 }), fc.double({ min: -3, max: 3, noNaN: true })) }) },
   { weight: 1, arbitrary: fc.record({ op: fc.constant('resize' as const), dw: fc.integer({ min: -20, max: 20 }), dh: fc.integer({ min: -20, max: 20 }) }) },

@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { decodeBmp32, parseLbx, type ImageObject, type LabelObject } from 'bil-lbx';
+import { PathBuilder } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { Printers } from 'obwat';
 import { labelGrid, labelRenderPlan, printableBand } from '../render';
@@ -74,8 +75,9 @@ describe('writeLbx read back', () => {
       return { width, height, data };
     };
     const ellipse: fc.Arbitrary<DrawCommand> = fc.tuple(coord, coord).map(([cx, cy]) => ({
-      kind: 'path', path: { kind: 'ellipse', cx, cy, rx: 3, ry: 2 }, fill: { paint: { color: '#000' } },
-    } as DrawCommand));
+      kind: 'path', path: new PathBuilder().moveTo(cx, cy).curveTo(cx + 3, cy, cx + 3, cy + 2, cx, cy + 2).close().build(),
+      fill: { paint: { color: '#000' } },
+    }));
     await fc.assert(fc.asyncProperty(tape, fc.array(fc.oneof(objectCommand, ellipse), { minLength: 1, maxLength: 5 }), async (t, commands) => {
       const page = { length: 72, tape: t, commands };
       const { bytes, config } = await writeLbx(page, { rasterize, rasterDpi: 72 });
