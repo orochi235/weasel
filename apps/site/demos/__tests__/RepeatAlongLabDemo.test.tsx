@@ -52,8 +52,9 @@ describe('RepeatAlongLabDemo', () => {
     if (!canvas) throw new Error('no scene canvas in the trial');
     const before = copyCenters();
     expect(before).toHaveLength(9);
-    // A copy's box is centered on its station, give or take its turn.
-    expect(Math.abs(before[8]!.x - 660)).toBeLessThan(10);
+    // The last copy ends at the track's end, so its box's middle sits within a copy's width (36) of it.
+    const fromEnd = (p: { x: number; y: number }, x: number, y: number) => Math.hypot(p.x - x, p.y - y);
+    expect(fromEnd(before[8]!, 660, 320)).toBeLessThan(36);
 
     // The track's last anchor, at (660, 320), dragged down and left.
     drag(canvas, [660, 320], [600, 420]);
@@ -61,7 +62,7 @@ describe('RepeatAlongLabDemo', () => {
     const after = copyCenters();
     expect(after).toHaveLength(9);
     expect(after[0]).toEqual(before[0]);
-    expect(Math.abs(after[8]!.x - 600)).toBeLessThan(10);
-    expect(Math.abs(after[8]!.y - 420)).toBeLessThan(10);
+    expect(fromEnd(after[8]!, 600, 420)).toBeLessThan(36);
+    expect(fromEnd(after[8]!, 660, 320)).toBeGreaterThan(60);
   });
 });

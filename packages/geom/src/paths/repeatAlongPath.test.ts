@@ -26,6 +26,12 @@ describe('stationsAlongPath', () => {
     expect(at({ count: 3, offset: 10 })).toEqual([10, 60]);
   });
 
+  it('spreads copies of a size end to end when the spacing is 0, as when it is unset', () => {
+    const sized = (opts: RepeatAlongPathOptions) => stationsAlongPath(line, opts, 10).map((s) => s.distance);
+    expect(sized({ count: 3, spacing: 0 })).toEqual(sized({ count: 3 }));
+    expect(sized({ count: 3, spacing: 0 })).toEqual([5, 50, 95]);
+  });
+
   it('lays copies of a size as items: within the ends, spaced edge to edge', () => {
     const sized = (opts: RepeatAlongPathOptions) => stationsAlongPath(line, opts, 10).map((s) => s.distance);
     expect(sized({ count: 3 })).toEqual([5, 50, 95]);
