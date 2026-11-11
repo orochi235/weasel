@@ -229,7 +229,7 @@ class Jump implements fc.Command<Model, Real> {
 /** The document and its history, read from their JSON text into a fresh scene that carries on in its place. */
 class Reload implements fc.Command<Model, Real> {
   check(): boolean { return true; }
-  run(m: Model, r: Real): void {
+  run(_m: Model, r: Real): void {
     const doc = json(r.scene);
     const history = JSON.parse(JSON.stringify(r.scene.serializeHistory()));
     const index = r.scene.historyIndex();
