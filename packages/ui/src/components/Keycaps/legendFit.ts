@@ -30,7 +30,7 @@ export interface BankMember {
 
 /** The legend itself, then its alternates from `spellings`. */
 export function spellingsOf(label: string, spellings: KeySpellings): string[] {
-  return [label, ...(spellings[label] ?? [])];
+  return [label, ...(Object.hasOwn(spellings, label) ? spellings[label]! : [])];
 }
 
 /** The scale a legend prints at: never past full size, never below `minScale`. */
