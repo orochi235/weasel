@@ -17,7 +17,8 @@ export type { RectPose };
 
 /** A box reaching a corner that is not finite has no extent to fold in: unions skip it as they skip a hole. */
 function finiteCorners(x: number, y: number, x2: number, y2: number): boolean {
-  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(x2) && Number.isFinite(y2);
+  const fin = Number.isFinite;
+  return fin(x) && fin(y) && fin(x2) && fin(y2);
 }
 
 /** Compute the AABB envelope of a set of rect-shaped poses, ignoring any
