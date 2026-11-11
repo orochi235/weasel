@@ -164,11 +164,7 @@ export function TrialChrome({
   const view2d = chromeView(record.view);
 
   const configSchema = useConfigSchema(instrument);
-  const { config: resolvedConfig, auto } = useResolvedConfig(
-    configSchema,
-    record.config,
-    record.auto,
-  );
+  const { config: settled, auto } = useResolvedConfig(configSchema, record.config, record.auto);
   const ownWrites = useTrialWrites({
     store: storeCtx.store,
     trialId,
@@ -273,7 +269,8 @@ export function TrialChrome({
   const inRegion = (region: TrialRegion): TrialContribution[] =>
     shown.filter((c) => c.region === region);
   const sections = inRegion('sidebar');
-  const sidebarRegion = <Sections sections={sections} ctx={ctx} />;
+  const docked = <SidebarRegion contributions={sections} ctx={ctx} />;
+  const undocked = <Undocked sections={sections} ctx={ctx} />;
 
   const handleKeyDown = (e: KeyboardEvent): void => {
     // A presented trial has no chrome, so nothing the chrome's keys act on.
@@ -304,10 +301,10 @@ export function TrialChrome({
       aria-label={`Trial ${title}`}
       tabIndex={-1}
     >
-      <FloatSidebarContext.Provider value={floating ? { title, sections: sidebarRegion } : null}>
+      <FloatSidebarContext.Provider value={floating ? { title, sections: docked } : null}>
         <TrialTitleBar
           title={title}
-          titleContent={instrument.renderTitle?.(title, { config: resolvedConfig })}
+          titleContent={instrument.renderTitle?.(title, { config: settled })}
           lead={<TitleBarRegion placement="lead" contributions={inRegion('titlebar')} ctx={ctx} />}
         >
           <TitleBarRegion contributions={inRegion('titlebar')} ctx={ctx} />
@@ -322,10 +319,11 @@ export function TrialChrome({
           width={record.sidebarWidth}
           onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
           contentClassName={contentClassOf(instrument, presented)}
-          sidebar={floating || sections.length === 0 ? null : sidebarRegion}
+          sidebar={floating || sections.length === 0 ? null : <>{docked}{undocked}</>}
         >
           <Titled title={title}>{children}</Titled>
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
+          {floating ? undocked : null}
         </TrialBody>
       </div>
       <div className="lk-trial__status">
@@ -336,17 +334,14 @@ export function TrialChrome({
   );
 }
 
-/** The sidebar's sections: those docked in it, and those torn out into the workspace, still rendered from here. */
-function Sections({ sections, ctx }: { sections: TrialContribution[]; ctx: TrialChromeContext }) {
+/** The sidebar sections torn out into the workspace, which the trial goes on rendering wherever the rest are. */
+function Undocked({ sections, ctx }: { sections: TrialContribution[]; ctx: TrialChromeContext }) {
   return (
-    <>
-      <SidebarRegion contributions={sections} ctx={ctx} />
-      <UndockedSections
-        trialId={ctx.trialId}
-        sections={sections.filter((c) => ctx.undockedPanels.includes(c.id))}
-        onDock={ctx.dockPanel}
-      />
-    </>
+    <UndockedSections
+      trialId={ctx.trialId}
+      sections={sections.filter((c) => ctx.undockedPanels.includes(c.id))}
+      onDock={ctx.dockPanel}
+    />
   );
 }
 

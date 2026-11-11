@@ -8,6 +8,7 @@ import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it } from 'vitest';
 import { f } from '../config/builder';
+import type { TrialContribution } from '../chrome/types';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 
@@ -109,5 +110,23 @@ describe('a floating trial sidebar', () => {
     expect(document.querySelector('.lk-trial__sidebar')).not.toBeNull();
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Trial settings' })).toBeNull();
+  });
+
+  it('keeps a section torn out of the panel in the workspace once the panel closes', async () => {
+    const notes: TrialContribution = {
+      id: 'notes',
+      region: 'sidebar',
+      item: { title: 'Notes', body: <p data-testid="notes-body">jot</p> },
+    };
+    const { container } = await renderSettled(
+      <Lab instruments={[Gridded]} defaultInstrument="Gridded" sidebar="float" chrome={[notes]} />,
+      { wrapper: withIcons },
+    );
+    const user = userEvent.setup();
+    await user.click(toggle());
+    await user.click(screen.getByRole('button', { name: 'Undock Notes' }));
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(container.querySelector('.lk-panel-tile')).toContainElement(screen.getByTestId('notes-body'));
   });
 });
