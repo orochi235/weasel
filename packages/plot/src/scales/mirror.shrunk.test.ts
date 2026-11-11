@@ -38,4 +38,10 @@ describe('scales, shrunk (second pass)', () => {
     expect(logScale({ domain: [d0, d1], range: [0, 1] }).map(v)).toBeCloseTo(2 / 3, 9);
     expect(logScale({ domain: [d1, d0], range: [1, 0] }).map(v)).toBeCloseTo(2 / 3, 9);
   });
+
+  it('spaces ticks across a domain near the largest double on a finite step', () => {
+    const { values, step } = linearScale({ domain: [0, -Number.MAX_VALUE], range: [1, 0] }).spacedTicks({ minSpacing: 1 });
+    expect(step).toBe(Number.MAX_VALUE);
+    expect(values).toEqual([-Number.MAX_VALUE, 0]);
+  });
 });

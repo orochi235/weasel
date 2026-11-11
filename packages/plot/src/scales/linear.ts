@@ -69,7 +69,9 @@ export function decimalsOf(step: number): number {
 export function niceStep(rough: number): number {
   const mag = 10 ** Math.floor(Math.log10(rough));
   const norm = rough / mag;
-  return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  // Rounded up past the largest double, the step stays the rough one, still never under it.
+  return Number.isFinite(step) ? step : rough;
 }
 
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
