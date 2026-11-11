@@ -74,7 +74,7 @@ function faceFor(
       if (!index) return null;
       return (font.glyphs.get(index).advanceWidth ?? 0) / upem;
     },
-    ...(isSfnt(sfnt) ? { embedding: () => embeddingOf(font, sfnt) } : {}),
+    ...(isSfnt(sfnt) ? { embedding: () => embeddingOf(font, sfnt, ascender, faceMetrics?.descent ?? 0) } : {}),
     kernOf(left: number, right: number): number {
       const l = font.charToGlyphIndex(String.fromCodePoint(left));
       const r = font.charToGlyphIndex(String.fromCodePoint(right));
@@ -127,6 +127,8 @@ function isSfnt(bytes: ArrayBuffer): boolean {
 
 const isCff = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x4f54544f;
 
+const finiteOr = (n: number | undefined, fallback: number): number => (Number.isFinite(n) ? n! : fallback);
+
 /** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
 const NO_OUTLINE_EMBEDDING = 0x0002 | 0x0200;
 
@@ -139,7 +141,8 @@ function englishNameOf(font: import('opentype.js').Font, key: string): string | 
   }
 }
 
-function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceEmbedding {
+/** `ascent` and `descent` are the face's in ems, for a font whose `hhea` states none. */
+function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent: number, descent: number): FaceEmbedding {
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const t = font.tables as EmbedTables;
   return {
@@ -152,9 +155,9 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceE
       return font.charToGlyphIndex(String.fromCodePoint(cp)) || null;
     },
     advanceOfGlyph: (gid) => font.glyphs.get(gid).advanceWidth ?? 0,
-    ascent: font.ascender,
-    descent: font.descender,
-    capHeight: t.os2?.sCapHeight || font.ascender,
+    ascent: finiteOr(font.ascender, ascent * font.unitsPerEm),
+    descent: finiteOr(font.descender, -descent * font.unitsPerEm),
+    capHeight: t.os2?.sCapHeight || finiteOr(font.ascender, ascent * font.unitsPerEm),
     italicAngle: t.post?.italicAngle ?? 0,
     bbox: [t.head?.xMin ?? 0, t.head?.yMin ?? 0, t.head?.xMax ?? 0, t.head?.yMax ?? 0],
   };
