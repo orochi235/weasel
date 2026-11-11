@@ -102,7 +102,7 @@ describe('attachHud layer', () => {
       const { hud, layer } = attached();
       const ws = specs.map((s, i) => build(hud, s, i));
       for (const p of pts) {
-        const hit = layer.hitTest!(p.x, p.y, null, VIEW, { width: 400, height: 300, dpr: 1 }) as LayerHit<{ widget: Widget }> | null;
+        const hit = layer.hitTest!(p.x, p.y, null, VIEW, { width: 400, height: 300 }) as LayerHit<{ widget: Widget }> | null;
         const want = modelHit(specs, p.x, p.y);
         expect(hit === null ? null : ws.indexOf(hit.initialScratch!.widget)).toBe(want);
         if (hit) {
@@ -148,7 +148,7 @@ describe('attachHud layer', () => {
           const at = hit === null ? null : order[hit]!;
           if (at !== over) { leave(); over = at; }
           if (at !== null) { want.push(`move ${at}`); seen.hit('over'); }
-          layer.onUncapturedMove!(s.x, s.y, null as never, VIEW, { width: 400, height: 300, dpr: 1 });
+          layer.onUncapturedMove!(s.x, s.y, null as never, VIEW, { width: 400, height: 300 });
         } else if (s.t === 'leave') {
           leave();
           layer.onUncapturedLeave!();
