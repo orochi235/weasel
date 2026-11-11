@@ -19,7 +19,7 @@ const targets = fc.array(fc.record({ origin: point, hit: fc.option(fc.record({ x
   .map((ts) => ts.map((t, i): DropTarget<P> => ({ pose: { ...t.origin, i } as P, origin: t.origin, ...(t.hit ? { hitBounds: t.hit } : {}) })));
 const anyTolerance = fc.oneof(posEighth(40), fc.constantFrom(0, -0, -1, -40, NaN, Infinity, -Infinity, Number.MIN_VALUE));
 const d2 = (a: P, b: P) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
-const pick = (snap: { pickTarget: (t: DropTarget<P>[], p: P, c: never) => DropTarget<P> | null }, ts: DropTarget<P>[], p: P) => snap.pickTarget(ts, p, undefined as never);
+const pick = (snap: { pickTarget: (t: DropTarget<P>[], p: P) => DropTarget<P> | null }, ts: DropTarget<P>[], p: P) => snap.pickTarget(ts, p);
 
 function shuffle<T>(xs: readonly T[], picks: fc.Stream<number>): T[] {
   const out = [...xs];

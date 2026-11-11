@@ -64,6 +64,7 @@ export function removeGuideOp(store: GuideStore, guide: Guide): Op {
       applied = true;
       if (held === undefined) return 'noop';
       store.removeGuide(guide.id);
+      return undefined;
     },
     invert: () => (!applied ? addGuideOp(store, guide) : held ? addGuideOp(store, held, at) : { label: op.label, apply: () => 'noop', invert: () => op }),
   };
