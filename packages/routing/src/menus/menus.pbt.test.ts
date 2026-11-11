@@ -17,7 +17,7 @@ const entry: fc.Arbitrary<MenuEntry> = fc.letrec<{ entry: MenuEntry }>((tie) => 
     fc.nat(99).map((n): MenuEntry => ({ kind: 'separator', key: `s${n}` })),
     fc.record({ n: fc.nat(99), disabled: fc.option(fc.boolean(), { nil: undefined }), reason: fc.option(fc.constant('own'), { nil: undefined }) })
       .map(({ n, disabled, reason }): MenuEntry => ({
-        kind: 'item', key: `i${n}`, label: `I${n}`,
+        kind: 'item', key: `i${n}`, label: `I${n}`, run: () => {},
         ...(disabled !== undefined ? { disabled } : {}), ...(reason !== undefined ? { disabledReason: reason } : {}),
       })),
     fc.record({ n: fc.nat(99), disabled: fc.boolean(), entries: fc.array(tie('entry'), { maxLength: 3 }) })

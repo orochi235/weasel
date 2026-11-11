@@ -15,11 +15,12 @@ describe('mergeMenuDefs, shrunk', () => {
   });
 
   it('puts the separator beside a child that already holds its key', () => {
+    const kept = pref.action('kept');
     const merged = mergeMenuDefs([
-      { def: { id: 'm', menu: pref.group('', { '~sep1': pref.action('kept') }) }, owner: null },
+      { def: { id: 'm', menu: pref.group('', { '~sep1': kept }) }, owner: null },
       { def: { id: 'm', menu: pref.group('', { b: pref.action('b') }) }, owner: null },
     ], null)[0]!;
     expect(Object.keys(merged.menu.children)).toEqual(['~sep1', '~sep2', 'b']);
-    expect(merged.menu.children['~sep1']!.kind).toBe('action');
+    expect(merged.menu.children['~sep1']).toBe(kept);
   });
 });
