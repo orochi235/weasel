@@ -1,4 +1,5 @@
-import { isByAxis } from '../axes.ts';
+import { isPlainObject } from '@weasel-js/registry';
+import { enumerateSelections, isByAxis, pick, type Selection } from '../axes.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
@@ -58,6 +59,15 @@ function scanSteps(entry: unknown, into: Node): void {
 
 /** Node key for a ramp's step list. `derive` rejects a token name containing a dot, so it never collides with one. */
 const stepsKey = (ramp: string) => `ramps.${ramp}`;
+
+/** Whether a pin replaces what it pins at `sel`: it has a value there, and any whole-value seed it names does too. */
+function pinApplies(pin: unknown, sel: Selection, seeds: Readonly<Record<string, unknown>>): boolean {
+  const picked = pick(pin, sel);
+  if (!picked.ok) return false;
+  const value = isPlainObject(picked.value) && 'value' in picked.value ? picked.value.value : picked.value;
+  const seed = typeof value === 'string' ? SEED_REF.exec(value.trim()) : null;
+  return seed === null || (Object.hasOwn(seeds, seed[1]) && pick(seeds[seed[1]], sel).ok);
+}
 
 /** The non-`by` values under a possibly nested `by` object. */
 function leaves(v: unknown): unknown[] {
@@ -137,12 +147,21 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     }
     nodes.set(name, n);
   }
-  for (const layer of [def.components, def.pins]) {
-    for (const [name, v] of Object.entries(layer ?? {})) {
-      const n = node();
-      scan(v, n);
-      nodes.set(name, n);
+  for (const [name, v] of Object.entries(def.components ?? {})) {
+    const n = node();
+    scan(v, n);
+    nodes.set(name, n);
+  }
+  const selections = enumerateSelections(def.axes ?? {});
+  for (const [name, v] of Object.entries(def.pins ?? {})) {
+    const n = node();
+    scan(v, n);
+    // Where the pin has no value, what it pins shows through, so the token depends on that too.
+    const under = nodes.get(name);
+    if (under && !selections.every((sel) => pinApplies(v, sel, def.seeds ?? {}))) {
+      for (const k of ['axes', 'seeds', 'edges'] as const) for (const x of under[k]) n[k].add(x);
     }
+    nodes.set(name, n);
   }
 
   const order = Object.keys(def.axes ?? {});
