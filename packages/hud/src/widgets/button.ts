@@ -120,7 +120,7 @@ function pressInput(evt: HudPointerEvent, inside: (x: number, y: number) => bool
 }
 
 export function createButton(opts: ButtonOptions): ButtonWidget {
-  if (opts.w <= 0 || opts.h <= 0) {
+  if (!(opts.w > 0 && opts.h > 0)) {
     throw new Error(`createButton: bounds must have positive w/h`);
   }
   let disposed = false;
