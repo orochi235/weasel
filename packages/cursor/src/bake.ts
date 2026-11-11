@@ -15,8 +15,15 @@ export interface BakeOptions {
   readonly fallback?: string;
 }
 
-/** The CSS px a glyph bakes at: `size` when it is a finite positive number, 24 otherwise, as a spec's size reads. */
+/** The CSS px a glyph bakes at: `size` when it is a finite positive number, 24 otherwise, as a spec's size reads.
+ *  Throws a `RangeError` past {@link CURSOR_MAX_CSS_PX}, `Infinity` included. */
 export function bakeSize(size: number | undefined): number {
+  if (size !== undefined && size > CURSOR_MAX_CSS_PX) {
+    throw new RangeError(
+      `cursor size ${size} exceeds the ${CURSOR_MAX_CSS_PX}px cap: the browser ` +
+        `would drop the image and silently fall back. Use the painted tier.`,
+    );
+  }
   return size !== undefined && Number.isFinite(size) && size > 0 ? size : 24;
 }
 
@@ -52,12 +59,6 @@ function renderOp(op: CursorPaintOp): string {
  * is no PNG pipeline and no `image-set()` here. See the spec.
  */
 export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
-  if (opts.size !== undefined && opts.size > CURSOR_MAX_CSS_PX) {
-    throw new RangeError(
-      `cursor size ${opts.size} exceeds the ${CURSOR_MAX_CSS_PX}px cap: the browser ` +
-        `would drop the image and silently fall back. Use the painted tier.`,
-    );
-  }
   const size = bakeSize(opts.size);
   // Halos first, then ink; within each pass, source order is z-order. The
   // pass structure is `paint.ts`'s, so the painted tier draws the same glyph
