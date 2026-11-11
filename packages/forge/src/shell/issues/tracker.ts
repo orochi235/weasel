@@ -39,9 +39,15 @@ export interface ReportContext {
   commit: string | null;
 }
 
+/** `text` as a Markdown code span: fenced past its longest run of backticks, padded where an edge would join the fence. */
+function code(text: string): string {
+  const fence = '`'.repeat(Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length)) + 1);
+  const pad = /^`|`$/.test(text) || /^ [^]*[^ ][^]* $/.test(text) ? ' ' : '';
+  return `${fence}${pad}${text}${pad}${fence}`;
+}
+
 /** An issue body: what the reporter wrote, then the story, the link back to it and the checkout. */
 export function reportBody(report: IssueReport, context: ReportContext): string {
-  const code = (text: string) => `\`${text}\``;
   const checkout = [
     context.branch === null ? null : `**Branch:** ${code(context.branch)}`,
     context.commit === null ? null : `**Commit:** ${context.commit}`,
