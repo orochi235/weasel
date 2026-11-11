@@ -2,4 +2,6 @@
 "@weasel-js/hud": patch
 ---
 
-A HUD window's drag that is canceled where it began reports nothing. A drag moved away and back used to report a move or resize to the bounds it already had, and mark its frame changed, when canceled.
+A HUD window drag canceled where it began reports no move or resize and leaves its frame unchanged.
+
+<!-- entry: rank=-5 fix -->

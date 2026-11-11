@@ -2,4 +2,6 @@
 "@weasel-js/forge": patch
 ---
 
-An issue report fences the story id and branch it names past any backticks they hold, so a branch such as `` fix/`x` `` reads back whole in the issue instead of breaking its code span.
+An issue report shows a story id or branch holding backticks, such as `` fix/`x` ``, whole in its code span.
+
+<!-- entry: rank=-5 fix -->

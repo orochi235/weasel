@@ -2,4 +2,6 @@
 "@weasel-js/routing": patch
 ---
 
-The route-conflict check reads a `ctrl` or `meta` spelled out beside `mod` as the matcher does, so `mod+ctrl` and `meta+ctrl` are reported as one chord on a Mac instead of passing unflagged.
+The route-conflict check reports `mod+ctrl` and `meta+ctrl` as one chord on a Mac, as the matcher reads them.
+
+<!-- entry: rank=-5 fix -->

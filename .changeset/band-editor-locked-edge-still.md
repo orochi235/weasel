@@ -2,4 +2,6 @@
 "@weasel-js/ui": patch
 ---
 
-`BandEditor`'s range edge stays exactly where it is when every band is locked. The locked lengths' sum could round off and move the edge by a hair, so a drag that changed nothing still rewrote the bands.
+`BandEditor`'s range edge stays exactly in place when every band is locked, so a drag that changes nothing no longer rewrites the bands.
+
+<!-- entry: rank=-5 fix -->

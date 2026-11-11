@@ -18,4 +18,6 @@
 "@weasel-js/forge": patch
 ---
 
-Layouts, bounds, legends, and reports over a long list no longer overflow the call stack. Each read the least or greatest of its items by spreading them all into `Math.min` or `Math.max`, which throws a `RangeError` past a few hundred thousand of them: a grid of a million nodes, a million pages, a polyline of a million points, a store of a million prefs records. geom adds `minOf` and `maxOf`, which answer as those spreads do (`Infinity` or `-Infinity` for none, `NaN` for any `NaN`) from a loop, optionally through a function of each item.
+Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+
+<!-- entry: fix -->

@@ -26,10 +26,10 @@ declare module 'virtual:demo-sources' {
   export default sources;
 }
 
-/** Provided by the `changelogs` vite plugin (`scripts/vite-changelogs.ts`).
- *  Every published release, newest first. */
+/** Provided by the `changelogs` vite plugin (`scripts/release/vite-plugin.ts`).
+ *  Every release, newest first; each one's entries load on demand. */
 declare module 'virtual:changelogs' {
-  const releases: import('../shared/releases').Release[];
+  const releases: import('../shared/releases').ReleaseIndexEntry[];
   export default releases;
 }
 
