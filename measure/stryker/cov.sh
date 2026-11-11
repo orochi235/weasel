@@ -17,15 +17,15 @@ echo '{"private":true}' > "$TOOLS/package.json"
 npm install --prefix "$TOOLS" --no-audit --no-fund --legacy-peer-deps --loglevel=error @vitest/coverage-v8@5.1.0 || exit 2
 ln -s "$PWD/$TOOLS/node_modules/@vitest/coverage-v8" "$LINK"
 
-git ls-files "packages/$MEASURE_PKG" | grep -E '\.test\.tsx?$' | grep -vE '\.(browser|build)\.test\.' > "$OUT/files.txt"
+git ls-files "packages/$MEASURE_PKG" | grep -E '\.test\.tsx?$' | grep -vE '\.(browser|build|smoke)\.test\.' > "$OUT/files.txt"
 total=$(wc -l < "$OUT/files.txt" | tr -d ' ')
 export OUT total
 nl -ba "$OUT/files.txt" | xargs -P "${MEASURE_JOBS:-8}" -L1 bash -c '
   i=$0; f=$1; d="$OUT/$i"
   npx vitest run -c measure/stryker/vitest.config.ts "$f" --reporter=dot --coverage.enabled \
-    --coverage.provider=v8 --coverage.reporter=json \
+    --coverage.provider=v8 --coverage.reporter=json --coverage.reportOnFailure \
     --coverage.reportsDirectory="$d" --coverage.include="packages/$MEASURE_PKG/src/**/*.{ts,tsx}" \
     --coverage.exclude="**/*.test.ts" > "$d.log" 2>&1
   rc=$?
   mkdir -p "$d"; echo "$f" > "$d/file.txt"
-  echo "$i/$total exit=$rc $f"'
+  echo "$i/$total exit=$rc $f"; echo "onto: progress $i/$total"'
