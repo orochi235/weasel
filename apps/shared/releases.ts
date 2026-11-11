@@ -75,9 +75,9 @@ export type Highlight = Pick<ChangelogEntry, 'id' | 'titleHtml' | 'packages' | '
 export interface ReleaseSummary {
   version: string;
   date?: string;
-  /** Each entry's group and packages, in entry order: enough to count and filter a release
+  /** Each entry's group, packages, and tags, in entry order: enough to count and filter a release
    *  without loading it. */
-  shape: { group: GroupId; packages: string[] }[];
+  shape: { group: GroupId; packages: string[]; tags: Tag[] }[];
   /** The picks, or when there are none the top-ranked entries outside Internal. */
   highlights: Highlight[];
   /** Whether `highlights` were picked rather than fallen back to. */
@@ -118,26 +118,43 @@ export function summarize(release: Release): ReleaseSummary {
   return {
     version: release.version,
     ...(release.date ? { date: release.date } : {}),
-    shape: release.entries.map((e) => ({ group: groupOf(e.tags), packages: e.packages })),
+    shape: release.entries.map((e) => ({ group: groupOf(e.tags), packages: e.packages, tags: e.tags })),
     highlights: chosen.map(({ id, titleHtml, packages: p, tags }) => ({ id, titleHtml, packages: p, tags })),
     curated: picks.length > 0,
   };
 }
 
-/** Whether an entry naming `packages` survives a filter to `selected`: any of them, or no filter. */
-export function matches(packages: readonly string[], selected: readonly string[]): boolean {
-  return selected.length === 0 || packages.some((p) => selected.includes(p));
+/** What the Releases view is narrowed to. Within one list the choices are a union; across the two,
+ *  an entry has to pass both. One changeset rarely touches two packages for the same reason, so
+ *  intersecting packages would almost always empty the list. */
+export interface Filter {
+  packages: readonly string[];
+  tags: readonly Tag[];
 }
 
-/** Entries per group among those `selected` keeps, in group order, leaving out empty groups. */
+export const NO_FILTER: Filter = { packages: [], tags: [] };
+
+/** Whether an entry survives `filter`: it names any chosen package and carries any chosen tag,
+ *  with an empty list passing everything. */
+export function matches(
+  entry: { readonly packages: readonly string[]; readonly tags: readonly Tag[] },
+  filter: Filter,
+): boolean {
+  return (
+    (filter.packages.length === 0 || entry.packages.some((p) => filter.packages.includes(p))) &&
+    (filter.tags.length === 0 || entry.tags.some((t) => filter.tags.includes(t)))
+  );
+}
+
+/** Entries per group among those `filter` keeps, in group order, leaving out empty groups. */
 export function countGroups(
   shape: ReleaseSummary['shape'],
-  selected: readonly string[],
+  filter: Filter,
 ): { id: GroupId; label: string; count: number }[] {
   return GROUPS.map((g) => ({
     id: g.id,
     label: g.label,
-    count: shape.filter((s) => s.group === g.id && matches(s.packages, selected)).length,
+    count: shape.filter((s) => s.group === g.id && matches(s, filter)).length,
   })).filter((g) => g.count > 0);
 }
 
