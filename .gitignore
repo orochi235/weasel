@@ -51,3 +51,4 @@ apps/devtools-extension/safari/
 
 # bench harness output (scripts/bench-overlap-reserve.mjs); delete after its numbers are recorded
 .bench/
+measure/out/
