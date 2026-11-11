@@ -16,7 +16,7 @@ import { type ArgsScope, ArgsContext, appliedLocal, coverOf, type LocalArgs } fr
 import { type ArgType, argsToSchema, type ControlMatchers } from './argsToSchema';
 import { isPlainObject } from '@weasel-js/core';
 import { withUnsent } from './portSafe';
-import { setOwn } from '../ownKey';
+import { setOwn } from '@weasel-js/registry';
 import { API_EXPORT } from '../story/api';
 import { PROP_ARG_TYPES_EXPORT } from './propArgTypes';
 import { timelineOf } from '../timeline/declare';

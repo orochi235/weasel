@@ -1,7 +1,7 @@
 import { type ConfigSchema, type ConfigShape, isConfigBranch, valueAtPath } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { type Globals, stableStringify } from '../protocol/messages';
-import { setOwn } from '../ownKey';
+import { setOwn } from '@weasel-js/registry';
 import { GLOBALS_KEY } from '../shell/globals';
 
 /**

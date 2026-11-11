@@ -2,7 +2,7 @@ import { type ConfigNode, type ConfigSchema, type ConfigShape, f, ObjectNode, Un
 import { isPlainObject } from '@weasel-js/core';
 import { iconFromData } from '@weasel-js/ui/components/Icon';
 import { sameKnob } from '../route/url';
-import { setOwn } from '../ownKey';
+import { setOwn } from '@weasel-js/registry';
 import { portSafePart } from './portSafe';
 
 /** Storybook's conditional control: shown only while an arg, or a global, meets the test. */

@@ -13,7 +13,7 @@ import {
   type ConfigShape,
   type NodeOptions,
 } from '@weasel-js/labkit/config';
-import { setOwn } from '../ownKey';
+import { setOwn } from '@weasel-js/registry';
 
 /** The section a described entry sits in, as structured-clone data. */
 export interface SectionDescription {

@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
-import { setOwn } from '../ownKey';
+import { setOwn } from '@weasel-js/registry';
 
 const g = globalThis as Record<string, unknown>;
 const CLONED_WHOLE = new Set<unknown>(
