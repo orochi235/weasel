@@ -15,8 +15,13 @@ import type { RectPose } from 'core/geometry/rectPose';
 import { poseFrameOf } from '@weasel-js/geom';
 export type { RectPose };
 
+/** A box reaching a corner that is not finite has no extent to fold in: unions skip it as they skip a hole. */
+function finiteCorners(x: number, y: number, x2: number, y2: number): boolean {
+  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(x2) && Number.isFinite(y2);
+}
+
 /** Compute the AABB envelope of a set of rect-shaped poses, ignoring any
- *  rotation they carry. See the module docstring before reaching for this
+ *  rotation they carry, and skipping one with a corner that is not finite. See the module docstring before reaching for this
  *  over {@link unionAABB}. */
 export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): RectPose | null {
   let minX = Infinity;
@@ -25,9 +30,10 @@ export function unionBounds<TPose extends RectPose>(poses: Iterable<TPose>): Rec
   let maxY = -Infinity;
   let any = false;
   for (const { x, y, width, height } of poses) {
-    any = true;
     const x2 = x + width;
     const y2 = y + height;
+    if (!finiteCorners(x, y, x2, y2)) continue;
+    any = true;
     if (x < minX) minX = x;
     if (x2 < minX) minX = x2;
     if (x > maxX) maxX = x;
@@ -92,7 +98,7 @@ export function axisAlignedBounds<TPose extends RectPose>(b: TPose): RectPose {
 
 /**
  * Fold every part into one world-space AABB, skipping `null` / `undefined`
- * entries. Rotated parts are expanded via {@link axisAlignedBounds} first;
+ * entries and any whose drawn corners are not all finite. Rotated parts are expanded via {@link axisAlignedBounds} first;
  * the result never carries a `rotation` (a union of several oriented boxes
  * has no single orientation to report).
  *
@@ -109,11 +115,12 @@ export function unionAABB<TPose extends RectPose>(
   for (const part of parts) {
     if (!part) continue;
     const b = axisAlignedBounds(part);
+    const right = b.x + b.width;
+    const bottom = b.y + b.height;
+    if (!finiteCorners(b.x, b.y, right, bottom)) continue;
     any = true;
     if (b.x < minX) minX = b.x;
     if (b.y < minY) minY = b.y;
-    const right = b.x + b.width;
-    const bottom = b.y + b.height;
     if (right > maxX) maxX = right;
     if (bottom > maxY) maxY = bottom;
   }
