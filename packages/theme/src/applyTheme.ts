@@ -46,7 +46,7 @@ function declarations(theme: Theme, tokens: Readonly<Record<string, string>>): s
 }
 
 /** What an element holds from its last `applyTheme`, so the next one, or its release, can let go of it. */
-const holds = new WeakMap<HTMLElement, () => void>();
+const holds = new WeakMap<HTMLElement, { readonly letGo: () => void; readonly axes: readonly string[] }>();
 
 /**
  * Apply `theme` at `selection` to `el`'s subtree, and return the release.
@@ -85,7 +85,10 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
   const selector = `${wzlAttr('theme', theme.name)}${names.map((a) => wzlAttr(a, sel[a])).join('')}`;
   // Held before the last one is let go, so re-applying the same rule rewrites nothing.
   const { variant, release: releaseRule } = holdRule(styleRootOf(el), selector, body);
-  holds.get(el)?.();
+  const prior = holds.get(el);
+  prior?.letGo();
+  // An axis the last application stamped and this one has not would still match that theme's rules.
+  for (const a of prior?.axes ?? []) if (!names.includes(a)) el.removeAttribute(`data-wzl-${a}`);
 
   el.setAttribute('data-wzl-theme', wzlValue(theme.name));
   for (const a of names) el.setAttribute(`data-wzl-${a}`, wzlValue(sel[a]));
@@ -97,9 +100,9 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: Selection =
     holds.delete(el);
     releaseRule();
   };
-  holds.set(el, letGo);
+  holds.set(el, { letGo, axes: names });
   return () => {
-    if (holds.get(el) !== letGo) return;
+    if (holds.get(el)?.letGo !== letGo) return;
     letGo();
     for (const a of ['theme', 'variant', ...names]) el.removeAttribute(`data-wzl-${a}`);
   };
