@@ -107,8 +107,23 @@ auth misconfiguration.
 
 ### Setting up a new package
 
-Trust config is held per package, with no org-wide setting, so every new
-publishable workspace needs registering once:
+Trust config is held per package, with no org-wide setting, and OIDC cannot create a
+package, so a new publishable workspace is published once by hand and then registered.
+Both commands name the package, and both run in a real terminal:
+
+```sh
+npm run build -w @weasel-js/<pkg>
+npm publish -w @weasel-js/<pkg> --tag pre --provenance=false
+node scripts/setup-trusted-publishing.mjs <pkg>
+```
+
+`--provenance=false` has to be the flag: the manifest's `publishConfig.provenance` outranks
+`NPM_CONFIG_PROVENANCE` for a plain `npm publish`. The setup script records the package in
+`scripts/trust-pending.json`; commit that with the package. A package that already has the
+config answers `409 Conflict`; the script then asks npm what the package has, and counts it
+as registered when that names this repository and workflow.
+
+Without a name the script registers every package, one `npm trust` call each:
 
 ```sh
 node scripts/setup-trusted-publishing.mjs --dry-run   # preview
@@ -123,10 +138,6 @@ re-run with `--otp=<code>` to finish the tail. Re-running is always safe.
 
 Needs npm >= 11.10.0 for `npm trust`. When the local npm does not understand the
 `--allow-publish` permission flag, the script runs `npx npm@latest` instead.
-
-A package must already exist on npm before it can be given a trusted publisher,
-so the very first publish of a brand-new package still has to be done by hand
-from a logged-in machine.
 
 `npm run check:first-publish` runs before the release job publishes anything,
 and fails on a package that is not on npm or that no trusted publisher has ever

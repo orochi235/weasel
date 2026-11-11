@@ -74,6 +74,11 @@ export async function readStates(names, { warn = false, onEach, ...fetchOpts } =
   return { states, errors };
 }
 
+/** Whether `npm trust list` output names `slug`'s `workflow` as a publisher. */
+export function listsPublisher(listOutput, slug, workflow) {
+  return listOutput.includes(slug) && listOutput.includes(workflow);
+}
+
 export function addPending(current, names) {
   return [...new Set([...current, ...names])].sort();
 }
