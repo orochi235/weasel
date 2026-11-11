@@ -170,9 +170,9 @@ function both(m: Model, r: Real, op: Op): void {
 }
 
 const id = fc.constantFrom(...IDS);
-const ports = fc.oneof(
-  { weight: 3, arbitrary: fc.constant(['in']) },
-  { weight: 2, arbitrary: fc.uniqueArray(fc.constantFrom(...PORTS), { maxLength: 3 }) },
+const ports: fc.Arbitrary<string[]> = fc.oneof(
+  { weight: 3, arbitrary: fc.constant<string[]>(['in']) },
+  { weight: 2, arbitrary: fc.uniqueArray(fc.constantFrom<string>(...PORTS), { maxLength: 3 }) },
 );
 const target: fc.Arbitrary<GraphTarget> = fc.oneof(
   { weight: 1, arbitrary: fc.constant({ output: true as const }) },

@@ -17,7 +17,7 @@ describe('createScore, shrunk from the property tests', () => {
     for (const ms of [938, 938, 938, 937, 1]) {
       await flush();
       ctx._advance(ms);
-      const p = pass;
+      const p = pass as (() => void) | null;
       pass = null;
       p?.();
       await flush();
