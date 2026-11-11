@@ -1094,6 +1094,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (forge second pass, 2026-11-11): a title whose story files sit in two libraries is one component row,
   tagged with its first story's library, while the package filter lists both libraries. No ruling on whether such
   a title should be one row or one per library.
+- 2026-11-11 (my call, symmetry second pass): a symmetry copy whose transform is not finite is left out, in
+  `symmetryTransforms` and every `SYMMETRY_KINDS` row (ce0289dd1). That includes a point turn about a center near
+  the double range's end, whose copy would draw at finite places but whose affine's translation overflows; the
+  original still draws. Rejected: throwing, which would fail every draw of a group a far drag put there.
+- 2026-11-11 (my call, symmetry second pass): `specOfData` reads a field of the wrong type at its default, a kind
+  `SYMMETRY_KINDS` does not hold as its own as `mirror`, and a cell that is not a wallpaper cell as `none`
+  (b686c535b). It does not report them; nothing in symmetry has a place to.
+- 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a
+  coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
+- Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
+  `gridOnScreen` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
+  it throws, draws nothing, or falls back to the screen grid.
 
 ## draw
 
