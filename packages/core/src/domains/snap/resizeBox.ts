@@ -101,7 +101,9 @@ export function resizeSides(s: ResizeSubject, delta: Point): SnapSide[] {
       const rates = now.flatMap((c, i) => (near(c[axis], edge, span)
         ? [{ x: stepX[i]![axis] - c[axis], y: stepY[i]![axis] - c[axis] }]
         : []));
-      const rate = rates[0]!;
+      const rate = rates[0];
+      // No corner reads as on the edge only when the box is no longer finite.
+      if (!rate) continue;
       const size = Math.hypot(rate.x, rate.y);
       if (size < EPS || rates.some((r) => !near(r.x, rate.x, size) || !near(r.y, rate.y, size))) continue;
       out.push({ axis, side, rate });

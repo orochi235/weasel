@@ -23,6 +23,7 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { carryPose, invertPlane, inPlane, planeOf, selectionLayer } from '../planeInput';
 import { recordTransform } from '../transform-again/memory';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
+import { finiteFrame } from '../finiteFrame';
 import { SNAP_ROLES } from 'domains/snap/roles';
 
 interface CloneScratch {
@@ -148,11 +149,15 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
         previewHidesSource: false,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          scratch.currentDelta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
-          scratch.previews.clear();
-          const { dx, dy } = scratch.currentDelta;
-          if (dx === 0 && dy === 0) return;
-          for (const id of scratch.originPoses.keys()) scratch.previews.set(id, landed(scratch, id, dx, dy)!);
+          const next = finiteFrame({ delta: scratch.currentDelta, previews: scratch.previews }, moveCtx, () => {
+            const delta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
+            const previews = new Map<NodeId, unknown>();
+            if (delta.dx === 0 && delta.dy === 0) return { delta, previews };
+            for (const id of scratch.originPoses.keys()) previews.set(id, landed(scratch, id, delta.dx, delta.dy)!);
+            return { delta, previews };
+          }, (f) => f.previews);
+          scratch.currentDelta = next.delta;
+          scratch.previews = next.previews;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           let committed = false;

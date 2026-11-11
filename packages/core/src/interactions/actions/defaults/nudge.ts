@@ -3,7 +3,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { PoseDescriptor } from '../resize/geometry';
 import { poseDescriptorOf } from '../poseDescriptorDep';
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from './requiresSelection';
@@ -65,7 +65,14 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         }
       },
     },
-    enabled: requiresSelection,
+    // On while some selected node would move: a step rounding absorbs moves nothing (2026-11-10 ruling).
+    enabled: (deps, _at, _carried, params) => {
+      const given = requiresSelection(deps);
+      if (given !== true || !deps?.scene) return given;
+      const { dx, dy } = nudgeDelta(dir, params?.magnitude);
+      const ops = moveNodesOps(deps.scene, deps.selection!.get() as readonly string[], { dx, dy }, deps, 'Nudge');
+      return ops.length > 0 ? true : ActionDisabledReason.NotApplicable;
+    },
   };
 }
 

@@ -1,6 +1,7 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
 import { transformPreview } from '../transformFinish';
+import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { beginMove, type MoveFrame, type ReparentOnDrop } from './session';
@@ -56,7 +57,7 @@ export const moveAction: Action & { requires: string[] } = inPlane({
           if (!moveCtx.drag) return;
           if (!engaged) session.lifecycle.start(session.ids as unknown as string[]);
           engaged = moveCtx.world;
-          frame = nextFrame(session, readers, moveCtx);
+          frame = finiteFrame(frame, moveCtx, () => nextFrame(session, readers, moveCtx), (f) => f.previews);
           hold.set(preview.poses());
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {

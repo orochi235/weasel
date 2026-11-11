@@ -16,6 +16,7 @@ import { insertParams } from './params';
 import { beginInsert } from './session';
 import { insertKind, insertShape } from './shape';
 import { insertLanding } from './lands';
+import { finiteFrame } from '../finiteFrame';
 
 /** How far, in CSS pixels, a drag travels before it draws a shape: past the wobble of a click, so a
  *  press that drifts a few pixels draws nothing rather than a shape a few pixels wide. */
@@ -72,8 +73,10 @@ export const insertAction: Action & { requires: string[] } = inPlane({
         kind: 'insert',
         autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
-          if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world, moveCtx);
-          frame = nextFrame(session, readers, frame, moveCtx);
+          frame = finiteFrame(frame, moveCtx, () => {
+            if (gesture.repositioning) carryStart(session, frame.pointer, moveCtx.world, moveCtx);
+            return nextFrame(session, readers, frame, moveCtx);
+          }, (f) => f.shaped);
         },
         overlay(): OngoingOverlay | null {
           if (!gesture.open) return null;

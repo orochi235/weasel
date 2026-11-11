@@ -1,5 +1,5 @@
 /**
- * Counterexamples `editActions.pbt.test.ts` shrank to, kept as plain examples.
+ * Counterexamples `editActions.pbt.test.ts` and `dragActions.pbt.test.ts` shrank to, kept as plain examples.
  */
 import { describe, it, expect } from 'vitest';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
@@ -13,6 +13,8 @@ import { distributeVerticalAction, distributeHorizontalAction } from './distribu
 import { flipAction } from './flip/action';
 import { reorderForwardAction } from './defaults/reorder';
 import { duplicateAction } from './defaults/duplicate';
+import { nudgeRightAction } from './defaults/nudge';
+import { groupAction } from './defaults/group';
 import { depsOf, makeScene, type TestScene } from './pbt.fixture';
 
 function add(scene: TestScene, pose: RectPose, kind: 'mark' | 'group' = 'mark', parent: NodeId | null = null): NodeId {
@@ -127,5 +129,58 @@ describe('locks', () => {
     expect(scene.childrenOf(innerCopy!)).toHaveLength(1);
     expect(scene.undo()).toBe(true);
     expect(scene.nodes.size).toBe(3);
+  });
+});
+
+describe('immediate actions near the double range', () => {
+  it('a nudge rounding absorbs is off and records nothing', () => {
+    const scene = makeScene();
+    const a = add(scene, { x: 1e308, y: 0, width: 1, height: 1 });
+    scene.setSelection([a]);
+    expect(enabled(nudgeRightAction, scene, { magnitude: 'big' })).toBe(ActionDisabledReason.NotApplicable);
+    const at = scene.historyIndex();
+    run(nudgeRightAction, scene, { magnitude: 'big' });
+    expect(scene.historyIndex()).toBe(at);
+  });
+
+  it('a flip whose mirror image leaves the double range is off and writes nothing', () => {
+    const scene = makeScene();
+    const a = add(scene, { x: 1e308, y: 0, width: 1, height: 1 });
+    const b = add(scene, { x: -1e308, y: 0, width: 1, height: 1 });
+    scene.setSelection([a, b]);
+    expect(enabled(flipAction, scene, { axis: 'x', pivot: 'union' })).toBe(ActionDisabledReason.NotApplicable);
+    run(flipAction, scene, { axis: 'x', pivot: 'union' });
+    expect(scene.get(a)!.pose.x).toBe(1e308);
+  });
+
+  it('a group whose container would leave the double range is off and adds nothing', () => {
+    const scene = makeScene();
+    const a = add(scene, { x: 0, y: -1e308, width: 1, height: 1e308 });
+    const b = add(scene, { x: 0, y: 0, width: 1, height: 1e308 });
+    scene.setSelection([a, b]);
+    expect(enabled(groupAction, scene)).toBe(ActionDisabledReason.NotApplicable);
+    run(groupAction, scene);
+    expect(scene.nodes.size).toBe(2);
+  });
+
+  it('a group of members on two layers is off', () => {
+    const scene = makeScene();
+    const a = add(scene, { x: 0, y: 0, width: 1, height: 1 });
+    const b = scene.mintId();
+    scene.add({ id: b, kind: 'mark', layer: 'top', pose: { x: 5, y: 0, width: 1, height: 1 }, data: {} });
+    scene.setSelection([a, b]);
+    expect(enabled(groupAction, scene)).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('an align that would carry a box past the double range is off and moves nothing', () => {
+    const scene = makeScene();
+    const a = add(scene, { x: 0, y: 0, width: -1, height: 1 });
+    const turned = { x: -1, y: Number.MAX_VALUE, width: 1, height: 1, rotation: 1.5707963267948968, transform: [1, -9.9579925010296e-17, -9.9579925010296e-17, -1] as const };
+    scene.add({ id: '__proto__' as NodeId, kind: 'mark', layer: 'main', pose: turned, data: {} });
+    scene.setSelection(['__proto__' as NodeId, a]);
+    expect(enabled(alignLeftAction, scene)).toBe(ActionDisabledReason.NotApplicable);
+    run(alignLeftAction, scene);
+    expect(scene.get(a)!.pose.x).toBe(0);
+    expect(scene.get('__proto__' as NodeId)!.pose.x).toBe(-1);
   });
 });

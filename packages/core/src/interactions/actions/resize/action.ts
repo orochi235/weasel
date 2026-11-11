@@ -2,6 +2,7 @@ import type { Action, ActionDeps } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle } from '@weasel-js/routing';
 import type { NodeId } from 'core/scene/types';
 import { transformPreview } from '../transformFinish';
+import { finiteFrame } from '../finiteFrame';
 import { closeGesture, runBehaviorCancel } from '../gestureLifecycle';
 import { inPlane, selectionLayer } from '../planeInput';
 import { commitResize } from './commit';
@@ -59,7 +60,7 @@ export function createResizeAction(opts: ResizeActionOptions = {}): Action & { r
           autoPan: true,
           onMove(moveCtx: InvocationCtx): void {
             if (!moveCtx.drag) return;
-            frame = nextFrame(session, readers, moveCtx);
+            frame = finiteFrame(frame, moveCtx, () => nextFrame(session, readers, moveCtx), (f) => f.previews);
             hold.set(preview.poses());
           },
           onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
