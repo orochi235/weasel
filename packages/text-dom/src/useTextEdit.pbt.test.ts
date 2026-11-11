@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { isBoldWeight, MIXED, runsToPlainText, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
+import { isBoldWeight, MIXED, runsToPlainText, type RangeStyle, type RunStylePatch, type StyledRun } from '@weasel-js/text';
 import { domToRuns } from './domRuns';
 import { readSelectionOffsets } from './overlaySelection';
 import {
@@ -37,6 +37,9 @@ interface Real {
 }
 
 const t = tally();
+
+/** Runs as JSON whatever order their keys were written in. */
+const keyed = (rs: readonly StyledRun[]): string => JSON.stringify(rs.map((r) => Object.entries(r).sort(([a], [b]) => (a < b ? -1 : 1))));
 
 const textOfUnits = (units: readonly Unit[]): string => units.map((u) => u.ch).join('');
 
@@ -235,10 +238,10 @@ describe('useTextEdit session (stateful)', () => {
       const m: Model = { units, sel: { start: 0, end: units.length }, armed: null, between: false };
       check(m, { edit: () => result.current, overlay });
       await fc.asyncModelRun(() => ({ model: m, real: { edit: () => result.current, overlay } }), cmds);
-      const opened = JSON.stringify(fromUnits(toUnits(rs)));
+      const opened = keyed(fromUnits(toUnits(rs)));
       act(() => result.current.commit());
       const want = fromUnits(m.units);
-      if (JSON.stringify(want) === opened) {
+      if (keyed(want) === opened) {
         expect(h.runCommits).toEqual([]);
       } else {
         t.count('commit');
