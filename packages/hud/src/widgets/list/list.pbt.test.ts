@@ -81,8 +81,8 @@ describe('createList', () => {
           } else if (o.kind === 'hover') l.onPointer({ type: 'hovermove', x: 10, y: o.y, native: null });
           else if (o.kind === 'leave') l.onPointer({ type: 'hoverleave', native: null });
           else if (o.kind === 'cancel') l.onPointer({ type: 'cancel', native: null });
-          else if (o.kind === 'key') l.onKey(key(o.key));
-          else if (o.kind === 'focus') l.onFocusChange!(o.on);
+          else if (o.kind === 'key') l.onKey?.(key(o.key));
+          else if (o.kind === 'focus') l.onFocusChange?.(o.on);
           else { rows = o.rows; l.setRows(rows); seen.hit('swap'); }
           const n = rows.length;
           if (l.active !== null) { expect(l.active).toBeGreaterThanOrEqual(0); expect(l.active).toBeLessThan(n); seen.hit('active'); }
