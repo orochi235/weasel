@@ -698,9 +698,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   an exponent (`1e-300`), in linear and log scales. A linear span among the subnormals is ticked at multiples of
   itself. A gantt duration of months past the last `Date` runs 30 days a month, and any end is held to the double
   range.
-- Open (2026-11-10, property tests): a value far past a fixed end of an xychart's value axis, or past a radar's fixed
-  `max`, is drawn as far past the plot, so one far enough out overflows what a path holds (float32). Whether it is
-  clamped to the edge, clipped, or left out. The property tests hold such values to ±1e6 against whole ends.
+- Ruled 2026-11-10: an xychart's and a radar's data are clipped to the plot area at compile time: a bar is cut at the
+  plot's edge, its handle on the cut end; a line is clipped to the plot rect, a radar's outline and fill to its rim;
+  a point whose center falls outside is not drawn. Nothing past the area is drawn, and any value stays finite.
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`

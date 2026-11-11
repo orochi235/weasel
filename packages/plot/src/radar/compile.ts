@@ -1,6 +1,7 @@
 /** A radar compiled to its scales and marks. */
 import { maxOf } from '@weasel-js/geom';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
+import { circleArea, clipPolygon, clipPolyline } from '../marks/clip';
 import { pointMark } from '../marks/boxes';
 import { areaMark, lineMark, ruleMark } from '../marks/paths';
 import { textMark } from '../marks/text';
@@ -103,19 +104,33 @@ function graticule(data: RadarData, scale: PolarScale, theme: PlotTheme, measure
 function curveMarks(data: RadarData, scale: PolarScale, theme: PlotTheme): PlotMark[] {
   const marks: PlotMark[] = [];
   const [d0, d1] = scale.domain;
-  // A value short of the center's sits at the center, as a drag holds it there.
+  // A value short of the center's sits at the center, as a drag holds it there. Past the rim, data is cut to it here,
+  // so no renderer or export draws past it.
   const held = (v: number) => (d0 <= d1 ? Math.max(d0, v) : Math.min(d0, v));
+  const inside = (v: number) => (d0 <= d1 ? v <= d1 : v >= d1);
+  const rim = circleArea(scale.center, scale.radius[1]);
+  // A radius a value far past the rim overflows is held finite, still along its spoke.
+  const spokePoint = (i: number, v: number) => {
+    const r = Math.min(1e300, scale.radiusAt(v));
+    const a = scale.angle(i);
+    return { x: scale.center.x + r * Math.sin(a), y: scale.center.y - r * Math.cos(a) };
+  };
   data.curves.forEach((curve, c) => {
     const color = seriesColor(theme, c);
     const placed = data.axes.flatMap((_, i) => {
       const v = curve.values[i];
-      return v !== undefined && Number.isFinite(v) ? [{ i, at: scale.point(i, held(v)) }] : [];
+      return v !== undefined && Number.isFinite(v) ? [{ i, v: held(v), at: spokePoint(i, held(v)) }] : [];
     });
     if (placed.length === 0) return;
     const ring = placed.map((p) => p.at);
-    marks.push(areaMark({ key: `curve:${c}`, top: ring, color, datum: { curve: c } }));
-    marks.push(lineMark({ key: `curve:${c}:outline`, points: [...ring, ring[0]!], color, datum: { curve: c } }));
-    for (const { i, at } of placed) marks.push(pointMark({ key: `point:${c}:${i}`, ...at, radius: 3.5, color, datum: { curve: c, axis: i } }));
+    const fill = clipPolygon(rim, ring);
+    if (fill.length > 0) marks.push(areaMark({ key: `curve:${c}`, top: fill, color, datum: { curve: c } }));
+    clipPolyline(rim, [...ring, ring[0]!]).forEach((run, k) => {
+      marks.push(lineMark({ key: k === 0 ? `curve:${c}:outline` : `curve:${c}:outline:${k}`, points: run, color, datum: { curve: c } }));
+    });
+    for (const { i, v, at } of placed) {
+      if (inside(v)) marks.push(pointMark({ key: `point:${c}:${i}`, ...at, radius: 3.5, color, datum: { curve: c, axis: i } }));
+    }
   });
   return marks;
 }

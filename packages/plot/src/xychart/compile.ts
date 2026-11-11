@@ -4,6 +4,7 @@ import { axisMarks, axisRoom } from '../axes';
 import { barMark, pointMark } from '../marks/boxes';
 import { lineMark } from '../marks/paths';
 import { CHART_PAD as PAD, chartTitle } from '../chartTitle';
+import { clipPolyline, rectArea } from '../marks/clip';
 import type { PlotMark } from '../marks/types';
 import type { PlotMeasure } from '../measure';
 import { bandScale } from '../scales/band';
@@ -103,8 +104,14 @@ export function compileXyChart(
 function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): PlotMark[] {
   const { value, slots, slotWidth } = layout;
   const vertical = layout.orientation === 'vertical';
+  // Data is cut to the plot area here, so no renderer or export draws past it.
+  const [lo, hi] = [Math.min(...value.range), Math.max(...value.range)];
+  const { plot } = layout;
+  const area = rectArea(vertical ? { x: plot.x, y: lo, width: plot.width, height: hi - lo } : { x: lo, y: plot.y, width: hi - lo, height: plot.height });
+  const place = (v: number) => Math.min(hi, Math.max(lo, value.map(v)));
   const at = (along: number, v: number) => (vertical ? { x: along, y: value.map(v) } : { x: value.map(v), y: along });
   const [d0, d1] = value.domain;
+  const inside = (v: number) => v >= Math.min(d0, d1) && v <= Math.max(d0, d1);
   const baseline = value.map(Math.min(Math.max(0, Math.min(d0, d1)), Math.max(d0, d1)));
   const bars = data.series.filter((s) => s.kind === 'bar');
   const barWidth = slotWidth / Math.max(1, bars.length);
@@ -118,16 +125,18 @@ function seriesMarks(data: XyChartData, layout: XyLayout, theme: PlotTheme): Plo
       const j = bars.indexOf(series);
       for (const { v, i } of placed) {
         marks.push(barMark({
-          key: `bar:${s}:${i}`, x: slots[i]! - slotWidth / 2 + j * barWidth, width: barWidth, from: baseline, to: value.map(v), color,
+          key: `bar:${s}:${i}`, x: slots[i]! - slotWidth / 2 + j * barWidth, width: barWidth, from: baseline, to: place(v), color,
           datum: datum(i), orient: layout.orientation,
         }));
       }
       return;
     }
-    if (placed.length > 0) {
-      marks.push(lineMark({ key: `line:${s}`, points: placed.map(({ v, i }) => at(slots[i]!, v)), color, datum: { series: s } }));
+    clipPolyline(area, placed.map(({ v, i }) => at(slots[i]!, v))).forEach((run, k) => {
+      marks.push(lineMark({ key: k === 0 ? `line:${s}` : `line:${s}:${k}`, points: run, color, datum: { series: s } }));
+    });
+    for (const { v, i } of placed) {
+      if (inside(v)) marks.push(pointMark({ key: `point:${s}:${i}`, ...at(slots[i]!, v), radius: 3.5, color, datum: datum(i) }));
     }
-    for (const { v, i } of placed) marks.push(pointMark({ key: `point:${s}:${i}`, ...at(slots[i]!, v), radius: 3.5, color, datum: datum(i) }));
   });
   return marks;
 }

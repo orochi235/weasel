@@ -122,7 +122,9 @@ describe('xychart edits', () => {
       const { layout, get } = byKey(data);
       const bar = get('bar:0:0')!;
       const handle = handlesOf(xyEditor.handle(data, { trait: bar.data.plotMark, pose: bar.pose }))[0]!;
-      const end = layout.value.map(20);
+      // 20 lies below the first chart's fixed 30, so its bar is cut at the plot's edge and its handle sits there.
+      const [lo, hi] = [Math.min(...layout.value.range), Math.max(...layout.value.range)];
+      const end = Math.min(hi, Math.max(lo, layout.value.map(20)));
       expect(data.orientation === 'horizontal' ? handle.at.x : handle.at.y).toBeCloseTo(end);
     }
   });
