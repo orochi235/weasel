@@ -224,6 +224,27 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, core actions second property pass): a drag's pointer that is no finite number lands nowhere,
+  as routing's sweep and kernel3d's camera already had it. Every drag `inPlane` wraps, the marquee, and the lasso
+  decline a press at such a point; move, resize, rotate, clone, insert, the marquee, and the lasso skip such a move
+  and go on from the last frame that landed, and the transform drags skip a move whose poses would leave the double
+  range the same way. Rejected: dropping such points in the dispatcher, which every package's drags would then rely
+  on without any of them checking.
+- 2026-11-11 (my call, same pass): a resize that would rewrite a locked node, as a group's resize rewrites its
+  members, does not start, after the 2026-11-09 ruling for commands; the press goes on to the next binding. Rejected:
+  resizing the members around the locked one, which move and rotate do not do either (they carry it with the group).
+- 2026-11-11 (my call, same pass): Nudge, Flip, Group, Align, and Distribute are disabled with `NotApplicable` where
+  they would write a pose past the double range or, for Nudge, move nothing; Group also where its members are on more
+  than one layer, where it used to be enabled and do nothing.
+- Open (core actions second property pass, 2026-11-11): within a few doublings of the double range's edge, Duplicate
+  of a node in a turned group writes `NaN`, since the copy's frame inverse overflows, and other immediate actions may
+  overflow the same way. Whether the scene should keep poses inside a margin of the range, or each action refuse what
+  it cannot write. The stateful property in `dragActions.pbt.test.ts` skips immediate actions once a coordinate is
+  past 1e300.
+- Open (same pass): a resize of members of a group scaled below about 1e-12 remaps their boxes in world, where they have
+  no precision left, so where the group sits decides the result: two members of a group scaled 1e-200, resized by one
+  unit, land 1e14 apart for the group moved 3 units. Whether resize should remap in the members' own frame.
+  `dragLaws.pbt.test.ts` leaves such resizes out of its translation law.
 - Ruled 2026-11-10 (my call, overnight sweep): geom's `tagTypedArrays` and `typedArrayReplacer` escape a plain object
   `reviveTypedArrays` would read as a tagged typed array or a wrapper by writing it inside a `{ "__raw": … }` wrapper,
   the one the editor's snapshots use, since a writer must not write what its reader misreads. The cost: an older
