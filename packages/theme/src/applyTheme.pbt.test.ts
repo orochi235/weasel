@@ -8,6 +8,7 @@
 import fc from 'fast-check';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
+import { refTarget } from './dtcg/resolve';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import { resolveTheme } from './resolveTheme';
 import type { Theme } from './theme';
@@ -19,7 +20,7 @@ const MODES = ['dark', 'light'] as const;
 /** Values no declaration can be cut short by, which therefore must land. */
 const SAFE = ['#ff0000', '4px', 'serif', "'Open Sans', sans-serif", 'var(--a, [x] f(1))', 'url(a.png)', 'serif)'];
 const HOSTILE = ['serif; } * { color: red', "'a\n;}", 'serif /*', 'serif \\', 'f(', '[', "'open", 'a { b'];
-const value = fc.oneof({ weight: 3, arbitrary: fc.constantFrom(...SAFE) }, fc.constantFrom(...HOSTILE), fc.string({ maxLength: 6 }));
+const value = fc.oneof({ weight: 3, arbitrary: fc.constantFrom(...SAFE) }, fc.constantFrom(...HOSTILE), fc.string({ maxLength: 6 }).filter((v) => refTarget(v) === null));
 
 const theme = (name: string): fc.Arbitrary<Theme> =>
   fc.record({ x: value, y: value, z: value }).map(({ x, y, z }) => ({

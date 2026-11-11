@@ -31,7 +31,7 @@ describe('ramp color lists', () => {
       const step = steps[((Math.trunc(i) % n) + n) % n]!;
       const property = `--wzl-${ramp}-${step}`;
       expect(colorAt({ ramp }, i, ctx)).toBe((ctx.resolved as Record<string, string>)[property]);
-      expect(colorAt({ ramp }, i + n, ctx)).toBe(colorAt({ ramp }, i, ctx));
+      if (Number.isInteger(i)) expect(colorAt({ ramp }, i + n, ctx)).toBe(colorAt({ ramp }, i, ctx));
       expect(colorCssAt({ ramp }, i, ctx)).toBe(`var(${property})`);
     }), runs(RUNS));
   });

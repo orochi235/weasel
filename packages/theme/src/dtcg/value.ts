@@ -41,7 +41,7 @@ export function parseTokenValue(type: string, text: string): TokenValue {
   if (type === 'fontFamily') {
     const families = raw
       .split(',')
-      .map((f) => f.trim().replace(/^['"]|['"]$/g, '').trim())
+      .map((f) => f.trim().replace(/^(['"])(.*)\1$/s, '$2').trim())
       .filter((f) => f !== '');
     return families.length > 0 ? families : raw;
   }
