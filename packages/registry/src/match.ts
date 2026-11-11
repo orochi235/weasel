@@ -16,7 +16,8 @@ export type QueryMatch = { readonly by: 'text' } | { readonly by: 'tag'; readonl
 const BY_TEXT: QueryMatch = { by: 'text' };
 
 /** Whether `entry` answers `query`, and by what. Each field matches when it
- *  contains the query, ignoring case; text is tried before tags. An empty or
+ *  contains the query, ignoring case and how accented letters are
+ *  encoded; text is tried before tags. An empty or
  *  whitespace query matches everything, by text. */
 export function matchQuery(query: string, entry: Findable): QueryMatch | null {
   const q = fold(query.trim());
@@ -26,10 +27,10 @@ export function matchQuery(query: string, entry: Findable): QueryMatch | null {
   return tag === undefined ? null : { by: 'tag', tag };
 }
 
-/** `s` lowercased, with final sigma folded to `σ`: the one letter `toLowerCase` spells by its place in a word,
- *  so a text holding the query exactly could otherwise miss it. */
+/** `s` lowercased and composed, with final sigma folded to `σ`: the one letter `toLowerCase` spells by its place in
+ *  a word, so a text holding the query exactly could otherwise miss it. Composing reads `é` and `e` + U+0301 alike. */
 function fold(s: string): string {
-  return s.toLowerCase().replaceAll('ς', 'σ');
+  return s.toLowerCase().normalize('NFC').replaceAll('ς', 'σ');
 }
 
 /** Whether `tags` holds `tag` exactly: the test for gathering every entry
