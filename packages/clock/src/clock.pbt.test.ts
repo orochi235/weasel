@@ -16,7 +16,7 @@ import type { ClockHandle, ClockSpec } from './types';
 const RUNS = 200;
 
 /** `slept`: the last sync left the clock inert, so the next one only records the time, as after a rebase. */
-interface Model { elapsed: number; rate: number; ramp: { to: number; left: number } | null; now: number; last: number | null; slept: boolean }
+interface Model { elapsed: number; rate: number; ramp: { to: number; left: number; over: number } | null; now: number; last: number | null; slept: boolean }
 interface Real { handle: ClockHandle; mix: ReturnType<typeof fakeMix> }
 
 const t = tally();
@@ -69,15 +69,16 @@ const syncCmd = fc.oneof(fc.constantFrom(0, 16, 16.7, 100, 1000, 1e4, 1e7), fc.d
         const span = spanOf(r.handle);
         let area: number;
         if (!m.ramp) area = m.rate * dt;
-        else if (dt >= m.ramp.left) {
-          area = ((m.rate + m.ramp.to) / 2) * m.ramp.left + m.ramp.to * (dt - m.ramp.left);
+        // A ramp settles once its time is up, to within the drift its frames' subtraction leaves.
+        else if (dt >= m.ramp.left - 8 * Number.EPSILON * m.ramp.over) {
+          area = ((m.rate + m.ramp.to) / 2) * m.ramp.left + m.ramp.to * Math.max(0, dt - m.ramp.left);
           m.rate = m.ramp.to;
           m.ramp = null;
         } else {
           const next = m.rate + ((m.ramp.to - m.rate) * dt) / m.ramp.left;
           area = ((m.rate + next) / 2) * dt;
           m.rate = next;
-          m.ramp = { to: m.ramp.to, left: m.ramp.left - dt };
+          m.ramp = { to: m.ramp.to, left: m.ramp.left - dt, over: m.ramp.over };
         }
         m.elapsed += area;
         if (m.elapsed >= span && (m.rate > 0 || area > 0)) { m.elapsed = span; m.rate = 0; m.ramp = null; t.count('end'); }
@@ -106,7 +107,7 @@ const commands = fc.commands([
     check: () => true,
     run(m, r) {
       r.handle.clock.ramp(to, over);
-      if (over > 0) m.ramp = { to, left: over };
+      if (over > 0) m.ramp = { to, left: over, over };
       else { m.rate = to; m.ramp = null; }
       check(m, r);
       t.count('ramp');
@@ -397,5 +398,17 @@ describe('shrunk counterexamples, deep run', () => {
     for (const dt of [2.4546168599200637e-18, 3.830208127153479e-11, 7.527052768548452e-22, 0]) clock.sync((now += dt));
     clock.sync(1);
     expect(clock.rate).toBe(2);
+  });
+});
+
+describe('shrunk counterexamples, second deep run', () => {
+  it('a duration write far out keeps the pass when its phase is near 1', () => {
+    const h = createClock({ loop: true, rate: 4, start: 1e9 });
+    h.clock.duration = 0.1;
+    h.clock.sync(0);
+    h.clock.sync(16.7);
+    const pass = h.clock.pass;
+    h.clock.duration = 0.001;
+    expect(h.clock.pass).toBe(pass);
   });
 });

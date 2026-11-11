@@ -92,10 +92,13 @@ function setDuration(run: Run, hub: Hub, next: number): void {
   if (next === run.duration) return;
   if (Number.isFinite(run.duration) && Number.isFinite(next)) {
     const ended = run.elapsed >= run.span;
-    const at = passAt(run) + phaseAt(run);
+    const pass = passAt(run);
+    const phase = phaseAt(run);
     run.duration = next;
     run.span = run.duration * passesOf(run.loop);
-    run.elapsed = ended ? run.span : clamp(run, at * run.duration);
+    // Not `(pass + phase) * next`: far out, the sum rounds a phase near 1 up into the next pass.
+    if (ended) run.elapsed = run.span;
+    else placeIn(run, pass, phase * next);
   } else {
     run.duration = next;
     run.span = run.duration * passesOf(run.loop);
