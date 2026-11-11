@@ -65,7 +65,8 @@ export function defaultStep(step: number | undefined, min: number, max: number):
   return (max - min) / 100;
 }
 
-/** Keep thumb `index` strictly between its neighbors: a step apart, or a thousandth of the span without one. */
+/** Keep thumb `index` strictly between its neighbors: a step apart, or a thousandth of the span without one, and
+ *  inside `min` to `max`. Neighbors too close for that hold it between them, or failing that inside `min` to `max`. */
 export function clampOrdered(
   v: number,
   thumbs: readonly { value: number }[],
@@ -75,9 +76,14 @@ export function clampOrdered(
   step: number | undefined,
 ): number {
   const gap = step !== undefined && step > 0 ? step : (max - min) / 1000;
-  const lower = index > 0 ? thumbs[index - 1]!.value + gap : min;
-  const upper = index < thumbs.length - 1 ? thumbs[index + 1]!.value - gap : max;
-  return clamp(v, lower, upper);
+  const below = index > 0 ? thumbs[index - 1]!.value : -Infinity;
+  const above = index < thumbs.length - 1 ? thumbs[index + 1]!.value : Infinity;
+  const lower = Math.max(min, below + gap);
+  const upper = Math.min(max, above - gap);
+  if (lower <= upper) return clamp(v, lower, upper);
+  const lo = Math.max(min, below);
+  const hi = Math.min(max, above);
+  return lo <= hi ? clamp(v, lo, hi) : clamp(v, min, max);
 }
 
 /**

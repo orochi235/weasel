@@ -55,7 +55,7 @@ export function useThumbDrags<T extends Thumb>({ props, span, scale, geometry }:
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
         v = clamp(v, bLo, bHi);
 
-        if (constraint === 'ordered') v = clampOrdered(v, buffer, index, min, max, step);
+        if (constraint === 'ordered') v = clampOrdered(v, buffer, index, bLo, bHi, step);
 
         if (props.onRemoveThumb) droppedOff = m.across > DROP_OFF * m.reach;
 
