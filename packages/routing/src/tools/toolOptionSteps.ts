@@ -64,6 +64,8 @@ function stepAction(toolId: string, toolLabel: string, options: ToolOptions, spe
 
 /** Wheel travel, in px of delta, that moves the size one more step within a burst. */
 export const WHEEL_SIZE_STEP_PX = 60;
+/** The most steps one wheel event takes, however far it travels. */
+export const WHEEL_SIZE_MAX_STEPS = 1_000;
 /** How long the wheel rests, in ms, before its next event starts a new burst. */
 export const WHEEL_SIZE_BURST_MS = 150;
 
@@ -104,10 +106,9 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
           return;
         }
         travel += d;
-        while (Math.abs(travel) >= WHEEL_SIZE_STEP_PX) {
-          travel -= Math.sign(travel) * WHEEL_SIZE_STEP_PX;
-          stepOption(toolId, options, values, step, leaf, dir);
-        }
+        const steps = Math.floor(Math.abs(travel) / WHEEL_SIZE_STEP_PX);
+        travel -= Math.sign(travel) * steps * WHEEL_SIZE_STEP_PX;
+        for (let i = Math.min(steps, WHEEL_SIZE_MAX_STEPS); i > 0; i--) stepOption(toolId, options, values, step, leaf, dir);
       },
     } satisfies ImmediateInvoker,
     enabled: enabledFor(toolId),
