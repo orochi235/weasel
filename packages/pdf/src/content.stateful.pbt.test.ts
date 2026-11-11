@@ -13,7 +13,6 @@ import { readContent } from './pdfReader.fixture';
 
 const RUNS = 150;
 
-type Affine = [number, number, number, number, number, number];
 type Op = { op: string; args: number[] };
 
 interface Model {

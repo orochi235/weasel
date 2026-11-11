@@ -91,7 +91,7 @@ const leaf: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 1, widt
 
 /** `leaf` inside `depth` groups, each picked from a plain, a moved, a faded, or an isolated one. */
 function nest(depth: number, kinds: readonly number[]): DrawCommand {
-  let cmd = leaf;
+  let cmd: DrawCommand = leaf;
   for (let i = 0; i < depth; i++) {
     const k = kinds[i % kinds.length]!;
     cmd = k === 0 ? { kind: 'group', children: [cmd] }

@@ -4,7 +4,7 @@
  * bitmap whose data fits its size is drawn, and one that does not is left out and reported.
  */
 import fc from 'fast-check';
-import type { DrawCommand } from '@weasel-js/renderer';
+import { blur, type DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it } from 'vitest';
 import { checkPdf } from './pdfCheck.fixture';
 import { runs, tally, timeoutFor } from './pbt.fixture';
@@ -37,7 +37,7 @@ const image = (n: number): DrawCommand => ({
 
 const blurred: DrawCommand = {
   kind: 'group',
-  effects: [{ kind: 'blur', radius: 2 }],
+  effects: blur({ radius: 2 }),
   children: [{ kind: 'path', path: { kind: 'rect', x: 5, y: 5, width: 20, height: 20 }, fill: { paint: { color: '#00f' } } }],
 } as DrawCommand;
 

@@ -6,7 +6,7 @@ import { writePdf } from './writePdf';
 
 const leaf: DrawCommand = { kind: 'path', path: { kind: 'rect', x: 1, y: 1, width: 5, height: 5 }, fill: { paint: { color: '#f00' } } };
 const nest = (depth: number): DrawCommand => {
-  let cmd = leaf;
+  let cmd: DrawCommand = leaf;
   for (let i = 0; i < depth; i++) cmd = { kind: 'group', children: [cmd] };
   return cmd;
 };

@@ -36,6 +36,8 @@ afterAll(() => {
   _resetLayoutCacheForTests();
 });
 
+const STYLE = { fontFamily: FAMILIES[0]!, fontSize: 12 };
+
 const run = (text: string, over: Partial<ResolvedRun>): ResolvedRun => ({
   text, fontFamily: FAMILIES[0]!, fontSize: 12, fontWeight: 400, fontStyle: 'normal', fill: { paint: { color: '#000' } },
   letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0, ...over,
@@ -97,7 +99,7 @@ describe('text beyond Latin', () => {
     );
     await fc.assert(
       fc.asyncProperty(parts, async (list) => {
-        const cmd: TextDrawCommand = { kind: 'text', x: 5, y: 30, runs: list.map((p) => run(p.text, { fontFamily: p.family })) };
+        const cmd: TextDrawCommand = { kind: 'text', x: 5, y: 30, style: STYLE, runs: list.map((p) => run(p.text, { fontFamily: p.family })) };
         const { bytes, skipped } = await writePdf([{ width: 400, height: 80, commands: [cmd] }], { fonts: registryFontSource, compress: false });
         const { pdf } = checkPdf(bytes);
         const undrawn = new Set(skipped.map((k) => /^U\+([0-9A-F]+) /.exec(k.detail)).filter((m) => m !== null).map((m) => parseInt(m[1]!, 16)));
@@ -121,7 +123,7 @@ describe('languages', () => {
     const parts = fc.array(fc.record({ text: fc.string({ unit: fc.constantFrom(...'abcxyz'), minLength: 1, maxLength: 5 }), lang }), { minLength: 1, maxLength: 4 });
     await fc.assert(
       fc.asyncProperty(parts, fc.option(lang, { nil: undefined }), async (list, docLang) => {
-        const cmd: TextDrawCommand = { kind: 'text', x: 5, y: 30, runs: list.map((p) => run(p.text, { lang: p.lang })) };
+        const cmd: TextDrawCommand = { kind: 'text', x: 5, y: 30, style: STYLE, runs: list.map((p) => run(p.text, { lang: p.lang })) };
         const { bytes } = await writePdf([{ width: 400, height: 80, commands: [cmd] }], { fonts: registryFontSource, compress: false, lang: docLang });
         const { pdf } = checkPdf(bytes);
         const mark = (l: string | undefined) => (l && l.toLowerCase() !== docLang?.toLowerCase() ? l : undefined);

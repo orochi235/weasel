@@ -126,7 +126,7 @@ describe('a damaged face in a document', () => {
             return seen.count('not loaded');
           }
           const cmd: TextDrawCommand = {
-            kind: 'text', x: 5, y: 20,
+            kind: 'text', x: 5, y: 20, style: { fontFamily: family, fontSize: 12 },
             runs: [{
               text: s, fontFamily: family, fontSize: 12, fontWeight: 400, fontStyle: 'normal', fill: { paint: { color: '#000' } },
               letterSpacing: 0, underline: false, strikethrough: false, overline: false, baselineShift: 0,

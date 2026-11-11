@@ -1,4 +1,4 @@
-import type { DrawCommand } from '@weasel-js/renderer';
+import { blur, type DrawCommand } from '@weasel-js/renderer';
 import { describe, expect, it } from 'vitest';
 import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
@@ -8,7 +8,7 @@ import { writePdf } from './writePdf';
 const image: DrawCommand = { kind: 'image', image: { width: 2, height: 2 } as unknown as ImageBitmap, x: 10, y: 10, w: 20, h: 20 } as DrawCommand;
 const blurred: DrawCommand = {
   kind: 'group',
-  effects: [{ kind: 'blur', radius: 2 }],
+  effects: blur({ radius: 2 }),
   children: [{ kind: 'path', path: { kind: 'rect', x: 5, y: 5, width: 20, height: 20 }, fill: { paint: { color: '#00f' } } }],
 } as DrawCommand;
 
