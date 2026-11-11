@@ -379,6 +379,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   widens a range end that falls inside a surrogate pair to take the whole character, and `styleAtRange`
   reads a range the same way; a combining mark still styles alone. A pair that authored runs split anyway
   lays out, and case-maps, as one character in the style of the run holding its high surrogate.
+- 2026-11-10 (property tests): `gposPairKerning` skips a `kern` feature or lookup whose offsets run past the end
+  of the font, as it already skipped such a pair subtable, and keeps the rest of the font's kerning. The default
+  outline parser rejects a font that states no units per em or no ascent, so the SDF tier keeps its text, rather
+  than handing back a face that measures `NaN`.
 - Open (2026-11-10, property tests): a combining mark opening a run, when the run's locale mapping drops
   it (`tr`'s dot after `I`), sends the paragraph to mapping code point by code point, since the mark has
   no piece in its own run to join. Code point snapping does not reach it.
