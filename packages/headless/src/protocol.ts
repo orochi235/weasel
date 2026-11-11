@@ -77,9 +77,16 @@ export function readPageRequest(value: unknown): PageRequest {
   if (!isRecord(value)) return refuse('the request', 'an object', value);
   if (!isRecord(value.scene)) refuse('scene', 'an object', value.scene);
   if (!isRecord(value.sourceRect)) refuse('sourceRect', 'an object', value.sourceRect);
-  for (const k of ['x', 'y', 'width', 'height'] as const) finite(`sourceRect.${k}`, (value.sourceRect as Record<string, unknown>)[k]);
+  const rect = value.sourceRect as Record<string, unknown>;
+  for (const k of ['x', 'y', 'width', 'height'] as const) finite(`sourceRect.${k}`, rect[k]);
+  // What core's `planPixelRender` refuses in the page, refused here before a browser starts.
+  for (const k of ['width', 'height'] as const) if ((rect[k] as number) <= 0) refuse(`sourceRect.${k}`, 'a positive number', rect[k]);
   if (!isRecord(value.scale)) refuse('scale', 'an object', value.scale);
-  for (const k of ['x', 'y'] as const) finite(`scale.${k}`, (value.scale as Record<string, unknown>)[k]);
+  for (const k of ['x', 'y'] as const) {
+    const v = (value.scale as Record<string, unknown>)[k];
+    finite(`scale.${k}`, v);
+    if (v === 0) refuse(`scale.${k}`, 'a nonzero number', v);
+  }
   if (value.format !== 'rgba' && value.format !== 'png') refuse('format', `'rgba' or 'png'`, value.format);
   if (value.background !== undefined && typeof value.background !== 'string') refuse('background', 'a CSS color string', value.background);
   if (value.flattenTolerancePx !== undefined) finite('flattenTolerancePx', value.flattenTolerancePx);
