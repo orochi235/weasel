@@ -67,6 +67,19 @@ describe('nearestOnCubic, property', () => {
   }, TIMEOUT);
 });
 
+describe('nearestOnCubic, two minima in one sampled basin (shrunk counterexamples)', () => {
+  it('finds a point the curve passes through beside an anchor its handle sits on', () => {
+    // The end's handle is on its anchor, so the refinement saw g = 0 at t = 1 and stopped there.
+    expect(nearestOnCubic(-1.0816205645975648e-9, 0, 0, 1.03139006961934e-9, -0.00013378324753995485, 0, 0, 0, 0, 0).dist).toBeLessThan(1e-11);
+  });
+
+  it('finds a point of the curve beside a fold, not the other side of it', () => {
+    // The flattening's vertex at the fold: the far side, 5e-7 away, shared its sampled basin.
+    const c = [0, 0, -4.6003908937305855, 0, 0, 0, 19.13117663435128, 0.006594193164349875] as const;
+    expect(nearestOnCubic(-1.649786044968359, 0.00008489762088653881, ...c).dist).toBeLessThan(1e-9);
+  });
+});
+
 describe('segmentLength, property', () => {
   it('agrees with a fine polyline, and adds up over a split', () => {
     fc.assert(fc.property(cubic, unitT, (c, s) => {
@@ -74,9 +87,11 @@ describe('segmentLength, property', () => {
       const pts = samples(c, 20000);
       let chords = 0;
       for (let k = 1; k < pts.length; k++) chords += Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
-      // Chords run short of the arc, by less than its length times their turn squared, which 20,000 keep tiny.
-      expect(total).toBeGreaterThanOrEqual(chords - 1e-8 * total - size(c) * 1e-12);
-      expect(total - chords).toBeLessThan(1e-6 * total + size(c) * 1e-9);
+      // Chords run short of the arc, by less than its length times their turn squared, which 20,000 keep tiny;
+      // each sample's rounding, an ulp of the coordinates, adds to their sum.
+      const noise = size(c) * 4e-16 * pts.length;
+      expect(total).toBeGreaterThanOrEqual(chords - 1e-8 * total - noise);
+      expect(total - chords).toBeLessThan(1e-6 * total + noise);
       const parts = segmentLength(c, 2, 0, s) + segmentLength(c, 2, s, 1);
       expect(Math.abs(parts - total)).toBeLessThan(1e-9 * total + size(c) * 1e-12);
     }), RUNS);

@@ -53,6 +53,8 @@ describe('flats, property', () => {
     const cols = (n: number) => fc.array(fc.tuple(vecOf(n, 10), magnitude).map(([v, m]) => v.map((x) => x * m)), { maxLength: n });
     fc.assert(fc.property(dimension.chain((n) => fc.tuple(cols(n), vecOf(n))), ([cs, rhs]) => {
       const x = solveLeastSquares(cs, rhs);
+      // A column so short its coefficient passes the double range has no answer to compare.
+      fc.pre(x.every(Number.isFinite));
       const got = rhs.map((_, i) => cs.reduce((s, c, j) => s + x[j]! * c[i]!, 0));
       const want = closestOnFlat({ at: rhs.map(() => 0), dirs: cs }, rhs);
       // Where the columns are nearly dependent the coefficients are ill-conditioned; compare the points they reach.
@@ -141,10 +143,17 @@ describe('resolveSnap, property', () => {
       if (r.members.length === 0) expect(dist(r.delta, closestOnFlat(prob.input, prob.delta0))).toBeLessThan(1e-12 * scale);
       else tally.snapped++;
       if (prob.candidates.some((c) => c.required)) {
-        // A required candidate the input can reach at all is always in the result.
-        const reachable = prob.candidates.some((c) => c.required
+        // A required candidate the input can reach at all is always met; one every move meets pins nothing, so is no member.
+        const required = prob.candidates.filter((c) => c.required
           && intersectFlats(prob.input, { at: c.locus.at.map((v, i) => v - at.get(c.probe)![i]!), dirs: c.locus.dirs }) !== null);
-        if (reachable) { tally.required++; expect(r.members.some((c) => c.required)).toBe(true); }
+        if (required.length > 0) {
+          tally.required++;
+          const met = required.some((c) => {
+            const world = at.get(c.probe)!.map((v, i) => v + r.delta[i]!);
+            return dist(closestOnFlat(c.locus, world), world) < 1e-6;
+          });
+          expect(met).toBe(true);
+        }
       }
       expect(r.codim).toBeLessThanOrEqual(flatDim(prob.input));
       expect(r.codim > 0).toBe(r.members.length > 0);
