@@ -36,6 +36,7 @@ import { annotationLayerIds } from 'core/scene/annotation';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { layerNameClaims } from 'core/layers/layerGroup';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
+import { checkPixelRenderRect } from './pixelRenderRect';
 
 export { warmRender, type WarmRenderOptions } from './warmRender';
 export type {
@@ -52,25 +53,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
   args: Omit<RenderSceneToPixelsArgs<TData, TLayer, TPose>, 'gl' | 'createCanvas' | 'flattenTolerancePx'>,
 ): PixelRenderPlan {
   const { sourceRect, scale } = args;
-  for (const [label, v] of [
-    ['sourceRect.width', sourceRect.width], ['sourceRect.height', sourceRect.height],
-  ] as const) {
-    if (!Number.isFinite(v) || v <= 0) {
-      throw new Error(`renderSceneToPixels: ${label} must be a positive finite number, got ${v}`);
-    }
-  }
-  for (const [label, v] of [['scale.x', scale.x], ['scale.y', scale.y]] as const) {
-    if (!Number.isFinite(v) || v === 0) {
-      throw new Error(`renderSceneToPixels: ${label} must be a nonzero finite number, got ${v}`);
-    }
-  }
-  for (const [label, v] of [
-    ['sourceRect.x', sourceRect.x], ['sourceRect.y', sourceRect.y],
-  ] as const) {
-    if (!Number.isFinite(v)) {
-      throw new Error(`renderSceneToPixels: ${label} must be a finite number, got ${v}`);
-    }
-  }
+  checkPixelRenderRect(sourceRect, scale);
   const width = Math.max(1, Math.round(sourceRect.width * Math.abs(scale.x)));
   const height = Math.max(1, Math.round(sourceRect.height * Math.abs(scale.y)));
   const view: View = {
