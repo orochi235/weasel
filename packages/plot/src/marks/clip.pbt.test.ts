@@ -119,3 +119,26 @@ describe('clipPolygon', () => {
     seen.atLeast('overlap', RUNS / 10);
   }, timeoutFor(RUNS, 1));
 });
+
+describe('an area with no inside', () => {
+  const flat: fc.Arbitrary<ConvexArea> = fc.oneof(
+    rect.map((r) => rectArea({ ...r, width: 0 })),
+    rect.map((r) => rectArea({ ...r, height: 0 })),
+    rect.map((r) => rectArea({ ...r, width: 0, height: 0 })),
+    fc.tuple(fc.integer({ min: -100, max: 100 }), fc.integer({ min: -100, max: 100 })).map(([x, y]) => circleArea({ x, y }, 0, 8)),
+  );
+  it('keeps only what lies on the segment or point it is', () => {
+    const seen = tally();
+    fc.assert(fc.property(flat, fc.array(point, { maxLength: 6 }), (a, pts) => {
+      const [x0, x1] = [Math.min(...a.map((p) => p.x)), Math.max(...a.map((p) => p.x))];
+      const [y0, y1] = [Math.min(...a.map((p) => p.y)), Math.max(...a.map((p) => p.y))];
+      const on = (p: PlotPoint) => p.x >= x0 - 1e-9 && p.x <= x1 + 1e-9 && p.y >= y0 - 1e-9 && p.y <= y1 + 1e-9;
+      for (const p of [...clipPolyline(a, pts).flat(), ...clipPolygon(a, pts)]) {
+        expect(on(p)).toBe(true);
+        seen.count('kept');
+      }
+      for (const p of pts) if (insideArea(a, p)) expect(on(p)).toBe(true);
+    }), runs(RUNS));
+    seen.atLeast('kept', 10);
+  }, timeoutFor(RUNS, 1));
+});

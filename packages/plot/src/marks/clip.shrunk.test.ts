@@ -1,6 +1,6 @@
 /** Counterexamples the clipper's property tests shrank to, kept as plain examples. */
 import { describe, expect, it } from 'vitest';
-import { clipPolygon, rectArea } from './clip';
+import { circleArea, clipPolygon, clipPolyline, insideArea, rectArea } from './clip';
 
 const finite = (pts: readonly { x: number; y: number }[]) => pts.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
 
@@ -22,5 +22,15 @@ describe('clipPolygon, shrunk', () => {
     const out = clipPolygon(small, rectArea({ x: 0, y: 0, width: 29, height: 91 }));
     expect(out).toHaveLength(9);
     expect(finite(out)).toBe(true);
+  });
+
+  it('holds an area with no inside to the segment or point it is', () => {
+    const line = rectArea({ x: 5, y: 5, width: 10, height: 0 });
+    expect(insideArea(line, { x: 100, y: 5 })).toBe(false);
+    expect(insideArea(line, { x: 10, y: 5 })).toBe(true);
+    const dot = rectArea({ x: 5, y: 5, width: 0, height: 0 });
+    expect(insideArea(dot, { x: 100, y: -50 })).toBe(false);
+    expect(clipPolyline(dot, [{ x: 100, y: 100 }, { x: -100, y: 3 }])).toEqual([]);
+    expect(insideArea(circleArea({ x: 5, y: 5 }, 0), { x: 100, y: -50 })).toBe(false);
   });
 });
