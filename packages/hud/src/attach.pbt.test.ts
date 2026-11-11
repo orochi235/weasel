@@ -148,7 +148,7 @@ describe('attachHud layer', () => {
           const at = hit === null ? null : order[hit]!;
           if (at !== over) { leave(); over = at; }
           if (at !== null) { want.push(`move ${at}`); seen.hit('over'); }
-          layer.onUncapturedMove!(s.x, s.y, null as never, VIEW);
+          layer.onUncapturedMove!(s.x, s.y, null as never, VIEW, { width: 400, height: 300, dpr: 1 });
         } else if (s.t === 'leave') {
           leave();
           layer.onUncapturedLeave!();
