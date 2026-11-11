@@ -434,16 +434,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has looked at every beveled control under both themes and kept or retuned
   its hooks.
 
-- **(P3) [agent] Two control choices are labkit's alone, and two controls draw an enum their own way.**
-  Which control a leaf draws is one table (`PARAMS_CONTROLS`, `Prefs/surfaceControls.ts`), but two
-  of its rows were carried over from labkit undecided: `enumAsAsked: false` (`radio` draws as
-  segments, `menu` as a select) and `openSlider: false` (a slider needs both bounds). Outside the
-  table, `Bar/BarField.tsx` draws an enum's `radio` as segments on every surface, and labkit's
-  `MatrixEditor` always lists an enum as radios.
-  Ruled (2026-11-07): both flip to true — an enum draws the control it asks for, and a slider with one bound
-  draws an open end. Closes when the table says so and `BarField` and `MatrixEditor` take their enum control
-  from `PARAMS_CONTROLS`.
-
 ### WeaselDraw app follow-ups (defer)
 
 - **(P3) [waiting] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and

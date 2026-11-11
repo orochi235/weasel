@@ -1,4 +1,5 @@
-import type { PropertyControlProps } from '../Properties/PropertyField';
+import type { LeafSurface } from '../Bar/renderBarLeaf';
+import type { PropertyControlProps, PropertyEnumFieldProps } from '../Properties/PropertyField';
 import type { ParamsSurface } from './commitPolicy';
 
 /** Which control a surface draws where a leaf's own `control` does not settle it. */
@@ -7,7 +8,7 @@ export interface SurfaceControls {
   flag: 'checkbox' | 'switch';
   /** Whether a boolean asking for `toggle` gets one. Where not, it draws as `flag`. */
   flagToggle: boolean;
-  /** Whether a number asking for a slider gets one with an end of its range missing, over 0..100. Where not, it is typed. */
+  /** Whether a number asking for a slider gets one with an end of its range missing, its track running 100 past the end it has. Where not, it is typed. */
   openSlider: boolean;
   /** Whether an enum's `radio` and `menu` draw as asked. Where not, `radio` is the segments `toggle` draws and `menu` is a select. */
   enumAsAsked: boolean;
@@ -17,8 +18,31 @@ export interface SurfaceControls {
 export const PARAMS_CONTROLS: Record<ParamsSurface, SurfaceControls> = {
   form: { flag: 'checkbox', flagToggle: true, openSlider: true, enumAsAsked: true },
   panel: { flag: 'switch', flagToggle: true, openSlider: true, enumAsAsked: true },
-  lab: { flag: 'checkbox', flagToggle: false, openSlider: false, enumAsAsked: false },
+  lab: { flag: 'checkbox', flagToggle: false, openSlider: true, enumAsAsked: true },
 };
+
+/** A control an enum can ask for. */
+export type EnumControlName = NonNullable<PropertyEnumFieldProps['control']>;
+
+/** Where a field is drawn: a labeled row, a cell of a bar, or the popover a cell opens. */
+export type ControlPlace = LeafSurface | 'popover';
+
+/**
+ * The control an enum asking for one draws, by place, where the place has no room for it: a radio group's
+ * column does not fit a bar's one line, and a dropdown or a menu opened in a popover is a popup inside a popup.
+ * Every other control draws as asked, on every surface.
+ */
+export const PARAMS_ENUM_PLACES: Record<ControlPlace, Partial<Record<EnumControlName, EnumControlName>>> = {
+  row: {},
+  bar: { radio: 'toggle' },
+  popover: { select: 'radio', menu: 'radio' },
+};
+
+/** The control an enum asking for `control` draws at `place`. One naming none asks for a select. */
+export function enumControlAt(control: EnumControlName | undefined, place: ControlPlace): EnumControlName {
+  const asked = control ?? 'select';
+  return PARAMS_ENUM_PLACES[place][asked] ?? asked;
+}
 
 /** `field` with the control `surface` draws for the one its leaf asked for. One naming none is left without. */
 export function withSurfaceControl(field: PropertyControlProps, surface: ParamsSurface): PropertyControlProps {

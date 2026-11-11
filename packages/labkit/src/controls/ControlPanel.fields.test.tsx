@@ -182,13 +182,27 @@ describe('<ControlPanel> option icons', () => {
     expect(schema.group.children.camera).toMatchObject({ control: 'toggle' });
   });
 
+  it('draws an enum asked for as radios as a radio group', () => {
+    const camera = f.enum('3d', ['2d', '3d']).radio();
+    const { container } = renderWithIcons(
+      <ControlPanel
+        schema={resolveConfigSchema(f.schema({ camera }), [])}
+        config={{ camera: '3d' }}
+        setConfig={() => {}}
+      />,
+    );
+    expect(screen.getByRole('radiogroup')).toBeInTheDocument();
+    expect(container.querySelectorAll('input[type="radio"]')).toHaveLength(2);
+    expect(screen.getByRole('radio', { name: '3d' })).toBeChecked();
+  });
+
   it("draws an option's icon in its segment and keeps the label as its name", () => {
     const status = f
       .enum('ok', [
         { value: 'ok', label: 'ok', icon: icon('ui:gradeSuccess') },
         { value: 'bad', label: 'bad' },
       ])
-      .radio();
+      .toggle();
     renderWithIcons(
       <ControlPanel
         schema={resolveConfigSchema(f.schema({ status }), [])}

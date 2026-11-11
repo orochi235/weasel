@@ -13,7 +13,16 @@ export { prefNumberScale } from './prefNumberScale';
 export { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, liveControl, withCommitPolicy, withDrafts, type ParamsSurface, type LiveControl } from './commitPolicy';
 export { useParamsPolicy, type ParamsPolicy } from './useParamsPolicy';
 export { useDebouncedText } from './useDebouncedText';
-export { PARAMS_CONTROLS, withRowControl, withSurfaceControl, type SurfaceControls } from './surfaceControls';
+export {
+  PARAMS_CONTROLS,
+  PARAMS_ENUM_PLACES,
+  enumControlAt,
+  withRowControl,
+  withSurfaceControl,
+  type ControlPlace,
+  type EnumControlName,
+  type SurfaceControls,
+} from './surfaceControls';
 export { PrefActionButton, PrefActionRows } from './PrefActionButton';
 export { actionLeafVariants, actionsLeafActions, prefDrawsActionRow, useRegisteredActions, type ActionsLeafOptions } from './registeredActions';
 export { PrefMixed } from './PrefMixed';

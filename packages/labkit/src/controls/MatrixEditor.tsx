@@ -5,7 +5,7 @@ import {
   type PrefSection,
   prefLeafValue,
 } from '@weasel-js/prefs';
-import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
+import { enumControlAt, prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
@@ -27,8 +27,9 @@ export interface OpenCell {
 }
 
 /**
- * The control a cell opens. An enum lists its options outright, as radios: the
- * panel's dropdown would be a second popup opened from inside this one.
+ * The control a cell opens. An enum draws the control it asks for, except that
+ * one which would open a popup of its own lists its options as radios instead
+ * (`PARAMS_ENUM_PLACES`).
  * Choosing one is the whole edit, so it closes the popover.
  */
 export function MatrixEditor({
@@ -50,19 +51,23 @@ export function MatrixEditor({
   const choices = useFieldChoices();
   const disabled = !isLeafEnabled(schema, path, config, over);
   const field = isBuiltinPref(leaf)
-    ? prefFieldProps(leaf, {
-        value: prefLeafValue(leaf, valueAtPath(config, path)),
-        setValue: (next) => setConfig(path, next),
-        fields: choices,
-        disabled,
-      })
+    ? prefFieldProps(
+        leaf,
+        {
+          value: prefLeafValue(leaf, valueAtPath(config, path)),
+          setValue: (next) => setConfig(path, next),
+          fields: choices,
+          disabled,
+        },
+        'lab',
+      )
     : null;
   if (field?.kind === 'enum') {
     return (
       <PropertyField
         {...field}
         label={leaf.name}
-        control="radio"
+        control={enumControlAt(field.control, 'popover')}
         onChange={(next: Parameters<typeof field.onChange>[0]) => {
           field.onChange(next);
           close();

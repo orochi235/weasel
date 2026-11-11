@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { FitLabel, labelForms } from '../FitLabel/FitLabel';
 import { type DistributiveOmit, PropertyControl, type PropertyControlProps } from '../Properties/PropertyField';
 import { PropertyReadout } from '../Properties/PropertyReadout';
+import { enumControlAt } from '../Prefs/surfaceControls';
 import { BarPopover } from './BarPopover';
 import { useOrientation } from '../orientation';
 import s from './Bar.module.css';
@@ -28,8 +29,8 @@ export type BarFieldProps<T extends string = string> = DistributiveOmit<Property
  * labeled row.
  *
  * A kind's `control` picks among the forms a line has room for. A radio group
- * draws as segments, a paint as its swatch, and a text area opens from a
- * button, since none of those fit on one.
+ * draws as segments (`PARAMS_ENUM_PLACES`), a paint as its swatch, and
+ * a text area opens from a button, since none of those fit on one.
  */
 export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
   const { icon, ...p } = typed as unknown as PropertyControlProps & BarFieldCellProps;
@@ -97,7 +98,7 @@ export function BarField<T extends string = string>(typed: BarFieldProps<T>) {
     case 'enum':
       return (
         <span {...field(s.field)}>
-          <PropertyControl {...p} control={p.control === 'radio' ? 'toggle' : p.control} />
+          <PropertyControl {...p} control={enumControlAt(p.control, 'bar')} />
         </span>
       );
     case 'paint':
