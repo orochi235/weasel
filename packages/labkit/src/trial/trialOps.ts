@@ -1,7 +1,7 @@
 import { withoutMarkHistory } from '../annotations/history';
 import { isAuto } from '../config/auto';
 import { autoPathsOf } from '../config/autoConfig';
-import { fillConfigDefaults, isRecord } from '../config/path';
+import { fillConfigDefaults, isRecord, setOwn } from '../config/path';
 import { unruledConfigSchema } from '../instrument/serializers';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import { newId } from '../state/helpers';
@@ -44,10 +44,10 @@ function splitAutoSeed(
       autoPaths.push(path);
     } else if (isRecord(value)) {
       const inner = splitAutoSeed(value as Record<string, unknown>, path);
-      config[key] = inner.config;
+      setOwn(config, key, inner.config);
       autoPaths.push(...inner.autoPaths);
     } else {
-      config[key] = value;
+      setOwn(config, key, value);
     }
   }
   return { config, autoPaths };

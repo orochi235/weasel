@@ -1,6 +1,6 @@
 import { isPrefLeaf, type PrefGroup } from '@weasel-js/prefs';
 import { headingLeaf } from './headingLeaf';
-import { valueAtPath } from './path';
+import { ownAt, setOwn, valueAtPath } from './path';
 import { bareGroup, type ConfigVerdict, configVerdict } from './railConditions';
 import type { ResolvedConfig } from './types';
 import { isLeafVisible } from './visible';
@@ -44,10 +44,10 @@ function markHeading(
   const lifted = headingLeaf(resolved, heading, paths)?.path;
   for (const path of paths) {
     const key = at === '' ? path : path.slice(at.length + 1);
-    const child = children[key];
+    const child = ownAt(children, key) as PrefGroup['children'][string] | undefined;
     if (!child || !isPrefLeaf(child)) continue;
     const marked = path === lifted;
-    if ((child.heading === true) !== marked) children[key] = { ...child, heading: marked };
+    if ((child.heading === true) !== marked) setOwn(children, key, { ...child, heading: marked });
   }
 }
 
@@ -85,14 +85,14 @@ function prune(
     const path = at === '' ? key : `${at}.${key}`;
     if (!isLeafVisible(resolved, path, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
-      children[key] = verdict.rowAt(path, child);
-      values[key] = valueAtPath(config, path);
+      setOwn(children, key, verdict.rowAt(path, child));
+      setOwn(values, key, valueAtPath(config, path));
       continue;
     }
     const kept = prune(resolved, child, path, config, showHidden, nested, verdict);
     if (!kept) continue;
-    children[key] = kept.group;
-    values[key] = kept.values;
+    setOwn(children, key, kept.group);
+    setOwn(values, key, kept.values);
   }
   const sectioned = new Set(resolved.sections.filter((s) => s.at === at).flatMap((s) => s.paths));
   const loose = Object.keys(group.children)
@@ -103,7 +103,9 @@ function prune(
   const taken = new Set(Object.keys(children));
   for (const section of resolved.sections) {
     if (section.at !== at || at === '') continue;
-    const keys = section.paths.map((p) => p.slice(at.length + 1)).filter((k) => k in children);
+    const keys = section.paths
+      .map((p) => p.slice(at.length + 1))
+      .filter((k) => Object.hasOwn(children, k));
     if (keys.length === 0) continue;
     const slug = slugOf(section.label, taken);
     taken.add(slug);
@@ -112,20 +114,20 @@ function prune(
     const sectionChildren: PrefGroup['children'] = {};
     const sectionValues: Record<string, unknown> = {};
     for (const k of keys) {
-      sectionChildren[k] = children[k] as PrefGroup['children'][string];
-      sectionValues[k] = values[k];
+      setOwn(sectionChildren, k, children[k]);
+      setOwn(sectionValues, k, values[k]);
     }
     markHeading(resolved, section.label, section.paths, at, sectionChildren);
     const reordered: PrefGroup['children'] = {};
     const revalued: Record<string, unknown> = {};
     for (const [k, child] of Object.entries(children)) {
       if (k === keys[0]) {
-        reordered[slug] = { name: section.label, children: sectionChildren };
-        revalued[slug] = sectionValues;
+        setOwn(reordered, slug, { name: section.label, children: sectionChildren });
+        setOwn(revalued, slug, sectionValues);
       }
       if (keys.includes(k)) continue;
-      reordered[k] = child;
-      revalued[k] = values[k];
+      setOwn(reordered, k, child);
+      setOwn(revalued, k, values[k]);
     }
     replace(children, reordered);
     replace(values, revalued);
@@ -137,7 +139,7 @@ function prune(
 
 function replace<V>(target: Record<string, V>, from: Record<string, V>): void {
   for (const k of Object.keys(target)) delete target[k];
-  Object.assign(target, from);
+  for (const [k, v] of Object.entries(from)) setOwn(target, k, v);
 }
 
 /**
@@ -160,6 +162,9 @@ export function sectionTree(
   const claimed = new Set<string>();
   const nested = new Set<string>();
   const verdict = configVerdict(resolved, config);
+  // A root node no section claims stays loose under its own key, so no section's slug may take it.
+  const sectioned = new Set(resolved.sections.flatMap((s) => (s.at === '' ? s.paths : [])));
+  const rootKeys = Object.keys(resolved.group.children).filter((k) => !sectioned.has(k));
 
   for (const section of resolved.sections) {
     if (section.at !== '') continue;
@@ -167,24 +172,26 @@ export function sectionTree(
     const held: Record<string, unknown> = {};
     for (const path of section.paths) {
       claimed.add(path);
-      const child = resolved.group.children[path];
+      const child = ownAt(resolved.group.children, path) as
+        | PrefGroup['children'][string]
+        | undefined;
       if (!child || !isLeafVisible(resolved, path, config, showHidden)) continue;
       if (isPrefLeaf(child)) {
-        kept[path] = verdict.rowAt(path, child);
-        held[path] = valueAtPath(config, path);
+        setOwn(kept, path, verdict.rowAt(path, child));
+        setOwn(held, path, valueAtPath(config, path));
       } else {
         const subtree = prune(resolved, child, path, config, showHidden, nested, verdict);
         if (!subtree) continue;
-        kept[path] = subtree.group;
-        held[path] = subtree.values;
+        setOwn(kept, path, subtree.group);
+        setOwn(held, path, subtree.values);
       }
     }
     if (Object.keys(kept).length === 0) continue;
     markHeading(resolved, section.label, section.paths, '', kept);
-    const slug = slugOf(section.label, slugs);
+    const slug = slugOf(section.label, new Set([...slugs, ...rootKeys]));
     slugs.add(slug);
-    children[slug] = { name: section.label, children: kept };
-    values[slug] = held;
+    setOwn(children, slug, { name: section.label, children: kept });
+    setOwn(values, slug, held);
   }
 
   // Whatever no section claimed stays at the top level, where `prefRailItems`
@@ -192,13 +199,13 @@ export function sectionTree(
   for (const [key, child] of Object.entries(resolved.group.children)) {
     if (claimed.has(key) || !isLeafVisible(resolved, key, config, showHidden)) continue;
     if (isPrefLeaf(child)) {
-      children[key] = verdict.rowAt(key, child);
-      values[key] = valueAtPath(config, key);
+      setOwn(children, key, verdict.rowAt(key, child));
+      setOwn(values, key, valueAtPath(config, key));
     } else {
       const subtree = prune(resolved, child, key, config, showHidden, nested, verdict);
       if (!subtree) continue;
-      children[key] = subtree.group;
-      values[key] = subtree.values;
+      setOwn(children, key, subtree.group);
+      setOwn(values, key, subtree.values);
     }
   }
 

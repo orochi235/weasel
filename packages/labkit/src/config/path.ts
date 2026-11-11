@@ -13,11 +13,12 @@ import { isPlainObject } from '@weasel-js/registry';
 export const isRecord = isPlainObject;
 
 /** `record`'s own value at `key`: a key every object inherits, `constructor` or `toString`, is absent. */
-const ownAt = (record: Record<string, unknown>, key: string): unknown =>
+export const ownAt = (record: Record<string, unknown>, key: string): unknown =>
   Object.hasOwn(record, key) ? record[key] : undefined;
 
-/** Assignment would run `__proto__`'s setter and change the prototype instead. */
-const setOwn = (record: Record<string, unknown>, key: string, value: unknown): void => {
+/** `record[key] = value` as an own property: assignment would run `__proto__`'s setter and change the prototype
+ *  instead. */
+export const setOwn = (record: Record<string, unknown>, key: string, value: unknown): void => {
   Object.defineProperty(record, key, {
     value,
     writable: true,

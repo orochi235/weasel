@@ -92,6 +92,14 @@ describe('fromConfigFields', () => {
   });
 });
 
+describe('a field keyed __proto__', () => {
+  it('lands as its own key rather than the group’s prototype', () => {
+    const r = fromConfigFields([{ type: 'checkbox', key: '__proto__.on', label: 'On', default: true }]);
+    expect(Object.getPrototypeOf(r.group.children)).toBe(Object.prototype);
+    expect(schemaNodeAtPath(r.group, '__proto__.on')).toMatchObject({ kind: 'boolean' });
+  });
+});
+
 describe('isLeafVisible', () => {
   it('is true for a leaf with no predicate', () => {
     const r = fromConfigFields([{ type: 'checkbox', key: 'a', label: 'A', default: true }]);

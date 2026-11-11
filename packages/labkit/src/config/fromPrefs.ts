@@ -6,7 +6,7 @@ import {
   type PrefSection,
   prefConditionPaths,
 } from '@weasel-js/prefs';
-import { withValueAtPath } from './path';
+import { ownAt, setOwn, withValueAtPath } from './path';
 import { isEncodedLeaf, storedDefault } from './storedDefault';
 import type {
   Annotations,
@@ -117,14 +117,14 @@ function place(root: OpenShape, path: string, node: ConfigEntry): void {
   const last = segments.pop()!;
   let shape = root;
   for (const segment of segments) {
-    let branch = shape[segment] as ConfigBranch | undefined;
+    let branch = ownAt(shape, segment) as ConfigBranch | undefined;
     if (branch === undefined || !('children' in branch)) {
       branch = { children: {}, annotations: { name: '' }, options: {} };
-      shape[segment] = branch;
+      setOwn(shape, segment, branch);
     }
     shape = branch.children as OpenShape;
   }
-  shape[last] = node;
+  setOwn(shape, last, node);
 }
 
 /** A group's `object` leaf as the branch it was, its children at `path` below it. */

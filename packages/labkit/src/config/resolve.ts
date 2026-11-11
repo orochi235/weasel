@@ -9,6 +9,7 @@ import {
 import { isDev } from '@weasel-js/react';
 import type { Motif } from '@weasel-js/ui/components/MotifFrame';
 import { isConfigBranch } from './builder';
+import { setOwn } from './path';
 import { applyRules, builtinRules, titleCase } from './rules';
 import type {
   ConfigEntry,
@@ -106,7 +107,7 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
 
   for (const [key, entry] of Object.entries(shape)) {
     const path = at === '' ? key : `${at}.${key}`;
-    children[key] = resolveEntry(entry, key, path, sink);
+    setOwn(children, key, resolveEntry(entry, key, path, sink));
 
     const { section, showIf: predicate, enableIf } = entry.options;
     if (section !== undefined) {
@@ -132,8 +133,10 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
     if (enableIf) sink.enableIf.set(path, enableIf);
     if (isConfigBranch(entry) && entry.options.resettable) sink.resettable.add(path);
     if (isConfigBranch(entry) && entry.options.motif) sink.motifs.set(path, entry.options.motif);
-    if (!isConfigBranch(entry) && entry.options.render) sink.renderers[path] = entry.options.render;
-    if (!isConfigBranch(entry) && entry.options.dialog) sink.dialogs[path] = entry.options.dialog;
+    if (!isConfigBranch(entry) && entry.options.render)
+      setOwn(sink.renderers, path, entry.options.render);
+    if (!isConfigBranch(entry) && entry.options.dialog)
+      setOwn(sink.dialogs, path, entry.options.dialog);
   }
 
   return { name, children };
