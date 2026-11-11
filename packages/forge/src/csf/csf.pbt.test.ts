@@ -66,14 +66,14 @@ function same(a: unknown, b: unknown): boolean {
   // A clone may come from another realm than the test's, so a prototype is compared by its tag and constructor's name.
   const kind = (v: object): string => `${Object.prototype.toString.call(v)}:${(Object.getPrototypeOf(v) as { constructor?: { name?: string } } | null)?.constructor?.name}`;
   if (kind(a) !== kind(b)) return false;
-  if (kind(a).startsWith('[object Date]')) return a.getTime() === (b as Date).getTime();
+  if (kind(a).startsWith('[object Date]')) return (a as Date).getTime() === (b as Date).getTime();
   if (kind(a).startsWith('[object RegExp]')) return String(a) === String(b);
   if (ArrayBuffer.isView(a)) return String(a) === String(b);
   if (kind(a).startsWith('[object Map]')) {
-    const bm = b as Map<unknown, unknown>;
-    return a.size === bm.size && [...a].every(([k, v], i) => { const [bk, bv] = [...bm][i]!; return same(k, bk) && same(v, bv); });
+    const [am, bm] = [a as Map<unknown, unknown>, b as Map<unknown, unknown>];
+    return am.size === bm.size && [...am].every(([k, v], i) => { const [bk, bv] = [...bm][i]!; return same(k, bk) && same(v, bv); });
   }
-  if (kind(a).startsWith('[object Set]')) return same([...a], [...(b as Set<unknown>)]);
+  if (kind(a).startsWith('[object Set]')) return same([...(a as Set<unknown>)], [...(b as Set<unknown>)]);
   const ka = Reflect.ownKeys(a);
   const kb = Reflect.ownKeys(b);
   return ka.length === kb.length && ka.every((k, i) => k === kb[i] && same((a as Record<PropertyKey, unknown>)[k], (b as Record<PropertyKey, unknown>)[k]));

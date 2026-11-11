@@ -29,7 +29,7 @@ const annotation = fc.tuple(fc.constantFrom('name' as const, 'storyName' as cons
 /** A CSF 2 function story takes only `storyName`, assigned: a function's `name` is read-only, and a literal is not one. */
 const story: fc.Arbitrary<Story> = fc.oneof(
   fc.record({ name: exportName, shape: fc.constant('object' as const), props: fc.array(annotation, { maxLength: 3 }), assigned: fc.array(annotation, { maxLength: 2 }) }),
-  fc.record({ name: exportName, shape: fc.constant('function' as const), props: fc.constant([]), assigned: fc.array(fc.tuple(fc.constant('storyName' as const), label), { maxLength: 2 }) }),
+  fc.record({ name: exportName, shape: fc.constant('function' as const), props: fc.constant<Story['props']>([]), assigned: fc.array(fc.tuple(fc.constant('storyName' as const), label), { maxLength: 2 }) }),
 );
 
 const module = fc.record({
