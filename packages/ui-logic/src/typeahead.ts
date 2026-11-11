@@ -1,3 +1,4 @@
+import { heldAt } from './heldAt';
 import type { ListShape } from './list';
 
 /** How typeahead reads a list: its shape, and the text each item is found by. */
@@ -22,14 +23,16 @@ export interface TypeaheadBuffer {
 /** A buffer nothing has been typed into. */
 export const EMPTY_TYPEAHEAD: TypeaheadBuffer = { text: '', at: -Infinity };
 
-/** The item a typed `query` lands on, searching forward from `from` with
+/** The item a typed `query` lands on, searching forward from `at` with
  *  wrap. A one-letter query starts after the highlight so repeating a letter
- *  cycles; a longer one starts at it so typing on keeps the match. */
+ *  cycles; a longer one starts at it so typing on keeps the match. An index
+ *  that names no item searches from the start. */
 export function typeaheadMatch<T>(
-  items: readonly T[], from: number | null, query: string, shape: TypeaheadShape<T>,
+  items: readonly T[], at: number | null, query: string, shape: TypeaheadShape<T>,
 ): number | null {
   const q = query.toLowerCase();
   const n = items.length;
+  const from = heldAt(n, at);
   const start = from == null ? 0 : isOneChar(query) ? from + 1 : from;
   for (let k = 0; k < n; k++) {
     const i = (start + k) % n;
