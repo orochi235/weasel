@@ -92,3 +92,27 @@ describe('gap pickers', () => {
     }), runs(RUNS));
   }, timeoutFor(RUNS, 3));
 });
+
+describe('moveItems at the edges', () => {
+  const index = (n: number) => fc.oneof(fc.integer({ min: -2, max: n + 1 }), fc.constantFrom(0.5, 1.5, -0, Number.NaN, Infinity, -Infinity, 2 ** 53));
+  it('gives back the same items, each once, for any indices and any gap', () => {
+    fc.assert(fc.property(
+      fc.integer({ min: 0, max: 8 }).chain((n) => fc.tuple(fc.constant(Array.from({ length: n }, (_, i) => `i${i}`)), fc.array(index(n), { maxLength: 5 }), index(n + 1))),
+      ([items, at, to]) => {
+        const got = moveItems(items, at, to);
+        expect([...got].sort()).toEqual([...items].sort());
+        // An index that names no item moves nothing: the rest keep their order around what was named.
+        const named = items.filter((_, i) => at.includes(i));
+        expect(got.filter((it) => !named.includes(it))).toEqual(items.filter((it) => !named.includes(it)));
+        expect(got.filter((it) => named.includes(it))).toEqual(named);
+      },
+    ), runs(RUNS));
+  }, timeoutFor(RUNS, 1));
+});
+
+describe('shrunk counterexamples', () => {
+  it('an index between two items names nothing to move', () => {
+    expect(moveItems(['i0'], [0.5], 0.5)).toEqual(['i0']);
+    expect(moveItems(['a', 'b', 'c'], [1.5, 0], 3)).toEqual(['b', 'c', 'a']);
+  });
+});

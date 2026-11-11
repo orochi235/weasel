@@ -4,10 +4,11 @@
  * carries something. The items moved are named by their indices, so a selection of several moves in one go.
  */
 
-const sortedSet = (at: readonly number[]): number[] => [...new Set(at)].sort((a, b) => a - b);
+/** The whole numbers in `at`, once each, ascending: an index that is not one names no item. */
+const sortedSet = (at: readonly number[]): number[] => [...new Set(at.filter(Number.isInteger))].sort((a, b) => a - b);
 
 /** `items` with the items at indices `at` taken out and put back, in their order, in gap `to`. An index outside
- *  `items` names nothing and is ignored; a gap past either end is that end. */
+ *  `items`, or not a whole number, names nothing and is ignored; a gap past either end is that end. */
 export function moveItems<T>(items: readonly T[], at: readonly number[], to: number): T[] {
   const inside = sortedSet(at).filter((i) => i >= 0 && i < items.length);
   const gap = Math.min(items.length, Math.max(0, to));
