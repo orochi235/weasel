@@ -1,5 +1,5 @@
 // Renders the extension's icons into public/icons/: the wordmark's "w", carrying the wordmark's whole
-// gradient left to right, stretched to fill a transparent square edge to edge.
+// gradient left to right, as wide as a transparent square and centered on it.
 // Rerun after the wordmark changes: `npm run gen:devtools-extension-icons`.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -36,8 +36,8 @@ function iconSvg(): string {
     .map((s) => `<stop offset="${s.offset}" stop-color="${s.color}"/>`)
     .join('');
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${W_BOX.w}" height="${W_BOX.w}" ` +
-    `viewBox="${W_BOX.x} ${W_BOX.y} ${W_BOX.w} ${W_BOX.h}" preserveAspectRatio="none">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" ` +
+    `viewBox="${W_BOX.x} ${W_BOX.y - (W_BOX.w - W_BOX.h) / 2} ${W_BOX.w} ${W_BOX.w}">` +
     `<defs><linearGradient id="mark" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient></defs>` +
     `<path d="${W_PATH}" fill="url(#mark)"/></svg>`
   );
