@@ -91,7 +91,8 @@ export function clampOrdered(
  * end of the slider's finite `range`, or `null` when it stays inside. An
  * endless end's stop lies on the `track` beyond the range, at a distance drawn
  * for the eye; to the keyboard it is one press past the range's end. A move
- * that would overshoot the end lands on the end first.
+ * that would overshoot the end lands on the end first, and one back from an
+ * end stop that would cross the whole range lands on its other end.
  */
 export function crossEnd(
   from: number,
@@ -101,8 +102,8 @@ export function crossEnd(
   track: readonly [number, number],
 ): number | null {
   const [lo, hi] = range;
-  if (from > hi) return delta < 0 ? hi + delta + stepSize : from;
-  if (from < lo) return delta > 0 ? lo + delta - stepSize : from;
+  if (from > hi) return delta < 0 ? Math.max(lo, hi + delta + stepSize) : from;
+  if (from < lo) return delta > 0 ? Math.min(hi, lo + delta - stepSize) : from;
   if (from + delta > hi) return from < hi ? hi : track[1];
   if (from + delta < lo) return from > lo ? lo : track[0];
   return null;
@@ -152,7 +153,10 @@ export function sliderKey(key: string, shift: boolean, shape: SliderKeyShape): n
     const stepSize = defaultStep(step, range[0], range[1]);
     const delta = move * stepSize;
     // The step grid starts at the range's start: an endless low end's stop sits off it, at whatever distance it is drawn.
-    v = crossEnd(from, delta, stepSize, range, [min, max]) ?? snapToStep(from + delta, step, range[0]);
+    const crossed = crossEnd(from, delta, stepSize, range, [min, max]);
+    if (crossed === null) v = snapToStep(from + delta, step, range[0]);
+    // Back into the range from an end stop, a press at a time from the range's end, which may sit off the grid.
+    else v = crossed > range[0] && crossed < range[1] ? snapToStep(crossed, step, range[0]) : crossed;
   }
   v = clamp(v, lo, hi);
   return shape.ordered ? clampOrdered(v, thumbs, index, lo, hi, step) : v;

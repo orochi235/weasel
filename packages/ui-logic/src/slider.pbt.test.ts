@@ -166,7 +166,7 @@ describe('sliderKey with an endless end', () => {
         const min = ends === 'max' ? lo : lo - gapLo;
         const max = ends === 'min' ? hi : hi + gapHi;
         // Thumbs rest on the grid from the range's start, on the range's ends, or on an end stop.
-        const rests = [...Array.from({ length: Math.floor(width / s) + 1 }, (_, k) => lo + k * s), hi];
+        const rests = [...Array.from({ length: Math.floor(width / s) + 1 }, (_, k) => lo + k * s), hi, min, max];
         const from = rests[pick % rests.length]!;
         const v = sliderKey(key, false, { thumbs: [{ value: from }], index: 0, min, max, step: s, range: [lo, hi] })!;
         const onGrid = v >= lo && v <= hi && (Number.isInteger((v - lo) / s) || v === hi);
@@ -189,5 +189,12 @@ describe('shrunk counterexamples, endless end', () => {
     const shape = { thumbs: [{ value: 30 }], index: 0, min: -7, max: 100, step: 10, range: [0, 100] as const };
     expect(sliderKey('ArrowUp', false, shape)).toBe(40);
     expect(sliderKey('ArrowDown', false, shape)).toBe(20);
+  });
+});
+
+describe('shrunk counterexamples, end stop', () => {
+  it('Page Down from the high end stop stops at the range\'s low end, not in the gap past it', () => {
+    const shape = { thumbs: [{ value: 32 }], index: 0, min: -33, max: 32, step: 7, range: [0, 31] as const };
+    expect(sliderKey('PageDown', false, shape)).toBe(0);
   });
 });
