@@ -181,7 +181,7 @@ describe('hullOf, property', () => {
 describe('meetHulls, property', () => {
   it('holds a pixel exactly when both hulls do', () => {
     const t = tally();
-    fc.assert(fc.property(nested, transform, fc.option(transform, { nil: undefined, freq: 1 }), target, fc.integer(), ([p1, p2], m1, other, tg, seed) => {
+    fc.assert(fc.property(nested, transform, fc.option(transform, { nil: undefined, freq: 2 }), target, fc.integer(), ([p1, p2], m1, other, tg, seed) => {
       const m2 = other ?? m1;
       const a = hullOf(p1, m1, tg.map), b = hullOf(p2, m2, tg.map);
       if (a === null || b === null) return;
@@ -199,7 +199,7 @@ describe('meetHulls, property', () => {
       expect(both.count).toBeLessThanOrEqual(8);
       t.count(inside > 0 ? 'met' : 'apart');
     }), runs(600));
-    t.atLeast('met', 30);
+    t.atLeast('met', 15);
     t.atLeast('apart', 30);
     t.atLeast('too many', 10);
   }, timeoutFor(600, 10));

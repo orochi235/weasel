@@ -52,7 +52,7 @@ const { tree: rawTree } = fc.letrec<{ tree: DrawCommand[]; node: DrawCommand }>(
       clip: fc.option(rectPath, { nil: undefined }),
       composite: fc.option(fc.constantFrom('source-over' as const, 'xor' as const, 'destination-in' as const), { nil: undefined }),
       reach: fc.option(fc.oneof(fc.integer({ min: 0, max: 40 }), fc.constant(undefined)), { nil: null }),
-      isolate: fc.option(fc.constant(true), { nil: undefined, freq: 1 }),
+      isolate: fc.option(fc.constant(true), { nil: undefined, freq: 2 }),
     }).map(({ children, transform, clip, composite, reach, isolate }): DrawCommand => ({
       kind: 'group', children,
       ...(isolate ? { isolate } : {}),
