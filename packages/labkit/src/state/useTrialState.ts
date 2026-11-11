@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { useStore } from 'zustand/react';
+import { ownAt } from '../config/path';
 import { useResolvedConfig } from '../config/useResolvedConfig';
 import { LabStoreContext, TrialIdContext, TrialWritersContext } from './context';
 import type { TrialStateHandle } from './types';
@@ -25,7 +26,7 @@ export function useTrialState<TS = unknown, TC = unknown>(): TrialStateHandle<TS
   // The store's own copy, not `useConfigSchema`: that reads `LabContext`, and
   // this hook only has the store's.
   const instrumentHooks = useStore(ctx.store, (s) => s.instrumentHooks);
-  const schema = instrumentHooks().configSchemas[record.instrumentName];
+  const schema = ownAt(instrumentHooks().configSchemas, record.instrumentName);
   const { config, auto } = useResolvedConfig<TC>(schema, record.config as TC, record.auto);
 
   return {

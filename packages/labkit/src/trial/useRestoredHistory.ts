@@ -1,6 +1,7 @@
 import { createHistory, type History, type Op } from '@weasel-js/core';
 import { useEffect } from 'react';
 import { useStore } from 'zustand/react';
+import { ownAt } from '../config/path';
 import { holdOwnUndo, restoringOwnUndo } from '../state/ownUndo';
 import { latestStamp, restorableTrialHistory } from '../state/savedUndo';
 import type { LabStore } from '../state/store';
@@ -41,7 +42,7 @@ export function useRestoredHistory(args: {
     restored.add(saved);
     const record = store.getState().trials.find((t) => t.id === trialId);
     if (!enabled || !record || record.history) return;
-    const serializer = store.getState().instrumentHooks().serializers[record.instrumentName];
+    const serializer = ownAt(store.getState().instrumentHooks().serializers, record.instrumentName);
     const data = restorableTrialHistory(saved, serializer);
     const history = trialUndoHistory(maxDepth, rebuild);
     history.restore(data);

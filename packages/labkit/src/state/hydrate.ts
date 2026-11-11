@@ -1,4 +1,4 @@
-import { fillConfigDefaults } from '../config/path';
+import { fillConfigDefaults, ownAt } from '../config/path';
 import { deserializeTrials } from './helpers';
 import type {
   CreateLabStoreOptions,
@@ -25,12 +25,14 @@ function migratedConfig(
   instrumentName: string,
   config: unknown,
 ): unknown {
-  const migrate = hydration.configMigrations?.[instrumentName];
+  const migrations = hydration.configMigrations;
+  const migrate = migrations && ownAt(migrations, instrumentName);
   return migrate ? migrate(config) : config;
 }
 
 function filledConfig(hydration: ConfigHydration, instrumentName: string, moved: unknown): unknown {
-  const defaults = hydration.configDefaults?.[instrumentName];
+  const all = hydration.configDefaults;
+  const defaults = all && ownAt(all, instrumentName);
   return defaults ? fillConfigDefaults(moved, defaults()) : moved;
 }
 
