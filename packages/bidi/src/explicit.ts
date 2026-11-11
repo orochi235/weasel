@@ -134,9 +134,13 @@ export function resolveExplicit(
         break;
       }
 
-      // X8 — a paragraph separator always returns to the paragraph level.
+      // X8 — a paragraph separator ends every embedding, override, and isolate.
       case 'B': {
         levels[i] = paragraphLevel;
+        stack.length = 1;
+        overflowIsolate = 0;
+        overflowEmbedding = 0;
+        validIsolate = 0;
         break;
       }
 

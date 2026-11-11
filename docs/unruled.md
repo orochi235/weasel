@@ -473,6 +473,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   (`runStyleAt`), a caret between two run spans included. An armed style is spent on its first character and the
   ones typed after follow it, so Cmd+B then a word bolds the word; Cmd+B again ends it. It used to style the first
   character alone and type the rest with no run styling at all.
+- Open (2026-11-10, property tests): a character typed with nothing armed at a caret between two run spans, where the
+  caret sits after a character typed under an armed style, gets a text node of its own and so no run styling at all,
+  while `rangeStyle` at that caret reports the character before it. After an armed character in a bold run, the next
+  one comes out plain. The session model test puts the caret into a text node before typing there.
+- Ruled 2026-11-10 (my call, overnight sweep): text-shaping's `shape` reads its feature settings before its cache,
+  so a setting it cannot read (`'smcp,liga'`) is refused every time; it used to come back with the glyphs cached for
+  `['smcp', 'liga']` when those were shaped first. A reader refuses bad input with its documented error, never
+  sometimes (50b4730c9).
+- Ruled 2026-11-10 (my call, overnight sweep): bidi's `analyze` reads a paragraph separator mid-text as UAX #9 does,
+  as the end of its paragraph: X8 closes every embedding and isolate there, BD9 pairs no `PDI` past it, and `'auto'`
+  takes its direction from before it, so `'\nא'` reads left to right where it read right to left. text's layout cuts
+  paragraphs before calling it, so only a separator text does not cut at (U+001C–U+001E) meets this (f533898fb).
 
 ## SVG and paths
 

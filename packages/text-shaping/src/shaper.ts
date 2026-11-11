@@ -77,7 +77,12 @@ const SHAPE_CACHE_LIMIT = 512;
  *  which an SVG path tokenizer would read as a command. */
 const PRECISION = 1e5;
 
-const fmt = (v: number): string => String(Math.round(v * PRECISION) / PRECISION);
+const fmt = (v: number): string => {
+  const scaled = v * PRECISION;
+  const r = Number.isFinite(scaled) ? Math.round(scaled) / PRECISION : v;
+  // `String` switches to exponent notation from 1e21; a double that large is an integer, which BigInt spells out.
+  return Math.abs(r) < 1e21 ? String(r) : BigInt(r).toString();
+};
 
 class HarfBuzzShaper implements Shaper {
   readonly #hb: HarfBuzz;
@@ -120,10 +125,14 @@ class HarfBuzzShaper implements Shaper {
   ): readonly ShapedGlyph[] {
     const rec = this.#face(bytes);
     const lang = language || undefined;
-    const key = `${features.join(',')}\u0000${lang ?? ''}\u0000${text}`;
+    // Refused before the cache is read, so a bad setting is refused whatever was shaped before.
+    const hbFeatures = features.map((tag) => this.#feature(tag));
+    // Length-prefixed, so no feature, language, or text can run into the next and answer another's key.
+    let key = `${features.length};`;
+    for (const f of [...features, lang ?? '']) key += `${f.length}:${f}`;
+    key += text;
     const held = rec.shapes.get(key);
     if (held) return held;
-    const hbFeatures = features.map((tag) => this.#feature(tag));
     const out: ShapedGlyph[] = [];
     for (const piece of scriptPieces(text)) this.#piece(rec, text, piece, hbFeatures, lang, out);
     if (rec.shapes.size >= SHAPE_CACHE_LIMIT) rec.shapes.clear();
