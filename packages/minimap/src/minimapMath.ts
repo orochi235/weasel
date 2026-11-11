@@ -48,11 +48,11 @@ const DEFAULT_INDICATOR_WIDTH = 1;
 const DEFAULT_INDICATOR_DASH: readonly number[] = [2, 3];
 
 /** Internal: fit a world rect uniformly into dims with padding, at whatever
- *  scale that takes. A rect with nothing to fit, or a minimap not yet measured,
+ *  scale that takes, up to the largest double for a rect too small to have one. A rect with nothing to fit, or a minimap not yet measured,
  *  gets identity scale centered on the rect's top-left. */
 function fitRectInto(rect: Bounds, dims: ViewportDims, padding: number): View {
   if (dims.width > 0 && dims.height > 0) {
-    const fitted = fitViewToBounds(rect, dims, FALLBACK_FIT_VIEW, { padding, minScale: 0, maxScale: Infinity });
+    const fitted = fitViewToBounds(rect, dims, FALLBACK_FIT_VIEW, { padding, minScale: 0, maxScale: Number.MAX_VALUE });
     if (fitted) return fitted;
   }
   return {
@@ -87,7 +87,7 @@ function sceneLeafBounds<TData, TLayer extends string, TPose>(
     const parts: (Bounds | null)[] = scene.childrenOf(id).map(boxOf);
     if (node.kind === 'mark') {
       const b = poseDescriptorForNode(descriptor, node).getBounds(worldPose(id));
-      if (Number.isFinite(b.x + b.y + b.width + b.height)) parts.push(b);
+      if ([b.x, b.y, b.width, b.height].every(Number.isFinite)) parts.push(b);
     }
     return unionAABB(parts);
   };

@@ -461,3 +461,21 @@ describe('computeFitView — fit="live"', () => {
     expect(view.x + dims.width / (2 * view.scale.x)).toBeCloseTo(50, 6);
   });
 });
+
+describe('computeFitView — found by the property tests', () => {
+  it('frames a mark far out on both axes, whose coordinates sum past the double range', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: -1.7976931348623157e308, y: -1e308, width: 0, height: 0 }, data: { label: 'far' } });
+    const v = computeFitView(scene, { width: 40, height: 40 }, 'scene', identityPoseBounds);
+    expect(v).not.toEqual(FALLBACK_FIT_VIEW);
+    expect(v.x + 20).toBe(-1.7976931348623157e308);
+  });
+
+  it('fits a mark too thin for any finite scale at the largest one, not the smallest', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 0, height: 5e-324 }, data: { label: 'thin' } });
+    const v = computeFitView(scene, { width: 40, height: 40 }, 'scene', identityPoseBounds);
+    expect(v.scale).toEqual({ x: Number.MAX_VALUE, y: Number.MAX_VALUE });
+    expect(Number.isFinite(v.x) && Number.isFinite(v.y)).toBe(true);
+  });
+});
