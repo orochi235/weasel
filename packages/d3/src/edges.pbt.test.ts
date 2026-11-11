@@ -24,6 +24,9 @@ describe('a transition at any duration and delay', () => {
   it('waits out its delay, ends at its target after its duration, or is refused for a NaN duration', async () => {
     const seen = tally();
     await fc.assert(fc.asyncProperty(duration, delay, fc.boolean(), async (ms, wait, perItem) => {
+      // A fresh fake clock each run: one advanced by many runs' long waits holds a time too coarse for a 16 ms step.
+      vi.useRealTimers();
+      vi.useFakeTimers();
       const scene = makeScene();
       const clock = makeAnimator();
       const poses: number[] = [];
