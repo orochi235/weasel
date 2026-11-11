@@ -142,6 +142,11 @@ describe('label disambiguation', () => {
     ]);
   });
 
+  it('widens a label past a whole title of its library, not only past one ending in it (found by buildComponents.pbt)', () => {
+    const rows = buildComponents([entry('ui/Gallery/a', 'Default', UI), entry('Gallery/a', 'Default', UI2)]);
+    expect(rows.map((r) => r.label).sort()).toEqual(['Gallery/a', 'ui/Gallery/a']);
+  });
+
   it('leaves a unique label alone', () => {
     const rows = buildComponents([entry('ui/Foundations/Button', 'Default', UI)]);
     expect(rows[0].label).toBe('Button');
@@ -165,6 +170,22 @@ describe('componentNodes', () => {
       { 'Cursors [ui]': [{ Gallery: ['Default'] }] },
       { 'Icons [ui]': [{ Gallery: ['Default', 'Dark'] }] },
     ]);
+  });
+});
+
+describe('componentNodes across libraries', () => {
+  it("keeps each library's widened labels in its own folders, though their paths agree (found by buildComponents.pbt)", () => {
+    const nodes = componentNodes(
+      buildComponents([
+        entry('ui/x', 'Default', UI),
+        entry('x', 'Default', UI),
+        entry('ui/Gallery', 'Default', LABKIT),
+        entry('Gallery', 'Default', LABKIT),
+      ]),
+    );
+    const tops = nodes.flatMap((n) => (n.kind === 'folder' && n.label === 'ui' ? [{ tag: n.tag, holds: n.children.map((c) => (c.kind === 'story' ? c.label : c.label)) }] : []));
+    expect(tops).toHaveLength(2);
+    expect(tops).toEqual(expect.arrayContaining([{ tag: 'labkit', holds: ['Gallery'] }, { tag: 'ui', holds: ['x'] }]));
   });
 });
 

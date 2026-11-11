@@ -119,6 +119,33 @@ describe('applyTokenEdits', () => {
   });
 });
 
+describe('applyTokenEdits on names every object answers to (found by saveTokens.pbt)', () => {
+  it('refuses a token named like an Object.prototype member that the theme does not define', () => {
+    expect(refusal(applyTokenEdits({ name: 't', components: { b: '1px' } }, { toString: '#111111' }, {}))).toMatch(/defines no token "toString"/);
+  });
+
+  it('writes a token named like one where the theme writes it out, rather than pinning it', () => {
+    const next = saved(applyTokenEdits({ name: 't', components: { constructor: '1px' }, pins: {} }, { constructor: '2px' }, {}));
+    expect(next.components).toEqual({ constructor: '2px' });
+    expect(next.pins).toEqual({});
+  });
+
+  it('adds the branch of an axis value named like one, rather than reading the member', () => {
+    const axes = { mode: { default: 'dark', values: { dark: {}, constructor: {} } } };
+    const next = saved(applyTokenEdits({ name: 't', axes, pins: { a: { by: 'mode', dark: '1px' } } }, { a: '2px' }, { mode: 'constructor' }));
+    expect(next.pins?.a).toEqual({ by: 'mode', dark: '1px', constructor: '2px' });
+  });
+});
+
+describe('applyTokenEdits on a written-out entry with no branch for the selection (found by saveTokens.pbt)', () => {
+  it('pins the value there, since the selection is known and only the branch is missing', () => {
+    const axes = { mode: { default: 'a-b', values: { 'a-b': {} } } };
+    const next = saved(applyTokenEdits({ name: 't', axes, components: { constructor: { by: 'mode' } }, pins: {} }, { constructor: '#111111' }, { mode: 'a-b' }));
+    expect(next.pins?.constructor).toEqual({ by: 'mode', 'a-b': '#111111' });
+    expect(new Map(Object.entries(derive(next, { mode: 'a-b' }).tokens)).get('constructor')?.value).toBe('#111111');
+  });
+});
+
 describe('canSave', () => {
   it('says whether a save has a place for a token', () => {
     expect(canSave(theme, 'gray-50', dark)).toBe(true);

@@ -325,6 +325,12 @@ describe('derive', () => {
     expect(tokens).toEqual({});
   });
 
+  it('reports a token named __proto__, which it dropped unreported (found by forge saveTokens.pbt)', () => {
+    const { tokens, issues } = derive({ name: 'x', components: JSON.parse('{"__proto__": "1px", "a": "2px"}') as Record<string, string> });
+    expect(issues).toContainEqual({ kind: 'invalid', path: 'components.__proto__', message: '"__proto__" cannot name a token' });
+    expect(Object.keys(tokens)).toEqual(['a']);
+  });
+
   it('reports a step name with a character a token name cannot carry', () => {
     const { tokens, issues } = derive({ name: 'x', ramps: { gray: { ...GRAY, steps: ['x y', '900'] } } });
     expect(issues).toEqual([

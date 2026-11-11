@@ -44,7 +44,11 @@ export function fileDates(log: string, paths: readonly string[]): Map<string, Fi
     const [status, ...files] = line.split('\t');
     const name = files.at(-1);
     const path = name === undefined ? undefined : names.get(name);
-    if (!status || name === undefined || path === undefined) continue;
+    const renamed = status?.startsWith('R') ? files[0] : undefined;
+    // Deleted or renamed away since: the file at that name now is uncommitted, not one this history wrote.
+    if (status === 'D' && name !== undefined) names.delete(name);
+    if (renamed !== undefined) names.delete(renamed);
+    if (!status || status === 'D' || name === undefined || path === undefined) continue;
     const newer = out.get(path);
     out.set(path, {
       created: date,
@@ -52,7 +56,6 @@ export function fileDates(log: string, paths: readonly string[]): Map<string, Fi
       createdBy: commit,
       modifiedBy: newer?.modifiedBy ?? commit,
     });
-    const renamed = status.startsWith('R') ? files[0] : undefined;
     if (status === 'A' || renamed !== undefined) names.delete(name);
     if (renamed !== undefined) names.set(renamed, path);
   }

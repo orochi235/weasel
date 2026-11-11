@@ -72,7 +72,7 @@ function disambiguate(rows: readonly ComponentRow[]): void {
       // One more segment at a time, stopping at the full title.
       for (let take = 2; take <= segments.length; take++) {
         row.label = segments.slice(-take).join('/');
-        if (group.every((other) => other === row || !other.path.endsWith(`/${row.label}`))) break;
+        if (group.every((other) => other === row || (other.path !== row.label && !other.path.endsWith(`/${row.label}`)))) break;
       }
     }
   }
@@ -133,10 +133,12 @@ export function componentNodes(rows: readonly ComponentRow[]): TreeNode[] {
     let tag: string | undefined = parent ? undefined : row.library;
     for (let i = 0; i < labels.length - 1; i++) {
       const path = title.slice(0, title.length - labels.length + i + 1).join('/');
-      let folder = folders.get(path);
+      // Per library: a folder another library's labels opened at the same path is not this one's.
+      const key = `${row.library}\0${path}`;
+      let folder = folders.get(key);
       if (!folder) {
         folder = { kind: 'folder', label: labels[i], path, tag, children: [] };
-        folders.set(path, folder);
+        folders.set(key, folder);
         siblings.push(folder);
       }
       siblings = folder.children;

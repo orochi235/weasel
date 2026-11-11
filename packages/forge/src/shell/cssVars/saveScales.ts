@@ -34,7 +34,7 @@ export function selectionFor(axes: AxisDefs, globals: Globals): Selection {
   for (const [axis, def] of Object.entries(axes)) {
     const value = globals[axis];
     if (value === undefined) out[axis] = def.default;
-    else if (typeof value === 'string' && value in def.values) out[axis] = value;
+    else if (typeof value === 'string' && Object.hasOwn(def.values, value)) out[axis] = value;
   }
   return out;
 }
@@ -47,7 +47,7 @@ export function branchOf(holder: Holder, key: string | number, where: string, se
   for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
     const axis = value.by;
     const picked = selection[axis];
-    if (picked === undefined || picked === 'by' || !(picked in value)) {
+    if (picked === undefined || picked === 'by' || !Object.hasOwn(value, picked)) {
       throw new EditError(`${slot.where} differs by ${axis}, and which ${axis} this trial shows is not known`);
     }
     slot = { holder: value as unknown as Holder, key: picked, where: `${slot.where}.${picked}` };
@@ -67,7 +67,7 @@ function slotOf(root: ThemeDefinition, holder: Holder, key: string | number, whe
     if (!ref) throw new EditError(`${w} is "${value}", which is not a number or a seed`);
     const name = ref[1]!;
     const seeds = root.seeds as Holder | undefined;
-    if (!seeds || !(name in seeds)) throw new EditError(`${w} names the seed "${name}", which this theme inherits rather than defines`);
+    if (!seeds || !Object.hasOwn(seeds, name)) throw new EditError(`${w} names the seed "${name}", which this theme inherits rather than defines`);
     return slotOf(root, seeds, name, `seeds.${name}`, selection, depth + 1);
   }
   throw new EditError(`${w} is not a number`);
@@ -119,7 +119,7 @@ export function applyScaleEdits(
   try {
     for (const [name, edit] of Object.entries(edits)) {
       const scales = root.scales;
-      const scale = scales?.[name];
+      const scale = scales && Object.hasOwn(scales, name) ? scales[name] : undefined;
       if (!scales || !scale) throw new EditError(`the theme defines no scale "${name}"`);
       const where = `scales.${name}`;
       write(slotOf(root, scale, 'base', `${where}.base`, selection), edit.base);

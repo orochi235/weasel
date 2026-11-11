@@ -56,9 +56,11 @@ export function variantRows(schema: ConfigSchema<unknown>): VariantRow[] {
 /** `over` merged into `base`: nested plain objects merge, anything else replaces. */
 export function mergeConfig(base: unknown, over: unknown): unknown {
   if (!isPlainObject(base) || !isPlainObject(over)) return over === undefined ? base : over;
-  const out: Record<string, unknown> = { ...base };
-  for (const [key, value] of Object.entries(over)) out[key] = mergeConfig(base[key], value);
-  return out;
+  const keys = [...Object.keys(base), ...Object.keys(over).filter((key) => !Object.hasOwn(base, key))];
+  // Built from entries, so a key named `__proto__` stays an own key rather than setting the prototype.
+  return Object.fromEntries(
+    keys.map((key) => [key, Object.hasOwn(over, key) ? mergeConfig(Object.hasOwn(base, key) ? base[key] : undefined, over[key]) : base[key]]),
+  );
 }
 
 /** `config` with `value` at dotted `path`, copying each object along the way. */

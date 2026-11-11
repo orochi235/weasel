@@ -39,14 +39,17 @@ function shownMode(value: string, ctx: ResolveContext): string {
 
 const SWAP: Readonly<Record<string, string>> = { light: 'dark', dark: 'light' };
 
+/** `record[key]` where the record holds it, not a member every object answers to. */
+const ownOf = <T>(record: Readonly<Record<string, T>>, key: string): T | undefined => (Object.hasOwn(record, key) ? record[key] : undefined);
+
 /**
  * The mode opposite the one `base` shows, from its declaration's `opposite` or else a swap of light and dark; `to`
  * is undefined where it has none.
  */
 export function oppositeMode(base: Globals, ctx: ResolveContext): { from: string; to: string | undefined } {
-  const from = shownMode(String(base[ctx.modeGlobal] ?? ''), ctx);
-  const own = ctx.declarations[ctx.modeGlobal]?.opposite;
-  return { from, to: own ? own(from, base) : SWAP[from] };
+  const from = shownMode(String(ownOf(base, ctx.modeGlobal) ?? ''), ctx);
+  const own = ownOf(ctx.declarations, ctx.modeGlobal)?.opposite;
+  return { from, to: own ? own(from, base) : ownOf(SWAP, from) };
 }
 
 /**
@@ -69,7 +72,7 @@ export function resolveComparison(c: ForgeComparison | null, base: Globals, ctx:
 
 /** A global's value as the toolbar names it: "Theme: Ocean". */
 function globalLabel(key: string, value: string, declarations: GlobalDeclarations): string {
-  const declaration = declarations[key];
+  const declaration = ownOf(declarations, key);
   if (!declaration) return `${key}: ${value}`;
   const option = declaration.options.find((o) => o.value === value);
   return `${declaration.label}: ${option?.label ?? value}`;

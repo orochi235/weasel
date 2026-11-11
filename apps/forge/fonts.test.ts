@@ -115,3 +115,12 @@ describe('fontTheme', () => {
     expect(fontTheme(weaselTheme, globals).name).toBe('weasel-ui-inter-body-lato');
   });
 });
+
+describe('font globals naming a member every object answers to (found by fonts.pbt)', () => {
+  it('falls back to Oswald for the UI face and to the theme for any other slot', () => {
+    const rule = fontRule({ fontFamily: 'valueOf', fontMono: 'toString' });
+    expect(rule).toContain('--wzl-font-ui: Oswald, system-ui, sans-serif;');
+    expect(rule).not.toContain('--wzl-font-mono:');
+    expect(() => fontTheme(weaselTheme, { fontDisplay: 'constructor' })).not.toThrow();
+  });
+});

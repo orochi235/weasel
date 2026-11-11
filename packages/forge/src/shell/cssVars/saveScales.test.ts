@@ -21,6 +21,10 @@ describe('selectionFor', () => {
   it('leaves out an axis whose global holds a value the axis does not offer', () => {
     expect(selectionFor(weasel.axes ?? {}, { mode: 'auto', density: 'compact' })).toEqual({ density: 'compact' });
   });
+
+  it('leaves out an axis whose global names a member of every object, as the engine does (found by saveTokens.pbt)', () => {
+    expect(selectionFor({ mode: { default: 'dark', values: { dark: {} } } }, { mode: 'hasOwnProperty' })).toEqual({});
+  });
 });
 
 describe('applyScaleEdits', () => {
@@ -108,5 +112,15 @@ describe('applyScaleEdits', () => {
     const def: ThemeDefinition = { name: 't', extends: 'weasel', scales: { a: { steps: ['1'], base: '{seeds.ui-base}', step: 1 } } };
     const result = applyScaleEdits(def, { a: { base: 5, rule: { kind: 'step', step: 1 } } }, {});
     expect(result).toEqual({ ok: false, message: expect.stringContaining('inherits') });
+  });
+
+  it('reads only a scale, seed, or branch the definition holds as its own, not a member of every object', () => {
+    const step = { base: 5, rule: { kind: 'step', step: 1 } } as const;
+    expect(applyScaleEdits({ name: 't', scales: {} }, { toString: step }, {})).toEqual({ ok: false, message: expect.stringContaining('defines no scale "toString"') });
+    const seeded: ThemeDefinition = { name: 't', seeds: {}, scales: { a: { steps: ['1'], base: '{seeds.constructor}', step: 1 } } };
+    expect(applyScaleEdits(seeded, { a: step }, {})).toEqual({ ok: false, message: expect.stringContaining('names the seed "constructor"') });
+    const axes = { mode: { default: 'dark', values: { dark: {}, constructor: {} } } };
+    const branched: ThemeDefinition = { name: 't', axes, scales: { a: { steps: ['1'], base: { by: 'mode', dark: 4 }, step: 1 } } };
+    expect(applyScaleEdits(branched, { a: step }, { mode: 'constructor' })).toEqual({ ok: false, message: expect.stringContaining('differs by mode') });
   });
 });

@@ -43,3 +43,10 @@ describe('newIssueUrl', () => {
     expect(body).toContain('**Commit:** abc1234def');
   });
 });
+
+describe('reportBody code spans (found by tracker.pbt)', () => {
+  it('fences a branch holding backticks so it reads back whole', () => {
+    expect(reportBody(report, { ...context, branch: '`' })).toContain('**Branch:** `` ` ``');
+    expect(reportBody(report, { ...context, branch: 'a``b' })).toContain('**Branch:** ```a``b```');
+  });
+});
