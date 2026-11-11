@@ -2,4 +2,6 @@
 "@weasel-js/animator": patch
 ---
 
-A tween shorter than 1 ms, on its own or on a target, shows the share of its own length that has elapsed. Its voice ran 1 ms long, so a 0.5 ms tween read a quarter of the way at 0.25 ms rather than half.
+A tween shorter than 1 ms, on its own or on a target, moves at its own length rather than as a 1 ms tween.
+
+<!-- entry: fix -->
