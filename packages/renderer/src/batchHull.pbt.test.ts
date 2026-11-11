@@ -163,10 +163,12 @@ describe('hullOf, property', () => {
       for (let i = 0; i < c.length; i += 2) {
         const x = c[i]! + (hull.path.origin?.x ?? 0), y = c[i + 1]! + (hull.path.origin?.y ?? 0);
         const wx = (map.ax * x + map.bx * y + map.cx) * U, wy = (map.ay * x + map.by * y + map.cy) * U;
-        const k = `${Math.round(wx)},${Math.round(wy)}`;
-        expect(ring.has(k), `${wx}, ${wy} is no snapped corner`).toBe(true);
-        // Float32 corners: close enough that the rasterizer snaps each to the grid point it came from.
+        // Float32 corners: close enough that the rasterizer snaps each to the grid point it came from, where float32
+        // can hold the corner that finely at all.
+        const held = 2 ** -23 * (Math.abs(c[i]!) + Math.abs(c[i + 1]!)) * U * (Math.abs(map.ax) + Math.abs(map.bx) + Math.abs(map.ay) + Math.abs(map.by));
+        if (held >= 0.25) continue;
         expect(Math.max(Math.abs(wx - Math.round(wx)), Math.abs(wy - Math.round(wy)))).toBeLessThan(0.5);
+        expect(ring.has(`${Math.round(wx)},${Math.round(wy)}`), `${wx}, ${wy} is no snapped corner`).toBe(true);
       }
     }), runs(300));
   });

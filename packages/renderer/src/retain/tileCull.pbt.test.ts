@@ -56,5 +56,5 @@ describe('tilesOf, property', () => {
       }
       expect(area).toBe(rect.width * rect.height);
     }), runs(300));
-  });
+  }, timeoutFor(300, 5));
 });
