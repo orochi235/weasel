@@ -134,8 +134,10 @@ function nodeSpecs(
  *  `<id>/mark:<i>` for its marks, `<edge id>/label`, a group's own and
  *  `<group id>/label`, a region's own and `<region id>/title` — so a later call's
  *  specs can be reconciled against this one's. Throws on a repeated id among
- *  nodes, groups, containers and lanes, which names two things as one. An edge whose
- *  end is not a node is dropped, and so is a repeat of an earlier edge with
+ *  nodes, groups, containers and lanes, which names two things as one, and on any
+ *  other id two specs would share: an edge's `id` given to a different edge, or an
+ *  item's id that another item's part is named (`a/1` beside a node `a`). An edge
+ *  whose end is not a node is dropped, and so is a repeat of an earlier edge with
  *  the same ends, ports and label: it would draw exactly on top of the first. */
 export function diagramScene<TLayer extends string>(data: DiagramData, opts: DiagramSceneOptions<TLayer> & { layer: TLayer }): DiagramSpec<TLayer>[];
 export function diagramScene(data: DiagramData, opts?: DiagramSceneOptions): DiagramSpec[];
@@ -185,11 +187,16 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
     padding: pad,
     title: (text) => measure(text, titleStyle),
   });
-  const seen = new Set<string>();
+  const seen = new Map<string, string>();
   const edges = data.edges.filter((e) => {
     const id = edgeIdOf(e);
-    if (seen.has(id) || !ids.has(e.from) || !ids.has(e.to)) return false;
-    seen.add(id);
+    if (!ids.has(e.from) || !ids.has(e.to)) return false;
+    const { id: _own, ...ends } = e;
+    const drawn = edgeIdOf(ends);
+    const earlier = seen.get(id);
+    if (earlier !== undefined && earlier !== drawn) throw new Error(`diagramScene: edge id "${id}" names two different edges`);
+    if (earlier !== undefined) return false;
+    seen.set(id, drawn);
     return true;
   });
 
@@ -244,6 +251,12 @@ function mainSpecs(data: DiagramData, opts: DiagramSceneOptions): DiagramSpec[] 
   const pages = scenePageSplits(data, placedAt, specs, edges.map((e) => ({ id: edgeIdOf(e), from: e.from, to: e.to })),
     () => ({ ...offPageTagLook(theme ?? diagramThemeFrom(undefined)), measure }));
   specs.push(...edgeSpecs(edges, pages === null ? edgeCtx : { ...edgeCtx, splits: pages.splits }), ...(pages?.tags ?? []));
+  const made = new Set<string>();
+  for (const spec of specs) {
+    const id = String(spec.id);
+    if (made.has(id)) throw new Error(`diagramScene: two things would share the scene id "${id}"`);
+    made.add(id);
+  }
   return specs;
 }
 

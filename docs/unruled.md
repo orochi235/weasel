@@ -785,6 +785,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): nudging spreads a bundle only within every obstacle's
   clearance, as `clearance` promises, so parallel runs beside a shape sit closer together than
   `spacing` where the room is short; a run already inside a clearance keeps out of the obstacle itself.
+- Ruled 2026-11-10 (my call, overnight sweep): `diagramScene` refuses data in which two specs would
+  share an id, with `diagramScene: two things would share the scene id "…"`: a node named for another
+  item's part (`a/1` beside a node `a`, `G/label` inside a titled group `G`), or an edge whose `id` is a
+  node's. An explicit edge `id` given to two edges with different ends, ports, or label is refused too
+  (`edge id "e" names two different edges`); a true repeat is still dropped. Why: these built specs the
+  scene then refused with its own id collision, and the second edge under a repeated `id` was dropped
+  silently. Escaping node ids in part ids instead would rename every part id that holds a `/`.
 
 - 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
   the workshop's stage does, rather than resizing the page: a Chromium resize took 6–13 s on a loaded
