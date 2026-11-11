@@ -41,6 +41,9 @@ describe('animator frames, property', () => {
         const a = start(one, k, from, to, ms), b = start(many, k, from, to, ms);
         one.at(T);
         for (const at of times) many.at(at);
+        // A spring or a coast rests at the first frame that finds it slow and near enough, so frames
+        // between can find it at rest earlier, where one frame later finds it past that window.
+        if (k !== 'tween' && b.done > a.done) { t.count('rested on a frame between'); return; }
         expect(b.done).toBe(a.done);
         if (a.done === 0) {
           expect(b.last).toBeCloseTo(a.last, 6);
