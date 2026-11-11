@@ -88,7 +88,8 @@ const syncCmd = fc.oneof(fc.constantFrom(0, 16, 16.7, 100, 1000, 1e4, 1e7), fc.d
       r.handle.clock.sync(m.now);
       check(m, r);
       // The mix keeps the clock's time, synced forward and sought back.
-      expect(near(r.mix.now, r.handle.clock.elapsed, spanOf(r.handle))).toBe(true);
+      // The mix's own host time only grows, so far out it keeps the clock's moves to its own precision.
+      expect(Math.abs(r.mix.now - r.handle.clock.elapsed)).toBeLessThanOrEqual(1e-9 * Math.max(1, r.handle.clock.elapsed) + 1e-12 * r.mix.host);
       t.count('sync');
     },
     toString: () => `sync(+${dt})`,
