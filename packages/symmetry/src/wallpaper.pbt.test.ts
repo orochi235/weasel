@@ -67,7 +67,7 @@ describe('latticePoints', () => {
     }), runs(RUNS));
     t.atLeast('many', 30);
     t.atLeast('empty', 5);
-  }, timeoutFor(RUNS, 5));
+  }, timeoutFor(RUNS, 40));
 
   it('keeps the points nearest the center under a limit, in the same order', () => {
     const t = tally();

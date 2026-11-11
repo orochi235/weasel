@@ -252,7 +252,7 @@ describe('the guide', () => {
       for (const h of guideHandles(s, c, vw, KNOB, 0, 9)) {
         const wx = h.at.x / vw.scale.x + vw.x;
         const wy = h.at.y / vw.scale.y + vw.y;
-        const hit = layer.hitTest!(wx, wy, undefined, vw);
+        const hit = layer.hitTest!(wx, wy, undefined, vw, { width: 800, height: 600 } as never);
         expect(hit).not.toBeNull();
         const got = (hit!.initialScratch as { handle: SymmetryHandle }).handle;
         const there = guideHandles(s, c, vw, KNOB, 0, 9).find((g) => g.handle === got)!;
