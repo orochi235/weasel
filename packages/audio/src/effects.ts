@@ -110,8 +110,8 @@ export interface DelayEffectOptions {
   feedback?: number;
   /** Default 0.35. */
   mix?: number;
-  /** The longest `time` the line can be set to later, ms. Default the larger
-   *  of 1000 and `time`. */
+  /** The longest `time` the line can be set to later, ms: above 0 and
+   *  below 180000, as a `DelayNode` must be. Default the larger of 1000 and `time`. */
   maxTime?: number;
 }
 
@@ -132,6 +132,9 @@ const checkFeedback = (value: number): number => {
   return value;
 };
 
+/** What a `DelayNode`'s longest time must be below, ms: three minutes. */
+const MOST_DELAY_MS = 180_000;
+
 const checkTime = (ms: number, maxTime: number): number => {
   if (!(ms >= 0 && ms <= maxTime)) {
     throw new RangeError(`@weasel-js/audio: delay time ${ms} is outside 0..${maxTime} ms`);
@@ -143,6 +146,9 @@ const checkTime = (ms: number, maxTime: number): number => {
  *  the repeats while it moves, as a tape delay does. */
 export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOptions = {}): DelayEffect {
   const maxTime = opts.maxTime ?? Math.max(1000, opts.time ?? 250);
+  if (!(maxTime / 1000 > 0 && maxTime < MOST_DELAY_MS)) {
+    throw new RangeError(`@weasel-js/audio: a delay's longest time ${maxTime} ms must be above 0 and below the ${MOST_DELAY_MS} a DelayNode takes`);
+  }
   const time = checkTime(opts.time ?? 250, maxTime);
   let fb = checkFeedback(opts.feedback ?? 0.35);
   const delay = ctx.createDelay(maxTime / 1000);
