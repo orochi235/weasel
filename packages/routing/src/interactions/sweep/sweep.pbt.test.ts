@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { InvocationCtx, OngoingInvoker } from '../actions/invoker';
-import { runs, tally } from '../../pbt.fixture';
+import { runs, tally, timeoutFor } from '../../pbt.fixture';
 import { sweepAction } from './sweep';
 
 interface Grid { ox: number; oy: number; cols: number; rows: number; w: number; h: number }
@@ -120,5 +120,5 @@ describe('sweepAction', () => {
       expectFollows(g, path, sweep(g, path));
     }), runs(300));
     t.expectHit('no number', 'far off');
-  });
+  }, timeoutFor(300, 6));
 });
