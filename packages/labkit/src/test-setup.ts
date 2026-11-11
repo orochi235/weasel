@@ -1,16 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach, expect } from 'vitest';
-
-// As the root setup does: a property file's ordinary run replays one seed, so its tally guards pass or fail alike
-// every run; a deep run (`WEASEL_PBT_RUNS`) draws fresh seeds.
-if (
-  /\.pbt\.test\.tsx?$/.test(expect.getState().testPath ?? '') &&
-  !(Number(process.env.WEASEL_PBT_RUNS) > 0)
-) {
-  const { default: fc } = await import('fast-check');
-  fc.configureGlobal({ seed: 0x5eed });
-}
+import { afterEach } from 'vitest';
 
 // vitest 4's jsdom env no longer hoists Storage APIs to globalThis (its
 // `KEYS` list omits localStorage/sessionStorage). The real Storage objects

@@ -8,7 +8,7 @@ package to harden. Add a row whenever a pass merges.
 
 | Practice | Where it runs | Files |
 |---|---|---|
-| Property tests (fast-check): round-trips, laws, metamorphic rules | locally, replaying one seed (`vitest.setup.ts`) so tally guards pass or fail alike every run; deep runs (10,000+, `WEASEL_PBT_RUNS`) on the fleet, with fresh seeds | `*.pbt.test.ts` beside the code |
+| Property tests (fast-check): round-trips, laws, metamorphic rules | locally, replaying one seed (`scripts/vitest-pbt-seed.setup.ts`) so tally guards pass or fail alike every run; deep runs (10,000+, `WEASEL_PBT_RUNS`) on the fleet, with fresh seeds | `*.pbt.test.ts` beside the code |
 | Stateful model tests (`fc.commands`): random op sequences checked after every step | same | `*.pbt.test.ts` |
 | Unicode conformance files | locally | `packages/bidi`, `packages/text` |
 | Audit rounds: agent review lanes, one per area | agents | `node scripts/audit-yield.mjs` counts fix commits per round and lane |

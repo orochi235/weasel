@@ -62,6 +62,7 @@ const REQUEST_LOG_SETUP = './scripts/vitest-request-log.setup.ts';
 const RESIZE_LOOPS_SETUP = './scripts/vitest-resize-loops.setup.ts';
 // Every vmThreads project needs it: see the file.
 const RETRY_REALM_SETUP = './scripts/vitest-retry-realm.setup.ts';
+const PBT_SEED_SETUP = './scripts/vitest-pbt-seed.setup.ts';
 
 const VITE_SERVER_TESTS = [
   'packages/forge/src/csf/shims/alias.test.ts',
@@ -105,7 +106,7 @@ export default defineConfig({
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           include: [
             'packages/core/src/**/*.test.{ts,tsx}',
             'tests/e2e/helpers/**/*.test.{ts,tsx}',
@@ -140,7 +141,7 @@ export default defineConfig({
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           include: ['apps/site/**/*.test.{ts,tsx}'],
           exclude: ['**/*.smoke.test.{ts,tsx}', '**/*.browser.test.{ts,tsx}', '**/node_modules/**'],
         },
@@ -154,7 +155,7 @@ export default defineConfig({
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           include: [
             'packages/**/*.smoke.test.{ts,tsx}',
             'apps/**/*.smoke.test.{ts,tsx}',
@@ -172,7 +173,7 @@ export default defineConfig({
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           include: ['packages/**/*.test.{ts,tsx}'],
           // labkit runs in its own project below (own setup + css handling).
           // core runs in the `core` project above — it lived at the repo root
@@ -193,7 +194,7 @@ export default defineConfig({
           // labkit ships its own setup (jest-dom matchers, cleanup, storage
           // hoist) and imports component CSS, so it needs css handling — the
           // root setup/projects don't provide either.
-          setupFiles: ['./packages/labkit/src/test-setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./packages/labkit/src/test-setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           css: true,
           // A test that mounts a whole lab takes up to ~0.5 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
@@ -210,7 +211,7 @@ export default defineConfig({
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           // A test that mounts the whole workshop takes ~1 s alone and blows the 5 s default under a full fleet run.
           testTimeout: 20_000,
           include: ['packages/forge/src/**/*.test.{ts,tsx}', 'apps/forge/*.test.{ts,tsx}'],
@@ -247,7 +248,7 @@ export default defineConfig({
           environment: 'jsdom',
           pool: 'vmThreads',
           globals: true,
-          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP],
+          setupFiles: ['./vitest.setup.ts', RETRY_REALM_SETUP, PBT_SEED_SETUP],
           // `apps/shared/` holds modules both in-repo apps import (buildInfo),
           // and `scripts/` the build-time plugins that feed them. Both ride
           // with the draw project rather than getting one of their own — same
