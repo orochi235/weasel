@@ -2,4 +2,8 @@
 "@weasel-js/storage": patch
 ---
 
-`localStorageAdapter`, `sessionStorageAdapter`, and `urlHashAdapter` write a `bigint` as its decimal digits, with their usual warning about a value JSON changes. A write holding one rejected with a `TypeError`, so a record cache sent it again on a backoff forever.
+The JSON storage adapters write a `bigint` as its decimal digits, with a warning, rather than rejecting the write.
+
+That is `localStorageAdapter`, `sessionStorageAdapter` and `urlHashAdapter`.
+
+<!-- entry: fix -->

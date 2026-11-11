@@ -2,4 +2,6 @@
 "@weasel-js/renderer": patch
 ---
 
-A retained group's surface no longer matches its old key once `reserve` has handed it out to be drawn over: until `commit` names the key the new pixels were drawn under, a lookup redraws rather than compositing pixels from a draw that never finished.
+A retained group being redrawn no longer composites pixels from a draw that never finished. After `reserve` hands its surface out, the surface matches no key until `commit` names the one its new pixels were drawn under.
+
+<!-- entry: fix visual -->

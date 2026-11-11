@@ -2,4 +2,6 @@
 "@weasel-js/geom": patch
 ---
 
-`fitAffine` now judges whether its points are distinct against their own scale: one point repeated far from the origin answers null instead of a collapsing map, and distinct points with tiny coordinates are fitted instead of refused.
+`fitAffine` judges whether its points are distinct against their own scale. One point repeated far from the origin answers null, and distinct points with tiny coordinates are fitted.
+
+<!-- entry: rank=-5 fix -->

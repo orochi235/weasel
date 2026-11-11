@@ -2,4 +2,6 @@
 "@weasel-js/d3": patch
 ---
 
-A transition's delay past 2³¹ − 1 ms, the longest one timer holds, is waited out, and an infinite delay never starts the item. Both used to start the item at once.
+A d3 transition waits out a delay past 2³¹ − 1 ms, and an infinite delay never starts the item.
+
+<!-- entry: rank=-5 fix -->

@@ -2,4 +2,6 @@
 '@weasel-js/path-tools': patch
 ---
 
-`useSmudgeBrushTool` and `useSimplifyBrushTool` take a `share`, laid over their options' shares, so `@weasel-js/brush`'s `shareBrushSize` can give them one brush size.
+`useSmudgeBrushTool` and `useSimplifyBrushTool` take a `share` option, so `shareBrushSize` can give them one brush size. It is laid over their options' shares.
+
+<!-- entry: api -->
