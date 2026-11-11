@@ -108,6 +108,8 @@ function gripDots(cx: number, cy: number, color: string): PathDrawCommand {
   return { kind: 'path', path: pathFromD(d), fill: { paint: { kind: 'solid', color } } };
 }
 
+const sameBounds = (a: WidgetBounds, b: WidgetBounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+
 export function createWindow(opts: WindowOptions): WindowWidget {
   const chrome = opts.titlebar ?? true;
   const passing = opts.interior === 'pass';
@@ -296,7 +298,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           // Only 'title' translates without resizing (zones.ts), so it is the
           // one drag where pulling the window back cannot fight the gesture.
           const next = dragZone === 'title' ? clampOnHost(dragged) : dragged;
-          if (next.x !== bounds.x || next.y !== bounds.y || next.w !== bounds.w || next.h !== bounds.h) {
+          if (!sameBounds(next, bounds)) {
             bounds = next;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
             rev.changed();
@@ -314,7 +316,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           break;
         }
         case 'cancel': {
-          if (dragZone && bounds !== dragStart) {
+          // A drag back where it began has already reported it; putting it back there is no move.
+          if (dragZone && !sameBounds(bounds, dragStart)) {
             bounds = dragStart;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
             rev.changed();
