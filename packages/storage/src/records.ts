@@ -1,4 +1,4 @@
-import { createEmitter } from '@weasel-js/registry';
+import { createEmitter, deepEqual } from '@weasel-js/registry';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 import { DELETED, createWriteQueue } from './writeQueue';
 
@@ -17,8 +17,10 @@ export interface RecordChange {
  *
  * Writes land in memory at once and reach storage on a debounce. The newest
  * write to a record wins: another writer's change to a record with a write
- * still queued or on its way here is ignored, since that write lands after
- * it. A write storage rejects stays queued and is sent again on a backoff.
+ * still queued here is ignored, since that write lands after it. One heard
+ * while a write is already on its way may have landed either side of it, so
+ * once the write lands the record is read back from storage. A write storage
+ * rejects stays queued and is sent again on a backoff.
  */
 export interface RecordCache {
   readonly prefix: string;
@@ -144,7 +146,31 @@ function buildCache(
     writable,
     closed: () => closed,
     stopped: () => stopped,
+    settled: (name) => {
+      if (!contested.has(name) || queue.owns(name)) return;
+      contested.delete(name);
+      void reconcile(name);
+    },
   });
+
+  // Names another writer changed while only a write of ours was on its way. Which landed last is unknown until
+  // ours has, so storage is read then: a substrate may report a write before it resolves to its writer.
+  const contested = new Set<string>();
+  // How many changes from another writer each name has taken, so a read started before one does not undo it.
+  const taken = new Map<string, number>();
+
+  async function reconcile(name: string): Promise<void> {
+    const mark = taken.get(name);
+    let value: unknown;
+    try {
+      value = await storage.get(prefix + name);
+    } catch {
+      return;
+    }
+    if (closed || stopped || queue.owns(name) || taken.get(name) !== mark) return;
+    if (value === undefined ? !values.has(name) : values.has(name) && deepEqual(values.get(name), value)) return;
+    applyRemote([[prefix + name, value]]);
+  }
 
   const applyRemote = (changes: StorageChange[]): void => {
     const applied: RecordChange[] = [];
@@ -154,6 +180,7 @@ function buildCache(
       const name = key.slice(prefix.length);
       if (queue.owns(name)) {
         overruled.push([name, value]);
+        if (!queue.has(name)) contested.add(name);
         continue;
       }
       if (value === undefined) {
@@ -162,6 +189,7 @@ function buildCache(
       } else {
         values.set(name, value);
       }
+      taken.set(name, (taken.get(name) ?? 0) + 1);
       applied.push({ name, value, origin: 'remote' });
     }
     if (overruled.length > 0) overruledEmitter.emit(overruled);
