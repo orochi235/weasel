@@ -3,6 +3,7 @@
  * package imports it.
  */
 import fc from 'fast-check';
+import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
@@ -49,3 +50,20 @@ export const key = fc.oneof(
 /** A double spread evenly over `min..max`, ends included; `fc.double` crowds toward zero. */
 export const uniform = (min: number, max: number): fc.Arbitrary<number> =>
   fc.integer({ min: 0, max: 1 << 20 }).map((k) => (k === 1 << 20 ? max : min + ((max - min) * k) / (1 << 20)));
+
+/** A key a dotted path can name: no `.` and not empty. */
+export const segment = key.filter((k) => k !== '' && !k.includes('.'));
+
+/** A prefs group of boolean leaves and nested groups, up to a few levels, keyed by {@link segment}s and named from
+ *  `names`, each key set as an own key. */
+export function prefGroup(names: fc.Arbitrary<string> = fc.constantFrom('Grid', 'Snap', 'Size', 'Color')): fc.Arbitrary<PrefGroup> {
+  const leaf = names.map((name): PrefLeaf => ({ kind: 'boolean', name, default: false }) as PrefLeaf);
+  return fc.letrec<{ g: PrefGroup }>((tie) => ({
+    g: fc.tuple(names, fc.uniqueArray(fc.tuple(segment, fc.oneof({ depthSize: 'small' }, leaf, tie('g') as fc.Arbitrary<PrefGroup | PrefLeaf>)), { selector: (e) => e[0], maxLength: 4 }))
+      .map(([name, entries]) => {
+        const children: Record<string, PrefGroup | PrefLeaf> = {};
+        for (const [k, v] of entries) Object.defineProperty(children, k, { value: v, enumerable: true, writable: true, configurable: true });
+        return { name, children } as PrefGroup;
+      }),
+  })).g;
+}

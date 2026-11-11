@@ -4,25 +4,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
 import { moveItems } from '@weasel-js/ui-logic';
-import { key, runs, tally, timeoutFor } from '../../pbt.fixture';
+import { key, prefGroup, runs, segment as seg, tally, timeoutFor } from '../../pbt.fixture';
 import { childKeysAt, movedOrder } from './barOrder';
 
 const RUNS = 300;
 
-/** A key a dotted path can name. */
-const seg = key.filter((k) => k !== '' && !k.includes('.'));
-
-const leaf: PrefLeaf = { kind: 'boolean', default: false } as PrefLeaf;
-const group: fc.Arbitrary<PrefGroup> = fc.letrec<{ g: PrefGroup }>((tie) => ({
-  g: fc.uniqueArray(fc.tuple(seg, fc.oneof({ depthSize: 'small' }, fc.constant(leaf), tie('g') as fc.Arbitrary<PrefGroup | PrefLeaf>)), { selector: (e) => e[0], maxLength: 4 })
-    .map((entries) => {
-      const children: Record<string, PrefGroup | PrefLeaf> = {};
-      for (const [k, v] of entries) Object.defineProperty(children, k, { value: v, enumerable: true, writable: true, configurable: true });
-      return { children } as PrefGroup;
-    }),
-})).g;
+const group = prefGroup();
 
 /** Every path to a group in `g`, `''` for `g` itself. */
 function groupPaths(g: PrefGroup, at = ''): string[] {

@@ -10,6 +10,7 @@ import {
   type PrefSection,
   prefSectionLeaves,
 } from '@weasel-js/prefs';
+import { setOwn } from '@weasel-js/registry';
 
 /** One field a `field` leaf may name: the path its value is read and written
  *  at, and what it is. */
@@ -166,7 +167,7 @@ export function filterPrefRoot(
   const children: PrefGroup['children'] = {};
   for (const [key, child] of Object.entries(root.children)) {
     const kept = filterPrefSubtree(child, query, key, over);
-    if (kept) children[key] = kept;
+    if (kept) setOwn(children, key, kept);
   }
   return Object.keys(children).length === 0 ? null : { ...root, children };
 }

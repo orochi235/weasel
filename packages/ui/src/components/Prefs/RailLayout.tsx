@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { isPrefLeaf, prefGroupIsPage, type PrefGroup } from '@weasel-js/prefs';
+import { setOwn } from '@weasel-js/registry';
 import { ResizeHandle } from '../ResizeHandle';
 import { dropDrawnPath, withDrop } from './drop';
 import { useDropMotion } from './dropMotion';
@@ -141,7 +142,7 @@ function paneGroup(root: PrefGroup, path: string, rootName: string): PrefGroup |
   let node: PrefGroup | undefined;
   let cursor = root;
   for (const seg of path.split('.')) {
-    const next = cursor.children[seg];
+    const next = Object.hasOwn(cursor.children, seg) ? cursor.children[seg] : undefined;
     if (next === undefined || isPrefLeaf(next)) return null;
     node = next;
     cursor = next;
@@ -163,7 +164,7 @@ function ownOf(group: PrefGroup): PrefGroup {
     }
     const own = isPrefLeaf(child) || !(prefGroupNests(child) || child.as === 'fragment') ? child : ownOf(child);
     if (own !== child) cut = true;
-    children[key] = own;
+    setOwn(children, key, own);
   }
   return cut ? { ...group, children } : group;
 }
