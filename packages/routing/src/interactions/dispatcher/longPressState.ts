@@ -90,7 +90,8 @@ export function createLongPressStore(): LongPressStore {
       if (!current) return 0;
       if (!(current.duration > 0)) return 1;
       const t = (now - current.startedAt) / current.duration;
-      return t <= 0 ? 0 : t >= 1 ? 1 : t;
+      // A reading that is no number, a clock or a start of NaN, has not begun.
+      return t > 0 ? Math.min(t, 1) : 0;
     },
     subscribe: changed.subscribe,
     set: (next) => {
