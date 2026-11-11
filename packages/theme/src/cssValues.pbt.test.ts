@@ -10,6 +10,8 @@ import { wzlAttr } from './axes';
 import { expandVars, parseBoxShadow, type BoxShadow } from './boxShadow';
 import { readCssNumber } from './cssNumber';
 import { resolveCurrentColor } from './currentColor';
+import type { ResolvedTheme } from './resolveTheme';
+import { tokenPx } from './tokenPx';
 import { runs, tally } from './pbt.fixture';
 
 const RUNS = 300;
@@ -29,6 +31,17 @@ describe('readCssNumber', () => {
   it('reads nothing from a list, a function, or a word', () => {
     fc.assert(fc.property(finite, fc.constantFrom('4px 2px', 'calc(1px)', 'var(--a)', 'px', '', '1px,', '--1px', '1..2'), (n, text) => {
       expect(readCssNumber(text.replace('1', String(Math.abs(n))))).toBeUndefined();
+    }), runs(RUNS));
+  });
+});
+
+describe('tokenPx', () => {
+  it('reads a px length or a bare zero, and throws for any other value', () => {
+    const name = '--wzl-space-md' as keyof ResolvedTheme;
+    fc.assert(fc.property(finite, fc.constantFrom('px', 'PX', '', 'rem', '%'), (n, unit) => {
+      const resolved = { [name]: `${n}${unit}` } as unknown as ResolvedTheme;
+      if (unit.toLowerCase() === 'px' || (unit === '' && n === 0)) expect(tokenPx(name, resolved)).toBe(n);
+      else expect(() => tokenPx(name, resolved)).toThrow('is not a px length');
     }), runs(RUNS));
   });
 });
