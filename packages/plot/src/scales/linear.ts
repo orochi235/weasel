@@ -45,7 +45,9 @@ const DEFAULT_TICKS = 5;
 export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number {
   // Halved first, so ends near ±Number.MAX_VALUE still give a step rather than an infinite span.
   const raw = (Math.abs(hi / 2 - lo / 2) / Math.max(1, count)) * 2;
-  if (raw === 0 || !Number.isFinite(raw)) return 1;
+  if (!Number.isFinite(raw)) return 1;
+  // A span among the subnormals halves to nothing, and is cut at multiples of itself.
+  if (raw === 0) return Math.abs(hi - lo) || 1;
   const power = 10 ** Math.floor(Math.log10(raw));
   const error = raw / power;
   const factor = error >= Math.sqrt(50) ? 10 : error >= Math.sqrt(10) ? 5 : error >= Math.sqrt(2) ? 2 : 1;

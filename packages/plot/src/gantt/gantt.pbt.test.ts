@@ -84,16 +84,17 @@ describe('scheduleGantt', () => {
       expect(spans.map((s) => s.length)).toEqual(data.sections.map((s) => s.tasks.length));
       expect(domain[0]).toBeLessThan(domain[1]);
       const flat = spans.flat();
+      // Chained only where no task names another, so no dependency cycle runs through the chain.
+      const linked = ganttTasks(data).some(({ task }) => task.start.kind === 'after' || task.end.kind === 'until');
       ganttTasks(data).forEach(({ task }, i) => {
         const span = flat[i]!;
         expect(Number.isFinite(span.start) && Number.isFinite(span.end)).toBe(true);
         expect(span.end).toBeGreaterThanOrEqual(span.start);
         expect(span.start).toBeGreaterThanOrEqual(domain[0]);
         expect(span.end).toBeLessThanOrEqual(domain[1]);
-        if (task.start.kind === 'previous' && i > 0) {
+        if (task.start.kind === 'previous' && i > 0 && !linked) {
           seen.count('previous');
-          // A cycle through the task before resolves this one to the chart's first date instead.
-          if (!(task.end.kind === 'until')) expect([flat[i - 1]!.end, domain[0]]).toContain(span.start);
+          expect(span.start).toBe(flat[i - 1]!.end);
         }
         // A start written as a date, so no dependency cycle runs through it.
         if (task.start.kind === 'date' && task.end.kind === 'duration' && task.end.unit === 'h' && Number.isFinite(task.end.amount) && task.end.amount >= 0) {
@@ -104,7 +105,7 @@ describe('scheduleGantt', () => {
       if (flat.length > 0) seen.count('scheduled');
     }), runs(RUNS));
     seen.atLeast('scheduled', RUNS / 2);
-    seen.atLeast('previous', RUNS / 4);
+    seen.atLeast('previous', RUNS / 20);
     seen.atLeast('hours', RUNS / 20);
   }, timeoutFor(RUNS, 3));
 

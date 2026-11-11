@@ -72,9 +72,11 @@ describe('linearScale', () => {
       const ticks = s.ticks(n);
       const step = s.tickStep(n);
       const [lo, hi] = [Math.min(d0, d1), Math.max(d0, d1)];
+      // A tick rounded to its grid's places may sit an ulp of the domain's magnitude out.
+      const slack = step * 1e-6 + Math.max(Math.abs(lo), Math.abs(hi)) * 4 * Number.EPSILON;
       for (const t of ticks) {
-        expect(t).toBeGreaterThanOrEqual(lo - step * 1e-6);
-        expect(t).toBeLessThanOrEqual(hi + step * 1e-6);
+        expect(t).toBeGreaterThanOrEqual(lo - slack);
+        expect(t).toBeLessThanOrEqual(hi + slack);
       }
       // Countable grids only: one too fine for the domain's magnitude collapses onto a few doubles, and a step under
       // the subnormals cannot be written.

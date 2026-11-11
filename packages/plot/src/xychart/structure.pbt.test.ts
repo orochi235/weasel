@@ -128,7 +128,7 @@ const commands = [
 describe('xychart structure, against a table', () => {
   it('keeps every row, series, value, and label where the edits put them', () => {
     fc.assert(fc.property(fc.commands(commands, { maxCommands: 50, size: 'max' }), (cmds) => {
-      fc.modelRun(() => ({ model: { labels: [], numbered: 0, series: [] }, real: { data: { kind: 'xychart', series: [] } } }), cmds);
+      fc.modelRun(() => ({ model: { labels: [], numbered: 0, series: [] }, real: { data: { kind: 'xychart' as const, series: [] } } }), cmds);
     }), runs(RUNS));
     for (const name of ['insertRow', 'removeRow', 'moveRow', 'setCategory', 'insertSeries', 'removeSeries', 'moveSeries', 'setValue', 'setKind']) {
       seen.atLeast(name, RUNS / 10);

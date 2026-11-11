@@ -41,6 +41,10 @@ describe('scales, shrunk', () => {
     expect(labels[0]).toBe('1e-300');
   });
 
+  it('ticks a span among the subnormals inside it', () => {
+    expect(linearScale({ domain: [5e-324, 1e-323], range: [0, 1] }).ticks()).toEqual([5e-324, 1e-323]);
+  });
+
   it('sends a log domain\'s ends to the range\'s ends when their logarithms round together', () => {
     const s = logScale({ domain: [1e-12, 1.0000000000000002e-12], range: [0, 1], base: 2 });
     expect(s.map(1e-12)).toBe(0);
