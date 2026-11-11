@@ -1,6 +1,7 @@
 import { easeOut, resolveEasing } from '@weasel-js/geom';
 import { stateOf } from '../target';
 import type { AnimationHandle, TargetTweenOptions } from '../types';
+import { voiceMs } from './tweenAnimation';
 import { commitOrLeave, type AnimationContext, type AnimationSeed } from './context';
 import { axesFor, bump, bumpOn, comeOut, commitOffset, goBehind, minus, plus, runsOn, seat, shareBehind, takeUp, times, travel } from './offsets';
 
@@ -27,7 +28,7 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
     : o.interpolate ? (u: number) => o.interpolate!(from, o.to, u)
       : null;
   const easing = resolveEasing(o.easing ?? easeOut);
-  const ms = Math.max(o.ms, 1);
+  const ms = voiceMs(o.ms);
 
   ctx.targets.attach(s as never);
   commitOrLeave(ctx, s as never, o.to);

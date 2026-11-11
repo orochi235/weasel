@@ -9,6 +9,12 @@ export function checkTweenMs(ms: number): void {
   if (Number.isNaN(ms)) throw new RangeError('tween: ms is a time, not NaN');
 }
 
+/** The length of a tween's voice: its own, where blits can time one, as a voice of no length
+ *  cannot be. A tween of 0 or less ends on its first tick, so its voice's length shows nowhere. */
+export function voiceMs(ms: number): number {
+  return ms > 0 ? ms : 1;
+}
+
 /** A tween that hands each frame's value to the caller's `onTick`. */
 export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): AnimationHandle {
   const { codec } = ctx;
@@ -30,7 +36,7 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
   ctx.seedClock();
   // Started ahead of `register`, whose `start` listeners may already cancel it.
   const reader = codec.tween({
-    id, ms: Math.max(o.ms, 1), ease: easing,
+    id, ms: voiceMs(o.ms), ease: easing,
     from: axes ? axes.to(o.from) : [0],
     to: axes ? axes.to(o.to) : [1],
     atEnd,
