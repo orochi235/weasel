@@ -17,6 +17,7 @@ import {
 import { graphemeEnds } from '../measure/graphemes';
 import type { ResolvedRun } from '../runs/resolveRuns';
 import { isHardLineBreak } from './lineBreak/lineBreaks';
+import { SOFT_HYPHEN } from './lineBreak/wrapLines';
 import type { ShapedCluster, TextShaper } from './shaperSeam';
 import { shapeRun, type ShapedSlot } from './shapedRuns';
 import type { TabStop } from './tabStops';
@@ -64,6 +65,23 @@ export interface Entry {
   shaped: ShapedCluster | null;
   /** See `LaidOutCell.drawsInk`. */
   drawsInk: boolean;
+  /** On a soft hyphen, what it draws when a line wraps at it; null elsewhere,
+   *  and where no tier has a hyphen. */
+  hyphen: Hyphen | null;
+}
+
+/** The hyphen a soft hyphen draws at the end of a line the wrap ended there:
+ *  the face's U+2010, else its U+002D, as CSS's `hyphens: manual` draws. */
+export interface Hyphen {
+  cp: number;
+  resolved: ResolveResult;
+  metrics: GlyphMetrics;
+  font: BmFont | null;
+  glyph: BmFontChar | null;
+  /** World units, as `Entry.advance`. */
+  advance: number;
+  /** The kerning between the entry before the soft hyphen and the hyphen. */
+  kerningBefore: number;
 }
 
 /**
@@ -163,25 +181,16 @@ export function measureRuns(
       } else if (isHardLineBreak(cp)) {
         entries[n++] = blank;
         prev = undefined;
+      } else if (cp === SOFT_HYPHEN) {
+        // Invisible on every tier, whatever glyph a face maps it to, until
+        // its line is known; kerning reads through it.
+        blank.tracking = tracking;
+        blank.hyphen = hyphenFor(run, resolved, fontSize, prev);
+        entries[n++] = blank;
       } else if (cp === 9 || cp === 32) {
-        // A face with no space still gets one wide enough to part words.
-        const space = metrics.advanceOf(32);
-        const advance = space !== null ? space * (fontSize / metrics.size) : fontSize * 0.25;
-        if (cp === 9) {
-          entries[n++] = { ...blank, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } };
-          prev = undefined;
-        } else {
-          // Its record in the run's own tier, for an atlas that draws one. It
-          // never escalates: a face without a space still parts words.
-          const own = glyphIn(resolved, 32, HIT);
-          blank.font = own?.font ?? null;
-          blank.glyph = own?.glyph ?? null;
-          blank.advance = advance;
-          blank.tracking = tracking;
-          blank.kerningBefore = kerningBefore;
-          prev = blank;
-          entries[n++] = prev;
-        }
+        if (cp === 32) { blank.tracking = tracking; blank.kerningBefore = kerningBefore; }
+        entries[n++] = whiteSpace(blank, run, resolved, metrics, tabSize);
+        prev = cp === 32 ? blank : undefined;
       } else if (slot !== undefined) {
         blank.tracking = tracking;
         entries[n++] = shape(blank, slot);
@@ -258,7 +267,7 @@ function blankEntry(
     const made: Entry = {
       run, cp, fontSize, lineSize, baselineShift, rotate, srcIndex, srcEnd, clusterEnd, resolved, metrics,
       font: null, glyph: null, advance: 0, tracking: 0, kerningBefore: 0, tab: undefined, shaped: null,
-      drawsInk: false,
+      drawsInk: false, hyphen: null,
     };
     if (pool && i < POOL_MAX) pool[i] = made;
     return made;
@@ -266,7 +275,7 @@ function blankEntry(
   e.run = run; e.cp = cp; e.fontSize = fontSize; e.lineSize = lineSize; e.baselineShift = baselineShift;
   e.rotate = rotate; e.srcIndex = srcIndex; e.srcEnd = srcEnd; e.clusterEnd = clusterEnd; e.resolved = resolved; e.metrics = metrics;
   e.font = null; e.glyph = null; e.advance = 0; e.tracking = 0; e.kerningBefore = 0; e.tab = undefined;
-  e.shaped = null; e.drawsInk = false;
+  e.shaped = null; e.drawsInk = false; e.hyphen = null;
   return e;
 }
 
@@ -280,6 +289,49 @@ function ink(e: Entry, hit: ResolvedGlyph): void {
   e.glyph = hit.glyph;
   e.advance = hit.advance * (e.fontSize / hit.metrics.size);
   e.drawsInk = true;
+}
+
+/** `e`, a tab or a space, filled in place, or a tab copied from it; a space's
+ *  tracking and kerning are the caller's to set. A face with no space still
+ *  gets one wide enough to part words. */
+function whiteSpace(e: Entry, run: ResolvedRun, resolved: ResolveResult, metrics: GlyphMetrics, tabSize: number): Entry {
+  const space = metrics.advanceOf(32);
+  const advance = space !== null ? space * (e.fontSize / metrics.size) : e.fontSize * 0.25;
+  if (e.cp === 9) return { ...e, tab: { stop: tabSize * (advance + run.letterSpacing), min: advance / 2 } };
+  // Its record in the run's own tier, for an atlas that draws one. It
+  // never escalates: a face without a space still parts words.
+  const own = glyphIn(resolved, 32, HIT);
+  e.font = own?.font ?? null;
+  e.glyph = own?.glyph ?? null;
+  e.advance = advance;
+  return e;
+}
+
+/** The hyphen a soft hyphen in `run` draws when a line wraps at it, kerned
+ *  against `prev`: in the run's own tier first, then the dynamic tier. */
+function hyphenFor(run: ResolvedRun, resolved: ResolveResult, fontSize: number, prev: Entry | undefined): Hyphen | null {
+  const { fontFamily: family, fontWeight: weight, fontStyle: style } = run;
+  let cp = HYPHEN;
+  let hit = glyphIn(resolved, cp);
+  if (!hit) hit = glyphIn(resolved, cp = HYPHEN_MINUS);
+  if (!hit) hit = resolveGlyph(resolved, family, weight, style, cp = HYPHEN, false);
+  if (!hit) hit = resolveGlyph(resolved, family, weight, style, cp = HYPHEN_MINUS, false);
+  if (!hit) return null;
+  return {
+    cp, resolved: hit.resolved, metrics: hit.metrics, font: hit.font, glyph: hit.glyph,
+    advance: hit.advance * (fontSize / hit.metrics.size),
+    kerningBefore: prev ? prev.metrics.kernOf(prev.cp, cp) * (prev.fontSize / prev.metrics.size) : 0,
+  };
+}
+
+const HYPHEN = 0x2010;
+const HYPHEN_MINUS = 0x2d;
+
+/** `e`, a soft hyphen closing a line the wrap ended there, drawing its hyphen, in place. */
+export function hyphenate(e: Entry, opensLine: boolean): void {
+  const h = e.hyphen!;
+  e.cp = h.cp; e.resolved = h.resolved; e.metrics = h.metrics; e.font = h.font; e.glyph = h.glyph;
+  e.advance = h.advance; e.kerningBefore = opensLine ? 0 : h.kerningBefore; e.shaped = null; e.drawsInk = true;
 }
 
 /** Fill the empty slot `e` with what shaping gave its code point, in place. */

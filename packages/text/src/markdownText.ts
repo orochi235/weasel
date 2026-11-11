@@ -5,7 +5,7 @@ import { resolveRunFace, scriptMetrics } from './runs/resolveRuns';
 import { graphemeCount } from './measure/graphemes';
 import { transformRunTexts } from './runs/textTransform';
 import { smallCapsScale, smallCapsText } from './runs/smallCaps';
-import { hangs, wrapLines } from './layout/lineBreak/wrapLines';
+import { endsHyphenated, hangs, wrapLines, type HyphenWidth } from './layout/lineBreak/wrapLines';
 import { DEFAULT_TAB_SIZE, tabAdvance, widthWithTabs, type TabStop } from './layout/tabStops';
 
 export type { StyledRun };
@@ -139,21 +139,7 @@ export function layoutMarkdown(
 
   // One sequence across every run, so a break opportunity that depends on a
   // neighbor in the next run is found the way `layoutRuns` finds it.
-  const cps: number[] = [];
-  /** Per code point: its run, and its UTF-16 span in that run's text. */
-  const runOf: number[] = [];
-  const startOf: number[] = [];
-  const endOf: number[] = [];
-  segs.forEach((r, ri) => {
-    let at = 0;
-    for (const ch of r.text) {
-      cps.push(ch.codePointAt(0)!);
-      runOf.push(ri);
-      startOf.push(at);
-      at += ch.length;
-      endOf.push(at);
-    }
-  });
+  const { cps, runOf, startOf, endOf } = codePointsOf(segs);
   // Already a screen-pixel layout, so a run's `{ px }` size is its size.
   const placed = segs.map(({ smallCaps, source: _source, ...run }) => {
     const runFace = resolveRunFace(run, node);
@@ -166,14 +152,19 @@ export function layoutMarkdown(
     // The run's size holds the line, as on the GL tier, however small its capitals.
     return { run, face, y, runSize, font, tracking };
   });
+  /** A UTF-16 span of one run's text, set on the current line; `hyphen` when
+   *  it closes a line wrapped at the soft hyphen it ends in, which draws as U+2010. */
+  interface Piece { run: number; start: number; end: number; hyphen?: boolean }
+
+  const pieceText = (p: Piece): string => {
+    const text = placed[p.run].run.text;
+    return p.hyphen ? `${text.slice(p.start, p.end - 1)}\u2010` : text.slice(p.start, p.end);
+  };
   const pieceWidth = (p: Piece): number => {
-    const { run, font, tracking } = placed[p.run];
-    const text = run.text.slice(p.start, p.end);
+    const { font, tracking } = placed[p.run];
+    const text = pieceText(p);
     return measure(text, font) + (tracking === 0 ? 0 : graphemeCount(text) * tracking);
   };
-
-  /** A UTF-16 span of one run's text, set on the current line. */
-  interface Piece { run: number; start: number; end: number }
 
   /** Code points `[from, to)` as spans of their runs' texts. */
   function piecesOf(from: number, to: number): Piece[] {
@@ -200,7 +191,7 @@ export function layoutMarkdown(
       const tab = run.text[p.start] === '\t' ? stopOf(p.run) : null;
       const width = tab ? tabAdvance(x, tab.stop, tab.min) : pieceWidth(p);
       positioned.push({
-        ...run, text: run.text.slice(p.start, p.end), x, width, y, font, lineSize: runSize, tracking,
+        ...run, text: pieceText(p), x, width, y, font, lineSize: runSize, tracking,
         ...(face ? { face } : {}),
       });
       x += width;
@@ -221,17 +212,42 @@ export function layoutMarkdown(
     piecesOf(start, end).reduce((w, p) => w + pieceWidth(p), 0);
   const widthOf = (start: number, end: number): number =>
     widthWithTabs(start, end, tabs, (k) => stopOf(runOf[k]), flatWidth);
-  for (const line of wrapLines(cps, maxWidth, widthOf)) {
+  const hyphenOf: HyphenWidth = (start, k) => {
+    const last = piecesOf(start, k + 1).pop()!;
+    return pieceWidth({ ...last, hyphen: true }) - pieceWidth(last);
+  };
+  for (const line of wrapLines(cps, maxWidth, widthOf, hyphenOf)) {
     let end = line.end;
     // A line's trailing spaces and tabs hang past the edge, as they do in `layoutRuns`.
     while (end > line.start && hangs(cps[end - 1])) end--;
-    commitLine(piecesOf(line.start, end));
+    const pieces = piecesOf(line.start, end);
+    if (endsHyphenated(cps, line.end, line.wrapped)) pieces[pieces.length - 1].hyphen = true;
+    commitLine(pieces);
   }
 
   if (lines.length === 0) return { lines: [], width: 0, height: 0 };
   const width = lines.reduce((w, l) => Math.max(w, l.width), -Infinity);
   const height = lines.reduce((sum, l) => sum + l.height, 0);
   return { lines, width, height };
+}
+
+/** The code points of `segs` in one sequence and, per code point, its run and its UTF-16 span in that run's text. */
+function codePointsOf(segs: readonly { text: string }[]) {
+  const cps: number[] = [];
+  const runOf: number[] = [];
+  const startOf: number[] = [];
+  const endOf: number[] = [];
+  segs.forEach((r, ri) => {
+    let at = 0;
+    for (const ch of r.text) {
+      cps.push(ch.codePointAt(0)!);
+      runOf.push(ri);
+      startOf.push(at);
+      at += ch.length;
+      endOf.push(at);
+    }
+  });
+  return { cps, runOf, startOf, endOf };
 }
 
 /** Font styling options threaded through `createMarkdownRenderer`. */

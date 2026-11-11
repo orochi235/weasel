@@ -58,6 +58,8 @@ export interface LaidOutCell {
   srcIndex: number;
   /** One past that source character — `srcIndex + 2` for an astral one. */
   srcEnd: number;
+  /** The code point drawn: a soft hyphen closing a line the wrap ended there
+   *  is the hyphen it draws, U+2010 or U+002D. */
   cp: number;
   /** Left edge of the cell, post-alignment, origin-relative.
    *
