@@ -4,6 +4,7 @@ import type { PinObject, SemanticRule } from '../definition.ts';
 import { refTarget } from '../dtcg/resolve.ts';
 import type { RawToken, TokenValue } from '../dtcg/types.ts';
 import { contrast, toLch } from './color/oklch.ts';
+import { checkProblem, ruleProblem } from './ruleShape.ts';
 import type { Issue } from './types.ts';
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -123,6 +124,9 @@ function deriveOne(name: string, r: SemanticRule, ctx: SemanticContext, env: Env
     ctx.issues.push({ kind: 'invalid', path: `semantics.${name}`, message });
     return undefined;
   };
+
+  const problem = ruleProblem(r as unknown as Record<string, unknown>);
+  if (problem) return invalid(problem);
 
   if ('value' in r) {
     return { rule: 'value', token: { type: r.type ?? 'unknown', value: r.value, alpha: undefined, description } };
@@ -250,7 +254,8 @@ export function checkSemantics(
   for (const name of Object.keys(rules)) {
     const p = pick(rules[name], sel);
     const check = p.ok && isRecord(p.value) ? (p.value as SemanticRule).check : undefined;
-    if (!check) continue;
+    // A malformed check was reported with its rule.
+    if (!check || checkProblem(check)) continue;
     for (const a of check.against) requireKnown(name, a, known);
     if (!Object.hasOwn(tokens, name)) continue;
     const path = `semantics.${name}.check`;

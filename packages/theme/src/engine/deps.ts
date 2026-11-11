@@ -3,6 +3,7 @@ import { enumerateSelections, isByAxis, pick, type Selection } from '../axes.ts'
 import { refTarget } from '../dtcg/resolve.ts';
 import type { SemanticRule, ThemeDefinition } from '../definition.ts';
 import { mergeChain, type Lookup } from './merge.ts';
+import { ruleProblem } from './ruleShape.ts';
 import { declaredSteps } from './steps.ts';
 
 /** The axes one token's value can change with. */
@@ -74,6 +75,10 @@ function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
 }
 
+/** The rules under a possibly `by`-varying semantic that `derive` can read; it reports the rest. */
+const readableRules = (rule: unknown): SemanticRule[] =>
+  leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
+
 /** Every token of the definition, `extends` chain included, mapped to the axes it depends on, in axis declaration order. */
 export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): Record<string, AxisDependency> {
   const def = mergeChain(definition, lookup);
@@ -106,10 +111,8 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const add = (from: string) => {
       for (const r of rampsOf(from, seen)) out.add(r);
     };
-    const rule = def.semantics?.[name];
-    for (const leaf of rule === undefined ? [] : leaves(rule)) {
-      if (typeof leaf !== 'object' || leaf === null) continue;
-      const l = leaf as SemanticRule;
+    const rule = def.semantics && Object.hasOwn(def.semantics, name) ? def.semantics[name] : undefined;
+    for (const l of rule === undefined ? [] : readableRules(rule)) {
       if ('ramp' in l) out.add(l.ramp);
       else if ('from' in l) add(l.from);
       else if ('ref' in l) add(l.ref);
@@ -125,7 +128,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   for (const [name, rule] of Object.entries(def.semantics ?? {})) {
     const n = node();
     scan(rule, n);
-    for (const leaf of leaves(rule) as SemanticRule[]) {
+    for (const leaf of readableRules(rule)) {
       if ('ref' in leaf) n.edges.add(leaf.ref);
       if ('from' in leaf) {
         n.edges.add(leaf.from);
