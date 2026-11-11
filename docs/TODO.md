@@ -496,18 +496,6 @@ only story runner in the repo.
   up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
   Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
-- **(P3) [agent] The CSS Vars panel does not save a token the theme derives.** A token
-  edited by hand saves when the definition writes its value out: a pin, a
-  component, or a literal semantic, in the branch the trial's globals read
-  (`applyTokenEdits`, `packages/forge/src/shell/cssVars/saveTokens.ts`). One
-  that follows another token, a ramp, a contrast rule, or an alpha stays a
-  per-trial override, and so does a scale step changed after its scale, because
-  a value written over it would drop the derivation for every mode and density
-  the branch covers. Not decided: whether such an edit should save at all, and
-  if so as a pin over the one step or as a change to what it follows.
-  Ruled (2026-11-07): save it as a pin over that one token in the branch, leaving the derivation for the rest.
-  Closes when it does, with a case in `saveTokens`' tests.
-
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
   `fs.watch` on that directory nor the `fsevents` module in 12 seconds, while a watch on the file

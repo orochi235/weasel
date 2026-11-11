@@ -2,6 +2,7 @@ import { createMemoryAdapter } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { THEME_SOURCES, type ThemeDefinition } from '@weasel-js/theme';
+import { derive } from '@weasel-js/theme/engine';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FromFrame, ToFrame } from '../../protocol/messages';
 import { describeSchema } from '../../protocol/schema';
@@ -262,7 +263,33 @@ describe('CssVarsPanel', () => {
     expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
   });
 
-  it('saves a token edited by hand where the theme writes its value out, and offers no save for one it derives', async () => {
+  it('saves a scale edit and pins over it a step edited by hand after it', async () => {
+    location.hash = '#/x--a';
+    const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
+    renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
+    const { received } = await openTrial('A');
+    await editFontBase(String(editedBase));
+    const step = `--wzl-font-size-${fontSteps[0]}`;
+    fireEvent.change(vars().getByLabelText('Filter'), { target: { value: step.replace('--wzl-', '') } });
+    const field = row(vars(), step).getByRole('textbox');
+    act(() => {
+      fireEvent.change(field, { target: { value: '19' } });
+      fireEvent.blur(field);
+    });
+    await flush();
+
+    fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
+    await waitFor(() => expect(vars().getByRole('status')).toHaveTextContent('Saved to themes/weasel.json.'));
+    const body = JSON.parse(String(calls.find((c) => c.init?.method === 'PUT')?.init?.body));
+    expect(body.definition.seeds['ui-base']).toEqual({ ...uiBase, comfortable: editedBase });
+    expect(derive(body.definition).tokens[step.replace('--wzl-', '')]?.value).toBe('19px');
+
+    await flush();
+    const cleared = (setsOf(received) as VarsSet[]).filter((m) => m.value === null);
+    expect(cleared.map((m) => m.name).sort()).toEqual(fontSteps.map((s) => `--wzl-font-size-${s}`).sort());
+  });
+
+  it('saves a token edited by hand where the theme writes its value out, and pins one it derives', async () => {
     location.hash = '#/x--a';
     const calls = stubStore({ status: 200, body: { status: 'saved', hash: 'h2', issues: [], regenerated: true, problems: [] } });
     renderWithIcons(<Workshop index={[a]} frameUrl="/frame.html" storage={createMemoryAdapter()} />);
@@ -273,7 +300,6 @@ describe('CssVarsPanel', () => {
       await flush();
     };
     await edit('--wzl-surface-sunken', '#101010');
-    expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
     await edit('--wzl-gray-50', '#123456');
 
     fireEvent.click(vars().getByRole('button', { name: 'Save to theme' }));
@@ -281,10 +307,11 @@ describe('CssVarsPanel', () => {
     const body = JSON.parse(String(calls.find((c) => c.init?.method === 'PUT')?.init?.body));
     expect(body.definition.pins['gray-50']).toEqual({ ...(weasel.pins?.['gray-50'] as object), value: '#123456' });
     expect(body.definition.semantics['surface-sunken']).toEqual(weasel.semantics?.['surface-sunken']);
+    expect(derive(body.definition).tokens['surface-sunken']?.value).toBe('#101010');
 
     await flush();
     const cleared = (setsOf(received) as VarsSet[]).filter((m) => m.value === null);
-    expect(cleared.map((m) => m.name)).toEqual(['--wzl-gray-50']);
+    expect(cleared.map((m) => m.name).sort()).toEqual(['--wzl-gray-50', '--wzl-surface-sunken']);
     expect(vars().queryByRole('button', { name: 'Save to theme' })).toBeNull();
   });
 

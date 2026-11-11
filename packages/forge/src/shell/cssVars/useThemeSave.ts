@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import type { Globals } from '../../protocol/messages';
 import type { CssOverrides } from './overrides';
 import { applyScaleEdits, type ScaleEdit } from './saveScales';
-import { applyTokenEdits, writtenOut } from './saveTokens';
+import { applyTokenEdits, canSave } from './saveTokens';
 import { useTrialSelection } from './useTrialSelection';
 import type { VarsHistory } from './varsHistory';
 
@@ -14,12 +14,13 @@ const NO_AXES: AxisDefs = {};
 
 type Notice = { readonly trialId: string | null; readonly outcome: 'saved' | 'error'; readonly text: string };
 
-/** A scale whose steps all hold what its edit generated. */
+/** An edited scale, and the steps of it that still hold what its edit generated. */
 export interface UnsavedScale {
   /** The scale's name in the definition. */
   readonly name: string;
   /** The panel's group for it, which its edit is kept under. */
   readonly group: string;
+  /** The steps the edit writes. A step edited by hand after the scale is saved as a token edit of its own. */
   readonly tokens: readonly string[];
   readonly edit: ScaleEdit;
 }
@@ -44,8 +45,9 @@ export interface ThemeSave {
 }
 
 /**
- * Saves a trial's edits into the theme's definition file: each clean scale edit, and each token edited by hand whose
- * value the definition writes out. Every other override stays the trial's own.
+ * Saves a trial's edits into the theme's definition file: each scale edit, and each token edited by hand, written where
+ * the definition writes its value out or pinned over what it derives. An override the theme has no token for, or one
+ * whose branch the trial's globals do not pick, stays the trial's own.
  */
 export function useThemeSave({ trialId, globals, themeApi, scales, overrides, history }: ThemeSaveOptions): ThemeSave {
   const definition = THEME_SOURCES[THEME_NAME];
@@ -57,7 +59,7 @@ export function useThemeSave({ trialId, globals, themeApi, scales, overrides, hi
       Object.entries(overrides).flatMap(([name, value]) => {
         if (!name.startsWith(TOKEN_PREFIX) || generated.has(name)) return [];
         const token = name.slice(TOKEN_PREFIX.length);
-        return writtenOut(definition, token, selection) ? [[token, value]] : [];
+        return canSave(definition, token, selection) ? [[token, value]] : [];
       }),
     );
   }, [definition, selection, scales, overrides]);
