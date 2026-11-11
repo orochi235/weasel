@@ -460,6 +460,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (2026-11-10, property tests): a combining mark opening a run, when the run's locale mapping drops
   it (`tr`'s dot after `I`), sends the paragraph to mapping code point by code point, since the mark has
   no piece in its own run to join. Code point snapping does not reach it.
+- Ruled 2026-11-10 (my call, overnight sweep): `textClusters` hands clusters back in the line's visual order, not
+  sorted by pen, and its first slot opens at the line's start. Tracking tighter than a cluster's advance gives that
+  cluster a negative `advance`, since its doc counts tracking in; sorting by pen put a lone mark's following letter
+  before it, and the first slot started left of the line.
+- Ruled 2026-11-10 (my call, overnight sweep): `runsToMarkdown` checks each change it writes by reading it back, and
+  in a grammar whose markers fuse into another marker spells it another way, else drops the flags it cannot say there,
+  never styling text with a flag it lacks. A writer never writes what its reader can't read back; dropping follows the
+  writer's documented handling of a flag no marker spells.
 - Ruled 2026-11-10 (my call, overnight sweep): the edit overlay carries every key a run holds through an edit,
   `fontScale` beside an absolute `fontSize` and `bold` beside the run's own `fontWeight` included, though the other
   key wins what draws, and a solid fill's color as it was spelled. A writer never drops data, so this reverses the
