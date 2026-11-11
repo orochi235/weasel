@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BODY_LIMIT, changelogSection, releaseBody } from './release-notes.mjs';
+import { BODY_LIMIT, changelogSection, releaseBody } from './notes.mjs';
 
 const CHANGELOG = [
   '# Changelog',

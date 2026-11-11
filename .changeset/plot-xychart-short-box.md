@@ -2,4 +2,6 @@
 "@weasel-js/plot": patch
 ---
 
-An xychart in a box too short for its axes lays its value and category axes along the plot it holds open, rather than along a span that ran upward from below the plot's top. Its bars, and in a horizontal chart its points, used to land outside the plot, above the chart.
+An xychart in a box too short for its axes keeps its axes, bars and points inside the plot instead of drawing them above the chart.
+
+<!-- entry: fix visual -->

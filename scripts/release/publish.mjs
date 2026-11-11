@@ -4,7 +4,7 @@
 import { spawn } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
-import { repoRoot } from './lib/workspaces.mjs';
+import { repoRoot } from '../lib/workspaces.mjs';
 
 // The shim is handed an absolute npm so it can never find itself on PATH.
 // `npm run` sets npm_execpath to the CLI that launched it; otherwise take the

@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Release } from '../../shared/releases';
@@ -9,27 +9,29 @@ const RELEASES: Release[] = [
   {
     version: 'Unreleased',
     entries: [
-      { id: 'a', packages: ['core', 'text'], titleHtml: 'px sizes', bodyHtml: '', level: 'patch' },
-      { id: 'b', packages: ['bidi'], titleHtml: 'bidi only', bodyHtml: '', level: 'patch' },
+      { id: 'a', packages: ['core', 'text'], titleHtml: 'px sizes', bodyHtml: '', tags: ['new'], rank: 0, pick: false },
+      { id: 'b', packages: ['bidi'], titleHtml: 'bidi only', bodyHtml: '', tags: ['new'], rank: 0, pick: false },
     ],
   },
   {
     version: '1.5.0',
     date: '2026-09-14T00:00:00Z',
     entries: [
-      { id: 'c', packages: ['core'], titleHtml: 'core only', bodyHtml: '', level: 'patch' },
+      { id: 'c', packages: ['core'], titleHtml: 'core only', bodyHtml: '', tags: ['new'], rank: 0, pick: false },
       {
         id: 'd',
         packages: ['svg', 'ui'],
         titleHtml: 'svg and ui',
         bodyHtml: '<p>the long account</p>',
-        level: 'patch',
+        tags: ['new'], rank: 0, pick: false,
       },
     ],
   },
 ];
 
-vi.mock('virtual:changelogs', () => ({ default: RELEASES }));
+vi.mock('virtual:changelogs', async () => ({
+  default: (await import('../../shared/releases')).indexReleases(RELEASES),
+}));
 
 const { Releases } = await import('../Releases');
 
@@ -37,8 +39,13 @@ const chips = () => screen.getByRole('group', { name: 'Filter by package' });
 const chip = (name: string) => within(chips()).getByRole('button', { name: new RegExp(`^${name}`) });
 // The entry's own prose, not the listitem, whose textContent also runs the
 // package chips together.
-const titles = () =>
-  screen.getAllByRole('listitem').map((li) => li.querySelector('.ckd-release-title')?.textContent);
+// A release's entries load when it opens, so wait for the first one.
+const titles = async () => {
+  await waitFor(() => expect(document.querySelector('.ckd-release-entry')).not.toBeNull());
+  return [...document.querySelectorAll('.ckd-release-entry')].map(
+    (li) => li.querySelector('.ckd-release-title')?.textContent,
+  );
+};
 const versions = () => screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
 // Only the first release starts open, and a closed one mounts no entries.
 async function openAll() {
@@ -70,13 +77,13 @@ describe('the package filter', () => {
     render(<Releases />);
     expect(chip('All')).toHaveAttribute('aria-pressed', 'true');
     await openAll();
-    expect(titles()).toHaveLength(4);
+    expect(await titles()).toHaveLength(4);
   });
 
   it('keeps only the entries naming the chosen package', async () => {
     render(<Releases />);
     await userEvent.click(chip('text'));
-    expect(titles()).toEqual(['px sizes']);
+    expect(await titles()).toEqual(['px sizes']);
   });
 
   it('drops a release with nothing left in it', async () => {
@@ -92,7 +99,7 @@ describe('the package filter', () => {
     // `svg` appears only in 1.5.0, which starts closed.
     await userEvent.click(chip('svg'));
     expect(versions()).toEqual(['1.5.0']);
-    expect(titles()).toEqual(['svg and ui']);
+    expect(await titles()).toEqual(['svg and ui']);
   });
 
   it('unions two packages rather than intersecting them', async () => {
@@ -100,7 +107,7 @@ describe('the package filter', () => {
     await userEvent.click(chip('text'));
     await userEvent.click(chip('bidi'));
     // Intersecting would leave nothing: no entry names both.
-    expect(titles()).toHaveLength(2);
+    expect(await titles()).toHaveLength(2);
     expect(screen.getByText('2 changes in bidi, text')).toBeTruthy();
   });
 
@@ -110,7 +117,7 @@ describe('the package filter', () => {
     await userEvent.click(chip('text'));
     expect(chip('All')).toHaveAttribute('aria-pressed', 'true');
     await openAll();
-    expect(titles()).toHaveLength(4);
+    expect(await titles()).toHaveLength(4);
   });
 
   it('clears everything when All is chosen', async () => {
@@ -119,15 +126,15 @@ describe('the package filter', () => {
     await userEvent.click(chip('bidi'));
     await userEvent.click(chip('All'));
     await openAll();
-    expect(titles()).toHaveLength(4);
+    expect(await titles()).toHaveLength(4);
     expect(window.location.search).toBe('');
   });
 
   it('filters from an entry chip too, so a change pivots to its package', async () => {
     render(<Releases />);
-    const entry = screen.getAllByRole('listitem')[0];
+    const entry = await screen.findByText('px sizes').then((t) => t.closest('li')!);
     await userEvent.click(within(entry).getByRole('button', { name: 'text' }));
-    expect(titles()).toEqual(['px sizes']);
+    expect(await titles()).toEqual(['px sizes']);
   });
 });
 
@@ -145,12 +152,12 @@ describe('the filter in the URL', () => {
     expect(window.location.hash).toBe('#__releases');
   });
 
-  it('restores a selection present at mount', () => {
+  it('restores a selection present at mount', async () => {
     window.history.replaceState(null, '', '/?pkg=bidi,text');
     render(<Releases />);
     expect(chip('bidi')).toHaveAttribute('aria-pressed', 'true');
     expect(chip('text')).toHaveAttribute('aria-pressed', 'true');
-    expect(titles()).toHaveLength(2);
+    expect(await titles()).toHaveLength(2);
   });
 
   it('shows the empty message for a package name that no entry carries', () => {
@@ -165,7 +172,7 @@ describe('an entry with a body', () => {
     render(<Releases />);
     // 1.5.0 is closed at first, as is the change inside it.
     await userEvent.click(screen.getByRole('heading', { level: 3, name: '1.5.0' }));
-    const change = screen.getByText('svg and ui').closest('details');
+    const change = (await screen.findByText('svg and ui')).closest('details');
     expect(change?.open).toBe(false);
     expect(screen.queryByText('the long account')).toBeNull();
     await userEvent.click(screen.getByText('svg and ui'));
@@ -176,6 +183,6 @@ describe('an entry with a body', () => {
   it('leaves a title-only entry as plain text', async () => {
     render(<Releases />);
     await openAll();
-    expect(screen.getByText('core only').closest('.ckd-release-change')).toBeNull();
+    expect((await screen.findByText('core only')).closest('.ckd-release-change')).toBeNull();
   });
 });

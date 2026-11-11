@@ -2,4 +2,6 @@
 "@weasel-js/forge": patch
 ---
 
-The CSS variable panel's save reads only axis values, scales, seeds, and branches a theme holds as its own. A global naming a member of every object (`mode: 'hasOwnProperty'`) was taken as the axis value the trial renders under, where the theme engine falls back to the axis default, and a scale or seed named like one was read off `Object.prototype` and refused with the wrong reason.
+The CSS variable panel's save reads only the axis values, scales, seeds and branches a theme holds as its own. A global such as `mode: 'hasOwnProperty'` saves under the axis default, as the theme engine renders it, and a scale or seed named like an `Object.prototype` member is refused for the right reason.
+
+<!-- entry: rank=-5 fix -->

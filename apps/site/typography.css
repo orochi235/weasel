@@ -10,7 +10,7 @@ body { font-family: var(--wzl-font-body); }
 .ckd-whatsnew-table th,
 .ckd-release-summary,
 .ckd-release-filter,
-.ckd-release-pkgs { font-family: var(--wzl-font-ui); }
+.ckd-release-meta { font-family: var(--wzl-font-ui); }
 
 .ckd-hint { font-family: var(--wzl-font-body); }
 

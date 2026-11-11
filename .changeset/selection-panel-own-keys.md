@@ -2,4 +2,6 @@
 "@weasel-js/ui": patch
 ---
 
-The selection panel reads a node's value only where the node holds it: a schema key named like an `Object.prototype` member (`data.toString`, `data.constructor`) read the inherited function, and now reads as unset. Writing such a key into an array value keeps it an own key, where `__proto__` replaced the array's prototype.
+The selection panel shows a key named like an `Object.prototype` member, such as `data.toString`, as unset when the node does not hold it. Writing such a key into an array value keeps it an own key.
+
+<!-- entry: rank=-5 fix -->

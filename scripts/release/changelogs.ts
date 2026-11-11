@@ -3,60 +3,10 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseChangesetFile } from '@changesets/parse';
 import { marked } from 'marked';
-import type { PluginOption } from 'vite';
-import type { ChangelogEntry, Release } from '../apps/shared/releases.ts';
-import { isChangesetFile } from './lib/changeset-bumps.mjs';
-
-/**
- * Virtual module exposing every package CHANGELOG as one release history,
- * newest version first. The site's Releases view imports it:
- *
- *   import RELEASES from 'virtual:changelogs';
- *
- * All packages ship as one changesets `fixed` group, so the per-package
- * CHANGELOG files are views of the same release. Entries are keyed by their
- * changeset hash and merged across packages — one entry naming the packages
- * it touched.
- *
- * `Updated dependencies` stanzas are dropped, and so is the same list written
- * as a bare bullet, which is the shape changesets uses when a package changed
- * only by the bump.
- *
- * Pending `.changeset/*.md` files lead the list as an "Unreleased" entry: the
- * site deploys from `main` on every push but publishes to npm only on a
- * release.
- *
- * Markdown is rendered to HTML here, at build time, so the client bundle
- * carries no markdown parser.
- */
-
-/** The version label given to pending, unpublished changesets. */
-export const UNRELEASED = 'Unreleased';
-
-export function changelogs(opts: { root?: string } = {}): PluginOption {
-  const VIRTUAL_ID = 'virtual:changelogs';
-  const RESOLVED_ID = '\0' + VIRTUAL_ID;
-  const root = opts.root ?? process.cwd();
-
-  return {
-    name: 'changelogs',
-    resolveId(id) {
-      if (id === VIRTUAL_ID) return RESOLVED_ID;
-      return null;
-    },
-    load(id) {
-      if (id !== RESOLVED_ID) return null;
-      return `export default ${JSON.stringify(readReleases(root), null, 2)};`;
-    },
-    configureServer(server) {
-      server.watcher.on('change', (file) => {
-        if (!file.endsWith('CHANGELOG.md') && !file.includes('.changeset')) return;
-        const mod = server.moduleGraph.getModuleById(RESOLVED_ID);
-        if (mod) server.moduleGraph.invalidateModule(mod);
-      });
-    },
-  };
-}
+import { type ChangelogEntry, compareEntries, type Release, type Tag } from '../../apps/shared/releases.ts';
+import { readMarker } from './entry-marker.ts';
+import { isChangesetFile } from './bumps.mjs';
+import { splitSummary } from './summary.ts';
 
 /** One package's changelog, as the pure parser wants it. */
 export interface ChangelogSource {
@@ -65,7 +15,16 @@ export interface ChangelogSource {
   text: string;
 }
 
-function readReleases(root: string): Release[] {
+/** The version label given to pending, unpublished changesets. */
+export const UNRELEASED = 'Unreleased';
+
+/** Tags and rank for entries published before markers existed, keyed by changeset hash. */
+export type HistoryMeta = Record<string, { tags: Tag[]; rank: number }>;
+
+export const HISTORY_META = 'scripts/release/history-meta.json';
+
+/** Every release, newest first, with pending changesets leading as Unreleased. */
+export function readReleases(root: string): Release[] {
   const packagesDir = resolve(root, 'packages');
   const sources: ChangelogSource[] = [];
   if (existsSync(packagesDir)) {
@@ -76,7 +35,9 @@ function readReleases(root: string): Release[] {
     }
   }
 
-  const releases = releasesFromChangelogs(sources);
+  const historyFile = resolve(root, HISTORY_META);
+  const history: HistoryMeta = existsSync(historyFile) ? JSON.parse(readFileSync(historyFile, 'utf8')) : {};
+  const releases = releasesFromChangelogs(sources, history);
   const dates = new Map<string, Map<string, string>>();
   for (const release of releases) {
     const heading = new RegExp(`^## ${release.version.replace(/\./g, '\\.')}$`, 'm');
@@ -94,7 +55,10 @@ function readReleases(root: string): Release[] {
  * Merge per-package changelogs into one release history, newest first. Pure —
  * the plugin supplies the file contents and stamps dates afterwards.
  */
-export function releasesFromChangelogs(sources: readonly ChangelogSource[]): Release[] {
+export function releasesFromChangelogs(
+  sources: readonly ChangelogSource[],
+  history: HistoryMeta = {},
+): Release[] {
   const byVersion = new Map<string, Map<string, ChangelogEntry>>();
 
   for (const source of sources) {
@@ -107,7 +71,7 @@ export function releasesFromChangelogs(sources: readonly ChangelogSource[]): Rel
         if (!existing.packages.includes(raw.pkg)) existing.packages.push(raw.pkg);
         continue;
       }
-      entries.set(raw.id, makeEntry(raw.id, raw.pkg, raw.level, raw.body));
+      entries.set(raw.id, makeEntry(raw.id, raw.pkg, raw.body, history[raw.id]));
     }
   }
 
@@ -141,7 +105,7 @@ export function readPendingChangesets(root: string): Release | null {
     const parsed = parseChangeset(readFileSync(resolve(dir, file), 'utf8'));
     if (!parsed) continue;
     const id = file.replace(/\.md$/, '');
-    const entry = makeEntry(id, parsed.packages[0] ?? '', parsed.level, parsed.body);
+    const entry = makeEntry(id, parsed.packages[0] ?? '', parsed.body);
     entry.packages = parsed.packages;
     entries.set(id, entry);
   }
@@ -155,7 +119,7 @@ export function readPendingChangesets(root: string): Release | null {
  */
 export function parseChangeset(
   text: string,
-): { packages: string[]; level: ChangelogEntry['level']; body: string } | null {
+): { packages: string[]; level: 'major' | 'minor' | 'patch'; body: string } | null {
   let parsed: ReturnType<typeof parseChangesetFile>;
   try {
     parsed = parseChangesetFile(text);
@@ -181,30 +145,33 @@ function unscope(name: string): string {
 function makeEntry(
   id: string,
   pkg: string,
-  level: ChangelogEntry['level'],
   body: string,
+  fallback?: { tags: Tag[]; rank: number },
 ): ChangelogEntry {
-  const [summary, rest] = splitSummary(body);
+  const marker = readMarker(body);
+  const meta = marker.ok ? marker.meta : { tags: fallback?.tags ?? [], rank: fallback?.rank ?? 0, pick: false };
+  const [summary, rest] = splitSummary(marker.body);
   return {
     id,
     packages: pkg ? [pkg] : [],
     titleHtml: renderInline(summary),
     bodyHtml: renderBlock(rest),
-    level,
+    tags: meta.tags,
+    rank: meta.rank,
+    pick: meta.pick,
   };
 }
 
-/** Sort each entry's packages, then order entries by breadth of impact. */
+/** Sort each entry's packages, then order entries by group, rank and breadth. */
 function finishEntries(entries: Map<string, ChangelogEntry>): ChangelogEntry[] {
   for (const entry of entries.values()) entry.packages.sort();
-  return [...entries.values()].sort((a, b) => b.packages.length - a.packages.length);
+  return [...entries.values()].sort(compareEntries);
 }
 
 interface RawEntry {
   id: string;
   pkg: string;
   version: string;
-  level: ChangelogEntry['level'];
   body: string;
 }
 
@@ -217,7 +184,6 @@ interface RawEntry {
 function parseChangelog(text: string, pkg: string): RawEntry[] {
   const out: RawEntry[] = [];
   let version: string | null = null;
-  let level: ChangelogEntry['level'] = 'patch';
   let bullet: string[] | null = null;
 
   const flush = () => {
@@ -230,7 +196,6 @@ function parseChangelog(text: string, pkg: string): RawEntry[] {
       id: hash ? hash[1] : `${pkg}-${version}-${out.length}`,
       pkg,
       version,
-      level,
       body: hash ? body.slice(hash[0].length) : body,
     });
   };
@@ -240,13 +205,10 @@ function parseChangelog(text: string, pkg: string): RawEntry[] {
     if (versionHeading) {
       flush();
       version = versionHeading[1];
-      level = 'patch';
       continue;
     }
-    const levelHeading = /^### +(Major|Minor|Patch) Changes\s*$/.exec(line);
-    if (levelHeading) {
+    if (/^### +(Major|Minor|Patch) Changes\s*$/.test(line)) {
       flush();
-      level = levelHeading[1].toLowerCase() as ChangelogEntry['level'];
       continue;
     }
     if (/^- /.test(line)) {
@@ -266,40 +228,6 @@ function parseChangelog(text: string, pkg: string): RawEntry[] {
  *  (sub-lists, fences, tables) at its own relative depth. */
 function dedent(lines: string[]): string[] {
   return lines.map((line, i) => (i === 0 ? line : line.replace(/^ {2}/, '')));
-}
-
-/**
- * Split an entry into its opening sentence and the rest. Changeset prose is
- * hard-wrapped, so the opening paragraph ends at the first blank line, not the
- * first newline; its first sentence is the summary, and the paragraph's
- * remainder leads the rest. The summary is unwrapped so it renders inline.
- */
-export function splitSummary(body: string): [summary: string, rest: string] {
-  const brk = body.search(/\n[ \t]*\n/);
-  const para = brk === -1 ? body : body.slice(0, brk);
-  const after = brk === -1 ? '' : body.slice(brk).trim();
-  // A fence, list or table opening the entry is not a summary paragraph.
-  if (/^\s*(```|[-*+] |\d+\. |#|\|)/.test(para)) return ['', body.trim()];
-  const [first, more] = splitSentence(unwrap(para));
-  return [first, [more, after].filter(Boolean).join('\n\n')];
-}
-
-/** Cut at the first sentence end outside a code span: `.`, `!` or `?`, then a
- *  space and something that is not a lowercase letter, so `e.g. this` holds. */
-function splitSentence(text: string): [first: string, more: string] {
-  let inCode = false;
-  for (let i = 0; i < text.length - 2; i++) {
-    const c = text[i];
-    if (c === '`') inCode = !inCode;
-    else if (!inCode && '.!?'.includes(c) && text[i + 1] === ' ' && !/[a-z]/.test(text[i + 2])) {
-      return [text.slice(0, i + 1), text.slice(i + 2)];
-    }
-  }
-  return [text, ''];
-}
-
-function unwrap(text: string): string {
-  return text.trim().replace(/\s*\n\s*/g, ' ');
 }
 
 function renderInline(markdown: string): string {

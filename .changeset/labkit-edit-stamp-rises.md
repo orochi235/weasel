@@ -2,4 +2,6 @@
 "@weasel-js/labkit": patch
 ---
 
-An edit stamp always rises past the one before. After a restored history held a stamp past 2^43 ms, the thousandth each stamp was nudged by rounded away, so later edits tied and a trial's Undo could take back its marks and its settings in the wrong order.
+A trial's Undo takes back marks and settings in the order they were made, even after a restored history with very large edit stamps.
+
+<!-- entry: rank=-5 fix -->

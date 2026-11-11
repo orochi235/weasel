@@ -2,4 +2,6 @@
 "@weasel-js/labkit": patch
 ---
 
-A run of writes to one setting now ends at any edit recorded between two of them, such as a mark or a step on the instrument's own history, so Undo takes back the last write rather than the edit before it.
+Undo after a mark made between two writes to one setting takes back the last write, not the mark. A run of writes to one setting ends at any edit recorded between them.
+
+<!-- entry: fix -->
