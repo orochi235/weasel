@@ -43,7 +43,7 @@ function entriesOf(body: string, line: number): PendingCurve['entries'] {
   const parts = body.split(',').map((p) => p.trim());
   if (parts.length === 1 && parts[0] === '') return [];
   const entries = parts.map((p) => {
-    const keyed = /^([A-Za-z_][\w-]*)\s*:\s*(.*)$/.exec(p);
+    const keyed = /^([A-Za-z_][\w-]*)\s*:\s*(.*)$/s.exec(p);
     return keyed === null ? { value: numberAt(p, line) } : { axis: keyed[1]!, value: numberAt(keyed[2]!.trim(), line) };
   });
   if (entries.some((e) => e.axis === undefined) && entries.some((e) => e.axis !== undefined)) {
@@ -92,7 +92,10 @@ function joined(body: readonly Statement[]): Statement[] {
   const out: Statement[] = [];
   for (let k = 0; k < body.length; k++) {
     let s = body[k]!;
-    const open = (t: string) => (t.match(/\{/g)?.length ?? 0) - (t.match(/\}/g)?.length ?? 0);
+    const open = (t: string) => {
+      const bare = t.replace(/"[^"]*"/g, '');
+      return (bare.match(/\{/g)?.length ?? 0) - (bare.match(/\}/g)?.length ?? 0);
+    };
     while (/^curve\b/.test(s.text) && open(s.text) > 0 && k + 1 < body.length) s = { ...s, text: `${s.text} ${body[++k]!.text}` };
     out.push(s);
   }
@@ -106,7 +109,7 @@ export function parseRadarBody(body: readonly Statement[]): { data: RadarData; t
   const opts: Partial<Pick<RadarData, 'min' | 'max' | 'ticks' | 'graticule' | 'showLegend'>> = {};
   let title: string | undefined;
   for (const { text, line } of joined(body)) {
-    const m = /^(\S+)\s*(.*)$/.exec(text)!;
+    const m = /^(\S+)\s*(.*)$/s.exec(text)!;
     const keyword = m[1]!;
     const rest = m[2]!.trim();
     switch (keyword) {
