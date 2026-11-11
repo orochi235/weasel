@@ -93,7 +93,7 @@ describe('rayAt and projectPoint, property', () => {
   }, T);
 });
 
-const boxNear = (vp: Viewport3d, at: Vec3, a: Vec3, b: Vec3): Aabb => {
+const boxNear = (at: Vec3, a: Vec3, b: Vec3): Aabb => {
   const p = add(at, a);
   const q = add(at, b);
   return {
@@ -178,7 +178,7 @@ describe('projectAabbToScreen, property', () => {
     fc.assert(fc.property(viewport, v3(5), v3(5), fc.double({ min: 1, max: 100, noNaN: true }), (vp, a, b, back) => {
       const { eye, forward } = forwardOf(vp);
       const reach = Math.max(len(a), len(b));
-      const box = boxNear(vp, sub(eye, scale(forward, back + reach * 2)), a, b);
+      const box = boxNear(sub(eye, scale(forward, back + reach * 2)), a, b);
       expect(projectAabbToScreen(box, viewProjectionOf(vp), rectOf(vp))).toBeNull();
     }), runs(RUNS));
   }, T);

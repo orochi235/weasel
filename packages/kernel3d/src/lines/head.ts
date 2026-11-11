@@ -50,7 +50,7 @@ export function headFor(shaftHalf: number, linePx = Number.POSITIVE_INFINITY, he
   const cap = head.maxShare === 0 ? 0 : head.maxShare * linePx;
   const headLen = Math.max(0, Math.min(wanted, cap));
   const headHalf = headLen * head.aspect;
-  const shrunk = wanted > 0 ? (shaftHalf * headLen) / wanted : shaftHalf;
+  const shrunk = wanted > 0 ? shaftHalf * (headLen / wanted) : shaftHalf;
   return { headLen, headHalf, shaftHalf: wanted > 0 ? Math.min(shrunk, headHalf) : shrunk };
 }
 

@@ -165,6 +165,11 @@ describe('headFor and layoutLine, property', () => {
     expect(headFor(2, undefined, { ...HEAD, maxShare: 0 })).toEqual({ headLen: 0, headHalf: 0, shaftHalf: 0 });
   });
 
+  it('keeps a shaft near the double range no wider than it was given (shrunk)', () => {
+    const size = headFor(1e300, Infinity, { lenRatio: 0.5000000000000011, maxShare: 5e-324, aspect: 1.9999999999999958 });
+    expect(size.shaftHalf).toBeLessThanOrEqual(1e300);
+  });
+
   it('stop the shaft inside the line, under the head by all but its overdraw', () => {
     const seen = tally();
     fc.assert(fc.property(nonNeg, nonNeg, nonNeg, fc.option(shape, { nil: null }), (half, length, pxPerUnit, head) => {
