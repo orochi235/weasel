@@ -650,12 +650,6 @@ only story runner in the repo.
 
 ---
 
-## Devtools
-
-- **(P3) [agent] The devtools extension's panel appears only when the top frame has a weasel hook.** The relay
-  handles weasel inside iframes, but the presence probe evaluates the top window alone. Closes when the panel shows
-  for a page whose weasel runs only in an iframe (found in audit round nine, 2026-11-08).
-
 ## Release-gate & build hygiene
 
 - **(P3) [agent] jsdom 31 fails nine weasel-ui tests on how it serializes CSS.** Tried and held at 30.1.3 in the

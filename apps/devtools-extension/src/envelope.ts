@@ -35,5 +35,20 @@ export function isHello(m: unknown): boolean {
   return typeof m === 'object' && m !== null && (m as typeof HELLO).weaselDevtools === 'hello';
 }
 
+/** What a devtools page asks the background: does any frame of the tab it inspects have a hook? */
+export interface ProbeRequest {
+  weaselDevtools: 'probe';
+  tabId: number;
+}
+
+export function probeRequest(tabId: number): ProbeRequest {
+  return { weaselDevtools: 'probe', tabId };
+}
+
+export function isProbeRequest(m: unknown): m is ProbeRequest {
+  return typeof m === 'object' && m !== null && (m as ProbeRequest).weaselDevtools === 'probe'
+    && typeof (m as ProbeRequest).tabId === 'number';
+}
+
 export const PORT_PAGE = 'weasel-devtools-page';
 export const PORT_PANEL = 'weasel-devtools-panel';

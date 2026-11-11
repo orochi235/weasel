@@ -1,8 +1,7 @@
 /**
  * The slice of the WebExtensions API this extension calls, typed by hand, and
  * one accessor that reads it from `browser` where there is one and `chrome`
- * otherwise. `eval` answers differently in each browser, so it has its own
- * wrapper below.
+ * otherwise.
  */
 
 export interface ExtEvent<A extends unknown[]> {
@@ -19,8 +18,6 @@ export interface PortLike {
   readonly onMessage: ExtEvent<[message: unknown, port: PortLike]>;
   readonly onDisconnect: ExtEvent<[port: PortLike]>;
 }
-
-type EvalCallback = (result: unknown, exception?: unknown) => void;
 
 export interface ExtensionApi {
   runtime: {
@@ -49,7 +46,6 @@ export interface ExtensionApi {
   devtools?: {
     inspectedWindow: {
       readonly tabId: number;
-      eval(expression: string, callback?: EvalCallback): Promise<[unknown, unknown?]> | void;
     };
     panels: {
       create(title: string, iconPath: string, pagePath: string, callback?: (panel: unknown) => void): unknown;
@@ -64,25 +60,4 @@ export function extensionApi(): ExtensionApi {
   const api = g.browser ?? g.chrome;
   if (!api) throw new Error('weasel devtools: no extension API in this context');
   return api;
-}
-
-/**
- * Evaluate `expression` in the inspected page. Chrome now has a `browser` namespace too, but its
- * promise resolves to the bare result where Firefox's resolves to `[result, exception]`, so the
- * callback form, which every browser's `chrome` namespace takes, is used wherever there is one.
- */
-export function evalInInspectedWindow(api: ExtensionApi, expression: string): Promise<unknown> {
-  const withCallback = (globalThis as { chrome?: ExtensionApi }).chrome?.devtools?.inspectedWindow;
-  const inspected = withCallback ?? api.devtools?.inspectedWindow;
-  if (!inspected) return Promise.reject(new Error('not a devtools page'));
-  return new Promise((resolve, reject) => {
-    const done: EvalCallback = (result, exception) => (exception ? reject(exception) : resolve(result));
-    if (withCallback) {
-      withCallback.eval(expression, done);
-      return;
-    }
-    const promise = inspected.eval(expression);
-    if (!promise) return reject(new Error('inspectedWindow.eval returned no promise'));
-    promise.then((answer) => (Array.isArray(answer) ? done(answer[0], answer[1]) : done(answer)), reject);
-  });
 }

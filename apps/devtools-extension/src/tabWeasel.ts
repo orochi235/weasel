@@ -1,5 +1,6 @@
 /** What the toolbar button knows about a tab: whether weasel runs there, read from each frame's hook. */
 import type { ExtensionApi } from './browserApi';
+import { isProbeRequest } from './envelope';
 
 export interface FrameWeasel {
   kitVersion: string;
@@ -50,4 +51,15 @@ export async function refreshBadge(api: ExtensionApi, tabId: number): Promise<Ta
   const tab = await probeTab(api, tabId);
   await api.action?.setBadgeText({ tabId, text: badgeText(tab) });
   return tab;
+}
+
+/**
+ * The background's answer to a devtools page's {@link isProbeRequest probe}: whether any frame of the
+ * tab has a hook. Returns whether it took the message, which a `runtime.onMessage` listener returns to
+ * keep `respond` open until the answer arrives.
+ */
+export function answerProbe(api: ExtensionApi, message: unknown, respond: (present: boolean) => void): boolean {
+  if (!isProbeRequest(message)) return false;
+  void probeTab(api, message.tabId).then((tab) => respond(tab !== null));
+  return true;
 }
