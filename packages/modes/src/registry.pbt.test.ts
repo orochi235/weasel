@@ -25,8 +25,11 @@ interface Model {
   active: string;
   /** For each surface, the listeners on it. */
   on: Record<Surface, Set<number>>;
-  /** Each unsubscribe handed out: its surface, its listener, and whether it is still live. */
-  offs: { surface: Surface; who: number; live: boolean }[];
+  /** Each unsubscribe handed out: its surface, its listener, and the subscription it releases. */
+  offs: { surface: Surface; who: number; gen: number }[];
+  /** The subscription holding each listener on each surface, by `${surface}:${who}`. */
+  subs: Map<string, number>;
+  gen: number;
   targets: Set<string>;
   /** Mode id to the registration number of its painter. */
   painters: Map<string, number>;
@@ -65,7 +68,7 @@ function setup(ms: readonly ModeDefinition[], initial: string, dimAlpha: number 
   };
   const model: Model = {
     modes: ms, active: initial, on: { registry: new Set(), scope: new Set(), decorations: new Set() },
-    offs: [], targets: new Set(), painters: new Map(), registered: 0, releases: [], dim: resolved(dimAlpha),
+    offs: [], subs: new Map(), gen: 0, targets: new Set(), painters: new Map(), registered: 0, releases: [], dim: resolved(dimAlpha),
   };
   return { model, real };
 }
@@ -141,10 +144,10 @@ class Subscribe implements fc.Command<Model, Real> {
   check = (): boolean => true;
   run(m: Model, r: Real): void {
     step(m, r, [], () => {
-      const held = m.on[this.surface].has(this.who);
+      const k = `${this.surface}:${this.who}`;
+      if (!m.subs.has(k)) m.subs.set(k, ++m.gen);
       m.on[this.surface].add(this.who);
-      m.offs.push({ surface: this.surface, who: this.who, live: !held });
-      if (held) for (const o of m.offs) if (o.surface === this.surface && o.who === this.who) o.live = true;
+      m.offs.push({ surface: this.surface, who: this.who, gen: m.subs.get(k)! });
       const target = this.surface === 'registry' ? r.reg : this.surface === 'scope' ? r.scope : r.decor;
       r.offs.push(target.subscribe(r.fns[this.who]!));
     });
@@ -159,9 +162,10 @@ class Unsubscribe implements fc.Command<Model, Real> {
     const i = this.at % m.offs.length;
     const o = m.offs[i]!;
     step(m, r, [], () => {
-      if (o.live) {
+      const k = `${o.surface}:${o.who}`;
+      if (m.subs.get(k) === o.gen) {
+        m.subs.delete(k);
         m.on[o.surface].delete(o.who);
-        for (const x of m.offs) if (x.surface === o.surface && x.who === o.who) x.live = false;
         if (SURFACES.some((s) => s !== o.surface && m.on[s].has(o.who))) t.count('shared listener off');
       }
       r.offs[i]!();

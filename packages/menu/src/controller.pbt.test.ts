@@ -45,7 +45,7 @@ interface Real {
 const t = tally();
 
 /** The entries at `level` along `stack`, walked by hand. */
-function levelOf(root: readonly MenuEntry[], stack: Stack, level: number): readonly MenuEntry[] {
+function levelOf(root: readonly MenuEntry[], stack: readonly (number | null)[], level: number): readonly MenuEntry[] {
   let entries = root;
   for (let i = 0; i < level; i++) {
     const e = stack[i] == null ? undefined : entries[stack[i]!];

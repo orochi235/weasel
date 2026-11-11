@@ -71,7 +71,7 @@ describe('createSelectionStore, against a model', () => {
     ], { maxCommands: 25 }), (initial, cmds) => {
       const store = createSelectionStore(initial);
       expect(store.getSelection()).toEqual(firsts(initial));
-      fc.modelRun(() => ({ model: { ids: firsts(initial), on: new Set() }, real: { store, heard: [], offs: new Map() } }), cmds);
+      fc.modelRun(() => ({ model: { ids: firsts(initial), on: new Set<number>() }, real: { store, heard: [], offs: new Map() } }), cmds);
     }), runs(RUNS));
     t.atLeast('changed', RUNS / 3);
     t.atLeast('unchanged', RUNS / 4);

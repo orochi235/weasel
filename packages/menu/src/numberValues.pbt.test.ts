@@ -125,7 +125,9 @@ const numRow = fc.record({
 }).map((x) => (x.min !== undefined && x.max !== undefined && x.min > x.max ? { ...x, min: x.max, max: x.min } : x));
 const textRow = fc.record({ value: fc.option(fc.constantFrom('', 'a', '#ff0000'), { nil: undefined }), disabled: fc.constantFrom(undefined, undefined, undefined, true as const), settable: fc.boolean() });
 
-function setup(nums: fc.RecordValue<typeof numRow>[], texts: fc.RecordValue<typeof textRow>[], colors: fc.RecordValue<typeof textRow>[]): { model: Model; real: Real } {
+type Drawn<A> = A extends fc.Arbitrary<infer T> ? T : never;
+
+function setup(nums: Drawn<typeof numRow>[], texts: Drawn<typeof textRow>[], colors: Drawn<typeof textRow>[]): { model: Model; real: Real } {
   const sets: string[] = [];
   const closed = { now: false };
   const strip = <T extends object>(o: T) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;

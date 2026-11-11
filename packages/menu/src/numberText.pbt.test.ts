@@ -26,6 +26,13 @@ const finite = fc.oneof(
   fc.constantFrom(0, -0, 5e-324, 1e-21, 4.9e-21, 1e21, Number.MAX_VALUE, -Number.MAX_SAFE_INTEGER, 0.1 + 0.2),
 );
 
+describe('menuNumberText, shrunk', () => {
+  it('reads a value past the twentieth place back within half of it, plus the ulp of reading it', () => {
+    const v = 0.000041912284029485276;
+    expect(Math.abs(parseAs(menuNumberText(v), menuNumberDisplay({})) - v)).toBeLessThanOrEqual(5e-21 + v * Number.EPSILON);
+  });
+});
+
 describe('menuNumberText', () => {
   it('reads back under the default display, exactly to 20 places and within half the twentieth past them', () => {
     const t = tally();
@@ -33,7 +40,8 @@ describe('menuNumberText', () => {
       const text = menuNumberText(v);
       const back = parseAs(text, menuNumberDisplay({}));
       if (placesOf(v) <= 20) { expect(back === v, `${v} → ${text} → ${back}`).toBe(true); t.count('exact'); return; }
-      expect(Math.abs(back - v)).toBeLessThanOrEqual(5e-21);
+      // Half the twentieth place, and half an ulp for the double the rounded text reads back as.
+      expect(Math.abs(back - v)).toBeLessThanOrEqual(5e-21 + Math.abs(v) * Number.EPSILON);
       t.count('rounded');
     }), runs(RUNS));
     t.atLeast('exact', RUNS / 4);
