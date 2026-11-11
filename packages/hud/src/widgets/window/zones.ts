@@ -30,7 +30,7 @@ export function zoneAt(
   x: number,
   y: number,
 ): WindowZone | null {
-  if (x < b.x || x >= b.x + b.w || y < b.y || y >= b.y + b.h) return null;
+  if (!(x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h)) return null;
 
   const west  = x < b.x + m.edge;
   const east  = x >= b.x + b.w - m.edge;
