@@ -41,12 +41,12 @@ const noise: fc.Arbitrary<KernelNoise> = fc.record({
   noise: fc.constantFrom<'white' | 'pink' | 'brown'>('white', 'pink', 'brown'),
   rate: fc.double({ min: 0.1, max: 4, noNaN: true }),
 }, { requiredKeys: ['noise'] });
-const voice = fc.oneof(
+type Voice = { kind: 'note'; patch: KernelNote } | { kind: 'noise'; patch: KernelNoise };
+const voice: fc.Arbitrary<Voice> = fc.oneof(
   note.map((n) => ({ kind: 'note' as const, patch: n })),
-  note.map(({ filter: _f, ...n }) => ({ kind: 'note' as const, patch: { ...n, wave: 'sine' as const } })),
+  note.map(({ filter: _f, ...n }): Voice => ({ kind: 'note', patch: { ...n, wave: 'sine' } })),
   noise.map((n) => ({ kind: 'noise' as const, patch: n })),
 );
-type Voice = { kind: 'note'; patch: KernelNote } | { kind: 'noise'; patch: KernelNoise };
 
 const make = (v: Voice, sr: number): VoiceKernel => (v.kind === 'note' ? createNoteKernel(v.patch, sr) : createNoiseKernel(v.patch, sr, () => 0.25));
 
