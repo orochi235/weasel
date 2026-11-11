@@ -6,7 +6,7 @@
  * anchor — CurveEditor is strictly interpolating, never approximating.
  */
 
-import { sampleCatmullRom, type Point } from './catmullRom';
+import { sampleCatmullRom, sampleSteps, type Point } from './catmullRom';
 import { sampleMonotone } from './monotone';
 
 /** Supported interpolation modes. All are interpolating (pass through
@@ -27,7 +27,7 @@ function sampleLinear(
   samplesPerSegment: number,
 ): Point[] {
   if (anchors.length < 2) return [];
-  if (samplesPerSegment < 1) samplesPerSegment = 1;
+  samplesPerSegment = sampleSteps(samplesPerSegment);
 
   const out: Point[] = [];
   for (let i = 0; i < anchors.length - 1; i++) {
@@ -50,6 +50,21 @@ export function sampleByInterpolation(
   samplesPerSegment: number,
   mode: InterpolationMode,
 ): Point[] {
+  const big = anchors.reduce((m, a) => Math.max(m, Math.abs(a.x), Math.abs(a.y)), 0);
+  if (!(big > BIG)) return sampleIn(anchors, samplesPerSegment, mode);
+  // Differences of coordinates near the double range overflow; sample at a power-of-two scale, which is exact.
+  const out = sampleIn(anchors.map((a) => ({ x: a.x * SHRINK, y: a.y * SHRINK })), samplesPerSegment, mode)
+    .map((p) => ({ x: grow(p.x), y: grow(p.y) }));
+  const n = sampleSteps(samplesPerSegment);
+  if (out.length) anchors.forEach((a, i) => { out[i * n] = a; });
+  return out;
+}
+
+const BIG = 2 ** 500;
+const SHRINK = 2 ** -520;
+const grow = (v: number): number => Math.max(-Number.MAX_VALUE, Math.min(Number.MAX_VALUE, v / SHRINK));
+
+function sampleIn(anchors: readonly Point[], samplesPerSegment: number, mode: InterpolationMode): Point[] {
   switch (mode) {
     case 'linear':
       return sampleLinear(anchors, samplesPerSegment);

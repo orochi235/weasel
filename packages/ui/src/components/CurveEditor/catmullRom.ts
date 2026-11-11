@@ -16,6 +16,11 @@ export interface Point {
   y: number;
 }
 
+/** A requested samples-per-segment as the whole count the samplers lay: rounded down, and at least 1. */
+export function sampleSteps(n: number): number {
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+}
+
 function knot(a: Point, b: Point, alpha: number): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -45,12 +50,13 @@ export function segmentSampleAt(
 
   const u = t1 + t * (t2 - t1);
 
-  const a1x = ((t1 - u) * p0.x + (u - t0) * p1.x) / (t1 - t0);
-  const a1y = ((t1 - u) * p0.y + (u - t0) * p1.y) / (t1 - t0);
+  // A phantom or repeated neighbor at p1 (or p2) has a zero knot; the point it stands for is then p1 (p2) itself.
+  const a1x = t1 === t0 ? p1.x : ((t1 - u) * p0.x + (u - t0) * p1.x) / (t1 - t0);
+  const a1y = t1 === t0 ? p1.y : ((t1 - u) * p0.y + (u - t0) * p1.y) / (t1 - t0);
   const a2x = ((t2 - u) * p1.x + (u - t1) * p2.x) / (t2 - t1);
   const a2y = ((t2 - u) * p1.y + (u - t1) * p2.y) / (t2 - t1);
-  const a3x = ((t3 - u) * p2.x + (u - t2) * p3.x) / (t3 - t2);
-  const a3y = ((t3 - u) * p2.y + (u - t2) * p3.y) / (t3 - t2);
+  const a3x = t3 === t2 ? p2.x : ((t3 - u) * p2.x + (u - t2) * p3.x) / (t3 - t2);
+  const a3y = t3 === t2 ? p2.y : ((t3 - u) * p2.y + (u - t2) * p3.y) / (t3 - t2);
 
   const b1x = ((t2 - u) * a1x + (u - t0) * a2x) / (t2 - t0);
   const b1y = ((t2 - u) * a1y + (u - t0) * a2y) / (t2 - t0);
@@ -75,7 +81,7 @@ export function sampleCatmullRom(
   alpha: number = 0.5,
 ): Point[] {
   if (anchors.length < 2) return [];
-  if (samplesPerSegment < 1) samplesPerSegment = 1;
+  samplesPerSegment = sampleSteps(samplesPerSegment);
 
   const n = anchors.length;
   const out: Point[] = [];
