@@ -93,7 +93,7 @@ export function ToolbarRegion<TCtx = TrialChromeContext>({
   return (
     <Toolbar aria-label={label} size={strip ? 'sm' : 'md'} framed={strip}>
       {groups.map((g) => (
-        <Toolbar.Group key={g.key} end={g.end} aria-label={g.key}>
+        <Toolbar.Group key={g.id} end={g.end} aria-label={g.key}>
           {g.entries.map((c) => renderEntry(c, ctx, region))}
         </Toolbar.Group>
       ))}
