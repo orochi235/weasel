@@ -55,10 +55,11 @@ export function zoomAt(
   const nextX = clampScale(view.scale.x * fx, minX, maxX);
   const nextY = clampScale(view.scale.y * fy, minY, maxY);
 
+  // An axis whose scale does not change keeps its translation exactly, rather than one a round trip has rounded.
   const world = viewScreenToWorld(view, anchor);
   return {
     scale: { x: nextX, y: nextY },
-    x: world.x - anchor.x / nextX,
-    y: world.y - anchor.y / nextY,
+    x: nextX === view.scale.x ? view.x : world.x - anchor.x / nextX,
+    y: nextY === view.scale.y ? view.y : world.y - anchor.y / nextY,
   };
 }

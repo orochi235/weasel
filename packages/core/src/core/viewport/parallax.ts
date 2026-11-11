@@ -37,16 +37,21 @@ export function deriveParallaxView(outer: View, opts: ParallaxOpts): View {
   const z = asXY(opts.zoom ?? 1);
   const a = opts.anchor ?? { x: 0, y: 0 };
   return {
-    x: a.x + (outer.x - a.x) * p.x,
-    y: a.y + (outer.y - a.y) * p.y,
+    x: track(a.x, outer.x, p.x),
+    y: track(a.y, outer.y, p.y),
     scale: { x: trackZoom(outer.scale.x, z.x), y: trackZoom(outer.scale.y, z.y) },
   };
+}
+
+/** `from` moved toward `to` by `factor`, landing on each exactly at 0 and 1. */
+function track(from: number, to: number, factor: number): number {
+  return from * (1 - factor) + to * factor;
 }
 
 /** A plane's scale on one axis: its magnitude moves from 1 toward the camera's
  *  by `factor`, and it keeps the camera's sign, so a y-up camera's planes are y-up. */
 function trackZoom(outer: number, factor: number): number {
-  const magnitude = normalizeZoom(1 + (Math.abs(outer) - 1) * factor);
+  const magnitude = normalizeZoom(track(1, Math.abs(outer), factor));
   return outer < 0 ? -magnitude : magnitude;
 }
 
