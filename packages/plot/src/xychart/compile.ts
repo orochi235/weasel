@@ -89,11 +89,13 @@ export function compileXyChart(
   const bottom = size.height - PAD - (vertical ? categoryRoom : valueRoom);
   const plot = { x: left, y: top, width: Math.max(1, size.width - PAD - left), height: Math.max(1, bottom - top) };
   const right = plot.x + plot.width;
+  // The plot's own foot, which a box too short for its axes holds below its top.
+  const foot = plot.y + plot.height;
 
-  const value = linearScale({ domain, range: vertical ? [bottom, top] : [left, right] });
-  const category = categoryAxis(data, vertical ? [left, right] : [top, bottom]);
-  marks.push(...axisMarks({ ...base, ...valueTitle, key: 'axis:value', scale: value, side: vertical ? 'left' : 'bottom', at: vertical ? left : bottom, gridTo: vertical ? right : top }));
-  marks.push(...axisMarks({ ...base, ...categoryTitle, key: 'axis:category', scale: category.scale as Scale<unknown>, side: vertical ? 'bottom' : 'left', at: vertical ? bottom : left }));
+  const value = linearScale({ domain, range: vertical ? [foot, top] : [left, right] });
+  const category = categoryAxis(data, vertical ? [left, right] : [top, foot]);
+  marks.push(...axisMarks({ ...base, ...valueTitle, key: 'axis:value', scale: value, side: vertical ? 'left' : 'bottom', at: vertical ? left : foot, gridTo: vertical ? right : top }));
+  marks.push(...axisMarks({ ...base, ...categoryTitle, key: 'axis:category', scale: category.scale as Scale<unknown>, side: vertical ? 'bottom' : 'left', at: vertical ? foot : left }));
 
   const layout: XyLayout = { orientation: vertical ? 'vertical' : 'horizontal', plot, value, slots: category.slots, slotWidth: category.slotWidth };
   marks.push(...seriesMarks(data, layout, theme));

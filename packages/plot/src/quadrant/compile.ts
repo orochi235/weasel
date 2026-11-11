@@ -6,6 +6,7 @@ import { textMark } from '../marks/text';
 import type { PlotDatum, PlotMark, PlotPoint } from '../marks/types';
 import type { PlotMeasure } from '../measure';
 import { seriesColor, type PlotTheme } from '../theme';
+import { quadrantClassOf } from './structure';
 import type { QuadrantData, QuadrantPoint, QuadrantPointStyle } from './types';
 
 /** Where a quadrant chart's unit square landed. */
@@ -29,7 +30,7 @@ export function quadrantValueAt(layout: QuadrantLayout, at: PlotPoint): { x: num
 
 /** A point's style: its own fields, then its class's, then the defaults. */
 export function quadrantStyleOf(data: QuadrantData, point: QuadrantPoint): QuadrantPointStyle {
-  const cls = point.className !== undefined ? data.classes?.[point.className] : undefined;
+  const cls = point.className !== undefined ? quadrantClassOf(data, point.className) : undefined;
   return { ...cls, ...point.style };
 }
 

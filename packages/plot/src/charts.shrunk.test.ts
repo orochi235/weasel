@@ -82,4 +82,16 @@ describe('charts, shrunk', () => {
       }
     }
   });
+
+  it('lays an xychart\'s axes along its plot in a box too short for them', () => {
+    for (const orientation of ['vertical', 'horizontal'] as const) {
+      const { marks, layout } = compileXyChart({ kind: 'xychart', orientation, series: [{ kind: 'bar', values: [0] }] }, { width: 0, height: 0 }, PLOT_THEME, measure);
+      const { plot } = layout;
+      const along = orientation === 'vertical' ? [plot.y, plot.y + plot.height] : [plot.x, plot.x + plot.width];
+      expect([...layout.value.range].sort((a, b) => a - b)).toEqual(along);
+      const bar = marks.find((m) => m.key === 'bar:0:0')!.pose;
+      expect(bar.y).toBeGreaterThanOrEqual(plot.y);
+      expect(bar.y + bar.height).toBeLessThanOrEqual(plot.y + plot.height);
+    }
+  });
 });

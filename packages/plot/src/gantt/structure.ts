@@ -34,9 +34,13 @@ function renameRefs(data: GanttData, from: string, to: string | undefined): Gant
   };
 }
 
-/** `data` with the ids `tasks` hold taken out of every dependency. */
+/** Whether a task in `data` holds `id`. */
+const holds = (data: GanttData, id: string): boolean => ganttTasks(data).some((t) => t.task.id === id);
+
+/** `data` with the ids `tasks` held, and no task in `data` holds any more, taken out of every dependency. An id a
+ *  task still holds names it now, as the schedule reads a dependency on an id two tasks hold. */
 const dropRefs = (data: GanttData, tasks: readonly GanttTask[]): GanttData =>
-  tasks.reduce((d, t) => (t.id === undefined ? d : renameRefs(d, t.id, undefined)), data);
+  tasks.reduce((d, t) => (t.id === undefined || holds(d, t.id) ? d : renameRefs(d, t.id, undefined)), data);
 
 /** `data` with `section` inserted before section `at`; absent, a section of one fresh task under a fresh name. */
 export function insertGanttSection(data: GanttData, at: number, section?: GanttSection): GanttData {
@@ -97,7 +101,8 @@ function withTask(data: GanttData, section: number, task: number, change: (t: Ga
 
 /**
  * `data` with a task's id set to `id`, trimmed, every dependency naming the old id following it; an empty id drops
- * it and the dependencies on it. Throws on an id another task holds.
+ * it and the dependencies on it. Where another task holds the old id too, a dependency names whichever comes first,
+ * and stays with it. Throws on an id another task holds.
  */
 export function setGanttTaskId(data: GanttData, section: number, task: number, id: string | undefined): GanttData {
   const next = id?.trim() || undefined;
@@ -107,7 +112,12 @@ export function setGanttTaskId(data: GanttData, section: number, task: number, i
   if (next !== undefined && /\s/.test(next)) throw new Error(`setGanttTaskId: an id holds no spaces, and "${next}" does`);
   if (next !== undefined && ganttTasks(data).some((t) => t.task.id === next)) throw new Error(`setGanttTaskId: a task already has id "${next}"`);
   const renamed = withTask(data, section, task, (t) => withOptional(t, 'id', next), 'setGanttTaskId');
-  return target.id === undefined ? renamed : renameRefs(renamed, target.id, next);
+  if (target.id === undefined) return renamed;
+  // Dependencies on an id two tasks hold name the first, so they follow only that one; dropped, they stay while
+  // another task still holds the id.
+  if (next === undefined) return dropRefs(renamed, [target]);
+  const first = ganttTasks(data).find((t) => t.task.id === target.id)!;
+  return first.section === section && first.index === task ? renameRefs(renamed, target.id, next) : renamed;
 }
 
 /** `data` with a task carrying `tags`, kept in one order and each once; none drops them. */

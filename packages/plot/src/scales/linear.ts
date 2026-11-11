@@ -1,5 +1,5 @@
 import { replacedFormat } from './replacedFormat';
-import { formatTick } from './tickFormat';
+import { FINEST_STEP, formatTick } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -34,7 +34,8 @@ export interface LinearScale extends ContinuousScale {
   /** The distance between ticks when about `count` are asked for. */
   tickStep(count?: number): number;
   /** Ticks on the finest 1/2/5 step that keeps neighbors `minSpacing` apart along the range, so a longer axis
-   *  gets more of them. Empty for an empty domain or range. */
+   *  gets more of them. Empty for an empty domain or range, and where `minSpacing` spans more of the domain than
+   *  the largest double. */
   spacedTicks(options: SpacedTickOptions): TickSet;
   tickFormat(count?: number): (value: number) => string;
 }
@@ -69,17 +70,16 @@ export function decimalsOf(step: number): number {
 export function niceStep(rough: number): number {
   const mag = 10 ** Math.floor(Math.log10(rough));
   const norm = rough / mag;
-  return (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag;
+  // Rounded up past the largest double, the step stays the rough one, still never under it.
+  return Number.isFinite(step) ? step : rough;
 }
 
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
 const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER;
 
-/** The smallest step whose places `toFixed` can write. */
-const FINEST = 10 ** -MAX_DECIMALS;
-
 /** `i` steps of `step`, without the float noise a bare product carries. */
-const onGrid = (i: number, step: number): number => (step < FINEST ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
+const onGrid = (i: number, step: number): number => (step < FINEST_STEP ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
 
 /** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
 export function stepTicks(lo: number, hi: number, step: number): number[] {
@@ -101,9 +101,14 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   if (!(span > 0) || !Number.isFinite(span) || !(length > 0) || !(minSpacing > 0)) return { values: [], step: 0, decimals: 0 };
   const perUnit = span / length;
   const step = niceStep(minSpacing * perUnit);
+  // A spacing whose step in domain units is past the double range is wider than the axis.
+  if (!Number.isFinite(step)) return { values: [], step: 0, decimals: 0 };
   const decimals = decimalsOf(step);
-  const first = Math.ceil((lo + inset * perUnit) / step - 1e-9);
-  const last = Math.floor((hi - inset * perUnit) / step + 1e-9);
+  // Room for a tick's rounding, in steps, but never more than a sliver of the domain: a step far wider than the
+  // domain would otherwise take in a multiple lying past it.
+  const slack = 1e-9 * Math.min(1, span / step);
+  const first = Math.ceil((lo + inset * perUnit) / step - slack);
+  const last = Math.floor((hi - inset * perUnit) / step + slack);
   if (!countable(first) || !countable(last)) return { values: [], step, decimals };
   const values: number[] = [];
   for (let i = first; i <= last; i++) values.push(onGrid(i, step) + 0);
@@ -112,11 +117,9 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
 
 /** `value` written as plainly as a grid of `step` allows: no trailing zeros, and no exponent above 1e-100. */
 export function formatNumber(value: number, step: number): string {
-  // Past the places `toFixed` writes, a label takes the exponent rather than reading 0.
-  if ((step > 0 && step < FINEST) || (value !== 0 && Math.abs(value) < FINEST)) return String(Number(value.toPrecision(12)));
-  const decimals = decimalsOf(step);
-  const fixed = formatTick(value, { decimals, step });
-  return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
+  const fixed = formatTick(value, { decimals: decimalsOf(step), step });
+  // An exponent, past the places `toFixed` writes, has no trailing zeros to drop.
+  return fixed.includes('.') && !fixed.includes('e') ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 
 /** `domain` widened to whole steps of a tick grid of about `count` ticks. */

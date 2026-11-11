@@ -23,14 +23,21 @@ export function tickDecimals(values: readonly number[]): number {
   return most;
 }
 
-/** `value.toFixed(decimals)`, without the exponent `toFixed` switches to at 1e21. */
-export function toFixedPlain(value: number, decimals: number): string {
+/** `value.toFixed(decimals)`, without the exponent `toFixed` switches to at 1e21, and with `decimals` held to the 0 to
+ *  100 `toFixed` takes rather than throwing past them. */
+export function toFixedPlain(value: number, places: number): string {
+  const decimals = Math.min(100, Math.max(0, Math.trunc(places) || 0));
   if (!(Math.abs(value) >= 1e21) || !Number.isFinite(value)) return value.toFixed(decimals);
   return BigInt(value).toString() + (decimals > 0 ? `.${'0'.repeat(decimals)}` : '');
 }
 
-/** `value` fixed to its column's shared decimals, with no negative zero, so a column of labels lines up. */
+/** The smallest step whose places `toFixed` can write. */
+export const FINEST_STEP = 10 ** -100;
+
+/** `value` fixed to its column's shared decimals, with no negative zero, so a column of labels lines up. A step or a
+ *  value finer than `toFixed` writes takes the exponent instead, rather than reading 0. */
 export function formatTick(value: number, ctx: TickFormatCtx): string {
+  if ((ctx.step > 0 && ctx.step < FINEST_STEP) || (value !== 0 && Math.abs(value) < FINEST_STEP)) return String(Number(value.toPrecision(12)));
   const text = toFixedPlain(value, ctx.decimals);
   return /^-0(\.0*)?$/.test(text) ? text.slice(1) : text;
 }
