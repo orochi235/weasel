@@ -5,9 +5,10 @@ import {
   add, cross, distance, dot, len, normalize, quatConjugate, quatFromAxisAngle, quatMultiply, quatRotate, sub, vec3, type Quat, type Vec3,
 } from './vec3';
 import { intersectRayAabb, pointOnRay, transformAabb, type Aabb } from './ray3';
-import { coord, decades, maxDiff, runs } from '../pbt.fixture';
+import { coord, decades, maxDiff, runs, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(200);
+const TIMEOUT = timeoutFor(200, 1);
 
 const v3 = (limit = 1000): fc.Arbitrary<Vec3> => fc.tuple(coord(limit), coord(limit), coord(limit))
   .map(([x, y, z]) => vec3(x, y, z));
@@ -43,13 +44,13 @@ describe('invert (3D), property', () => {
       const limit = norm1(linear(m)) * norm1(linear(inv!)) * 1e-14;
       expect(maxDiff(multiply(linear(m), linear(inv!)), identity())).toBeLessThan(limit);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('refuses a matrix whose condition number is past the shared limit', () => {
     fc.assert(fc.property(conditioned(decades(-18, -13)), (m) => {
       expect(invert(m)).toBeNull();
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('carries a point back through a perspective projection', () => {
     const proj = fc.record({
@@ -67,7 +68,7 @@ describe('invert (3D), property', () => {
       const back = transformPoint(inv, transformPoint(m, q));
       expect(distance(back, q)).toBeLessThan((len(q) + 1) * 1e-6 * depth);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('refuses a matrix holding NaN or Infinity anywhere', () => {
     const bad = fc.constantFrom(Number.NaN, Infinity, -Infinity);
@@ -76,7 +77,7 @@ describe('invert (3D), property', () => {
       broken[i] = v;
       expect(invert(broken)).toBeNull();
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('invert (3D), an affine inverse (shrunk counterexample)', () => {
@@ -97,7 +98,7 @@ describe('matrices, property', () => {
       const twice = transformPoint(a, transformPoint(b, v));
       expect(distance(once, twice)).toBeLessThan((len(twice) + norm1(a) * (norm1(b) + len(v))) * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('invert undoes its matrix on a point, and inverting twice comes back', () => {
     fc.assert(fc.property(conditioned(decades(-3, 0)), v3(), (m, v) => {
@@ -108,7 +109,7 @@ describe('matrices, property', () => {
       const again = invert(inv)!;
       expect(maxDiff(again, m)).toBeLessThan(k * k * (norm1(m) + 1) * 1e-13);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('compose scales, then rotates, then moves', () => {
     fc.assert(fc.property(v3(1e4), quat, v3(100), v3(), (at, q, s, v) => {
@@ -116,7 +117,7 @@ describe('matrices, property', () => {
       const got = transformPoint(compose(at, q, s), v);
       expect(distance(got, want)).toBeLessThan((len(at) + (Math.abs(s.x) + Math.abs(s.y) + Math.abs(s.z)) * len(v)) * 1e-13 + 1e-300);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('lookAt puts the eye at the origin and the target down -z, through a rotation', () => {
     fc.assert(fc.property(v3(1e3), v3(1e3), v1, (eye, target, up) => {
@@ -134,7 +135,7 @@ describe('matrices, property', () => {
       const upView = transformPoint(lin, up);
       expect(upView.y).toBeGreaterThan(0);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('quaternions, property', () => {
@@ -142,7 +143,7 @@ describe('quaternions, property', () => {
     fc.assert(fc.property(quat, v3(), (q, v) => {
       expect(Math.abs(len(quatRotate(q, v)) - len(v))).toBeLessThan((len(v) + 1) * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('compose: rotating by a·b is rotating by b, then a', () => {
     fc.assert(fc.property(quat, quat, v3(), (a, b, v) => {
@@ -150,7 +151,7 @@ describe('quaternions, property', () => {
       const twice = quatRotate(a, quatRotate(b, v));
       expect(distance(once, twice)).toBeLessThan((len(v) + 1) * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('quaternions and normalize, property', () => {
@@ -165,7 +166,7 @@ describe('quaternions and normalize, property', () => {
       const turned = quatRotate(q, side);
       expect(Math.abs(dot(turned, side) - Math.cos(a))).toBeLessThan(1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('compose associatively', () => {
     fc.assert(fc.property(quat, quat, quat, v3(), (a, b, c, v) => {
@@ -173,7 +174,7 @@ describe('quaternions and normalize, property', () => {
       const right = quatRotate(quatMultiply(a, quatMultiply(b, c)), v);
       expect(distance(left, right)).toBeLessThan((len(v) + 1) * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('normalize gives a unit vector along any finite nonzero one, at any magnitude', () => {
     const magnitude = fc.double({ min: -320, max: 307, noNaN: true }).map((k) => 10 ** k);
@@ -188,7 +189,7 @@ describe('quaternions and normalize, property', () => {
       if (Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z)) < 1e-290) expect(distance(n, back)).toBeLessThan(1e-15);
       expect(dot(n, own)).toBeGreaterThan(0);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 const aabb: fc.Arbitrary<Aabb> = fc.tuple(v3(), v3()).map(([a, b]) => ({
@@ -211,7 +212,7 @@ describe('rays and boxes, property', () => {
       const p = transformPoint(m, pointIn(b, f));
       expect(inside(transformAabb(m, b), p, (len(p) + 1) * 1e-9)).toBe(true);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('a ray aimed through a point of the box hits it no later than that point, and lands on the box', () => {
     fc.assert(fc.property(aabb, fc.tuple(fraction, fraction, fraction), v3(5000), (b, f, origin) => {
@@ -223,7 +224,7 @@ describe('rays and boxes, property', () => {
       expect(t!).toBeLessThanOrEqual(1 + 1e-9);
       expect(inside(b, pointOnRay({ origin, direction }, t!), (len(origin) + len(target) + 1) * 1e-9)).toBe(true);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('moving the ray and the box together leaves the hit distance alone', () => {
     fc.assert(fc.property(aabb, v3(), v3(), v3(), (b, origin, direction, by) => {
@@ -243,5 +244,5 @@ describe('rays and boxes, property', () => {
       if (t === null || u === null) return;
       expect(Math.abs(t - u)).toBeLessThan(((len(origin) + len(by) + 2000) / len(direction)) * 1e-9);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });

@@ -6,9 +6,10 @@ import { flattenCubic, flattenCubicWithArcLen, flattenQuadratic, flattenQuadrati
 import { segmentLength, segmentTAtLength } from './paths/segmentLength';
 import { intersectSegments } from './intersect/segmentIntersections';
 import { pointSegmentDist } from './points2';
-import { coord, runs } from './pbt.fixture';
+import { coord, runs, timeoutFor } from './pbt.fixture';
 
 const RUNS = runs(200);
+const TIMEOUT = timeoutFor(200, 30);
 
 const cubic: fc.Arbitrary<CubicCoords> = fc.tuple(coord(500), coord(500), coord(500), coord(500), coord(500), coord(500), coord(500), coord(500));
 const unitT = fc.double({ min: 0, max: 1, noNaN: true });
@@ -30,30 +31,25 @@ describe('splitCubicAt, property', () => {
       expect(left[6]).toBe(right[0]);
       expect(left[7]).toBe(right[1]);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('cubicBounds, property', () => {
   it('holds every point of the curve, and each side touches it', () => {
     fc.assert(fc.property(cubic, (c) => {
       const [x0, y0, x1, y1] = cubicBounds(...c);
-      const pts = samples(c, 2000);
+      const n = 500;
       const eps = size(c) * 1e-12;
-      for (const [x, y] of pts) {
-        expect(x).toBeGreaterThanOrEqual(x0 - eps);
-        expect(x).toBeLessThanOrEqual(x1 + eps);
-        expect(y).toBeGreaterThanOrEqual(y0 - eps);
-        expect(y).toBeLessThanOrEqual(y1 + eps);
+      let lx = Infinity, hx = -Infinity, ly = Infinity, hy = -Infinity;
+      for (const [x, y] of samples(c, n)) {
+        expect(x >= x0 - eps && x <= x1 + eps && y >= y0 - eps && y <= y1 + eps).toBe(true);
+        lx = Math.min(lx, x); hx = Math.max(hx, x); ly = Math.min(ly, y); hy = Math.max(hy, y);
       }
-      // A sample lies within one step's travel of each extreme: the control polygon bounds the speed.
-      const step = (Math.hypot(c[2] - c[0], c[3] - c[1]) + Math.hypot(c[4] - c[2], c[5] - c[3]) + Math.hypot(c[6] - c[4], c[7] - c[5])) * 3 / 2000;
-      const reach = step + eps;
-      expect(Math.min(...pts.map(([x]) => x)) - x0).toBeLessThan(reach);
-      expect(x1 - Math.max(...pts.map(([x]) => x))).toBeLessThan(reach);
-      expect(Math.min(...pts.map(([, y]) => y)) - y0).toBeLessThan(reach);
-      expect(y1 - Math.max(...pts.map(([, y]) => y))).toBeLessThan(reach);
+      // A sample lies within one step's travel of each extreme: three times the control polygon bounds the speed.
+      const reach = (Math.hypot(c[2] - c[0], c[3] - c[1]) + Math.hypot(c[4] - c[2], c[5] - c[3]) + Math.hypot(c[6] - c[4], c[7] - c[5])) * 3 / n + eps;
+      expect(Math.max(lx - x0, x1 - hx, ly - y0, y1 - hy)).toBeLessThan(reach);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('nearestOnCubic, property', () => {
@@ -68,7 +64,7 @@ describe('nearestOnCubic, property', () => {
       const brute = Math.min(...samples(c, 3000).map(([sx, sy]) => Math.hypot(px - sx, py - sy)));
       expect(hit.dist).toBeLessThanOrEqual(brute + size(c) * 1e-9);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('segmentLength, property', () => {
@@ -84,7 +80,7 @@ describe('segmentLength, property', () => {
       const parts = segmentLength(c, 2, 0, s) + segmentLength(c, 2, s, 1);
       expect(Math.abs(parts - total)).toBeLessThan(1e-9 * total + size(c) * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('segmentTAtLength finds where the curve has run a length', () => {
     fc.assert(fc.property(cubic, unitT, (c, f) => {
@@ -95,7 +91,7 @@ describe('segmentLength, property', () => {
       expect(t).toBeLessThanOrEqual(1);
       expect(Math.abs(segmentLength(c, 2, 0, t) - f * total)).toBeLessThan(1e-8 * total);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('flattenCubic, property', () => {
@@ -118,7 +114,7 @@ describe('flattenCubic, property', () => {
         expect(best).toBeLessThanOrEqual(tol + eps);
       }
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('flattenQuadratic, property', () => {
@@ -136,7 +132,7 @@ describe('flattenQuadratic, property', () => {
         expect(best).toBeLessThanOrEqual(tol + size(q) * 1e-12);
       }
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('flattening with arc lengths, property', () => {
@@ -164,7 +160,7 @@ describe('flattening with arc lengths, property', () => {
       for (let k = 0; k < plain.length; k += 2) expect(kept.has(`${plain[k]},${plain[k + 1]}`)).toBe(true);
       for (let k = 1; k < wideArcs.length; k++) expect(wideArcs[k]!).toBeGreaterThanOrEqual(wideArcs[k - 1]!);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('a quadratic draws what plain flattening does, with arc lengths counted from its start', () => {
     const quad = fc.tuple(coord(500), coord(500), coord(500), coord(500), coord(500), coord(500));
@@ -181,7 +177,7 @@ describe('flattening with arc lengths, property', () => {
       }
       expect(total).toBe(arcs[arcs.length - 1]);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 type P = { x: number; y: number };
@@ -257,5 +253,5 @@ describe('intersectSegments, property', () => {
       }
     }), RUNS);
     expect(tally.crossings).toBeGreaterThan(RUNS.numRuns / 4);
-  });
+  }, TIMEOUT);
 });

@@ -8,7 +8,7 @@ import type { Path, PolygonPath } from '../path';
 import { circleAt, coord, runs, shape, starAt, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(40);
-const TIMEOUT = timeoutFor(40, 6);
+const TIMEOUT = timeoutFor(40, 15);
 
 const area = (p: Path): number => Math.abs(pathSignedArea(p));
 

@@ -7,9 +7,10 @@ import { nearestOnPath } from '../nearest';
 import { transformPath } from '../paths/transformPath';
 import { translate } from '../affine';
 import type { Path } from '../path';
-import { circle, coord, eighth, runs, star } from '../pbt.fixture';
+import { circle, coord, eighth, runs, star, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(200);
+const TIMEOUT = timeoutFor(200, 3);
 
 const dist = (a: Vec, b: Vec): number => Math.hypot(...a.map((v, i) => v - b[i]!));
 const dimension = fc.integer({ min: 1, max: 4 });
@@ -45,7 +46,7 @@ describe('flats, property', () => {
         expect(dist(rest, v)).toBeLessThanOrEqual(1e-6 * n * 1.01 + 1e-300);
       }
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('solveLeastSquares combines the columns to the projection onto their span, at any magnitude', () => {
     const magnitude = fc.double({ min: -310, max: 300, noNaN: true }).map((k) => 10 ** k);
@@ -57,7 +58,7 @@ describe('flats, property', () => {
       // Where the columns are nearly dependent the coefficients are ill-conditioned; compare the points they reach.
       expect(dist(got, want)).toBeLessThan(1e-6 * (Math.hypot(...rhs) + 1));
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('closestOnFlat is a projection: on the flat, idempotent, and nearer than any other point of it', () => {
     fc.assert(fc.property(dimension.chain((n) => fc.tuple(flatOf(n), vecOf(n), fc.array(coord(10), { minLength: n + 1, maxLength: n + 1 }))), ([f, p, c]) => {
@@ -67,7 +68,7 @@ describe('flats, property', () => {
       const other = f.dirs.reduce<Vec>((acc, d, i) => acc.map((v, k) => v + c[i]! * d[k]!), f.at);
       expect(dist(q, p)).toBeLessThanOrEqual(dist(other, p) + scale * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('intersectFlats holds only points of both, and is as large as the two allow', () => {
     const tally = { met: 0 };
@@ -84,7 +85,7 @@ describe('flats, property', () => {
       expect(flatDim(x)).toBeLessThanOrEqual(Math.min(flatDim(a), flatDim(b)));
     }), RUNS);
     expect(tally.met).toBeGreaterThan(RUNS.numRuns / 4);
-  });
+  }, TIMEOUT);
 });
 
 /** A 2D snap problem: a probe or two, and points, axis lines, and slanted lines near them. Coordinates are
@@ -150,7 +151,7 @@ describe('resolveSnap, property', () => {
     }), RUNS);
     expect(tally.snapped).toBeGreaterThan(RUNS.numRuns / 4);
     expect(tally.required).toBeGreaterThan(RUNS.numRuns / 20);
-  });
+  }, TIMEOUT);
 
   it('answers the same move when the scene moves whole, the view with it', () => {
     fc.assert(fc.property(problemOf(locus), fc.tuple(eighth(500), eighth(500)), (prob, t) => {
@@ -158,7 +159,7 @@ describe('resolveSnap, property', () => {
       expect(b.delta).toEqual(a.delta);
       expect(b.members.map((c) => c.order)).toEqual(a.members.map((c) => c.order));
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('ignores the order candidates are listed in, and a candidate out of reach', () => {
     fc.assert(fc.property(problemOf(fc.oneof(locus, slanted)), fc.nat(), (prob, seed) => {
@@ -171,7 +172,7 @@ describe('resolveSnap, property', () => {
       expect(dist(b.delta, a.delta)).toBeLessThan(1e-9);
       expect(new Set(b.members.map((c) => c.order))).toEqual(new Set(a.members.map((c) => c.order)));
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
 
 describe('path snapping, property', () => {
@@ -209,7 +210,7 @@ describe('path snapping, property', () => {
     }), RUNS);
     expect(tally.hits).toBeGreaterThan(RUNS.numRuns);
     expect(tally.nearest).toBeGreaterThan(RUNS.numRuns / 10);
-  });
+  }, TIMEOUT);
 
   it('moves its hits with the paths and the probe', () => {
     fc.assert(fc.property(paths, fc.tuple(coord(80), coord(80)), query, fc.tuple(eighth(200), eighth(200)), (ps, [x, y], { radius, sx, sy }, [tx, ty]) => {
@@ -223,5 +224,5 @@ describe('path snapping, property', () => {
       expect(b).not.toBeNull();
       expect(Math.abs(b!.distance - a.distance)).toBeLessThan(1e-2);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });

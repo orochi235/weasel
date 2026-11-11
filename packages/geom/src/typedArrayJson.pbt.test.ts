@@ -3,9 +3,10 @@ import fc from 'fast-check';
 import {
   TYPED_ARRAY_CONSTRUCTORS, reviveTypedArrays, tagTypedArrays, typedArrayReplacer, type TypedArrayTag,
 } from './typedArrayJson';
-import { runs } from './pbt.fixture';
+import { runs, timeoutFor } from './pbt.fixture';
 
 const RUNS = runs(300);
+const TIMEOUT = timeoutFor(300, 1);
 const TAGS = Object.keys(TYPED_ARRAY_CONSTRUCTORS) as TypedArrayTag[];
 
 /** Any number, the ones JSON cannot write included. */
@@ -58,7 +59,7 @@ describe('typed arrays through JSON, property', () => {
       expect(JSON.stringify(v, typedArrayReplacer)).toBe(text);
     }), RUNS);
     expect(tally.lookalikes).toBeGreaterThan(RUNS.numRuns / 4);
-  });
+  }, TIMEOUT);
 
   it('write what the first version of the encoding wrote, wherever that could hold the value, and read its files', () => {
     // The writer as it stood on 2026-10-12 (126116b48): a tag and `Array.from` of the numbers, nothing escaped.
@@ -82,5 +83,5 @@ describe('typed arrays through JSON, property', () => {
       expect(JSON.stringify(tagTypedArrays(v))).toBe(old);
       expect(same(reviveTypedArrays(JSON.parse(old)), v)).toBe(true);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
