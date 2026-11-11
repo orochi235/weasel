@@ -91,6 +91,7 @@ export function createIconRegistry(initial?: IconTable | readonly IconTable[]): 
 
   const add = (tables: IconTable | readonly IconTable[]): (() => void) => {
     const list = Array.isArray(tables) ? tables : [tables as IconTable];
+    if (list.length === 0) return () => {};
     // Check every claim, those within the batch included, before writing any: a refused batch registers nothing.
     const pending = new Map<string, string>();
     for (const t of list) {
