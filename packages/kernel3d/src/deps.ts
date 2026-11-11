@@ -251,9 +251,10 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         const kx = src.width === 0 ? 1 : dst.width / src.width;
         const ky = src.height === 0 ? 1 : dst.height / src.height;
         const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        // Written as a change to `from`, so a map that moves nothing moves it by exactly nothing.
         const to = {
-          x: dst.x + (from.x - src.x) * kx,
-          y: dst.y + (from.y - src.y) * ky,
+          x: from.x + (dst.x - src.x) + (from.x - src.x) * (kx - 1),
+          y: from.y + (dst.y - src.y) + (from.y - src.y) * (ky - 1),
         };
 
         const plane = viewPlaneAt(vp.camera, pose.position);
