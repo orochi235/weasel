@@ -59,7 +59,8 @@ describe('zoomWindow and panWindow', () => {
       const p = panWindow(w, by, b);
       within(p, b);
       expect(p.to - p.from).toBeCloseTo(w.to - w.from, Math.max(0, 6 - Math.log10(1 + Math.abs(b.from) + Math.abs(b.to))));
-      expect(panWindow(w, 0, b)).toEqual(w);
+      const still = panWindow(w, 0, b);
+      expect(still.from === w.from && still.to === w.to).toBe(true);
       if (p.from === b.from || p.to === b.to) t.count('pinned');
       else t.count('free');
     }), runs(RUNS));

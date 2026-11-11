@@ -38,8 +38,10 @@ class Type implements fc.Command<Model, Real> {
   constructor(readonly text: string) {}
   check = () => true;
   run(m: Model, r: Real) {
+    // Text the field already shows is no change, to React as to the field.
+    const changes = this.text !== r.field.value;
     act(() => { fireEvent.change(r.field, { target: { value: this.text } }); });
-    m.draft = this.text;
+    if (changes) m.draft = this.text;
     check(m, r);
   }
   toString = () => `type(${JSON.stringify(this.text)})`;
