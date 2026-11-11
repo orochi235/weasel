@@ -1,4 +1,5 @@
-import { createEmitter, deepEqual } from '@weasel-js/registry';
+import { createEmitter } from '@weasel-js/registry';
+import { createRemote } from './remote';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 import { DELETED, createWriteQueue } from './writeQueue';
 
@@ -146,55 +147,20 @@ function buildCache(
     writable,
     closed: () => closed,
     stopped: () => stopped,
-    settled: (name) => {
-      if (!contested.has(name) || queue.owns(name)) return;
-      contested.delete(name);
-      void reconcile(name);
-    },
+    settled: (name) => remote.settled(name),
   });
 
-  // Names another writer changed while only a write of ours was on its way. Which landed last is unknown until
-  // ours has, so storage is read then: a substrate may report a write before it resolves to its writer.
-  const contested = new Set<string>();
-  // How many changes from another writer each name has taken, so a read started before one does not undo it.
-  const taken = new Map<string, number>();
-
-  async function reconcile(name: string): Promise<void> {
-    const mark = taken.get(name);
-    let value: unknown;
-    try {
-      value = await storage.get(prefix + name);
-    } catch {
-      return;
-    }
-    if (closed || stopped || queue.owns(name) || taken.get(name) !== mark) return;
-    if (value === undefined ? !values.has(name) : values.has(name) && deepEqual(values.get(name), value)) return;
-    applyRemote([[prefix + name, value]]);
-  }
-
-  const applyRemote = (changes: StorageChange[]): void => {
-    const applied: RecordChange[] = [];
-    const overruled: [string, unknown][] = [];
-    for (const [key, value] of changes) {
-      if (!key.startsWith(prefix)) continue;
-      const name = key.slice(prefix.length);
-      if (queue.owns(name)) {
-        overruled.push([name, value]);
-        if (!queue.has(name)) contested.add(name);
-        continue;
-      }
-      if (value === undefined) {
-        if (!values.has(name)) continue;
-        values.delete(name);
-      } else {
-        values.set(name, value);
-      }
-      taken.set(name, (taken.get(name) ?? 0) + 1);
-      applied.push({ name, value, origin: 'remote' });
-    }
-    if (overruled.length > 0) overruledEmitter.emit(overruled);
-    if (applied.length > 0) emit(applied);
-  };
+  const remote = createRemote({
+    prefix,
+    values,
+    owns: (name) => queue.owns(name),
+    queued: (name) => queue.has(name),
+    live: () => !closed && !stopped,
+    read: (key) => storage.get(key),
+    applied: emit,
+    overruled: overruledEmitter.emit,
+  });
+  const applyRemote = remote.apply;
 
   let unsubscribe = writable() ? storage.subscribe?.(prefix, applyRemote) : undefined;
 
