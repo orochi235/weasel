@@ -163,7 +163,7 @@ describe('the filter in the URL', () => {
   it('shows the empty message for a package name that no entry carries', () => {
     window.history.replaceState(null, '', '/?pkg=nonesuch');
     render(<Releases />);
-    expect(screen.getByText('No changes name those packages.')).toBeTruthy();
+    expect(screen.getByText('No changes match that filter.')).toBeTruthy();
   });
 });
 

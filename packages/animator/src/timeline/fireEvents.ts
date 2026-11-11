@@ -2,6 +2,13 @@ import { firstAfter, firstAtOrAfter } from './booking';
 import type { TimelineReport } from './createTimeline';
 import type { Track } from './types';
 
+/** A stated duration as the timeline plays it: refused where `NaN`, which every playhead and
+ *  seek would carry, and none below 0, as a tween of 0 or less ends at once. */
+export function lengthOf(duration: number): number {
+  if (Number.isNaN(duration)) throw new RangeError('timeline: duration is a time, not NaN');
+  return Math.max(0, duration);
+}
+
 /** Fires the events of `tracks` the playhead crossed going from `from` to `to`, at any depth.
  *  With `fromOpen`, an event exactly at `from` fires too. Stops once `moved` says a handler
  *  moved the playhead, and answers whether it did. */
@@ -21,7 +28,8 @@ export interface EventCursor {
   back(t: number): false;
 }
 
-export function createEventCursor(fire: FireEvents): EventCursor {
+/** `gone` says the timeline was canceled, which stops its firing as a handler's seek does. */
+export function createEventCursor(fire: FireEvents, gone: () => boolean): EventCursor {
   let at = -Infinity;
   let open = false;
   let places = 0;
@@ -29,7 +37,7 @@ export function createEventCursor(fire: FireEvents): EventCursor {
     to(tracks, to) {
       const was = places;
       // A handler that seeks has placed the cursor where playback goes on from.
-      if (fire(tracks, at, to, open, () => places !== was)) return true;
+      if (fire(tracks, at, to, open, () => places !== was || gone())) return true;
       at = to;
       open = false;
       return false;
@@ -76,7 +84,7 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
           if (moved()) return true;
         }
       } else if (track.kind === 'timeline') {
-        const end = track.timeline.duration ?? Infinity;
+        const end = track.timeline.duration == null ? Infinity : lengthOf(track.timeline.duration);
         if (from - track.at > end) continue;
         path.push(k);
         const stopped = fire(track.timeline.tracks, from - track.at, Math.min(to - track.at, end), fromOpen, moved);

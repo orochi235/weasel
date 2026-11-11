@@ -11,7 +11,9 @@
  */
 
 import { OUTLINE_PRECISION, type FaceEmbedding, type OutlineFace, type OutlineParser } from './OutlineFace';
-import { sfntFromCollection } from './sfnt';
+import { sfntFromCollection, tableOf } from './sfnt';
+import { checkCff } from './cffCheck';
+import { checkCmap } from './cmapCheck';
 import { gposPairKerning, type PairKerning } from './gposKerning';
 import { faceMetricsFromTables, type FaceMetricTables } from '../faceMetrics';
 
@@ -72,7 +74,7 @@ function faceFor(
       if (!index) return null;
       return (font.glyphs.get(index).advanceWidth ?? 0) / upem;
     },
-    ...(isSfnt(sfnt) ? { embedding: () => embeddingOf(font, sfnt) } : {}),
+    ...(isSfnt(sfnt) ? { embedding: () => embeddingOf(font, sfnt, ascender, faceMetrics?.descent ?? 0) } : {}),
     kernOf(left: number, right: number): number {
       const l = font.charToGlyphIndex(String.fromCodePoint(left));
       const r = font.charToGlyphIndex(String.fromCodePoint(right));
@@ -83,11 +85,29 @@ function faceFor(
     glyphD(cp: number): string | null {
       const index = font.charToGlyphIndex(String.fromCodePoint(cp));
       if (!index) return null;
-      const d = font.glyphs.get(index).getPath(0, 0, 1).toPathData(OUTLINE_PRECISION);
+      // Unoptimized: opentype.js's optimizer drops a contour's last line when it ends within one *unit* of the
+      // start, and at one unit per em that is every last line; a CFF contour, which closes implicitly, loses a vertex.
+      const path = font.glyphs.get(index).getPath(0, 0, 1) as unknown as PathData;
+      // A damaged CFF charstring reads past its operand stack, and opentype.js writes the coordinates it lacks as NaN.
+      if (!path.commands.every(finiteCommand)) throw new Error('its outline holds a coordinate that is not a finite number');
+      const d = path.toPathData({ decimalPlaces: OUTLINE_PRECISION, optimize: false, flipY: false });
       // A glyph with no contours (a space) serializes to the empty string.
       return d.length > 0 ? d : null;
     },
   };
+}
+
+/** opentype.js 2's `toPathData`, which the 1.x typings declare as taking only a precision. */
+interface PathData {
+  commands: readonly Record<string, unknown>[];
+  toPathData(options: { decimalPlaces: number; optimize: boolean; flipY: boolean }): string;
+}
+
+const COORDINATES = ['x', 'y', 'x1', 'y1', 'x2', 'y2'];
+
+/** Every coordinate a path command carries is a finite number. */
+function finiteCommand(cmd: Record<string, unknown>): boolean {
+  return COORDINATES.every((k) => cmd[k] === undefined || Number.isFinite(cmd[k]));
 }
 
 interface EmbedTables {
@@ -105,6 +125,10 @@ function isSfnt(bytes: ArrayBuffer): boolean {
   return tag === 0x00010000 || tag === 0x74727565 || tag === 0x4f54544f;
 }
 
+const isCff = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x4f54544f;
+
+const finiteOr = (n: number | undefined, fallback: number): number => (Number.isFinite(n) ? n! : fallback);
+
 /** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
 const NO_OUTLINE_EMBEDDING = 0x0002 | 0x0200;
 
@@ -117,7 +141,8 @@ function englishNameOf(font: import('opentype.js').Font, key: string): string | 
   }
 }
 
-function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceEmbedding {
+/** `ascent` and `descent` are the face's in ems, for a font whose `hhea` states none. */
+function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent: number, descent: number): FaceEmbedding {
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const t = font.tables as EmbedTables;
   return {
@@ -130,9 +155,9 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceE
       return font.charToGlyphIndex(String.fromCodePoint(cp)) || null;
     },
     advanceOfGlyph: (gid) => font.glyphs.get(gid).advanceWidth ?? 0,
-    ascent: font.ascender,
-    descent: font.descender,
-    capHeight: t.os2?.sCapHeight || font.ascender,
+    ascent: finiteOr(font.ascender, ascent * font.unitsPerEm),
+    descent: finiteOr(font.descender, -descent * font.unitsPerEm),
+    capHeight: t.os2?.sCapHeight || finiteOr(font.ascender, ascent * font.unitsPerEm),
     italicAngle: t.post?.italicAngle ?? 0,
     bbox: [t.head?.xMin ?? 0, t.head?.yMin ?? 0, t.head?.xMax ?? 0, t.head?.yMax ?? 0],
   };
@@ -153,6 +178,10 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
       throw new Error(
         `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
     }
+    const cff = isCff(single) ? tableOf(single, 'CFF ') : null;
+    if (cff) checkCff(cff);
+    const cmap = tableOf(single, 'cmap');
+    if (cmap) checkCmap(cmap);
     return faceFor(parse(single), gposPairKerning(single), single);
   };
 }

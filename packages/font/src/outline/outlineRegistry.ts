@@ -34,6 +34,7 @@ import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { notifyGlyphReady } from '../glyphReady';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
 import type { FontStyle } from '../fontStyle';
+import { cssString } from '../cssFamily';
 import { openTypeParser } from './opentypeParser';
 
 /**
@@ -137,7 +138,7 @@ export function registerFontOutlines(
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
   // to know when to drop it; a registration that leaves it still is invisible.
   notifyGlyphReady();
-  if (source instanceof ArrayBuffer) announceBytes(slots.get(slotKey(family, weight, style))!, source);
+  if (isArrayBuffer(source)) announceBytes(slots.get(slotKey(family, weight, style))!, source);
 }
 
 /** Drop a registration. Glyphs already handed out stay valid — they are
@@ -338,7 +339,7 @@ export function outlineCssSource(
   if (!slot) return null;
   if (slot.cssSrc !== undefined) return { registration: slot, src: slot.cssSrc };
   if (typeof slot.source === 'string') {
-    return { registration: slot, url: `url(${JSON.stringify(slot.source)})` };
+    return { registration: slot, url: `url(${cssString(slot.source)})` };
   }
   const source = slot.source;
   return { registration: slot, bytes: () => readSource(source) };
@@ -375,9 +376,12 @@ async function readSource(source: OutlineSource): Promise<ArrayBuffer> {
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${resolved}`);
     return res.arrayBuffer();
   }
-  if (resolved instanceof ArrayBuffer) return resolved;
+  if (isArrayBuffer(resolved)) return resolved;
   return resolved.arrayBuffer();
 }
+
+/** Bytes from any realm: an iframe's, or Node's beside jsdom's, fail `instanceof ArrayBuffer`. */
+const isArrayBuffer = (x: unknown): x is ArrayBuffer => Object.prototype.toString.call(x) === '[object ArrayBuffer]';
 
 // Loading and glyph lookup both run off the render loop, so an unguarded warn
 // would repeat every frame.

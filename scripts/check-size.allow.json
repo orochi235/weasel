@@ -6,7 +6,7 @@
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 165
+    "longestFunction": 160
   },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 231
@@ -60,7 +60,7 @@
     "longestFunction": 335
   },
   "packages/font/src/registerFont.ts": {
-    "lines": 797
+    "lines": 722
   },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 135

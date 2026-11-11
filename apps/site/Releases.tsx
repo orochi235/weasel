@@ -1,27 +1,42 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RELEASES from 'virtual:changelogs';
 import num from '@weasel-js/theme/numeric.module.css';
-import { Button } from '@weasel-js/ui/components/Button';
-import { matches } from '../shared/releases';
+import { type Filter, matches, NO_FILTER, type Tag, TAGS } from '../shared/releases';
+import { describeFilter, ReleaseFilter } from './ReleaseFilter';
 import { ReleaseSection } from './ReleaseSection';
 import './Releases.css';
 
 /** The filter lives in the query string, not the hash: the hash is the app's
  *  router and it rewrites itself to the bare view id on every change. */
-const PARAM = 'pkg';
+const PACKAGE_PARAM = 'pkg';
+const TAG_PARAM = 'tag';
 /** A version to open and scroll to, e.g. `?v=1.9.4#__releases`. */
 const VERSION_PARAM = 'v';
 
-function readParam(): string[] {
-  const raw = new URLSearchParams(window.location.search).get(PARAM);
+function readList(params: URLSearchParams, name: string): string[] {
+  const raw = params.get(name);
   return raw ? raw.split(',').filter(Boolean) : [];
 }
 
-function writeParam(names: readonly string[]): void {
+function readFilter(): Filter {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    packages: readList(params, PACKAGE_PARAM),
+    tags: readList(params, TAG_PARAM).filter((t): t is Tag => t in TAGS),
+  };
+}
+
+function writeFilter(filter: Filter): void {
   const url = new URL(window.location.href);
-  if (names.length === 0) url.searchParams.delete(PARAM);
-  else url.searchParams.set(PARAM, names.join(','));
+  for (const [name, list] of [[PACKAGE_PARAM, filter.packages], [TAG_PARAM, filter.tags]] as const) {
+    if (list.length === 0) url.searchParams.delete(name);
+    else url.searchParams.set(name, list.join(','));
+  }
   window.history.replaceState(null, '', url);
+}
+
+function toggled<T extends string>(list: readonly T[], item: T): T[] {
+  return list.includes(item) ? list.filter((x) => x !== item) : [...list, item].sort();
 }
 
 /** Release history for every published package, newest first. The entries come
@@ -29,43 +44,46 @@ function writeParam(names: readonly string[]): void {
  *  across the fixed version group so each change is stated once; each release's
  *  entries load when it is opened. */
 export function Releases() {
-  const [selected, setSelected] = useState<string[]>(readParam);
+  const [filter, setFilter] = useState<Filter>(readFilter);
   const [linked] = useState(() => new URLSearchParams(window.location.search).get(VERSION_PARAM));
 
   useEffect(() => {
-    const onPop = () => setSelected(readParam());
+    const onPop = () => setFilter(readFilter());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
   useEffect(() => {
-    writeParam(selected);
-  }, [selected]);
+    writeFilter(filter);
+  }, [filter]);
 
-  const toggle = useCallback((name: string) => {
-    setSelected((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name].sort(),
-    );
+  const togglePackage = useCallback((name: string) => {
+    setFilter((f) => ({ ...f, packages: toggled(f.packages, name) }));
+  }, []);
+  const toggleTag = useCallback((tag: Tag) => {
+    setFilter((f) => ({ ...f, tags: toggled(f.tags, tag) }));
   }, []);
 
-  /** Every package that appears anywhere in the history, with how many entries
-   *  name it, so a chip can say how much filtering to it would leave. */
-  const counts = useMemo(() => {
-    const map = new Map<string, number>();
+  /** Every package and tag that appears anywhere in the history, with how many entries carry
+   *  it, so a chip can say how much filtering to it would leave. Tags keep their `TAGS` order. */
+  const [packageCounts, tagCounts] = useMemo(() => {
+    const byPackage = new Map<string, number>();
+    const byTag = new Map<Tag, number>();
     for (const release of RELEASES) {
       for (const entry of release.shape) {
-        for (const name of entry.packages) map.set(name, (map.get(name) ?? 0) + 1);
+        for (const name of entry.packages) byPackage.set(name, (byPackage.get(name) ?? 0) + 1);
+        for (const tag of entry.tags) byTag.set(tag, (byTag.get(tag) ?? 0) + 1);
       }
     }
-    return [...map].sort(([a], [b]) => a.localeCompare(b));
+    return [
+      [...byPackage].sort(([a], [b]) => a.localeCompare(b)),
+      (Object.keys(TAGS) as Tag[]).filter((t) => byTag.has(t)).map((t) => [t, byTag.get(t)!] as const),
+    ] as const;
   }, []);
 
-  /** An entry survives if it names any selected package — union, not
-   *  intersection: one changeset rarely touches two packages for the same
-   *  reason, so intersecting almost always empties the list. */
   const shown = useMemo(
-    () => RELEASES.filter((release) => release.shape.some((e) => matches(e.packages, selected))),
-    [selected],
+    () => RELEASES.filter((release) => release.shape.some((e) => matches(e, filter))),
+    [filter],
   );
 
   if (RELEASES.length === 0) {
@@ -80,10 +98,8 @@ export function Releases() {
     );
   }
 
-  const matched = shown.reduce(
-    (n, r) => n + r.shape.filter((e) => matches(e.packages, selected)).length,
-    0,
-  );
+  const matched = shown.reduce((n, r) => n + r.shape.filter((e) => matches(e, filter)).length, 0);
+  const summary = describeFilter(filter, matched);
 
   return (
     <article className="ckd-demo ckd-releases">
@@ -98,27 +114,24 @@ export function Releases() {
           away. Anything merged but not yet on npm leads the list as unreleased.
         </p>
 
-        <div className="ckd-release-filter" role="group" aria-label="Filter by package">
-          <Button size="sm" pressed={selected.length === 0} onClick={() => setSelected([])}>
-            All
-          </Button>
-          {counts.map(([name, count]) => (
-            <Button key={name} size="sm" pressed={selected.includes(name)} onClick={() => toggle(name)}>
-              {name}
-              <span className={`ckd-release-pkg-n ${num.numeric}`}>{count}</span>
-            </Button>
-          ))}
-        </div>
+        <ReleaseFilter
+          filter={filter}
+          packageCounts={packageCounts}
+          tagCounts={tagCounts}
+          onTogglePackage={togglePackage}
+          onToggleTag={toggleTag}
+          onClear={() => setFilter(NO_FILTER)}
+        />
 
-        {selected.length > 0 ? (
+        {summary ? (
           <p className={`ckd-release-matched ${num.numeric}`} aria-live="polite">
-            {matched} {matched === 1 ? 'change' : 'changes'} in {selected.join(', ')}
+            {summary}
           </p>
         ) : null}
       </header>
 
       {shown.length === 0 ? (
-        <p className="ckd-desc">No changes name those packages.</p>
+        <p className="ckd-desc">No changes match that filter.</p>
       ) : (
         shown.map((release, i) => (
           <ReleaseSection
@@ -126,8 +139,9 @@ export function Releases() {
             release={release}
             lead={i === 0}
             target={release.version === linked}
-            selected={selected}
-            onToggle={toggle}
+            filter={filter}
+            onTogglePackage={togglePackage}
+            onToggleTag={toggleTag}
           />
         ))
       )}

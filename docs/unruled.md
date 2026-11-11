@@ -242,6 +242,27 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, core actions second property pass): a drag's pointer that is no finite number lands nowhere,
+  as routing's sweep and kernel3d's camera already had it. Every drag `inPlane` wraps, the marquee, and the lasso
+  decline a press at such a point; move, resize, rotate, clone, insert, the marquee, and the lasso skip such a move
+  and go on from the last frame that landed, and the transform drags skip a move whose poses would leave the double
+  range the same way. Rejected: dropping such points in the dispatcher, which every package's drags would then rely
+  on without any of them checking.
+- 2026-11-11 (my call, same pass): a resize that would rewrite a locked node, as a group's resize rewrites its
+  members, does not start, after the 2026-11-09 ruling for commands; the press goes on to the next binding. Rejected:
+  resizing the members around the locked one, which move and rotate do not do either (they carry it with the group).
+- 2026-11-11 (my call, same pass): Nudge, Flip, Group, Align, and Distribute are disabled with `NotApplicable` where
+  they would write a pose past the double range or, for Nudge, move nothing; Group also where its members are on more
+  than one layer, where it used to be enabled and do nothing.
+- Open (core actions second property pass, 2026-11-11): within a few doublings of the double range's edge, Duplicate
+  of a node in a turned group writes `NaN`, since the copy's frame inverse overflows, and other immediate actions may
+  overflow the same way. Whether the scene should keep poses inside a margin of the range, or each action refuse what
+  it cannot write. The stateful property in `dragActions.pbt.test.ts` skips immediate actions once a coordinate is
+  past 1e300.
+- Open (same pass): a resize of members of a group scaled below about 1e-12 remaps their boxes in world, where they have
+  no precision left, so where the group sits decides the result: two members of a group scaled 1e-200, resized by one
+  unit, land 1e14 apart for the group moved 3 units. Whether resize should remap in the members' own frame.
+  `dragLaws.pbt.test.ts` leaves such resizes out of its translation law.
 - Ruled 2026-11-10 (my call, overnight sweep): geom's `tagTypedArrays` and `typedArrayReplacer` escape a plain object
   `reviveTypedArrays` would read as a tagged typed array or a wrapper by writing it inside a `{ "__raw": … }` wrapper,
   the one the editor's snapshots use, since a writer must not write what its reader misreads. The cost: an older
@@ -395,6 +416,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint
+- 2026-11-11 (my call, core canvas second pass): `reconcileSpecs` puts a group's member back on its own layer after
+  the group's spec changes layer and the member's does not, wherever the group's new layer allows; `setLayer` alone
+  still carries the whole subtree (fef31b751). The member's spec says where it stands, which is what the render
+  worker's copy needs, but a consumer reconciling to specs that expected the old carry would see members stay put.
 
 - Ruled 2026-11-10 (my call, overnight sweep): a marquee or lasso takes a node under several clips only where
   the clips' common part meets it and the region (`PickQuery.intersectClips`), not where each clip alone does:
@@ -568,6 +593,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   number that is not finite (a group transform with `NaN` or `Infinity`, an infinite stroke width, a scale past the
   double range) and skips such `lbxObjects` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
   is not a positive finite number. A `-0` position is written and reads back as `0`.
+- 2026-11-11 (my call, core canvas second pass): a marquee rect with a negative width or height (`rectRegion`,
+  `hitTestArea`) is the same rect named from its other corner, as the marquee drag's `rectBetween` already makes it,
+  rather than an empty area (5f06b1f0d).
 
 ## Text
 
@@ -603,6 +631,21 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   of the font, as it already skipped such a pair subtable, and keeps the rest of the font's kerning. The default
   outline parser rejects a font that states no units per em or no ascent, so the SDF tier keeps its text, rather
   than handing back a face that measures `NaN`.
+- 2026-11-11 (font, second property pass): the default outline parser checks a CFF face's `CFF ` table before
+  opentype.js reads it (`outline/cffCheck.ts`) and refuses the face when an INDEX runs past the table, has offsets
+  wider than 4 bytes or out of order, or does not start at offset 1, or when a top DICT offset operator holds other
+  than its one integer (two for `Private`). The first-offset rule refuses some faces opentype.js would read. The `cmap` subtable opentype.js reads is refused when its records, segments, or groups run past the table or
+  name more code points than the format maps (65,536 for format 4, 1,114,112 for 12 and 13), overlaps included. A CFF
+  glyph whose outline holds a non-finite coordinate is refused as one glyph, which the registry warns of and serves
+  from the SDF tier. A TrueType glyph's path data now keeps the line back to its contour's start before the `Z`.
+- 2026-11-11 (font, second property pass): `parseBmFont` refuses an atlas whose glyph or kerning entry is not an object
+  or holds a non-finite field, naming it; a `kernings` that is not an array is still read as none.
+- Open (2026-11-11, font property tests): a face whose `cmap` maps any code point to a glyph id past its last glyph
+  fails to load whole, since opentype.js throws a `TypeError` while naming its glyphs; text in it falls back to the
+  SDF tier. Browsers' font sanitizer refuses such a face too. Whether the outline tier should instead drop the stray
+  mappings and load the rest is a call about how forgiving the tier is.
+- Open (2026-11-11, font property tests): a family name holding U+0000 cannot be written as a CSS string, which reads
+  any NUL, escaped or not, as U+FFFD; `cssFamilyName` writes it raw, and CSS names another family.
 - Open (2026-11-10, property tests): text set in italic, or in a weight, that has no outline face of its own
   while the upright face does lays out no glyphs at all on the outline tier, so neither the renderer nor the PDF
   writer draws it; the atlas tier fakes the style instead. Whether the outline tier should fall back to the
@@ -756,6 +799,22 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, second property pass): an endless clock whose frames would move it past the double range
   stops at `Number.MAX_VALUE` and keeps its rate, rather than ending or throwing; a frame gap past the range counts
   as the largest double.
+- 2026-11-11 (my call, animator second property pass): the animator's own clock takes the clock package's rule: a
+  frame gap past the double range counts as the largest double, and the clock stops at `Number.MAX_VALUE`. An endless
+  timeline there keeps its playhead inside its lap. A timeline's `duration`, root or nested, throws a `RangeError` on
+  `NaN`, as d3's `duration(NaN)` does, and one below 0 plays as 0.
+- 2026-11-11 (my call, animator second property pass): an event handler that cancels or seeks its timeline stops the
+  rest of that frame's crossings; one that pauses it does not, and the events the frame already crossed still fire.
+- Open (animator second property pass, 2026-11-11): a spring or a coast ends at the first frame that finds it under its
+  rest threshold, so where it ends depends on the frames: one at 0 → 1 (stiffness 120, damping 14, velocity 18.5)
+  ends at a frame at 892 ms, but a single frame at 1062 ms finds it 1.0009 and still moving, and it runs on.
+- Open (animator second property pass, 2026-11-11): a `loop` or `tweenLoop` starts each pass on the frame after the
+  last pass ended, so every pass drops that frame's overshoot: 3 passes of 100 ms on 100 ms frames end at 350 ms, and
+  on 1000 ms frames take a frame each. A timeline's loop carries the overshoot into the next lap.
+- Open (animator second property pass, 2026-11-11): a tween, a sampled track, or a target tween between finite values
+  whose difference passes the double range (`-1e308` to `1e308`) shows `-Infinity`, `Infinity`, or `NaN` midway. A
+  tween's and a track's blend is blits', outside this repository; a target tween's offset, `from - to`, overflows in the
+  animator's own offset arithmetic. The second pass's properties keep such endpoints out.
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.
 - 2026-10-11 (targets): a coast commits where it stops; `from` defaults to the committed value; an
