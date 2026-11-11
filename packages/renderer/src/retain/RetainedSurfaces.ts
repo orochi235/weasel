@@ -245,6 +245,8 @@ export class RetainedSurfaces {
     };
     surface.adrift = false;
     surface.evicted = false;
+    // Its pixels are about to be drawn over: until `commit` names what they were drawn under, they match no key.
+    surface.key = null;
     this.surfaces.set(id, surface);
     this.fitSurface(surface, rect);
     surface.frame = this.frame;
