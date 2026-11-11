@@ -387,6 +387,19 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   quotient is not finite, a subnormal scale say, as collapsed, the rule it had for a scale of 0. A world pose rebased
   into such a frame lands on the frame's origin along that axis when composed back, not where it was.
 
+- 2026-11-11 (my call, core second property pass): `unionBounds` and `unionAABB` skip a box with a corner that is
+  not finite (a `NaN` or infinite field, or an edge past the double range), as `unionAABB` skips a hole, and a union of
+  only such boxes is `null`. Before, a `NaN` width counted the box's `x` and not its far edge, and a union of such
+  boxes alone came back with a width of `-Infinity`.
+- 2026-11-11 (my call, core second property pass): `createMoveToIndexOp` holds its index as the finite integer that
+  places alike: `Infinity` as `Number.MAX_SAFE_INTEGER` (the top), `NaN` as 0 (the bottom, where `moveToIndex` already
+  put it), a fraction truncated. JSON wrote `Infinity` as `null`, which a reloaded history read as 0.
+  `scene.add`, `scene.move`, and `scene.reorder` record the index the node lands at by the same rule (`slotIndex`:
+  truncated, held to the ends, `NaN` at the start), so a reorder at `NaN` of a node already first is no edit.
+- 2026-11-11 (my call, core second property pass): a box remap from a box of subnormal width or height keeps that
+  axis's scale, as one from a box of no extent does: geom's `extentScale`, which `boxToBox`, the rect pose descriptor,
+  and `remapRotatedLeaf` share. The true factor is past the double range.
+
 ## Rendering, canvas, and paint
 
 - Ruled 2026-11-10 (my call, overnight sweep): a marquee or lasso takes a node under several clips only where
@@ -404,6 +417,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
   `up` lies just off an axis, as `createInsert` lays its footprint at 0: the hit is on the ground by construction, so
   rounding left in `up` is no height.
+- 2026-11-11 (my call, core second property pass): `zoomAt` takes a `NaN` or negative factor as no zoom on that axis
+  (a negative one had turned the axis over, `NaN` had dropped it to `ZOOM_FLOOR`), and a factor of 0 as the clamp's
+  minimum, keeping a flipped axis flipped. An anchor that is not finite, or whose world point overflows, zooms about
+  the canvas's top-left corner, as the keyboard zoom does. `wheelPan` leaves an axis where it was when its delta is not
+  finite or would carry the view past the double range. `hasExtent` reads bounds whose far edge overflows as nothing
+  to fit, so `fitViewToBounds` answers `null`.
 - Ruled 2026-11-10 (my call, overnight sweep): the minimap fits content too thin for any finite scale (a line
   5e-324 long) at the largest double scale, as an input past the double range is handled at its limit. It was
   fitted at the zoom floor, 1e-9, because an infinite scale normalizes to the floor.

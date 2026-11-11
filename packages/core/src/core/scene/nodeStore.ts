@@ -10,6 +10,7 @@ import { createDependentsIndex } from './dependents';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { restoreFn, type FnBearingNode, type NodeFn, type NodeFnField } from './nodeFnFields';
 import { SceneMembershipError } from './staleReplay';
+import { slotIndex } from './treeOrder';
 import type { AddNodeSpec, Node, NodeId } from './types';
 
 /** What the store keeps of a scene's state. */
@@ -120,8 +121,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
 
   function attach(id: NodeId, parent: NodeId | null, index: number): void {
     const sibs = siblingsOf(parent);
-    const i = Math.max(0, Math.min(index, sibs.length));
-    sibs.splice(i, 0, id);
+    sibs.splice(slotIndex(index, sibs.length), 0, id);
     const node = requireNode(id);
     (node as { parent: NodeId | null }).parent = parent;
     invalidateOrder();
@@ -198,9 +198,8 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     if (payload && attached.size > 0) addedFns.set(payload, attached);
   }
 
-  /** Re-attach those fields to a node restored from a `kit:remove` snapshot.
-   *  In-session the clone already carries them; a persisted history does not,
-   *  so the registry keys are what is left. */
+  /** Re-attach those fields to a node restored from a `kit:remove` snapshot, from the
+   *  registry keys it carries: from JSON, its layout is a strategy with its methods gone. */
   function restoreNodeFunctions(
     node: Node<TData, TLayer, TPose>,
     keys: Record<string, string | undefined> | undefined,
@@ -208,9 +207,9 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     if (!keys) return;
     const target = node as unknown as FnBearingNode;
     for (const field of fnFields) {
-      if (field.read(target) !== undefined) continue;
       const key = keys[field.spec.opKey];
       if (key === undefined) continue;
+      delete target[field.spec.field];
       restoreFn(field, target, key, 'kit:remove', dwarn);
     }
   }
