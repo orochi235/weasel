@@ -6,10 +6,12 @@ export function formatSeconds(ms: number): string {
   return String(rounded === 0 ? 0 : rounded);
 }
 
-/** Ms from a seconds string, or null for anything but a finite number. */
+/** Ms from a seconds string, or null for anything but a finite number. An exponent is read, as `formatSeconds`
+ *  writes one past 1e21 seconds. */
 export function parseSeconds(text: string | null | undefined): number | null {
-  if (text == null || !/^\s*-?(\d+\.?\d*|\.\d+)\s*$/.test(text)) return null;
-  return Math.round(Number(text) * 1000);
+  if (text == null || !/^\s*-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?\s*$/i.test(text)) return null;
+  const ms = Math.round(Number(text) * 1000);
+  return Number.isFinite(ms) ? ms : null;
 }
 
 /** The playhead the URL holds, in ms, or null. */
