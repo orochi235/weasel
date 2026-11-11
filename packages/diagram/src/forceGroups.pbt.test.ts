@@ -52,8 +52,10 @@ function boxOf(g: GraphGroup, byId: ReadonlyMap<string, ForceBody>, groups: read
 }
 const bodyBox = (b: ForceBody): Box => ({ x0: b.x - b.hw, y0: b.y - b.hh, x1: b.x + b.hw, y1: b.y + b.hh });
 /** Whether `a` and `b` stand at least `padding` apart on some axis, within rounding. */
-const clear = (a: Box, b: Box, padding: number) =>
-  Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0) + padding <= 1e-9 || Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0) + padding <= 1e-9;
+const clear = (a: Box, b: Box, padding: number) => {
+  const reach = (a0: number, a1: number, b0: number, b1: number) => (a1 - a0 + b1 - b0 - Math.abs(b0 + b1 - a0 - a1)) / 2 + padding;
+  return reach(a.x0, a.x1, b.x0, b.x1) <= 1e-9 || reach(a.y0, a.y1, b.y0, b.y1) <= 1e-9;
+};
 const holds = (outer: GraphGroup, inner: GraphGroup, groups: readonly GraphGroup[]): boolean => {
   for (let at = inner.parent; at !== undefined; at = groups.find((g) => g.id === at)?.parent) if (at === outer.id) return true;
   return false;
