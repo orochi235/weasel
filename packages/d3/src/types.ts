@@ -6,7 +6,7 @@ import type { Animator } from '@weasel-js/animator';
  * what the binding needs in order to place and animate them.
  */
 export interface BindOptions<TData, TPose> {
-  /** Stable id derivation per datum — the binding diffs old vs new state by this key. `join()` throws on two data sharing one. */
+  /** Stable id derivation per datum — the binding diffs old vs new state by this key. `join()` throws on two data sharing one, and on a key the scene already gives a node other than a mark on the binding's layer. */
   key: (d: TData, i: number) => string;
   /** Which scene layer the binding enters, updates and exits leaves on. Defaults to the first of `scene.layers`, user or system. */
   layer?: string;

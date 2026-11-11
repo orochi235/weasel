@@ -534,6 +534,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - Ruled 2026-11-10: a hold of weight 0 released with a commit commits nothing, even under holds that
   cover the target outright, where a hold that weighs anything gives the committed value its own.
+- Ruled 2026-11-10 (my call, overnight sweep): a tween with its own `interpolate` or `interpolator` is handed exactly
+  1 on its last frame (0 when it ends at its start, played backward), whatever its easing answers there, as a tween
+  of numbers already ends at `to`: an easing such as `1 - cos(t π/2)` gives 0.9999999999999999 at 1. A d3
+  transition's pose and numeric tweens then end exactly at their targets rather than at `a + (b - a) · 1`.
+- Ruled 2026-11-10 (my call, overnight sweep): `d3Bind`'s `join` refuses a key the scene already gives a node other
+  than a mark on the binding's layer with an error naming the key and the node, before changing anything, where it
+  had failed partway with core's "id collision".
 
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.

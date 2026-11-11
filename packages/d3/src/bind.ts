@@ -74,6 +74,14 @@ export function d3Bind<
           enterIndices.push(i);
         }
       });
+      for (const i of enterIndices) {
+        const held = scene.get(dataKeys[i]);
+        if (held) {
+          throw new Error(
+            `d3Bind.join: key "${dataKeys[i]}" is held by a ${held.kind} on layer "${held.layer}", not a mark on "${layer}"; a bound key must be free or one of the binding's own marks`,
+          );
+        }
+      }
       for (const node of scene.nodesOnLayer(layer)) {
         if (node.kind === 'mark' && !dataKeySet.has(node.id)) exitIds.push(node.id);
       }

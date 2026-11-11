@@ -233,7 +233,7 @@ function makeStage<TData, TPose>(
             ms: duration,
             easing,
             cancelKey: ns,
-            interpolate: (a, b, t) => lerp(a, b, t),
+            interpolate: (a, b, t) => (t === 1 ? b : t === 0 ? a : lerp(a, b, t)),
             onTick: (pose) => {
               if (!lost(i)) scene.setPose(id, pose);
             },
@@ -261,8 +261,9 @@ function makeStage<TData, TPose>(
               ? undefined
               : ((a, b, t) => {
                   // Fallback per-tick interpolator for numeric values when no factory is given.
+                  // Ends exactly, which `a + (b - a) * 1` does not.
                   if (typeof a === 'number' && typeof b === 'number') {
-                    return (a as number) + ((b as number) - (a as number)) * t;
+                    return t === 1 ? b : t === 0 ? a : a + (b - a) * t;
                   }
                   throw new Error(
                     `d3Bind.transition.tween("${ct.name}"): non-numeric value without an interpolate factory`,
