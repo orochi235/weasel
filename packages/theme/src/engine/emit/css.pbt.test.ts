@@ -111,6 +111,12 @@ describe('emitCss against a model of the cascade', () => {
           const got = computed(rules, { theme, ...(sel as Selection) });
           for (const n of Object.keys(tokens)) {
             if (want(n).includes('<cycle>')) continue;
+            // A reference to a token the chain has none of here: the sheet cannot unset it, so it shows the value
+            // the token has where it was declared (docs/unruled.md, 2026-11-11). Only a definition with issues does this.
+            if (want(n).includes('<unset>')) {
+              t.count('unset');
+              continue;
+            }
             t.count(theme);
             expect({ theme, sel, n, value: got(n) }).toEqual({ theme, sel, n, value: want(n) });
           }
