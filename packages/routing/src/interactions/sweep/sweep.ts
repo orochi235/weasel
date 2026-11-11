@@ -75,6 +75,8 @@ export const SWEEP_BINDING: GestureSpec = {
 /** Travel, in CSS pixels, between the points hit-tested along one move, so a
  *  fast drag reaches every item it crosses. Smaller than any item worth sweeping. */
 const STEP_PX = 4;
+/** The most points hit-tested along one move: a move longer than this many steps is a jump, tested more sparsely. */
+const MAX_STEPS = 4096;
 
 /** The item under client point (`x`, `y`) in `surface`, or `null`. */
 function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number, y: number): SweepItem<K> | null {
@@ -128,8 +130,14 @@ export function sweepAction<K>(opts: SweepOptions<K>): Action {
           }
         };
         const travel = (to: { x: number; y: number }): void => {
-          const steps = Math.max(1, Math.ceil(Math.hypot(to.x - last.x, to.y - last.y) / STEP_PX));
-          for (let i = 1; i <= steps; i++) reach(last.x + ((to.x - last.x) * i) / steps, last.y + ((to.y - last.y) * i) / steps);
+          // A point that is no number lands nowhere, and the next move travels from the last one that did.
+          if (!Number.isFinite(to.x) || !Number.isFinite(to.y)) return;
+          const dx = to.x - last.x;
+          const dy = to.y - last.y;
+          const length = Math.hypot(dx, dy);
+          const steps = Number.isFinite(length) ? Math.min(MAX_STEPS, Math.max(1, Math.ceil(length / STEP_PX))) : 1;
+          for (let i = 1; i < steps; i++) reach(last.x + (dx * i) / steps, last.y + (dy * i) / steps);
+          reach(to.x, to.y);
           last = to;
         };
         travel(ctx.world);

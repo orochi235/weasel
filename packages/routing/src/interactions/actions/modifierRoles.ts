@@ -4,6 +4,7 @@
  * move one to another key without forking the action.
  */
 import { isApplePlatform, type ModifierKey, type ModSpec } from '@weasel-js/gestures';
+import { setOwn } from '@weasel-js/registry';
 import type { ModifierState } from '../../vocabulary';
 
 /** The keys that hold a role: any one of them held holds it. `'mod'` is Cmd
@@ -38,6 +39,10 @@ export function roleMods(roles: ModifierRoles): ModSpec {
   return out;
 }
 
+/** `record`'s own entry for `id`: a role named like an `Object.prototype` member must not read the prototype's. */
+const ownOf = <V>(record: Readonly<Record<string, V>> | undefined, id: string): V | undefined =>
+  record && Object.hasOwn(record, id) ? record[id] : undefined;
+
 /** Whether any of `keys` is held. */
 export function keysHeld(keys: RoleKeys, modifiers: ModifierState, isMac: boolean): boolean {
   return keys.some((k) => {
@@ -55,7 +60,7 @@ export function roleKeysOf(
 ): Readonly<Record<string, RoleKeys>> | undefined {
   if (!roles) return undefined;
   const out: Record<string, RoleKeys> = {};
-  for (const id of Object.keys(roles)) out[id] = rebinds?.[id] ?? roles[id].keys;
+  for (const id of Object.keys(roles)) setOwn(out, id, ownOf(rebinds, id) ?? roles[id].keys);
   return out;
 }
 
@@ -65,7 +70,7 @@ export function platformRoleKeys(
   isMac: boolean,
 ): Readonly<Record<string, RoleKeys>> {
   const out: Record<string, RoleKeys> = {};
-  for (const id of Object.keys(keys)) out[id] = keys[id].map((k) => (k === 'mod' ? (isMac ? 'meta' : 'ctrl') : k));
+  for (const id of Object.keys(keys)) setOwn(out, id, keys[id].map((k) => (k === 'mod' ? (isMac ? 'meta' : 'ctrl') : k)));
   return out;
 }
 
@@ -76,7 +81,7 @@ export function resolveRoles(
   isMac: boolean,
 ): Record<string, boolean> {
   const out: Record<string, boolean> = {};
-  for (const id of Object.keys(keys)) out[id] = keysHeld(keys[id], modifiers, isMac);
+  for (const id of Object.keys(keys)) setOwn(out, id, keysHeld(keys[id], modifiers, isMac));
   return out;
 }
 
@@ -84,7 +89,8 @@ export function resolveRoles(
 export function rebindRoles(roles: ModifierRoles, rebinds: RoleRebinds): ModifierRoles {
   const out: Record<string, ModifierRole> = {};
   for (const id of Object.keys(roles)) {
-    out[id] = rebinds[id] ? { ...roles[id], keys: rebinds[id] } : roles[id];
+    const keys = ownOf(rebinds, id);
+    setOwn(out, id, keys ? { ...roles[id], keys } : roles[id]);
   }
   return out;
 }
@@ -97,5 +103,5 @@ export function rebindRoles(roles: ModifierRoles, rebinds: RoleRebinds): Modifie
  */
 export function roleReader<R extends ModifierRoles>(roles: R) {
   return (ctx: { roles?: Readonly<Record<string, boolean>>; modifiers: ModifierState }, id: keyof R & string): boolean =>
-    ctx.roles?.[id] ?? keysHeld(roles[id].keys, ctx.modifiers, isApplePlatform());
+    ownOf(ctx.roles, id) ?? keysHeld(roles[id].keys, ctx.modifiers, isApplePlatform());
 }

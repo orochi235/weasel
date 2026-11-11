@@ -1024,6 +1024,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (second property pass, my call): `impulseResponse` refuses a `decayDb` below -770, where the rising
   tail ends past float32's range, as well as one that is not finite, and a `channels` that is not a whole number
   above 0.
+- 2026-11-11 (routing second property pass, my call): a sweep skips a move to a point that is not a finite number,
+  and hit-tests at most 4,096 points along one move, so a jump longer than 16,384 px is sampled more sparsely; each
+  move still hit-tests the point it went to. One Shift+wheel event steps a tool's size at most 1,000 times. A
+  long-press's `progress()` reads 0 at a clock or start of `NaN`; a duration that is not above 0, `NaN` included,
+  still reads 1. `steppedOption` sheds float noise to 12 significant digits rather than 6 decimal places, and a
+  finite option stepped past the double range stops at the largest double.
+- Open (routing second property pass, 2026-11-11): a `times` step never moves an option at 0, and grows a negative
+  value further below zero. Where a host has no `elementFromPoint`, two overlapping carry surfaces neither of which
+  holds the other are picked between by registration order (read from `surfaceAt`, not tested).
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`

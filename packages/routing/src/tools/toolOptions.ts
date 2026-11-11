@@ -10,7 +10,7 @@
 import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs';
 import { prefValueAbsent, repairPrefValue } from '@weasel-js/prefs';
 import { endlessAllows } from '@weasel-js/quantity';
-import { createEmitter, deepEqual } from '@weasel-js/registry';
+import { createEmitter, deepEqual, setOwn } from '@weasel-js/registry';
 
 /** How a step action moves one option: by a factor, or by an amount. */
 export interface ToolOptionStep {
@@ -141,7 +141,7 @@ export function heldToolOptions(
     const slot = toolOptionSlot(toolId, options, key);
     const own = values.get(slot.owner);
     const v = Object.hasOwn(own, slot.key) ? readHeld(leaf, own[slot.key]) : undefined;
-    if (v !== undefined) out[key] = v;
+    if (v !== undefined) setOwn(out, key, v);
   }
   return out;
 }
@@ -151,7 +151,7 @@ export function toolOptionParams(
   toolId: string, options: ToolOptions, values: ToolOptionValues | undefined,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  for (const [key, leaf] of optionKeys(options)) out[key] = (leaf as { default?: unknown }).default;
+  for (const [key, leaf] of optionKeys(options)) setOwn(out, key, (leaf as { default?: unknown }).default);
   return { ...out, ...heldToolOptions(toolId, options, values) };
 }
 
@@ -184,7 +184,12 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   const moved = step.times !== undefined ? value * step.times ** dir : value + dir * (step.plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
   // A step that rounds back to where it began still moves one `step`.
-  const next = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
-  const clamped = Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, next));
-  return Number(clamped.toFixed(6));
+  const stepped = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
+  // Past the double range a finite option has nowhere further to go than the largest double.
+  const next = Number.isFinite(stepped) ? stepped : dir * Number.MAX_VALUE;
+  const clamp = (n: number): number => Math.min(leaf.max ?? Infinity, Math.max(leaf.min ?? -Infinity, n));
+  const clamped = clamp(next);
+  // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step.
+  const tidy = Number(clamped.toPrecision(12));
+  return clamped !== value && (tidy - value) * dir > 0 && clamp(tidy) === tidy ? tidy : clamped;
 }
