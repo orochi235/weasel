@@ -14,6 +14,8 @@ export function ditherPixels(image: RgbaImage, options: DitherOptions = {}): Uin
   if (protect && protect.length !== width * height) {
     throw new RangeError(`ditherPixels: protect holds ${protect.length} pixels, the image ${width * height}`);
   }
+  // No pixels, however tall: the loops below would walk every empty row.
+  if (width * height === 0) return new Uint8Array(0);
   const gray = toGray(image, background);
   switch (method) {
     case 'threshold': {
