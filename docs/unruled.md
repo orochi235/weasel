@@ -972,6 +972,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   at an infinite distance: silent, or at whole gain under a rolloff factor of 0, and panned along its halved offset.
   A reference distance of 0 silences a source past it even with a rolloff factor of 0, as the option's doc says it
   cliffs. `patternVoicePeaks` leaves out an event on a step the pass never reaches.
+- 2026-11-11 (second property pass, my call): a score's `bar` counts the bars since `start` by the steps its
+  pattern player has passed, skipped ones included, so a stall past whole bars reports a later bar (a run's first
+  report can be bar 1 or more), and `cueBar` counts the skipped bars. A bar whose first steps were skipped is
+  reported, and written from its mood, at the first step it books, with that step's time; the steps of it already
+  booked play the bar before's notes. The pattern player's `onStep` gets that count as a third argument.
+- 2026-11-11 (second property pass, my call): `impulseResponse` refuses a `decayDb` below -770, where the rising
+  tail ends past float32's range, as well as one that is not finite, and a `channels` that is not a whole number
+  above 0.
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`
