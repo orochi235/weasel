@@ -32,6 +32,7 @@ export {
   registerProgram,
   registerTexture,
   releaseImageSource,
+  spreadRadius,
   subscribeGlyphReady,
   tessellate,
   tessellateStroke,

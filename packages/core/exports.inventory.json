@@ -3442,6 +3442,7 @@
     "registerProgram": "function",
     "registerTexture": "function",
     "releaseImageSource": "function",
+    "spreadRadius": "function",
     "subscribeGlyphReady": "function",
     "tessellate": "function",
     "tessellateStroke": "function",
