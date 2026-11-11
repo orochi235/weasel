@@ -55,12 +55,17 @@ function faceFor(
   font: import('opentype.js').Font, gpos: PairKerning | null, sfnt: ArrayBuffer,
 ): OutlineFace {
   const upem = font.unitsPerEm;
+  if (!(Number.isFinite(upem) && upem > 0)) {
+    throw new Error(`the font states no usable units per em (${String(upem)}); its head table is missing or damaged`);
+  }
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const { hhea, post, os2 } = font.tables as Pick<FaceMetricTables, 'hhea' | 'post' | 'os2'>;
   const faceMetrics = faceMetricsFromTables({ unitsPerEm: upem, hhea, post, os2 });
+  const ascender = faceMetrics?.ascent ?? font.ascender / upem;
+  if (!Number.isFinite(ascender)) throw new Error('the font states no ascent; its hhea and OS/2 tables are missing or damaged');
   return {
     unitsPerEm: upem,
-    ascender: faceMetrics?.ascent ?? font.ascender / upem,
+    ascender,
     ...(faceMetrics ? { faceMetrics } : {}),
     advanceOf(cp: number): number | null {
       const index = font.charToGlyphIndex(String.fromCodePoint(cp));
