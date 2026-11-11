@@ -47,6 +47,12 @@ function lessLaps(t: number, laps: number, duration: number): number {
   return Number.isFinite(span) ? t - span : ((t % duration) + duration) % duration;
 }
 
+/** The playhead and its offset from the entry's clock, `laps` laps back. */
+function lapBack(playhead: number, offset: number, laps: number, duration: number): [number, number] {
+  const next = lessLaps(playhead, laps, duration);
+  return [next, offset + (Number.isFinite(laps * duration) ? -laps * duration : next - playhead)];
+}
+
 /** Where a seek to `t` lands: not before 0, nor past `duration` unless laps are left, where it
  *  lands in a later lap, `laps` on, and a time on a seam is the end of the lap before. */
 function landing(t: number, duration: number, lapsLeft: number): { at: number; laps: number } {
@@ -114,21 +120,14 @@ export function createTimeline(
   let wantScale = 1;
 
   const edited = createEmitter();
-  const playback = createEmitter();
-  const playbackChanged = playback.emit;
+  const { emit: playbackChanged, subscribe: subscribePlayback } = createEmitter();
 
   let loopsLeft = lapsOf(opts.loop ?? false);
   let lap = 0;
 
-  const booker = opts.booking
-    ? createBooker(opts.booking, {
-      tracks: opts.tracks,
-      duration: () => duration,
-      lapsLeft: () => loopsLeft,
-      lap: () => lap,
-      playhead: () => playhead,
-    })
-    : null;
+  const booker = opts.booking ? createBooker(opts.booking, {
+    tracks: opts.tracks, duration: () => duration, lapsLeft: () => loopsLeft, lap: () => lap, playhead: () => playhead,
+  }) : null;
   const sampler = createTrackSampler(hold);
 
   const events = createEventCursor(createEventFirer(report, booker !== null), () => canceled);
@@ -152,9 +151,7 @@ export function createTimeline(
       playhead = virtualNow + offset;
       crossLaps(playhead, duration, loopsLeft, lap, (laps) => {
         takeLaps(laps);
-        const next = lessLaps(playhead, laps, duration);
-        offset += Number.isFinite(laps * duration) ? -laps * duration : next - playhead;
-        playhead = next;
+        [playhead, offset] = lapBack(playhead, offset, laps, duration);
         onWrap(laps);
       });
     }
@@ -260,6 +257,6 @@ export function createTimeline(
       edited.emit();
     },
     subscribe: edited.subscribe,
-    subscribePlayback: playback.subscribe,
+    subscribePlayback,
   };
 }

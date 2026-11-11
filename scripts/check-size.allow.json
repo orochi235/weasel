@@ -6,7 +6,7 @@
     "longestFunction": 135
   },
   "packages/animator/src/timeline/createTimeline.ts": {
-    "longestFunction": 165
+    "longestFunction": 160
   },
   "packages/audio/src/inserts.ts": {
     "longestFunction": 231
