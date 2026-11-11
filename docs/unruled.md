@@ -562,7 +562,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (font, second property pass): the default outline parser checks a CFF face's `CFF ` table before
   opentype.js reads it (`outline/cffCheck.ts`) and refuses the face when an INDEX runs past the table, has offsets
   wider than 4 bytes or out of order, or does not start at offset 1, or when a top DICT offset operator holds other
-  than its one integer (two for `Private`). The first-offset rule refuses some faces opentype.js would read. A CFF
+  than its one integer (two for `Private`). The first-offset rule refuses some faces opentype.js would read. The `cmap` subtable opentype.js reads is refused when its records, segments, or groups run past the table or
+  name more code points than the format maps (65,536 for format 4, 1,114,112 for 12 and 13), overlaps included. A CFF
   glyph whose outline holds a non-finite coordinate is refused as one glyph, which the registry warns of and serves
   from the SDF tier. A TrueType glyph's path data now keeps the line back to its contour's start before the `Z`.
 - 2026-11-11 (font, second property pass): `parseBmFont` refuses an atlas whose glyph or kerning entry is not an object
