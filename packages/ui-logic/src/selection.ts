@@ -67,12 +67,15 @@ export interface SelectionModel {
   readonly followsFocus: boolean;
 }
 
+/** Whether `a` and `b` are one value as `Array.prototype.includes` reads them: `NaN` is itself, `-0` is `0`. */
+const same = (a: unknown, b: unknown): boolean => a === b || (Number.isNaN(a) && Number.isNaN(b));
+
 /** `spec`'s selection over `values`, one per item in order. */
 export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): SelectionModel {
   const mixed = spec.mixedValues ?? [];
   if (spec.mode === 'multiple') {
     const on = spec.value;
-    const flip = (list: readonly V[], v: V, to: boolean): V[] => (to ? [...list, v] : list.filter((w) => w !== v));
+    const flip = (list: readonly V[], v: V, to: boolean): V[] => (to ? [...list, v] : list.filter((w) => !same(w, v)));
     return {
       mode: 'multiple',
       followsFocus: false,
@@ -98,9 +101,9 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
   return {
     mode: 'single',
     followsFocus: spec.followsFocus ?? true,
-    stateOf: (i) => (spec.value === values[i] ? 'on' : mixed.includes(values[i]!) ? 'mixed' : 'off'),
+    stateOf: (i) => (same(spec.value, values[i]) ? 'on' : mixed.includes(values[i]!) ? 'mixed' : 'off'),
     press: (i) => {
-      if (spec.value !== values[i]) choose(values[i]!);
+      if (!same(spec.value, values[i])) choose(values[i]!);
       else if (spec.allowDeselect) choose(null);
     },
     edit: () => {
@@ -108,12 +111,12 @@ export function selection<V>(spec: SelectionSpec<V>, values: readonly V[]): Sele
       let working = initial;
       return {
         set: (i, to) => {
-          const next = to ? values[i]! : working === values[i] && spec.allowDeselect ? null : working;
-          if (next === working) return;
+          const next = to ? values[i]! : same(working, values[i]) && spec.allowDeselect ? null : working;
+          if (same(next, working)) return;
           working = next;
           choose(next);
         },
-        revert: () => { if (working !== initial) choose(initial); },
+        revert: () => { if (!same(working, initial)) choose(initial); },
       };
     },
   };
