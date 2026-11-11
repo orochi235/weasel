@@ -21,6 +21,11 @@ function flipOrShiftBack(at: number, len: number, lo: number, span: number, flip
   return Math.max(lo, hi - len);
 }
 
+/** `at` held inside `[lo, lo + span]` for something `len` long, at `lo` when it is longer. */
+function held(at: number, len: number, lo: number, span: number): number {
+  return Math.max(lo, Math.min(at, lo + span - len));
+}
+
 /** The inline direction a menu is laid out in. Under `'rtl'` a menu opens to the left of where it hangs from. */
 export type MenuDirection = 'ltr' | 'rtl';
 
@@ -55,12 +60,12 @@ export type MenuSide = 'top' | 'bottom' | 'left' | 'right';
 export function placeMenuUnder(size: Size, under: Rect, bounds: Rect, side: MenuSide = 'bottom', dir: MenuDirection = 'ltr'): Point {
   if (side === 'left' || side === 'right') {
     const x = side === 'left' && under.x - size.w >= bounds.x
-      ? under.x - size.w
+      ? held(under.x - size.w, size.w, bounds.x, bounds.w)
       : flipOrShift(under.x + under.w, size.w, bounds.x, bounds.w, under.x);
     return { x, y: Math.max(bounds.y, Math.min(under.y, bounds.y + bounds.h - size.h)) };
   }
   const y = side === 'top' && under.y - size.h >= bounds.y
-    ? under.y - size.h
+    ? held(under.y - size.h, size.h, bounds.y, bounds.h)
     : flipOrShift(under.y + under.h, size.h, bounds.y, bounds.h, under.y);
   const x = dir === 'rtl'
     ? flipOrShiftBack(under.x + under.w, size.w, bounds.x, bounds.w, under.x)
