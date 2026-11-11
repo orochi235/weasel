@@ -133,8 +133,9 @@ export function checkRoutes(input: AvoidInput, routes: AvoidRoutes, seen: Return
       const [a, b] = [full[i - 1]!, full[i]!];
       // A port's stub, `clearance + 1` long, is not searched: it runs through whatever clearance the port sits in.
       const stub = AVOID_DEFAULTS.clearance + 1;
-      let [ca, cb] = [i === 1 ? past(a, b, stub) : a, i === full.length - 1 ? past(b, a, stub) : b];
-      if (i === 1 && i === full.length - 1 && Math.hypot(b.x - a.x, b.y - a.y) <= 2 * stub) cb = ca;
+      const ca = i === 1 ? past(a, b, stub) : a;
+      const short = i === 1 && i === full.length - 1 && Math.hypot(b.x - a.x, b.y - a.y) <= 2 * stub;
+      const cb = short ? ca : i === full.length - 1 ? past(b, a, stub) : b;
       for (const o of input.obstacles) {
         if (o.kind === 'label' || !blocks(o, edge)) continue;
         expect(entersBox(a, b, o.box), `${edge.id} enters ${o.id}: ${JSON.stringify(full)}`).toBe(false);

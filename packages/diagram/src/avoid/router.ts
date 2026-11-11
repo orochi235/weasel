@@ -70,12 +70,10 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   const opts = { ...AVOID_DEFAULTS, ...options };
   let committed = new Map<string, AvoidObstacle>();
   const keys = new Map<string, string>();
-  /** Each connector's last route with its ends, as it was before nudging and after. */
-  const raw = new Map<string, Vec2[]>();
-  const shown = new Map<string, Vec2[]>();
+  /** Each connector's last route with its ends, as it was before nudging and after; those the last commit routing
+   *  them found no path for. */
+  const [raw, shown, pathless] = [new Map<string, Vec2[]>(), new Map<string, Vec2[]>(), new Set<string>()];
   const previews = new Map<string, Vec2[] | null>();
-  /** Connectors the last commit routing them found no path for. */
-  const pathless = new Set<string>();
   let drag: DragIndex | null = null;
   /** Where each connector sat in the last committed input, to find a dirty one in a frame without a scan. */
   let positions = new Map<string, number>();
@@ -93,8 +91,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
 
   function forget(input: AvoidInput): void {
     const live = new Set(input.edges.map((e) => e.id));
-    for (const map of [keys, raw, shown]) for (const id of [...map.keys()]) if (!live.has(id)) map.delete(id);
-    for (const id of [...pathless]) if (!live.has(id)) pathless.delete(id);
+    for (const map of [keys, raw, shown, pathless]) for (const id of [...map.keys()]) if (!live.has(id)) map.delete(id);
   }
 
   /** Index what `input`, as committed, holds now, for the drag frames that follow. */
@@ -150,10 +147,8 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     const bundle = bundleOf(fresh, input.edges, clean, rawOf);
     const nudged = nudge(bundle, opts.spacing, index);
     const out: AvoidRoutes = new Map();
-    for (const [id, full] of fresh) {
-      if (full === null) { raw.delete(id); shown.delete(id); out.set(id, null); pathless.add(id); }
-      else pathless.delete(id);
-    }
+    for (const [id, full] of fresh) if (full !== null) pathless.delete(id);
+    for (const [id, full] of fresh) if (full === null) { raw.delete(id); shown.delete(id); out.set(id, null); pathless.add(id); }
     for (const [id, full] of nudged) {
       const was = dirtyIds.has(id) ? null : routeOf(byId.get(id)!);
       raw.set(id, bundle.get(id)!.points);
