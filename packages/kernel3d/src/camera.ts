@@ -93,7 +93,7 @@ export const DEFAULT_ORBIT_LIMITS: OrbitLimits = {
  *  itself when it already holds. */
 export function clampCamera(camera: Camera3d, limits: Partial<OrbitLimits> = {}): Camera3d {
   const l = { ...DEFAULT_ORBIT_LIMITS, ...limits };
-  const pitch = clamp(camera.pitch, Math.max(-MAX_PITCH, l.minPitch), Math.min(MAX_PITCH, l.maxPitch));
+  const pitch = clamp(camera.pitch, clamp(l.minPitch, -MAX_PITCH, MAX_PITCH), clamp(l.maxPitch, -MAX_PITCH, MAX_PITCH));
   const distance = clamp(camera.distance, l.minDistance, l.maxDistance);
   if (pitch === camera.pitch && distance === camera.distance) return camera;
   return { ...camera, pitch, distance };
