@@ -37,7 +37,9 @@ export function clamp01(v: number): number {
 export function trimNumber(n: number, places = 6): string {
   if (!Number.isFinite(n)) return '0';
   const k = 10 ** places;
-  return String(Math.round(n * k) / k);
+  const rounded = Math.round(n * k) / k;
+  // Past about 1e302, `n * k` overflows; a number that large has no decimals to round.
+  return String(Number.isFinite(rounded) ? rounded : n);
 }
 
 /** The number `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */

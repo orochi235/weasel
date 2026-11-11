@@ -22,11 +22,18 @@ const INITIAL: Record<string, string> = {
 };
 
 /** The paint attributes `node` writes on its `<g>`: those it holds and does
- *  not take from a group above. */
-export function groupPaintAttrs(node: SvgGroupNode, registry: PaintServerRegistry, warn: Warn): string[] {
+ *  not take from a group above, and, of a paint it holds, each attribute
+ *  `painted` names that it does not state, at its initial value. */
+export function groupPaintAttrs(
+  node: SvgGroupNode, registry: PaintServerRegistry, warn: Warn, painted: ReadonlySet<string> = new Set(),
+): string[] {
   const out: string[] = [];
-  if (node.fill && !node.inherits?.fill) out.push(...paintAttrs(node.fill, 'fill', registry));
-  if (node.stroke && !node.inherits?.stroke) out.push(...strokeAttrsFor(node.stroke, registry, warn));
+  const own = (attrs: string[], family: readonly string[]): void => {
+    const has = new Set(attrNames(attrs));
+    out.push(...attrs, ...family.filter((n) => painted.has(n) && !has.has(n)).map((n) => `${n}="${INITIAL[n]}"`));
+  };
+  if (node.fill && !node.inherits?.fill) own(paintAttrs(node.fill, 'fill', registry), FILL_ATTRS);
+  if (node.stroke && !node.inherits?.stroke) own(strokeAttrsFor(node.stroke, registry, warn), STROKE_ATTRS);
   return out;
 }
 

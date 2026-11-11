@@ -129,3 +129,10 @@ to address 0 under `PromiseConstructor` during another worker's full GC) until `
 replace each vm worker about once a run (2026-10-22); vitest's default limit never recycles one, since it reads
 `heapUsed` without a GC. Nothing leaks (a worker over 319 files held a flat ~200 MB), and the cause was not hunted
 (ruled 2026-11-07), so raising or removing the limit brings the crash back.
+
+**jsdom keeps every Document a `DOMParser` makes, though not a tree taken out of it.** A deep run of svg's
+exporter properties died on teitou at the 4 GB heap limit ("ineffective mark-compacts", 2026-11-10). Measured
+there with a forced GC: 6,000 parses of those documents held 740 MB more than before, about 120 KB each, and the
+same parses each followed by `doc.documentElement.remove()` held 30 MB. `parseSvg` removes its tree when it is
+done for this reason; a test parsing thousands of documents itself does the same. The cause inside jsdom was not
+hunted.

@@ -47,6 +47,12 @@ When work merges, retire its entry here in the same change.
   had not finished after 45 s. pdf outlines every stroke it cannot draw natively this way, so one wide
   gradient stroke can stall `writePdf`; its property tests keep outlined widths under 50 for this reason.
   Closes when 3,484 triangles from that shape union in under a second.
+- **(P3) [agent] `serializeSvg` takes up to half a second to box one stroked path of huge extent.** Its
+  fallback viewBox comes from `strokedBounds`, which tessellates the stroke, and a curve flattens to more
+  pieces the larger it is. Measured 2026-11-10 (svg's path-data property tests): a 1-wide stroke along a
+  handful of curves whose coordinates reach 1e30 to 1e37 took 200 to 500 ms to serialize, nearly all in the
+  bounds; the same path unstroked takes under a millisecond. The property strokes nothing for this reason.
+  Closes when such a path serializes in under 20 ms.
 
 ---
 

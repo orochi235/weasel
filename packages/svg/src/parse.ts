@@ -9,7 +9,7 @@
  */
 
 import {
-  type Matrix, type NamespaceMeta, type NamespacedElement, type ParseOptions, type ParseResult,
+  type Matrix, type ParseOptions, type ParseResult,
   type SvgNode, type SvgPathNode, IDENTITY_MATRIX,
 } from './types';
 import {
@@ -37,8 +37,15 @@ import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type Group
 import { booleanAttrOf } from './booleanGroup';
 import { conditionsHold, drawnChildren } from './conditional';
 import { parseUse } from './use';
+import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
+
+/** How deep elements may nest, `<use>` references included, before what is deeper is left undrawn. */
+export const NESTING_LIMIT = 512;
+
+/** How deep the walk is now. */
+let nesting = 0;
 
 /**
  * Public entry point: parse an SVG document string. Errors during DOM
@@ -47,8 +54,6 @@ const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
  */
 export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   const warnings: string[] = [];
-  const onWarn = (m: string): void => { warnings.push(m); };
-
   const unreadable = (error: string): ParseResult => ({ nodes: [], warnings: [error], error });
   let doc: Document;
   try {
@@ -56,6 +61,18 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   } catch (e) {
     return unreadable(`failed to parse SVG: ${(e as Error).message}`);
   }
+  try {
+    return readDocument(doc, opts, warnings, unreadable);
+  } finally {
+    // jsdom keeps a parsed Document alive, though not a tree taken out of it (docs/traps/testing.md).
+    doc.documentElement?.remove();
+  }
+}
+
+function readDocument(
+  doc: Document, opts: ParseOptions, warnings: string[], unreadable: (error: string) => ParseResult,
+): ParseResult {
+  const onWarn = (m: string): void => { warnings.push(m); };
   const errEl = doc.getElementsByTagName('parsererror')[0];
   if (errEl) return unreadable(`SVG parse error: ${errEl.textContent ?? 'unknown'}`);
   const root = doc.documentElement;
@@ -75,8 +92,16 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
-  const nodes = parseChildren(root.children, IDENTITY_MATRIX, rootStyle, NO_GROUP_PAINT, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
-  const markers = ingestMarkers(root, nodes, gradients, onWarn);
+  let nodes: SvgNode[];
+  let markers: ReturnType<typeof ingestMarkers>;
+  try {
+    nodes = parseChildren(root.children, IDENTITY_MATRIX, rootStyle, NO_GROUP_PAINT, gradients, clips, onWarn, uriToPrefix, opts.keepHidden === true);
+    markers = ingestMarkers(root, nodes, gradients, onWarn);
+  } catch (e) {
+    // Past the nesting limit nothing recurses, so this is a stack some other walk ran out of.
+    if (e instanceof RangeError) return unreadable(`SVG nests too deeply to read: ${e.message}`);
+    throw e;
+  }
 
   const result: ParseResult = { nodes, warnings };
   if (markers.length > 0) result.markers = markers;
@@ -105,103 +130,6 @@ function rootLength(root: Element, name: string, onWarn: (m: string) => void): n
   return Number.isFinite(n) ? n : undefined;
 }
 
-function collectDocumentMeta(
-  root: Element,
-  uriToPrefix: Map<string, string>,
-): NamespaceMeta | undefined {
-  if (uriToPrefix.size === 0) return undefined;
-  const meta: NamespaceMeta = {};
-
-  // Root-level namespaced attributes.
-  for (let i = 0; i < root.attributes.length; i++) {
-    const a = root.attributes[i];
-    if (!a.namespaceURI) continue;
-    const prefix = uriToPrefix.get(a.namespaceURI);
-    if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    (bucket.attrs ??= {})[a.localName] = a.value;
-  }
-
-  // Root-level namespaced child elements. The body of these is collected
-  // recursively as a generic XML-element tree; geometry inside them is NOT
-  // promoted to SvgNodes (that's the consumer's job if they want it).
-  for (let i = 0; i < root.children.length; i++) {
-    const c = root.children[i];
-    if (!c.namespaceURI) continue;
-    const prefix = uriToPrefix.get(c.namespaceURI);
-    if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    const elements = (bucket.elements ??= {});
-    const list = (elements[c.localName] ??= []);
-    list.push(collectNamespacedElement(c, uriToPrefix));
-  }
-
-  return Object.keys(meta).length > 0 ? meta : undefined;
-}
-
-function collectNamespacedElement(
-  el: Element,
-  uriToPrefix: Map<string, string>,
-): NamespacedElement {
-  const result: NamespacedElement = { attrs: {} };
-  for (let i = 0; i < el.attributes.length; i++) {
-    const a = el.attributes[i];
-    // For namespaced *elements* we collect every attribute (namespaced or
-    // not) under the element — unlike root attrs where we filter by NS.
-    // Treat `xmlns:*` as structural and skip.
-    if (a.name.startsWith('xmlns')) continue;
-    result.attrs[a.localName] = a.value;
-  }
-
-  let hasChildElements = false;
-  for (let i = 0; i < el.children.length; i++) {
-    const c = el.children[i];
-    if (!c.namespaceURI) continue;
-    const prefix = uriToPrefix.get(c.namespaceURI);
-    if (!prefix) continue;  // child in undeclared NS: drop
-    hasChildElements = true;
-    const children = (result.children ??= {});
-    const list = (children[c.localName] ??= []);
-    list.push(collectNamespacedElement(c, uriToPrefix));
-  }
-
-  if (!hasChildElements && el.textContent != null && el.textContent.trim() !== '') {
-    result.text = el.textContent;
-  }
-
-  return result;
-}
-
-/** Per-element namespace meta: walked at every parsed SVG element. */
-function collectElementMeta(
-  el: Element,
-  uriToPrefix: Map<string, string>,
-): NamespaceMeta | undefined {
-  if (uriToPrefix.size === 0) return undefined;
-  const meta: NamespaceMeta = {};
-  for (let i = 0; i < el.attributes.length; i++) {
-    const a = el.attributes[i];
-    if (!a.namespaceURI) continue;
-    const prefix = uriToPrefix.get(a.namespaceURI);
-    if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    (bucket.attrs ??= {})[a.localName] = a.value;
-  }
-  // Namespaced child elements on a *standard* SVG element (e.g. a <g>) are
-  // also surfaced under elements[] in the same shape used at the root.
-  for (let i = 0; i < el.children.length; i++) {
-    const c = el.children[i];
-    if (!c.namespaceURI) continue;
-    const prefix = uriToPrefix.get(c.namespaceURI);
-    if (!prefix) continue;
-    const bucket = (meta[prefix] ??= {});
-    const elements = (bucket.elements ??= {});
-    const list = (elements[c.localName] ??= []);
-    list.push(collectNamespacedElement(c, uriToPrefix));
-  }
-  return Object.keys(meta).length > 0 ? meta : undefined;
-}
-
 function parseChildren(
   children: ArrayLike<Element>,
   ctm: Matrix,
@@ -214,6 +142,32 @@ function parseChildren(
   keepHidden: boolean,
 ): SvgNode[] {
   const out: SvgNode[] = [];
+  if (children.length === 0) return out;
+  if (nesting >= NESTING_LIMIT) {
+    onWarn(`elements nest more than ${NESTING_LIMIT} deep; what is deeper is not drawn`);
+    return out;
+  }
+  nesting++;
+  try {
+    readChildren(children, ctm, style, from, gradients, clips, onWarn, uriToPrefix, keepHidden, out);
+  } finally {
+    nesting--;
+  }
+  return out;
+}
+
+function readChildren(
+  children: ArrayLike<Element>,
+  ctm: Matrix,
+  style: StyleContext,
+  from: GroupPaintFrom,
+  gradients: GradientTable,
+  clips: ClipTable,
+  onWarn: (m: string) => void,
+  uriToPrefix: Map<string, string>,
+  keepHidden: boolean,
+  out: SvgNode[],
+): void {
   for (let i = 0; i < children.length; i++) {
     const el = children[i];
     // Skip namespaced children — they belong to `meta.elements`, not nodes.
@@ -228,7 +182,6 @@ function parseChildren(
     if (hidden) for (const n of parsed) n.hidden = true;
     out.push(...parsed);
   }
-  return out;
 }
 
 function parseElement(
