@@ -1,36 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { isChangesetFile, readBumps } from './bumps.mjs';
+import { parseChangesetFile } from '@changesets/parse';
+import { atLevel, isChangesetFile } from './bumps.mjs';
 
-const levels = (text: string) => readBumps(text).unapproved.map((b) => b.level);
+const released = (text: string) => parseChangesetFile(text).releases;
 
-describe('readBumps', () => {
-  it('passes patch and none', () => {
-    expect(levels('---\n"@weasel-js/core": patch\n"@weasel-js/geom": none\n---\n\nfix\n')).toEqual([]);
+describe('atLevel', () => {
+  it('releases every package at the level the release was cut at, up or down', () => {
+    const text = '---\n"@weasel-js/core": major\n"@weasel-js/geom": patch\n---\n\nA title.\n\n<!-- entry: new api -->\n';
+    expect(released(atLevel(text, 'minor'))).toEqual([
+      { name: '@weasel-js/core', type: 'minor' },
+      { name: '@weasel-js/geom', type: 'minor' },
+    ]);
+    expect(parseChangesetFile(atLevel(text, 'minor')).summary).toBe('A title.\n\n<!-- entry: new api -->');
   });
 
-  it('reads a level however YAML spells it', () => {
-    expect(levels(`---\n'@weasel-js/core': "minor" # why\n---\n\nx\n`)).toEqual(['minor']);
-    expect(levels('---\n{ "@weasel-js/core": major }\n---\n\nx\n')).toEqual(['major']);
+  it('leaves a package marked none out of the release', () => {
+    expect(released(atLevel('---\n"a": none\n"b": patch\n---\n\nx\n', 'minor'))).toEqual([
+      { name: 'a', type: 'none' },
+      { name: 'b', type: 'minor' },
+    ]);
   });
 
-  it('reads frontmatter changesets reads after a blank line or a byte-order mark', () => {
-    expect(levels('\n---\n"@weasel-js/core": major\n---\n\nx\n')).toEqual(['major']);
-    expect(levels('﻿---\n"@weasel-js/core": minor\n---\n\nx\n')).toEqual(['minor']);
+  it('reads a level however YAML spells it, after a blank line or a byte-order mark', () => {
+    expect(released(atLevel(`---\n'@weasel-js/core': "minor" # why\n---\n\nx\n`, 'patch'))).toEqual([{ name: '@weasel-js/core', type: 'patch' }]);
+    expect(released(atLevel('\n---\n{ "a": major }\n---\n\nx\n', 'patch'))).toEqual([{ name: 'a', type: 'patch' }]);
+    expect(released(atLevel('\ufeff---\n"a": minor\n---\n\nx\n', 'patch'))).toEqual([{ name: 'a', type: 'patch' }]);
   });
 
-  it('approves only the level its marker names', () => {
-    const text = (level: string) =>
-      `---\n"@weasel-js/core": ${level}\n---\n\nx\n\n<!-- bump-approved: minor: someone — reason -->\n`;
-    expect(readBumps(text('minor'))).toMatchObject({ approved: [{ level: 'minor' }], unapproved: [] });
-    expect(levels(text('major'))).toEqual(['major']);
-  });
-
-  it('notices a marker opening the body', () => {
-    expect(readBumps('---\n"a": patch\n---\n\n<!-- bump-approved: minor: a — b -->\nx\n').leadingMarker).toBe(true);
-  });
-
-  it('throws on a level changesets refuses', () => {
-    expect(() => readBumps('---\n"a": Minor\n---\n\nx\n')).toThrow(/invalid version type/);
+  it('refuses a level it does not know', () => {
+    expect(() => atLevel('---\n"a": patch\n---\n\nx\n', 'Minor')).toThrow(/unknown release level/);
   });
 });
 

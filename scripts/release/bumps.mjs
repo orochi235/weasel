@@ -1,6 +1,5 @@
-// What a changeset asks for, read by changesets' own parser, so a file it versions from is a
-// file the bump check reads the same way: frontmatter after a blank line or a BOM, and any YAML
-// spelling of a level.
+// What a changeset asks for, read by changesets' own parser, so a file it versions from is read
+// here the same way: frontmatter after a blank line or a BOM, and any YAML spelling of a level.
 import { parseChangesetFile } from '@changesets/parse';
 
 /** The names `@changesets/read` passes over; only README matches without regard to case. */
@@ -15,30 +14,16 @@ export function isChangesetFile(name) {
   );
 }
 
-/** Everything above `patch` needs sign-off. */
-const GATED = ['minor', 'major'];
-
-/** `<!-- bump-approved: minor: someone — reason -->` */
-function approvalFor(text, level) {
-  return new RegExp(`<!--\\s*bump-approved:\\s*${level}\\s*:\\s*\\S+.*-->`, 'i').test(text);
-}
+/** The release levels `version-packages --bump` takes. */
+export const LEVELS = ['patch', 'minor', 'major'];
 
 /**
- * The bumps above `patch` in a changeset's text, split by whether a marker in its body approves
- * their level, and whether a marker opens the body. Throws on a file changesets cannot read.
+ * A changeset's text with every package it releases released at `level`, the one the release
+ * was cut at; a package it marks `none` stays `none`. Throws on a file changesets cannot read.
  */
-export function readBumps(text) {
+export function atLevel(text, level) {
+  if (!LEVELS.includes(level)) throw new Error(`unknown release level ${JSON.stringify(level)}`);
   const { releases, summary } = parseChangesetFile(text);
-  const byLevel = new Map();
-  for (const { name, type } of releases) {
-    if (type === 'patch' || type === 'none') continue;
-    byLevel.set(type, [...(byLevel.get(type) ?? []), name]);
-  }
-  const approved = [];
-  const unapproved = [];
-  for (const [level, pkgs] of byLevel) {
-    (GATED.includes(level) && approvalFor(summary, level) ? approved : unapproved).push({ level, pkgs });
-  }
-  // Changesets prints a body's first line beside the commit hash, the entry's title.
-  return { approved, unapproved, leadingMarker: /^<!--\s*bump-approved:/i.test(summary) };
+  const lines = releases.map(({ name, type }) => `${JSON.stringify(name)}: ${type === 'none' ? 'none' : level}`);
+  return `---\n${lines.join('\n')}\n---\n\n${summary}\n`;
 }

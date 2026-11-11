@@ -1553,7 +1553,7 @@ Calls the round made:
 - A `Tree` drop with a zero, negative or NaN indent keeps the row's depth.
 - A pasted table keeps a tab per empty cell before one with text; a trailing empty cell still pastes nothing.
 - A chunks or dots tile with a size that isn't positive draws nothing.
-- `check:bumps` and the site's Releases view read changesets through `@changesets/parse`, which arrives through
+- `version-packages` and the site's Releases view read changesets through `@changesets/parse`, which arrives through
   `@changesets/cli` and is not declared at the root. `import { type A }` counts as a run-time import in
   `scripts/lib/imports.mjs`, as `verbatimModuleSyntax` builds it.
 - `resolveStroke`'s doc says a stroke of base width 0 draws through its per-vertex widths; `tessellateStroke`,

@@ -1,6 +1,3 @@
-export interface Bump {
-  level: string;
-  pkgs: string[];
-}
-export function readBumps(text: string): { approved: Bump[]; unapproved: Bump[]; leadingMarker: boolean };
+export const LEVELS: readonly ['patch', 'minor', 'major'];
+export function atLevel(text: string, level: string): string;
 export function isChangesetFile(name: string): boolean;
