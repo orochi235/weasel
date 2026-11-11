@@ -1,5 +1,5 @@
 ---
-'@weasel-js/ui-logic': patch
+'@weasel-js/ui-input': patch
 ---
 
 `frames` throws a `RangeError` for a `loop` count that is NaN or negative.

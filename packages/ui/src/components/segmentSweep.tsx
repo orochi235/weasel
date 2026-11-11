@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 import { useMemo, useRef, type ReactElement, type RefObject } from 'react';
-import { sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-logic';
+import { sweepFrom, type SelectionModel, type SelectState } from '@weasel-js/ui-input';
 
 /** The attribute naming a segment's index, which is what a sweep reaches. */
 export const SWEEP_INDEX_ATTR = 'data-sweep-index';

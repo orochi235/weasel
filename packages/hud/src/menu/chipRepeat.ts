@@ -1,4 +1,4 @@
-import { createStepRepeat, type StepRepeatOptions } from '@weasel-js/ui-logic';
+import { createStepRepeat, type StepRepeatOptions } from '@weasel-js/ui-input';
 import { menuNumberCanStep, type MenuController, type MenuNumberEntry, type Rect } from '@weasel-js/menu';
 import { rowAt, type MenuMetrics } from './drawPanel';
 import { chipAt } from './valueRows';

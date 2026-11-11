@@ -2,8 +2,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import {
-  envPx, exactly, measureRowList,
-  type HeadlessComponent, type ListMode, type RowFace, type RowListLayout,
+  envPx, exactly, measureRowList, type HeadlessComponent, type ListMode, type RowFace, type RowListLayout,
 } from '@weasel-js/ui-logic';
 import { resolveCurrentColor } from '@weasel-js/theme';
 import { hudMeasureEnv } from '../../measureEnv';

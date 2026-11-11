@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { imeKey } from '@weasel-js/ui-logic';
+import { imeKey } from '@weasel-js/ui-input';
 import { Button } from '@weasel-js/ui/components/Button';
 import { CloseButton } from '@weasel-js/ui/components/CloseButton';
 import { Icon } from '@weasel-js/ui/components/Icon';

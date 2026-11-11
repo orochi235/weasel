@@ -1,5 +1,6 @@
 import { useMemo, type KeyboardEvent, type ReactNode } from 'react';
-import { dropSide, imeKey } from '@weasel-js/ui-logic';
+import { imeKey } from '@weasel-js/ui-input';
+import { dropSide } from '@weasel-js/ui-logic';
 import type { ReorderDragState } from '../../useReorderDragList';
 import { CloseButton } from '../CloseButton';
 import { ReorderHandle } from '../ReorderHandle/ReorderHandle';

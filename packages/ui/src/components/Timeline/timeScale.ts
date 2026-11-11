@@ -1,6 +1,6 @@
 import { linearScale, type LinearScale } from '@weasel-js/plot/scales';
-import type { Span } from '@weasel-js/ui-logic';
-import { spanPlace, spanShare } from '@weasel-js/ui-logic';
+import type { Span } from '@weasel-js/ui-input';
+import { spanPlace, spanShare } from '@weasel-js/ui-input';
 
 /** A visible span of timeline time, in ms. */
 export type TimeWindow = Span;

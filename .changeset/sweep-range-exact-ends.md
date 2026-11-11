@@ -1,5 +1,5 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
 A `range` sweep walks its ends exactly and keeps a value's digits past the twelfth.

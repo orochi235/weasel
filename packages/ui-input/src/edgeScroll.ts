@@ -1,4 +1,4 @@
-import type { Rect } from '@weasel-js/geom';
+import type { Box } from './scalar';
 import type { Span } from './span';
 
 /** How near an edge a dragged pointer starts a scroll, in px, unless a caller says otherwise. */
@@ -22,7 +22,7 @@ export function edgePush(span: Span, p: number, margin: number = EDGE_SCROLL_MAR
 
 /** {@link edgePush} on both axes of a scrolling box: multiply by a top speed for how far to scroll. */
 export function edgeScroll(
-  bounds: Rect, point: { x: number; y: number }, margin: number = EDGE_SCROLL_MARGIN,
+  bounds: Box, point: { x: number; y: number }, margin: number = EDGE_SCROLL_MARGIN,
 ): { x: number; y: number } {
   return {
     x: edgePush({ from: bounds.x, to: bounds.x + bounds.width }, point.x, margin),

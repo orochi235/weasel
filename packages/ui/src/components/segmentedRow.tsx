@@ -5,7 +5,7 @@ import { useOrientation, type Orientation } from './orientation';
 import { SegmentsAlong } from './segmentsAlong';
 import type { SegmentedSize, SegmentedVariant } from './segmentedVariant';
 import s from './segmentedControl.module.css';
-import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-logic';
+import type { LastRow, SelectState, Tiling } from '@weasel-js/ui-input';
 import { tiling } from '../tiling';
 
 /** Whether a segment is on, off, or mixed: its sources disagree. */

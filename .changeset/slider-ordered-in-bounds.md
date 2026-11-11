@@ -1,5 +1,5 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 "@weasel-js/ui": patch
 ---
 

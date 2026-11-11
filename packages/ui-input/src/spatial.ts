@@ -1,4 +1,4 @@
-import type { Rect } from '@weasel-js/geom';
+import type { Box } from './scalar';
 
 /** A way to move across a surface, in its own x and y: y grows downward. */
 export type Heading = 'left' | 'right' | 'up' | 'down';
@@ -19,7 +19,7 @@ export function headingOf(key: string): Heading | null {
  * `drift` times the distance across it, so a target straight ahead beats a nearer one off to the side. Null for
  * a target that is not ahead at all.
  */
-export function headingCost(from: Rect, to: Rect, heading: Heading, drift: number = HEADING_DRIFT): number | null {
+export function headingCost(from: Box, to: Box, heading: Heading, drift: number = HEADING_DRIFT): number | null {
   const dx = to.x + to.width / 2 - (from.x + from.width / 2);
   const dy = to.y + to.height / 2 - (from.y + from.height / 2);
   const across = heading === 'left' || heading === 'right';
@@ -32,7 +32,7 @@ export function headingCost(from: Rect, to: Rect, heading: Heading, drift: numbe
 /** Which of `targets` focus moves to from `from` on `heading`: the index of the cheapest by {@link headingCost},
  *  the earlier of two that tie, or -1 when none is ahead. A target with no box is passed over. */
 export function nearestToward(
-  from: Rect, targets: readonly (Rect | null | undefined)[], heading: Heading, drift: number = HEADING_DRIFT,
+  from: Box, targets: readonly (Box | null | undefined)[], heading: Heading, drift: number = HEADING_DRIFT,
 ): number {
   let best = -1;
   let bestCost = Infinity;

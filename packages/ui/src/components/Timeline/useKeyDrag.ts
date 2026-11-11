@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
-import { sliderAt, spanMap } from '@weasel-js/ui-logic';
+import { sliderAt, spanMap } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import type { TimeWindow } from './timeScale';
 

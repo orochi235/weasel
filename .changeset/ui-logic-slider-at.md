@@ -1,8 +1,8 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
-`@weasel-js/ui-logic` exports `sliderAt`, the value a pointer picks along a slider's track.
+`@weasel-js/ui-input` exports `sliderAt`, the value a pointer picks along a slider's track.
 
 `sliderAt(f, shape)` reads the track at fraction `f`, lands on the step grid inside `min` to `max`, and is pulled onto a stop within `pull` unless `free`.
 

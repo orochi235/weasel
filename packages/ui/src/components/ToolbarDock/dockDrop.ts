@@ -1,5 +1,5 @@
 import { setOwn } from '@weasel-js/registry';
-import { gapByMidpoint } from '@weasel-js/ui-logic';
+import { gapByMidpoint } from '@weasel-js/ui-input';
 import { canEnter, dockRows, isVerticalEdge, moveBar, type BarTarget, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 
 /** Marks the element a dock draws round each bar, holding the bar's id. */

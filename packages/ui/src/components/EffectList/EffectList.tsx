@@ -2,7 +2,8 @@ import { useLayoutEffect, useMemo, useRef, type KeyboardEvent, type ReactNode } 
 import type { IconRef } from '@weasel-js/icons';
 import type { ColorSource } from '@weasel-js/paint';
 import { useColorCss } from '@weasel-js/theme/react';
-import { dropSide, moveItems, nudgeOf } from '@weasel-js/ui-logic';
+import { moveItems, nudgeOf } from '@weasel-js/ui-input';
+import { dropSide } from '@weasel-js/ui-logic';
 import { useReorderDragList } from '../../useReorderDragList';
 import { useRemovedRowFocus } from '../../useRemovedRowFocus';
 import { tintSource } from '../appearance';

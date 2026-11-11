@@ -2,7 +2,7 @@ import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactEl
 import { openPointerSession, useElementSize, useLatest, type PointerSession } from '@weasel-js/core';
 import s from './Timeline.module.css';
 import { decimalsOf, type TickSet } from '@weasel-js/plot/scales';
-import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-logic';
+import { sliderAt, spanMap, spanPan, spanZoom } from '@weasel-js/ui-input';
 import { MIN_SPAN_MS, TICK_SPACING_PX, toPercent, windowScale, type TimeWindow } from './timeScale';
 
 /** One wheel notch's zoom factor. */

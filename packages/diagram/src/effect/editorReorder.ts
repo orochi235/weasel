@@ -2,7 +2,7 @@
  *  a main-line stage dragged along the line, a lane dragged by its header,
  *  and a group dragged along the line by its title. */
 import type { Contribution } from '@weasel-js/core';
-import { moveItems } from '@weasel-js/ui-logic';
+import { moveItems } from '@weasel-js/ui-input';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { reorderContribution, sequenceSlots, type ReorderMove, type ReorderSlots } from '../reorder';
 import { moveInChain, moveRunInChain } from './chainEdit';

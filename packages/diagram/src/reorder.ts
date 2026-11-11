@@ -20,7 +20,7 @@ import {
   type Vec2,
 } from '@weasel-js/core';
 import { rectContainsPoint, maxOf, minOf } from '@weasel-js/geom';
-import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-logic';
+import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-input';
 import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
 /** The action that drags an item of a sequence to another place in it. */

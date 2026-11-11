@@ -12,7 +12,7 @@ import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
-import type { StepRepeatOptions } from '@weasel-js/ui-logic';
+import type { StepRepeatOptions } from '@weasel-js/ui-input';
 import { chipUnder, createChipHold, levelAt } from './chipRepeat';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -33,7 +33,7 @@ export interface MenuWidgetOptions {
   icons?: MenuIcons;
   /** The swatches a color row's picker offers, as `#rrggbb`. Default {@link DEFAULT_MENU_PALETTE}. */
   palette?: readonly string[];
-  /** The timing of a held number chip. Defaults to `REPEAT_DELAY_MS` and `REPEAT_EVERY_MS` from `@weasel-js/ui-logic`,
+  /** The timing of a held number chip. Defaults to `REPEAT_DELAY_MS` and `REPEAT_EVERY_MS` from `@weasel-js/ui-input`,
    *  the defaults a `@weasel-js/ui` number field's steppers hold with. */
   repeat?: StepRepeatOptions;
   onChange(): void;

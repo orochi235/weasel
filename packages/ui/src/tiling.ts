@@ -1,11 +1,11 @@
 /**
- * Tiling on the DOM: ui-logic's `tileGrid` as a CSS grid. Spread
+ * Tiling on the DOM: ui-input's `tileGrid` as a CSS grid. Spread
  * {@link tiling}'s `className` and `style` on the container and `item(i)` on
  * each item, and hand {@link tilingRoving}'s options to `useRovingTabIndex`,
- * which walks the same layout with ui-logic's `rovingGridTarget`.
+ * which walks the same layout with ui-input's `rovingGridTarget`.
  */
 import type { CSSProperties } from 'react';
-import { tileGrid, type Tiling } from '@weasel-js/ui-logic';
+import { tileGrid, type Tiling } from '@weasel-js/ui-input';
 import type { UseRovingTabIndexOptions } from './useRovingTabIndex';
 import s from './tiling.module.css';
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { arrowDir } from '@weasel-js/ui-logic';
+import { arrowDir } from '@weasel-js/ui-input';
 
 /** Where focus goes once the field has rendered an edit: a chip by index, or the text field. */
 export type TokenFocusRequest = number | 'input';

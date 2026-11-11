@@ -1,4 +1,4 @@
-import { dropBand } from '@weasel-js/ui-logic';
+import { dropBand } from '@weasel-js/ui-input';
 
 /** Where a drop lands: among `parentId`'s children (`null` is the top level), at `index` counted before the drag
  *  removes anything. */

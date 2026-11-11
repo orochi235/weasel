@@ -349,9 +349,9 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-logic) compares
+- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
   lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
-  `matchQuery` folds the two sigmas since 2026-11-10; ui-logic does not depend on registry, so the fold needs one
+  `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
   home both read rather than a second copy (2026-11-10). Closes when both fold through one definition and a
   typeahead test lands `ασ` on `ΑΣ`.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid

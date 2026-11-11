@@ -3,7 +3,7 @@ import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack }
 import { DisclosureMark } from '../Disclosure';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
-import { arrowMove } from '@weasel-js/ui-logic';
+import { arrowMove } from '@weasel-js/ui-input';
 import { LaneGraph } from './LaneGraph';
 import type { LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';

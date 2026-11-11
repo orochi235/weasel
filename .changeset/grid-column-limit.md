@@ -1,5 +1,5 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
 A tiling's `columns` is held to at most 2^24, so `tileRows`, `tileKey` and `tileGrid` work for an `Infinity` or huge column count.

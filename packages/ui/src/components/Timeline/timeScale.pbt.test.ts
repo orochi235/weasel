@@ -1,6 +1,6 @@
 /**
  * Property test of the timeline's window fractions: where the lane and ruler place a time and a duration agrees
- * with the pixel scale. The window math itself is `@weasel-js/ui-logic`'s span, tested there.
+ * with the pixel scale. The window math itself is `@weasel-js/ui-input`'s span, tested there.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';

@@ -1,5 +1,5 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
 A key pressed back from an endless end's stop lands on the step grid, or on the range's other end when it would cross the whole range.

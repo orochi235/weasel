@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type ReactElement } from 'react';
-import { tileKey, type LastRow } from '@weasel-js/ui-logic';
+import { tileKey, type LastRow } from '@weasel-js/ui-input';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { useRecordRecentColor } from '../RecentColors/RecentColorsProvider';
 import type { SwatchGridOption } from './SwatchGrid';

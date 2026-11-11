@@ -848,7 +848,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   and reports nothing. Why: an edit that would change nothing does nothing.
 
 - 2026-11-11 (my call, second property pass): a highlight index that names no item (past the end of a list that
-  shrank, negative, or not a whole number) steps, types, and keys as no highlight does in ui-logic's `stepStop` and
+  shrank, negative, or not a whole number) steps, types, and keys as no highlight does in ui-input's `stepStop` and
   `typeaheadMatch`, so Down from past the end lands on the first stop even without wrap, as `tabStep` already reads a
   target gone from the order.
 - 2026-11-11 (my call, second property pass): a slider key back into the range from an endless end's stop moves a
@@ -861,10 +861,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (2026-11-11): a record cache with `retryMs: 0`, or a negative one, tries a failed read or write again every
   tick for as long as storage fails, since doubling 0 leaves 0; nothing floors the backoff.
 - 2026-11-11 (my call, modes/registry/select/menu second property pass): `matchQuery`, a menu's access letters,
-  and ui-logic's typeahead compare text composed (NFC), so `é` and `e` followed by U+0301 read alike. A query that
+  and ui-input's typeahead compare text composed (NFC), so `é` and `e` followed by U+0301 read alike. A query that
   is a lone combining mark no longer finds one the text composed into the letter before it.
 - 2026-11-11 (my call, same pass): select's presses, ranges, and store read ids as a `Set` does, `NaN` one id and
-  `-0` the same as `0`, as ui-logic's selection values do.
+  `-0` the same as `0`, as ui-input's selection values do.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
 - Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
   stack rather than answer.
@@ -1392,7 +1392,7 @@ Calls the round made:
 
 - loupe's `pixelHex` and `sourcePixel` are gone and `CanvasSource.sample` became `pixel`, folding three samplers
   into one for the eyedropper: breaking, said in the changeset. Not yet ruled whether deprecated wrappers come back.
-- A list or menu counts a typed key by code point (`isOneChar` in ui-logic), so an emoji types and an access letter
+- A list or menu counts a typed key by code point (`isOneChar` in ui-input), so an emoji types and an access letter
   can be one.
 - `lerpHueDeg` with `longer` and two equal hues stays put, where CSS goes a full turn, because an achromatic endpoint
   takes the other side's hue and a full turn would spin a ramp to white or black. Left as is.
@@ -1490,7 +1490,7 @@ Calls the round made:
 - Trim and Extend pass over locked and hidden strokes; a locked stroke still cuts and stops, a hidden one does
   neither. Link anchor ties to no hidden or locked path.
 - Arrows in ui's widgets (`PageTabs`, `TokenField`, `ItemList`, the icon picker, `PrefsRail`, `Tree`) follow the
-  direction read from computed CSS at the key press, through ui-logic's `arrowDir`. `ResizeHandle` stays physical.
+  direction read from computed CSS at the key press, through ui-input's `arrowDir`. `ResizeHandle` stays physical.
 - A `Tree` drop with a zero, negative or NaN indent keeps the row's depth.
 - A pasted table keeps a tab per empty cell before one with text; a trailing empty cell still pastes nothing.
 - A chunks or dots tile with a size that isn't positive draws nothing.

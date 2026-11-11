@@ -1,4 +1,4 @@
-import { tabSort, tabStep } from './focus';
+import { tabSort, tabStep } from './tabOrder';
 
 describe('tabSort', () => {
   it('puts declared places first, ascending, and keeps the rest and ties in place', () => {

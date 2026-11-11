@@ -1,5 +1,5 @@
 ---
-"@weasel-js/ui-logic": patch
+"@weasel-js/ui-input": patch
 ---
 
 The arrows, Home, End and typeahead treat a highlight that names no item, such as one left past the end of a shrunken list, as no highlight.

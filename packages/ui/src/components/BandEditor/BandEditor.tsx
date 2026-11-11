@@ -14,7 +14,7 @@ import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
-import { attract } from '@weasel-js/ui-logic';
+import { attract } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { clamp01 } from '@weasel-js/geom';

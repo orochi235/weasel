@@ -1,4 +1,4 @@
-import { clamp } from '@weasel-js/geom';
+import { clamp } from './scalar';
 import { snapToStep } from '@weasel-js/quantity';
 import { rangeKey } from './keySteps';
 

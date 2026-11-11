@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import type { PrefGroup } from '@weasel-js/prefs';
-import { moveItems } from '@weasel-js/ui-logic';
+import { moveItems } from '@weasel-js/ui-input';
 import { key, prefGroup, runs, segment as seg, tally, timeoutFor } from '../../pbt.fixture';
 import { childKeysAt, movedOrder } from './barOrder';
 

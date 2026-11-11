@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { ToggleBar } from './ToggleBar';
-import type { LastRow } from '@weasel-js/ui-logic';
+import type { LastRow } from '@weasel-js/ui-input';
 
 const cells = (n: number) => Array.from({ length: n }, (_, i) => ({ value: String(i), label: String(i) }));
 

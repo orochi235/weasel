@@ -5,8 +5,8 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { textCommandFromRuns } from '@weasel-js/core';
 import { roundRectPath } from '@weasel-js/geom';
 import {
-  envPx, exactly, IDLE_PRESS, isPressKey, measureButton, pressStep,
-  type ButtonFace, type ButtonLayout, type ButtonSize, type HeadlessComponent, type PressInput, type PressState,
+  envPx, exactly, IDLE_PRESS, isPressKey, measureButton, pressStep, type ButtonFace, type ButtonLayout,
+  type ButtonSize, type HeadlessComponent, type PressInput, type PressState,
 } from '@weasel-js/ui-logic';
 import { hudMeasureEnv } from '../measureEnv';
 

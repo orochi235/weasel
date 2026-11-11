@@ -1,4 +1,4 @@
-import { firstStop, rovingKey, type ListShape } from '@weasel-js/ui-logic';
+import { firstStop, rovingKey, type ListShape } from '@weasel-js/ui-input';
 import { entriesAt, isRow, type MenuEntry } from './entries';
 import type { MenuDirection } from './placement';
 

@@ -3,7 +3,7 @@ import {
   menuNumberDisplay, type MenuController, type MenuNumberEntry, type MenuTextEntry,
 } from '@weasel-js/menu';
 import { unitSymbol } from '@weasel-js/quantity';
-import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-logic';
+import { editEnd, imeKey, type EditEnd } from '@weasel-js/ui-input';
 import { Input } from '../Input';
 import { UnitField } from '../NumberField/UnitField';
 import s from './ContextMenu.module.css';
