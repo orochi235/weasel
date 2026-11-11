@@ -11,7 +11,7 @@ import { isBoldWeight, MIXED, runsToPlainText, type RangeStyle, type RunStylePat
 import { domToRuns } from './domRuns';
 import { readSelectionOffsets } from './overlaySelection';
 import {
-  codePointStops, fromUnits, patched, runs, runsArb, tally, textOf, timeoutFor, toUnits, TYPED,
+  codePointStops, fromUnits, patched, runs, runsArb, sameStyle, tally, textOf, timeoutFor, toUnits, TYPED,
   type Unit,
 } from './pbt.fixture';
 import {
@@ -90,7 +90,10 @@ function applyPatch(m: Model, patch: RunStylePatch): void {
   if (Object.keys(patch).length === 0) return;
   const { start, end } = m.sel;
   if (start === end) {
-    m.armed = patched(m.armed ?? caretStyle(m.units, start), patch);
+    const caret = caretStyle(m.units, start);
+    const armed = patched(m.armed ?? caret, patch);
+    // Arming the styling the caret already has arms nothing.
+    m.armed = sameStyle(armed, caret) ? null : armed;
     return;
   }
   m.units = m.units.map((u, i) => (i >= start && i < end ? { ch: u.ch, style: patched(u.style, patch) } : u));
