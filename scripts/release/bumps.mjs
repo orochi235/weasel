@@ -1,6 +1,7 @@
 // What a changeset asks for, read by changesets' own parser, so a file it versions from is read
 // here the same way: frontmatter after a blank line or a BOM, and any YAML spelling of a level.
 import { parseChangesetFile } from '@changesets/parse';
+import inc from 'semver/functions/inc.js';
 
 /** The names `@changesets/read` passes over; only README matches without regard to case. */
 const NOT_CHANGESETS = [/^README\.md$/i, 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
@@ -18,12 +19,15 @@ export function isChangesetFile(name) {
 export const LEVELS = ['patch', 'minor', 'major'];
 
 /**
- * A changeset's text with every package it releases released at `level`, the one the release
- * was cut at; a package it marks `none` stays `none`. Throws on a file changesets cannot read.
+ * `plan` with every package it releases moved to the next `level` version, whatever its changesets
+ * ask for: the release level is chosen when versioning. The changesets themselves are left as
+ * written, so each changelog entry is still listed under its own change's level. A package the
+ * plan does not release stays out.
  */
-export function atLevel(text, level) {
+export function releasedAt(plan, level) {
   if (!LEVELS.includes(level)) throw new Error(`unknown release level ${JSON.stringify(level)}`);
-  const { releases, summary } = parseChangesetFile(text);
-  const lines = releases.map(({ name, type }) => `${JSON.stringify(name)}: ${type === 'none' ? 'none' : level}`);
-  return `---\n${lines.join('\n')}\n---\n\n${summary}\n`;
+  return {
+    ...plan,
+    releases: plan.releases.map((r) => (r.type === 'none' ? r : { ...r, type: level, newVersion: inc(r.oldVersion, level) })),
+  };
 }

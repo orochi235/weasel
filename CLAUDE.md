@@ -110,8 +110,9 @@ it down — most such lessons cite paths that have since moved.
 keep a release small (2026-11-11).
 
 What a release ships as is chosen when versioning, not by the changesets:
-`npm run version-packages -- --bump <patch|minor|major>` rewrites every pending
-changeset to that level first, and is `patch` without the flag. Every package is
+`npm run version-packages -- --bump <patch|minor|major>` sets every package's
+next version at that level, and is `patch` without the flag; each changelog
+entry stays under its own changeset's level. Every package is
 in one changesets `fixed` group, so one level moves every package; weasel reached
 1.0.0 by accident on 2026-08-12, from two `major` changesets an unrelated release
 consumed. So **`--bump minor` and `--bump major` are Mike's calls**, made in the

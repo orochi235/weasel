@@ -1,34 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { parseChangesetFile } from '@changesets/parse';
-import { atLevel, isChangesetFile } from './bumps.mjs';
+import { releasedAt, isChangesetFile } from './bumps.mjs';
 
-const released = (text: string) => parseChangesetFile(text).releases;
+describe('releasedAt', () => {
+  const plan = {
+    changesets: [{ id: 'a', summary: 'x', releases: [{ name: 'core', type: 'major' as const }, { name: 'geom', type: 'patch' as const }] }],
+    releases: [
+      { name: 'core', type: 'major' as const, oldVersion: '1.18.2', newVersion: '2.0.0', changesets: ['a'] },
+      { name: 'geom', type: 'major' as const, oldVersion: '1.18.2', newVersion: '2.0.0', changesets: ['a'] },
+      { name: 'skip', type: 'none' as const, oldVersion: '1.18.2', newVersion: '1.18.2', changesets: [] },
+    ],
+    preState: undefined,
+  };
 
-describe('atLevel', () => {
-  it('releases every package at the level the release was cut at, up or down', () => {
-    const text = '---\n"@weasel-js/core": major\n"@weasel-js/geom": patch\n---\n\nA title.\n\n<!-- entry: new api -->\n';
-    expect(released(atLevel(text, 'minor'))).toEqual([
-      { name: '@weasel-js/core', type: 'minor' },
-      { name: '@weasel-js/geom', type: 'minor' },
+  it('moves every released package to the next version at the level the release is cut at', () => {
+    expect(releasedAt(plan, 'minor').releases.map((r) => [r.name, r.type, r.newVersion])).toEqual([
+      ['core', 'minor', '1.19.0'],
+      ['geom', 'minor', '1.19.0'],
+      ['skip', 'none', '1.18.2'],
     ]);
-    expect(parseChangesetFile(atLevel(text, 'minor')).summary).toBe('A title.\n\n<!-- entry: new api -->');
+    expect(releasedAt(plan, 'patch').releases[0].newVersion).toBe('1.18.3');
   });
 
-  it('leaves a package marked none out of the release', () => {
-    expect(released(atLevel('---\n"a": none\n"b": patch\n---\n\nx\n', 'minor'))).toEqual([
-      { name: 'a', type: 'none' },
-      { name: 'b', type: 'minor' },
-    ]);
-  });
-
-  it('reads a level however YAML spells it, after a blank line or a byte-order mark', () => {
-    expect(released(atLevel(`---\n'@weasel-js/core': "minor" # why\n---\n\nx\n`, 'patch'))).toEqual([{ name: '@weasel-js/core', type: 'patch' }]);
-    expect(released(atLevel('\n---\n{ "a": major }\n---\n\nx\n', 'patch'))).toEqual([{ name: 'a', type: 'patch' }]);
-    expect(released(atLevel('\ufeff---\n"a": minor\n---\n\nx\n', 'patch'))).toEqual([{ name: 'a', type: 'patch' }]);
+  it('leaves each changeset at its own level, which its changelog entry is listed under', () => {
+    expect(releasedAt(plan, 'patch').changesets).toBe(plan.changesets);
   });
 
   it('refuses a level it does not know', () => {
-    expect(() => atLevel('---\n"a": patch\n---\n\nx\n', 'Minor')).toThrow(/unknown release level/);
+    expect(() => releasedAt(plan, 'Minor')).toThrow(/unknown release level/);
   });
 });
 

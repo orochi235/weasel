@@ -17,8 +17,8 @@ them all to the same number whether or not they changed.
 3. **Version on `main`.** `npm run version-packages -- --bump <level>` bumps
    every manifest to the next `patch`, `minor` or `major` version (`patch`
    without the flag), consumes the changesets and rewrites the `CHANGELOG.md`s.
-   It rewrites every pending changeset to that level first, so a `CHANGELOG.md`
-   lists the whole release under it. It refuses while
+   Each entry stays under its own changeset's level in the `CHANGELOG.md`s;
+   only the version number follows `--bump`. It refuses while
    no pending changeset is picked (`-- --no-picks` overrides). Read the
    changelog diff, commit it as `chore: version packages`, and push.
 4. **Dispatch the release.** `gh workflow run release.yml -R orochi235/weasel`.
