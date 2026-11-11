@@ -1,9 +1,9 @@
 /** Counterexamples the chart property tests shrank to, kept as plain examples: each compiles to finite geometry. */
 import { describe, expect, it } from 'vitest';
-import { CHART_OVERSHOOT } from './chartTitle';
 import { compileQuadrant } from './quadrant/compile';
 import { compileRadar } from './radar/compile';
 import { compileXyChart } from './xychart/compile';
+import type { XyChartData } from './xychart/types';
 import { compilePlot, type PlotData } from './plotData';
 import { measure, nonFinite } from './pbt.fixture';
 import { sankeyLayout } from './sankey/layout';
@@ -60,18 +60,26 @@ describe('charts, shrunk', () => {
     finite({ kind: 'gantt', dateFormat: 'x', sections: [{ tasks: [{ name: 'a', start: { kind: 'date', date: `-${'9'.repeat(400)}` }, end: { kind: 'date', date: '0' } }] }] });
   });
 
-  it('draws a value far past a fixed axis end just past the plot\'s edge', () => {
-    const data: PlotData = { kind: 'xychart', y: { min: 0 }, series: [{ kind: 'line', values: [-7.240050144249653e36] }] };
+  it('cuts data far past a fixed axis end to the plot area', () => {
+    const data: XyChartData = { kind: 'xychart', y: { min: 0 }, series: [{ kind: 'line', values: [-7.240050144249653e36, 1] }, { kind: 'bar', values: [5, -3] }] };
     finite(data);
     const { marks, layout } = compileXyChart(data, { width: 600, height: 400 }, PLOT_THEME, measure);
-    const point = marks.find((m) => m.key === 'point:0:0')!;
-    expect(point.pose.y + point.pose.height / 2).toBe(layout.plot.y + layout.plot.height + CHART_OVERSHOOT);
-    const bar = compileXyChart({ kind: 'xychart', y: { min: 0, max: 0.000001 }, series: [{ kind: 'bar', values: [1] }] }, { width: 0, height: 0 }, PLOT_THEME, measure);
-    expect(bar.marks.flatMap((m) => nonFinite(m, m.key))).toEqual([]);
+    const bottom = layout.plot.y + layout.plot.height;
+    expect(marks.find((m) => m.key === 'point:0:0')).toBeUndefined();
+    expect(marks.find((m) => m.key === 'point:0:1')).toBeDefined();
+    const line = marks.find((m) => m.key === 'line:0')!;
+    expect(line.pose.y + line.pose.height).toBeCloseTo(bottom, 6);
+    const bar = marks.find((m) => m.key === 'bar:1:1')!;
+    expect(bar.pose.height).toBe(0);
+    expect(bar.pose.y).toBe(bottom);
     const radar = compileRadar({ kind: 'radar', max: 1, axes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }], curves: [{ id: 'k', values: [1e300, 1, 1] }] }, { width: 600, height: 400 }, PLOT_THEME, measure);
-    const far = radar.marks.find((m) => m.key === 'point:0:0')!;
+    expect(radar.marks.find((m) => m.key === 'point:0:0')).toBeUndefined();
     const { center, radius } = radar.layout.scale;
-    const r = Math.hypot(far.pose.x + far.pose.width / 2 - center.x, far.pose.y + far.pose.height / 2 - center.y);
-    expect(r).toBeCloseTo(radius[1] + CHART_OVERSHOOT, 6);
+    for (const m of radar.marks.filter((mk) => mk.key.startsWith('curve:0'))) {
+      for (const [x, y] of [[m.pose.x, m.pose.y], [m.pose.x + m.pose.width, m.pose.y + m.pose.height]] as const) {
+        expect(Math.abs(x - center.x)).toBeLessThanOrEqual(radius[1] * 1.001);
+        expect(Math.abs(y - center.y)).toBeLessThanOrEqual(radius[1] * 1.001);
+      }
+    }
   });
 });

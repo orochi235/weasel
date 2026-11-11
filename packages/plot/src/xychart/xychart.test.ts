@@ -5,7 +5,6 @@ import { setXyValue, xyValueAt } from './edit';
 import { handlesOf } from '../editing/editors';
 import { xyEditor } from './editor';
 import type { XyChartData } from './types';
-import { CHART_OVERSHOOT } from '../chartTitle';
 
 const measure = (text: string) => ({ width: text.length * 7, height: 14 });
 const SIZE = { width: 600, height: 400 };
@@ -123,8 +122,8 @@ describe('xychart edits', () => {
       const { layout, get } = byKey(data);
       const bar = get('bar:0:0')!;
       const handle = handlesOf(xyEditor.handle(data, { trait: bar.data.plotMark, pose: bar.pose }))[0]!;
-      // 20 lies below the first chart's fixed 30, so its bar stops just past the plot's edge.
-      const [lo, hi] = [Math.min(...layout.value.range) - CHART_OVERSHOOT, Math.max(...layout.value.range) + CHART_OVERSHOOT];
+      // 20 lies below the first chart's fixed 30, so its bar is cut at the plot's edge and its handle sits there.
+      const [lo, hi] = [Math.min(...layout.value.range), Math.max(...layout.value.range)];
       const end = Math.min(hi, Math.max(lo, layout.value.map(20)));
       expect(data.orientation === 'horizontal' ? handle.at.x : handle.at.y).toBeCloseTo(end);
     }

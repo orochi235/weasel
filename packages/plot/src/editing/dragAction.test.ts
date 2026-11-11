@@ -62,6 +62,25 @@ describe('plot.dragValue', () => {
     expect(plotRootOf(scene.get('p' as NodeId))!.data).toBe(DATA);
   });
 
+  it('grabs a bar cut at the plot\'s edge by its handle there, and drags it back inside', () => {
+    const scene = createScene<PlotSceneData, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const cut: XyChartData = { ...DATA, series: [{ kind: 'bar', values: [4, 1e9] }] };
+    for (const spec of plotSpecs(cut, { id: 'p', box: { x: 20, y: 30, width: 400, height: 300 }, measure })) scene.add(spec as PlotSpec);
+    const bar = scene.get('p/bar:0:1' as NodeId)!.pose;
+    const handle = [...plotHandles(scene as never)].find((h) => h.markId === 'p/bar:0:1')!;
+    // The bar runs up to the plot's top, 10 units tall, and its handle sits on that cut end.
+    expect(handle.at.y).toBeCloseTo(30 + bar.y);
+    const unit = bar.height / 10;
+    const ctx = (world: { x: number; y: number }) => ({
+      world, deps: { scene }, drag: { start: handle.at, affordance: { payload: handle } },
+    }) as unknown as InvocationCtx;
+    const drag = (createPlotDragAction({ measure }).invoker as { start(ctx: InvocationCtx): OngoingHandle }).start(ctx(handle.at));
+    const at = { x: handle.at.x, y: handle.at.y + 3 * unit };
+    drag.onMove!(ctx(at));
+    drag.onEnd!(ctx(at), 'commit');
+    expect((plotRootOf(scene.get('p' as NodeId))!.data as XyChartData).series[0]!.values).toEqual([4, 7]);
+  });
+
   it('is bound to a drag on the handle layer\'s kind', () => {
     const { scene } = setup();
     const { contribution } = plotEditing({ scene: scene as never });
