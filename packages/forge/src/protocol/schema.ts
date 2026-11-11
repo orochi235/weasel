@@ -13,6 +13,7 @@ import {
   type ConfigShape,
   type NodeOptions,
 } from '@weasel-js/labkit/config';
+import { setOwn } from '../ownKey';
 
 /** The section a described entry sits in, as structured-clone data. */
 export interface SectionDescription {
@@ -66,7 +67,7 @@ function describeShape(shape: ConfigShape): DescribedShape {
       ...(section === undefined ? {} : { section: { ...section } }),
       conditional: showIf !== undefined,
     };
-    out[key] = isConfigBranch(entry)
+    const described: DescribedEntry = isConfigBranch(entry)
       ? { branch: true, ...common, children: describeShape(entry.children) }
       : {
           branch: false,
@@ -76,6 +77,7 @@ function describeShape(shape: ConfigShape): DescribedShape {
           validated: entry.options.validate !== undefined,
           customControl: entry.options.render !== undefined,
         };
+    setOwn(out, key, described);
   }
   return out;
 }
@@ -98,7 +100,7 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
         annotations: entry.annotations,
         options,
       };
-      out[key] = branch;
+      setOwn(out, key, branch);
     } else {
       const node: ConfigNode = {
         kind: entry.kind,
@@ -106,7 +108,7 @@ function rebuildShape(shape: DescribedShape, at: string, answers: SchemaAnswers)
         annotations: entry.annotations,
         options: entry.validated ? { ...options, validate: (_leaf, config) => answers.errors(path, config) } : options,
       };
-      out[key] = node;
+      setOwn(out, key, node);
     }
   }
   return out;
@@ -142,7 +144,7 @@ export function answerSchema(
       const leaf = schemaNodeAtPath(group, path);
       if (!leaf || 'children' in leaf) continue;
       const found = validate(leaf, record);
-      if (found.length > 0) errors[path] = found;
+      if (found.length > 0) setOwn(errors, path, found);
     }
   };
   walk(schema.nodes, '');

@@ -51,7 +51,10 @@ export function createAnswerBook(): AnswerBook {
       const hidden = answerFor(config)?.hidden;
       return hidden?.some((h) => path === h || path.startsWith(`${h}.`)) ?? false;
     },
-    errors: (path, config) => answerFor(config)?.errors[path] ?? [],
+    errors(path, config) {
+      const errors = answerFor(config)?.errors;
+      return errors && Object.hasOwn(errors, path) ? errors[path]! : [];
+    },
     subscribe: answered.subscribe,
   };
 }

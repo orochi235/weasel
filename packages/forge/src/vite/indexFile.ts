@@ -154,7 +154,8 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
       return {
         id: storyId(title, name),
         title,
-        name: stringOf(prop(spec, 'name'), bindings) ?? stringOf(prop(spec, 'storyName'), bindings) ?? storyNameFromExport(name),
+        // An empty name falls through, as the loader's does, so the tree and the trial name a story alike.
+        name: stringOf(prop(spec, 'name'), bindings) || stringOf(prop(spec, 'storyName'), bindings) || storyNameFromExport(name),
         exportName: name,
         file,
         ...(doc === undefined ? {} : { description: doc }),
@@ -185,7 +186,7 @@ function assignedProps(program: t.Program): Map<string, t.ObjectProperty[]> {
 /** `spec` with `props` set over it, the last of them winning, as the assignments leave the story at runtime. */
 function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectProperty[] | undefined): t.ObjectExpression | null {
   if (!props) return spec;
-  return { type: 'ObjectExpression', properties: [...[...props].reverse(), ...(spec?.properties ?? [])] } as unknown as t.ObjectExpression;
+  return { type: 'ObjectExpression', properties: [...(spec?.properties ?? []), ...props] } as unknown as t.ObjectExpression;
 }
 
 /**

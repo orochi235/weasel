@@ -889,6 +889,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   falls to the default.
 - Ruled 2026-11-10 (my call, overnight sweep): `protectMask` reads a rect whose size is `Infinity` as running to
   infinity from wherever it starts, minus infinity included, as an input past the double range is read at its limit.
+- Ruled 2026-11-10 (my call, overnight sweep): forge's static indexer names a story whose `name` (or
+  `storyName`) is the empty string by the next of `storyName` and its export name, as the CSF loader
+  already did, where it had named it `''`. Why: the tree and the trial name one story alike, and the
+  loader follows Storybook's runtime, which treats an empty name as absent.
+- Ruled 2026-11-10 (my call, overnight sweep): forge's URL gives no param to a schema key that is the
+  empty string, as it gives none to a key holding a dot. Why: its dotted path reads as its parent's, so
+  one param set two leaves.
 
 ## draw
 

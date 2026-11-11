@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { formatRoute } from '../../route/url';
 import { indexId } from '../../story/indexPages';
 import type { IndexContext, IndexStoryProps, LoadedStory, StoryContext } from '../../story/types';
 import { StoryHost } from '../StoryHost';
@@ -117,7 +118,7 @@ function OpenLink({ id, className, children }: { id: string; className: string; 
     env.open(id);
   };
   return (
-    <a className={className} href={`#/${encodeURIComponent(id)}`} onClick={follow}>
+    <a className={className} href={formatRoute({ story: id, params: {} })} onClick={follow}>
       {children}
     </a>
   );

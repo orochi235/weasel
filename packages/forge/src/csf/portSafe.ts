@@ -1,4 +1,5 @@
 import { isPlainObject } from '@weasel-js/core';
+import { setOwn } from '../ownKey';
 
 const g = globalThis as Record<string, unknown>;
 const CLONED_WHOLE = new Set<unknown>(
@@ -74,11 +75,14 @@ export function portSafePart(value: unknown): { value: unknown } | null {
     if (!splittable(v) || walking.has(v)) return null;
     walking.add(v);
     try {
-      if (Array.isArray(v)) return { value: v.map((member) => part(member)?.value ?? null) };
+      if (Array.isArray(v)) {
+        // Not `?.value ?? null`: an `undefined` member crosses as itself, and only one with no part becomes null.
+        return { value: v.map((member) => { const kept = part(member); return kept ? kept.value : null; }) };
+      }
       const out: Record<string, unknown> = {};
       for (const [key, member] of Object.entries(v)) {
         const kept = part(member);
-        if (kept) out[key] = kept.value;
+        if (kept) setOwn(out, key, kept.value);
       }
       return { value: out };
     } finally {
@@ -101,9 +105,10 @@ export function withUnsent(sent: unknown, original: unknown): unknown {
   if (!splittable(original) || Array.isArray(original) || !isPlainObject(sent)) return sent;
   const out: Record<string, unknown> = {};
   for (const [key, member] of Object.entries(original)) {
-    if (key in sent) out[key] = withUnsent(sent[key], member);
-    else if (portSafePart(member) === null) out[key] = member;
+    // A key whose member has no part was never sent, so the sent value under it is an edit, null included.
+    if (Object.hasOwn(sent, key)) setOwn(out, key, portSafePart(member) === null ? sent[key] : withUnsent(sent[key], member));
+    else if (portSafePart(member) === null) setOwn(out, key, member);
   }
-  for (const [key, member] of Object.entries(sent)) if (!(key in original)) out[key] = member;
+  for (const [key, member] of Object.entries(sent)) if (!Object.hasOwn(original, key)) setOwn(out, key, member);
   return out;
 }

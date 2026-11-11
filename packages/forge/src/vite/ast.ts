@@ -142,8 +142,9 @@ export function objectOf(node: t.Node | undefined, bindings: Bindings, wrappers:
   }
 }
 
+/** The value `obj` holds at `key`: the last property naming it, as an object literal evaluates. */
 export function prop(obj: t.ObjectExpression | null, key: string): t.Node | undefined {
-  for (const p of obj?.properties ?? []) {
+  for (const p of [...(obj?.properties ?? [])].reverse()) {
     if (p.type !== 'ObjectProperty' || p.computed) continue;
     const name = p.key.type === 'Identifier' ? p.key.name : p.key.type === 'StringLiteral' ? p.key.value : null;
     if (name === key) return p.value;
