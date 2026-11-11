@@ -47,7 +47,7 @@ export const sceneSpec: fc.Arbitrary<SceneSpec> = shapeSpecs.chain((shapes) => f
     b: fc.nat(shapes.length - 2),
     from: sides,
     to: sides,
-    waypoints: fc.oneof({ weight: 3, arbitrary: fc.constant([]) }, { weight: 1, arbitrary: fc.array(gutter, { minLength: 1, maxLength: 2 }) }),
+    waypoints: fc.oneof({ weight: 3, arbitrary: fc.constant<Vec2[]>([]) }, { weight: 1, arbitrary: fc.array(gutter, { minLength: 1, maxLength: 2 }) }),
     label: fc.boolean(),
   }), { minLength: 1, maxLength: 5 }),
   region: fc.option(fc.subarray(shapes.map((_, k) => k), { minLength: 1 }), { freq: 3, nil: null }),

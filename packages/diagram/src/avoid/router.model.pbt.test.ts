@@ -28,7 +28,7 @@ function carrying(frame: AvoidInput, held: AvoidInput): AvoidInput {
 }
 
 /** What the connectors of `input` hold, as routes: an answer for each. */
-const heldRoutes = (input: AvoidInput): AvoidRoutes => new Map(input.edges.map((e) => [e.id, e.route ?? null]));
+const heldRoutes = (input: AvoidInput): AvoidRoutes => new Map(input.edges.map((e) => [e.id, e.route === undefined ? null : [...e.route]]));
 
 function commit(m: Model, r: Real, spec: SceneSpec): void {
   const frame = carrying(build(spec), m.held);

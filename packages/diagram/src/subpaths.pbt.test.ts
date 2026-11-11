@@ -7,7 +7,7 @@ import { subpathOf } from './subpaths';
 
 const RUNS = 300;
 
-type Step = ['M' | 'L' | 'Q' | 'C' | 'Z', number[]];
+type Step = ['M' | 'L' | 'Q' | 'C' | 'Z', readonly number[]];
 const step: fc.Arbitrary<Step> = fc.oneof(
   fc.tuple(fc.constant('M' as const), fc.array(gridCoord, { minLength: 2, maxLength: 2 })),
   fc.tuple(fc.constant('L' as const), fc.array(gridCoord, { minLength: 2, maxLength: 2 })),

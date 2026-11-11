@@ -36,7 +36,7 @@ const bounds = fc.record({
 });
 
 const nodeOf = (outline: string, anchors: readonly PortAnchor[]) => ({
-  id: 'n', kind: 'mark', data: { diagram: { outline, ports: anchors.map((at, i) => ({ id: `p${i}`, at })) } },
+  id: 'n', kind: 'mark' as const, data: { diagram: { outline, ports: anchors.map((at, i) => ({ id: `p${i}`, at })) } },
 });
 
 /** How far `p` is from the closed polyline `poly`. */

@@ -7,7 +7,7 @@ import fc from 'fast-check';
 import { chain } from './chain';
 import { grid } from './grid';
 import { graphOf as buildGraphOf } from './graph';
-import { layered } from './layered';
+import { layered, layeredPlan } from './layered';
 import type { LayoutDirection, LayoutFn, LayoutOptions } from './layout';
 import { at, graphOf, moved, type Box } from './layoutFixture';
 import { nonFinite, runs, tally, timeoutFor } from './pbt.fixture';
@@ -66,12 +66,12 @@ describe.each(LAYOUTS)('%s', (_name, layout, apart) => {
         for (const a of ids) for (const b of ids) if (a < b) expect(overlap(after[a]!, after[b]!), `${a} ${b} ${JSON.stringify(after)}`).toBe(false);
       }
       // A re-run reads the routes the first one laid out, as a scene holding them does.
-      const routes = layout === layered ? layered.plan(graphOf(boxes, edges, pins), opts).waypoints : new Map();
+      const routes = layout === layered ? layeredPlan(graphOf(boxes, edges, pins), opts).waypoints : new Map<string, never>();
       const bare = graphOf(after, edges, pins);
-      const next = buildGraphOf(bare.nodes, bare.edges.map((e) => {
+      const next = buildGraphOf([...bare.nodes], bare.edges.map((e) => {
         const w = routes.get(e.id);
         return w === undefined ? e : { ...e, waypoints: w };
-      }), bare.groups ?? []);
+      }), [...(bare.groups ?? [])]);
       const second = layout(next, opts);
       expect([...second].map(([id, p]) => [id, p, at(after, new Map(), id)])).toEqual([]);
     }), runs(RUNS));
