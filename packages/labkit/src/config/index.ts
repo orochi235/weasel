@@ -1,6 +1,6 @@
 export { type Auto, auto, isAuto } from './auto';
-export type { AutoReports } from './autoReports';
 export { autoPathsOf, resolveAutoConfig } from './autoConfig';
+export type { AutoReports } from './autoReports';
 export {
   ActionNode,
   AliasNode,

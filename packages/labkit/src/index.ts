@@ -185,8 +185,8 @@ export {
 export * from './chrome';
 export * from './clock';
 export { type Auto, auto, isAuto } from './config/auto';
-export type { AutoReports } from './config/autoReports';
 export { autoPathsOf, resolveAutoConfig } from './config/autoConfig';
+export type { AutoReports } from './config/autoReports';
 export {
   ActionNode,
   AliasNode,
