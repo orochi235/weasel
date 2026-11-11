@@ -13,9 +13,7 @@ export function writeParam(
   rampMs?: number,
 ): void {
   // Before the cancel: an AudioParam refuses either, and would throw with the ramp in flight gone.
-  if (!Number.isFinite(value) || (rampMs !== undefined && !Number.isFinite(rampMs))) {
-    throw new RangeError(`@weasel-js/audio: a param is set to a finite value over a finite time, not ${value} over ${rampMs} ms`);
-  }
+  checkParam(value, rampMs);
   const now = ctx.currentTime;
   param.cancelScheduledValues(now);
   if (rampMs && rampMs > 0) {
@@ -23,6 +21,14 @@ export function writeParam(
     param.linearRampToValueAtTime(value, now + rampMs / 1000);
   } else {
     param.setValueAtTime(value, now);
+  }
+}
+
+/** Throws on a value or ramp an AudioParam refuses, as {@link writeParam} does: for a write kept
+ *  until a node exists to take it, which would otherwise throw from that later start. */
+export function checkParam(value: number, rampMs?: number): void {
+  if (!Number.isFinite(value) || (rampMs !== undefined && !Number.isFinite(rampMs))) {
+    throw new RangeError(`@weasel-js/audio: a param is set to a finite value over a finite time, not ${value} over ${rampMs} ms`);
   }
 }
 

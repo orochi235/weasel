@@ -22,7 +22,8 @@ export interface ScoreState {
 export interface ScoreOptions extends ScoreBarOptions {
   mood: ScoreMood;
   /** Called as each bar's first step is booked — up to a lookahead before it
-   *  sounds — with what the bar plays and its engine time in ms. */
+   *  sounds — with what the bar plays and its engine time in ms. A bar whose
+   *  first steps a stall skipped is reported at the first step it books. */
   onBar?: (state: ScoreState, when: number) => void;
 }
 
@@ -58,7 +59,7 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
     const cue = readScoreCue(target);
     return {
       bar,
-      cueBar: before && before.cue.name === cue.name ? before.cueBar + 1 : 0,
+      cueBar: before && before.cue.name === cue.name ? before.cueBar + bar - before.bar : 0,
       mood: target,
       cue,
       params: scoreParams(target),
@@ -68,29 +69,42 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
 
   let current = stateAt(0, null);
   let next = current;
+  /** The bar last reported in this run, -1 before its first. */
+  let reported = -1;
+  const write = (state: ScoreState): void => {
+    player.setTempo(state.params.tempo);
+    player.setEvents(eventsOf(state), SCORE_BAR_STEPS);
+  };
 
   const player = createPatternPlayer(engine, {
     tempo: current.params.tempo,
     length: SCORE_BAR_STEPS,
     events: eventsOf(current),
-    onStep(step, when) {
-      if (step === 0) {
-        current = next;
+    onStep(step, when, count) {
+      // From the count, not the step: a stall can skip a bar's first or last steps, or whole bars.
+      const bar = Math.floor(count / SCORE_BAR_STEPS);
+      if (bar > reported) {
+        if (next.bar === bar) current = next;
+        else {
+          // The bar before this one never reached its last step, so this one was never written.
+          current = next = stateAt(bar, reported < 0 ? null : current);
+          write(current);
+        }
+        reported = bar;
         onBar?.(current, when);
       }
       if (step !== SCORE_BAR_STEPS - 1) return;
       next = stateAt(current.bar + 1, current);
-      player.setTempo(next.params.tempo);
-      player.setEvents(eventsOf(next), SCORE_BAR_STEPS);
+      write(next);
     },
   });
 
   return {
     start(when) {
       if (player.playing()) return;
+      reported = -1;
       current = next = stateAt(0, null);
-      player.setTempo(current.params.tempo);
-      player.setEvents(eventsOf(current), SCORE_BAR_STEPS);
+      write(current);
       player.start(when);
     },
     stop: () => player.stop(),

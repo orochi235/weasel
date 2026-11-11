@@ -1,4 +1,5 @@
 import type { Timers } from '../audioTime';
+import { checkParam } from '../param';
 import { blocked, drop, findLive, logical, reaches, touches, type Edge } from './edges';
 import { createFader } from './fader';
 import { replaceDef } from './replace';
@@ -26,6 +27,13 @@ function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrappe
   const w = live(to.node);
   if (!owns(w.ins, to.port)) throw noPort(to.node, to.port);
   return [w, to.port];
+}
+
+function viewOf(nodes: ReadonlyMap<string, NodeWrapper>, edges: readonly Edge[]): GraphView {
+  return {
+    nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(Object.keys(w.ins)), params: w.def.params }])),
+    edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
+  };
 }
 
 /** The graph's nodes and edges: every structural edit, and the bookkeeping that
@@ -82,10 +90,7 @@ export function createEdits(deps: EditsDeps) {
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
-    view: (): GraphView => ({
-      nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(Object.keys(w.ins)), params: w.def.params }])),
-      edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
-    }),
+    view: (): GraphView => viewOf(nodes, edges),
     /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
     busy: () =>
       edges.some((e) => e.state !== 'open') ||
@@ -138,6 +143,7 @@ export function createEdits(deps: EditsDeps) {
     set(id: string, param: string, value: number, rampMs?: number): void {
       const w = live(id);
       if (!owns(w.def.params, param)) throw noParam(id, param);
+      checkParam(value, rampMs);
       w.def.params[param](value, rampMs ?? fade());
     },
     /** Cut every edge, canceling its close, then release every def. */

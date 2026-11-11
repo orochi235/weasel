@@ -40,10 +40,17 @@ interface VoiceOps {
   poolGain(voice: LiveVoice): void;
 }
 
+/** A handle for a voice that never started: its setters do nothing, but refuse what a live one refuses. */
 const dropped = (id: number): VoiceHandle => ({
   id,
-  stop: () => {}, release: () => {}, setGain: () => {}, setRate: () => {}, setDetune: () => {},
-  setPan: () => {}, setPosition: () => {}, isPlaying: () => false,
+  stop: (fadeMs) => checkFinite('voice fade', fadeMs),
+  release: () => {},
+  setGain: (value, rampMs) => checkGain('voice', value, rampMs),
+  setRate: (value) => checkFinite('voice rate', value),
+  setDetune: (cents) => checkFinite('voice detune', cents),
+  setPan: (value) => checkFinite('voice pan', value),
+  setPosition: (p) => checkPoint('voice position', p),
+  isPlaying: () => false,
 });
 
 function teardownVoice(voice: LiveVoice, reason: VoiceDropReason, live: Map<number, LiveVoice>): void {

@@ -37,8 +37,9 @@ export function createWrapper(
   id: string,
   def: GraphNodeDef,
 ): NodeWrapper {
-  const ins: Record<string, GainNode> = {};
-  const inFaders: Record<string, Fader> = {};
+  // No prototype: a port named `constructor` or `__proto__` is a port like any other.
+  const ins: Record<string, GainNode> = Object.create(null);
+  const inFaders: Record<string, Fader> = Object.create(null);
   for (const port of Object.keys(def.inputs)) {
     ins[port] = ctx.createGain();
     inFaders[port] = createFader(ctx, timers, ins[port], def.inputs[port]);
