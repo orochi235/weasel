@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DropTarget } from '@weasel-js/core';
 import { nearestWithin } from './snaps';
+import { gridSlots } from './strategies/arrangements';
 
 type P = { x: number; y: number };
 const at = (x: number, y: number): DropTarget<P> => ({ pose: { x, y }, origin: { x, y } });
@@ -10,5 +11,14 @@ describe('drop-target pickers, shrunk from the property tests', () => {
     // Squared, -Infinity accepted a target anywhere, and -5 one within 5.
     expect(nearestWithin<P>({ tolerance: -Infinity }).pickTarget([at(0, 0)], { x: 0, y: 0 }, undefined as never)).toBeNull();
     expect(nearestWithin<P>({ tolerance: -5 }).pickTarget([at(1, 0)], { x: 0, y: 0 }, undefined as never)).toBeNull();
+  });
+
+  it('gridSlots gives no slot for a column count under one, and none outside its container for a fractional one', () => {
+    // One column of -1 put the slot at x = -0.0625, outside a box from 0; NaN rows put every slot at NaN.
+    const b = { x: 0, y: 0, width: 0.125, height: 0.125 };
+    expect(gridSlots({ cols: -1 })(b, 1)).toEqual([]);
+    expect(gridSlots({ cols: 0 })(b, 2)).toEqual([]);
+    expect(gridSlots({ cols: 2.5 })(b, 3)).toEqual(gridSlots({ cols: 2 })(b, 3));
+    expect(gridSlots({ cols: 2, rows: NaN })(b, 1)).toEqual(gridSlots({ cols: 2 })(b, 1));
   });
 });

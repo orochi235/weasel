@@ -217,6 +217,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   undo put back the wrong guides. It reverses the 2026-09-28 rule that `getGuides` answers the committed list over
   one a suspended transition rendered: a write in such a transition is now in the list, as `useSelection`'s store
   holds a selection set in one.
+- 2026-11-11 (my call, guides second property pass): `gridSlots` rounds `cols` and `rows` down, and a grid of
+  under one column, or of columns that are not finite, has no slots, so `slots` refuses every child; rows under one, or
+  not finite, are the default 1. A negative column count placed slots outside the container, and zero or `NaN`
+  placed them at `NaN`.
 
 ## Scene, move, and history
 
