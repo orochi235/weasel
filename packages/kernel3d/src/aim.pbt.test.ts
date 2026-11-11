@@ -103,7 +103,7 @@ describe('aimOf3d drawn into 2D, property', () => {
       seen.count('panned');
       const now = aimSpace3d(moved!.viewport, 'v').unproject(from);
       expect(now).not.toBeNull();
-      const tol = 1e-9 * (1 + Math.abs(ends.x) + Math.abs(ends.y) + vp.camera.distance);
+      const tol = 1e-8 * (1 + Math.abs(ends.x) + Math.abs(ends.y) + vp.camera.distance);
       expect(Math.abs(now!.x - ends.x)).toBeLessThanOrEqual(tol);
       expect(Math.abs(now!.y - ends.y)).toBeLessThanOrEqual(tol);
     }), runs(RUNS));

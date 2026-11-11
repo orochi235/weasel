@@ -62,7 +62,9 @@ describe('degenerate cameras and panes, property', () => {
       const ray = rayAt(vp, s);
       if (ray === null) return;
       expect(isFinite3(ray.origin) && isFinite3(ray.direction)).toBe(true);
-      expect(len(ray.direction)).toBeGreaterThan(0);
+      // A direction too short to square, as a pane a subnormal height gives far off it, is still one.
+      const unit = normalize(ray.direction);
+      expect(unit.x !== 0 || unit.y !== 0 || unit.z !== 0).toBe(true);
     }), runs(RUNS));
   }, T);
 
