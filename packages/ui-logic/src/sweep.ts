@@ -29,10 +29,18 @@ export function stepsOf<V>(sweep: Sweep<V>, cap = SWEEP_CAP): { steps: V[]; capp
 
 const clamp01 = (u: number): number => (u <= 0 ? 0 : u >= 1 ? 1 : u);
 
-/** Sums of a float step drift (0.1 * 3 is 0.30000000000000004); twelve digits keeps the step and drops the drift. */
-const tidy = (n: number): number => +n.toPrecision(12);
+/** `n` to twelve digits, as a label shows it. */
+const shown = (n: number): number => +n.toPrecision(12);
 
-const plain = (n: number): string => String(tidy(n));
+/** Sums of a float step drift (0.1 * 3 is 0.30000000000000004): `n` to twelve digits where that is within such
+ *  drift of it, measured against `scale`, the largest operand `n` was summed from; otherwise `n`, whose digits
+ *  past the twelfth are its own. */
+const tidy = (n: number, scale = 0): number => {
+  const t = shown(n);
+  return Math.abs(t - n) <= 2 * Number.EPSILON * Math.max(Math.abs(n), Math.abs(scale)) ? t : n;
+};
+
+const plain = (n: number): string => String(shown(n));
 
 /** What {@link range} walks: its ends, and either a `step` or a `count`. */
 export type RangeSpec = {
@@ -56,13 +64,14 @@ export function range(spec: RangeSpec): Sweep<number> {
     if (!(step > 0)) throw new RangeError(`a range's step is above 0, not ${step}`);
     const last = Number.isFinite(span) ? Math.floor(tidy(Math.abs(span) / step)) : Infinity;
     const dir = span < 0 ? -1 : 1;
+    const nth = (i: number): number => (i === 0 ? from : tidy(from + dir * step * i, Math.max(Math.abs(from), step * i)));
     return {
       at: (u) => {
         if (!Number.isFinite(last)) throw new RangeError('an endless range has no point a fraction of the way along');
-        return tidy(from + dir * step * Math.round(clamp01(u) * last));
+        return nth(Math.round(clamp01(u) * last));
       },
       *walk() {
-        for (let i = 0; i <= last; i++) yield tidy(from + dir * step * i);
+        for (let i = 0; i <= last; i++) yield nth(i);
       },
       label: spec.label ?? plain,
     };
@@ -70,11 +79,14 @@ export function range(spec: RangeSpec): Sweep<number> {
   const count = spec.count;
   if (!(Number.isInteger(count) && count > 0)) throw new RangeError(`a range's count is a whole number above 0, not ${count}`);
   if (!Number.isFinite(span)) throw new RangeError('a range given a count needs a finite end');
+  const scale = Math.max(Math.abs(from), Math.abs(to));
+  const [lo, hi] = from <= to ? [from, to] : [to, from];
+  const along = (u: number): number => (u <= 0 ? from : u >= 1 ? to : Math.min(hi, Math.max(lo, tidy(from + span * u, scale))));
   return {
-    at: (u) => tidy(from + span * clamp01(u)),
+    at: (u) => along(clamp01(u)),
     *walk() {
       if (count === 1) yield from;
-      else for (let i = 0; i < count; i++) yield tidy(from + (span * i) / (count - 1));
+      else for (let i = 0; i < count; i++) yield i === 0 ? from : i === count - 1 ? to : tidy(from + (span * i) / (count - 1), scale);
     },
     label: spec.label ?? plain,
   };
@@ -110,7 +122,7 @@ export interface FrameOptions {
   label?: (elapsed: number) => string;
 }
 
-const ms = (t: number): string => `${tidy(t)} ms`;
+const ms = (t: number): string => `${shown(t)} ms`;
 
 /**
  * The frames of a clock's run, as elapsed ms, `every` apart from 0. A run that
@@ -144,7 +156,7 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
         yield t;
         if (t === end) return;
       }
-      if (ends && tidy(end % every) !== 0) yield end;
+      if (ends && tidy(end % every, every) !== 0) yield end;
     },
     label,
   };
