@@ -5,6 +5,7 @@ import {
 } from 'core/geometry/poseDescriptor';
 import { createTransformOp } from 'core/ops/transform';
 import { sameValue } from 'core/scene/sameValue';
+import { finiteThroughout } from './finiteFrame';
 import type { Op } from 'core/ops/types';
 import type { NodeId, Scene } from 'core/scene/types';
 import { geometryDataOp, type GeometryProjection } from './geometryProjection';
@@ -78,7 +79,8 @@ export function moveNodesOps(
 /**
  * The ops that move each entry of `moves` by its own delta, each as
  * {@link moveNodesOps} moves it. A node two entries reach takes the first
- * one's delta, and every pose is read before any op is applied.
+ * one's delta, and every pose is read before any op is applied. None when
+ * a pose would leave the double range.
  */
 export function moveEachOps(
   scene: AnyScene,
@@ -113,7 +115,8 @@ export function moveEachOps(
       label,
     ));
   }
-  return ops;
+  // A move carrying any pose past the double range cannot land, so none of it does.
+  return ops.every((op) => op.name !== 'transform' || finiteThroughout((op.args as { to: unknown }).to)) ? ops : [];
 }
 
 /**
