@@ -32,7 +32,7 @@ import {
   type PrefSection,
   type PrefSectionAs,
 } from '@weasel-js/prefs';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, setOwn } from '@weasel-js/registry';
 import { declaredField, nodeRoot } from './declaredFields';
 
 // Re-exported under its existing public name here: the kit-wide "these
@@ -251,8 +251,8 @@ export function nodeValueAt(node: AnyNode, path: string): unknown {
   if (segments.length < 2 && !declaredField(head)) return undefined;
   let cursor: unknown = nodeRoot(node, head);
   for (let i = 1; i < segments.length; i++) {
-    if (cursor == null || typeof cursor !== 'object') return undefined;
-    cursor = (cursor as Record<string, unknown>)[segments[i]];
+    if (cursor == null || typeof cursor !== 'object' || !Object.hasOwn(cursor, segments[i]!)) return undefined;
+    cursor = (cursor as Record<string, unknown>)[segments[i]!];
   }
   return cursor;
 }
@@ -263,23 +263,27 @@ export function nodeValueAt(node: AnyNode, path: string): unknown {
  *  — this is the write-side twin of `nodeValueAt`, so a schema author who
  *  gets a working read gets a working write. */
 export function setAtPath(root: object, segments: readonly string[], value: unknown): object {
-  const [head, ...rest] = segments;
+  const [head, ...rest] = segments as [string, ...string[]];
+  const copy = (Array.isArray(root) ? [...root] : { ...root }) as Record<string, unknown>;
   if (rest.length === 0) {
-    return Array.isArray(root)
-      ? Object.assign([...root], { [head]: value })
-      : { ...root, [head]: value };
+    put(copy, head, value);
+    return copy;
   }
-  const child = (root as Record<string, unknown>)[head];
+  const child = Object.hasOwn(root, head) ? (root as Record<string, unknown>)[head] : undefined;
   const childObj = Array.isArray(child)
     ? [...child]
     : child != null && typeof child === 'object'
       ? { ...child }
       : {};
-  const nested = setAtPath(childObj, rest, value);
-  return Array.isArray(root)
-    ? Object.assign([...root], { [head]: nested })
-    : { ...root, [head]: nested };
+  put(copy, head, setAtPath(childObj, rest, value));
+  return copy;
 }
+
+/** An own key, even one named like a prototype member; an array's `length` is already one, and is assigned. */
+const put = (copy: Record<string, unknown>, key: string, value: unknown): void => {
+  if (Array.isArray(copy) && key === 'length') copy[key] = value;
+  else setOwn(copy, key, value);
+};
 
 /** What a node holding `held` at a leaf's path shows there ({@link prefLeafValue}). Holding nothing reads as the
  *  leaf's default only where it says absence means that, else as `undefined`, which a panel draws as unset. */
