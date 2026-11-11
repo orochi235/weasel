@@ -1,4 +1,5 @@
 import type { Timers } from '../audioTime';
+import { checkParam } from '../param';
 import { blocked, drop, findLive, logical, reaches, touches, type Edge } from './edges';
 import { createFader } from './fader';
 import { replaceDef } from './replace';
@@ -138,6 +139,7 @@ export function createEdits(deps: EditsDeps) {
     set(id: string, param: string, value: number, rampMs?: number): void {
       const w = live(id);
       if (!owns(w.def.params, param)) throw noParam(id, param);
+      checkParam(value, rampMs);
       w.def.params[param](value, rampMs ?? fade());
     },
     /** Cut every edge, canceling its close, then release every def. */
