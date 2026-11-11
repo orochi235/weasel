@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, isPrefSection } from '@weasel-js/prefs';
 import { branchUnder, childrenOf, joinPath, nodeAt, parentPath, type ChildMap, type SchemaNode, type SchemaRoot } from './schemaTree';
 
@@ -78,7 +79,7 @@ export function keysTakenAt(root: SchemaRoot, parent: string | null, leaf: boole
   if (!leaf && !panelNames) return kids;
   const out: ChildMap = { ...kids };
   eachScoped(nodeAt(root, top) ?? root, top, (key, held) => {
-    if (isPrefLeaf(held) || (leaf && panelNames)) out[key] = held;
+    if (isPrefLeaf(held) || (leaf && panelNames)) setOwn(out, key, held);
   });
   return out;
 }

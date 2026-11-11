@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, isPrefSection, prefHoldsValue, type PrefAlias } from '@weasel-js/prefs';
 import { keysTakenAt, uniqueKey } from './schemaKeys';
 import {
@@ -56,7 +57,7 @@ export function aliasNodes<R extends SchemaRoot>(root: R, paths: readonly string
     const taken: ChildMap = { ...keysTakenAt(root, dest, true) };
     const entries: Array<[string, SchemaNode]> = made.map((m) => {
       const key = uniqueKey(taken, aliasKey(root, m.key));
-      taken[key] = m.alias;
+      setOwn(taken, key, m.alias);
       out.push(joinPath(dest, key));
       return [key, m.alias];
     });
@@ -91,7 +92,7 @@ export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[
     const leafKeys: ChildMap = { ...keysTakenAt(root, dest, true) };
     const leafKey = (key: string, node: SchemaNode): string => {
       const free = uniqueKey(leafKeys, key);
-      leafKeys[free] = node;
+      setOwn(leafKeys, free, node);
       return free;
     };
     /** The copy of the node at `path`, and the key it takes; a section inside a copied one keeps its own. */

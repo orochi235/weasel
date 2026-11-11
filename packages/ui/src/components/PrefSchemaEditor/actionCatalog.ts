@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, type PrefAction, type PrefGroup } from '@weasel-js/prefs';
 import { minOf } from '@weasel-js/geom';
 import { actionLeaf, actionLeafKey, type EditorAction } from './editorActions';
@@ -104,7 +105,7 @@ export function dissolve(catalog: PrefGroup, paths: readonly string[], live: Rea
       const taken: ChildMap = { ...rest };
       const lifted = Object.entries(held).map(([key, child]): [string, SchemaNode] => {
         const unique = uniqueKey(taken, key);
-        taken[unique] = child;
+        setOwn(taken, unique, child);
         return [unique, child];
       });
       return insertAt(rest, lifted, index);

@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { isPrefLeaf, type PrefAlias } from '@weasel-js/prefs';
 import { checkKey, keysTakenAt, takesDottedKey, uniqueKey } from './schemaKeys';
 import {
@@ -148,8 +149,8 @@ export function shiftNodes<R extends SchemaRoot>(
     const leafKeys: ChildMap = { ...keysTakenAt(lifted, dest, true) };
     const entries: Array<[string, SchemaNode]> = moving.map((m) => {
       const key = uniqueKey(isPrefLeaf(m.node) ? leafKeys : taken, m.key);
-      taken[key] = m.node;
-      leafKeys[key] = m.node;
+      setOwn(taken, key, m.node);
+      setOwn(leafKeys, key, m.node);
       out.push(joinPath(dest, key));
       return [key, m.node];
     });

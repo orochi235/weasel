@@ -1,5 +1,5 @@
 import { isPrefLeaf, prefSectionLeaves, type PrefLeaf, type PrefObject } from '@weasel-js/prefs';
-import { deepEqual } from '@weasel-js/registry';
+import { deepEqual, setOwn } from '@weasel-js/registry';
 import { autoRowsOf, withAutoRow, type AutoRow } from './autoRows';
 import { attributeSchema, type AttributeSchema, type CustomKinds, type KindAttrs } from './kindSchemas';
 import type { RegisteredAction } from './registeredActionAttrs';
@@ -23,11 +23,11 @@ function splitObject(
   for (const [key, field] of prefSectionLeaves(def.children)) {
     const held = each.map((value) => fieldsOf(value)[key]);
     if (held.every((value) => deepEqual(value, held[0]))) {
-      if (held[0] !== undefined) agreed[key] = held[0];
+      if (held[0] !== undefined) setOwn(agreed, key, held[0]);
     } else if (field.kind === 'object') {
       const inner = splitObject(field as PrefObject, held, `${at}.${key}`, drawsMixed);
       if (inner === null) return null;
-      agreed[key] = inner.agreed;
+      setOwn(agreed, key, inner.agreed);
       mixed.push(...inner.mixed);
     } else if (drawsMixed(field.kind)) {
       mixed.push(`${at}.${key}`);
@@ -106,10 +106,10 @@ export function aggregateAttributes(
     for (const [key, def] of Object.entries(first![part])) {
       if (!rest.every((s) => deepEqual(s[part][key], def))) continue;
       if (held.every((h) => deepEqual(h[key], held[0]![key]))) {
-        out[key] = def;
-        if (held[0]![key] !== undefined) values[key] = held[0]![key];
+        setOwn(out, key, def);
+        if (held[0]![key] !== undefined) setOwn(values, key, held[0]![key]);
       } else if (drawsMixed(def.kind)) {
-        out[key] = def;
+        setOwn(out, key, def);
         mixed.add(key);
       } else {
         const split = def.kind === 'object' ? splitObject(def as PrefLeaf as PrefObject, held.map((h) => h[key]), key, drawsMixed) : null;
@@ -117,8 +117,8 @@ export function aggregateAttributes(
           apart.push(key);
           continue;
         }
-        out[key] = def;
-        values[key] = split.agreed;
+        setOwn(out, key, def);
+        setOwn(values, key, split.agreed);
         for (const at of split.mixed) mixed.add(at);
       }
     }
