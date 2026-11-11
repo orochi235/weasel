@@ -10,7 +10,7 @@ import { unquote } from '../xychart/parse';
 /** The page a pie is read onto. */
 export const PIE_PAGE = { width: 640, height: 400 } as const;
 
-const HEADER = /^pie(\s+showData)?(?:\s+title(?:\s+(.*))?)?$/;
+const HEADER = /^pie(\s+showData)?(?:\s+title(?:\s+(.*))?)?$/s;
 const SLICE = /^("[^"]*"|'[^']*')\s*:\s*(\S+)$/;
 
 /** Reads a Mermaid `pie`. Throws, naming the line, on text that is not one or a value that is not a non-negative number. */
@@ -23,7 +23,7 @@ export function readMermaidPie(text: string): ImportResult {
   const slices: PieSlice[] = [];
   const labels = new Set<string>();
   for (const s of src.body) {
-    const t = /^title(?:\s+(.*))?$/.exec(s.text);
+    const t = /^title(?:\s+(.*))?$/s.exec(s.text);
     if (t !== null) {
       title = t[1]?.trim() || undefined;
       continue;

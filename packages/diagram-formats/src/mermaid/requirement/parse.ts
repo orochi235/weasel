@@ -45,7 +45,7 @@ export function parseRequirementDiagram(text: string): RequirementDiagram {
     if (block !== null) {
       const fields: [string, string][] = [];
       for (i++; i < body.length && body[i]!.text !== '}'; i++) {
-        const f = /^(\w+)\s*:\s*(.*)$/.exec(body[i]!.text);
+        const f = /^(\w+)\s*:\s*(.*)$/s.exec(body[i]!.text);
         if (f === null) throw lineError('Mermaid', body[i]!.line, `cannot read "${body[i]!.text}" as a field: a name, a colon, and a value`);
         fields.push([f[1]!, unquote(f[2]!.trim())]);
       }

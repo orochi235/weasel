@@ -27,7 +27,7 @@ export function readMermaidJourney(text: string): ImportResult {
   let title: string | undefined;
   const sections: { name?: string; tasks: JourneyTask[] }[] = [];
   for (const s of src.body) {
-    const keyword = /^(title|section)(?:\s+(.*))?$/.exec(s.text);
+    const keyword = /^(title|section)(?:\s+(.*))?$/s.exec(s.text);
     if (keyword?.[1] === 'title') title = keyword[2]?.trim() || undefined;
     else if (keyword?.[1] === 'section') {
       const name = keyword[2]?.trim();

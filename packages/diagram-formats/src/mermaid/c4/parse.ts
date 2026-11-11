@@ -46,7 +46,7 @@ export function argsOf(text: string): C4Args {
   return args;
 }
 
-const CALL = /^(\w+)\s*\((.*)\)\s*(\{)?$/;
+const CALL = /^(\w+)\s*\((.*)\)\s*(\{)?$/s;
 
 /** Statements up to the `}` closing a boundary opened on line `opened`, or to the end when `opened` is null. */
 function block(lines: MermaidSource['body'], at: { i: number }, opened: number | null): C4Stmt[] {
@@ -57,7 +57,7 @@ function block(lines: MermaidSource['body'], at: { i: number }, opened: number |
       if (opened === null) throw lineError('Mermaid', line, '"}" closes no boundary');
       return out;
     }
-    const title = /^title\s+(.*)$/.exec(text);
+    const title = /^title\s+(.*)$/s.exec(text);
     if (title !== null) {
       out.push({ kind: 'title', text: title[1]!.trim(), line });
       continue;

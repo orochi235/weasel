@@ -35,9 +35,9 @@ export interface ParsedSequence {
 }
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const MESSAGE = new RegExp(`^(.+?)\\s*(${ARROWS.map(([a]) => escape(a)).join('|')})\\s*([+-]?)\\s*([^:]+?)\\s*(?::(.*))?$`);
+const MESSAGE = new RegExp(`^(.+?)\\s*(${ARROWS.map(([a]) => escape(a)).join('|')})\\s*([+-]?)\\s*([^:]+?)\\s*(?::(.*))?$`, 's');
 const NOTE = /^note\s+(left of|right of|over)\s+([^:]+?)\s*:(.*)$/i;
-const DECLARE = /^(create\s+)?(participant|actor)\s+(.+)$/i;
+const DECLARE = /^(create\s+)?(participant|actor)\s+(.+)$/is;
 
 /** `text` as a participant id: one word, as a declaration takes it. Throws, naming `line`, on anything else. */
 function idAt(text: string, line: number, shown = text): string {
@@ -47,9 +47,9 @@ function idAt(text: string, line: number, shown = text): string {
 
 /** A declaration's id, its `@{ ... }` type and alias, and its `as` label. */
 function declaration(rest: string, word: string, create: boolean, line: number): SeqStmt {
-  const as = /\s+as\s+(.+)$/i.exec(rest);
+  const as = /\s+as\s+(.+)$/is.exec(rest);
   const head = (as === null ? rest : rest.slice(0, as.index)).trim();
-  const meta = /^([^@\s]+)\s*@\{(.*)\}$/.exec(head);
+  const meta = /^([^@\s]+)\s*@\{(.*)\}$/s.exec(head);
   const id = idAt(meta === null ? head : meta[1]!, line, head);
   const type = (meta && /"type"\s*:\s*"([^"]*)"/.exec(meta[2]!)?.[1]) ?? word.toLowerCase();
   const alias = meta ? /"alias"\s*:\s*"([^"]*)"/.exec(meta[2]!)?.[1] : undefined;
@@ -62,7 +62,7 @@ function statementOf(text: string, line: number, dropped: string[]): SeqStmt | n
   // A line may end in a `;`, but not the one closing a `#quot;` or `&amp;` reference.
   const t = text.trim().replace(/(?<!(?:#|&#?)[\da-z]+);$/i, '').trim();
   if (t === '' || t.startsWith('%%')) {
-    if (/^%%\{.*\}%%$/.test(t)) dropped.push('Mermaid configuration directives were dropped.');
+    if (/^%%\{.*\}%%$/s.test(t)) dropped.push('Mermaid configuration directives were dropped.');
     return null;
   }
   const word = /^\S+/.exec(t)![0].toLowerCase();
@@ -99,7 +99,7 @@ function body(text: string, dropped: string[]): { lines: string[]; first: number
   const close = lines.findIndex((l, i) => i > 0 && /^---\s*$/.test(l));
   if (close < 0) throw lineError('Mermaid', 1, 'the front matter is never closed with ---');
   const front = lines.slice(1, close);
-  const raw = front.map((l) => /^title:\s*(.*)$/.exec(l)?.[1]).find((t) => t !== undefined);
+  const raw = front.map((l) => /^title:\s*(.*)$/s.exec(l)?.[1]).find((t) => t !== undefined);
   if (front.some((l) => /^(config|displayMode):/.test(l))) dropped.push('Mermaid configuration in the front matter was dropped.');
   const title = raw === undefined ? undefined : frontTitle(raw);
   return { lines: lines.slice(close + 1), first: close + 2, ...(title !== undefined ? { title } : {}) };

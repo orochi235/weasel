@@ -51,8 +51,8 @@ export function parseMindmap(text: string): Mindmap {
   const stack: { indent: number; node: MindmapNode }[] = [];
   for (const s of source.body) {
     const last = stack.at(-1)?.node;
-    const icon = /^::icon\((.*)\)$/.exec(s.text);
-    const classes = /^:::\s*(.*)$/.exec(s.text);
+    const icon = /^::icon\((.*)\)$/s.exec(s.text);
+    const classes = /^:::\s*(.*)$/s.exec(s.text);
     if (icon !== null || classes !== null) {
       if (last === undefined) throw lineError('Mermaid', s.line, 'an icon or class must follow a node');
       if (icon !== null) last.icon = icon[1]!;

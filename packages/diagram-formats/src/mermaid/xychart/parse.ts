@@ -47,7 +47,7 @@ function listItems(list: string): string[] {
 
 /** A leading quoted title off `rest`, and what follows it. */
 function leadingTitle(rest: string): { title?: string; rest: string } {
-  const m = /^("[^"]*")\s*(.*)$/.exec(rest);
+  const m = /^("[^"]*")\s*(.*)$/s.exec(rest);
   return m === null ? { rest } : { title: unquote(m[1]!), rest: m[2]! };
 }
 
@@ -94,7 +94,7 @@ function frontMatter(lines: readonly string[], into: XyChartText): number {
   if (!/^---\s*$/.test(lines[0] ?? '')) return 0;
   let k = 1;
   for (; k < lines.length && !/^---\s*$/.test(lines[k]!); k++) {
-    const m = /^title:\s*(.*)$/.exec(lines[k]!.trim());
+    const m = /^title:\s*(.*)$/s.exec(lines[k]!.trim());
     if (m !== null) into.frontTitle = frontTitle(m[1]!);
     else if (lines[k]!.trim() !== '') into.frontOther++;
   }
@@ -133,7 +133,7 @@ export function parseXyChart(text: string): XyChartText {
       block = !l.includes('}');
       continue;
     }
-    const m = /^(\S+)\s*(.*)$/.exec(l)!;
+    const m = /^(\S+)\s*(.*)$/s.exec(l)!;
     out.statements.push(statementOf(m[1]!, m[2]!.trim(), line));
   }
   if (!header) throw lineError(FORMAT, lines.length, 'no xychart header');

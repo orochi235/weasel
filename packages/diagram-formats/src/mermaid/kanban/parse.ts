@@ -16,7 +16,7 @@ export interface KanbanBoard {
   columns: (KanbanItem & { cards: KanbanItem[] })[];
 }
 
-const ITEM = /^([\p{L}\p{N}_][\p{L}\p{N}_-]*)?(?:\[(.*)\])?\s*(?:@\{(.*)\})?$/u;
+const ITEM = /^([\p{L}\p{N}_][\p{L}\p{N}_-]*)?(?:\[(.*)\])?\s*(?:@\{(.*)\})?$/us;
 
 /** `ticket: MC-1, assigned: 'knsv'` as its pairs, values unquoted. */
 export function metaOf(meta: string, line: number): [string, string][] {
@@ -27,7 +27,7 @@ export function metaOf(meta: string, line: number): [string, string][] {
     const at = re.lastIndex;
     const m = re.exec(text);
     if (m === null || m[0] === '') throw lineError('Mermaid', line, `cannot read "${text.slice(at).trim()}" as card metadata`);
-    out.push([m[1]!, /^(['"]).*\1$/.test(m[2]!) ? m[2]!.slice(1, -1) : m[2]!]);
+    out.push([m[1]!, /^(['"]).*\1$/s.test(m[2]!) ? m[2]!.slice(1, -1) : m[2]!]);
   }
   return out;
 }

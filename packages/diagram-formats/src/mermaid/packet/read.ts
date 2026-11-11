@@ -39,7 +39,7 @@ export function readMermaidPacket(text: string): ImportResult {
   const fields: PacketField[] = [];
   let after = -1;
   for (const s of src.body) {
-    const t = /^title(?:\s+(.*))?$/.exec(s.text);
+    const t = /^title(?:\s+(.*))?$/s.exec(s.text);
     if (t !== null) {
       title = t[1]?.trim() || undefined;
       continue;
