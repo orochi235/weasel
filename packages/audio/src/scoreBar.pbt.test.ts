@@ -10,8 +10,11 @@ import { scoreParams, type ScoreMood } from './scoreMood';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 
 const RUNS = 300;
-const unit = fc.double({ min: 0, max: 1, noNaN: true });
-const mood: fc.Arbitrary<ScoreMood> = fc.record({ valence: fc.double({ min: -1, max: 1, noNaN: true }), tension: unit, urgency: unit });
+// fc.double leans toward the ends; hundredths spread a mood across every band of every axis.
+const unit = fc.oneof({ weight: 1, arbitrary: fc.double({ min: 0, max: 1, noNaN: true }) }, { weight: 4, arbitrary: fc.noBias(fc.integer({ min: 0, max: 100 })).map((n) => n / 100) });
+const mood: fc.Arbitrary<ScoreMood> = fc.record({ valence: fc.double({ min: -1, max: 1, noNaN: true }), tension: unit,
+  // A branch past 0.15, where a bar has a pulse.
+  urgency: fc.oneof(unit, fc.noBias(fc.integer({ min: 15, max: 100 })).map((n) => n / 100)) });
 const opts = fc.record({
   tonic: fc.integer({ min: -12, max: 12 }),
   gain: fc.oneof(fc.constantFrom(0, 0.5, 1), fc.double({ min: 0, max: 4, noNaN: true })),
