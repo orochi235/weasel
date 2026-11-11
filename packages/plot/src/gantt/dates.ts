@@ -51,8 +51,8 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export const formatHasHours = (format: string): boolean =>
   partsOf(format).some((p) => 'token' in p && ['HH', 'H', 'X', 'x'].includes(p.token));
 
-/** `text` read strictly in Day.js `format`, as milliseconds since the epoch; `null` when it does not read. Fields the
- *  format lacks default to 1970-01-01 00:00. */
+/** `text` read strictly in Day.js `format`, as milliseconds since the epoch; `null` when it does not read, or reads past
+ *  what a number holds. Fields the format lacks default to 1970-01-01 00:00. */
 export function parseGanttDate(text: string, format: string): number | null {
   const parts = partsOf(format);
   const m = new RegExp(`^${parts.map((p) => ('token' in p ? `(${PATTERN[p.token]})` : escapeRe(p.literal))).join('')}$`).exec(text.trim());
@@ -63,8 +63,8 @@ export function parseGanttDate(text: string, format: string): number | null {
     if (!('token' in p)) continue;
     const n = Number(m[group++]);
     switch (p.token) {
-      case 'X': return n * 1000;
-      case 'x': return n;
+      case 'X': return Number.isFinite(n * 1000) ? n * 1000 : null;
+      case 'x': return Number.isFinite(n) ? n : null;
       case 'YYYY': f.year = n; break;
       case 'YY': f.year = n + (n > 68 ? 1900 : 2000); break;
       case 'MM': case 'M': f.month = n; break;
