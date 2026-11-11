@@ -51,7 +51,7 @@ const { spec } = fc.letrec((tie) => ({
     group: fc.boolean(),
     fill, stroke, box,
     rotation: fc.option(fc.integer({ min: -180, max: 180 }).map((d) => d * Math.PI / 180), { nil: 0, freq: 3 }),
-    children: fc.oneof({ depthSize: 'small' }, fc.constant([]), fc.array(tie('spec') as fc.Arbitrary<Spec>, { minLength: 1, maxLength: 3 })),
+    children: fc.oneof({ depthSize: 'small' }, fc.constant([] as Spec[]), fc.array(tie('spec') as fc.Arbitrary<Spec>, { minLength: 1, maxLength: 3 })),
   }),
 }));
 
