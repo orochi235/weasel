@@ -40,7 +40,7 @@ const stroke: fc.Arbitrary<Stroke> = fc.record({
   markerStart: fc.option(fc.constantFrom('dot', 'arrow'), { nil: undefined }),
 }, { requiredKeys: ['width'] }).map((s) => ({ ...s, paint: INK }) as Stroke);
 
-const shape = fc.oneof(
+const shape: fc.Arbitrary<{ shape: string; sides?: number; points?: number }> = fc.oneof(
   fc.constantFrom({ shape: 'rect' }, { shape: 'ellipse' }),
   fc.integer({ min: 3, max: 12 }).map((sides) => ({ shape: 'polygon', sides })),
   fc.integer({ min: 3, max: 9 }).map((points) => ({ shape: 'star', points })),
