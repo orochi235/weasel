@@ -95,3 +95,22 @@ describe('sfntFromCollection, shrunk', () => {
     expect(() => sfntFromCollection(bytes)).toThrow(/font collection is truncated/);
   });
 });
+
+describe('sfntFromCollection, by name', () => {
+  it('hands back the first member of the name asked for, named like Object.prototype members or not', () => {
+    const t = tally();
+    const ascii = fc.string({ unit: fc.integer({ min: 1, max: 0x7f }).map((c) => String.fromCharCode(c)), minLength: 1, maxLength: 12 });
+    const name = fc.oneof(fc.constantFrom('__proto__', 'toString', 'constructor', 'hasOwnProperty'), ascii);
+    fc.assert(fc.property(fc.array(name, { minLength: 1, maxLength: 6 }), fc.option(name, { nil: undefined }), (names, asked) => {
+      const fonts = names.map((n) => tinyFont(n));
+      const out = sfntFromCollection(dataFork(fonts.map((data) => ({ type: 'sfnt', data }))), asked);
+      expect(out.names).toEqual(names);
+      const at = asked === undefined ? 0 : names.indexOf(asked);
+      expect(out.matched).toBe(at >= 0);
+      expect(new Uint8Array(out.bytes)).toEqual(fonts[Math.max(at, 0)]);
+      t.count(at > 0 ? 'later member' : at === 0 ? 'first member' : 'no member');
+    }), runs(RUNS));
+    t.atLeast('later member', 20);
+    t.atLeast('no member', 20);
+  }, timeoutFor(RUNS, 2));
+});
