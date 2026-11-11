@@ -230,7 +230,7 @@ function buildCache(
 
   const remove = (name: string): void => {
     // An unread cache cannot tell what storage holds, so it queues the delete.
-    if (!unread && !values.has(name) && !queue.has(name)) return;
+    if (!unread && !values.has(name)) return;
     values.delete(name);
     queue.add(name, DELETED);
     emit([{ name, value: undefined, origin: 'local' }]);
