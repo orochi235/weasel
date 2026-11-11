@@ -71,7 +71,7 @@ describe('useTextEdit — framed overlay', () => {
     expect(land(el, 0, 0)).toEqual({ x: -10, y: 20 });
     expect(land(el, 200, 0)).toEqual({ x: 390, y: 20 });
     expect(land(el, 200, 40)).toEqual({ x: 430, y: 100 });
-    expect(el.style.transformOrigin).toBe('0 0');
+    expect(el.style.transformOrigin).toMatch(/^0(px)? 0(px)?$/);
   });
 
   it('keeps the unwrapped alignment shift inside the frame', () => {

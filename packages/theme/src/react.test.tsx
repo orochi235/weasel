@@ -56,10 +56,11 @@ describe('ThemeProvider', () => {
     const theme = defineTheme({ name: 'held', pins: { 'color-accent': '#0a0b0c' } });
     const view = (mode: string) => <ThemeProvider theme={theme} selection={{ mode }}>x</ThemeProvider>;
     const { rerender, unmount } = render(view('light'));
-    expect(sheet()).toContain("[data-wzl-mode='light']");
+    const modeRule = (mode: string): RegExp => new RegExp(`\\[data-wzl-mode=["']${mode}["']\\]`);
+    expect(sheet()).toMatch(modeRule('light'));
     rerender(view('dark'));
-    expect(sheet()).toContain("[data-wzl-mode='dark']");
-    expect(sheet()).not.toContain("[data-wzl-mode='light']");
+    expect(sheet()).toMatch(modeRule('dark'));
+    expect(sheet()).not.toMatch(modeRule('light'));
     unmount();
     expect(sheet()).not.toContain('held');
   });

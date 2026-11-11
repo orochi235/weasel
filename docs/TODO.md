@@ -626,15 +626,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P3) [agent] jsdom 31 fails nine weasel-ui tests on how it serializes CSS.** Tried and held at 30.1.3 in the
-  2026-11-07 dependency sweep (fleet run of 1002ad7a6). The failures: `theme/src/react.test.tsx` (a rule's selector
-  now reads `[data-wzl-mode="light"]`, the test looks for single quotes), three in
-  `text-dom/src/useTextEdit.overlayStyle.test.ts` (`text-align: justify` and its last-line siblings read back as
-  `''`), `useTextEdit.overlayFrame.test.ts` and `.overlayGeometry.test.ts` (the overlay's transform),
-  `ui/src/paintGradientTrack.test.tsx`, `prefs/src/KitSettingsFromPrefs.test.tsx`, and
-  `animator/src/engine/handoff/handoffPhysics.test.tsx`. Each is either a test reading jsdom's own spelling,
-  to be made spelling-independent, or a jsdom regression to report upstream.
-  Closes when weasel runs on jsdom 31 with all nine passing.
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
   which minimatch 11 removed (`build:forge` exited "mini.matchOne is not a function", 2026-11-07), so it keeps

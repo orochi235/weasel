@@ -47,10 +47,12 @@ describe('KitSettingsFromPrefs', () => {
     expect(screen.getByTestId('app.zoom').textContent).toBe('1');
   });
 
-  // jsdom has no adoptedStyleSheets, so this is the `<style>` fallback; the browser test covers the adopted sheet.
   it('with `css`, writes a sheet and sets the selector attributes on the root, and takes both away on unmount', () => {
     const store = open();
-    const sheet = () => [...document.head.querySelectorAll('style')].map((s) => s.textContent).join('\n');
+    const sheet = () => [
+      ...(document.adoptedStyleSheets ?? []).flatMap((s) => [...s.cssRules].map((r) => r.cssText)),
+      ...[...document.head.querySelectorAll('style')].map((s) => s.textContent),
+    ].join('\n');
     const { unmount } = render(<KitSettingsFromPrefs store={store} at="kit" css />);
     expect(document.documentElement.getAttribute('data-wzl-kit-look-mode')).toBe('dark');
     expect(sheet()).toContain('--wzl-kit-tree-typeahead-ms: 500;');

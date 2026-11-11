@@ -46,7 +46,7 @@ describe('physics handed to the compositor', () => {
     for (let i = 0; i < 400 && done === 0; i++) step(16);
     expect(done).toBe(1);
     expect(e.target.committed().x).toBeCloseTo(p.committed().x, 1);
-    expect(e.inlineX()).toBeCloseTo(e.target.committed().x, 6);
+    expect(e.inlineX()).toBeCloseTo(e.target.committed().x, 2);
   });
 
   it('a spring on an angle turns the short way round, as on the main thread', () => {

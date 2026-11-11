@@ -19,9 +19,11 @@ export function applyOverlayDirection(el: HTMLElement, style: ResolvedTextStyle)
   const edge = style.direction === 'auto'
     ? (justify ? 'start' : style.align)
     : resolveAlign(style.align, style.direction);
+  // css-text-4 makes `text-align` a shorthand that resets `text-align-last`, so the last line is cleared first.
+  el.style.removeProperty('text-align-last');
   el.style.textAlign = justify ? 'justify' : edge;
   // Pinned, so a justified paragraph's last line sits where the canvas puts it.
-  el.style.setProperty('text-align-last', justify ? edge : '');
+  if (justify) el.style.setProperty('text-align-last', edge);
 }
 
 /** The absolute edge the overlay's text is set from, by its first paragraph. */

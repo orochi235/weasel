@@ -41,9 +41,7 @@ describe('paintGradientTrack', () => {
     const div = container.querySelector('div')!;
     const bg = (div as HTMLElement).style.background;
     expect(bg).toContain('linear-gradient(to right');
-    // 5 stops at 0/25/50/75/100%.
-    expect(bg).toMatch(/0\.0%/);
-    expect(bg).toMatch(/100\.0%/);
+    expect([...bg.matchAll(/(\d+(?:\.\d+)?)%/g)].map((m) => Number(m[1]))).toEqual([0, 25, 50, 75, 100]);
     expect(bg).toContain('rgb(0, 0, 0)');
     expect(bg).toContain('rgb(255, 255, 255)');
   });

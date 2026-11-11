@@ -161,7 +161,7 @@ describe('useTextEdit — zoom-scaled overlay', () => {
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     expect(overlay.style.transform).toBe('scale(2)');
-    expect(overlay.style.transformOrigin).toBe('0 0');
+    expect(overlay.style.transformOrigin).toMatch(/^0(px)? 0(px)?$/);
   });
 
   it('hands the zoom to run spans sized in screen pixels', () => {
