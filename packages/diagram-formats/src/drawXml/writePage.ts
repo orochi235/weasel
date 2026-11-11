@@ -94,8 +94,10 @@ function vertices(data: DiagramData, theme: DiagramTheme, headerOf: (id: string)
 export function writePage(page: GraphPage, index: number, theme: DiagramTheme, warn: Warn): string {
   const laid = needsLayout(page) ? laidOutPage(page, { theme }) : page;
   const { data } = laid;
-  // In world: the tree below makes each box relative to the cell holding it.
-  const specs = new Map(diagramScene(data, { layout: 'none', theme, composition: IDENTITY_POSE_COMPOSITION }).map((s) => [s.id as string, s]));
+  // In world: the tree below makes each box relative to the cell holding it. Only the boxes are read, and the edges
+  // are written from the data, so the scene is built without them: an edge id another cell has is numbered below.
+  const specs = new Map(diagramScene({ ...data, edges: [] }, { layout: 'none', theme, composition: IDENTITY_POSE_COMPOSITION })
+    .map((s) => [s.id as string, s]));
   const headerOf = (id: string) => (specs.get(id)?.data.diagram as { container?: { header?: ContainerHeader } } | undefined)?.container?.header;
   const items = vertices(data, theme, headerOf, warn);
   const ids = new Set(items.map((v) => v.id));
