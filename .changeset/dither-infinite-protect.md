@@ -2,4 +2,6 @@
 "@weasel-js/dither": patch
 ---
 
-`protectMask` protects every pixel under a rect that runs from minus to plus infinity, as `protectRects` makes of a large document rect on a fine grid. Its far edge summed to `NaN`, and the rect protected nothing.
+`protectMask` protects every pixel under a rect running from minus to plus infinity. `protectRects` makes such a rect of a large document rect on a fine grid.
+
+<!-- entry: rank=-5 fix -->

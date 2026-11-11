@@ -2,4 +2,8 @@
 '@weasel-js/theme': patch
 ---
 
-`rampSteps`, `findRampSteps`, and the color lists and refs built on them find a ramp by the theme's own ramp names only. A ramp named like an `Object.prototype` member (`constructor`, `toString`) used to answer with that member, so `colorCount({ ramp: 'constructor' })` was 1 and `colorCssAt` wrote `var(--wzl-constructor-undefined)` rather than throwing that the theme has no such ramp.
+`rampSteps`, `findRampSteps` and the color lists and refs built on them find a ramp by the theme's own ramp names only.
+
+A missing ramp named like an `Object.prototype` member, such as `constructor`, throws that the theme has no such ramp, as any missing ramp does.
+
+<!-- entry: rank=-5 fix -->

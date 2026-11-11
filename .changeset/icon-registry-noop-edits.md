@@ -2,4 +2,6 @@
 "@weasel-js/icons": patch
 ---
 
-The icon registry no longer advances its version or notifies subscribers when `add` is given an empty list, or when `provideVariants` names only variants it already knows: `entries()` keeps its array and a `useSyncExternalStore` reader does not re-render.
+The icon registry no longer notifies subscribers when `add` gets an empty list or `provideVariants` names only variants it already knows. `entries()` keeps its array, and a `useSyncExternalStore` reader does not re-render.
+
+<!-- entry: rank=-5 fix perf -->

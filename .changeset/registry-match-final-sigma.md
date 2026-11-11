@@ -2,4 +2,6 @@
 "@weasel-js/registry": patch
 ---
 
-`matchQuery` finds a Greek text that holds the query exactly when the match ends in a capital sigma: `Σ` lowercases to `ς` at the end of a word and `σ` elsewhere, so `'ΑΣ'` missed the query `'Σ'`. Both sigmas now match each other.
+`matchQuery` matches a Greek capital sigma at the end of a word, where it lowercases to `ς`, as well as inside one.
+
+<!-- entry: rank=-5 fix -->

@@ -3,4 +3,8 @@
 "@weasel-js/core": patch
 ---
 
-`toolStacksOf` leaves out a stacked set that names no tool, so a palette given a stack cut down to nothing by `withoutTools` (path-tools' `WARP_TOOLS` less all three warps, say) no longer draws an empty stack button.
+A tool palette no longer draws an empty stack button for a stack that `withoutTools` cut down to nothing.
+
+`toolStacksOf` leaves such a stack out.
+
+<!-- entry: rank=-5 fix -->

@@ -15,6 +15,7 @@ export const TRIGGERS = [
   'scripts/chromium-gpu-args.ts',
   'scripts/headless-source.ts',
   'scripts/lib/**',
+  'scripts/release/**',
   'typedoc/packageOptions.mjs',
   'apps/draw/vite-plugin-*{.ts,/**}',
   'apps/forge/viteShared.ts',
