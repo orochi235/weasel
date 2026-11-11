@@ -71,11 +71,13 @@ function placeIn(run: Run, pass: number, into: number): void {
   const last = Math.ceil(passesOf(run.loop)) - 1;
   const within = Math.min(Math.max(0, into), run.duration);
   const at = Math.min(pass, last);
-  // A pass's end is written as the next pass's start, which is how `placeOf` finds the line. A sum that rounds
-  // onto a line stands at the end of the pass only from the later half of it.
-  const end = within === run.duration;
-  run.elapsed = clamp(run, end ? (at + 1) * run.duration : at * run.duration + within);
-  run.edge = run.elapsed > 0 && (end || (within > run.duration / 2 && run.elapsed % run.duration === 0));
+  // A pass's end is written as the next pass's start, which is how `placeOf` finds the line. A sum from the later
+  // half of a pass that rounds onto or past that line stands at its end.
+  const line = (at + 1) * run.duration;
+  const sum = at * run.duration + within;
+  const end = within > 0 && (within === run.duration || (within > run.duration / 2 && sum >= line));
+  run.elapsed = clamp(run, end ? line : sum);
+  run.edge = run.elapsed > 0 && end;
 }
 
 function change(run: Run, hub: Hub): void {
@@ -134,15 +136,16 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   checkLoop(declared.loop);
   const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
   const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
-  const shown = run.origin + into;
+  // Moved by the change of origin alone, so an unchanged origin leaves the time within the pass exactly as it was.
+  const within = into + (run.origin - origin);
   run.duration = duration;
   run.loop = declared.loop;
   run.span = duration * passesOf(run.loop);
   run.origin = origin;
   run.speed = declared.speed;
-  if (Number.isFinite(duration)) placeIn(run, pass, shown - origin);
+  if (Number.isFinite(duration)) placeIn(run, pass, within);
   else {
-    run.elapsed = clamp(run, shown - origin);
+    run.elapsed = clamp(run, within);
     run.edge = false;
   }
   change(run, hub);
@@ -246,7 +249,7 @@ function clockOf(run: Run, hub: Hub, seekable: boolean, rates: readonly number[]
         clock.rate = to;
         return;
       }
-      run.ramp = { to, left: over };
+      run.ramp = { to, left: over, over };
       change(run, hub);
       hub.subs.emit();
     },
