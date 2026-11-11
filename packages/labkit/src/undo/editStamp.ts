@@ -7,7 +7,8 @@ let last = 0;
  * timestamps, which are `Date.now()`, to the millisecond.
  */
 export function editStamp(): number {
-  last = Math.max(Date.now(), last + 0.001);
+  // Past 2^43 ms a thousandth rounds away; a restored stamp can stand there.
+  last = Math.max(Date.now(), last + Math.max(0.001, Math.abs(last) * Number.EPSILON));
   return last;
 }
 
