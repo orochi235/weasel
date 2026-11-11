@@ -120,9 +120,11 @@ function spanHolds<M>(c: SnapCandidate<M>, world: Vec, eps: number): boolean {
   return c.span.every(([lo, hi], i) => u[i] >= lo - eps && u[i] <= hi + eps);
 }
 
-/** The probe's screen move under `delta`, or null when it is out of reach or off the span. */
-function meets<M>(m: Measure, c: SnapCandidate<M>, probe: Vec, delta: Vec): number | null {
-  const measured = m.move(c.probe, probe, delta);
+/** The probe's screen move under `reachAt`, or null when that is out of reach or `delta` is off the span.
+ *  A target's reach is measured where the targets alone put the probe, so a fallback's pull on the
+ *  other axes never carries it out of reach. */
+function meets<M>(m: Measure, c: SnapCandidate<M>, probe: Vec, delta: Vec, reachAt: Vec = delta): number | null {
+  const measured = m.move(c.probe, probe, c.tier === 'target' ? reachAt : delta);
   if (!c.required && (Number.isNaN(measured) || !(measured <= c.reachPx))) return null;
   const px = Number.isNaN(measured) ? Infinity : measured;
   return spanHolds(c, plus(probe, delta), m.eps) ? px : null;
@@ -182,14 +184,15 @@ function extend<M>(parent: Combo<M>, l: Live<M>, input: Flat, delta0: Vec, m: Me
   const delta = closestOnFlat(flat, delta0);
   if (!isFiniteVec(delta)) return null;
   const members = [...parent.members, l];
-  for (const mem of members) if (meets(m, mem.c, mem.probe, delta) === null) return null;
   const targetFlat = l.c.tier === 'target'
     ? intersectFlats(parent.targetFlat, l.within, m.eps) ?? flat
     : parent.targetFlat;
+  const reachAt = closestOnFlat(targetFlat, delta0);
+  for (const mem of members) if (meets(m, mem.c, mem.probe, delta, reachAt) === null) return null;
   const kept = prune(members, input, dim, flatDim(targetFlat), m.eps);
   let px = 0;
   for (const mem of kept) {
-    const p = meets(m, mem.c, mem.probe, delta);
+    const p = meets(m, mem.c, mem.probe, delta, reachAt);
     if (p === null) return null;
     px = Math.max(px, p);
   }
@@ -246,14 +249,14 @@ function search<M>(candidates: Live<M>[], root: Combo<M>, delta0: Vec, m: Measur
   return best.required ?? best.any;
 }
 
-function satisfiedBy<M>(problem: SnapProblem<M>, delta: Vec, m: Measure): SnapCandidate<M>[] {
+function satisfiedBy<M>(problem: SnapProblem<M>, delta: Vec, reachAt: Vec, m: Measure): SnapCandidate<M>[] {
   const probes = new Map(problem.probes.map((p) => [p.id, p.at]));
   return problem.candidates.filter((c) => {
     const probe = probes.get(c.probe);
     if (!probe) return false;
     const world = plus(probe, delta);
     if (!(distance(closestOnFlat(c.locus, world), world) <= m.eps)) return false;
-    return meets(m, c, probe, delta) !== null;
+    return meets(m, c, probe, delta, reachAt) !== null;
   });
 }
 
@@ -273,7 +276,7 @@ export function resolveSnap<M>(problem: SnapProblem<M>): SnapResolution<M> {
   return {
     delta: win.delta,
     members: win.members.map((l) => l.c),
-    satisfied: satisfiedBy(problem, win.delta, m),
+    satisfied: satisfiedBy(problem, win.delta, win === root ? win.delta : closestOnFlat(win.targetFlat, delta0), m),
     codim: win.codim,
   };
 }

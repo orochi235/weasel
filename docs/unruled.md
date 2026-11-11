@@ -197,6 +197,16 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-19 (pass 7): `resolveSnap`'s `members` is the smallest set that pins the move: a member
   the others already imply (a line taken before a point on it) is dropped, and so cannot decide a
   tie on its order. It still shows in `satisfied`.
+- 2026-11-10 (property tests): `resolveSnap` measures a target's reach where the targets alone put the
+  probe, so a fallback snapping another axis (a grid line across a guide) never carries a target in
+  reach out of it; before, the grid could take both axes from a guide in reach.
+- 2026-11-10 (property tests): `measureGaps` measures a box's gap to every box tied for nearest on its
+  right, rather than to whichever came first.
+- Open (2026-11-10, property tests): `matchSpacing` snaps each axis from where the box started, so a
+  snap on y can carry the box out of the row whose neighbor set its x snap, and the gap it marks is one
+  the box no longer has.
+- Open (2026-11-10, property tests): a box overlapping a sibling is offered equal-spacing placements
+  across a gap that sibling blocks.
 
 ## Scene, move, and history
 
