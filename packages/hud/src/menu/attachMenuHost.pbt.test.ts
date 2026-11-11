@@ -70,8 +70,9 @@ describe('attachMenuHost', () => {
         if (opener !== null && f === pool[opener]) { seen.hit('opened mid-report'); host.open({ menu: 'row', client: { x: 5, y: 5 } }); }
       });
       const menus = () => hud.widgets().filter((w) => !pool.includes(w as Plain));
-      /** The plain widget focused when the open menu opened, read off the HUD before each open. */
-      let returnTo: Widget | null = null;
+      /** The plain widget focused when the open menu opened, read off the HUD before each open; unknown for a menu a
+       *  focus listener opened, which opened against whatever focus that report named. */
+      let returnTo: Widget | null | 'unknown' = null;
       let returnVisible = false;
       for (const c of cmds) {
         const wasOpen = host.current() !== null;
@@ -87,7 +88,10 @@ describe('attachMenuHost', () => {
         else if (c.t === 'reattach') { detach(); detach = attachMenuHost(hud, host, opts); }
         else opener = c.i;
 
-        if (!wasOpen && host.current() !== null && c.t === 'open') { returnTo = focusedBefore; returnVisible = visibleBefore; }
+        if (!wasOpen && host.current() !== null) {
+          returnTo = c.t === 'open' ? focusedBefore : 'unknown';
+          returnVisible = visibleBefore;
+        }
         const open = host.current() !== null;
         const ms = menus();
         expect(ms).toHaveLength(open ? 1 : 0);
@@ -95,7 +99,7 @@ describe('attachMenuHost', () => {
           expect(hud.focused).toBe(ms[0]);
           seen.hit('open');
         }
-        if (wasOpen && !open && c.t === 'close') {
+        if (wasOpen && !open && c.t === 'close' && returnTo !== 'unknown') {
           // Given back when it can still take focus; otherwise nothing holds it.
           const back = returnTo !== null && hud.widgets().includes(returnTo) && !(returnTo as Plain).hidden;
           if (opener === null) {
