@@ -325,6 +325,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): `addPage` (and `addTemplatePage`, which hands its index on) holds an
   `index` past either end of the page order to that end, as `movePage` already did, rather than reading a negative
   one from the end as `splice` does: one rule for an index into the page order.
+- Ruled 2026-11-10 (my call, overnight sweep): Trim segment and the Girth tool's `girth.clear`, click commands, are
+  enabled outright by a click's point, as Extend to next path is, so the tool keeps the click and the run decides; with
+  no click, `enabled` asks whether the press in their params reaches a piece to cut or a set width point to clear, and
+  answers `NotApplicable` otherwise. Before, both were always enabled.
+- Ruled 2026-11-10 (my call, overnight sweep): `extendToMeet` takes an end within float32 rounding of a stroke (1e-6 of
+  its coordinates' magnitude) as already meeting it, so a second Extend to next path is disabled rather than recording
+  an invisible step, after the Align ruling above.
+- Ruled 2026-11-10 (my call, overnight sweep): `toolStacksOf` reports no stack for a stacked set that names no tool, as
+  `withoutTools` leaves one cut to nothing: a palette has no button to draw for it.
 
 ## Rendering, canvas, and paint
 

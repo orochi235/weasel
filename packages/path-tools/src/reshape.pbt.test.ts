@@ -6,9 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import {
-  anchorsToPath, pathToAnchors, PATH_C, PATH_CMD_LENGTHS, PATH_L, PATH_M, PATH_Q, PATH_Z, worldCoords, type PenAnchor, type PolygonPath,
-} from '@weasel-js/geom';
+import { pathToAnchors, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import type { Action, ImmediateInvoker } from '@weasel-js/routing';
 import { deleteAnchorsAction, nudgeAnchorsLeftAction, nudgeAnchorsUpAction } from '@weasel-js/core';
 import {
@@ -19,6 +17,7 @@ import {
   shrinkAnchorSelectionAction, unconstrainAnchorsAction,
 } from './index';
 import { editHarness as harness, type EditHarness } from './shared/testing/editHarness';
+import { checkPath, penPath as path, snap } from './pbt.fixture';
 
 const RUNS = Number(globalThis.process?.env?.WEASEL_PBT_RUNS) || 60;
 const TIMEOUT = Math.max(10_000, RUNS * 60);
@@ -35,31 +34,6 @@ const ACTIONS: Action[] = [
 ];
 
 type H = EditHarness;
-
-const snap = (p: PolygonPath) => ({ commands: Array.from(p.commands), coords: Array.from(worldCoords(p)), corners: p.corners ?? null });
-
-/** Well formed: each subpath opens with M and draws something before a Z, coords match the commands, all finite. */
-function checkPath(p: PolygonPath): void {
-  const cmds = Array.from(p.commands);
-  let need = 0;
-  let drawn = false;
-  cmds.forEach((c, i) => {
-    need += PATH_CMD_LENGTHS[c]!;
-    if (i === 0) expect(c, 'the path opens with a moveto').toBe(PATH_M);
-    if (c === PATH_M) {
-      expect(cmds[i + 1], `a moveto at ${i} is followed by something`).not.toBeUndefined();
-      expect(cmds[i + 1], `no empty subpath at ${i}`).not.toBe(PATH_M);
-      drawn = false;
-    } else if (c === PATH_Z) {
-      expect(drawn, `a close at ${i} closes a subpath that drew something`).toBe(true);
-    } else {
-      expect([PATH_L, PATH_C, PATH_Q]).toContain(c);
-      drawn = true;
-    }
-  });
-  expect(p.coords.length).toBe(need);
-  for (const v of worldCoords(p)) expect(Number.isFinite(v)).toBe(true);
-}
 
 const closedCount = (p: PolygonPath): number => Array.from(p.commands).filter((c) => c === PATH_Z).length;
 
@@ -130,15 +104,6 @@ class Redo implements fc.Command<Model, H> {
   }
   toString(): string { return 'Redo'; }
 }
-
-const at = fc.integer({ min: -200, max: 200 });
-const anchor: fc.Arbitrary<PenAnchor> = fc.tuple(at, at, fc.option(fc.tuple(at, at), { nil: undefined }), fc.boolean())
-  .map(([x, y, h, mirrored]) => (h
-    ? { x, y, outHandle: { x: x + h[0] / 4, y: y + h[1] / 4 }, inHandle: mirrored ? { x: x - h[0] / 4, y: y - h[1] / 4 } : { x: x + h[1] / 5, y: y - h[0] / 5 } }
-    : { x, y }));
-const path: fc.Arbitrary<PolygonPath> = fc.array(
-  fc.tuple(fc.array(anchor, { minLength: 2, maxLength: 6 }), fc.boolean()), { minLength: 1, maxLength: 2 },
-).map((subs) => anchorsToPath(subs.map(([a]) => a), subs.map(([, c]) => c)));
 
 /** `setCorners` is a control's action, and does nothing without the shape or radius the control gives it. */
 const cornerParams = fc.record({

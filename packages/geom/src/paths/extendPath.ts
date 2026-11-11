@@ -95,11 +95,13 @@ export function extendToMeet(
   if (!(reach > 0)) return null;
   let best: number | null = null;
   let walked = 0;
+  // A stored pose is float32: an end left on a stroke by the last extension sits a few ulps off it, not on it.
+  const touching = Math.max(1e-6, 1e-6 * Math.max(Math.abs(frame.point.x), Math.abs(frame.point.y)));
   for (const piece of extensionPieces(frame, reach, mode, opts)) {
     for (const s of all) {
       for (const h of intersectSegments(piece.pts, s.pts)) {
         const d = walked + pieceLengthAt(piece, h.ta);
-        if (d > 1e-6 && (best === null || d < best)) best = d;
+        if (d > touching && (best === null || d < best)) best = d;
       }
     }
     if (best !== null) break;

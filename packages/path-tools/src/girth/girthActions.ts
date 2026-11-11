@@ -121,6 +121,18 @@ function widthsAt(grip: WidthGrip, press: Point, p: Point, alt: boolean, params:
   return { widths, moved };
 }
 
+/** The set width point a click at the press in `params` clears: its stroke, the stroke's widths, and its index. */
+function planClear(deps: ActionDeps, env: GirthEnv, params: unknown): { target: WidthTarget; widths: VertexWidth[]; index: number } | null {
+  const press = (params as ImmediateParams | undefined)?.press;
+  const at = found(deps, env);
+  if (!at || !press) return null;
+  const target = widthTargetAt(at.scene, press.x, press.y, at.scale, at.reach);
+  if (!target) return null;
+  const index = widthPointNear(target, press.x, press.y, at.reach);
+  const widths = widthsOf(target, pathToAnchors(target.path).anchors.flat().length);
+  return index >= 0 && isWidthSet(widths[index]) ? { target, widths, index } : null;
+}
+
 function dragAction(env: GirthEnv): Action['invoker'] {
   return {
     timing: 'ongoing',
@@ -194,17 +206,15 @@ export function createGirthActions(env: GirthEnv): Action[] {
       id: GIRTH_CLEAR_ID,
       label: 'Girth — clear the width point under the pointer',
       ...base,
+      // A click's point enables it, and the run decides; without one, the press in its params does.
+      enabled: (deps?: ActionDeps, at?: Point, _carried?: unknown, params?: unknown) =>
+        (deps?.scene && (at || planClear(deps, env, params)) ? true : ActionDisabledReason.NotApplicable),
       invoker: {
         timing: 'immediate',
         run: (deps, params) => {
-          const press = (params as ImmediateParams | undefined)?.press;
-          const at = found(deps, env);
-          if (!at || !press) return;
-          const target = widthTargetAt(at.scene, press.x, press.y, at.scale, at.reach);
-          if (!target) return;
-          const index = widthPointNear(target, press.x, press.y, at.reach);
-          const widths = widthsOf(target, pathToAnchors(target.path).anchors.flat().length);
-          if (index < 0 || !isWidthSet(widths[index])) return;
+          const plan = planClear(deps, env, params);
+          if (!plan) return;
+          const { target, widths, index } = plan;
           widths[index] = NaN;
           const grip: WidthGrip = {
             target, path: target.path, widths, index, at: { x: 0, y: 0 }, inserted: false,

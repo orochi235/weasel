@@ -48,4 +48,11 @@ describe('tool sets', () => {
     expect(toolStacksOf([emptied])).toEqual([]);
     expect(emptied.members).toEqual(['girth', 'trim']);
   });
+
+  it('draws no stack for a stacked set cut down to nothing', () => {
+    // Shrunk by path-tools' tool-set property: the warp stack less all three warps.
+    const warps = toolSet('warp', ['distort', 'envelope', 'puppet'], { stack: true });
+    expect(toolStacksOf([withoutTools(warps, 'distort', 'envelope', 'puppet')])).toEqual([]);
+    expect(toolStacksOf([toolSet('empty', [], { stack: true })])).toEqual([]);
+  });
 });

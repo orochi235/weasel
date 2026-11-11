@@ -77,8 +77,11 @@ export function toolStacksOf<TId extends string>(entries: readonly ToolEntry<TId
   const walk = (list: readonly ToolEntry<TId>[]): void => {
     for (const entry of list) {
       if (!isToolSet(entry)) continue;
-      if (entry.stack) out.push(toolIdsOf([entry]));
-      else walk(entry.members);
+      if (!entry.stack) walk(entry.members);
+      else {
+        const ids = toolIdsOf([entry]);
+        if (ids.length > 0) out.push(ids);
+      }
     }
   };
   walk(entries);

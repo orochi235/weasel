@@ -121,13 +121,15 @@ export function anchorNormals(path: PolygonPath): Point[] {
     const closed = set.closed?.[s] ?? false;
     const next = sub[i + 1] ?? (closed ? sub[0] : undefined);
     const prev = sub[i - 1] ?? (closed ? sub[sub.length - 1] : undefined);
-    const out = a.outHandle ?? next;
-    const inn = a.inHandle ?? prev;
     let tx = 0, ty = 0;
-    for (const [from, to] of [[a, out], [inn, a]] as const) {
-      if (!from || !to) continue;
-      const len = Math.hypot(to.x - from.x, to.y - from.y);
-      if (len > 0) { tx += (to.x - from.x) / len; ty += (to.y - from.y) / len; }
+    // A segment's tangent at its end runs toward its first control point that is not on the end: a retracted
+    // handle leaves it to the far one, and then to the far anchor.
+    for (const [sign, points] of [[1, next && [a.outHandle, next.inHandle, next]], [-1, prev && [a.inHandle, prev.outHandle, prev]]] as const) {
+      const p = points?.find((q) => q && Math.hypot(q.x - a.x, q.y - a.y) > 0);
+      if (!p) continue;
+      const len = Math.hypot(p.x - a.x, p.y - a.y);
+      tx += sign * (p.x - a.x) / len;
+      ty += sign * (p.y - a.y) / len;
     }
     const len = Math.hypot(tx, ty);
     return len > 0 ? { x: -ty / len, y: tx / len } : { x: 0, y: 1 };
