@@ -2,6 +2,7 @@ import { asNodeId, sceneMagnification, type Bounds, type SnapCollect, type SnapM
 import {
   equalGaps, measureGapSpans, referenceGaps, spacingOffers, type MeasuredGap,
 } from '../guides/alignment/spacing';
+import { isFiniteBox } from '../guides/alignment/finite';
 import type { SpacingEdge } from '../guides/alignment/types';
 import type { SpacingGap } from '../guides/types';
 import { landedBox, sideLine } from './lines';
@@ -36,8 +37,10 @@ export interface SpacingSnapSourceOptions {
 
 interface Measured { boxes: readonly Bounds[]; x: readonly MeasuredGap[]; y: readonly MeasuredGap[] }
 
-const measureAll = (boxes: readonly Bounds[]): Measured =>
-  ({ boxes, x: measureGapSpans(boxes, 'x'), y: measureGapSpans(boxes, 'y') });
+function measureAll(all: readonly Bounds[]): Measured {
+  const boxes = all.filter(isFiniteBox);
+  return { boxes, x: measureGapSpans(boxes, 'x'), y: measureGapSpans(boxes, 'y') };
+}
 
 function gapMark(g: SpacingGap, color: string | undefined, magnification: number): SnapMark {
   const ends = g.axis === 'x'

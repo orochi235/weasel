@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { alignmentSnapSource } from '../../sources/alignment';
+import { spacingSnapSource } from '../../sources/spacing';
 import { moveBy, sceneOf } from '../../sources/testing/session';
 import { deriveAlignmentGuides } from './derive';
+import { matchSpacing, measureGaps } from './spacing';
 
 describe('alignment and spacing at the edges, shrunk from the property tests', () => {
   it('derives no line from a box with a coordinate that is not finite', () => {
@@ -17,5 +19,20 @@ describe('alignment and spacing at the edges, shrunk from the property tests', (
       const { scene, ids } = sceneOf([{ x: 0, y: 0, width: 1, height: 1 }, ...order.map((i) => sibs[i - 1]!)]);
       expect(moveBy({ sources: [alignmentSnapSource()], scene, ids: [ids[0]!], reachPx: 8 }).by(0.125, 0).point).toEqual({ x: 0, y: 0 });
     }
+  });
+
+  it('spaces a box among siblings alike with a sibling of NaN width among them', () => {
+    const moving = { x: 0, y: 0, width: 1, height: 1 };
+    const sibs = [{ x: -2.25, y: 0, width: 1, height: 1.125 }, { x: 0, y: 0, width: 1, height: 1 }];
+    const worse = { x: 0, y: 0, width: NaN, height: 1.125 };
+    const run = (others: object[]) => {
+      const { scene, ids } = sceneOf([moving, ...others] as never);
+      return moveBy({ sources: [alignmentSnapSource(), spacingSnapSource()], scene, ids: [ids[0]!], reachPx: 8 }).by(-1.125, 1).point;
+    };
+    expect(run([...sibs, worse])).toEqual(run(sibs));
+    expect(run([worse, ...sibs])).toEqual(run(sibs));
+    expect(measureGaps([...sibs, worse], 'x')).toEqual(measureGaps(sibs, 'x'));
+    expect(matchSpacing({ x: 3, y: 0, width: 1, height: 1 }, [{ x: 0, y: 0, width: 1, height: 1 }, { x: 1.5, y: 0, width: 1, height: 1 }, worse], { x: 8, y: 8 }).dx)
+      .toBe(matchSpacing({ x: 3, y: 0, width: 1, height: 1 }, [{ x: 0, y: 0, width: 1, height: 1 }, { x: 1.5, y: 0, width: 1, height: 1 }], { x: 8, y: 8 }).dx);
   });
 });
