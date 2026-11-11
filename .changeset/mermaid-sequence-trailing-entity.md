@@ -2,6 +2,6 @@
 '@weasel-js/diagram-formats': patch
 ---
 
-A Mermaid sequence line ending in a character reference such as `#quot;` or `#lt;` keeps the reference's
-semicolon, where it was dropped as the line's own and the text read back as `#quot`. A message the writer ended
-with `"`, `<`, `>`, or `#` now reads back as written.
+A Mermaid sequence line ending in a character reference such as `#quot;` keeps it, so a message ending in `"`, `<`, `>` or `#` reads back as written.
+
+<!-- entry: rank=-5 fix -->

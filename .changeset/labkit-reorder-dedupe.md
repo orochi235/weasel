@@ -2,4 +2,6 @@
 "@weasel-js/labkit": patch
 ---
 
-Reordering trials with an id named more than once now places that trial once, where it was first named, instead of listing it twice.
+Reordering trials with an id named more than once places that trial once, where it was first named.
+
+<!-- entry: rank=-5 fix -->

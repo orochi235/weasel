@@ -8,8 +8,8 @@ import {
   parseChangeset,
   readPendingChangesets,
   releasesFromChangelogs,
-  splitSummary,
-} from './vite-changelogs';
+} from './changelogs';
+import { splitSummary } from './summary';
 
 const CORE = `# @weasel-js/core
 
@@ -84,8 +84,26 @@ describe('releasesFromChangelogs', () => {
     expect(entry.bodyHtml).toContain('<code>code</code>');
   });
 
-  it('carries the bump level from the section heading', () => {
-    expect(releases.find((r) => r.version === '1.1.0')!.entries[0].level).toBe('minor');
+  it('reads an entry marker, keeping it out of the prose, and falls back to the history file', () => {
+    const marked = `# @weasel-js/core
+
+## 1.2.0
+
+### Patch Changes
+
+- aaa1111: A marked one.
+
+  <!-- entry: rank=4 new api pick -->
+
+- bbb2222: An old one.
+`;
+    const [release] = releasesFromChangelogs([{ pkg: 'core', text: marked }], {
+      bbb2222: { tags: ['fix'], rank: -5 },
+    });
+    expect(release.entries.map(({ id, tags, rank, pick, bodyHtml }) => ({ id, tags, rank, pick, bodyHtml }))).toEqual([
+      { id: 'aaa1111', tags: ['api', 'new'], rank: 4, pick: true, bodyHtml: '' },
+      { id: 'bbb2222', tags: ['fix'], rank: -5, pick: false, bodyHtml: '' },
+    ]);
   });
 
   it('folds a prerelease into its release once that is out, and keeps it alone until then', () => {

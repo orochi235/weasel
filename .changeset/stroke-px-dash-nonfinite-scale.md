@@ -3,4 +3,8 @@
 "@weasel-js/renderer": patch
 ---
 
-A `{ px }` stroke's dashes and dash offset resolve at a scale the way its width does. Under an infinite scale `strokeAtScale` (and so `strokeToPath`) and the renderer's stroke resolution left the width as given but multiplied every dash by zero, which drew the stroke solid; the dashes are now left as given too.
+A `{ px }` stroke under an infinite scale keeps its dashes, rather than drawing solid.
+
+Its dashes and dash offset resolve as its width does, left as given, in `strokeAtScale`, `strokeToPath` and the renderer.
+
+<!-- entry: rank=-5 fix visual -->

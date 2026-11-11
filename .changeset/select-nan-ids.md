@@ -2,4 +2,6 @@
 "@weasel-js/select": patch
 ---
 
-`select` and `rangeOf` read ids as a `Set` does, so `NaN` is one id and `-0` is `0`. A toggle could turn a `NaN` id on and never off, a range could not start or end on one, and pressing a selection's lone `NaN` id handed back a new state rather than the same one.
+`select` and `rangeOf` treat ids as a `Set` does, so a `NaN` id toggles off and can start or end a range, and `-0` is `0`.
+
+<!-- entry: rank=-5 fix -->

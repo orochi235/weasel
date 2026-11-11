@@ -6,20 +6,89 @@ them all to the same number whether or not they changed.
 
 ## The normal path
 
-1. **Write a changeset with the change.** `npx changeset`: pick the packages,
-   pick a bump, write the prose. The prose is the changelog; it is read by
-   people deciding whether to upgrade, so describe what changed and why it
-   mattered, not which files moved.
-2. **Version on `main`.** `npm run version-packages` bumps every manifest,
-   consumes the changesets and rewrites the `CHANGELOG.md`s. Read the changelog
-   diff, commit it as `chore: version packages`, and push.
-3. **Dispatch the release.** `gh workflow run release.yml -R orochi235/weasel`.
+1. **Write a changeset with the change.** `npx changeset`, pick the packages,
+   pick `patch`, and write it as "Writing a changeset" below says.
+   `npm run check:changesets` holds every pending one to those rules.
+2. **Pick the highlights.** `npm run release:pick` lists the pending changesets
+   by rank. Choose the few a reader of this release should see first; it writes
+   `pick` into their markers. See "Picking highlights".
+3. **Version on `main`.** `npm run version-packages` bumps every manifest,
+   consumes the changesets and rewrites the `CHANGELOG.md`s. It refuses while
+   no pending changeset is picked (`-- --no-picks` overrides). Read the
+   changelog diff, commit it as `chore: version packages`, and push.
+4. **Dispatch the release.** `gh workflow run release.yml -R orochi235/weasel`.
    With no changesets left, the workflow publishes to npm, pushes the
    `@weasel-js/<pkg>@<version>` tags, writes the GitHub releases and checks the
    registry. Nothing else starts it, so it never queues behind another run.
 
 Versioning moved off the workflow on 2026-11-08: it used to open a
 "chore: version packages" PR, and every changeset push started a run to refresh it.
+
+## Writing a changeset
+
+A changeset is read by someone deciding whether to upgrade, on the site's
+Releases page and in each package's `CHANGELOG.md`. Its first sentence is the
+entry's title; everything after it folds away until clicked.
+
+- **One change per changeset.** Three fixes found in one pass are three
+  changesets. A title that lists things ("Fixes to the hand tool, the pencil
+  and the trim tool") is three entries forced into one, and the check refuses
+  one that opens "Fixes to" or strings three things together after "Fix".
+- **The title says what a consumer sees change**, in their words, under 140
+  characters: "The pencil draws a stroke that starts over a shape", not "Fix
+  the pencil binding's hit gate". Name the API only when the API is the change.
+- **Leave out how it used to fail.** "Before, …" belongs in the commit
+  message. A fix needs one sentence of what now happens, and a second only when
+  a reader has to do something; the check caps a fix at 700 characters.
+- **A body is for code a reader writes differently**: a new option and its
+  default, a migration, a before/after snippet. A `breaking` entry must have
+  one.
+
+The body ends with an entry marker naming what kind of change it is:
+
+```md
+<!-- entry: rank=10 new api -->
+```
+
+| Tag | The change… |
+|---|---|
+| `breaking` | makes consumer code or saved data have to change |
+| `deprecates` | marks something deprecated; it still works |
+| `api` | adds public surface: an export, a prop, an option, an action id |
+| `new` | adds a capability a user can see, with or without new API |
+| `behavior` | makes existing code act differently with no code change, on purpose and not as a fix |
+| `data` | changes serialized output or how saved documents load |
+| `visual` | changes rendered pixels |
+| `perf` | makes something measurably faster or leaner |
+| `fix` | corrects a defect |
+| `internal` | does nothing a consumer can observe (and takes no other tag) |
+
+Give every tag that holds: a fix that moves pixels is `fix visual`. The page
+lists an entry under the first of Breaking, New, Changed, Performance, Fixes and
+Internal that its tags reach, and folds Fixes and Internal away.
+
+`rank=N` is a suggestion of how far up its release the entry sorts, read like a
+z-index: unset is 0, higher sorts first, negative sinks. Rough anchors: 0 for an
+ordinary change, 10 for one a reader of the release should notice, 20 or more
+for one that could headline it, below 0 for one nobody would miss. Ranks from different
+authors are not comparable and do not need to be; the release pick settles what
+leads. The tags and the parser are in `scripts/release/entry-marker.ts`.
+
+## Picking highlights
+
+`npm run release:pick` prints the pending changesets, highest rank first, each
+with its number, tags and title, and asks which to pick (`3 7 12`, or a blank
+line to keep the current picks). It writes `pick` into the chosen markers and
+takes it out of the rest. `--list` only prints, and `--set 3,7,12` picks
+without asking. Pick what a reader would want to
+know about this release if they read nothing else: usually two to four, rarely
+a fix.
+
+The Releases page shows a release's picks above its groups. A release with no
+picks shows its three highest-ranked entries there instead, marked as not
+curated. Entries published before markers existed take their tags and rank from
+`scripts/release/history-meta.json`, keyed by changeset hash; none of them is
+picked.
 
 ## Authentication
 

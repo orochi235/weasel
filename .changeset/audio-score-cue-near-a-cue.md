@@ -2,4 +2,6 @@
 "@weasel-js/audio": patch
 ---
 
-`readScoreCue`, and so a score's `state().cue`, weighs a mood within rounding of a cue's own mood as all that cue, instead of giving every cue a `NaN` weight.
+A score's cue reading gives a mood within rounding of a cue's own mood wholly to that cue, instead of a `NaN` weight to every cue. This holds for `readScoreCue` and a score's `state().cue`.
+
+<!-- entry: rank=-5 fix -->

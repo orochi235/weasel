@@ -11,8 +11,8 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { changelogSection, releaseBody } from './lib/release-notes.mjs';
-import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
+import { changelogSection, releaseBody } from './notes.mjs';
+import { publishableWorkspaces, repoRoot } from '../lib/workspaces.mjs';
 
 const published = JSON.parse(process.env.PUBLISHED ?? '[]');
 const repository = process.env.GITHUB_REPOSITORY;
