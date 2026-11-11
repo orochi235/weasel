@@ -80,10 +80,10 @@ class SetGain implements fc.Command<Model, Real> {
 const time = fc.oneof(fc.integer({ min: 0, max: 5 }), fc.double({ min: 0, max: 1e6, noNaN: true }));
 const level = fc.oneof(fc.constantFrom(0, 0.5, 1), fc.double({ min: 0, max: 2, noNaN: true }));
 const commands = fc.commands([
-  fc.tuple(time, level).map(([t, g]) => new Acquire(t, g)),
+  ...[1, 2, 3].map(() => fc.tuple(time, level).map(([t, g]) => new Acquire(t, g))),
   fc.tuple(fc.nat(), fc.boolean()).map(([p, w]) => new Release(p, w)),
   fc.tuple(fc.nat(), level).map(([p, g]) => new SetGain(p, g)),
-], { maxCommands: 60 });
+], { maxCommands: 60, size: '+1' });
 
 describe('createVoicePool', () => {
   it('hands out and steals voices as its model does, never more than the limit', () => {
