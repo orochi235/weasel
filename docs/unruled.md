@@ -1094,6 +1094,21 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (forge second pass, 2026-11-11): a title whose story files sit in two libraries is one component row,
   tagged with its first story's library, while the package filter lists both libraries. No ruling on whether such
   a title should be one row or one per library.
+- 2026-11-11 (my call, hud second pass): a HUD button reports each press, hover, and leave through registry's
+  emitter, to the listeners held when the report starts: one added mid-report hears the next report, one taken off
+  mid-report is skipped, and one that throws is logged and leaves the rest heard (c40e88c77).
+- 2026-11-11 (my call, hud second pass): a HUD window ignores a drag's move to a point that is not finite and reports
+  no content click for a release at one, and `zoneAt` names no zone for such a point (6c0bec5e0, c7dc1f33a).
+- 2026-11-11 (my call, hud second pass): a HUD drops a focus report for a listener once focus has moved past it,
+  so a listener that moves focus mid-report leaves the rest hearing only the newer focus (9a6ff1efe). A listener can
+  hear the current focus twice when focus moves away and back within one report.
+- Open (hud second pass, 2026-11-11): `createRect`, `createImage`, and `createButton` refuse a width or height that
+  is not positive, but every widget's `setBounds` takes any bounds, zero, negative, and `NaN` included. Either the
+  factories refuse a size `setBounds` would take later (a progress bar's rect at zero width), or `setBounds` should
+  refuse what the factories do.
+- Open (hud second pass, 2026-11-11): `attachMenuHost`'s detach takes the menu widget off the HUD and gives focus
+  back, but leaves the host's menu open, so a later attach on the same host shows it again. No ruling on whether
+  detaching should close the host's menu.
 
 ## draw
 
