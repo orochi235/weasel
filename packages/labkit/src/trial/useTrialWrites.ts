@@ -1,7 +1,9 @@
 import { useLatest } from '@weasel-js/core';
 import { isDev } from '@weasel-js/react';
+import { deepEqual } from '@weasel-js/registry';
 import { useCallback, useContext, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
+import { isAuto } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
 import { LabOverContext, writesOver } from '../config/over';
 import { hasConfigPath, schemaNodeAtPath, valueAtPath } from '../config/path';
@@ -11,6 +13,7 @@ import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
 import { lastEditStamp } from '../undo/editStamp';
 import { stateOp } from '../undo/stateOp';
+import { readTrialEdit, type TrialEdit } from './trialEdit';
 import type { MountedTrialHistory } from './trialHistory';
 import { type TrialSnapshot, useTrialSnapshot } from './useTrialSnapshot';
 
@@ -60,7 +63,14 @@ export function useTrialWrites({
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const over = useLatest(useContext(LabOverContext));
-  const lastWrite = useRef<{ path: string; at: number; version: string } | null>(null);
+  /** The gesture the last write began or continued. `start` is the record as the gesture found it, where its step
+   *  is the trial's own snapshot, which a gesture ending where it started can take back. */
+  const lastWrite = useRef<{
+    path: string;
+    at: number;
+    version: string;
+    start: TrialEdit | null;
+  } | null>(null);
   // Undoing an entry ends the gesture that recorded it, on whichever history holds it.
   const { snapshot, stored } = useTrialSnapshot({
     store,
@@ -75,7 +85,7 @@ export function useTrialWrites({
 
   /** Snapshots for a write to `path`, unless it continues the gesture the last one began. */
   const recordWrite = useCallback(
-    (path: string, op?: Parameters<TrialSnapshot>[1]): void => {
+    (path: string, op?: Parameters<TrialSnapshot>[1]): boolean => {
       // Any edit recorded since, on this trial's histories or its marks, ends the gesture.
       const version = (): string =>
         `${lastEditStamp()}:${stored()?.history?.getVersion() ?? -1}:${ownHistory()?.undoStamp?.() ?? ''}`;
@@ -87,11 +97,28 @@ export function useTrialWrites({
         last.path === path &&
         Date.now() - last.at < GESTURE_MS &&
         last.version === version();
-      if (!sameGesture && !snapshot('config.change', op)) snapshot(`config.change:${path}`, op);
-      lastWrite.current = { path, at: Date.now(), version: version() };
+      let start = sameGesture ? last.start : null;
+      if (!sameGesture) {
+        const before = stored();
+        const recorded = snapshot('config.change', op) || snapshot(`config.change:${path}`, op);
+        start = recorded && !op && !ownHistory() && before ? readTrialEdit(before) : null;
+      }
+      lastWrite.current = { path, at: Date.now(), version: version(), start };
+      return sameGesture;
     },
     [stored, snapshot, ownHistory],
   );
+
+  /** A gesture back where it started has made no step: take back the one its first write recorded. */
+  const takeBackIfUnchanged = useCallback((): void => {
+    const start = lastWrite.current?.start;
+    const now = stored();
+    const history = now?.history;
+    if (!start || !now || !history?.canUndo() || !deepEqual(readTrialEdit(now), start)) return;
+    history.undo();
+    history.dropRedo();
+    lastWrite.current = null;
+  }, [stored]);
 
   const setConfig = useCallback(
     (path: string, value: unknown): void => {
@@ -99,6 +126,7 @@ export function useTrialWrites({
         const lab = over.current;
         if (!lab) return;
         const read = () => valueAtPath(over.current?.values, path);
+        if (!isAuto(value) && deepEqual(read(), value)) return;
         const write = (v: unknown) => over.current?.set(path, v);
         recordWrite(path, stateOp(structuredClone(read()), read, write));
         lab.set(path, value);
@@ -106,6 +134,12 @@ export function useTrialWrites({
       }
       const before = stored();
       if (!before) return;
+      // A write that changes nothing records nothing, as an edit that would change nothing does nothing.
+      const unpinned = before.auto?.includes(path) ?? false;
+      if (
+        isAuto(value) ? unpinned : !unpinned && deepEqual(valueAtPath(before.config, path), value)
+      )
+        return;
       if (
         isDev() &&
         !hasConfigPath(before.config as Record<string, unknown>, path) &&
@@ -115,16 +149,28 @@ export function useTrialWrites({
           `[labkit] setConfig: unknown path "${path}" for instrument "${before.instrumentName}"`,
         );
       }
-      recordWrite(path);
+      const continued = recordWrite(path);
       updateTrialConfig(trialId, path, value);
       const after = stored();
-      if (!instrument.onConfigChange || !after) return;
-      const resolved = (r: TrialRecord): unknown =>
-        resolveAutoConfig(schema, r.config, new Set(r.auto ?? []));
-      const next = instrument.onConfigChange(resolved(after), resolved(before), after.state);
-      updateTrialState(trialId, next as never);
+      if (instrument.onConfigChange && after) {
+        const resolved = (r: TrialRecord): unknown =>
+          resolveAutoConfig(schema, r.config, new Set(r.auto ?? []));
+        const next = instrument.onConfigChange(resolved(after), resolved(before), after.state);
+        updateTrialState(trialId, next as never);
+      }
+      if (continued) takeBackIfUnchanged();
     },
-    [stored, schema, over, recordWrite, updateTrialConfig, updateTrialState, trialId, instrument],
+    [
+      stored,
+      schema,
+      over,
+      recordWrite,
+      takeBackIfUnchanged,
+      updateTrialConfig,
+      updateTrialState,
+      trialId,
+      instrument,
+    ],
   );
 
   return useMemo(() => ({ snapshot, setConfig }), [snapshot, setConfig]);
