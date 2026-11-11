@@ -14,10 +14,12 @@ import { editEnd, imeKey } from '@weasel-js/ui-logic';
 import type { StyledRun } from '@weasel-js/text';
 import { charOffsetToDomPosition, domToRuns, type OverlayRunBase } from './domRuns';
 import {
-  applyStyleToRange, effectiveRangeStyle, nodeHasFlag, patchRangeStyle, rangeWeight, setFlagOverRange,
-  styleAtRange, supersededKey, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
+  applyStyleToRange, effectiveRangeStyle, nodeHasFlag, rangeWeight, setFlagOverRange,
+  styleAtRange, unboldPatch, type FlagKey, type RangeStyle, type RunStylePatch,
 } from '@weasel-js/text';
+import { armedOver, armPatch } from './armedStyle';
 import { draftChanged, overlayDraft, writeEdit } from './overlayDraft';
+import { runStyleAt } from './runSplice';
 import { overlayTop } from './overlayFrame';
 import { mountOverlayBoxes, placeOverlay } from './overlayPlace';
 export { overlayTop };
@@ -68,22 +70,6 @@ function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle {
 /** No pending style. One frozen object so re-publishing an already-empty
  *  pending style doesn't re-render every consumer. */
 const NO_PENDING: RunStylePatch = Object.freeze({});
-
-/**
- * Merge `patch` into a pending style. A key set to `false` or `undefined` is
- * deleted rather than stored, and bold and a weight supersede each other —
- * the canonical form a stored run keeps.
- */
-function mergePending(prev: RunStylePatch, patch: RunStylePatch): RunStylePatch {
-  const next: Record<string, unknown> = { ...prev };
-  const superseded = supersededKey(patch);
-  if (superseded !== undefined) delete next[superseded];
-  for (const [key, value] of Object.entries(patch)) {
-    if (value === undefined || value === false) delete next[key];
-    else next[key] = value;
-  }
-  return next as RunStylePatch;
-}
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
 export function useTextEdit(
@@ -273,7 +259,7 @@ export function useTextEdit(
     // A collapsed caret has no run to restyle, so the styling is armed for
     // the next character instead of silently doing nothing.
     if (range.start === range.end) {
-      armPending(mergePending(pendingRef.current, patch), range.start);
+      armPending(armPatch(runStyleAt(runs, range.start), pendingRef.current, patch), range.start);
       restoreOverlayFocus(overlay, range);
       return;
     }
@@ -299,7 +285,7 @@ export function useTextEdit(
     // whatever is already armed, so pressing Cmd+B twice disarms rather than
     // arming a second time.
     const current = range.start === range.end
-      ? patchRangeStyle(styleAtCaret(runs, range.start), pendingRef.current)
+      ? armedOver(styleAtCaret(runs, range.start), pendingRef.current)
       : styleAtRange(runs, range.start, range.end);
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
   }, [applyStyleToSelection, editingIdRef, styleOf]);
@@ -461,7 +447,7 @@ function shownStyle(
 ): RangeStyle | null {
   if (editingId === null) return null;
   return effectiveRangeStyle(
-    patchRangeStyle(rangeStyle ?? {}, pendingStyle),
+    armedOver(rangeStyle ?? {}, pendingStyle),
     nodeStyle ?? opts.getStyle(editingId),
     opts.getPaint?.(editingId),
   );

@@ -13,6 +13,7 @@
 import { runsToPlainText, supersededKey, type RunStylePatch, type StyledRun } from '@weasel-js/text';
 import { domPositionToCharOffset, domToRuns, normalizeSmallCaps, type OverlayRunBase } from './domRuns';
 import { readSelectionOffsets, selectOffsets, writeRunsPreservingSelection } from './overlaySelection';
+import { withArmed } from './armedStyle';
 import { clipboardRuns } from './pasteRuns';
 import { replaceRunRange, runStyleAt } from './runSplice';
 import type { TextEditSelection } from './textEditTypes';
@@ -76,11 +77,7 @@ function styledForRange(
   pasted: readonly StyledRun[], runs: readonly StyledRun[], at: TextEditSelection, pending: RunStylePatch,
 ): StyledRun[] {
   // Over a selection, the first character replaced; at a caret, the one before it.
-  const base: Record<string, unknown> = { ...runStyleAt(runs, at.start === at.end ? at.start : at.start + 1) };
-  for (const [key, value] of Object.entries(pending)) {
-    if (value === undefined || value === false) delete base[key];
-    else base[key] = value;
-  }
+  const base = withArmed(runStyleAt(runs, at.start === at.end ? at.start : at.start + 1), pending);
   return pasted.map((run) => {
     const styled: Record<string, unknown> = { ...base, ...run };
     const superseded = supersededKey(run);
