@@ -83,11 +83,19 @@ function faceFor(
     glyphD(cp: number): string | null {
       const index = font.charToGlyphIndex(String.fromCodePoint(cp));
       if (!index) return null;
-      const d = font.glyphs.get(index).getPath(0, 0, 1).toPathData(OUTLINE_PRECISION);
+      // Unoptimized: opentype.js's optimizer drops a contour's last line when it ends within one *unit* of the
+      // start, and at one unit per em that is every last line; a CFF contour, which closes implicitly, loses a vertex.
+      const d = (font.glyphs.get(index).getPath(0, 0, 1) as unknown as PathData)
+        .toPathData({ decimalPlaces: OUTLINE_PRECISION, optimize: false, flipY: false });
       // A glyph with no contours (a space) serializes to the empty string.
       return d.length > 0 ? d : null;
     },
   };
+}
+
+/** opentype.js 2's `toPathData`, which the 1.x typings declare as taking only a precision. */
+interface PathData {
+  toPathData(options: { decimalPlaces: number; optimize: boolean; flipY: boolean }): string;
 }
 
 interface EmbedTables {
