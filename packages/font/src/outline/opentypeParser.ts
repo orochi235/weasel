@@ -13,6 +13,7 @@
 import { OUTLINE_PRECISION, type FaceEmbedding, type OutlineFace, type OutlineParser } from './OutlineFace';
 import { sfntFromCollection, tableOf } from './sfnt';
 import { checkCff } from './cffCheck';
+import { checkCmap } from './cmapCheck';
 import { gposPairKerning, type PairKerning } from './gposKerning';
 import { faceMetricsFromTables, type FaceMetricTables } from '../faceMetrics';
 
@@ -176,6 +177,8 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
     }
     const cff = isCff(single) ? tableOf(single, 'CFF ') : null;
     if (cff) checkCff(cff);
+    const cmap = tableOf(single, 'cmap');
+    if (cmap) checkCmap(cmap);
     return faceFor(parse(single), gposPairKerning(single), single);
   };
 }
