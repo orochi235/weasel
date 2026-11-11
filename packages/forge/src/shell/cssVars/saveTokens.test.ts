@@ -137,6 +137,15 @@ describe('applyTokenEdits on names every object answers to (found by saveTokens.
   });
 });
 
+describe('applyTokenEdits on a written-out entry with no branch for the selection (found by saveTokens.pbt)', () => {
+  it('pins the value there, since the selection is known and only the branch is missing', () => {
+    const axes = { mode: { default: 'a-b', values: { 'a-b': {} } } };
+    const next = saved(applyTokenEdits({ name: 't', axes, components: { constructor: { by: 'mode' } }, pins: {} }, { constructor: '#111111' }, { mode: 'a-b' }));
+    expect(next.pins?.constructor).toEqual({ by: 'mode', 'a-b': '#111111' });
+    expect(derive(next, { mode: 'a-b' }).tokens.constructor?.value).toBe('#111111');
+  });
+});
+
 describe('canSave', () => {
   it('says whether a save has a place for a token', () => {
     expect(canSave(theme, 'gray-50', dark)).toBe(true);

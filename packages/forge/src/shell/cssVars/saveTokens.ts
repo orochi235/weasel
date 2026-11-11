@@ -1,7 +1,7 @@
 import { isPlainObject } from '@weasel-js/core';
 import { type AxisDefs, isByAxis, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import { axisDependencies } from '@weasel-js/theme/engine';
-import { branchOf, EditError, type Holder, type ScaleEditResult, type Slot } from './saveScales';
+import { EditError, type Holder, type ScaleEditResult, type Slot } from './saveScales';
 
 const REFERENCE = /\{[^}]+\}/;
 /** The layers a token's value can be written out in, in the order the definition resolves a name. */
@@ -24,9 +24,9 @@ function picked(selection: Selection, axis: string, where: string): string {
   return value;
 }
 
-/** `holder[key]` through its per-axis branches; undefined where a pin leaves the selection out, so it overrides nothing. */
-function pinBranch(holder: Holder, key: string, selection: Selection): Slot | undefined {
-  let slot: Slot = { holder, key, where: `pins.${key}` };
+/** `holder[key]` through its per-axis branches; undefined where an entry leaves the selection out, so it writes nothing there. */
+function branchAt(holder: Holder, key: string, where: string, selection: Selection): Slot | undefined {
+  let slot: Slot = { holder, key, where };
   for (let value = holder[key]; isByAxis(value); value = slot.holder[slot.key]) {
     const at = picked(selection, value.by, slot.where);
     if (!Object.hasOwn(value, at)) return undefined;
@@ -40,7 +40,7 @@ function writtenSlot(definition: ThemeDefinition, token: string, selection: Sele
   for (const layer of LAYERS) {
     const entries = definition[layer] as Holder | undefined;
     if (!entries || !Object.hasOwn(entries, token)) continue;
-    const slot = layer === 'pins' ? pinBranch(entries, token, selection) : branchOf(entries, token, `${layer}.${token}`, selection);
+    const slot = branchAt(entries, token, `${layer}.${token}`, selection);
     if (slot === undefined) continue;
     return derived(slot.holder[slot.key]) ? null : slot;
   }
