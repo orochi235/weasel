@@ -29,9 +29,11 @@ export function easingLabel(spec?: EasingSpec): string {
   return 'custom';
 }
 
-/** `count` evenly spaced samples of the curve over 0..1, for drawing it. */
+/** `count` evenly spaced samples of the curve over 0..1, for drawing it: the whole count below a fraction, and none
+ *  for a negative or non-finite one. */
 export function sampleEasing(spec: EasingSpec | undefined, count: number): number[] {
   const fn = resolveEasing(spec);
+  count = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
   const out = new Array<number>(count);
   const last = count - 1;
   for (let i = 0; i < count; i++) out[i] = fn(last === 0 ? 0 : i / last);

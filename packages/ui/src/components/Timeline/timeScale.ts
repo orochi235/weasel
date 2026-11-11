@@ -41,11 +41,12 @@ export function spanPercent(window: TimeWindow, ms: number): string {
 }
 
 function clampWindow(w: TimeWindow, bounds: TimeWindow): TimeWindow {
+  if (w.from >= bounds.from && w.to <= bounds.to) return { from: w.from, to: w.to };
   const span = Math.min(w.to - w.from, bounds.to - bounds.from);
   let from = w.from;
   if (from < bounds.from) from = bounds.from;
-  if (from + span > bounds.to) from = bounds.to - span;
-  return { from, to: from + span };
+  if (from + span > bounds.to) from = Math.max(bounds.from, bounds.to - span);
+  return { from, to: Math.min(bounds.to, from + span) };
 }
 
 /** Scale the window by `factor` about `atMs`, which stays at the same fraction

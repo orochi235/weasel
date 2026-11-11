@@ -101,7 +101,8 @@ export function tokenCategory(token: TokenEntry): TokenCategory {
   }
 }
 
-const AMOUNT = String.raw`-?(?:\d+\.?\d*|\.\d+)`;
+// CSS's <number>: a sign, and an exponent as `${n}` writes one past 1e21 or below 1e-6.
+const AMOUNT = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?`;
 const DIMENSION = new RegExp(
   `^${AMOUNT}(?:px|rem|em|%|ch|ex|lh|rlh|vh|vw|vmin|vmax|svh|lvh|dvh|cqw|cqh|pt|pc|cm|mm|in|q)$`,
   'i',

@@ -13,7 +13,7 @@
  * monotonicity-preserving by construction.
  */
 
-import type { Point } from './catmullRom';
+import { sampleSteps, type Point } from './catmullRom';
 
 /** Per-axis tangent computation for a 1D series of y-values sampled at
  *  unit intervals (index-parameterized). Returns one tangent per
@@ -72,7 +72,7 @@ export function sampleMonotone(
   samplesPerSegment: number,
 ): Point[] {
   if (anchors.length < 2) return [];
-  if (samplesPerSegment < 1) samplesPerSegment = 1;
+  samplesPerSegment = sampleSteps(samplesPerSegment);
 
   const n = anchors.length;
   const xs = anchors.map((a) => a.x);

@@ -827,6 +827,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): a menu number row's default display stops at 20 decimal places,
   quantity's cap, so a value with more reads back within half the twentieth place, and one under 5e-21 as 0. Left
   as is: a row that needs finer values names its own display.
+- Ruled 2026-11-10 (my call, overnight sweep): `UnitField`'s default display stops at 20 decimal places too, so
+  text it shows for a finer value (5e-324, 1.0000000000000001e-7), typed back, commits the rounded value. Left as
+  is, as the menu row's ruling above leaves it; its property retypes only values the display holds exactly.
+- Ruled 2026-11-10 (my call, overnight sweep): `sampleByInterpolation` takes a fractional samples-per-segment as
+  the whole count below it and a `NaN` or infinite one as 1; `sampleEasing` takes a fraction the same way and a
+  negative or non-finite count as 0. Why: the count is of samples, and a fraction dropped every anchor after the
+  first, `NaN` gave no points, and a negative count threw.
 
 ## Diagram, audio, and labkit
 
