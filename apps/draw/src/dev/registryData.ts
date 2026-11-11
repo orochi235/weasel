@@ -3,10 +3,12 @@ import { defaultNodeProperties, type NodePropertiesEntry } from '@weasel-js/core
 import { parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import { type PrefObject, prefSectionLeaves } from '@weasel-js/prefs';
 import { iconSpecRefs } from '@weasel-js/icons';
+import traitSchemas from 'virtual:weasel-trait-schemas';
 import { ICON_GROUPS, icon } from '../icons.gen';
 import {
   type ActionEntry,
   type BundleEntry,
+  type ExportsEntry,
   GESTURE_CATALOG_KEYS,
   type GestureEntry,
   type IconEntry,
@@ -129,6 +131,8 @@ export function countForEntry(
       return tools.filter((t) => t.surface.outputs[entry.id]).length;
     case 'slot':
       return tools.filter((t) => t.slot === entry.id).length;
+    case 'exports':
+      return Object.keys(entry.names).length;
     default:
       return undefined;
   }
@@ -147,6 +151,16 @@ export function collectGestures(): readonly GestureEntry[] {
  *  newly-registered op appears here without a second list to update. */
 export function collectOpKinds(): readonly OpKindEntry[] {
   return Weasel.registeredOpNames().map((id) => ({ kind: 'opKind', id, label: id }));
+}
+
+/** `@weasel-js/core`'s entry points, from the checked-in exports inventory. */
+export function collectExports(): readonly ExportsEntry[] {
+  return Object.entries(traitSchemas.exports).map(([id, names]) => ({
+    kind: 'exports',
+    id,
+    label: id === '.' ? '@weasel-js/core' : `@weasel-js/core/${id.slice(2)}`,
+    names,
+  }));
 }
 
 export function collectSlots(): readonly SlotEntry[] {

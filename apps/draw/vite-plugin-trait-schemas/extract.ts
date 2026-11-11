@@ -5,6 +5,7 @@
  * are repo-relative, like the rest of the inspector's citations.
  */
 import { Project, type Node, SyntaxKind, type SourceFile } from 'ts-morph';
+import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import type {
   TraitSchemaIndex,
@@ -35,6 +36,7 @@ export function watchedFilesFor(repoRoot: string): readonly string[] {
     resolve(repoRoot, 'packages/core/src/interactions/actions/defaults/index.ts'),
     resolve(repoRoot, 'packages/core/src/interactions/gestures/types.ts'),
     resolve(repoRoot, 'packages/core/src/core/scene/types.ts'),
+    resolve(repoRoot, 'packages/core/exports.inventory.json'),
   ];
 }
 
@@ -52,9 +54,11 @@ export function extractTraitSchemas(repoRoot: string): TraitSchemaIndex {
   const actions = safe('actions', () => extractActions(project, repoRoot)) ?? {};
   const gestures = safe('gestures', () => extractGestures(project, repoRoot)) ?? {};
   const node = safe('node', () => extractNode(project, repoRoot)) ?? FALLBACK_NODE;
+  const exports = safe('exports', () =>
+    JSON.parse(readFileSync(resolve(repoRoot, 'packages/core/exports.inventory.json'), 'utf8')) as TraitSchemaIndex['exports']) ?? {};
 
   return {
-    shapes, ops, actions, gestures, node,
+    shapes, ops, actions, gestures, node, exports,
     extractedAt: Date.now(),
   };
 }

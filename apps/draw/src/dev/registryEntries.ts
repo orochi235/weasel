@@ -13,6 +13,7 @@ export type TreeEntry =
   | PhaseOutputEntry
   | OpKindEntry
   | SlotEntry
+  | ExportsEntry
   | MetaEntry;
 
 /** Gesture kinds a tool binds. `true` when at least one entry in
@@ -273,6 +274,9 @@ export const TOOL_SLOTS: readonly ToolEntry['slot'][] = ['registry', 'ambient'];
 
 export interface SlotEntry { kind: 'slot'; id: ToolEntry['slot']; label: string }
 
+/** One of `@weasel-js/core`'s entry points; `id` is its `exports` subpath (`.`, `./math`). */
+export interface ExportsEntry { kind: 'exports'; id: string; label: string; names: Readonly<Record<string, string>> }
+
 export interface MetaEntry { kind: 'meta'; id: 'tokens' | 'sceneNode'; label: string }
 
 export type TreeCategory =
@@ -280,6 +284,7 @@ export type TreeCategory =
   | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'slots'
+  | 'exports'
   | 'meta';
 
 export interface TreeCategoryNode {

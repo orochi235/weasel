@@ -716,10 +716,6 @@ only story runner in the repo.
     Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
     tests in a run that logged `ERR_NETWORK_CHANGED`.
 
-- **(P3) [agent] Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one
-  is desired. The barrel test (`packages/core/src/index.barrel.test.ts`) asserts parity for op
-  factories, shape kinds, and the `features` presets; the rest of the public exports are uncovered.
-  Ruled (2026-11-07): wanted. Closes when a checked-in inventory holds core's barrel to every public export.
 
 ---
 

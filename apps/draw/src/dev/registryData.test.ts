@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { IconRef } from '@weasel-js/icons';
-import { collectIcons, collectBundles, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
+import { collectIcons, collectBundles, collectExports, collectPropertiesTrait, collectOpFactories, collectOpKinds, collectShapeTrait } from './registryData';
 import type { ActionEntry } from './registryEntries';
 import { icon } from '../icons.gen';
 import * as Weasel from '@weasel-js/core';
@@ -63,6 +63,13 @@ describe('registryData static collectors', () => {
     expect(ids).toContain('createInsertOp');
     expect(ids).toContain('createDeleteOp');
     expect(ids).toContain('createTransformOp');
+  });
+
+  it('collectExports lists every core entry point with the names the barrel ships', () => {
+    const byId = new Map(collectExports().map((e) => [e.id, e]));
+    expect(byId.get('.')?.label).toBe('@weasel-js/core');
+    expect(byId.get('.')?.names.createInsertOp).toBe('function');
+    expect(byId.get('./math')?.label).toBe('@weasel-js/core/math');
   });
 
   it('collectShapeTrait returns the built-in shape kind ids', () => {

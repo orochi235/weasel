@@ -80,6 +80,8 @@ export interface TraitSchemaIndex {
   readonly actions: Record<string, ActionSchema>;
   readonly gestures: Record<string, GestureSchema>;
   readonly node: SceneNodeSchema;
+  /** `packages/core/exports.inventory.json`: each entry point's export names and their kinds. */
+  readonly exports: Readonly<Record<string, Readonly<Record<string, string>>>>;
   /** Wall-clock ms when the plugin produced this index. */
   readonly extractedAt: number;
 }
