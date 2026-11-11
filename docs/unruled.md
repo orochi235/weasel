@@ -746,6 +746,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   edit that would change nothing does nothing. A gesture whose writes bring the trial's config and state back to
   where it began takes back the step its first write recorded, where that step is the trial's own snapshot; an
   instrument's own history and the lab's `over` keep theirs, since the trial cannot take back their steps.
+- Ruled 2026-11-10 (my call, overnight sweep): `Hud.add` of a widget already in the HUD changes nothing, and does not
+  move it to the top: an edit that would change nothing does nothing.
+- Ruled 2026-11-10 (my call, overnight sweep): a HUD menu's text row types any key that is one grapheme cluster, a
+  multi-code-point emoji included, and a word move or delete widens to the cluster boundary past where the word run
+  stops, since `editKey`'s doc makes a character a grapheme cluster.
+- Ruled 2026-11-10 (my call, overnight sweep): a shadow's spread changes its corner radius by CSS Backgrounds 3's rule
+  (`spreadRadius`, renderer): a radius under the spread grows by the spread times 1 + (r/spread - 1)^3, so a square
+  box casts a square shadow; a HUD inset layer's hole follows the same rule with the spread negated, as the spec
+  says for inner shadows.
 
 ## draw
 
