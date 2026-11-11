@@ -107,5 +107,5 @@ describe('point and slot arrangements at the edges, property', () => {
       t.count(got.length ? 'points' : 'none');
     }), RUNS);
     t.atLeast('points', 50);
-  }, TIMEOUT);
+  }, timeoutFor(300, 25));
 });
