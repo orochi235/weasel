@@ -139,6 +139,16 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: anything one keystroke can fire twice is a conflict. A chord typing no Latin
   character matches by its code's letter or digit, so `findConflicts` reports a modified `key: 'a'`
   binding against one naming `code: 'KeyA'` (and `Digit*` likewise) wherever both take a chord.
+- 2026-11-11 (my call, kernel3d second property pass): a camera drag reads a host that answered with its own
+  write at once as caught up, so any other camera the dep answers with at the next move is another writer's and
+  the drag rebases onto it, even one it saw before (a `home` returning one camera object, pressed mid-drag). A host
+  that lands its writes on its next render is still read by what it answers: a camera it showed at the previous move
+  is taken for its lag.
+- Open (kernel3d second property pass, 2026-11-11): such a lagging host cannot be told apart from another writer
+  setting that same camera object again; the drag then moves on from where it was and undoes the write.
+- 2026-11-11 (my call, kernel3d second property pass): `orbitBy`, `dollyBy`, `panBy`, and `dollyToward` return the
+  camera as it was for an input that is `NaN` or would carry its target, angles, or distance past the double range.
+  An infinite or zero dolly factor still reaches the distance limits, as before.
 
 ## Snapping
 
@@ -208,6 +218,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is always one the box has.
 - Ruled 2026-11-10: no equal-spacing placement is offered across a gap another box blocks, a sibling
   the box overlaps included.
+- 2026-11-11 (my call, kernel3d second property pass): kernel3d's `groundGridSource` offers no line along an axis
+  whose line index (the probe's coordinate over the step) is past a safe integer, as guides' `linesIn` lists none
+  there: lines a step apart are one number, or none is finite.
 
 ## Scene, move, and history
 
@@ -346,6 +359,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   an invisible step, after the Align ruling above.
 - Ruled 2026-11-10 (my call, overnight sweep): `toolStacksOf` reports no stack for a stacked set that names no tool, as
   `withoutTools` leaves one cut to nothing: a palette has no button to draw for it.
+- 2026-11-11 (my call, kernel3d second property pass): `POSE3_COMPOSITION.decompose` reads a frame axis whose
+  quotient is not finite, a subnormal scale say, as collapsed, the rule it had for a scale of 0. A world pose rebased
+  into such a frame lands on the frame's origin along that axis when composed back, not where it was.
 
 ## Rendering, canvas, and paint
 
@@ -500,6 +516,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   entries are not finite numbers, whose `screen` is not nine of them, or whose `format`, `background`,
   `annotations`, or `overlay` has the wrong type, with an error naming the field. Fields it does not know
   pass through.
+- 2026-11-11 (my call, kernel3d second property pass): `projectPoint` gives `null` for a pane with no area, and
+  `projectAabbToScreen` for a rect with no area, as `rayAt` names no ray there; both give `null` for a camera whose
+  near plane is its far one, where every clip depth is `NaN`.
+- Open (kernel3d second property pass, 2026-11-11): a camera with a near plane at 0, a field of view of π, or its eye
+  at a pole still projects points (all to one depth, or all to the middle of the pane) though `rayAt` names no ray
+  through any of them, so it draws what nothing can pick. Whether projection should refuse those cameras too, or
+  `rayAt` cast from the eye for a near plane at 0, is unsettled. A near plane past the far one draws depth mirrored,
+  and its rays run back toward the eye.
 
 ## Text
 

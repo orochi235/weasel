@@ -7,12 +7,18 @@ import type { Pose3 } from './pose3';
 
 const times = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x * b.x, y: a.y * b.y, z: a.z * b.z });
 
-/** `a / s` per axis, reading a collapsed axis (`s` 0) as `zero`: nothing in a
- *  zero-scaled frame can be told apart along it. */
+/** `a / s` on one axis, reading a collapsed one as `zero`: nothing in a
+ *  zero-scaled frame can be told apart along it, nor in one scaled too small
+ *  for the quotient to be finite. */
+const overAxis = (a: number, s: number, zero: number): number => {
+  const q = a / s;
+  return s === 0 || !Number.isFinite(q) ? zero : q;
+};
+
 const over = (a: Vec3, s: Vec3, zero: Vec3): Vec3 => ({
-  x: s.x === 0 ? zero.x : a.x / s.x,
-  y: s.y === 0 ? zero.y : a.y / s.y,
-  z: s.z === 0 ? zero.z : a.z / s.z,
+  x: overAxis(a.x, s.x, zero.x),
+  y: overAxis(a.y, s.y, zero.y),
+  z: overAxis(a.z, s.z, zero.z),
 });
 
 const ORIGIN: Vec3 = { x: 0, y: 0, z: 0 };

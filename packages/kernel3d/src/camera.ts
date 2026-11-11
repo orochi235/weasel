@@ -99,29 +99,39 @@ export function clampCamera(camera: Camera3d, limits: Partial<OrbitLimits> = {})
   return { ...camera, pitch, distance };
 }
 
+/** `moved`, or `camera` itself where a gesture would leave its place or
+ *  angles not finite: an input that is `NaN` or carries it past the double
+ *  range moves nothing, rather than leaving a camera that draws nothing. */
+function heldFinite(camera: Camera3d, moved: Camera3d): Camera3d {
+  const { target: t, yaw, pitch, distance } = moved;
+  return Number.isFinite(t.x + t.y + t.z + yaw + pitch + distance) ? moved : camera;
+}
+
 /** The camera turned about its target by the given radians, pitch held inside
- *  `limits`. Yaw is not wrapped. */
+ *  `limits`. Yaw is not wrapped. A turn that is not finite leaves it as it is. */
 export function orbitBy(
   camera: Camera3d,
   deltaYaw: number,
   deltaPitch: number,
   limits?: Partial<OrbitLimits>,
 ): Camera3d {
-  return clampCamera(
+  return heldFinite(camera, clampCamera(
     { ...camera, yaw: camera.yaw + deltaYaw, pitch: camera.pitch + deltaPitch },
     limits,
-  );
+  ));
 }
 
-/** The camera with its distance multiplied by `factor`, held inside `limits`. */
+/** The camera with its distance multiplied by `factor`, held inside `limits`.
+ *  A `NaN` factor leaves it as it is. */
 export function dollyBy(camera: Camera3d, factor: number, limits?: Partial<OrbitLimits>): Camera3d {
-  return clampCamera({ ...camera, distance: camera.distance * factor }, limits);
+  return heldFinite(camera, clampCamera({ ...camera, distance: camera.distance * factor }, limits));
 }
 
 /**
  * The camera with its target slid across the screen plane, so the point at the
  * target follows a pointer that moved `dx`, `dy` CSS pixels in a pane
- * `paneHeight` pixels tall. Neither angle nor distance changes.
+ * `paneHeight` pixels tall. Neither angle nor distance changes. A pan that
+ * carries the target past the double range leaves the camera as it is.
  */
 export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: number): Camera3d {
   if (!(paneHeight > 0)) return camera;
@@ -134,7 +144,7 @@ export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: numb
     z: -Math.cos(yaw) * Math.sin(pitch),
   };
   const shift = add(scale(right, -dx * perPixel), scale(up, dy * perPixel));
-  return { ...camera, target: add(camera.target, shift) };
+  return heldFinite(camera, { ...camera, target: add(camera.target, shift) });
 }
 
 /**
@@ -160,5 +170,5 @@ export function dollyToward(
     -kept * (at.y - pane.height / 2),
     pane.height,
   );
-  return { ...dollied, target: moved.target };
+  return heldFinite(camera, { ...dollied, target: moved.target });
 }

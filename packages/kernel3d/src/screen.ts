@@ -6,8 +6,15 @@
  */
 
 import {
+  add,
+  compose,
+  cross,
+  dot,
   invert,
+  multiply,
   normalize,
+  quatIdentity,
+  scale,
   sub,
   transformPoint,
   transformPoint4,
@@ -73,7 +80,10 @@ export function rayThroughScreenPoint(
   rect: ScreenBox,
   viewProjection: Mat4,
 ): Ray | null {
-  const inv = invert(viewProjection);
+  // Inverted about the eye: a camera far from the world origin puts a translation in the matrix that makes it
+  // look too ill-conditioned to invert, though the rotation and projection are all an inverse needs.
+  const eye = eyeOf(viewProjection) ?? ORIGIN;
+  const inv = invert(multiply(viewProjection, compose(eye, quatIdentity(), UNIT)));
   if (!inv) return null;
   const ndc = screenToNdc(point, rect);
   const near = transformPoint(inv, { x: ndc.x, y: ndc.y, z: -1 });
@@ -82,7 +92,23 @@ export function rayThroughScreenPoint(
   // normalize answers zero for a non-finite difference, which is no direction.
   const unit = normalize(direction);
   if (unit.x === 0 && unit.y === 0 && unit.z === 0) return null;
-  return { origin: near, direction };
+  return { origin: add(eye, near), direction };
+}
+
+const ORIGIN: Vec3 = { x: 0, y: 0, z: 0 };
+const UNIT: Vec3 = { x: 1, y: 1, z: 1 };
+
+/** Where a perspective view-projection's rays all leave from: the point clip x, y and w are all zero at. `null`
+ *  for a projection with no such point, a parallel or a degenerate one. */
+function eyeOf(m: Mat4): Vec3 | null {
+  const row = (r: number): Vec3 => ({ x: m[r]!, y: m[4 + r]!, z: m[8 + r]! });
+  const [a, b, c] = [row(0), row(1), row(3)];
+  const bc = cross(b, c);
+  const ca = cross(c, a);
+  const ab = cross(a, b);
+  const det = dot(a, bc);
+  const eye = scale(add(add(scale(bc, m[12]!), scale(ca, m[13]!)), scale(ab, m[15]!)), -1 / det);
+  return Number.isFinite(eye.x + eye.y + eye.z) ? eye : null;
 }
 
 type Clip = readonly [number, number, number, number];
@@ -122,6 +148,7 @@ export function projectAabbToScreen(
   viewProjection: Mat4,
   rect: ScreenBox,
 ): ScreenBox | null {
+  if (!(rect.width > 0 && rect.height > 0)) return null;
   const corners: Clip[] = [];
   for (let i = 0; i < 8; i++) {
     const corner: Vec3 = {
@@ -158,7 +185,8 @@ export function projectAabbToScreen(
       for (const side of CLIP_SIDES) {
         const da = side(a);
         const db = side(b);
-        if (da < 0 && db < 0) { t0 = 1; t1 = 0; break; }
+        // A side that is NaN, as every depth is under planes with no depth between them, draws nothing.
+        if (Number.isNaN(da) || Number.isNaN(db) || (da < 0 && db < 0)) { t0 = 1; t1 = 0; break; }
         if (da < 0) t0 = Math.max(t0, da / (da - db));
         else if (db < 0) t1 = Math.min(t1, da / (da - db));
       }
@@ -169,5 +197,6 @@ export function projectAabbToScreen(
   }
 
   if (!any) return null;
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  const out = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  return Number.isFinite(out.x + out.y + out.width + out.height) ? out : null;
 }

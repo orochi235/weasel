@@ -164,14 +164,19 @@ export interface GroundGridSourceOptions {
 /**
  * A grid on the ground plane as snap targets: for each pointer or geometry
  * probe on the ground, the grid line on either side of it along each of the
- * ground's two axes. Its reach is unlimited and it is a fallback, so it
- * holds every axis no target claims and never displaces one.
+ * ground's two axes, none along an axis where the probe lies so far out that
+ * lines a step apart are no longer two numbers. Its reach is unlimited and it
+ * is a fallback, so it holds every axis no target claims and never displaces one.
  */
 export function groundGridSource(opts: GroundGridSourceOptions): SnapSource<Vec3> {
   const up = normalize(opts.up ?? DEFAULT_UP);
   const [u, v] = planeBasis(up);
-  const lines = (c: number): [number, number] => {
-    const near = Math.round(c / opts.step) * opts.step;
+  const lines = (c: number): number[] => {
+    const k = Math.round(c / opts.step);
+    // Past a safe index, lines a step apart are one number or none finite, so the grid offers none there,
+    // as guides' grid lists none.
+    if (!Number.isSafeInteger(k)) return [];
+    const near = k * opts.step;
     return [near, near + (c >= near ? opts.step : -opts.step)];
   };
   return {
