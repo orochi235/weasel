@@ -15,7 +15,7 @@ import { transformPath } from './transformPath';
  *  path, as the shape is wide. */
 export interface RepeatAlongPathOptions {
   /**
-   * How many copies. With no `spacing`, they spread evenly over the whole
+   * How many copies. With no `spacing`, or 0, they spread evenly over the whole
    * path — the first starting at its start and the last ending at its end on
    * an open one, evenly round a closed one — and the default is 5. With a
    * `spacing`, it caps the run; unset, as many as fit.
@@ -65,7 +65,7 @@ export function stationsAlongPath(path: Path, opts: RepeatAlongPathOptions = {},
 /** How many copies `size` long go on a path `L` long, and the gap between each two. */
 function layout(L: number, closed: boolean, size: number, opts: RepeatAlongPathOptions): { n: number; gap: number } {
   const { spacing } = opts;
-  if (spacing === undefined || !(size + spacing > 0)) {
+  if (spacing === undefined || !(spacing > 0)) {
     const n = Math.max(Math.floor(opts.count ?? 5), 0);
     if (closed) return { n, gap: n > 0 ? L / n - size : 0 };
     return { n, gap: n > 1 ? (L - n * size) / (n - 1) : 0 };
