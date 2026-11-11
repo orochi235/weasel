@@ -12,6 +12,9 @@
 import type { ScreenLength, Stroke, Fill } from '@weasel-js/paint';
 import type { TextTransform } from './runs/textTransform';
 import type { FontVariantCaps } from './runs/smallCaps';
+import {
+  difference, fittedMarkdown, flagsKey, longestMarker, markersByDelimiter, readDelimiters, toggle,
+} from './runs/delimiterRuns';
 
 /** A span of text with its own styling, as authored. Fields left absent
  *  inherit from the node's text style — this is the difference between a run
@@ -193,6 +196,9 @@ function sameFlags(a: ReadonlySet<RunFlag>, b: readonly RunFlag[]): boolean {
  * Markers are written where a flag changes, not around every run: the reader
  * toggles flags, so two runs sharing one would close and reopen it as a
  * single delimiter run (`*a**b*`), which reads as a different marker.
+ * Markers written in a row on one delimiter fuse the same way, so a change
+ * whose markers would read back as another is spelled some other way; where
+ * the grammar has no spelling for it, the flags it cannot say there are dropped.
  */
 export function runsToMarkdown(
   runs: readonly StyledRun[],
@@ -209,31 +215,33 @@ export function runsToMarkdown(
     const singles = flags.map((f) => grammar.markers.find((m) => m.flags.length === 1 && m.flags[0] === f));
     return singles.every((m) => m !== undefined) ? singles as RunMarker[] : null;
   };
-  const write = (markers: readonly RunMarker[]): void => {
-    for (const m of markers) out += m.delimiter.repeat(m.repeat);
-  };
-  const moveTo = (want: ReadonlySet<RunFlag>): void => {
+  const spell = (markers: readonly RunMarker[]): string => markers.map((m) => m.delimiter.repeat(m.repeat)).join('');
+  const byDelimiter = markersByDelimiter(grammar);
+  /** Writes the markers for the change to `want`, unless they would read back as another change. */
+  const moveTo = (want: ReadonlySet<RunFlag>): boolean => {
     const kept = open.filter((f) => want.has(f));
     const opening = [...want].filter((f) => !kept.includes(f));
     const close = cover(open.filter((f) => !want.has(f)).reverse());
     const reopen = cover(opening);
-    if (close && reopen) {
-      write(close);
-      write(reopen);
-      open = [...kept, ...opening];
-      return;
-    }
     // Only a marker spelling several flags at once says the change: close them all and open afresh.
-    write(cover([...open].reverse()) ?? []);
-    write(cover([...want]) ?? []);
-    open = [...want];
+    const text = close && reopen
+      ? spell(close) + spell(reopen)
+      : spell(cover([...open].reverse()) ?? []) + spell(cover([...want]) ?? []);
+    const read = readDelimiters(text, byDelimiter);
+    if (!read || flagsKey(read) !== flagsKey(difference(open, want))) return false;
+    out += text;
+    open = close && reopen ? [...kept, ...opening] : [...want];
+    return true;
   };
-  for (const r of runs) {
-    // An empty run would write its markers back to back, which read as a toggle.
-    if (r.text.length === 0) continue;
-    moveTo(spelled(flagsOf(r, grammar), grammar));
-    out += escapeFor(r.text, chars);
+  // An empty run would write its markers back to back, which read as a toggle.
+  const shown = runs.filter((r) => r.text.length > 0);
+  const wants = shown.map((r) => spelled(flagsOf(r, grammar), grammar));
+  for (let i = 0; i < shown.length; i++) {
+    // Markers on one delimiter written in a row fuse, and the run they make can read as another marker.
+    if (!moveTo(wants[i]!)) return fittedMarkdown(shown.map((r) => escapeFor(r.text, chars)), wants, byDelimiter);
+    out += escapeFor(shown[i]!.text, chars);
   }
+  // Nothing follows the closing markers, so ones that would misread are left off.
   moveTo(new Set());
   return out;
 }
@@ -256,13 +264,7 @@ export function markdownToRuns(
 ): StyledRun[] {
   const chars = escapees(grammar);
   // Longest-first per delimiter, so `***` is tried before `**` before `*`.
-  const byDelimiter = new Map<string, RunMarker[]>();
-  for (const m of grammar.markers) {
-    const list = byDelimiter.get(m.delimiter) ?? [];
-    list.push(m);
-    byDelimiter.set(m.delimiter, list);
-  }
-  for (const list of byDelimiter.values()) list.sort((a, b) => b.repeat - a.repeat);
+  const byDelimiter = markersByDelimiter(grammar);
 
   const runs: StyledRun[] = [];
   const active = new Set<RunFlag>();
@@ -292,17 +294,14 @@ export function markdownToRuns(
       while (i + count < input.length && input[i + count] === ch) count++;
       // The longest marker the delimiter run can pay for; a run shorter than
       // every marker is text.
-      const marker = markers.find((m) => m.repeat <= count);
+      const marker = longestMarker(markers, count);
       if (!marker) {
         buf += ch.repeat(count);
         i += count;
         continue;
       }
       flush();
-      for (const f of marker.flags) {
-        if (active.has(f)) active.delete(f);
-        else active.add(f);
-      }
+      toggle(active, marker.flags);
       i += marker.repeat;
       continue;
     }
