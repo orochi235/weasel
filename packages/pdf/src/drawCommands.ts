@@ -15,6 +15,9 @@ import { writeStroke } from './strokeOps';
 import { writeText } from './textOps';
 import type { PdfSkip, WritePdfOptions } from './writePdf';
 
+/** How deep groups may nest before what lies deeper is left undrawn, as the SVG reader caps elements. */
+export const NESTING_LIMIT = 512;
+
 export interface DrawState {
   transform: GlMat3;
   alpha: number;
@@ -154,6 +157,9 @@ async function writeOne(ctx: PageCtx, cmd: DrawCommand, state: DrawState): Promi
   const line = ctx.out.mark();
   const object = ctx.objects.mark();
   const skips = ctx.skipped.length;
+  if (cmd.kind === 'group' && ctx.trail.length > NESTING_LIMIT) {
+    return skip(ctx, `groups nest more than ${NESTING_LIMIT} deep; what is deeper is not drawn`);
+  }
   try {
     const geometry = cmd.kind === 'path' ? cmd.path : cmd.kind === 'group' ? cmd.clip : undefined;
     if (geometry && !finitePath(geometry)) throw new NonFiniteNumber('pdf: non-finite path');
