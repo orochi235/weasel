@@ -32,6 +32,7 @@ import {
 import type { View } from 'core/viewport/view';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { NodeAtPointDep, SnapDep, ViewApi } from './depSchema';
+import { finiteThroughout } from './finiteFrame';
 import type { SnapBegin } from './snapDep';
 import { multiply, type Affine, type Point } from '@weasel-js/geom';
 import type { ImmediateParams } from '@weasel-js/routing';
@@ -120,6 +121,8 @@ export function inPlane<A extends Action>(action: A, layerOf: EditedLayerOf): A 
     invoker: {
       ...inner,
       start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
+        // A press that is no finite number lands nowhere: nothing is under it to drag.
+        if (!finiteThroughout(ctx.world) || !finiteThroughout(ctx.drag?.start)) return {};
         const plane = livePlane(
           ctx.deps, layerOf(ctx.deps, ctx.drag?.affordance), declared, ctx.drag?.start ?? null,
         );

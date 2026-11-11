@@ -4,6 +4,7 @@ import type { InvocationCtx, OngoingHandle, OngoingOverlay } from '@weasel-js/ro
 import type { NodeId } from 'core/scene/types';
 import type { AreaSelectDep, ViewApi } from '../depSchema';
 import { hitTargets, selectionFromHits } from '../hitSelection';
+import { finiteThroughout } from '../finiteFrame';
 
 interface AreaSelectScratch {
   dep: AreaSelectDep;
@@ -35,7 +36,8 @@ export const areaSelectAction: Action & { requires: string[] } = {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
       const dep = ctx.deps.areaSelect;
-      if (!dep) return {};
+      // A press that is no finite number lands nowhere, as a move that is not does below.
+      if (!dep || !finiteThroughout(ctx.world)) return {};
 
       // Decline on anchor / control-handle affordances: the select tool's
       // `{ kind: 'drag', target: 'empty' }` binding also matches an anchor hit
@@ -70,6 +72,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
         kind: 'marquee',
         autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
+          if (!finiteThroughout(moveCtx.world)) return;
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;
         },

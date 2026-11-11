@@ -29,6 +29,7 @@ import type { GestureContext, LassoSelectBehavior, LassoSelectPose } from '../..
 import { LASSO_VERTICES } from './behaviors/selectFromLasso';
 import { reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { hitTargets, selectionFromHits } from '../hitSelection';
+import { finiteThroughout } from '../finiteFrame';
 
 /** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
 function polygonAABB(
@@ -106,7 +107,8 @@ export const lassoSelectAction: Action & { requires: string[] } = {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts): OngoingHandle {
       const dep = ctx.deps.lassoSelect;
-      if (!dep) return {};
+      // A press that is no finite number lands nowhere, as a move that is not does below.
+      if (!dep || !finiteThroughout(ctx.world)) return {};
 
       const params = resolveParams(opts?.params) as
         { mode?: LassoHitMode; minVertexSpacing?: number } | undefined;
@@ -152,6 +154,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
         kind: 'lasso',
         autoPan: true,
         onMove(moveCtx: InvocationCtx): void {
+          if (!finiteThroughout(moveCtx.world)) return;
           const { x, y } = moveCtx.world;
           scratch.currentX = x;
           scratch.currentY = y;
