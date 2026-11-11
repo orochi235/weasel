@@ -45,3 +45,7 @@ export const key = fc.oneof(
   fc.constantFrom('a', 'b', 'c', 'd', 'e', '__proto__', 'constructor', 'toString'),
   fc.string({ maxLength: 3 }),
 );
+
+/** A double spread evenly over `min..max`, ends included; `fc.double` crowds toward zero. */
+export const uniform = (min: number, max: number): fc.Arbitrary<number> =>
+  fc.integer({ min: 0, max: 1 << 20 }).map((k) => (k === 1 << 20 ? max : min + ((max - min) * k) / (1 << 20)));
