@@ -22,7 +22,7 @@ function bruteEdt(cost: Float64Array, width: number): Float64Array {
 }
 
 /** `alphaToSdf` with the transform done by brute force. */
-function oracle(alpha: Uint8Array, width: number, height: number, radius: number, cutoff: number): Uint8Array {
+function oracle(alpha: Uint8Array, width: number, radius: number, cutoff: number): Uint8Array {
   const outer = new Float64Array(alpha.length);
   const inner = new Float64Array(alpha.length);
   for (let i = 0; i < alpha.length; i++) {
@@ -50,7 +50,7 @@ describe('alphaToSdf, property', () => {
     const t = tally();
     fc.assert(fc.property(bitmap, fc.integer({ min: 1, max: 8 }), fc.constantFrom(0.25, 0.5, 0.75), ({ width, height, alpha }, radius, cutoff) => {
       const got = alphaToSdf(alpha, width, height, radius, cutoff);
-      const want = oracle(alpha, width, height, radius, cutoff);
+      const want = oracle(alpha, width, radius, cutoff);
       expect(got.length).toBe(width * height);
       for (let i = 0; i < got.length; i++) {
         expect(Math.abs(got[i]! - want[i]!), `texel ${i}`).toBeLessThanOrEqual(1);
