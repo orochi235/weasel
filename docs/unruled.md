@@ -1001,6 +1001,17 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): forge's URL gives no param to a schema key that is the
   empty string, as it gives none to a key holding a dot. Why: its dotted path reads as its parent's, so
   one param set two leaves.
+- 2026-11-11 (forge second pass): theme refuses a token named `__proto__` as an unsafe name, an `invalid`
+  issue like any other, where `derive` had dropped it unreported (37e090748). Supporting it instead would mean
+  every record of tokens built without a prototype.
+- 2026-11-11 (forge second pass): forge's CSS variable save pins an edit to a component or semantic that varies
+  on an axis but has no branch for the trial's value, over just that value, where it refused with "which mode this
+  trial shows is not known" (b8171e74a). A pin that already leaves the value out was saved this way before.
+- 2026-11-11 (forge second pass): in the components view, folders that two libraries open at one path list as
+  two rows, keyed apart by a number (507b51f5a), and still share one fold state, which forge stores by path.
+- Open (forge second pass, 2026-11-11): a title whose story files sit in two libraries is one component row,
+  tagged with its first story's library, while the package filter lists both libraries. No ruling on whether such
+  a title should be one row or one per library.
 
 ## draw
 
