@@ -27,4 +27,14 @@ describe('timelines, shrunk from the property tests', () => {
     expect(tl.time()).toBeGreaterThanOrEqual(0);
     expect(tl.time()).toBeLessThanOrEqual(3);
   });
+
+  it('seek a timeline of infinite duration to where it is asked', () => {
+    const h = clocked();
+    h.at(0);
+    const tl = h.animator.timeline({ duration: Infinity, loop: 2, tracks: [] });
+    tl.seek(3);
+    expect(tl.time()).toBe(3);
+    h.at(10);
+    expect(tl.time()).toBe(13);
+  });
 });

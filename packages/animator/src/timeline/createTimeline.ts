@@ -41,6 +41,8 @@ const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : l
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
 function lessLaps(t: number, laps: number, duration: number): number {
+  // No laps of an endless duration are none, not `NaN`.
+  if (laps === 0) return t;
   const span = laps * duration;
   return Number.isFinite(span) ? t - span : ((t % duration) + duration) % duration;
 }
