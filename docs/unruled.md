@@ -301,6 +301,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Rendering, canvas, and paint
 
+- Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `headFor` gives a head whose `maxShare` is 0 no length
+  on a line of unknown (infinite) length, reading `0 · ∞` at its limit: a head allowed no share of the line has none.
+- Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
+  `up` lies just off an axis, as `createInsert` lays its footprint at 0: the hit is on the ground by construction, so
+  rounding left in `up` is no height.
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
   nothing there and is reported once, mirroring a WGSL-only program on WebGL; the canvas is never
   swapped for one of the other context kind, which would lose its listeners and layout.
