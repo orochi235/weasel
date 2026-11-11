@@ -57,7 +57,8 @@ test('the squashed disc paints its fold magenta at step 2, none once untangled, 
   const away = magentaIn(canvas()) - magentaIn(canvas(), cx - 16, cy - 16, cx + 16, cy + 16);
   expect(away, 'step 2 of the disc has no other turned-over triangle').toBe(0);
 
-  await userEvent.click(screen.getByRole('radio', { name: 'Bend' }));
+  // A lab's radio is a visually hidden input; its label is what takes the click.
+  await userEvent.click(screen.getByRole('radio', { name: 'Bend' }).closest('label')!);
   await expect.poll(() => screen.queryByTestId('step')?.textContent, { timeout: 8000 }).toMatch(/^\d+\/\d+$/);
   await scrubTo(TWO_STEP);
   await expect.poll(() => screen.getByTestId('step').textContent, { timeout: 8000 }).toMatch(/^2\//);
