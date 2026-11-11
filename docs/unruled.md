@@ -225,6 +225,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   error naming the node; `sceneFromJSON` refuses `systemLayers` that are not a list of layers with string ids, and
   the editor's `adoptSnapshotPages` a `core:pages` value that is not a `PagesDoc`. Each had failed with a
   `TypeError`. A pose's shape is still not checked: it is the app's pose descriptor's to read.
+- 2026-11-11 (my call, editor second property pass): the editor's `docFromSnapshot` and `nodeSpecsFromSnapshot`
+  read a copy of the snapshot they are handed and leave it as it was, so the same parsed snapshot reads the same
+  every time; `revive` is handed a copy of each node's data. Document values are now revived as node data is.
+- Open (editor second property pass, 2026-11-11): `usePages`' `goTo` on a page narrower than the view is wide, beside
+  a wider one, leaves `current` naming the wider page, which shows more of its area once the narrow one is fitted:
+  pages 100 × 1000 and 1000 × 1000 in a 1000 × 1000 workspace, `goTo('a')` reads back `current: 'b'`, and `add` and
+  `step` then work from `b`. Whether `current` should follow the last page gone to until the view moves.
 - 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
   scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
   and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the
@@ -368,6 +375,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   neither notifies nor replaces the object `get` returns, as an edit that changes nothing does nothing; the
   plane keeps its own copies of `pan`, `zoom`, and `anchor` pairs, so a caller's later edit to an object it
   passed is not a change the plane misses.
+- Open (parallax second property pass, 2026-11-11): `createParallaxPlane`'s `set` compares opts by shape, so a
+  write that means the same plane notifies: `pan: 1` over `{ x: 1, y: 1 }`, `zoom: 1` or `zoom: undefined` where none
+  was set, `anchor: { x: 0, y: 0 }` where none was. Whether "changes nothing" means the derived view or the opts.
+- 2026-11-11 (my call, parallax second property pass): a `space: 'screen'` source inside `createTiledLayer` draws
+  nothing under a view with no finite inverse (zoomed to 0 or a denormal on an axis), which collapses the lattice to
+  a point; it had been drawn through a transform holding `Infinity`.
 - Ruled 2026-11-10 (my call, overnight sweep): loupe's `placeBand` never answers a factor below `ZOOM_FLOOR`, the
   floor the loupe model holds its own factor to: on a host with no room it gives a lens of no size rather than a
   factor of 0 that a point in the lens could not be mapped back through.
@@ -654,6 +667,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): `d3Bind`'s `join` refuses a key the scene already gives a node other
   than a mark on the binding's layer with an error naming the key and the node, before changing anything, where it
   had failed partway with core's "id collision".
+- 2026-11-11 (my call, d3 second property pass): a d3 transition's `duration(NaN)` throws a `RangeError` where it is
+  set, as the animator's own tweens refuse one; an infinite delay never starts the item, and an infinite duration
+  holds it at its start until interrupted. A delay past 2³¹ − 1 ms is waited out, through registry's new
+  `after(ms, fn)`, which editor's `useAutosave` uses for its `delayMs` too.
 
 - 2026-11-11 (my call, second property pass): an endless clock whose frames would move it past the double range
   stops at `Number.MAX_VALUE` and keeps its rate, rather than ending or throwing; a frame gap past the range counts

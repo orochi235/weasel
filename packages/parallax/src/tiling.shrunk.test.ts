@@ -33,4 +33,11 @@ describe('shrunk from the tiling properties', () => {
     expect(fn).not.toHaveBeenCalled();
     expect(plane.get()).toBe(before);
   });
+
+  it('draws a screen source inside a lattice under a view zoomed to 0 as nothing, not through an infinite inverse', () => {
+    const screen = recordingSource('screen');
+    const tiled = createTiledLayer({ id: 't', label: 't', source: [screen.layer], period: 0 });
+    const out = drawOneLayer(tiled, undefined, { x: 0, y: 0, scale: { x: 0.05, y: 0 } }, { width: 0, height: 0, dpr: 1 });
+    expect(nonFinite(out)).toEqual([]);
+  });
 });

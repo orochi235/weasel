@@ -122,16 +122,21 @@ function checkPagesDoc(value: unknown): void {
 }
 
 /** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or
- *  `undefined` for a snapshot written before it had any. A `core:pages` value is not among them:
- *  `nodeSpecsFromSnapshot` loads those pages as nodes (`adoptSnapshotPages`). */
+ *  `undefined` for a snapshot written before it had any. Each reads back as `serializeReplacer` was handed
+ *  it, a value the writer wrapped or tagged included, and `json` is left as it is. A `core:pages` value is
+ *  not among them: `nodeSpecsFromSnapshot` loads those pages as nodes (`adoptSnapshotPages`). */
 export function docFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
 ): Readonly<Record<string, unknown>> | undefined {
   const { doc } = json;
   if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return undefined;
-  if (!(PAGES_DOC_KEY in doc)) return doc;
-  const { [PAGES_DOC_KEY]: _pages, ...rest } = doc;
-  return rest;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(doc)) {
+    if (key === PAGES_DOC_KEY) continue;
+    const value = reviveTypedArrays(copyPlain((doc as Record<string, unknown>)[key]));
+    Object.defineProperty(out, key, { value, enumerable: true, writable: true, configurable: true });
+  }
+  return out;
 }
 
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
@@ -140,8 +145,8 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
  *  that function rather than failing the load, unless `opts.unknownKeys` says
  *  `'throw'`; `opts.onSkip` hears each. Pages saved as a `core:pages` value
  *  come back as page nodes, and a snapshot saved without pages gets
- *  `opts.pages` (`adoptSnapshotPages`). `revive` rewrites each node's data on
- *  the way in; the default revives typed arrays only. A scene composed other
+ *  `opts.pages` (`adoptSnapshotPages`). `revive` rewrites a copy of each node's
+ *  data on the way in, so `json` is left as it is; the default revives typed arrays only. A scene composed other
  *  than rigidly passes its own `opts.composition`, since the pages are made in
  *  a scene built on it. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
@@ -152,5 +157,19 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   const { descriptor: _descriptor, pages: _pages, ...read } = opts;
   return specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...read })
-    .map((spec) => ({ ...spec, data: revive(spec.data) }));
+    .map((spec) => ({ ...spec, data: revive(copyPlain(spec.data)) }));
+}
+
+/** `v` with every array and plain object in it copied, own `__proto__` keys included, so a reviver that works in
+ *  place leaves the snapshot it was read from as it was. Anything else is shared. */
+function copyPlain<T>(v: T): T {
+  if (Array.isArray(v)) return v.map(copyPlain) as T;
+  if (v === null || typeof v !== 'object') return v;
+  const proto: unknown = Object.getPrototypeOf(v);
+  if (proto !== Object.prototype && proto !== null) return v;
+  const out = Object.create(proto) as Record<string, unknown>;
+  for (const k of Object.keys(v)) {
+    Object.defineProperty(out, k, { value: copyPlain((v as Record<string, unknown>)[k]), enumerable: true, writable: true, configurable: true });
+  }
+  return out as T;
 }

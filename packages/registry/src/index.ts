@@ -13,6 +13,7 @@ export type {
   Registrant,
   RegisterOptions,
 } from './reflectable';
+export { after } from './after';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
 export { matchQuery, hasTag } from './match';

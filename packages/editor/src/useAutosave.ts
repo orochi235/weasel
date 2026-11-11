@@ -1,4 +1,5 @@
 import { useLatest } from '@weasel-js/core';
+import { after } from '@weasel-js/registry';
 import { useEffect, useRef } from 'react';
 import { type SessionEntry, writeSession } from './sessionStore';
 
@@ -10,7 +11,8 @@ export interface SessionWrite {
 
 /** When `useAutosave` saves, and what it reports after. */
 export interface AutosaveOptions {
-  /** How long after a change the save runs. Defaults to 300 ms. */
+  /** How long after a change the save runs. Defaults to 300 ms. An infinite delay saves only on unmount or when
+   *  the page goes away. */
   delayMs?: number;
   /** When given, a save is scheduled on mount and then only when it changes. Without it, every
    *  render schedules one. */
@@ -31,6 +33,8 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
 
   useEffect(() => {
     const save = (): void => {
+      // A save the page going away has already written must not be written again when its timer runs.
+      if (pendingRef.current !== save) return;
       pendingRef.current = null;
       const { onSaved } = optsRef.current;
       try {
@@ -44,8 +48,7 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
       }
     };
     pendingRef.current = save;
-    const id = setTimeout(save, optsRef.current.delayMs ?? 300);
-    return () => clearTimeout(id);
+    return after(optsRef.current.delayMs ?? 300, save);
     // With a revision, only its change reschedules; a render that leaves it alone must not clear the timer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, tracksRevision ? [opts.revision] : undefined);

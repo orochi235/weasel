@@ -1,5 +1,7 @@
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
+import { after } from '@weasel-js/registry';
+import { pendingFor, unregisterRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {
@@ -49,38 +51,6 @@ export function interruptNode(animator: object, ns: string, except?: object): vo
   const live = LIVE_ITEMS.get(animator)?.get(ns);
   if (!live) return;
   for (const [stop, root] of [...live]) if (root !== except) stop();
-}
-
-/** Per scene, the nodes a `.remove()` transition will delete when it ends,
- *  each with the cancel that keeps it. Keyed weakly so a dropped scene takes
- *  its entries with it. */
-const PENDING_REMOVALS = new WeakMap<object, Map<NodeId, Set<() => void>>>();
-
-function pendingFor(scene: object): Map<NodeId, Set<() => void>> {
-  let map = PENDING_REMOVALS.get(scene);
-  if (!map) {
-    map = new Map();
-    PENDING_REMOVALS.set(scene, map);
-  }
-  return map;
-}
-
-function unregisterRemoval(scene: object, id: NodeId, cancel: () => void): void {
-  const map = PENDING_REMOVALS.get(scene);
-  const set = map?.get(id);
-  if (!map || !set) return;
-  set.delete(cancel);
-  if (set.size === 0) map.delete(id);
-}
-
-/**
- * @internal Stop every transition chain that would remove `id` when it ends,
- * for that node only, so the node stays in the scene.
- */
-export function cancelPendingRemoval(scene: object, id: NodeId): void {
-  const set = PENDING_REMOVALS.get(scene)?.get(id);
-  if (!set) return;
-  for (const cancel of [...set]) cancel();
 }
 
 /** One transition in a chain, as the transition chained after it sees it. */
@@ -151,11 +121,10 @@ function makeStage<TData, TPose>(
     resolveEnd = resolve;
   });
   const handles = new Map<number, AnimationHandle[]>();
-  const pendingDelays = new Map<number, ReturnType<typeof setTimeout>>();
+  const pendingDelays = new Map<number, () => void>();
 
   const stopItem = (i: number): void => {
-    const timer = pendingDelays.get(i);
-    if (timer !== undefined) clearTimeout(timer);
+    pendingDelays.get(i)?.();
     pendingDelays.delete(i);
     for (const h of handles.get(i) ?? []) h.cancel();
     handles.delete(i);
@@ -293,11 +262,10 @@ function makeStage<TData, TPose>(
     };
     const delayMs = delayFn ? Math.max(0, delayFn(d, i)) : 0;
     if (delayMs > 0) {
-      const timer = setTimeout(() => {
+      pendingDelays.set(i, after(delayMs, () => {
         pendingDelays.delete(i);
         spawn();
-      }, delayMs);
-      pendingDelays.set(i, timer);
+      }));
     } else {
       spawn();
     }
@@ -392,6 +360,7 @@ function makeStage<TData, TPose>(
 
   const t: D3Transition<TData, TPose> = {
     duration(ms) {
+      if (Number.isNaN(ms)) throw new RangeError('d3Bind.transition.duration: ms is a time, not NaN');
       duration = ms;
       return t;
     },
