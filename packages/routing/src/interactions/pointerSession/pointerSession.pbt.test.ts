@@ -56,7 +56,7 @@ const commands = [
     }));
     m.sessions.push({ pointerId: p, origin: o, reportsButtons: buttons, active: true, moves: 0, ended: null });
   })),
-  fc.tuple(pid, fc.constantFrom(0, 1)).map(([p, b]) => cmd(`move ${p} buttons ${b}`, (m, r) => {
+  fc.tuple(pid, fc.constantFrom(0, 1)).map(([p, b]) => cmd(`move ${p} buttons ${b}`, (m) => {
     send(document, 'pointermove', p, b);
     end(m, p, 'end', (s) => s.reportsButtons && b === 0);
     for (const s of m.sessions) if (s.active && s.pointerId === p) s.moves++;
@@ -89,7 +89,7 @@ it('ends each session exactly once, by its own pointer\'s events, through long r
       document.body.append(surface);
       const origins = [0, 1, 2].map(() => { const el = document.createElement('span'); surface.append(el); return el; });
       live = { surface, origins, sessions: [], heard: [] };
-      return { model: { sessions: [], detached: new Set() }, real: live };
+      return { model: { sessions: [], detached: new Set<number>() }, real: live };
     }, cmds);
   }), runs(200));
   t.expectHit('end', 'pointercancel', 'superseded', 'lostcapture', 'aborted');
