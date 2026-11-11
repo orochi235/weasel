@@ -66,9 +66,10 @@ export function buildTree(index: readonly IndexEntry[]): TreeNode[] {
   const pages = new Map(indexEntries(index).map((page) => [page.title, page]));
   for (const entry of index) {
     let siblings = root;
-    let path = '';
+    let path: string | null = null;
     for (const label of entry.title.split('/')) {
-      path = path ? `${path}/${label}` : label;
+      // Not `path ? …`: an empty first segment would make `/ui` and `ui` one folder.
+      path = path === null ? label : `${path}/${label}`;
       let folder = folders.get(path);
       if (!folder) {
         const page = pages.get(path);

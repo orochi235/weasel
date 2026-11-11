@@ -103,7 +103,7 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
   const from = isRecord(stored) ? stored : {};
   const offered: Globals = Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const value = from[key];
+      const value = Object.hasOwn(from, key) ? from[key] : undefined;
       const known =
         declaration.options.some((option) => option.value === value) || (declaration.follows && value === FOLLOW_APP);
       return [key, known ? value : declaration.default];
@@ -128,7 +128,7 @@ export function labGlobals(declarations: GlobalDeclarations, stored: unknown): G
 /** The lab's values, overridden by the pins in a trial's config that do not follow the lab. */
 export function effectiveGlobals(lab: Globals, pins: unknown): Globals {
   if (!isRecord(pins)) return lab;
-  const pinned = Object.entries(pins).filter(([key, value]) => key in lab && value !== FOLLOW_LAB);
+  const pinned = Object.entries(pins).filter(([key, value]) => Object.hasOwn(lab, key) && value !== FOLLOW_LAB);
   return pinned.length === 0 ? lab : { ...lab, ...Object.fromEntries(pinned) };
 }
 

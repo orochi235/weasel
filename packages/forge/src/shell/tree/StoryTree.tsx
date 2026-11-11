@@ -3,6 +3,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { ToggleBar, type ToggleBarItem } from '@weasel-js/ui/components/ToggleBar';
 import { Tree, type TreeNode as UiTreeNode, type TreeProps } from '@weasel-js/ui/components/Tree';
 import { type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { formatRoute } from '../../route/url';
 import { indexEntries } from '../../story/indexPages';
 import { isGallery, isLab } from '../../story/tags';
 import type { IndexEntry } from '../../story/types';
@@ -33,15 +34,15 @@ type StoryFolder = Extract<StoryNode, { kind: 'folder' }>;
 
 const keyOf = (node: StoryNode): string => (node.kind === 'folder' ? `folder:${node.path}` : `story:${node.entry.id}`);
 const pathOf = (folderKey: string): string => folderKey.slice('folder:'.length);
-const hrefOf = (entry: IndexEntry): string => `#/${encodeURIComponent(entry.id)}`;
+const hrefOf = (entry: IndexEntry): string => formatRoute({ story: entry.id, params: {} });
 
 /** The folder paths above a story's component, and the component's own. */
 function ancestorsOf(entry: IndexEntry | undefined): Set<string> {
   const paths = new Set<string>();
   if (!entry) return paths;
-  let path = '';
+  let path: string | null = null;
   for (const label of entry.title.split('/')) {
-    path = path ? `${path}/${label}` : label;
+    path = path === null ? label : `${path}/${label}`;
     paths.add(path);
   }
   return paths;
