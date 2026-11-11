@@ -5,14 +5,21 @@
  * pair, even as character references, and a parser rejects the whole
  * document over one. A vertical tab or form feed is a line break where text
  * comes from (a word processor's clipboard), so those become `\n`; the rest
- * are dropped.
+ * are written as U+FFFD, the replacement character, so the text keeps its length
+ * and shows where something was.
  */
 
 const LINE_BREAK_CONTROLS = /[\u000B\u000C]/g;
 const NOT_XML_CHAR = /[\u0000-\u0008\u000E-\u001F￾￿]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
 
 function xmlChars(s: string): string {
-  return s.replace(LINE_BREAK_CONTROLS, '\n').replace(NOT_XML_CHAR, '');
+  return s.replace(LINE_BREAK_CONTROLS, '\n').replace(NOT_XML_CHAR, '\uFFFD');
+}
+
+/** Whether `s` holds a character the escapes write as U+FFFD. */
+export function holdsNonXmlChar(s: string): boolean {
+  NOT_XML_CHAR.lastIndex = 0;
+  return NOT_XML_CHAR.test(s);
 }
 
 /** A parser turns a literal tab or line break in an attribute value into a

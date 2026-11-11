@@ -3,7 +3,7 @@
  * emitted as a `<path>`, even shapes that started as `<rect>` etc.
  */
 
-import { escapeAttr, escapeText } from './xmlEscape';
+import { escapeAttr, escapeText, holdsNonXmlChar } from './xmlEscape';
 import type { Path } from '@weasel-js/core';
 import { isSolidPaint } from '@weasel-js/core';
 import { metaAttrsXml, metaElementsXml } from './metaXml';
@@ -55,6 +55,9 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
     said.add(m);
     opts.onWarn(m);
   };
+  if (holdsNonXmlChar(stringsIn([given, opts.title, opts.documentMeta]))) {
+    warn('text holds characters XML cannot hold (a control character, U+FFFE, U+FFFF, or half a surrogate pair); each is written as U+FFFD');
+  }
   // Written first: a marker's def is registered as an element references it,
   // which decides whether its head is seated.
   const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn, opts.textLayout)).join('');
@@ -93,6 +96,17 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
 
   const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
   return opts.pretty ? prettyXml(xml) : xml;
+}
+
+/** Every string in `value`, joined: what the document's text and attribute values are written from. */
+function stringsIn(value: unknown): string {
+  const out: string[] = [];
+  const walk = (v: unknown): void => {
+    if (typeof v === 'string') out.push(v);
+    else if (v !== null && typeof v === 'object' && !ArrayBuffer.isView(v)) Object.values(v).forEach(walk);
+  };
+  walk(value);
+  return out.join('\n');
 }
 
 export function registerPaintServers(nodes: readonly SvgNode[], registry: PaintServerRegistry): void {
@@ -217,7 +231,7 @@ function groupXml(
   painted: ReadonlySet<string> = NOTHING_PAINTED,
 ): string {
   const attrs: string[] = [];
-  const paint = groupPaintAttrs(node, registry, warn);
+  const paint = groupPaintAttrs(node, registry, warn, painted);
   for (const a of paint) attrs.push(a);
   const below = paint.length === 0 ? painted : new Set([...painted, ...attrNames(paint)]);
   if (node.transform) {

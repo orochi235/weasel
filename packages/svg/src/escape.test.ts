@@ -24,9 +24,17 @@ describe('serializeSvg and characters XML cannot hold', () => {
     expect((nodes[0] as SvgTextNode).text).toBe('a\nb');
   });
 
-  it('drops a lone surrogate and keeps a pair', () => {
-    const svg = serializeSvg([text('a\uD83Db\u{1F600}c')]);
-    expect(svg).toContain('ab\u{1F600}c');
+  it('writes a lone surrogate as U+FFFD, keeps a pair, and warns', () => {
+    const said: string[] = [];
+    const svg = serializeSvg([text('a\uD83Db\u{1F600}c')], { onWarn: (w) => said.push(w) });
+    expect(svg).toContain('a\uFFFDb\u{1F600}c');
+    expect(said).toEqual([expect.stringContaining('written as U+FFFD')]);
+  });
+
+  it('warns of nothing for text XML holds', () => {
+    const said: string[] = [];
+    serializeSvg([text('a\u{1F600}\t\n\r\uFFFD')], { onWarn: (w) => said.push(w) });
+    expect(said).toEqual([]);
   });
 
   it('writes whitespace in an attribute as character references', () => {
