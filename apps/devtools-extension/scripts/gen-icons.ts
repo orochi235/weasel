@@ -1,35 +1,57 @@
-// Renders the extension's icons from the site's logo into public/icons/: the whole mark centered on a square,
-// and at the sizes too small for it to read, the head alone.
-// Rerun after the logo changes: `npm run gen:devtools-extension-icons`.
+// Renders the extension's icons into public/icons/: the wordmark's "w", carrying the wordmark's whole
+// gradient left to right, centered on a transparent square.
+// Rerun after the wordmark changes: `npm run gen:devtools-extension-icons`.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
 import { ICON_SIZES } from '../manifest.ts';
 
 const app = resolve(import.meta.dirname, '..');
-const logo = readFileSync(resolve(app, '../site/assets/weasel-logo.svg'), 'utf8');
 
-/** `svg` with its viewBox widened or heightened to a square around the same center. */
-function squared(svg: string): string {
-  return svg.replace(/viewBox="([^"]+)"/, (_, box: string) => {
-    const [x, y, w, h] = box.trim().split(/\s+/).map(Number) as [number, number, number, number];
-    const side = Math.max(w, h);
-    return `viewBox="${x - (side - w) / 2} ${y - (side - h) / 2} ${side} ${side}"`;
-  });
+// Inter 700's "w" (Version 4.001, the face in apps/site/assets/fonts/inter-latin-700.woff2), in font units
+// with y pointing down and the baseline at 0. opentype.js reads no woff2, so the outline is copied here.
+const W_PATH =
+  'M361 0 31 -1118H346L443 -705Q468 -594 497 -463.5Q526 -333 550 -175H516Q542 -329 573 -460Q604 -591 631 -705' +
+  'L733 -1118H1009L1108 -705Q1134 -592 1165 -461.5Q1196 -331 1223 -175H1189Q1213 -330 1240.5 -460.5Q1268 -591 1294 -705' +
+  'L1391 -1118H1710L1378 0H1073L949 -431Q931 -496 913 -574.5Q895 -653 878 -734.5Q861 -816 843 -887H896' +
+  'Q879 -816 861.5 -734.5Q844 -653 826 -574Q808 -495 790 -431L666 0Z';
+const W_BOX = { x: 31, y: -1118, w: 1679, h: 1118 };
+/** Space left on each side, as a share of the icon's edge. */
+const MARGIN = 1 / 32;
+
+/** The wordmark's gradient stops, read from its stylesheet so the two can't drift apart. */
+function wordmarkStops(): { color: string; offset: string }[] {
+  const css = readFileSync(resolve(app, '../site/FrontPage/Wordmark.module.css'), 'utf8');
+  const start = /--mark-start:\s*(#[0-9a-f]{3,8})/i.exec(css)?.[1];
+  const gradient = /linear-gradient\(90deg,(.*?)\);/s.exec(css)?.[1];
+  if (!start || !gradient) throw new Error('gen-icons: Wordmark.module.css no longer has --mark-start and a 90deg gradient');
+  const stops = [...gradient.matchAll(/(#[0-9a-f]{3,8}|var\(--mark-start\))\s+([\d.]+%)/gi)].map(([, color, offset]) => ({
+    color: color!.startsWith('var(') ? start : color!,
+    offset: offset!,
+  }));
+  if (stops.length < 2) throw new Error('gen-icons: could not read the wordmark gradient stops');
+  return stops;
 }
 
-/** The head, ears to collar and the glasses' arm included, in the logo's own units (read from its geometry). */
-const HEAD_BOX = '838 186 294 294';
-const HEAD_SIZES: ReadonlySet<number> = new Set([16, 32]);
-
-const withViewBox = (svg: string, box: string): string => svg.replace(/viewBox="[^"]+"/, `viewBox="${box}"`);
+function iconSvg(): string {
+  const side = W_BOX.w / (1 - 2 * MARGIN);
+  const x = W_BOX.x - (side - W_BOX.w) / 2;
+  const y = W_BOX.y - (side - W_BOX.h) / 2;
+  const stops = wordmarkStops()
+    .map((s) => `<stop offset="${s.offset}" stop-color="${s.color}"/>`)
+    .join('');
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${side} ${side}">` +
+    `<defs><linearGradient id="mark" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient></defs>` +
+    `<path d="${W_PATH}" fill="url(#mark)"/></svg>`
+  );
+}
 
 const out = resolve(app, 'public/icons');
 mkdirSync(out, { recursive: true });
-const square = squared(logo);
-const head = withViewBox(logo, HEAD_BOX);
+const svg = iconSvg();
 for (const size of ICON_SIZES) {
-  const png = new Resvg(HEAD_SIZES.has(size) ? head : square, { fitTo: { mode: 'width', value: size } }).render().asPng();
+  const png = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng();
   const file = resolve(out, `icon-${size}.png`);
   writeFileSync(file, png);
   console.log(`devtools-extension: ${file}`);
