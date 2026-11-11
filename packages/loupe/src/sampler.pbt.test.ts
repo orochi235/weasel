@@ -32,7 +32,7 @@ describe('createSampler', () => {
       expect(got).toEqual(want);
       expect(await createSampler(sources).sample({ x: 0, y: 0 })).toBe(want ? rgbaHex(want) : null);
       if (got) for (const c of got) expect(Number.isInteger(c) && c >= 0 && c <= 255).toBe(true);
-      const top = stack.findLastIndex((l) => l.px?.[3] === 255);
+      const top = stack.map((l) => l.px?.[3] === 255).lastIndexOf(true);
       seen.count(top >= 0 ? 'opaque' : 'see-through');
       if (top >= 0) expect(reads.every((i) => i >= top)).toBe(true);
       if (stack.some((l) => l.later)) seen.count('later');
