@@ -198,9 +198,8 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     if (payload && attached.size > 0) addedFns.set(payload, attached);
   }
 
-  /** Re-attach those fields to a node restored from a `kit:remove` snapshot.
-   *  In-session the clone already carries them; a persisted history does not,
-   *  so the registry keys are what is left. */
+  /** Re-attach those fields to a node restored from a `kit:remove` snapshot, from the
+   *  registry keys it carries: from JSON, its layout is a strategy with its methods gone. */
   function restoreNodeFunctions(
     node: Node<TData, TLayer, TPose>,
     keys: Record<string, string | undefined> | undefined,
@@ -208,9 +207,9 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
     if (!keys) return;
     const target = node as unknown as FnBearingNode;
     for (const field of fnFields) {
-      if (field.read(target) !== undefined) continue;
       const key = keys[field.spec.opKey];
       if (key === undefined) continue;
+      delete target[field.spec.field];
       restoreFn(field, target, key, 'kit:remove', dwarn);
     }
   }
