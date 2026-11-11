@@ -370,6 +370,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   longer reports more. `lerpPaint` and `lerpStroke` answer `b`'s numbers exactly at `t = 1`.
 - Ruled 2026-11-10: `paintKey` keys every fully transparent solid as one, whatever its color; none draws anything.
   It still keys apart from no paint (`'none'`).
+- 2026-11-10 (property tests): `RetainedSurfaces.reserve` drops the surface's key, so until `commit` names a new
+  one a lookup redraws rather than compositing pixels from a draw that never finished (043db55ad).
+- 2026-11-10 (property tests): Given a width scale (a `{ px }` stroke in a stretched transform), `populatePolylineWidths`
+  splits each corner into one point per edge, as a nib does, so a corner's two edges can take different widths and
+  a join between them may bevel where one factor drew a miter (5bc9b9479).
 
 ## Text
 
