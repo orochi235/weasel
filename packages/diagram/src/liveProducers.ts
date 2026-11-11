@@ -120,6 +120,13 @@ export function forceProducer<TPose>(
   };
 }
 
+/** `a` to `b` by `u`: exactly `b` at 1, and finite where `b - a` would overflow. */
+function lerp(a: number, b: number, u: number): number {
+  if (u === 1 || a === b) return u === 1 ? b : a;
+  const d = b - a;
+  return Number.isFinite(d) ? a + d * u : a * (1 - u) + b * u;
+}
+
 /** Options for {@link easedProducer}. */
 export interface EasedProducerOptions {
   layout?: LayoutOptions;
@@ -154,10 +161,7 @@ export function easedProducer<TPose>(
       if (pinned.has(id as NodeId)) continue;
       const start = from.get(id);
       if (start === undefined) continue;
-      result.set(id, {
-        x: start.x + (to.x - start.x) * u,
-        y: start.y + (to.y - start.y) * u,
-      });
+      result.set(id, { x: lerp(start.x, to.x, u), y: lerp(start.y, to.y, u) });
     }
     return { result, done: t >= 1 };
   };
