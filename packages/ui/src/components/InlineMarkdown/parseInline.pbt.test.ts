@@ -38,7 +38,6 @@ describe('parseInline', () => {
 });
 
 const ESCAPED = /[`*~[\]\\]/g;
-const letter = fc.constantFrom(...'abcxyz019'.split(''));
 /** Plain text, marks' own characters among it, with no `<` to start a tag. */
 const word = fc.array(fc.constantFrom(...'abcxyz09 *~`[]\\()!.:_'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
 const codeText = fc.array(fc.constantFrom(...'abc09 .-_()+'.split('')), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
