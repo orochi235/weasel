@@ -5,7 +5,7 @@ import type { DiagramDocument, ExportResult, WriteOptions } from '../../document
 import { edgeStyleIn, graphOut, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
-import { mermaidEscaped, mermaidIds } from '../common/text';
+import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import { ATTRIBUTE } from './parse';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -22,7 +22,7 @@ function entityParts(out: GraphOut, node: DataNode): { name: string; attributes:
   const text = rows.filter((r) => r.kind === 'label' || r.kind === 'field');
   const [first, ...rest] = text;
   const name = first === undefined ? node.id : first.kind === 'label' ? first.text : `${first.label} ${first.value}`;
-  const lines = rest.map((r) => (r.kind === 'field' ? `${r.label} ${r.value}` : (r as { text: string }).text).trim());
+  const lines = rest.map((r) => oneLine(r.kind === 'field' ? `${r.label} ${r.value}` : (r as { text: string }).text, 'ER', (m) => out.warnings.add(m)).trim());
   const attributes = lines.filter((l) => ATTRIBUTE.test(l) && readsAsStatement(l));
   if (attributes.length < lines.length) {
     out.warnings.add('Mermaid ER attributes are a type, a name, keys, and a quoted comment; rows that are not were dropped.');

@@ -24,13 +24,13 @@ export interface StateDiagram {
 
 /** A state's id, `[*]` for the start or end of its scope, and the class `:::` gives it. */
 const END = String.raw`(\[\*\]|[\w-]+)(?::::([\w-]+))?`;
-const TRANSITION = new RegExp(`^${END}\\s*-->\\s*${END}\\s*(?::\\s*(.*))?$`);
+const TRANSITION = new RegExp(`^${END}\\s*-->\\s*${END}\\s*(?::\\s*(.*))?$`, 's');
 const STATE_AS = /^state\s+"([^"]*)"\s+as\s+([\w-]+)\s*(\{)?$/;
 const STATE_TYPE = /^state\s+([\w-]+)\s+<<\s*(fork|join|choice)\s*>>$/;
 const STATE = /^state\s+([\w-]+)\s*(\{)?$/;
 const BARE = /^([\w-]+)(?::::([\w-]+))?$/;
-const DESCRIBE = /^([\w-]+)\s*:\s*(.+)$/;
-const NOTE = /^note\s+(left|right)\s+of\s+([\w-]+)\s*(?::\s*(.*))?$/;
+const DESCRIBE = /^([\w-]+)\s*:\s*(.+)$/s;
+const NOTE = /^note\s+(left|right)\s+of\s+([\w-]+)\s*(?::\s*(.*))?$/s;
 
 class StateParser {
   i = 0;

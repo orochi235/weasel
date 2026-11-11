@@ -74,7 +74,7 @@ export function elementParts(lines: readonly string[], outline: Outline | undefi
     base: outline === 'person' || outline === 'actor' ? 'person' : 'system', external: role === 'muted',
     ...(outline === 'cylinder' ? { variant: 'db' as const } : outline === 'queue' ? { variant: 'queue' as const } : {}),
   };
-  const tech = /^\[(.*)\]$/.exec(rest[1] ?? '');
+  const tech = /^\[(.*)\]$/s.exec(rest[1] ?? '');
   return {
     kind, name: rest[0] ?? '', technology: tech?.[1],
     description: rest.slice(tech !== null ? 2 : 1).join(' '),

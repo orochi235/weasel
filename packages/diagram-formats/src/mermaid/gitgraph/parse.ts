@@ -9,7 +9,7 @@ const TYPES: readonly string[] = ['NORMAL', 'REVERSE', 'HIGHLIGHT'];
 /** One `key: value` attribute, its value quoted or bare. */
 const ATTRIBUTE = /\s*(\w+)\s*:\s*(?:"([^"]*)"|([^\s"]+))\s*/y;
 /** A branch name, quoted or bare, and what follows it. */
-const NAME = /^(?:"([^"]*)"|([^\s"]+))\s*(.*)$/;
+const NAME = /^(?:"([^"]*)"|([^\s"]+))\s*(.*)$/s;
 
 /** The attributes in `rest`, each checked against those `kind` takes. */
 function attributes(rest: string, kind: string, allowed: readonly string[], line: number): Map<string, string> {
@@ -46,7 +46,7 @@ function nameOf(rest: string, keyword: string, line: number): { name: string; re
 
 /** One statement as its command. Throws, naming the line, on one it cannot read. */
 export function commandOf({ text, line }: Statement): GitCommand {
-  const m = /^(\S+)\s*(.*)$/.exec(text)!;
+  const m = /^(\S+)\s*(.*)$/s.exec(text)!;
   const keyword = m[1]!;
   const rest = m[2]!.trim();
   switch (keyword) {

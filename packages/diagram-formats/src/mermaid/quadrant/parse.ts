@@ -41,7 +41,7 @@ export function styleOf(text: string, line: number): QuadrantPointStyle {
   return style;
 }
 
-const POINT = /^(.+?)(?::::([\w-]+))?\s*:\s*\[([^\]]*)\](.*)$/;
+const POINT = /^("[^"]*"|.+?)(?::::([\w-]+))?\s*:\s*\[([^\]]*)\](.*)$/s;
 
 /** `Name:::class: [x, y] styles` as a point, or `null` for a line that is not one. Throws, naming the line, on
  *  coordinates that are not numbers from 0 to 1. */

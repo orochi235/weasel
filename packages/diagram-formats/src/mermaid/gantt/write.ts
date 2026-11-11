@@ -2,12 +2,10 @@
 import { formatGanttEnd, formatGanttStart, type GanttData, type GanttTask } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { lineOpening, spelledLine } from '../common/text';
 
-/** `s` on one line, the colon Mermaid splits a task on written as `#58;`. */
-function oneLine(s: string, warnings: Warnings): string {
-  if (/[\r\n]/.test(s)) warnings.add('Mermaid gantt text holds one line; line breaks were written as spaces.');
-  return s.replace(/\s*[\r\n]+\s*/g, ' ').replace(/:/g, '#58;');
-}
+/** Words that open a gantt statement other than a task. */
+const STATEMENTS = ['title', 'dateFormat', 'axisFormat', 'excludes', 'todayMarker', 'section', 'click', 'call'];
 
 /**
  * A task's items after the colon. Mermaid names no task that starts where the one before it ends, so such a task
@@ -38,7 +36,7 @@ export function writeMermaidGantt(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'gantt') throw new Error(`Mermaid writes this chart as a gantt only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
-  const text = (s: string) => oneLine(s, warnings);
+  const text = (s: string) => spelledLine(s, 'gantt', (m) => warnings.add(m));
   const lines = ['gantt', ...settingLines(data, text)];
   let before: GanttTask | undefined;
   let named = false;
@@ -50,7 +48,7 @@ export function writeMermaidGantt(page: PlotPage): ExportResult {
       warnings.add('Mermaid holds no unnamed section after the first; its tasks were written into the section before it.');
     }
     for (const task of section.tasks) {
-      lines.push(`${named ? '    ' : '  '}${text(task.name)} :${taskItems(task, before, warnings).join(', ')}`);
+      lines.push(`${named ? '    ' : '  '}${lineOpening(text(task.name).trim(), STATEMENTS)} :${taskItems(task, before, warnings).join(', ')}`);
       before = task;
     }
   });

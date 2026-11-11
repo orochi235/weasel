@@ -55,10 +55,14 @@ const nameOf = (t: DotToken): string => (t.quoted ? t.value.replace(/\\\\/g, '\\
 
 const valueOf = (t: DotToken): DotValue => ({ value: t.value, ...(t.quoted ? { quoted: true } : {}), ...(t.html ? { html: true } : {}) });
 
+/** How deep subgraphs nest before the parser refuses them, well short of where reading them would run out of stack. */
+const MAX_DEPTH = 1000;
+
 /** Parses DOT source. Throws, naming the line, on text that is not a DOT graph. */
 export function parseDot(text: string): DotGraph {
   const tokens = lexDot(text);
   let i = 0;
+  let depth = 0;
   const lastLine = text.split('\n').length;
   const peek = (k = 0) => tokens[i + k];
   const where = () => peek()?.line ?? lastLine;
@@ -113,6 +117,7 @@ export function parseDot(text: string): DotGraph {
 
   function subgraph(): DotSubgraph {
     const line = where();
+    if (++depth > MAX_DEPTH) throw lineError('DOT', line, `subgraphs nest more than ${MAX_DEPTH} deep`);
     let name: string | undefined;
     if (keyword(peek(), 'subgraph')) {
       i++;
@@ -121,6 +126,7 @@ export function parseDot(text: string): DotGraph {
     take('{');
     const body = stmtList();
     take('}');
+    depth--;
     return { kind: 'subgraph', ...(name !== undefined ? { id: name } : {}), stmts: body, line };
   }
 

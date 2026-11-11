@@ -4,7 +4,8 @@ import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { pageNameOf, statementsOf } from '../common/lines';
-import { ganttText, parseGanttTask } from './parse';
+import { parseGanttTask } from './parse';
+import { numberedText } from '../common/text';
 
 /** The page a gantt is read onto. */
 export const GANTT_PAGE = { width: 1000, height: 500 } as const;
@@ -20,7 +21,7 @@ export function readMermaidGantt(text: string): ImportResult {
   const settings: { title?: string; dateFormat?: string; axisFormat?: string; excludes?: string[]; todayMarker?: string } = {};
   const sections: { name?: string; tasks: GanttTask[] }[] = [{ tasks: [] }];
   for (const s of src.body) {
-    const m = /^(\S+)(?:\s+(.*))?$/.exec(s.text)!;
+    const m = /^(\S+)(?:\s+(.*))?$/s.exec(s.text)!;
     const [keyword, rest = ''] = [m[1]!, m[2]?.trim()];
     // A colon makes the line a task named for the word, except after `click` and `call`, whose links hold colons.
     if (DROPPED.has(keyword) && (keyword === 'click' || keyword === 'call' || !s.text.includes(':'))) {
@@ -28,12 +29,12 @@ export function readMermaidGantt(text: string): ImportResult {
       continue;
     }
     switch (keyword) {
-      case 'title': settings.title = ganttText(rest); continue;
+      case 'title': settings.title = numberedText(rest); continue;
       case 'dateFormat': settings.dateFormat = rest; continue;
       case 'axisFormat': settings.axisFormat = rest; continue;
       case 'excludes': settings.excludes = rest.split(/[\s,]+/).filter((e) => e !== ''); continue;
       case 'todayMarker': settings.todayMarker = rest; continue;
-      case 'section': sections.push({ name: ganttText(rest), tasks: [] }); continue;
+      case 'section': sections.push({ name: numberedText(rest), tasks: [] }); continue;
     }
     const task = parseGanttTask(s.text, s.line);
     if (task === 'vert') warnings.add('Mermaid gantt vertical markers were dropped.');

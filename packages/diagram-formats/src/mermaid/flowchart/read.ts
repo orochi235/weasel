@@ -217,7 +217,7 @@ export function readFlowchart(text: string): ImportResult {
     const members = r.membership.members(id);
     const colors = nodeColors(r.propsOf(id, false), r.warnings);
     return {
-      id, role: 'container', label: title !== undefined ? textLines(title).join(' ') : id,
+      id, role: 'container', label: title !== undefined ? textLines(title).filter((l) => l !== '').join(' ') : id,
       ...(members.length > 0 ? { members } : {}),
       ...(colors !== undefined ? { colors } : {}),
     };

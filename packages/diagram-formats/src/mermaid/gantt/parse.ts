@@ -1,17 +1,15 @@
 /** A Mermaid gantt's task lines read into tasks, their starts and ends kept as written. */
 import { parseGanttEnd, parseGanttStart, type GanttTag, type GanttTask } from '@weasel-js/plot';
 import { lineError } from '../../lineError';
+import { numberedText } from '../common/text';
 
 const TAGS = new Set(['done', 'active', 'crit', 'milestone', 'vert']);
-
-/** Task text as written, `#58;` read back as the colon Mermaid splits a task on. */
-export const ganttText = (s: string): string => s.trim().replace(/#58;/g, ':');
 
 /** A task line read: the task, or `'vert'` for a vertical marker, which a chart does not hold. */
 export function parseGanttTask(text: string, line: number): GanttTask | 'vert' {
   const colon = text.indexOf(':');
   if (colon < 0) throw lineError('Mermaid', line, `"${text}" is not a gantt statement`);
-  const name = ganttText(text.slice(0, colon));
+  const name = numberedText(text.slice(0, colon));
   const items = text.slice(colon + 1).split(',').map((s) => s.trim());
   const tags: string[] = [];
   while (items.length > 0 && TAGS.has(items[0]!)) tags.push(items.shift()!);

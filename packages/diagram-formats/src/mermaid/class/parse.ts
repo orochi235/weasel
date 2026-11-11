@@ -33,13 +33,13 @@ export interface ClassDiagram {
 }
 
 const ID = String.raw`([\w-]+)(?:~[^~\s]*~)?`;
-const CLASS = /^class\s+([\w-]+)(?:~([^~]*)~)?(?:\s*\[\s*"([^"]*)"\s*\])?(?::::([\w-]+))?\s*(\{.*)?$/;
+const CLASS = /^class\s+([\w-]+)(?:~([^~]*)~)?(?:\s*\[\s*"([^"]*)"\s*\])?(?::::([\w-]+))?\s*(\{.*)?$/s;
 const RELATION = new RegExp(
-  `^${ID}(?:\\s+"([^"]*)")?\\s*(<\\||\\*|o|<)?(--|\\.\\.)(\\|>|\\*|o|>)?\\s*(?:"([^"]*)"\\s*)?${ID}(?:\\s*:\\s*(.*))?$`,
+  `^${ID}(?:\\s+"([^"]*)")?\\s*(<\\||\\*|o|<)?(--|\\.\\.)(\\|>|\\*|o|>)?\\s*(?:"([^"]*)"\\s*)?${ID}(?:\\s*:\\s*(.*))?$`, 's',
 );
 const HEADS: Readonly<Record<string, ClassHead>> = { '<|': 'triangle', '|>': 'triangle', '*': 'diamond', o: 'hollow-diamond', '<': 'arrow', '>': 'arrow' };
-const MEMBER = /^([\w-]+)\s*:\s*(.+)$/;
-const NOTE = /^note\s+(?:for\s+([\w-]+)\s+)?"(.*)"$/;
+const MEMBER = /^([\w-]+)\s*:\s*(.+)$/s;
+const NOTE = /^note\s+(?:for\s+([\w-]+)\s+)?"(.*)"$/s;
 
 const memberOf = (text: string): ClassMember => ({ text, method: text.includes('(') });
 
@@ -82,7 +82,7 @@ class ClassParser {
     if (ns !== null) return { kind: 'namespace', id: ns[1]!, stmts: this.block(line), line };
     const rel = RELATION.exec(text);
     if (rel !== null) return relationOf(rel, line);
-    const ann = /^<<\s*(.+?)\s*>>\s*([\w-]+)$/.exec(text);
+    const ann = /^<<\s*(.+?)\s*>>\s*([\w-]+)$/s.exec(text);
     if (ann !== null) return { kind: 'annotation', id: ann[2]!, name: ann[1]!, line };
     const note = NOTE.exec(text);
     if (note !== null) return { kind: 'note', ...(note[1] !== undefined ? { for: note[1] } : {}), text: note[2]!, line };
@@ -103,7 +103,7 @@ class ClassParser {
     const members: ClassMember[] = [];
     const annotations: string[] = [];
     const take = (body: string) => {
-      const ann = /^<<\s*(.+?)\s*>>$/.exec(body);
+      const ann = /^<<\s*(.+?)\s*>>$/s.exec(body);
       if (ann !== null) annotations.push(ann[1]!);
       else if (body !== '') members.push(memberOf(body));
     };

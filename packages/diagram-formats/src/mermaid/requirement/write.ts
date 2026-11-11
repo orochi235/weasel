@@ -6,6 +6,7 @@ import { graphOut } from '../../graphWrite';
 import type { Warnings } from '../../graphRead';
 import { titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
+import { oneLine } from '../common/text';
 import { BLOCK_KINDS, RELATIONS } from './parse';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -24,9 +25,9 @@ function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [s
   let past = false;
   for (const r of rows) {
     if (r.kind === 'divider') past = true;
-    else if (r.kind === 'field') fields.push([r.label, r.value]);
+    else if (r.kind === 'field') fields.push([r.label, oneLine(r.value, 'requirement', (m) => warnings.add(m))]);
     else if (r.kind === 'label' && past) {
-      const kv = /^(\w+)\s*:\s*(.*)$/.exec(r.text);
+      const kv = /^(\w+)\s*:\s*(.*)$/s.exec(oneLine(r.text, 'requirement', (m) => warnings.add(m)));
       if (kv !== null) fields.push([kv[1]!, kv[2]!]);
       else warnings.add('Mermaid requirement fields are named; rows that name none were dropped.');
     }
@@ -35,18 +36,19 @@ function blockOf(node: DataNode, warnings: Warnings): { type: string; fields: [s
 }
 
 /** A box's name: its first text row past the `<<kind>>` one, else its id. */
-function blockName(node: DataNode): string {
+function blockName(node: DataNode, warnings: Warnings): string {
   const rows: readonly Row[] = node.rows ?? (node.lines ?? []).map((text) => ({ kind: 'label', text }));
   const labels = rows.flatMap((r) => (r.kind === 'label' ? [r.text] : []));
   const named = labels[0] !== undefined && /^<<\w+>>$/.test(labels[0]) ? labels[1] : labels[0];
-  return named !== undefined && named.trim() !== '' ? named.trim() : node.id;
+  const one = named === undefined ? '' : oneLine(named, 'requirement', (m) => warnings.add(m)).trim();
+  return one !== '' ? one : oneLine(node.id, 'requirement', (m) => warnings.add(m));
 }
 
 /** Each box's name, a name two boxes share made distinct by a number. */
-function blockNames(nodes: readonly DataNode[]): Map<string, string> {
+function blockNames(nodes: readonly DataNode[], warnings: Warnings): Map<string, string> {
   const taken = new Set<string>();
   return new Map(nodes.map((n) => {
-    const base = blockName(n);
+    const base = blockName(n, warnings);
     let name = base;
     for (let k = 2; taken.has(name); k++) name = `${base} ${k}`;
     taken.add(name);
@@ -62,7 +64,7 @@ export function writeRequirementDiagram(doc: DiagramDocument, opts?: WriteOption
   if (out.clusters.length > 0) warnings.add('Mermaid requirement diagrams have no containers; they were dropped.');
   const lines = [...titleLines(page.name), 'requirementDiagram'];
   if (page.direction !== undefined && page.direction !== 'down') lines.push(`  direction ${HEADER[page.direction]}`);
-  const names = blockNames(page.data.nodes);
+  const names = blockNames(page.data.nodes, warnings);
   const name = (id: string) => nameOf(names.get(id) ?? id);
   for (const n of page.data.nodes) {
     const { type, fields } = blockOf(n, warnings);

@@ -49,7 +49,7 @@ export function statementsOf(text: string): MermaidSource {
       continue;
     }
     if (trimmed === '' || trimmed.startsWith('%%')) continue;
-    const acc = /^acc(Title|Descr)\s*(?::\s*(.*)|\{\s*(.*))$/.exec(trimmed);
+    const acc = /^acc(Title|Descr)\s*(?::\s*(.*)|\{\s*(.*))$/s.exec(trimmed);
     if (acc !== null && acc[3] === undefined) {
       if (acc[1] === 'Title') accTitle = acc[2]!.trim();
       else accDescr = acc[2]!.trim();

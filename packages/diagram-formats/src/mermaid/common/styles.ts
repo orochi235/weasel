@@ -104,7 +104,7 @@ export class StyleSheet {
 
   /** Reads `classDef`, `style id …`, and, unless `withClass` is false, `class a,b name` statements; whether `text` was one. */
   statement(text: string, withClass = true): boolean {
-    const m = /^(classDef|class|style)\s+(\S+)\s*(.*)$/.exec(text);
+    const m = /^(classDef|class|style)\s+(\S+)\s*(.*)$/s.exec(text);
     if (m === null || (!withClass && m[1] === 'class')) return false;
     const [, keyword, first, rest] = m as unknown as [string, string, string, string];
     if (keyword === 'classDef') this.classDef(first.split(','), propsOf(rest));

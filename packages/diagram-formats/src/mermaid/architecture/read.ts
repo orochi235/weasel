@@ -103,7 +103,7 @@ export function readArchitecture(text: string): ImportResult {
   }
   const containers: DataContainer[] = [...r.groups].map(([id, title]) => {
     const members = r.order.filter((m) => r.parent.get(m) === id);
-    return { id, role: 'container', ...(title !== undefined ? { label: textLines(title).join(' ') } : {}), ...(members.length > 0 ? { members } : {}) };
+    return { id, role: 'container', ...(title !== undefined ? { label: textLines(title).filter((l) => l !== '').join(' ') } : {}), ...(members.length > 0 ? { members } : {}) };
   });
   const name = pageNameOf(source, r.warnings);
   const page = graphPage({ ...(name !== undefined ? { name } : {}), direction: 'right', nodes: r.nodes, edges: r.edges, containers });

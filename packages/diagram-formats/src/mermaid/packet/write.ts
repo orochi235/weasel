@@ -1,7 +1,7 @@
 /** A plot page holding a packet diagram as Mermaid `packet-beta` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
-import { mermaidQuoted } from '../common/text';
+import { mermaidQuoted, oneLine } from '../common/text';
 
 
 const range = (start: number, end: number): string => (start === end ? `${start}` : `${start}-${end}`);
@@ -14,7 +14,8 @@ export function writeMermaidPacket(page: PlotPage): ExportResult {
   const warnings = new Warnings();
   if (data.bitsPerRow !== undefined && data.bitsPerRow !== 32) warnings.add('Mermaid reads bits per row from its configuration only; it was dropped.');
   const lines = ['packet-beta'];
-  if (data.title?.trim()) lines.push(`  title ${data.title.trim()}`);
+  const title = data.title === undefined ? '' : oneLine(data.title, 'packet', (m) => warnings.add(m)).trim();
+  if (title) lines.push(`  title ${title}`);
   let after = -1;
   for (const f of data.fields) {
     const whole = Number.isInteger(f.start) && Number.isInteger(f.end);

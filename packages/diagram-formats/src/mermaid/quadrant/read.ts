@@ -20,7 +20,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
   const points: QuadrantPoint[] = [];
   const classes = new Map<string, QuadrantPointStyle>();
   for (const s of src.body) {
-    const m = /^(\S+)(?:\s+(.*))?$/.exec(s.text)!;
+    const m = /^(\S+)(?:\s+(.*))?$/s.exec(s.text)!;
     const keyword = m[1]!;
     const rest = m[2] ?? '';
     const quadrant = /^quadrant-([1-4])$/.exec(keyword);
@@ -28,7 +28,7 @@ export function readMermaidQuadrant(text: string): ImportResult {
     else if (keyword === 'x-axis' || keyword === 'y-axis') axes[keyword[0] as 'x' | 'y'] = axisOf(rest);
     else if (quadrant !== null) quadrants[(Number(quadrant[1]) - 1) as 0 | 1 | 2 | 3] = textOf(rest) || undefined;
     else if (keyword === 'classDef') {
-      const c = /^([\w-]+)\s*(.*)$/.exec(rest);
+      const c = /^([\w-]+)\s*(.*)$/s.exec(rest);
       if (c === null) throw lineError('Mermaid', s.line, 'a classDef needs a name');
       classes.set(c[1]!, styleOf(c[2]!, s.line));
     } else {
