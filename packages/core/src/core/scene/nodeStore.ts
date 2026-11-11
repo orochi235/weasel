@@ -10,6 +10,7 @@ import { createDependentsIndex } from './dependents';
 import { dropPoseKeyedMemoSlots } from './nodeMemo';
 import { restoreFn, type FnBearingNode, type NodeFn, type NodeFnField } from './nodeFnFields';
 import { SceneMembershipError } from './staleReplay';
+import { slotIndex } from './treeOrder';
 import type { AddNodeSpec, Node, NodeId } from './types';
 
 /** What the store keeps of a scene's state. */
@@ -120,8 +121,7 @@ export function createNodeStore<TData, TLayer extends string, TPose>(
 
   function attach(id: NodeId, parent: NodeId | null, index: number): void {
     const sibs = siblingsOf(parent);
-    const i = Math.max(0, Math.min(index, sibs.length));
-    sibs.splice(i, 0, id);
+    sibs.splice(slotIndex(index, sibs.length), 0, id);
     const node = requireNode(id);
     (node as { parent: NodeId | null }).parent = parent;
     invalidateOrder();
