@@ -77,7 +77,9 @@ export function createGestureFacts(): GestureFactsStore {
     },
     turn(gestureId, event) {
       const turn = turns.get(gestureId);
-      if (!turn || event.angle === undefined) return;
+      if (!turn || event.angle === undefined || !Number.isFinite(event.angle)) return;
+      // A gesture that opened on no angle turns from its first one.
+      if (!Number.isFinite(turn.last)) { turn.last = event.angle; return; }
       // The shorter way round: an angle crossing 180 has not turned a full circle.
       const step = event.angle - turn.last;
       turn.total += step - 360 * Math.round(step / 360);
