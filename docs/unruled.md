@@ -395,6 +395,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint
+- 2026-11-11 (my call, core canvas second pass): `reconcileSpecs` puts a group's member back on its own layer after
+  the group's spec changes layer and the member's does not, wherever the group's new layer allows; `setLayer` alone
+  still carries the whole subtree (fef31b751). The member's spec says where it stands, which is what the render
+  worker's copy needs, but a consumer reconciling to specs that expected the old carry would see members stay put.
 
 - Ruled 2026-11-10 (my call, overnight sweep): a marquee or lasso takes a node under several clips only where
   the clips' common part meets it and the region (`PickQuery.intersectClips`), not where each clip alone does:
@@ -568,6 +572,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   number that is not finite (a group transform with `NaN` or `Infinity`, an infinite stroke width, a scale past the
   double range) and skips such `lbxObjects` with a reason, and `writeLbx` throws a `RangeError` for a `length` that
   is not a positive finite number. A `-0` position is written and reads back as `0`.
+- 2026-11-11 (my call, core canvas second pass): a marquee rect with a negative width or height (`rectRegion`,
+  `hitTestArea`) is the same rect named from its other corner, as the marquee drag's `rectBetween` already makes it,
+  rather than an empty area (5f06b1f0d).
 
 ## Text
 

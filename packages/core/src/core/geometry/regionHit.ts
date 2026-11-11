@@ -11,6 +11,7 @@ import {
   boxContainsBox,
   pointInPolygon,
   polygonContainsPath,
+  rectBetween,
   polygonIntersectsPath,
   type Path,
   type PolygonPath,
@@ -35,10 +36,10 @@ export interface SelectRegion {
   readonly isRect: boolean;
 }
 
-/** A marquee's region. */
+/** A marquee's region. A negative width or height reaches back from `x` or `y`, as a drag up and to the left does. */
 export function rectRegion(r: Bounds): SelectRegion {
   const { x, y, width: w, height: h } = r;
-  return regionOf([x, y, x + w, y, x + w, y + h, x, y + h], { x, y, width: w, height: h }, true)!;
+  return regionOf([x, y, x + w, y, x + w, y + h, x, y + h], rectBetween(x, y, x + w, y + h), true)!;
 }
 
 /** A region from interleaved coords. `bounds` is derived when omitted; `null`
