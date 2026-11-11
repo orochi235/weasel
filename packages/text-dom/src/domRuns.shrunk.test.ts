@@ -29,4 +29,11 @@ describe('domRuns round trip (shrunk)', () => {
     expect(roundTrip([{ text: 'a', fill: { paint: { kind: 'solid', color: 'not-a-color' } } }]))
       .toEqual([{ text: 'a', fill: { paint: { kind: 'solid', color: 'not-a-color' } } }]);
   });
+
+  it('keeps a hard break when text is typed ahead of its stand-in', () => {
+    runsToDom([{ text: '\u2028' }], parent);
+    const stand = parent.querySelector('[data-break]')!.firstChild as Text;
+    stand.insertData(0, 'a');
+    expect(domToRuns(parent)).toEqual([{ text: 'a\u2028' }]);
+  });
 });

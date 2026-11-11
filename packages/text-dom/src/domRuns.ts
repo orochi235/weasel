@@ -33,11 +33,12 @@ function solidColor(p: Paint | null | undefined): string | null {
 
 const BREAK_ATTR = 'data-break';
 
-/** A break stand-in's source text: its hard break, and anything typed into it after. */
+/** A break stand-in's source text: its hard break, and anything typed into it before or after. */
 function restoreBreak(el: Element): string {
   const text = el.textContent ?? '';
   const code = parseInt(el.getAttribute(BREAK_ATTR) ?? '', 16);
-  return text.startsWith('\n') && Number.isFinite(code) ? String.fromCharCode(code) + text.slice(1) : text;
+  const at = text.indexOf('\n');
+  return at >= 0 && Number.isFinite(code) ? text.slice(0, at) + String.fromCharCode(code) + text.slice(at + 1) : text;
 }
 
 /**
