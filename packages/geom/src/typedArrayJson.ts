@@ -53,15 +53,21 @@ const isPlain = (value: unknown): value is Record<string, unknown> => classOf(va
 
 const RAW = '__raw';
 
+/** A value of the writer's caller that its reader would take for something the writer wrote, as written:
+ *  the reader takes the wrapper off and reads nothing into what it holds. */
+export interface RawWrapper {
+  __raw: unknown;
+}
+
 /** Whether `value` is a `{ "__raw": … }` wrapper: a plain object with that one own key. */
-const isRaw = (value: unknown): value is { [RAW]: unknown } => {
+export function isRawWrapper(value: unknown): value is RawWrapper {
   if (!isPlain(value)) return false;
   const keys = Object.keys(value);
   return keys.length === 1 && keys[0] === RAW;
-};
+}
 
 /** Whether the reader would take the plain value for something the writer wrote: a tagged array or a wrapper. */
-const misread = (value: unknown): boolean => isPlain(value) && (isRaw(value) || untagTypedArray(value) !== undefined);
+const misread = (value: unknown): boolean => isPlain(value) && (isRawWrapper(value) || untagTypedArray(value) !== undefined);
 
 /** A copy of an array or a plain object, `each` applied to what it holds; anything else as it is. */
 function within(value: unknown, each: (v: unknown) => unknown): unknown {
@@ -95,18 +101,29 @@ export function tagTypedArrays(value: unknown): unknown {
  *  `{ "__raw": … }` wrapper taken off: what `JSON.parse` answered for something
  *  `tagTypedArrays` or `typedArrayReplacer` wrote. */
 export function reviveTypedArrays(value: unknown): unknown {
-  if (isRaw(value)) return within(value[RAW], reviveTypedArrays);
+  if (isRawWrapper(value)) return within(value.__raw, reviveTypedArrays);
   return untagTypedArray(value) ?? within(value, reviveTypedArrays);
 }
 
-const wrappers = new WeakSet<object>();
+/**
+ * A `JSON.stringify` replacer that tags typed arrays, and writes inside a `{ "__raw": … }` wrapper any
+ * plain object `reviveTypedArrays` would take for a tagged array or a wrapper, and any object `alsoWrap`
+ * names: what a reader with more shapes of its own (an older save's) would misread.
+ */
+export function typedArrayReplacerWrapping(
+  alsoWrap?: (key: string, value: object) => boolean,
+): (this: unknown, key: string, value: unknown) => unknown {
+  const wrappers = new WeakSet<object>();
+  return function replace(this: unknown, key: string, value: unknown): unknown {
+    const tagged = tagTypedArray(value);
+    if (tagged) return tagged;
+    if (value === null || typeof value !== 'object' || wrappers.has(this as object)) return value;
+    if (!misread(value) && !alsoWrap?.(key, value)) return value;
+    const wrapper = { [RAW]: value };
+    wrappers.add(wrapper);
+    return wrapper;
+  };
+}
 
 /** `tagTypedArrays` as a `JSON.stringify` replacer. */
-export function typedArrayReplacer(this: unknown, _key: string, value: unknown): unknown {
-  const tagged = tagTypedArray(value);
-  if (tagged) return tagged;
-  if (!misread(value) || wrappers.has(this as object)) return value;
-  const wrapper = { [RAW]: value };
-  wrappers.add(wrapper);
-  return wrapper;
-}
+export const typedArrayReplacer: (this: unknown, key: string, value: unknown) => unknown = typedArrayReplacerWrapping();
