@@ -392,6 +392,7 @@ function makeStage<TData, TPose>(
 
   const t: D3Transition<TData, TPose> = {
     duration(ms) {
+      if (Number.isNaN(ms)) throw new RangeError('d3Bind.transition.duration: ms is a time, not NaN');
       duration = ms;
       return t;
     },

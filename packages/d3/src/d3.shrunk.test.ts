@@ -48,4 +48,13 @@ describe('shrunk from the d3 properties', () => {
     expect(scene.get(asNodeId('a'))!.pose.x).toBe(0.1);
     clock.dispose();
   });
+
+  it('refuses a NaN duration where it is set, not from the frame or timer that would start the tween', () => {
+    const scene = makeScene();
+    const clock = makeAnimator();
+    d3Bind(scene, [{ id: 'a' }], { key: (d) => d.id }).pose(() => box(0)).join();
+    const t = d3Bind(scene, [{ id: 'a' }], { key: (d) => d.id, animator: clock.animator }).pose(() => box(1)).join().transition();
+    expect(() => t.duration(NaN)).toThrow(/d3Bind\.transition\.duration: ms is a time, not NaN/);
+    clock.dispose();
+  });
 });

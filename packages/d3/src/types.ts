@@ -82,6 +82,7 @@ export interface D3Selection<TData, TPose> {
  * starting one starts the whole chain.
  */
 export interface D3Transition<TData, TPose = unknown> {
+  /** How long each item's tweens run, in ms; 250 unless set. Throws a `RangeError` on `NaN`. */
   duration(ms: number): this;
   ease(fn: (t: number) => number): this;
   /** Per-item delay. On a chained transition it counts from the moment that
