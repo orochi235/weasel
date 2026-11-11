@@ -73,7 +73,8 @@ function translate(tx: number, ty: number): Float64Array {
  *
  * **A `space: 'screen'` source is drawn once, untiled, in screen space**, in its place among the sources — it
  * ignores the view by definition, so every copy would land on top of the last. Same constraint
- * `createParallaxLayer` carries.
+ * `createParallaxLayer` carries. Under a view with no finite inverse, zoomed to 0 or a denormal on an axis,
+ * it draws nothing.
  */
 export function createTiledLayer<TData>(
   opts: CreateTiledLayerOpts<TData>,
@@ -101,15 +102,12 @@ export function createTiledLayer<TData>(
       // layer's effects run once over all of its copies.
       for (const layer of source) {
         if ((layer.space ?? 'world') === 'screen') {
+          // This plane is drawn through the view, so screen content is handed the view's inverse; a view
+          // with none, zoomed to 0 or a denormal, collapses the plane to a point, and the content with it.
+          const inverse = new Float64Array([1 / view.scale.x, 0, 0, 0, 1 / view.scale.y, 0, view.x, view.y, 1]);
+          if (!inverse.every(Number.isFinite)) continue;
           const onScreen = drawOneLayer(layer, data, view, dims);
-          // This plane is drawn through the view, so screen content is handed the view's inverse.
-          if (onScreen.length > 0) {
-            out.push({
-              kind: 'group',
-              transform: new Float64Array([1 / view.scale.x, 0, 0, 0, 1 / view.scale.y, 0, view.x, view.y, 1]),
-              children: onScreen,
-            });
-          }
+          if (onScreen.length > 0) out.push({ kind: 'group', transform: inverse, children: onScreen });
           continue;
         }
         if (!tiling) continue;
