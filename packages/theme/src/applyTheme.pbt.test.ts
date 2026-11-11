@@ -8,6 +8,7 @@
 import fc from 'fast-check';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
+import { wzlValue } from './axes';
 import { refTarget } from './dtcg/resolve';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import { resolveTheme } from './resolveTheme';
@@ -63,7 +64,7 @@ function check(m: Model, r: Real): void {
       return;
     }
     const th = m.themes[h.theme]!;
-    expect(el.getAttribute('data-wzl-theme')).toBe(th.name);
+    expect(el.getAttribute('data-wzl-theme')).toBe(wzlValue(th.name));
     expect(el.getAttribute('data-wzl-mode')).toBe(h.mode);
     if (el.hasAttribute('data-wzl-variant')) t.count('variant');
     const resolved = resolveTheme(th, { mode: h.mode }) as Record<string, string>;
@@ -134,7 +135,7 @@ describe('applyTheme against a model', () => {
       fc.nat().map((k) => new Release(k)),
     ];
     fc.assert(
-      fc.property(fc.tuple(theme('a'), theme('a'), theme("b'\r\\")), fc.commands(commands, { maxCommands: 30, size: '+1' }), (themes, cmds) => {
+      fc.property(fc.tuple(theme('a'), theme('a'), theme("b'\r\\\0")), fc.commands(commands, { maxCommands: 30, size: '+1' }), (themes, cmds) => {
         document.head.innerHTML = '';
         document.body.innerHTML = '';
         document.adoptedStyleSheets = [];

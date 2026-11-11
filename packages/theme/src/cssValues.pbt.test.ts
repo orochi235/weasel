@@ -6,7 +6,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { parseColor } from '@weasel-js/paint';
-import { wzlAttr } from './axes';
+import { wzlAttr, wzlValue } from './axes';
 import { expandVars, parseBoxShadow, type BoxShadow } from './boxShadow';
 import { readCssNumber } from './cssNumber';
 import { resolveCurrentColor } from './currentColor';
@@ -192,19 +192,18 @@ describe('resolveCurrentColor', () => {
 });
 
 describe('wzlAttr', () => {
-  // The BMP only: jsdom's selector engine matches no character past it, though a browser does. No NUL: CSS
-  // reads one as U+FFFD, escaped or not, so no selector can match it (docs/unruled.md).
-  const char = fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }).filter((c) => c.length === 1 && c !== '\0');
-  const text = fc.string({ unit: fc.oneof(fc.constantFrom("'", '"', '\\', '\n', '\r', '\f', '\t', ' ', ']', '[', 'a', '-', '0', 'é'), char), maxLength: 8 });
+  // The BMP only: jsdom's selector engine matches no character past it, though a browser does.
+  const char = fc.string({ unit: 'binary', minLength: 1, maxLength: 1 }).filter((c) => c.length === 1);
+  const text = fc.string({ unit: fc.oneof(fc.constantFrom("'", '"', '\\', '\n', '\r', '\f', '\t', ' ', ']', '[', 'a', '-', '0', 'é', '\0', '\uFFFD'), char), maxLength: 8 });
 
   it('selects the element whose attribute holds the value, and no other', () => {
     fc.assert(fc.property(text, text, (value, other) => {
-      fc.pre(value !== other);
+      fc.pre(wzlValue(value) !== wzlValue(other));
       const root = document.createElement('div');
       const el = document.createElement('div');
       const not = document.createElement('div');
-      el.setAttribute('data-wzl-theme', value);
-      not.setAttribute('data-wzl-theme', other);
+      el.setAttribute('data-wzl-theme', wzlValue(value));
+      not.setAttribute('data-wzl-theme', wzlValue(other));
       root.append(el, not);
       expect(root.querySelectorAll(wzlAttr('theme', value))).toEqual(root.querySelectorAll('div:first-child'));
     }), runs(RUNS));
