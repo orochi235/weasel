@@ -212,7 +212,8 @@ describe('interpolateView run backward', () => {
         const tol = 1e-7 * Math.max(1, Math.abs(a[axis]), Math.abs(b[axis]), Math.abs(ab[axis]), 1e4 / Math.min(Math.abs(a.scale[axis]), Math.abs(b.scale[axis])));
         expect(Math.abs(ab[axis] - ba[axis]), `${axis}: ${JSON.stringify({ a, b, k, ab, ba })}`).toBeLessThanOrEqual(tol);
       }
-      expect(interpolateView(a, a)(k)).toEqual(a);
+      // `sameView`, not `toEqual`: a -0 position comes back as 0, the same camera.
+      expect(sameView(interpolateView(a, a)(k), a)).toBe(true);
     }), runs(N));
   }, T);
 });

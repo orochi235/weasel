@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { applyToPoint, extentScale, poseFrameOf } from '@weasel-js/geom';
 import { coord, positive, runs, tally, timeoutFor } from '../pbt.fixture';
 import { unionAABB, unionBounds, axisAlignedBounds } from './unionBounds';
 import { RECT_POSE_DESCRIPTOR, remapRotatedLeaf, type RotatedPose } from './poseDescriptor';
@@ -71,6 +71,8 @@ describe('remaps between boxes of next to no size', () => {
     fc.assert(fc.property(box, fc.record({ x: coord(500), y: coord(500), width: tiny, height: tiny }), fc.record({ x: coord(500), y: coord(500), width: positive(0, 500), height: positive(0, 500) }),
       (p, src, dst) => {
         const out = RECT_POSE_DESCRIPTOR.remapBounds(p, src, dst);
+        // A finite factor can still carry a point off the source box past the double range: the map's own image.
+        if (!Number.isFinite((p.x - src.x) * extentScale(src.width, dst.width)) || !Number.isFinite((p.y - src.y) * extentScale(src.height, dst.height))) return;
         expect(allFinite(out), JSON.stringify({ p, src, dst, out })).toBe(true);
         if (src.width > 0 && src.width < 1e-200) t.count('subnormal');
       }), runs(N));
@@ -87,8 +89,8 @@ describe('remaps between boxes of next to no size', () => {
       const flat = [next.x, next.y, next.width, next.height, next.rotation, ...((next as { transform?: number[] }).transform ?? [])];
       expect(flat.every(Number.isFinite), JSON.stringify({ p, s, d, next })).toBe(true);
       // The group map as the descriptor reads it: an axis with no source extent keeps its scale.
-      const sx = s.width > 0 && Number.isFinite(d.width / s.width) ? d.width / s.width : 1;
-      const sy = s.height > 0 && Number.isFinite(d.height / s.height) ? d.height / s.height : 1;
+      const sx = extentScale(s.width, d.width);
+      const sy = extentScale(s.height, d.height);
       if (sx > 1e6 || sy > 1e6) return;
       const g = ([x, y]: readonly number[]) => [d.x + (x! - s.x) * sx, d.y + (y! - s.y) * sy];
       const corners = (b: Bounds) => {
