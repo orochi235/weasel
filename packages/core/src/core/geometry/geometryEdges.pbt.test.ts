@@ -72,7 +72,9 @@ describe('remaps between boxes of next to no size', () => {
       (p, src, dst) => {
         const out = RECT_POSE_DESCRIPTOR.remapBounds(p, src, dst);
         // A finite factor can still carry a point off the source box past the double range: the map's own image.
-        if (!Number.isFinite((p.x - src.x) * extentScale(src.width, dst.width)) || !Number.isFinite((p.y - src.y) * extentScale(src.height, dst.height))) return;
+        const kx = extentScale(src.width, dst.width);
+        const ky = extentScale(src.height, dst.height);
+        if (![(p.x - src.x) * kx, p.width * kx, (p.y - src.y) * ky, p.height * ky].every(Number.isFinite)) return;
         expect(allFinite(out), JSON.stringify({ p, src, dst, out })).toBe(true);
         if (src.width > 0 && src.width < 1e-200) t.count('subnormal');
       }), runs(N));

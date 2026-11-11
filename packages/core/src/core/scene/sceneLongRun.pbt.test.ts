@@ -270,7 +270,9 @@ describe('a scene through long runs of edits, z-order, layers, pages, and histor
     fc.assert(fc.property(commands, (cmds) => {
       const scene = make();
       fc.modelRun(() => ({ model: { states: [json(scene)] }, real: { scene } }), cmds);
+      if ([...cmds].length >= 50) t.count('long');
     }), runs(N));
+    t.atLeast('long', N / 4);
     for (const k of ['Add', 'Remove', 'Move', 'Reorder', 'SetPose', 'Flag', 'SetLayer', 'LayerEdit', 'DocSet', 'PageEdit', 'Undo', 'Redo', 'Jump', 'Reload']) t.atLeast(k, 5);
   }, T);
 });
