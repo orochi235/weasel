@@ -1,7 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
-import { SMALL_CAPS_SCALE } from '@weasel-js/text';
+import { resolveTextStyle, SMALL_CAPS_SCALE } from '@weasel-js/text';
+import { applyOverlayDirection } from './overlayDirection';
 import {
   makeHarness,
   getOverlay,
@@ -172,6 +173,15 @@ describe('useTextEdit — letter-spacing on the overlay', () => {
   });
 });
 
+/** `text-align`, or under css-text-4 (jsdom 31, no shipping browser) its `text-align-all` longhand, which
+ *  the shorthand cannot spell beside a `text-align-last` of its own. */
+function textAlignOf(el: HTMLElement): string {
+  return el.style.textAlign || el.style.getPropertyValue('text-align-all');
+}
+
+/** `text-align-last` left to `text-align`: unset, or `auto` where `text-align` is a shorthand. */
+const LAST_FROM_ALIGN = ['', 'auto'];
+
 describe('useTextEdit — alignment on the overlay', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
@@ -182,7 +192,7 @@ describe('useTextEdit — alignment on the overlay', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    expect(overlay.style.textAlign).toBe('justify');
+    expect(textAlignOf(overlay)).toBe('justify');
     expect(overlay.style.getPropertyValue('text-align-last')).toBe('right');
   });
 
@@ -191,8 +201,8 @@ describe('useTextEdit — alignment on the overlay', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
-    expect(overlay.style.textAlign).toBe('right');
-    expect(overlay.style.getPropertyValue('text-align-last')).toBe('');
+    expect(textAlignOf(overlay)).toBe('right');
+    expect(LAST_FROM_ALIGN).toContain(overlay.style.getPropertyValue('text-align-last'));
   });
 
   // Proxies, all three: what a browser does with these properties is layout,
@@ -240,15 +250,23 @@ describe('useTextEdit — alignment on the overlay', () => {
     const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'end' });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
-    expect(getOverlay(h.container)!.style.textAlign).toBe('end');
+    expect(textAlignOf(getOverlay(h.container)!)).toBe('end');
     act(() => result.current.cancelEdit());
 
     const j = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, align: 'justify' });
     const second = renderHook(() => useTextEdit(j.opts));
     act(() => second.result.current.startEdit('a'));
     const overlay = getOverlay(j.container)!;
-    expect(overlay.style.textAlign).toBe('justify');
+    expect(textAlignOf(overlay)).toBe('justify');
     expect(overlay.style.getPropertyValue('text-align-last')).toBe('start');
+  });
+
+  it('lets go of a justified last line when the alignment changes', () => {
+    const el = document.createElement('div');
+    applyOverlayDirection(el, resolveTextStyle({ align: 'justify', direction: 'rtl' }));
+    applyOverlayDirection(el, resolveTextStyle({ align: 'center', direction: 'rtl' }));
+    expect(textAlignOf(el)).toBe('center');
+    expect(LAST_FROM_ALIGN).toContain(el.style.getPropertyValue('text-align-last'));
   });
 });
 
