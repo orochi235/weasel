@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { attract, clampOrdered, crossEnd, sliderKey, stepStops, usableStops, type SliderKeyShape } from './slider';
+import { attract, clampOrdered, crossEnd, evenMap, sliderAt, sliderKey, stepStops, usableStops, type SliderKeyShape } from './slider';
+import { spanMap } from './span';
 
 describe('slider stops', () => {
   it('keeps the stops inside the range, deduped and ascending, with the first label given', () => {
@@ -17,6 +18,13 @@ describe('slider stops', () => {
     const f = (v: number) => v / 100;
     expect(attract(48, [50, 60], 0.03, f)).toBe(50);
     expect(attract(40, [50, 60], 0.03, f)).toBe(40);
+  });
+
+  it("attracts in the value's own units with no track map", () => {
+    expect(attract(103, [0, 100, 200], 6)).toBe(100);
+    expect(attract(150, [0, 100, 200], 6)).toBe(150);
+    expect(attract(98, [95, 100], 6)).toBe(100);
+    expect(attract(150, [], 6)).toBe(150);
   });
 
   it('steps by whole stops, saturating at the ends', () => {
@@ -75,5 +83,58 @@ describe('sliderKey', () => {
 
   it('keeps an ordered thumb inside its neighbors', () => {
     expect(sliderKey('PageUp', false, shape({ thumbs: [{ value: 50 }, { value: 55 }], ordered: true }))).toBe(54);
+  });
+});
+
+describe('evenMap', () => {
+  const map = evenMap([0, 10, 100, 1000]);
+
+  it('gives each gap between stops the same length of track', () => {
+    expect(map.toFraction(10)).toBeCloseTo(1 / 3, 12);
+    expect(map.toFraction(100)).toBeCloseTo(2 / 3, 12);
+    expect(map.toFraction(55)).toBeCloseTo(0.5, 12);
+    expect(map.toValue(0.5)).toBeCloseTo(55, 9);
+  });
+
+  it('holds a value or a place past either end at that end', () => {
+    expect(map.toFraction(-5)).toBe(0);
+    expect(map.toFraction(5000)).toBe(1);
+    expect(map.toValue(-1)).toBe(0);
+    expect(map.toValue(2)).toBe(1000);
+  });
+});
+
+describe('sliderAt', () => {
+  const track = { min: 0, max: 100, ...spanMap({ from: 0, to: 100 }) };
+
+  it("reads the track's value at the place, held inside min to max", () => {
+    expect(sliderAt(0.25, track)).toBe(25);
+    expect(sliderAt(-0.5, track)).toBe(0);
+    expect(sliderAt(1.5, track)).toBe(100);
+  });
+
+  it('lands on the step grid, which starts at the origin', () => {
+    expect(sliderAt(0.26, { ...track, step: 10 })).toBe(30);
+    expect(sliderAt(0.26, { ...track, step: 10, origin: 3 })).toBe(23);
+  });
+
+  it('pulls onto a stop within reach, and passes it by when free', () => {
+    const stops = [40, 80];
+    expect(sliderAt(0.42, { ...track, stops, pull: 0.03 })).toBe(40);
+    expect(sliderAt(0.5, { ...track, stops, pull: 0.03 })).toBe(50);
+    expect(sliderAt(0.42, { ...track, stops, pull: 0.03, free: true })).toBe(42);
+    expect(sliderAt(0.42, { ...track, stops })).toBe(42);
+  });
+
+  it('picks only a stop under strict, however far, free or not', () => {
+    expect(sliderAt(0.1, { ...track, stops: [40, 80], strict: true, free: true })).toBe(40);
+  });
+
+  it('reads a window onto a longer range, past its edges', () => {
+    const windowed = { min: 0, max: Infinity, ...spanMap({ from: 200, to: 300 }) };
+    expect(sliderAt(0.5, windowed)).toBe(250);
+    expect(sliderAt(1.5, windowed)).toBe(350);
+    expect(sliderAt(-3, windowed)).toBe(0);
+    expect(sliderAt(0.52, { ...windowed, stops: [100, 251], pull: 0.02 })).toBe(251);
   });
 });

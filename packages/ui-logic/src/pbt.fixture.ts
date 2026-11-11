@@ -68,3 +68,7 @@ export const items: fc.Arbitrary<Item[]> = fc.array(
 /** An index into a list of `n`, or null. */
 export const at = (n: number): fc.Arbitrary<number | null> =>
   n === 0 ? fc.constant(null) : fc.option(fc.integer({ min: 0, max: n - 1 }), { nil: null });
+
+/** A double spread evenly over `min..max`, ends included; `fc.double` crowds toward zero. */
+export const uniform = (min: number, max: number): fc.Arbitrary<number> =>
+  fc.integer({ min: 0, max: 1 << 20 }).map((k) => (k === 1 << 20 ? max : min + ((max - min) * k) / (1 << 20)));

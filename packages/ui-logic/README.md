@@ -84,6 +84,31 @@ tiled by a spec. `@weasel-js/ui`'s `ToggleBar`, `OptionsBar`,
 a thumb's next value, by step or by whole stops, across an endless end and inside its neighbors;
 `@weasel-js/ui`'s `Slider` runs on it.
 
+`sliderAt(f, shape)` is the pointer's half: the value picked at fraction `f` of the track, on the
+step grid, inside `min` to `max`, and pulled onto a stop within `pull` unless `free`. The shape
+carries a `TrackMap`, the two-way map between a value and its place along the track, so the rule
+does not care what the track is. `spanMap(span)` lays a `Span` along it linearly, `evenMap(stops)`
+gives every gap between stops the same length, and a caller with a scale of its own writes the two
+functions itself. `attract` is the pull alone: the nearest stop within a tolerance, measured along
+the track with a map or in the value's own units without one.
+
+A track need not show its whole range. A `Span` is a stretch of values, and a track that shows
+one span of a longer range is a windowed track: `spanPan` and `spanZoom` move the window inside
+its bounds, `spanZoom` about a value that keeps its place, and `spanPlace` and `spanShare` put a
+value and a length at their fractions of it. Values outside the window map to places off the
+track's ends, so a thumb can sit out of view and a drag can carry one there.
+
+```ts
+const window = { from: 2000, to: 3000 };
+const track = { min: 0, max: Infinity, ...spanMap(window) };
+sliderAt(0.5, track);                                        // 2500
+sliderAt(0.52, { ...track, stops: [2510], pull: 6 / 400 });  // 2510, within 6px on a 400px track
+spanZoom(window, 2500, 0.5, { from: 0, to: 10_000 });        // { from: 2250, to: 2750 }
+```
+
+`@weasel-js/ui`'s `Timeline` runs its lanes and ruler on these: a lane is a track windowed onto the
+timeline, its keys the thumbs and every other key's time a stop.
+
 ## Text fields
 
 `editEnd(cause, shape)` says how a text field's edit ends: Enter and blur commit, Escape cancels.

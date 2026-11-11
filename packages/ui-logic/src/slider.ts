@@ -24,10 +24,18 @@ export function usableStops<L>(
   return [...byValue.values()].sort((a, b) => a.value - b.value);
 }
 
-/** The stop nearest `v` along the track, or `v` itself when none lies within
- *  `tolerance` (a track fraction). Measured on the track rather than in value
- *  units so evenly spaced stops attract over the same distance. */
-export function attract(v: number, stops: readonly number[], tolerance: number, toFraction: (v: number) => number): number {
+/** The two-way map between a value and its place along a track, as a fraction: 0 at one end, 1 at the other. */
+export interface TrackMap {
+  toFraction(v: number): number;
+  toValue(f: number): number;
+}
+
+/** The stop nearest `v`, or `v` itself when none lies within `tolerance`. With `toFraction` the distance is
+ *  measured along the track and `tolerance` is a track fraction, so evenly spaced stops attract over the same
+ *  distance; without it both are in `v`'s own units. */
+export function attract(
+  v: number, stops: readonly number[], tolerance: number, toFraction: (v: number) => number = (x) => x,
+): number {
   const f = toFraction(v);
   let best = v;
   let bestGap = tolerance;
@@ -39,6 +47,53 @@ export function attract(v: number, stops: readonly number[], tolerance: number, 
     }
   }
   return best;
+}
+
+/** The map for a track its stops divide evenly, whatever their values: each gap between two stops takes the
+ *  same length, and a value sits between its neighbors in proportion. Needs two stops, ascending. */
+export function evenMap(stops: readonly number[]): TrackMap {
+  const gaps = stops.length - 1;
+  return {
+    toFraction(v) {
+      const x = clamp(v, stops[0]!, stops[gaps]!);
+      let i = 0;
+      while (i < gaps - 1 && x > stops[i + 1]!) i++;
+      return (i + (x - stops[i]!) / (stops[i + 1]! - stops[i]!)) / gaps;
+    },
+    toValue(f) {
+      const c = clamp(f, 0, 1);
+      const i = Math.min(gaps - 1, Math.floor(c * gaps));
+      return stops[i]! + (c * gaps - i) * (stops[i + 1]! - stops[i]!);
+    },
+  };
+}
+
+/** What a pointer on a slider's track reads: how the track maps to values, and what has a say in the value picked. */
+export interface SliderAtShape extends TrackMap {
+  /** The least and greatest value a pointer can pick. Either may be infinite. */
+  min: number;
+  max: number;
+  step?: number;
+  /** Where the step grid starts. Default `min`. */
+  origin?: number;
+  /** Values the pointer is pulled onto. */
+  stops?: readonly number[];
+  /** How near a stop pulls, as a track fraction. Default 0: only a pointer exactly on a stop lands on it. */
+  pull?: number;
+  /** Only a stop can be picked: the nearest, however far. */
+  strict?: boolean;
+  /** Pass the stops by. Not read under `strict`. */
+  free?: boolean;
+}
+
+/** The value a pointer at track fraction `f` picks: the track's value there, on the step grid and inside
+ *  `min` to `max`, then pulled onto a stop within reach. */
+export function sliderAt(f: number, shape: SliderAtShape): number {
+  const stops = shape.stops ?? [];
+  const v = shape.toValue(f);
+  if (shape.strict) return attract(v, stops, Infinity, shape.toFraction);
+  const q = clamp(snapToStep(v, shape.step, shape.origin ?? shape.min), shape.min, shape.max);
+  return stops.length > 0 && !shape.free ? attract(q, stops, shape.pull ?? 0, shape.toFraction) : q;
 }
 
 /** The stop `count` places past `v` in `direction`, saturating at either end. */
