@@ -11,43 +11,72 @@ export type WidthScale = (tx: number, ty: number) => number;
  *  `pl.offsets` where the two sides differ. Anchor-aligned points (A === B)
  *  read the anchor's value directly. Entries resolve through
  *  `vertexHalfWidths`, so a missing one takes `fallbackWidth`. Given `scale`,
- *  each entry is scaled at the point that reads it, and the fallback is not. */
+ *  each entry is scaled along the segment that reads it, and the fallback is
+ *  not: a corner becomes two coincident points, one for each segment, as a nib
+ *  splits it, since one factor at a corner of a stretched space is wrong for
+ *  at least one side. */
 export function populatePolylineWidths(
   pl: Polyline,
   vertexWidths: readonly VertexWidth[],
   fallbackWidth: number,
   scale?: WidthScale,
 ): void {
-  const ptCount = pl.points.length / 2;
-  if (ptCount === 0) return;
-  const aA = pl.anchorA ?? new Uint32Array(ptCount);
-  const aB = pl.anchorB ?? new Uint32Array(ptCount);
-  const aT = pl.anchorT ?? new Float32Array(ptCount);
-  const widths = new Float32Array(ptCount);
-  const offsets = new Float32Array(ptCount);
-  let sided = false;
+  const n = pl.points.length / 2;
+  if (n === 0) return;
+  const P = pl.points;
+  const aA = pl.anchorA ?? new Uint32Array(n);
+  const aB = pl.anchorB ?? new Uint32Array(n);
+  const aT = pl.anchorT ?? new Float32Array(n);
   const fallback = fallbackWidth / 2;
-  let k = 1;
   // A fallback side is not scaled: it is the stroke's own width.
-  const sides = (i: number): [number, number] => {
+  const sides = (i: number, k: number): [number, number] => {
     const h = vertexHalfWidths(vertexWidths[i], NaN);
     return [Number.isNaN(h.left) ? fallback : h.left * k, Number.isNaN(h.right) ? fallback : h.right * k];
   };
-  for (let i = 0; i < ptCount; i++) {
-    if (scale) k = scaleAt(pl, i, scale);
+  const pts: number[] = [], ptA: number[] = [], ptB: number[] = [], ptT: number[] = [], ws: number[] = [], os: number[] = [];
+  let sided = false;
+  const push = (i: number, k: number): void => {
     const a = aA[i], b = aB[i], t = aT[i];
-    let [left, right] = sides(a);
+    let [left, right] = sides(a, k);
     if (a !== b) {
-      const [lb, rb] = sides(b);
+      const [lb, rb] = sides(b, k);
       left += (lb - left) * t;
       right += (rb - right) * t;
     }
-    widths[i] = left + right;
-    offsets[i] = (right - left) / 2;
-    if (offsets[i] !== 0) sided = true;
+    pts.push(P[i * 2], P[i * 2 + 1]);
+    ptA.push(a); ptB.push(b); ptT.push(t);
+    ws.push(left + right);
+    os.push((right - left) / 2);
+    if (right !== left) sided = true;
+  };
+  const segCount = n < 2 ? 0 : pl.closed ? n : n - 1;
+  if (!scale || segCount === 0) {
+    for (let i = 0; i < n; i++) push(i, 1);
+  } else {
+    const factors: number[] = [];
+    for (let i = 0; i < segCount; i++) {
+      const j = (i + 1) % n;
+      const dx = P[j * 2] - P[i * 2], dy = P[j * 2 + 1] - P[i * 2 + 1];
+      const len = Math.hypot(dx, dy);
+      factors.push(len > 0 ? scale(dx / len, dy / len) : NaN);
+    }
+    // A zero-length segment takes the direction of the one before it.
+    for (let i = 0; i < segCount; i++) {
+      if (Number.isNaN(factors[i])) factors[i] = i > 0 ? factors[i - 1] : (factors.find((f) => !Number.isNaN(f)) ?? 1);
+    }
+    push(0, factors[0]);
+    for (let i = 1; i < n; i++) {
+      push(i, factors[i - 1]);
+      if (i < segCount) push(i, factors[i]);
+    }
+    if (pl.closed) push(0, factors[segCount - 1]);
+    pl.points = pts;
+    pl.anchorA = Uint32Array.from(ptA);
+    pl.anchorB = Uint32Array.from(ptB);
+    pl.anchorT = Float32Array.from(ptT);
   }
-  pl.widths = widths;
-  if (sided) pl.offsets = offsets;
+  pl.widths = Float32Array.from(ws);
+  if (sided) pl.offsets = Float32Array.from(os);
 }
 
 /** The widest a stroke of `width` draws: twice the farthest any edge sits
@@ -68,23 +97,4 @@ export function populateWidths(
 ): void {
   if (vertexWidths) populatePolylineWidths(pl, vertexWidths, width, scale);
   if (nib) applyNib(pl, nib, width);
-}
-
-/** `scale` along the line's direction at point `i`: the bisector of the
- *  segments either side, or the one segment at an open end. */
-function scaleAt(pl: Polyline, i: number, scale: WidthScale): number {
-  const pts = pl.points;
-  const n = pts.length / 2;
-  let tx = 0, ty = 0;
-  const add = (from: number, to: number) => {
-    const dx = pts[to * 2] - pts[from * 2], dy = pts[to * 2 + 1] - pts[from * 2 + 1];
-    const len = Math.hypot(dx, dy);
-    if (len > 0) { tx += dx / len; ty += dy / len; }
-  };
-  if (i > 0) add(i - 1, i);
-  else if (pl.closed && n > 1) add(n - 1, 0);
-  if (i < n - 1) add(i, i + 1);
-  else if (pl.closed && n > 1) add(n - 1, 0);
-  const len = Math.hypot(tx, ty);
-  return len > 0 ? scale(tx / len, ty / len) : 1;
 }
