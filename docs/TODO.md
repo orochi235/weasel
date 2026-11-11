@@ -638,6 +638,14 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] The site dev server dies on its first edit to a workspace package.** Saving a file
+  under `packages/core/src` logs `re-bundling workspace packages: <file>` (`scripts/vite-prebundle.ts`),
+  then `transport was disconnected, cannot call "fetchModule"` against `scripts/vite-wake.ts` and
+  `server restart failed`. The server keeps answering, but with the code from before the edit, so a
+  browser check after a package change passes or fails on stale source. Seen twice in a row on `npx vite`
+  at `bb2b7ec72` (2026-11-11). Suspect `68004a234`, which reloads the dev config through vite's module
+  runner on this restart.
+
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
   which minimatch 11 removed (`build:forge` exited "mini.matchOne is not a function", 2026-11-07), so it keeps

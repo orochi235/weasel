@@ -96,16 +96,19 @@ export function snapToContainer<TPose>(args: {
     const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
     const target = found && !intoDragged(ctx, found) ? found : null;
 
+    // Leaving a container withdraws the target it announced, which the commit reads.
+    let left: BehaviorResult<TPose> | undefined;
     if (s.committedSnap) {
       if (target && target.parentId === s.committedSnap.parentId) {
         return snapped(ctx, s.committedSnap, originInWorld);
       }
       s.committedSnap = null;
+      left = { snap: null };
     }
 
     if (!target) {
       clearTimer(s);
-      return;
+      return left;
     }
 
     if (isInstant?.(target)) {
@@ -115,7 +118,7 @@ export function snapToContainer<TPose>(args: {
     }
 
     if (s.pendingTargetId === target.parentId) {
-      return;
+      return left;
     }
     clearTimer(s);
     s.pendingTargetId = target.parentId;
@@ -123,7 +126,7 @@ export function snapToContainer<TPose>(args: {
       s.committedSnap = target;
       s.pendingTimer = null;
     }, dwellMs);
-    return;
+    return left;
   };
   const cancel = (ctx: GestureContext<TPose>): void => { clearTimer(getState<TPose>(ctx)); };
 
