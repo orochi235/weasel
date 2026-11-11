@@ -1,3 +1,4 @@
+import { matchPhase, type PhaseSpec } from '@weasel-js/gestures';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
 import { PREDICATE_TARGET, type RegistryEntry } from './registry';
@@ -63,11 +64,33 @@ export function viewsTie(
 }
 
 /** Every arg value an entry buckets under, lowercased — `matchKey` is
- *  case-insensitive, so `'h'` and `'H'` are one arg. */
+ *  case-insensitive, so `'h'` and `'H'` are one arg — and each physical key
+ *  `code` a key spec names, which fires it whatever key that press types. */
 export function argKeysOf(entry: RegistryEntry): readonly string[] {
   const alts = entry.argAlternatives;
-  if (alts && alts.length > 0) return [...new Set(alts.map((a) => a.toLowerCase()))];
-  return [(entry.arg ?? '').toLowerCase()];
+  const args = alts && alts.length > 0 ? [...new Set(alts.map((a) => a.toLowerCase()))] : [(entry.arg ?? '').toLowerCase()];
+  const code = 'code' in entry.spec ? entry.spec.code : undefined;
+  return code === undefined ? args : [...args, ...[code].flat().map((c) => `code:${c}`)];
+}
+
+const phaseOf = (e: RegistryEntry): PhaseSpec | undefined => ('phase' in e.spec ? e.spec.phase : undefined);
+
+/** Whether two bindings' phases both hold in some engagement state: each
+ *  owner engaged or idle on its own, and any channel either one names, or
+ *  none of them, engaged as well. */
+export function phasesTie(e: RegistryEntry, f: RegistryEntry): boolean {
+  const a = phaseOf(e);
+  const b = phaseOf(f);
+  if (a === undefined || b === undefined) return true;
+  const named = [a, b].flatMap((p) => (typeof p === 'string' ? [] : p.map((atom) => atom.channel)))
+    .filter((c) => c !== '&' && c !== '*');
+  const channels = [...new Set([e.ownerId, f.ownerId, ...named, '\u0000other'])];
+  for (let bits = 0; bits < 1 << channels.length; bits++) {
+    const engagedChannels = new Set(channels.filter((_, i) => (bits & (1 << i)) !== 0));
+    if (matchPhase(a, { selfChannel: e.ownerId, engagedChannels })
+      && matchPhase(b, { selfChannel: f.ownerId, engagedChannels })) return true;
+  }
+  return false;
 }
 
 /** Bucket key for an entry's target slot. Predicate targets all render as

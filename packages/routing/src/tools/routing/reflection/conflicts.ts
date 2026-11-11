@@ -8,7 +8,7 @@ import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
-import { argKeysOf, modifierTieKeys, objectId, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { argKeysOf, modifierTieKeys, objectId, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple, so slot order alone picks one. */
@@ -75,24 +75,23 @@ function findConflictsKeyed(
   modes: readonly ActiveMode[] = KIT_MODES,
 ): { key: string; conflict: Conflict }[] {
   const rows = buildRouteRegistry(entries);
-  const groups = new Map<string, { base: string; platform: Platform; members: RegistryEntry[] }>();
+  const groups = new Map<string, { platform: Platform; members: RegistryEntry[] }>();
   for (const entry of rows) {
     // One bucket per arg the binding answers to, not one per display token:
     // `key: ['h','H']` and `key: 'H'` really do collide, as do two `drop` specs
     // whose MIME sets overlap without being equal. Modifiers bucket the same
     // way, one per state the spec accepts, so an optional Shift meets a forbidden one.
-    // Phases bucket the same way: a binding of no one phase meets one of either. The matcher ranks by
-    // specificity before declaration order, so only equal ranks tie.
-    const phases = entry.phase === 'any' ? ['initial', 'engaged'] : [entry.phase];
+    // The matcher ranks by specificity before declaration order, so only equal ranks tie. Phases are
+    // compared pair by pair (`phasesTie`), since whether two meet depends on whose channel each reads.
     for (const arg of argKeysOf(entry)) {
       const base = `${entry.gesture}|${arg}|${targetKey(entry)}`;
       for (const platform of PLATFORMS) {
         const rank = specificity(entry.spec, platform === 'mac').join();
-        for (const state of phases.flatMap((p) => modifierTieKeys(entry, platform).map((m) => `${p}|${m}`))) {
+        for (const state of modifierTieKeys(entry, platform)) {
           const key = `${platform}|${base}|${state}|${rank}`;
           const bucket = groups.get(key);
           if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
-          else groups.set(key, { base, platform, members: [entry] });
+          else groups.set(key, { platform, members: [entry] });
         }
       }
     }
@@ -100,9 +99,9 @@ function findConflictsKeyed(
   // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
-    viewsTie(e.views, f.views) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
+    viewsTie(e.views, f.views) && phasesTie(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts = new Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>();
-  for (const { base, platform, members } of groups.values()) {
+  for (const { platform, members } of groups.values()) {
     // Keep only members that could tie with another member. Members are in
     // declaration order, and a pair led by a binding that yields is ordered on purpose.
     const ties = (e: RegistryEntry, i: number, f: RegistryEntry, j: number): boolean =>
@@ -112,8 +111,9 @@ function findConflictsKeyed(
     const first = bucket[0];
     // Two specs that tie in one modifier state usually tie in several, and on
     // both platforms: one conflict per set of specs, each named by identity so
-    // the key is the same in every pass `findScopedConflicts` makes over them.
-    const key = `${base}|${bucket.map((e) => `${objectId(e.spec)}:${canonicalModifiers(e.modifiers)}`).join(';')}`;
+    // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
+    // several args (a key and a code, two keys of a list) is one conflict too.
+    const key = `${first.gesture}|${targetKey(first)}|${bucket.map((e) => `${objectId(e.spec)}:${canonicalModifiers(e.modifiers)}`).join(';')}`;
     const found = conflicts.get(key);
     if (found) { found.platforms.add(platform); continue; }
     conflicts.set(key, {

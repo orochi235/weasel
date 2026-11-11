@@ -17,4 +17,19 @@ describe('findConflicts, shrunk', () => {
     const initial = { kind: 'key', key: 'a', phase: [{ channel: '*', phase: 'initial' }] };
     expect(findConflicts([entry('o0', either), entry('o1', initial)]).map((c) => c.ownerIds)).toEqual([['o0', 'o1']]);
   });
+
+  it('flags two owners whose bindings tie while one is engaged and the other idle', () => {
+    const engaged = { kind: 'key', key: 'a', phase: 'engaged' };
+    const initial = { kind: 'key', key: 'a', phase: 'initial' };
+    expect(findConflicts([entry('o0', engaged), entry('o1', initial)]).map((c) => c.ownerIds)).toEqual([['o0', 'o1']]);
+    expect(findConflicts([entry('o0', engaged, initial)])).toEqual([]);
+  });
+
+  it('flags bindings whose codes overlap whatever their keys, once each', () => {
+    const one = { kind: 'key', key: 'a', code: ['Digit1', 'KeyA'] };
+    const other = { kind: 'key', key: 'Enter', code: 'Digit1' };
+    expect(findConflicts([entry('o0', one), entry('o1', other)]).map((c) => c.ownerIds)).toEqual([['o0', 'o1']]);
+    const same = { kind: 'key', key: 'a', code: 'KeyA' };
+    expect(findConflicts([entry('o0', same), entry('o1', { ...same })])).toHaveLength(1);
+  });
 });

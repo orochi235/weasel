@@ -132,12 +132,14 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   specificity: one of either phase meets an `initial` or `engaged` one of the same rank, and two of
   different ranks never tie. The separator `mergeMenuDefs` puts between contributions takes the next
   free `~sep<n>` key rather than overwriting a child that holds it.
-- Open (2026-11-10, property tests): `findConflicts` reads a phase as the whole canvas's, so it never
-  reports a pair of owners' own-channel bindings that tie only while one owner is engaged and the other
-  is not (`&:engaged` against `&:initial`). The property engages both owners or neither.
-- Open (2026-11-10, property tests): `findConflicts` buckets a key binding by `key` alone, so two
-  bindings with different keys and the same `code` are not reported though one keystroke fires both.
-  The property's specs name no `code`.
+- Ruled 2026-11-10: two owners' bindings that tie only while one owner is engaged and the other idle
+  (`&:engaged` against `&:initial`) conflict, and `findConflicts` reports them.
+- Ruled 2026-11-10: key bindings whose `code`s overlap fire on one keystroke whatever their `key`s, and
+  `findConflicts` reports them.
+- Open (2026-11-10, property tests): a chord typing no Latin letter matches by its code's letter, so
+  Alt with `code: 'KeyA'` on a non-Latin layout fires both `{ key: 'a', mods: { alt: true } }` and a
+  binding naming `code: 'KeyA'` under another key; `findConflicts` does not report that pair. The
+  property's keystrokes by code type a Latin key no spec names.
 
 ## Snapping
 
