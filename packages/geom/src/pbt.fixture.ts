@@ -4,6 +4,8 @@
 import fc from 'fast-check';
 import { multiply, rotate, scale, translate, type Affine } from './affine';
 import type { Box } from './box';
+import type { Path, RectPath } from './path';
+import { PathBuilder } from './paths/builder';
 
 /** A finite double in `±limit`, no `NaN`, no `-0` worries for callers that compare with `toBe`. */
 export function coord(limit = 1000): fc.Arbitrary<number> {
@@ -70,3 +72,40 @@ export function runs(n: number): { numRuns: number } {
 export function timeoutFor(n: number, msPerRun: number): number {
   return Math.max(5_000, runs(n).numRuns * msPerRun);
 }
+
+/** A star-shaped polygon about `(cx, cy)`: simple, convex or not. */
+export function starAt(cx: number, cy: number, radii: readonly number[], turn: number): Path {
+  const b = new PathBuilder();
+  radii.forEach((r, i) => {
+    const a = turn + (i / radii.length) * 2 * Math.PI;
+    const x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+    if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
+  });
+  return b.close().build() as Path;
+}
+
+/** A circle of four cubics. */
+export function circleAt(cx: number, cy: number, r: number): Path {
+  const k = 0.5522847498 * r;
+  return new PathBuilder().moveTo(cx + r, cy)
+    .curveTo(cx + r, cy + k, cx + k, cy + r, cx, cy + r)
+    .curveTo(cx - k, cy + r, cx - r, cy + k, cx - r, cy)
+    .curveTo(cx - r, cy - k, cx - k, cy - r, cx, cy - r)
+    .curveTo(cx + k, cy - r, cx + r, cy - k, cx + r, cy)
+    .close().build() as Path;
+}
+
+const size = (lo: number, hi: number) => fc.double({ min: lo, max: hi, noNaN: true });
+
+export const star: fc.Arbitrary<Path> = fc.record({
+  cx: coord(40), cy: coord(40), radii: fc.array(size(5, 60), { minLength: 3, maxLength: 9 }), turn: size(0, Math.PI),
+}).map(({ cx, cy, radii, turn }) => starAt(cx, cy, radii, turn));
+
+export const circle: fc.Arbitrary<Path> = fc.record({ cx: coord(40), cy: coord(40), r: size(5, 60) })
+  .map(({ cx, cy, r }) => circleAt(cx, cy, r));
+
+export const rect: fc.Arbitrary<RectPath> = fc.record({ x: coord(60), y: coord(60), width: size(5, 100), height: size(5, 100) })
+  .map((r) => ({ kind: 'rect' as const, ...r }));
+
+/** A star, a circle, or a rect: the shapes the boolean properties combine. */
+export const shape: fc.Arbitrary<Path> = fc.oneof(star, circle, rect);

@@ -69,6 +69,16 @@ describe('reviveTypedArrays', () => {
     }
   });
 
+  it('reads back a plain object shaped like what it writes as that object (shrunk from the round-trip property)', () => {
+    const value = [{ __ta: 'u8', data: [1] }, { __raw: { __ta: 'u8', data: [1] } }];
+    for (const text of [JSON.stringify(tagTypedArrays(value)), JSON.stringify(value, typedArrayReplacer)]) {
+      expect(reviveTypedArrays(JSON.parse(text))).toEqual(value);
+    }
+    expect(tagTypedArrays(value)).toEqual([
+      { __raw: { __ta: 'u8', data: [1] } }, { __raw: { __raw: { __raw: { __ta: 'u8', data: [1] } } } },
+    ]);
+  });
+
   it('leaves an object that only looks tagged alone', () => {
     expect(reviveTypedArrays({ __ta: 'nope', data: [1] })).toEqual({ __ta: 'nope', data: [1] });
     expect(untagTypedArray({ __ta: 'f32' })).toBeUndefined();

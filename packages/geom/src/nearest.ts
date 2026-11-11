@@ -5,6 +5,7 @@
 import { cubicEvalAt, elevateQuadraticToCubic } from './curve';
 import { segmentT } from './points2';
 import { lerp } from './scalar';
+import { polynomialRoots01 } from './polyRoots';
 import { forEachSegment, PATH_M, PATH_L, PATH_Q, PATH_C, PATH_Z } from './commands';
 
 /** The point on one segment nearest a probe. */
@@ -94,6 +95,26 @@ export function nearestOnCubic(
     const refined = d2At(t);
     const [tk, dk] = refined <= d ? [t, refined] : [k / CUBIC_SAMPLES, d];
     if (dk < bestD2) { bestD2 = dk; bestT = tk; }
+  }
+
+  // Two minima closer than a sample's spacing (either side of a fold) share one sampled basin, so every
+  // critical point competes too: the roots of g, a quintic.
+  const dx0 = x0 - px, dy0 = y0 - py;
+  const dot = (ux: number, uy: number, vx: number, vy: number) => ux * vx + uy * vy;
+  const aa = dot(ax, ay, ax, ay), ab = dot(ax, ay, bx, by), ac = dot(ax, ay, cx, cy), bb = dot(bx, by, bx, by);
+  const g = [
+    dot(cx, cy, dx0, dy0),
+    2 * dot(bx, by, dx0, dy0) + dot(cx, cy, cx, cy),
+    3 * dot(ax, ay, dx0, dy0) + 3 * dot(bx, by, cx, cy),
+    4 * ac + 2 * bb,
+    5 * ab,
+    3 * aa,
+  ];
+  if (g.every(Number.isFinite)) {
+    for (const t of polynomialRoots01(g)) {
+      const d = d2At(t);
+      if (d < bestD2) { bestD2 = d; bestT = t; }
+    }
   }
 
   const [x, y] = cubicEvalAt(x0, y0, x1, y1, x2, y2, x3, y3, bestT);

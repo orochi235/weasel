@@ -37,9 +37,16 @@ export function orthonormalize(vecs: readonly Vec[], start: readonly Vec[] = [])
   const basis: number[][] = start.map((q) => q.slice());
   const out: number[][] = [];
   for (const d of vecs) {
-    const n0 = normv(d);
-    if (!(n0 > 0) || !isFiniteVec(d)) continue;
-    const v = d.slice();
+    if (!isFiniteVec(d)) continue;
+    let v = d.slice();
+    let n0 = normv(v);
+    if (!(n0 > 1e-150 && n0 < 1e150)) {
+      // The square under- or overflows; only the direction counts, so bring it into range first.
+      const m = Math.max(...v.map(Math.abs));
+      if (!(m > 0)) continue;
+      v = v.map((x) => x / m);
+      n0 = normv(v);
+    }
     for (let pass = 0; pass < 2; pass++) {
       for (const q of basis) {
         const k = dotv(v, q);
@@ -83,8 +90,16 @@ export function closestOnFlat(f: Flat, p: Vec): Vec {
  * A column within `RANK_TOL` of the span of the kept ones before it is
  * dropped, the same verdict `orthonormalize` reaches, and its unknown is zero.
  */
-export function solveLeastSquares(cols: readonly Vec[], rhs: Vec): number[] {
-  const k = cols.length;
+export function solveLeastSquares(given: readonly Vec[], rhs: Vec): number[] {
+  const k = given.length;
+  // A column whose square under- or overflows is solved for in range, as `orthonormalize` takes it.
+  const scales = given.map((c) => {
+    const n = normv(c);
+    if (n > 1e-150 && n < 1e150) return 1;
+    const m = Math.max(...c.map(Math.abs));
+    return m > 0 && m < Infinity ? m : 1;
+  });
+  const cols = given.map((c, j) => (scales[j] === 1 ? c : c.map((v) => v / scales[j]!)));
   const m = cols.map((a) => [...cols.map((b) => dotv(a, b)), dotv(a, rhs)]);
   const len2 = m.map((r, i) => r[i]);
   const kept: number[] = [];
@@ -103,7 +118,7 @@ export function solveLeastSquares(cols: readonly Vec[], rhs: Vec): number[] {
     for (let c = col + 1; c < k; c++) s -= m[col][c] * x[c];
     x[col] = s / m[col][col];
   }
-  return x;
+  return x.map((v, j) => v / scales[j]!);
 }
 
 /** The nearest pair of points, one on each flat. Parallel flats have many

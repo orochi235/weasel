@@ -53,6 +53,9 @@ export function len2(a: Vec3): number {
   return dot(a, a);
 }
 
+/** The smallest positive double with full precision. */
+const MIN_NORMAL = 2.2250738585072014e-308;
+
 /** Euclidean length. */
 export function len(a: Vec3): number {
   return Math.sqrt(len2(a));
@@ -61,10 +64,14 @@ export function len(a: Vec3): number {
 /** A vector with no length, or no finite one, normalizes to the zero vector
  *  rather than to `NaN`. Every other vector keeps its direction, however short. */
 export function normalize(a: Vec3): Vec3 {
-  const l = len(a);
+  const l2 = len2(a);
   // Divided rather than scaled by `1 / l`, so a vector along an axis normalizes to that axis exactly.
-  if (l > 0 && l < Infinity) return { x: a.x / l, y: a.y / l, z: a.z / l };
-  // The square under- or overflowed; divided by its largest component first, the vector squares in range.
+  if (l2 >= MIN_NORMAL && l2 < Infinity) {
+    const l = Math.sqrt(l2);
+    return { x: a.x / l, y: a.y / l, z: a.z / l };
+  }
+  // The square under- or overflowed, or went subnormal and lost bits; divided by its largest component first,
+  // the vector squares in range.
   const m = Math.max(Math.abs(a.x), Math.abs(a.y), Math.abs(a.z));
   if (!(m > 0 && m < Infinity)) return { x: 0, y: 0, z: 0 };
   const b = { x: a.x / m, y: a.y / m, z: a.z / m };

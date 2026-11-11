@@ -143,7 +143,8 @@ export function intersectSegments(a: Point[], b: Point[], maxHits = MAX_HITS): S
   }
   const out: SegmentCrossing[] = [];
   const push = (ta: number, tb: number) => {
-    [ta, tb] = refine(a, b, ta, tb);
+    // The chord test's slack reaches past the ends, and refinement may stop before it clamps.
+    [ta, tb] = refine(a, b, Math.min(1, Math.max(0, ta)), Math.min(1, Math.max(0, tb)));
     const pa = evalSeg(a, ta), pb = evalSeg(b, tb);
     if (Math.hypot(pa.x - pb.x, pa.y - pb.y) > 1e-6 * (1 + Math.abs(pa.x) + Math.abs(pa.y))) return;
     if (out.some((h) => Math.abs(h.ta - ta) < SAME_T && Math.abs(h.tb - tb) < SAME_T)) return;

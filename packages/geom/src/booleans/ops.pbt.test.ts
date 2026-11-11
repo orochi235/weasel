@@ -2,43 +2,12 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { pathExclude, pathIntersect, pathSubtract, pathUnion } from './ops';
 import { pointInPath, strokeHitTest } from '../pathHitTest';
-import { PathBuilder } from '../paths/builder';
 import type { Path } from '../path';
-import { coord, runs, timeoutFor } from '../pbt.fixture';
+import { coord, runs, shape, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(60);
 const TIMEOUT = timeoutFor(60, 3);
 
-/** A star-shaped polygon: simple, convex or not. */
-const star = fc.record({
-  cx: coord(40), cy: coord(40),
-  radii: fc.array(fc.double({ min: 5, max: 60, noNaN: true }), { minLength: 3, maxLength: 9 }),
-  turn: fc.double({ min: 0, max: Math.PI, noNaN: true }),
-}).map(({ cx, cy, radii, turn }) => {
-  const b = new PathBuilder();
-  radii.forEach((r, i) => {
-    const a = turn + (i / radii.length) * 2 * Math.PI;
-    const x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
-    if (i === 0) b.moveTo(x, y); else b.lineTo(x, y);
-  });
-  return b.close().build() as Path;
-});
-
-/** A circle of four cubics. */
-const circle = fc.record({ cx: coord(40), cy: coord(40), r: fc.double({ min: 5, max: 60, noNaN: true }) }).map(({ cx, cy, r }) => {
-  const k = 0.5522847498 * r;
-  return new PathBuilder().moveTo(cx + r, cy)
-    .curveTo(cx + r, cy + k, cx + k, cy + r, cx, cy + r)
-    .curveTo(cx - k, cy + r, cx - r, cy + k, cx - r, cy)
-    .curveTo(cx - r, cy - k, cx - k, cy - r, cx, cy - r)
-    .curveTo(cx + k, cy - r, cx + r, cy - k, cx + r, cy)
-    .close().build() as Path;
-});
-
-const rect = fc.record({ x: coord(60), y: coord(60), width: fc.double({ min: 5, max: 100, noNaN: true }), height: fc.double({ min: 5, max: 100, noNaN: true }) })
-  .map((r) => ({ kind: 'rect' as const, ...r }));
-
-const shape = fc.oneof(star, circle, rect);
 const probes = fc.array(fc.tuple(coord(110), coord(110)), { minLength: 20, maxLength: 20 });
 
 /** Each probe clear of every outline, where flattening and float32 coords cannot move it across one. */

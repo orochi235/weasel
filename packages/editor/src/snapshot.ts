@@ -11,39 +11,20 @@ import type {
   AddNodeSpec, PagesDoc, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
 } from '@weasel-js/core';
 import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, setPages, specsFromSerialized } from '@weasel-js/core';
-import { tagTypedArray, untagTypedArray } from '@weasel-js/geom';
-
-const RAW = '__raw';
-const wrappers = new WeakSet<object>();
-
-/** Whether `v` is a `{ "__raw": … }` wrapper: a plain object with that one own key. */
-function isRaw(v: unknown): v is { [RAW]: unknown } {
-  if (v === null || typeof v !== 'object' || Array.isArray(v)) return false;
-  const keys = Object.keys(v);
-  return keys.length === 1 && keys[0] === RAW;
-}
+import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
 
 const isPathKey = (k: string): k is 'commands' | 'coords' => k === 'commands' || k === 'coords';
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip, and wrap any other value
- *  {@link reviveTypedArrays} would read as something else. */
-export function serializeReplacer(this: unknown, key: string, value: unknown): unknown {
-  const tagged = tagTypedArray(value);
-  if (tagged) return tagged;
-  if (value === null || typeof value !== 'object' || wrappers.has(this as object)) return value;
-  if (isRaw(value) || untagTypedArray(value) || (isPathKey(key) && legacyNumbers(value))) {
-    const wrapper = { [RAW]: value };
-    wrappers.add(wrapper);
-    return wrapper;
-  }
-  return value;
-}
+ *  {@link reviveTypedArrays} would read as something else, an older save's untagged path arrays included. */
+export const serializeReplacer: (this: unknown, key: string, value: unknown) => unknown =
+  typedArrayReplacerWrapping((key, value) => isPathKey(key) && legacyNumbers(value) !== undefined);
 
 /** Walk a parsed snapshot and rebuild any tagged / numeric-key typed arrays in
  *  place. Returns the same node for call-site convenience, unless the node itself is one. */
 export function reviveTypedArrays<T>(node: T): T {
   if (node == null || typeof node !== 'object') return node;
-  if (isRaw(node)) return reviveWithin(node[RAW]) as T;
+  if (isRawWrapper(node)) return reviveWithin(node.__raw) as T;
   const tagged = untagTypedArray(node);
   if (tagged) return tagged as unknown as T;
   return reviveWithin(node);

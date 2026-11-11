@@ -237,6 +237,6 @@ export {
 export { nearestPathAnchor, reverseAnchors, type PathAnchorHit } from './paths/nearestAnchor';
 export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './paths/pathInWorld';
 export {
-  reviveTypedArrays, tagTypedArray, tagTypedArrays, typedArrayReplacer, untagTypedArray,
-  TYPED_ARRAY_CONSTRUCTORS, type NumberTypedArray, type TaggedTypedArray, type TypedArrayTag,
+  reviveTypedArrays, tagTypedArray, tagTypedArrays, typedArrayReplacer, typedArrayReplacerWrapping, untagTypedArray,
+  isRawWrapper, TYPED_ARRAY_CONSTRUCTORS, type NumberTypedArray, type RawWrapper, type TaggedTypedArray, type TypedArrayTag,
 } from './typedArrayJson';

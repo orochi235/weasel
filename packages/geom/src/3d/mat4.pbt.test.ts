@@ -1,11 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { compose, identity, invert, multiply, perspective, transformPoint, type Mat4 } from './mat4';
-import { distance, len, quatFromAxisAngle, quatMultiply, quatRotate, vec3, type Quat, type Vec3 } from './vec3';
+import { compose, identity, invert, lookAt, multiply, perspective, transformPoint, type Mat4 } from './mat4';
+import {
+  add, cross, distance, dot, len, normalize, quatConjugate, quatFromAxisAngle, quatMultiply, quatRotate, sub, vec3, type Quat, type Vec3,
+} from './vec3';
 import { intersectRayAabb, pointOnRay, transformAabb, type Aabb } from './ray3';
-import { coord, decades, maxDiff, runs } from '../pbt.fixture';
+import { coord, decades, maxDiff, runs, timeoutFor } from '../pbt.fixture';
 
 const RUNS = runs(200);
+const TIMEOUT = timeoutFor(200, 1);
 
 const v3 = (limit = 1000): fc.Arbitrary<Vec3> => fc.tuple(coord(limit), coord(limit), coord(limit))
   .map(([x, y, z]) => vec3(x, y, z));
@@ -41,13 +44,13 @@ describe('invert (3D), property', () => {
       const limit = norm1(linear(m)) * norm1(linear(inv!)) * 1e-14;
       expect(maxDiff(multiply(linear(m), linear(inv!)), identity())).toBeLessThan(limit);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('refuses a matrix whose condition number is past the shared limit', () => {
     fc.assert(fc.property(conditioned(decades(-18, -13)), (m) => {
       expect(invert(m)).toBeNull();
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('carries a point back through a perspective projection', () => {
     const proj = fc.record({
@@ -65,7 +68,7 @@ describe('invert (3D), property', () => {
       const back = transformPoint(inv, transformPoint(m, q));
       expect(distance(back, q)).toBeLessThan((len(q) + 1) * 1e-6 * depth);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('refuses a matrix holding NaN or Infinity anywhere', () => {
     const bad = fc.constantFrom(Number.NaN, Infinity, -Infinity);
@@ -74,7 +77,65 @@ describe('invert (3D), property', () => {
       broken[i] = v;
       expect(invert(broken)).toBeNull();
     }), RUNS);
+  }, TIMEOUT);
+});
+
+describe('invert (3D), an affine inverse (shrunk counterexample)', () => {
+  it('is affine exactly, so it inverts in turn', () => {
+    // The bottom row came out 0.9999999999999999, so the inverse was judged as projective and refused.
+    const m = [0.001, 0, 0, 0, 0, 0.0000010001757745759682, 0, 0, 0, 0, 0.0000010001757745759682, 0, 0, -999.5880079149057, 0, 1];
+    const inv = invert(m)!;
+    expect([inv[3], inv[7], inv[11], inv[15]]).toEqual([0, 0, 0, 1]);
+    expect(maxDiff(invert(inv)!, m)).toBeLessThan(1e-9);
   });
+});
+
+describe('matrices, property', () => {
+  const v1 = v3(1);
+  it('multiply composes: the product applies the right matrix first', () => {
+    fc.assert(fc.property(conditioned(decades(-2, 0)), conditioned(decades(-2, 0)), v3(), (a, b, v) => {
+      const once = transformPoint(multiply(a, b), v);
+      const twice = transformPoint(a, transformPoint(b, v));
+      expect(distance(once, twice)).toBeLessThan((len(twice) + norm1(a) * (norm1(b) + len(v))) * 1e-12);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('invert undoes its matrix on a point, and inverting twice comes back', () => {
+    fc.assert(fc.property(conditioned(decades(-3, 0)), v3(), (m, v) => {
+      const inv = invert(m)!;
+      const back = transformPoint(inv, transformPoint(m, v));
+      const k = norm1(linear(m)) * norm1(linear(inv));
+      expect(distance(back, v)).toBeLessThan((len(v) + norm1(inv) * 1e4) * k * 1e-13);
+      const again = invert(inv)!;
+      expect(maxDiff(again, m)).toBeLessThan(k * k * (norm1(m) + 1) * 1e-13);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('compose scales, then rotates, then moves', () => {
+    fc.assert(fc.property(v3(1e4), quat, v3(100), v3(), (at, q, s, v) => {
+      const want = add(at, quatRotate(q, vec3(s.x * v.x, s.y * v.y, s.z * v.z)));
+      const got = transformPoint(compose(at, q, s), v);
+      expect(distance(got, want)).toBeLessThan((len(at) + (Math.abs(s.x) + Math.abs(s.y) + Math.abs(s.z)) * len(v)) * 1e-13 + 1e-300);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('lookAt puts the eye at the origin and the target down -z, through a rotation', () => {
+    fc.assert(fc.property(v3(1e3), v3(1e3), v1, (eye, target, up) => {
+      const view = sub(eye, target);
+      fc.pre(len(view) > 1e-3 && len(up) > 1e-3 && len(cross(normalize(up), normalize(view))) > 1e-3);
+      const m = lookAt(eye, target, up);
+      const scale = len(eye) + len(target);
+      expect(len(transformPoint(m, eye))).toBeLessThan(scale * 1e-13);
+      const t = transformPoint(m, target);
+      expect(Math.hypot(t.x, t.y)).toBeLessThan(scale * 1e-12);
+      expect(Math.abs(t.z + len(view))).toBeLessThan(scale * 1e-12);
+      const lin = linear(m);
+      expect(maxDiff(multiply(lin, [lin[0], lin[4], lin[8], 0, lin[1], lin[5], lin[9], 0, lin[2], lin[6], lin[10], 0, 0, 0, 0, 1]), identity())).toBeLessThan(1e-14);
+      // Up stays up: the view's y axis leans toward it.
+      const upView = transformPoint(lin, up);
+      expect(upView.y).toBeGreaterThan(0);
+    }), RUNS);
+  }, TIMEOUT);
 });
 
 describe('quaternions, property', () => {
@@ -82,7 +143,7 @@ describe('quaternions, property', () => {
     fc.assert(fc.property(quat, v3(), (q, v) => {
       expect(Math.abs(len(quatRotate(q, v)) - len(v))).toBeLessThan((len(v) + 1) * 1e-12);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('compose: rotating by a·b is rotating by b, then a', () => {
     fc.assert(fc.property(quat, quat, v3(), (a, b, v) => {
@@ -90,7 +151,50 @@ describe('quaternions, property', () => {
       const twice = quatRotate(a, quatRotate(b, v));
       expect(distance(once, twice)).toBeLessThan((len(v) + 1) * 1e-12);
     }), RUNS);
+  }, TIMEOUT);
+});
+
+describe('quaternions and normalize, property', () => {
+  it('a conjugate undoes its rotation, and the axis stays where it is', () => {
+    fc.assert(fc.property(unit, fc.double({ min: -Math.PI, max: Math.PI, noNaN: true }), v3(), (axis, a, v) => {
+      const q = quatFromAxisAngle(axis, a);
+      expect(distance(quatRotate(quatConjugate(q), quatRotate(q, v)), v)).toBeLessThan((len(v) + 1) * 1e-12);
+      const k = normalize(axis);
+      expect(distance(quatRotate(q, k), k)).toBeLessThan(1e-14);
+      // Rotation by `a` about the axis: a perpendicular turns through `a`.
+      const side = normalize(cross(k, Math.abs(k.x) < 0.9 ? vec3(1, 0, 0) : vec3(0, 1, 0)));
+      const turned = quatRotate(q, side);
+      expect(Math.abs(dot(turned, side) - Math.cos(a))).toBeLessThan(1e-12);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('normalize keeps a vector whose square is subnormal on its axis (shrunk counterexample)', () => {
+    // Its square, 5.9e-310, kept too few bits for a root to divide by: z came out 1 + 1.7e-15.
+    expect(normalize(vec3(0, 0, 0.0010000000000000002 * 2.4299586463497805e-152))).toEqual(vec3(0, 0, 1));
   });
+
+  it('compose associatively', () => {
+    fc.assert(fc.property(quat, quat, quat, v3(), (a, b, c, v) => {
+      const left = quatRotate(quatMultiply(quatMultiply(a, b), c), v);
+      const right = quatRotate(quatMultiply(a, quatMultiply(b, c)), v);
+      expect(distance(left, right)).toBeLessThan((len(v) + 1) * 1e-12);
+    }), RUNS);
+  }, TIMEOUT);
+
+  it('normalize gives a unit vector along any finite nonzero one, at any magnitude', () => {
+    const magnitude = fc.double({ min: -320, max: 307, noNaN: true }).map((k) => 10 ** k);
+    fc.assert(fc.property(unit, magnitude, (d, m) => {
+      const v = vec3(d.x * m, d.y * m, d.z * m);
+      fc.pre(len(vec3(v.x / m, v.y / m, v.z / m)) > 0 && (v.x !== 0 || v.y !== 0 || v.z !== 0));
+      const n = normalize(v);
+      expect(Math.abs(len(n) - 1)).toBeLessThan(1e-15);
+      // Same direction as the vector's own components: subnormal ones have lost bits, so compare to those.
+      const own = vec3(v.x, v.y, v.z);
+      const back = normalize(vec3(own.x * 2 ** 600, own.y * 2 ** 600, own.z * 2 ** 600));
+      if (Math.max(Math.abs(v.x), Math.abs(v.y), Math.abs(v.z)) < 1e-290) expect(distance(n, back)).toBeLessThan(1e-15);
+      expect(dot(n, own)).toBeGreaterThan(0);
+    }), RUNS);
+  }, TIMEOUT);
 });
 
 const aabb: fc.Arbitrary<Aabb> = fc.tuple(v3(), v3()).map(([a, b]) => ({
@@ -113,7 +217,7 @@ describe('rays and boxes, property', () => {
       const p = transformPoint(m, pointIn(b, f));
       expect(inside(transformAabb(m, b), p, (len(p) + 1) * 1e-9)).toBe(true);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('a ray aimed through a point of the box hits it no later than that point, and lands on the box', () => {
     fc.assert(fc.property(aabb, fc.tuple(fraction, fraction, fraction), v3(5000), (b, f, origin) => {
@@ -125,7 +229,7 @@ describe('rays and boxes, property', () => {
       expect(t!).toBeLessThanOrEqual(1 + 1e-9);
       expect(inside(b, pointOnRay({ origin, direction }, t!), (len(origin) + len(target) + 1) * 1e-9)).toBe(true);
     }), RUNS);
-  });
+  }, TIMEOUT);
 
   it('moving the ray and the box together leaves the hit distance alone', () => {
     fc.assert(fc.property(aabb, v3(), v3(), v3(), (b, origin, direction, by) => {
@@ -145,5 +249,5 @@ describe('rays and boxes, property', () => {
       if (t === null || u === null) return;
       expect(Math.abs(t - u)).toBeLessThan(((len(origin) + len(by) + 2000) / len(direction)) * 1e-9);
     }), RUNS);
-  });
+  }, TIMEOUT);
 });
