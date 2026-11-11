@@ -249,6 +249,17 @@ describe('loadCsfModule', () => {
 });
 
 describe('shrunk counterexamples', () => {
+  it('sends an undefined array member as itself, beside one with no part', () => {
+    const original = [new Set([createElement('b')]), undefined];
+    expect(portSafePart(original)?.value).toEqual([null, undefined]);
+    expect(withUnsent(portSafePart(original)!.value, original)).toEqual(original);
+  });
+
+  it('keeps an edit to null under a key whose member was never sent', () => {
+    const element = createElement('b');
+    expect(withUnsent({ constructor: null }, own([['constructor', element]]))).toEqual(own([['constructor', null]]));
+  });
+
   const ownKey = (k: string, value: unknown): Record<string, unknown> => own([[k, value]]);
   const label = (schema: ReturnType<typeof argsToSchema>, k: string): string | undefined =>
     (schema.nodes as Record<string, { annotations: { name?: string } }>)[k]!.annotations.name;
