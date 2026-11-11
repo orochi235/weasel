@@ -16,6 +16,7 @@ interface SceneMock {
   readonly roots: NodeId[];
   get: Mock;
   childrenOf: Mock;
+  isLocked: Mock;
   reorder: Mock;
   batch: Mock;
   applyBatch: Mock;
@@ -40,6 +41,7 @@ function makeScene(rootIds: string[]): SceneMock {
     get roots() { return order; },
     get: vi.fn((id: NodeId) => ({ id, parent: null })),
     childrenOf: vi.fn().mockReturnValue([]),
+    isLocked: vi.fn().mockReturnValue(false),
     reorder,
     batch: vi.fn((_, fn: () => void) => fn()),
     renderOrder: vi.fn(() => order),

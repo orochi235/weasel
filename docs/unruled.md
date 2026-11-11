@@ -298,6 +298,21 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is none to remove, `setCorners` without a shape or radius or with the corners' own, and `nudgeAnchors`
   and `reversePath` where the selection names no anchor of the path (as an undo that shortened the path
   can leave it). A selection command stays enabled when its result is the selection already held.
+- 2026-11-10 (property tests): Align, Distribute, Flip, and the reorder commands follow the ruling above:
+  `NotApplicable` where they would change nothing, through the same plan their `run` commits.
+- Ruled 2026-11-10 (my call, overnight sweep): a reorder that would shift a locked node's place in the stack
+  is disabled with `Locked`, after the 2026-11-09 ruling (a node it would move is locked). It used to throw
+  from the scene partway through.
+- Ruled 2026-11-10 (my call, overnight sweep): Align and Distribute take a move within rounding of where a box
+  already is (1e-9 of the coordinates' magnitude) as no move, so a second run is disabled rather than
+  recording an invisible step.
+- Ruled 2026-11-10 (my call, overnight sweep): Distribute by centers orders the boxes, and picks its two fixed
+  ends, by center rather than by leading edge, so the outermost centers stay and a second run does nothing.
+- Ruled 2026-11-10 (my call, overnight sweep): a duplicate or clone of a locked node is locked: the copy goes in
+  unlocked, its children under it, and the lock last, in the same batch. A writer never drops data.
+- Open (2026-11-10, property tests): Distribute by gaps over boxes that overlap past fitting between its ends
+  leaves negative gaps, takes the boxes starting first and last as its ends though another may reach further,
+  and can reorder them, so a second run moves them again.
 
 ## Rendering, canvas, and paint
 

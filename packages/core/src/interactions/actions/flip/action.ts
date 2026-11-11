@@ -20,7 +20,9 @@ import { scenePoseFrame, type PoseFrame } from '../poseFrame';
 import { actionReferenceSources, resolveSpatialReference } from '../spatialReference';
 import type { PointerContextValue } from '@weasel-js/routing/react';
 import type { RectPose } from 'core/scene/types';
-import type { Action } from '@weasel-js/routing';
+import type { Action, ActionDeps } from '@weasel-js/routing';
+import { ActionDisabledReason } from '@weasel-js/routing';
+import { sameValue } from 'core/scene/sameValue';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from '../defaults/requiresSelection';
@@ -59,7 +61,9 @@ function localMirror(
 }
 
 /**
- * Flip the current selection in `scene` along `axis`, as one undo entry.
+ * The ops a flip of the current selection in `scene` along `axis` commits as
+ * one undo entry: none for a node the flip leaves as it was, so the list is
+ * empty when nothing would change.
  *
  * Pivot: `'each'` (per-item own AABB) unless the caller passes `'union'`,
  * which mirrors every pose about the selection's *visual* union AABB — the
@@ -68,20 +72,19 @@ function localMirror(
  * member's own mirrored position needs no expansion: `axisAlignedBounds`
  * keeps the stored box's center, so mirroring either box lands the same place.
  */
-function flipSelection(
-  selection: SelectionApi,
+function flipOps(
+  selection: Pick<SelectionApi, 'get'>,
   scene: Scene<unknown, string, unknown>,
   axis: FlipAxis,
   pivot: FlipPivot,
-  applyOps: ((ops: Op[], label: string) => void) | undefined,
   geometryProjection: GeometryProjection | undefined,
   geom: PoseDescriptor<unknown>,
   params: Record<string, unknown> | undefined,
   pointer: PointerContextValue | undefined,
   boxesOver: (frame: PoseFrame<unknown>) => DrawnBoxes,
-): void {
+): Op[] {
   const selected = withoutPageStructure(scene, selection.get());
-  if (selected.length === 0) return;
+  if (selected.length === 0) return [];
   const frame = scenePoseFrame(scene);
   const boxes = boxesOver(frame);
 
@@ -117,7 +120,7 @@ function flipSelection(
     sharedPivot = unionAABB([...worlds].map(([id, p]) => boxes.aabb(id, p)));
   } else if (pivot !== 'each') {
     sharedPivot = resolveSpatialReference(pivot, actionReferenceSources(params, pointer, scene, frame, boxes));
-    if (sharedPivot === null) return;
+    if (sharedPivot === null) return [];
   }
 
   const ops: Op[] = [];
@@ -130,7 +133,8 @@ function flipSelection(
       ? flipPoseAboutBounds(world, axis, geom, about)
       : flipPoseViaDescriptor(world, axis, geom);
     const to = frame.local(id, flipped);
-    ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
+    const moved = !sameValue(node.pose, to);
+    if (moved) ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
     // Mirror the data-held geometry about the SAME pivot the pose flip uses.
     // A pose-only flip of a bare-AABB pose is identity, so this data op is
     // the only way an asymmetric shape actually mirrors.
@@ -142,12 +146,24 @@ function flipSelection(
       to,
       'Flip',
     );
-    if (dataOp) ops.push(dataOp);
+    if (dataOp) {
+      if (!moved) ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
+      ops.push(dataOp);
+    }
   }
-  if (ops.length === 0) return;
+  return ops;
+}
 
-  if (applyOps) applyOps(ops, 'Flip');
-  else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, selection.adapterMethods));
+function flipParams(params: Readonly<Record<string, unknown>> | undefined): { axis: FlipAxis; pivot: FlipPivot } {
+  return { axis: (params?.axis as FlipAxis | undefined) ?? 'x', pivot: (params?.pivot as FlipPivot | undefined) ?? 'each' };
+}
+
+function flipOpsFor(deps: ActionDeps, selection: Pick<SelectionApi, 'get'>, scene: Scene<unknown, string, unknown>, params: Readonly<Record<string, unknown>> | undefined): Op[] {
+  const { axis, pivot } = flipParams(params);
+  return flipOps(
+    selection, scene, axis, pivot, deps.geometryProjection, poseDescriptorOf(deps.poseDescriptor),
+    params as Record<string, unknown> | undefined, deps.pointer, (frame) => drawnBoxes(deps, frame),
+  );
 }
 
 /**
@@ -176,20 +192,19 @@ export const flipAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {
-      const axis = (params?.axis as FlipAxis | undefined) ?? 'x';
-      const pivot = (params?.pivot as FlipPivot | undefined) ?? 'each';
       const selection = deps.selection;
       const scene = deps.scene;
-      const applyOps = transformApplyOps(deps);
-      const geometryProjection = deps.geometryProjection;
       if (!selection || !scene) return;
-      flipSelection(
-        selection, scene, axis, pivot, applyOps, geometryProjection,
-        poseDescriptorOf(deps.poseDescriptor),
-        params, deps.pointer,
-        (frame) => drawnBoxes(deps, frame),
-      );
+      const ops = flipOpsFor(deps, selection, scene, params);
+      if (ops.length === 0) return;
+      const applyOps = transformApplyOps(deps);
+      if (applyOps) applyOps(ops, 'Flip');
+      else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, selection.adapterMethods));
     },
   },
-  enabled: requiresSelection,
+  enabled: (deps, _at, _carried, params) => {
+    const needs = requiresSelection(deps);
+    if (needs !== true) return needs;
+    return flipOpsFor(deps!, deps!.selection!, deps!.scene!, params).length > 0 ? true : ActionDisabledReason.NotApplicable;
+  },
 };
