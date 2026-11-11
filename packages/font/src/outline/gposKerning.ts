@@ -31,36 +31,42 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
   const gpos = tableOffset(v, 'GPOS');
   if (gpos === null) return null;
 
+  if (gpos + 10 > v.byteLength) return null;
   const featureList = gpos + v.getUint16(gpos + 6);
   const lookupList = gpos + v.getUint16(gpos + 8);
+  // A list, feature, or lookup whose offsets run past the end of the font is skipped, as a subtable is below.
   const lookupIndexes = new Set<number>();
-  const featureCount = v.getUint16(featureList);
+  const featureCount = inRange(() => v.getUint16(featureList)) ?? 0;
   for (let i = 0; i < featureCount; i++) {
-    const rec = featureList + 2 + i * 6;
-    if (tag(v, rec) !== 'kern') continue;
-    const feature = featureList + v.getUint16(rec + 4);
-    const count = v.getUint16(feature + 2);
-    for (let j = 0; j < count; j++) lookupIndexes.add(v.getUint16(feature + 4 + j * 2));
+    inRange(() => {
+      const rec = featureList + 2 + i * 6;
+      if (tag(v, rec) !== 'kern') return;
+      const feature = featureList + v.getUint16(rec + 4);
+      const count = v.getUint16(feature + 2);
+      for (let j = 0; j < count; j++) lookupIndexes.add(v.getUint16(feature + 4 + j * 2));
+    });
   }
   if (lookupIndexes.size === 0) return null;
 
   const lookups: number[][] = [];
   for (const index of [...lookupIndexes].sort((a, b) => a - b)) {
-    const lookup = lookupList + v.getUint16(lookupList + 2 + index * 2);
-    const type = v.getUint16(lookup);
     const subtables: number[] = [];
-    const count = v.getUint16(lookup + 4);
-    for (let j = 0; j < count; j++) {
-      let sub = lookup + v.getUint16(lookup + 6 + j * 2);
-      let subType = type;
-      // opentype.js reads no extension's header, so a font it accepts can point one past its end.
-      if (type === 9) {
-        if (sub + 8 > v.byteLength) continue;
-        subType = v.getUint16(sub + 2);
-        sub += v.getUint32(sub + 4);
+    inRange(() => {
+      const lookup = lookupList + v.getUint16(lookupList + 2 + index * 2);
+      const type = v.getUint16(lookup);
+      const count = v.getUint16(lookup + 4);
+      for (let j = 0; j < count; j++) {
+        let sub = lookup + v.getUint16(lookup + 6 + j * 2);
+        let subType = type;
+        // opentype.js reads no extension's header, so a font it accepts can point one past its end.
+        if (type === 9) {
+          if (sub + 8 > v.byteLength) continue;
+          subType = v.getUint16(sub + 2);
+          sub += v.getUint32(sub + 4);
+        }
+        if (subType === 2) subtables.push(sub);
       }
-      if (subType === 2) subtables.push(sub);
-    }
+    });
     if (subtables.length > 0) lookups.push(subtables);
   }
 
@@ -87,11 +93,21 @@ function tag(v: DataView, at: number): string {
 
 function tableOffset(v: DataView, name: string): number | null {
   const count = v.getUint16(4);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < count && 12 + (i + 1) * 16 <= v.byteLength; i++) {
     const rec = 12 + i * 16;
     if (tag(v, rec) === name) return v.getUint32(rec + 8);
   }
   return null;
+}
+
+/** `read()`, or null when it reads past the end of the font. */
+function inRange<T>(read: () => T): T | null {
+  try {
+    return read();
+  } catch (err) {
+    if (err instanceof RangeError) return null;
+    throw err;
+  }
 }
 
 /** Bytes in a ValueRecord of this format: two per set bit. */
@@ -109,12 +125,7 @@ function xAdvance(v: DataView, at: number, format: number): number {
 
 /** `pairValue`, with a subtable whose offsets run past the end of the font applying to no pair. */
 function readablePairValue(v: DataView, sub: number, left: number, right: number): number | null {
-  try {
-    return pairValue(v, sub, left, right);
-  } catch (err) {
-    if (err instanceof RangeError) return null;
-    throw err;
-  }
+  return inRange(() => pairValue(v, sub, left, right));
 }
 
 /** The subtable's adjustment for this pair, or `null` when it does not apply. */
