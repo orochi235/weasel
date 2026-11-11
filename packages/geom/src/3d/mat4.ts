@@ -92,8 +92,10 @@ export function invert(m: Mat4): Mat4 | null {
     (m20 * b03 - m21 * b01 + m22 * b00) * d,
   ];
   // An affine matrix is judged on its 3x3 block, since translation never costs an inverse its precision.
-  const n = m03 === 0 && m13 === 0 && m23 === 0 && m33 === 1 ? 3 : 4;
-  return invertible(norm1(m, n), norm1(inv, n)) ? inv : null;
+  const affine = m03 === 0 && m13 === 0 && m23 === 0 && m33 === 1;
+  // Its inverse is affine too, exactly: a bottom row an ulp off 1 would make it projective, and its own inverse refused.
+  if (affine) { inv[3] = 0; inv[7] = 0; inv[11] = 0; inv[15] = 1; }
+  return invertible(norm1(m, affine ? 3 : 4), norm1(inv, affine ? 3 : 4)) ? inv : null;
 }
 
 function norm1(m: Mat4, n: number): number {
