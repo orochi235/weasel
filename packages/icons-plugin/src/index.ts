@@ -7,7 +7,7 @@ import { fail, iconCatalog, tablesFrom } from './catalog.ts';
 import { collectIconRefs } from './collect.ts';
 import { rewriteIconCalls } from './rewrite.ts';
 import { genFile, namespaceIn, packageDirFinder, reachableTables } from './tables.ts';
-import { MARKER, PREFIX, moduleFor, variantOf, type VariantFilter } from './virtual.ts';
+import { MARKER, PREFIX, markedVariant, moduleFor, variantOf, type VariantFilter } from './virtual.ts';
 
 export type { VariantFilter } from './virtual.ts';
 export { collectIconRefs } from './collect.ts';
@@ -77,7 +77,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, false> = createUn
     if (!code.includes('__WEASEL_ICONS__')) return null;
     const s = new MagicString(code);
     for (const m of code.matchAll(MARKER)) {
-      const json = JSON.stringify(JSON.stringify(catalog.variant(this, m[2]!, dev)));
+      const json = JSON.stringify(JSON.stringify(catalog.variant(this, markedVariant(m), dev)));
       s.overwrite(m.index!, m.index! + m[0].length, json);
     }
     // A string map: magic-string's object form types `sourcesContent` wider than rollup accepts.
