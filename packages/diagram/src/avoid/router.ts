@@ -74,6 +74,8 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   const raw = new Map<string, Vec2[]>();
   const shown = new Map<string, Vec2[]>();
   const previews = new Map<string, Vec2[] | null>();
+  /** Connectors the last commit routing them found no path for. */
+  const pathless = new Set<string>();
   let drag: DragIndex | null = null;
   /** Where each connector sat in the last committed input, to find a dirty one in a frame without a scan. */
   let positions = new Map<string, number>();
@@ -92,6 +94,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   function forget(input: AvoidInput): void {
     const live = new Set(input.edges.map((e) => e.id));
     for (const map of [keys, raw, shown]) for (const id of [...map.keys()]) if (!live.has(id)) map.delete(id);
+    for (const id of [...pathless]) if (!live.has(id)) pathless.delete(id);
   }
 
   /** Index what `input`, as committed, holds now, for the drag frames that follow. */
@@ -147,7 +150,10 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     const bundle = bundleOf(fresh, input.edges, clean, rawOf);
     const nudged = nudge(bundle, opts.spacing, index);
     const out: AvoidRoutes = new Map();
-    for (const [id, full] of fresh) if (full === null) { raw.delete(id); shown.delete(id); out.set(id, null); }
+    for (const [id, full] of fresh) {
+      if (full === null) { raw.delete(id); shown.delete(id); out.set(id, null); pathless.add(id); }
+      else pathless.delete(id);
+    }
     for (const [id, full] of nudged) {
       const was = dirtyIds.has(id) ? null : routeOf(byId.get(id)!);
       raw.set(id, bundle.get(id)!.points);
@@ -169,6 +175,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       raw.clear();
       shown.clear();
       for (const e of input.edges) keys.set(e.id, stopsKey(e));
+      pathless.clear();
       previews.clear();
       indexForDrag({ obstacles, edges: input.edges });
     },
@@ -176,7 +183,8 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
       const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
       const changed = changedObstacles(committed, obstacles);
-      const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, routeOf);
+      // The route before nudging too, which a nudge spreads a clean connector from.
+      const dirty = dirtyEdges(input.edges, keys, changed, opts.clearance, (e) => [routeOf(e), rawOf(e)], pathless);
       forget(input);
       return commit(input, dirty, obstacles);
     },
@@ -184,18 +192,28 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
 }
 
 /** Route each of `dirty` in turn, each counting crossings of the routes
- *  before it and routing around the labels as they now stand. */
+ *  before it and routing around the labels as they now stand. One that finds
+ *  no path is tried again once the rest have moved their labels, so a path a
+ *  label stood across only while it waited is still found. */
 function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { crossings: SegmentIndex }): Map<string, Vec2[] | null> {
   const fresh = new Map<string, Vec2[] | null>();
-  for (const edge of dirty) {
+  let moves = 0;
+  const failedAt = new Map<AvoidEdge, number>();
+  const route = (edge: AvoidEdge): void => {
     const full = routeEdge(edge, ctx);
     fresh.set(edge.id, full);
     if (full !== null) ctx.crossings.add(edge.id, full);
-    if (edge.label === undefined) continue;
-    const label = labelObstacle(edge, full ?? fullRoute(edge));
-    if (label === null) ctx.index.delete(edge.label.id);
-    else ctx.index.replace(label);
-  }
+    if (edge.label !== undefined) {
+      const label = labelObstacle(edge, full ?? fullRoute(edge));
+      if (label === null) ctx.index.delete(edge.label.id);
+      else ctx.index.replace(label);
+      moves++;
+    }
+    if (full === null) failedAt.set(edge, moves);
+    else failedAt.delete(edge);
+  };
+  for (const edge of dirty) route(edge);
+  for (const [edge, at] of [...failedAt]) if (at < moves) route(edge);
   return fresh;
 }
 

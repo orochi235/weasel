@@ -15,6 +15,9 @@ export interface Inflated {
 
 const EPS = 1e-7;
 
+const touches = (a: Box, b: Box): boolean =>
+  a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
+
 /** Every obstacle, inflated, filed in a spatial hash: a label by
  *  `labelClearance`, anything else by `clearance`. */
 export class ObstacleIndex {
@@ -45,7 +48,13 @@ export class ObstacleIndex {
 
   /** The inflated obstacles touching `box`. */
   near(box: Box, out: Inflated[] = []): Inflated[] {
-    return this.hash.query(box, out);
+    const start = out.length;
+    this.hash.query(box, out);
+    // The hash answers whole cells, which fall differently as a scene moves; a search must not see that.
+    let k = start;
+    for (let i = start; i < out.length; i++) if (touches(out[i]!.box, box)) out[k++] = out[i]!;
+    out.length = k;
+    return out;
   }
 
   /** Remove obstacle `id`, if it is filed. */
