@@ -122,16 +122,21 @@ function checkPagesDoc(value: unknown): void {
 }
 
 /** The document values a persisted snapshot carries, shaped for `useScene`'s `doc` option, or
- *  `undefined` for a snapshot written before it had any. A `core:pages` value is not among them:
- *  `nodeSpecsFromSnapshot` loads those pages as nodes (`adoptSnapshotPages`). */
+ *  `undefined` for a snapshot written before it had any. Each reads back as `serializeReplacer` was handed
+ *  it, a value the writer wrapped or tagged included, and `json` is left as it is. A `core:pages` value is
+ *  not among them: `nodeSpecsFromSnapshot` loads those pages as nodes (`adoptSnapshotPages`). */
 export function docFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
 ): Readonly<Record<string, unknown>> | undefined {
   const { doc } = json;
   if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return undefined;
-  if (!(PAGES_DOC_KEY in doc)) return doc;
-  const { [PAGES_DOC_KEY]: _pages, ...rest } = doc;
-  return rest;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(doc)) {
+    if (key === PAGES_DOC_KEY) continue;
+    const value = reviveTypedArrays(structuredClone((doc as Record<string, unknown>)[key]));
+    Object.defineProperty(out, key, { value, enumerable: true, writable: true, configurable: true });
+  }
+  return out;
 }
 
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
