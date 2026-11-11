@@ -11,6 +11,9 @@ import { decodeUrlHash, encodeUrlHash } from './urlHash';
 
 const RUNS = 500;
 
+/** `s` with each lone surrogate as U+FFFD, as `String.prototype.toWellFormed` writes it. */
+const wellFormed = (s: string): string => [...s].map((c) => (c.length === 1 && c >= '\ud800' && c <= '\udfff' ? '\ufffd' : c)).join('');
+
 /** `value` with every object field holding `undefined` removed, as JSON drops them. */
 function withoutUndefinedFields(value: unknown): unknown {
   if (Array.isArray(value) || value === null || typeof value !== 'object') return value;
@@ -78,7 +81,7 @@ describe('URL fragment encoding', () => {
     const surrogate = fc.integer({ min: 0xd800, max: 0xdfff }).map((c) => String.fromCharCode(c));
     const withSurrogates = fc.array(fc.oneof(surrogate, fc.string({ maxLength: 2 })), { minLength: 1, maxLength: 6 }).map((a) => a.join(''));
     fc.assert(fc.property(withSurrogates, (s) => {
-      expect(decodeUrlHash(encodeUrlHash(s))).toBe(s.toWellFormed() || null);
+      expect(decodeUrlHash(encodeUrlHash(s))).toBe(wellFormed(s) || null);
     }), runs(RUNS));
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();

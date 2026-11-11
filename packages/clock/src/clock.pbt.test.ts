@@ -376,3 +376,25 @@ describe('shrunk counterexamples', () => {
     expect(h.clock.phase).toBe(0);
   });
 });
+
+describe('shrunk counterexamples, deep run', () => {
+  it('a clock at its run\'s end keeps its pass when the run loops on', () => {
+    const h = createClock({ duration: 100, loop: 3, rate: 1 });
+    h.clock.sync(0);
+    h.clock.sync(10000);
+    h.clock.duration = 682.718716916597;
+    h.clock.loop = true;
+    expect([h.clock.pass, h.clock.phase]).toEqual([2, 1]);
+  });
+
+  it('a ramp reaches its rate exactly when frames that add up to its time leave a few ulps', () => {
+    const { clock } = createClock({ start: 1e7 });
+    clock.sync(0);
+    clock.ramp(2, 1);
+    clock.sync(0);
+    let now = 0;
+    for (const dt of [2.4546168599200637e-18, 3.830208127153479e-11, 7.527052768548452e-22, 0]) clock.sync((now += dt));
+    clock.sync(1);
+    expect(clock.rate).toBe(2);
+  });
+});

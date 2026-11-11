@@ -9,7 +9,7 @@ import { clockPosition, createClock } from './clock';
 import { holdAt, holdElapsed, shownInPass } from './hold';
 import { duration, near, rate, reading, runs, spec, tally, timeoutFor } from './pbt.fixture';
 import { createClockRegistry, type ClockTarget } from './registry';
-import type { ClockHandle } from './types';
+import type { ClockHandle, ClockSpec } from './types';
 
 const RUNS = 300;
 const finite = fc.record({
@@ -69,7 +69,7 @@ describe('holdAt', () => {
 describe('holdElapsed', () => {
   it('brings a clock back where a recorded one stood, pass and all', () => {
     const t = tally();
-    const looping = fc.oneof({ weight: 1, arbitrary: spec }, { weight: 3, arbitrary: fc.record({ duration: fc.constantFrom(100, 250, 0.1), loop: fc.constantFrom<boolean | number>(2, 3, 2.5, true), origin: fc.option(fc.constantFrom(0, 30), { nil: undefined }) }) });
+    const looping: fc.Arbitrary<ClockSpec> = fc.oneof({ weight: 1, arbitrary: spec }, { weight: 3, arbitrary: fc.record({ duration: fc.constantFrom(100, 250, 0.1), loop: fc.constantFrom<boolean | number>(2, 3, 2.5, true), origin: fc.option(fc.constantFrom(0, 30), { nil: undefined }) }) });
     fc.assert(fc.property(looping, fc.array(fc.double({ min: 0, max: 400, noNaN: true }), { maxLength: 6 }), fc.option(fc.oneof(fc.constantFrom(150, 350, 200, 500), fc.double({ min: 0, max: 5000, noNaN: true })), { nil: undefined }), (s, frames, seek) => {
       let a: ClockHandle;
       try { a = createClock({ ...s, rate: s.rate ?? 1 }); } catch { return; }
@@ -149,5 +149,17 @@ describe('createClockRegistry — stateful model', () => {
       reg.subscribe(() => { real.notified++; });
       fc.modelRun(() => ({ model: { entries: new Map(), notified: 0, next: 0 }, real }), cmds);
     }), runs(RUNS));
+  });
+});
+
+describe('shrunk counterexamples', () => {
+  it('a declaration that changes nothing leaves a held clock held', () => {
+    const h = createClock({ duration: 0.001, loop: false });
+    h.clock.sync(0);
+    const hold = holdAt(h, 0);
+    h.declare({ duration: 0.001, loop: false, origin: -10 });
+    h.declare({ duration: 0.001, loop: false, origin: -10 });
+    expect(hold.pending()).toBe(0);
+    expect(h.clock.elapsed).toBe(0.001);
   });
 });

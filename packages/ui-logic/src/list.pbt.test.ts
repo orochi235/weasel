@@ -136,7 +136,7 @@ describe('typeahead', () => {
           const fresh = now - buffer.at >= 500;
           const prev = fresh ? '' : buffer.text;
           const cycling = prev !== '' && [...prev].every((c) => c.toLowerCase() === key.toLowerCase());
-          const step = typeaheadStep(list, from, buffer, key, now, labelShape);
+          const step: { buffer: TypeaheadBuffer; hit: number | null } = typeaheadStep(list, from, buffer, key, now, labelShape);
           const text = cycling ? key : prev + key;
           expect(step.buffer).toEqual({ text, at: now });
           expect(step.hit).toBe(typeaheadMatch(list, from, text, labelShape));

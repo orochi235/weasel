@@ -101,6 +101,8 @@ describe('frames', () => {
         const walked = passes === 'all' ? count : 1;
         const span = duration === 0 || walked === 0 ? 0 : duration * walked;
         const ends = walked === count;
+        // A looping pass of no length has no frame short of its end.
+        if (span === 0 && !ends) { expect(steps).toEqual([]); return; }
         expect(steps[0]).toBe(0);
         for (let i = 1; i < steps.length; i++) expect(steps[i]!).toBeGreaterThan(steps[i - 1]!);
         const body = ends && steps.length > 1 && steps.at(-1) === span ? steps.slice(0, -1) : steps;
