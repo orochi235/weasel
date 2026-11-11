@@ -95,11 +95,15 @@ export function spacingOffers(
     if (hi(t, axis) <= center && (left === null || hi(t, axis) > hi(left, axis))) left = t;
     if (lo(t, axis) >= center && (right === null || lo(t, axis) < lo(right, axis))) right = t;
   }
-  const sizes = refs.map((g) => g.max - g.min);
+  const sizes = [...new Set(refs.map((g) => g.max - g.min))];
 
   const out: SpacingOffer[] = [];
+  const moving = { x: axis === 'x' ? edge : null, y: axis === 'y' ? edge : null };
+  // Only where the placed box really has the gap: no sibling, one overlapping it included, blocks it.
   const offer = (delta: number, gap: number): void => {
-    if (gap > EPS) out.push({ delta, size: gap });
+    if (gap > EPS && hasGap(applyEdges(b, axis === 'x' ? delta : 0, axis === 'y' ? delta : 0, moving), axis, gap, targets)) {
+      out.push({ delta, size: gap });
+    }
   };
 
   const L = left === null ? null : hi(left, axis);
@@ -141,7 +145,8 @@ function bestAxis(
 }
 
 /** Every gap of `size` on `axis` once the box sits at `b`: the matching
- *  reference gaps, plus the box's own gaps to its two neighbors. */
+ *  reference gaps, plus the box's own gaps to its two neighbors; none when
+ *  the box has no gap of that size. */
 export function equalGaps(
   b: Bounds,
   axis: Axis,
@@ -150,7 +155,14 @@ export function equalGaps(
   refs: readonly SpacingGap[],
 ): SpacingGap[] {
   const eq = (g: SpacingGap) => Math.abs(g.max - g.min - size) < 1e-3;
-  return [...refs.filter(eq), ...ownGaps(b, axis, targets).filter(eq)];
+  const own = ownGaps(b, axis, targets).filter(eq);
+  // Equal to nothing the box has, the reference gaps would mark a spacing it does not keep.
+  return own.length === 0 ? [] : [...refs.filter(eq), ...own];
+}
+
+/** Whether the box at `b` has a gap of `size` to a neighbor on `axis`. */
+function hasGap(b: Bounds, axis: Axis, size: number, targets: readonly Bounds[]): boolean {
+  return ownGaps(b, axis, targets).some((g) => Math.abs(g.max - g.min - size) < 1e-3);
 }
 
 /** The box's gaps to its neighbors on `axis`, the nearest sharing some of its
@@ -191,7 +203,9 @@ export function referenceGaps(bounds: Bounds, measured: readonly MeasuredGap[]):
  * leave the axis alone. Default `'both'` on each axis.
  *
  * Targets should exclude the box itself. A reference gap the box now stands
- * inside no longer counts. The returned gaps are every gap equal to the one
+ * inside no longer counts, and no placement is offered across a gap another
+ * box blocks. A snap on one axis that the other's carries away from the gap
+ * it reproduced is dropped, so every gap marked is one the box has. The returned gaps are every gap equal to the one
  * snapped to, with the box at its snapped position — ready to draw with
  * `createGuidesLayer`'s `getGaps`.
  */
@@ -203,11 +217,21 @@ export function matchSpacing(
 ): SpacingMatchResult {
   const refsX = referenceGaps(bounds, measureGapSpans(targets, 'x'));
   const refsY = referenceGaps(bounds, measureGapSpans(targets, 'y'));
-  const x = moving.x === null ? null : bestAxis(bounds, 'x', moving.x, targets, refsX, worldTolerance.x);
-  const y = moving.y === null ? null : bestAxis(bounds, 'y', moving.y, targets, refsY, worldTolerance.y);
+  let x = moving.x === null ? null : bestAxis(bounds, 'x', moving.x, targets, refsX, worldTolerance.x);
+  let y = moving.y === null ? null : bestAxis(bounds, 'y', moving.y, targets, refsY, worldTolerance.y);
+  // Each axis placed the box from where it started; a snap the other axis's move undoes is dropped,
+  // and dropping it can undo the other, so check again until both stand.
+  let final = applyEdges(bounds, x?.delta ?? 0, y?.delta ?? 0, moving);
+  for (;;) {
+    const keepX = x === null || hasGap(final, 'x', x.size, targets);
+    const keepY = y === null || hasGap(final, 'y', y.size, targets);
+    if (keepX && keepY) break;
+    if (!keepX) x = null;
+    if (!keepY) y = null;
+    final = applyEdges(bounds, x?.delta ?? 0, y?.delta ?? 0, moving);
+  }
   const dx = x?.delta ?? 0;
   const dy = y?.delta ?? 0;
-  const final = applyEdges(bounds, dx, dy, moving);
   return {
     dx,
     dy,

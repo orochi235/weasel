@@ -203,11 +203,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   reach out of it; before, the grid could take both axes from a guide in reach.
 - 2026-11-10 (property tests): `measureGaps` measures a box's gap to every box tied for nearest on its
   right, rather than to whichever came first.
-- Open (2026-11-10, property tests): `matchSpacing` snaps each axis from where the box started, so a
-  snap on y can carry the box out of the row whose neighbor set its x snap, and the gap it marks is one
-  the box no longer has.
-- Open (2026-11-10, property tests): a box overlapping a sibling is offered equal-spacing placements
-  across a gap that sibling blocks.
+- Ruled 2026-11-10: after `matchSpacing` snaps both axes, each axis's spacing is checked again where
+  the box ended up, and a snap whose gap the box no longer has is dropped with its marks; a marked gap
+  is always one the box has.
+- Ruled 2026-11-10: no equal-spacing placement is offered across a gap another box blocks, a sibling
+  the box overlaps included.
 
 ## Scene, move, and history
 
