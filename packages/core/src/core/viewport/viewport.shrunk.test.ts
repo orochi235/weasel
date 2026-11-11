@@ -19,4 +19,11 @@ describe('viewport, shrunk counterexamples', () => {
     expect(deriveParallaxView({ x: 7.3, y: -2.1, scale: { x: 0.01, y: 0.01 } }, { pan: 0, anchor: { x: 0.1, y: 0.2 } }))
       .toEqual({ x: 0.1, y: 0.2, scale: { x: 0.01, y: 0.01 } });
   });
+
+  it('a zoom by a negative or NaN factor keeps the axis, by 0 keeps a flipped axis flipped, and a wild anchor stays finite', () => {
+    expect(zoomAt({ x: 0, y: 0, scale: { x: 1, y: 1 } }, { x: 0, y: 0 }, -0.5).scale).toEqual({ x: 1, y: 1 });
+    expect(zoomAt({ x: 0, y: 0, scale: { x: 1, y: 1 } }, { x: 0, y: 0 }, NaN).scale).toEqual({ x: 1, y: 1 });
+    expect(zoomAt({ x: 0, y: 0, scale: { x: 1, y: -1 } }, { x: 0, y: 0 }, { x: 0.001, y: 0 }).scale).toEqual({ x: 0.1, y: -0.1 });
+    expect(zoomAt({ x: 3, y: 0, scale: { x: 1, y: 1 } }, { x: NaN, y: 0 }, 2)).toEqual({ x: 3, y: 0, scale: { x: 2, y: 2 } });
+  });
 });
