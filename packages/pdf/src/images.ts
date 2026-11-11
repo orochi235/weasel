@@ -38,6 +38,12 @@ function defaultReadPixels(image: Source): RasterPixels {
   return { width: w, height: h, data: ctx.getImageData(0, 0, w, h).data };
 }
 
+/** Whether `px` is a bitmap PDF can hold: a whole number of pixels each way, at least one, and four bytes for each. */
+export function fitsPixels(px: RasterPixels): boolean {
+  const { width: w, height: h } = px;
+  return Number.isSafeInteger(w) && Number.isSafeInteger(h) && w > 0 && h > 0 && px.data.length === w * h * 4;
+}
+
 /** A memo for this document: one entry per key, however many pages ask. */
 function memo(ctx: PageCtx): Map<string, PdfRef> {
   let m = embedded.get(ctx.objects);
@@ -78,6 +84,10 @@ export function imageXObject(
     raw = (ctx.opts.readPixels ?? defaultReadPixels)(image);
   } catch {
     skip(ctx, 'image could not be read');
+    return null;
+  }
+  if (!fitsPixels(raw)) {
+    skip(ctx, 'image has the wrong number of pixels');
     return null;
   }
   const ref = pixelsXObject(ctx, { ...raw, data: foldPixels(raw.data, state) }, interpolate);

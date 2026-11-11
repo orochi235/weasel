@@ -472,6 +472,19 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   to 1e-4 of a page unit. A group scaled to 1e-5 was written as a singular matrix and drew nothing, which loses
   data. Texture tiles are a unit square scaled by the pattern matrix. Dictionary numbers outside a pattern or a
   shading (a form's `/BBox`, `/MediaBox`) keep four decimals.
+- 2026-11-11 (property tests): the PDF writer leaves out groups nested more than 512 deep, the SVG reader's
+  `NESTING_LIMIT`, reporting `groups nest more than 512 deep; what is deeper is not drawn` once per group cut;
+  some tens of thousands deep overflowed the stack (ee3cfe48b). The two limits are separate constants.
+- 2026-11-11 (property tests): `writePdf` refuses the whole document, naming the page, when a page's width or
+  height is not finite or writes as 0 at the media box's four decimals (below 0.00005). Before, a non-finite side
+  threw the internal number error and a side of 0 or less wrote a page its drawing missed (f39af93d3). Clamping
+  to a least size instead would write a file where now there is none.
+- 2026-11-11 (property tests): text in a TrueType face whose tables the subsetter cannot read whole is drawn as
+  outlines with no report, as a CFF or restricted face is; such a face failed the whole file (b368c6537).
+  Embedding it whole when `subsetFonts` is false would still hand readers the damaged program.
+- Open 2026-11-11: coordinates past PDF's customary real range (about ±3.4e38) are written as plain integers of
+  up to 309 digits, which some readers cannot hold. Whether to drop such a command as `num` drops a non-finite
+  one is unasked.
 - Ruled 2026-11-10 (my call, overnight sweep): the `.lbx` writer writes each of UAX #14's hard breaks in a text
   box (`\r\n`, `\r`, VT, FF, NEL, U+2028, U+2029) as one `\n`, the break P-touch reads; a bare `\r` read back
   as a second line feed.
