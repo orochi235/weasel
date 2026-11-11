@@ -29,8 +29,13 @@ export function toFixedPlain(value: number, decimals: number): string {
   return BigInt(value).toString() + (decimals > 0 ? `.${'0'.repeat(decimals)}` : '');
 }
 
-/** `value` fixed to its column's shared decimals, with no negative zero, so a column of labels lines up. */
+/** The smallest step whose places `toFixed` can write. */
+export const FINEST_STEP = 10 ** -100;
+
+/** `value` fixed to its column's shared decimals, with no negative zero, so a column of labels lines up. A step or a
+ *  value finer than `toFixed` writes takes the exponent instead, rather than reading 0. */
 export function formatTick(value: number, ctx: TickFormatCtx): string {
+  if ((ctx.step > 0 && ctx.step < FINEST_STEP) || (value !== 0 && Math.abs(value) < FINEST_STEP)) return String(Number(value.toPrecision(12)));
   const text = toFixedPlain(value, ctx.decimals);
   return /^-0(\.0*)?$/.test(text) ? text.slice(1) : text;
 }

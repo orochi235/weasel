@@ -1,7 +1,9 @@
 /** Counterexamples the second pass's scale properties shrank to, kept as plain examples. */
 import { describe, expect, it } from 'vitest';
 import { bandScale } from './band';
+import { formatNumber, linearScale } from './linear';
 import { ordinalScale } from './ordinal';
+import { formatTick } from './tickFormat';
 
 describe('scales, shrunk (second pass)', () => {
   it('keeps a key the domain names twice at its first place, listed once', () => {
@@ -20,5 +22,11 @@ describe('scales, shrunk (second pass)', () => {
       const s = bandScale({ domain: ['a', 'b'], range: [0, 100], paddingInner, paddingOuter });
       expect([s.start('a'), s.start('b'), s.bandwidth]).toEqual([plain.start('a'), plain.start('b'), plain.bandwidth]);
     }
+  });
+
+  it('labels spaced ticks finer than 1e-100 apart, with an exponent', () => {
+    const { values, step, decimals } = linearScale({ domain: [0, 3e-323], range: [0, 2] }).spacedTicks({ minSpacing: 1 });
+    expect(values.map((v) => formatTick(v, { decimals, step }))).toEqual(['0', '2e-323']);
+    expect(formatNumber(1.5e-300, 1e-300)).toBe('1.5e-300');
   });
 });

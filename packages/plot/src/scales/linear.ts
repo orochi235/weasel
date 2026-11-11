@@ -1,5 +1,5 @@
 import { replacedFormat } from './replacedFormat';
-import { formatTick } from './tickFormat';
+import { FINEST_STEP, formatTick } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -75,11 +75,8 @@ export function niceStep(rough: number): number {
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
 const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER;
 
-/** The smallest step whose places `toFixed` can write. */
-const FINEST = 10 ** -MAX_DECIMALS;
-
 /** `i` steps of `step`, without the float noise a bare product carries. */
-const onGrid = (i: number, step: number): number => (step < FINEST ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
+const onGrid = (i: number, step: number): number => (step < FINEST_STEP ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
 
 /** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
 export function stepTicks(lo: number, hi: number, step: number): number[] {
@@ -112,11 +109,9 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
 
 /** `value` written as plainly as a grid of `step` allows: no trailing zeros, and no exponent above 1e-100. */
 export function formatNumber(value: number, step: number): string {
-  // Past the places `toFixed` writes, a label takes the exponent rather than reading 0.
-  if ((step > 0 && step < FINEST) || (value !== 0 && Math.abs(value) < FINEST)) return String(Number(value.toPrecision(12)));
-  const decimals = decimalsOf(step);
-  const fixed = formatTick(value, { decimals, step });
-  return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
+  const fixed = formatTick(value, { decimals: decimalsOf(step), step });
+  // An exponent, past the places `toFixed` writes, has no trailing zeros to drop.
+  return fixed.includes('.') && !fixed.includes('e') ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 
 /** `domain` widened to whole steps of a tick grid of about `count` ticks. */
