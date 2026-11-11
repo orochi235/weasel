@@ -30,9 +30,19 @@ function isCommandLetter(d: string, j: number): boolean {
   return !/\d/.test(d[k] ?? '');
 }
 
-/** Tokenize the command stream from a `d` string. */
-function tokenize(d: string): { cmd: string; args: number[] }[] {
-  const out: { cmd: string; args: number[] }[] = [];
+/** One command of SVG path data: its letter, as written, and the numbers after it. */
+export interface PathDataCommand {
+  cmd: string;
+  args: number[];
+}
+
+/**
+ * The commands of an SVG path-data string, each with its numbers, read as SVG reads them: `1e2` is a number and not
+ * an `e` command, `.5` and `1.5.5` are `0.5` and `1.5`, `0.5`, and an arc's flags need no separator. Letters are
+ * kept as written, relative ones included; a number past the double range is dropped. What `pathFromD` lowers.
+ */
+export function tokenizePathData(d: string): PathDataCommand[] {
+  const out: PathDataCommand[] = [];
   // Walk character by character so we can group command-letter + arg-run.
   let i = 0;
   while (i < d.length) {
@@ -123,7 +133,7 @@ export function pathFromD(
   d: string,
   onWarn?: (message: string) => void,
 ): ReturnType<PathBuilder['build']> {
-  const tokens = tokenize(d);
+  const tokens = tokenizePathData(d);
   const b = new PathBuilder().autoOrigin();
   const st: ParseState = {
     x: 0, y: 0, startX: 0, startY: 0,
