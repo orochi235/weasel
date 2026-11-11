@@ -668,6 +668,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- Ruled 2026-11-10 (my call, overnight sweep): the avoid router reroutes a connector its last commit
+  found no path for only when something it depends on changes (its ends or stops, an attached shape, an
+  obstacle meeting the line it falls back to), so an unchanged scene answers nothing. A commit retries
+  such a connector once the others have moved their labels. Why: an update that changes nothing does
+  nothing, and the retry keeps a label's interim spot from leaving a path unfound until the next edit.
+- Ruled 2026-11-10 (my call, overnight sweep): nudging spreads a bundle only within every obstacle's
+  clearance, as `clearance` promises, so parallel runs beside a shape sit closer together than
+  `spacing` where the room is short; a run already inside a clearance keeps out of the obstacle itself.
+
 - 2026-10-20 (overnight pass): In a forge story test, a story's viewport sizes the story's box, as
   the workshop's stage does, rather than resizing the page: a Chromium resize took 6–13 s on a loaded
   node and timed out Prefs' Rail Filterable. `viewport` is gone from `RunStoryOptions` in

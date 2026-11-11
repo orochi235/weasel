@@ -27,11 +27,16 @@ const dot = (a: Vec2, b: Vec2): number => a.x * b.x + a.y * b.y;
  */
 export function selfLoop(ports: readonly Port[], standoff: number, fixed: { from?: Port; to?: Port } = {}): SelfLoop | null {
   const facing = ports.filter((p): p is Port & { normal: Vec2 } => p.normal !== null);
-  const most = (dir: Vec2, among: typeof facing) =>
-    among.reduce<(typeof facing)[number] | undefined>(
-      (best, p) => (best === undefined || dot(p.normal, dir) > dot(best.normal, dir) ? p : best),
-      undefined,
-    );
+  // Of two facing `dir` alike, the one facing a quarter turn on from it, as north is from east, so the list's order
+  // never decides.
+  const most = (dir: Vec2, among: typeof facing) => {
+    const then = { x: dir.y, y: -dir.x };
+    return among.reduce<(typeof facing)[number] | undefined>((best, p) => {
+      if (best === undefined) return p;
+      const [a, b] = [dot(p.normal, dir), dot(best.normal, dir)];
+      return a > b || (a === b && dot(p.normal, then) > dot(best.normal, then)) ? p : best;
+    }, undefined);
+  };
   // Across, not along: a second port on the same side would fold the loop flat.
   const across = (side: Vec2) => facing.filter((p) => Math.abs(dot(p.normal, side)) < 0.5);
   let from: (typeof facing)[number] | undefined;

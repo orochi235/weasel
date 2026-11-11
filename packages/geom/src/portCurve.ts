@@ -35,18 +35,38 @@ export function portControls(
     const d = b[i]! - a[i]!;
     sum += d * d;
   }
-  const span = Math.sqrt(sum) * reach;
+  let span = Math.sqrt(sum) * reach;
+  if (!Number.isFinite(span)) span = Math.min(farChord(a, b) * reach, Number.MAX_VALUE);
 
   const c1: number[] = [];
   const c2: number[] = [];
   for (let i = 0; i < a.length; i++) {
     const ai = a[i]!;
     const bi = b[i]!;
-    c1.push(outNormal == null ? ai + (bi - ai) * reach : ai + outNormal[i]! * span);
-    c2.push(inNormal == null ? bi - (bi - ai) * reach : bi + inNormal[i]! * span);
+    c1.push(outNormal == null ? toward(ai, bi, reach) : held(ai + outNormal[i]! * span));
+    c2.push(inNormal == null ? toward(bi, ai, reach) : held(bi + inNormal[i]! * span));
   }
   return [c1, c2];
 }
+
+/** The distance from `a` to `b` where its square passes the double range, as far as a double holds it. */
+function farChord(a: readonly number[], b: readonly number[]): number {
+  let scale = 0;
+  for (let i = 0; i < a.length; i++) scale = Math.max(scale, Math.abs(b[i]! / 2 - a[i]! / 2));
+  if (scale === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += ((b[i]! / 2 - a[i]! / 2) / scale) ** 2;
+  return Math.min(scale * Math.sqrt(sum) * 2, Number.MAX_VALUE);
+}
+
+/** `from` moved fraction `t` of the way to `to`, finite wherever both are. */
+function toward(from: number, to: number, t: number): number {
+  const v = from + (to - from) * t;
+  return Number.isFinite(v) ? v : from * (1 - t) + to * t;
+}
+
+/** `v` held to the double range. */
+const held = (v: number): number => Math.max(-Number.MAX_VALUE, Math.min(Number.MAX_VALUE, v));
 
 /** A port curve sampled into `samples` points, excluding its start. */
 export function portCurvePoints(
@@ -78,7 +98,9 @@ export function cubicAt(
   const d = t * t * t;
   const out: number[] = [];
   for (let i = 0; i < p0.length; i++) {
-    out.push(a * p0[i]! + b * p1[i]! + c * p2[i]! + d * p3[i]!);
+    const v = a * p0[i]! + b * p1[i]! + c * p2[i]! + d * p3[i]!;
+    // Points near the double range's ends can round a sum past it.
+    out.push(Number.isFinite(v) ? v : held(2 * (a * (p0[i]! / 2) + b * (p1[i]! / 2) + c * (p2[i]! / 2) + d * (p3[i]! / 2))));
   }
   return out;
 }

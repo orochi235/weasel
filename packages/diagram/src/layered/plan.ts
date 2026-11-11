@@ -66,10 +66,11 @@ const LABEL_GAP = 0.75;
 const MIN_GAP = 0.25;
 /** The layered layout, with the ranks and edge routes it settled on. */
 export function layeredPlan(graph: Graph, opts: LayoutOptions = {}): LayeredPlan {
-  // Keeping groups together can move an outsider out of a group's column,
-  // which changes the order the next seeded run starts from. Barycenter
-  // ordering reorders on every run, so it has no arrangement to settle on.
-  if ((graph.groups?.length ?? 0) === 0 || opts.order === 'barycenter') return planOnce(graph, opts);
+  // A pass can leave nodes in an order the next seeded run reads differently: an
+  // outsider moved out of a group's column, or a node beside a second pin off its
+  // slot. Barycenter ordering reorders on every run, so it has no arrangement to
+  // settle on.
+  if (opts.order === 'barycenter' || ((graph.groups?.length ?? 0) === 0 && pinnedSet(graph, opts).size < 2)) return planOnce(graph, opts);
   // Each pass starts its placeholders on the routes the pass before laid out,
   // and the routes kept are the last pass's.
   let last: LayeredPlan | undefined;

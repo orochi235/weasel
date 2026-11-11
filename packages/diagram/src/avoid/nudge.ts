@@ -97,7 +97,7 @@ function order(s: Run, t: Run): number {
 }
 
 /** The free span across a bundle's line at `c`, between the nearest
- *  obstacles on either side over `lo` to `hi`, the labels of the bundle's
+ *  inflated obstacles on either side over `lo` to `hi`, the labels of the bundle's
  *  own `edges` aside. */
 function freeSpan(
   obstacles: ObstacleIndex, axis: Axis, c: number, lo: number, hi: number, reach: number, edges: ReadonlySet<string>,
@@ -107,9 +107,12 @@ function freeSpan(
     : { x: c - reach, y: lo, width: 2 * reach, height: hi - lo };
   let low = c - reach;
   let high = c + reach;
-  for (const { obstacle } of obstacles.near(probe)) {
+  for (const { obstacle, box: inflated } of obstacles.near(probe)) {
     if (obstacle.kind === 'label' && edges.has(obstacle.edge!)) continue;
-    const b = obstacle.box;
+    // Inflated, so a spread run keeps the clearance the search kept; a run already inside that keeps out of the
+    // obstacle itself.
+    const grown = axis === 'h' ? [inflated.y, inflated.height] : [inflated.x, inflated.width];
+    const b = grown[0]! + grown[1]! > c + EPS && grown[0]! < c - EPS ? obstacle.box : inflated;
     const [bLo, bHi, bAcross, bSize] = axis === 'h' ? [b.x, b.x + b.width, b.y, b.height] : [b.y, b.y + b.height, b.x, b.width];
     if (bHi <= lo + EPS || bLo >= hi - EPS) continue;
     if (bAcross + bSize <= c + EPS) low = Math.max(low, bAcross + bSize);

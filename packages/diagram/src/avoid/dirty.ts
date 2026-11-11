@@ -83,25 +83,28 @@ export function fullRoute(edge: AvoidEdge): Vec2[] {
 }
 
 /** What an update reroutes, most urgent first: connectors attached to a
- *  changed shape or with changed stops, then the rest. */
+ *  changed shape or with changed stops, or holding no route but those in
+ *  `pathless`, which found none when last routed; then those with one of
+ *  their `routes` meeting a changed obstacle. */
 export function dirtyEdges(
   edges: readonly AvoidEdge[],
   keys: ReadonlyMap<string, string>,
   changed: { ids: ReadonlySet<string>; boxes: readonly Box[] },
   clearance: number,
-  routes: (edge: AvoidEdge) => readonly Vec2[],
+  routes: (edge: AvoidEdge) => readonly (readonly Vec2[])[],
+  pathless: ReadonlySet<string> = new Set(),
 ): AvoidEdge[] {
   const first: AvoidEdge[] = [];
   const meeting = new Set<string>();
   if (changed.boxes.length > 0) {
     const index = new SegmentIndex();
-    for (const e of edges) index.add(e.id, routes(e));
+    for (const e of edges) for (const r of routes(e)) index.add(e.id, r);
     for (const box of changed.boxes) index.edgesMeeting(inflate(box, clearance), meeting);
   }
   const rest: AvoidEdge[] = [];
   for (const e of edges) {
     const attached = changed.ids.has(e.from.node) || changed.ids.has(e.to.node);
-    if (attached || keys.get(e.id) !== stopsKey(e) || e.route === undefined) first.push(e);
+    if (attached || keys.get(e.id) !== stopsKey(e) || (e.route === undefined && !pathless.has(e.id))) first.push(e);
     else if (meeting.has(e.id)) rest.push(e);
   }
   return [...first, ...rest];
