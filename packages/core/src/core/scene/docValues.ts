@@ -78,6 +78,6 @@ export function createSceneDoc(env: SceneDocEnv): SceneDoc {
 /** Make `scene`'s document values `next`'s: each one `next` holds set, every other cleared. One edit per
  *  changed key, so call it inside the caller's batch. */
 export function replaceDoc(scene: SceneDocValues, next: SerializedDoc): void {
-  for (const key of scene.doc.keys()) if (!(key in next)) scene.doc.set(key, undefined);
+  for (const key of scene.doc.keys()) if (!Object.hasOwn(next, key)) scene.doc.set(key, undefined);
   for (const [key, value] of Object.entries(next)) scene.doc.set(key, value);
 }

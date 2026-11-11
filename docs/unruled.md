@@ -322,6 +322,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (2026-11-10, property tests): Distribute by gaps over boxes that overlap past fitting between its ends
   leaves negative gaps, takes the boxes starting first and last as its ends though another may reach further,
   and can reorder them, so a second run moves them again.
+- Ruled 2026-11-10 (my call, overnight sweep): `addPage` (and `addTemplatePage`, which hands its index on) holds an
+  `index` past either end of the page order to that end, as `movePage` already did, rather than reading a negative
+  one from the end as `splice` does: one rule for an index into the page order.
 
 ## Rendering, canvas, and paint
 

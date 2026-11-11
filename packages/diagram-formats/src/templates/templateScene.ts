@@ -34,7 +34,7 @@ export function addTemplatePage<TData, TLayer extends string, TPose>(
   const doc = pagesOf(scene as never);
   const pages = doc?.pages ?? [];
   const id = nextPageId(pages);
-  const at = index ?? pages.length;
+  const at = Math.max(0, Math.min(index ?? pages.length, pages.length));
   const placeAt = (page: Page) => layoutPages([...pages.slice(0, at), page, ...pages.slice(at)], doc?.layout)[at]!;
   const { page, specs } = pageSpecs(template.page(id, size), placeAt, draw);
   scene.batch('Add page', () => {
