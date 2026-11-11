@@ -17,4 +17,19 @@ describe('spacingSnapSource, shrunk from the property tests', () => {
     expect(d).toEqual({ x: 24.375, y: -0.125 });
     expect(move({ ...box, x: box.x + d.x, y: box.y + d.y }, 0)).toEqual({ x: 0, y: 0 });
   });
+
+  it('takes a lone gap the box keeps to one neighbor for no equal spacing', () => {
+    // Centered between B below and A above, the box kept its gap to B once alignment moved it off A, and marked
+    // that one gap as equal spacing; snapped again, it moved 0.1875 onto B's bottom edge.
+    const box = { x: 0, y: 0, width: 0.5, height: 0.125 };
+    const sibs = [{ x: -20.875, y: 1, width: 21, height: 0.125 }, { x: 0.375, y: -6.125, width: 0.5, height: 6.625 }];
+    const move = (b: typeof box, dy: number) => {
+      const { scene, ids } = sceneOf([b, ...sibs]);
+      return moveBy({ sources: [alignmentSnapSource(), spacingSnapSource()], scene, ids: [ids[0]!], scale: 0.5, reachPx: 1 }).by(0, dy);
+    };
+    const first = move(box, 0.625);
+    expect(first.point).toEqual({ x: 0.125, y: 0.5 });
+    expect(first.marks.filter((m) => m.kind === 'gap')).toEqual([]);
+    expect(move({ ...box, x: 0.125, y: 0.5 }, 0).point).toEqual({ x: 0, y: 0 });
+  });
 });

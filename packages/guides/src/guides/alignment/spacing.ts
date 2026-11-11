@@ -104,7 +104,7 @@ export function spacingOffers(
   const moving = { x: axis === 'x' ? edge : null, y: axis === 'y' ? edge : null };
   // Only where the placed box really has the gap: no sibling, one overlapping it included, blocks it.
   const offer = (delta: number, gap: number): void => {
-    if (gap > EPS && hasGap(applyEdges(b, axis === 'x' ? delta : 0, axis === 'y' ? delta : 0, moving), axis, gap, targets)) {
+    if (gap > EPS && hasGap(applyEdges(b, axis === 'x' ? delta : 0, axis === 'y' ? delta : 0, moving), axis, gap, targets, refs)) {
       out.push({ delta, size: gap });
     }
   };
@@ -149,7 +149,8 @@ function bestAxis(
 
 /** Every gap of `size` on `axis` once the box sits at `b`: the matching
  *  reference gaps, plus the box's own gaps to its two neighbors; none when
- *  the box has no gap of that size. */
+ *  the box has no gap of that size, or when it is the only gap of that size,
+ *  which spaces nothing equally. */
 export function equalGaps(
   b: Bounds,
   axis: Axis,
@@ -159,13 +160,14 @@ export function equalGaps(
 ): SpacingGap[] {
   const eq = (g: SpacingGap) => Math.abs(g.max - g.min - size) < 1e-3;
   const own = ownGaps(b, axis, targets).filter(eq);
+  const all = [...refs.filter(eq), ...own];
   // Equal to nothing the box has, the reference gaps would mark a spacing it does not keep.
-  return own.length === 0 ? [] : [...refs.filter(eq), ...own];
+  return own.length === 0 || all.length < 2 ? [] : all;
 }
 
-/** Whether the box at `b` has a gap of `size` to a neighbor on `axis`. */
-function hasGap(b: Bounds, axis: Axis, size: number, targets: readonly Bounds[]): boolean {
-  return ownGaps(b, axis, targets).some((g) => Math.abs(g.max - g.min - size) < 1e-3);
+/** Whether the box at `b` keeps an equal spacing of `size` on `axis`. */
+function hasGap(b: Bounds, axis: Axis, size: number, targets: readonly Bounds[], refs: readonly SpacingGap[]): boolean {
+  return equalGaps(b, axis, size, targets, refs).length > 0;
 }
 
 /** The box's gaps to its neighbors on `axis`, the nearest sharing some of its
@@ -228,8 +230,8 @@ export function matchSpacing(
   // and dropping it can undo the other, so check again until both stand.
   let final = applyEdges(bounds, x?.delta ?? 0, y?.delta ?? 0, moving);
   for (;;) {
-    const keepX = x === null || hasGap(final, 'x', x.size, finite);
-    const keepY = y === null || hasGap(final, 'y', y.size, finite);
+    const keepX = x === null || hasGap(final, 'x', x.size, finite, refsX);
+    const keepY = y === null || hasGap(final, 'y', y.size, finite, refsY);
     if (keepX && keepY) break;
     if (!keepX) x = null;
     if (!keepY) y = null;
