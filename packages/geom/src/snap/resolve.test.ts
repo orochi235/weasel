@@ -57,6 +57,17 @@ describe('resolveSnap', () => {
     expect(new Set(r.members)).toEqual(new Set([target, gridY]));
   });
 
+  it('measures a target\'s reach without the move a fallback adds on another axis', () => {
+    // The target alone moves the probe 7.9; the grid's 1.5 across it made 8.04, past its reach of 8.
+    const target = cand(hline(7.9));
+    const gridX = cand(vline(-1.5), { tier: 'fallback', reachPx: Infinity });
+    const gridY = cand(hline(0), { tier: 'fallback', reachPx: Infinity });
+    const r = resolveSnap(problem({ candidates: [gridX, gridY, target] }));
+    expectVecClose(r.delta, [-1.5, 7.9]);
+    expect(new Set(r.members)).toEqual(new Set([target, gridX]));
+    expect(r.satisfied).toContain(target);
+  });
+
   it('nothing in reach returns delta0 projected into H', () => {
     const r = resolveSnap(problem({
       input: { at: [0, 0], dirs: [[1, 1]] },
