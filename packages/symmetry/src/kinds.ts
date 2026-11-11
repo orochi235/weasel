@@ -84,8 +84,10 @@ const about = (c: Point, m: Affine): Affine => multiply(translate(c.x, c.y), mul
 
 /** The reflection across the line through `c` at `angle`. */
 export function mirrorAcross(c: Point, angle: number): Affine {
-  const cos = exact(Math.cos(2 * angle));
-  const sin = exact(Math.sin(2 * angle));
+  // Within a half turn first, or an axis near the double range's end doubles past it.
+  const twice = 2 * (angle % Math.PI);
+  const cos = exact(Math.cos(twice));
+  const sin = exact(Math.sin(twice));
   return about(c, [cos, sin, sin, -cos, 0, 0]);
 }
 
