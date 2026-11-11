@@ -380,6 +380,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-10 (property tests): Given a width scale (a `{ px }` stroke in a stretched transform), `populatePolylineWidths`
   splits each corner into one point per edge, as a nib does, so a corner's two edges can take different widths and
   a join between them may bevel where one factor drew a miter (5bc9b9479).
+- Ruled 2026-11-10 (my call, overnight sweep): the PDF writer writes a miter limit below 1 as 1. PDF refuses
+  one below 1, and the renderer bevels every corner under one, as a limit of 1 does.
+- Ruled 2026-11-10 (my call, overnight sweep): a PDF dash whose every length rounds to 0 where it is written
+  strokes solid, as a dash too fine for the renderer's dash cap does; PDF forbids an all-zero dash array.
+- Ruled 2026-11-10 (my call, overnight sweep): the PDF writer drops and reports a path or group clip holding a
+  non-finite coordinate before any geometry runs, as it already dropped one `num` refused. A writer refuses bad
+  input with its documented report, never a `TypeError` from the stroke outline.
+- Ruled 2026-11-10 (my call, overnight sweep): the PDF writer writes each number as finely as the matrices
+  around it need: four decimals of each matrix axis's own scale, and coordinates, dashes, and gradient geometry
+  to 1e-4 of a page unit. A group scaled to 1e-5 was written as a singular matrix and drew nothing, which loses
+  data. Texture tiles are a unit square scaled by the pattern matrix. Dictionary numbers outside a pattern or a
+  shading (a form's `/BBox`, `/MediaBox`) keep four decimals.
 
 ## Text
 
@@ -415,6 +427,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   of the font, as it already skipped such a pair subtable, and keeps the rest of the font's kerning. The default
   outline parser rejects a font that states no units per em or no ascent, so the SDF tier keeps its text, rather
   than handing back a face that measures `NaN`.
+- Open (2026-11-10, property tests): text set in italic, or in a weight, that has no outline face of its own
+  while the upright face does lays out no glyphs at all on the outline tier, so neither the renderer nor the PDF
+  writer draws it; the atlas tier fakes the style instead. Whether the outline tier should fall back to the
+  upright face with a synthetic slant and weight is a call about the font tiers. pdf's text property registers
+  an italic face and draws only weight 400.
 - Open (2026-11-10, property tests): a combining mark opening a run, when the run's locale mapping drops
   it (`tr`'s dot after `I`), sends the paragraph to mapping code point by code point, since the mark has
   no piece in its own run to join. Code point snapping does not reach it.

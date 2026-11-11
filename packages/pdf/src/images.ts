@@ -9,8 +9,8 @@ import {
 } from '@weasel-js/renderer';
 import { foldPixels } from './color';
 import { type DrawState, type PageCtx, pageFlip, skip } from './drawCommands';
-import { latin1Bytes } from './latin1';
-import { name, type PdfDict, type PdfRef } from './objects';
+import { affinePlaces, ContentStream } from './content';
+import { name, type PdfDict, PdfReal, type PdfRef } from './objects';
 import { paintToFrame } from './shading';
 import type { RasterPixels, Rect } from './writePdf';
 
@@ -196,16 +196,19 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
   if (!mat3.invert(placement)) return null;
   // A pattern's matrix maps to the page's own space, below the flip that opens the content stream.
   const m = mat3.multiply(mat3.multiply(pageFlip(ctx), mat3.multiply(Float64Array.from(state.transform), toFrame)), placement);
-  const matrix = mat3.toAffine(m);
-
   const [w, h] = tileExtent(paint, entry);
-  const key = `pattern ${paint.texture.id} ${w},${h} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
+  // The tile is the unit square and the matrix scales it, so a tile of any size keeps its precision.
+  const [ma, mb, mc, md, me, mf] = mat3.toAffine(m);
+  const matrix = [ma * w, mb * w, mc * h, md * h, me, mf];
+
+  const key = `pattern ${paint.texture.id} ${matrix.join(',')} ${state.colorMatrix?.join(',') ?? ''}`;
   const cache = memo(ctx);
   let ref = cache.get(key);
   if (!ref) {
     const image = imageXObject(ctx, entry.source, state, 'linear');
     if (!image) return null;
     ref = ctx.objects.alloc();
+    const places = affinePlaces(matrix);
     ctx.objects.streamDeflated(
       ref,
       {
@@ -213,13 +216,13 @@ export function texturePattern(ctx: PageCtx, paint: TextureFill, state: DrawStat
         PatternType: 1,
         PaintType: 1,
         TilingType: 1,
-        BBox: [0, 0, w, h],
-        XStep: w,
-        YStep: h,
-        Matrix: matrix,
+        BBox: [0, 0, 1, 1],
+        XStep: 1,
+        YStep: 1,
+        Matrix: matrix.map((v, i) => new PdfReal(v, places[i]!)),
         Resources: { XObject: { Im1: image } },
       },
-      latin1Bytes(`${w} 0 0 -${h} 0 ${h} cm\n/Im1 Do\n`),
+      new ContentStream().op('cm', 1, 0, 0, -1, 0, 1).op('Do', '/Im1').bytes(),
     );
     cache.set(key, ref);
   }

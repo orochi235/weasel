@@ -196,8 +196,10 @@ function emitDot(
   const left = verts.length / 2;
   verts.push(x - ty * pos, y + tx * pos, x + ty * neg, y - tx * neg);
   anchorA.push(a, a); anchorB.push(b, b); anchorT.push(t, t);
-  const ahead = makeSeg(x, y, x + tx, y + ty, pos, neg, pos, neg)!;
-  const behind = makeSeg(x - tx, y - ty, x, y, pos, neg, pos, neg)!;
+  // A unit step vanishes beside a coordinate past 2^53; one scaled to it stays a fraction of it.
+  const step = Math.max(1, Math.abs(x), Math.abs(y)) * 2 ** -20;
+  const ahead = makeSeg(x, y, x + tx * step, y + ty * step, pos, neg, pos, neg)!;
+  const behind = makeSeg(x - tx * step, y - ty * step, x, y, pos, neg, pos, neg)!;
   emitCap(ahead, left, left + 1, false, pos, neg, cap, verts, idx, anchorA, anchorB, anchorT, a, b, t);
   emitCap(behind, left, left + 1, true, pos, neg, cap, verts, idx, anchorA, anchorB, anchorT, a, b, t);
   if (at && out.lengths) ownVertices(out, mark, at[0], false);

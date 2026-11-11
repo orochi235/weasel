@@ -119,9 +119,9 @@ describe('texture paint', () => {
     ]);
     expect(skipped).toEqual([]);
     expect(s).toContain('/PatternType 1');
-    expect(s).toContain('/BBox [0 0 4 2] /XStep 4 /YStep 2');
-    // page flip, then the tile placed at its origin and scaled by its transform
-    expect(s).toContain('/Matrix [2 0 0 -2 3 95]');
+    expect(s).toContain('/BBox [0 0 1 1] /XStep 1 /YStep 1');
+    // page flip, then the unit tile spanned over 4 by 2, placed at its origin and scaled by its transform
+    expect(s).toContain('/Matrix [8 0 0 -4 3 95]');
     expect(content).toContain('/Pattern cs');
     expect(content).toContain('/P1 scn');
     expect(s).toContain('/Subtype /Image');
@@ -141,7 +141,7 @@ describe('texture paint', () => {
       children: [texturePath({ units: 'local', origin: { x: 3, y: 5 }, transform: [2, 0, 0, 2] })],
     };
     const { s } = await render([group]);
-    expect(s).toContain('/Matrix [4 0 0 -6 11 79]');
+    expect(s).toContain('/Matrix [16 0 0 -12 11 79]');
   });
 
   it('ignores the group transform for page units', async () => {
@@ -152,21 +152,21 @@ describe('texture paint', () => {
       children: [texturePath({ origin: { x: 3, y: 5 }, transform: [2, 0, 0, 2] })],
     };
     const { s } = await render([group]);
-    expect(s).toContain('/Matrix [2 0 0 -2 3 95]');
+    expect(s).toContain('/Matrix [8 0 0 -4 3 95]');
   });
 
   it('spans a tile over the width and height the paint gives, not the texture\'s pixels', async () => {
     handles.push(registerTexture(fakeImage(4, 2)));
     const { s } = await render([texturePath({ width: 20, height: 10 })]);
-    expect(s).toContain('/BBox [0 0 20 10] /XStep 20 /YStep 10');
-    expect(s).toContain('20 0 0 -10 0 10 cm');
+    expect(s).toContain('/Matrix [20 0 0 -10 0 100]');
+    expect(s).toContain('1 0 0 -1 0 1 cm');
   });
 
   it('writes a pattern per tile extent for one texture', async () => {
     handles.push(registerTexture(fakeImage(4, 2)));
     const { s } = await render([texturePath({ width: 20, height: 10 }), texturePath({ width: 8, height: 4 })]);
-    expect(s).toContain('/XStep 20 /YStep 10');
-    expect(s).toContain('/XStep 8 /YStep 4');
+    expect(s).toContain('/Matrix [20 0 0 -10 0 100]');
+    expect(s).toContain('/Matrix [8 0 0 -4 0 100]');
   });
 
   it('tiles an image paint the renderer has not drawn yet', async () => {
@@ -178,7 +178,7 @@ describe('texture paint', () => {
         { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 50, height: 50 }, fill: { paint: fill as never } },
       ]);
       expect(skipped).toEqual([]);
-      expect(s).toContain('/BBox [0 0 4 2] /XStep 4 /YStep 2');
+      expect(s).toContain('/Matrix [4 0 0 -2 0 100]');
     } finally {
       releaseImage(src);
     }

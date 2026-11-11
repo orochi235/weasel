@@ -28,13 +28,18 @@ export function strokeStyleOps(ctx: PageCtx, stroke: CommandStroke, width: numbe
   out.op('w', width);
   out.op('J', CAPS[stroke.cap ?? 'butt']);
   out.op('j', JOINS[stroke.join ?? 'miter']);
-  out.op('M', stroke.miterLimit ?? 4);
+  // PDF refuses a limit below 1; the renderer bevels every corner under one, as a limit of 1 does.
+  out.op('M', Math.max(1, stroke.miterLimit ?? 4));
   // PDF draws nothing for an all-zero dash and rejects a negative one; the renderer strokes both solid.
   // A non-finite one never gets here: no line is drawn for it.
   const dash = dashPattern(stroke.dash, length);
   if (dash === 'solid' || dash === 'non-finite') return;
+  const places = out.places();
+  const written = dash.map((d) => num(d, places));
+  // Dashes too fine to write are all zero in PDF, which draws no line; the renderer draws them as good as solid.
+  if (written.every((d) => d === '0')) return;
   // Wrapped into one cycle, as the renderer's dasher reads it; PDF has no rule for a negative phase.
-  out.op('d', `[${dash.map(num).join(' ')}]`, num(dashPhase(dash, phase + (stroke.dashOffset ?? 0))));
+  out.op('d', `[${written.join(' ')}]`, num(dashPhase(dash, phase + (stroke.dashOffset ?? 0)), places));
 }
 
 /** `raw` with its `{ px }` lengths resolved at the exact scale of `state`, and its width as a number. */
