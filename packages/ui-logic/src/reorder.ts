@@ -61,6 +61,16 @@ export function nearestGap(gaps: readonly number[], p: number): number {
   return best;
 }
 
+/**
+ * Which part of an item a pointer at fraction `f` along it is over: the leading `band` of it drops before, the
+ * trailing `band` after, and what lies between drops into it. The default `band` of a half leaves no middle, which
+ * is an item that cannot take a drop into it, split at its midpoint.
+ */
+export function dropBand(f: number, band = 0.5): 'before' | 'into' | 'after' {
+  if (f < band) return 'before';
+  return f >= 1 - band ? 'after' : 'into';
+}
+
 /** The keys and modifiers a nudge chord reads off a keystroke. */
 export interface NudgeKey {
   key: string;

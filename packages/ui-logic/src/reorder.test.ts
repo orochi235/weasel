@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gapByMidpoint, isNoopDrop, isNudgeChord, moveItems, movedIndex, nearestGap, nudgeGap, nudgeOf } from './reorder';
+import { dropBand, gapByMidpoint, isNoopDrop, isNudgeChord, moveItems, movedIndex, nearestGap, nudgeGap, nudgeOf } from './reorder';
 
 const L = ['a', 'b', 'c', 'd', 'e'];
 
@@ -119,5 +119,15 @@ describe('nudgeOf', () => {
   it('is not the chord with Ctrl or Cmd held', () => {
     expect(isNudgeChord(k('ArrowUp', { altKey: true, metaKey: true }))).toBe(false);
     expect(nudgeOf(k('ArrowUp', { altKey: true, ctrlKey: true }))).toBeNull();
+  });
+});
+
+describe('dropBand', () => {
+  it('splits an item at its midpoint by default', () => {
+    expect([0, 0.49, 0.5, 1].map((f) => dropBand(f))).toEqual(['before', 'before', 'after', 'after']);
+  });
+  it('keeps the middle for a drop into the item', () => {
+    expect([0.1, 0.25, 0.5, 0.74, 0.75, 0.9].map((f) => dropBand(f, 0.25)))
+      .toEqual(['before', 'into', 'into', 'into', 'after', 'after']);
   });
 });

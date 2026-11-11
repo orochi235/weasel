@@ -61,6 +61,11 @@ focused, whether its ring shows, `focus`, `moveFocus` through a `tabOrder`, and
 `domFocusScope(root)` is one over the elements under `root`, so code that moves focus is
 written once for both. `tabSort` and `tabStep` are the order and the step both use.
 
+Targets placed freely, with no row or grid to walk, take the arrows by where they sit. `nearestToward(from, targets,
+heading)` is the index of the target focus moves to: the cheapest by `headingCost`, which adds the travel along the
+heading to twice the drift across it, so a target straight ahead beats a nearer one off to the side. `headingOf(key)`
+reads the heading off an arrow key.
+
 ## Selection and grids
 
 `selection(spec, values)` is which of a run of items are on: one value or `null` (`mode: 'single'`, which may
@@ -122,7 +127,12 @@ anything is taken out: 0 before the first item, `length` after the last. `moveIt
 indices `at` into gap `to`; `isNoopDrop` says whether that leaves them where they are; `nudgeGap` is the gap a
 one-place move takes them to, and `nudgeOf` reads the Alt+arrow chord that asks for one. A pointer finds its gap by
 `gapByMidpoint`, for items side by side, each split at its middle, or by `nearestGap`, for gaps drawn at places of
-their own.
+their own. `dropBand(f, band)` says which part of one item the pointer is over: before it, after it, or, with a
+`band` under a half, into it.
+
+A drag near the edge of a scrolling box scrolls it. `edgePush(span, p, margin)` is how hard, from -1 to 1: nothing
+until the pointer is within `margin` of an end, full strength at the end and past it. `edgeScroll(bounds, point)`
+reads both axes of a box; multiply by a top speed.
 
 ## Measure and draw
 

@@ -1,3 +1,5 @@
+import { dropBand } from '@weasel-js/ui-logic';
+
 /** Where a drop lands: among `parentId`'s children (`null` is the top level), at `index` counted before the drag
  *  removes anything. */
 export interface TreeDropTarget {
@@ -54,13 +56,10 @@ export function resolveDrop(
   if (i === -1) return gapAfter(rows, rows.length - 1, p.x, indent);
   const r = rows[i]!;
   if (p.y < r.top) return before(r);
-  const frac = (p.y - r.top) / r.height;
-  if (r.branch) {
-    if (frac < 0.25) return before(r);
-    if (frac >= 0.75) return gapAfter(rows, i, p.x, indent);
-    return { target: { parentId: r.id, index: r.childCount }, mark: { id: r.id, where: 'into' } };
-  }
-  return frac < 0.5 ? before(r) : gapAfter(rows, i, p.x, indent);
+  const where = dropBand((p.y - r.top) / r.height, r.branch ? 0.25 : 0.5);
+  if (where === 'before') return before(r);
+  if (where === 'after') return gapAfter(rows, i, p.x, indent);
+  return { target: { parentId: r.id, index: r.childCount }, mark: { id: r.id, where: 'into' } };
 }
 
 function before(r: DropRow): ResolvedDrop {

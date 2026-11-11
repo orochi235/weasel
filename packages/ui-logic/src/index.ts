@@ -20,9 +20,12 @@ export type { Span } from './span';
 export { editEnd, imeKey } from './textCommit';
 export type { EditCause, EditEnd, EditEndShape, KeySource } from './textCommit';
 export {
-  moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, isNudgeChord, nudgeOf,
+  moveItems, movedIndex, isNoopDrop, nudgeGap, gapByMidpoint, nearestGap, dropBand, isNudgeChord, nudgeOf,
 } from './reorder';
 export type { NudgeKey } from './reorder';
+export { EDGE_SCROLL_MARGIN, edgePush, edgeScroll } from './edgeScroll';
+export { HEADING_DRIFT, headingOf, headingCost, nearestToward } from './spatial';
+export type { Heading } from './spatial';
 export { treeKey } from './tree';
 export type { TreeShape, TreeKeyResult } from './tree';
 export { timerScheduler } from './scheduler';
