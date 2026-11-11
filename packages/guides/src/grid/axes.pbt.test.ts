@@ -131,7 +131,7 @@ describe('grid axes, property', () => {
       const want = [...new Set(at)].sort((p, q) => p - q);
       expect(lines.at).toEqual(want);
       const c = cellOf(lines, v);
-      const i = want.findLastIndex((l) => l <= v);
+      const i = want.filter((l) => l <= v).length - 1;
       if (i >= 0 && i < want.length - 1) expect(c).toEqual({ index: i, lo: want[i], hi: want[i + 1] });
       else expect(c).toBeNull();
       const pair = linesNear(lines, v);
