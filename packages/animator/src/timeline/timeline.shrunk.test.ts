@@ -57,4 +57,17 @@ describe('timelines, shrunk from the property tests', () => {
     tl.seek(3);
     expect(tl.time()).toBe(0);
   });
+
+  it('fire nothing more once a handler cancels the timeline', () => {
+    const h = clocked();
+    h.at(0);
+    const fired: number[] = [];
+    const tl = h.animator.timeline({
+      duration: 400,
+      tracks: [{ kind: 'event', events: [{ t: 0, fire: () => { fired.push(0); tl.cancel(); } }, { t: 0, fire: () => { fired.push(1); } }] }],
+    });
+    h.at(1);
+    expect(fired).toEqual([0]);
+    expect(h.animator.isActive()).toBe(false);
+  });
 });

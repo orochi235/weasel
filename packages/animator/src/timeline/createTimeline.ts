@@ -131,7 +131,7 @@ export function createTimeline(
     : null;
   const sampler = createTrackSampler(hold);
 
-  const events = createEventCursor(createEventFirer(report, booker !== null));
+  const events = createEventCursor(createEventFirer(report, booker !== null), () => canceled);
 
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
@@ -167,6 +167,8 @@ export function createTimeline(
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
     const sought = rate > 0 ? events.to(opts.tracks, playhead) : rate < 0 && events.back(playhead);
+    // A handler canceled it: it is off the table already, and books nothing more.
+    if (canceled) return true;
     booker?.tick(virtualNow, rate);
 
     if ((finished || rewound) && !done && !sought) { done = true; opts.onDone?.(); playbackChanged(); }

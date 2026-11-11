@@ -28,7 +28,8 @@ export interface EventCursor {
   back(t: number): false;
 }
 
-export function createEventCursor(fire: FireEvents): EventCursor {
+/** `gone` says the timeline was canceled, which stops its firing as a handler's seek does. */
+export function createEventCursor(fire: FireEvents, gone: () => boolean): EventCursor {
   let at = -Infinity;
   let open = false;
   let places = 0;
@@ -36,7 +37,7 @@ export function createEventCursor(fire: FireEvents): EventCursor {
     to(tracks, to) {
       const was = places;
       // A handler that seeks has placed the cursor where playback goes on from.
-      if (fire(tracks, at, to, open, () => places !== was)) return true;
+      if (fire(tracks, at, to, open, () => places !== was || gone())) return true;
       at = to;
       open = false;
       return false;
