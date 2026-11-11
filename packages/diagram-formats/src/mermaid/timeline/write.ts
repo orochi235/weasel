@@ -1,27 +1,19 @@
 /** A plot page holding a timeline as Mermaid `timeline` text. */
 import type { ExportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
+import { lineOpening, spelledLine } from '../common/text';
 
-/** `s` on one line, the colon Mermaid splits on written as `#58;` and a `#` as `#35;`. */
-function timelineText(s: string, warnings: Warnings): string {
-  if (/[\r\n]/.test(s)) warnings.add('Mermaid timeline text holds one line; line breaks were written as spaces.');
-  return s.replace(/\s*[\r\n]+\s*/g, ' ').replace(/#/g, '#35;').replace(/:/g, '#58;');
-}
 
 /** The label a period with none is written with, since a line with no label adds events to the period above. */
 const UNTITLED = '(untitled)';
 
-/** A period's label as it opens a line: its first character spelled out where the line would otherwise read as a
- *  title, a section, a comment, or accessibility text. */
-const periodLabel = (label: string): string =>
-  (/^(?:title|section)(?:\s|$)|^%%|^acc(?:Title|Descr)\s*[:{]/.test(label) ? `#${label.codePointAt(0)};${label.slice(1)}` : label);
 
 /** Writes `page`'s timeline as Mermaid. Throws on a page holding another kind of chart. */
 export function writeMermaidTimeline(page: PlotPage): ExportResult {
   const data = page.data;
   if (data.kind !== 'timeline') throw new Error(`Mermaid writes this chart as a timeline only; the page holds a ${(data as { kind: string }).kind}`);
   const warnings = new Warnings();
-  const text = (s: string) => timelineText(s, warnings);
+  const text = (s: string) => spelledLine(s, 'timeline', (m) => warnings.add(m));
   const lines = ['timeline'];
   if (data.title !== undefined) lines.push(`  title ${text(data.title)}`);
   let named = false;
@@ -40,7 +32,7 @@ export function writeMermaidTimeline(page: PlotPage): ExportResult {
       }
       const events = period.events.filter((e) => e.trim() !== '');
       if (events.length < period.events.length) warnings.add('Mermaid holds no empty events; they were dropped.');
-      lines.push(`${indent}${[blank ? UNTITLED : periodLabel(text(period.label).trim()), ...events.map(text)].join(' : ')}`);
+      lines.push(`${indent}${[blank ? UNTITLED : lineOpening(text(period.label).trim(), ['title', 'section']), ...events.map(text)].join(' : ')}`);
     }
   });
   return { text: `${lines.join('\n')}\n`, warnings: warnings.all() };

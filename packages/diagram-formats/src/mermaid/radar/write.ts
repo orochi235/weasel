@@ -1,5 +1,6 @@
 /** A plot page holding a radar as Mermaid `radar-beta` text. */
 import type { ExportResult, PlotPage } from '../../document';
+import { oneLine } from '../common/text';
 
 const ID = /^[A-Za-z_][\w-]*$/;
 
@@ -11,8 +12,9 @@ function item(x: { id: string; label?: string }, warn: (m: string) => void): str
     id = /^[A-Za-z_]/.test(id) ? id.replace(/[^\w-]/g, '_') : `_${id.replace(/[^\w-]/g, '_')}`;
   }
   if (x.label === undefined) return id;
-  if (x.label.includes('"')) warn('Mermaid labels hold no double quotes; they were written as single quotes.');
-  return `${id}["${x.label.replace(/"/g, "'")}"]`;
+  const label = oneLine(x.label, 'radar', warn);
+  if (label.includes('"')) warn('Mermaid labels hold no double quotes; they were written as single quotes.');
+  return `${id}["${label.replace(/"/g, "'")}"]`;
 }
 
 const option = (key: string, value: number | string | boolean | undefined): string[] => (value === undefined ? [] : [`  ${key} ${value}`]);
@@ -26,7 +28,7 @@ export function writeMermaidRadar(page: PlotPage): ExportResult {
     if (!warnings.includes(m)) warnings.push(m);
   };
   const lines = ['radar-beta'];
-  if (data.title !== undefined) lines.push(`  title ${data.title}`);
+  if (data.title !== undefined) lines.push(`  title ${oneLine(data.title, 'radar', warn)}`);
   if (data.axes.length > 0) lines.push(`  axis ${data.axes.map((a) => item(a, warn)).join(', ')}`);
   for (const c of data.curves) {
     const values = data.axes.map((_, i) => c.values[i]);

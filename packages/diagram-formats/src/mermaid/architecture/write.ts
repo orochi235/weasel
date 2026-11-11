@@ -3,15 +3,18 @@ import type { DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { titleLines } from '../common/lines';
-import { mermaidEscaped, mermaidIds } from '../common/text';
+import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import type { ArchSide } from './parse';
 import { ICON_OUTLINES, SIDE_PORTS } from './read';
 
 const OUTLINE_ICONS = new Map(Object.entries(ICON_OUTLINES).map(([icon, outline]) => [outline, icon]));
 const PORT_SIDES = new Map(Object.entries(SIDE_PORTS).map(([side, port]) => [port, side as ArchSide]));
 
-/** A title as Mermaid's brackets hold it: one line, escaped, its closing brackets spelled as entities. */
-const title = (lines: readonly string[]): string => mermaidEscaped([lines.join(' ')], { also: /\]/g });
+/** A title's text as Mermaid's brackets hold it: one line. */
+const oneTitle = (lines: readonly string[], warn: (m: string) => void): string => oneLine(lines.join(' '), 'architecture', warn).trim();
+
+/** A title as Mermaid's brackets hold it: escaped, its closing brackets spelled as entities. */
+const title = (text: string): string => mermaidEscaped([text], { also: /\]/g });
 
 class ArchWriter {
   readonly lines: string[] = [];
@@ -41,7 +44,7 @@ class ArchWriter {
   }
 
   group(c: Cluster): void {
-    this.lines.push(`  group ${this.id(c.id)}${c.label !== undefined ? `[${title([c.label])}]` : ''}${this.in(c.id)}`);
+    this.lines.push(`  group ${this.id(c.id)}${c.label !== undefined ? `[${title(oneTitle([c.label], (m) => this.out.warnings.add(m)))}]` : ''}${this.in(c.id)}`);
     for (const k of c.clusters) this.group(k);
   }
 
@@ -55,7 +58,8 @@ class ArchWriter {
     if (icon === undefined && n.outline !== undefined && n.outline !== 'roundRect') {
       this.out.warnings.add('Mermaid architecture services wear only its built-in icons; other outlines were dropped.');
     }
-    const named = text.length === 0 || (text.length === 1 && text[0] === n.id) ? '' : `[${title(text)}]`;
+    const one = oneTitle(text, (m) => this.out.warnings.add(m));
+    const named = text.length === 0 || one === n.id ? '' : `[${title(one)}]`;
     this.lines.push(`  service ${this.id(n.id)}${icon !== undefined ? `(${icon})` : ''}${named}${this.in(n.id)}`);
   }
 

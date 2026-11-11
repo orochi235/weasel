@@ -5,9 +5,12 @@ import type { DiagramDocument, ExportResult, WriteOptions } from '../../document
 import { edgeStyleIn, graphOut, type Cluster, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
 import { styleProps } from '../common/styles';
-import { mermaidIds } from '../common/text';
+import { mermaidIds, oneLine, spelledBreaks } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
+
+/** Text as a class diagram's strings hold it: a `#`, a double quote, and line ends spelled as the entities its reader reads. */
+const spelled = (text: string): string => spelledBreaks(text.replace(/#/g, '#35;').replace(/"/g, '#quot;'));
 
 /** A class box's parts, from its rows: what is above the first divider, then between, then below the second. */
 export function classParts(node: DataNode): { annotations: string[]; name: string; attributes: string[]; methods: string[] } {
@@ -58,8 +61,8 @@ class ClassWriter {
     const generic = /^(.*)<([^<>]*)>$/.exec(name);
     const head = name === node.id ? id
       : generic !== null && generic[1] === node.id ? `${id}~${generic[2]}~`
-        : `${id}["${name.replace(/"/g, '#quot;')}"]`;
-    const members = [...attributes, ...methods].map((m) => m.trim());
+        : `${id}["${spelled(name)}"]`;
+    const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
     const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
     if (kept.length < members.length) this.out.warnings.add('Mermaid class members are lines of text; blank ones, and ones it reads as comments or a closing brace, were dropped.');
     const body = [...annotations.map((a) => `<<${a}>>`), ...kept];
@@ -88,16 +91,16 @@ class ClassWriter {
 
   relation(e: DataEdge): string {
     const style = edgeStyleIn(this.out, e);
-    const card = (text: string | undefined) => (text !== undefined ? ` "${text.replace(/"/g, '#quot;')}"` : '');
+    const card = (text: string | undefined) => (text !== undefined ? ` "${spelled(text)}"` : '');
     const line = style.dash !== undefined ? '..' : '--';
-    const label = e.label !== undefined && e.label !== '' ? ` : ${e.label}` : '';
+    const label = e.label !== undefined && e.label !== '' ? ` : ${spelled(e.label)}` : '';
     const arrow = `${this.head(style.markerStart, 0)}${line}${this.head(style.markerEnd, 1)}`;
     return `  ${this.id(e.from)}${card(e.endLabels?.from)} ${arrow}${card(e.endLabels?.to)} ${this.id(e.to)}${label}`;
   }
 
   noteLines(): void {
     for (const [id, target] of this.notes) {
-      const text = (this.out.byId.get(id)!.lines ?? []).join('\\n').replace(/"/g, '#quot;');
+      const text = spelled((this.out.byId.get(id)!.lines ?? []).join('\\n'));
       this.lines.push(target === null ? `  note "${text}"` : `  note for ${this.id(target.to)} "${text}"`);
     }
   }

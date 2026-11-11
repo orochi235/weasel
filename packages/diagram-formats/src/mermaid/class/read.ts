@@ -83,7 +83,7 @@ class ClassReader {
     const endLabels = { ...(s.fromCard !== undefined ? { from: card(s.fromCard) } : {}), ...(s.toCard !== undefined ? { to: card(s.toCard) } : {}) };
     this.edges.push({
       from: s.from, to: s.to,
-      ...(s.label !== undefined ? { label: s.label } : {}),
+      ...(s.label !== undefined ? { label: decodeEntities(s.label, true) } : {}),
       ...(Object.keys(endLabels).length > 0 ? { endLabels } : {}),
       ...(Object.keys(colors).length > 0 ? { colors } : {}),
     });

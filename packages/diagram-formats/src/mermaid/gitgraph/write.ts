@@ -2,11 +2,13 @@
 import type { GitCommand } from '@weasel-js/plot';
 import type { ExportResult, PlotPage } from '../../document';
 import { titleLines } from '../common/lines';
+import { oneLine } from '../common/text';
 
 type Warn = (m: string) => void;
 
 /** `s` in double quotes, which Mermaid strings cannot hold, so a quote inside becomes a single one. */
-function quoted(s: string, warn: Warn): string {
+function quoted(text: string, warn: Warn): string {
+  const s = oneLine(text, 'gitGraph', warn);
   if (s.includes('"')) warn('Mermaid strings hold no double quotes; they were written as single quotes.');
   return `"${s.replace(/"/g, "'")}"`;
 }

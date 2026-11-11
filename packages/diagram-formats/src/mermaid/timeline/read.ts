@@ -4,13 +4,11 @@ import type { ImportResult, PlotPage } from '../../document';
 import { Warnings } from '../../graphRead';
 import { lineError } from '../../lineError';
 import { pageNameOf, statementsOf } from '../common/lines';
+import { numberedText } from '../common/text';
 
 /** The page a timeline is read onto. */
 export const TIMELINE_PAGE = { width: 900, height: 500 } as const;
 
-/** Text as a timeline writes it, Mermaid's `#58;` and the other numbered references read back as their characters. */
-export const timelineText = (s: string): string =>
-  s.trim().replace(/#(\d+);/g, (whole, n: string) => (Number(n) <= 0x10ffff ? String.fromCodePoint(Number(n)) : whole));
 
 /** Reads a Mermaid `timeline`. Throws, naming the line, on text that is not one. */
 export function readMermaidTimeline(text: string): ImportResult {
@@ -23,17 +21,17 @@ export function readMermaidTimeline(text: string): ImportResult {
   const sections: { name?: string; periods: TimelinePeriod[] }[] = [{ periods: [] }];
   let last: TimelinePeriod | null = null;
   for (const s of src.body) {
-    const keyword = /^(title|section)(?:\s+(.*))?$/.exec(s.text);
+    const keyword = /^(title|section)(?:\s+(.*))?$/s.exec(s.text);
     if (keyword?.[1] === 'title') {
-      title = timelineText(keyword[2] ?? '');
+      title = numberedText(keyword[2] ?? '');
       continue;
     }
     if (keyword?.[1] === 'section') {
-      sections.push({ name: timelineText(keyword[2] ?? ''), periods: [] });
+      sections.push({ name: numberedText(keyword[2] ?? ''), periods: [] });
       last = null;
       continue;
     }
-    const [label, ...events] = s.text.split(':').map(timelineText);
+    const [label, ...events] = s.text.split(':').map(numberedText);
     const said = events.filter((e) => e !== '');
     if (label === '') {
       if (last === null) throw lineError('Mermaid', s.line, 'an event with no period above it');
