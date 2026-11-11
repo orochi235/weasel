@@ -6,11 +6,12 @@ export const SCOPE_EXT = 'com.weasel.scope';
 /** A reference reads a dot as a group, and a name reaches CSS custom properties and the generated module unescaped. */
 const SAFE_NAME = /^[A-Za-z0-9_-]+$/;
 
-/** Whether `name` can name a token: letters, digits, `-` and `_`. */
-export const isSafeTokenName = (name: string): boolean => SAFE_NAME.test(name);
+/** Whether `name` can name a token: letters, digits, `-` and `_`, and not `__proto__`, which a record cannot hold as a key. */
+export const isSafeTokenName = (name: string): boolean => SAFE_NAME.test(name) && name !== '__proto__';
 
 /** Why `name` cannot name a token. */
-export const unsafeTokenName = (name: string): string => `"${name}" cannot name a token: use letters, digits, "-" and "_"`;
+export const unsafeTokenName = (name: string): string =>
+  name === '__proto__' ? '"__proto__" cannot name a token' : `"${name}" cannot name a token: use letters, digits, "-" and "_"`;
 
 /** A token's value as authored: a string (which may be a `{ref}`), a number, or a list of those, such as a font stack. */
 export type TokenValue = string | number | readonly (string | number)[];
