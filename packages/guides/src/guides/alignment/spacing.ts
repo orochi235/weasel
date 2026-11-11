@@ -150,13 +150,30 @@ export function equalGaps(
   refs: readonly SpacingGap[],
 ): SpacingGap[] {
   const eq = (g: SpacingGap) => Math.abs(g.max - g.min - size) < 1e-3;
-  const out = refs.filter(eq);
-  // Only a box overlapping the gap-wide margins beside b can bound or block
-  // one of b's own gaps, so the quadratic measure runs on those alone.
-  const near = targets.filter((t) => hi(t, axis) > lo(b, axis) - size - EPS && lo(t, axis) < hi(b, axis) + size + EPS);
-  const own = measureGaps([...near, b], axis).filter((g) =>
-    (Math.abs(g.max - lo(b, axis)) < EPS || Math.abs(g.min - hi(b, axis)) < EPS) && eq(g));
-  return [...out, ...own];
+  return [...refs.filter(eq), ...ownGaps(b, axis, targets).filter(eq)];
+}
+
+/** The box's gaps to its neighbors on `axis`, the nearest sharing some of its
+ *  cross range on each side (every one tied), where no other box stands in
+ *  the strip between: the neighbors `spacingOffers` places it against. */
+function ownGaps(b: Bounds, axis: Axis, targets: readonly Bounds[]): SpacingGap[] {
+  const c = cross(axis);
+  const beside = targets.filter((t) => t !== b && overlap(t, b, c) !== null);
+  const before = beside.filter((t) => hi(t, axis) <= lo(b, axis) - EPS);
+  const after = beside.filter((t) => lo(t, axis) >= hi(b, axis) + EPS);
+  const L = Math.max(...before.map((t) => hi(t, axis)));
+  const R = Math.min(...after.map((t) => lo(t, axis)));
+  const pairs: [Bounds, Bounds][] = [
+    ...before.filter((t) => hi(t, axis) === L).map((t): [Bounds, Bounds] => [t, b]),
+    ...after.filter((t) => lo(t, axis) === R).map((t): [Bounds, Bounds] => [b, t]),
+  ];
+  const out: SpacingGap[] = [];
+  for (const [p, q] of pairs) {
+    const gap = gapBetween(p, q, axis)!;
+    const span = overlap(p, q, c)!;
+    if (!targets.some((t) => t !== p && t !== q && hitsStrip(gap, t, span))) out.push(gap);
+  }
+  return out.sort((g, h) => g.min - h.min || g.at - h.at);
 }
 
 /** The measured gaps a box at `bounds` can reproduce: all but those it

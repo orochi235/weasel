@@ -179,5 +179,15 @@ describe('equal spacing, property', () => {
     expect(measureGaps([a, top, bottom], 'x')).toEqual(want);
     expect(measureGaps([a, bottom, top], 'x')).toEqual(want);
   });
+
+  it('marks the gap a snap reproduced beside the box, though its neighbor has a nearer one elsewhere (shrunk counterexample)', () => {
+    // The left neighbor's nearest box to its right sits lower, so measuring from it never reached the box.
+    const targets = [
+      { x: 0, y: 40, width: 15, height: 5 }, { x: 70, y: 40, width: 10, height: 15 }, { x: 85, y: 50, width: 5, height: 10 },
+    ];
+    const m = matchSpacing({ x: 135, y: 35, width: 5, height: 10 }, targets, { x: 5, y: 5 }, { x: 'both', y: null });
+    expect(m.dx).toBe(0);
+    expect(m.gapsX.map((g) => [g.min, g.max])).toEqual([[15, 70], [80, 135]]);
+  });
 });
 
