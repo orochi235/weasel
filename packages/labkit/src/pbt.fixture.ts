@@ -143,8 +143,7 @@ export type GroupSpec = Said & {
 
 export type NodeSpec = LeafSpec | GroupSpec;
 
-// No '': `.section('')` reads back through `f.prefs` as no section at all, which is open in `docs/unruled.md`.
-const SECTIONS = ['Grid', 'grid', 'Camera', 'A b'] as const;
+const SECTIONS = ['Grid', 'grid', 'Camera', '', 'A b'] as const;
 
 const said: fc.Arbitrary<Said> = fc.record(
   {

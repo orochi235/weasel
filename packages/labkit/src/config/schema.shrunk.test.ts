@@ -75,3 +75,14 @@ describe('a root section whose slug is a loose root key', () => {
     expect(leaves.map(tree.pathAt).sort()).toEqual(['a', 'grid']);
   });
 });
+
+describe('a section with an empty label', () => {
+  // Shrunk from `schema.pbt.test.ts`: `a` in `.section('')` came back from `f.prefs` in no section.
+  it('is no section, so it reads back through prefsFromConfig and f.prefs the same', () => {
+    const resolved = resolveConfigSchema(f.schema({ a: f.boolean(false).section('') }));
+    expect(resolved.sections).toEqual([]);
+    const again = resolveConfigSchema(configFromPrefs(prefsFromConfig(resolved)));
+    expect(again.group).toEqual(resolved.group);
+    expect(again.sections).toEqual([]);
+  });
+});

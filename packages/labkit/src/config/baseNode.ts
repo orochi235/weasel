@@ -126,7 +126,7 @@ export abstract class BaseNode<T> implements ConfigNode<T> {
 
   /** Render under a named section heading. `collapsed` opens the section
    *  folded, and `layout` and `pack` lay out its rows — say each on any one of
-   *  the section's leaves. */
+   *  the section's leaves. An empty `label` is no section. */
   section(label: string, opts: Omit<SectionOption, 'label'> = {}): this {
     return this.opt({ section: { label, ...opts } });
   }
