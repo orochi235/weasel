@@ -60,4 +60,14 @@ describe('useTextEdit armed style (shrunk)', () => {
     act(() => edit().commit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a' }, { text: 'a', fill: null }]);
   });
+
+  it('reads bold armed beside a weight that both name as the weight, as the next character takes it', () => {
+    const { h, edit, overlay } = editAtEnd([{ text: 'a', fontWeight: 300 }]);
+    act(() => edit().applyStyleToSelection({ bold: true, fontWeight: 300 }));
+    expect(edit().effectiveStyle?.bold).toBe(false);
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
+    act(() => dispatchBeforeInput(overlay, 'a'));
+    act(() => edit().commit());
+    expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'a', bold: true }]);
+  });
 });

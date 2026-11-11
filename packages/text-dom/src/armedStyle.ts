@@ -3,9 +3,7 @@
  * caret sits in: a key it sets, and a key it takes off as `false` (a flag) or `undefined`. So a shortcut can take
  * bold off at the end of a bold word, and the character typed next lands as a write of the same patch over it would.
  */
-import {
-  applyStyleToRange, patchRangeStyle, type RangeStyle, type RunStylePatch,
-} from '@weasel-js/text';
+import { applyStyleToRange, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 
 const FLAGS: ReadonlySet<string> = new Set(['bold', 'italic', 'underline', 'strikethrough', 'overline']);
 
@@ -38,9 +36,13 @@ export function armPatch(caret: RunStylePatch, armed: RunStylePatch, patch: RunS
   return out as RunStylePatch;
 }
 
-/** `range` as the armed style shows over it: `patchRangeStyle`, with a key armed `undefined` taken off. */
+/** `range` as the armed style shows over it. The armed style names every key it changes, so nothing it leaves out
+ *  is superseded: a key armed `undefined` is taken off, and a flag armed `false` reads `false`. */
 export function armedOver(range: RangeStyle, armed: RunStylePatch): RangeStyle {
-  const out: Record<string, unknown> = { ...patchRangeStyle(range, armed) };
-  for (const [key, value] of Object.entries(armed)) if (value === undefined) delete out[key];
+  const out: Record<string, unknown> = { ...range };
+  for (const [key, value] of Object.entries(armed)) {
+    if (value === undefined) delete out[key];
+    else out[key] = value;
+  }
   return out as RangeStyle;
 }
