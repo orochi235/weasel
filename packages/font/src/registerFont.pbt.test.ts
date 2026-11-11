@@ -2,12 +2,14 @@
  * The atlas registry through `fc.commands` runs of eager and lazy registrations that load or fail, warms, and the
  * settling of loads in flight, over families named like `Object.prototype` members and like the registry's own keys
  * (`a|400`): after every step each variant is loaded, declared, loading, or absent as a model says, and `getFont`,
- * `listFonts`, `fontPending`, and `warmFonts` answer for it alone.
+ * `listFonts`, `fontPending`, and `warmFonts` answer for it alone, and a landed variant resolves to itself, cached or not.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
 import { FIXTURE_FONT } from './FontAtlas';
-import { _resetFontRegistryForTests, fontPending, getFont, listFonts, registerFont, warmFonts } from './registerFont';
+import {
+  _resetFontRegistryForTests, cachedFontVariant, fontPending, getFont, listFonts, registerFont, resolveFontVariant, warmFonts,
+} from './registerFont';
 import { runs, tally, timeoutFor } from './pbt.fixture';
 import type { FontStyle } from './fontStyle';
 
@@ -125,12 +127,39 @@ class Warm implements fc.AsyncCommand<Model, Real> {
   toString = () => `warm(${JSON.stringify(this.family)})`;
 }
 
+/** Every landed variant in the model, as family and variant. */
+const landed = (m: Readonly<Model>) => [...m.variants].flatMap(([family, vs]) =>
+  VARIANTS.filter((v) => vs.get(keyOf(v))?.state === 'loaded').map((v) => ({ family, variant: v })));
+
+/** Resolve the `pick`-th landed variant, cached and fresh: both land on it, and the lookup wakes the family's other
+ *  declared variants. */
+class Resolve implements fc.AsyncCommand<Model, Real> {
+  constructor(readonly pick: number) {}
+  check = (m: Readonly<Model>) => landed(m).length > 0;
+  async run(m: Model, r: Real): Promise<void> {
+    const all = landed(m);
+    const { family, variant: { weight, style } } = all[this.pick % all.length]!;
+    const cached = cachedFontVariant(family, weight, style);
+    expect(cachedFontVariant(family, weight, style)).toBe(cached);
+    expect(resolveFontVariant(family, weight, style)).toEqual(cached);
+    expect(cached.entry).toBe(getFont(family, weight, style));
+    expect(cached.resolved).toEqual({ family, weight, style });
+    for (const v of m.variants.get(family)!.values()) if (v.state === 'declared') v.state = 'loading';
+    r.t.count('resolved');
+    check(m);
+  }
+  toString = () => `resolve(#${this.pick})`;
+}
+
 const family = fc.constantFrom(...FAMILIES);
 const register = fc.tuple(family, fc.constantFrom(...VARIANTS), fc.boolean(), fc.oneof({ weight: 3, arbitrary: fc.constant(true) }, { weight: 1, arbitrary: fc.constant(false) }))
   .map(([f, v, lazy, ok]) => new Register(f, v, lazy, ok));
 const commands = fc.commands([
   register, register, register,
   fc.constant(new Settle()),
+  fc.constant(new Settle()),
+  fc.nat().map((n) => new Resolve(n)),
+  fc.nat().map((n) => new Resolve(n)),
   family.map((f) => new Warm(f, false)),
   family.map((f) => new Warm(f, true)),
   family.map((f) => new Warm(f, true)),
@@ -146,11 +175,12 @@ describe('atlas registry, stateful', () => {
     const t = tally();
     await fc.assert(fc.asyncProperty(commands, async (cmds) => {
       _resetFontRegistryForTests();
-      await fc.asyncModelRun(() => ({ model: { registered: new Set(), variants: new Map() }, real: { t } }), cmds);
+      await fc.asyncModelRun(() => ({ model: { registered: new Set<string>(), variants: new Map() }, real: { t } }), cmds);
       await release();
     }), runs(RUNS));
     t.atLeast('warm resolved', 50);
     t.atLeast('warm rejected', 50);
     t.atLeast('joined', 8);
+    t.atLeast('resolved', 25);
   }, timeoutFor(RUNS, 40));
 });

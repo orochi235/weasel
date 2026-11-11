@@ -12,7 +12,7 @@ export interface Contour {
 }
 
 export interface GlyphSpec {
-  unicodes: number[];
+  unicodes: readonly number[];
   advance: number;
   contours: Contour[];
 }
@@ -79,7 +79,7 @@ export function writeFont(spec: FontSpec): ArrayBuffer {
       }
       path.close();
     }
-    return new opentype.Glyph({ name: `g${i}`, unicode: g.unicodes[0], unicodes: g.unicodes, advanceWidth: g.advance, path });
+    return new opentype.Glyph({ name: `g${i}`, unicode: g.unicodes[0], unicodes: [...g.unicodes], advanceWidth: g.advance, path });
   });
   const font = new opentype.Font({
     familyName: spec.family || 'x', styleName: 'Regular', unitsPerEm: spec.unitsPerEm,
