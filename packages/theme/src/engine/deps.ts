@@ -75,6 +75,28 @@ function leaves(v: unknown): unknown[] {
   return isByAxis(v) ? Object.entries(v).filter(([k]) => k !== 'by').flatMap(([, x]) => leaves(x)) : [v];
 }
 
+/** Each node's axes with everything its edges reach. */
+function closure(nodes: ReadonlyMap<string, Node>, ownSets: ReadonlyMap<string, Set<string>>): Map<string, Set<string>> {
+  // `all[n] = own[n] ∪ ⋃ all[edge]`, iterated to a fixpoint instead of walked recursively —
+  // a per-path `visiting` guard would memoize the empty answer for whichever cycle node it
+  // revisits first. This converges because every step only adds axes, which are finite.
+  const all = new Map<string, Set<string>>();
+  for (const [name, own] of ownSets) all.set(name, new Set(own));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const [name, n] of nodes) {
+      const out = all.get(name)!;
+      for (const e of n.edges) {
+        const from = all.get(e);
+        if (!from) continue;
+        for (const a of from) if (!out.has(a)) { out.add(a); changed = true; }
+      }
+    }
+  }
+  return all;
+}
+
 /** The rules under a possibly `by`-varying semantic that `derive` can read; it reports the rest. */
 const readableRules = (rule: unknown): SemanticRule[] =>
   leaves(rule).filter((l): l is SemanticRule => isPlainObject(l) && ruleProblem(l) === undefined);
@@ -182,23 +204,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   const ownSets = new Map<string, Set<string>>();
   for (const [name, n] of nodes) ownSets.set(name, ownOf(n));
 
-  // `all[n] = own[n] ∪ ⋃ all[edge]`, iterated to a fixpoint instead of walked recursively —
-  // a per-path `visiting` guard would memoize the empty answer for whichever cycle node it
-  // revisits first. This converges because every step only adds axes, which are finite.
-  const all = new Map<string, Set<string>>();
-  for (const [name, own] of ownSets) all.set(name, new Set(own));
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const [name, n] of nodes) {
-      const out = all.get(name)!;
-      for (const e of n.edges) {
-        const from = all.get(e);
-        if (!from) continue;
-        for (const a of from) if (!out.has(a)) { out.add(a); changed = true; }
-      }
-    }
-  }
+  const all = closure(nodes, ownSets);
 
   const result: Record<string, AxisDependency> = {};
   for (const name of nodes.keys()) if (!name.includes('.')) result[name] = { own: sorted(ownSets.get(name)!), all: sorted(all.get(name)!) };
