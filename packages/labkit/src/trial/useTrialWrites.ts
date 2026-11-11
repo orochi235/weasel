@@ -50,6 +50,25 @@ export interface TrialWrites {
   setConfig: (path: string, value: unknown) => void;
 }
 
+/** Whether writing `value` at `path` would leave `record` as it is. A write that changes nothing records nothing,
+ *  as an edit that would change nothing does nothing. */
+function changesNothing(record: TrialRecord, path: string, value: unknown): boolean {
+  const unpinned = record.auto?.includes(path) ?? false;
+  return isAuto(value) ? unpinned : !unpinned && deepEqual(valueAtPath(record.config, path), value);
+}
+
+function warnUnknownPath(record: TrialRecord, schema: ResolvedConfig, path: string): void {
+  if (
+    isDev() &&
+    !hasConfigPath(record.config as Record<string, unknown>, path) &&
+    schemaNodeAtPath(schema.group, path) === undefined
+  ) {
+    console.warn(
+      `[labkit] setConfig: unknown path "${path}" for instrument "${record.instrumentName}"`,
+    );
+  }
+}
+
 /** The one place a trial's config is written, for the settings panel, chrome
  *  contributions, and the instrument's own `ctx.setConfig` alike. */
 export function useTrialWrites({
@@ -133,22 +152,8 @@ export function useTrialWrites({
         return;
       }
       const before = stored();
-      if (!before) return;
-      // A write that changes nothing records nothing, as an edit that would change nothing does nothing.
-      const unpinned = before.auto?.includes(path) ?? false;
-      if (
-        isAuto(value) ? unpinned : !unpinned && deepEqual(valueAtPath(before.config, path), value)
-      )
-        return;
-      if (
-        isDev() &&
-        !hasConfigPath(before.config as Record<string, unknown>, path) &&
-        schemaNodeAtPath(schema.group, path) === undefined
-      ) {
-        console.warn(
-          `[labkit] setConfig: unknown path "${path}" for instrument "${before.instrumentName}"`,
-        );
-      }
+      if (!before || changesNothing(before, path, value)) return;
+      warnUnknownPath(before, schema, path);
       const continued = recordWrite(path);
       updateTrialConfig(trialId, path, value);
       const after = stored();
