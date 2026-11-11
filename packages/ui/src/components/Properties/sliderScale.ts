@@ -47,7 +47,12 @@ export function trackPlace(
     if (raw <= 0) return min;
     if (raw >= 1) return max;
     // A stop off the step grid is put back where it sat, as an input running in value units would.
-    const stop = at.find((s) => Math.abs(toInput(s) - raw) < 1e-9);
+    let stop: number | undefined;
+    let gap = 1e-9;
+    for (const s of at) {
+      const d = Math.abs(toInput(s) - raw);
+      if (d < gap) { stop = s; gap = d; }
+    }
     return stop ?? clamp(snapToStep(unit.invert(raw), step, min), min, max);
   };
   return {

@@ -720,6 +720,14 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-10 (property tests): `blendTheme` follows the split-pref ruling above: an infinite share takes its
   whole axis, split equally among several infinite ones, and the finite shares on that axis drop out. It
   used to blend to `NaN`. Not ruled: chosen to match prefs.
+- Ruled 2026-11-10 (my call, overnight sweep): `byRank`, and with it the tool palette's group and tool orders,
+  ranks a key that its order names twice by the first place it is named; it used to take the last. Why: an
+  earlier mention in an order list is the one a reader would take as meant.
+- Open (2026-11-10, property tests): the timeline's `insertKey` seeds a new key with what the track reads there,
+  which leaves a linear stretch's motion as it was, but in an eased stretch each side runs the easing again
+  (`easeInQuad` from 0 to 100 reads 56.25 at 75 ms, and 43.75 after a key at 50). Its doc said an insert never
+  changes the motion and now says linear stretches only. Whether an insert should split the easing, where the
+  easing allows it, is open; the property draws linear tracks only.
 
 ## Diagram, audio, and labkit
 

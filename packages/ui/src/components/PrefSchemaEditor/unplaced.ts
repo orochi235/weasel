@@ -1,4 +1,5 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import { setOwn } from '@weasel-js/registry';
 import { childrenOf, type SchemaNode, type SchemaRoot } from './schemaEdit';
 
 /** The key of every leaf `root` holds, at any depth. */
@@ -24,10 +25,10 @@ export function stillUnplaced(unplaced: PrefGroup, schema: SchemaRoot): PrefGrou
     const children: Record<string, PrefLeaf | PrefGroup> = {};
     for (const [key, child] of Object.entries(group.children)) {
       if (isPrefLeaf(child)) {
-        if (!held.has(key)) children[key] = child;
+        if (!held.has(key)) setOwn(children, key, child);
       } else {
         const left = cut(child);
-        if (left) children[key] = left;
+        if (left) setOwn(children, key, left);
       }
     }
     return Object.keys(children).length === 0 ? null : { ...group, children };
@@ -40,7 +41,7 @@ export function unplacedAt(root: PrefGroup, keys: readonly string[]): PrefLeaf |
   let at: PrefLeaf | PrefGroup | undefined = root;
   for (const key of keys) {
     if (at === undefined || isPrefLeaf(at)) return undefined;
-    at = at.children[key];
+    at = Object.hasOwn(at.children, key) ? at.children[key] : undefined;
   }
   return at;
 }

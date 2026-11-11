@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import type { PresetDescription } from '@weasel-js/core';
 import { isPrefLeaf, isPrefSection, type PrefAction, type PrefAlias, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
 import { actionLeafKey } from './editorActions';
@@ -95,7 +96,7 @@ export function bundleTree(presets: readonly PresetDescription[]): PrefGroup {
   const taken: ChildMap = {};
   for (const pkg of packages) {
     const key = uniqueKey(taken, actionLeafKey(pkg.split('/').pop()!));
-    taken[key] = { name: pkg, description: '', children: {} };
+    setOwn(taken, key, { name: pkg, description: '', children: {} });
     packageKeys.set(pkg, key);
   }
   const pathOf = (id: string): string => {

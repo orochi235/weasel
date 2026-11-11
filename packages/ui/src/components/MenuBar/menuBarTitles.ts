@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { applyPrefConditions, isPrefLeaf, prefJudge, type PrefGroup } from '@weasel-js/prefs';
 
 /** One stretch of a menu bar: a menu group's title, or a run of anything else, drawn as a bar. */
@@ -20,7 +21,7 @@ export function menuBarTitles(schema: PrefGroup): MenuBarPart[] {
       run = {};
       titles.push({ kind: 'other', key, schema: { name: '', children: run } });
     }
-    run[key] = child;
+    setOwn(run, key, child);
   }
   return titles;
 }

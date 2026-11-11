@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { FLOATING_CORNERS, type Corner } from 'windease';
+import { setOwn } from '@weasel-js/registry';
 import type { BarOrientation } from '../Bar';
 
 /** Which edge of a ToolbarDock's container a dock runs along; a left or right dock lays its bars vertically. */
@@ -77,7 +78,7 @@ export function resolveLayout(
 ): ToolbarLayout {
   const byId = new Map(bars.map((b) => [b.id, b]));
   const out: ToolbarLayout = { docks: {}, floating: {} };
-  for (const d of docks) out.docks[d.id] = [];
+  for (const d of docks) setOwn(out.docks, d.id, []);
   const placed = new Set<string>();
 
   for (const d of docks) {
@@ -88,7 +89,7 @@ export function resolveLayout(
         placed.add(id);
         return true;
       });
-      if (kept.length) out.docks[d.id].push(kept);
+      if (kept.length) dockRows(out, d.id)!.push(kept);
     }
   }
 
@@ -96,23 +97,23 @@ export function resolveLayout(
     const bar = byId.get(id);
     if (placed.has(id) || !bar?.float) continue;
     placed.add(id);
-    out.floating[id] = {
+    setOwn(out.floating, id, {
       x: Number.isFinite(at.x) ? at.x : 0,
       y: Number.isFinite(at.y) ? at.y : 0,
       anchor: (FLOATING_CORNERS as readonly unknown[]).includes(at.anchor) ? at.anchor : null,
       orientation: bar.vertical && at.orientation === 'vertical' ? 'vertical' : 'horizontal',
-    };
+    });
   }
 
   for (const bar of bars) {
     if (placed.has(bar.id)) continue;
     const home = homeDock(docks, bar);
     if (home) {
-      const rows = out.docks[home.id];
+      const rows = dockRows(out, home.id)!;
       if (rows.length) rows[rows.length - 1].push(bar.id);
       else rows.push([bar.id]);
     } else if (bar.float) {
-      out.floating[bar.id] = { x: 0, y: 0, anchor: null, orientation: 'horizontal' };
+      setOwn(out.floating, bar.id, { x: 0, y: 0, anchor: null, orientation: 'horizontal' });
     }
   }
   return out;
@@ -131,17 +132,19 @@ export function homeDock(docks: readonly DockSpec[], bar: DockBar): DockSpec | u
 export function moveBar(layout: ToolbarLayout, barId: string, to: BarTarget): ToolbarLayout {
   const rowsOf = (rows: string[][]) => rows.map((r) => r.filter((id) => id !== barId));
   const out: ToolbarLayout = { docks: {}, floating: {} };
-  for (const [dock, rows] of Object.entries(layout.docks)) out.docks[dock] = rowsOf(rows);
-  for (const [id, at] of Object.entries(layout.floating)) if (id !== barId) out.floating[id] = at;
+  for (const [dock, rows] of Object.entries(layout.docks)) setOwn(out.docks, dock, rowsOf(rows));
+  for (const [id, at] of Object.entries(layout.floating)) if (id !== barId) setOwn(out.floating, id, at);
 
   if ('float' in to) {
-    out.floating[barId] = { ...to.float };
+    setOwn(out.floating, barId, { ...to.float });
   } else {
-    const rows = dockRows(out, to.dock) ?? (out.docks[to.dock] = []);
-    if (to.newRow) rows.splice(Math.max(0, to.row), 0, [barId]);
-    else if (to.row >= rows.length) rows.push([barId]);
-    else rows[Math.max(0, to.row)].splice(Math.max(0, to.index), 0, barId);
+    if (!dockRows(out, to.dock)) setOwn(out.docks, to.dock, []);
+    const rows = dockRows(out, to.dock)!;
+    const row = Math.max(0, to.row);
+    if (to.newRow) rows.splice(row, 0, [barId]);
+    else if (row >= rows.length) rows.push([barId]);
+    else rows[row].splice(Math.max(0, to.index), 0, barId);
   }
-  for (const [dock, rows] of Object.entries(out.docks)) out.docks[dock] = rows.filter((r) => r.length);
+  for (const [dock, rows] of Object.entries(out.docks)) setOwn(out.docks, dock, rows.filter((r) => r.length));
   return out;
 }

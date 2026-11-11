@@ -92,8 +92,9 @@ export function moveKey(
   return { tracks: tracks.slice(), selection: sel };
 }
 
-/** Insert a key at `atMs`, seeded with whatever the track already reads there
- *  so inserting alone never changes the motion. */
+/** Insert a key at `atMs`, seeded with whatever the track already reads there,
+ *  so inserting alone leaves a linear stretch's motion as it was. An eased
+ *  stretch runs its easing again over each side of the new key. */
 export function insertKey(
   tracks: readonly Track[], trackPath: readonly number[], atMs: number,
 ): KeyEdit {
