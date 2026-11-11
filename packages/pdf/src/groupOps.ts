@@ -12,7 +12,7 @@ import {
 import { composeMatrix, foldPixels } from './color';
 import { ContentStream } from './content';
 import { type DrawState, type PageCtx, pageFlip, pageThrough, skip, writeCommands } from './drawCommands';
-import { writeRaster } from './images';
+import { fitsPixels, writeRaster } from './images';
 import { name } from './objects';
 import { fillPathOps } from './pathOps';
 import { PageResources } from './resources';
@@ -55,7 +55,7 @@ async function drawRaster(
   } catch (err) {
     return skip(ctx, `${reason} raster failed: ${err instanceof Error ? err.message : String(err)}`);
   }
-  if (px.data.length !== px.width * px.height * 4) return skip(ctx, `${reason} raster has the wrong number of pixels`);
+  if (!fitsPixels(px)) return skip(ctx, `${reason} raster has the wrong number of pixels`);
   const inverse = mat3.invert(state.transform);
   if (!inverse) return;
   const { out } = ctx;
