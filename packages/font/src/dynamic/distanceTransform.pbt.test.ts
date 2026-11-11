@@ -7,7 +7,7 @@ const RUNS = 300;
 const INF = 1e20;
 
 /** The squared distance transform by definition: each texel's least squared distance to a texel plus that texel's cost. */
-function bruteEdt(cost: Float64Array, width: number, height: number): Float64Array {
+function bruteEdt(cost: Float64Array, width: number): Float64Array {
   const out = new Float64Array(cost.length);
   for (let i = 0; i < cost.length; i++) {
     const x = i % width, y = Math.floor(i / width);
@@ -30,7 +30,7 @@ function oracle(alpha: Uint8Array, width: number, height: number, radius: number
     outer[i] = a === 1 ? 0 : a === 0 ? INF : Math.max(0, 0.5 - a) ** 2;
     inner[i] = a === 1 ? INF : a === 0 ? 0 : Math.max(0, a - 0.5) ** 2;
   }
-  const o = bruteEdt(outer, width, height), n = bruteEdt(inner, width, height);
+  const o = bruteEdt(outer, width), n = bruteEdt(inner, width);
   return Uint8Array.from(o, (_, i) => {
     const byte = Math.round(255 - 255 * ((Math.sqrt(o[i]!) - Math.sqrt(n[i]!)) / radius + cutoff));
     return byte < 0 ? 0 : byte > 255 ? 255 : byte;
