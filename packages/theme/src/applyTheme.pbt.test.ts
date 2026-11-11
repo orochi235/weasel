@@ -18,8 +18,9 @@ const ELEMENTS = 3;
 const MODES = ['dark', 'light'] as const;
 
 /** Values no declaration can be cut short by, which therefore must land. */
-const SAFE = ['#ff0000', '4px', 'serif', "'Open Sans', sans-serif", 'var(--a, [x] f(1))', 'url(a.png)', 'serif)'];
-const HOSTILE = ['serif; } * { color: red', "'a\n;}", 'serif /*', 'serif \\', 'f(', '[', "'open", 'a { b'];
+const SAFE = ['#ff0000', '4px', 'serif', "'Open Sans', sans-serif", 'var(--a, [x] f(1))', 'url(a.png)'];
+/** Values that may be left out; a stray closer among them, which a browser drops. */
+const HOSTILE = ['serif; } * { color: red', "'a\n;}", 'serif /*', 'serif \\', 'f(', '[', "'open", 'a { b', 'serif)', 'a ]'];
 const value = fc.oneof({ weight: 3, arbitrary: fc.constantFrom(...SAFE) }, fc.constantFrom(...HOSTILE), fc.string({ maxLength: 6 }).filter((v) => refTarget(v) === null));
 
 const theme = (name: string): fc.Arbitrary<Theme> =>
