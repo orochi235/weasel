@@ -186,8 +186,10 @@ const REACH_BY_STROKE = new WeakMap<MarkerEntry, WeakMap<Stroke, number>>();
 
 function measureUnitReach(entry: MarkerEntry, stroke: Stroke): number {
   const b = boundsOfPath(entry.path({ size: 1, stroke }));
-  return Math.max(Math.abs(b.x), Math.abs(b.x + b.width), Math.abs(b.y), Math.abs(b.y + b.height))
-    + (entry.outline ? entry.outline.width / 2 : 0);
+  // A head turns to its segment's direction, so it reaches as far as its box's farthest corner, whichever way.
+  const x = Math.max(Math.abs(b.x), Math.abs(b.x + b.width));
+  const y = Math.max(Math.abs(b.y), Math.abs(b.y + b.height));
+  return Math.hypot(x, y) + (entry.outline ? entry.outline.width / 2 : 0);
 }
 
 function unitReach(entry: MarkerEntry, stroke: Stroke): number {

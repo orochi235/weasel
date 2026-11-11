@@ -179,8 +179,9 @@ describe('markerReach', () => {
   ])('follows the stroke field that shapes %s', (_, reads) => {
     const dispose = registerMarker(growingHead(reads as MarkerEntry['reads']));
     try {
-      expect(markerReach(at(1)).world).toBeCloseTo(2, 6);
-      expect(markerReach(at(10)).world).toBeCloseTo(20, 6);
+      // The head's farthest corner, (-len, ±size / 2), at size 2.
+      expect(markerReach(at(1)).world).toBeCloseTo(2 * Math.hypot(1, 0.5), 6);
+      expect(markerReach(at(10)).world).toBeCloseTo(2 * Math.hypot(10, 0.5), 6);
     } finally {
       dispose();
     }

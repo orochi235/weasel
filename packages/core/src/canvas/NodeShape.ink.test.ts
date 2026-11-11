@@ -209,6 +209,7 @@ describe('findShapeInk — a Stroke object on the node', () => {
 
   // Each head's reach is measured where it is built: on screen for a { px }
   // size, in world for a world size, whatever the line's own width is in.
+  // The 4-by-4 head turned 45° reaches its corner, 2√2 size units out.
   describe('a head sized in other units than its line', () => {
     const bar = () => registerMarker({
       id: 'test-ink-bar',
@@ -225,14 +226,14 @@ describe('findShapeInk — a Stroke object on the node', () => {
     it('reaches a { px } head on a world-width line in screen pixels', () => {
       const off = bar();
       const n = strokeNode({ paint: { color: '#000' }, width: 2, markerEnd: { key: 'test-ink-bar', size: { px: 5 } } });
-      expect(reachOf(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 1, inset: 1, outsetPx: 10, insetPx: 0 });
+      expect(reachOf(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 1, inset: 1, outsetPx: 10 * Math.SQRT2, insetPx: 0 });
       off();
     });
 
     it('reaches a world-sized head on a { px } line in world units', () => {
       const off = bar();
       const n = strokeNode({ paint: { color: '#000' }, width: { px: 8 }, markerEnd: { key: 'test-ink-bar', size: 3 } });
-      expect(reachOf(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 6, inset: 0, outsetPx: 4, insetPx: 4 });
+      expect(reachOf(n, POSE, { scale: 2 })).toEqual({ filled: false, outset: 6 * Math.SQRT2, inset: 0, outsetPx: 4, insetPx: 4 });
       off();
     });
   });

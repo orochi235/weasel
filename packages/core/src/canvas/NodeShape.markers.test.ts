@@ -47,9 +47,10 @@ describe('markers on a path node', () => {
     const marked = nodeWith({ paint: { kind: 'solid', color: '#000' }, width: 2, markerEnd: key });
     const inkOf = (n: unknown) =>
       findNodeShape(n as never)!.ink!(n as never, POSE as never, { scale: 1 } as never)!.outset;
-    // arrow-open's arms reach 2.867 units back, bar's 1.5 across; both carry a
-    // 1-unit outline, half of which lies outside the geometry.
-    const reach = key === 'arrow-open' ? 2.867 + 0.5 : 1.5 + 0.5;
+    // A head turns with its segment, so it reaches its box's farthest corner: arrow-open's
+    // (-2.867, ±2.007), bar's (0, ±1.5). Both carry a 1-unit outline, half of it outside the geometry.
+    const corner = key === 'arrow-open' ? Math.hypot(2.867, 2.007) : 1.5;
+    const reach = corner + 0.5;
     expect(inkOf(marked)).toBeCloseTo(inkOf(plain) + reach * 2, 3);
   });
 
@@ -61,8 +62,9 @@ describe('markers on a path node', () => {
       markerEnd: { key: 'arrow', size: { px: 8 } },
     });
     const ink = (scale: number) => findNodeShape(node)!.ink!(node, POSE as never, { scale } as never)!;
-    // A centered 2-wide stroke reaches 1; the arrow reaches 3 size units.
-    for (const scale of [1, 4]) expect(ink(scale)).toMatchObject({ outset: 1, outsetPx: 24 });
+    // A centered 2-wide stroke reaches 1; the arrow's corner (-3, ±1.5) reaches √11.25 size units.
+    for (const scale of [1, 4]) expect(ink(scale).outset).toBe(1);
+    for (const scale of [1, 4]) expect(ink(scale).outsetPx).toBeCloseTo(8 * Math.hypot(3, 1.5), 9);
   });
 });
 
