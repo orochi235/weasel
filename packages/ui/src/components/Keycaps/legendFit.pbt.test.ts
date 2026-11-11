@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { key, runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
-import { clampScale, KEY_SPELLINGS, pickSpelling, resolveBankScales, spellingsOf, type LegendFit } from './legendFit';
+import { clampScale, KEY_SPELLINGS, pickSpelling, resolveBankScales, spellingsOf } from './legendFit';
 
 const RUNS = 400;
 const scale = fc.oneof(uniform(0, 1.5), fc.constantFrom(0, 0.6, 1, 2));
