@@ -306,6 +306,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10 (my call, overnight sweep): kernel3d's `aimSpace3d` unprojects onto the ground at height 0 when
   `up` lies just off an axis, as `createInsert` lays its footprint at 0: the hit is on the ground by construction, so
   rounding left in `up` is no height.
+- Ruled 2026-11-10 (my call, overnight sweep): the minimap fits content too thin for any finite scale (a line
+  5e-324 long) at the largest double scale, as an input past the double range is handled at its limit. It was
+  fitted at the zoom floor, 1e-9, because an infinite scale normalizes to the floor.
+
 - 2026-11-06 (WebGPU backend): A program with no WGSL, registered after a canvas went WebGPU, draws
   nothing there and is reported once, mirroring a WGSL-only program on WebGL; the canvas is never
   swapped for one of the other context kind, which would lose its listeners and layout.
@@ -534,6 +538,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - Ruled 2026-11-10: a hold of weight 0 released with a commit commits nothing, even under holds that
   cover the target outright, where a hold that weighs anything gives the committed value its own.
+- Ruled 2026-11-10 (my call, overnight sweep): a simulation's alpha decays toward `alphaTarget` without passing it.
+  An `alphaDecay` above 1 acts as 1 and lands on the target, and a negative one as 0, which never moves it; d3-force
+  takes either unchecked, and above 2 alpha grew without bound to `Infinity`, which no finite input may give.
 
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.
