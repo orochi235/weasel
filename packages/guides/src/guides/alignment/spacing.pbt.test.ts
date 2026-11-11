@@ -130,17 +130,12 @@ describe('equal spacing, property', () => {
   it('a translate snapped to a gap lands with that gap beside the box, and marks it', () => {
     const t = tally();
     fc.assert(fc.property(scene, ({ b, targets }) => {
-      // Open in docs/unruled.md: a box overlapping a sibling offers gaps that sibling blocks.
-      fc.pre(!targets.some((t) => shared(t, b, 'x') && shared(t, b, 'y')));
+      if (targets.some((t) => shared(t, b, 'x') && shared(t, b, 'y'))) t.count('overlapping');
       const m = matchSpacing(b, targets, { x: 5, y: 5 });
       const final = applyEdges(b, m.dx, m.dy, { x: 'both', y: 'both' });
       for (const [axis, gaps, other] of [['x', m.gapsX, m.dy], ['y', m.gapsY, m.dx]] as const) {
         if (gaps.length === 0) continue;
-        // Open in docs/unruled.md: a snap on the other axis can carry the box out of the row that set this one.
-        if (other !== 0) {
-          t.count('both axes');
-          continue;
-        }
+        if (other !== 0) t.count('both axes');
         t.count(`snapped ${axis}`);
         const size = gaps[0]!.max - gaps[0]!.min;
         for (const g of gaps) expect(Math.abs(g.max - g.min - size)).toBeLessThan(1e-3);
@@ -150,6 +145,8 @@ describe('equal spacing, property', () => {
     }), RUNS);
     t.atLeast('snapped x', 15);
     t.atLeast('snapped y', 10);
+    t.atLeast('both axes', 5);
+    t.atLeast('overlapping', 5);
   }, TIMEOUT);
 
   it('translating the whole layout carries the match with it', () => {
@@ -188,6 +185,26 @@ describe('equal spacing, property', () => {
     const m = matchSpacing({ x: 135, y: 35, width: 5, height: 10 }, targets, { x: 5, y: 5 }, { x: 'both', y: null });
     expect(m.dx).toBe(0);
     expect(m.gapsX.map((g) => [g.min, g.max])).toEqual([[15, 70], [80, 135]]);
+  });
+
+  it('drops an x snap a y snap carries out of its neighbor\'s row (shrunk counterexample)', () => {
+    // The y snap moved the box to y 20, out of the row whose 15 gap set dx; it kept dx and marked 5..20.
+    const targets = [
+      { x: 20, y: 10, width: 5, height: 5 }, { x: 30, y: 0, width: 15, height: 5 },
+      { x: 0, y: 10, width: 5, height: 5 }, { x: 0, y: 30, width: 20, height: 5 },
+    ];
+    const m = matchSpacing({ x: 44.875, y: 30, width: 1, height: 1 }, targets, { x: 10, y: 10 });
+    expect(m.dx).toBe(0);
+    expect(m.gapsX).toEqual([]);
+    expect(m.dy).toBe(-10);
+  });
+
+  it('offers no placement across a gap an overlapping sibling blocks (shrunk counterexample)', () => {
+    // The box sat inside 80,20..85,30, whose body stands in its 15 gap to the box at y 40.
+    const targets = [{ x: 80, y: 40, width: 5, height: 5 }, { x: 80, y: 60, width: 5, height: 5 }, { x: 80, y: 20, width: 5, height: 10 }];
+    const m = matchSpacing({ x: 80, y: 20, width: 5, height: 5 }, targets, { x: 4, y: 4 });
+    expect(m.dy).toBe(0);
+    expect(m.gapsY).toEqual([]);
   });
 });
 
