@@ -30,7 +30,7 @@ import {
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
-import { drawsOwn } from '../config/drawsOwn';
+import { drawsOwn, entryAt } from '../config/drawsOwn';
 import { valueAtPath, withValueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { aliasTargetsOf, conditionedLeaf, isLeafActive } from '../config/visible';
@@ -78,7 +78,8 @@ export interface ControlRowProps<TC extends Record<string, unknown>> {
  *  renders it are all the target's. */
 export function ControlRow<TC extends Record<string, unknown>>(props: ControlRowProps<TC>) {
   const { leaf, resolved, renderers } = props;
-  const drawn = (renderers?.[props.path] ?? resolved.renderers[props.path]) !== undefined;
+  const drawn =
+    (entryAt(renderers, props.path) ?? entryAt(resolved.renderers, props.path)) !== undefined;
   const custom = drawsOwn(resolved, renderers, props.path, leaf);
   if (prefDrawsNoControl(leaf) && !custom) {
     return (
@@ -214,12 +215,12 @@ function customRow(
   path: string,
   leaf: PrefLeaf,
 ): ControlRenderer | undefined {
-  const dialog = resolved.dialogs[path];
+  const dialog = entryAt(resolved.dialogs, path);
   return (
-    renderers?.[path] ??
-    resolved.renderers[path] ??
+    entryAt(renderers, path) ??
+    entryAt(resolved.renderers, path) ??
     (dialog ? inDialog(dialog.body, dialog) : undefined) ??
-    renderers?.[leaf.kind]
+    entryAt(renderers, leaf.kind)
   );
 }
 

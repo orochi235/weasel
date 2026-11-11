@@ -5,6 +5,8 @@ import {
   type PrefObject,
   type PrefSection,
 } from '@weasel-js/prefs';
+import { entryAt } from './drawsOwn';
+import { setOwn } from './path';
 import type { ResolvedConfig, SectionSpec } from './types';
 
 /** What a section keeps that a `PrefSection` has no field for. */
@@ -41,8 +43,8 @@ function leafOf(resolved: ResolvedConfig, leaf: PrefLeaf, path: string): PrefLea
   return withExtras(
     { ...leaf },
     {
-      render: resolved.renderers[path],
-      dialog: resolved.dialogs[path],
+      render: entryAt(resolved.renderers, path),
+      dialog: entryAt(resolved.dialogs, path),
       showWhen: resolved.showIf.get(path),
       enableWhen: resolved.enableIf?.get(path),
     },
@@ -53,8 +55,8 @@ function leafOf(resolved: ResolvedConfig, leaf: PrefLeaf, path: string): PrefLea
 function defaultsOf(members: PrefSection['members']): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(members)) {
-    if (isPrefLeaf(child)) out[key] = child.default;
-    else Object.assign(out, defaultsOf(child.members));
+    if (isPrefLeaf(child)) setOwn(out, key, child.default);
+    else for (const [k, v] of Object.entries(defaultsOf(child.members))) setOwn(out, k, v);
   }
   return out;
 }
@@ -115,16 +117,16 @@ function membersOf(
     const node = isPrefLeaf(child) ? leafOf(resolved, child, path) : groupOf(resolved, child, path);
     const spec = specs.find((s) => s.paths.includes(path));
     if (spec === undefined) {
-      out[key] = node;
+      setOwn(out, key, node);
       continue;
     }
     let section = opened.get(spec);
     if (section === undefined) {
       section = sectionOf(spec);
       opened.set(spec, section);
-      out[slugOf(spec.label, taken)] = section;
+      setOwn(out, slugOf(spec.label, taken), section);
     }
-    (section.members as Record<string, PrefLeaf | PrefSection>)[key] = node;
+    setOwn(section.members as Record<string, PrefLeaf | PrefSection>, key, node);
   }
   return out;
 }

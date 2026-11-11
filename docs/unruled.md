@@ -737,6 +737,16 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-26/27 (agent batches 2–10): Plain text is taken by every ingest canvas by default; image paints
   store the picture inline as a data URI.
 
+- 2026-11-10 (property tests, my calls): labkit refuses a stored lab whose version is a number but not a whole one
+  of 0 or more (`NaN`, `-1`, `2.5`) as unreadable, which sets it aside, while a version that is not a number still
+  reads as 0. A stored `layout` or undocked-panels record that is not a plain object, a list included, starts empty.
+  In the settings rail, a root section whose slug a loose root key already holds takes the next free one
+  (`grid-2`); a key a root section claims stays free for its slug, as before.
+- Open (2026-11-10, property tests): `.section('')` makes a section with an empty heading, but `prefsFromConfig` and
+  `f.prefs` read a `PrefSection` named `''` as no section at all, so the round trip drops it.
+- Open (2026-11-10, property tests): a trial's `setConfig` of the value a path already holds records an undo step
+  that changes nothing, so the next Undo seems to do nothing.
+
 ## draw
 
 - 2026-10-23: Inside an entered group every tool and command works as outside one, page edits

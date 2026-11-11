@@ -13,7 +13,7 @@ import {
   prefJudge,
   prefLeafAt,
 } from '@weasel-js/prefs';
-import { valueAtPath } from './path';
+import { setOwn, valueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 
 const ALWAYS: PrefCondition = { all: [] };
@@ -50,7 +50,7 @@ function withFunctions(resolved: ResolvedConfig, config: Record<string, unknown>
     if (isPrefLeaf(own)) return own;
     const children: PrefGroup['children'] = {};
     for (const [key, child] of Object.entries(own.children))
-      children[key] = fold(child, path === '' ? key : `${path}.${key}`);
+      setOwn(children, key, fold(child, path === '' ? key : `${path}.${key}`));
     return { ...own, children };
   };
   return fold(resolved.group, '');
@@ -103,9 +103,13 @@ function settleInside(leaf: PrefLeaf, holds: PrefConditionJudge): PrefLeaf {
   const members = (held: PrefSection['members']): PrefSection['members'] => {
     const out: PrefSection['members'] = {};
     for (const [key, child] of Object.entries(held)) {
-      out[key] = isPrefLeaf(child)
-        ? settleInside(settle(child, holds), holds)
-        : { ...settle(child, holds), members: members(child.members) };
+      setOwn(
+        out,
+        key,
+        isPrefLeaf(child)
+          ? settleInside(settle(child, holds), holds)
+          : { ...settle(child, holds), members: members(child.members) },
+      );
     }
     return out;
   };
@@ -114,7 +118,7 @@ function settleInside(leaf: PrefLeaf, holds: PrefConditionJudge): PrefLeaf {
   if (leaf.kind === 'union') {
     const variants: PrefUnion['variants'] = {};
     for (const [key, variant] of Object.entries((leaf as PrefUnion).variants)) {
-      variants[key] = { ...variant, children: members(variant.children) };
+      setOwn(variants, key, { ...variant, children: members(variant.children) });
     }
     return { ...leaf, variants } as PrefLeaf;
   }

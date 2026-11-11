@@ -1,3 +1,4 @@
+import { isPlainObject } from '@weasel-js/registry';
 import type { StorageAdapter } from '@weasel-js/storage';
 import { labStorageKey } from './helpers';
 import type { LabDocument, LabMode, Migration, SavedSnapshot, SerializedTrial } from './types';
@@ -45,6 +46,14 @@ export function runMigrations(
 ): MigrationOutcome {
   const from = typeof raw.version === 'number' ? raw.version : 0;
   if (from > target) return { ok: false, reason: 'future' };
+  // `NaN` would skip every migration and pass as current; a fraction has no migration to run.
+  if (!Number.isInteger(from) || from < 0) {
+    return {
+      ok: false,
+      reason: 'failed',
+      error: new Error(`[labkit] no document version ${from}`),
+    };
+  }
   if (from === target) return { ok: true, doc: raw, migrated: false };
 
   let doc = raw;
@@ -81,7 +90,7 @@ export function parseStored(value: unknown): unknown {
 function bucketOr<T>(value: unknown, fallback: T, bucket: string, shape: 'array' | 'object'): T {
   if (value === undefined) return fallback;
   const parsed = parseStored(value);
-  const fits = shape === 'array' ? Array.isArray(parsed) : !!parsed && typeof parsed === 'object';
+  const fits = shape === 'array' ? Array.isArray(parsed) : isPlainObject(parsed);
   if (fits) return parsed as T;
   console.warn(`[labkit] unparseable legacy bucket "${bucket}", dropping it`);
   return fallback;
@@ -163,12 +172,8 @@ export function normalizeDocument(
     version: CURRENT_DOCUMENT_VERSION,
     trials: Array.isArray(doc.trials) ? (doc.trials as SerializedTrial[]) : [],
     saves: Array.isArray(doc.saves) ? (doc.saves as SavedSnapshot[]) : [],
-    layout:
-      doc.layout && typeof doc.layout === 'object' ? (doc.layout as Record<string, unknown>) : {},
-    undockedPanels:
-      doc.undockedPanels && typeof doc.undockedPanels === 'object'
-        ? (doc.undockedPanels as UndockedPanels)
-        : {},
+    layout: isPlainObject(doc.layout) ? doc.layout : {},
+    undockedPanels: isPlainObject(doc.undockedPanels) ? (doc.undockedPanels as UndockedPanels) : {},
     mode,
   };
 }
@@ -185,7 +190,7 @@ export function migrateV0toV1(doc: Record<string, unknown>): Record<string, unkn
     version: 1,
     workspaces: Array.isArray(doc.workspaces) ? doc.workspaces : [],
     saves: Array.isArray(doc.saves) ? doc.saves : [],
-    layout: doc.layout && typeof doc.layout === 'object' ? doc.layout : {},
+    layout: isPlainObject(doc.layout) ? doc.layout : {},
     mode,
   };
 }

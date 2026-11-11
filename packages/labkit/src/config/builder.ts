@@ -15,7 +15,7 @@ import {
 } from './compound';
 import { configFromPrefs } from './fromPrefs';
 import { NumberNode } from './numberNode';
-import { copyTree } from './path';
+import { copyTree, setOwn } from './path';
 import type {
   Annotations,
   BranchAnnotations,
@@ -226,7 +226,11 @@ function numberLeaf(def?: number): NumberNode<number | undefined> {
 function shapeDefaults(shape: ConfigShape): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, entry] of Object.entries(shape)) {
-    out[key] = isConfigBranch(entry) ? shapeDefaults(entry.children) : copyTree(entry.default);
+    setOwn(
+      out,
+      key,
+      isConfigBranch(entry) ? shapeDefaults(entry.children) : copyTree(entry.default),
+    );
   }
   return out;
 }

@@ -123,6 +123,15 @@ describe('addTrial', () => {
     expect(out[0]?.config).toEqual({ subject: 'none', zoom: 1 });
   });
 
+  it('keeps a seed key `__proto__` as its own key, as a parsed seed holds it', () => {
+    const seed = JSON.parse('{"subject": "brick", "__proto__": { "subject": "proto" }}');
+    const out = addTrial([], instruments, 'Subject', { config: seed });
+    const config = out[0]?.config as Record<string, unknown>;
+    expect(Object.getPrototypeOf(config)).toBe(Object.prototype);
+    expect(Object.hasOwn(config, '__proto__')).toBe(true);
+    expect(config.subject).toBe('brick');
+  });
+
   it('opens a trial with the schema-declared auto paths already unpinned', () => {
     const out = addTrial([], instruments, 'Schemed');
     expect(out[0]?.auto).toEqual(['cols']);

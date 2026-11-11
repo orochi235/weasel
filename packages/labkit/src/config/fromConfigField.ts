@@ -1,5 +1,6 @@
-import type { PrefGroup, PrefLeaf } from '@weasel-js/prefs';
+import type { PrefGroup } from '@weasel-js/prefs';
 import type { ConfigField } from '../controls/types';
+import { ownAt, setOwn } from './path';
 import type { LeafPatch, ResolvedConfig } from './types';
 
 /** One `ConfigField` as the `Pref*` vocabulary spells it. The two describe the
@@ -71,13 +72,13 @@ export function fromConfigFields(fields: readonly ConfigField[]): ResolvedConfig
     const leafKey = segments.pop() as string;
     let group = root;
     for (const segment of segments) {
-      const existing = group.children[segment];
+      const existing = ownAt(group.children, segment) as PrefGroup['children'][string] | undefined;
       if (existing === undefined || !('children' in existing) || 'kind' in existing) {
-        group.children[segment] = { name: '', children: {} };
+        setOwn(group.children, segment, { name: '', children: {} });
       }
       group = group.children[segment] as PrefGroup;
     }
-    group.children[leafKey] = { ...patch, default: field.default, auto: false } as PrefLeaf;
+    setOwn(group.children, leafKey, { ...patch, default: field.default, auto: false });
   }
   return {
     group: root,
