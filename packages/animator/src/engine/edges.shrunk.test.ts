@@ -23,3 +23,22 @@ describe('animator edges, shrunk', () => {
     expect(target.read()).toBeCloseTo(0.5, 9);
   });
 });
+
+describe('animator frames across the double range, shrunk', () => {
+  it('a frame gap past the double range counts as the largest double, and nothing throws', () => {
+    const h = clocked();
+    h.at(-Number.MAX_VALUE);
+    const seen: number[] = [];
+    let done = 0;
+    h.animator.tween({ from: 0, to: 5, ms: 3, easing: 'linear', onTick: (v) => seen.push(v), onDone: () => { done++; } });
+    h.animator.spring({ from: 0, to: 5, onTick: (v) => seen.push(v) });
+    expect(() => h.at(Number.MAX_VALUE)).not.toThrow();
+    expect(done).toBe(1);
+    expect(seen.every(Number.isFinite)).toBe(true);
+    expect(seen.at(-1)).toBe(5);
+    // The clock stopped at the largest double, so one started there reads its own clock as 0, not NaN.
+    h.animator.tween({ from: 0, to: 5, ms: 3, onTick: () => {} });
+    h.at(Number.MAX_VALUE);
+    expect(h.animator.live()[0]!.elapsed).toBe(0);
+  });
+});

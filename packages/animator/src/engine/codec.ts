@@ -162,7 +162,7 @@ export function createCodec(placeOf?: (on: object) => LanePlace | undefined): Co
         if (v.queuedRate !== undefined) v.handle.rate = v.queuedRate;
       }
       queue.length = 0;
-      time += dtMs;
+      time = Math.min(Number.MAX_VALUE, time + dtMs);
       lanes.frame(time);
       rewinds.frame();
     },
