@@ -5,8 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
+import { tokenizePathData } from '@weasel-js/geom';
 import { markedGlyph, placeCursorPath } from './mark';
-import { pathCommands } from './pathData';
 import { GLYPHS, MARKS } from './glyphs';
 import { CURSOR_HALO_WIDTH, haloFitsInBox, rotationFitsInBox, type CursorGlyph } from './types';
 import { runs, tally } from './pbt.fixture';
@@ -66,7 +66,10 @@ describe('the fit guards', () => {
     const glyphs = Object.values(GLYPHS) as CursorGlyph[];
     fc.assert(fc.property(fc.constantFrom(...glyphs), fc.array(fc.nat(), { minLength: 1, maxLength: 8 }), (g, hows) => {
       let k = 0;
-      const respell = (d: string) => [...pathCommands(d)].map(([cmd, nums]) => `${cmd}${nums.map((v) => ` ${spell(v, hows[k++ % hows.length]!)}`).join('')}`).join(' ');
+      // An arc's flags are one digit each in SVG's grammar, so they keep their spelling.
+      const flag = (cmd: string, i: number) => cmd.toUpperCase() === 'A' && (i % 7 === 3 || i % 7 === 4);
+      const respell = (d: string) => tokenizePathData(d)
+        .map(({ cmd, args }) => `${cmd}${args.map((v, i) => ` ${flag(cmd, i) ? v : spell(v, hows[k++ % hows.length]!)}`).join('')}`).join(' ');
       const moved: CursorGlyph = { ...g, paths: g.paths.map((p) => ({ ...p, d: respell(p.d) })) };
       expect(haloFitsInBox(moved)).toBe(haloFitsInBox({ ...g, over: [] }));
       expect(rotationFitsInBox(moved)).toBe(rotationFitsInBox({ ...g, over: [] }));
@@ -74,7 +77,7 @@ describe('the fit guards', () => {
   });
 });
 
-const numbersOf = (d: string): number[] => [...pathCommands(d)].flatMap(([, nums]) => nums);
+const numbersOf = (d: string): number[] => tokenizePathData(d).flatMap(({ args }) => args);
 const ARC_D = 'M 2 3 A 4 4 0 1 0 10 3 L 5 5 Z';
 
 describe('placeCursorPath', () => {

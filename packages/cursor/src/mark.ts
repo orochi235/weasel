@@ -1,4 +1,4 @@
-import { pathCommands } from './pathData';
+import { tokenizePathData, trimNumber } from '@weasel-js/geom';
 import type { CursorGlyph, CursorMark, CursorPath } from './types';
 
 /**
@@ -7,13 +7,12 @@ import type { CursorGlyph, CursorMark, CursorPath } from './types';
  * past the double range or is not a number.
  */
 export function placeCursorPath(d: string, k: number, dx: number, dy: number): string {
-  const r2 = (v: number): number => {
+  const r2 = (v: number): string => {
     if (!Number.isFinite(v)) throw new RangeError(`placeCursorPath: scaled by ${k} and moved by ${dx}, ${dy}, a coordinate of ${d} is ${v}`);
-    // Past 1e306 the hundredths overflow, and the value has none to round anyway.
-    return Number.isFinite(v * 100) ? Math.round(v * 100) / 100 : v;
+    return trimNumber(v, 2);
   };
   const out: string[] = [];
-  for (const [cmd, nums] of pathCommands(d)) {
+  for (const { cmd, args: nums } of tokenizePathData(d)) {
     const arity = cmd === 'M' || cmd === 'L' ? 2 : cmd === 'A' ? 7 : 0;
     if (arity > 0 && (nums.length === 0 || nums.length % arity !== 0)) {
       throw new Error(`cursor path '${cmd}' has ${nums.length} numbers, which placeCursorPath cannot read as whole points: ${d}`);

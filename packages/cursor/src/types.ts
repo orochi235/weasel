@@ -1,4 +1,4 @@
-import { pathCommands } from './pathData';
+import { tokenizePathData } from '@weasel-js/geom';
 
 /**
  * A cursor glyph: SVG path `d` strings tagged with a paint role, plus the
@@ -92,7 +92,7 @@ export const CURSOR_MAX_CSS_PX = 128;
 function walk(d: string, see: (x: number, y: number) => void): void {
   let cx = 0;
   let cy = 0;
-  for (const [cmd, nums] of pathCommands(d)) {
+  for (const { cmd, args: nums } of tokenizePathData(d)) {
     if (cmd !== cmd.toUpperCase()) {
       throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
     }
