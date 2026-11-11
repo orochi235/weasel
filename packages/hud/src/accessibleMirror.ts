@@ -14,10 +14,13 @@ let mirrors = 0;
 const withoutActive = (n: HudAccessibleNode): unknown =>
   ({ ...n, active: undefined, children: n.children?.map(withoutActive) });
 
+// By position rather than key: keys may hold the `-` ids are joined with, and two paths of keys can join alike.
+const childIdOf = (id: string, i: number) => `${id}-${i}`;
+
 /** The active node's id and its container's, with ids built under `id` as `build` builds them. */
 function activeIn(node: HudAccessibleNode, id: string): { id: string; container: string } | null {
-  for (const child of node.children ?? []) {
-    const childId = `${id}-${child.key}`;
+  for (const [i, child] of (node.children ?? []).entries()) {
+    const childId = childIdOf(id, i);
     if (child.active) return { id: childId, container: id };
     const deeper = activeIn(child, childId);
     if (deeper) return deeper;
@@ -41,7 +44,7 @@ function build(doc: Document, node: HudAccessibleNode, id: string): HTMLElement 
   }
   if (node.children?.length) {
     if (node.label) el.setAttribute('aria-label', node.label);
-    for (const child of node.children) el.appendChild(build(doc, child, `${id}-${child.key}`));
+    node.children.forEach((child, i) => el.appendChild(build(doc, child, childIdOf(id, i))));
   } else if (node.label) {
     el.textContent = node.label;
   }
