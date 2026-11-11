@@ -4,6 +4,7 @@ import { sameView } from './view';
 import { zoomAt, axisZoomFactor } from './zoomAt';
 import { deriveParallaxView, planeMap } from './parallax';
 import { wheelPan } from './wheelHandler';
+import { fitViewToBounds, hasExtent } from './fitViewToBounds';
 
 describe('viewport, shrunk counterexamples', () => {
   it('a zoom on x leaves y exactly where it was', () => {
@@ -32,5 +33,11 @@ describe('viewport, shrunk counterexamples', () => {
     const v = { x: 0, y: 2, scale: { x: 0.1, y: 0.1 } };
     expect(wheelPan(v, { deltaX: Infinity, deltaY: 1 })).toEqual({ x: 0, y: 12, scale: v.scale });
     expect(wheelPan({ ...v, x: Number.MAX_VALUE }, { deltaX: Number.MAX_VALUE, deltaY: NaN }).x).toBe(Number.MAX_VALUE);
+  });
+
+  it('bounds whose far edge overflows the double range have nothing to fit', () => {
+    const b = { x: Number.MAX_VALUE, y: 0, width: Number.MAX_VALUE, height: 0 };
+    expect(hasExtent(b)).toBe(false);
+    expect(fitViewToBounds(b, { width: 50, height: 50 }, { x: 0, y: 0, scale: { x: 0.1, y: 0.1 } })).toBeNull();
   });
 });
