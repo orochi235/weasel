@@ -316,7 +316,6 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           break;
         }
         case 'cancel': {
-          // A drag back where it began has already reported it; putting it back there is no move.
           if (dragZone && !sameBounds(bounds, dragStart)) {
             bounds = dragStart;
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);

@@ -63,6 +63,23 @@ export interface Hud extends FocusScope<Widget> {
   list(opts: ListOptions): ListWidget;
 }
 
+type FocusListener = (focused: Widget | null) => void;
+
+/** Focus change reports that pass none on once focus has moved past it: a listener that moves focus mid-report
+ *  has had the newer report reach every listener already. */
+function focusReports(current: () => Widget | null): { emit: FocusListener; subscribe(fn: FocusListener): () => void } {
+  const subs = createEmitter<[Widget | null]>();
+  const reporters = new WeakMap<FocusListener, FocusListener>();
+  return {
+    emit: subs.emit,
+    subscribe(fn) {
+      let r = reporters.get(fn);
+      if (!r) { const own: FocusListener = (w) => { if (w === current()) fn(w); }; reporters.set(fn, own); r = own; }
+      return subs.subscribe(r);
+    },
+  };
+}
+
 /** Create an empty, unbound HUD. */
 export function createHud(): Hud {
   const list: Widget[] = [];
@@ -75,9 +92,7 @@ export function createHud(): Hud {
 
   let focused: Widget | null = null;
   let focusVisible = false;
-  const focusSubs = createEmitter<[Widget | null]>();
-  // A report a listener moved focus past is not passed on: the newer one has reached every listener already.
-  const reporters = new WeakMap<(w: Widget | null) => void, (w: Widget | null) => void>();
+  const focusSubs = focusReports(() => focused);
 
   const setFocus = (next: Widget | null, visible: boolean): void => {
     const was = focused;
@@ -159,11 +174,7 @@ export function createHud(): Hud {
       return next;
     },
     tabOrder,
-    subscribeFocus(fn) {
-      let w = reporters.get(fn);
-      if (!w) { const r = (next: Widget | null) => { if (next === focused) fn(next); }; reporters.set(fn, r); w = r; }
-      return focusSubs.subscribe(w);
-    },
+    subscribeFocus: focusSubs.subscribe,
     markDirty() { requestRedraw(); },
     bind(h) {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
