@@ -1,5 +1,5 @@
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
-import { isPlainObject } from '@weasel-js/registry';
+import { isPlainObject, setOwn } from '@weasel-js/registry';
 
 /**
  * Reading and writing a config tree by dotted path. A schema's leaves address
@@ -16,16 +16,7 @@ export const isRecord = isPlainObject;
 export const ownAt = (record: Record<string, unknown>, key: string): unknown =>
   Object.hasOwn(record, key) ? record[key] : undefined;
 
-/** `record[key] = value` as an own property: assignment would run `__proto__`'s setter and change the prototype
- *  instead. */
-export const setOwn = (record: Record<string, unknown>, key: string, value: unknown): void => {
-  Object.defineProperty(record, key, {
-    value,
-    writable: true,
-    enumerable: true,
-    configurable: true,
-  });
-};
+export { setOwn };
 
 /** The value at a dotted path. `undefined` when a segment is missing or the
  *  walk hits something that is not a record. */

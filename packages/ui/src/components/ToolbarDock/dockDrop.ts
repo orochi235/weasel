@@ -1,3 +1,4 @@
+import { setOwn } from '@weasel-js/registry';
 import { gapByMidpoint } from '@weasel-js/ui-logic';
 import { canEnter, dockRows, isVerticalEdge, moveBar, type BarTarget, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 
@@ -46,7 +47,7 @@ export function drawnBars(root: HTMLElement): Set<string> {
 /** `layout` with only the bars in `drawn`, and `barId`, left in its rows; rows left empty stay, so row indices hold. */
 export function drawnLayout(layout: ToolbarLayout, drawn: ReadonlySet<string>, barId: string): ToolbarLayout {
   const docks: ToolbarLayout['docks'] = {};
-  for (const [dock, rows] of Object.entries(layout.docks)) docks[dock] = rows.map((r) => r.filter((id) => id === barId || drawn.has(id)));
+  for (const [dock, rows] of Object.entries(layout.docks)) setOwn(docks, dock, rows.map((r) => r.filter((id) => id === barId || drawn.has(id))));
   return { docks, floating: layout.floating };
 }
 

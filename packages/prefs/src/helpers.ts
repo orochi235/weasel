@@ -1,5 +1,5 @@
 import type { Endless } from '@weasel-js/quantity';
-import { matchQuery } from '@weasel-js/registry';
+import { matchQuery, setOwn } from '@weasel-js/registry';
 import { prefAliasedLeaf, prefAliasTarget, type PrefAlias } from './alias';
 import type { PrefGroup, PrefSection } from './groups';
 import type { PrefLeaf, PrefNumber, PrefObject } from './schema';
@@ -172,7 +172,7 @@ export function prefLeaves(schema: PrefGroup): Map<string, PrefLeaf> {
 /** Set `key` on `tree` itself. Plain assignment to `__proto__` replaces the
  *  tree's prototype instead, and a schema key or a record name may be one. */
 export function setOwnPrefValue(tree: Record<string, unknown>, key: string, value: unknown): void {
-  Object.defineProperty(tree, key, { value, writable: true, enumerable: true, configurable: true });
+  setOwn(tree, key, value);
 }
 
 /** Set `value` at the dotted `path` in `root` itself, creating missing branches. */
