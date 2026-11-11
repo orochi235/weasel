@@ -120,14 +120,15 @@ function edit<TData, TLayer extends string, TPose>(
   setPages(scene, { ...doc, pages }, label, descriptor ? { descriptor } : {});
 }
 
-/** Insert `page` at `index`, by default after the last page. */
+/** Insert `page` at `index`, by default after the last page. An index past either end is held to it, as {@link movePage}
+ *  holds one. */
 export function addPage<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   page: Page,
   options: PageEditOptions & { index?: number } = {},
 ): void {
   edit(scene, 'Add page', options, (pages) => {
-    pages.splice(options.index ?? pages.length, 0, page);
+    pages.splice(Math.max(0, Math.min(options.index ?? pages.length, pages.length)), 0, page);
     return pages;
   });
 }

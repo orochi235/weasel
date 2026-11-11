@@ -298,6 +298,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is none to remove, `setCorners` without a shape or radius or with the corners' own, and `nudgeAnchors`
   and `reversePath` where the selection names no anchor of the path (as an undo that shortened the path
   can leave it). A selection command stays enabled when its result is the selection already held.
+- Ruled 2026-11-10 (my call, overnight sweep): `addPage` (and `addTemplatePage`, which hands its index on) holds an
+  `index` past either end of the page order to that end, as `movePage` already did, rather than reading a negative
+  one from the end as `splice` does: one rule for an index into the page order.
 
 ## Rendering, canvas, and paint
 
