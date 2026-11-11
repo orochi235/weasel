@@ -5,6 +5,7 @@ import { deflate as zlibDeflate } from './deflate';
 import { type PageCtx, pageFlip, writeCommands } from './drawCommands';
 import { DocumentFonts } from './fonts/embedFont';
 import type { PdfFontSource } from './fonts/fontSource';
+import { num } from './num';
 import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
 
@@ -63,7 +64,10 @@ export interface PdfResult {
   skipped: readonly PdfSkip[];
 }
 
-/** One PDF page per entry of `pages`, which must hold at least one. */
+/** Whether a page side is a length its media box, written to four decimals, holds. */
+const hasArea = (n: number) => Number.isFinite(n) && num(n) !== '0' && n > 0;
+
+/** One PDF page per entry of `pages`, which must hold at least one, each with a width and height of at least 0.0001. */
 export function writePdf(pages: readonly PdfPage[], opts: WritePdfOptions): Promise<PdfResult> {
   return writePdfWith(pages, opts, zlibDeflate);
 }
@@ -75,6 +79,11 @@ export async function writePdfWith(
   deflate: Deflater,
 ): Promise<PdfResult> {
   if (pages.length === 0) throw new Error('pdf: a document needs at least one page');
+  pages.forEach(({ width, height }, i) => {
+    if (!hasArea(width) || !hasArea(height)) {
+      throw new Error(`pdf: page ${i + 1} is ${width} by ${height}; a page needs a finite width and height of at least 0.0001`);
+    }
+  });
   const release = holdImageBitmaps();
   try {
     return await writePages(pages, opts, deflate);
