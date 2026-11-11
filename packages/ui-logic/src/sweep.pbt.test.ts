@@ -129,4 +129,8 @@ describe('shrunk counterexamples', () => {
     expect(range({ from: 0, to: 60079.85937499993, count: 1 }).at(0.9999999999999996)).toBeLessThanOrEqual(60079.85937499993);
     expect(range({ from: 9.565119516300001e-301, to: 9.565119516300001e-301, count: 1 }).at(5e-324)).toBe(9.565119516300001e-301);
   });
+
+  it('frames show the end of a run whose last frame time rounds past it', () => {
+    expect([...frames({ duration: 1999.9999999999998, loop: false }, { every: 499.99999999999994 }).walk()].at(-1)).toBe(1999.9999999999998);
+  });
 });

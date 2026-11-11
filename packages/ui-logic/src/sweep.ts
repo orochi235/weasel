@@ -156,7 +156,8 @@ export function frames(span: FrameSpan, options: FrameOptions): Sweep<number> {
         yield t;
         if (t === end) return;
       }
-      if (ends && tidy(end % every, every) !== 0) yield end;
+      // The loop yields the end only when a frame lands on it, so a run that ends shows it here.
+      if (ends) yield end;
     },
     label,
   };
