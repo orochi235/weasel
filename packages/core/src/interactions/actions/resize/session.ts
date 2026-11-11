@@ -134,7 +134,7 @@ export function captureResize(
   const held = captureHeld(scene, written, poseFrame);
   // A resize rewrites what it holds as well as what it writes: one that would rewrite a locked node does not
   // start (ruled 2026-11-09 for the commands, 2026-11-11 for the drag).
-  if ([...written, ...held.keys()].some((id) => scene.isLocked(id))) return null;
+  if ([...written, ...held.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
   const { box, ruleOrigin } = captureBox(starts, writeIds, isGroupPath, anchor, geometry, geometryOf);
   const sharedBox = isGroupPath || writeIds.length > 1;
   return {
