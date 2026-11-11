@@ -122,12 +122,13 @@ export function edgeReach(
   let lockedSpan = 0;
   for (let i = 0; i < n; i++) if (locked[i]) lockedSpan += edges[i + 1] - edges[i];
   const allLocked = locked.slice(0, n).every(Boolean);
+  // With every band locked the edge stays put: the locked lengths' sum can round off where it stands.
   if (edge === 'min') {
     const inner = edges[n] - lockedSpan;
-    return allLocked ? [inner, inner] : [Math.min(limits[0], inner), inner];
+    return allLocked ? [edges[0], edges[0]] : [Math.min(limits[0], inner), inner];
   }
   const inner = edges[0] + lockedSpan;
-  return allLocked ? [inner, inner] : [inner, Math.max(limits[1], inner)];
+  return allLocked ? [edges[n], edges[n]] : [inner, Math.max(limits[1], inner)];
 }
 
 /**
