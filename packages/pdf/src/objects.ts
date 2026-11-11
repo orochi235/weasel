@@ -13,6 +13,10 @@ export class PdfText {
 export class PdfBytes {
   constructor(readonly value: Uint8Array) {}
 }
+/** A number written to `decimals` places rather than `num`'s four. */
+export class PdfReal {
+  constructor(readonly value: number, readonly decimals: number) {}
+}
 
 export type PdfValue =
   | number
@@ -22,6 +26,7 @@ export type PdfValue =
   | PdfRef
   | PdfText
   | PdfBytes
+  | PdfReal
   | readonly PdfValue[]
   | PdfDict;
 export interface PdfDict {
@@ -66,6 +71,7 @@ function write(v: PdfValue): string {
   if (v instanceof PdfName) return writeName(v.value);
   if (v instanceof PdfRef) return `${v.id} 0 R`;
   if (v instanceof PdfText) return writeText(v.value);
+  if (v instanceof PdfReal) return num(v.value, v.decimals);
   if (v instanceof PdfBytes) return `<${Array.from(v.value, hex2).join('')}>`;
   if (Array.isArray(v)) return `[${(v as readonly PdfValue[]).map(write).join(' ')}]`;
   return writeDict(v as PdfDict);

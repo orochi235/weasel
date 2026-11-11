@@ -10,7 +10,7 @@ import {
 import { colorFor, type Rgba } from './color';
 import type { DrawState, PageCtx } from './drawCommands';
 import { latin1Bytes } from './latin1';
-import { name, type PdfDict, type PdfRef, type PdfValue } from './objects';
+import { name, type PdfDict, PdfReal, type PdfRef, type PdfValue } from './objects';
 
 type Gradient = Extract<CommandPaint, { kind: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>;
 type Box = { x0: number; y0: number; x1: number; y1: number };
@@ -42,7 +42,9 @@ export function paintShading(ctx: PageCtx, paint: CommandPaint, state: DrawState
   if (!toFrame || !toPaint) return null;
   const box = paintBox(path, toPaint);
   let segments = rampSegments(stopsOf(paint, state));
-  const geometry = geometryOf(paint, box);
+  // Paint space is drawn through `toFrame`, so its numbers are as fine as a coordinate there.
+  const places = ctx.out.places(isIdentity(toFrame) ? undefined : mat3.toAffine(toFrame));
+  const geometry = geometryOf(paint, box, places);
   if (geometry.degenerate) segments = [{ lo: 0, hi: 1, c0: segments[0].c0, c1: segments[0].c0 }];
 
   let alpha = (paint.opacity ?? 1) * state.alpha;
@@ -52,7 +54,7 @@ export function paintShading(ctx: PageCtx, paint: CommandPaint, state: DrawState
   if (uniform) alpha *= a0;
   else {
     const mask = writeShading(ctx, geometry, rampFunction(segments, (c) => [c[3]]), 'DeviceGray');
-    softMask = ctx.resources.softMask(writeMaskGroup(ctx, mask, box));
+    softMask = ctx.resources.softMask(writeMaskGroup(ctx, mask, box, places));
   }
   const color = writeShading(ctx, geometry, rampFunction(segments, (c) => [c[0], c[1], c[2]]), 'DeviceRGB');
   return { shading: ctx.resources.shading(color), softMask, alpha, matrix: isIdentity(toFrame) ? null : toFrame };
@@ -141,24 +143,25 @@ function rampFunction(segments: Segment[], channels: (c: Rgba) => number[]): Pdf
 
 type Geometry = { dict: PdfDict; data?: Uint8Array; degenerate?: boolean };
 
-function geometryOf(paint: Gradient, box: Box): Geometry {
+function geometryOf(paint: Gradient, box: Box, places: number): Geometry {
+  const fine = (vs: number[]) => vs.map((v) => new PdfReal(v, places));
   const extend = [true, true];
   if (paint.kind === 'linear-gradient') {
     const { from, to } = paint;
     // A zero-length segment paints the ramp's start everywhere, as the renderer does.
     const degenerate = from.x === to.x && from.y === to.y;
     const coords = degenerate ? [from.x, from.y, from.x + 1, from.y] : [from.x, from.y, to.x, to.y];
-    return { dict: { ShadingType: 2, Coords: coords, Extend: extend }, degenerate };
+    return { dict: { ShadingType: 2, Coords: fine(coords), Extend: extend }, degenerate };
   }
   const { center, radius, angle } = gradientGeometry(paint);
   if (paint.kind === 'radial-gradient') {
     const r = Math.max(radius, 1e-4);
-    return { dict: { ShadingType: 3, Coords: [center.x, center.y, 0, center.x, center.y, r], Extend: extend } };
+    return { dict: { ShadingType: 3, Coords: fine([center.x, center.y, 0, center.x, center.y, r]), Extend: extend } };
   }
   const reach = Math.max(
     ...[box.x0, box.x1].flatMap((x) => [box.y0, box.y1].map((y) => Math.hypot(x - center.x, y - center.y))),
   );
-  return conicMesh(center, angle, reach * 1.01 + 1);
+  return conicMesh(center, angle, reach * 1.01 + 1, places);
 }
 
 /**
@@ -166,7 +169,7 @@ function geometryOf(paint: Gradient, box: Box): Geometry {
  * center vertex takes the slice's midpoint, so a wedge strays at most half a slice from the
  * `atan` the renderer takes.
  */
-function conicMesh(center: { x: number; y: number }, angle: number, r: number): Geometry {
+function conicMesh(center: { x: number; y: number }, angle: number, r: number, places: number): Geometry {
   const x0 = center.x - r;
   const y0 = center.y - r;
   const data = new Uint8Array(CONIC_WEDGES * 3 * 11);
@@ -195,7 +198,7 @@ function conicMesh(center: { x: number; y: number }, angle: number, r: number): 
       BitsPerCoordinate: 32,
       BitsPerComponent: 16,
       BitsPerFlag: 8,
-      Decode: [x0, x0 + 2 * r, y0, y0 + 2 * r, 0, 1],
+      Decode: [...[x0, x0 + 2 * r, y0, y0 + 2 * r].map((v) => new PdfReal(v, places)), 0, 1],
     },
     data,
   };
@@ -210,7 +213,7 @@ function writeShading(ctx: PageCtx, g: Geometry, fn: PdfDict, colorSpace: string
 }
 
 /** A luminosity group painting the gray alpha shading, for an ExtGState's `/SMask`. */
-function writeMaskGroup(ctx: PageCtx, mask: PdfRef, box: Box): PdfRef {
+function writeMaskGroup(ctx: PageCtx, mask: PdfRef, box: Box, places: number): PdfRef {
   const ref = ctx.objects.alloc();
   const body = latin1Bytes('/Sh1 sh\n');
   ctx.objects.streamDeflated(
@@ -218,7 +221,7 @@ function writeMaskGroup(ctx: PageCtx, mask: PdfRef, box: Box): PdfRef {
     {
       Type: name('XObject'),
       Subtype: name('Form'),
-      BBox: [box.x0, box.y0, box.x1, box.y1],
+      BBox: [box.x0, box.y0, box.x1, box.y1].map((v) => new PdfReal(v, places)),
       Group: { Type: name('Group'), S: name('Transparency'), CS: name('DeviceGray'), I: true },
       Resources: { Shading: { Sh1: mask } },
     },

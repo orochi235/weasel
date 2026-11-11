@@ -1,4 +1,4 @@
-import { type GlMat3, mat3 } from '@weasel-js/geom';
+import { type GlMat3, mat3, type Path } from '@weasel-js/geom';
 import { type CommandPaint, isGradientPaint, isSolidPaint } from '@weasel-js/paint';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { solidColor } from './color';
@@ -143,11 +143,20 @@ export async function writeCommands(
   }
 }
 
+/** Whether every number of `path` is finite; geometry run on one that is not can throw before `num` sees it. */
+function finitePath(path: Path): boolean {
+  if (path.kind === 'rect') return [path.x, path.y, path.width, path.height].every(Number.isFinite);
+  if (path.origin && !(Number.isFinite(path.origin.x) && Number.isFinite(path.origin.y))) return false;
+  return path.coords.every(Number.isFinite);
+}
+
 async function writeOne(ctx: PageCtx, cmd: DrawCommand, state: DrawState): Promise<void> {
   const line = ctx.out.mark();
   const object = ctx.objects.mark();
   const skips = ctx.skipped.length;
   try {
+    const geometry = cmd.kind === 'path' ? cmd.path : cmd.kind === 'group' ? cmd.clip : undefined;
+    if (geometry && !finitePath(geometry)) throw new NonFiniteNumber('pdf: non-finite path');
     await writeCommand(ctx, cmd, state);
   } catch (err) {
     if (!(err instanceof NonFiniteNumber)) throw err;
