@@ -108,14 +108,21 @@ function isSfnt(bytes: ArrayBuffer): boolean {
 /** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
 const NO_OUTLINE_EMBEDDING = 0x0002 | 0x0200;
 
+/** A `name` table entry in English, or undefined; opentype.js throws for a font whose table names no platform. */
+function englishNameOf(font: import('opentype.js').Font, key: string): string | undefined {
+  try {
+    return (font as { getEnglishName?: (k: string) => string | undefined }).getEnglishName?.(key);
+  } catch {
+    return undefined;
+  }
+}
+
 function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer): FaceEmbedding {
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const t = font.tables as EmbedTables;
-  const englishName = (font as { getEnglishName?: (key: string) => string | undefined })
-    .getEnglishName?.('postScriptName');
   return {
     sfnt,
-    postScriptName: englishName ?? '',
+    postScriptName: englishNameOf(font, 'postScriptName') ?? '',
     unitsPerEm: font.unitsPerEm,
     outlines: t.cff && !t.glyf ? 'cff' : 'truetype',
     embeddable: ((t.os2?.fsType ?? 0) & NO_OUTLINE_EMBEDDING) === 0,

@@ -73,6 +73,14 @@ describe('createOpenTypeParser, shrunk', () => {
     await expect(parse(without('head'))).rejects.toThrow(/units per em/);
   });
 
+  it('embeds a font whose name table holds no names, with no PostScript name', async () => {
+    // opentype.js 2's `getEnglishName` throws on this font; 1.x answers undefined.
+    const bytes = INTER.slice(0);
+    new DataView(bytes).setUint16(TABLES.find((t) => t.tag === 'name')!.offset + 2, 0);
+    const face = await parse(bytes);
+    expect(face.embedding?.().postScriptName).toBe('');
+  });
+
   it('rejects a font with neither hhea nor OS/2, which states no ascent', async () => {
     await expect(parse(without('hhea', 'OS/2'))).rejects.toThrow(/no ascent/);
   });

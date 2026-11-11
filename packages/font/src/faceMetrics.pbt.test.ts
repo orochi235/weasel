@@ -108,7 +108,8 @@ describe('parseFaceMetrics, fuzzed', () => {
       }
       t.count(m ? 'read' : 'empty');
       if (!m) return;
-      expect(parseFaceMetrics(JSON.parse(JSON.stringify(m)))).toEqual(m);
+      const stored = JSON.parse(JSON.stringify(m)) as FaceMetrics;
+      expect(parseFaceMetrics(stored)).toEqual(stored);
       for (const v of Object.values(m)) {
         for (const n of typeof v === 'number' ? [v] : Object.values(v as object)) expect(Number.isFinite(n)).toBe(true);
       }
