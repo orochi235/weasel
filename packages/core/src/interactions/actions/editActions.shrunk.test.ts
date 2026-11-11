@@ -15,7 +15,7 @@ import { reorderForwardAction } from './defaults/reorder';
 import { duplicateAction } from './defaults/duplicate';
 import { depsOf, makeScene, type TestScene } from './pbt.fixture';
 
-function add(scene: TestScene, pose: RectPose, kind = 'mark', parent: NodeId | null = null): NodeId {
+function add(scene: TestScene, pose: RectPose, kind: 'mark' | 'group' = 'mark', parent: NodeId | null = null): NodeId {
   const id = scene.mintId();
   scene.add({ id, kind, layer: 'main', pose, data: {}, parent });
   return id;

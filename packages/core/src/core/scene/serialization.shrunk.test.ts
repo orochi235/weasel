@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { replaceDoc } from './docValues';
 import { SnapshotShapeError } from './snapshotShape';
+import type { RectPose } from '../geometry/rectPose';
 
 const LAYERS = [{ id: 'a' }];
 
@@ -10,8 +11,8 @@ describe('snapshots, shrunk counterexamples', () => {
   it('refuses a snapshot whose nodes are not a list with a SnapshotShapeError, and loadState keeps the document', () => {
     const broken = { version: 3, systemLayers: LAYERS, nodes: null };
     expect(() => sceneFromJSON(broken as never)).toThrow(SnapshotShapeError);
-    const scene = createScene<Record<string, never>, 'a', { x: number }>({ systemLayers: [{ id: 'a' }] });
-    scene.add({ id: 'kept' as never, kind: 'mark', layer: 'a', pose: { x: 1 }, data: {} });
+    const scene = createScene<Record<string, never>, 'a', RectPose>({ systemLayers: [{ id: 'a' as const }] });
+    scene.add({ id: 'kept' as never, kind: 'mark', layer: 'a', pose: { x: 1, y: 0, width: 1, height: 1 }, data: {} });
     const was = JSON.stringify(scene.toJSON());
     expect(() => scene.loadState(broken as never)).toThrow(SnapshotShapeError);
     expect(JSON.stringify(scene.toJSON())).toBe(was);
@@ -23,7 +24,7 @@ describe('snapshots, shrunk counterexamples', () => {
   });
 
   it('replaceDoc clears a value named like an Object.prototype member', () => {
-    const scene = createScene<Record<string, never>, 'a', { x: number }>({ systemLayers: [{ id: 'a' }] });
+    const scene = createScene<Record<string, never>, 'a', RectPose>({ systemLayers: [{ id: 'a' as const }] });
     scene.doc.set('toString', 1);
     scene.batch('replace', () => replaceDoc(scene, {}));
     expect(scene.doc.keys()).toEqual([]);

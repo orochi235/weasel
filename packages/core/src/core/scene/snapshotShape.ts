@@ -27,12 +27,13 @@ export function assertSnapshotShape(json: unknown): void {
   });
   if (!Array.isArray(nodes)) refuse('`nodes` is not an array');
   if (doc !== undefined && !isRecord(doc)) refuse('`doc` is not an object');
-  const kinds = version === 1 ? ['leaf', 'container'] : ['mark', 'group'];
+  // Version 1 reads any kind but `leaf` as a group, or as its classifier says, so only later versions name theirs.
+  const kinds = version === 1 ? null : ['mark', 'group'];
   (nodes as unknown[]).forEach((n, i) => {
     if (!isRecord(n)) return refuse(`node ${i} is not an object`);
     if (typeof n.id !== 'string') refuse(`node ${i} has no string \`id\``);
     const at = `node "${n.id as string}"`;
-    if (!kinds.includes(n.kind as string)) refuse(`${at} has kind ${JSON.stringify(n.kind)}; expected ${kinds.join(' or ')}`);
+    if (kinds && !kinds.includes(n.kind as string)) refuse(`${at} has kind ${JSON.stringify(n.kind)}; expected ${kinds.join(' or ')}`);
     if (typeof n.layer !== 'string') refuse(`${at} has no string \`layer\``);
     if (n.pose === undefined || n.pose === null) refuse(`${at} has no \`pose\``);
     if (n.parent !== undefined && n.parent !== null && typeof n.parent !== 'string') refuse(`${at} has a \`parent\` that is not an id`);

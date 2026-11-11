@@ -279,7 +279,7 @@ const pose = fc.tuple(rectPose, fc.option(fc.constantFrom(Math.PI / 2, Math.PI /
 const insert = fc.tuple(fc.constantFrom(0, 1), pick, fc.option(pick, { nil: null, freq: 2 }), fc.boolean(), pose)
   .map(([w, k, o, f, p]) => new Setup(w, k, o, f, p));
 const selection = fc.oneof(
-  { weight: 1, arbitrary: fc.constant([]) },
+  { weight: 1, arbitrary: fc.constant<number[]>([]) },
   { weight: 3, arbitrary: fc.array(pick, { minLength: 1, maxLength: 2 }) },
   { weight: 6, arbitrary: fc.array(pick, { minLength: 3, maxLength: 6 }) },
 );

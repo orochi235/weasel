@@ -142,7 +142,7 @@ class Rename implements fc.Command<Model, Real> {
     const page = pick(was.pages, this.k)!;
     const next = clone(was);
     const target = next.pages.find((p) => p.id === page.id)!;
-    if (this.name === '') delete target.name;
+    if (this.name === '') delete (target as { name?: string }).name;
     else Object.assign(target, { name: this.name });
     const unchanged = (page.name ?? '') === this.name;
     settle(m, r, unchanged ? null : next, 'Rename', () => renamePage(r.scene, page.id, this.name));
