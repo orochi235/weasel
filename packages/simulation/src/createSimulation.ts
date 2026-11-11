@@ -47,7 +47,11 @@ export function createSimulation<TNode extends SimulationNode>(
   for (const f of forces) f.initialize?.(nodes, random);
 
   function step(): void {
-    alpha += (alphaTarget - alpha) * alphaDecay;
+    // Decay toward the target never overshoots it, and stays finite between finite ends.
+    const decay = alphaDecay > 1 ? 1 : alphaDecay > 0 ? alphaDecay : 0;
+    let next = alpha + (alphaTarget - alpha) * decay;
+    if (!Number.isFinite(next)) next = alpha * (1 - decay) + alphaTarget * decay;
+    alpha = Math.sign(next - alphaTarget) === -Math.sign(alpha - alphaTarget) ? alphaTarget : next;
     for (const f of forces) f(alpha);
 
     const friction = 1 - velocityDecay;

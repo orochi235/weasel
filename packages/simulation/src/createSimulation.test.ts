@@ -75,4 +75,13 @@ describe('createSimulation', () => {
     expect(a.y).toBe(20);
     expect(b.x).toBeGreaterThan(0);
   });
+
+  it('decays alpha without passing its target, under a decay past 1 or one that lands on it', () => {
+    const wild = createSimulation<TestNode>({ nodes: [node('a')], forces: [inert], alphaDecay: 1e308 });
+    wild.tick(2);
+    expect(wild.alpha()).toBe(0);
+    const exact = createSimulation<TestNode>({ nodes: [node('a')], forces: [inert], alphaDecay: 1, alphaTarget: 5e-324 });
+    exact.tick();
+    expect(exact.alpha()).toBe(5e-324);
+  });
 });
