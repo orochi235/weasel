@@ -463,9 +463,8 @@ describe('domRuns round-trip — decoration and tracking', () => {
     runsToDom([{ text: 'a', fontSize: 24, fontScale: 0.5 }], parent);
     const span = parent.firstElementChild as HTMLElement;
     expect(span.style.fontSize).toBe('24px');
-    // The scale had no spelling left to take, so it does not survive — the
-    // absolute size it lost to is the one that mattered.
-    expect(domToRuns(parent)).toEqual([{ text: 'a', fontSize: 24 }]);
+    // The scale rides in an attribute, so an edit keeps it for when the size is cleared.
+    expect(domToRuns(parent)).toEqual([{ text: 'a', fontSize: 24, fontScale: 0.5 }]);
   });
 
   it('reads <sup> and <sub> a browser produced, like <b> and <i>', () => {

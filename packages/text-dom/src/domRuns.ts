@@ -10,7 +10,7 @@
  * browser's own synthesis uses a fixed factor of its own.
  */
 
-import { isSolidPaint, type Paint, type ScreenLength } from '@weasel-js/paint';
+import { isSolidPaint, type Fill, type Paint, type ScreenLength } from '@weasel-js/paint';
 import {
   DEFAULT_TEXT_STYLE, isHardLineBreak, resolveRunFace, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
@@ -19,7 +19,7 @@ import {
 import { cssFontFamily } from '@weasel-js/font';
 import { BLOCK_TAGS } from './domOffsets';
 import {
-  cssFontVariant, EMPTY_STYLE, FILL_ATTR, fontScalePercent, FONT_SIZE_PX_ATTR, LETTER_SPACING_PX_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
+  BOLD_ATTR, cssFontVariant, EMPTY_STYLE, FILL_ATTR, FONT_SCALE_ATTR, fontScalePercent, FONT_SIZE_PX_ATTR, LETTER_SPACING_PX_ATTR, isSmallCapsPiece, ROTATE_ATTR, STROKE_ATTR, styleEquals,
   styleStateFromElement, toRun, TRANSFORMS, type StyleState,
 } from './runStyle';
 
@@ -33,11 +33,12 @@ function solidColor(p: Paint | null | undefined): string | null {
 
 const BREAK_ATTR = 'data-break';
 
-/** A break stand-in's source text: its hard break, and anything typed into it after. */
+/** A break stand-in's source text: its hard break, and anything typed into it before or after. */
 function restoreBreak(el: Element): string {
   const text = el.textContent ?? '';
   const code = parseInt(el.getAttribute(BREAK_ATTR) ?? '', 16);
-  return text.startsWith('\n') && Number.isFinite(code) ? String.fromCharCode(code) + text.slice(1) : text;
+  const at = text.indexOf('\n');
+  return at >= 0 && Number.isFinite(code) ? text.slice(0, at) + String.fromCharCode(code) + text.slice(at + 1) : text;
 }
 
 /**
@@ -186,19 +187,24 @@ export function runsToDom(
     if (run.fontWeight != null) {
       span.style.fontWeight = String(run.fontWeight);
       span.setAttribute('data-font-weight', String(run.fontWeight));
+      if (run.bold) span.setAttribute(BOLD_ATTR, '');
     } else if (run.bold) span.style.fontWeight = '700';
     if (run.italic) span.style.fontStyle = 'italic';
     // An absolute size wins over a relative one, as it does in `resolveRuns`.
-    if (run.fontSize != null) setLength(span, 'fontSize', FONT_SIZE_PX_ATTR, run.fontSize);
-    else if (run.fontScale != null) span.style.fontSize = fontScalePercent(run.fontScale);
+    if (run.fontSize != null) {
+      setLength(span, 'fontSize', FONT_SIZE_PX_ATTR, run.fontSize);
+      if (run.fontScale != null) span.setAttribute(FONT_SCALE_ATTR, String(run.fontScale));
+    } else if (run.fontScale != null) span.style.fontSize = fontScalePercent(run.fontScale);
     if (run.fontFamily != null) {
       span.style.fontFamily = cssFontFamily(run.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
       span.setAttribute('data-font-family', run.fontFamily);
     }
     const color = solidColor(run.fill?.paint);
     if (color != null) span.style.color = color;
-    // CSS color says a solid paint's color but not its opacity.
-    if (run.fill !== undefined && (color == null || run.fill?.paint?.opacity !== undefined)) {
+    // The CSS color carries the fill only where `domToRuns` reads it back as the very same one: it drops an
+    // opacity, respells `#f00` as `rgb(255, 0, 0)`, and refuses a color it cannot parse.
+    const shown: Fill = { paint: { kind: 'solid', color: span.style.color } };
+    if (run.fill !== undefined && JSON.stringify(run.fill) !== JSON.stringify(shown)) {
       span.setAttribute(FILL_ATTR, JSON.stringify(run.fill));
     }
     // Black, as an unfilled node edits in: no CSS color leaves it legible.

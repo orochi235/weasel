@@ -435,6 +435,18 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Open (2026-11-10, property tests): a combining mark opening a run, when the run's locale mapping drops
   it (`tr`'s dot after `I`), sends the paragraph to mapping code point by code point, since the mark has
   no piece in its own run to join. Code point snapping does not reach it.
+- Ruled 2026-11-10 (my call, overnight sweep): the edit overlay carries every key a run holds through an edit,
+  `fontScale` beside an absolute `fontSize` and `bold` beside the run's own `fontWeight` included, though the other
+  key wins what draws, and a solid fill's color as it was spelled. A writer never drops data, so this reverses the
+  earlier choice to let the losing key go (2c2d6638b).
+- Ruled 2026-11-10 (my call, overnight sweep): styling armed at a collapsed caret is the change it makes to the
+  styling the caret sits in, so it can take a flag, a script, or a valued key off (`pendingStyle` holds that key as
+  `false` or `undefined`), and the character typed under it lands as a write of the same patch would, bold and a
+  weight each dropping the other. Cmd+B at the end of a bold word used to arm nothing (d13b75728).
+- Open (2026-11-10, property tests): a character typed with nothing armed at a caret between two run spans, where the
+  caret sits after a character typed under an armed style, gets a text node of its own and so no run styling at all,
+  while `rangeStyle` at that caret reports the character before it. After an armed character in a bold run, the next
+  one comes out plain. The session model test puts the caret into a text node before typing there.
 
 ## SVG and paths
 

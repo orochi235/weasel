@@ -35,11 +35,11 @@ function keepsSpace(el: HTMLElement, inherited: boolean): boolean {
   return /^(pre|pre-wrap|break-spaces|preserve)\b/.test(ws);
 }
 
-/** The run fields a paste keeps. A weight that reads as bold anywhere else reads as bold here. */
+/** The run fields a paste keeps. Bold is read off the weight that renders: a run's own weight wins over its flag. */
 function emphasis(text: string, style: StyleState): StyledRun {
   const read = toRun(text, style);
   const run: StyledRun = { text };
-  if (read.bold || (read.fontWeight !== undefined && isBoldWeight(read.fontWeight))) run.bold = true;
+  if (read.fontWeight !== undefined ? isBoldWeight(read.fontWeight) : read.bold) run.bold = true;
   for (const key of ['italic', 'underline', 'strikethrough', 'overline'] as const) if (read[key]) run[key] = true;
   if (read.script) run.script = read.script;
   return run;
