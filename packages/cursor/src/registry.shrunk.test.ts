@@ -8,4 +8,9 @@ describe('cursorFor, shrunk', () => {
     expect(() => bakeCursor(cursorGlyph('pencil'), { size: Infinity })).toThrow(RangeError);
     expect(() => cursorFor('pencil', { size: Infinity })).toThrow(RangeError);
   });
+
+  it('throws for an empty mark name whatever it cached, where a cached plain cursor answered for it', () => {
+    cursorFor('pencil');
+    expect(() => cursorFor('pencil', { mark: '' as CursorMarkName })).toThrow(/unknown cursor mark/);
+  });
 });

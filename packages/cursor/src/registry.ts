@@ -67,7 +67,7 @@ export function cursorFor(name: CursorGlyphName, opts: CursorForOptions = {}): s
   // The step index, not the raw angle: the hover pump feeds a continuously
   // varying selection rotation, so a raw-angle key would never hit.
   const step = quantizeCursorAngle(opts.angle ?? 0);
-  const key = `${name}|${opts.mark ?? ''}|${size}|${step}|${fallback}`;
+  const key = `${name}${opts.mark === undefined ? '' : `+${opts.mark}`}|${size}|${step}|${fallback}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
   const css = bakeCursor(cursorGlyph(name, opts.mark), { size, fallback, angle: opts.angle ?? 0 });
