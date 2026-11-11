@@ -35,6 +35,12 @@ export const oddText: fc.Arbitrary<string> = fc.array(
   { maxLength: 8 },
 ).map((parts) => parts.join(''));
 
+/** Odd text broken across lines by any of the line ends a reader might split on, pasted text's `\r\n` among them. */
+export const brokenText: fc.Arbitrary<string> = fc.array(
+  fc.oneof({ weight: 3, arbitrary: oddText }, { weight: 1, arbitrary: fc.constantFrom('\n', '\r\n', '\r', '\u2028', '\u2029', '\u0085') }),
+  { minLength: 2, maxLength: 5 },
+).map((parts) => parts.join(''));
+
 /** A non-empty id: a plain name most of the time, else odd text or a keyword. */
 export const idText: fc.Arbitrary<string> = fc.oneof(
   { weight: 3, arbitrary: fc.stringMatching(/^[a-z][a-z0-9_]{0,5}$/) },
@@ -54,17 +60,19 @@ export interface GraphShape {
   endLabels?: boolean;
   /** Compass ports at edges' ends. */
   ports?: boolean;
+  /** Text for lines and labels; {@link oddText} by default. */
+  text?: fc.Arbitrary<string>;
 }
 
 /** A graph page's data: unique ids, each node's lines and outline, edges between nodes with labels, and what `shape` adds. */
 export function graphData(shape: GraphShape = {}): fc.Arbitrary<DiagramData> {
-  const { placed = false, containers = false, endLabels = false, ports = false } = shape;
+  const { placed = false, containers = false, endLabels = false, ports = false, text = oddText } = shape;
   return fc.tuple(fc.uniqueArray(idText, { minLength: 1, maxLength: containers ? 9 : 6 }), fc.nat()).chain(([all, split]) => {
     const regionCount = containers ? Math.min(split % 4, all.length - 1) : 0;
     const ids = all.slice(0, all.length - regionCount);
     const regionIds = all.slice(all.length - regionCount);
     const node = (id: string, i: number): fc.Arbitrary<DataNode> => fc.record({
-      lines: fc.array(oddText, { maxLength: 3 }),
+      lines: fc.array(text, { maxLength: 3 }),
       outline: fc.constantFrom(...OUTLINES),
     }).map(({ lines, outline }) => ({
       id, lines, outline,
@@ -72,9 +80,9 @@ export function graphData(shape: GraphShape = {}): fc.Arbitrary<DiagramData> {
     }));
     const end = fc.constantFrom(...ids);
     const port = ports ? fc.option(fc.constantFrom('n', 'e', 's', 'w'), { nil: undefined }) : fc.constant(undefined);
-    const endText = endLabels ? fc.option(oddText.filter((t) => t !== ''), { nil: undefined }) : fc.constant(undefined);
+    const endText = endLabels ? fc.option(text.filter((t) => t !== ''), { nil: undefined }) : fc.constant(undefined);
     const edge: fc.Arbitrary<DataEdge> = fc.record({
-      from: end, to: end, label: fc.option(oddText, { nil: undefined }),
+      from: end, to: end, label: fc.option(text, { nil: undefined }),
       fromPort: port, toPort: port, tail: endText, head: endText,
     }).map(({ from, to, label, fromPort, toPort, tail, head }) => ({
       from, to,
@@ -87,7 +95,7 @@ export function graphData(shape: GraphShape = {}): fc.Arbitrary<DiagramData> {
     // Each node and region sits in one region before it in this list, or at the top (-1).
     const owner = (i: number) => fc.integer({ min: -1, max: Math.max(-1, Math.min(i, regionIds.length) - 1) });
     const regions = fc.tuple(
-      fc.tuple(...regionIds.map((_, i) => fc.tuple(owner(i), fc.option(oddText, { nil: undefined })))),
+      fc.tuple(...regionIds.map((_, i) => fc.tuple(owner(i), fc.option(text, { nil: undefined })))),
       fc.tuple(...ids.map(() => owner(regionIds.length))),
     ).map(([regionOwners, nodeOwners]): DataContainer[] => regionIds.map((id, r) => {
       const members = [

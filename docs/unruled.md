@@ -922,6 +922,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10: Draw-style XML numbers on an edge's cell id (`edge:a->b-2`) when another cell has it, where two
   edges with the same ends, ports, and label were written under one id. The Diagram JSON reader refuses a page
   that is not an object or whose `kind` it does not know.
+- Ruled 2026-11-11 (my call, property tests): Mermaid writes a title or name its kind holds on one line with each line
+  break as a space, with a warning; a quoted string the kind reads entities in keeps the break as `#10;`. A journey step
+  whose name opens with `title` or `section` is dropped, with a warning, since Mermaid reads the line as that statement
+  and journey text has no escape; a step with no name is written as `(untitled)`, as a timeline period is. A packet
+  field with an empty label reads back as the gap the writer spells the same way. DOT refuses subgraphs nested more
+  than 1000 deep, so a document whose containers nest deeper writes DOT its own reader refuses. Containers that hold
+  each other in a loop are written apart by DOT and Mermaid, with a warning, as draw-style XML already wrote them.
 - 2026-11-10 (property tests): plot draws a quadrant point held to the unit square, as a drag holds it, and no point
   with a `NaN` coordinate; a radius or stroke width that is negative or not finite takes the default, and a radius
   past the plot is cut to it. A radar value short of the center's sits at the center, as `valueAt` holds it. A journey
