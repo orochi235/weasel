@@ -17,6 +17,10 @@ describe('cursor baking, shrunk', () => {
     expect(bakeCursor(cursorGlyph('pencil'), { size: -3 })).toBe(bakeCursor(cursorGlyph('pencil')));
   });
 
+  it('holds the hotspot inside an image under a pixel, where rounding carried it to 1', () => {
+    expect(bakeCursor(cursorGlyph('pencil'), { size: 0.6315789473684211, angle: 0 })).toMatch(/"\) 0 0, default$/);
+  });
+
   it('draws a brush ring too small to round to a pixel at one, not at the default 24', () => {
     const r = resolveCursorTier(brushRing(0));
     expect(r.kind === 'css' && r.css).toMatch(/width%3D%221%22/);

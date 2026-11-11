@@ -49,8 +49,9 @@ describe('bakeCursor', () => {
       const c = glyph.box / 2;
       const [dx, dy] = [glyph.hotspot[0] - c, glyph.hotspot[1] - c];
       const k = s / glyph.box;
-      expect(Math.abs(got.hx - (c + Math.cos(theta) * dx - Math.sin(theta) * dy) * k)).toBeLessThanOrEqual(0.5 + 1e-9);
-      expect(Math.abs(got.hy - (c + Math.sin(theta) * dx + Math.cos(theta) * dy) * k)).toBeLessThanOrEqual(0.5 + 1e-9);
+      const inside = (v: number) => Math.min(Math.max(0, v), Math.floor(s));
+      expect(Math.abs(got.hx - inside((c + Math.cos(theta) * dx - Math.sin(theta) * dy) * k))).toBeLessThanOrEqual(0.5 + 1e-9);
+      expect(Math.abs(got.hy - inside((c + Math.sin(theta) * dx + Math.cos(theta) * dy) * k))).toBeLessThanOrEqual(0.5 + 1e-9);
       expect(css).not.toMatch(/NaN|Infinity|undefined/);
     }), runs(RUNS));
     t.atLeast('sized', 100);
@@ -93,7 +94,11 @@ describe('the painted tier', () => {
       const bx = x - baked.hx + (c + Math.cos(angle) * (px - c) - Math.sin(angle) * (py - c)) * k;
       const by = y - baked.hy + (c + Math.sin(angle) * (px - c) + Math.cos(angle) * (py - c)) * k;
       const [mx, my] = apply(m, px, py);
-      expect(Math.hypot(mx - bx, my - by)).toBeLessThanOrEqual(Math.SQRT1_2 + 1e-6);
+      // Apart by just what the baked hotspot moved to land on a pixel inside the image: half a pixel each way at most, unless held in.
+      const tx = (c + Math.cos(angle) * (glyph.hotspot[0] - c) - Math.sin(angle) * (glyph.hotspot[1] - c)) * k;
+      const ty = (c + Math.sin(angle) * (glyph.hotspot[0] - c) + Math.cos(angle) * (glyph.hotspot[1] - c)) * k;
+      expect(Math.abs(Math.hypot(mx - bx, my - by) - Math.hypot(tx - baked.hx, ty - baked.hy))).toBeLessThan(1e-6);
+      if (tx >= 0 && ty >= 0 && tx <= Math.floor(size) && ty <= Math.floor(size)) expect(Math.hypot(mx - bx, my - by)).toBeLessThanOrEqual(Math.SQRT1_2 + 1e-6);
     }), runs(RUNS));
   }, timeoutFor(RUNS, 2));
 
