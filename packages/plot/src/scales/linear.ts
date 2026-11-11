@@ -104,8 +104,11 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   // A spacing whose step in domain units is past the double range is wider than the axis.
   if (!Number.isFinite(step)) return { values: [], step: 0, decimals: 0 };
   const decimals = decimalsOf(step);
-  const first = Math.ceil((lo + inset * perUnit) / step - 1e-9);
-  const last = Math.floor((hi - inset * perUnit) / step + 1e-9);
+  // Room for a tick's rounding, in steps, but never more than a sliver of the domain: a step far wider than the
+  // domain would otherwise take in a multiple lying past it.
+  const slack = 1e-9 * Math.min(1, span / step);
+  const first = Math.ceil((lo + inset * perUnit) / step - slack);
+  const last = Math.floor((hi - inset * perUnit) / step + slack);
   if (!countable(first) || !countable(last)) return { values: [], step, decimals };
   const values: number[] = [];
   for (let i = first; i <= last; i++) values.push(onGrid(i, step) + 0);

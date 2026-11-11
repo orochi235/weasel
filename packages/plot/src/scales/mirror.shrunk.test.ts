@@ -45,6 +45,11 @@ describe('scales, shrunk (second pass)', () => {
     expect(values).toEqual([-Number.MAX_VALUE, 0]);
   });
 
+  it('spaces no tick past a domain far narrower than the step', () => {
+    expect(linearScale({ domain: [-3715146.8331344076, -1], range: [-1463, -1464] }).spacedTicks({ minSpacing: 134.58421888600756 }).values)
+      .toEqual([]);
+  });
+
   it('spaces no ticks where the spacing\'s step in domain units is past the double range', () => {
     expect(linearScale({ domain: [1e308, 0], range: [0, 1] }).spacedTicks({ minSpacing: 1.797693134862316 }))
       .toEqual({ values: [], step: 0, decimals: 0 });
