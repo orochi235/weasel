@@ -1,5 +1,7 @@
 import type { NodeId, PoseDescriptor, Scene } from '@weasel-js/core';
 import type { Animator, AnimationHandle, EasingFn } from '@weasel-js/animator';
+import { after } from './after';
+import { pendingFor, unregisterRemoval } from './pendingRemovals';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {
@@ -49,52 +51,6 @@ export function interruptNode(animator: object, ns: string, except?: object): vo
   const live = LIVE_ITEMS.get(animator)?.get(ns);
   if (!live) return;
   for (const [stop, root] of [...live]) if (root !== except) stop();
-}
-
-/** Per scene, the nodes a `.remove()` transition will delete when it ends,
- *  each with the cancel that keeps it. Keyed weakly so a dropped scene takes
- *  its entries with it. */
-const PENDING_REMOVALS = new WeakMap<object, Map<NodeId, Set<() => void>>>();
-
-function pendingFor(scene: object): Map<NodeId, Set<() => void>> {
-  let map = PENDING_REMOVALS.get(scene);
-  if (!map) {
-    map = new Map();
-    PENDING_REMOVALS.set(scene, map);
-  }
-  return map;
-}
-
-function unregisterRemoval(scene: object, id: NodeId, cancel: () => void): void {
-  const map = PENDING_REMOVALS.get(scene);
-  const set = map?.get(id);
-  if (!map || !set) return;
-  set.delete(cancel);
-  if (set.size === 0) map.delete(id);
-}
-
-/**
- * @internal Stop every transition chain that would remove `id` when it ends,
- * for that node only, so the node stays in the scene.
- */
-export function cancelPendingRemoval(scene: object, id: NodeId): void {
-  const set = PENDING_REMOVALS.get(scene)?.get(id);
-  if (!set) return;
-  for (const cancel of [...set]) cancel();
-}
-
-/** The longest wait one `setTimeout` keeps; past it, a timer fires at once. */
-const LONGEST_TIMER = 2 ** 31 - 1;
-
-/** Run `fn` once `ms` have passed, never for an infinite `ms`, and answer what cancels it. */
-function after(ms: number, fn: () => void): () => void {
-  if (ms === Infinity) return () => {};
-  let timer: ReturnType<typeof setTimeout>;
-  const wait = (left: number): void => {
-    timer = setTimeout(() => (left > LONGEST_TIMER ? wait(left - LONGEST_TIMER) : fn()), Math.min(left, LONGEST_TIMER));
-  };
-  wait(ms);
-  return () => clearTimeout(timer);
 }
 
 /** One transition in a chain, as the transition chained after it sees it. */
