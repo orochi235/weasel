@@ -38,19 +38,26 @@ const finite = (t: number): number => {
 /** The laps a loop policy allows past the first pass. */
 const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : loop);
 
+/** Where `t` stands in its lap of `duration`. */
+const inLap = (t: number, duration: number): number => ((t % duration) + duration) % duration;
+
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
 function lessLaps(t: number, laps: number, duration: number): number {
   // No laps of an endless duration are none, not `NaN`.
   if (laps === 0) return t;
   const span = laps * duration;
-  return Number.isFinite(span) ? t - span : ((t % duration) + duration) % duration;
+  return Number.isFinite(span) ? t - span : inLap(t, duration);
 }
 
-/** The playhead and its offset from the entry's clock, `laps` laps back. */
-function lapBack(playhead: number, offset: number, laps: number, duration: number): [number, number] {
-  const next = lessLaps(playhead, laps, duration);
-  return [next, offset + (Number.isFinite(laps * duration) ? -laps * duration : next - playhead)];
+/** The playhead and its offset from the entry's clock, which stands at `now`, `laps` laps back.
+ *  Where the offset would pass the double range, the playhead is where it stands in its lap. */
+function lapBack(playhead: number, offset: number, now: number, laps: number, duration: number): [number, number] {
+  const span = laps * duration;
+  const kept = offset - span;
+  if (Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
+  const next = inLap(playhead, duration);
+  return [next, next - now];
 }
 
 /** Where a seek to `t` lands: not before 0, nor past `duration` unless laps are left, where it
@@ -151,7 +158,7 @@ export function createTimeline(
       playhead = virtualNow + offset;
       crossLaps(playhead, duration, loopsLeft, lap, (laps) => {
         takeLaps(laps);
-        [playhead, offset] = lapBack(playhead, offset, laps, duration);
+        [playhead, offset] = lapBack(playhead, offset, virtualNow, laps, duration);
         onWrap(laps);
       });
     }

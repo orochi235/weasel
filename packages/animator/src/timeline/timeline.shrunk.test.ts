@@ -28,6 +28,20 @@ describe('timelines, shrunk from the property tests', () => {
     expect(tl.time()).toBeLessThanOrEqual(3);
   });
 
+  it('keep it there when an earlier lap had already moved it far along', () => {
+    const h = clocked();
+    h.at(-Number.MAX_VALUE);
+    const tl = h.animator.timeline({ duration: 507, loop: true, tracks: [] });
+    h.at(-Number.MAX_VALUE + 1e300);
+    h.at(Number.MAX_VALUE);
+    h.at(Number.MAX_VALUE);
+    expect(tl.time()).toBeGreaterThanOrEqual(0);
+    expect(tl.time()).toBeLessThanOrEqual(507);
+    h.at(Number.MAX_VALUE);
+    expect(tl.time()).toBeGreaterThanOrEqual(0);
+    expect(tl.time()).toBeLessThanOrEqual(507);
+  });
+
   it('seek a timeline of infinite duration to where it is asked', () => {
     const h = clocked();
     h.at(0);
