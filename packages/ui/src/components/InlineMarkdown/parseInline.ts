@@ -9,9 +9,10 @@ export type InlineToken =
 
 // Alternatives in precedence order: a code span, a shortcut, strong, emphasis, strikethrough, a link, an escaped mark.
 // A mark opens and closes against a non-space, so `a * b` and a glob's `*.ts` stay as written. Underscores
-// are never emphasis: prose here names snake_case identifiers.
+// are never emphasis: prose here names snake_case identifiers. Inside a mark or a label a backslash pair is one
+// character, so an escaped mark there cannot close it.
 const INLINE =
-  /`([^`]+)`|<kbd>([^<]+)<\/kbd>|\*\*(?=\S)([^]+?)(?<=\S)\*\*|\*(?=[^\s*])([^*]+?)(?<=\S)\*|~~(?=\S)([^]+?)(?<=\S)~~|\[([^\]]+)\]\(([^)\s]+)\)|\\([`*~[\]\\])/g;
+  /`([^`]+)`|<kbd>([^<]+)<\/kbd>|\*\*(?=\S)((?:\\[^]|[^\\])+?)(?<=\S)\*\*|\*(?=[^\s*])((?:\\[^]|[^*\\])+?)(?<=\S)\*|~~(?=\S)((?:\\[^]|[^\\])+?)(?<=\S)~~|\[((?:\\[^]|[^\]\\])+)\]\(([^)\s]+)\)|\\([`*~[\]\\])/g;
 
 const SAFE_HREF = /^(https?:|mailto:|[/#.])/i;
 
