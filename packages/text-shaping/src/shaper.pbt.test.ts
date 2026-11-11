@@ -105,7 +105,7 @@ describe('loadShaper, property', () => {
         ? { ...first, lang: `${first.lang ?? ''}\u0000`, text: first.text.slice(1) }
         : { ...first, lang: (first.lang ?? '').replace(/\u0000$/, ''), text: `\u0000${first.text}` }),
     )));
-    // Each run reads two fresh copies of a face, whose HarfBuzz objects are never freed, so a deep run stops at 1,000.
+    // Each run loads a face into HarfBuzz twice, so a deep run stops at 1,000.
     fc.assert(fc.property(face, pair, ([, bytes], [first, then]) => {
       const fresh = outcome(bytes.slice(0), then);
       const warmed = bytes.slice(0);
