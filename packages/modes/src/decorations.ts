@@ -39,6 +39,10 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
   // registration of the same function.
   const painters = new Map<string, { painter: ModeDecorationPainter }>();
   const listeners = createEmitter();
+  // One relay of the registry's changes for every listener, so a listener this shares with the registry, or with
+  // another of its readers, keeps its subscription there when it leaves here.
+  const relay = (): void => { listeners.emit(); };
+  let offMode: (() => void) | null = null;
   let registrations = 0;
   const changed = (): void => {
     registrations++;
@@ -63,10 +67,13 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
     getVersion: () => registry.getVersion() + registrations,
     subscribe(listener: () => void): () => void {
       const off = listeners.subscribe(listener);
-      const offMode = registry.subscribe(listener);
+      offMode ??= registry.subscribe(relay);
       return () => {
         off();
-        offMode();
+        if (listeners.size === 0) {
+          offMode?.();
+          offMode = null;
+        }
       };
     },
   };
