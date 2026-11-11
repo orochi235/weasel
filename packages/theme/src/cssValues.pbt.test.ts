@@ -130,6 +130,21 @@ describe('expandVars', () => {
   });
 });
 
+describe('expandVars fuzzed', () => {
+  it('expands any text or refuses it with an error', () => {
+    const text = fc.array(fc.constantFrom('var(', ')', ',', ' ', '--a', '--b', 'constructor', '__proto__', '1px', '('), { maxLength: 10 }).map((ws) => ws.join(''));
+    fc.assert(fc.property(text, fc.dictionary(fc.constantFrom('--a', '--b'), text, { maxKeys: 2 }), (value, tokens) => {
+      try {
+        expect(typeof expandVars(value, tokens)).toBe('string');
+      } catch (e) {
+        expect(e).toBeInstanceOf(Error);
+        expect(e).not.toBeInstanceOf(TypeError);
+        expect((e as Error).message).toMatch(/^expandVars: /);
+      }
+    }), runs(RUNS));
+  });
+});
+
 describe('resolveCurrentColor', () => {
   const byte = fc.integer({ min: 0, max: 255 });
   const pct = fc.integer({ min: 0, max: 100 });
