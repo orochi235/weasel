@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { cubicBounds, cubicEvalAt, splitCubicAt, type CubicCoords } from './curve';
+import { cubicBounds, cubicEvalAt, quadraticEvalAt, splitCubicAt, type CubicCoords } from './curve';
 import { nearestOnCubic } from './nearest';
-import { flattenCubic } from './flatten';
+import { flattenCubic, flattenCubicWithArcLen, flattenQuadratic, flattenQuadraticWithArcLen } from './flatten';
 import { segmentLength, segmentTAtLength } from './paths/segmentLength';
 import { intersectSegments } from './intersect/segmentIntersections';
 import { pointSegmentDist } from './points2';
@@ -117,6 +117,69 @@ describe('flattenCubic, property', () => {
         for (let k = 0; k + 3 < line.length; k += 2) best = Math.min(best, pointSegmentDist(x, y, line[k]!, line[k + 1]!, line[k + 2]!, line[k + 3]!));
         expect(best).toBeLessThanOrEqual(tol + eps);
       }
+    }), RUNS);
+  });
+});
+
+describe('flattenQuadratic, property', () => {
+  it('stays within its tolerance of every point of the curve', () => {
+    const quad = fc.tuple(coord(500), coord(500), coord(500), coord(500), coord(500), coord(500));
+    fc.assert(fc.property(quad, fc.double({ min: 0.01, max: 5, noNaN: true }), (q, tol) => {
+      const out: number[] = [];
+      flattenQuadratic(...q, tol, out);
+      expect(out.slice(-2)).toEqual([q[4], q[5]]);
+      const line = [q[0], q[1], ...out];
+      for (let k = 0; k <= 1000; k++) {
+        const [x, y] = quadraticEvalAt(...q, k / 1000);
+        let best = Infinity;
+        for (let i = 0; i + 3 < line.length; i += 2) best = Math.min(best, pointSegmentDist(x, y, line[i]!, line[i + 1]!, line[i + 2]!, line[i + 3]!));
+        expect(best).toBeLessThanOrEqual(tol + size(q) * 1e-12);
+      }
+    }), RUNS);
+  });
+});
+
+describe('flattening with arc lengths, property', () => {
+  it('draws the same points as plain flattening, counts each chord once, and only refines for an offset', () => {
+    fc.assert(fc.property(cubic, fc.double({ min: 0.01, max: 5, noNaN: true }), fc.double({ min: 0, max: 50, noNaN: true }), (c, tol, offset) => {
+      const plain: number[] = [];
+      flattenCubic(...c, tol, plain);
+      const out: number[] = [], arcs: number[] = [];
+      const total = flattenCubicWithArcLen(...c, tol, out, arcs);
+      expect(out).toEqual(plain);
+      expect(arcs.length).toBe(out.length / 2);
+      let x = c[0], y = c[1], sum = 0;
+      for (let k = 0; k < arcs.length; k++) {
+        sum += Math.hypot(out[2 * k]! - x, out[2 * k + 1]! - y);
+        x = out[2 * k]!; y = out[2 * k + 1]!;
+        expect(Math.abs(arcs[k]! - sum)).toBeLessThanOrEqual(sum * 1e-15);
+      }
+      expect(total).toBe(arcs[arcs.length - 1]);
+      expect(total).toBeLessThanOrEqual(segmentLength(c, 2) * (1 + 1e-9) + size(c) * 1e-12);
+      const wide: number[] = [], wideArcs: number[] = [];
+      flattenCubicWithArcLen(...c, tol, wide, wideArcs, offset);
+      // Every vertex of the plain flattening is kept: the offset only splits pieces further.
+      const kept = new Set<string>();
+      for (let k = 0; k < wide.length; k += 2) kept.add(`${wide[k]},${wide[k + 1]}`);
+      for (let k = 0; k < plain.length; k += 2) expect(kept.has(`${plain[k]},${plain[k + 1]}`)).toBe(true);
+      for (let k = 1; k < wideArcs.length; k++) expect(wideArcs[k]!).toBeGreaterThanOrEqual(wideArcs[k - 1]!);
+    }), RUNS);
+  });
+
+  it('a quadratic draws what plain flattening does, with arc lengths counted from its start', () => {
+    const quad = fc.tuple(coord(500), coord(500), coord(500), coord(500), coord(500), coord(500));
+    fc.assert(fc.property(quad, fc.double({ min: 0.01, max: 5, noNaN: true }), (q, tol) => {
+      const plain: number[] = [];
+      flattenQuadratic(...q, tol, plain);
+      const out: number[] = [], arcs: number[] = [];
+      const total = flattenQuadraticWithArcLen(...q, tol, out, arcs);
+      expect(out).toEqual(plain);
+      let sum = 0;
+      for (let k = 0; k < arcs.length; k++) {
+        sum += Math.hypot(out[2 * k]! - (k ? out[2 * k - 2]! : q[0]), out[2 * k + 1]! - (k ? out[2 * k - 1]! : q[1]));
+        expect(Math.abs(arcs[k]! - sum)).toBeLessThanOrEqual(sum * 1e-15);
+      }
+      expect(total).toBe(arcs[arcs.length - 1]);
     }), RUNS);
   });
 });
