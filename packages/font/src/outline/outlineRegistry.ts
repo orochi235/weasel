@@ -34,6 +34,7 @@ import { createReflectable, type Reflection } from '@weasel-js/registry';
 import { notifyGlyphReady } from '../glyphReady';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
 import type { FontStyle } from '../fontStyle';
+import { cssString } from '../cssFamily';
 import { openTypeParser } from './opentypeParser';
 
 /**
@@ -338,7 +339,7 @@ export function outlineCssSource(
   if (!slot) return null;
   if (slot.cssSrc !== undefined) return { registration: slot, src: slot.cssSrc };
   if (typeof slot.source === 'string') {
-    return { registration: slot, url: `url(${JSON.stringify(slot.source)})` };
+    return { registration: slot, url: `url(${cssString(slot.source)})` };
   }
   const source = slot.source;
   return { registration: slot, bytes: () => readSource(source) };
