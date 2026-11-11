@@ -784,6 +784,22 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-11 (my call, second property pass): an endless clock whose frames would move it past the double range
   stops at `Number.MAX_VALUE` and keeps its rate, rather than ending or throwing; a frame gap past the range counts
   as the largest double.
+- 2026-11-11 (my call, animator second property pass): the animator's own clock takes the clock package's rule: a
+  frame gap past the double range counts as the largest double, and the clock stops at `Number.MAX_VALUE`. An endless
+  timeline there keeps its playhead inside its lap. A timeline's `duration`, root or nested, throws a `RangeError` on
+  `NaN`, as d3's `duration(NaN)` does, and one below 0 plays as 0.
+- 2026-11-11 (my call, animator second property pass): an event handler that cancels or seeks its timeline stops the
+  rest of that frame's crossings; one that pauses it does not, and the events the frame already crossed still fire.
+- Open (animator second property pass, 2026-11-11): a spring or a coast ends at the first frame that finds it under its
+  rest threshold, so where it ends depends on the frames: one at 0 → 1 (stiffness 120, damping 14, velocity 18.5)
+  ends at a frame at 892 ms, but a single frame at 1062 ms finds it 1.0009 and still moving, and it runs on.
+- Open (animator second property pass, 2026-11-11): a `loop` or `tweenLoop` starts each pass on the frame after the
+  last pass ended, so every pass drops that frame's overshoot: 3 passes of 100 ms on 100 ms frames end at 350 ms, and
+  on 1000 ms frames take a frame each. A timeline's loop carries the overshoot into the next lap.
+- Open (animator second property pass, 2026-11-11): a tween, a sampled track, or a target tween between finite values
+  whose difference passes the double range (`-1e308` to `1e308`) shows `-Infinity`, `Infinity`, or `NaN` midway. A
+  tween's and a track's blend is blits', outside this repository; a target tween's offset, `from - to`, overflows in the
+  animator's own offset arithmetic. The second pass's properties keep such endpoints out.
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.
 - 2026-10-11 (targets): a coast commits where it stops; `from` defaults to the committed value; an

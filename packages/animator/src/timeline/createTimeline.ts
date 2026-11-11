@@ -1,7 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { AnimationHandle } from '../types';
 import { createBooker } from './booking';
-import { createEventCursor, createEventFirer } from './fireEvents';
+import { createEventCursor, createEventFirer, lengthOf } from './fireEvents';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -38,12 +38,34 @@ const finite = (t: number): number => {
 /** The laps a loop policy allows past the first pass. */
 const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : loop);
 
+/** Where `t` stands in its lap of `duration`. */
+const inLap = (t: number, duration: number): number => ((t % duration) + duration) % duration;
+
+/** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
+ *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
+function lessLaps(t: number, laps: number, duration: number): number {
+  // No laps of an endless duration are none, not `NaN`.
+  if (laps === 0) return t;
+  const span = laps * duration;
+  return Number.isFinite(span) ? t - span : inLap(t, duration);
+}
+
+/** The playhead and its offset from the entry's clock, which stands at `now`, `laps` laps back.
+ *  Where the offset would pass the double range, the playhead is where it stands in its lap. */
+function lapBack(playhead: number, offset: number, now: number, laps: number, duration: number): [number, number] {
+  const span = laps * duration;
+  const kept = offset - span;
+  if (Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
+  const next = inLap(playhead, duration);
+  return [next, next - now];
+}
+
 /** Where a seek to `t` lands: not before 0, nor past `duration` unless laps are left, where it
  *  lands in a later lap, `laps` on, and a time on a seam is the end of the lap before. */
 function landing(t: number, duration: number, lapsLeft: number): { at: number; laps: number } {
   const to = Math.max(0, finite(t));
   const laps = duration > 0 && to > duration ? Math.min(Math.ceil(to / duration) - 1, lapsLeft) : 0;
-  return { at: Math.min(to - laps * duration, duration), laps };
+  return { at: Math.min(lessLaps(to, laps, duration), duration), laps };
 }
 
 /** End time of a track: its last key/event, or a nested timeline's own end. */
@@ -56,7 +78,7 @@ function trackEnd(track: Track): number {
 }
 
 function tracksEnd(tracks: Track[], explicit?: number): number {
-  if (explicit != null) return explicit;
+  if (explicit != null) return lengthOf(explicit);
   let max = 0;
   for (const t of tracks) max = Math.max(max, trackEnd(t));
   return max;
@@ -105,24 +127,17 @@ export function createTimeline(
   let wantScale = 1;
 
   const edited = createEmitter();
-  const playback = createEmitter();
-  const playbackChanged = playback.emit;
+  const { emit: playbackChanged, subscribe: subscribePlayback } = createEmitter();
 
   let loopsLeft = lapsOf(opts.loop ?? false);
   let lap = 0;
 
-  const booker = opts.booking
-    ? createBooker(opts.booking, {
-      tracks: opts.tracks,
-      duration: () => duration,
-      lapsLeft: () => loopsLeft,
-      lap: () => lap,
-      playhead: () => playhead,
-    })
-    : null;
+  const booker = opts.booking ? createBooker(opts.booking, {
+    tracks: opts.tracks, duration: () => duration, lapsLeft: () => loopsLeft, lap: () => lap, playhead: () => playhead,
+  }) : null;
   const sampler = createTrackSampler(hold);
 
-  const events = createEventCursor(createEventFirer(report, booker !== null));
+  const events = createEventCursor(createEventFirer(report, booker !== null), () => canceled);
 
   // Flush the outgoing pass's tail before re-arming, or an event between the
   // last tick and `duration` is dropped whenever a frame straddles the seam.
@@ -143,7 +158,7 @@ export function createTimeline(
       playhead = virtualNow + offset;
       crossLaps(playhead, duration, loopsLeft, lap, (laps) => {
         takeLaps(laps);
-        offset -= laps * duration; playhead -= laps * duration;
+        [playhead, offset] = lapBack(playhead, offset, virtualNow, laps, duration);
         onWrap(laps);
       });
     }
@@ -156,6 +171,8 @@ export function createTimeline(
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, playhead);
     const sought = rate > 0 ? events.to(opts.tracks, playhead) : rate < 0 && events.back(playhead);
+    // A handler canceled it: it is off the table already, and books nothing more.
+    if (canceled) return true;
     booker?.tick(virtualNow, rate);
 
     if ((finished || rewound) && !done && !sought) { done = true; opts.onDone?.(); playbackChanged(); }
@@ -247,6 +264,6 @@ export function createTimeline(
       edited.emit();
     },
     subscribe: edited.subscribe,
-    subscribePlayback: playback.subscribe,
+    subscribePlayback,
   };
 }

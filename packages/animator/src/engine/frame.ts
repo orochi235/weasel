@@ -101,12 +101,13 @@ export function createFrame(host: FrameHost): Frame {
       // is idle. The two share a time origin in a browser, where the rAF timestamp and
       // `performance.now()` are both page-relative, but not everywhere: jsdom starts them
       // ~600ms apart. Time never runs against the way it is driven, so such a sample is never real.
-      const frameDt = clock.frameT == null ? 0 : Math.max(0, (t - clock.frameT) * clock.drive);
+      // A gap past the double range counts as the largest double, and the clock stops there, as clock's does.
+      const frameDt = clock.frameT == null ? 0 : Math.min(Number.MAX_VALUE, Math.max(0, (t - clock.frameT) * clock.drive));
       clock.frameT = t;
       framing = true;
       // Backward is each animation's own rate: the clock under them only goes forward.
-      const dt = frameDt * (clock.paused ? 0 : Math.abs(clock.timeScale));
-      clock.elapsed += dt;
+      const dt = Math.min(Number.MAX_VALUE, frameDt * (clock.paused ? 0 : Math.abs(clock.timeScale)));
+      clock.elapsed = Math.min(Number.MAX_VALUE, clock.elapsed + dt);
       host.codec.frame(dt);
       host.targets.settle();
       for (const anim of tickEach()) {
