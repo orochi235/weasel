@@ -2,6 +2,13 @@ import { firstAfter, firstAtOrAfter } from './booking';
 import type { TimelineReport } from './createTimeline';
 import type { Track } from './types';
 
+/** A stated duration as the timeline plays it: refused where `NaN`, which every playhead and
+ *  seek would carry. */
+export function lengthOf(duration: number): number {
+  if (Number.isNaN(duration)) throw new RangeError('timeline: duration is a time, not NaN');
+  return duration;
+}
+
 /** Fires the events of `tracks` the playhead crossed going from `from` to `to`, at any depth.
  *  With `fromOpen`, an event exactly at `from` fires too. Stops once `moved` says a handler
  *  moved the playhead, and answers whether it did. */
@@ -76,7 +83,7 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
           if (moved()) return true;
         }
       } else if (track.kind === 'timeline') {
-        const end = track.timeline.duration ?? Infinity;
+        const end = track.timeline.duration == null ? Infinity : lengthOf(track.timeline.duration);
         if (from - track.at > end) continue;
         path.push(k);
         const stopped = fire(track.timeline.tracks, from - track.at, Math.min(to - track.at, end), fromOpen, moved);

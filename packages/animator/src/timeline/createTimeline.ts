@@ -1,7 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { AnimationHandle } from '../types';
 import { createBooker } from './booking';
-import { createEventCursor, createEventFirer } from './fireEvents';
+import { createEventCursor, createEventFirer, lengthOf } from './fireEvents';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
@@ -65,7 +65,7 @@ function trackEnd(track: Track): number {
 }
 
 function tracksEnd(tracks: Track[], explicit?: number): number {
-  if (explicit != null) return explicit;
+  if (explicit != null) return lengthOf(explicit);
   let max = 0;
   for (const t of tracks) max = Math.max(max, trackEnd(t));
   return max;

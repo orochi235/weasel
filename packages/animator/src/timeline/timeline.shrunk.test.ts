@@ -37,4 +37,11 @@ describe('timelines, shrunk from the property tests', () => {
     h.at(10);
     expect(tl.time()).toBe(13);
   });
+
+  it('refuse a NaN duration where it is given, at the root or nested', () => {
+    const h = clocked();
+    expect(() => h.animator.timeline({ duration: Number.NaN, tracks: [] })).toThrow(RangeError);
+    expect(() => h.animator.timeline({ tracks: [{ kind: 'timeline', at: 0, timeline: { duration: Number.NaN, tracks: [] } }] })).toThrow(RangeError);
+    expect(h.animator.isActive()).toBe(false);
+  });
 });
