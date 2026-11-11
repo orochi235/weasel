@@ -1,3 +1,4 @@
+import { heldAt } from './heldAt';
 import { treeKey, type TreeShape } from './tree';
 import { isOneChar } from './typeahead';
 
@@ -21,14 +22,15 @@ export function firstStop<T>(items: readonly T[], shape: ListShape<T> = {}): num
   return i < 0 ? null : i;
 }
 
-/** The next item the highlight can land on from `from` in direction `dir`; from `null`, the first or last.
- *  Without wrap, an end stays where it is. Null for a list with no such item. */
+/** The next item the highlight can land on from `at` in direction `dir`; from `null`, or an index that names no
+ *  item, the first or last. Without wrap, an end stays where it is. Null for a list with no such item. */
 export function stepStop<T>(
-  items: readonly T[], from: number | null, dir: 1 | -1, shape: ListShape<T> = {},
+  items: readonly T[], at: number | null, dir: 1 | -1, shape: ListShape<T> = {},
 ): number | null {
   const canStop = shape.canStop ?? always;
   const wrap = shape.wrap ?? true;
   const n = items.length;
+  const from = heldAt(n, at);
   let i = from ?? (dir === 1 ? -1 : n);
   for (let k = 0; k < n; k++) {
     i += dir;

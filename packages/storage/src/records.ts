@@ -1,4 +1,5 @@
 import { createEmitter } from '@weasel-js/registry';
+import { createRemote } from './remote';
 import type { StorageAdapter, StorageChange, SyncStorageAdapter } from './types';
 import { DELETED, createWriteQueue } from './writeQueue';
 
@@ -17,8 +18,10 @@ export interface RecordChange {
  *
  * Writes land in memory at once and reach storage on a debounce. The newest
  * write to a record wins: another writer's change to a record with a write
- * still queued or on its way here is ignored, since that write lands after
- * it. A write storage rejects stays queued and is sent again on a backoff.
+ * still queued here is ignored, since that write lands after it. One heard
+ * while a write is already on its way may have landed either side of it, so
+ * once the write lands the record is read back from storage. A write storage
+ * rejects stays queued and is sent again on a backoff.
  */
 export interface RecordCache {
   readonly prefix: string;
@@ -144,29 +147,20 @@ function buildCache(
     writable,
     closed: () => closed,
     stopped: () => stopped,
+    settled: (name) => remote.settled(name),
   });
 
-  const applyRemote = (changes: StorageChange[]): void => {
-    const applied: RecordChange[] = [];
-    const overruled: [string, unknown][] = [];
-    for (const [key, value] of changes) {
-      if (!key.startsWith(prefix)) continue;
-      const name = key.slice(prefix.length);
-      if (queue.owns(name)) {
-        overruled.push([name, value]);
-        continue;
-      }
-      if (value === undefined) {
-        if (!values.has(name)) continue;
-        values.delete(name);
-      } else {
-        values.set(name, value);
-      }
-      applied.push({ name, value, origin: 'remote' });
-    }
-    if (overruled.length > 0) overruledEmitter.emit(overruled);
-    if (applied.length > 0) emit(applied);
-  };
+  const remote = createRemote({
+    prefix,
+    values,
+    owns: (name) => queue.owns(name),
+    queued: (name) => queue.has(name),
+    live: () => !closed && !stopped,
+    read: (key) => storage.get(key),
+    applied: emit,
+    overruled: overruledEmitter.emit,
+  });
+  const applyRemote = remote.apply;
 
   let unsubscribe = writable() ? storage.subscribe?.(prefix, applyRemote) : undefined;
 

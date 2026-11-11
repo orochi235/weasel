@@ -15,6 +15,8 @@ export interface WriteQueueOptions {
   writable(): boolean;
   closed(): boolean;
   stopped(): boolean;
+  /** Called when the last write to `name` on its way to storage has landed or failed. */
+  settled?(name: string): void;
 }
 
 /** A cache's writes on their way to storage: the newest per record, sent on a
@@ -39,7 +41,7 @@ export interface WriteQueue {
 }
 
 export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
-  const { storage, prefix, debounceMs, maxWaitMs, retryMs, retryMaxMs, writable, closed, stopped } = options;
+  const { storage, prefix, debounceMs, maxWaitMs, retryMs, retryMaxMs, writable, closed, stopped, settled } = options;
   const queued = new Map<string, unknown>();
   // How many writes to each name are on their way to storage.
   const inFlight = new Map<string, number>();
@@ -96,7 +98,10 @@ export function createWriteQueue(options: WriteQueueOptions): WriteQueue {
     } finally {
       const count = inFlight.get(name) ?? 1;
       if (count > 1) inFlight.set(name, count - 1);
-      else inFlight.delete(name);
+      else {
+        inFlight.delete(name);
+        settled?.(name);
+      }
     }
   }
 

@@ -655,6 +655,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   than a mark on the binding's layer with an error naming the key and the node, before changing anything, where it
   had failed partway with core's "id collision".
 
+- 2026-11-11 (my call, second property pass): an endless clock whose frames would move it past the double range
+  stops at `Number.MAX_VALUE` and keeps its rate, rather than ending or throwing; a frame gap past the range counts
+  as the largest double.
 - 2026-10-11: `UseAnimatorOptions.setTimer`/`clearTimer` are gone. Timeline handles need
   `subscribePlayback`.
 - 2026-10-11 (targets): a coast commits where it stops; `from` defaults to the committed value; an
@@ -746,6 +749,19 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   leaves the fragment alone, and `RecordCache.delete` of a record whose delete is still queued does nothing
   and reports nothing. Why: an edit that would change nothing does nothing.
 
+- 2026-11-11 (my call, second property pass): a highlight index that names no item (past the end of a list that
+  shrank, negative, or not a whole number) steps, types, and keys as no highlight does in ui-logic's `stepStop` and
+  `typeaheadMatch`, so Down from past the end lands on the first stop even without wrap, as `tabStep` already reads a
+  target gone from the order.
+- 2026-11-11 (my call, second property pass): a slider key back into the range from an endless end's stop moves a
+  press at a time from the range's end and lands on the step grid, which starts at the range's start; one that would
+  cross the whole range stops at its far end, not on the far end's stop.
+- 2026-11-11 (my call, second property pass): a record cache that hears another writer change a record while only a
+  write of its own is on its way reads the record back from storage once that write lands, and takes what it reads
+  as a remote change; the change still reaches `onOverruled` when heard. Open: a value `deepEqual` cannot compare (a
+  `Map`, a `Date`) read back unchanged reports as a remote change of the same value.
+- Open (2026-11-11): a record cache with `retryMs: 0`, or a negative one, tries a failed read or write again every
+  tick for as long as storage fails, since doubling 0 leaves 0; nothing floors the backoff.
 - 2026-10-20 (overnight pass): `useRovingTabIndex` swaps Left and Right under right-to-left, in
   `horizontal`, `both` and grid layouts, reading the container's computed `direction` at each key
   unless the new `dir` option says otherwise. ui declares its own `RovingDirection` rather than

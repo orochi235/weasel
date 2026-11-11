@@ -76,7 +76,8 @@ function placeIn(run: Run, pass: number, into: number): void {
   const line = (at + 1) * run.duration;
   const sum = at * run.duration + within;
   const end = within > 0 && (within === run.duration || (within > run.duration / 2 && sum >= line));
-  run.elapsed = clamp(run, end ? line : sum);
+  // Far out a pass's start and the time into it sum past the double range; an endless run holds the largest time.
+  run.elapsed = Math.min(Number.MAX_VALUE, clamp(run, end ? line : sum));
   run.edge = run.elapsed > 0 && end;
 }
 
@@ -169,8 +170,9 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   const wasChanged = run.changed;
   const before = run.elapsed;
   if (!Number.isNaN(run.last) && !run.slept) {
-    const moved = advance(run, hub, Math.max(0, timestamp - run.last));
-    run.elapsed += moved;
+    // Between frame times far apart, the gap and the move overflow; an endless run stops at the largest time it holds.
+    const moved = advance(run, hub, Math.min(Number.MAX_VALUE, Math.max(0, timestamp - run.last)));
+    run.elapsed = Math.min(Number.MAX_VALUE, run.elapsed + moved);
     // A ramp that turns back within the frame still reached the end on its way there.
     if (run.elapsed >= run.span && (run.rate > 0 || moved > 0)) {
       run.elapsed = run.span;
@@ -350,15 +352,20 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       change(run, hub);
       hub.subs.emit();
     },
+    // `applyRun` checks before it writes, so a declaration or override it refuses is not kept either.
     declare(next) {
-      const was = declared.loop;
-      declared = declaredOf(run, next);
+      const taken = declaredOf(run, next);
+      // Checked under an override too, which would otherwise hand a bad duration to the call that lifts it.
+      checkDuration(taken.duration);
+      checkOrigin(taken.origin);
       // A declaration that keeps its loop leaves one set since, as a transport's toggle.
-      applyRun(run, hub, { ...declared, loop: declared.loop !== was ? declared.loop : run.loop }, override);
+      applyRun(run, hub, { ...taken, loop: taken.loop !== declared.loop ? taken.loop : run.loop }, override);
+      declared = taken;
     },
     override(next) {
-      override = next ? { ...next } : null;
-      applyRun(run, hub, { ...declared, loop: run.loop }, override);
+      const taken = next ? { ...next } : null;
+      applyRun(run, hub, { ...declared, loop: run.loop }, taken);
+      override = taken;
     },
     onFrame: hub.frames.subscribe,
   };
