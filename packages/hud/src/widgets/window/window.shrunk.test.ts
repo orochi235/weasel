@@ -18,3 +18,20 @@ describe('createWindow, shrunk', () => {
     expect(win.bounds).toEqual({ x: 0, y: 0, w: 80, h: 52 });
   });
 });
+
+describe('createWindow at points that are not finite, shrunk', () => {
+  it('stays where it is through a move to a NaN point', () => {
+    const win = createWindow({ id: 'w', x: 50, y: 40, w: 200, h: 150, title: 'W', titlebar: false });
+    win.onPointer({ type: 'down', x: 60, y: 50, native: null });
+    win.onPointer({ type: 'move', x: Number.NaN, y: 0, native: null });
+    expect(win.bounds).toEqual({ x: 50, y: 40, w: 200, h: 150 });
+  });
+
+  it('reports no click for a release at a NaN point', () => {
+    const clicks: unknown[] = [];
+    const win = createWindow({ id: 'w', x: 50, y: 40, w: 200, h: 150, title: 'W', titlebar: false, onContentClick: (p) => clicks.push(p) });
+    win.onPointer({ type: 'down', x: 60, y: 50, native: null });
+    win.onPointer({ type: 'up', x: 0, y: Number.NaN, native: null });
+    expect(clicks).toEqual([]);
+  });
+});

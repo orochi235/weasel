@@ -285,7 +285,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           break;
         }
         case 'move': {
-          if (!dragZone) break;
+          if (!dragZone || !Number.isFinite(evt.x) || !Number.isFinite(evt.y)) break;
           if (pastDragThreshold(
             { clientX: dragOrigin.x, clientY: dragOrigin.y },
             { clientX: evt.x, clientY: evt.y },
@@ -308,7 +308,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         case 'up': {
           if (dragZone === 'close' && zoneAt(bounds, m, evt.x, evt.y) === 'close') {
             opts.onClose?.();
-          } else if (pressZone === 'content' && !pressMoved) {
+          } else if (pressZone === 'content' && !pressMoved && Number.isFinite(evt.x) && Number.isFinite(evt.y)) {
             opts.onContentClick?.({ x: evt.x, y: evt.y });
           }
           dragZone = null;
