@@ -19,11 +19,11 @@ function ownSteps(def: ThemeDefinition): Set<string> {
 /** A child's by-axis pin with the axis values it leaves out taken from the parent's pin of the same name. */
 function fillFromParent(child: unknown, parent: unknown, axes: AxisDefs): unknown {
   if (!isByAxis(child) || parent === undefined) return child;
-  const values = Object.keys(axes[child.by]?.values ?? {});
+  const values = Object.keys((Object.hasOwn(axes, child.by) ? axes[child.by] : undefined)?.values ?? {});
   const out: Record<string, unknown> = { ...child };
   for (const v of values) {
-    if (v in out) continue;
-    out[v] = isByAxis(parent) && parent.by === child.by ? parent[v] : parent;
+    if (Object.hasOwn(out, v)) continue;
+    out[v] = isByAxis(parent) && parent.by === child.by ? (Object.hasOwn(parent, v) ? parent[v] : undefined) : parent;
     if (out[v] === undefined) delete out[v];
   }
   return out;
@@ -42,7 +42,7 @@ export function mergeChain(def: ThemeDefinition, lookup?: Lookup, seen: Readonly
   const inherited = Object.entries(parent.pins ?? {}).filter(([name]) => !shadowed.has(name));
   const axes = mergeAxes(parent.axes ?? {}, def.axes ?? {});
   const parentPins: Record<string, unknown> = parent.pins ?? {};
-  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, parentPins[name], axes)]);
+  const own = Object.entries(def.pins ?? {}).map(([name, v]) => [name, fillFromParent(v, Object.hasOwn(parentPins, name) ? parentPins[name] : undefined, axes)]);
   out.pins = { ...Object.fromEntries(inherited), ...Object.fromEntries(own) };
   out.axes = axes;
   out.tints = def.tints ?? parent.tints;
