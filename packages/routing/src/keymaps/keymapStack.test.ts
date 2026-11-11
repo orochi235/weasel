@@ -117,4 +117,19 @@ describe('createKeymapStack', () => {
     s.release('g2');
     expect(ids(s)).toEqual([]);
   });
+
+  it('shows input that arrived while a leader was held, and says so', () => {
+    const s = createKeymapStack();
+    s.push('a', 'A', { heldBy: 'g1' });
+    const fn = vi.fn();
+    s.subscribe(fn);
+    s.inputSeen();
+    expect(s.innermost()?.usedWhileHeld).toBe(true);
+    expect(fn).toHaveBeenCalledTimes(1);
+    s.push('b', 'B', { heldBy: 'g2' });
+    s.swallowed();
+    expect(s.open().map((k) => k.usedWhileHeld)).toEqual([true, true]);
+    s.inputSeen();
+    expect(fn).toHaveBeenCalledTimes(3);
+  });
 });

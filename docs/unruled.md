@@ -128,6 +128,17 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 
 - 2026-10-26/27 (agent batches 2–10): Alt+P opens the Pathfinder keymap, with U/I/M/X/D/C/T/R inside it.
 
+- 2026-11-10 (property tests): `findConflicts` compares bindings phase by phase at the dispatcher's
+  specificity: one of either phase meets an `initial` or `engaged` one of the same rank, and two of
+  different ranks never tie. The separator `mergeMenuDefs` puts between contributions takes the next
+  free `~sep<n>` key rather than overwriting a child that holds it.
+- Open (2026-11-10, property tests): `findConflicts` reads a phase as the whole canvas's, so it never
+  reports a pair of owners' own-channel bindings that tie only while one owner is engaged and the other
+  is not (`&:engaged` against `&:initial`). The property engages both owners or neither.
+- Open (2026-11-10, property tests): `findConflicts` buckets a key binding by `key` alone, so two
+  bindings with different keys and the same `code` are not reported though one keystroke fires both.
+  The property's specs name no `code`.
+
 ## Snapping
 
 - 2026-10-20 (overnight pass): `SnapBegin` and `SnapCollect` take `parent`, the container a subject

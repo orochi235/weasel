@@ -1,5 +1,6 @@
 import { freshId } from '@weasel-js/registry';
 import type { MenuDef, MenuHit, MenuWhen, OwnedMenuDef } from './types';
+import type { PrefGroup } from '@weasel-js/prefs';
 
 const oneOf = <T>(want: T | readonly T[] | undefined, got: T | undefined) =>
   want === undefined || (Array.isArray(want) ? (want as readonly T[]).includes(got as T) : want === got);
@@ -28,9 +29,14 @@ export function mergeMenuDefs(defs: readonly OwnedMenuDef[], activeTool: string 
     }
     const n = prev.parts++;
     const children = prev.def.menu.children;
-    children[`~sep${n}`] = { kind: 'separator', name: '', description: '', default: undefined };
+    const taken = { has: (id: string) => Object.hasOwn(children, id) };
+    const place = (k: string, node: PrefGroup['children'][string]): void => {
+      // Defined, not assigned: assigning `__proto__` would set the prototype and drop the child.
+      Object.defineProperty(children, k, { value: node, enumerable: true, writable: true, configurable: true });
+    };
+    place(freshId('~sep', taken, { from: n, sep: '', bare: false }), { kind: 'separator', name: '', description: '', default: undefined });
     for (const [k, node] of Object.entries(def.menu.children)) {
-      children[Object.hasOwn(children, k) ? freshId(k, { has: (id) => Object.hasOwn(children, id) }, { from: n, sep: '~' }) : k] = node;
+      place(taken.has(k) ? freshId(k, taken, { from: n, sep: '~' }) : k, node);
     }
     if (!prev.def.when && def.when) prev.def.when = def.when;
   }

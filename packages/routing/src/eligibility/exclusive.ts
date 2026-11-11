@@ -12,12 +12,18 @@ import { checkCapability, checkMode, isAllRule, isAnyRule, isNotRule, isWhenRule
  * that share a tuple but are never eligible together.
  */
 export function rulesExclusive(a: Rule, b: Rule): boolean {
-  if (isAllRule(a)) return a.all.some((r) => rulesExclusive(r, b));
-  if (isAllRule(b)) return b.all.some((r) => rulesExclusive(a, r));
+  // Before `all` and `any` are taken apart, or `not` of a compound rule never meets the rule itself.
+  if (isNotRule(a) && rulesEqual(a.not, b)) return true;
+  if (isNotRule(b) && rulesEqual(b.not, a)) return true;
+  // `any` splits exactly and `all` only sufficiently, so `any` goes first, and two `all`s each get a turn:
+  // a proof can need each alternative met by a different part, or a part of either side.
   if (isAnyRule(a)) return a.any.every((r) => rulesExclusive(r, b));
   if (isAnyRule(b)) return b.any.every((r) => rulesExclusive(a, r));
-  if (isNotRule(a)) return rulesEqual(a.not, b);
-  if (isNotRule(b)) return rulesEqual(b.not, a);
+  if (isAllRule(a) || isAllRule(b)) {
+    return (isAllRule(a) && a.all.some((r) => rulesExclusive(r, b)))
+      || (isAllRule(b) && b.all.some((r) => rulesExclusive(a, r)));
+  }
+  if (isNotRule(a) || isNotRule(b)) return false;
   if (isWhenRule(a) || isWhenRule(b)) return false;
   return selectorsExclusive(a, b);
 }

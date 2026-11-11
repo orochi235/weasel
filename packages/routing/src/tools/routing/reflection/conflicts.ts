@@ -5,6 +5,7 @@ import { overriddenBindings, type ResolvedBindingOverrides } from '../../../inte
 import type { ParsedModifiers } from '../routeGrammar';
 import { canonicalModifiers, formatRoute } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
+import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
 import { argKeysOf, modifierTieKeys, objectId, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
@@ -80,11 +81,15 @@ function findConflictsKeyed(
     // `key: ['h','H']` and `key: 'H'` really do collide, as do two `drop` specs
     // whose MIME sets overlap without being equal. Modifiers bucket the same
     // way, one per state the spec accepts, so an optional Shift meets a forbidden one.
+    // Phases bucket the same way: a binding of no one phase meets one of either. The matcher ranks by
+    // specificity before declaration order, so only equal ranks tie.
+    const phases = entry.phase === 'any' ? ['initial', 'engaged'] : [entry.phase];
     for (const arg of argKeysOf(entry)) {
-      const base = `${entry.phase}|${entry.gesture}|${arg}|${targetKey(entry)}`;
+      const base = `${entry.gesture}|${arg}|${targetKey(entry)}`;
       for (const platform of PLATFORMS) {
-        for (const state of modifierTieKeys(entry, platform)) {
-          const key = `${platform}|${base}|${state}`;
+        const rank = specificity(entry.spec, platform === 'mac').join();
+        for (const state of phases.flatMap((p) => modifierTieKeys(entry, platform).map((m) => `${p}|${m}`))) {
+          const key = `${platform}|${base}|${state}|${rank}`;
           const bucket = groups.get(key);
           if (bucket) { if (!bucket.members.includes(entry)) bucket.members.push(entry); }
           else groups.set(key, { base, platform, members: [entry] });
