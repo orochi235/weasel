@@ -84,7 +84,7 @@ export { composePath, decomposePath } from './paths/compose';
 export { splitSubpaths } from './paths/splitSubpaths';
 export { hasOpenSubpath, splitByClosure } from './paths/splitByClosure';
 export { pathSignedArea, reversePath } from './paths/winding';
-export { pathFromD } from './paths/pathFromD';
+export { pathFromD, tokenizePathData, type PathDataCommand } from './paths/pathFromD';
 export { pathToD } from './paths/pathToD';
 export { pointAlongPath, type PathStation, type PointAlongPathOptions } from './paths/pathAt';
 export { measurePath, type MeasurePathOptions, type PathMeasure, type PathNearestStation } from './paths/pathMeasure';

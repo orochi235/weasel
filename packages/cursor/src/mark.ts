@@ -1,16 +1,18 @@
+import { tokenizePathData, trimNumber } from '@weasel-js/geom';
 import type { CursorGlyph, CursorMark, CursorPath } from './types';
 
-const r2 = (v: number) => Math.round(v * 100) / 100;
-
 /**
- * Path data scaled by `k` and moved by `(dx, dy)`. Reads the authored dialect, absolute `M`, `L`, `A` and `Z`,
- * and throws on anything else rather than misplace it.
+ * Path data scaled by `k` and moved by `(dx, dy)`, to two decimals. Reads the authored dialect, absolute `M`, `L`,
+ * `A` and `Z`, and throws on anything else rather than misplace it, and a `RangeError` for a coordinate that lands
+ * past the double range or is not a number.
  */
 export function placeCursorPath(d: string, k: number, dx: number, dy: number): string {
+  const r2 = (v: number): string => {
+    if (!Number.isFinite(v)) throw new RangeError(`placeCursorPath: scaled by ${k} and moved by ${dx}, ${dy}, a coordinate of ${d} is ${v}`);
+    return trimNumber(v, 2);
+  };
   const out: string[] = [];
-  // `e` is an exponent, not a command: a number like 1e-3 must not split.
-  for (const [, cmd, args] of d.matchAll(/([A-DF-Za-df-z])([^A-DF-Za-df-z]*)/g)) {
-    const nums = (args!.match(/[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) ?? []).map(Number);
+  for (const { cmd, args: nums } of tokenizePathData(d)) {
     const arity = cmd === 'M' || cmd === 'L' ? 2 : cmd === 'A' ? 7 : 0;
     if (arity > 0 && (nums.length === 0 || nums.length % arity !== 0)) {
       throw new Error(`cursor path '${cmd}' has ${nums.length} numbers, which placeCursorPath cannot read as whole points: ${d}`);

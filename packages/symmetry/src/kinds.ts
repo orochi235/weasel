@@ -84,8 +84,10 @@ const about = (c: Point, m: Affine): Affine => multiply(translate(c.x, c.y), mul
 
 /** The reflection across the line through `c` at `angle`. */
 export function mirrorAcross(c: Point, angle: number): Affine {
-  const cos = exact(Math.cos(2 * angle));
-  const sin = exact(Math.sin(2 * angle));
+  // Within a half turn first, or an axis near the double range's end doubles past it.
+  const twice = 2 * (angle % Math.PI);
+  const cos = exact(Math.cos(twice));
+  const sin = exact(Math.sin(twice));
   return about(c, [cos, sin, sin, -cos, 0, 0]);
 }
 
@@ -119,11 +121,8 @@ const none = (): Affine[] => [];
 const finite = (label: string, transforms: SymmetryKindDef['transforms']): SymmetryKindDef =>
   ({ label, transforms, pointGroup: transforms });
 
-/**
- * Every kind, by name. A new kind is a row here: the group, the guide layer
- * and the controls all read the table.
- */
-export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
+/** A new kind is a row here: the group, the guide layer and the controls all read the table built from it. */
+const ROWS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
   mirror: finite('Mirror', (s, c) => [mirrorAcross(c, s.angle)]),
   both: finite('Both axes', (s, c) => [mirrorAcross(c, s.angle), mirrorAcross(c, s.angle + Math.PI / 2), turnAbout(c, Math.PI)]),
   point: finite('Point', (_s, c) => [turnAbout(c, Math.PI)]),
@@ -176,6 +175,19 @@ export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = {
     },
   },
 };
+
+/** A copy whose affine is not finite, from a spacing or a center near the double range's end or an angle that is
+ *  not a number, is not drawn. */
+const drawable = (ms: Affine[]): Affine[] => ms.filter((m) => m.every(Number.isFinite));
+
+/** Every kind, by name. */
+export const SYMMETRY_KINDS: Readonly<Record<SymmetryKind, SymmetryKindDef>> = Object.fromEntries(
+  Object.entries(ROWS).map(([kind, def]) => [kind, {
+    label: def.label,
+    transforms: (s: SymmetrySpec, c: Point) => drawable(def.transforms(s, c)),
+    pointGroup: (s: SymmetrySpec, c: Point) => drawable(def.pointGroup(s, c)),
+  }]),
+) as Record<SymmetryKind, SymmetryKindDef>;
 
 /** What a wallpaper's cell draws about the center, its axis turned by `cellAngle`. */
 function cellTransforms(s: SymmetrySpec, c: Point): Affine[] {
