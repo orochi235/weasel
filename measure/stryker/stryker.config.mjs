@@ -6,7 +6,7 @@ export default {
   plugins: [`${tools}@stryker-mutator/vitest-runner/dist/src/index.js`],
   disableTypeChecks: `packages/${pkg}/src/**/*.{ts,tsx}`,
   vitest: { configFile: 'measure/stryker/vitest.config.ts', related: false },
-  mutate: [`packages/${pkg}/src/**/*.{ts,tsx}`, '!**/*.test.{ts,tsx}', '!**/*.d.ts'],
+  mutate: [process.env.MEASURE_MUTATE ?? `packages/${pkg}/src/**/*.{ts,tsx}`, '!**/*.test.{ts,tsx}', '!**/*.d.ts', '!**/*.fixture.ts'],
   coverageAnalysis: 'perTest',
   disableBail: true,
   ignoreStatic: true,
