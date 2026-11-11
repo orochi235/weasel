@@ -37,7 +37,9 @@ const rectD = ({ x, y, w, h }: { x: number; y: number; w: number; h: number }) =
 
 function points(p: PolygonPath): [number, number][] {
   const out: [number, number][] = [];
-  for (let k = 0; k + 1 < p.coords.length; k += 2) out.push([p.coords[k]!, p.coords[k + 1]!]);
+  const ox = p.origin?.x ?? 0;
+  const oy = p.origin?.y ?? 0;
+  for (let k = 0; k + 1 < p.coords.length; k += 2) out.push([p.coords[k]! + ox, p.coords[k + 1]! + oy]);
   return out;
 }
 
