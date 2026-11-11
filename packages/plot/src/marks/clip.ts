@@ -60,24 +60,33 @@ function sidesOf(area: ConvexArea): Sides {
   };
 }
 
+/** Whether `p` lies inside every one of `sides`, or on one. */
+function within(sides: Sides, p: PlotPoint): boolean {
+  for (let i = 0; i < sides.count; i++) if (!(sides.at(i, p) >= 0)) return false;
+  return true;
+}
+
 /** `p`, or where the line from the area's centroid to it leaves the area when it lies outside: a last guard for a
  *  crossing whose ends were both too far out to place it exactly. */
 function into(sides: Sides, p: PlotPoint): PlotPoint {
+  if (within(sides, p)) return p;
   const c = sides.center;
   let k = 1;
   for (let i = 0; i < sides.count; i++) {
     const sp = sides.at(i, p);
     if (sp < 0) k = Math.min(k, sides.at(i, c) / (sides.at(i, c) - sp));
   }
-  return k === 1 ? p : { x: c.x + (p.x - c.x) * k, y: c.y + (p.y - c.y) * k };
+  // A point a rounding outside scales by a share that rounds to 1, or lands a rounding outside again: each try pulls
+  // it a little further in.
+  for (let tries = 0; tries < 8; tries++, k *= 1 - 1e-12 * 16 ** tries) {
+    const q = { x: c.x + (p.x - c.x) * k, y: c.y + (p.y - c.y) * k };
+    if (within(sides, q)) return q;
+  }
+  return c;
 }
 
 /** Whether `p` lies inside `area` or on its edge. */
-export function insideArea(area: ConvexArea, p: PlotPoint): boolean {
-  const sides = sidesOf(area);
-  for (let i = 0; i < sides.count; i++) if (!(sides.at(i, p) >= 0)) return false;
-  return true;
-}
+export const insideArea = (area: ConvexArea, p: PlotPoint): boolean => within(sidesOf(area), p);
 
 /** Where the segment `p`→`q` crosses a line its ends sit `sp` and `sq` inside of, measured from the nearer end, so a
  *  far end does not swamp the share. */

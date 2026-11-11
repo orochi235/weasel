@@ -33,4 +33,14 @@ describe('clipPolygon, shrunk', () => {
     expect(clipPolyline(dot, [{ x: 100, y: 100 }, { x: -100, y: 3 }])).toEqual([]);
     expect(insideArea(circleArea({ x: 5, y: 5 }, 0), { x: 100, y: -50 })).toBe(false);
   });
+
+  it('pulls a crossing a rounding outside the area inside it', () => {
+    const area = [
+      { x: 5, y: -187.78254751155208 }, { x: 82.23130556292534, y: -150.58991097507854 }, { x: 101.30586280543925, y: -67.01881526914543 },
+      { x: 47.86014107387006, y: -1.4210854715202004e-14 }, { x: -37.86014107387004, y: 0 }, { x: -91.30586280543925, y: -67.01881526914542 },
+      { x: -72.23130556292536, y: -150.5899109750785 },
+    ];
+    const runs = clipPolyline(area, [{ x: -208, y: 0 }, { x: 1e12, y: 0 }, { x: 5, y: -187.78254751155208 }]);
+    for (const p of runs.flat()) expect(insideArea(area, p)).toBe(true);
+  });
 });
