@@ -85,4 +85,17 @@ describe('replayGitGraph', () => {
       expect(cmd.kind === 'cherry-pick' && /already exists/.test(h.error.message)).toBe(false);
     }), runs(RUNS));
   }, timeoutFor(RUNS, 1));
+
+  it('lays branches out in one order, by their order else their place of creation, whatever orders they hold', () => {
+    const order = fc.oneof(fc.integer({ min: -2, max: 6 }), fc.constantFrom(Number.NaN, Infinity, -Infinity, 0.5));
+    const names = ['a', 'b', 'c', 'd', 'e'];
+    fc.assert(fc.property(fc.array(fc.option(order, { nil: undefined }), { minLength: 5, maxLength: 5 }), (orders) => {
+      const commands: GitCommand[] = [{ kind: 'commit' }];
+      names.forEach((name, i) => commands.push({ kind: 'branch', name, ...(orders[i] !== undefined ? { order: orders[i] } : {}) }, { kind: 'checkout', name: 'main' }));
+      const lanes = replayGitGraph({ kind: 'gitgraph', commands }).branches.map((b) => b.name);
+      const rank = (i: number) => (orders[i] !== undefined && !Number.isNaN(orders[i]) ? orders[i]! : i + 1);
+      const want = names.map((_, i) => i).sort((x, y) => (rank(x) === rank(y) ? x - y : rank(x) < rank(y) ? -1 : 1)).map((i) => names[i]);
+      expect(lanes).toEqual(['main', ...want]);
+    }), runs(RUNS));
+  });
 });

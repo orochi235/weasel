@@ -127,7 +127,9 @@ export function replayGitGraph(data: GitGraphData): GitHistory {
       break;
     }
   }
-  const rank = (b: GitBranch & { created: number }) => (b.name === main ? Number.NEGATIVE_INFINITY : b.order ?? b.created);
+  // An order that is not a number places a branch as one with none.
+  const rank = (b: GitBranch & { created: number }) =>
+    (b.name === main ? Number.NEGATIVE_INFINITY : b.order !== undefined && !Number.isNaN(b.order) ? b.order : b.created);
   s.history.branches = [...s.branches.values()]
     .sort((a, b) => rank(a) - rank(b) || a.created - b.created)
     .map(({ created: _, ...b }) => b);
