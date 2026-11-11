@@ -28,6 +28,16 @@ export type Varying<T> = T | ByAxis<T>;
 
 export type Picked<T> = { ok: true; value: T } | { ok: false; axis: string; value: string };
 
+/** Attribute names `applyTheme` stamps beside the axes', which an axis of the same name would overwrite. */
+const RESERVED_AXES = ['theme', 'variant'];
+
+/** Why `name` cannot name an axis, or undefined when it can. */
+export function axisNameProblem(name: string): string | undefined {
+  if (name === '__proto__') return '"__proto__" cannot name an axis';
+  if (RESERVED_AXES.includes(name)) return `"${name}" is reserved and cannot name an axis: its data-wzl-${name} attribute is the theme's own`;
+  return undefined;
+}
+
 /** Whether `v` is a {@link ByAxis} value. */
 export function isByAxis(v: unknown): v is ByAxis<unknown> {
   return isPlainObject(v) && typeof v.by === 'string';

@@ -1,5 +1,5 @@
 import { isPlainObject } from '@weasel-js/registry';
-import { isByAxis, type AxisDefs, type Varying } from './axes.ts';
+import { axisNameProblem, isByAxis, type AxisDefs, type Varying } from './axes.ts';
 import type { SerializableColorList } from './colorListItems.ts';
 import type { PinObject, PinValue, ThemeDefinition } from './definition.ts';
 import { isSafeTokenName, unsafeTokenName, type RawToken, type TokenValue } from './dtcg/types.ts';
@@ -64,6 +64,10 @@ export function defineTheme(input: ThemeInput): Theme {
     throw new Error(
       `Theme "${input.name}" has ${rules.join(', ')}, which need deriving. Bake it with \`bake\` from @weasel-js/theme/engine.`,
     );
+  }
+  for (const axis of Object.keys(input.axes ?? {})) {
+    const problem = axisNameProblem(axis);
+    if (problem) throw new Error(`Theme "${input.name}": ${problem}`);
   }
   const tokens: Record<string, Varying<RawToken>> = {};
   for (const [name, v] of Object.entries({ ...input.components, ...input.pins })) {

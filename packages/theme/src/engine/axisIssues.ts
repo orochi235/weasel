@@ -1,4 +1,4 @@
-import type { AxisDefs } from '../axes.ts';
+import { axisNameProblem, type AxisDefs } from '../axes.ts';
 import type { Issue } from './types.ts';
 
 /** What is wrong with the axes themselves: one with no values has no selection to derive at, and a default outside the values names tokens nothing declares. */
@@ -6,8 +6,9 @@ export function axisIssues(axes: AxisDefs): Issue[] {
   const issues: Issue[] = [];
   for (const [name, def] of Object.entries(axes)) {
     const values = Object.keys(def.values ?? {});
-    if (name === '__proto__') {
-      issues.push({ kind: 'invalid', path: `axes.${name}`, message: '"__proto__" cannot name an axis' });
+    const problem = axisNameProblem(name);
+    if (problem) {
+      issues.push({ kind: 'invalid', path: `axes.${name}`, message: problem });
     } else if (values.length === 0) {
       issues.push({ kind: 'invalid', path: `axes.${name}`, message: `axis "${name}" has no values` });
     } else if (typeof def.default !== 'string') {

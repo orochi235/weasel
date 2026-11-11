@@ -1,6 +1,8 @@
 /** Counterexamples `applyTheme.axes.pbt.test.ts` shrank to, kept as plain examples. */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { applyTheme, __resetThemeSheet } from './applyTheme';
+import { derive } from './engine/derive';
+import { defineTheme } from './theme';
 import type { Theme } from './theme';
 
 const byMode: Theme = { name: 't', extends: null, axes: { mode: { default: 'dark', values: { dark: {} } } }, tokens: { y: { type: 'color', value: '#000001' } } };
@@ -28,5 +30,17 @@ describe('applyTheme again with other axes', () => {
     applyTheme(b!, byMode);
     const rules = document.adoptedStyleSheets.flatMap((s) => [...s.cssRules]) as CSSStyleRule[];
     expect(rules.filter((r) => a!.matches(r.selectorText)).map((r) => r.style.getPropertyValue('--wzl-y').trim())).toEqual(['#000000']);
+  });
+});
+
+describe('axes named for the attributes applyTheme stamps itself', () => {
+  it('refuses an axis named variant or theme, whose attribute would be overwritten and the theme not apply', () => {
+    for (const axis of ['variant', 'theme']) {
+      const axes = { [axis]: { default: 'a', values: { a: {} } } };
+      expect(() => defineTheme({ name: 't', axes })).toThrow(`"${axis}" is reserved and cannot name an axis`);
+      expect(derive({ name: 't', axes }).issues).toEqual([
+        { kind: 'invalid', path: `axes.${axis}`, message: `"${axis}" is reserved and cannot name an axis: its data-wzl-${axis} attribute is the theme's own` },
+      ]);
+    }
   });
 });
