@@ -97,34 +97,48 @@ export const clipBox = (b: Box): Box => ({ x: b.x + 0.25, y: b.y + 0.25, width: 
 
 export type BoxScene = Scene<null, LayerId, Box>;
 
-/** The scene `spec` describes, with every pose moved by `(dx, dy)`. */
-export function buildScene(spec: SceneSpec, dx = 0, dy = 0): BoxScene {
+/** Names a scene can give its layers and nodes in place of {@link LAYERS} and {@link nodeIdOf}'s. */
+export interface SceneNames { layer?: (l: LayerId) => string; node?: (i: number) => NodeId }
+
+/** Names a plain object already answers for, for scenes that must not mistake one for their own. */
+export const PROTO_NAMES = ['__proto__', 'toString', 'constructor', 'hasOwnProperty', 'valueOf', 'isPrototypeOf'] as const;
+
+/** {@link SceneNames} drawn from {@link PROTO_NAMES}: each layer one of them, and node `i` one too while they last. */
+export const protoNames: SceneNames = {
+  layer: (l) => PROTO_NAMES[LAYERS.indexOf(l)]!,
+  node: (i) => asNodeId(i < PROTO_NAMES.length ? PROTO_NAMES[i]! : `n${i}`),
+};
+
+/** The scene `spec` describes, with every pose moved by `(dx, dy)`, its layers and nodes named by `names`. */
+export function buildScene(spec: SceneSpec, dx = 0, dy = 0, names: SceneNames = {}): BoxScene {
+  const layerName = (names.layer ?? ((l: LayerId) => l)) as (l: LayerId) => LayerId;
+  const idOf = names.node ?? nodeIdOf;
   const scene = createScene<null, LayerId, Box>({
-    systemLayers: spec.layers.map((l) => ({ id: l.id })),
+    systemLayers: spec.layers.map((l) => ({ id: layerName(l.id) })),
     composition: IDENTITY_POSE_COMPOSITION as never,
   });
   spec.nodes.forEach((n, i) => {
     const pose = { ...n.pose, x: n.pose.x + dx, y: n.pose.y + dy };
     scene.add({
-      id: nodeIdOf(i),
+      id: idOf(i),
       kind: n.group ? 'group' : 'mark',
-      layer: n.layer,
+      layer: layerName(n.layer),
       pose,
       data: null,
-      ...(n.parent !== null ? { parent: nodeIdOf(n.parent) } : {}),
+      ...(n.parent !== null ? { parent: idOf(n.parent) } : {}),
       ...(n.unpickable ? { pickable: false } : {}),
       ...(n.group && n.clip ? { clipFromPose: (p: Box) => ({ kind: 'rect', ...clipBox(p) }) } : {}),
     } as never);
   });
   // Flags after every add: a lock refuses the edits that follow it.
   spec.nodes.forEach((n, i) => {
-    if (n.hidden) scene.setHidden(nodeIdOf(i), true);
-    if (n.faded) scene.overrides.set(nodeIdOf(i), { alpha: 0 });
+    if (n.hidden) scene.setHidden(idOf(i), true);
+    if (n.faded) scene.overrides.set(idOf(i), { alpha: 0 });
   });
-  spec.nodes.forEach((n, i) => { if (n.locked) scene.setLocked(nodeIdOf(i), true); });
+  spec.nodes.forEach((n, i) => { if (n.locked) scene.setLocked(idOf(i), true); });
   for (const l of spec.layers) {
-    if (!l.visible) scene.setLayerVisible(l.id, false);
-    if (l.locked) scene.setLayerLocked(l.id, true);
+    if (!l.visible) scene.setLayerVisible(layerName(l.id), false);
+    if (l.locked) scene.setLayerLocked(layerName(l.id), true);
   }
   scene.overrides.commit();
   return scene;
