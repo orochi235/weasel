@@ -47,7 +47,7 @@ function build(nodes: readonly Node_[], parent: HTMLElement, out: Built[], shut:
       const el = document.createElement(n.kind === 'details' ? 'details' : 'div');
       if (n.kind === 'hidden') el.hidden = true;
       if (n.kind === 'inert') el.setAttribute('inert', '');
-      if (n.kind === 'details' && n.open) el.open = true;
+      if (el instanceof HTMLDetailsElement && n.open) el.open = true;
       parent.append(el);
       const gone = shut || n.kind === 'hidden' || n.kind === 'inert';
       if (n.kind === 'details' && n.summary) {
@@ -188,7 +188,7 @@ describe('domFocusScope', () => {
       gone.setAttribute('tabindex', '-1');
       const after = scope.tabOrder();
       const follows = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-      const want = dir === 'next' ? after.find((el) => follows(gone, el)) ?? null : after.findLast((el) => follows(el, gone)) ?? null;
+      const want = dir === 'next' ? after.find((el) => follows(gone, el)) ?? null : [...after].reverse().find((el) => follows(el, gone)) ?? null;
       expect(scope.moveFocus(dir)).toBe(want);
       t.count(want === null ? 'off the end' : 'stepped');
     }), runs(RUNS));

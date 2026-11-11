@@ -281,7 +281,7 @@ export function setAtPath(root: object, segments: readonly string[], value: unkn
 
 /** An own key, even one named like a prototype member; an array's `length` is already one, and is assigned. */
 const put = (copy: Record<string, unknown>, key: string, value: unknown): void => {
-  if (Array.isArray(copy) && key === 'length') copy[key] = value;
+  if (Array.isArray(copy) && key === 'length') copy.length = value as number;
   else setOwn(copy, key, value);
 };
 
