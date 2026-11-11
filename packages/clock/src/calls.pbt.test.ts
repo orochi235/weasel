@@ -1,11 +1,13 @@
 /**
  * Second-pass property tests of the clock's calls: a call it refuses changes nothing, now or later; frame times in
  * any order and at any magnitude keep the playhead finite and inside its run; a model of when it wakes, reports a
- * frame, and notifies; and pausing over a gap moves it as a rebase over the gap does.
+ * frame, and notifies; pausing over a gap moves it as a rebase over the gap does; and a hold keeps its place through
+ * overrides, loop writes, and frames.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createClock } from './clock';
+import { holdAt } from './hold';
 import { duration, loop, near, rate, reading, runs, tally, timeoutFor } from './pbt.fixture';
 import { passesOf } from './place';
 import type { ClockHandle, ClockSpec } from './types';
@@ -211,6 +213,37 @@ describe('pausing and rebasing', () => {
       },
     ), runs(RUNS));
   }, timeoutFor(RUNS, 2));
+});
+
+describe('holdAt under overrides, loops, and frames', () => {
+  it('keeps the clock paused at the shown time in its first pass through overrides, loop writes, and syncs', () => {
+    const t = tally();
+    const move = fc.oneof(
+      fc.record({ kind: fc.constant('override' as const), span: fc.option(fc.record({ duration: fc.option(duration, { nil: undefined }), origin: fc.option(origin, { nil: undefined }) }, { requiredKeys: [] }), { nil: null }) }),
+      fc.record({ kind: fc.constant('loop' as const), to: loop }),
+      fc.record({ kind: fc.constant('sync' as const), dt: fc.constantFrom(0, 16, 1000) }),
+      fc.record({ kind: fc.constant('declare' as const), spec: fc.record({ duration: fc.option(duration, { nil: undefined }), origin: fc.option(origin, { nil: undefined }) }, { requiredKeys: [] }) }),
+    );
+    fc.assert(fc.property(playing, fc.option(fc.oneof(fc.double({ min: -100, max: 3000, noNaN: true }), fc.constantFrom(0, 100, 250)), { nil: null }), fc.array(move, { maxLength: 8 }), (s, shown, moves) => {
+      const h = createClock({ duration: 500, ...s });
+      const now = { t: 0 };
+      h.clock.sync(0);
+      const hold = holdAt(h, shown);
+      for (const mv of moves) {
+        apply(h, mv.kind === 'declare' ? { kind: 'declare', spec: { ...mv.spec, loop: h.clock.loop } } : mv, now);
+        const c = h.clock;
+        expect(c.rate).toBe(0);
+        const span = c.duration * passesOf(c.loop);
+        const want = Math.min(Math.max(0, Math.min(shown === null ? 0 : shown - c.origin, c.duration)), span);
+        expect(near(c.elapsed, want, c.duration)).toBe(true);
+        if (Number.isFinite(c.duration)) expect(c.pass).toBe(0);
+        const reached = shown === null || c.origin + c.elapsed === shown;
+        expect(hold.pending()).toBe(reached ? null : shown);
+        t.count(mv.kind);
+      }
+    }), runs(RUNS));
+    for (const k of ['override', 'loop', 'sync']) t.atLeast(k, RUNS / 4);
+  }, timeoutFor(RUNS, 3));
 });
 
 describe('shrunk counterexamples', () => {
