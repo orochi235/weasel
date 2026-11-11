@@ -109,3 +109,29 @@ export function readD(d: string): { commands: string; numbers: number[] } {
     numbers: (d.match(/-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/g) ?? []).map(Number),
   };
 }
+
+/** Each `cmap` subtable of a single font: its format and where it starts in the file. */
+export function cmapSubtables(bytes: ArrayBuffer, cmapAt: number): { format: number; at: number }[] {
+  const v = new DataView(bytes);
+  const out: { format: number; at: number }[] = [];
+  for (let i = 0; i < v.getUint16(cmapAt + 2); i++) {
+    const at = cmapAt + v.getUint32(cmapAt + 4 + i * 8 + 4);
+    if (!out.some((s) => s.at === at)) out.push({ format: v.getUint16(at), at });
+  }
+  return out;
+}
+
+/** Where a cmap subtable of format 4 or 12 keeps the numbers that pick glyph ids: format 4's `idDelta`s, format 12's
+ *  groups' `startGlyphID`s, as `[offset, bytes]` each. */
+export function glyphIdFields(bytes: ArrayBuffer, sub: { format: number; at: number }): [number, number][] {
+  const v = new DataView(bytes);
+  if (sub.format === 4) {
+    const segCount = v.getUint16(sub.at + 6) / 2;
+    const deltas = sub.at + 14 + segCount * 2 + 2 + segCount * 2;
+    return Array.from({ length: segCount }, (_, i) => [deltas + i * 2, 2]);
+  }
+  if (sub.format === 12) {
+    return Array.from({ length: v.getUint32(sub.at + 12) }, (_, i) => [sub.at + 16 + i * 12 + 8, 4]);
+  }
+  return [];
+}

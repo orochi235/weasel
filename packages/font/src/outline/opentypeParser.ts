@@ -11,7 +11,8 @@
  */
 
 import { OUTLINE_PRECISION, type FaceEmbedding, type OutlineFace, type OutlineParser } from './OutlineFace';
-import { sfntFromCollection } from './sfnt';
+import { sfntFromCollection, tableOf } from './sfnt';
+import { checkCff } from './cffCheck';
 import { gposPairKerning, type PairKerning } from './gposKerning';
 import { faceMetricsFromTables, type FaceMetricTables } from '../faceMetrics';
 
@@ -123,6 +124,8 @@ function isSfnt(bytes: ArrayBuffer): boolean {
   return tag === 0x00010000 || tag === 0x74727565 || tag === 0x4f54544f;
 }
 
+const isCff = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x4f54544f;
+
 /** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
 const NO_OUTLINE_EMBEDDING = 0x0002 | 0x0200;
 
@@ -171,6 +174,8 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
       throw new Error(
         `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
     }
+    const cff = isCff(single) ? tableOf(single, 'CFF ') : null;
+    if (cff) checkCff(cff);
     return faceFor(parse(single), gposPairKerning(single), single);
   };
 }

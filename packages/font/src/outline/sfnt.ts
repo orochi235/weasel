@@ -54,6 +54,18 @@ function readTableDirectory(view: DataView, dirOffset: number): TableRecord[] {
   return records;
 }
 
+/** The bytes of table `tag` in a single font, or `null` when it has none or its directory or the table runs past the
+ *  end of the file. */
+export function tableOf(bytes: ArrayBuffer, tag: string): DataView | null {
+  const view = new DataView(bytes);
+  try {
+    const r = readTableDirectory(view, 0).find((t) => t.tag === tag);
+    return r && r.offset + r.length <= bytes.byteLength ? new DataView(bytes, r.offset, r.length) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The PostScript name of the member whose directory is at `dirOffset`, or `null` when it carries none or its
  *  directory or `name` table runs past the end of the file: a member that cannot be read leaves the rest selectable. */
 function memberName(view: DataView, dirOffset: number): string | null {
