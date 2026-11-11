@@ -1,5 +1,59 @@
 # @weasel-js/ui-logic
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 4e68e7c: `domFocusScope`'s `moveFocus` skips an element that will not take focus and returns the one that did, or null.
+  
+  <!-- entry: rank=-5 fix -->
+- 218974c: `envPx` reads a px length written with a sign, an exponent or an upper-case unit, such as `+4px`, `1e+21px` or `2PX`, rather than throwing.
+  
+  A unitless zero is any spelling of zero, such as `0.0`; a length past the double range still reads as none.
+  
+  <!-- entry: rank=-5 fix -->
+- eace261: `pressStep` counts a press only while one that went down on the control is still down; `PressState` gains `down` to say so.
+  
+  <!-- entry: fix api -->
+- 644c5c7: `@weasel-js/ui-logic` no longer exports the key and pointer rules; import them from `@weasel-js/ui-input`.
+  
+  Breaking: every export but the measure/draw contract (`HeadlessComponent`, `measureButton`, `measureRowList` and what they read), `pressStep`, `listMode`, `dropSide` and `FocusScope` has moved, under the same name. `@weasel-js/ui-logic` no longer depends on `@weasel-js/quantity`.
+  
+  <!-- entry: breaking -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [d83feb6]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [eaff448]
+- Updated dependencies [b1309b2]
+  - @weasel-js/geom@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

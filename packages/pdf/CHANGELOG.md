@@ -1,5 +1,122 @@
 # @weasel-js/pdf
 
+## 1.19.0
+
+### Patch Changes
+
+- 1ba5d83: A dash whose every length rounds to 0 in a PDF strokes solid, as in the renderer, instead of drawing nothing.
+  
+  <!-- entry: rank=-5 fix visual -->
+- 048b375: A PDF leaves out and reports an image whose host pixels, from `readPixels` or `rasterize`, are the wrong size.
+  
+  The report reads `image has the wrong number of pixels`. A bitmap needs a whole number of pixels each way, at least one, and four bytes for each.
+  
+  <!-- entry: fix -->
+- 1ba5d83: A stroke with a miter limit below 1 is written to PDF with a limit of 1, which bevels every corner as the renderer does.
+  
+  <!-- entry: rank=-5 fix -->
+- ee3cfe4: Groups nested past 512 deep are left out of the PDF page and reported, as the SVG reader caps nesting, instead of failing the whole file.
+  
+  <!-- entry: fix -->
+- 1ba5d83: A path or group clip holding a non-finite coordinate is dropped from the PDF and reported, instead of possibly throwing out of `writePdf`.
+  
+  <!-- entry: rank=-5 fix -->
+- 54f3c97: The PDF writer's number formatter keeps a whole number's trailing zeros when asked for no decimals; no file it writes changes.
+  
+  <!-- entry: internal -->
+- f39af93: `writePdf` refuses a page whose width or height is not finite or would be written as 0, naming the page (`pdf: page 2 is 0 by 0.001; …`).
+  
+  <!-- entry: fix -->
+- 1ba5d83: A PDF writes numbers as finely as the transforms around them need, so a group scaled far down or up draws where it should.
+  
+  Each matrix keeps four decimals of each axis's own scale, and coordinates, dashes and gradient geometry under a group scaled up keep their position to 1e-4 of a page unit. A texture tile far smaller or larger than a unit is written as a unit tile its pattern matrix scales.
+  
+  <!-- entry: fix visual -->
+- b368c65: Text in a TrueType face whose tables the PDF subsetter cannot read whole is drawn as outlines instead of failing the file.
+  
+  <!-- entry: fix -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [2595ad3]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [c5202b9]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [33bca4e]
+- Updated dependencies [d83feb6]
+- Updated dependencies [63edf95]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [f0c159d]
+- Updated dependencies [043db55]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ebab03f]
+- Updated dependencies [eaff448]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [77cc6e1]
+- Updated dependencies [afa1429]
+- Updated dependencies [582dfcb]
+- Updated dependencies [204596e]
+- Updated dependencies [c3dc307]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [12f254e]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [b1309b2]
+- Updated dependencies [5bc9b94]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/renderer@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/stroke@1.19.0
+  - @weasel-js/paint@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

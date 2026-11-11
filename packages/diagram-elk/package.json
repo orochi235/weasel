@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/diagram-elk",
-  "version": "1.18.2",
+  "version": "1.19.0",
   "description": "An ELK layout adapter for @weasel-js/diagram: lays a diagram's graph out once with elkjs, ports, labels and nested groups included, and answers with a diagram layout plan.",
   "weasel": {
     "tier": "plugin"
@@ -40,9 +40,9 @@
     "build": "tsup"
   },
   "peerDependencies": {
-    "@weasel-js/core": "1.18.2",
-    "@weasel-js/diagram": "1.18.2",
-    "@weasel-js/geom": "1.18.2"
+    "@weasel-js/core": "1.19.0",
+    "@weasel-js/diagram": "1.19.0",
+    "@weasel-js/geom": "1.19.0"
   },
   "publishConfig": {
     "access": "public",

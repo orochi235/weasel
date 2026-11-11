@@ -1,5 +1,399 @@
 # @weasel-js/labkit
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- a233329: Undo and Redo over an instrument's history and over a trial's marks survive a reload, in the order the steps were made.
+  
+  `TrialHistorySource` gains two optional methods: `serialize()`, whose result the trial saves in its record beside its state, and `restore(data, rebuild)`, which the trial calls once per load of its record, handing `rebuild` to make live ops again of the settings entries it recorded onto that history. A history without them starts empty on every load, as before.
+  
+  `sceneTrialHistory` implements both, so a `<TrialSceneCanvas>` trial keeps its scene's undo. Its `stamps` argument is now a `Map`.
+  
+  A mark set's `toJSON` carries the marks' history as `history`, so marks an instrument keeps in its own `storage` keep theirs as well; a mark set saved without one opens with nothing to undo, and a cloned trial's marks start with none. `MarkHistory` gains `toJSON()` and `fromJSON()`.
+  
+  <!-- entry: rank=10 breaking api new data pick -->
+- 2fa2f43: A lab's header stays one row at every width, with its menus beside the title as in an app's title bar.
+  
+  A narrow header truncates the title, and add trial, zoom and the theme switch give way to the Lab and View menus that also hold them. A lab drawn with `menuBar={false}` keeps all three.
+  
+  <!-- entry: behavior visual -->
+- 5e16055: A config key every object has, such as `__proto__`, `constructor` or `toString`, works like any other key. That holds in a schema, a seed config and the settings rail.
+  
+  <!-- entry: fix -->
+- efaf9a6: Config paths read only a record's own keys. A leaf named `constructor` or `toString` loads at its default and reads as absent until set, and a `__proto__` key is kept as data.
+  
+  <!-- entry: rank=-5 fix -->
+- 27531b4: A stored lab whose `layout` or undocked panels hold a list opens with them empty. One whose version is `NaN`, negative or a fraction is set aside as unreadable.
+  
+  <!-- entry: rank=-5 fix data -->
+- d10979e: A trial's Undo takes back marks and settings in the order they were made, even after a restored history with very large edit stamps.
+  
+  <!-- entry: rank=-5 fix -->
+- c505461: `.section('')` leaves a leaf or group loose, as no `.section()` call does, so it reads back unchanged through `prefsFromConfig` and `f.prefs`.
+  
+  <!-- entry: rank=-5 fix -->
+- 3ce6875: The `AutoReports` type is exported from the package root and `@weasel-js/labkit/config`, so a consumer's declaration emit can name it (TS2742).
+  
+  <!-- entry: fix api -->
+- 88626b2: A mark's position and shape read as 0 along a side too short to divide by, instead of `NaN` or `Infinity`.
+  
+  <!-- entry: rank=-5 fix -->
+- cfb6cc3: A schema's `defaults()` hands out a fresh copy of every list, object and map default on each call, so trials never share one.
+  
+  <!-- entry: fix -->
+- e72ca9d: Undo after a mark made between two writes to one setting takes back the last write, not the mark. A run of writes to one setting ends at any edit recorded between them.
+  
+  <!-- entry: fix -->
+- e39c5c4: An instrument named after an inherited key, such as `__proto__` or `toString`, keeps its own config defaults, migration, schema and serializers.
+  
+  <!-- entry: rank=-5 fix -->
+- 0b248c8: An annotation target named `__proto__`, `constructor` or another inherited key takes marks and keeps them through a save like any other target.
+  
+  <!-- entry: rank=-5 fix -->
+- e46b7a8: A trial config write that changes nothing, or a drag that ends where it began, records no undo step.
+  
+  A write of the value a path already holds, including `auto` over a path already auto, also runs no `onConfigChange`.
+  
+  <!-- entry: fix -->
+- a3cbe31: An orbit trial's zoom readout and resize check honor the instrument's own `orbit.limits` rather than the default ones. A camera dollied past 500 units under a wider `maxDistance` reads its real zoom and keeps its place.
+  
+  <!-- entry: fix -->
+- b1309b2: The settings rail keeps a root setting whose key matches a root section's name, such as a `grid` setting beside a `Grid` section.
+  
+  <!-- entry: fix -->
+- ca11bc4: Reordering trials with an id named more than once places that trial once, where it was first named.
+  
+  <!-- entry: rank=-5 fix -->
+- 4fe97d4: Reset, and loading a snapshot into a trial, start undo afresh on a history the instrument handed over with `useTrialHistory` too.
+  
+  The trial calls the new optional `TrialHistorySource.clear()` where the source offers one, and the settings entries recorded before then write nothing, so Undo can no longer put the old settings back.
+  
+  <!-- entry: fix api -->
+- 9a1c3e1: The lab store gains a `resetTrial(trialId, instruments)` action, which the lab's Reset goes through.
+  
+  It and the store's `loadSnapshot` start a trial's undo afresh on an instrument's own history whoever calls them, not only through the lab's commands.
+  
+  <!-- entry: api fix -->
+- b3d1188: A lab's page switcher marks the right page when a page at the site root comes first in `pages`. A directory's `index.html` counts as the directory.
+  
+  <!-- entry: fix -->
+- 6df4bc8: A toolbar group named like an ungrouped contribution's id draws as a separate run from that contribution.
+  
+  <!-- entry: rank=-5 fix -->
+- cc6eca8: `validateConfigSchema` refuses a slider or number field whose bounds are not finite or cannot hold its default.
+  
+  That is a slider whose `min` or `max` is not a finite number, and a number field whose default lies outside its `min` and `max`, whose `min` is above its `max`, or whose bounds are `NaN`.
+  
+  <!-- entry: fix -->
+- 602c78d: A lab draws an enum with the control it asks for, as a form and a panel do: `.radio()` is a radio group, and `menu` is a menu button.
+  
+  Where a place has no room for the control asked for, a new table, `PARAMS_ENUM_PLACES` (read through `enumControlAt`), says what it draws instead: a bar draws radios as segments, and a `ControlMatrix` cell's popover lists a select or a menu as radios. `BarField` and labkit's `MatrixEditor` take their enum control from it, and the popover draws segments for an enum asking for them.
+  
+  <!-- entry: fix api visual -->
+- b1309b2: A slider with only one bound is a slider on every surface, a lab included.
+  
+  Its track runs 100 on from the bound it has, and its readout takes and steps to values past the open end.
+  
+  <!-- entry: fix visual -->
+- e54eb75: Reset, or a snapshot loaded over a trial, also drops the saved history of an instrument that had unmounted.
+  
+  <!-- entry: fix -->
+- d58fb78: A trial's Undo and Redo survive a reload.
+  
+  The trial's history is saved in its record, beside the state it undoes, and restored when the trial mounts, with each step's state put through the instrument's `serialize` and `deserialize`; another tab's write to a trial brings that tab's history with it. Reset and loading a snapshot clear the saved history, as they clear the live one. A step that cannot be saved, such as a write to the lab's `over` values, is left out of the saved history along with every step before it. Stored labs move to document version 5; a version-4 record opens with nothing to undo. `TrialRecord` gains `undo`, the history its record was read with.
+  
+  <!-- entry: rank=10 new data api -->
+- 30c0e8e: A unit catalog in `@weasel-js/quantity` gives each unit one symbol, compact form and spoken name, read wherever units are shown or typed.
+  
+  Each entry has a unit's canonical name, its symbol, a compact form for tight spaces (`″` for `in`, `′` for `ft`), the aliases that read as it, its spoken names or `Intl` unit, its CSS unit, and whether its glyph attaches to the number (`°`, `′`, `″`, `%`). `catalogUnit`, `unitSymbol`, `unitSpellings`, `withUnit` and `speakUnit` read it, and `registerUnit` adds or replaces a unit and returns a function that takes it back out. The `unit` display, the bytes and duration displays' speech, `parseNumber`'s alternate spellings and `prefsCss`'s CSS units all read the catalog, in place of the tables each kept.
+  
+  `UnitDisplay` and a prefs unit take `compact: true` for a unit's compact form, and a unit is written as the catalog writes it, so `unit('deg')` and a prefs unit with `suffix: 'deg'` show `°`.
+  
+  In `@weasel-js/ui`, a field's or readout's unit whose glyph attaches stays on the value's line in every layout, including an inline slider row that hangs word units below its readout, and is out of flow, so the field is the same size with it as without. The catalog decides which units attach: a property field's string `unit`, a menu number row's `suffix` and a read-only readout all ask it. `QuantityText`'s `unit` takes `compact` and marks an attaching unit `data-attach`.
+  
+  Breaking: `unit('"')` now shows `12″` and `unit("'")` shows `1′`, the compact forms those marks are aliases of, and a unit named by an alias shows its symbol (`deg` shows `°`). A degree passed as `<sup>°</sup>` still draws as given but no longer attaches; pass the string `'°'`. `ResolvedPrefUnit.suffix` is the text a field shows, the catalog's form of the one written. Typed text reads every spelling the catalog knows for a unit a table accepts, so a field accepting `deg` also reads `°`. A scale indicator's label is spoken through the catalog, `Scale: 10 feet`.
+  
+  <!-- entry: rank=20 breaking api new visual pick -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [8d3f30f]
+- Updated dependencies [24fe08a]
+- Updated dependencies [ebc9f52]
+- Updated dependencies [63ce1c6]
+- Updated dependencies [ec703b3]
+- Updated dependencies [eb8743c]
+- Updated dependencies [871e410]
+- Updated dependencies [5be32af]
+- Updated dependencies [857c097]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ee0609a]
+- Updated dependencies [4413857]
+- Updated dependencies [5ceed2d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [34b8b1e]
+- Updated dependencies [ba20a9d]
+- Updated dependencies [7b45877]
+- Updated dependencies [6d7fe95]
+- Updated dependencies [c0d8f48]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [efba5cf]
+- Updated dependencies [6646205]
+- Updated dependencies [b1309b2]
+- Updated dependencies [153719c]
+- Updated dependencies [bce00fd]
+- Updated dependencies [98a8020]
+- Updated dependencies [6d7aae1]
+- Updated dependencies [326d7be]
+- Updated dependencies [2740ed4]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [976bdf2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [4fd3050]
+- Updated dependencies [cd31516]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [0e15698]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [d4c2b70]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [d327c41]
+- Updated dependencies [7504d6f]
+- Updated dependencies [a547bff]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [82e3877]
+- Updated dependencies [e5b5077]
+- Updated dependencies [a278147]
+- Updated dependencies [3fd015a]
+- Updated dependencies [2032aaf]
+- Updated dependencies [9ff5443]
+- Updated dependencies [4e9c742]
+- Updated dependencies [c71f636]
+- Updated dependencies [0a11cbc]
+- Updated dependencies [143c898]
+- Updated dependencies [92c1c26]
+- Updated dependencies [be5d412]
+- Updated dependencies [59fc2e8]
+- Updated dependencies [965c7b9]
+- Updated dependencies [39c0d34]
+- Updated dependencies [f94df0d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [84e0536]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [2ba3a4e]
+- Updated dependencies [2ba3a4e]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [020f69a]
+- Updated dependencies [faaeb54]
+- Updated dependencies [602c78d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [30f5040]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [0f8e7cc]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [562c8a2]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [c0b44f0]
+- Updated dependencies [7736185]
+- Updated dependencies [f63f932]
+- Updated dependencies [a933054]
+- Updated dependencies [ae820c2]
+- Updated dependencies [8710c48]
+- Updated dependencies [7d5ab0e]
+- Updated dependencies [ef5634e]
+- Updated dependencies [7c02aa8]
+- Updated dependencies [08c143e]
+- Updated dependencies [11ffe9f]
+- Updated dependencies [81e2cf4]
+- Updated dependencies [744af77]
+- Updated dependencies [b1309b2]
+- Updated dependencies [9ea8393]
+- Updated dependencies [aa61074]
+- Updated dependencies [7b9e651]
+- Updated dependencies [6d62197]
+- Updated dependencies [b06557b]
+- Updated dependencies [efac12a]
+- Updated dependencies [5ebb996]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [47a4976]
+- Updated dependencies [2f5f287]
+- Updated dependencies [eaff448]
+- Updated dependencies [20c4979]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [851bf17]
+- Updated dependencies [851bf17]
+- Updated dependencies [623c0b8]
+- Updated dependencies [2c6c317]
+- Updated dependencies [7ca4c3d]
+- Updated dependencies [741b33c]
+- Updated dependencies [5f50ea6]
+- Updated dependencies [37e387f]
+- Updated dependencies [741b33c]
+- Updated dependencies [3a1b492]
+- Updated dependencies [4606941]
+- Updated dependencies [aa46f79]
+- Updated dependencies [43755f1]
+- Updated dependencies [cfc03c6]
+- Updated dependencies [57e12cb]
+- Updated dependencies [741b33c]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [33633eb]
+- Updated dependencies [8e8a341]
+- Updated dependencies [ac2ab9d]
+- Updated dependencies [c089fd1]
+- Updated dependencies [b7f10eb]
+- Updated dependencies [355a332]
+- Updated dependencies [ada22ef]
+- Updated dependencies [1379dff]
+- Updated dependencies [b4f5abf]
+- Updated dependencies [3c2cddd]
+- Updated dependencies [263aa62]
+- Updated dependencies [9f52075]
+- Updated dependencies [aa35a8f]
+- Updated dependencies [2c54d23]
+- Updated dependencies [1167180]
+- Updated dependencies [1b24a9a]
+- Updated dependencies [db86b0c]
+- Updated dependencies [fa2b6a2]
+- Updated dependencies [37e0907]
+- Updated dependencies [f7e4000]
+- Updated dependencies [9334505]
+- Updated dependencies [fcd1616]
+- Updated dependencies [54b81ce]
+- Updated dependencies [c38920e]
+- Updated dependencies [2fff7ea]
+- Updated dependencies [05f0dd7]
+- Updated dependencies [45c01e4]
+- Updated dependencies [a7578e7]
+- Updated dependencies [0a82772]
+- Updated dependencies [3643214]
+- Updated dependencies [b1309b2]
+- Updated dependencies [d965b03]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [4e68e7c]
+- Updated dependencies [8936d41]
+- Updated dependencies [228d835]
+- Updated dependencies [0c1c414]
+- Updated dependencies [d5f05e2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+- Updated dependencies [352b221]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/animator@1.19.0
+  - @weasel-js/ui@1.19.0
+  - @weasel-js/svg@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/routing@1.19.0
+  - @weasel-js/clock@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/kernel3d@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/theme@1.19.0
+  - @weasel-js/loupe@1.19.0
+  - @weasel-js/menu@1.19.0
+  - @weasel-js/minimap@1.19.0
+  - @weasel-js/storage@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

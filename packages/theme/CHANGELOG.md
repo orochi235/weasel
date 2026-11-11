@@ -1,5 +1,133 @@
 # @weasel-js/theme
 
+## 1.19.0
+
+### Patch Changes
+
+- a547bff: An inline Properties row puts its control under the label when the label would leave the control too narrow to use.
+  
+  A slider wraps when its track would fall below `--wzl-prop-track-min` (64px), keeping its readout beside the track; a number or text field, select, dialog trigger or segmented toggle wraps below `--wzl-prop-field-min` (6ch) or its segments' own width. Rows that fit lay out as before. This covers labkit's `ControlPanel` two to a row and a two-across `PrefsForm`, whose slider slot now holds the same track floor. `--wzl-prop-readout-reserve` sets how much room a slider counts for its readout.
+  
+  <!-- entry: behavior visual api -->
+- 33633eb: `applyTheme` removes `data-wzl-<axis>` attributes the new theme lacks, so the old theme's rules stop matching.
+  
+  <!-- entry: fix -->
+- 8e8a341: A theme name or axis value holding a carriage return or form feed no longer breaks the selector `applyTheme` and the stylesheet write.
+  
+  <!-- entry: rank=-5 fix -->
+- ac2ab9d: `bake` leaves a token named like an `Object.prototype` member, such as `constructor`, out of a selection that does not produce it.
+  
+  <!-- entry: rank=-5 fix -->
+- c089fd1: `blendTheme`, and `applyTheme` with `weights`, give a finite value for extreme lengths and shares instead of `Infinity` or `NaN`. An infinite share takes its whole axis, as a split pref's infinite weight does.
+  
+  <!-- entry: rank=-5 fix -->
+- b7f10eb: A categorical ramp reports a gate of the wrong type as `invalid` rather than throwing or using it as given.
+  
+  `surface` takes a hex color, `order` `"hue"` or `"farthest"`, and every other gate a finite number.
+  
+  <!-- entry: fix -->
+- 355a332: `readCssNumber`, and so `tokenPx` and `parseBoxShadow`, read a leading `+` or an exponent (`+4px`, `1e1px`) as CSS does.
+  
+  <!-- entry: rank=-5 fix -->
+- ada22ef: `loadDTCG` refuses a `com.weasel.axes` extension it cannot read with an error naming the part at fault, rather than a `TypeError`.
+  
+  That is an axis without a string `default` and an object of `values`, a `varies` entry that is not a list of axis names, or an override layer that is not an object.
+  
+  <!-- entry: fix -->
+- 1379dff: `generate` draws an empty palette for a count of 0, and a categorical ramp with no steps derives to no tokens, instead of throwing.
+  
+  <!-- entry: rank=-5 fix -->
+- b4f5abf: `expandVars` treats a `var()` named like an `Object.prototype` member as a name the theme lacks, taking the fallback or throwing its usual error.
+  
+  <!-- entry: rank=-5 fix -->
+- 3c2cddd: `parseTokenValue` unwraps a font family only when one quote closes both ends, so it round-trips through `serializeTokenValue` unchanged.
+  
+  <!-- entry: rank=-5 fix -->
+- 263aa62: A theme whose axes loaded malformed derives and bakes with each fault reported, rather than throwing.
+  
+  An axis with no values enumerates no selections in `enumerateSelections` and `bake`; an axis whose default is not a string is reported and gets no value in a full selection; and an axis named `__proto__` is reported as a name an axis cannot take. `fullSelection` reads only a selection's own entries.
+  
+  <!-- entry: fix -->
+- 9f52075: `derive` reports a semantic rule whose fields have the wrong types as `invalid` rather than throwing.
+  
+  That covers a `ref` or `from` that is not a name, a non-finite `offset` or `alpha`, an unknown `dir`, and a `contrast` or `check` without a number and a list of names. `axisDependencies`, which the theme editor calls mid-edit, no longer throws for a rule that is not an object.
+  
+  <!-- entry: fix -->
+- aa35a8f: Baking a theme that extends another fills by-axis pins from the parent correctly for names like `constructor` on `Object.prototype`.
+  
+  <!-- entry: rank=-5 fix -->
+- 2c54d23: A theme name or axis value holding U+0000 applies, with U+FFFD in place of the NUL as CSS reads it.
+  
+  That holds in `applyTheme`, `ThemeProvider` and the selectors theme writes.
+  
+  <!-- entry: rank=-5 fix -->
+- 1167180: A token shown through a partial pin follows its own axes in the generated stylesheet.
+  
+  `axisDependencies` keeps what a pin replaces among a token's dependencies wherever the pin has no value: a `by` pin that leaves some axis values out, or a pin naming a seed that some selection leaves unset.
+  
+  <!-- entry: fix -->
+- 1b24a9a: `derive` reads a pin by its own name only, so a semantic token named `constructor` can be measured for contrast and offset from.
+  
+  <!-- entry: rank=-5 fix -->
+- db86b0c: `themePrefsSchema` builds for a theme with a token named like an `Object.prototype` member, such as `toString`, rather than throwing.
+  
+  <!-- entry: rank=-5 fix -->
+- fa2b6a2: `themePrefsValues` writes a token leaf outside any group at its own key, not under a key one character short of its name.
+  
+  <!-- entry: rank=-5 fix -->
+- 37e0907: A token named `__proto__` is reported as an `invalid` unsafe name, as other names a token cannot carry are.
+  
+  <!-- entry: rank=-5 fix -->
+- f7e4000: `rampSteps`, `findRampSteps` and the color lists and refs built on them find a ramp by the theme's own ramp names only.
+  
+  A missing ramp named like an `Object.prototype` member, such as `constructor`, throws that the theme has no such ramp, as any missing ramp does.
+  
+  <!-- entry: rank=-5 fix -->
+- 9334505: An axis can no longer be named `theme` or `variant`: `defineTheme` throws and `derive` reports it as `invalid`.
+  
+  `applyTheme` stamps `data-wzl-theme` and `data-wzl-variant` itself, so such an axis never applied; give it another name.
+  
+  <!-- entry: fix -->
+- fcd1616: A semantic rule naming an undeclared ramp called like an `Object.prototype` member, such as `toString`, is reported as `invalid`.
+  
+  <!-- entry: rank=-5 fix -->
+- 54b81ce: `applyTheme` leaves out, with a warning, a token value with a `)` or `]` that closes nothing, which the browser would drop as invalid.
+  
+  <!-- entry: rank=-5 fix -->
+- Updated dependencies [65ee9a0]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [3e4a895]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [30c0e8e]
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

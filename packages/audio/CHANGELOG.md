@@ -1,5 +1,61 @@
 # @weasel-js/audio
 
+## 1.19.0
+
+### Patch Changes
+
+- 2f08388: Audio filters stay finite at extreme gains and at very low lowpass or highpass Q, instead of filtering every sample to `NaN`. `biquadCoefficients`, used by worklet and offline voices, clamps gain to the ±1541 dB a `BiquadFilterNode` takes, as the node does.
+  
+  <!-- entry: rank=-5 fix -->
+- eefb1a0: A delay insert and `delayNode` throw a `RangeError` for a longest time they cannot hold. That is 180000 ms or more, or a time that rounds to nothing in seconds; the browser's `NotSupportedError` no longer reaches the caller.
+  
+  <!-- entry: rank=-5 fix -->
+- 9abfeda: A dropped voice's handle throws a `RangeError` for a non-finite gain, fade, rate, detune, pan or position, as a live handle does. A voice is dropped at the call when the engine was disposed or its context was not yet running.
+  
+  <!-- entry: rank=-5 fix -->
+- 6b016f5: A Web Audio synth note gated exactly at the end of its attack, with no decay, reaches full level before it releases. It steps to its sustain and then releases, as `envelopeLevel` and the worklet voices do.
+  
+  <!-- entry: fix -->
+- 3994bb8: A Web Audio synth note with no decay and a sustain below 1 rises to full level through its attack, then steps to its sustain. This matches the worklet voices, and a release during that attack no longer jumps the gain up.
+  
+  <!-- entry: fix -->
+- 4920b0f: `envelopeLevel` is exactly 0 from `gate + release` on, where `envelopePoints` and the voice kernels end.
+  
+  <!-- entry: rank=-5 fix -->
+- 944c448: An audio graph node can have a port named like an `Object.prototype` member, such as `toString`, `constructor` or `__proto__`.
+  
+  <!-- entry: rank=-5 fix -->
+- 587a69e: An audio graph's `set` throws a `RangeError` for a value or ramp that is not finite, even on a node that is not sounding.
+  
+  <!-- entry: rank=-5 fix -->
+- 6b016f5: A harmonic wave plays the same wave for levels near either end of the double range as for any others in the same ratio. Levels are scaled to a peak of 1 before use, so a worklet or offline voice no longer renders `NaN` and a node voice's `PeriodicWave` no longer stores `Infinity` or 0.
+  
+  <!-- entry: rank=-5 fix -->
+- 0f566f9: `impulseResponse` throws a `RangeError` for a length, decay or channel count it cannot render. The length must be finite, the decay finite and rising no more than 770 dB, and the channel count a whole number above 0.
+  
+  <!-- entry: rank=-5 fix -->
+- 233a559: `createMixNode` gives an input named `__proto__` its own port and level param.
+  
+  <!-- entry: rank=-5 fix -->
+- e0ea2ba: A score keeps counting bars through a stall that skips steps, so it no longer repeats a bar or holds a new mood back. A bar whose first steps a stall skipped is reported at the first step it books, and `cueBar` counts any bars skipped. The pattern player's `onStep` gets a third argument, the steps since `start`, skips included.
+  
+  <!-- entry: fix api -->
+- b37ae7a: A score's cue reading gives a mood within rounding of a cue's own mood wholly to that cue, instead of a `NaN` weight to every cue. This holds for `readScoreCue` and a score's `state().cue`.
+  
+  <!-- entry: rank=-5 fix -->
+- 626d76d: `spatialize`, and so a spatial voice, keeps its gain and pan finite at the ends of the double range. A source past the double range is silent, or at whole gain with a rolloff factor of 0; a reference distance of 0 silences everything past it, as documented.
+  
+  <!-- entry: rank=-5 fix -->
+- 6f8374d: Waiting on the audio clock for more than about 24.8 days ahead no longer rechecks the clock every millisecond.
+  
+  <!-- entry: rank=-5 fix -->
+- 1840e27: `patternVoicePeaks` leaves out events on steps the pattern player never plays: past the pattern's `length`, or before step 0.
+  
+  <!-- entry: rank=-5 fix -->
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+
 ## 1.18.2
 
 ### Patch Changes

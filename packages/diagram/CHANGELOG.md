@@ -1,5 +1,273 @@
 # @weasel-js/diagram
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 01eac83: Spreading parallel connector runs apart no longer pushes one into a shape's clearance. A connector the update did not reroute, whose run would be spread back beside a shape that moved next to it, is rerouted.
+  
+  <!-- entry: fix visual -->
+- b1309b2: The obstacle-avoiding router retries a connector with no path only when something it depends on changes, rather than on every update. A connector that a label's interim spot blocked is routed in the same update.
+  
+  <!-- entry: perf fix -->
+- b1309b2: Moving a whole diagram moves its obstacle-avoiding routes with it, rather than switching between equally short paths.
+  
+  <!-- entry: fix visual -->
+- b1309b2: `canvasMeasure` reports a `capCenter` of 0 for a 0px font, rather than `NaN`.
+  
+  <!-- entry: rank=-5 fix -->
+- 5e38ac7: An item's `colors` holding a `__proto__` key, as `JSON.parse` reads one, stays a plain key of the style `diagramScene` draws it in.
+  
+  <!-- entry: rank=-5 fix -->
+- 814ff67: An eased live layout lands each node exactly on its target on the last frame. It also stays finite easing between the two ends of the double range.
+  
+  <!-- entry: rank=-5 fix -->
+- 93d0c9d: The force layout pushes a node or group sitting inside another group's box clear of that box in one tick, past its far edge by the padding.
+  
+  <!-- entry: fix visual -->
+- b1309b2: `labelSpotAt` reads a route fraction inside 0 to 1 for a label at a vertex beside a stretch too short to see.
+  
+  <!-- entry: rank=-5 fix -->
+- 9263a07: A connector label dropped back where it stood no longer jumps to another stretch of its route. `labelSpotAt` reads a label two stretches are equally near on the stretch that stands it where it is.
+  
+  <!-- entry: fix -->
+- 6d1672c: `radial`, and `layered` and `tree` with more than one pinned node, move nothing on a second run, as every layout promises.
+  
+  <!-- entry: fix -->
+- b123a8b: A live layout no longer mistakes two graphs for one when node ids hold `>`, `,` or `|`, so a stale plan cannot land on a changed graph.
+  
+  <!-- entry: rank=-5 fix -->
+- 7a7c2ef: The `orthogonal` and `bezier` routers stay finite between ports and waypoints near the ends of the double range.
+  
+  <!-- entry: rank=-5 fix -->
+- f4d1040: Where nothing measures text, a diagram row, edge label or header estimates one glyph per character, so an emoji no longer counts twice.
+  
+  <!-- entry: fix -->
+- 48ef8f7: `diagramScene` refuses data in which two specs would share an id, with an error naming the id. That covers a node named like another item's part (`a/1` beside a node `a`, or `G/label` inside a titled group `G`), an edge whose `id` is a node's, and one edge `id` given to two different edges. An exact repeat of an edge is still dropped.
+  
+  <!-- entry: behavior fix -->
+- 8ccd5eb: A self-edge on a node with no east-facing port loops at the same corner however the node's ports are listed, taking the north-facing side.
+  
+  <!-- entry: rank=-5 fix visual -->
+- 69f482f: `formatParam` shows every decimal place of a step written in exponent form: a step of `1.5e-7` shows eight places. `@weasel-js/diagram` now depends on `@weasel-js/quantity`.
+  
+  <!-- entry: fix -->
+- 471752d: The `force` layout no longer flings nodes that start on or near the same point thousands of units apart. Repulsion treats two bodies as at least 10 world units apart, so a stacked pair settles at the spacing a separated pair does.
+  
+  <!-- entry: fix visual -->
+- 30c0e8e: A unit catalog in `@weasel-js/quantity` gives each unit one symbol, compact form and spoken name, read wherever units are shown or typed.
+  
+  Each entry has a unit's canonical name, its symbol, a compact form for tight spaces (`″` for `in`, `′` for `ft`), the aliases that read as it, its spoken names or `Intl` unit, its CSS unit, and whether its glyph attaches to the number (`°`, `′`, `″`, `%`). `catalogUnit`, `unitSymbol`, `unitSpellings`, `withUnit` and `speakUnit` read it, and `registerUnit` adds or replaces a unit and returns a function that takes it back out. The `unit` display, the bytes and duration displays' speech, `parseNumber`'s alternate spellings and `prefsCss`'s CSS units all read the catalog, in place of the tables each kept.
+  
+  `UnitDisplay` and a prefs unit take `compact: true` for a unit's compact form, and a unit is written as the catalog writes it, so `unit('deg')` and a prefs unit with `suffix: 'deg'` show `°`.
+  
+  In `@weasel-js/ui`, a field's or readout's unit whose glyph attaches stays on the value's line in every layout, including an inline slider row that hangs word units below its readout, and is out of flow, so the field is the same size with it as without. The catalog decides which units attach: a property field's string `unit`, a menu number row's `suffix` and a read-only readout all ask it. `QuantityText`'s `unit` takes `compact` and marks an attaching unit `data-attach`.
+  
+  Breaking: `unit('"')` now shows `12″` and `unit("'")` shows `1′`, the compact forms those marks are aliases of, and a unit named by an alias shows its symbol (`deg` shows `°`). A degree passed as `<sup>°</sup>` still draws as given but no longer attaches; pass the string `'°'`. `ResolvedPrefUnit.suffix` is the text a field shows, the catalog's form of the one written. Typed text reads every spelling the catalog knows for a unit a table accepts, so a field accepting `deg` also reads `°`. A scale indicator's label is spoken through the catalog, `Scale: 10 feet`.
+  
+  <!-- entry: rank=20 breaking api new visual pick -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [8d3f30f]
+- Updated dependencies [24fe08a]
+- Updated dependencies [ebc9f52]
+- Updated dependencies [63ce1c6]
+- Updated dependencies [ec703b3]
+- Updated dependencies [eb8743c]
+- Updated dependencies [871e410]
+- Updated dependencies [5be32af]
+- Updated dependencies [857c097]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ee0609a]
+- Updated dependencies [2f08388]
+- Updated dependencies [eefb1a0]
+- Updated dependencies [9abfeda]
+- Updated dependencies [6b016f5]
+- Updated dependencies [3994bb8]
+- Updated dependencies [4920b0f]
+- Updated dependencies [944c448]
+- Updated dependencies [587a69e]
+- Updated dependencies [6b016f5]
+- Updated dependencies [0f566f9]
+- Updated dependencies [233a559]
+- Updated dependencies [e0ea2ba]
+- Updated dependencies [b37ae7a]
+- Updated dependencies [626d76d]
+- Updated dependencies [6f8374d]
+- Updated dependencies [1840e27]
+- Updated dependencies [93ed93d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [3932826]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [153719c]
+- Updated dependencies [bce00fd]
+- Updated dependencies [98a8020]
+- Updated dependencies [6d7aae1]
+- Updated dependencies [326d7be]
+- Updated dependencies [2740ed4]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [cd31516]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [0e15698]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [c913ef0]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [2f5f287]
+- Updated dependencies [eaff448]
+- Updated dependencies [c7756c5]
+- Updated dependencies [c7756c5]
+- Updated dependencies [20c4979]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [44aa42f]
+- Updated dependencies [a612a95]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [10199c0]
+- Updated dependencies [b1309b2]
+- Updated dependencies [644c5c7]
+- Updated dependencies [521cab5]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [7b56e88]
+- Updated dependencies [279a193]
+- Updated dependencies [521cab5]
+- Updated dependencies [76da952]
+- Updated dependencies [228d835]
+- Updated dependencies [521cab5]
+- Updated dependencies [e198aad]
+- Updated dependencies [7dd964d]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+- Updated dependencies [352b221]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/animator@1.19.0
+  - @weasel-js/audio@1.19.0
+  - @weasel-js/ui-input@1.19.0
+  - @weasel-js/clock@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/simulation@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

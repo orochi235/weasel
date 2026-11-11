@@ -1,5 +1,114 @@
 # @weasel-js/animator
 
+## 1.19.0
+
+### Patch Changes
+
+- 8d3f30f: `axesOf` keeps a plain object's own `__proto__` field, as `JSON.parse` makes one, when it builds a value back from its axes.
+  
+  <!-- entry: rank=-5 fix -->
+- 24fe08a: Frames far apart on the clock no longer throw: the animator's clock stops at `Number.MAX_VALUE`, as an endless clock does. A frame gap past the double range counts as the largest double.
+  
+  <!-- entry: fix -->
+- ebc9f52: A tween shorter than 1 ms, on its own or on a target, moves at its own length rather than as a 1 ms tween.
+  
+  <!-- entry: fix -->
+- 63ce1c6: A timeline frame played backward fires no events, including one at the time a seek landed on.
+  
+  <!-- entry: fix -->
+- ec703b3: A timeline canceled by one of its own event handlers fires no more events, in that frame or after.
+  
+  <!-- entry: fix -->
+- eb8743c: A seek on a timeline with an infinite `duration` lands at the time asked.
+  
+  <!-- entry: fix -->
+- 871e410: An endless timeline on a clock near `Number.MAX_VALUE` keeps its playhead inside its lap, and a seek to `Number.MAX_VALUE` lands there too.
+  
+  <!-- entry: fix -->
+- 5be32af: A timeline, root or nested, throws a `RangeError` on a `NaN` `duration`, as a tween does on a `NaN` `ms`.
+  
+  <!-- entry: fix -->
+- 857c097: A timeline with a negative `duration` plays as one of no length, its playhead at 0.
+  
+  <!-- entry: fix -->
+- b1309b2: An animator tween with its own `interpolate` or `interpolator` ends exactly at `to`. It is handed exactly 1 on its last frame, whatever its easing answers there.
+  
+  <!-- entry: fix -->
+- ee0609a: Releasing a weight-0 hold with a commit, under holds that cover the target outright, leaves the committed value where it was.
+  
+  <!-- entry: rank=-5 fix -->
+- cd31516: A d3 transition ends every node exactly at its target pose, and a numeric `tween` exactly at its `to`.
+  
+  <!-- entry: fix -->
+- b1309b2: A typed array's `NaN`, `Infinity`, `-Infinity` and `-0` survive a JSON round trip through `tagTypedArrays`, which writes them by name. Files saved before still read as they did. An animation clip still refuses a typed array holding a non-finite number.
+  
+  <!-- entry: fix data -->
+- 352b221: The weight brush paints each point's share of the active joint, so painting a joint raises it even on a skin whose weights do not sum to 1.
+  
+  `jointShares(skin, joint, count)` is the share the brush and the weight overlay both read.
+  
+  <!-- entry: fix api -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [153719c]
+- Updated dependencies [bce00fd]
+- Updated dependencies [98a8020]
+- Updated dependencies [6d7aae1]
+- Updated dependencies [326d7be]
+- Updated dependencies [2740ed4]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [d83feb6]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [2f5f287]
+- Updated dependencies [eaff448]
+- Updated dependencies [b1309b2]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/clock@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

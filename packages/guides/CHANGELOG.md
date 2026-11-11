@@ -1,5 +1,220 @@
 # @weasel-js/guides
 
+## 1.19.0
+
+### Patch Changes
+
+- 396a24b: Every guide from `deriveAlignmentGuides` has its own id; a guide whose `align:x:…` id is already taken gets a `~2` suffix.
+  
+  <!-- entry: rank=-5 fix -->
+- c73c031: Edges and centers within 0.001 of each other always share one alignment guide. `deriveAlignmentGuides` merges them by tolerance, so boxes whose left edges sit at 10.0004 and 10.0006 share a guide spanning both.
+  
+  <!-- entry: fix visual -->
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 9230203: `pointToGridCell` and `cellOf` put a point on a pitch grid's line, such as 0.3 on a 0.1 grid, in the cell above the line. They already did for a grid of explicit lines.
+  
+  <!-- entry: rank=-5 fix -->
+- 989d2f6: `deriveAlignmentGuides` derives no line from a box with a coordinate that is not finite.
+  
+  `alignmentSnapSource` finds every line in reach beside such a box.
+  
+  <!-- entry: rank=-5 fix -->
+- d98c770: `measureDistances` draws no leader from a box with no height or width whose gap already meets the other box.
+  
+  <!-- entry: rank=-5 fix visual -->
+- 089697b: `gridFit` counts a point that is not finite as off the grid, and every point as off it under a `NaN` tolerance.
+  
+  <!-- entry: rank=-5 fix -->
+- 7ab54e8: `cellOf`, `pointToGridCell`, and `linesNear` put a value that is not finite in no cell and near no line.
+  
+  `linesNear` also answers no line where a pitch is too fine to count its lines out to the value.
+  
+  <!-- entry: rank=-5 fix -->
+- 8455e28: `gridSlots` rounds `cols` and `rows` down to whole counts, and gives no slots for under one column.
+  
+  Columns that are not finite give no slots, and rows under one, or not finite, count as 1.
+  
+  <!-- entry: fix -->
+- be3fabb: Equal spacing no longer snaps a box to a gap it keeps to one neighbor and that matches no other gap.
+  
+  `matchSpacing` and `spacingSnapSource` drop such a snap, so a box another axis's snap moved off center stays where it lands when snapped again.
+  
+  <!-- entry: fix -->
+- db69c53: `matchSpacing` snaps nowhere under a `NaN` tolerance.
+  
+  <!-- entry: rank=-5 fix -->
+- 83730fd: `nearestWithin` rejects every drop under a negative tolerance.
+  
+  <!-- entry: rank=-5 fix -->
+- 3686875: Undoing a guide add or remove puts the guide list back as it was. Undoing `addGuideOp` over an id the store already held restores the guide that was there, and undoing `removeGuideOp` puts the guide back at its place in the list.
+  
+  `GuideStore` now requires `getGuides()`, which `createRulers` already required, and `addGuide` takes an optional `index` for a new guide; `useGuides` provides both. A custom store must implement `getGuides()`.
+  
+  <!-- entry: breaking api fix -->
+- ae708f3: `useGuides().addGuide` with a guide equal to the one already under its id changes nothing. There is no new list, no re-render, and no notice to `subscribe`'s listeners.
+  
+  <!-- entry: rank=-5 fix -->
+- 373e5ee: Undoing `removeGuideOp` puts back the guide the store held, not the copy the op was handed, which may be stale.
+  
+  Over an id the store does not hold, the op is a no-op and records no undo step.
+  
+  <!-- entry: fix -->
+- 6e71013: Undoing `replaceGuideOp` restores the guide the store held when it applied, not the `from` it was handed, which may be stale.
+  
+  Over an id the store did not hold, undoing it removes the guide it added.
+  
+  <!-- entry: fix -->
+- 2475e40: `roundToCell` returns a value it cannot round unchanged.
+  
+  That is a value that is not finite, one whose multiple overflows, or any value on a cell size that is not a positive finite number, as a grid pitch must be.
+  
+  <!-- entry: rank=-5 fix -->
+- 0e1a46e: `snapPoint` offers no grid points on an infinite `gridSpacing`.
+  
+  <!-- entry: rank=-5 fix -->
+- 77f66de: `snapPoint` offers no grid point past its container's far edges, even along an axis its spacing cuts finer than a double counts.
+  
+  <!-- entry: rank=-5 fix -->
+- 54c2ae4: Equal spacing marks the box's own gap to each neighbor it was placed against. It does so even when that neighbor's nearest box to the right is out of the box's row.
+  
+  <!-- entry: fix visual -->
+- a1ec2f7: Equal spacing marks and snaps only to a gap the box really has. `matchSpacing` drops an axis's snap when the other axis's snap carries the box away from the neighbor that set it, and offers no placement across a gap another box blocks, a sibling the box overlaps included. `equalGaps` returns nothing when the box has no gap of the size asked.
+  
+  <!-- entry: fix visual -->
+- d49fc0b: `measureGaps`, `matchSpacing`, and `spacingSnapSource` ignore a box with a coordinate that is not finite.
+  
+  <!-- entry: rank=-5 fix -->
+- 437159b: `spacingSnapSource` lets go of an equal-spacing snap once another axis's snap carries the box to where its neighbors leave no such gap.
+  
+  <!-- entry: fix -->
+- 6af73f3: Equal-spacing snapping measures a box's gap to every box tied for nearest on its right, so its marks no longer depend on sibling order. `measureGaps` measures each one, such as two boxes stacked in one column beside the box.
+  
+  <!-- entry: fix visual -->
+- a204d0b: Undo across several guide ops puts back the right guides: `useGuides`'s `getGuides` answers each change as soon as it is made.
+  
+  `subscribe` hears the change then too, rather than once React renders it. A write inside a suspended transition is now in the list at once, where `getGuides` used to answer the committed list.
+  
+  <!-- entry: rank=5 behavior fix -->
+- 15bc280: Equal spacing snaps a line lying between two boxes to their gaps.
+  
+  `matchSpacing`, `measureGaps` and `spacingSnapSource` count a box with no extent across the axis as in the row of any box whose range holds it. Boxes with extent still have to share some of it, not merely touch.
+  
+  <!-- entry: fix -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [0e15698]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [eaff448]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

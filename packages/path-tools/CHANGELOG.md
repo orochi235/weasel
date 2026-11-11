@@ -1,5 +1,223 @@
 # @weasel-js/path-tools
 
+## 1.19.0
+
+### Patch Changes
+
+- c0845c1: `@weasel-js/cursor` adds `brushRing(radius, unit)`, the `brush` ring cursor at a radius in screen px. With `unit` set to `'world'`, the radius is in world units and the ring follows the zoom.
+  
+  `brushRingCursor` is gone from `@weasel-js/path-tools`; call `brushRing` instead.
+  
+  <!-- entry: breaking api -->
+- 0a82772: `useSmudgeBrushTool` and `useSimplifyBrushTool` take a `share` option, so `shareBrushSize` can give them one brush size. It is laid over their options' shares.
+  
+  <!-- entry: api -->
+- 2143ffe: Extend to next path, handed params, is enabled exactly when the run those params make would carry an end on. Handed no params, it still enables when either a straight or an eased run meets a stroke, since the last-operation panel can switch shapes.
+  
+  <!-- entry: fix -->
+- f8a6830: Extend to next path is not enabled for an end that already touches a stroke, so it no longer records an undo step that changes nothing. `extendToMeet` reports no meet from such an end.
+  
+  <!-- entry: fix -->
+- b1309b2: Clearing a Girth width point is disabled with `NotApplicable` when its params hold no click and no set width point under the press.
+  
+  <!-- entry: rank=-5 fix -->
+- ae99285: Dragging a Girth width point at an open end with a retracted handle moves it across the curve, not sideways along the path.
+  
+  <!-- entry: fix -->
+- 2ba2d22: Releasing an Alt-dragged anchor with `linkAnchor` under a real dispatcher links or moves it instead of throwing.
+  
+  <!-- entry: fix -->
+- e913291: An edit action that would change nothing reports itself disabled (`NotApplicable`) instead of enabled.
+  
+  That covers `deleteAnchors` where the path refuses the delete, such as one anchor of a two-anchor line; `constrainAnchors` where the selection makes no constraint of its kind; `unconstrainAnchors` where there is none to remove; `setCorners` without a shape or radius, or with the ones the corners have; and the anchor nudges and `reversePath` where the selection names no anchor of the path. Selection commands stay enabled when their result is the current selection.
+  
+  <!-- entry: behavior fix -->
+- f0c159d: Repeat Along lays its copies end to end along the path, so a saved document's repeats land in new places.
+  
+  Each copy is as long along the path as the shape is wide. A count with no spacing puts the first copy's start at the path's start and the last copy's end at its end, rather than centering them on the ends, and `spacing` is the gap between one copy's end and the next one's start, not between their centers. On an open path a copy that `offset` slides partly off an end is kept; one slid wholly off is dropped. `stationsAlongPath` takes the copies' length as a third argument, 0 by default.
+  
+  <!-- entry: rank=10 behavior data visual api -->
+- f8a6830: Menus and the command palette no longer offer a Trim segment that would cut nothing.
+  
+  It is disabled with `NotApplicable` when it has no click and its press reaches nothing it could cut.
+  
+  A click still enables it, and the run decides from the click's point, as Extend to next path does.
+  
+  <!-- entry: fix -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [c0845c1]
+- Updated dependencies [6646205]
+- Updated dependencies [c5202b9]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [976bdf2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [cd3e070]
+- Updated dependencies [b1309b2]
+- Updated dependencies [998e8d4]
+- Updated dependencies [c841997]
+- Updated dependencies [253abc5]
+- Updated dependencies [97e890d]
+- Updated dependencies [87c8ed0]
+- Updated dependencies [e3481a9]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [33bca4e]
+- Updated dependencies [d4c2b70]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [82e3877]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [337b676]
+- Updated dependencies [020f69a]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [55f85bb]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [3e4a895]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [562c8a2]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [043db55]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [c0b44f0]
+- Updated dependencies [7736185]
+- Updated dependencies [f63f932]
+- Updated dependencies [a933054]
+- Updated dependencies [ae820c2]
+- Updated dependencies [8710c48]
+- Updated dependencies [7d5ab0e]
+- Updated dependencies [ef5634e]
+- Updated dependencies [7c02aa8]
+- Updated dependencies [08c143e]
+- Updated dependencies [11ffe9f]
+- Updated dependencies [81e2cf4]
+- Updated dependencies [744af77]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [47a4976]
+- Updated dependencies [eaff448]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [77cc6e1]
+- Updated dependencies [afa1429]
+- Updated dependencies [582dfcb]
+- Updated dependencies [204596e]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [45c01e4]
+- Updated dependencies [a7578e7]
+- Updated dependencies [0a82772]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [5bc9b94]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/renderer@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/cursor@1.19.0
+  - @weasel-js/routing@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/stroke@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

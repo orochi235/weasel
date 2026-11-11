@@ -1,5 +1,45 @@
 # @weasel-js/gestures
 
+## 1.19.0
+
+### Patch Changes
+
+- 0d828ef: A drag ghost lands under the pointer when a transform, filter or containment sits above the themed host or on the body. `fixedSeat` answers the corner of whichever of the host and its ancestors contains fixed descendants.
+  
+  <!-- entry: fix visual -->
+- 98a2b04: `keySpecRoute` writes a key spec's `phase` into the route, as in `[engaged] keyDown(Delete)`, instead of always `[*:*]`. It returns `null` for a spec with a physical key `code` or more than one key, rather than a route that drops them; store such a spec as JSON.
+  
+  <!-- entry: fix -->
+- 8c040fd: `multiTouchGeometry` reports a level pair of fingers whose second is left of the first at 180, never -180, as its range `(-180, 180]` says.
+  
+  <!-- entry: rank=-5 fix -->
+- 020f69a: A key that types a character outside the BMP counts as one typed character for chords, `<select>` type-ahead and AltGr bindings.
+  
+  <!-- entry: fix -->
+- b62813d: A press on a pointer the recognizer still holds cancels the stale press first (`pointercancel`) instead of replacing it silently.
+  
+  <!-- entry: fix -->
+- a1911f5: `findConflicts` and `reportRouteConflicts` catch more pairs of key bindings that fire on the same keystroke.
+  
+  - Two owners' bindings that fire together only while one owner is engaged and the other idle, such as one owner's `engaged` binding against another's `initial` one on the same key.
+  - Key bindings whose `code`s overlap, whatever keys they name.
+  - A chord of a letter or digit against a binding naming the physical key that bears it, such as Mod+A against `code: 'KeyA'` under Mod, which both fire on a non-Latin layout.
+  
+  A pair that meets on several keys or codes is reported once. `@weasel-js/gestures` exports `chordCodesFor` and `CHORD_MODIFIERS`, the matcher's own rule for this, and reads only `KeyA`–`KeyZ` and `Digit0`–`Digit9` as bearing a letter or digit.
+  
+  <!-- entry: behavior api -->
+- 6bd1b2b: `specificity(spec, isMac?)` counts modifiers as the matcher resolves them on that platform, so `mod` beside the key it stands for counts once.
+  
+  `isMac` is new, optional, and defaults to this platform; the dispatcher ranks and records with its own.
+  
+  <!-- entry: fix api -->
+- Updated dependencies [84e0536]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [30c0e8e]
+  - @weasel-js/menu@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

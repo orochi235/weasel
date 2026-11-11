@@ -1,5 +1,280 @@
 # @weasel-js/forge
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 507b51f: The components view keeps each library's components in that library's own folders. Folders two libraries open at one path list as rows of their own, each with its own key.
+  
+  <!-- entry: fix -->
+- 25512bd: The component list widens a label until no other component of its library shares it, so two components no longer list under one name.
+  
+  <!-- entry: fix -->
+- 55c1ffd: A CSF story's args, argTypes and parameters read a key named like an `Object.prototype` member as the story's own. That includes `__proto__`, `toString` and `constructor`.
+  
+  <!-- entry: rank=-5 fix -->
+- 90ed459: A component's history gives no dates to an uncommitted file written at a path where an earlier file was deleted or renamed away.
+  
+  <!-- entry: rank=-5 fix -->
+- f571b77: The story tree names a story as its trial does. A story whose `name` or `storyName` is empty is named by its export, and a key an object literal gives twice reads as the last one given.
+  
+  <!-- entry: fix -->
+- 387e110: An issue report shows a story id or branch holding backticks, such as `` fix/`x` ``, whole in its code span.
+  
+  <!-- entry: rank=-5 fix -->
+- 36d1ee6: A story with a knob named `constructor`, `toString` or another inherited key opens from a URL that leaves it out, rather than throwing. A `__proto__` param is kept as a param.
+  
+  <!-- entry: rank=-5 fix -->
+- 0708e41: A lens's comparison reads only the globals, declarations and modes it holds as its own. A mode or key named like an `Object.prototype` member no longer breaks it.
+  
+  <!-- entry: rank=-5 fix -->
+- c74721e: An index page keeps a config override keyed `__proto__` when it merges overrides into the story's defaults.
+  
+  <!-- entry: rank=-5 fix -->
+- 8cb43c5: The CSS Vars panel saves an edit to a token the theme derives as a pin over that token alone. A derived token is one that follows another token, a ramp, a contrast rule or an alpha. The pin holds only the axis values the trial reads that its value varies on; the derivation keeps giving every other token, and this one everywhere else. A scale step edited by hand after its scale saves the same way, on top of the scale edit, which now saves too.
+  
+  <!-- entry: new -->
+- b1309b2: A trial's pins take no `__proto__` or `toString` pin for a global the lab does not declare. The lab's stored globals read only their own keys.
+  
+  <!-- entry: rank=-5 fix -->
+- b0fc20b: A paused playhead held in the URL past 1e21 seconds reads back. `parseSeconds` reads the exponent `formatSeconds` writes there, and refuses a number of seconds too large for a finite ms rather than returning `Infinity`.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: A control edit that sets `null` under a key the frame port never carried is kept. Such a key holds, for example, a React element; the edit is no longer replaced by the original value.
+  
+  <!-- entry: rank=-5 fix -->
+- e9adade: A story arg array with an `undefined` member reaches the story with that member still `undefined`. This holds beside a value the frame port cannot carry.
+  
+  <!-- entry: rank=-5 fix -->
+- 82c1691: A story control keyed like an `Object.prototype` member reaches the workshop with its own schema and validation errors. That includes `__proto__`, `toString` and `constructor`.
+  
+  <!-- entry: rank=-5 fix -->
+- dcb4bd4: `formatRoute` writes a story id holding a lone surrogate as U+FFFD, as it already did for a param's value, rather than throwing `URIError`.
+  
+  <!-- entry: rank=-5 fix -->
+- b4e96a1: The CSS variable panel's save reads only the axis values, scales, seeds and branches a theme holds as its own. A global such as `mode: 'hasOwnProperty'` saves under the axis default, as the theme engine renders it, and a scale or seed named like an `Object.prototype` member is refused for the right reason.
+  
+  <!-- entry: rank=-5 fix -->
+- b8171e7: Saving a CSS variable edit to a token with no branch for the trial's axis value pins the value there instead of refusing it. This applies to component and semantic tokens.
+  
+  <!-- entry: fix -->
+- 4a74d7b: Saving a CSS variable edit reads only the tokens and branches a theme holds as its own. An edit to an undefined token named like an `Object.prototype` member is refused, and one the theme writes under such a name is written in place.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: Story links in the tree and on index pages link a story id holding a lone surrogate rather than throwing, since `formatRoute` writes them.
+  
+  <!-- entry: rank=-5 fix -->
+- a3ca692: The story tree keeps a title with an empty first segment, such as `/ui`, in a folder of its own. It no longer merges it with `ui`, and the tree's open folders follow it.
+  
+  <!-- entry: fix -->
+- b1309b2: A group keyed by the empty string no longer shares the root's URL params with its leaves, so one knob in the URL sets one leaf.
+  
+  <!-- entry: fix -->
+- dcb4bd4: A story link keeps a knob keyed `__proto__`. The knob params written for a trial, the knobs read back from a URL and `storyHref`'s params all hold it as an own key.
+  
+  <!-- entry: rank=-5 fix -->
+- 2f5f287: `shownInPass` takes the clock itself, and a clock at the start of a pass now shows `origin`.
+  
+  Replace `shownInPass(origin, elapsed, duration, loop)` with `shownInPass(clock)`. It reads the time within the pass `clock.pass` names, so it agrees with `clock.phase`; forge's playhead readout follows.
+  
+  <!-- entry: breaking fix -->
+- Updated dependencies [0896b71]
+- Updated dependencies [bbfb059]
+- Updated dependencies [4413857]
+- Updated dependencies [5ceed2d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [34b8b1e]
+- Updated dependencies [ba20a9d]
+- Updated dependencies [7b45877]
+- Updated dependencies [6d7fe95]
+- Updated dependencies [c0d8f48]
+- Updated dependencies [efba5cf]
+- Updated dependencies [b1309b2]
+- Updated dependencies [153719c]
+- Updated dependencies [bce00fd]
+- Updated dependencies [98a8020]
+- Updated dependencies [6d7aae1]
+- Updated dependencies [326d7be]
+- Updated dependencies [2740ed4]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [4fd3050]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [056d901]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [d327c41]
+- Updated dependencies [7504d6f]
+- Updated dependencies [a547bff]
+- Updated dependencies [a43fd34]
+- Updated dependencies [a233329]
+- Updated dependencies [14398f2]
+- Updated dependencies [965c7b9]
+- Updated dependencies [2fa2f43]
+- Updated dependencies [5e16055]
+- Updated dependencies [efaf9a6]
+- Updated dependencies [27531b4]
+- Updated dependencies [d10979e]
+- Updated dependencies [c505461]
+- Updated dependencies [3ce6875]
+- Updated dependencies [88626b2]
+- Updated dependencies [cfb6cc3]
+- Updated dependencies [e72ca9d]
+- Updated dependencies [e39c5c4]
+- Updated dependencies [0b248c8]
+- Updated dependencies [e46b7a8]
+- Updated dependencies [a3cbe31]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca11bc4]
+- Updated dependencies [4fe97d4]
+- Updated dependencies [9a1c3e1]
+- Updated dependencies [b3d1188]
+- Updated dependencies [6df4bc8]
+- Updated dependencies [cc6eca8]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [faaeb54]
+- Updated dependencies [602c78d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [30f5040]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [3e4a895]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [e54eb75]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [9ea8393]
+- Updated dependencies [aa61074]
+- Updated dependencies [7b9e651]
+- Updated dependencies [6d62197]
+- Updated dependencies [b06557b]
+- Updated dependencies [efac12a]
+- Updated dependencies [5ebb996]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [2f5f287]
+- Updated dependencies [20c4979]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [741b33c]
+- Updated dependencies [5f50ea6]
+- Updated dependencies [37e387f]
+- Updated dependencies [741b33c]
+- Updated dependencies [3a1b492]
+- Updated dependencies [4606941]
+- Updated dependencies [aa46f79]
+- Updated dependencies [43755f1]
+- Updated dependencies [cfc03c6]
+- Updated dependencies [57e12cb]
+- Updated dependencies [741b33c]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [33633eb]
+- Updated dependencies [8e8a341]
+- Updated dependencies [ac2ab9d]
+- Updated dependencies [c089fd1]
+- Updated dependencies [b7f10eb]
+- Updated dependencies [355a332]
+- Updated dependencies [ada22ef]
+- Updated dependencies [1379dff]
+- Updated dependencies [b4f5abf]
+- Updated dependencies [3c2cddd]
+- Updated dependencies [263aa62]
+- Updated dependencies [9f52075]
+- Updated dependencies [aa35a8f]
+- Updated dependencies [2c54d23]
+- Updated dependencies [1167180]
+- Updated dependencies [1b24a9a]
+- Updated dependencies [db86b0c]
+- Updated dependencies [fa2b6a2]
+- Updated dependencies [37e0907]
+- Updated dependencies [f7e4000]
+- Updated dependencies [9334505]
+- Updated dependencies [fcd1616]
+- Updated dependencies [54b81ce]
+- Updated dependencies [c38920e]
+- Updated dependencies [2fff7ea]
+- Updated dependencies [05f0dd7]
+- Updated dependencies [3643214]
+- Updated dependencies [b1309b2]
+- Updated dependencies [d965b03]
+- Updated dependencies [b8ea958]
+- Updated dependencies [d58fb78]
+- Updated dependencies [4e68e7c]
+- Updated dependencies [8936d41]
+- Updated dependencies [228d835]
+- Updated dependencies [0c1c414]
+- Updated dependencies [d5f05e2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/ui@1.19.0
+  - @weasel-js/labkit@1.19.0
+  - @weasel-js/svg@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/clock@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/theme@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

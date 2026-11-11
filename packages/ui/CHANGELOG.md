@@ -1,5 +1,478 @@
 # @weasel-js/ui
 
+## 1.19.0
+
+### Patch Changes
+
+- 4413857: `ColorField` keeps a color's exact alpha through an edit of its hue, rather than rounding it to whole percents.
+  
+  <!-- entry: fix -->
+- 5ceed2d: `colorRamp` given a fractional step count uses its whole steps and still ends on `to`.
+  
+  <!-- entry: rank=-5 fix -->
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 34b8b1e: Paint swatches in `PaintField`, `PaintInput` and `FillStrokeSwatch` show a paint at its `opacity`. `paintPreviewCss` applies it to solid, gradient and mesh paints; an image pattern's preview still ignores it, since a CSS `background` value cannot fade.
+  
+  <!-- entry: fix visual -->
+- ba20a9d: `createRecentColorsStore` reads a NaN `limit` as the default 12 and a fractional one as its whole part.
+  
+  <!-- entry: rank=-5 fix -->
+- 7b45877: A `UnitField`'s steppers respond only to a primary press, so a right-click no longer leaves the value stepping.
+  
+  <!-- entry: fix -->
+- 6d7fe95: `BandEditor`'s range edge stays exactly in place when every band is locked, so a drag that changes nothing no longer rewrites the bands.
+  
+  <!-- entry: rank=-5 fix -->
+- c0d8f48: A bar's reorder finds no group, rather than throwing, under a container path naming a key every object inherits, such as `constructor`.
+  
+  <!-- entry: rank=-5 fix -->
+- efba5cf: `byRank`, and so the tool palette's group and tool orders, ranks a key an order names twice by its first place.
+  
+  <!-- entry: rank=-5 fix -->
+- 4fd3050: A `CurveEditor`'s curve has no `NaN` points past a repeated anchor in the Catmull-Rom modes, or for anchors near the double range in any mode. `sampleByInterpolation` takes a fractional sample count as the whole count below it, and a `NaN` or infinite one as 1.
+  
+  <!-- entry: fix -->
+- d327c41: `KeySequence` takes `inline`, for keys set in a line of prose.
+  
+  With `inline`, the row sits on the text's baseline instead of its bottom edge, and its keys are 4px shorter so they do not push the line apart. A key whose legend is an icon gets the same baseline as one with a letter. `InlineMarkdown` sets its `<kbd>` shortcuts inline.
+  
+  <!-- entry: new api visual -->
+- 7504d6f: `InlineMarkdown` keeps a backslash-escaped mark literal inside strong, emphasis, strikethrough and link labels. `**a\***` reads as a strong `a*`, and `[\]](…)` as a link labeled `]`.
+  
+  <!-- entry: fix -->
+- a547bff: An inline Properties row puts its control under the label when the label would leave the control too narrow to use.
+  
+  A slider wraps when its track would fall below `--wzl-prop-track-min` (64px), keeping its readout beside the track; a number or text field, select, dialog trigger or segmented toggle wraps below `--wzl-prop-field-min` (6ch) or its segments' own width. Rows that fit lay out as before. This covers labkit's `ControlPanel` two to a row and a two-across `PrefsForm`, whose slider slot now holds the same track floor. `--wzl-prop-readout-reserve` sets how much room a slider counts for its readout.
+  
+  <!-- entry: behavior visual api -->
+- 965c7b9: A keycap whose legend is named like an `Object.prototype` member, such as `constructor` or `toString`, prints it instead of throwing.
+  
+  <!-- entry: rank=-5 fix -->
+- 602c78d: A lab draws an enum with the control it asks for, as a form and a panel do: `.radio()` is a radio group, and `menu` is a menu button.
+  
+  Where a place has no room for the control asked for, a new table, `PARAMS_ENUM_PLACES` (read through `enumControlAt`), says what it draws instead: a bar draws radios as segments, and a `ControlMatrix` cell's popover lists a select or a menu as radios. `BarField` and labkit's `MatrixEditor` take their enum control from it, and the popover draws segments for an enum asking for them.
+  
+  <!-- entry: fix api visual -->
+- b1309b2: A slider with only one bound is a slider on every surface, a lab included.
+  
+  Its track runs 100 on from the bound it has, and its readout takes and steps to values past the open end.
+  
+  <!-- entry: fix visual -->
+- 30f5040: The prefs form's filter, rail pages and the schema editor's unplaced list keep a setting keyed `__proto__`. A path naming an inherited key such as `constructor` finds nothing.
+  
+  <!-- entry: rank=-5 fix -->
+- 3e4a895: A step of `1e-7` shows seven decimal places, and a value typed at a unit scale written as `1e-7` is stored without binary dust.
+  
+  `@weasel-js/quantity` exports `decimalPlaces`, which counts the decimal places a number is written with, exponent form included, capped at 20. Stepping, a slider step's readout, the token scale slider and a linear pref unit all count with it.
+  
+  <!-- entry: fix api -->
+- 9ea8393: `sampleEasing` gives no samples for a negative or non-finite count, and the whole count below a fractional one, rather than throwing.
+  
+  <!-- entry: rank=-5 fix -->
+- aa61074: A scaled `PropertyField` slider snaps to the nearer of two stops that sit a hair apart, rather than to whichever comes first.
+  
+  <!-- entry: rank=-5 fix -->
+- 6d62197: The schema editor's `moveNodes` moves a path named twice once, rather than leaving a copy under a renamed key.
+  
+  <!-- entry: rank=-5 fix -->
+- b06557b: A key named `__proto__` in a schema made elsewhere survives the schema editor's copies, moves and key checks. The action catalog, bundle tree, attribute panel's shared values and a menu bar's loose settings keep such a key too.
+  
+  <!-- entry: rank=-5 fix -->
+- 5ebb996: The selection panel shows a key named like an `Object.prototype` member, such as `data.toString`, as unset when the node does not hold it. Writing such a key into an array value keeps it an own key.
+  
+  <!-- entry: rank=-5 fix -->
+- 20c4979: An ordered slider's thumb stays inside its bounds and between its neighbors when dragged or set by a track click.
+  
+  `clampOrdered` holds it there even when a neighbor sits too close for the step it keeps.
+  
+  <!-- entry: fix -->
+- c38920e: A timeline zoomed or panned against an end of its bounds stays exactly within them, and a pan of nothing returns the window unchanged.
+  
+  <!-- entry: rank=-5 fix -->
+- 2fff7ea: In an inline params row, a segmented toggle shortens its labels before it takes a line of its own.
+  
+  It wraps only once its shortest labels still overflow beside the row's label. `useFitScope` marks its element `data-fit-spent` when every label is at its last form and the room still overflows, until the element's parent grows wider than it was then.
+  
+  <!-- entry: behavior visual api -->
+- 05f0dd7: The token panel reads a number written with a sign or an exponent, such as `1e+21px` or `1e-7`, as CSS does, and keeps its field.
+  
+  `inferTokenType` types such values as numbers, dimensions, durations and `cubic-bezier()` easings.
+  
+  <!-- entry: fix -->
+- b1309b2: A bar moved into an empty dock at row -1 lands in its first row instead of throwing.
+  
+  <!-- entry: rank=-5 fix -->
+- d965b03: `ToolbarDock` keeps a dock or bar whose id is `__proto__` as its own entry in the layout.
+  
+  <!-- entry: rank=-5 fix -->
+- 4e68e7c: `domFocusScope`'s `moveFocus` skips an element that will not take focus and returns the one that did, or null.
+  
+  <!-- entry: rank=-5 fix -->
+- 8936d41: `@weasel-js/ui`'s tree rows read which part of a row a drop is over from `@weasel-js/ui-input`'s `dropBand`.
+  
+  A drop lands where it did before.
+  
+  <!-- entry: internal -->
+- 228d835: A slider with an endless low end steps on a grid from its range's start, not from the end stop drawn before it.
+  
+  `useScale`'s new `stepOrigin` option says where the grid starts; `SliderBody` passes its range's start.
+  
+  <!-- entry: fix api -->
+- 0c1c414: `Timeline`, `Slider`, `BandEditor` and the curve editor's keyframe layer pick a dragged value by `@weasel-js/ui-input`'s slider rules.
+  
+  The ruler pans and zooms with its `spanPan` and `spanZoom`. `snapToNearest`, `toFraction` and `spanFraction` are exported as before.
+  
+  <!-- entry: internal -->
+- d5f05e2: `UnitField` reverts an infinity typed into a field with no `endless` end and no bound to clamp it, rather than committing it.
+  
+  <!-- entry: rank=-5 fix -->
+- b80eae4: Ungroup, Delete and Cut are disabled while any node they would move, rewrite or remove is locked, and no longer throw from `run` then.
+  
+  They report the new `ActionDisabledReason.Locked`, labeled "Contains a locked item" in the ui's reason labels.
+  
+  <!-- entry: fix api -->
+- 30c0e8e: A unit catalog in `@weasel-js/quantity` gives each unit one symbol, compact form and spoken name, read wherever units are shown or typed.
+  
+  Each entry has a unit's canonical name, its symbol, a compact form for tight spaces (`″` for `in`, `′` for `ft`), the aliases that read as it, its spoken names or `Intl` unit, its CSS unit, and whether its glyph attaches to the number (`°`, `′`, `″`, `%`). `catalogUnit`, `unitSymbol`, `unitSpellings`, `withUnit` and `speakUnit` read it, and `registerUnit` adds or replaces a unit and returns a function that takes it back out. The `unit` display, the bytes and duration displays' speech, `parseNumber`'s alternate spellings and `prefsCss`'s CSS units all read the catalog, in place of the tables each kept.
+  
+  `UnitDisplay` and a prefs unit take `compact: true` for a unit's compact form, and a unit is written as the catalog writes it, so `unit('deg')` and a prefs unit with `suffix: 'deg'` show `°`.
+  
+  In `@weasel-js/ui`, a field's or readout's unit whose glyph attaches stays on the value's line in every layout, including an inline slider row that hangs word units below its readout, and is out of flow, so the field is the same size with it as without. The catalog decides which units attach: a property field's string `unit`, a menu number row's `suffix` and a read-only readout all ask it. `QuantityText`'s `unit` takes `compact` and marks an attaching unit `data-attach`.
+  
+  Breaking: `unit('"')` now shows `12″` and `unit("'")` shows `1′`, the compact forms those marks are aliases of, and a unit named by an alias shows its symbol (`deg` shows `°`). A degree passed as `<sup>°</sup>` still draws as given but no longer attaches; pass the string `'°'`. `ResolvedPrefUnit.suffix` is the text a field shows, the catalog's form of the one written. Typed text reads every spelling the catalog knows for a unit a table accepts, so a field accepting `deg` also reads `°`. A scale indicator's label is spoken through the catalog, `Scale: 10 feet`.
+  
+  <!-- entry: rank=20 breaking api new visual pick -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [396a24b]
+- Updated dependencies [c73c031]
+- Updated dependencies [8d3f30f]
+- Updated dependencies [24fe08a]
+- Updated dependencies [ebc9f52]
+- Updated dependencies [63ce1c6]
+- Updated dependencies [ec703b3]
+- Updated dependencies [eb8743c]
+- Updated dependencies [871e410]
+- Updated dependencies [5be32af]
+- Updated dependencies [857c097]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ee0609a]
+- Updated dependencies [93ed93d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [3932826]
+- Updated dependencies [2595ad3]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [153719c]
+- Updated dependencies [bce00fd]
+- Updated dependencies [98a8020]
+- Updated dependencies [6d7aae1]
+- Updated dependencies [326d7be]
+- Updated dependencies [2740ed4]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [cd31516]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [0d828ef]
+- Updated dependencies [056d901]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [0e15698]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [9230203]
+- Updated dependencies [c913ef0]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [989d2f6]
+- Updated dependencies [d98c770]
+- Updated dependencies [089697b]
+- Updated dependencies [7ab54e8]
+- Updated dependencies [8455e28]
+- Updated dependencies [be3fabb]
+- Updated dependencies [db69c53]
+- Updated dependencies [83730fd]
+- Updated dependencies [3686875]
+- Updated dependencies [ae708f3]
+- Updated dependencies [373e5ee]
+- Updated dependencies [6e71013]
+- Updated dependencies [2475e40]
+- Updated dependencies [0e1a46e]
+- Updated dependencies [77f66de]
+- Updated dependencies [54c2ae4]
+- Updated dependencies [a1ec2f7]
+- Updated dependencies [d49fc0b]
+- Updated dependencies [437159b]
+- Updated dependencies [6af73f3]
+- Updated dependencies [a204d0b]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [a547bff]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [98a2b04]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [84e0536]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [7d98f63]
+- Updated dependencies [d8ce575]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [8c040fd]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [337b676]
+- Updated dependencies [020f69a]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [ca94f2d]
+- Updated dependencies [8ac5c6f]
+- Updated dependencies [5f0d749]
+- Updated dependencies [e6d57fe]
+- Updated dependencies [e0a3d33]
+- Updated dependencies [7a29e1b]
+- Updated dependencies [5ea8837]
+- Updated dependencies [a97da18]
+- Updated dependencies [b1309b2]
+- Updated dependencies [c75559c]
+- Updated dependencies [dcbcc5d]
+- Updated dependencies [e5cbd2e]
+- Updated dependencies [a6fb3c0]
+- Updated dependencies [a6ffc20]
+- Updated dependencies [3137efc]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f77795f]
+- Updated dependencies [9723ed2]
+- Updated dependencies [cc185ab]
+- Updated dependencies [d69b413]
+- Updated dependencies [6ead2a8]
+- Updated dependencies [46dfb3e]
+- Updated dependencies [b1309b2]
+- Updated dependencies [3137efc]
+- Updated dependencies [dcd3f2c]
+- Updated dependencies [cfd1fc7]
+- Updated dependencies [b1309b2]
+- Updated dependencies [3137efc]
+- Updated dependencies [dcf2a76]
+- Updated dependencies [36504c7]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b62813d]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [9451076]
+- Updated dependencies [365b49d]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [2f5f287]
+- Updated dependencies [eaff448]
+- Updated dependencies [20c4979]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [15bc280]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [c3dc307]
+- Updated dependencies [741b33c]
+- Updated dependencies [5f50ea6]
+- Updated dependencies [37e387f]
+- Updated dependencies [741b33c]
+- Updated dependencies [3a1b492]
+- Updated dependencies [4606941]
+- Updated dependencies [aa46f79]
+- Updated dependencies [43755f1]
+- Updated dependencies [cfc03c6]
+- Updated dependencies [57e12cb]
+- Updated dependencies [741b33c]
+- Updated dependencies [44aa42f]
+- Updated dependencies [a612a95]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [33633eb]
+- Updated dependencies [8e8a341]
+- Updated dependencies [ac2ab9d]
+- Updated dependencies [c089fd1]
+- Updated dependencies [b7f10eb]
+- Updated dependencies [355a332]
+- Updated dependencies [ada22ef]
+- Updated dependencies [1379dff]
+- Updated dependencies [b4f5abf]
+- Updated dependencies [3c2cddd]
+- Updated dependencies [263aa62]
+- Updated dependencies [9f52075]
+- Updated dependencies [aa35a8f]
+- Updated dependencies [2c54d23]
+- Updated dependencies [1167180]
+- Updated dependencies [1b24a9a]
+- Updated dependencies [db86b0c]
+- Updated dependencies [fa2b6a2]
+- Updated dependencies [37e0907]
+- Updated dependencies [f7e4000]
+- Updated dependencies [9334505]
+- Updated dependencies [fcd1616]
+- Updated dependencies [54b81ce]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [10199c0]
+- Updated dependencies [b1309b2]
+- Updated dependencies [4e68e7c]
+- Updated dependencies [644c5c7]
+- Updated dependencies [521cab5]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [218974c]
+- Updated dependencies [8936d41]
+- Updated dependencies [7b56e88]
+- Updated dependencies [eace261]
+- Updated dependencies [644c5c7]
+- Updated dependencies [279a193]
+- Updated dependencies [521cab5]
+- Updated dependencies [76da952]
+- Updated dependencies [228d835]
+- Updated dependencies [521cab5]
+- Updated dependencies [e198aad]
+- Updated dependencies [7dd964d]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+- Updated dependencies [352b221]
+- Updated dependencies [038a0da]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/guides@1.19.0
+  - @weasel-js/animator@1.19.0
+  - @weasel-js/ui-input@1.19.0
+  - @weasel-js/plot@1.19.0
+  - @weasel-js/svg@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/ui-logic@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/clock@1.19.0
+  - @weasel-js/gestures@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/theme@1.19.0
+  - @weasel-js/menu@1.19.0
+  - @weasel-js/modes@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/select@1.19.0
+  - @weasel-js/history@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes
