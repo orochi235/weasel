@@ -24,3 +24,17 @@ describe('shrunk counterexamples', () => {
     expect(() => catalog.settle({})).toThrow(/icon "é:hasOwnProperty" is not in @e's table/);
   });
 });
+
+describe('shrunk counterexamples: record order', () => {
+  it('writes the same variants whichever module was recorded first', () => {
+    const core = genIn('core', { namespace: 'core', owner: '@core', icons: { undo: { body: 'u', group: 'G', tags: [] } } });
+    const e = genIn('e2', { namespace: 'é', owner: '@e', icons: { a: { body: 'a', group: 'G', tags: [] } } });
+    const written = (order: [string, string][]) => {
+      const catalog = iconCatalog({});
+      for (const [id, gen] of order) catalog.record(id, { file: id, gens: [gen], pkg: undefined, refs: [] });
+      catalog.settle({});
+      return JSON.stringify([catalog.variant({}, 'all', false), catalog.variant({}, USED, false)]);
+    };
+    expect(written([['/src/b.ts', core], ['/src/a.ts', e]])).toBe(written([['/src/a.ts', e], ['/src/b.ts', core]]));
+  });
+});
