@@ -54,8 +54,6 @@ let nesting = 0;
  */
 export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   const warnings: string[] = [];
-  const onWarn = (m: string): void => { warnings.push(m); };
-
   const unreadable = (error: string): ParseResult => ({ nodes: [], warnings: [error], error });
   let doc: Document;
   try {
@@ -63,6 +61,18 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   } catch (e) {
     return unreadable(`failed to parse SVG: ${(e as Error).message}`);
   }
+  try {
+    return readDocument(doc, opts, warnings, unreadable);
+  } finally {
+    // jsdom keeps a parsed Document alive, though not a tree taken out of it (docs/traps/testing.md).
+    doc.documentElement?.remove();
+  }
+}
+
+function readDocument(
+  doc: Document, opts: ParseOptions, warnings: string[], unreadable: (error: string) => ParseResult,
+): ParseResult {
+  const onWarn = (m: string): void => { warnings.push(m); };
   const errEl = doc.getElementsByTagName('parsererror')[0];
   if (errEl) return unreadable(`SVG parse error: ${errEl.textContent ?? 'unknown'}`);
   const root = doc.documentElement;
