@@ -7,8 +7,8 @@ import type { PlotTheme } from './theme';
 /** The room every chart leaves around its edge. */
 export const CHART_PAD = 12;
 
-/** How far past a plot's edge a value beyond a fixed axis end is drawn, at most: the plot's clip hides it, and it
- *  does not read as a value on the edge (ruled 2026-11-10). */
+/** How far past a plot's edge a value beyond a fixed axis end is drawn, at most, so it does not read as a value on
+ *  the edge (ruled 2026-11-10). Nothing clips the data marks yet, so the overshoot shows. */
 export const CHART_OVERSHOOT = 8;
 const GAP = 8;
 

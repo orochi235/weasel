@@ -673,8 +673,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   itself. A gantt duration of months past the last `Date` runs 30 days a month, and any end is held to the double
   range.
 - Ruled 2026-11-10: a value far past a fixed end of an xychart's value axis, or past a radar's fixed `max`, is drawn
-  at most `CHART_OVERSHOOT` (8 px) past the plot's edge, so the plot's clip still hides the overshoot, nothing reads
-  as sitting on the edge, and the geometry stays finite however large the value.
+  at most `CHART_OVERSHOOT` (8 px) past the plot's edge, so nothing reads as sitting on the edge and the geometry
+  stays finite however large the value. The ruling assumes a clip over the data marks; plot has none yet, so the
+  overshoot shows.
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`
