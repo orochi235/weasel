@@ -110,8 +110,8 @@ function check(m: Model, r: Real, before: { version: number; open: unknown }): v
 
 type Op = { name: string; model: (m: Model) => unknown; real: (s: KeymapStack) => unknown };
 
-const op: fc.Arbitrary<Op> = fc.oneof(
-  fc.record({ id: fc.constantFrom(...IDS), held: fc.option(fc.constantFrom(...LEADERS), { nil: undefined }) }).map(({ id, held }) => ({
+const opOver = (ids: readonly string[]): fc.Arbitrary<Op> => fc.oneof(
+  fc.record({ id: fc.constantFrom(...ids), held: fc.option(fc.constantFrom(...LEADERS), { nil: undefined }) }).map(({ id, held }) => ({
     name: `push(${id}${held ? `, ${held}` : ''})`,
     model: (m: Model) => m.push(id, held),
     real: (s: KeymapStack) => s.push(id, id.toUpperCase(), held !== undefined ? { heldBy: held } : {}),
@@ -124,44 +124,54 @@ const op: fc.Arbitrary<Op> = fc.oneof(
 );
 
 /** A step: one op bare, or a raw input holding several, maybe with an input nested inside it. */
-const step = fc.oneof(
-  op.map((o) => ({ ops: [o], batch: false, nested: [] as Op[] })),
-  fc.record({ ops: fc.array(op, { minLength: 1, maxLength: 4 }), batch: fc.constant(true), nested: fc.array(op, { maxLength: 2 }) }),
-);
+const stepOver = (ids: readonly string[]) => {
+  const op = opOver(ids);
+  return fc.oneof(
+    op.map((o) => ({ ops: [o], batch: false, nested: [] as Op[] })),
+    fc.record({ ops: fc.array(op, { minLength: 1, maxLength: 4 }), batch: fc.constant(true), nested: fc.array(op, { maxLength: 2 }) }),
+  );
+};
+type Step = { ops: Op[]; batch: boolean; nested: Op[] };
+
+function play(steps: readonly Step[]): void {
+  const m = new Model();
+  const s = createKeymapStack();
+  const r: Real = { s, notified: 0 };
+  s.subscribe(() => { r.notified++; });
+  for (const st of steps) {
+    const before = { version: s.getVersion(), open: s.open().map(({ id, heldBy, usedWhileHeld }) => ({ id, ...(heldBy !== undefined ? { heldBy } : {}), usedWhileHeld })) };
+    if (!st.batch) {
+      const got = st.ops[0]!.real(s);
+      expect(got).toEqual(st.ops[0]!.model(m));
+      // Only a push restarts a level with nothing to show for it; anything else notifies on a change alone.
+      const same = JSON.stringify(shown(m)) === JSON.stringify(before.open);
+      if (same && !st.ops[0]!.name.startsWith('push')) expect(s.getVersion()).toBe(before.version);
+    } else {
+      m.begin();
+      s.batch(() => {
+        for (const o of st.ops) {
+          expect(o.real(s)).toEqual(o.model(m));
+          check(m, r, { version: -1, open: null });
+        }
+        if (st.nested.length > 0) {
+          m.begin();
+          s.batch(() => { for (const o of st.nested) expect(o.real(s)).toEqual(o.model(m)); });
+          m.end();
+        }
+      });
+      m.end();
+    }
+    check(m, r, before);
+  }
+}
 
 describe('createKeymapStack', () => {
   it('keeps the levels, verdict, and notifications a model of the stack predicts', () => {
-    fc.assert(fc.property(fc.array(step, { maxLength: 25 }), (steps) => {
-      const m = new Model();
-      const s = createKeymapStack();
-      const r: Real = { s, notified: 0 };
-      s.subscribe(() => { r.notified++; });
-      for (const st of steps) {
-        const before = { version: s.getVersion(), open: s.open().map(({ id, heldBy, usedWhileHeld }) => ({ id, ...(heldBy !== undefined ? { heldBy } : {}), usedWhileHeld })) };
-        if (!st.batch) {
-          const got = st.ops[0]!.real(s);
-          expect(got).toEqual(st.ops[0]!.model(m));
-          // Only a push restarts a level with nothing to show for it; anything else notifies on a change alone.
-          const same = JSON.stringify(shown(m)) === JSON.stringify(before.open);
-          if (same && !st.ops[0]!.name.startsWith('push')) expect(s.getVersion()).toBe(before.version);
-        } else {
-          m.begin();
-          s.batch(() => {
-            for (const o of st.ops) {
-              expect(o.real(s)).toEqual(o.model(m));
-              check(m, r, { version: -1, open: null });
-            }
-            if (st.nested.length > 0) {
-              m.begin();
-              s.batch(() => { for (const o of st.nested) expect(o.real(s)).toEqual(o.model(m)); });
-              m.end();
-            }
-          });
-          m.end();
-        }
-        check(m, r, before);
-      }
-    }), runs(300));
+    fc.assert(fc.property(fc.array(stepOver(IDS), { maxLength: 25 }), play), runs(300));
     t.expectHit('open', 'used', 'stacked');
   }, timeoutFor(300, 5));
+
+  it('keeps to the model through runs of up to 200 steps over ids named like Object.prototype members', () => {
+    fc.assert(fc.property(fc.array(stepOver(['__proto__', 'toString', 'constructor', 'a']), { maxLength: 200 }), play), runs(60));
+  }, timeoutFor(60, 40));
 });
