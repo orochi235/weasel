@@ -146,6 +146,7 @@ export function regionPickQuery(
 ): PickQuery<unknown> {
   return {
     includeGroups: query.includeGroups === true,
+    intersectClips: true,
     broad: { box: r.bounds },
     clipAdmits: (clip, node, pose, derived) => {
       const g = poseDescriptorForNode(descriptor, node);

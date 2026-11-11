@@ -68,16 +68,23 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Every shape kind is inscribed in the pose box.
   bounds: (node, pose, ctx) =>
     poseBoxBounds(pose, resolveStroke((node.data as ShapeData).stroke, ctx?.inherited?.stroke), ctx),
-  // A rect's or an ellipse's stroke reaches its box evenly; a polygon's or a
-  // star's corners are sharper than a right angle, so their miters are measured.
+  // A rect's or an ellipse's stroke reaches its box evenly, unless something sticks out of the ribbon; a
+  // polygon's or a star's corners are sharper than a right angle, so their miters are measured.
   drawnBounds: (node, pose, ctx) => {
     const d = node.data as ShapeData;
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
-    return d.shape === 'polygon' || d.shape === 'star'
+    return d.shape === 'polygon' || d.shape === 'star' || (stroke !== null && protrudes(stroke))
       ? strokedPoseBox(node, pose, stroke, ctx, (at) => pathForShape(d, at))
       : outsetPoseBox(pose, stroke, ctx);
   },
 };
+
+/** Whether `stroke` paints past an even outset of a smooth closed outline: a marker head, or a square cap on
+ *  an end a dash or a trim opens, whose corners stand off a curve. */
+function protrudes(stroke: Stroke): boolean {
+  if (stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined) return true;
+  return stroke.cap === 'square' && ((stroke.dash?.length ?? 0) > 0 || stroke.trim !== undefined);
+}
 
 export const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);
 

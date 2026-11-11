@@ -9,7 +9,8 @@
  *   3. painted alpha is above zero
  *   4. the node is not locked, unless the query asks for locked nodes
  *   5. the query's own shape test
- *   6. every ancestor clip admits the query region
+ *   6. every ancestor clip admits the query region, and for a query with an
+ *      extent so does their common part
  *
  * 2, 3 and 6 are all "the renderer did not put this on screen". A pick path
  * that skips one answers for a node the user cannot see. 4 is the other axis:
@@ -17,6 +18,7 @@
  */
 
 import { invert, type Affine, type Path } from '@weasel-js/geom';
+import { pathIntersect } from '@weasel-js/geom/booleans';
 import type { CopiesFromPoseFn } from 'core/scene/types';
 import { ownClipOf, type ClipBearing } from './ownClip';
 import { inheritedPaintOf, inheritsPaint, type InheritedPaint } from 'core/scene/inheritedPaint';
@@ -110,6 +112,11 @@ export interface PickQuery<TPose> {
   /** Default `false`. Every selecting or editing query passes over locked
    *  nodes; one that only samples what is painted can take them back. */
   includeLocked?: boolean;
+  /** Default `false`. A query with an extent sets it: a node under several
+   *  clips is drawn only where they all cover, and each clip meeting the
+   *  region does not mean their common part does, so the walk asks
+   *  `clipAdmits` once more of that part. A point in every clip is in it. */
+  intersectClips?: boolean;
   /** Where the query can hit at all, for a source with an index. `inPlane`
    *  carries it with the query; without it the walk visits every node. */
   broad?: PickBroad;
@@ -144,6 +151,9 @@ export interface PickQuery<TPose> {
    *  copies — see `GroupNode.copiesFromPose`. */
   inCopy?(m: Affine): PickQuery<TPose>;
 }
+
+/** The common part of each run of clips met, one level per clip. */
+interface CommonMemo { path?: Path; next: Map<Path, CommonMemo> }
 
 /**
  * Collect every candidate the query hits, back-to-front — the last element is
@@ -200,7 +210,19 @@ export function pickWalk<TPose>(
     return found;
   };
 
-  const lookups = { clipOf, copiesOf, carry };
+  // Keyed by the clips themselves, which `clipOf` and `carry` hand out once each per walk.
+  const commons: CommonMemo = { next: new Map() };
+  const common = (clips: readonly Path[]): Path => {
+    let at = commons;
+    for (const clip of clips) {
+      let next = at.next.get(clip);
+      if (next === undefined) at.next.set(clip, next = { next: new Map() });
+      at = next;
+    }
+    return at.path ??= pathIntersect(...clips);
+  };
+
+  const lookups = { clipOf, copiesOf, carry, common };
   const parentsOf = (node: PickCandidate<TPose>) => src.parentsOf(node);
   const order = src.order();
   const copying = order.some((n) => typeof n.copiesFromPose === 'function');

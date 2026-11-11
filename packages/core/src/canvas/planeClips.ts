@@ -7,21 +7,25 @@ import { planeMatrix, planeToPlane, type PlaneMap } from 'core/viewport/parallax
  * plane; a child on another plane reads it in its own. Null `planeOf` means no
  * layer is a plane, and every clip passes through untouched.
  *
- * Memoized per clip path and target plane, so a container with many children
- * on one other plane maps its clip once.
+ * Memoized per clip path and pair of planes, so a container with many
+ * children on one other plane maps its clip once. The source plane is part
+ * of the key: one clip object can come from containers on different planes.
  */
 export function clipCarrier(
   planeOf: ((layer: string) => PlaneMap | null) | null,
 ): (clip: Path, fromLayer: string | undefined, toLayer: string | undefined) => Path {
   if (planeOf === null) return (clip) => clip;
   const mapOf = (layer: string | undefined) => (layer === undefined ? null : planeOf(layer));
-  const cache = new WeakMap<Path, Map<PlaneMap | null, Path>>();
+  const cache = new WeakMap<Path, Map<PlaneMap | null, Map<PlaneMap | null, Path>>>();
   return (clip, fromLayer, toLayer) => {
+    const from = mapOf(fromLayer);
     const to = mapOf(toLayer);
-    const m = planeToPlane(mapOf(fromLayer), to);
+    const m = planeToPlane(from, to);
     if (m === null) return clip;
-    let byTarget = cache.get(clip);
-    if (byTarget === undefined) cache.set(clip, byTarget = new Map());
+    let byFrom = cache.get(clip);
+    if (byFrom === undefined) cache.set(clip, byFrom = new Map());
+    let byTarget = byFrom.get(from);
+    if (byTarget === undefined) byFrom.set(from, byTarget = new Map());
     let out = byTarget.get(to);
     if (out === undefined) byTarget.set(to, out = transformPath(clip, planeMatrix(m)));
     return out;

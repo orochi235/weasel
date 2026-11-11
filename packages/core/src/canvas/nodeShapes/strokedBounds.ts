@@ -4,7 +4,7 @@ import {
   markerHeads, resolveStrokeWidth, strokeAtScale, strokeInsets, tessellateStroke,
   type InsetLength, type ScreenSpace, type StrokeSpaces,
 } from '@weasel-js/stroke';
-import { resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
+import { DEFAULT_FLATTEN_TOLERANCE_PX, resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import type { NodeInkCtx } from 'canvas/NodeShape';
@@ -33,6 +33,7 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
       path,
       { ...sized, width: width * k, align: 'center', vertexWidths: stroke.vertexWidths?.map((w) => scaleVertexWidth(w, k)) },
       {
+        flattenTolerance: flattenAt(scale),
         startInset: insetIn(insets.start, spaces.start, spaces.ribbon),
         endInset: insetIn(insets.end, spaces.end, spaces.ribbon),
         ...(spaces.ribbon ? { metric: spaces.ribbon.metric } : {}),
@@ -42,13 +43,19 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
     const ox = mesh.origin?.x ?? 0, oy = mesh.origin?.y ?? 0;
     for (let i = 0; i + 1 < v.length; i += 2) box.add(v[i]! + ox, v[i + 1]! + oy, 0);
   }
-  for (const { entry, path: head, size } of markerHeads(path, sized, width, undefined, spaces)) {
+  for (const { entry, path: head, size } of markerHeads(path, sized, width, flattenAt(scale), spaces)) {
     const b = boundsOfPath(head);
     const pad = entry.outline ? (entry.outline.width * size) / 2 : 0;
     box.add(b.x, b.y, pad);
     box.add(b.x + b.width, b.y + b.height, pad);
   }
   return box.bounds();
+}
+
+/** The world tolerance the renderer flattens curves to at view scale `scale`: its pixel default, on screen. */
+function flattenAt(scale: number): number | undefined {
+  const world = DEFAULT_FLATTEN_TOLERANCE_PX / scale;
+  return world > 0 && Number.isFinite(world) ? world : undefined;
 }
 
 /** `[a, b, c, d]`: a frame's linear map to screen pixels. */
