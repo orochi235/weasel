@@ -26,7 +26,9 @@ const mark = fc.record({
   name: fc.constantFrom('a', '__proto__', 'constructor', 'é😀'),
 });
 
-function sceneOf(marks: fc.RecordValue<typeof mark>[]) {
+type Mark = typeof mark extends fc.Arbitrary<infer T> ? T : never;
+
+function sceneOf(marks: Mark[]) {
   const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
   for (const m of marks) {
     const style = {

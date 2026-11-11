@@ -47,8 +47,10 @@ describe('kit settings stores against a model', () => {
     );
     fc.assert(fc.property(fc.array(step, { minLength: 5, maxLength: 60 }), (steps) => {
       const trees: Tree[] = [{}, {}, {}];
-      const stores: WritableKitSettingsStore<never>[] = [];
-      for (let i = 0; i < 3; i++) stores.push(createKitSettingsStore<never>({}, stores[i - 1] ?? null));
+      // Typed loosely: the paths are prototype names no declared settings tree holds.
+      type Loose = Record<string, never>;
+      const stores: WritableKitSettingsStore<Loose>[] = [];
+      for (let i = 0; i < 3; i++) stores.push(createKitSettingsStore<Loose>({}, stores[i - 1] ?? null));
       const resolved = (i: number, path: string): unknown => {
         for (let j = i; j >= 0; j--) {
           const v = read(trees[j]!, path);

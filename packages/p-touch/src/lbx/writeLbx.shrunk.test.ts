@@ -6,8 +6,8 @@ import { tapeForWidthMm } from '../tape';
 import { writeLbx } from './writeLbx';
 
 const t = tapeForWidthMm(12)!;
-const rect = (stroke?: number): DrawCommand => ({
-  kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 5 }, fill: { paint: { color: '#000000' } },
+const rect = (stroke?: number, x = 0): DrawCommand => ({
+  kind: 'path', path: { kind: 'rect', x, y: 0, width: 10, height: 5 }, fill: { paint: { color: '#000000' } },
   ...(stroke !== undefined ? { stroke: { paint: { color: '#000000' }, width: stroke } } : {}),
 });
 
@@ -16,7 +16,7 @@ describe('shrunk counterexamples', () => {
     const pages: DrawCommand[][] = [
       [rect(Infinity)],
       [{ kind: 'group', transform: Float32Array.of(Number.NaN, 0, 0, 0, Number.NaN, 0, 0, 0, 1) as never, children: [rect()] }],
-      [{ kind: 'group', transform: [1e200, 0, 0, 0, 1e200, 0, 0, 0, 1] as never, children: [{ ...rect(), path: { kind: 'rect', x: 1e200, y: 0, width: 1, height: 1 } }] }],
+      [{ kind: 'group', transform: [1e200, 0, 0, 0, 1e200, 0, 0, 0, 1] as never, children: [rect(undefined, 1e200)] }],
     ];
     for (const commands of pages) {
       const { bytes, config, skipped } = await writeLbx({ length: 100, tape: t, commands });
