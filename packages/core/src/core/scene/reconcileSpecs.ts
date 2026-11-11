@@ -34,6 +34,12 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
 
   // A replaced node is the same node to whoever selected it.
   const selected = scene.getSelection();
+  // `setLayer` carries a node's subtree with it, so a member whose own layer did not change is put back after.
+  const startLayer = new Map<NodeId, TLayer>();
+  for (const spec of next) {
+    const node = scene.get(spec.id!);
+    if (node !== undefined) startLayer.set(spec.id!, node.layer);
+  }
 
   // Syncing to outside data reaches a node a lock guards, as a replay does.
   scene.untracked(() => scene.unlocked(() => {
@@ -48,6 +54,7 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       const parent = spec.parent ?? null;
       if (parent !== (before.parent ?? null)) scene.move(id, parent);
       if (spec.layer !== before.layer) scene.setLayer(id, spec.layer);
+      else restoreLayer(scene, id, startLayer.get(id));
       if (!same(spec.data, before.data)) scene.update(id, { data: spec.data });
       if (!same(spec.dependsOn, before.dependsOn)) scene.setDependsOn(id, spec.dependsOn);
       if (!same(spec.units, before.units)) scene.setUnits(id, spec.units ?? null);
@@ -63,6 +70,19 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       scene.setSelection(selected.filter((id) => scene.get(id) !== undefined));
     }
   }));
+}
+
+/** Put `id` back on `layer` where its parent's layer, which may have just moved, still lets it stand there. */
+function restoreLayer<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+  id: NodeId,
+  layer: TLayer | undefined,
+): void {
+  const node = scene.get(id)!;
+  if (layer === undefined || node.layer === layer) return;
+  const rank = (l: TLayer) => scene.layers.findIndex((r) => r.id === l);
+  const parent = node.parent === null ? undefined : scene.get(node.parent);
+  if (parent === undefined || rank(layer) >= rank(parent.layer)) scene.setLayer(id, layer);
 }
 
 /** Each parent whose spec children `next` lists differently from `prev` gets
