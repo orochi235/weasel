@@ -4,7 +4,7 @@ import type { ColorList, Theme } from '@weasel-js/theme';
 import type { ReactNode } from 'react';
 import type { CameraGestures } from '../canvas/cameraGestures';
 import type { LabContribution } from '../chrome/labTypes';
-import type { TrialContribution } from '../chrome/types';
+import type { TrialContribution, TrialSidebar } from '../chrome/types';
 import type { ClockCapability } from '../clock/trialClock';
 import type { LabOver } from '../config/over';
 import type { ConfigRule, ControlRenderer } from '../config/types';
@@ -72,6 +72,12 @@ export interface LabBaseProps {
   labChrome?: readonly LabContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
+  /** Contribution ids whose buttons to hide while keeping what they bind: `['undo', 'redo']` takes every trial's
+   *  undo row away and leaves Mod+Z stepping the trial. Throws on an id that is not there. */
+  hide?: readonly string[];
+  /** Where every trial's sidebar sections go. Default `'dock'`, a pane beside the trial's body; `'float'` puts them
+   *  in a panel over the body, opened from a Settings toggle (`panel`) in the title bar. */
+  sidebar?: TrialSidebar;
   /** Whether a double-click on a trial also opens it in its lightbox, beside
    *  the title bar's expand toggle every trial has. Off by default; a
    *  function decides per trial, by its record. */

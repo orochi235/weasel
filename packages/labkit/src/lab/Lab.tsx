@@ -119,6 +119,18 @@ function panelsOf(undocked: UndockedPanels): PanelDescriptor[] {
   }));
 }
 
+/** Whether a double-click opens a trial in its lightbox, asked of its record when the lab's answer is a function. */
+function doubleClickExpands(
+  expand: NonNullable<LabProps['expandOnDoubleClick']>,
+  store: OpenedLab['store'],
+): boolean | ((id: string) => boolean) {
+  if (typeof expand !== 'function') return expand;
+  return (id) => {
+    const trial = store.getState().trials.find((t) => t.id === id);
+    return trial ? expand(trial) : false;
+  };
+}
+
 let seedWarned = false;
 function warnSeedIgnored(): void {
   if (seedWarned) return;
@@ -141,6 +153,8 @@ function LabRuntime({
   chrome,
   labChrome,
   suppress,
+  hide,
+  sidebar,
   expandOnDoubleClick = false,
   addTrial,
   zoom = true,
@@ -222,6 +236,7 @@ function LabRuntime({
   });
   const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
 
+  const trialOptions = { chrome, suppress, hide, sidebar };
   const workspace = (
     <Workspace
       panels={workspacePanels}
@@ -231,17 +246,10 @@ function LabRuntime({
       onReorder={(ids) => commands.reorderTrials(ids)}
       layout={layout as TrialLayout}
       onLayoutChange={(next) => store.getState().setLayout(next)}
-      expandOnDoubleClick={
-        typeof expandOnDoubleClick === 'function'
-          ? (id) => {
-              const trial = store.getState().trials.find((t) => t.id === id);
-              return trial ? expandOnDoubleClick(trial) : false;
-            }
-          : expandOnDoubleClick
-      }
+      expandOnDoubleClick={doubleClickExpands(expandOnDoubleClick, store)}
     >
       {trialIds.map((id) => (
-        <Trial key={id} id={id} chrome={chrome} suppress={suppress} />
+        <Trial key={id} id={id} {...trialOptions} />
       ))}
     </Workspace>
   );
