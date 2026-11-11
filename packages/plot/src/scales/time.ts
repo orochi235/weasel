@@ -1,4 +1,4 @@
-import { tickStep } from './linear';
+import { proportion, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 
@@ -86,11 +86,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
 /** `t` written to the precision of `unit`. */
 export function formatInstant(t: number, unit: Unit): string {
   const d = new Date(t);
-  const date = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  const month = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+  const date = `${month}-${pad(d.getUTCDate())}`;
   const time = `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
   switch (unit) {
     case 'year': return String(d.getUTCFullYear());
-    case 'month': return date.slice(0, 7);
+    case 'month': return month;
     case 'day': return date;
     case 'hour':
     case 'minute': return d.getUTCHours() === 0 && d.getUTCMinutes() === 0 ? date : time;
@@ -103,7 +104,8 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
   const [d0, d1] = opts.domain;
   const [r0, r1] = opts.range;
   const span = d1 - d0;
-  const map = (v: number) => (span === 0 ? (r0 + r1) / 2 : r0 + ((v - d0) / span) * (r1 - r0));
+  const { along, unmap } = proportion(d0, d1);
+  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
   const interval = (count = 5) => intervalFor(Math.abs(span), count);
   const format = (v: number): string => formatInstant(v, interval().unit);
   return {
@@ -112,7 +114,7 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
     range: [r0, r1],
     map,
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : d0 + ((at - r0) / (r1 - r0)) * span),
+    invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
     ticks: (count = 5) => {
       const out = gridTicks(Math.min(d0, d1), Math.max(d0, d1), interval(count));
       return d0 <= d1 ? out : out.reverse();

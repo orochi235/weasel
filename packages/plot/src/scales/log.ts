@@ -29,19 +29,27 @@ export function logScale(opts: LogScaleOptions): LogScale {
   const log = (v: number) => Math.log(v) / Math.log(base);
   const l0 = log(d0);
   const l1 = log(d1);
-  const map = (v: number) => (l1 === l0 ? (r0 + r1) / 2 : r0 + ((log(v) - l0) / (l1 - l0)) * (r1 - r0));
+  // Ends too near for their logarithms to differ are told apart by their ratio.
+  const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log(v / d0) / Math.log(d1 / d0);
+  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
   const ticks = (count = 5): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);
     const last = Math.ceil(hi - 1e-9);
-    // Few decades get their 2s and 5s too, so a short axis still reads.
+    // Few decades get their 2s and 5s too, so a short axis still reads; many keep every `every`th, about twice the count.
     const steps = last - first < count / 2 && base === 10 ? [1, 2, 5] : [1];
+    const every = Math.max(1, Math.ceil((last - first) / (2 * Math.max(1, count))));
+    // Compared as values, with room for a tick's rounding but never more than a sliver of the domain: ends too near
+    // for their logarithms to differ still keep a tick between them out.
+    const [vlo, vhi] = d0 <= d1 ? [d0, d1] : [d1, d0];
     const out: number[] = [];
-    for (let p = first; p <= last; p++) {
+    for (let p = Math.ceil(first / every) * every; p <= last; p += every) {
       for (const m of steps) {
         const v = Number((m * base ** p).toPrecision(12));
-        if (log(v) >= lo - 1e-9 && log(v) <= hi + 1e-9) out.push(v);
+        const slack = Math.min(1e-9 * v, (vhi - vlo) * 1e-9);
+        // Powers deep in the subnormals can round onto one another.
+        if (v >= vlo - slack && v <= vhi + slack && v !== out.at(-1)) out.push(v);
       }
     }
     return l0 <= l1 ? out : out.reverse();
@@ -49,7 +57,8 @@ export function logScale(opts: LogScaleOptions): LogScale {
   // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.
   const format = (v: number): string => {
     const decade = v >= 1 ? 0 : decimalsOf(10 ** Math.floor(Math.log10(v)));
-    return formatNumber(v, 10 ** -(base === 10 ? decade : Math.max(decade, tickDecimals([v]))));
+    // Digits counted on the value moved up past its decade, as `tickDecimals` counts places to an absolute tolerance.
+    return formatNumber(v, 10 ** -(base === 10 ? decade : decade + tickDecimals([v * 10 ** decade])));
   };
   return {
     kind: 'log',
@@ -58,7 +67,13 @@ export function logScale(opts: LogScaleOptions): LogScale {
     range: [r0, r1],
     map,
     position: map,
-    invert: (at) => base ** (r1 === r0 ? l0 : l0 + ((at - r0) / (r1 - r0)) * (l1 - l0)),
+    invert(at) {
+      const t = r1 === r0 ? 0 : (at - r0) / (r1 - r0);
+      if (t === 0 || t === 1) return t === 0 ? d0 : d1;
+      // A logarithm a rounding past the double range's end would turn into Infinity or 0.
+      const v = base ** (l0 + t * (l1 - l0));
+      return t > 0 && t < 1 ? Math.min(Math.max(d0, d1), Math.max(Math.min(d0, d1), v)) : v;
+    },
     ticks,
     format,
     tickFormat() {

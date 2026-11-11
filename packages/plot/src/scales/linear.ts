@@ -49,7 +49,8 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   const power = 10 ** Math.floor(Math.log10(raw));
   const error = raw / power;
   const factor = error >= Math.sqrt(50) ? 10 : error >= Math.sqrt(10) ? 5 : error >= Math.sqrt(2) ? 2 : 1;
-  return factor * power;
+  // Rounded up past the largest double, the step falls back to its power of ten.
+  return Number.isFinite(factor * power) ? factor * power : power;
 }
 
 /** The most `toFixed` accepts. */
@@ -72,8 +73,11 @@ export function niceStep(rough: number): number {
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
 const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER;
 
+/** The smallest step whose places `toFixed` can write. */
+const FINEST = 10 ** -MAX_DECIMALS;
+
 /** `i` steps of `step`, without the float noise a bare product carries. */
-const onGrid = (i: number, step: number): number => Number((i * step).toFixed(decimalsOf(step)));
+const onGrid = (i: number, step: number): number => (step < FINEST ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
 
 /** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
 export function stepTicks(lo: number, hi: number, step: number): number[] {
@@ -104,8 +108,10 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   return { values, step, decimals };
 }
 
-/** `value` written as plainly as a grid of `step` allows: no trailing zeros, no exponent. */
+/** `value` written as plainly as a grid of `step` allows: no trailing zeros, and no exponent above 1e-100. */
 export function formatNumber(value: number, step: number): string {
+  // Past the places `toFixed` writes, a label takes the exponent rather than reading 0.
+  if ((step > 0 && step < FINEST) || (value !== 0 && Math.abs(value) < FINEST)) return String(Number(value.toPrecision(12)));
   const decimals = decimalsOf(step);
   const fixed = formatTick(value, { decimals, step });
   return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
@@ -124,14 +130,37 @@ export function niceDomain(domain: readonly [number, number], count = DEFAULT_TI
   return out[0] === out[1] ? [lo, hi] : out;
 }
 
+/** How far `v` lies from `d0` toward `d1`, as a share of the span, and back. A distance past the double range is
+ *  taken in halves, which do not overflow. */
+export function proportion(d0: number, d1: number): { along(v: number): number; unmap(t: number): number } {
+  const span = d1 - d0;
+  const half = d1 / 2 - d0 / 2;
+  const wide = !Number.isFinite(span) && Number.isFinite(half);
+  // Halves where a difference overflows; not where they underflow to nothing, as a subnormal span's do.
+  return {
+    along(v) {
+      const t = (v - d0) / span;
+      return !wide && (Number.isFinite(t) || !Number.isFinite(v) || half === 0) ? t : (v / 2 - d0 / 2) / half;
+    },
+    unmap(t) {
+      if (t === 0 || t === 1) return t === 0 ? d0 : d1;
+      const v = d0 + t * span;
+      if (!wide && (Number.isFinite(v) || !Number.isFinite(t) || half === 0)) return v;
+      const w = 2 * (d0 / 2 + t * half);
+      // Doubled back near an end of the double range, a point inside the domain can round past it.
+      return t > 0 && t < 1 ? Math.min(Math.max(d0, d1), Math.max(Math.min(d0, d1), w)) : w;
+    },
+  };
+}
+
 /** A linear scale from `domain` onto `range`. */
 export function linearScale(opts: LinearScaleOptions): LinearScale {
   const domain = opts.nice !== undefined ? niceDomain(opts.domain, opts.nice) : ([opts.domain[0], opts.domain[1]] as const);
   const range = [opts.range[0], opts.range[1]] as const;
   const [d0, d1] = domain;
   const [r0, r1] = range;
-  const span = d1 - d0;
-  const map = (v: number) => (span === 0 ? (r0 + r1) / 2 : r0 + ((v - d0) / span) * (r1 - r0));
+  const { along, unmap } = proportion(d0, d1);
+  const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : r0 + along(v) * (r1 - r0));
   const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
   const format = (v: number): string => formatNumber(v, step());
   return {
@@ -140,7 +169,7 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
     range,
     map,
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : d0 + ((at - r0) / (r1 - r0)) * span),
+    invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),

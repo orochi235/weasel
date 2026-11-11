@@ -1,4 +1,4 @@
-import { formatNumber, stepTicks, tickStep } from './linear';
+import { formatNumber, proportion, stepTicks, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import type { ContinuousScale } from './types';
 
@@ -28,7 +28,8 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
   const [r0, r1] = opts.range;
   const w0 = to(d0);
   const w1 = to(d1);
-  const map = (v: number) => (w1 === w0 ? (r0 + r1) / 2 : r0 + ((to(v) - w0) / (w1 - w0)) * (r1 - r0));
+  const { along, unmap } = proportion(w0, w1);
+  const map = (v: number) => (w1 === w0 ? (r0 + r1) / 2 : r0 + along(to(v)) * (r1 - r0));
   const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
   const format = (v: number): string => formatNumber(v, step());
   return {
@@ -37,7 +38,7 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
     range: [r0, r1],
     map,
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : from(w0 + ((at - r0) / (r1 - r0)) * (w1 - w0))),
+    invert: (at) => (r1 === r0 ? d0 : from(unmap((at - r0) / (r1 - r0)))),
     ticks: (count = DEFAULT_TICKS) => stepTicks(d0, d1, step(count)),
     format,
     tickFormat(count) {
