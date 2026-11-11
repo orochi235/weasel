@@ -3,7 +3,7 @@ import type { Scale } from './types';
 
 /** Options for {@link bandScale}. */
 export interface BandScaleOptions {
-  /** The categories, one band each, in order. */
+  /** The categories, one band each, in order; a category named twice keeps its first band. */
   domain: readonly string[];
   range: readonly [number, number];
   /** The share of each step left empty between bands, 0 to 1. Default 0.2. */
@@ -29,7 +29,7 @@ export interface BandScale extends Scale<string> {
 
 /** A band scale over `domain`. */
 export function bandScale(opts: BandScaleOptions): BandScale {
-  const domain = [...opts.domain];
+  const domain = [...new Set(opts.domain)];
   const [r0, r1] = opts.range;
   const inner = Math.min(1, Math.max(0, opts.paddingInner ?? 0.2));
   const outer = Math.max(0, opts.paddingOuter ?? inner / 2);

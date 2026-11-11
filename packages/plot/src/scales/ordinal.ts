@@ -1,6 +1,6 @@
 /** Options for {@link ordinalScale}. */
 export interface OrdinalScaleOptions<T> {
-  /** The keys, in order. */
+  /** The keys, in order; a key named twice keeps its first place. */
   domain: readonly string[];
   /** What each key maps to, in domain order, wrapping when there are fewer than keys. */
   range: readonly T[];
@@ -21,7 +21,7 @@ export interface OrdinalScale<T> {
 /** An ordinal scale from `domain` to `range`. Throws on an empty range. */
 export function ordinalScale<T>(opts: OrdinalScaleOptions<T>): OrdinalScale<T> {
   if (opts.range.length === 0) throw new Error('ordinalScale: an empty range');
-  const domain = [...opts.domain];
+  const domain = [...new Set(opts.domain)];
   const index = new Map(domain.map((key, i) => [key, i]));
   const range = [...opts.range];
   return {
