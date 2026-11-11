@@ -19,7 +19,8 @@ import {
 export interface TextCluster {
   /** Its slot's leading edge, from the line's left, in visual order. */
   x: number;
-  /** The slot's width: its cells' advances, kerning and tracking included. */
+  /** The slot's width: its cells' advances, kerning and tracking included. Negative where tracking pulls
+   *  the next cluster back past this one's advance. */
   advance: number;
   /** Outlines with the slot's left edge at x = 0 and the baseline at y = 0, y down, one per paint; empty for a
    *  space or a color glyph. */
@@ -104,7 +105,8 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
   const lineRules = deco.end();
 
   const glyphOf: PlacedGlyph[] = new Array(line.cells.length);
-  for (const g of line.glyphs) glyphOf[g.cell] = g;
+  const visualAt = new Map<PlacedGlyph, number>();
+  line.glyphs.forEach((g, k) => { glyphOf[g.cell] = g; visualAt.set(g, k); });
 
   const groups: PlacedGlyph[][] = [];
   let open: PlacedGlyph[] = [];
@@ -113,9 +115,13 @@ function clustersOf(data: TextOutlineSource, width: number, scale: number): Text
     if (cell.clusterEnd || i === line.cells.length - 1) { groups.push(open); open = []; }
   });
 
+  // Visual order is the glyphs' own, not their pens': tracking tighter than a cluster's advance sets the next
+  // one's pen left of it.
   const slots = groups
-    .map((glyphs) => ({ glyphs, left: minOf(glyphs, (g) => g.x) }))
-    .sort((a, b) => a.left - b.left);
+    .map((glyphs) => ({ glyphs, left: minOf(glyphs, (g) => g.x), at: minOf(glyphs, (g) => visualAt.get(g)!) }))
+    .sort((a, b) => a.at - b.at);
+  // The first slot opens the line even where tracking sets a pen before the line's start.
+  if (slots.length > 0) slots[0]!.left = line.x0;
   return slots.map(({ glyphs, left }, i): TextCluster => {
     const right = i + 1 < slots.length ? slots[i + 1]!.left : line.x1;
     const parts: PolygonPath[][] = paints.map(() => []);

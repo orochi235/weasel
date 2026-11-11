@@ -96,6 +96,13 @@ Owner tags, after the priority (2026-10-26):
 
 - **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
   (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
+- **(P3) [agent] `mergeRegion` leaves edges inside the fill where two curves cross nearly tangent.** Two
+  round-joined synthetic-bold outlines whose corner arcs lie 0.001 em apart (`M0 -0.001h0.02v0.02h-0.02Z` and
+  `M0 0h0.021v0.1h-0.021Z`, grown by the canvas tier's 1/75 em) merge with spikes and slivers a stroke traces.
+  The pass on 2026-11-10 fixed shared and near-shared straight edges and exact duplicate contours; this needs
+  near-tangent curve crossings snapped or merged, a change to the curve boolean core. Closes when
+  `glyphGeometry.pbt.test.ts` checks the bake's round-joined outlines for inner edges too (it checks the
+  mitered atlas ones only).
 
 ### Path editing tricks
 

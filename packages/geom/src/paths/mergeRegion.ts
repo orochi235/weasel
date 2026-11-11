@@ -37,18 +37,22 @@ interface Cut {
 export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonPath {
   const tol = opts.tolerance ?? 0.01;
   const contours = pathToCubicContours(path).filter((c) => c.segs.length > 0);
-  const segs = contours.flatMap((c) => closeContour(c.segs, tol * 1e-3));
+  const snap = tol * 1e-3;
+  const all = weld(contours.flatMap((c) => closeContour(c.segs, snap)), snap);
   // A positively wound region fills to the right of travel (`growRegion`).
   const fillLeft = pathSignedArea(path) < 0;
+  // A segment another contour already runs along carries no edge of its own; its twin decides that.
+  const segs = distinct(all, snap);
   const cuts: Cut[][] = segs.map(() => []);
   for (const x of segmentCrossings(segs)) {
-    const p = crossingPoint(segs[x.a]!, x.s, segs[x.b]!, x.t);
+    const p = crossingPoint(segs[x.a]!, x.s, segs[x.b]!, x.t, snap);
     cuts[x.a]!.push({ t: x.s, p });
     cuts[x.b]!.push({ t: x.t, p });
   }
-  const rings = flattenAll(segs, tol / 4);
+  overlapCuts(segs, cuts, snap);
+  const rings = flattenAll(all, tol / 4);
   const pieces: CubicSegment[] = [];
-  let changed = false;
+  let changed = segs.length < all.length;
   segs.forEach((seg, i) => {
     const parts = cutSegment(seg, cuts[i]!);
     if (parts.length > 1) changed = true;
@@ -64,11 +68,83 @@ export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonP
   });
   const b = new PathBuilder();
   if (!changed) {
-    for (const c of contours) emit(b, closeContour(c.segs, tol * 1e-3));
+    for (const c of contours) emit(b, closeContour(c.segs, snap));
     return b.build();
   }
-  for (const ring of chain(pieces)) emit(b, ring);
+  for (const ring of chain(once(pieces))) emit(b, ring);
   return b.build();
+}
+
+/**
+ * Cuts where two straight edges run along each other: each is cut where the
+ * other's ends fall inside it, at that end's own point, so the shared stretch
+ * becomes the same piece on both and {@link once} keeps one of it.
+ */
+function overlapCuts(segs: readonly CubicSegment[], cuts: Cut[][], snap: number): void {
+  for (let i = 0; i < segs.length; i++) {
+    const a = segs[i]!;
+    if (!a.line) continue;
+    for (let j = i + 1; j < segs.length; j++) {
+      const b = segs[j]!;
+      if (!b.line) continue;
+      const onA = endsAlong(a, b, snap);
+      if (!onA) continue;
+      const onB = endsAlong(b, a, snap)!;
+      cuts[i]!.push(...onA);
+      cuts[j]!.push(...onB);
+    }
+  }
+}
+
+/** Where `b`'s ends fall inside straight edge `a`, when the two lie on one line within `snap` and overlap. */
+function endsAlong(a: CubicSegment, b: CubicSegment, snap: number): Cut[] | null {
+  const [ax, ay] = [a.c[0], a.c[1]];
+  const dx = a.c[6] - ax,
+    dy = a.c[7] - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return null;
+  const len = Math.sqrt(len2);
+  const ends: Pt[] = [[b.c[0], b.c[1]], [b.c[6], b.c[7]]];
+  const t: number[] = [];
+  for (const [x, y] of ends) {
+    if (Math.abs((x - ax) * dy - (y - ay) * dx) / len > snap) return null;
+    t.push(((x - ax) * dx + (y - ay) * dy) / len2);
+  }
+  if (Math.min(t[0]!, t[1]!) >= 1 || Math.max(t[0]!, t[1]!) <= 0) return null;
+  return ends.map((p, k) => ({ t: t[k]!, p }));
+}
+
+/** `pieces` with each straight one two contours share kept once, known by its ends whatever its handles, and
+ *  every piece that runs back over another dropped along with it: a spike of no width a sliver left. */
+function once(pieces: readonly CubicSegment[]): CubicSegment[] {
+  const keyOf = (c: readonly number[], line: boolean) => (line
+    ? `${c[0]},${c[1]},${c[6]},${c[7]}` : c.join(','));
+  const kept = new Map<string, CubicSegment>();
+  for (const p of pieces) {
+    const k = keyOf(p.c, p.line);
+    if (kept.has(k)) continue;
+    const back = keyOf(reversed(p).c, p.line);
+    if (kept.delete(back)) continue;
+    kept.set(k, p);
+  }
+  return [...kept.values()];
+}
+
+/** `segs` less each that runs, either way, where an earlier one does: the same welded ends, and every handle
+ *  within `snap` of the earlier one's, or both straight. */
+function distinct(segs: readonly CubicSegment[], snap: number): CubicSegment[] {
+  const byEnds = new Map<string, CubicSegment[]>();
+  const ends = (c: readonly number[], a: number, b: number) => `${c[a]},${c[a + 1]}|${c[b]},${c[b + 1]}`;
+  const near = (p: CubicSegment, q: CubicSegment, flip: boolean) => p.line && q.line
+    || [2, 3, 4, 5].every((k) => Math.abs(p.c[k]! - q.c[flip ? (k < 4 ? k + 2 : k - 2) : k]!) <= snap);
+  return segs.filter((s) => {
+    const fwd = ends(s.c, 0, 6);
+    const twins = [...(byEnds.get(fwd) ?? []).map((q) => [q, false] as const),
+      ...(byEnds.get(ends(s.c, 6, 0)) ?? []).map((q) => [q, true] as const)];
+    if (twins.some(([q, flip]) => near(s, q, flip))) return false;
+    byEnds.set(fwd, [...(byEnds.get(fwd) ?? []), s]);
+    return true;
+  });
 }
 
 /** `segs` with every straight edge no longer than `snap` dropped, the gap it
@@ -88,17 +164,53 @@ function closeContour(given: readonly CubicSegment[], snap: number): CubicSegmen
   return segs;
 }
 
+/**
+ * `segs` with every end within `snap` of an earlier one moved onto it, and
+ * any straight edge that leaves with no length dropped, so contours that
+ * nearly share a corner share it exactly.
+ */
+function weld(segs: readonly CubicSegment[], snap: number): CubicSegment[] {
+  if (!(snap > 0)) return [...segs];
+  const grid = new Map<string, Pt[]>();
+  const cell = (v: number) => Math.floor(v / snap);
+  const at = (x: number, y: number): Pt => {
+    const cx = cell(x),
+      cy = cell(y);
+    for (let i = cx - 1; i <= cx + 1; i++) {
+      for (let j = cy - 1; j <= cy + 1; j++) {
+        for (const p of grid.get(`${i},${j}`) ?? []) if (Math.hypot(p[0] - x, p[1] - y) <= snap) return p;
+      }
+    }
+    const p: Pt = [x, y];
+    const k = `${cx},${cy}`;
+    grid.set(k, [...(grid.get(k) ?? []), p]);
+    return p;
+  };
+  const out: CubicSegment[] = [];
+  for (const s of segs) {
+    const a = at(s.c[0], s.c[1]),
+      b = at(s.c[6], s.c[7]);
+    if (s.line && a === b) continue;
+    out.push(a[0] === s.c[0] && a[1] === s.c[1] && b[0] === s.c[6] && b[1] === s.c[7] ? s : moveEnds(s, a, b));
+  }
+  return out;
+}
+
 /** One point for a crossing: an end of either segment when it falls there,
- *  so the cut lands on the corner already joining it, else the midpoint of
- *  the two curves' estimates. */
-function crossingPoint(a: CubicSegment, s: number, b: CubicSegment, t: number): Pt {
+ *  or within `snap` of it, so the cut lands on the corner already joining
+ *  it, else the midpoint of the two curves' estimates. */
+function crossingPoint(a: CubicSegment, s: number, b: CubicSegment, t: number, snap: number): Pt {
   const end = (seg: CubicSegment, u: number): Pt | null =>
     u <= 1e-7 ? [seg.c[0], seg.c[1]] : u >= 1 - 1e-7 ? [seg.c[6], seg.c[7]] : null;
   const fixed = end(a, s) ?? end(b, t);
   if (fixed) return fixed;
   const p = cubicEvalAt(...a.c, s),
     q = cubicEvalAt(...b.c, t);
-  return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  const m: Pt = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
+  for (const c of [a.c, b.c]) {
+    for (const k of [0, 6]) if (Math.hypot(c[k]! - m[0], c[k + 1]! - m[1]) <= snap) return [c[k]!, c[k + 1]!];
+  }
+  return m;
 }
 
 /** `seg` cut at every interior cut, each cut end moved onto its cut's point,
@@ -110,7 +222,8 @@ function cutSegment(seg: CubicSegment, cuts: Cut[]): CubicSegment[] {
     from = 0;
   let start: Pt = [seg.c[0], seg.c[1]];
   for (const cut of inner) {
-    if (cut.t - from < 1e-9) continue;
+    if (cut.t - from < 1e-9 || (cut.p[0] === start[0] && cut.p[1] === start[1])) continue;
+    if (cut.p[0] === seg.c[6] && cut.p[1] === seg.c[7]) continue;
     const [l, r] = splitSegment(rest, (cut.t - from) / (1 - from));
     out.push(moveEnds(l, start, cut.p));
     rest = r;
