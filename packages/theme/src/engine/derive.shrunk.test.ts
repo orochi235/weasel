@@ -44,3 +44,18 @@ describe('derive, names Object.prototype holds', () => {
     expect(tokens.text!.value).toBe('{gray-900}');
   });
 });
+
+describe('derive, categorical gates', () => {
+  const gated = (gates: Record<string, unknown>) => derive({ name: 't', ramps: { c: { kind: 'categorical', steps: ['a', 'b'], gates } } } as ThemeDefinition);
+
+  it('reports a surface that is not a hex color, rather than throwing', () => {
+    expect(gated({ surface: 'x' }).issues).toEqual([{ kind: 'invalid', path: 'ramps.c.gates.surface', message: 'expected a hex color' }]);
+  });
+
+  it('reports a gate number that is not finite, and an order it does not know', () => {
+    expect(gated({ hueFloor: Number.NaN, order: 'x' }).issues).toEqual([
+      { kind: 'invalid', path: 'ramps.c.gates.hueFloor', message: 'expected a number' },
+      { kind: 'invalid', path: 'ramps.c.gates.order', message: 'expected "hue" or "farthest"' },
+    ]);
+  });
+});

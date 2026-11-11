@@ -161,10 +161,15 @@ function rampColors(name: string, r: Record<string, unknown>, steps: readonly st
   if (r.kind === 'categorical') {
     const gates: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(read.record(r.gates, `${path}.gates`))) {
-      if (!has(DEFAULT_CONSTRAINTS, k) || k === 'count' || k === 'anchors') read.fail(`${path}.gates.${k}`, 'unknown gate');
-      else if (typeof v !== typeof DEFAULT_CONSTRAINTS[k as keyof typeof DEFAULT_CONSTRAINTS]) {
-        read.fail(`${path}.gates.${k}`, `expected a ${typeof DEFAULT_CONSTRAINTS[k as keyof typeof DEFAULT_CONSTRAINTS]}`);
-      } else gates[k] = v;
+      const at = `${path}.gates.${k}`;
+      if (!has(DEFAULT_CONSTRAINTS, k) || k === 'count' || k === 'anchors') read.fail(at, 'unknown gate');
+      else if (k === 'surface') {
+        if (typeof v === 'string' && HEX.test(v)) gates[k] = v;
+        else read.fail(at, 'expected a hex color');
+      } else if (k === 'order') {
+        if (v === 'hue' || v === 'farthest') gates[k] = v;
+        else read.fail(at, 'expected "hue" or "farthest"');
+      } else gates[k] = read.num(v, at);
     }
     const anchors: Anchor[] = [];
     const rawAnchors = r.anchors ?? [];
