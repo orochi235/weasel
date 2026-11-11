@@ -1,5 +1,5 @@
-import { gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor, type SnapBegin, type SnapCandidateMark, type SnapOutcome, type SnapOutcomeStore, type SnapProbeAt, type SnapSession, type SnapSource } from '@weasel-js/core/engine';
-import { closestOnFlat, resolveSnap, type Flat, type SnapCandidate } from '@weasel-js/geom/nd';
+import { gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor, type GatheredCandidate, type SnapBegin, type SnapOutcome, type SnapOutcomeStore, type SnapProbeAt, type SnapSession, type SnapSource } from '@weasel-js/core/engine';
+import { closestOnFlat, resolveSnap, type Flat } from '@weasel-js/geom/nd';
 import {
   add, cross, dot, intersectRayPlane, len, normalize, pointOnRay, sub, type Vec3,
 } from '@weasel-js/geom/3d';
@@ -74,16 +74,17 @@ export function createSession3d<TData, TLayer extends string>(inputs: Session3dI
         store.set([]);
       } else {
         const probes = frame.probes(anchor);
-        const res = resolveSnap({
-          probes: probes.map((q) => ({ id: q.id, at: tuple(q.at), role: q.role })),
+        const at = probes.map((q) => ({ id: q.id, at: tuple(q.at), role: q.role }));
+        const res = resolveHolding(candidatesOf(inputs, sources, probes, delta0, vp, origin, up), (kept) => resolveSnap({
+          probes: at,
           input,
           delta0: tuple(delta0),
-          candidates: candidatesOf(inputs, sources, probes, delta0, vp, origin, up),
+          candidates: kept,
           toScreen: (w) => {
             const s = projectPoint(vec3Of(w), vp);
             return s ? [s.x, s.y] : [NaN, NaN];
           },
-        });
+        }), vec3Of);
         delta = vec3Of(res.delta);
         held = res.members.length > 0;
         store.set(resolvedSnapMarks(res.satisfied, delta));
@@ -134,7 +135,7 @@ function castOnto(vp: Viewport3d, s: Point, up: Vec3, offset: number): Vec3 | nu
 function candidatesOf<TData, TLayer extends string>(
   inputs: Session3dInputs<TData, TLayer>, sources: readonly SnapSource<Vec3>[], probes: readonly SnapProbeAt<Vec3>[],
   delta0: Vec3, vp: Viewport3d, origin: Vec3 | null, up: Vec3,
-): SnapCandidate<SnapCandidateMark<Vec3>>[] {
+): GatheredCandidate<Vec3>[] {
   const { req } = inputs;
   const shifted = probes.map((q) => ({ ...q, at: add(q.at, delta0) }));
   const perPx = worldPerPx(vp, shifted);

@@ -9,7 +9,8 @@ export type {
 export { SNAP_ANGLE_STEP, SNAP_AXIS_STEP, SNAP_ROLES, snapMods } from '../domains/snap/roles';
 export { createSnapOutcomeStore, type SnapOutcomeStore } from '../domains/snap/outcomeStore';
 export {
-  assertSnapSourceIds, gatherSnapCandidates, resolvedSnapMarks, snapSourcesFor, type GatherSnapOptions, type SnapCandidateMark,
+  assertSnapSourceIds, gatherSnapCandidates, resolveHolding, resolvedSnapMarks, snapSourcesFor,
+  type GatherSnapOptions, type GatheredCandidate, type SnapCandidateMark,
 } from '../domains/snap/gather';
 export { pointSnap, type PointSnap } from '../domains/snap/pointSnap';
 export { stepAngles } from '../domains/snap/stepAngles';

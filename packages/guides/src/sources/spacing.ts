@@ -55,7 +55,8 @@ function gapMark(g: SpacingGap, color: string | undefined, magnification: number
  * two siblings, or center it between its two neighbors. A resize moves only
  * the sides it drags; on a turned or skewed box, the sides of its
  * axis-aligned extent the drag moves. When the result meets one, it marks
- * every gap of that size, the box's own included, where the box lands.
+ * every gap of that size, the box's own included, where the box lands; a
+ * placement whose gap the box does not have where it lands does not hold.
  */
 export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSource {
   const fromScene = cachedPerScene(measureAll, opts.filter);
@@ -86,6 +87,8 @@ export function spacingSnapSource(opts: SpacingSnapSourceOptions = {}): SnapSour
               const landed = landedBox(q, delta) ?? box;
               return equalGaps(landed, axis, o.size, measured.boxes, refs[axis]).map((g) => gapMark(g, opts.color, magnification));
             },
+            // Another axis's snap can carry the box to where its neighbors leave it no such gap.
+            holds: (delta: Point) => equalGaps(landedBox(q, delta) ?? box, axis, o.size, measured.boxes, refs[axis]).length > 0,
           };
         }
       }

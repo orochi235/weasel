@@ -37,6 +37,11 @@ export interface SourceCandidate<P = Point> {
   /** Drawn when the result meets this candidate. A function is handed the
    *  resolved move, so the marks can sit where the probe landed. */
   mark?: SnapMarks<P> | ((delta: P) => SnapMarks<P>);
+  /** Whether the resolved move keeps what this candidate snapped the probe
+   *  to, for one whose target depends on where the rest of the subject lands
+   *  (an equal gap another axis's snap carries the box away from). A result
+   *  whose members include one that does not is resolved again without it. */
+  holds?: (delta: P) => boolean;
 }
 
 /** `'handle'` is an angle about an anchor, as `'rotate'` is about a pivot,
