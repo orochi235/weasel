@@ -209,6 +209,10 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     quantize?: SceneOptions<TData, TLayer, TPose>['quantize'];
   } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
+  const layers: unknown = json.systemLayers;
+  if (!Array.isArray(layers) || !layers.every((l) => l !== null && typeof l === 'object' && typeof (l as { id?: unknown }).id === 'string')) {
+    throw new Error('Scene: the save\'s systemLayers is not a list of layers, each with a string id');
+  }
   return buildScene(
     options,
     json.systemLayers.map(layerFromSerialized),

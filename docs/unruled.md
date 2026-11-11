@@ -211,6 +211,15 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- Ruled 2026-11-10 (my call, overnight sweep): the editor's `serializeReplacer` writes a value of the document's
+  that `reviveTypedArrays` would take for something it wrote (a plain object shaped like a tagged typed array, plain
+  numbers under `commands` or `coords` as an older save's path wrote them, or a `{ "__raw": … }` object) inside a
+  `{ "__raw": … }` wrapper, which the reader takes off and reads nothing into. Those had come back as typed arrays.
+- Ruled 2026-11-10 (my call, overnight sweep): a save whose node is not an object, or has no string `id` or
+  `layer`, or (from version 2) a `kind` other than `mark` or `group`, is refused by `specsFromSerialized` with an
+  error naming the node; `sceneFromJSON` refuses `systemLayers` that are not a list of layers with string ids, and
+  the editor's `adoptSnapshotPages` a `core:pages` value that is not a `PagesDoc`. Each had failed with a
+  `TypeError`. A pose's shape is still not checked: it is the app's pose descriptor's to read.
 - 2026-10-20 (overnight pass): The document stores every pose in world units; a container's unit
   scope converts only for display, entry and snapping. Grid snapping (`gridSnapSource({ scopes })`)
   and length fields (`measure: 'length'`, `prefLeafInScopes`, `SelectionPanel`'s `units`) use the

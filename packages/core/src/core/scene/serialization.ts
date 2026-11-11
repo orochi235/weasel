@@ -156,6 +156,7 @@ function currentSpecs<TData, TLayer extends string, TPose>(
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   type Entry = { n: Omit<SerializedNode<TData, TLayer, TPose>, 'kind'>; kind: 'mark' | 'group' };
   let entries: Entry[];
+  json.nodes.forEach((n, i) => { checkSavedNode(n, i, json.version); });
   if (json.version === 1) {
     entries = json.nodes.map((n) => ({ n, kind: nodeKindOf(1, n, opts.classifyV1) }));
   } else if (json.version === 2 || json.version === 3) {
@@ -206,6 +207,18 @@ function currentSpecs<TData, TLayer extends string, TPose>(
     if (clipsAsV1(json.version, spec)) spec.clip = 'outline';
     return spec;
   });
+}
+
+/** Throws, naming the node, on an entry of a save's `nodes` that is not shaped like a saved node. */
+function checkSavedNode(n: unknown, i: number, version: unknown): void {
+  const shown = (v: unknown) => (typeof v === 'string' ? `"${v}"` : JSON.stringify(v) ?? String(v));
+  if (n === null || typeof n !== 'object' || Array.isArray(n)) throw new Error(`Scene: node ${i} of the save is ${shown(n)}, not a node`);
+  const { id, kind, layer } = n as Record<string, unknown>;
+  if (typeof id !== 'string') throw new Error(`Scene: node ${i} of the save has the id ${shown(id)}; a node's id is a string`);
+  if (typeof layer !== 'string') throw new Error(`Scene: node "${id}" of the save has the layer ${shown(layer)}; a layer is named by a string`);
+  if (version !== 1 && kind !== 'mark' && kind !== 'group') {
+    throw new Error(`Scene: node "${id}" of the save is of kind ${shown(kind)}; a node is a "mark" or a "group"`);
+  }
 }
 
 /** Version 1 clipped a container with no clip function to its outline, which
