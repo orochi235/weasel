@@ -1,3 +1,5 @@
+import { sameId } from './same';
+
 /** `single` always replaces; `multi` lets a policy's keys toggle and range. */
 export type SelectionMode = 'single' | 'multi';
 
@@ -49,8 +51,8 @@ export function intentOf(modifiers: SelectModifiers, policy: SelectPolicy): Sele
 /** The ids from `from` to `to` in `order`, ends included, in order, less those `forceSingle` holds.
  *  Empty when either end is not in `order`. */
 export function rangeOf<K>(order: readonly K[], from: K, to: K, forceSingle: (id: K) => boolean = never): K[] {
-  const a = order.indexOf(from);
-  const b = order.indexOf(to);
+  const a = order.findIndex((id) => sameId(id, from));
+  const b = order.findIndex((id) => sameId(id, to));
   if (a < 0 || b < 0) return [];
   return order.slice(Math.min(a, b), Math.max(a, b) + 1).filter((id) => !forceSingle(id));
 }
@@ -62,7 +64,7 @@ export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, cont
   if (forceSingle(id)) intent = 'single';
   if (intent === 'toggle') {
     const kept = state.ids.filter((x) => !forceSingle(x));
-    return { ids: kept.includes(id) ? kept.filter((x) => x !== id) : [...kept, id], anchor: id };
+    return { ids: kept.includes(id) ? kept.filter((x) => !sameId(x, id)) : [...kept, id], anchor: id };
   }
   if (intent === 'range' && state.anchor !== null) {
     const ids = rangeIn(context, state.anchor, id, forceSingle);
@@ -77,9 +79,9 @@ function rangeIn<K>(context: SelectContext<K>, from: K, to: K, forceSingle: (id:
 }
 
 function settle<K>(state: Selection<K>, next: Selection<K>): Selection<K> {
-  const same = next.anchor === state.anchor
+  const same = sameId(next.anchor, state.anchor)
     && next.ids.length === state.ids.length
-    && next.ids.every((id, i) => id === state.ids[i]);
+    && next.ids.every((id, i) => sameId(id, state.ids[i]));
   return same ? state : next;
 }
 
