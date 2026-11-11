@@ -104,8 +104,9 @@ export function setAttribute<R extends SchemaRoot>(root: R, path: string | null,
 }
 
 /**
- * Move the nodes at `paths` to `target`, in the order given. A path beneath another moved path travels with it. A
- * moved key that collides with one {@link keysTakenAt} gives for the target parent is renamed with {@link uniqueKey}. Returns the
+ * Move the nodes at `paths` to `target`, in the order given, a path named twice moved once. A path beneath another
+ * moved path travels with it. A moved key that collides with one {@link keysTakenAt} gives for the target parent is
+ * renamed with {@link uniqueKey}. Returns the
  * tree, `root` itself when nothing ends up anywhere new, and each moved node's old path in `from` beside its new
  * one in `paths`.
  */
@@ -121,7 +122,7 @@ export function moveNodes<R extends SchemaRoot>(
 export function shiftNodes<R extends SchemaRoot>(
   root: R, paths: readonly string[], target: SchemaTarget,
 ): { root: R; from: string[]; paths: string[] } {
-  const tops = outermost(paths);
+  const tops = outermost([...new Set(paths)]);
   const dest = target.parentPath;
   if (dest !== null && tops.some((p) => dest === p || isUnder(dest, p))) {
     throw new Error('schemaEdit: cannot move a node into itself');
