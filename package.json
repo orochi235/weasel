@@ -71,6 +71,7 @@
     "check:listener-sets": "node scripts/check-listener-sets.mjs",
     "check:audio-worklet": "node packages/audio/scripts/gen-worklet.mjs --check",
     "check:size": "node scripts/check-size.mjs",
+    "inventory:core": "node scripts/core-inventory.mjs",
     "check:engine-boundary": "node scripts/gen-engine-entry.mjs --check && node scripts/check-engine-boundary.mjs",
     "gen:engine-entry": "node scripts/gen-engine-entry.mjs",
     "graph:packages": "node scripts/package-graph.mjs",

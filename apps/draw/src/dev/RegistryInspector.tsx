@@ -7,7 +7,7 @@ import s from './RegistryInspector.module.css';
 import { DevShell } from './DevShell';
 import { RegistryDetail } from './RegistryDetail';
 import { RegistryProbe, type RegistrySnapshot } from './registryProbe';
-import { collectBundles, collectGestures, countForEntry, collectIcons, collectMeta, collectPropertiesTrait, collectOpKinds, collectPhaseOutputs, collectShapeTrait, collectSlots } from './registryData';
+import { collectBundles, collectExports, collectGestures, countForEntry, collectIcons, collectMeta, collectPropertiesTrait, collectOpKinds, collectPhaseOutputs, collectShapeTrait, collectSlots } from './registryData';
 import type { TreeCategoryNode, TreeEntry } from './registryEntries';
 import { icon } from '../icons.gen';
 
@@ -56,6 +56,7 @@ export function RegistryInspector() {
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
   const opKinds = useMemo(() => collectOpKinds(), []);
   const slots = useMemo(() => collectSlots(), []);
+  const coreExports = useMemo(() => collectExports(), []);
   const meta = useMemo(() => collectMeta(), []);
 
   const nodes: readonly TreeCategoryNode[] = useMemo(() => {
@@ -70,6 +71,7 @@ export function RegistryInspector() {
       { id: 'gestures', label: 'Gestures', entries: gestures },
       { id: 'phaseOutputs', label: 'Phase outputs', entries: phaseOutputs },
       { id: 'slots', label: 'Slots', entries: slots },
+      { id: 'exports', label: 'Exports', entries: coreExports },
       { id: 'meta', label: 'Meta', entries: meta },
     ];
     // Bundles keep the preset table's order, each after the presets it includes, rather than alphabetizing.
@@ -89,7 +91,7 @@ export function RegistryInspector() {
         if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [bundles, icons, shapeKinds, propertiesEntries, gestures, phaseOutputs, opKinds, slots, meta]);
+  }, [bundles, icons, shapeKinds, propertiesEntries, gestures, phaseOutputs, opKinds, slots, coreExports, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();

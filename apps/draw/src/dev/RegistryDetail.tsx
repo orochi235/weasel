@@ -1,5 +1,6 @@
 import s from './RegistryInspector.module.css';
 import { BundleDetail } from './detail/BundleDetail';
+import { ExportsDetail } from './detail/ExportsDetail';
 import { GestureDetail, PhaseOutputDetail } from './detail/GestureDetail';
 import { IconDetail } from './detail/IconDetail';
 import { PropertiesKindDetail, ShapeKindDetail } from './detail/KindDetail';
@@ -48,6 +49,7 @@ function renderEntryBody(
     case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} />;
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} />;
+    case 'exports':       return <ExportsDetail entry={entry} />;
     case 'meta':          return <MetaDetail entry={entry} />;
   }
 }
