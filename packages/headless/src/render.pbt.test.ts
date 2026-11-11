@@ -54,9 +54,11 @@ describe('a scene sent to the page', () => {
       const before = JSON.stringify(sceneToWire(scene));
       const wire = JSON.parse(before) as object;
       const revived = sceneFromJSON(sceneFromWire(wire) as SavedScene<unknown, string, unknown>);
-      const own = planPixelRender({ scene, ...rect });
-      expect(planPixelRender({ scene: revived, ...rect })).toEqual(own);
-      expect(planPixelRender({ scene, ...rect })).toEqual(own);
+      // As JSON, where a pose's `-0`, which a snapshot sends as `0`, plans the same pixels.
+      const plan = (s: typeof scene) => JSON.stringify(tagTypedArrays(planPixelRender({ scene: s, ...rect })));
+      const own = plan(scene);
+      expect(plan(revived as typeof scene)).toBe(own);
+      expect(plan(scene)).toBe(own);
       expect(JSON.stringify(sceneToWire(revived))).toBe(before);
       expect(JSON.stringify(sceneToWire(scene))).toBe(before);
     }), runs(100));
