@@ -58,9 +58,10 @@ function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } 
  *  reset that clears the map cannot be undone by a late `finally`. */
 const inFlight = new Map<string, Set<object>>();
 
-/** One variant's fetch, keyed `family|weight|style`, so a lazy declaration and
- *  an eager call for the same face share it. */
-const loads = new Map<string, Promise<void>>();
+/** One variant's fetch, per family and keyed like `registry`, so a lazy
+ *  declaration and an eager call for the same face share it. Per family, since a
+ *  family's name may hold the `|` the variant keys are joined with. */
+const loads = new Map<string, Map<string, Promise<void>>>();
 
 /** A lazily registered variant nothing has asked for yet. */
 interface Declared {
@@ -192,7 +193,7 @@ export function registerFont(
   if (registry.get(family)?.has(key)) return Promise.resolve();
   if (!opts.lazy) return loadVariant(family, key, metricsUrl, atlasUrl);
 
-  const running = loads.get(`${family}|${key}`);
+  const running = loads.get(family)?.get(key);
   if (running) return running;
   const existing = declared.get(family)?.get(key);
   if (existing) return existing.promise;
@@ -213,13 +214,18 @@ export function registerFont(
 function loadVariant(
   family: string, key: string, metricsUrl: string, atlasUrl: string,
 ): Promise<void> {
-  const id = `${family}|${key}`;
-  const running = loads.get(id);
+  const running = loads.get(family)?.get(key);
   if (running) return running;
 
   const load = fetchVariant(family, key, metricsUrl, atlasUrl);
-  loads.set(id, load);
-  const settleLoad = () => { if (loads.get(id) === load) loads.delete(id); };
+  const familyLoading = loads.get(family) ?? new Map<string, Promise<void>>();
+  loads.set(family, familyLoading.set(key, load));
+  const settleLoad = () => {
+    const now = loads.get(family);
+    if (now?.get(key) !== load) return;
+    now.delete(key);
+    if (now.size === 0) loads.delete(family);
+  };
   load.then(settleLoad, settleLoad);
 
   const pendingLazy = declared.get(family)?.get(key);
@@ -343,7 +349,7 @@ export function warmFonts(fonts?: readonly (string | FontRequest)[]): Promise<vo
 
 /** Every atlas fetch running for `family`. */
 function familyLoads(family: string): Promise<void>[] {
-  return [...loads].filter(([id]) => id.startsWith(`${family}|`)).map(([, load]) => load);
+  return [...(loads.get(family)?.values() ?? [])];
 }
 
 /** The loads `(family, weight, style)` resolves through, started — the same
@@ -355,7 +361,7 @@ function variantLoads(family: string, weight: number, style: FontStyle): Promise
   const key = variantKey(weight, style);
   if (registry.get(family)?.has(key)) return out;
   wakeDeclared(family, weight, style);
-  const exact = loads.get(`${family}|${key}`);
+  const exact = loads.get(family)?.get(key);
   if (exact) return [...out, exact];
   if (registry.has(family) || atlasPending(family)) return [...out, ...familyLoads(family)];
   if (outlines || isExplicitCanvasFont(family) || getFontFallbackPolicy() !== 'substitute') return out;
@@ -725,7 +731,7 @@ function resolveFontVariantInternal(
   // A landed variant is not on its way, even before its load promise settles:
   // `fetchVariant` wakes subscribers first, and they resolve synchronously.
   const exactKey = variantKey(weight, style);
-  if (loads.size > 0 && loads.has(`${family}|${exactKey}`) && !registry.get(family)?.has(exactKey)) {
+  if (loads.size > 0 && loads.get(family)?.has(exactKey) && !registry.get(family)?.has(exactKey)) {
     return pendingMiss(family, weight, style);
   }
   const familyMap = registry.get(family);
