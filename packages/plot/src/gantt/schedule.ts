@@ -51,15 +51,23 @@ export function excludedDays(data: GanttData): (t: number) => boolean {
   return (t) => weekdays.has(new Date(t).getUTCDay()) || dates.has(dayOf(t));
 }
 
+/** `t` moved by `months` calendar months; past the instants a `Date` holds, by 30 days a month. */
 function addMonths(t: number, months: number): number {
   const whole = Math.trunc(months);
   const d = new Date(t);
   d.setUTCMonth(d.getUTCMonth() + whole);
-  return d.getTime() + (months - whole) * 30 * DAY;
+  const at = d.getTime() + (months - whole) * 30 * DAY;
+  return Number.isNaN(at) ? t + months * 30 * DAY : at;
 }
 
-/** Where a task of `amount` `unit`s from `start` ends. Days and weeks count only days not `excluded`. */
+/** Where a task of `amount` `unit`s from `start` ends, held to what a number holds. Days and weeks count only days not
+ *  `excluded`. */
 export function addGanttDuration(start: number, amount: number, unit: GanttUnit, excluded: (t: number) => boolean): number {
+  return Math.min(Number.MAX_VALUE, Math.max(-Number.MAX_VALUE, endAfter(start, amount, unit, excluded)));
+}
+
+/** {@link addGanttDuration}'s end before it is held to what a number holds. */
+function endAfter(start: number, amount: number, unit: GanttUnit, excluded: (t: number) => boolean): number {
   const n = Number.isFinite(amount) ? amount : 0;
   const fixed = FIXED[unit];
   if (fixed !== undefined) return start + n * fixed;
@@ -80,6 +88,12 @@ export function ganttDurationBetween(start: number, end: number, unit: GanttUnit
   let days = 0;
   for (let k = 0; k < steps; k++) if (!excluded(start + k * DAY)) days++;
   return unit === 'w' ? Math.round(days / 7) : days;
+}
+
+/** A day from `t`, or as far as the next double can be where a day is too fine to move it. */
+function widened(t: number): [number, number] {
+  const by = Math.max(DAY, Math.abs(t) * Number.EPSILON);
+  return Number.isFinite(t + by) ? [t, t + by] : [t - by, t];
 }
 
 /** Each task with where it sits, in document order. */
@@ -142,5 +156,5 @@ export function scheduleGantt(data: GanttData, today = Date.now()): GanttSchedul
   const all = spans.flat();
   const lo = all.length > 0 ? minOf(all, (s) => s.start) : first;
   const hi = all.length > 0 ? maxOf(all, (s) => s.end) : first;
-  return { spans, domain: [lo, hi > lo ? hi : lo + DAY] };
+  return { spans, domain: hi > lo ? [lo, hi] : widened(lo) };
 }

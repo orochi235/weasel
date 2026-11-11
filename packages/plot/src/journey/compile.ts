@@ -81,11 +81,14 @@ function stepMarks(data: JourneyData, layout: JourneyLayout, actors: OrdinalScal
   journeySteps(data).forEach(({ section, task }, k) => {
     const step = data.sections[section]!.tasks[task]!;
     const x = layout.steps.position(String(k));
-    const y = layout.score.map(Math.min(5, Math.max(1, step.score)));
     const id = `${section}:${task}`;
     const datum = { section, task };
-    marks.push(ruleMark({ key: `task:rule:${id}`, from: { x, y: y + RADIUS }, to: { x, y: baseline }, color: theme.axis, datum }));
-    marks.push(pointMark({ key: `task:${id}`, x, y, radius: RADIUS, color: seriesColor(theme, section), datum }));
+    // A step without a score keeps its name and actors but draws no face.
+    if (!Number.isNaN(step.score)) {
+      const y = layout.score.map(Math.min(5, Math.max(1, step.score)));
+      marks.push(ruleMark({ key: `task:rule:${id}`, from: { x, y: y + RADIUS }, to: { x, y: baseline }, color: theme.axis, datum }));
+      marks.push(pointMark({ key: `task:${id}`, x, y, radius: RADIUS, color: seriesColor(theme, section), datum }));
+    }
     marks.push(textMark({
       key: `task:label:${id}`, text: step.name, x, y: baseline + GAP, baseline: 'top', font: theme.font, color: theme.text, measure,
       datum: { edit: 'task', section, task },

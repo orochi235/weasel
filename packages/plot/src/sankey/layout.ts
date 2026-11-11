@@ -96,7 +96,10 @@ function orderColumns(
 export function sankeyLayout(data: SankeyData, box: { x: number; y: number; width: number; height: number }): SankeyLayout {
   const labels = sankeyNodes(data);
   const index = new Map(labels.map((l, k) => [l, k]));
-  const edges = data.links.map((l) => [index.get(l.source)!, index.get(l.target)!, flowOf(l.value)] as const);
+  const flows = data.links.map((l) => flowOf(l.value));
+  // Flows whose sum is past what a number holds are laid out over the largest, which keeps their proportions.
+  const unit = Number.isFinite(flows.reduce((a, b) => a + b, 0)) ? 1 : flows.reduce((a, b) => Math.max(a, b), 0);
+  const edges = data.links.map((l, i) => [index.get(l.source)!, index.get(l.target)!, flows[i]! / unit] as const);
   const column = depths(labels.length, edges.map(([s, t]) => [s, t] as const));
   const ins = labels.map((_, k) => edges.filter(([, t]) => t === k).reduce((a, [, , w]) => a + w, 0));
   const outs = labels.map((_, k) => edges.filter(([s]) => s === k).reduce((a, [, , w]) => a + w, 0));
@@ -121,9 +124,10 @@ export function sankeyLayout(data: SankeyData, box: { x: number; y: number; widt
   };
   columns.forEach(stack);
   orderColumns(columns, (k) => y[k]! + (value[k]! * scale) / 2, edges, stack);
-  const step = count > 1 ? (box.width - SANKEY_NODE_WIDTH) / (count - 1) : 0;
+  // A box narrower than a node starts every column at its left edge rather than before it.
+  const step = count > 1 ? Math.max(0, box.width - SANKEY_NODE_WIDTH) / (count - 1) : 0;
   const nodes = labels.map((label, k) => ({
-    label, column: column[k]!, value: value[k]!, x: box.x + column[k]! * step, y: y[k]!, width: SANKEY_NODE_WIDTH, height: value[k]! * scale,
+    label, column: column[k]!, value: value[k]! * unit, x: box.x + column[k]! * step, y: y[k]!, width: SANKEY_NODE_WIDTH, height: value[k]! * scale,
   }));
   return { nodes, links: ribbons(nodes, edges, scale), columns: count };
 }

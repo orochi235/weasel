@@ -16,11 +16,20 @@ export function parseGanttStart(text: string): GanttStart {
   return after !== null ? { kind: 'after', ids: ids(after[1]!) } : { kind: 'date', date: t };
 }
 
+/** `v` in decimal digits, never an exponent, which a duration does not read: the shortest digits that read back as it. */
+function plainDecimal(v: number): string {
+  const m = /^(-?)(\d)(?:\.(\d+))?e([+-]\d+)$/.exec(String(v));
+  if (m === null) return String(v);
+  const digits = m[2]! + (m[3] ?? '');
+  const exp = Number(m[4]);
+  return m[1]! + (exp < 0 ? `0.${'0'.repeat(-exp - 1)}${digits}` : digits.padEnd(exp + 1, '0'));
+}
+
 /** `end` as written: `until a b`, a duration, or a date. */
 export function formatGanttEnd(end: GanttEnd): string {
   if (end.kind === 'date') return end.date;
   if (end.kind === 'until') return `until ${end.ids.join(' ')}`;
-  return `${end.amount}${end.unit}`;
+  return `${plainDecimal(end.amount)}${end.unit}`;
 }
 
 /** Text read as an end: `until a b` as its ids, a duration as its amount and unit, anything else as a date. */

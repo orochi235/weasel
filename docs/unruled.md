@@ -687,6 +687,19 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10: Draw-style XML numbers on an edge's cell id (`edge:a->b-2`) when another cell has it, where two
   edges with the same ends, ports, and label were written under one id. The Diagram JSON reader refuses a page
   that is not an object or whose `kind` it does not know.
+- 2026-11-10 (property tests): plot draws a quadrant point held to the unit square, as a drag holds it, and no point
+  with a `NaN` coordinate; a radius or stroke width that is negative or not finite takes the default, and a radius
+  past the plot is cut to it. A radar value short of the center's sits at the center, as `valueAt` holds it. A journey
+  step scored `NaN` keeps its name and actors and draws no face. A packet field's fractional bit is the bit it falls
+  in. A sankey in a box narrower than a node starts every column at the box's left edge.
+- 2026-11-10 (property tests): A log axis over more decades than twice its tick count keeps every `n`th decade, about
+  twice the count, rather than one tick a decade. A tick label past the places `toFixed` writes (below 1e-100) takes
+  an exponent (`1e-300`), in linear and log scales. A linear span among the subnormals is ticked at multiples of
+  itself. A gantt duration of months past the last `Date` runs 30 days a month, and any end is held to the double
+  range.
+- Open (2026-11-10, property tests): a value far past a fixed end of an xychart's value axis, or past a radar's fixed
+  `max`, is drawn as far past the plot, so one far enough out overflows what a path holds (float32). Whether it is
+  clamped to the edge, clipped, or left out. The property tests hold such values to ±1e6 against whole ends.
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`

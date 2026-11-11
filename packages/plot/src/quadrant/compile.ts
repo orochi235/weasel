@@ -89,15 +89,21 @@ function axisLabelMarks(data: QuadrantData, layout: QuadrantLayout, theme: PlotT
   return marks;
 }
 
+/** `v` where it is a length a mark can be drawn at, else `fallback`. */
+const lengthOr = (v: number | undefined, fallback: number): number => (v !== undefined && v >= 0 && Number.isFinite(v) ? v : fallback);
+
 function pointMarks(data: QuadrantData, layout: QuadrantLayout, theme: PlotTheme, measure: PlotMeasure): PlotMark[] {
   const marks: PlotMark[] = [];
   data.points.forEach((p, i) => {
     const style = quadrantStyleOf(data, p);
-    const at = quadrantAt(layout, p.x, p.y);
-    const radius = style.radius ?? RADIUS;
+    if (Number.isNaN(p.x) || Number.isNaN(p.y)) return;
+    // Held to the unit square, as a drag holds it.
+    const at = quadrantAt(layout, Math.min(1, Math.max(0, p.x)), Math.min(1, Math.max(0, p.y)));
+    // Past the plot's size a dot covers it all, and a radius near float32's end overflows its path.
+    const radius = Math.min(lengthOr(style.radius, RADIUS), Math.max(layout.plot.width, layout.plot.height));
     const mark = pointMark({ key: `point:${i}`, ...at, radius, color: style.color ?? theme.text, datum: { point: i } });
     if (style.strokeColor !== undefined || style.strokeWidth !== undefined) {
-      mark.data.stroke = { paint: { color: style.strokeColor ?? theme.text }, width: style.strokeWidth ?? 1 };
+      mark.data.stroke = { paint: { color: style.strokeColor ?? theme.text }, width: lengthOr(style.strokeWidth, 1) };
     }
     marks.push(mark);
     marks.push(textMark({

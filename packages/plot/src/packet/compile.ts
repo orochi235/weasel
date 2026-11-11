@@ -44,20 +44,21 @@ export const packetBitsPerRow = (data: PacketData): number => {
 };
 
 /** The last bit of `field` that is drawn, its own cut at {@link PACKET_MAX_BIT}; `null` for a field that runs
- *  backward or starts past the last bit. */
+ *  backward or starts past the last bit. A fractional end is read as the bit it falls in. */
 function lastBit(field: PacketField): number | null {
-  const end = Math.min(field.end, PACKET_MAX_BIT);
-  return field.start >= 0 && end >= field.start ? end : null;
+  const end = Math.min(Math.floor(field.end), PACKET_MAX_BIT);
+  return field.start >= 0 && end >= Math.floor(field.start) ? end : null;
 }
 
-/** A field cut where it wraps: one piece per row it covers, up to {@link PACKET_MAX_BIT}. None for a field that
- *  runs backward or starts past it. */
+/** A field cut where it wraps: one piece per row it covers, up to {@link PACKET_MAX_BIT}, a fractional bit read as the
+ *  bit it falls in. None for a field that runs backward or starts past it. */
 export function packetPieces(field: PacketField, bitsPerRow: number): PacketPiece[] {
   const end = lastBit(field);
   if (end === null) return [];
+  const start = Math.floor(field.start);
   const pieces: PacketPiece[] = [];
-  for (let row = Math.floor(field.start / bitsPerRow); row <= Math.floor(end / bitsPerRow); row++) {
-    pieces.push({ row, lo: Math.max(field.start, row * bitsPerRow), hi: Math.min(end, (row + 1) * bitsPerRow - 1) });
+  for (let row = Math.floor(start / bitsPerRow); row <= Math.floor(end / bitsPerRow); row++) {
+    pieces.push({ row, lo: Math.max(start, row * bitsPerRow), hi: Math.min(end, (row + 1) * bitsPerRow - 1) });
   }
   return pieces;
 }
