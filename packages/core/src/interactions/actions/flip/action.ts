@@ -23,6 +23,7 @@ import type { RectPose } from 'core/scene/types';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason } from '@weasel-js/routing';
 import { sameValue } from 'core/scene/sameValue';
+import { finiteThroughout } from '../finiteFrame';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { transformApplyOps } from '../transformFinish';
 import { requiresSelection } from '../defaults/requiresSelection';
@@ -133,6 +134,8 @@ function flipOps(
       ? flipPoseAboutBounds(world, axis, geom, about)
       : flipPoseViaDescriptor(world, axis, geom);
     const to = frame.local(id, flipped);
+    // A mirror image past the double range cannot be drawn, so the flip cannot land.
+    if (!finiteThroughout(to)) return [];
     const moved = !sameValue(node.pose, to);
     if (moved) ops.push(createTransformOp<unknown>({ id: id as string, from: node.pose, to, label: 'Flip' }));
     // Mirror the data-held geometry about the SAME pivot the pose flip uses.
