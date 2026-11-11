@@ -13,5 +13,7 @@ export function brushRing(radius: number, unit: BrushRingUnit = 'px'): CursorSpe
   if (unit === 'world') return { glyph: 'brush', worldRadius: radius, fallback: 'crosshair' };
   const glyph: CursorGlyph = GLYPHS.brush;
   const ring = glyph.radius ?? glyph.box / 2;
-  return { glyph: 'brush', size: Math.round((radius * glyph.box) / ring), fallback: 'crosshair' };
+  // At least a pixel, so a brush too small to round to one is not drawn at the default size.
+  const size = radius >= 0 ? Math.max(1, Math.round((radius * glyph.box) / ring)) : Math.round((radius * glyph.box) / ring);
+  return { glyph: 'brush', size, fallback: 'crosshair' };
 }
