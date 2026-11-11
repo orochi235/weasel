@@ -22,6 +22,7 @@ export interface AxisMap {
 const EPS = 1e-6;
 
 export function axisMap(m: GlMat3): AxisMap | undefined {
+  if (![m[0], m[1], m[3], m[4], m[6], m[7]].every((v) => Number.isFinite(v))) return undefined;
   if (Math.abs(m[1]!) > EPS || Math.abs(m[3]!) > EPS) return undefined;
   if (m[0]! <= 0 || m[4]! <= 0) return undefined;
   return { sx: m[0]!, sy: m[4]!, tx: m[6]!, ty: m[7]! };
@@ -69,5 +70,6 @@ export function plainStroke(stroke: CommandStroke | undefined, alpha: number, sc
   if (color === undefined) return undefined;
   const width = resolveScreenLength(stroke.width ?? 1, scale) * scale;
   if (!(width > 0)) return null;
+  if (!Number.isFinite(width)) return undefined;
   return { color, width, cap: stroke.cap ?? 'butt', join: stroke.join ?? 'miter', align: stroke.align ?? 'center' };
 }
