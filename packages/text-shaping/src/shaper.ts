@@ -125,10 +125,14 @@ class HarfBuzzShaper implements Shaper {
   ): readonly ShapedGlyph[] {
     const rec = this.#face(bytes);
     const lang = language || undefined;
-    const key = `${features.join(',')}\u0000${lang ?? ''}\u0000${text}`;
+    // Refused before the cache is read, so a bad setting is refused whatever was shaped before.
+    const hbFeatures = features.map((tag) => this.#feature(tag));
+    // Length-prefixed, so no feature, language, or text can run into the next and answer another's key.
+    let key = `${features.length};`;
+    for (const f of [...features, lang ?? '']) key += `${f.length}:${f}`;
+    key += text;
     const held = rec.shapes.get(key);
     if (held) return held;
-    const hbFeatures = features.map((tag) => this.#feature(tag));
     const out: ShapedGlyph[] = [];
     for (const piece of scriptPieces(text)) this.#piece(rec, text, piece, hbFeatures, lang, out);
     if (rec.shapes.size >= SHAPE_CACHE_LIMIT) rec.shapes.clear();
