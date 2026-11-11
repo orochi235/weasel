@@ -15,6 +15,7 @@ export default {
   ...(Number(process.env.MEASURE_CONCURRENCY) > 0 ? { concurrency: Number(process.env.MEASURE_CONCURRENCY) } : {}),
   dryRunOnly: process.env.MEASURE_DRY === '1',
   timeoutMS: 10000,
+  dryRunTimeoutMinutes: 30,
   reporters: ['json', 'progress-append-only', 'clear-text'],
   clearTextReporter: { reportMutants: false, reportTests: false, reportScoreTable: true },
   jsonReporter: { fileName: `measure/out/${pkg}/mutation.json` },

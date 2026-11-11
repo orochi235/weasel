@@ -10,7 +10,7 @@ export default defineConfig({
   resolve: { alias: weaselAliases(root) },
   plugins: [react()],
   test: {
-    environment: 'jsdom',
+    environment: process.env.MEASURE_ENV ?? 'node',
     pool: 'threads',
     globals: true,
     setupFiles: ['./vitest.setup.ts', './scripts/vitest-pbt-seed.setup.ts'],
