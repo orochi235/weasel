@@ -45,8 +45,9 @@ export interface PatternPlayerOptions {
    *  function is asked as each event is booked. Default 0. */
   detune?: PatternDetune;
   /** Called as each step is booked — up to a lookahead ahead of it sounding —
-   *  with its index in the pattern and its engine time in ms. */
-  onStep?: (step: number, when: number) => void;
+   *  with its index in the pattern, its engine time in ms, and how many steps
+   *  since `start` it is, counting any a stall skipped. */
+  onStep?: (step: number, when: number, count: number) => void;
 }
 
 /** See `PatternPlayerOptions.detune`. */
@@ -175,7 +176,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     const ran = run;
     inStep = true;
     try {
-      opts.onStep?.(step, when);
+      opts.onStep?.(step, when, count);
     } finally {
       inStep = false;
       // Booked even when `onStep` throws, or `playing()` stays true over a silent player.
