@@ -7,6 +7,7 @@
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import type { Selection } from '../axes';
 import type { ThemeDefinition } from '../definition';
 import { outcome, runs, tally, timeoutFor } from '../pbt.fixture';
 import { bake } from './bake';
@@ -68,8 +69,8 @@ const malformed: fc.Arbitrary<ThemeDefinition> = fc.record({
 describe('the engine on malformed definitions', () => {
   it('derive and bake report what they cannot use, throwing only for a cycle or a dangling reference', () => {
     const t = tally();
-    fc.assert(fc.property(malformed, fc.constantFrom({}, { mode: 'light' }, { density: 'roomy', mode: 'toString' }), (def, sel) => {
-      for (const [what, run] of [['derive', () => derive(def, sel)], ['bake', () => bake(def)]] as const) {
+    fc.assert(fc.property(malformed, fc.constantFrom<Selection>({}, { mode: 'light' }, { density: 'roomy', mode: 'toString' }), (def, sel) => {
+      for (const [what, run] of [['derive', () => derive(def, sel)], ['bake', () => bake(def)]] as [string, () => unknown][]) {
         const got = outcome(run);
         if (typeof got === 'string' && got.startsWith('throws:')) {
           t.count(`${what} throws`);
