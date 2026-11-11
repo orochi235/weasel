@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { asNodeId, type NodeId } from '@weasel-js/core';
 import { d3Bind } from './bind';
-import { key, makeScene, pose, runs, tally, timeoutFor, type Payload, type Pose, type TestScene } from './pbt.fixture';
+import { key, makeScene, pose, runs, tally, timeoutFor, type Pose, type TestScene } from './pbt.fixture';
 
 const RUNS = 150;
 
@@ -121,4 +121,3 @@ describe('d3Bind join', () => {
   }, timeoutFor(RUNS, 40));
 });
 
-export type { Payload };
