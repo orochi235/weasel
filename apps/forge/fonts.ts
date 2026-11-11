@@ -112,9 +112,13 @@ export function loadWebFonts(doc: Document): void {
 }
 
 /** The default face: the family the Font global names. */
+/** The family the table lists under `key`; none for a key it lacks, a member every object answers to included. */
+const fontNamed = (key: string): FontInfo | undefined => (Object.hasOwn(FONTS, key) ? FONTS[key] : undefined);
+
 const fontOf = (globals: StoryContext['globals']): [string, FontInfo] => {
   const key = String(globals.fontFamily ?? 'oswald');
-  return FONTS[key] ? [key, FONTS[key]] : ['oswald', FONTS.oswald!];
+  const font = fontNamed(key);
+  return font ? [key, font] : ['oswald', FONTS.oswald!];
 };
 
 /** Each slot whose global names a family, with that family. A slot left on Theme is absent. */
@@ -131,7 +135,7 @@ function chosenSlots(globals: StoryContext['globals']): ChosenSlot[] {
       return [{ token, key, font }];
     }
     const key = String(globals[global] ?? THEME);
-    const font = FONTS[key];
+    const font = fontNamed(key);
     return font ? [{ token, key, font }] : [];
   });
 }
