@@ -285,4 +285,12 @@ describe('shrunk counterexamples, under an override', () => {
     clock.sync(1e308);
     expect(clock.elapsed).toBe(5);
   });
+
+  it('a duration write to a looping clock at the largest time keeps it finite', () => {
+    const { clock } = createClock({ duration: 100, loop: true, rate: 2 });
+    clock.sync(0);
+    clock.sync(1e308);
+    clock.duration = 100.00000000000001;
+    expect(Number.isFinite(clock.elapsed)).toBe(true);
+  });
 });

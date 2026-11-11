@@ -76,7 +76,8 @@ function placeIn(run: Run, pass: number, into: number): void {
   const line = (at + 1) * run.duration;
   const sum = at * run.duration + within;
   const end = within > 0 && (within === run.duration || (within > run.duration / 2 && sum >= line));
-  run.elapsed = clamp(run, end ? line : sum);
+  // Far out a pass's start and the time into it sum past the double range; an endless run holds the largest time.
+  run.elapsed = Math.min(Number.MAX_VALUE, clamp(run, end ? line : sum));
   run.edge = run.elapsed > 0 && end;
 }
 
