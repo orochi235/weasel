@@ -13,7 +13,8 @@ import { unionBounds } from 'core/geometry/unionBounds';
 import { poseDescriptorOf } from '../poseDescriptorDep';
 import { visualBoundsViaDescriptor } from '../resize/geometry';
 import { createTransformOp } from 'core/ops/transform';
-import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action, type ActionDeps } from '@weasel-js/routing';
+import { finiteThroughout } from '../finiteFrame';
 import { requiresContent, selectedContent } from './requiresSelection';
 import { scenePoseFrame } from '../poseFrame';
 import { commitOps } from '../defaultCommitAdapter';
@@ -33,6 +34,40 @@ import { BETWEEN_GESTURES } from '@weasel-js/routing';
  * than derived from its members, whose poses are expressed in it. A node
  * following a member that changes page goes where `followerMoves` says.
  */
+/** Where grouping the selection puts its container and members, or null when it cannot: no content, members on
+ *  more than one layer, or a container too large for the double range. `enabled` and `run` both read this. */
+function groupPlan(deps: ActionDeps) {
+  const scene = deps.scene;
+  if (!deps.selection || !scene) return null;
+  const ids = withoutPageStructure(scene, deps.selection.get() as readonly NodeId[]);
+  const nodes = inPaintOrder(scene, ids
+    .map((id) => scene.get(id as NodeId))
+    .filter((n): n is NonNullable<typeof n> => n !== undefined));
+  if (nodes.length === 0) return null;
+
+  // Members must share a layer — containers live on a single layer.
+  if (new Set(nodes.map((n) => n.layer)).size > 1) return null;
+
+  const d = poseDescriptorOf(deps.poseDescriptor);
+  const frame = scenePoseFrame(scene);
+  const worlds = new Map<NodeId, unknown>();
+  for (const node of nodes) worlds.set(node.id, frame.world(node.id));
+  // Visual, not stored, bounds: a turned member's ink reaches outside its
+  // own box, and the container has to cover what is drawn.
+  const drawn = unionBounds([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, d)));
+  const { parent, shift } = groupingSite(scene, nodes.map((n) => n.id), drawn);
+  if (shift.dx !== 0 || shift.dy !== 0) {
+    for (const [id, p] of worlds) worlds.set(id, translatePoseViaDescriptor(p, shift.dx, shift.dy, d));
+  }
+  const union = drawn && { ...drawn, x: drawn.x + shift.dx, y: drawn.y + shift.dy };
+  const containerWorldPose = union === null
+    ? nodes[0]!.pose
+    : d.fromBounds(union, nodes[0]!.pose);
+  const pose = frame.localUnder(parent, containerWorldPose);
+  if (!finiteThroughout(pose)) return null;
+  return { scene, nodes, worlds, frame, parent, containerWorldPose, pose };
+}
+
 export const groupAction: Action & { requires: string[] } = {
   id: 'group',
   label: 'Group',
@@ -44,39 +79,9 @@ export const groupAction: Action & { requires: string[] } = {
   invoker: {
     timing: 'immediate',
     run: (deps) => {
-      const selection = deps.selection;
-      const scene = deps.scene;
-      if (!selection || !scene) return;
-
-      const ids = withoutPageStructure(scene, selection.get() as readonly NodeId[]);
-      if (ids.length === 0) return;
-
-      const nodes = inPaintOrder(scene, ids
-        .map((id) => scene.get(id as NodeId))
-        .filter((n): n is NonNullable<typeof n> => n !== undefined));
-      if (nodes.length === 0) return;
-
-      // Members must share a layer — containers live on a single layer.
-      const layers = new Set(nodes.map((n) => n.layer));
-      if (layers.size > 1) return;
-      const layer = nodes[0]!.layer;
-
-      const d = poseDescriptorOf(deps.poseDescriptor);
-      const frame = scenePoseFrame(scene);
-      const worlds = new Map<NodeId, unknown>();
-      for (const node of nodes) worlds.set(node.id, frame.world(node.id));
-      // Visual, not stored, bounds: a turned member's ink reaches outside its
-      // own box, and the container has to cover what is drawn.
-      const drawn = unionBounds([...worlds.values()].map((p) => visualBoundsViaDescriptor(p, d)));
-      const { parent, shift } = groupingSite(scene, nodes.map((n) => n.id), drawn);
-      if (shift.dx !== 0 || shift.dy !== 0) {
-        for (const [id, p] of worlds) worlds.set(id, translatePoseViaDescriptor(p, shift.dx, shift.dy, d));
-      }
-      const union = drawn && { ...drawn, x: drawn.x + shift.dx, y: drawn.y + shift.dy };
-      const containerWorldPose = union === null
-        ? nodes[0]!.pose
-        : d.fromBounds(union, nodes[0]!.pose);
-      const pose = frame.localUnder(parent, containerWorldPose);
+      const plan = groupPlan(deps);
+      if (!plan) return;
+      const { scene, nodes, worlds, frame, parent, containerWorldPose, pose } = plan;
 
       // The container must exist before any child reparents into it, so the
       // insert op is emitted first.
@@ -87,7 +92,7 @@ export const groupAction: Action & { requires: string[] } = {
           node: {
             id: containerId,
             kind: 'group',
-            layer,
+            layer: nodes[0]!.layer,
             pose: pose as unknown,
             data: {} as unknown,
             parent: parent ?? null,
@@ -118,7 +123,11 @@ export const groupAction: Action & { requires: string[] } = {
       commitOps(deps, ops, 'Group', { select: [containerId] });
     },
   },
-  enabled: requiresContent(1),
+  enabled: (deps) => {
+    const given = requiresContent(1)(deps);
+    if (given !== true) return given;
+    return groupPlan(deps!) ? true : ActionDisabledReason.NotApplicable;
+  },
 };
 
 /** Whether ungrouping `node` dissolves it: a group, or a boolean group, which releases its operands. */
