@@ -24,4 +24,9 @@ describe('DOT, shrunk counterexamples', () => {
     expect(DIAGRAM_DOT.detect('digraph "http://x/*y" {\n}\n')).toBe(true);
     expect(DIAGRAM_DOT.detect('// digraph {\n')).toBe(false);
   });
+
+  it('refuses subgraphs nested past 1000 deep with a line error, where it ran out of stack', () => {
+    expect(() => readDot(`digraph {\n${'{'.repeat(30_000)} a ${'}'.repeat(30_000)}\n}\n`)).toThrow(/^DOT, line 2: subgraphs nest more than 1000 deep$/);
+    expect(asGraph(readDot(`digraph {\n${'{'.repeat(1000)} a ${'}'.repeat(1000)}\n}\n`).document.pages[0]!).data.nodes.map((n) => n.id)).toEqual(['a']);
+  });
 });
