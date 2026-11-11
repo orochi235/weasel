@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { sameView } from './view';
 import { zoomAt, axisZoomFactor } from './zoomAt';
 import { deriveParallaxView, planeMap } from './parallax';
+import { wheelPan } from './wheelHandler';
 
 describe('viewport, shrunk counterexamples', () => {
   it('a zoom on x leaves y exactly where it was', () => {
@@ -25,5 +26,11 @@ describe('viewport, shrunk counterexamples', () => {
     expect(zoomAt({ x: 0, y: 0, scale: { x: 1, y: 1 } }, { x: 0, y: 0 }, NaN).scale).toEqual({ x: 1, y: 1 });
     expect(zoomAt({ x: 0, y: 0, scale: { x: 1, y: -1 } }, { x: 0, y: 0 }, { x: 0.001, y: 0 }).scale).toEqual({ x: 0.1, y: -0.1 });
     expect(zoomAt({ x: 3, y: 0, scale: { x: 1, y: 1 } }, { x: NaN, y: 0 }, 2)).toEqual({ x: 3, y: 0, scale: { x: 2, y: 2 } });
+  });
+
+  it('a wheel pan by a delta that is not finite, or past the double range, leaves that axis where it was', () => {
+    const v = { x: 0, y: 2, scale: { x: 0.1, y: 0.1 } };
+    expect(wheelPan(v, { deltaX: Infinity, deltaY: 1 })).toEqual({ x: 0, y: 12, scale: v.scale });
+    expect(wheelPan({ ...v, x: Number.MAX_VALUE }, { deltaX: Number.MAX_VALUE, deltaY: NaN }).x).toBe(Number.MAX_VALUE);
   });
 });
