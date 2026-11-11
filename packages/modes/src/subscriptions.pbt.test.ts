@@ -1,7 +1,8 @@
 /**
  * Property tests of a mode registry's construction and of the subscriptions its readers keep on it. Construction:
  * any list of modes, ids repeated and named like `Object.prototype` members included, builds exactly when the ids
- * are distinct and `initial` names one, and the registry then lists, reflects, and finds each. Subscriptions: long
+ * are distinct and `initial` names one, and the registry then lists, reflects, and finds each, whatever the caller
+ * does to the list it gave. Subscriptions: long
  * runs of subscribes and unsubscribes (fresh, repeated, and stale) on a scoping dim and a decoration set, with
  * listeners that, while being notified, unsubscribe themselves or another, subscribe another, switch the mode
  * again, or invalidate. After every step each reader holds exactly one subscription on the registry while it has
@@ -38,6 +39,11 @@ describe('createModeRegistry, construction', () => {
       expect(reg.list()).toEqual(ms);
       expect(reg.reflection.entries().map((e) => e.value)).toEqual(ms);
       for (const m of ms) expect(reg.byId(m.id)).toBe(m);
+      // The list given is the caller's: changing it afterward changes nothing registered.
+      const registered = [...ms];
+      ms.reverse().push(mode('later'));
+      expect(reg.list()).toEqual(registered);
+      expect(() => reg.byId('later')).toThrow(/Unknown mode id/);
       for (const id of [...MODE_IDS, 'toString', 'hasOwnProperty', 'valueOf']) {
         if (!list.includes(id)) {
           expect(() => reg.byId(id)).toThrow(/Unknown mode id/);

@@ -29,7 +29,8 @@ export interface ModeRegistry {
  *  `initial` does not name one of them. */
 export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistry {
   const modes = createReflectable<ModeDefinition>();
-  for (const m of opts.modes) {
+  const list: readonly ModeDefinition[] = Object.freeze([...opts.modes]);
+  for (const m of list) {
     if (modes.get(m.id)) throw new Error(`createModeRegistry: duplicate mode id "${m.id}"`);
     modes.set(m.id, m);
   }
@@ -40,7 +41,7 @@ export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistr
 
   return {
     current: () => active,
-    list: () => opts.modes,
+    list: () => list,
     setMode(id: string): void {
       const next = modes.get(id);
       if (!next) throw new Error(`Unknown mode id: ${id}`);
