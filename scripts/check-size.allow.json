@@ -60,7 +60,7 @@
     "longestFunction": 335
   },
   "packages/font/src/registerFont.ts": {
-    "lines": 797
+    "lines": 722
   },
   "packages/forge/src/frame/FrameController.tsx": {
     "longestFunction": 135

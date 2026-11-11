@@ -44,4 +44,17 @@ describe('ShelfPacker, property', () => {
     t.atLeast('full', 50);
     t.atLeast('too big', 50);
   }, timeoutFor(RUNS, 2));
+
+  it('places every rect that fits, in any order, given a page for each', () => {
+    fc.assert(fc.property(fc.integer({ min: 1, max: 64 }).chain((pageSize) => fc.tuple(
+      fc.constant(pageSize),
+      sizes(pageSize).chain((rects) => fc.tuple(fc.constant(rects), fc.shuffledSubarray(rects, { minLength: rects.length }))),
+    )), ([pageSize, [rects, shuffled]]) => {
+      for (const order of [rects, shuffled]) {
+        const packer = new ShelfPacker(pageSize, order.length);
+        for (const [w, h] of order) expect(packer.alloc(w, h) !== null).toBe(w <= pageSize && h <= pageSize);
+        expect(packer.pageCount).toBeLessThanOrEqual(order.filter(([w, h]) => w <= pageSize && h <= pageSize).length);
+      }
+    }), runs(RUNS));
+  }, timeoutFor(RUNS, 2));
 });

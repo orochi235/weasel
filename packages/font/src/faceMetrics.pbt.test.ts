@@ -93,6 +93,39 @@ const raw = fc.oneof(
   { weight: 1, arbitrary: fc.anything() },
 );
 
+/** Any finite double, the magnitudes no 16-bit field holds among them: what a consumer-built table may hold. */
+const anyFinite = fc.oneof(fc.double({ noNaN: true, noDefaultInfinity: true }), fc.constantFrom(1e308, -1e308, 5e-324, 1e-300));
+const wide: fc.Arbitrary<FaceMetricTables> = fc.record({
+  unitsPerEm: fc.oneof(anyFinite, fc.constantFrom(1000, 1e-310, 1e300)),
+  hhea: opt(fc.record({ ascender: opt(anyFinite), descender: opt(anyFinite) })),
+  post: opt(fc.record({ underlinePosition: opt(anyFinite), underlineThickness: opt(anyFinite) })),
+  os2: opt(fc.record({
+    fsSelection: opt(uint16), sTypoAscender: opt(anyFinite), sTypoDescender: opt(anyFinite),
+    usWinAscent: opt(anyFinite), usWinDescent: opt(anyFinite), yStrikeoutPosition: opt(anyFinite), yStrikeoutSize: opt(anyFinite),
+    ySuperscriptYSize: opt(anyFinite), ySuperscriptYOffset: opt(anyFinite), ySubscriptYSize: opt(anyFinite),
+    ySubscriptYOffset: opt(anyFinite), sxHeight: opt(anyFinite), sCapHeight: opt(anyFinite),
+  })),
+});
+
+describe('faceMetricsFromTables, at any magnitude', () => {
+  it('states only finite numbers, positive weights and sizes, and a line box with height', () => {
+    const t = tally();
+    fc.assert(fc.property(wide, (tb) => {
+      const m = faceMetricsFromTables(tb);
+      if (!m) return t.count('none');
+      t.count('some');
+      for (const v of Object.values(m)) {
+        for (const n of typeof v === 'number' ? [v] : Object.values(v as object)) expect(Number.isFinite(n)).toBe(true);
+      }
+      if (m.ascent !== undefined) expect(m.ascent + m.descent!).toBeGreaterThan(0);
+      for (const r of [m.underline, m.strikethrough]) if (r) expect(r.thickness).toBeGreaterThan(0);
+      for (const sc of [m.superscript, m.subscript]) if (sc) expect(sc.size).toBeGreaterThan(0);
+      for (const h of [m.xHeight, m.capHeight]) if (h !== undefined) expect(h).toBeGreaterThan(0);
+    }), runs(RUNS));
+    t.atLeast('some', 100);
+  }, timeoutFor(RUNS, 1));
+});
+
 describe('parseFaceMetrics, fuzzed', () => {
   it('refuses a malformed block by name, or reads one it reads back the same', () => {
     const t = tally();
