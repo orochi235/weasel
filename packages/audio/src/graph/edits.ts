@@ -29,6 +29,13 @@ function target(live: (id: string) => NodeWrapper, to: GraphTarget): [NodeWrappe
   return [w, to.port];
 }
 
+function viewOf(nodes: ReadonlyMap<string, NodeWrapper>, edges: readonly Edge[]): GraphView {
+  return {
+    nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(Object.keys(w.ins)), params: w.def.params }])),
+    edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
+  };
+}
+
 /** The graph's nodes and edges: every structural edit, and the bookkeeping that
  *  lets a removed node finish fading out after its id is free again. */
 export function createEdits(deps: EditsDeps) {
@@ -83,10 +90,7 @@ export function createEdits(deps: EditsDeps) {
     /** Live and leaving: every wrapper whose def has not been released. */
     allNodes: () => [...nodes.values(), ...leaving],
     /** The live nodes and the edges a caller can see, by id, for `validatePatches`. */
-    view: (): GraphView => ({
-      nodes: new Map([...nodes].map(([id, w]) => [id, { ports: new Set(Object.keys(w.ins)), params: w.def.params }])),
-      edges: edges.filter(logical).map((e) => ({ from: e.from.id, to: e.to?.id ?? null, port: e.port })),
-    }),
+    view: (): GraphView => viewOf(nodes, edges),
     /** An edge is fading out or waiting to be wired, or a replaced def is fading out. */
     busy: () =>
       edges.some((e) => e.state !== 'open') ||
