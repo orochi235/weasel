@@ -6,8 +6,12 @@ export function axisIssues(axes: AxisDefs): Issue[] {
   const issues: Issue[] = [];
   for (const [name, def] of Object.entries(axes)) {
     const values = Object.keys(def.values ?? {});
-    if (values.length === 0) {
+    if (name === '__proto__') {
+      issues.push({ kind: 'invalid', path: `axes.${name}`, message: '"__proto__" cannot name an axis' });
+    } else if (values.length === 0) {
       issues.push({ kind: 'invalid', path: `axes.${name}`, message: `axis "${name}" has no values` });
+    } else if (typeof def.default !== 'string') {
+      issues.push({ kind: 'invalid', path: `axes.${name}.default`, message: `axis "${name}" needs a default naming one of its values (${values.join(', ')})` });
     } else if (!values.includes(def.default)) {
       issues.push({ kind: 'invalid', path: `axes.${name}`, message: `axis "${name}" defaults to "${def.default}", which is not one of its values (${values.join(', ')})` });
     }
