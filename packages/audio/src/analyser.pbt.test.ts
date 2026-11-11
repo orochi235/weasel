@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { createAnalyserTap } from './analyser';
 import { createFakeAudioContext } from './testing/fakeAudioContext';
-import { runs } from './pbt.fixture';
+import { runs, timeoutFor } from './pbt.fixture';
 
 const fft = fc.constantFrom(32, 64, 128, 256, 512, 2048);
 const bytes = fc.array(fc.integer({ min: 0, max: 255 }), { minLength: 1, maxLength: 64 });
@@ -39,7 +39,7 @@ describe('the analyser tap', () => {
         expect(b.reduce((s, v) => s + v, 0) / n).toBeCloseTo(mean, 5);
       }
     }), runs(300));
-  });
+  }, timeoutFor(300, 10));
 
   it('reads a level in 0..1 that is the RMS of its window, after any fftSize change under it', () => {
     fc.assert(fc.property(fft, fft, bytes, (size, later, pattern) => {

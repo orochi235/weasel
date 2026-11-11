@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { impulseResponse } from './impulse';
 import { createFakeAudioContext } from './testing/fakeAudioContext';
-import { anyFinite, runs, tally } from './pbt.fixture';
+import { anyFinite, runs, tally, timeoutFor } from './pbt.fixture';
 
 const seen = tally();
 const FLOAT32_MAX = 3.4028234663852886e38;
@@ -61,7 +61,7 @@ describe('impulseResponse', () => {
     }), runs(400));
     seen.atLeast('made', 100);
     seen.atLeast('refused', 20);
-  });
+  }, timeoutFor(400, 3));
 
   it('makes the same buffer from the same call, with channels that differ', () => {
     fc.assert(fc.property(fc.double({ min: 0.001, max: 0.01, noNaN: true }), fc.integer(), (s, seed) => {

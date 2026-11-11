@@ -1,9 +1,9 @@
 /**
  * Stateful test of a generative score through starts at any offset, stops, mood changes, and clock advances of
- * any length, stalls past a whole bar included. Within a run, the bars reported count up from 0 and each is the
- * bar its time falls in at the tempo in force; `cueBar` counts the bars since the cue last changed; the mood a
- * bar reports was the one set when it was booked or one set since the bar before it; `state()` is the last bar
- * reported; and nothing is reported while stopped.
+ * any length, stalls past a whole bar included. Within a run the bars reported count up, the first is the bar its
+ * time falls in from the start, and at one tempo throughout so is each; `cueBar` counts the bars since the cue
+ * last changed; the mood a bar reports was the one set when it was booked or one set since the bar before it;
+ * `state()` is the last bar reported; and nothing is reported while stopped.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -91,7 +91,8 @@ describe('createScore', () => {
         for (let i = 0; i < run.length; i += 1) {
           const { state, when } = run[i];
           const prev = i > 0 ? run[i - 1] : null;
-          if (!prev) expect(state.bar).toBe(0);
+          // A run's first bar is 0 unless a stall skipped it whole.
+          if (!prev) expect(state.bar).toBe(Math.floor((when - runStart.at) / (240_000 / state.params.tempo) + 1e-9));
           else expect(state.bar).toBeGreaterThan(prev.state.bar);
           // At one tempo throughout, the bar a time falls in.
           if (fixed) expect(state.bar).toBe(Math.floor((when - runStart.at) / (240_000 / state.params.tempo) + 1e-9));
