@@ -63,7 +63,7 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
         const parts = splitIconRef(ref);
         const table = parts && tables.get(parts.namespace);
         if (!parts || !table) fail(ctx, `no package in this build provides the icon namespace "${parts?.namespace ?? ref}" (named in ${from})`);
-        if (!table.icons[parts.name]) fail(ctx, `icon "${ref}" is not in ${table.owner}'s table (named in ${from})`);
+        if (!Object.hasOwn(table.icons, parts.name)) fail(ctx, `icon "${ref}" is not in ${table.owner}'s table (named in ${from})`);
       }
     },
     /** The tables a variant holds; in dev the used variant holds every table. */
