@@ -1,6 +1,7 @@
 // What crosses between Node and the page: JSON only, so pixels travel as base64. Typed here rather
 // than from core, whose types reach React and the DOM, neither of which a Node caller has.
 import { reviveTypedArrays, tagTypedArrays } from '@weasel-js/geom';
+import { checkPixelRenderRect } from '@weasel-js/core/math';
 
 /** The page script's global, set once the script has run. */
 export const PAGE_GLOBAL = '__weaselHeadless';
@@ -53,6 +54,7 @@ export function sceneFromWire(wire: object): object {
   return reviveTypedArrays(wire) as object;
 }
 
+type Rect = { x: unknown; y: unknown; width: unknown; height: unknown };
 const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 const shown = (v: unknown): string => {
   try {
@@ -77,9 +79,9 @@ export function readPageRequest(value: unknown): PageRequest {
   if (!isRecord(value)) return refuse('the request', 'an object', value);
   if (!isRecord(value.scene)) refuse('scene', 'an object', value.scene);
   if (!isRecord(value.sourceRect)) refuse('sourceRect', 'an object', value.sourceRect);
-  for (const k of ['x', 'y', 'width', 'height'] as const) finite(`sourceRect.${k}`, (value.sourceRect as Record<string, unknown>)[k]);
   if (!isRecord(value.scale)) refuse('scale', 'an object', value.scale);
-  for (const k of ['x', 'y'] as const) finite(`scale.${k}`, (value.scale as Record<string, unknown>)[k]);
+  // Refused here as the page's `renderSceneToPixels` refuses it, so such a request never starts a browser.
+  checkPixelRenderRect(value.sourceRect as Rect, value.scale as Rect, 'headless render request');
   if (value.format !== 'rgba' && value.format !== 'png') refuse('format', `'rgba' or 'png'`, value.format);
   if (value.background !== undefined && typeof value.background !== 'string') refuse('background', 'a CSS color string', value.background);
   if (value.flattenTolerancePx !== undefined) finite('flattenTolerancePx', value.flattenTolerancePx);

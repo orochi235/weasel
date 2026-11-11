@@ -75,8 +75,8 @@ describe('scene snapshots on the wire', () => {
 const num = fc.double({ min: -1e6, max: 1e6, noNaN: true }).filter((n) => !Object.is(n, -0));
 const request: fc.Arbitrary<PageRequest> = fc.record({
   scene: fc.constant({ nodes: [], layers: [] }),
-  sourceRect: fc.record({ x: num, y: num, width: num, height: num }),
-  scale: fc.record({ x: num, y: num }),
+  sourceRect: fc.record({ x: num, y: num, width: num.filter((v) => v > 0), height: num.filter((v) => v > 0) }),
+  scale: fc.record({ x: num.filter((v) => v !== 0), y: num.filter((v) => v !== 0) }),
   format: fc.constantFrom('rgba' as const, 'png' as const),
   background: fc.option(fc.constantFrom('#fff', 'transparent'), { nil: undefined }),
   flattenTolerancePx: fc.option(num, { nil: undefined }),
@@ -88,7 +88,8 @@ const request: fc.Arbitrary<PageRequest> = fc.record({
 /** A request with one field set to what JSON or a careless caller can put there. */
 const broken = fc.tuple(request, fc.constantFrom(
   ['scene', null], ['scene', 'x'], ['scene', [1]], ['sourceRect', undefined], ['sourceRect', null],
-  ['sourceRect.width', null], ['sourceRect.x', '1'], ['scale', 3], ['scale.y', null], ['scale.x', Infinity],
+  ['sourceRect.width', null], ['sourceRect.width', 0], ['sourceRect.height', -1], ['sourceRect.x', '1'], ['scale', 3],
+  ['scale.y', null], ['scale.x', Infinity], ['scale.x', 0],
   ['format', 'jpeg'], ['format', undefined], ['background', 3], ['flattenTolerancePx', null], ['annotations', 'yes'],
   ['overlay', {}], ['overlay', [null]], ['screen', [1, 2, 3]], ['screen', 'abc'], ['screen.4', null],
 ) as fc.Arbitrary<[string, unknown]>).map(([req, [path, value]]) => {

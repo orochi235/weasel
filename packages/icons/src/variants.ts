@@ -38,15 +38,16 @@ export function createVariants(addTables: (tables: readonly IconTable[]) => void
       set(name, 'loading');
       const run = Promise.resolve()
         .then(loader)
-        .then((mod) => {
-          addTables(mod.default);
-          set(name, 'loaded');
-        })
-        .catch((error: unknown) => {
+        .then((mod) => addTables(mod.default))
+        .then(() => 'loaded' as const, (error: unknown) => {
           if (isDev()) console.error(`icon variant "${name}" failed to load`, error);
-          set(name, 'failed');
+          return 'failed' as const;
         })
-        .finally(() => pending.delete(name));
+        .then((settled) => {
+          // Out of flight before the notice, so a listener retrying a failure starts a fresh load.
+          pending.delete(name);
+          set(name, settled);
+        });
       pending.set(name, run);
       return run;
     },

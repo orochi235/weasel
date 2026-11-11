@@ -49,3 +49,4 @@ export type {
 export { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 export { rotatePoint } from 'interactions/actions/rotate/geometry';
 export { CLIP_NOTHING, clipNothing } from 'core/scene/clipNothing';
+export { checkPixelRenderRect } from 'canvas/pixelRenderRect';

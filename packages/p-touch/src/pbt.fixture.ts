@@ -6,6 +6,7 @@ import fc from 'fast-check';
 import { mat3, PathBuilder } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
 import type { ResolvedRun } from '@weasel-js/text';
+import type { LabelObject } from 'bil-lbx';
 import { TAPES } from './tape';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
@@ -91,3 +92,31 @@ export const axisGroup = (children: fc.Arbitrary<DrawCommand[]>): fc.Arbitrary<D
 export const objectCommand: fc.Arbitrary<DrawCommand> = fc.oneof(
   solidRect, polyline, textBox, axisGroup(fc.array(fc.oneof(solidRect, polyline, textBox), { maxLength: 3 })),
 );
+
+/** A pen or brush that draws nothing reads back as none. */
+const drawn = <T extends { style: string }>(v: T | undefined): T | undefined => (v?.style === 'NULL' ? undefined : v);
+
+/** What of an object a P-touch round trip has to keep. */
+export function shape(o: LabelObject): Record<string, unknown> {
+  const common = { type: o.type, position: o.position };
+  switch (o.type) {
+    case 'text':
+      return {
+        ...common, data: o.data, font: { name: o.font.name, size: o.font.size, ...(o.font.weight !== 400 && o.font.weight !== undefined ? { weight: o.font.weight } : {}), ...(o.font.italic ? { italic: true } : {}) },
+        color: o.textStyle?.color ?? '#000000', underline: o.textStyle?.underline ?? 0,
+        horizontalAlignment: o.horizontalAlignment ?? 'LEFT', autoLF: !!o.autoLF,
+      };
+    case 'rect':
+      return { ...common, pen: drawn(o.pen), brush: drawn(o.brush) };
+    case 'line':
+      return { ...common, points: o.points, pen: drawn(o.pen), arrowBegin: o.arrowBegin, arrowEnd: o.arrowEnd };
+    default:
+      return common;
+  }
+}
+
+export const finiteDeep = (v: unknown): boolean =>
+  typeof v === 'number' ? Number.isFinite(v)
+  : Array.isArray(v) ? v.every(finiteDeep)
+  : v !== null && typeof v === 'object' && !(v instanceof Uint8Array) ? Object.values(v).every(finiteDeep)
+  : true;
