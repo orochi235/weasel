@@ -53,9 +53,17 @@ const BUILT_IN: Record<'sine' | 'square' | 'sawtooth' | 'triangle', WaveShape> =
   },
 };
 
+/** `levels` divided by the largest of them, or as given when every one is 0. */
+export function toUnitPeak(levels: readonly number[]): readonly number[] {
+  const big = levels.reduce((most, v) => Math.max(most, Math.abs(v)), 0);
+  return big > 0 ? levels.map((v) => v / big) : levels;
+}
+
 /** Sine harmonics at `levels`, the fundamental first, scaled so the whole wave
  *  peaks at 1 as a `PeriodicWave` is. A harmonic at or past Nyquist is left out. */
-function harmonicShape(levels: readonly number[]): WaveShape {
+function harmonicShape(given: readonly number[]): WaveShape {
+  // Only the ratios matter; at their own size, levels near either end of the double range overflow 1/peak or the sum.
+  const levels = toUnitPeak(given);
   const sum = (phase: number, count: number): number => {
     let v = 0;
     for (let k = 1; k <= count; k += 1) v += levels[k - 1] * Math.sin(TAU * k * phase);

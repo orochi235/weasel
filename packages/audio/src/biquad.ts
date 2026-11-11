@@ -7,6 +7,8 @@ export interface BiquadCoefficients {
   a2: number;
 }
 
+const NODE_GAIN_DB = 40 * Math.log10(3.4028234663852886e38);
+
 /**
  * The coefficients a `BiquadFilterNode` of `type` runs at `frequency`, by the
  * formulas in the Web Audio specification. `Q` is in dB for a lowpass or a
@@ -27,9 +29,11 @@ export function biquadCoefficients(
   const w0 = (2 * Math.PI * f) / sampleRate;
   const cos = Math.cos(w0);
   const sin = Math.sin(w0);
-  const A = 10 ** (gain / 40);
+  // A node clamps its gain to 40·log10 of float32's largest value; past it, A or 1/A overflows.
+  const A = 10 ** (Math.min(Math.max(gain, -NODE_GAIN_DB), NODE_GAIN_DB) / 40);
   const alphaQ = sin / (2 * Math.max(Q, 1e-4));
-  const alphaDb = sin / (2 * 10 ** (Q / 20));
+  // Floored where 10^(Q/20) would underflow to 0, and alpha with it to Infinity.
+  const alphaDb = sin / (2 * Math.max(10 ** (Q / 20), 1e-300));
   const shelf = sin * Math.SQRT2 * Math.sqrt(A);
   let b0 = (1 - cos) / 2;
   let b1 = 1 - cos;

@@ -716,6 +716,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - Ruled 2026-11-10: an xychart's and a radar's data are clipped to the plot area at compile time: a bar is cut at the
   plot's edge, its handle on the cut end; a line is clipped to the plot rect, a radar's outline and fill to its rim;
   a point whose center falls outside is not drawn. Nothing past the area is drawn, and any value stays finite.
+- 2026-11-10 (property tests, my call): audio's `biquadCoefficients` clamps a shelf or peaking gain to ±1541 dB, the
+  most a `BiquadFilterNode` takes, on both sides (the node clamps only the top); a lowpass or highpass Q far enough
+  below 0 dB that 10^(Q/20) underflows is read as 10^-300, so its pole sits at -1 rather than at `NaN`.
+- 2026-11-10 (property tests, my call): `spatialize` puts a source further from the listener than a double reaches
+  at an infinite distance: silent, or at whole gain under a rolloff factor of 0, and panned along its halved offset.
+  A reference distance of 0 silences a source past it even with a rolloff factor of 0, as the option's doc says it
+  cliffs. `patternVoicePeaks` leaves out an event on a step the pass never reaches.
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the
   runner (new `EffectRunner.seek(seconds)`) each clock frame. With a clock, `runner.play()`/`pause()`

@@ -40,7 +40,7 @@ const heldLevel = (e: ResolvedEnvelope, t: number): number => {
  *  ms in, from whatever level the envelope had reached. */
 export function envelopeLevel(e: ResolvedEnvelope, t: number, gate?: number): number {
   if (gate === undefined || t <= gate) return heldLevel(e, t);
-  if (e.release === 0) return 0;
+  if (t >= gate + e.release) return 0;
   return Math.max(0, heldLevel(e, gate) * (1 - (t - gate) / e.release));
 }
 
@@ -54,13 +54,15 @@ export function envelopePoints(e: ResolvedEnvelope, gate?: number): EnvelopePoin
   const end = gate ?? Infinity;
   const points: EnvelopePoint[] = [{ at: 0, value: e.attack > 0 ? 0 : heldLevel(e, 0) }];
   const last = (): EnvelopePoint => points[points.length - 1];
-  if (e.attack > 0 && e.attack < end) points.push({ at: e.attack, value: 1 });
+  // At a gate on the attack's end the peak is still reached, then stepped from if there is no decay.
+  if (e.attack > 0 && e.attack <= end) points.push({ at: e.attack, value: 1 });
   const decayEnd = e.attack + e.decay;
   if (decayEnd < end && (decayEnd > last().at || last().value !== e.sustain)) {
     points.push({ at: decayEnd, value: e.sustain });
   }
   if (gate === undefined) return points;
-  if (gate > points[points.length - 1].at) points.push({ at: gate, value: heldLevel(e, gate) });
+  const held = heldLevel(e, gate);
+  if (gate > last().at || held !== last().value) points.push({ at: gate, value: held });
   points.push({ at: gate + e.release, value: 0 });
   return points;
 }
