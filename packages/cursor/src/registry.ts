@@ -1,4 +1,4 @@
-import { bakeCursor, quantizeCursorAngle } from './bake';
+import { bakeCursor, bakeSize, quantizeCursorAngle } from './bake';
 import type { BakeOptions } from './bake';
 import { GLYPHS, MARKS } from './glyphs';
 import type { CursorGlyphName, CursorMarkName } from './glyphs';
@@ -62,7 +62,7 @@ export interface CursorForOptions extends BakeOptions {
  * fallbacks in use, so the cache needs no eviction.
  */
 export function cursorFor(name: CursorGlyphName, opts: CursorForOptions = {}): string {
-  const size = opts.size ?? 24;
+  const size = bakeSize(opts.size);
   const fallback = opts.fallback ?? 'default';
   // The step index, not the raw angle: the hover pump feeds a continuously
   // varying selection rotation, so a raw-angle key would never hit.

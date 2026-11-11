@@ -816,6 +816,17 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   (`spreadRadius`, renderer): a radius under the spread grows by the spread times 1 + (r/spread - 1)^3, so a square
   box casts a square shadow; a HUD inset layer's hole follows the same rule with the spread negated, as the spec
   says for inner shadows.
+- Ruled 2026-11-10 (my call, overnight sweep): a symmetry guide handle dropped where it was pressed leaves the group's
+  spec and center as they were and records no step, as an edit that would change nothing does nothing. The axis,
+  step, and row still follow the pointer's own direction and distance once it moves, so a knob pressed off its line
+  turns the axis onto the pointer at the first move.
+- Ruled 2026-11-10 (my call, overnight sweep): `bakeCursor` and `cursorFor` bake a size that is not a finite positive
+  number at the default 24, as `resolveCursorTier` already reads a spec's size, one rule for both; a size past the
+  cap, `Infinity` included, still throws. `brushRing` gives a radius of 0 or more a size of at least one pixel, so a
+  brush too small to round to one draws a one-pixel ring rather than the default 24; a negative or `NaN` radius still
+  falls to the default.
+- Ruled 2026-11-10 (my call, overnight sweep): `protectMask` reads a rect whose size is `Infinity` as running to
+  infinity from wherever it starts, minus infinity included, as an input past the double range is read at its limit.
 
 ## draw
 

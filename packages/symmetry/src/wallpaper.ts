@@ -27,16 +27,21 @@ export const exact = (v: number): number => (Math.abs(v) < 1e-12 ? 0 : v);
  * center kept.
  */
 export function latticePoints(spec: SymmetrySpec, limit = MAX_WALLPAPER_COPIES + 1): LatticePoint[] {
-  const ax = exact(Math.cos(spec.angle)) * spec.spacing;
-  const ay = exact(Math.sin(spec.angle)) * spec.spacing;
-  const bx = exact(Math.cos(spec.angle + spec.rowAngle)) * spec.rowSpacing;
-  const by = exact(Math.sin(spec.angle + spec.rowAngle)) * spec.rowSpacing;
-  const det = ax * by - ay * bx;
+  const ux = exact(Math.cos(spec.angle));
+  const uy = exact(Math.sin(spec.angle));
+  const vx = exact(Math.cos(spec.angle + spec.rowAngle));
+  const vy = exact(Math.sin(spec.angle + spec.rowAngle));
+  const ax = ux * spec.spacing;
+  const ay = uy * spec.spacing;
+  const bx = vx * spec.rowSpacing;
+  const by = vy * spec.rowSpacing;
+  // The cross product of the unit directions, so a lattice spaced near the double range's end does not overflow it.
+  const cross = ux * vy - uy * vx;
   const { x, y, width, height } = spec.extent;
-  if (!(Math.abs(det) > 1e-9) || !(width >= 0) || !(height >= 0)) return [];
+  if (!(Math.abs(cross) * Math.abs(spec.spacing) * Math.abs(spec.rowSpacing) > 1e-9) || !(width >= 0) || !(height >= 0)) return [];
   // The extent's corners in lattice coordinates bound the indices worth trying.
   const corners = [[x, y], [x + width, y], [x, y + height], [x + width, y + height]]
-    .map(([px, py]) => [(px * by - py * bx) / det, (ax * py - ay * px) / det]);
+    .map(([px, py]) => [(px * vy - py * vx) / cross / spec.spacing, (ux * py - uy * px) / cross / spec.rowSpacing]);
   const range = (k: 0 | 1): [number, number] => [
     Math.max(-SEARCH, Math.floor(Math.min(...corners.map((c) => c[k])))),
     Math.min(SEARCH, Math.ceil(Math.max(...corners.map((c) => c[k])))),

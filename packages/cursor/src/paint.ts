@@ -116,7 +116,7 @@ export function cursorWorldSize(
   scale: number,
 ): number {
   const r = glyph.radius ?? glyph.box / 2;
-  return (worldRadius * scale * glyph.box) / r;
+  return worldRadius * scale * (glyph.box / r);
 }
 
 /**

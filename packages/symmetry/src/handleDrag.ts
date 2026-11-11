@@ -23,6 +23,7 @@ export function handleChange(
   to: Point,
   snap: SymmetryHandleSnap,
 ): SymmetryChange {
+  if (to.x === from.x && to.y === from.y) return unmoved(press.handle, origin);
   if (press.handle === 'center') {
     return { center: snap.point({ x: origin.center.x + to.x - from.x, y: origin.center.y + to.y - from.y }) };
   }
@@ -33,6 +34,18 @@ export function handleChange(
   if (press.handle === 'angle') return { spec: { angle } };
   if (press.handle === 'row') return { spec: { rowAngle: angle - origin.spec.angle, rowSpacing: length } };
   return { spec: { angle, spacing: length } };
+}
+
+/** What a handle the pointer is back on holds: the group's own values, not those of the point pressed, which may sit
+ *  off the handle anywhere in its hit radius. */
+function unmoved(handle: SymmetryHandlePress['handle'], origin: { center: Point; spec: SymmetrySpec }): SymmetryChange {
+  const { angle, spacing, rowAngle, rowSpacing } = origin.spec;
+  switch (handle) {
+    case 'center': return { center: origin.center };
+    case 'angle': return { spec: { angle } };
+    case 'row': return { spec: { rowAngle, rowSpacing } };
+    case 'step': return { spec: { angle, spacing } };
+  }
 }
 
 /**
