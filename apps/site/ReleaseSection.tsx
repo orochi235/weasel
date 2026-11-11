@@ -2,10 +2,12 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   type ChangelogEntry,
   countGroups,
+  type Filter,
   GROUPS,
   groupOf,
   matches,
   type ReleaseIndexEntry,
+  type Tag,
 } from '../shared/releases';
 import num from '@weasel-js/theme/numeric.module.css';
 import { isoDay } from './isoDay';
@@ -43,16 +45,18 @@ export function ReleaseSection({
   release,
   lead,
   target,
-  selected,
-  onToggle,
+  filter,
+  onTogglePackage,
+  onToggleTag,
 }: {
   release: ReleaseIndexEntry;
   /** First in the list as filtered: open whenever it becomes so. */
   lead: boolean;
   /** Named by the URL: opened and scrolled to on mount. */
   target: boolean;
-  selected: readonly string[];
-  onToggle: (name: string) => void;
+  filter: Filter;
+  onTogglePackage: (name: string) => void;
+  onToggleTag: (tag: Tag) => void;
 }) {
   const [open, setOpen] = useState(lead || target);
   const ref = useRef<HTMLDetailsElement>(null);
@@ -70,8 +74,8 @@ export function ReleaseSection({
     if (scrollTo) ref.current?.scrollIntoView({ block: 'start' });
   }, [scrollTo]);
 
-  const counts = countGroups(release.shape, selected);
-  const highlights = release.highlights.filter((h) => matches(h.packages, selected));
+  const counts = countGroups(release.shape, filter);
+  const highlights = release.highlights.filter((h) => matches(h, filter));
 
   return (
     <details
@@ -109,7 +113,7 @@ export function ReleaseSection({
             </div>
           ) : null}
           {entries ? (
-            <Groups entries={entries} selected={selected} onToggle={onToggle} />
+            <Groups entries={entries} filter={filter} onTogglePackage={onTogglePackage} onToggleTag={onToggleTag} />
           ) : (
             <p className="ckd-release-matched">Loading…</p>
           )}
@@ -121,14 +125,18 @@ export function ReleaseSection({
 
 function Groups({
   entries,
-  selected,
-  onToggle,
+  filter,
+  onTogglePackage,
+  onToggleTag,
 }: {
   entries: readonly ChangelogEntry[];
-  selected: readonly string[];
-  onToggle: (name: string) => void;
+  filter: Filter;
+  onTogglePackage: (name: string) => void;
+  onToggleTag: (tag: Tag) => void;
 }) {
-  const shown = entries.filter((e) => matches(e.packages, selected));
+  const shown = entries.filter((e) => matches(e, filter));
+  // A tag filter asks for exactly these entries, so folding them away would hide the answer.
+  const fold = filter.tags.length === 0;
   return (
     <>
       {GROUPS.map((group) => {
@@ -137,11 +145,17 @@ function Groups({
         const list = (
           <ul className="ckd-release-entries">
             {members.map((entry) => (
-              <ReleaseEntry key={entry.id} entry={entry} selected={selected} onToggle={onToggle} />
+              <ReleaseEntry
+                key={entry.id}
+                entry={entry}
+                filter={filter}
+                onTogglePackage={onTogglePackage}
+                onToggleTag={onToggleTag}
+              />
             ))}
           </ul>
         );
-        return group.folded ? (
+        return group.folded && fold ? (
           <FoldedGroup key={group.id} label={group.label} count={members.length}>
             {list}
           </FoldedGroup>

@@ -18,6 +18,7 @@ afterEach(cleanup);
 it('names every package an entry touches, however many', async () => {
   render(<Releases />);
   const entry = (await screen.findByText('touches six')).closest('li')!;
-  expect(within(entry).getAllByRole('button').map((b) => b.textContent)).toEqual(MANY);
+  // The entry's tag chip leads, then one chip per package.
+  expect(within(entry).getAllByRole('button').map((b) => b.textContent)).toEqual(['new', ...MANY]);
   expect(entry.textContent).not.toMatch(/\+\d/);
 });

@@ -194,15 +194,10 @@
   gap: 5px;
   margin-bottom: 7px;
 }
-.ckd-release-tag {
-  padding: 0 var(--wzl-space-3);
-  border: 1px solid var(--wzl-border);
-  border-radius: var(--wzl-radius-sm);
+/* A tag is a Button like the package chips beside it; only its text color tells it apart. */
+.ckd-release-meta .ckd-release-tag {
   color: var(--wzl-fg-subtle);
-  font-size: var(--wzl-font-size-sm);
-  line-height: 20px;
 }
-.ckd-release-tag.is-breaking {
-  border-color: var(--wzl-danger);
+.ckd-release-meta .ckd-release-tag.is-breaking {
   color: var(--wzl-danger);
 }
