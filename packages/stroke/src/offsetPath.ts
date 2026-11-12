@@ -3,6 +3,7 @@ import {
   type Path, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathSubtract, pathUnion } from '@weasel-js/geom/booleans';
+import { DEFAULT_MITER_LIMIT } from '@weasel-js/paint';
 import { strokeToPath } from './strokeToPath';
 
 /** Options for {@link offsetPath}. */
@@ -34,7 +35,7 @@ export function offsetPath(path: Path, distance: number, opts: OffsetPathOptions
   const band = strokeToPath(region, {
     width: Math.abs(distance) * 2,
     join: opts.join ?? 'miter',
-    miterLimit: opts.miterLimit ?? 4,
+    miterLimit: opts.miterLimit ?? DEFAULT_MITER_LIMIT,
   }, { flattenTolerance: tolerance });
   const cut = distance > 0 ? pathUnion(region, band) : pathSubtract(region, band);
   const corners = offsetCornerTraces(path, distance);
