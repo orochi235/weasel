@@ -171,8 +171,8 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
   /** Layer to place inserted nodes on. Defaults to the trivial-form layer. */
   insertLayer?: TLayer;
   /** Selection source: the result of `useSelection()` (or its
-   *  `adapterMethods`). When omitted, `getSelection` returns `[]` and
-   *  `setSelection` is a noop, so the marquee gesture updates nothing. */
+   *  `adapterMethods`). When omitted, the adapter reads and writes the
+   *  scene's own selection. */
   selection?: SceneAdapterSelection;
   /** How to read and rewrite this scene's poses. Default `AUTO_POSE_DESCRIPTOR`. */
   poseDescriptor?: PoseDescriptor<TPose>;
@@ -191,8 +191,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
   const sel = options.selection;
-  const getSelection = sel?.getSelection ?? sel?.get ?? (() => [] as string[]);
-  const setSelection = sel?.setSelection ?? sel?.set ?? (() => {});
+  const getSelection = sel?.getSelection ?? sel?.get ?? (() => [...scene.getSelection()] as string[]);
+  const setSelection = sel?.setSelection ?? sel?.set ?? ((ids: string[]) => scene.setSelection(ids.map(asNodeId)));
   const d = (options.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const poseBounds = (p: TPose, node: unknown): Bounds =>
     visualBoundsViaDescriptor(p, poseDescriptorForNode(d, node));

@@ -30,8 +30,9 @@ export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
     apply(adapter) {
       // Always call setPose so consumers that inspect op behavior (tests,
       // overlays) see a consistent "this op writes (id, to)" signal, and
-      // report a no-op to history when the pose is already `to`.
-      const held = poseShallowEqual(from, to) || alreadyHolds(adapter, id, (node) => sameValue(node.pose, to));
+      // report a no-op to history when the pose is already `to`. The node is
+      // the answer where it can be read: a stated `from` can be stale.
+      const held = alreadyHolds(adapter, id, (node) => sameValue(node.pose, to)) ?? poseShallowEqual(from, to);
       (adapter as TransformAdapter<TPose>).setPose(id, to);
       return held ? false : undefined;
     },
