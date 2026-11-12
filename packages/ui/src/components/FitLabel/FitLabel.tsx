@@ -46,7 +46,8 @@ const overflows = (el: Element | null): boolean => el !== null && el.scrollWidth
  * element overflowing itself is a control squeezed below its content, and its
  * parent overflowing is one that will not shrink at all. Each label takes its
  * form at the step, or its last where it has fewer. The room growing past the
- * size it had when a step was taken starts again from the full forms.
+ * size it had when a step was taken starts again from the full forms, and so
+ * does a web font finishing loading.
  *
  * A scope nested in another steps at least as far as the outer one, so a
  * control inside a strip shortens along with the strip.
@@ -123,6 +124,22 @@ export function useFitScope(ref: RefObject<HTMLElement | null>): FitScopeValue {
     if (shouldStep()) setOwn(own + 1);
     else markSpent();
   }, [labels, own, shouldStep, markSpent]);
+
+  // Labels set in a fallback font may have stepped further than the face that loads needs, with no change in
+  // the room to say so.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const fonts: FontFaceSet | undefined = el?.ownerDocument.fonts;
+    if (!el || typeof fonts?.addEventListener !== 'function') return;
+    const refit = (): void => {
+      steppedAt.current = null;
+      spentAt.current = null;
+      el.removeAttribute('data-fit-spent');
+      setOwn(0);
+    };
+    fonts.addEventListener('loadingdone', refit);
+    return () => fonts.removeEventListener('loadingdone', refit);
+  }, [ref]);
 
   useLayoutEffect(() => {
     const el = ref.current;
