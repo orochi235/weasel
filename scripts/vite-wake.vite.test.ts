@@ -36,7 +36,7 @@ describe('localWake in the forge workshop', () => {
     writeFileSync(join(root, 'wake.mjs'), FAKE_WAKE);
     writeFileSync(join(root, 'a.stories.tsx'), "export default { title: 'ui/A' };\nexport const Only = {};\n");
     process.env.WAKE_PATH = join(root, 'wake.mjs');
-    const wake = await localWake({ skip: skipWake });
+    const wake = localWake({ skip: skipWake });
     server = await createServer({
       root,
       configFile: false,

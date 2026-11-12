@@ -72,6 +72,7 @@ const VITE_SERVER_TESTS = [
   'packages/forge/src/vite/watchRecovery.test.ts',
   'packages/prefs/src/vite.test.ts',
   'scripts/vite-prebundle.vite.test.ts',
+  'scripts/vite-runner-lazy.vite.test.ts',
   'scripts/vite-wake.vite.test.ts',
   'scripts/vitest-css-cache-key.vite.test.ts',
   'scripts/vitest-browser-deps.vite.test.ts',
