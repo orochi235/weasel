@@ -142,8 +142,7 @@ export function useTextEdit(
   const restyleNode = useCallback((overlay: HTMLDivElement, id: string, style: TextStyle | null) => {
     holdNodeStyle(style);
     // The root's own decoration and slant reach every run by inheritance.
-    const base = resolveTextStyle(style ?? optsRef.current.getStyle(id), optsRef.current.getPaint?.(id));
-    baseRef.current = base;
+    const base = (baseRef.current = resolveTextStyle(style ?? optsRef.current.getStyle(id), optsRef.current.getPaint?.(id)));
     applyOverlayStyle(overlay, base);
     return base;
   }, [holdNodeStyle, optsRef]);
