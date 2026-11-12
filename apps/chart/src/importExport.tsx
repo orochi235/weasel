@@ -45,10 +45,12 @@ export function exportChart(scene: ChartScene, format: DiagramFormat, pages: Cha
   return { blob: new Blob([text], { type: 'text/plain' }), name: `${base}${format.extensions[0] ?? ''}`, warnings };
 }
 
-async function pickAndImport(scene: ChartScene): Promise<void> {
+async function pickAndImport(scene: ChartScene, onReplaced: () => void): Promise<void> {
   const file = await pickFile(READABLE.flatMap((f) => f.extensions).join(','));
   if (file === null) return;
-  reportFileWarnings('Imported', await importChart(scene, file), 'chart-import-warnings');
+  const warnings = await importChart(scene, file);
+  onReplaced();
+  reportFileWarnings('Imported', warnings, 'chart-import-warnings');
 }
 
 function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: ChartPages; format: DiagramFormat }): null {
@@ -67,10 +69,12 @@ function FormatExport({ scene, pages, format }: { scene: ChartScene; pages: Char
 }
 
 /** Registers File › Import… and File › Export's command for every diagram format that writes, each off while the format cannot
- *  hold every kind of page the chart has. */
-export function ImportExportCommands({ scene, pages }: { scene: ChartScene; pages: ChartPages }): ReactElement {
+ *  hold every kind of page the chart has. `onReplaced` runs once Import has replaced the chart. */
+export function ImportExportCommands({ scene, pages, onReplaced }: {
+  scene: ChartScene; pages: ChartPages; onReplaced: () => void;
+}): ReactElement {
   useCommand(IMPORT_ACTION, 'Import…', () => {
-    pickAndImport(scene).catch(reportFailure('Could not import the file'));
+    pickAndImport(scene, onReplaced).catch(reportFailure('Could not import the file'));
   });
   return <>{WRITABLE.map((format) => <FormatExport key={format.id} scene={scene} pages={pages} format={format} />)}</>;
 }
