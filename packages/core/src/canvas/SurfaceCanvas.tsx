@@ -8,10 +8,14 @@ import { adoptCssOnce, assignRef } from '@weasel-js/react';
  *  A filling canvas must give its parent no size back, or the parent could
  *  never shrink. `contain: size` drops its buffer's size, but Chrome still
  *  takes the buffer's aspect ratio for an auto height, so a near-flat ratio
- *  replaces it. */
+ *  replaces it.
+ *
+ *  A canvas that takes input keeps touch from the browser, which would
+ *  otherwise pan or zoom the page under a finger's drag or pinch and cancel the pointer. */
 export const SURFACE_RULE =
   ':where([data-wzl-surface]) { width: var(--wzl-surface-width, 100%); height: var(--wzl-surface-height, 100%); }'
-  + " :where([data-wzl-surface='fill']) { display: block; contain: size; aspect-ratio: 1000000 / 1; }";
+  + " :where([data-wzl-surface='fill']) { display: block; contain: size; aspect-ratio: 1000000 / 1; }"
+  + ' :where([data-wzl-input]) { touch-action: none; }';
 
 /** Hold {@link SURFACE_RULE} in the root `el`'s styles come from, once per root. */
 export function adoptSurfaceRule(el: Element): void {
@@ -31,12 +35,14 @@ export interface SurfaceCanvasProps {
   /** `'worker'` for a canvas handed to a worker with `transferControlToOffscreen`: the worker
    *  sizes its buffer, and the element takes no size attributes, which it could no longer use. */
   buffer?: 'page' | 'worker';
+  /** Whether the canvas takes pointer input, which keeps touch from the page's own panning and zoom. */
+  input?: boolean;
 }
 
 /** The `<canvas>` a kit component paints into, `width` × `height` CSS pixels,
  *  or its parent's size on an axis given neither. */
 export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
-  function SurfaceCanvas({ width, height, className, style, tabIndex, 'aria-label': ariaLabel, buffer }, ref) {
+  function SurfaceCanvas({ width, height, className, style, tabIndex, 'aria-label': ariaLabel, buffer, input }, ref) {
     // Stable while `ref` is, so a commit does not detach the element.
     const setRef = useCallback((el: HTMLCanvasElement | null) => {
       if (el) adoptSurfaceRule(el);
@@ -58,6 +64,7 @@ export const SurfaceCanvas = forwardRef<HTMLCanvasElement, SurfaceCanvasProps>(
         className={className}
         style={sized as CSSProperties}
         data-wzl-surface={fills ? 'fill' : ''}
+        data-wzl-input={input ? '' : undefined}
       />
     );
   },

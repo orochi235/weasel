@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { AccessLabel } from '../ContextMenu/AccessLabel';
 import s from './MenuBar.module.css';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** One title of a menu bar: a `menuitem` button that opens its menu. */
 export function MenuBarTitle(props: {
@@ -30,7 +31,7 @@ export function MenuBarTitle(props: {
       onFocus={props.onFocus}
       // The menu takes focus as it opens; the press must not move it back to the title.
       onMouseDown={(e) => e.preventDefault()}
-      onPointerDown={(e) => { if (e.button === 0) props.onPress(); }}
+      onPointerDown={(e) => { if (isPrimaryPress(e)) props.onPress(); }}
       onPointerEnter={(e) => props.onEnter((e.buttons & 1) === 1)}
       onClick={(e) => { if (e.detail === 0) props.onActivate(); }}
       onKeyDown={props.onKey}

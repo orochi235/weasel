@@ -5,6 +5,7 @@ import { swallowNextClick } from '../../useReorderDragList';
 import { GHOST_WIDTH, ghostIsPage } from './NodeGhost';
 import { aliasOf, canAlias, carried, nodeAt, parentPath, pathOf, type SchemaNode, type SchemaRoot, type SchemaTarget } from './schemaEdit';
 import type { DropOutside } from './StructurePane';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 export interface PreviewGhost {
   left: number;
@@ -50,7 +51,7 @@ export function usePreviewDrag({ stage, schema, place, onMove, onCopy, onAlias, 
     const button = !entry && el?.closest('[data-pref-bar]') ? target.closest?.('button') : null;
     // A rail entry, or a button in a bar, whose press is also the pick-up.
     const pressed = entry ?? (button && el!.contains(button) ? button : null);
-    if (!box || !el || drag.current || e.button !== 0 || (!pressed && isInControlWithin(target, el))) return;
+    if (!box || !el || drag.current || !isPrimaryPress(e) || (!pressed && isInControlWithin(target, el))) return;
     // With Cmd or Ctrl alone the press adds the row to the selection or takes it out, and picks nothing up.
     if ((e.metaKey || e.ctrlKey) && !e.altKey) return;
     // A leaf's row is its label and then its control; only the label picks the row up.

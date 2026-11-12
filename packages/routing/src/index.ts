@@ -175,7 +175,9 @@ export { createLongPressStore, LONG_PRESS_MS } from './interactions/dispatcher/l
 export type {
   PendingLongPress, LongPressState, LongPressStore, LongPressOptions,
 } from './interactions/dispatcher/longPressState';
-export { DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin } from '@weasel-js/gestures';
+export {
+  DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
+} from '@weasel-js/gestures';
 export type { GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export { startCarry } from './interactions/carry';

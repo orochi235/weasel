@@ -5,6 +5,7 @@ import { clampOrdered } from '@weasel-js/ui-input';
 import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useThumbDrags } from './useThumbDrags';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** A thumb, picked by its role: its class composes another, so `.${s.thumb}` names two classes and matches nothing. */
 const THUMB = '[role="slider"]';
@@ -20,7 +21,7 @@ export interface SliderPointerArgs<T extends Thumb> {
   valueAt: (f: number, length: number, free?: boolean) => number;
   valueToFraction: (v: number) => number;
   onInput: (next: T[]) => void;
-  drags: Pick<ReturnType<typeof useThumbDrags<T>>, 'beginThumbDrag' | 'beginShiftAllDrag'>;
+  drags: Pick<ReturnType<typeof useThumbDrags<T>>, 'beginThumbDrag' | 'beginShiftAllDrag' | 'held'>;
 }
 
 /** The presses on a slider: a thumb, a thumb's context menu, and the bare track. */
@@ -29,9 +30,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
   const { onChange, constraint, step } = props;
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
-    // Only bail on explicit non-primary buttons (button > 0). jsdom's PointerEvent
-    // leaves `button` undefined; treat that as primary so tests can drive drags.
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e) || drags.held()) return;
     // preventDefault below suppresses the focus the press would otherwise
     // give the thumb, and the arrow keys are on the thumb.
     (e.currentTarget as HTMLElement).focus?.();
@@ -54,7 +53,7 @@ export function useSliderPointer<T extends Thumb>(a: SliderPointerArgs<T>) {
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<Element>) => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e) || drags.held()) return;
     const trackClick = props.trackClick ?? (thumbs.length === 1 ? 'move-nearest' : 'none');
     const wantsMove = trackClick === 'move-nearest' && thumbs.length > 0;
     if (!props.onAddThumb && !wantsMove) return;

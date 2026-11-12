@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
-import { fixedSeat, type FixedSeat } from '@weasel-js/gestures';
+import { fixedSeat, type FixedSeat, isPrimaryPress } from '@weasel-js/gestures';
 import { openPointerSession, pastDragThreshold, type PointerSession } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
@@ -175,7 +175,7 @@ export function useDragHandle(
   useEffect(() => () => { live.current?.cancel(); }, []);
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     // A second finger would replace `live`, and its release would then clear
     // the ref while the first drag runs on with nothing to cancel it.
     if (live.current) return;

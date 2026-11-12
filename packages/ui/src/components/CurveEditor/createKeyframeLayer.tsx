@@ -8,7 +8,7 @@
  * them, so the two do not share curve maths.
  */
 import type { ReactNode } from 'react';
-import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
+import { cubicBezierEasing, isPrimaryPress, resolveEasing } from '@weasel-js/core';
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
@@ -342,7 +342,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
     _ctx: LayerCtx,
     extra: EmptyDownArgs<KeyframeLayerState>,
   ): LayerGesture<KeyframeLayerState> | void {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     if (hit.kind === 'handle') {
       const bezier = activeBezier(state);
       const segment = state.selectedSegment;

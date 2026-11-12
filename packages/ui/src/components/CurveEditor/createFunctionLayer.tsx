@@ -18,10 +18,10 @@ import type {
   CurveLayer, LayerCtx, LayerGesture, LayerRenderCtx, ModelPoint, PlotPoint,
   EmptyDownArgs, KeyDownArgs,
 } from './layerTypes';
-
 import type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
 } from './functionLayerTypes';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 export type {
   ControlPoint, CurveDomain, EndpointMode, AddPointMode, AnchorRenderProps, CurveSettings, FillSettings, FunctionLayerConfig, FunctionLayerState,
@@ -289,7 +289,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     ctx: LayerCtx,
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     if (hit.kind === 'anchor') {
       const { index } = hit.payload as { index: number };
       dlog('function-layer', 'anchor-down', { id, index, shift: ctx.modifiers.shift, button: e.button });
@@ -342,7 +342,7 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
     ctx: LayerCtx,
     extra: EmptyDownArgs<FunctionLayerState>,
   ): LayerGesture<FunctionLayerState> | void {
-    if (!interactive || e.button !== 0) return;
+    if (!interactive || !isPrimaryPress(e)) return;
     if (addPointMode !== 'click-empty') return;
     if (cfg.maxPoints !== undefined && state.points.length >= cfg.maxPoints) return;
 

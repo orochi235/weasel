@@ -193,6 +193,18 @@ describe('seam drag', () => {
 });
 
 describe('seam drag teardown', () => {
+  it('leaves a seam drag to its finger when a second finger presses another seam', () => {
+    const { seams, onChange } = setup();
+    const touch = (pointerId: number, clientX: number) => ({ clientX, clientY: 20, button: 0, pointerId, pointerType: 'touch' });
+    fireEvent.pointerDown(seams()[0], touch(1, 80));
+    fireEvent.pointerDown(seams()[1], touch(2, 240));
+    fireEvent.pointerMove(document, touch(1, 120));
+    fireEvent.pointerUp(document, touch(1, 120));
+    fireEvent.pointerUp(document, touch(2, 240));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(froms(onChange.mock.calls[0][0])).toEqual([0, 30, 60]);
+  });
+
   it('pointercancel ends the drag — later moves no longer track the seam', () => {
     const { seams, onInput, onChange } = setup();
     fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0 });

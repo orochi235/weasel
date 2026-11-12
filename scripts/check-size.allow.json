@@ -248,7 +248,7 @@
     "longestFunction": 132
   },
   "packages/ui/src/components/Slider/useThumbDrags.ts": {
-    "longestFunction": 133
+    "longestFunction": 132
   },
   "packages/ui/src/components/Timeline/Lane.tsx": {
     "longestFunction": 130

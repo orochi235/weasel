@@ -2,6 +2,7 @@ import { useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { pastDragThreshold, startCarry, type CarryPayload, type Tool } from '@weasel-js/core';
 import { useKitSetting } from '@weasel-js/react';
 import { DragGhost } from '../DragGhost';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 interface GhostState {
   node: ReactNode;
@@ -29,7 +30,7 @@ export function useToolCarry(
   const [ghost, setGhost] = useState<GhostState | null>(null);
   const dragPx = useKitSetting('gestures.dragPx');
   const press = (tool: Tool, e: PointerEvent<HTMLButtonElement>) => {
-    const payload = e.button === 0 ? carryTool?.(tool) ?? null : null;
+    const payload = isPrimaryPress(e) ? carryTool?.(tool) ?? null : null;
     if (payload === null) return;
     const origin = { clientX: e.clientX, clientY: e.clientY };
     const from = e.currentTarget;

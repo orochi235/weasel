@@ -94,7 +94,7 @@ export interface PointerIdentity {
   pointerId?: number;
 }
 
-/** The mouse button a press was made with. Pen and touch press with `'primary'`. */
+/** The button a press was made with. Touch presses with `'primary'`, and so does a pen's tip or eraser end; its barrel button is `'secondary'`. */
 export type PointerButton = 'primary' | 'middle' | 'secondary';
 
 /** A pointer press — the start of any drag, and the richest event shape. */

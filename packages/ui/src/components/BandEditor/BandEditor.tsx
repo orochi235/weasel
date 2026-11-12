@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
-import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
+import { focusedControlOwnsKey, isEditableTarget, isPrimaryPress } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
@@ -193,13 +193,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
-  // An edge drag. One that ends without a release commits nothing.
+  // An edge drag, which a second finger's press leaves to the first. One that ends without a release commits nothing.
   const drag = (
     down: ReactPointerEvent<HTMLElement>,
     onMove: (ev: PointerEvent) => void,
     onEnd: () => void,
   ): void => {
-    sessionRef.current?.cancel();
+    if (sessionRef.current?.active) return;
     sessionRef.current = openPointerSession(down.currentTarget, down, {
       onMove,
       onEnd: () => { sessionRef.current = null; setDraft(null); onEnd(); },
@@ -223,7 +223,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     if (index !== selectedIndex) onSelect?.(index);
   };
 
@@ -265,7 +265,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     e.preventDefault();
     splitAt(fromUnit(unitAt(e.clientX)));
   };

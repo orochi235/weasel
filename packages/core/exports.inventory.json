@@ -1949,6 +1949,7 @@
     "isPathLike": "function",
     "isPatternPaint": "function",
     "isPlainObject": "function",
+    "isPrimaryPress": "function",
     "isRectAim": "function",
     "isRectPose": "function",
     "isSerializedScene": "function",

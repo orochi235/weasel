@@ -3,7 +3,7 @@
  * and does for it what needs a DOM — sessions, timers, haptics.
  */
 import {
-  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, pointerDownEvent, stylusOf,
+  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, pointerDownEvent, pressButtonOf, stylusOf,
   type ClickMemory, type HeldPress, type PointerButton, type PointerSample, type PressSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
@@ -200,9 +200,6 @@ function pressClaims(canvas: Element | null, dragPx: () => number | undefined) {
   };
 }
 
-/** `PointerEvent.button`, as a press names it. The back and forward buttons are the browser's. */
-const BUTTONS: readonly PointerButton[] = ['primary', 'middle', 'secondary'];
-
 /** How long after a secondary release its native menu can still arrive. */
 const MENU_AFTER_RELEASE_MS = 500;
 
@@ -233,8 +230,7 @@ function nativeMenus() {
 function takesPress(
   e: PointerEvent, canvas: HTMLElement, opts: PointerInputOptions,
 ): { button: PointerButton; onControl: boolean } | null {
-  // An absent `button` (synthetic events) is primary.
-  const button = BUTTONS[e.button ?? 0];
+  const button = pressButtonOf(e);
   if (!button || (button === 'secondary' && !opts.secondaryDrags)) return null;
   // A button or field laid over the canvas handles its own press: opening a
   // session here would capture the pointer and retarget its click. A surface
