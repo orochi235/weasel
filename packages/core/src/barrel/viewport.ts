@@ -145,7 +145,7 @@ export type { SurfaceSizeProps } from '../canvas/useSurfaceSize';
 export { DrawCanvas } from '../canvas/DrawCanvas';
 export type { DrawCanvasProps, DrawCanvasDraw } from '../canvas/DrawCanvas';
 // The accent a canvas's chrome paints in, read off the theme cascade, and how to hear it change.
-export { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '../canvas/accentColor';
+export { accentColorOf, chromeColorOf, FALLBACK_ACCENT, watchThemeOf } from '../canvas/accentColor';
 
 // ─── Canvas focus & visibility gating ───────────────────────────────────────
 export { gateLayer } from '../core/layers/gateLayer';

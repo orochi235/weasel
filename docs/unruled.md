@@ -1741,3 +1741,10 @@ Calls the lanes made without a ruling:
   nothing against the config schema: a number past a since-narrowed `max`, or an enum option since removed, reaches
   the instrument and the panel as stored, and only the next edit clamps it. Repairing on load needs the schema at
   hydration and has to leave `minAt`/`maxAt` bounds, auto values and encoded leaves alone.
+
+## Audit round seventeen (2026-11-12): theme
+
+- Open: whether `PlotView` with no `theme` follows the nearest `ThemeProvider`, as `useHud` does, or keeps drawing
+  `PLOT_THEME`, the weasel theme's dark mode, as documented. In a light-mode provider its text and axes are drawn in
+  dark mode's near-white `fg`. Ties to the `docs/TODO.md` entry on whether the site's `.ckd-canvas` stage follows the
+  mode.

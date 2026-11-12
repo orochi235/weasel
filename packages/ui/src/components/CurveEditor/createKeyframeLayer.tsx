@@ -13,7 +13,6 @@ import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import { arrowMove, attract } from '@weasel-js/ui-input';
-import { handleHalf } from '../../handles';
 import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
 import s from './CurveEditor.module.css';
 import type {
@@ -65,8 +64,6 @@ const SAMPLES_PER_SEGMENT = 16;
 export const KEY_HIT_PX = 8;
 export const HANDLE_HIT_PX = 8;
 export const CURVE_HIT_PX = 6;
-const KEY_HALF = handleHalf('--wzl-handle-size');
-const HANDLE_RADIUS = handleHalf('--wzl-handle-dot-size-sm');
 const HANDLE_STEP = 0.01;
 
 /** A keyframe layer state with nothing selected and no gesture in flight. */
@@ -246,7 +243,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
                   className={s.handle}
                   cx={h.x}
                   cy={h.y}
-                  r={HANDLE_RADIUS}
+                  r={ctx.handleHalf('--wzl-handle-dot-size-sm')}
                   role="button"
                   tabIndex={0}
                   aria-label={`${label} bezier handle ${i + 1}`}
@@ -263,7 +260,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
               key={`key-${i}`}
               className={s.keyframe}
               at={p}
-              half={KEY_HALF}
+              half={ctx.handleHalf('--wzl-handle-size')}
               role="button"
               tabIndex={0}
               aria-label={`${label} key at ${formatX(k.t)}`}
@@ -280,7 +277,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
               aria-hidden="true"
               className={s.keyframeGhost}
               at={p}
-              half={KEY_HALF}
+              half={ctx.handleHalf('--wzl-handle-size')}
               data-keyframe-ghost=""
             />
           );
