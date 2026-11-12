@@ -100,6 +100,18 @@ describe('Lane', () => {
     expect(onKeyCommit.mock.calls).toEqual([[1, 700]]);
   });
 
+  it('puts a key back where it was when the browser cancels its drag', () => {
+    const onKeyInput = vi.fn();
+    const onKeyCommit = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onKeyInput={onKeyInput} onKeyCommit={onKeyCommit} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.pointerDown(key, { clientX: 250, clientY: 10, button: 0, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerCancel(document, { pointerId: 1, pointerType: 'touch' });
+    expect(onKeyInput.mock.calls.at(-1)).toEqual([1, 500]);
+    expect(onKeyCommit).not.toHaveBeenCalled();
+  });
+
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
     const onKeyCommit = vi.fn();

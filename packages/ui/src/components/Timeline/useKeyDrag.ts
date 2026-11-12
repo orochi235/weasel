@@ -79,7 +79,11 @@ export function useKeyDrag(a: KeyDragArgs) {
         if (traveled(ev)) onKeyCommit(i, at(ev));
         end();
       },
-      onCancel: end,
+      // The consumer previewed the move through `onKeyInput`; a drag that ends without a release puts it back.
+      onCancel: () => {
+        if (dragging) onKeyInput(i, times[i]);
+        end();
+      },
     }, { capture: false });
   };
 
