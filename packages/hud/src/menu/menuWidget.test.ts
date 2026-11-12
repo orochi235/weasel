@@ -273,3 +273,26 @@ describe('createMenuWidget text rows on a Mac', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('createMenuWidget kill buffer on a Mac', () => {
+  it('yanks into one text row what Ctrl+K cut from another', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    const setA = vi.fn(), setB = vi.fn();
+    const rows: MenuEntry[] = [
+      { kind: 'text', key: 'a', label: 'A', value: 'keep cut', set: setA },
+      { kind: 'text', key: 'b', label: 'B', value: 'x', set: setB },
+    ];
+    const { w } = widget({ ...open, source: 'keyboard', entries: rows });
+    w.onKey!(keydown('Enter'));
+    for (let i = 0; i < 3; i++) w.onKey!(keydown('b', { code: 'KeyB', ctrlKey: true }));
+    w.onKey!(keydown('k', { code: 'KeyK', ctrlKey: true }));
+    w.onKey!(keydown('Enter'));
+    expect(setA).toHaveBeenLastCalledWith('keep ');
+    w.onKey!(keydown('ArrowDown'));
+    w.onKey!(keydown('Enter'));
+    w.onKey!(keydown('y', { code: 'KeyY', ctrlKey: true }));
+    w.onKey!(keydown('Enter'));
+    expect(setB).toHaveBeenLastCalledWith('xcut');
+    vi.restoreAllMocks();
+  });
+});

@@ -121,6 +121,23 @@ describe('editKey', () => {
     expect(shown(run('abc', [['x', ctrl]]))).toBe('abc|');
   });
 
+  it("keeps what a Mac's Ctrl+K cuts, and enters it again at the caret on Ctrl+Y", () => {
+    const ctrl = editMods({ shiftKey: false, ctrlKey: true, metaKey: false, altKey: false }, true);
+    const cut = run('one two', ['Home', 'ArrowRight', 'ArrowRight', 'ArrowRight', ['k', ctrl]]);
+    expect(cut).toMatchObject({ draft: 'one', kill: ' two' });
+    expect(shown(run('one two', ['Home', 'ArrowRight', 'ArrowRight', 'ArrowRight', ['k', ctrl], 'Home', ['y', ctrl]]))).toBe(' two|one');
+    expect(shown(run('ab', [['y', ctrl]]))).toBe('ab|');
+  });
+
+  it("swaps the clusters either side of the caret on a Mac's Ctrl+T, the last two at the end of the line", () => {
+    const ctrl = editMods({ shiftKey: false, ctrlKey: true, metaKey: false, altKey: false }, true);
+    expect(shown(run('abc', ['ArrowLeft', ['t', ctrl]]))).toBe('acb|');
+    expect(shown(run('abc', [['t', ctrl]]))).toBe('acb|');
+    expect(shown(run('a😀e\u0301', ['ArrowLeft', ['t', ctrl]]))).toBe('ae\u0301😀|');
+    expect(shown(run('abc', ['Home', ['t', ctrl]]))).toBe('|abc');
+    expect(shown(run('a', [['t', ctrl]]))).toBe('a|');
+  });
+
   it('holds a composition in place of the selection until it is entered', () => {
     const sel = run('abcd', [['ArrowLeft', { shift: true }], ['ArrowLeft', { shift: true }]])!;
     const composing = composeEdit(sel, 'に');
