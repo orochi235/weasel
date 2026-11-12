@@ -155,7 +155,10 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
       }
       const siblings = liveRef.current.index.filter((e) => e.file === entry.file && !isIndexId(e.id));
       const ids = siblings.map((e) => e.id);
-      void importOf(entry.file)
+      const loading = importOf(entry.file);
+      // A reload drops this import for a newer one, whose answer this one must not overwrite when it lands late.
+      const latestImport = () => imports.current.get(entry.file) === loading;
+      void loading
         .then(async (mod) => {
           const stories = loadModule(mod, entry.title, current.parameters);
           const result = new Map<string, Loaded>();
@@ -166,9 +169,9 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
             result.set(sibling.id, { kind: 'story', story });
           }
           if (!result.has(entry.id)) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
-          settle(ids, result);
+          if (latestImport()) settle(ids, result);
         })
-        .catch((error: unknown) => fail(ids, error));
+        .catch((error: unknown) => { if (latestImport()) fail(ids, error); });
     },
     [importOf, liveRef],
   );
