@@ -30,10 +30,10 @@ export const KINDS = framed({
   // and the needle's round cap, leaves the tip at r 3.
   perf: `<path d="M4.6 13.6a5.4 5.4 0 0 1 10.8 0"/><path d="M10 13.6 11.72 11.14"/><circle cx="10" cy="13.6" r="1.3" fill="currentColor" stroke="none"/>`,
 
-  // A sticking plaster across the corner: its strip, the pad in the middle and the vent holes either side.
+  // A sticking plaster across the corner: its strip, the pad spanning its width, and the vent holes either side.
   fix: `<g transform="rotate(-45 10 10)">
     <rect x="3.4" y="7.6" width="13.2" height="4.8" rx="2.4"/>
-    <rect x="7.9" y="8.5" width="4.2" height="3" rx="0.5" stroke-width="1.25"/>
+    <rect x="7.6" y="7.6" width="4.8" height="4.8" rx="0.5" stroke-width="1.25"/>
     <path d="M5.6 9.3h0M5.6 10.7h0M14.4 9.3h0M14.4 10.7h0" stroke-width="1.25"/></g>`,
 
   // The works: a cog.
