@@ -89,8 +89,6 @@ export { probeUnderLens } from './lens/probeUnderLens';
 export { useFrameSchedule } from './lens/useFrameSchedule';
 export type { Remeasurable } from './lens/useLensRemeasure';
 export { useLensRemeasure } from './lens/useLensRemeasure';
-export type { LoupeInputApi } from './loupeActions';
-export { createLoupeActions, LOUPE_MAGNIFY_ID, LOUPE_PEEK_ID } from './loupeActions';
 export type { SceneLoupeProps, SceneViewSource } from './SceneLoupe';
 export { SceneLoupe } from './SceneLoupe';
 export type { SourceLoupeProps } from './SourceLoupe';
