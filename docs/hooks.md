@@ -113,6 +113,7 @@ curly quote, so both codepoints are listed.
 | `lengthenPath` | none of its own: the `lengthen` path-edit tool binds a drag on an anchor, Shift optional, and the action takes it only on an open end, so a drag on any other anchor falls through to `editAnchors`; its `mode` param (`'tangent'`, the default, or `'curvature'`) picks how the end grows, Shift picks the other, and both are read on every move |
 | `enterPathEdit` | double-click on a body |
 | `selectAnchor` | click |
+| `editEffectText` | click on a body: in path edit on a path an effect hides, a click on that effect opens its text, off the open path's anchors |
 | `insertPathAnchor` | Alt+click |
 | `cutPathAtAnchor` | Alt+Shift+click |
 | `viewport.pinchZoom` | two-finger `multiTouch` |

@@ -11,7 +11,7 @@ import { createScopingDim, DEFAULT_MODES } from '@weasel-js/modes';
 import { SceneCanvas, asNodeId, createEnteredGroup, createScene, hasEditablePath, pathFromD, solid, useSelection, type EnteredGroupApi, type PolygonPath } from '@weasel-js/core';
 import type { DrawScene } from '../drawDocument';
 import { createModeMachine, type ModeMachine } from './machine';
-import { modeScopeIds } from './modeScope';
+import { modeScope } from './modeScope';
 import { modePathEdit } from './pathEditHost';
 import { useCanvasModes } from './useCanvasModes';
 
@@ -67,7 +67,7 @@ function Harness({ machine, into }: { machine: ModeMachine; into: (entered: Ente
   const [pathEdit] = useState(() => modePathEdit(machine, (id) => hasEditablePath(scene.get(asNodeId(id)))));
   const [dim] = useState(() => createScopingDim({
     registry: machine.registry,
-    getTargetIds: () => modeScopeIds(machine),
+    getTargetIds: modeScope(machine, scene),
   }));
   const [entered] = useState(() => createEnteredGroup(scene));
   into(entered);
