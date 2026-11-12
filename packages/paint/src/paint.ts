@@ -147,6 +147,14 @@ export interface Fill {
   paint?: Paint;
 }
 
+/**
+ * The {@link Stroke.miterLimit} of a stroke that sets none. SVG's default, not
+ * Canvas2D's 10, because the serializer omits the attribute when the field is
+ * unset — so a kit stroke exported to SVG is read back by every other renderer
+ * as 4, and a kit that used 10 would disagree with its own export.
+ */
+export const DEFAULT_MITER_LIMIT = 4;
+
 /** Stroke style: a Paint plus structural line parameters. */
 export interface Stroke {
   /** Omitted, the stroke paints nothing and keeps its width and dash for
@@ -181,10 +189,8 @@ export interface Stroke {
   join?: 'miter' | 'round' | 'bevel';
   /**
    * Miter join fallback threshold. When the miter length exceeds
-   * `miterLimit * width / 2`, the join falls back to a bevel. Default 4,
-   * matching SVG — which is also what the kit's own serializer implies when
-   * it omits the attribute for an unset field. Canvas2D's 10 lets an acute
-   * corner throw a spike four times the half-width.
+   * `miterLimit * width / 2`, the join falls back to a bevel. Default
+   * {@link DEFAULT_MITER_LIMIT}, SVG's 4.
    */
   miterLimit?: number;
   /** Where the stroke sits relative to the geometric edge. Default `'center'`. */

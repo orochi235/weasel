@@ -14,6 +14,7 @@ import { CANVAS_CONTEXT_ATTRIBUTES } from '../contextAttributes';
 import { defaultDrawOne, paintBoundsFor } from '../defaultDrawOne';
 import type { SceneViewDrawOne } from '../nodeShapeTypes';
 import type { PaintBoundsFn } from '../paintCull';
+import { registerShaders } from '../registerShaders';
 import { buildSceneViewCommands } from '../sceneViewRender';
 import type { FrameInputs, FromWorker, ToWorker } from './protocol';
 import { createSceneMirror, type SceneMirror, type SceneMirrorOptions } from './sceneMirror';
@@ -76,7 +77,7 @@ function openRenderer(
     imageMinification: options.imageMinification,
     retainBudget: options.retainBudget,
   });
-  for (const handle of options.shaders ?? []) renderer.registerProgram(handle);
+  registerShaders(renderer, options.shaders);
   return renderer;
 }
 

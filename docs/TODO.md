@@ -324,6 +324,12 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
   rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
   SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
+- **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
+  pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
+  takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to
+  a grid cell off the container's painted edge. Children still compose from the stored pose, and
+  picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
+  and the walk does what was ruled.
 
 ---
 

@@ -88,6 +88,9 @@ export function buildSceneTree<
   /** True for a node whose paint cannot be seen — see `paintMissesView`. Its
    *  painter is not called; its clip and its children are walked as usual. */
   culled?: (node: TNode, pose: TPose, view: View) => boolean,
+  /** Where a node is drawn, given its world pose: the scene's output grid moves it. Its cull
+   *  and its painter both read this pose. Absent, a node is drawn at its world pose. */
+  drawnPose?: (node: TNode, pose: TPose) => TPose,
 ): DrawCommand[] {
   const layers = adapter.getLayers();
   // A hidden layer gets no bucket, and a node with no bucket is not painted.
@@ -120,8 +123,9 @@ export function buildSceneTree<
     const bucket = forLayer === undefined || node.layer === forLayer
       ? buckets.get(node.layer) : undefined;
     const v = planeViews?.get(node.layer) ?? view;
+    const drawn = bucket && drawnPose ? drawnPose(node, pose) : pose;
     const { under: self, over } = splitOverChildren(
-      bucket && (copied || !culled?.(node, pose, v)) ? drawOne(node, pose, v) : [],
+      bucket && (copied || !culled?.(node, drawn, v)) ? drawOne(node, drawn, v) : [],
     );
 
     let ownClips = ancestorClips;
