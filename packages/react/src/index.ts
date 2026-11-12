@@ -5,6 +5,7 @@ export { isDev } from '@weasel-js/registry';
 export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
 export { useLatest } from './useLatest';
+export { type Notifier, useNotified } from './useNotified';
 export { useNearViewport } from './useNearViewport';
 export { watchElementMove } from './watchElementMove';
 export { prefersReducedMotion, usePrefersReducedMotion } from './reducedMotion';
