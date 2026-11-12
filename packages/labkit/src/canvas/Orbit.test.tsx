@@ -4,7 +4,7 @@
  */
 
 import { act, render } from '@testing-library/react';
-import { type Camera3d, createCamera } from '@weasel-js/kernel3d';
+import { type Camera3d, createCamera, panBy } from '@weasel-js/kernel3d';
 import { useState } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { CameraView } from './CameraInput';
@@ -105,6 +105,14 @@ describe('<Orbit>', () => {
     drag(host, { shiftKey: true });
     expect(last()?.yaw).toBe(OPEN.yaw);
     expect(last()?.target).not.toEqual(OPEN.target);
+  });
+
+  it('pans across the screen of a scene whose up it is given', () => {
+    const z = { x: 0, y: 0, z: 1 };
+    const { host, last } = mount(undefined, { up: z });
+    drag(host, { shiftKey: true });
+    // jsdom lays nothing out, so the pane reads as 1 px tall.
+    expect(last()?.target).toEqual(panBy(OPEN, 40, 20, 1, z).target);
   });
 
   it('dollies on the wheel and on a trackpad pinch, and claims both', () => {
