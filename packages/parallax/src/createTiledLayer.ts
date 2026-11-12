@@ -111,19 +111,26 @@ export function createTiledLayer<TData>(
           continue;
         }
         if (!tiling) continue;
-        const copies: DrawCommand[] = [];
-        for (let i = kx.from; i <= kx.to; i++) {
-          for (let j = ky.from; j <= ky.to; j++) {
-            const tx = Number.isFinite(p.x) ? i * p.x : 0;
-            const ty = Number.isFinite(p.y) ? j * p.y : 0;
-            const shifted: View = { ...view, x: view.x - tx, y: view.y - ty };
-            const children = layer.draw(data, shifted, dims);
-            if (children.length === 0) continue;
-            copies.push(tx === 0 && ty === 0
-              ? { kind: 'group', children }
-              : { kind: 'group', transform: translate(tx, ty), children });
+        const drawCopies = (): DrawCommand[] => {
+          const copies: DrawCommand[] = [];
+          for (let i = kx.from; i <= kx.to; i++) {
+            for (let j = ky.from; j <= ky.to; j++) {
+              const tx = Number.isFinite(p.x) ? i * p.x : 0;
+              const ty = Number.isFinite(p.y) ? j * p.y : 0;
+              const shifted: View = { ...view, x: view.x - tx, y: view.y - ty };
+              const children = layer.draw(data, shifted, dims);
+              if (children.length === 0) continue;
+              copies.push(tx === 0 && ty === 0
+                ? { kind: 'group', children }
+                : { kind: 'group', transform: translate(tx, ty), children });
+            }
           }
-        }
+          return copies;
+        };
+        // Through `drawOneLayer`, as a parallax plane draws its sources, so a source that throws paints
+        // nothing and is reported by its own id while the rest of the lattice still draws. As a screen
+        // layer with no effects it hands the copies back unwrapped.
+        const copies = drawOneLayer({ id: layer.id, label: layer.label, space: 'screen', draw: drawCopies }, data, view, dims);
         if (copies.length === 0) continue;
         if (layer.effects && layer.effects.length > 0) out.push({ kind: 'group', effects: layer.effects, children: copies });
         else out.push(...copies);
