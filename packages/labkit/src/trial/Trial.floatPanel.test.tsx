@@ -2,7 +2,7 @@
  * `<Lab sidebar="float">` puts a trial's sidebar in a panel floating over its body, opened from the title bar,
  * instead of a pane beside the body.
  */
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -80,7 +80,8 @@ describe('a floating trial sidebar', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     await user.click(toggle());
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(toggle()).toHaveFocus();
+    // React Aria gives focus back to the trigger on a later frame.
+    await waitFor(() => expect(toggle()).toHaveFocus());
   });
 
   it('offers no toggle to a trial with no sections, and none once suppressed', async () => {
@@ -126,7 +127,7 @@ describe('a floating trial sidebar', () => {
     await user.click(toggle());
     await user.click(screen.getByRole('button', { name: 'Undock Notes' }));
     await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(container.querySelector('.lk-panel-tile')).toContainElement(
       screen.getByTestId('notes-body'),
     );
