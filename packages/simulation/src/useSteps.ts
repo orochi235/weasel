@@ -33,6 +33,7 @@ export function useSteps(
   const frameLoop = useVisibleRaf(
     (_t, loop) => { if (stepRef.current()) loop.request(); },
     {
+      phase: 'update',
       requestFrame: opts.requestFrame,
       cancelFrame: opts.cancelFrame,
     },
