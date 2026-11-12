@@ -37,6 +37,19 @@ describe('SharedBrushSizeDemo', () => {
     expect(nodes().length).toBeGreaterThan(0);
   });
 
+  it('stamps where crypto.randomUUID is missing, as on a page served over plain http to another machine', () => {
+    const real = Object.getOwnPropertyDescriptor(crypto, 'randomUUID');
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+    try {
+      const { container } = render(<SharedBrushSizeDemo />);
+      drag(container.querySelector('canvas')!, 100, 40, 200);
+      expect(nodes().length).toBeGreaterThan(3);
+    } finally {
+      if (real) Object.defineProperty(crypto, 'randomUUID', real);
+      else delete (crypto as { randomUUID?: unknown }).randomUUID;
+    }
+  });
+
   it('keeps a size per brush, and one size for both once shared', () => {
     render(<SharedBrushSizeDemo />);
     const slider = () => screen.getByRole('slider');

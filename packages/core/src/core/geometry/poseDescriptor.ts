@@ -1,6 +1,6 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
-import { extentScale, multiply, poseLinearOf, rotate, wrapAngle } from '@weasel-js/geom';
+import { extentScale, lerp, multiply, poseLinearOf, rotate, wrapAngle } from '@weasel-js/geom';
 import type { TargetAxes } from '@weasel-js/animator';
 import type { PoseComposition } from 'core/scene/composeFrame';
 
@@ -112,15 +112,17 @@ export const RECT_POSE_DESCRIPTOR: PoseDescriptor<Bounds> = {
   lerp: (a, b, t) => {
     const pose = {
       ...a,
-      x: a.x + (b.x - a.x) * t,
-      y: a.y + (b.y - a.y) * t,
-      width: a.width + (b.width - a.width) * t,
-      height: a.height + (b.height - a.height) * t,
+      x: lerp(a.x, b.x, t),
+      y: lerp(a.y, b.y, t),
+      width: lerp(a.width, b.width, t),
+      height: lerp(a.height, b.height, t),
     };
     // The short way round, as `axes` marks the rotation for an animation.
     if (a.rotation !== undefined || b.rotation !== undefined) {
       const from = a.rotation ?? 0;
-      pose.rotation = from + wrapAngle((b.rotation ?? 0) - from) * t;
+      const to = b.rotation ?? 0;
+      const turn = wrapAngle(to - from);
+      pose.rotation = lerp(from, turn === to - from ? to : from + turn, t);
     }
     return pose;
   },

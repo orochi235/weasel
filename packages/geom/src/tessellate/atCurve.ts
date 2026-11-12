@@ -1,6 +1,7 @@
 import { bezierPoint, segmentCoords } from '../along/bezier';
 import type { LengthRun } from '../along/lengthTable';
 import { segmentLength } from '../paths/segmentLength';
+import { lerp } from '../scalar';
 import type { Polyline } from './polyline';
 
 /** A curve position found on one flattening of its run. */
@@ -89,5 +90,3 @@ function arcShare(seg: readonly number[], t: number): number {
   const whole = segmentLength(seg, 2);
   return whole > 0 ? segmentLength(seg, 2, 0, t) / whole : t;
 }
-
-const lerp = (a: number, b: number, f: number): number => a + (b - a) * f;

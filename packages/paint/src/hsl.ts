@@ -1,5 +1,7 @@
 // HSL, the polar form of gamma-encoded sRGB that CSS `hsl()` writes.
 
+import { wrapDeg } from './hue';
+
 /** HSL to sRGB. Hue in degrees, any number of turns; saturation, lightness and output all 0..1. */
 export function hslToSrgb(h: number, s: number, l: number): [number, number, number] {
   if (s === 0) return [l, l, l];
@@ -33,5 +35,5 @@ export function srgbToHsl(r: number, g: number, b: number): [number, number, num
   if (max === r) h = ((g - b) / d) % 6;
   else if (max === g) h = (b - r) / d + 2;
   else h = (r - g) / d + 4;
-  return [(((h * 60) % 360) + 360) % 360, s, l];
+  return [wrapDeg(h * 60), s, l];
 }
