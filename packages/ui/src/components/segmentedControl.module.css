@@ -371,3 +371,22 @@
 .variant_flat[data-orientation='vertical'] .segment:last-of-type {
   border-radius: 0 0 var(--wzl-radius-sm) var(--wzl-radius-sm);
 }
+
+/* Forced colors drop the selected segment's gradient and shadow, so no segment would read as on. */
+@media (forced-colors: active) {
+  .segmentSelected {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    text-shadow: none;
+  }
+
+  .segmentSelected::before {
+    display: none;
+  }
+
+  .segmentMixed {
+    outline: 1px dashed CanvasText;
+    outline-offset: -1px;
+  }
+}

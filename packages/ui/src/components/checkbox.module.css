@@ -62,3 +62,20 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Forced colors repaint every background as Canvas, the mark's fill included, so a checked box
+   would read as empty. The box takes the system's selected pair instead. */
+@media (forced-colors: active) {
+  .checkbox:checked,
+  .checkbox:indeterminate {
+    forced-color-adjust: none;
+    background: Highlight;
+    border-color: Highlight;
+  }
+
+  .checkbox:checked::before,
+  .checkbox:indeterminate::before {
+    forced-color-adjust: none;
+    background: HighlightText;
+  }
+}

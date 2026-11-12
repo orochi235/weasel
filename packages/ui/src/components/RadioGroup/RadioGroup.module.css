@@ -78,6 +78,14 @@
   transform: scale(1);
 }
 
+/* Forced colors repaint the dot's fill as Canvas, so a chosen radio would read as empty. */
+@media (forced-colors: active) {
+  .dot::after {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}
+
 /* A radio group laid along a track shape: its label and radios are placed on the run. */
 .along {
   composes: root from '../Along/runRow.module.css';

@@ -80,6 +80,14 @@
   background: var(--wzl-accent-strong);
 }
 
+/* Forced colors repaint the indicator's fill as Canvas, so no tab would read as chosen. */
+@media (forced-colors: active) {
+  .tab[data-selected]::after {
+    forced-color-adjust: none;
+    background: Highlight;
+  }
+}
+
 .tabs[data-orientation="vertical"] .tab[data-selected]::after {
   inset-inline-start: auto;
   inset-inline-end: calc(-1 * (var(--wzl-space-4) + 1px));

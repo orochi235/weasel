@@ -59,3 +59,29 @@
   composes: toggleText from '../toggleLabel.module.css';
   line-height: 1.2;
 }
+
+/* Forced colors repaint the track and thumb as Canvas, leaving neither the thumb nor its side visible. */
+@media (forced-colors: active) {
+  .track,
+  .thumb {
+    forced-color-adjust: none;
+  }
+
+  .track {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .thumb {
+    background: CanvasText;
+  }
+
+  .switch[data-selected] .track {
+    background: Highlight;
+    border-color: Highlight;
+  }
+
+  .switch[data-selected] .thumb {
+    background: HighlightText;
+  }
+}
