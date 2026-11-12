@@ -349,6 +349,20 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
+  iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
+  and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
+  avoids it (iconfab's README, "Known problems", 2026-11-11). Reported by the agent that built the lab and
+  not yet reproduced in weasel. Closes when a labkit test mounting 100 targets in one commit renders without
+  the error and iconfab drops its batching.
+- **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
+  stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
+  scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
+  frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
+- **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
+  target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
+  screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
+
 - **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
   lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
   `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
