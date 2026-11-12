@@ -1,4 +1,4 @@
-import { useLatest, useVisibleRaf } from '@weasel-js/core';
+import { useDeviceProfile, useLatest, useVisibleRaf } from '@weasel-js/core';
 import { type LoupePoint, type LoupeSize, loupeExtent } from '@weasel-js/loupe';
 import { type RefObject, useEffect, useRef } from 'react';
 import { drawSourceLens, type LoupeSource, resolveLoupeSource, sourceBoxIn } from './sourceLens';
@@ -22,7 +22,8 @@ export interface SourceLoupeProps {
  */
 export function SourceLoupe({ aim, factor, diameter, source, hostRef }: SourceLoupeProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+  // Watched, so a window moved to a display of another density resizes the lens.
+  const { dpr } = useDeviceProfile();
   const argsRef = useLatest({ aim, factor, diameter, dpr, source });
 
   const loop = useVisibleRaf(

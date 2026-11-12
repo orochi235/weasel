@@ -110,7 +110,8 @@ export interface PointerSample {
 
 /** Context for `forEachCoalesced`: the canvas's client rect and its view. */
 export interface CoalescedCtx {
-  canvasRect: { left: number; top: number };
+  /** The canvas's client position; `layoutBoxOf(canvas)` also carries the scale an ancestor transform shows it at. */
+  canvasRect: { left: number; top: number; scale?: { x: number; y: number } };
   view: { x: number; y: number; scale: { x: number; y: number } };
 }
 
@@ -132,7 +133,8 @@ export function forEachCoalesced(
   const sub = typeof get === 'function' ? get.call(event) : [];
   const list = sub.length > 0 ? sub : [event];
   for (const e of list) {
-    const [screenX, screenY] = [e.clientX - ctx.canvasRect.left, e.clientY - ctx.canvasRect.top];
+    const { left, top, scale } = ctx.canvasRect;
+    const [screenX, screenY] = [(e.clientX - left) / (scale?.x ?? 1), (e.clientY - top) / (scale?.y ?? 1)];
     const [worldX, worldY] = clientToWorld(e.clientX, e.clientY, ctx.canvasRect, ctx.view);
     cb({
       clientX: e.clientX,

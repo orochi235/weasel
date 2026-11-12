@@ -1,4 +1,4 @@
-import { FALLBACK_ACCENT } from '@weasel-js/core';
+import { FALLBACK_ACCENT, useDeviceProfile } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ThemeColorSpec, useThemeColors } from '../../canvas/useThemeColors';
@@ -53,6 +53,8 @@ export function GridCanvas<C>({
   const started = useRef(false);
   const { reticle, factor, size, conditions, dpr } = request;
   const { width: w, height: h } = size;
+  // The screen's density, which the buffer is sized for; `dpr` is the capture's.
+  const { dpr: sd } = useDeviceProfile();
   useEffect(() => source.subscribe(() => setTick((n) => n + 1)), [source]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: the request's fields and `tick` are the signal to capture again; the capture reads `latest`
   useEffect(() => {
@@ -86,7 +88,6 @@ export function GridCanvas<C>({
     const el = canvas.current;
     const ctx = el?.getContext('2d');
     if (!el || !ctx || !colors) return;
-    const sd = el.ownerDocument.defaultView?.devicePixelRatio ?? 1;
     const width = Math.max(1, Math.round(w * sd));
     const height = Math.max(1, Math.round(h * sd));
     if (el.width !== width) el.width = width;
@@ -103,6 +104,6 @@ export function GridCanvas<C>({
       y: Math.round(height / 2 - read.capture.at.y * factor * sd) / sd,
     };
     drawPixelGrid(ctx, { ...view, origin }, read.mask, colors);
-  }, [colors, read, factor, dpr, w, h]);
+  }, [colors, read, factor, dpr, sd, w, h]);
   return <canvas ref={attach} className="lk-lens-grid" />;
 }

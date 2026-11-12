@@ -15,6 +15,7 @@ import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import s from './hud.module.css';
 import { useHostAnchor } from './useHostAnchor';
 import type { View } from 'core/viewport/view';
+import { layoutBoxOf } from '@weasel-js/routing';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 
 /** Props for `<CursorCoordsHud>`. */
@@ -100,7 +101,7 @@ export function CursorCoordsHud({ canvasRef, anchorRef, viewRef, toWorld, offset
         e.clientX >= rect.left && e.clientX <= rect.right &&
         e.clientY >= rect.top  && e.clientY <= rect.bottom;
       const [wx, wy] = toWorldRef.current?.(e.clientX, e.clientY)
-        ?? clientToWorld(e.clientX, e.clientY, rect, view);
+        ?? clientToWorld(e.clientX, e.clientY, layoutBoxOf(canvas), view);
       const world = { x: wx, y: wy };
       setState({ client, world, inCanvas });
     };

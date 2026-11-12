@@ -3,6 +3,7 @@
  * anything else showing the canvas's own pixels goes through.
  */
 import { clamp } from '@weasel-js/geom';
+import { layoutBoxOf } from '@weasel-js/routing';
 import { canvasPaintsWith } from './canvasBackend';
 import { readCanvasPixels } from './readCanvasPixels';
 
@@ -31,9 +32,10 @@ export function regionOnCanvas(
   canvas: HTMLCanvasElement, region: Rect | undefined, at: { x: number; y: number },
   rw: (dpr: number) => number, rh: (dpr: number) => number,
 ): Rect | null {
-  const cssRect = canvas.getBoundingClientRect();
-  if (cssRect.width === 0) return null;
-  const dpr = canvas.width / cssRect.width;
+  // Its CSS size, which `region` is in: an ancestor transform changes the client rect and not the buffer.
+  const css = layoutBoxOf(canvas);
+  if (css.width === 0) return null;
+  const dpr = canvas.width / css.width;
   const target = region
     ? {
         x: Math.round(region.x * dpr), y: Math.round(region.y * dpr),

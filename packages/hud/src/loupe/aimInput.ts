@@ -1,3 +1,4 @@
+import { clientToCanvas } from '@weasel-js/core';
 import type { LoupeAimInput } from '@weasel-js/loupe';
 
 interface Point { x: number; y: number }
@@ -16,8 +17,8 @@ export function lensAimInput(
   let pressed = false;
   let holding = false;
   const local = (clientX: number, clientY: number): Point => {
-    const r = input.getBoundingClientRect();
-    return { x: clientX - r.left, y: clientY - r.top };
+    const [x, y] = clientToCanvas(input, clientX, clientY);
+    return { x, y };
   };
   return {
     aimAt(clientX, clientY, held) {

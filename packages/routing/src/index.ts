@@ -240,7 +240,9 @@ export {
   pendingKindOf, type PendingIngestItem,
 } from './ingestion/ingestItems';
 export type { IngestItem } from '@weasel-js/gestures';
-export { clientToCanvas, clientToCanvasRect } from './viewport/clientToCanvas';
+export {
+  canvasToClient, clientScaleOf, clientToCanvas, clientToCanvasRect, layoutBoxOf, type LayoutBox, type ShownElement,
+} from './viewport/clientToCanvas';
 export { dlog, dwarn, isDebugEnabled } from './dlog';
 
 // ─── menus ────────────────────────────────────────────────────────────────

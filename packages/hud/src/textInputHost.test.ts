@@ -91,6 +91,17 @@ describe('the hidden text input', () => {
     expect([input().style.left, input().style.top, input().style.width, input().style.height]).toEqual(['40px', '45px', '50px', '20px']);
   });
 
+  it('sits at the edit on a canvas an ancestor transform shows at half size', () => {
+    const e = editor();
+    hud.add(e.w);
+    hud.focus(e.w);
+    Object.defineProperty(el, 'offsetWidth', { value: 400, configurable: true });
+    Object.defineProperty(el, 'offsetHeight', { value: 300, configurable: true });
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 5, width: 200, height: 150 } as DOMRect);
+    e.setEditing(true);
+    expect([input().style.left, input().style.top, input().style.width, input().style.height]).toEqual(['25px', '25px', '25px', '10px']);
+  });
+
   it('hands its keys to the widget, and leaves an input method\'s keys alone', () => {
     const e = editor();
     hud.add(e.w);

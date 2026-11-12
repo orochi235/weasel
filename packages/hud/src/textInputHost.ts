@@ -1,3 +1,4 @@
+import { layoutBoxOf } from '@weasel-js/core';
 import { imeKey } from '@weasel-js/ui-input';
 import type { Hud } from './hud';
 import { isFocusable, type HudTextInput, type Widget } from './widget';
@@ -44,10 +45,11 @@ export function wireTextInput(element: HTMLElement, hud: Hud, on: TextInputHandl
     const w = hud.focused;
     const state = w && source?.widget === w && isFocusable(w) ? source.text.read() : null;
     if (!state) { release(); return; }
-    const box = element.getBoundingClientRect();
+    // The input is the page's, fixed in client px; the widget's rect is the canvas's CSS px.
+    const { left, top, scale } = layoutBoxOf(element);
     Object.assign(input.style, {
-      left: `${box.left + state.rect.x}px`, top: `${box.top + state.rect.y}px`,
-      width: `${state.rect.w}px`, height: `${state.rect.h}px`,
+      left: `${left + state.rect.x * scale.x}px`, top: `${top + state.rect.y * scale.y}px`,
+      width: `${state.rect.w * scale.x}px`, height: `${state.rect.h * scale.y}px`,
     });
     if (state.label) input.setAttribute('aria-label', state.label);
     else input.removeAttribute('aria-label');

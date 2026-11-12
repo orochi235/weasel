@@ -2,6 +2,7 @@ import type { Bounds } from './fitViewToBounds';
 import type { View } from './view';
 import { viewToTransform } from './view';
 import { worldToScreen } from './viewTransform';
+import { canvasToClient } from '@weasel-js/routing';
 
 /** Options for {@link sceneNodeClientRect}. */
 export interface SceneNodeClientRectOpts {
@@ -40,12 +41,14 @@ export function sceneNodeClientRect(opts: SceneNodeClientRectOpts): NodeClientRe
   const t = viewToTransform(opts.view);
   const [x0, y0] = worldToScreen(bounds.x, bounds.y, t);
   const [x1, y1] = worldToScreen(bounds.x + bounds.width, bounds.y + bounds.height, t);
-  const canvasRect = opts.canvas.getBoundingClientRect();
+  // Through the canvas's own scale, which an ancestor transform sets.
+  const [cx0, cy0] = canvasToClient(opts.canvas, x0, y0);
+  const [cx1, cy1] = canvasToClient(opts.canvas, x1, y1);
   // A flipped (y-up) axis draws the box's far world edge first on screen.
   return {
-    x: canvasRect.left + Math.min(x0, x1),
-    y: canvasRect.top + Math.min(y0, y1),
-    width: Math.abs(x1 - x0),
-    height: Math.abs(y1 - y0),
+    x: Math.min(cx0, cx1),
+    y: Math.min(cy0, cy1),
+    width: Math.abs(cx1 - cx0),
+    height: Math.abs(cy1 - cy0),
   };
 }

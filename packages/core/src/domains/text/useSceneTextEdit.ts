@@ -23,7 +23,7 @@ import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
 import { inheritedPaintIn } from '../../canvas/inheritedPaints';
 import { withInheritedPaint } from '../../core/scene/inheritedPaint';
-import { clientToCanvas } from '@weasel-js/routing';
+import { clientToCanvas, layoutBoxOf } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
@@ -210,13 +210,14 @@ export function useSceneTextEditor<
     const root = containerRef.current;
     const canvas = root ? findMountedCanvas(root, openedOnRef.current) : null;
     if (!root || !canvas) return null;
-    const a = canvas.element.getBoundingClientRect();
-    const b = root.getBoundingClientRect();
+    // Layout boxes: under an ancestor transform a client offset is the container's px times its scale.
+    const a = layoutBoxOf(canvas.element);
+    const b = layoutBoxOf(root);
     return {
       canvas,
       box: {
-        x: a.left - b.left - root.clientLeft + root.scrollLeft,
-        y: a.top - b.top - root.clientTop + root.scrollTop,
+        x: (a.left - b.left) / b.scale.x - root.clientLeft + root.scrollLeft,
+        y: (a.top - b.top) / b.scale.y - root.clientTop + root.scrollTop,
         width: a.width,
         height: a.height,
       },

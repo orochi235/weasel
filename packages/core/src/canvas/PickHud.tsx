@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
 import type { WorldPoint } from '@weasel-js/routing';
+import { layoutBoxOf } from '@weasel-js/routing';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import { useHostAnchor } from './useHostAnchor';
 import s from './hud.module.css';
@@ -75,7 +76,7 @@ export function PickHud({ canvasRef, anchorRef, viewRef, toWorld, pickEvery, pic
         return;
       }
       const [x, y] = toWorldRef.current?.(e.clientX, e.clientY)
-        ?? clientToWorld(e.clientX, e.clientY, rect, view);
+        ?? clientToWorld(e.clientX, e.clientY, layoutBoxOf(canvas), view);
       const world = { x, y };
       let ids: readonly string[] = [];
       try {
