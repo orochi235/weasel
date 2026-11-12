@@ -36,14 +36,17 @@ export function useGirthTool(options: UseGirthToolOptions = {}): Tool {
   const opts = useLatest({ reach: options.reach });
   const env = useMemo(() => {
     const changed = createEmitter();
-    const held: { focus: GirthFocus | null } = { focus: null };
+    const held: { focus: GirthFocus | null; reach: number | null } = { focus: null, reach: null };
     const value: GirthEnv & { listen(fn: () => void): () => void } = {
       focus: () => held.focus,
       setFocus: (next) => {
         held.focus = next;
         changed.emit();
       },
-      reachPx: () => opts.current.reach ?? DEFAULT_GIRTH_REACH_PX,
+      reachPx: () => opts.current.reach ?? held.reach ?? DEFAULT_GIRTH_REACH_PX,
+      noteReach: (px) => {
+        held.reach = px;
+      },
       listen: changed.subscribe,
     };
     return value;
