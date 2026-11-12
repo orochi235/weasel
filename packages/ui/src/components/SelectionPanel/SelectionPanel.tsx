@@ -132,7 +132,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   const shown = panelMarkedPaths(sections, props.selected ?? NO_MARKS, renderers);
   const marks: PanelMarks = { selected: shown, lead: shown.at(-1) ?? null, ...(props.markHidden ? { hidden: scope.hidden } : {}) };
   const rowSelection = useSelectedRow(props.selected ?? NO_MARKS, marks.lead ?? null, props.onSelect);
-  const { settles } = useParamsPolicy('panel');
+  const { settles, textWaitMs } = useParamsPolicy('panel');
 
   if (nodes.length === 0) {
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
@@ -152,6 +152,7 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     entryAt: scope.entryAt,
     targets: scope.targets,
     settles,
+    textWaitMs,
     paintAbove: (node) => paintAbove(scene, node as never),
   };
 

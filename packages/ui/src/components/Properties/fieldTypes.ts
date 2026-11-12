@@ -149,6 +149,9 @@ export interface PropertyStringFieldProps extends FieldBase {
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
+  /** How long `onInput` waits for the next keystroke before it gets the text, in ms. Whatever is waiting is
+   *  sent when the edit settles, before `onChange`. Absent or 0, every keystroke. */
+  inputWaitMs?: number;
   placeholder?: string;
   maxLength?: number;
   /** Commit once typing rests, as well as on blur or Enter. Defaults to the `typing.settleWhenIdle` kit setting. */

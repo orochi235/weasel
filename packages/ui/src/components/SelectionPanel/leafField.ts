@@ -30,8 +30,8 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
     },
     fontFamily: ctx.valueAt(siblingPath(ctx.path, 'fontFamily')).value,
   };
-  const { settles } = ctx;
-  const settled = prefFieldProps(ctx.pref, state, 'panel', settles);
+  const { settles, textWaitMs } = ctx;
+  const settled = prefFieldProps(ctx.pref, state, 'panel', settles, textWaitMs);
   const field = settled && ctx.drafts
     ? withDrafts(settled, prefFieldProps(ctx.pref, drafting(state, ctx.drafts), 'panel', settles), 'panel', settles)
     : settled;

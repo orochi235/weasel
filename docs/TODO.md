@@ -385,13 +385,6 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
   target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
   screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
-- **(P3) [agent] `params.form.textWaitMs` and `params.panel.textWaitMs` do nothing.** `uiKitSettingsSchema`
-  offers a text wait for every surface, but only labkit reads one (`useTextWaitMs`, `useDebouncedText`); a form or
-  panel told `settles.string: false` writes text on every keystroke whatever wait it is given. The wait needs a
-  path from `useParamsPolicy` to each surface's string control (`PrefsForm`/`PrefControl`'s render context,
-  `SelectionPanel`'s and `Bar`'s), about fifteen sites, which is why the 2026-11-11 design audit left it. Closes
-  when a test sets `params.form.textWaitMs` and `params.panel.textWaitMs` and sees the write wait, or when the two
-  settings are removed from the schema.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown

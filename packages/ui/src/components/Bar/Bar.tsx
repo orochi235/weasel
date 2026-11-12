@@ -94,8 +94,8 @@ export function Bar(props: BarProps) {
   const judge = (entry?: PrefEntry) => prefJudge(schema, read, entry, props.over);
   const { shown, disabled, active } = applyPrefConditions(schema, judge(), { aliasOver: over, aliasHolds: targets.holds });
   const entryAt = entryApplier(judge);
-  const { settles } = useParamsPolicy('panel');
-  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, active, entryAt, targets, settles };
+  const { settles, textWaitMs } = useParamsPolicy('panel');
+  const draw: Draw = { values, mixed, renderers, onChange, fields, disabled, active, entryAt, targets, settles, textWaitMs };
   return (
     <BarLayout
       nodes={shown === null ? [] : shownBarNodes(groupBarNodes(orderPrefGroup(shown, props.order), '', (group, path) => <GroupBody draw={draw} group={group} path={path} />, { values: read, onChange, over: props.over && 'children' in props.over ? props.over : schema }), (node) => shownNode(node, draw))}
@@ -132,6 +132,7 @@ interface Draw {
   /** The schema the bar's aliases point into, as its conditions leave it: what an alias is drawn from. */
   targets: PrefAliasTargets;
   settles: Readonly<Record<LiveControl, boolean>>;
+  textWaitMs: number;
 }
 
 /** `node` as the bar draws it: an alias as the leaf it shows, unless a renderer of the kind draws aliases itself. */
@@ -199,6 +200,7 @@ function leafCell({ path: own, leaf, at }: BarLeafNode, surface: LeafSurface, dr
     ...(draw.active.has(own) ? { active: true } : {}),
     entryAt: at === undefined ? draw.entryAt : draw.targets.entryAt,
     settles: draw.settles,
+    textWaitMs: draw.textWaitMs,
   };
   return {
     key: own,
@@ -255,6 +257,7 @@ function GroupBody({ draw, group, path }: { draw: Draw; group: PrefGroup; path: 
     active: draw.active,
     entryAt: draw.entryAt,
     settles: draw.settles,
+    textWaitMs: draw.textWaitMs,
     leaves: {
       row: (node) => (node.leaf.hidden === true ? null : leafRow(shownNode(node, draw), draw)),
       cells: (leaves) => barCells(leaves, draw),

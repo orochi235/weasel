@@ -51,3 +51,12 @@ it('drops text still waiting when the value is replaced from outside', () => {
   expect(write).not.toHaveBeenCalled();
   expect(result.current.local).toBe('reset');
 });
+
+it('writes text still waiting at once when flushed, and not again when the wait ends', () => {
+  const { write, result } = mount();
+  act(() => result.current.type('word'));
+  act(() => result.current.flush());
+  expect(write.mock.calls).toEqual([['word']]);
+  act(() => vi.advanceTimersByTime(150));
+  expect(write).toHaveBeenCalledTimes(1);
+});

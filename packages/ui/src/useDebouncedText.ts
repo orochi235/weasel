@@ -3,13 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 /**
  * Live text held locally between debounced commits, so typing into a control that writes as it changes does
  * not write on every keystroke; `PARAMS_TEXT_WAIT_MS` says how long each surface waits. Locally controlled
- * between commits, which means it has to notice the value changing underneath it.
+ * between commits, which means it has to notice the value changing underneath it. `flush` writes text still
+ * waiting now: a field settling its edit sends its last draft before the commit.
  */
 export function useDebouncedText(
   value: string,
   write: (value: string) => void,
   debounceMs: number,
-): { local: string; type: (next: string) => void } {
+): { local: string; type: (next: string) => void; flush: () => void } {
   const [local, setLocal] = useState(value);
   const lastExternal = useRef(value);
   // The text typed since the last write, and the timer that will write it.
@@ -50,5 +51,6 @@ export function useDebouncedText(
       pending.current = { text: next, timer: setTimeout(() => settle(true), debounceMs) };
       if (debounceMs === 0) settle(true);
     },
+    flush: () => settle(true),
   };
 }
