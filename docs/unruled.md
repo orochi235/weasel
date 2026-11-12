@@ -1701,3 +1701,30 @@ Calls the lanes made without a ruling:
   changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
 - Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`
   pick the topmost hit, so with alt-cycling `onClick` can name a different node from the one the press selected.
+
+## Audit round sixteen (2026-11-11): leftovers
+
+- A raw `History`'s `undo`, `redo` and `goto` throw while a journal is active, as `beginJournal` does, rather than
+  stepping into the journal as the scene facade's `undo` does (2026-11-12).
+- A snapshot in an unsupported version throws `SnapshotShapeError`, checked before any node; an unregistered
+  function key throws a new `SnapshotKeyError` carrying `id`, `field` and `key` (2026-11-12).
+- A text edit takes focus back from a checkbox or a slider in its chrome after styling, as from a button, since
+  text-dom now asks gestures' `isEditableTarget`; arrow keys on a slider then reach the text, not the slider
+  (2026-11-12).
+- Open: whether Mod+Z in a text field inside an editor with its own history (`PrefSchemaEditor`'s fields,
+  `CssVarsPanel`'s apart from its filter) steps the editor or is left to the field. Page-level handlers leave it to
+  the field (`undoKeyStep`); these two take it.
+- Open: draw's soft modes without a journal cannot discard an edit that coalesced into the entry before the mode,
+  and a text box's typing coalesces into its insert on purpose (`useTextEditSession`'s "one undo entry with its
+  insert"). Sealing the history on entry fixes discard and splits that entry. No soft mode has a coalescing edit
+  today.
+- Open: whether a `LensCapture`'s bitmap stays valid after the source's next capture. The Pixels source closes the
+  captures it throws away, and leaves a replaced shot open because `capture()` handed it to a caller that may paint
+  it later.
+- Open: whether paint keeps a lerp of its own (no dependencies) or takes geom's, which also stays finite where
+  `b - a` overflows. d3's transition pins `t` 0 and 1 over a pose descriptor's lerp; that is not a copy.
+- Open: whether `useGestureDispatcher`'s `views` (multi-view routing, which core fills through
+  `@weasel-js/routing/internal`) becomes public surface.
+- Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
+- Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
+  ask for `^19.0.0`.
