@@ -439,14 +439,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [agent] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
-  0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
-  subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
-  cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
-  disabled.
-  Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
-  fades when disabled also desaturates.
-
 - **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
   `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
   plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's

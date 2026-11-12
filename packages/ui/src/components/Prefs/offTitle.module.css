@@ -1,4 +1,5 @@
 /* A group or a section its `enableIf` turns off, in a heading that is no frame: its name dims as a frame's title does. */
-.off {
+.disabled {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
 }

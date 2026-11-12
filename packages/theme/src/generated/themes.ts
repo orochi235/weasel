@@ -34,6 +34,7 @@ export type TokenName =
   | '--wzl-curve-width'
   | '--wzl-danger'
   | '--wzl-danger-base'
+  | '--wzl-disabled-filter'
   | '--wzl-ease-in-cubic'
   | '--wzl-ease-in-out-cubic'
   | '--wzl-ease-out-back'
@@ -306,6 +307,7 @@ export const THEMES = {
         '--wzl-stance-preview-title-size': "10px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-disabled-filter': "grayscale(1)",
         '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
@@ -489,6 +491,7 @@ export const THEMES = {
         '--wzl-stance-preview-title-size': "12px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-disabled-filter': "grayscale(1)",
         '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
@@ -672,6 +675,7 @@ export const THEMES = {
         '--wzl-stance-preview-title-size': "14px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-disabled-filter': "grayscale(1)",
         '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
@@ -855,6 +859,7 @@ export const THEMES = {
         '--wzl-stance-preview-title-size': "10px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-disabled-filter': "grayscale(1)",
         '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
@@ -1038,6 +1043,7 @@ export const THEMES = {
         '--wzl-stance-preview-title-size': "12px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-disabled-filter': "grayscale(1)",
         '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
@@ -1221,6 +1227,7 @@ export const THEMES = {
         '--wzl-stance-preview-title-size': "14px",
         '--wzl-stance-preview-title-case': "none",
         '--wzl-stance-preview-title-inset': "6px 10px 0",
+        '--wzl-disabled-filter': "grayscale(1)",
         '--wzl-danger-base': "#d94a3f",
         '--wzl-warning-base': "#d99a3f",
         '--wzl-success-base': "#2ec27e",
@@ -1874,6 +1881,11 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       "stance-preview-title-inset": {
         "value": "6px 10px 0",
         "type": "dimension"
+      },
+      "disabled-filter": {
+        "value": "grayscale(1)",
+        "type": "string",
+        "description": "A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled)."
       }
     },
     "pins": {
@@ -3252,6 +3264,11 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "stance-preview-title-inset": {
         "type": "dimension",
         "value": "6px 10px 0"
+      },
+      "disabled-filter": {
+        "type": "string",
+        "value": "grayscale(1)",
+        "description": "A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled)."
       },
       "danger-base": {
         "type": "color",

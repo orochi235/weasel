@@ -149,6 +149,7 @@
 .textarea:disabled,
 .readoutInput:disabled {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 
@@ -162,12 +163,13 @@
 }
 
 /* A disabled inline paint: the editor itself, inert, dimmed here once since none of its controls is disabled. */
-.paintOff {
+.paintDisabled {
   min-inline-size: 0;
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 
-.paintOffBody {
+.paintDisabledBody {
   display: contents;
 }

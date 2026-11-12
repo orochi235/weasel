@@ -81,6 +81,7 @@
     "check:spacing": "tsx scripts/check-spacing.ts",
     "check:numeric": "tsx scripts/check-numeric.ts",
     "check:on-accent": "tsx scripts/check-on-accent.ts",
+    "check:disabled": "tsx scripts/check-disabled.ts",
     "check:controls": "tsx scripts/check-controls.ts",
     "check:labels": "tsx scripts/check-labels.ts",
     "check:layers": "tsx scripts/check-layers.ts",

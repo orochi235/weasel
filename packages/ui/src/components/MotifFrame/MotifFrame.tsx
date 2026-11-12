@@ -93,6 +93,6 @@ export function MotifFrame({
     'data-motif': chosen.id,
     ...(onContextMenu ? { onContextMenu } : {}),
   };
-  const shownTitle = disabled && title != null ? <span className={s.titleOff}>{title}</span> : title;
+  const shownTitle = disabled && title != null ? <span className={s.titleDisabled}>{title}</span> : title;
   return chosen.render({ heading: { title: shownTitle, titleId, inline, note, level, twisty, twistyAt, leading, actions }, body: children, root });
 }
