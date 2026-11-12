@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { importSvgText, openSvgFile, openSvgText, UnreadableSvgError } from './openSvg';
+import { importSvgFile, importSvgText, openSvgFile, openSvgText, UnreadableSvgError } from './openSvg';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { contentRoots } from '@weasel-js/core';
 import { backgroundOf, setBackground } from './docBackground';
 import { drawScene } from './testScenes';
-import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
+import { SWILL_NAMESPACES } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
 function sceneWithOneShape() {
@@ -173,18 +173,6 @@ describe('importSvgText', () => {
   });
 });
 
-describe('pickSvgFileNamed', () => {
-  afterEach(() => vi.restoreAllMocks());
-
-  it('resolves with the picked file\'s name beside its text', async () => {
-    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
-      Object.defineProperty(this, 'files', { value: [new File(['<svg/>'], 'art.svg', { type: 'image/svg+xml' })] });
-      this.dispatchEvent(new Event('change'));
-    });
-    expect(await pickSvgFileNamed()).toEqual({ name: 'art.svg', text: '<svg/>' });
-  });
-});
-
 describe('openSvgFile', () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -252,5 +240,21 @@ describe('a file that is not an SVG document', () => {
     expect(t.leaveMode).not.toHaveBeenCalled();
     expect(t.showFirstPage).not.toHaveBeenCalled();
     expect(danger).toHaveBeenCalledWith('“broken.svg” was not opened', expect.anything());
+  });
+
+  it('says so when the picked file cannot be read, as Save does when it cannot write, rather than acting canceled', async () => {
+    const unreadable = new File(['<svg/>'], 'gone.svg');
+    vi.spyOn(unreadable, 'text').mockRejectedValue(new DOMException('The file is gone', 'NotFoundError'));
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
+      Object.defineProperty(this, 'files', { value: [unreadable] });
+      this.dispatchEvent(new Event('change'));
+    });
+    const danger = vi.spyOn(toast, 'danger');
+    const t = { scene: sceneWithOneShape(), setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn() };
+    await openSvgFile(t);
+    expect(danger).toHaveBeenLastCalledWith('“gone.svg” was not opened', expect.objectContaining({ description: 'The file is gone' }));
+    await importSvgFile(t.scene);
+    expect(danger).toHaveBeenLastCalledWith('“gone.svg” was not imported', expect.objectContaining({ description: 'The file is gone' }));
+    expect(contentRoots(t.scene)).toEqual([asNodeId('old')]);
   });
 });
