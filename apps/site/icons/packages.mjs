@@ -162,7 +162,12 @@ export const PACKAGES = framed({
   select: `<rect x="4.6" y="4.6" width="8" height="8" rx="0.8" stroke-width="1.1" stroke-dasharray="1.6 1.4"/><path d="M10.6 10.6v4.8l1.4-1.4 1.6 1.6 .8-.8-1.6-1.6 1.4-1.4z" fill="currentColor" stroke-width="1"/>`,
 
   // A body, the orbit it keeps, and the satellite on it.
-  simulation: `<circle cx="10" cy="10" r="1.8" fill="currentColor"/><circle cx="10" cy="10" r="5.2" stroke-width="1.1" stroke-dasharray="1.6 1.4"/><circle cx="13.68" cy="6.32" r="1.4" fill="currentColor" stroke="none"/>`,
+  // A planet, lit from its moon's side, and the moon's orbit.
+  simulation: `
+    <circle cx="10" cy="10" r="3.6" stroke-width="1"/>
+    <path d="M10 6.4a3.6 3.6 0 0 1 0 7.2 2.2 3.6 0 0 0 0-7.2z" transform="rotate(135 10 10)" fill="currentColor" stroke="none"/>
+    <circle cx="10" cy="10" r="5.6" stroke-width="1.1" stroke-dasharray="1.6 1.4"/>
+    <circle cx="13.96" cy="6.04" r="1.4" fill="currentColor" stroke="none"/>`,
 
   storage: `
     <ellipse cx="10" cy="6.2" rx="4.8" ry="1.6"/>
