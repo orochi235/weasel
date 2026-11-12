@@ -55,6 +55,18 @@ function drag(action: ReturnType<ReturnType<typeof fixture>['action']>, deps: Ac
 }
 
 describe('createRulers', () => {
+  it('refuses a second canvas while one is attached, and keeps serving the first', () => {
+    const { rulers } = fixture();
+    const other = {
+      registerLayer: () => () => {},
+      requestRedraw: () => {},
+      getSurfaceRect: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+    } as unknown as CanvasExtensionApi;
+    expect(() => rulers.contribution.attach!(other, { get: () => undefined })).toThrow(/one canvas/);
+    rulers.contribution.beforePaint!({ view: VIEW } as ContributionFrameCtx);
+    expect(rulers.get().width).toBe(400);
+  });
+
   it('claims presses on the strips along the top and left, and the corner', () => {
     const { layers } = fixture();
     const hit = layers.find((l) => l.id === 'rulers-hit')!;
