@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback } from 'react';
 import type { MouseEvent } from 'react';
 import {
   ActionsProvider, SceneCanvas, rectPath, solid, useMenus, useScene, useSelection,
@@ -42,7 +42,6 @@ function Demo() {
   });
   const selection = useSelection({ scene, mode: 'single' });
   useMenus(MENUS);
-  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
 
   const openRowMenu = useContextMenu('demo.row');
   const onRowMenu = useCallback((id: NodeId, e: MouseEvent) => {
