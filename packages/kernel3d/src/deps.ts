@@ -16,14 +16,13 @@ import {
   add,
   dot,
   len,
-  normalize,
   quatIdentity,
   scale as scaleBy,
   sub,
   type Aabb,
   type Vec3,
 } from '@weasel-js/geom/3d';
-import { cameraEye, type Camera3d } from './camera';
+import { cameraBasis, type Camera3d } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
 import { groundAxes, type Axis } from './ground';
 import { castOntoPlane, rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
@@ -46,7 +45,7 @@ export { worldPoseOf } from './world';
  * depth, and one screen pixel is the same world distance everywhere on it.
  */
 function viewPlaneAt(camera: Camera3d, p: Vec3): { normal: Vec3; offset: number } {
-  const normal = normalize(sub(camera.target, cameraEye(camera)));
+  const normal = cameraBasis(camera).forward;
   return { normal, offset: dot(normal, p) };
 }
 

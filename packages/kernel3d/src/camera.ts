@@ -10,8 +10,10 @@ import {
   add,
   lookAt,
   multiply,
+  normalize,
   perspective,
   scale,
+  sub,
   type Mat4,
   type Vec3,
 } from '@weasel-js/geom/3d';
@@ -22,22 +24,25 @@ import { clamp } from '@weasel-js/geom';
  *  `near`/`far` the clip distances. */
 export interface Camera3d {
   target: Vec3;
-  /** Radians about +y, measured from +z. */
+  /** Radians about `up`. At yaw 0 the eye sits where the turn that carries +y onto `up` carries +z: down +z when
+   *  `up` is +y, down -y when it is +z. */
   yaw: number;
-  /** Radians above the xz plane. */
+  /** Radians above the ground, the plane at right angles to `up`. */
   pitch: number;
   distance: number;
   fov: number;
   near: number;
   far: number;
+  /** The axis the camera orbits about and keeps upright on screen: the world's `up` (`World3d.up`). Default +y. */
+  up?: Vec3;
 }
 
 /** Short of vertical: at exactly ±π/2 the eye lands on the up axis and `lookAt` degenerates. */
 export const MAX_PITCH = Math.PI / 2 - 0.01;
-const UP: Vec3 = { x: 0, y: 1, z: 0 };
+const Y_UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 /** A camera with defaults for every field not given: origin target, level at
- *  yaw 0, distance 10, fov π/4, near 0.1, far 1000. */
+ *  yaw 0, distance 10, fov π/4, near 0.1, far 1000, +y up. */
 export function createCamera(init: Partial<Camera3d>): Camera3d {
   return {
     target: init.target ?? { x: 0, y: 0, z: 0 },
@@ -47,23 +52,79 @@ export function createCamera(init: Partial<Camera3d>): Camera3d {
     fov: init.fov ?? Math.PI / 4,
     near: init.near ?? 0.1,
     far: init.far ?? 1000,
+    ...(init.up ? { up: init.up } : {}),
+  };
+}
+
+/** Where a +y-up camera's x, y and z axes lie in a world with `up` up: the shortest turn carrying +y onto `up`. `null`
+ *  for +y itself, so a +y-up camera's arithmetic runs on its own numbers rather than through a multiply by 1 and 0. */
+type OrbitFrame = { x: Vec3; y: Vec3; z: Vec3 } | null;
+
+function orbitFrame(up: Vec3 | undefined): OrbitFrame {
+  if (!up) return null;
+  const u = normalize(up);
+  // An `up` with no direction, or none finite, is no `up`: +y.
+  if (!Number.isFinite(u.x + u.y + u.z) || (u.x === 0 && u.z === 0 && !(u.y < 0))) return null;
+  const c = u.y;
+  // Straight down has no shortest turn; take the half turn about x.
+  if (1 + c < 1e-12) return { x: { x: 1, y: 0, z: 0 }, y: u, z: { x: 0, y: 0, z: -1 } };
+  const k = 1 / (1 + c);
+  return {
+    x: { x: c + u.z * u.z * k, y: -u.x, z: -u.x * u.z * k },
+    y: u,
+    z: { x: -u.x * u.z * k, y: -u.z, z: c + u.x * u.x * k },
+  };
+}
+
+function inFrame(frame: OrbitFrame, v: Vec3): Vec3 {
+  if (!frame) return v;
+  return add(add(scale(frame.x, v.x), scale(frame.y, v.y)), scale(frame.z, v.z));
+}
+
+/** Where a camera stands and which ways it faces, in world terms. `right` and `up` are the screen's +x and its upward
+ *  direction, unit length, `forward` the unit direction from the eye to the target. */
+export interface CameraBasis {
+  eye: Vec3;
+  forward: Vec3;
+  right: Vec3;
+  up: Vec3;
+  /** The axis the camera orbits about: `camera.up`, unit length. */
+  orbitUp: Vec3;
+}
+
+/** The camera's basis: every reading of where it is and how it is turned goes through this one. */
+export function cameraBasis(camera: Camera3d): CameraBasis {
+  const { target, yaw, pitch, distance } = camera;
+  const frame = orbitFrame(camera.up);
+  const horizontal = Math.cos(pitch) * distance;
+  const offset = inFrame(frame, {
+    x: horizontal * Math.sin(yaw),
+    y: Math.sin(pitch) * distance,
+    z: horizontal * Math.cos(yaw),
+  });
+  const eye = { x: target.x + offset.x, y: target.y + offset.y, z: target.z + offset.z };
+  return {
+    eye,
+    forward: normalize(sub(target, eye)),
+    right: inFrame(frame, { x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) }),
+    up: inFrame(frame, {
+      x: -Math.sin(yaw) * Math.sin(pitch),
+      y: Math.cos(pitch),
+      z: -Math.cos(yaw) * Math.sin(pitch),
+    }),
+    orbitUp: frame ? frame.y : Y_UP,
   };
 }
 
 /** The eye's world position. */
 export function cameraEye(camera: Camera3d): Vec3 {
-  const { target, yaw, pitch, distance } = camera;
-  const horizontal = Math.cos(pitch) * distance;
-  return {
-    x: target.x + horizontal * Math.sin(yaw),
-    y: target.y + Math.sin(pitch) * distance,
-    z: target.z + horizontal * Math.cos(yaw),
-  };
+  return cameraBasis(camera).eye;
 }
 
-/** World-to-view matrix, with +y up. */
+/** World-to-view matrix, upright about the camera's `up`. */
 export function cameraView(camera: Camera3d): Mat4 {
-  return lookAt(cameraEye(camera), camera.target, UP);
+  const { eye, orbitUp } = cameraBasis(camera);
+  return lookAt(eye, camera.target, orbitUp);
 }
 
 /** World-to-clip matrix for a pane of the given width/height `aspect`. */
@@ -136,13 +197,7 @@ export function dollyBy(camera: Camera3d, factor: number, limits?: Partial<Orbit
 export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: number): Camera3d {
   if (!(paneHeight > 0)) return camera;
   const perPixel = (2 * camera.distance * Math.tan(camera.fov / 2)) / paneHeight;
-  const { yaw, pitch } = camera;
-  const right: Vec3 = { x: Math.cos(yaw), y: 0, z: -Math.sin(yaw) };
-  const up: Vec3 = {
-    x: -Math.sin(yaw) * Math.sin(pitch),
-    y: Math.cos(pitch),
-    z: -Math.cos(yaw) * Math.sin(pitch),
-  };
+  const { right, up } = cameraBasis(camera);
   const shift = add(scale(right, -dx * perPixel), scale(up, dy * perPixel));
   return heldFinite(camera, { ...camera, target: add(camera.target, shift) });
 }

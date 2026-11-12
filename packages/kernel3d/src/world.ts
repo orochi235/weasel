@@ -38,7 +38,8 @@ export interface World3d<TData, TLayer extends string> {
   scene: Scene3d<TData, TLayer>;
   viewport: ViewportSource;
   bounds?: NodeBounds<TData, TLayer>;
-  /** The axis gestures resolve against. Default `+y`. */
+  /** The axis gestures resolve against. Default `+y`. Give the camera the same `up` (`createCamera({ up })`) so it
+   *  orbits about it and keeps its horizon level. */
   up?: Vec3;
 }
 

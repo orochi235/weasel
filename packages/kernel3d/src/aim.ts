@@ -6,7 +6,7 @@
 
 import type { AimOutline, AimPoint, AimSpace, ViewAim } from '@weasel-js/core/engine';
 import { add, dot, normalize, scale, sub, type Vec3 } from '@weasel-js/geom/3d';
-import { cameraEye, type Camera3d } from './camera';
+import { cameraBasis, type Camera3d } from './camera';
 import { fromAimPoint, groundAxes, groundHit, toAimPoint, type GroundAxes } from './ground';
 import { projectPoint, rayAt, rectOf, type Viewport3d } from './project';
 import { DEFAULT_UP } from './world';
@@ -41,8 +41,7 @@ function paneCorners(viewport: Viewport3d): { x: number; y: number }[] {
 
 function frustumOf(viewport: Viewport3d): Frustum3d {
   const { camera } = viewport;
-  const eye = cameraEye(camera);
-  const forward = normalize(sub(camera.target, eye));
+  const { eye, forward } = cameraBasis(camera);
   const at = (depth: number): Vec3[] =>
     paneCorners(viewport).map((c) => {
       const ray = rayAt(viewport, c);
