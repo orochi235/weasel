@@ -78,6 +78,7 @@ export type {
 export type { CacheUse } from './layout/layoutCache';
 export { cachedPaintRuns } from './layout/paintCache';
 
+export { graphemeEnds } from './measure/graphemes';
 export { measureText, measuredWidth } from './measure/measureText';
 export type { MeasuredText, MeasuredSpan } from './measure/measureText';
 export { measureTextBounds } from './measure/measureTextBounds';
