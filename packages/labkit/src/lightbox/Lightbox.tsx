@@ -93,12 +93,18 @@ export function Lightbox({
   );
 
   // Disabling closes an open one for good: its owner hears it, and enabling it again does not reopen it.
-  const wanted = expandedProp ?? own;
+  const [wasDisabled, setWasDisabled] = useState(disabled);
+  const [closings, setClosings] = useState(0);
+  if (disabled !== wasDisabled) {
+    setWasDisabled(disabled);
+    if (disabled && (expandedProp ?? own)) {
+      setOwn(false);
+      setClosings((n) => n + 1);
+    }
+  }
   useLayoutEffect(() => {
-    if (!disabled || !wanted) return;
-    setOwn(false);
-    onChangeRef.current?.(false);
-  }, [disabled, wanted, onChangeRef]);
+    if (closings > 0) onChangeRef.current?.(false);
+  }, [closings, onChangeRef]);
 
   const ctx = useMemo<LightboxContextValue | null>(
     () =>
