@@ -50,13 +50,14 @@ function brushTool(id: string, label: string, act: Act, share?: ToolOptionShare)
 
 /** One dot per radius of travel along the stroke. */
 const dots: Act = ({ deps }, trail, r) => {
+  const scene = deps.scene!;
   const ops = [];
   let last: Point | null = null;
   for (const p of trail) {
     if (last && Math.hypot(p.x - last.x, p.y - last.y) < r) continue;
     last = p;
     const pose = { x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r };
-    const node = { id: crypto.randomUUID(), kind: 'mark', layer: 'default', parent: null, pose, data: { path: ellipsePath(pose), fill: { paint: solid(DOT) } } };
+    const node = { id: scene.mintId(), kind: 'mark', layer: 'default', parent: null, pose, data: { path: ellipsePath(pose), fill: { paint: solid(DOT) } } };
     ops.push(createInsertOp({ node, label: 'Dots' }));
   }
   commitOps(deps, ops, 'Dots');
