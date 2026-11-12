@@ -107,6 +107,15 @@
   background: var(--wzl-tree-selected, var(--wzl-border));
 }
 
+/* Forced colors repaint the selected row's fill as Canvas, so no row would read as selected. */
+@media (forced-colors: active) {
+  .item[aria-selected='true'] > .row {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
 .row[href] {
   text-decoration: none;
   cursor: pointer;

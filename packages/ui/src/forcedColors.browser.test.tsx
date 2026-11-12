@@ -4,10 +4,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { commands, userEvent } from 'vitest/browser';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { Input } from '@weasel-js/ui/components/Input';
+import { ItemList } from '@weasel-js/ui/components/ItemList';
 import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
+import { Tree } from '@weasel-js/ui/components/Tree';
 
 // Windows high contrast: the browser repaints backgrounds as Canvas and drops box-shadows, so a
 // state or a focus ring drawn only with those is gone.
@@ -78,6 +80,20 @@ describe('a chosen control still reads as chosen', () => {
     const [on, off] = screen.getAllByRole('button');
     expect(bg(on!)).not.toBe(bg(off!));
     expect(bg(on!)).not.toBe(canvas());
+  });
+});
+
+describe('a chosen row still reads as chosen', () => {
+  test('the selected row of a tree', () => {
+    render(<Tree aria-label="T" selectionMode="single" defaultSelectedIds={['a']} nodes={[{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]} />);
+    const row = (name: string) => screen.getByRole('treeitem', { name }).firstElementChild as Element;
+    expect(bg(row('A'))).not.toBe(canvas());
+  });
+
+  test('the selected row of an item list', () => {
+    render(<ItemList selection="single" rows={[{ id: 'a', label: 'A', selected: true }, { id: 'b', label: 'B' }]} containerProps={{ 'aria-label': 'Items' }} />);
+    const row = (name: string) => screen.getByRole('option', { name });
+    expect(bg(row('A'))).not.toBe(canvas());
   });
 });
 

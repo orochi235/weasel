@@ -68,6 +68,16 @@
   color: var(--wzl-fg);
 }
 
+/* Forced colors repaint the selected row's fill as Canvas, so no row would read as selected. */
+@media (forced-colors: active) {
+  .selected,
+  .selected:hover {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+}
+
 /* Drag feedback. The seam is an outer shadow of the row beside it: it needs no
    measured offset, adds no element for a drag to count as a row, and escapes
    the row's own `overflow: hidden`. */
