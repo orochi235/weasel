@@ -211,7 +211,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
     case 'color':
       return {
         kind: 'color',
-        value: typeof value === 'string' ? value : leaf.default,
+        value: mixed || unset ? undefined : typeof value === 'string' ? value : leaf.default,
         mixed,
         unset,
         alpha: leaf.alpha ? true : undefined,

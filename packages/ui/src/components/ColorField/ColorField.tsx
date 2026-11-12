@@ -11,7 +11,7 @@ import s from './ColorField.module.css';
  * `onChange` once at its end.
  */
 export interface ColorFieldProps {
-  /** Current color, `#rrggbb` or `#rrggbbaa`. Omit when `mixed`. */
+  /** Current color, `#rrggbb` or `#rrggbbaa`. Omit when `mixed` or `unset`. */
   value?: string;
   /** Indeterminate presentation (multi-selection with differing colors):
    *  checkered chip, empty value. The first color edit produces a real
@@ -19,6 +19,9 @@ export interface ColorFieldProps {
    *  edit would otherwise commit a value composed against the
    *  placeholder black). */
   mixed?: boolean;
+  /** No color is held, and whatever paints comes from a fallback: drawn as `mixed` is, without saying the
+   *  values disagree, so an opacity edit cannot write the placeholder back as a color. */
+  unset?: boolean;
   /** Show the opacity slider; emitted values are `#rrggbbaa`. */
   alpha?: boolean;
   /** Draw the opacity slider inert, for a consumer that drops alpha. */
@@ -56,7 +59,7 @@ function hex8Of(value: string): string {
  * commit-on-change would emit one undo entry per tick.
  */
 export function ColorField(props: ColorFieldProps) {
-  const { value, mixed = false, alpha = false, alphaDisabled = false, disabled = false, onInput, onChange, id, className } = props;
+  const { value, mixed = false, unset = false, alpha = false, alphaDisabled = false, disabled = false, onInput, onChange, id, className } = props;
   const hex8 = hex8Of(value ?? '#000000');
   const rgb6 = hex8.slice(0, 7);
   const alpha01 = getAlpha01(hex8);
@@ -75,7 +78,7 @@ export function ColorField(props: ColorFieldProps) {
   // Mixed with no color edit yet: the alpha slider has nothing real to
   // compose against (rgb6 is the placeholder black), so keep it disabled
   // until the first color edit lands.
-  const alphaLocked = mixed && colorDraft === null;
+  const alphaLocked = (mixed || unset) && colorDraft === null;
 
   // Commit only when a gesture actually changed something — blur with no
   // preceding input must not emit (it would create a no-op undo entry).
@@ -95,6 +98,7 @@ export function ColorField(props: ColorFieldProps) {
     <span
       className={[s.root, className].filter(Boolean).join(' ')}
       {...(mixed && colorDraft === null ? { 'data-mixed': '' } : {})}
+      {...(unset && !mixed && colorDraft === null ? { 'data-unset': '' } : {})}
     >
       <span className={s.chip}>
         <input
