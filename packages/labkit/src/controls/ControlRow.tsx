@@ -38,7 +38,7 @@ import { boundAction } from './boundAction';
 import { type ControlPack, spansGrid } from './controlPack';
 import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
-import { extra, labField, leafValueAt } from './fields';
+import { extra, labField, leafValueAt, useLabSettles } from './fields';
 import { inDialog, summarizeLeaf } from './inDialog';
 import { useRowAuto } from './rowAuto';
 import { DebouncedTextRow, UnwiredRow } from './rows';
@@ -251,6 +251,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const write = (value: unknown): void => setConfig(path, value);
   const draft = draftConfig && ((value: unknown): void => draftConfig(path, value));
   const choices = useFieldChoices();
+  const settles = useLabSettles();
   const pinned = leafValueAt(config, path, leaf);
 
   const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, pinned, auto, setRowAuto });
@@ -329,9 +330,8 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled, draft, (p) =>
-    valueAtPath(shown, p),
-  );
+  const read = (p: string): unknown => valueAtPath(shown, p);
+  const field = labField(leaf, value, write, choices, disabled, draft, read, settles);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {

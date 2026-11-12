@@ -16,6 +16,7 @@ import { stepDisplay } from '@weasel-js/ui/components/Properties';
 import { leafCanAuto } from '../config/autoConfig';
 import type { ControlRenderer, InDialogOptions } from '../config/types';
 import { DraftDialogRow } from './DraftDialogRow';
+import { extra } from './fields';
 
 export type { InDialogOptions };
 
@@ -29,17 +30,23 @@ export function summarizeValue(value: unknown): string {
   return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 
-/** `value` as `leaf`'s field writes it — through its `display` or its unit, and infinity as the word its
- *  `endless` end gives it — or `undefined` where the leaf says nothing of how it shows. */
+/** `value` as `leaf`'s field writes it — through its `display` or its unit, after its `suffix`, and infinity as
+ *  the word its `endless` end gives it — or `undefined` where the leaf says nothing of how it shows. */
 export function numberText(leaf: PrefNumber, value: number): string | undefined {
-  if (leaf.display === undefined && leaf.infinity === undefined && Number.isFinite(value))
+  const suffix = extra<string>(leaf, 'suffix');
+  if (
+    suffix === undefined &&
+    leaf.display === undefined &&
+    leaf.infinity === undefined &&
+    Number.isFinite(value)
+  )
     return leaf.unit === undefined ? undefined : resolvePrefUnit(leaf.unit).format(value);
   const field = prefFieldProps(leaf, { value, setValue: () => {} });
   if (field?.kind !== 'number' || typeof field.value !== 'number') return undefined;
   const text = qty(field.value, field.display ?? stepDisplay(field.step)).text;
-  return Number.isFinite(value) && typeof field.unit === 'string'
-    ? withUnit(text, field.unit)
-    : text;
+  // `labField` draws a `suffix` over the unit's, so the text does too.
+  const unit = suffix ?? field.unit;
+  return Number.isFinite(value) && typeof unit === 'string' ? withUnit(text, unit) : text;
 }
 
 /** `value` with each number that has a unit as its field writes it, at any depth of a compound leaf. */

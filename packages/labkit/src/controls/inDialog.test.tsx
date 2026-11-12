@@ -120,6 +120,12 @@ describe('summarizeLeaf', () => {
     expect(summarizeLeaf(plain, 3)).toBe('3');
   });
 
+  it('writes a number with a suffix as its field shows it', () => {
+    // `suffix` is a labkit extra, which no `PrefLeaf` type names.
+    expect(summarizeLeaf(Object.assign({ suffix: 'px' }, plain), 12)).toBe('12px');
+    expect(summarizeLeaf(Object.assign({ suffix: 'ticks' }, angle), Math.PI)).toBe('180ticks');
+  });
+
   it("writes a number through its display, and infinity as its endless end's word", () => {
     const budget = { ...plain, display: compact() } as const;
     expect(summarizeLeaf(budget, 2_000_000)).toBe('2.00M');
