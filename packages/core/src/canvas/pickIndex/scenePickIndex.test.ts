@@ -16,6 +16,7 @@ import { registerNodeShape } from 'canvas/NodeShape';
 import { pickWalk, scenePickSource, type PickQuery } from 'canvas/pickWalk';
 import { pointPick, regionPick } from './pickIndexFixture';
 import { pickIndexBuildCount } from './scenePickIndex';
+import { addOutsideSource, noteOutsideRead } from 'core/scene/outsideReads';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type Box = { x: number; y: number; width: number; height: number };
@@ -117,6 +118,25 @@ describe('scenePickIndex freshness', () => {
     expect(pick(scene, at(60, 10))).toEqual(['a']);
     drops.pop()!();
     expect(pick(scene, at(60, 10))).toEqual([]);
+  });
+
+  it('follows an outside source landing under a derived path, as a face landing reshapes text', () => {
+    // The derivation reads something outside the scene, as text set as a path reads glyph outlines.
+    let reach = 20, landed = 0;
+    drops.push(addOutsideSource(() => landed));
+    const scene = sceneWith({ x: 0, y: 0, width: 20, height: 20 });
+    scene.add({
+      id: asNodeId('d'), kind: 'mark', layer: 'main', pose: { x: 0, y: 100, width: 0, height: 0 }, data: { fill: { paint: { color: '#000' } } },
+      dependsOn: [A],
+      derivePath: () => {
+        noteOutsideRead();
+        return rectPath(0, 100, reach, 20);
+      },
+    } as never);
+    expect(pick(scene, at(300, 110))).toEqual([]);
+    reach = 400;
+    landed++;
+    expect(pick(scene, at(300, 110))).toEqual(['d']);
   });
 
   it('a still scene does not rebuild', () => {

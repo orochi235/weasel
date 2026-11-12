@@ -2224,6 +2224,7 @@
     "rectPath": "function",
     "rectToPlane": "function",
     "refreshCanvasFont": "function",
+    "refreshNodeShapes": "function",
     "refusalOf": "function",
     "regenerateShape": "function",
     "regionAround": "function",

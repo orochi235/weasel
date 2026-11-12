@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { rectPath } from '@weasel-js/core';
+import { describe, expect, it, vi } from 'vitest';
+import { findShapeSilhouette, rectPath } from '@weasel-js/core';
 import { registerOutline } from './outline';
 import { diagramScene, DEFAULT_NODE_STYLE, type DiagramData } from './fromData';
-import { diagramShape } from './shape';
+import { diagramShape, registerDiagramShape } from './shape';
 
 type PathCmd = { kind: 'path'; fill?: { paint: { color?: string } }; stroke?: { paint: { color?: string } } };
 
@@ -49,5 +49,18 @@ describe('diagramShape', () => {
     const cmds = diagramShape().paint({ id: 'n', kind: 'mark', data: { diagram: { outline: 'test:rimmed2' } } } as never, POSE as never);
     expect(cmds).toHaveLength(1);
     dispose();
+  });
+
+  it('picks a node by an outline registered after it was first picked', () => {
+    const undo = registerDiagramShape();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const late = { id: 'late', kind: 'mark', layer: 'main', pose: POSE, data: { diagram: { outline: 'test:late' } } } as never;
+    expect(findShapeSilhouette(late, POSE as never)).toEqual(rectPath(0, 0, 40, 20));
+    const dispose = registerOutline('test:late', { path: (b) => rectPath(b.x, b.y, b.width / 2, b.height) });
+    expect(findShapeSilhouette(late, POSE as never)).toEqual(rectPath(0, 0, 20, 20));
+    dispose();
+    expect(findShapeSilhouette(late, POSE as never)).toEqual(rectPath(0, 0, 40, 20));
+    warn.mockRestore();
+    undo();
   });
 });
