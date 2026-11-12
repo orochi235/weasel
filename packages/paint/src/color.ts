@@ -1,6 +1,7 @@
 import { linearToSrgb, oklabToLinearSrgb, oklchToOklab } from './colorSpaces';
 import { hslToSrgb } from './hsl';
 import { byteHex, parseHexBytes } from './hex';
+import { wrapDeg } from './hue';
 
 /**
  * Parse a CSS color string into [r, g, b, a] with 0..1 components.
@@ -256,7 +257,7 @@ function parseHue(tok: string): number | null {
   if (n === null) return null;
   // 400grad = 360deg
   const deg = unit === 'grad' ? n * 0.9 : unit === 'rad' ? n * (180 / Math.PI) : unit === 'turn' ? n * 360 : n;
-  return ((deg % 360) + 360) % 360;
+  return wrapDeg(deg);
 }
 
 /** An OKLab lightness: a percent or a unitless number 0..1. */

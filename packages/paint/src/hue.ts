@@ -19,4 +19,5 @@ export function lerpHueDeg(h1: number, h2: number, t: number, method: HueInterpo
   return wrapDeg(a + dh * t);
 }
 
-const wrapDeg = (h: number): number => ((h % 360) + 360) % 360;
+/** `h` degrees in `[0, 360)`. */
+export const wrapDeg = (h: number): number => ((h % 360) + 360) % 360;
