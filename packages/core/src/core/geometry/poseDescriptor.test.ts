@@ -26,6 +26,12 @@ describe.each(DESCRIPTORS)('%s', (_name, descriptor) => {
     expect(lerp(a, { ...a, rotation: 2 * Math.PI - 0.2 }, 0.5).rotation).toBeCloseTo(0);
   });
 
+  it('lands on the end pose itself at t = 1', () => {
+    const lerp = descriptor.lerp as unknown as (a: object, b: object, t: number) => object;
+    const b = { x: 0.1, y: 0.3, width: 0.2, height: 100.3, rotation: 0.1 };
+    expect(lerp({ x: 0.7, y: 100.1, width: 3, height: -0.1, rotation: 0.3 }, b, 1)).toEqual(b);
+  });
+
   it('reads back the rotation it writes', () => {
     expect(descriptor.withRotation).toBeDefined();
     expect(descriptor.getRotation).toBeDefined();
