@@ -33,6 +33,14 @@ describe('createInsert', () => {
     expect(seen!.center.x).toBeCloseTo(5, 6);
   });
 
+  it('takes its viewport and up from a world, so it casts where the world\'s snap and camera do', () => {
+    const up = { x: 0, y: 0, z: 1 };
+    let seen: Footprint | null = null;
+    createInsert({ world: { viewport: () => TOP, up }, mint: (f) => ((seen = f), 'n' as NodeId) })
+      .commit(DRAG, { kind: 'rect' } as never);
+    expect(seen).toEqual(footprintOf(TOP, up));
+  });
+
   it('lays a footprint on the plane at right angles to `up`, across the two axes it is not', () => {
     const f = footprintOf(TOP, { x: 0, y: 0, z: 1 })!;
     expect(f.center.x).toBeCloseTo(0, 6);

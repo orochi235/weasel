@@ -26,7 +26,7 @@ export {
   type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';
-export { createInsert, type Footprint } from './insert';
+export { createInsert, type Footprint, type InsertOptions } from './insert';
 export { projectPoint } from './project';
 export {
   aimOf3d, aimSpace3d, cameraOfAim3d, type Aim3d, type Aim3dOptions, type Frustum3d,
