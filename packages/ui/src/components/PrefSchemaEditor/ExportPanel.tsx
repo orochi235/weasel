@@ -1,3 +1,4 @@
+import { copyText } from '@weasel-js/react';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { Button } from '../Button';
 import { CodeBlock } from '../CodeBlock';
@@ -9,7 +10,7 @@ import { formatChanges, printSchema, type SchemaChange } from './schemaExport';
 import s from './PrefSchemaEditor.module.css';
 
 function Copy({ text }: { text: string }) {
-  return <Button size="sm" variant="ghost" onClick={() => { void navigator.clipboard?.writeText(text).catch(() => {}); }}>Copy</Button>;
+  return <Button size="sm" variant="ghost" onClick={() => { void copyText(text); }}>Copy</Button>;
 }
 
 /** Where the changes go when the reader submits them; a promise it returns says whether they arrived. */

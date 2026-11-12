@@ -7,7 +7,7 @@ import { Input } from '@weasel-js/ui/components/Input';
 import { icon } from './icons.gen';
 import styles from './PaletteLab.module.css';
 import { BUILTIN_PRESETS, persist, toSource, type LabState, type Preset } from './presets';
-import { copyText } from './copyText';
+import { copyText } from '@weasel-js/react';
 import { useFlash } from './useFlash';
 
 export interface PresetBarProps {
