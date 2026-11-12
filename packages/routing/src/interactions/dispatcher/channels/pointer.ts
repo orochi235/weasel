@@ -228,6 +228,26 @@ function nativeMenus() {
   };
 }
 
+/** The button a press on `canvas` is taken with, and whether it landed on a
+ *  control, or null when the press is not this surface's to take. */
+function takesPress(
+  e: PointerEvent, canvas: HTMLElement, opts: PointerInputOptions,
+): { button: PointerButton; onControl: boolean } | null {
+  // An absent `button` (synthetic events) is primary.
+  const button = BUTTONS[e.button ?? 0];
+  if (!button || (button === 'secondary' && !opts.secondaryDrags)) return null;
+  // A button or field laid over the canvas handles its own press: opening a
+  // session here would capture the pointer and retarget its click. A surface
+  // that takes its controls captures only once the press becomes a drag.
+  const onControl = isInControlWithin(e.target, canvas);
+  if (onControl && opts.controls() === 'leave') return null;
+  // A surface nested inside this one runs its own gestures for a press in it.
+  if (pressedNestedIn(canvas, e.target)) return null;
+  // An item whose own listener ran first already took this press for a drag of its own.
+  if (heldWithin(e.pointerId, canvas)) return null;
+  return { button, onControl };
+}
+
 export function pointerInput(core: PointerDispatchCore, opts: PointerInputOptions): PointerInput {
   const { canvas, routeAt, routeDown, routeRelease, toWorld, target } = core;
   const sessions = new Map<number, PointerSession>();
@@ -287,19 +307,10 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   return {
     onPointerDown(e) {
       claimedDoubleClick = false;
-      // An absent `button` (synthetic events) is primary.
-      const button = BUTTONS[e.button ?? 0];
-      if (!button || (button === 'secondary' && !opts.secondaryDrags)) return;
       if (!canvas) return;
-      // A button or field laid over the canvas handles its own press: opening a
-      // session here would capture the pointer and retarget its click. A surface
-      // that takes its controls captures only once the press becomes a drag.
-      const onControl = isInControlWithin(e.target, canvas);
-      if (onControl && opts.controls() === 'leave') return;
-      // A surface nested inside this one runs its own gestures for a press in it.
-      if (pressedNestedIn(canvas, e.target)) return;
-      // An item whose own listener ran first already took this press for a drag of its own.
-      if (heldWithin(e.pointerId, canvas)) return;
+      const taken = takesPress(e, canvas, opts);
+      if (!taken) return;
+      const { button, onControl } = taken;
       routeDown(e.pointerId, e.clientX, e.clientY);
       const w = toWorld(e.clientX, e.clientY);
       const where = underPointer(target(), e, w);

@@ -139,6 +139,21 @@ function fireLongPress(
   if (rec.holdType) observer.longPress?.(rec.holdType);
 }
 
+/** Whether any held pointer armed a long-press, firing each one still pending ahead of its timer. */
+function takeHolds(
+  held: ReadonlyMap<number, Held>, hold: ReturnType<typeof createLongPressHold>, fire: (rec: Held) => void,
+): boolean {
+  let holding = false;
+  for (const [id, rec] of held) {
+    if (!rec.holdType) continue;
+    holding = true;
+    if (!hold.pendingFor(id)) continue;
+    hold.cancel(id);
+    fire(rec);
+  }
+  return holding;
+}
+
 /** Each threshold as its option says at the moment of reading, else its constant. */
 function thresholdsOf(opts: PointerRecognizerOptions) {
   return {
@@ -277,17 +292,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       sink.dispatch({ kind: 'pointercancel', pointerId, ...modifiersOf(rec.down) });
     },
 
-    takeHold() {
-      let holding = false;
-      for (const [id, rec] of held) {
-        if (!rec.holdType) continue;
-        holding = true;
-        if (!hold.pendingFor(id)) continue;
-        hold.cancel(id);
-        fireLongPress(rec, sink, observer, clicks);
-      }
-      return holding;
-    },
+    takeHold: () => takeHolds(held, hold, (rec) => { fireLongPress(rec, sink, observer, clicks); }),
 
     heldCount: () => held.size,
     positionOf: (pointerId) => held.get(pointerId)?.pos,

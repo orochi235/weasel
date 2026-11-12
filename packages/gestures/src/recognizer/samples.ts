@@ -61,6 +61,8 @@ const at = (s: PointerSample, world: Point) => ({
   pointerId: s.pointerId, x: world.x, y: world.y, clientX: s.clientX, clientY: s.clientY, ...modifiersOf(s),
 });
 
+/** The `drag` copy of a press, as the recognizer buffers it: what a host asks
+ *  `resolveOnly` with to learn whether a press would drag before taking it. */
 export function pointerDownEvent(s: PressSample): PointerDownEvent {
   return {
     kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s),

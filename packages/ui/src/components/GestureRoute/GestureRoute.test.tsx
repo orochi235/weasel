@@ -8,7 +8,7 @@ const texts = (route: string) =>
 
 describe('gestureRouteSegments', () => {
   it('orders phase, gesture, modifiers, target', () => {
-    expect(texts('[initial] drag => node +mod ?shift')).toEqual(['initial', 'drag', expect.stringMatching(/^\+.+\?.+$/), 'node']);
+    expect(texts('[initial] click => node +mod ?shift')).toEqual(['initial', 'click', expect.stringMatching(/^\+.+\?.+$/), 'node']);
   });
 
   it('splits a channel off its phase, and leaves out the implicit channel', () => {
