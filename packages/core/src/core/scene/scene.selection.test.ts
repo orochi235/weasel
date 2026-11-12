@@ -19,7 +19,9 @@ const ids = (list: string[]): NodeId[] => list.map(asNodeId);
 
 describe('Scene — selection', () => {
   it('round-trips and notifies', () => {
-    const { scene } = makeScene();
+    const { scene, add } = makeScene();
+    add('a');
+    add('b');
     const listener = vi.fn();
     scene.subscribe(listener);
 
@@ -61,6 +63,7 @@ describe('Scene — selection', () => {
   it('undo restores the selection an applyBatch was made under', () => {
     const { scene, add } = makeScene();
     add('a');
+    add('b');
     scene.setSelection(ids(['a', 'b']));
 
     scene.applyBatch(
@@ -68,7 +71,7 @@ describe('Scene — selection', () => {
       'move',
       { setPose: (id: string, pose: unknown) => { scene.setPose(asNodeId(id), pose as typeof POSE); } },
     );
-    scene.setSelection(ids(['other']));
+    scene.setSelection(ids(['b']));
 
     scene.undo();
     expect(scene.getSelection()).toEqual(ids(['a', 'b']));
@@ -94,6 +97,7 @@ describe('Scene — selection', () => {
   it('redo returns the selection the user had before undoing', () => {
     const { scene, add } = makeScene();
     add('a');
+    add('after');
     scene.setSelection(ids(['a']));
     scene.setPose(asNodeId('a'), { ...POSE, x: 50 });
     scene.setSelection(ids(['after']));
@@ -106,7 +110,7 @@ describe('Scene — selection', () => {
 
   it('jumpToHistoryIndex restores the selection of the entry it lands on', () => {
     const { scene, add } = makeScene();
-    add('a');
+    scene.batch('seed', () => { add('a'); add('first'); add('second'); });
     scene.setSelection(ids(['first']));
     scene.setPose(asNodeId('a'), { ...POSE, x: 10 });
     scene.setSelection(ids(['second']));
@@ -144,6 +148,25 @@ describe('Scene — selection', () => {
 
     scene.remove(asNodeId('b'));
     expect(scene.getSelection()).toBe(before);
+  });
+
+  it('never holds an id that names no node', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    scene.setSelection(ids(['a', 'gone']));
+    expect(scene.getSelection()).toEqual(ids(['a']));
+  });
+
+  it('an undo leaves out a selected node an untracked edit removed since', () => {
+    const { scene, add } = makeScene();
+    add('a');
+    add('b');
+    scene.setSelection(ids(['a', 'b']));
+    scene.setPose(asNodeId('b'), { ...POSE, x: 5 });
+    scene.untracked(() => scene.remove(asNodeId('a')));
+
+    scene.undo();
+    expect(scene.getSelection()).toEqual(ids(['b']));
   });
 });
 

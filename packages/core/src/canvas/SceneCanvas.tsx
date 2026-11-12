@@ -132,7 +132,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ref, elementRef: internalCanvasRef, apiRef: canvasApiRef, onElement: chrome.trackHoverOn,
     ingest, viewAnimation, camera, addView, viewAt, aimOf, setAim,
   });
-  const viewInputs = useSurfaceViewInputs({ picking, selection, resizeHandles: layered.resizeHandles,
+  const viewInputs = useSurfaceViewInputs({ picking, selection, selectionRules: scene, resizeHandles: layered.resizeHandles,
     descriptor: descriptor as PoseDescriptor<unknown>, chromeCaps: chrome.chromeCaps, rotationBadge: layered.rotationBadge,
   });
 

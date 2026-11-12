@@ -116,11 +116,11 @@ describe('the published selection kinds on one canvas', () => {
     expect(table.rect).toEqual({ label: 'thing', routing: 'unknown' });
   });
 
-  it('publishes no labels for an empty selection, and undefined for an id the scene lacks', () => {
+  it('publishes no labels for an empty selection, and none for an id the scene lacks, which it never selects', () => {
     const { seen, scene } = answers();
     act(() => scene.setSelection([]));
     expect(seen.label).toBeUndefined();
     act(() => scene.setSelection([asNodeId('gone'), asNodeId('group')]));
-    expect(seen.label).toEqual([undefined, 'group']);
+    expect(seen.label).toEqual(['group']);
   });
 });

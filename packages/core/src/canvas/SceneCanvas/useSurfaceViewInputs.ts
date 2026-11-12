@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { SelectionRules } from 'core/selection/legalSelection';
 import type { ChromeCaps } from 'domains/chrome-caps/useChromeCaps';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import type { SurfaceViewInputs } from '../viewInputs';
@@ -16,10 +17,12 @@ export function useSurfaceViewInputs(args: {
   descriptor: PoseDescriptor<unknown>;
   chromeCaps: ChromeCaps;
   selection: SelectionApi;
+  /** The scene, which a view's own selection is kept legal against. */
+  selectionRules?: SelectionRules;
   rotationBadge: SurfaceViewInputs['rotationBadge'];
   resizeHandles: SurfaceViewInputs['resizeHandles'];
 }): SurfaceViewInputs {
-  const { picking, descriptor, chromeCaps, selection, rotationBadge, resizeHandles } = args;
+  const { picking, descriptor, chromeCaps, selection, selectionRules, rotationBadge, resizeHandles } = args;
   const { adapter, boundsOf, boundsOfPose, planeOfNode, pickEvery, pickBest, kindOfNode, doubleClickNames } = picking;
   return useMemo<SurfaceViewInputs>(() => ({
     adapter: adapter as { getPose(id: string): unknown },
@@ -33,8 +36,9 @@ export function useSurfaceViewInputs(args: {
     doubleClickNames,
     chromeCaps,
     selectionApi: selection,
+    ...(selectionRules ? { selectionRules } : {}),
     rotationBadge,
     resizeHandles,
   }), [adapter, descriptor, boundsOf, boundsOfPose, planeOfNode,
-       pickEvery, pickBest, kindOfNode, doubleClickNames, chromeCaps, selection, rotationBadge, resizeHandles]);
+       pickEvery, pickBest, kindOfNode, doubleClickNames, chromeCaps, selection, selectionRules, rotationBadge, resizeHandles]);
 }

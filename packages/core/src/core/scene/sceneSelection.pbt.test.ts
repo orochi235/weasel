@@ -26,12 +26,12 @@ const ids = (s: S): NodeId[] => [...s.nodes.keys()].sort();
 const pick = <T>(xs: readonly T[], k: number): T | undefined => (xs.length === 0 ? undefined : xs[k % xs.length]);
 
 /** What the selection should hold after a write of `next`: each id once, at its first place, in reach, and none
- *  with an ancestor among the others. An id the scene does not hold is in reach (`nodeGates`). */
+ *  with an ancestor among the others. An id the scene does not hold is never kept. */
 function legal(s: S, next: readonly NodeId[]): NodeId[] {
   const unique = [...new Set(next)];
-  const inReach = unique.filter((id) => s.get(id) === undefined || (!s.isLocked(id) && !s.isHidden(id)));
+  const inReach = unique.filter((id) => s.get(id) !== undefined && !s.isLocked(id) && !s.isHidden(id));
   const set = new Set(inReach);
-  return inReach.filter((id) => s.get(id) === undefined || !s.ancestorsOf(id).some((a) => set.has(a)));
+  return inReach.filter((id) => !s.ancestorsOf(id).some((a) => set.has(a)));
 }
 
 /** After an edit, the selection is the one before it with ids taken out, and those it holds are legal. */
