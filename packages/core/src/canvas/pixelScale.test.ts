@@ -41,7 +41,7 @@ const VIEW = { x: 0, y: 0, scale: { x: 3, y: 3 } };
 describe("a painter's pixelScale", () => {
   it("is the canvas's own density times the view's scale", () => {
     const scene = oneNodeScene();
-    const layer = buildSceneLayer({ drawOne: defaultDrawOne }, sceneToAdapter(scene) as never, () => null, () => null);
+    const layer = buildSceneLayer({ drawOne: defaultDrawOne as never }, sceneToAdapter(scene) as never, () => null, () => null);
     layer.draw(null, VIEW, { width: 100, height: 100, dpr: 1 });
     expect(seen).toEqual([3]);
   });
