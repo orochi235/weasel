@@ -2,6 +2,7 @@ import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Path } from '@wea
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { unionBounds } from 'core/geometry/unionBounds';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/derivedParts';
@@ -59,11 +60,17 @@ function pathCommand(
   };
 }
 
-/** The stroked box of the path on `ctx`, or `null` with no path or no stroke. */
+/** The stroked box of the path on `ctx`, each of its parts in its own stroke, or `null` with no
+ *  path or no stroke. */
 export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | undefined): Bounds | null {
   const path = ctx?.derivedPath;
-  const stroke = resolveStroke((node.data as PaintData | null)?.stroke, ctx?.inherited?.stroke);
-  return path == null || stroke === null ? null : strokedBounds(path, stroke, ctx?.scale ?? 1, ctx?.screen);
+  if (path == null) return null;
+  const d = node.data as PaintData | null;
+  const stroked = (p: Path, stroke: Stroke | null) =>
+    stroke === null ? null : strokedBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
+  const parts = derivedPartsOf(path);
+  if (parts === undefined) return stroked(path, resolveStroke(d?.stroke, ctx?.inherited?.stroke));
+  return unionBounds(parts.flatMap((part) => stroked(part.path, resolvePartPaint(part, d, ctx?.inherited).stroke) ?? []));
 }
 
 /** One part's command, in its own paint; `INHERIT` takes the node's. */
