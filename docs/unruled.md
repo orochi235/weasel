@@ -1728,3 +1728,10 @@ Calls the lanes made without a ruling:
 - Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
 - Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
   ask for `^19.0.0`.
+
+## Audit round seventeen (2026-11-12): theme
+
+- Open: whether `PlotView` with no `theme` follows the nearest `ThemeProvider`, as `useHud` does, or keeps drawing
+  `PLOT_THEME`, the weasel theme's dark mode, as documented. In a light-mode provider its text and axes are drawn in
+  dark mode's near-white `fg`. Ties to the `docs/TODO.md` entry on whether the site's `.ckd-canvas` stage follows the
+  mode.
