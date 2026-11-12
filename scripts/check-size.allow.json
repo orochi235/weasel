@@ -174,8 +174,8 @@
     "lines": 511
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 506,
-    "longestFunction": 361
+    "lines": 427,
+    "longestFunction": 341
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126
