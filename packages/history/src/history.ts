@@ -169,8 +169,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   /** Step until `n` entries are on the undo stack. An entry changes stacks
    *  only once its step has run, so a throw leaves both stacks describing
-   *  the state as it is. */
+   *  the state as it is. Refused under an active journal, whose edits sit over the stack's top. */
   function walkTo(n: number): Entry[] {
+    if (n !== undoStack.length) refuseWhileActive(activeJournal);
     const walked: Entry[] = [];
     while (undoStack.length > n) {
       const entry = undoStack[undoStack.length - 1]!;
@@ -288,12 +289,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       pushOrCoalesce(ops, label);
     },
     undo() {
-      refuseWhileActive(activeJournal);
       if (undoStack.length === 0) return;
       bump(stepOf('undo', walkTo(undoStack.length - 1)));
     },
     redo() {
-      refuseWhileActive(activeJournal);
       if (redoStack.length === 0) return;
       bump(stepOf('redo', walkTo(undoStack.length + 1)));
     },
@@ -323,9 +322,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       };
     },
     goto(n) {
-      refuseWhileActive(activeJournal);
-      // Total length stays constant during this walk (we only shuffle
-      // entries between undo and redo stacks).
+      // Total length stays constant during this walk: entries only move between the two stacks.
       const total = undoStack.length + redoStack.length;
       if (!Number.isInteger(n) || n < 0 || n > total || n === undoStack.length) return;
       const start = undoStack.length;
