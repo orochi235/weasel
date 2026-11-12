@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
+import { maxImageTextureSide } from './cache/GLImageCache';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
@@ -180,6 +181,20 @@ describe('WeaselRenderer context loss', () => {
     } as unknown as HTMLCanvasElement;
     expect(() => new WeaselRenderer({ canvas, width: 10, height: 10, dpr: 1 })).toThrow();
     expect([...live]).toEqual([]);
+  });
+
+  it('builds no image cache for a disposed renderer when its minification changes', () => {
+    const small = new Proxy(recorder.gl, {
+      get(target, prop) {
+        if (prop === 'getParameter') return (p: number) => (p === target.MAX_TEXTURE_SIZE ? 7 : target.getParameter(p));
+        return Reflect.get(target, prop);
+      },
+    });
+    const before = maxImageTextureSide();
+    const r = new WeaselRenderer({ gl: small, width: 10, height: 10, dpr: 1 });
+    r.dispose();
+    r.setImageMinification('mipmap');
+    expect(maxImageTextureSide()).toBe(before);
   });
 
   // A proxy, as with registerProgram below: the recorder answers every lookup,

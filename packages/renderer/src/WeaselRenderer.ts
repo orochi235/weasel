@@ -269,7 +269,7 @@ export class WeaselRenderer {
    *  a caller-owned context can host renderer after renderer without
    *  accumulating anything.
    *
-   *  A disposed renderer ignores further `render()` and `registerProgram()`
+   *  A disposed renderer ignores further `render()`, `registerProgram()` and `setImageMinification()`
    *  calls. */
   dispose(): void {
     if (this.disposed) return;
@@ -487,7 +487,8 @@ export class WeaselRenderer {
    *  default. A change frees every image texture, and each re-uploads when next drawn. */
   setImageMinification(mode: ImageMinification | undefined): void {
     const next = mode ?? 'auto';
-    if (next === this.imageMinification) return;
+    // A disposed renderer's cache would join every live renderer's texture-size limit and never leave.
+    if (this.disposed || next === this.imageMinification) return;
     this.imageMinification = next;
     this.imageCache.dispose();
     this.imageCache = new GLImageCache(this.gpu, next);
