@@ -171,6 +171,7 @@ export { AUTO_ORIGIN_PROJECTION, RECT_ORIGIN_PROJECTION } from '../interactions/
 export type { OriginProjection } from '../interactions/gestures/shared/originProjection';
 export type { ActionBehavior, AreaSelectOverlay, BehaviorEnd, BehaviorResult, BoundsConstraint, CloneBehavior, CloneBehaviorResult, CloneEnd, GestureContext, GroupTransform, InsertBehavior, InsertMoveResult, InsertOverlay, InsertPoint, InsertProposed, LassoSelectBehavior, LassoSelectMoveResult, LassoSelectOverlay, LassoSelectPose, LassoSelectProposed, MoveBehavior, MoveEnd, PointerState, ResizeMoveResult, ResizeOverlay, ResizeProposed, RotateBehavior, RotateMoveResult, RotateOverlay, RotateProposed } from '../interactions/gestures/types';
 export type { ContainerBounds, DropRegion, DropTarget, LayoutArrival, LayoutChild, LayoutContainer, LayoutDragged, LayoutDropTargetMode, LayoutSnap, LayoutStrategy, ReflowGlideOptions, ReflowTransition } from '../layout/types';
+export { pressTarget } from '../tools/builtin/pressTarget';
 export type { PressTargetTree } from '../tools/builtin/pressTarget';
 export { useGroupEntryContribution } from '../tools/builtin/select/groupEntry';
 export { selectionMoveContribution } from '../tools/builtin/select/selectionContributions';
