@@ -31,6 +31,12 @@ describe('useLastTool', () => {
     expect(drawPrefs().get('tools.lastTool')).toBe('gone');
   });
 
+  it('keeps the stored tool through StrictMode\'s remount while the restore is landing', () => {
+    act(() => drawPrefs().set('tools.lastTool', 'gone'));
+    renderHook(() => useLastTool(fakeTools('select')), { reactStrictMode: true });
+    expect(drawPrefs().get('tools.lastTool')).toBe('gone');
+  });
+
   it('stores each tool the user switches to', () => {
     const { rerender } = renderHook(({ tools }) => useLastTool(tools), {
       initialProps: { tools: fakeTools('select') },
