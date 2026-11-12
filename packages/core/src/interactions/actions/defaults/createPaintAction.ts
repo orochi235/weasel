@@ -4,7 +4,7 @@ import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
-import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { commitOps } from '../defaultCommitAdapter';
 import { paintInheritors } from 'core/scene/inheritedPaint';
 
 /** The node data one paint action reads and writes: its own key, nothing else. */
@@ -50,15 +50,12 @@ interface Scratch<TState, TValue, K extends string> {
   state: TState;
   /** Preview data entries — the merged value per selected node. */
   previews: Map<NodeId, PaintData<K, TValue>>;
-  /** Consumer commit hook captured at gesture start; undefined falls back to
-   *  `scene.applyBatch`. */
-  applyOps?: (ops: Op[], label: string) => void;
 }
 
 /**
  * The ongoing-action body the paint actions share: it previews without
- * touching the scene, and commits one batch (one undo entry) through the
- * consumer `applyOps` hook when present, else `scene.applyBatch`.
+ * touching the scene, and commits one batch (one undo entry) through
+ * `commitOps`.
  *
  * The `from` data is re-read at commit rather than reused from the start
  * snapshot, so a concurrent edit to a field this action does not own is not
@@ -88,7 +85,6 @@ export function createPaintAction<TState, TValue, K extends string>(
       start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
         const selection = ctx.deps.selection;
         const scene = ctx.deps.scene as Scene<Data, string, unknown> | undefined;
-        const applyOps = ctx.deps.applyOps;
 
         if (!selection || !scene) return {};
 
@@ -112,7 +108,6 @@ export function createPaintAction<TState, TValue, K extends string>(
           startData,
           state: spec.initialState(pick),
           previews: new Map(),
-          applyOps,
         };
         refreshPreviews(scratch);
         // Members that inherit the paint being changed preview with it.
@@ -143,10 +138,7 @@ export function createPaintAction<TState, TValue, K extends string>(
               const to = { ...from, [spec.dataKey]: merged } as Data;
               ops.push(createSetDataOp<Data>({ id: id as string, from, to }));
             }
-            if (ops.length > 0) {
-              if (scratch.applyOps) scratch.applyOps(ops, spec.label);
-              else scratch.scene.applyBatch(ops, spec.label, defaultCommitAdapter(scratch.scene, selection.adapterMethods));
-            }
+            commitOps(ctx.deps, ops, spec.label);
             scratch.previews.clear();
           },
           previewIds: () => (scratch.previews.size === 0 ? [] : [...scratch.previews.keys(), ...inheritors]),
