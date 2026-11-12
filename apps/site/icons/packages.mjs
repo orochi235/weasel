@@ -43,8 +43,8 @@ export const PACKAGES = framed({
   // One run right over one run left, each head keeping only the barb away from the other run.
   bidi: `<path d="M4.6 8.2h10.8l-2-2M15.4 11.8H4.6l2 2"/>`,
 
-  // A brush's footprint and its center: the size every brush tool shares.
-  brush: `<circle cx="10" cy="10" r="5"/><path d="M10 10h0" stroke-width="2.5"/>`,
+  // A paintbrush on the diagonal: handle, square ferrule, and a teardrop head pressed flat on a surface at y=16.
+  brush: `<path d="M15.5 4.5L11.5 8.5M10.3 7.3L12.7 9.7L10.7 11.7L8.3 9.3zM8.3 9.3C6.6 11.4 5 13.6 5.5 16H12.5C13 14 12.6 12.6 10.7 11.7"/>`,
 
   clock: `<circle cx="10" cy="10" r="5.4"/><path d="M10 6.8V10l2.2 1.4"/>`,
 
@@ -85,7 +85,8 @@ export const PACKAGES = framed({
   // A window with its menu bar and side panel.
   editor: `<rect x="4.6" y="5" width="10.8" height="10" rx="1.2"/><path d="M4.6 7.8h10.8M8 7.8V15"/>`,
 
-  font: `<path d="M5.2 15.4 10 4.6l4.8 10.8" stroke-linejoin="miter"/><path d="M7 11.4h6"/>`,
+  // A capital F in Source Serif 4 (SIL OFL), outlined so no font has to load.
+  font: `<path d="M10.47 15L6.23 15L6.23 14.39L8.19 14.16L8.51 14.16L10.47 14.39L10.47 15M9.1 15L7.59 15Q7.62 14.24 7.63 13.48Q7.63 12.72 7.63 11.93Q7.63 11.15 7.63 10.37L7.63 10.37L7.63 9.64Q7.63 8.87 7.63 8.09Q7.63 7.31 7.63 6.54Q7.62 5.76 7.59 5L7.59 5L9.1 5Q9.08 5.75 9.07 6.52Q9.05 7.3 9.05 8.07Q9.05 8.85 9.05 9.64L9.05 9.64L9.05 10.19Q9.05 11.04 9.05 11.86Q9.05 12.67 9.07 13.45Q9.08 14.22 9.1 15L9.1 15M11.83 10.25L8.34 10.25L8.34 9.55L11.83 9.55L11.83 10.25M12.26 11.81L11.57 11.81L11.35 10.15L11.35 9.7L11.57 8.13L12.26 8.13L12.26 11.81M8.19 5.84L6.23 5.61L6.23 5L8.34 5L8.34 5.84L8.19 5.84M13.77 7.64L12.92 7.64L12.51 5.3L13.04 5.75L8.34 5.75L8.34 5L13.66 5L13.77 7.64" fill="currentColor" stroke="none"/>`,
 
   // An anvil.
   forge: `<path d="${ANVIL}" fill="currentColor" stroke-width="1"/>`,
@@ -96,9 +97,9 @@ export const PACKAGES = framed({
   // A figure waving: a head, a body standing on two legs, one arm low and the other raised, and a motion arc
   // beside the raised hand.
   gestures: `
-    <circle cx="8.6" cy="5.8" r="1.9"/>
-    <path d="M8.6 8.8V12.6M8.6 12.6 6.4 16M8.6 12.6 10.8 16M8.6 9.8 6.4 12M8.6 9.8l3.2-3.2"/>
-    <path d="M13.34 4.76A2.4 2.4 0 0 1 13.64 8.14" stroke-width="1.25"/>`,
+    <circle cx="8.6" cy="5.8" r="1.9" stroke-width="1.25"/>
+    <path d="M8.6 8.8V12.6M8.6 12.6 6.4 16M8.6 12.6 10.8 16M8.6 11 6.4 13.2M8.6 11l3.6-3.6" stroke-width="1.25"/>
+    <path d="M13.74 5.56A2.4 2.4 0 0 1 14.04 8.94" stroke-width="1.25"/>`,
 
   // A grid of nine cells.
   guides: `<rect x="5.908" y="5.908" width="8.184" height="8.184" rx="0.868"/><path d="M8.636 5.908v8.184M11.364 5.908v8.184M5.908 8.636h8.184M5.908 11.364h8.184" stroke-width="1"/>`,
@@ -195,8 +196,8 @@ export const PACKAGES = framed({
     <path d="M4.4 10h3.4c2 0 2.8-3.4 5.4-3.4h1.4M7.8 10c2 0 2.8 3.4 5.4 3.4h1.4"/>
     <path d="M7.8 10h0" stroke-width="2.5"/>`,
 
-  // A marquee, and the pointer dragging it.
-  select: `<rect x="4.6" y="4.6" width="8" height="8" rx="0.8" stroke-width="1.25" stroke-dasharray="1.6 1.4"/><path d="M10.6 10.6v4.8l1.4-1.4 1.6 1.6 .8-.8-1.6-1.6 1.4-1.4z" fill="currentColor" stroke-width="1"/>`,
+  // A marquee: a dashed box centered in the frame.
+  select: `<rect x="5" y="5" width="10" height="10" stroke-dasharray="2.5 1.5"/>`,
 
   // A body, the orbit it keeps, and the satellite on it.
   // A planet, lit from its moon's side, and the moon's orbit.
