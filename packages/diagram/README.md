@@ -1397,7 +1397,9 @@ the gap nearest its middle. Give it `slots`, the items and gaps that
 `show: 'slide'` slides the other items into the places they would take instead,
 moving each item's `carries` as pose overrides, which is how `onReorder` shows a
 group's members. `reorderContribution` packs the action and its binding to pass
-as `ambient`.
+as `ambient`. Beside the `move` feature pass `reorderPreset` in `features`
+instead: a move binds the same press and would take it first, and the preset's
+drag is tried ahead of it, handing off to the move once it leaves `region`.
 
 `EffectEditor` takes a `run` too, drawn as `EffectChart` draws one.
 

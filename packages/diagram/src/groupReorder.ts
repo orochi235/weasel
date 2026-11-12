@@ -10,6 +10,7 @@ import {
   type Action,
   type ActionDeps,
   type Contribution,
+  type FeaturePreset,
   type RectPose,
   type Scene,
   type Vec2,
@@ -18,7 +19,7 @@ import { moveItems, nudgeGap } from '@weasel-js/ui-input';
 import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
 import type { DiagramSceneData } from './dataTypes';
-import { reorderContribution, sequenceSlots, type ReorderSlots } from './reorder';
+import { reorderContribution, reorderPreset, sequenceSlots, type ReorderOptions, type ReorderSlots } from './reorder';
 import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel';
 
 /** Alt and an arrow key: the selected member one place along. */
@@ -101,11 +102,10 @@ function containerRegion(deps: ActionDeps, member: string) {
 
 const onBody = bodyPredicate((target) => target === 'selected-body' || target === 'unselected-body');
 
-/** Everything `DiagramView` installs for `onReorder`: the reorder drag,
- *  sliding, pressed on a node's body, and the step action. A container's member
- *  dragged out of the container's box is handed to the move. */
-export function groupReorderContribution(report: (change: ReorderChange) => void): Contribution {
-  const drag = reorderContribution({
+/** The reorder drag's options for a reorderable group or container: sliding, pressed on a node's body, and a
+ *  container's member dragged out of the container's box handed to the move. */
+function groupReorderOptions(report: (change: ReorderChange) => void): ReorderOptions & { on: typeof onBody } {
+  return {
     slots: groupReorderSlots,
     requires: ['nodeAtPoint'],
     show: 'slide',
@@ -115,6 +115,21 @@ export function groupReorderContribution(report: (change: ReorderChange) => void
       const parent = targetAt(ctx.deps, move.id)?.parent;
       if (parent !== undefined) report({ parent, order: move.order });
     },
-  });
+  };
+}
+
+/** The reorder drag and the step action, as an entry to pass in `ambient`. Beside the `move` feature the move takes
+ *  every press first; {@link groupReorderPreset} is the form that works beside it. */
+export function groupReorderContribution(report: (change: ReorderChange) => void): Contribution {
+  const drag = reorderContribution(groupReorderOptions(report));
   return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };
+}
+
+/** Everything `DiagramView` installs for `onReorder`, as a preset to pass in `features`: the reorder drag, tried
+ *  ahead of the `move` feature's on the same press, and the step action. */
+export function groupReorderPreset(report: (change: ReorderChange) => void): FeaturePreset {
+  const id = 'weasel-diagram-reorder';
+  const drag = reorderPreset(groupReorderOptions(report));
+  const entry = { ...drag.ambient!({}), id };
+  return { ...drag, id, actions: [...(drag.actions ?? []), createStepReorderAction(report)], ambient: () => entry };
 }
