@@ -15,6 +15,7 @@ import {
   type Tool,
   useActionsRegistry,
   useDepSource,
+  useDeviceProfile,
   useGestureDispatcher,
   useLatest,
   usePointerPosition,
@@ -128,14 +129,14 @@ function fitRect(rect: OverviewBounds, size: ViewportSize): View {
   };
 }
 
-/** A canvas's 2D context sized to `size` at the device pixel ratio. */
+/** A canvas's 2D context sized to `size` at `dpr` device pixels per CSS pixel. */
 function prepare(
   canvas: HTMLCanvasElement | null,
   size: ViewportSize,
+  dpr: number,
 ): CanvasRenderingContext2D | null {
   const ctx = canvas?.getContext('2d') ?? null;
   if (!canvas || !ctx) return null;
-  const dpr = window.devicePixelRatio || 1;
   const w = Math.round(size.width * dpr);
   const h = Math.round(size.height * dpr);
   if (canvas.width !== w) canvas.width = w;
@@ -227,8 +228,9 @@ function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; fra
   const stack = useContext(CanvasStackContext);
   const ref = useRef<HTMLCanvasElement | null>(null);
   const layers = stack?.surface?.layers;
+  const { dpr } = useDeviceProfile();
   useLayoutEffect(() => {
-    const ctx = prepare(ref.current, size);
+    const ctx = prepare(ref.current, size, dpr);
     if (!ctx || !layers) return;
     const local: WorldFrame = { originPx: { x: 0, y: 0 }, yDir: frame.yDir };
     const view = fromCameraView(fit, local);
@@ -238,7 +240,7 @@ function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; fra
       layer.render(ctx, view, local);
       ctx.restore();
     }
-  }, [layers, fit, size, frame.yDir]);
+  }, [layers, fit, size, frame.yDir, dpr]);
   return <canvas ref={ref} className="lk-overview__canvas" />;
 }
 
@@ -262,10 +264,11 @@ function ChromeCanvas({
   const pointer = usePointerPosition();
   const root = camera.view.get();
   const host = camera.view.hostSize?.() ?? null;
-  // No dependency list: this renders only when the pointer or the trial's
-  // camera moved or the theme changed, and each one changes the chrome.
+  const { dpr } = useDeviceProfile();
+  // No dependency list: this renders only when the pointer, the trial's
+  // camera, the theme or the density changed, and each one changes the chrome.
   useLayoutEffect(() => {
-    const ctx = prepare(canvas, size);
+    const ctx = prepare(canvas, size, dpr);
     if (!ctx || !colors) return;
     const s = fit.scale.x;
     const px = (x: number, y: number) => ({ x: (x - fit.x) * s, y: (y - fit.y) * s });
