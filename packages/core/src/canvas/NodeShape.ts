@@ -76,6 +76,14 @@ export function registerNodeShape<TData, TPose>(
 }
 
 /**
+ * Tell the kit that something a registered painter reads besides the node has changed — a
+ * table of named outlines, say — so every node's painter, silhouette and ink are read again.
+ */
+export function refreshNodeShapes(): void {
+  bumpNodeMemoGeneration();
+}
+
+/**
  * Slot names for what picking asks per node per pointer move: which painter matches, and that
  * painter's silhouette path. Both go through {@link nodeMemo}, so they invalidate on `data`
  * (and, for the silhouette, `pose`) reference changes and on a painter registration.
