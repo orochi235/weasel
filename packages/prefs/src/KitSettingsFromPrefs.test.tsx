@@ -64,4 +64,17 @@ describe('KitSettingsFromPrefs', () => {
     expect(document.documentElement.hasAttribute('data-wzl-kit-look-mode')).toBe(false);
     expect(sheet()).not.toContain('--wzl-kit-');
   });
+
+  it('with two `css` bridges on one root, keeps the attributes until the last one unmounts', () => {
+    const a = open();
+    const b = open();
+    act(() => b.set('kit.look.mode', 'light'));
+    const first = render(<KitSettingsFromPrefs store={a} at="kit" css />);
+    const second = render(<KitSettingsFromPrefs store={b} at="kit" css />);
+    expect(document.documentElement.getAttribute('data-wzl-kit-look-mode')).toBe('light');
+    second.unmount();
+    expect(document.documentElement.getAttribute('data-wzl-kit-look-mode')).toBe('dark');
+    first.unmount();
+    expect(document.documentElement.hasAttribute('data-wzl-kit-look-mode')).toBe(false);
+  });
 });
