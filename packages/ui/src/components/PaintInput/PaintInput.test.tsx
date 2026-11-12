@@ -76,6 +76,14 @@ describe('PaintInput', () => {
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
   });
 
+  it('reports live picks through onInput when the value is mixed, as it does for a solid', () => {
+    const onInput = vi.fn();
+    const { container } = renderWithIcons(<PaintInput value={LINEAR} mixed onInput={onInput} onChange={() => {}} />);
+    const picker = container.querySelector('input[type="color"]') as HTMLInputElement;
+    fireEvent.input(picker, { target: { value: '#445566' } });
+    expect(onInput).toHaveBeenCalledWith(expect.objectContaining({ color: '#445566' }));
+  });
+
   // The switch precedence, which is the whole point of the memory.
   it('linear -> solid -> linear restores the stops', () => {
     const onCommit = vi.fn();
