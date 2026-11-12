@@ -11,7 +11,6 @@ import {
   PARAMS_SETTLES,
   type PrefFieldChoice,
   prefFieldProps,
-  useDebouncedText,
   useParamsPolicy,
   withDrafts,
 } from '@weasel-js/ui/components/Prefs';
@@ -58,7 +57,7 @@ export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unkn
  * hex swatch would flatten to a solid and the panel declines, and an object,
  * which a flat row would write one field of and the panel opens in a dialog.
  * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by; `settles` is
- * {@link useLabSettles}.
+ * {@link useLabSettles}, and `textWaitMs` how long drafted text waits for the next keystroke ({@link useTextWaitMs}).
  */
 export function labField(
   given: PrefLeaf,
@@ -69,12 +68,19 @@ export function labField(
   draft?: (value: unknown) => void,
   read?: PrefBoundReader,
   settles: Settles = PARAMS_SETTLES.lab,
+  textWaitMs = 0,
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (given.kind === 'paint' || given.kind === 'object') return null;
   const leaf = given.kind === 'number' && read ? prefNumberAt(given as PrefNumber, read) : given;
   const state = { value, setValue: write, fields, disabled };
-  const settled = prefFieldProps(leaf, state, 'lab', draft ? settles : typedSettle(settles));
+  const settled = prefFieldProps(
+    leaf,
+    state,
+    'lab',
+    draft ? settles : typedSettle(settles),
+    textWaitMs,
+  );
   if (settled === null) return null;
   const field = draft
     ? withDrafts(
@@ -136,19 +142,10 @@ export function BareControl({
     draft,
     read,
     useLabSettles(),
-  );
-  // `labField` has already decided whether this text drafts, and where to.
-  const drafts = useDebouncedText(
-    typeof value === 'string' ? value : '',
-    (draft && field?.kind === 'string' && field.onInput) || unwritten,
     useTextWaitMs(leaf),
   );
   if (field === null) return null;
   switch (field.kind) {
-    case 'string':
-      return (
-        <PropertyControl {...field} name={name} onInput={draft ? drafts.type : field.onInput} />
-      );
     case 'number':
       // The pair names the row, so a cell has no room for a unit.
       return <PropertyControl {...field} name={name} control="input" unit={undefined} />;
