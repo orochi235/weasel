@@ -207,6 +207,8 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
       (requireNode(p.id) as { layer: TLayer }).layer = p.to;
       invalidateOrder();
       invalidateDependents(p.id);
+      // Onto a hidden layer, it is out of the selection's reach.
+      env.narrowSelection();
     },
     revert: (p) => {
       (requireNode(p.id) as { layer: TLayer }).layer = p.from;
