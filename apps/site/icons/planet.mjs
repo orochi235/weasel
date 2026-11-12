@@ -71,7 +71,7 @@ const slid = (C, rho, u, gap, hint) => ({ C: [C[0] + u[0] * gap, C[1] + u[1] * g
 
 export function planet() {
   const R = 3.6; // planet
-  const HR = 0.6; // half the rim's width
+  const HR = 0.625; // half the rim's width
   const [A, B, R1] = [6.4, 1.4, 0.9]; // the oval's half-length, half-height and end radius
   const HO = 0.5; // half the orbit's width
   const GAP = 0.5;
