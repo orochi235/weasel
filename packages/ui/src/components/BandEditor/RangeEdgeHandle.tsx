@@ -10,6 +10,7 @@ import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './b
 import type { ContinuousScaleFactory } from '@weasel-js/plot/scales';
 import { unitScale } from './scale';
 import { arrowStep, pct } from './track';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** A rescale of the whole range: the new ends and the bands refitted between them. `bands` is the committed
  *  array itself when the end is where it started. */
@@ -70,7 +71,7 @@ export function RangeEdgeHandle<T>(props: RangeEdgeHandleProps<T>): ReactElement
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     e.preventDefault();
     e.stopPropagation();
     let latest: RangeEdit<T> | null = null;

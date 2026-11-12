@@ -13,6 +13,7 @@ import {
 import { type Corner, DEFAULT_INSET, type FloatingPlacement } from 'windease';
 import { dragPlacement, floatingItem, ITEM_ID, STRATEGY } from './dragPlacement';
 import { cssPx } from '../cssPx';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** What {@link useFloatingPlacement} reads. */
 export interface FloatingPlacementOptions {
@@ -144,7 +145,7 @@ export function useFloatingPlacement({
   useEffect(() => () => drag.current?.cancel(), []);
 
   const startDrag = (e: ReactPointerEvent): void => {
-    if (e.button !== 0 || isInteractive(e.target)) return;
+    if (!isPrimaryPress(e) || isInteractive(e.target)) return;
     // The canvas stack underneath owns pan/zoom on the same pointer events.
     e.stopPropagation();
     drag.current?.cancel();

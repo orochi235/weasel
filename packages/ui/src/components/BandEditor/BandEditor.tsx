@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/core';
-import { focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
+import { focusedControlOwnsKey, isEditableTarget, isPrimaryPress } from '@weasel-js/gestures';
 import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
@@ -215,7 +215,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onBandPointerDown = (index: number) => (e: ReactPointerEvent<HTMLButtonElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     if (index !== selectedIndex) onSelect?.(index);
   };
 
@@ -257,7 +257,7 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     e.preventDefault();
     splitAt(fromUnit(unitAt(e.clientX)));
   };

@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import s from './NumberField.module.css';
 import { useStepRepeat } from './useStepRepeat';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** A `UnitField`'s up and down buttons: each steps once on a tap and repeats while held. `spin` steps by an
  *  arrow key's name, and `spent` says whether that key has nowhere left to step to. */
@@ -50,7 +51,7 @@ function Stepper({ label, glyph, disabled, onHold, onRelease, onTap }: StepperPr
       disabled={disabled}
       // Keeps focus in the input, where a press on the button would take it.
       onPointerDown={(e) => {
-        if (e.button !== 0) return;
+        if (!isPrimaryPress(e)) return;
         e.preventDefault();
         onHold();
       }}

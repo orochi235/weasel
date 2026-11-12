@@ -9,6 +9,7 @@ import { Tab } from '../Tabs';
 import type { PageTabItem, PageTabsProps } from './PageTabs';
 import { RenameField } from './RenameField';
 import s from './PageTabs.module.css';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** Two presses on one tab this close together are a double press. */
 const DOUBLE_PRESS_MS = 500;
@@ -115,7 +116,7 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
         key={page.id}
         id={page.id}
         className={cls.join(' ')}
-        onPointerDown={(e) => { if (e.button === 0 && editing !== page.id) drag.rowProps(page.id, i).onPointerDown(e); }}
+        onPointerDown={(e) => { if (isPrimaryPress(e) && editing !== page.id) drag.rowProps(page.id, i).onPointerDown(e); }}
         onContextMenu={(e) => onTabContextMenu?.(page.id, e)}
       >
         {editing === page.id

@@ -7,6 +7,7 @@ import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 import type { useScale } from './useSpan';
 import { useLatestHandlers } from './useLatestHandlers';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** What a region drag reads: the thumbs and their handlers, the span, and the map and geometry a pointer goes through. */
 export interface RegionDragArgs<T extends Thumb> {
@@ -42,7 +43,7 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   return (index: number) => (e: ReactPointerEvent) => {
-    if (typeof e.button === 'number' && e.button > 0) return;
+    if (!isPrimaryPress(e)) return;
     const { thumbs } = props;
     if (index === 0 || index >= thumbs.length) return;
     const start = geometry.measure(e.clientX, e.clientY);

@@ -4,6 +4,7 @@ import { useKitSetting } from '@weasel-js/react';
 import { sliderAt, spanMap } from '@weasel-js/ui-input';
 import { useSnapRadiusPx } from '../../snap';
 import type { TimeWindow } from './timeScale';
+import { isPrimaryPress } from '@weasel-js/gestures';
 
 /** What a lane's pointer reads: its track, the window laid across it, and the keys on it. */
 export interface KeyDragArgs {
@@ -42,7 +43,7 @@ export function useKeyDrag(a: KeyDragArgs) {
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return;
+    if (!isPrimaryPress(e)) return;
     e.stopPropagation();
     onSelect(i);
 
