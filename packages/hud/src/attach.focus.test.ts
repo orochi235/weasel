@@ -289,6 +289,15 @@ describe('assistive tech', () => {
     expect(region()?.textContent).toBe('');
   });
 
+  it('announces the focused widget again when its name changes', () => {
+    const play = hud.button({ id: 'play', x: 0, y: 0, w: 20, h: 20, label: 'Play' });
+    hud.focus(play);
+    expect(region()?.textContent).toBe('Play');
+    play.setLabel('Pause');
+    for (const [frame] of vi.mocked(api.subscribeFrame).mock.calls) frame();
+    expect(region()?.textContent).toBe('Pause');
+  });
+
   it('removes the region on detach', () => {
     detach();
     detach = () => {};
