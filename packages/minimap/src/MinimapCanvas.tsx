@@ -1,12 +1,12 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { Ref } from 'react';
+import type { Ref, RefObject } from 'react';
 import { ActionsProvider, ActiveToolContextProvider, DepRegistryProvider } from '@weasel-js/routing/react';
 import { assignRef } from '@weasel-js/react';
-import { PointerProviderIfRoot, useDeviceProfile, usePublishPointer } from '@weasel-js/core';
+import { PointerProviderIfRoot, useDeviceProfile, useElementSize, usePublishPointer } from '@weasel-js/core';
 import { usePointerPosition } from '@weasel-js/routing/react';
 import { useMinimapInput } from './useMinimapInput';
 import { createLinkedCursorLayer } from './layers';
-import type { CanvasSize, SurfaceSizeProps, ZoomClampOpts } from '@weasel-js/core';
+import type { SurfaceSizeProps, ZoomClampOpts } from '@weasel-js/core';
 import { SceneViewCanvas } from '@weasel-js/core';
 import { computeIndicatorCommand } from './minimapMath';
 import { useFitView } from './useFitView';
@@ -82,6 +82,9 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
   wheelZoom?: boolean | ZoomClampOpts;
 }
 
+const NO_ELEMENT: RefObject<HTMLElement | null> = { current: null };
+const BEFORE_PAINT = { beforePaint: true };
+
 function MinimapCanvasInner<TData, TLayer extends string, TPose>(
   props: MinimapCanvasProps<TData, TLayer, TPose>,
 ) {
@@ -104,19 +107,18 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     onResize,
     wheelZoom = true,
   } = props;
-  const [measured, setMeasured] = useState<CanvasSize | null>(null);
-  const width = props.width ?? measured?.width ?? 0;
-  const height = props.height ?? measured?.height ?? 0;
-  const handleResize = useCallback((size: CanvasSize) => {
-    setMeasured(size);
-    onResize?.(size);
-  }, [onResize]);
+  const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Measured as `<SceneViewCanvas>` measures it, in the resize callback, so the frame that paints a new size
+  // paints it through the fit for that size.
+  const fills = props.width === undefined || props.height === undefined;
+  const measured = useElementSize(fills ? localCanvasRef : NO_ELEMENT, BEFORE_PAINT);
+  const width = props.width ?? measured.width;
+  const height = props.height ?? measured.height;
   const mainView = normalizeView(mainViewProp);
 
   const descriptor = (poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const fitView = useFitView(scene, width, height, fit, descriptor);
 
-  const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [accent, setAccent] = useState(FALLBACK_ACCENT);
   useLayoutEffect(() => {
     const read = () => setAccent(accentColorOf(localCanvasRef.current));
@@ -160,7 +162,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       view={fitView}
       width={props.width}
       height={props.height}
-      onResize={handleResize}
+      onResize={onResize}
       drawOne={drawOne}
       extraCommands={extraCommands}
       alphaFor={alphaFor}
