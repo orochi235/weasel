@@ -4,82 +4,6 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## State (2026-11-07)
-
-- 1.17.3 is on npm (all 54 packages; the release's registry install resolved), after 1.17.0, 1.17.1 and 1.17.2 the
-  same day. It carries the face-crossing polish, labkit's live auto rows (an auto row shows its control ghosted and
-  any edit pins it) and the `reportAuto` toggle fix, collego's nine fixes (overlay theme, minimap indicator, key
-  holding and fallback, text-only `isEditableTarget`, keys stopping at modals, one entered-group store per scene,
-  disabled reasons on commands, menus, and buttons), and `@msb235/blits` as a `^1.1.0` peer of core and animator.
-  Its batch (`batch/2026-11-07g`) ran `test:fleet --full` at 21180df69 (35395 passed, 1 failed:
-  `AnnotationOverlay.clip`, the filed P2 that fails in some full runs) and `test:fleet:postbuild` green at 47cce78f9,
-  which fixed the consumer smoke to treat third-party peers as external.
-- Three more bug-audit rounds landed on 2026-11-07 evening, each through a green fleet batch: round two (66 fixes,
-  pushed), round three (43) and round four (53), with `select`'s `'single'` intent and one shared condition-number rule
-  for geom's 2D and 3D `invert`. round four landed through 83b654fef, a batch that ran `test:fleet` (4167 files,
-  35672 tests) and postbuild green; pushed.
-- Round five (2026-11-07 night, 72 fixes across nine lanes: hud and guides, audio and clock, the type packages, quantity
-  and paint, history through cursor, the small packages, the secondary apps and devtools, core's interactions, and a
-  sweep folding duplicated helpers into geom, paint and registry) is on `main` at f3b6313ff, through `batch/2026-11-07k`
-  (`test:fleet`, a full run since ci.yml changed: 4175 files, 35733 tests; postbuild green). Pushed. Its open
-  questions are under "Audit round five" in `docs/unruled.md`. `check:forge-stories` moved after ci.yml's first
-  build: the fleet's test tree keeps a stale `dist`, which forge's vite config reads.
-- Round six (2026-11-08, 29 fixes in core's leftovers: snap and paths, the remaining domains, animation and
-  affordances, and the barrel and debug plumbing) is on `main` at 62133c61f through `batch/2026-11-08` (`test:fleet`
-  2541 files, postbuild green). Pushed. Open questions are under "Audit round six" in `docs/unruled.md`.
-- Round seven (2026-11-08, a second pass: renderer, diagram, draw, labkit and forge, geom/stroke/path-tools,
-  routing/theme/prefs, core's `core/`, and `scripts/`, plus Mike's rulings: empty fits land on Cmd-0's view, no-op
-  `update`/`setPose` record nothing, draw's background is undoable and its filename is not, `applyTheme` drops token
-  text that could leave its rule, a number field steps by the smallest step its display shows) is on `main` at
-  d9c637a1a through `batch/2026-11-08b` (`test:fleet` full: 35819 tests; postbuild green). Pushed. Open questions
-  are under "Audit round seven" in `docs/unruled.md`. The scripts lane's stricter checks now fail where they used to
-  pass silently.
-- Round eight (2026-11-08: ui, core's canvas and interactions, animator/gestures/kernel3d, the type packages,
-  hud/guides/menu/history/storage, quantity/paint/audio/clock, and site/chart/theme-editor), the eyedropper (one engine
-  sampler in `@weasel-js/loupe`, a `colorAt` dep that redraws document layers, labkit's trial toggle, draw's tool on
-  `I`) and labkit's `.meta()` field slot are on `main` at 9720cf0c2 through `batch/2026-11-08c` (`test:fleet` full:
-  35916 tests; postbuild green). Pushed. Open questions are under "Audit round eight" in `docs/unruled.md`.
-  `check:frame-loops` now covers `apps/` too (Mike, 2026-11-08), and `usePages.add` puts a page after the one shown.
-- Round nine (2026-11-08: pdf/svg/diagram-formats/d3, plot and chart, font/text-shaping/bidi, the small packages,
-  editor/storage/loupe/p-touch and the rest, icons and devtools; 42 fixes) is on `main` at d548e497b, through
-  `batch/2026-11-08d` (`test:fleet` at 72a4db7fd: 36063 tests; postbuild green). It was merged over another session's
-  `effect-list` and `icons-freeze` merges without a run of the combination (Mike, 2026-11-08); the two touch no file
-  in common. Open questions are under "Audit round nine" in `docs/unruled.md`.
-- Round ten (2026-11-08: ui, routing/cursor/gestures, labkit/prefs/hud/forge, renderer/stroke/paint/text, diagram,
-  draw/path-tools, core/geom/select/history, kernel3d/animator/audio/headless, scripts and the secondary apps; 45
-  fixes, plus the eyedropper and hand tool reading through chrome claims) is on `main` at 8d36c5e16 through
-  `batch/2026-11-08e` (`test:fleet`: 36256 tests; postbuild green), and the hand fix at cd61bfa32 (branch run 15039
-  tests, full typecheck). Pushed. `frame-fixes` (paths in groups read and written in world, derived nodes picked
-  through their own frame) followed at 7186be511 through `batch/2026-11-09`; pushed. Open questions are under "Audit round ten" in `docs/unruled.md`.
-- Round eleven (2026-11-09, the same lanes; about 50 fixes, plus Mike's rulings that the image cache closes what it
-  drops and plot's sizes clamp) is on `main` at 5e7c5fabd through `batch/2026-11-09b` (`test:fleet` full at
-  194990bac: 34268 passed, 1 failed, fixed; reruns on the tip green; postbuild green after the consumer smoke check
-  learned bare imports). Pushed. Open questions are under "Audit round eleven" in `docs/unruled.md`.
-- Round twelve (2026-11-09, gestures: schema, dispatch, resolution, consumers; plus Mike's rulings on a throwing
-  deferred start and zero-width strokes, and six TODO pickups) is on `main` at 535d4001f through `batch/2026-11-09c`
-  (`test:fleet` full: 36477 passed after three test fixes; postbuild green). Not pushed. Six key choices wait on
-  Mike under "Audit round twelve" in `docs/unruled.md`.
-- Round thirteen (2026-11-09, the nine lanes again, per-view 3D cameras, Mike's key choices and the SVG data-URL
-  ruling) is on `main` at 84c3cb6b6 through `batch/2026-11-09d` (`test:fleet` full: 36604 passed after a loupe
-  regression, a format fix and a size split; postbuild green), and the discard-key change through
-  `batch/2026-11-09e`. Released and pushed with the version commit that follows.
-- Round fourteen (2026-11-10: ui, routing, core, render, the text stack, diagram, labkit, motion, the small packages;
-  about 38 fixes, plus a sweep replacing `Math.min/max(...xs)` over unbounded lists with geom's new `minOf`/`maxOf`)
-  is on `main` at d66392e69 through `batch/2026-11-10-audit14` (`test:fleet` 36952 passed, postbuild green, merged
-  with the svg/path-tools property passes). It fixes today's tool-options regression: a polygon's sides or a star's
-  points set after one shape didn't reach the next. Not pushed. Open questions are under "Audit round fourteen" in
-  `docs/unruled.md`.
-- astv waits on the next weasel release for `.meta()`: its TODO "Prefs-only fields marked on the field" (astv
-  1d4a53c9) swaps its `PREFS_ONLY` set for `leaf.meta?.prefsOnly`.
-- The site deploy of 1.17.2's version merge timed out in GitHub Pages' `syncing_files`; 1.17.3's deploy succeeded.
-- Two sibling worktrees (`fix-keys`, `fix-overlay-theme`) ended up holding each other's uncommitted tracked edits,
-  new files excluded, while both ran `onto do` jobs. onto-ad ruled onto out; the cause is unknown. Agents committed
-  by path, and the stray copies matched what merged. Until it is understood, give parallel agents in sibling
-  worktrees a brief that forbids `git stash`, and diff any leftover files against the merge before removing a tree.
-- Release no longer repeats `check:manifests`, `check:treeshake` and `check:react-free`: postbuild runs them.
-- The main checkout's `npm install` holds back install scripts for esbuild 0.28.2 and fsevents until
-  `npm install-scripts approve`; `node_modules/.bin/esbuild` answers 0.27.7.
-
 ## Decisions taken in conversation and not visible in the code
 
 - weaselchart's grid and snapping (2026-10-19): pipeline mode's route editing takes the same snap change with
@@ -93,10 +17,13 @@ For the session picking this up: what is in flight and what has no other home. O
 
 - Every checkout needs core rebuilt (`npm run build -w @weasel-js/core`) before `dev:forge` loads: the capture
   endpoint imports `@weasel-js/core/json` from core's `dist`.
-- Nothing heavy runs on Mike's machine: tests, typecheck, lint and builds go to the fleet through onto.
 - onto keeps one tree per repository per node, so parallel arcs want their own nodes, and a full
   `npm run test:fleet` queues behind an arc testing on the same node.
 - Run a subagent controller from outside a worktree: a session inside one locks every subagent to it.
+- Two sibling worktrees (`fix-keys`, `fix-overlay-theme`, 2026-11-07) ended up holding each other's uncommitted
+  tracked edits, new files excluded, while both ran `onto do` jobs; the cause is unknown. Give parallel agents in
+  sibling worktrees a brief that forbids `git stash`, and diff any leftover files against the merge before removing a
+  tree.
 - Two commits in agent batch 7 do not build alone (5b7d0acfe, 11e2b7d6f); the merge's tree is the gated one.
 
 ## Not seen in a browser
@@ -221,12 +148,8 @@ Passed its tests and was never looked at by a person. Delete a line when someone
 - Overnight pass (2026-10-20): a `ToolPalette` grid's arrow keys, a disabled bar button's tooltip, a cleared
   clearable field in labkit, the corner panel's shape row with no shape, the loupe through a real drag, and a
   scoped container's length fields (no app passes `units` yet).
-- By ear: the music bed's level, and whether each cue in the `score` demo reads as its name.
 
 ## Weak evidence
 
 - The animator's frame-cost and churn numbers are single runs on a busy machine.
   `node tests/perf/target-reads/run.mjs` on a quiet one is the check.
-- `fseventsd` on orochi sat at 99% CPU through the night of 2026-10-13 and delivered no directory events to
-  `fs.watch`, which made forge's dev server serve stale modules. The cause was not found; forge warns at startup
-  when its watcher is silent.
