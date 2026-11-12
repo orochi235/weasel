@@ -294,6 +294,8 @@ export { radial } from './radial';
 export { grid, type GridOptions } from './grid';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
+  DEFAULT_PORT_FILL,
+  DEFAULT_PORT_STROKE,
   PORT_AFFORDANCE_KIND,
   PORT_LAYER_ID,
   createPortAffordance,

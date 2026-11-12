@@ -801,7 +801,9 @@ marks, each of which returns its disposer, or they do not paint:
 `'connect'` draws them and lets one be dragged onto another, `'show'` draws
 them and nothing more, `'none'` hides them. `portOptions` styles them: `shape`
 is `'square'` (default) or `'circle'`, `fill` is one fill or a function of the
-port (its `type`, say), and `showsPort` picks which of a node's ports show.
+port (its `type`, say), and `showsPort` picks which of a node's ports show. With
+neither `fill` nor `stroke`, a port is drawn in `DEFAULT_PORT_FILL` outlined in
+`DEFAULT_PORT_STROKE`.
 
 Under `layered`, an edge that names neither leaves its source by the face
 toward the next rank and arrives at its target's face toward the last; an edge

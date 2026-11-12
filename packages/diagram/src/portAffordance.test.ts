@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { viewToTransform, type ChromeState } from '@weasel-js/core';
-import { createPortAffordance, portScratchOf } from './portAffordance';
+import { DEFAULT_PORT_FILL, DEFAULT_PORT_STROKE, createPortAffordance, portScratchOf } from './portAffordance';
 import type { DiagramNodeLike } from './trait';
 
 interface Rect { x: number; y: number; width: number; height: number; rotation?: number }
@@ -104,6 +104,21 @@ describe('port paint', () => {
     ] } }, 'a'),
     pose: box,
   }];
+
+  it('paints a port given no fill or stroke in the default look, so it is visible', () => {
+    const [square, circle] = [undefined, 'circle' as const].map((shape) =>
+      createPortAffordance<Rect>(paintParticipants, shape === undefined ? {} : { shape }).regions(state)[0]!.paint!);
+    expect(square).toMatchObject({ kind: 'square', fill: DEFAULT_PORT_FILL, stroke: DEFAULT_PORT_STROKE });
+    if (circle!.kind !== 'custom') throw new Error('expected a custom paint');
+    const [cmd] = circle!.draw({ world: { x: 0, y: 20 }, local: { kind: 'point', x: 0, y: 20 }, view: { x: 0, y: 0, scale: { x: 1, y: 1 } } } as never) as { fill?: unknown }[];
+    expect(cmd!.fill).toEqual(DEFAULT_PORT_FILL);
+  });
+
+  it('paints only the stroke it is given when it is given no fill', () => {
+    const stroke = { paint: { color: '#f00' }, width: 2 };
+    const [region] = createPortAffordance<Rect>(paintParticipants, { stroke }).regions(state);
+    expect(region!.paint).toEqual({ kind: 'square', sizePx: 7, stroke });
+  });
 
   it('asks the fill function once per port and paints what it answers', () => {
     const fill = (port: { type?: string }) => ({ paint: { color: port.type === 'image' ? '#00f' : '#fa0' } });

@@ -112,7 +112,9 @@ export interface PortAffordanceOptions<TPose> {
    *  diameter. Default 7. Omit `paint` entirely by passing 0 — a port the
    *  consumer draws itself is still hittable. */
   sizePx?: number;
-  /** One fill for every port, or a function of the port — its `type`, say. */
+  /** One fill for every port, or a function of the port — its `type`, say.
+   *  With neither `fill` nor `stroke` set, {@link DEFAULT_PORT_FILL} and
+   *  {@link DEFAULT_PORT_STROKE}. */
   fill?: CommandFill | ((port: Port) => CommandFill);
   stroke?: CommandStroke;
   /** Default `'square'`. */
@@ -125,6 +127,9 @@ export interface PortAffordanceOptions<TPose> {
 
 const DEFAULT_HIT_PX = 8;
 const DEFAULT_SIZE_PX = 7;
+/** A port's look when its options give neither `fill` nor `stroke`. */
+export const DEFAULT_PORT_FILL: CommandFill = { paint: { color: '#7ba7c7' } };
+export const DEFAULT_PORT_STROKE: CommandStroke = { paint: { color: '#16222c' }, width: 1 };
 
 /** Read a port press's scratch back off the hit an action was handed. */
 export function portScratchOf(hit: { payload?: unknown } | null | undefined): PortScratch | null {
@@ -158,7 +163,9 @@ export function createPortAffordance<TPose>(
   const paintOf = (port: Port): AffordanceRegion['paint'] => {
     if (sizePx <= 0) return undefined;
     const fill = typeof opts.fill === 'function' ? opts.fill(port) : opts.fill;
-    const look = { ...(fill ? { fill } : {}), ...(opts.stroke ? { stroke: opts.stroke } : {}) };
+    const look = fill === undefined && opts.stroke === undefined
+      ? { fill: DEFAULT_PORT_FILL, stroke: DEFAULT_PORT_STROKE }
+      : { ...(fill ? { fill } : {}), ...(opts.stroke ? { stroke: opts.stroke } : {}) };
     if (opts.shape !== 'circle') return { kind: 'square', sizePx, ...look };
     return {
       kind: 'custom',
