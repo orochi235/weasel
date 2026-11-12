@@ -190,6 +190,20 @@ describe('useEyedropperTool', () => {
       expect(onPick).toHaveBeenCalledExactlyOnceWith('#abcdef');
     });
 
+    it('drops an answer that lands after a later press has answered', async () => {
+      const onPick = vi.fn();
+      const answers: ((hex: string | null) => void)[] = [];
+      const colorAt = () => new Promise<string | null>((resolve) => { answers.push(resolve); });
+      const { result } = renderHook(() => useEyedropperTool({ onPick }));
+      run(result.current, pixelDeps(colorAt), { press: { x: 0, y: 0 } });
+      run(result.current, pixelDeps(colorAt), { press: { x: 5, y: 5 } });
+      answers[1]?.('#222222');
+      await Promise.resolve();
+      answers[0]?.('#111111');
+      await Promise.resolve();
+      expect(onPick.mock.calls).toEqual([['#222222']]);
+    });
+
     it('takes the press as the screen point where no view is sourced, as on a 3D host', () => {
       const colorAt = vi.fn(() => '#000000');
       const { result } = renderHook(() => useEyedropperTool({ onPick: () => {} }));
