@@ -356,6 +356,11 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
+  windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
+  back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
+  (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
+
 - **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
   iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
   and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
@@ -664,6 +669,10 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] labkit's lint fails on a raw font size in `QuantityText.module.css:15`** (`font-size: 0.7em`),
+  from `d254251e8` (2026-11-11). `check-design-tokens` counts it as a violation, so the release gate's
+  `npm run lint -w @weasel-js/labkit` step is red on `main`. Closes when that size reads a token.
 
 - **(P2) [agent] Two of labkit's floating-sidebar tests fail when their file runs alone.** In
   `Trial.floatPanel.test.tsx`, "closes on a press outside it, and the toggle closes what it opened" and "keeps a
