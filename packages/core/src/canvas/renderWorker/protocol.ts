@@ -79,7 +79,8 @@ export type ToWorker =
   | { type: 'init'; canvas: OffscreenCanvas; width: number; height: number; dpr: number }
   | ({ type: 'frame'; scene?: SceneDelta; overrides?: WireOverride[] } & FrameInputs)
   | { type: 'snapshot'; id: number }
-  | { type: 'image'; src: string; bitmap?: ImageBitmap; error?: string }
+  /** The answer to the worker's `image` request of the same `id`. */
+  | { type: 'image'; id: number; src: string; bitmap?: ImageBitmap; error?: string }
   /** The ids the last frame painted over `rect`, CSS pixels from the canvas's top-left. */
   | { type: 'readIds'; id: number; rect: IdRect; minAlpha?: number; exclude?: number[] };
 
@@ -98,7 +99,7 @@ export type FromWorker =
    *  came back. The page schedules a frame. */
   | { type: 'dirty' }
   /** The worker cannot load `src` itself. */
-  | { type: 'image'; src: string; size?: ImageRasterSize }
+  | { type: 'image'; id: number; src: string; size?: ImageRasterSize }
   | { type: 'snapshot'; id: number; bitmap: ImageBitmap | null }
   | { type: 'ids'; id: number; ids: IdBuffer }
   | { type: 'error'; message: string };
