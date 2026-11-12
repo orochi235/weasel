@@ -33,7 +33,7 @@ export interface SceneHistoryEnv {
   runArrivalEdit(ops: Op[], run: (ops: Op[]) => void): void;
   /** Run an edit applying ops, labeled `label` for the pose writes it reports. */
   labeled<T>(label: string, fn: () => T): T;
-  /** The journal `applyBatch` writes to now, or null. Undo and redo step it
+  /** The journal every edit writes to now, or null. Undo and redo step it
    *  instead of the engine, so they take back the edits that went there. */
   activeJournal(): Journal | null;
 }
@@ -46,13 +46,30 @@ export type SceneHistoryMethods = Pick<
   | 'jumpToHistoryIndex' | 'serializeHistory' | 'restoreHistory'
 >;
 
+/** Apply `ops` as one entry on `journal`, else the engine. `one` carries the label
+ *  `history.apply` was called with, which the engine reads an op's own label in place of. */
+function applyEdit(
+  env: SceneHistoryEnv, journal: Journal | null, ops: Op[], label: string, one?: { given: string | undefined },
+): void {
+  env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
+    env.applying(() => {
+      if (journal) journal.applyBatch(all.map(env.causing), label);
+      else if (one && all.length === 1) env.engine.apply(env.causing(all[0]!), one.given);
+      else env.engine.applyOps(all.map(env.causing), label);
+    });
+    env.notify();
+  }));
+}
+
 export function createSceneHistory(env: SceneHistoryEnv): {
   history: History;
   methods: SceneHistoryMethods;
   /** The innermost active journal opened through `history`, or null. */
   openJournal(): Journal | null;
+  /** The journal edits go to now as the engine holds it, or null. */
+  targetJournal(): Journal | null;
 } {
-  const { engine, replay, notify, refuseUntracked, runArrivalEdit } = env;
+  const { engine, replay, notify, refuseUntracked } = env;
 
   const journals = createSceneJournals(env);
 
@@ -93,6 +110,8 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     historyIndex: () => engine.undoDepth(),
     jumpToHistoryIndex(index) {
       if (Number.isNaN(index) || (Number.isFinite(index) && !Number.isInteger(index))) return false;
+      // The journal's edits are applied over this stack's top, so stepping under them would rewrite what they edit.
+      if (env.activeJournal()) return dwarn('scene', 'jumpToHistoryIndex: refused while a journal is open'), false;
       const total = engine.undoDepth() + engine.redoDepth();
       const target = Math.max(0, Math.min(total, index));
       return step(() => target !== engine.undoDepth(), () => engine.goto(target));
@@ -113,27 +132,18 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     // Mutating: applied ops re-enter the scene's own mutation methods.
     apply(op, label) {
       refuseUntracked('history.apply');
-      env.labeled(label ?? op.label ?? '', () => runArrivalEdit([op], (all) => {
-        const run = () => (all.length === 1
-          ? engine.apply(env.causing(op), label)
-          : engine.applyOps(all.map(env.causing), label ?? op.label ?? ''));
-        env.applying(run);
-        notify();
-      }));
+      applyEdit(env, journals.target(), [op], label ?? op.label ?? '', { given: label });
     },
     applyOps(ops, label) {
       refuseUntracked('history.applyOps');
-      env.labeled(label, () => runArrivalEdit(ops, (all) => {
-        env.applying(() => engine.applyOps(all.map(env.causing), label));
-        notify();
-      }));
+      applyEdit(env, journals.target(), ops, label);
     },
     undo: () => { methods.undo(); },
     redo: () => { methods.redo(); },
     goto: (n) => { methods.jumpToHistoryIndex(n); },
     // Stack-only: nothing applies, but what `canUndo()` answers changes.
     clear: stackOnly(() => engine.clear()),
-    recordEntry: stackOnly<Parameters<History['recordEntry']>>((ops, label, opts) => engine.recordEntry(ops, label, opts)),
+    recordEntry: stackOnly<Parameters<History['recordEntry']>>((ops, label, opts) => (journals.target() ?? engine).recordEntry(ops, label, opts)),
     prune: stackOnly<[number]>((t) => engine.prune(t)),
     switchBranch: stackOnly<[number]>((id) => engine.switchBranch(id)),
     dropRedo: stackOnly(() => engine.dropRedo()),
@@ -153,11 +163,11 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     observe: (listener) => engine.observe(listener),
     serialize: methods.serializeHistory,
     allForwardOps: () => engine.allForwardOps(),
-    seal: () => engine.seal(),
+    seal: () => { engine.seal(); journals.target()?.seal(); },
     currentEntryId: () => engine.currentEntryId(),
     beginJournal: journals.begin,
     resumeJournal: journals.resume,
     activeJournal: () => env.activeJournal(),
   };
-  return { history, methods, openJournal: journals.innermost };
+  return { history, methods, openJournal: journals.innermost, targetJournal: journals.target };
 }

@@ -242,6 +242,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, audit round 16, history lane): `scene.jumpToHistoryIndex` (draw's History panel) does nothing
+  and returns false while a journal is open, where it walked the scene stack beneath the journal's applied edits.
+  Rejected: committing the journal first, which would end the user's mode from a click on the panel.
 - 2026-11-11 (my call, audit round 15, scene lane): `sceneToAdapter(scene)` and `useSceneAdapter(scene)` given no
   `selection` read and write the scene's own selection, where they answered `[]` and dropped writes. The boolean,
   outline and shape-builder actions read `adapter.getSelection()` and acted on nothing through such an adapter.

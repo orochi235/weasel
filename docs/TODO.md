@@ -316,20 +316,6 @@ Owner tags, after the priority (2026-10-26):
   minting 100 ids a frame reaches it in about 45 minutes at 60 fps. Reusing a removed node's number
   breaks the "stays good" promise for ids read before the removal, so it needs a ruling. Closes when
   removed nodes' numbers are reclaimed or the promise is kept some other bounded way (filed 2026-11-11).
-
-- **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
-  `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
-  `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
-  Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
-  consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
-  on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
-  has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
-  container runs as a batch. draw opens a journal in every strict mode, and in every soft mode
-  unless the Modes > Undo inside a mode pref says the document's history
-  (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
-  a mode lands.
-  Ruled (2026-11-07), reopening 2026-10-12's: route them to the open journal.
-  Closes when the direct calls reach the open journal and `scene.recordedForm.test.ts` pins that instead.
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor

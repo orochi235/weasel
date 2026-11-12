@@ -116,3 +116,23 @@ describe.each([true, false])('a text box drawn and left empty (soft modes journa
     expect(scene.get(asNodeId('t'))).toBeUndefined();
   });
 });
+
+describe.each([true, false])('a text box drawn and typed into (soft modes journaled: %s)', (journaled) => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('is one undo entry with its insert', () => {
+    const { scene, entries, edit } = inserted(journaled);
+    act(() => edit().startEdit('t', { caret: 0 }));
+    // The edit's commit, as the overlay makes it.
+    act(() => { scene.batch('Edit text', () => scene.update(asNodeId('t'), { data: { text: 'Hi' } }), textEditJoin('t')); });
+    act(() => edit().cancelEdit());
+    expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
+    expect(scene.historyEntries().length).toBe(entries + 1);
+    act(() => { scene.undo(); });
+    expect(scene.get(asNodeId('t'))).toBeUndefined();
+    act(() => { scene.redo(); });
+    expect(scene.get(asNodeId('t'))?.data.text).toBe('Hi');
+  });
+});

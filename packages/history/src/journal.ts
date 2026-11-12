@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
-import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry, type HistoryStep } from './history';
+import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry, type HistoryStep, type RecordEntryOptions } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();
 /** A journal opened inside another, to the one it was opened in. */
@@ -67,6 +67,8 @@ export interface Journal {
 
   // Same operational surface as History
   applyBatch(ops: Op[], label: string): void;
+  /** As `History.recordEntry`, for the journal's own entries: ops that have already applied. */
+  recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   undo(): void;
   redo(): void;
   canUndo(): boolean;
@@ -138,6 +140,10 @@ export function createJournalInternal(
       if (state !== 'active') throw new Error('Journal is not active');
       inner.applyOps(ops, label);
     },
+    recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
+      if (state === 'active') inner.recordEntry(ops, label, options);
+      else throw new Error('Journal is not active');
+    },
     undo(): void {
       if (state !== 'active') throw new Error('Journal is not active');
       inner.undo();
@@ -175,10 +181,9 @@ export function createJournalInternal(
       if (openChildren().length > 0) throw new Error('A journal inside this one is still active or suspended — commit or cancel it first');
       // Coalescing splits an entry in two: the forward half is the latest
       // push, the base half the first, and undo inverts the base.
-      const { forwardOps, baseOps } = _journalAccessInternal(inner).appliedOps();
-      _journalAccessInternal(parent).record(
-        forwardOps, baseOps, label, selectionBefore ? { selectionBefore } : undefined,
-      );
+      // A session made only of one keyed run carries its key, so it continues that run on the parent.
+      const { forwardOps, baseOps, coalesceKey } = _journalAccessInternal(inner).appliedOps();
+      _journalAccessInternal(parent).record(forwardOps, baseOps, label, { selectionBefore, coalesceKey });
       state = 'closed';
       RESUMERS.delete(journal);
       onClose?.();

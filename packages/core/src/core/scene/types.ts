@@ -454,8 +454,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Index of the "current state". Equals the count of applied entries;
    *  `0` means "nothing applied" (initial). */
   historyIndex(): number;
-  /** Jump to the given history index, clamped to [0, total]. Returns true
-   *  if any movement occurred. */
+  /** Jump to the given history index, clamped to [0, total]. Returns true if any
+   *  movement occurred; false, moving nothing, while a journal is open over the stack. */
   jumpToHistoryIndex(index: number): boolean;
 
   // History persistence

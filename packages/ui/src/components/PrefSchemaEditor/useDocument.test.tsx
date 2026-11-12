@@ -62,6 +62,18 @@ describe('useDocument', () => {
     expect(result.current.value).toEqual({ n: 1 });
   });
 
+  it('steps back one commit at a time when two land before a render', () => {
+    const { result } = setup();
+    act(() => {
+      result.current.doc.commit({ n: 1 });
+      result.current.doc.commit({ n: 2 });
+    });
+    act(() => result.current.doc.step('undo'));
+    expect(result.current.value).toEqual({ n: 1 });
+    act(() => result.current.doc.step('undo'));
+    expect(result.current.value).toBe(BASE);
+  });
+
   it('keeps a draft after an edit and drops it back at the baseline', () => {
     const { result, storage } = setup();
     act(() => result.current.doc.commit({ n: 1 }));

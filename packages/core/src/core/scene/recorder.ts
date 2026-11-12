@@ -3,7 +3,7 @@
  * into the batch it runs in, or left to the engine or the untracked run that
  * is driving it.
  */
-import type { History, RecordEntryOptions } from '@weasel-js/history';
+import type { History, Journal, RecordEntryOptions } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import type { AppliedLog } from './appliedLog';
 import type { ArrivalWindow } from './arrivalWindow';
@@ -19,6 +19,8 @@ export interface RecorderEnv {
   mode: EditMode;
   /** The scene's own undo/redo engine. */
   engine: History;
+  /** The journal edits go to now, ahead of `engine`, or null. */
+  journal(): Journal | null;
   /** Apply a registered op's forward half. */
   runOp(kind: string, payload: unknown): void;
   /** A registered op as the engine holds it. */
@@ -78,17 +80,26 @@ function unwind(outer: readonly Op[]): void {
   }
 }
 
-/** Hand a bare call's op to the engine, which applies it itself: that is what lets it coalesce.
- *  Every bare scene call runs this, so it opens its label and mode without closures. */
+/** Hand a bare call's op to the open journal, else the engine, which applies it itself: that is
+ *  what lets it coalesce. Every bare scene call runs this, so it opens its label and mode without
+ *  closures. */
 function pushOwn(env: RecorderEnv, op: Op, label: string): void {
   const labeled = env.label(label, 'call');
   env.mode.enter('own');
   try {
-    env.engine.apply(op, label);
+    const journal = env.journal();
+    if (journal) journal.applyBatch([op], label);
+    else env.engine.apply(op, label);
   } finally {
     env.mode.leave('own');
     if (labeled) env.unlabel();
   }
+}
+
+/** End the coalescing run on the engine and on the open journal alike. */
+function sealAll(env: RecorderEnv): void {
+  env.engine.seal();
+  env.journal()?.seal();
 }
 
 export function createRecorder(env: RecorderEnv): Recorder {
@@ -137,7 +148,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
       // The ops were applied as they were issued, so the entry is pushed
       // without re-applying.
       if (finished.ops.length > 0) {
-        engine.recordEntry(finished.ops, finished.label, finished.entry);
+        (env.journal() ?? engine).recordEntry(finished.ops, finished.label, finished.entry);
       }
     }));
   }
@@ -172,7 +183,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
         return result;
       }), () => {
         if (ownsArrivals) arrivals.abandon();
-        if (notifier.version() !== versionBefore) engine.seal();
+        if (notifier.version() !== versionBefore) sealAll(env);
       });
     },
     joins: () => mode.records() && collecting !== null,
