@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   outlineMesh, OUTLINE_MESH_CACHE_LIMIT, _resetOutlineMeshCacheForTests,
 } from './outlineMeshCache';
+import { registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 
 // A unit square with a square hole — the shape of every glyph with a counter,
 // and the case a fill rule has to get right.
@@ -39,6 +40,13 @@ describe('outline mesh cache', () => {
     // per-frame call does not have to hash a few hundred bytes of path text.
     const first = outlineMesh('k|tri', TRI);
     expect(outlineMesh('k|tri', RING)).toBe(first);
+  });
+
+  it('drops what it holds once a face is registered again, whose glyphs the same key now names', () => {
+    const first = outlineMesh('k|tri', TRI);
+    registerFontOutlines('outline-mesh-cache-test', {}, () => new ArrayBuffer(0));
+    unregisterFontOutlines('outline-mesh-cache-test');
+    expect(outlineMesh('k|tri', RING).indices.length).toBeGreaterThan(first.indices.length);
   });
 
   it('drops every mesh once the cache reaches its limit', () => {

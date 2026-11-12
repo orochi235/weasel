@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { outlineStrokeMesh, _resetOutlineStrokeMeshCacheForTests } from './outlineStrokeMeshCache';
+import { registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 
 const SQUARE = 'M0 0L1 0L1 -1L0 -1Z';
 const LINE = 'M0 0L1 -1';
@@ -24,6 +25,13 @@ describe('outline stroke mesh cache', () => {
     expect(xs('center')).toEqual([-0.05, 1.05]);
     expect(xs('inner')).toEqual([0, 1]);
     expect(xs('outer')).toEqual([-0.1, 1.1]);
+  });
+
+  it('drops what it holds once a face is registered again, whose glyphs the same key now names', () => {
+    const line = outlineStrokeMesh('k|g', LINE, 0.1, {});
+    registerFontOutlines('outline-stroke-mesh-cache-test', {}, () => new ArrayBuffer(0));
+    unregisterFontOutlines('outline-stroke-mesh-cache-test');
+    expect(outlineStrokeMesh('k|g', SQUARE, 0.1, {})).not.toBe(line);
   });
 
   it('keys a trim, so a trimmed outline does not reuse the whole ribbon', () => {

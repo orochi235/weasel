@@ -6,9 +6,10 @@
  * in the key, and a document that animates stroke width or font size will miss
  * every frame. The width is quantized before it reaches the key: neighboring
  * sub-quantum widths would otherwise each get their own entry and evict each
- * other.
+ * other. Dropped when `faceGeneration()` moves, as `outlineMeshCache` is.
  */
 
+import { faceGeneration } from '@weasel-js/font';
 import { pathFromD } from '@weasel-js/geom';
 import { strokeToPath, tessellateStroke } from '@weasel-js/stroke';
 import { metricKey, type StrokeMetric } from '@weasel-js/stroke';
@@ -26,6 +27,7 @@ export const OUTLINE_STROKE_MESH_CACHE_LIMIT = 2048;
 const WIDTH_QUANTUM = 1 / 1024;
 
 let cache = new Map<string, Mesh>();
+let faces = faceGeneration();
 
 /** Quantized em width, exported so the key builder and the tessellator agree
  *  on the number rather than each rounding for themselves. */
@@ -57,6 +59,10 @@ export function outlineStrokeMesh(
     metricKey(metric),
   ].join('|');
 
+  if (faces !== faceGeneration()) {
+    faces = faceGeneration();
+    cache = new Map();
+  }
   const cached = cache.get(key);
   if (cached !== undefined) return cached.indices.length === 0 ? null : cached;
   if (cache.size >= OUTLINE_STROKE_MESH_CACHE_LIMIT) cache = new Map();
