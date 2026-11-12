@@ -23,7 +23,11 @@ export function readStored<T>(key: string, parse: (raw: string) => T, fallback: 
   }
 }
 
-const asideOf = (key: string): string => `${key}:unreadable`;
+const UNREADABLE = ':unreadable';
+const asideOf = (key: string): string => `${key}${UNREADABLE}`;
+
+/** Whether `key` is where {@link readStored} keeps an unreadable entry aside, not an entry of its own. */
+export const isUnreadableKey = (key: string): boolean => key.endsWith(UNREADABLE);
 
 /** Whether `raw`, the entry under `key`, is what {@link readStored} last kept aside as unreadable: a load of it fell
  *  back. */
