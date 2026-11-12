@@ -1,6 +1,6 @@
-import { type Action, type Tool, type ToolDef, type ToolsApi, useActionsRegistry } from '@weasel-js/core';
+import type { Tool, ToolDef, ToolsApi } from '@weasel-js/core';
 import { buildRouteRegistry, type Conflict, findConflicts, type RegistryEntry } from '@weasel-js/core/routing';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 /** The ids a canvas mounted in each of its two tool slots, sorted. */
 export interface ToolSlots { registry: readonly string[]; ambient: readonly string[] }
@@ -81,17 +81,4 @@ export function useToolReflection(): ToolReflection {
   const conflicts = useMemo(() => findConflicts(toolList), [toolList]);
 
   return { onToolsCreated, defs: toolDefs, tools: toolList, slots: toolSlots, routes, conflicts };
-}
-
-/** Every action registered in scope, kept current. */
-export function useLiveActions(): readonly Action[] {
-  const reg = useActionsRegistry();
-  const [actions, setActions] = useState<readonly Action[]>(() => (reg ? reg.list() : []));
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs to the actions registry subscription
-    if (!reg) { setActions([]); return; }
-    setActions(reg.list());
-    return reg.subscribe(() => setActions(reg.list()));
-  }, [reg]);
-  return actions;
 }
