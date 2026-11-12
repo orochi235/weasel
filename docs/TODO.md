@@ -436,14 +436,6 @@ Owner tags, after the priority (2026-10-26):
   Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
   fades when disabled also desaturates.
 
-- **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
-  `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
-  plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's
-  tube lab: a 259px strip with a 140px sidebar put a 160px content pane at x=141), then slides it 41px left
-  once the floors arrive. Since `watchElementMove` reports that slide, surfaces follow it; what is left is the
-  visible jump at load. Closes when a browser test mounts a 260px `TrialBody` with `width={140}` and finds the
-  content inside the strip on its first painted frame.
-
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
   `.lk-titlebar-button` is 18px square and `Button`'s smallest size is `--wzl-control-h-sm`;
