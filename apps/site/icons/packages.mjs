@@ -55,16 +55,17 @@ export const PACKAGES = framed({
 
   cursor: `<path d="M6.2 4.6v10l2.6-2.6 1.8 3.8 1.8-.8-1.8-3.8h3.6z"/>`,
 
-  // Points joined to marks: three data dots and the bars they become.
-  d3: `<path d="M5.6 15.4V12M10 15.4V8.4M14.4 15.4V5.6"/><path d="M5.6 7.2h0M10 4.8h0" stroke-width="2.5"/>`,
+  // "d3" in Fira Mono SemiBold (Fira Code's d and 3 are Fira Mono's), outlined so no font has to load.
+  d3: `<path d="M8.23 8.91L8.23 6.55L9.41 6.67L9.41 13.32L8.36 13.32L8.29 12.76Q8.07 13.07 7.74 13.26Q7.41 13.45 6.97 13.45L6.97 13.45Q6.37 13.45 5.97 13.14Q5.58 12.83 5.39 12.26Q5.20 11.69 5.20 10.94L5.20 10.94Q5.20 10.22 5.43 9.65Q5.65 9.08 6.07 8.76Q6.50 8.43 7.08 8.43L7.08 8.43Q7.77 8.43 8.23 8.91L8.23 8.91ZM7.40 9.32L7.40 9.32Q6.95 9.32 6.69 9.71Q6.43 10.09 6.43 10.94L6.43 10.94Q6.43 11.84 6.67 12.20Q6.91 12.57 7.31 12.57L7.31 12.57Q7.61 12.57 7.83 12.39Q8.06 12.21 8.23 11.95L8.23 11.95L8.23 9.78Q8.06 9.56 7.86 9.44Q7.65 9.32 7.40 9.32ZM12.57 6.98L12.57 6.98Q13.20 6.98 13.66 7.19Q14.12 7.41 14.36 7.77Q14.60 8.12 14.60 8.56L14.60 8.56Q14.60 9.14 14.25 9.51Q13.90 9.89 13.36 10.03L13.36 10.03Q13.76 10.08 14.09 10.25Q14.41 10.42 14.61 10.74Q14.80 11.07 14.80 11.56L14.80 11.56Q14.80 12.09 14.52 12.52Q14.23 12.95 13.72 13.20Q13.20 13.45 12.49 13.45L12.49 13.45Q11.85 13.45 11.32 13.23Q10.78 13.00 10.40 12.56L10.40 12.56L11.10 11.93Q11.36 12.24 11.71 12.39Q12.05 12.53 12.42 12.53L12.42 12.53Q12.95 12.53 13.26 12.26Q13.58 11.99 13.58 11.49L13.58 11.49Q13.58 10.94 13.27 10.71Q12.97 10.48 12.45 10.48L12.45 10.48L11.90 10.48L12.04 9.64L12.43 9.64Q12.85 9.64 13.15 9.41Q13.45 9.19 13.45 8.73L13.45 8.73Q13.45 8.33 13.16 8.10Q12.88 7.87 12.45 7.87L12.45 7.87Q12.07 7.87 11.77 8.02Q11.47 8.16 11.18 8.43L11.18 8.43L10.57 7.77Q11.40 6.98 12.57 6.98Z" fill="currentColor" stroke="none"/>`,
 
-  devtools: `<path d="M7.6 6.4 4.8 10l2.8 3.6M12.4 6.4l2.8 3.6-2.8 3.6"/><path d="M11 5.4 9 14.6" stroke-width="1.25"/>`,
+  devtools: `<path d="M6.8 6.4 4 10l2.8 3.6M13.2 6.4l2.8 3.6-2.8 3.6"/><path d="M11 5.4 9 14.6" stroke-width="1.25"/>`,
 
-  // Two boxes and the elbow connector between them.
+  // A decision diamond branching to two boxes.
   diagram: `
-    <rect x="4.6" y="4.6" width="4.4" height="3.6" rx="0.8"/>
+    <path d="M6.8 5.5L9.4 7.7L6.8 9.9L4.2 7.7Z"/>
+    <rect x="11" y="5.9" width="4.4" height="3.6" rx="0.8"/>
     <rect x="11" y="11.8" width="4.4" height="3.6" rx="0.8"/>
-    <path d="M6.8 8.2v5.4H11"/>`,
+    <path d="M9.4 7.7H11M6.8 9.9v3.7H11" stroke-width="1.25"/>`,
 
   // A layered layout: one node over two, routed orthogonally.
   diagramElk: `
@@ -84,13 +85,13 @@ export const PACKAGES = framed({
   // A window with its menu bar and side panel.
   editor: `<rect x="4.6" y="5" width="10.8" height="10" rx="1.2"/><path d="M4.6 7.8h10.8M8 7.8V15"/>`,
 
-  font: `<path d="M5.2 15.4 10 4.6l4.8 10.8M7 11.4h6"/>`,
+  font: `<path d="M5.2 15.4 10 4.6l4.8 10.8" stroke-linejoin="miter"/><path d="M7 11.4h6"/>`,
 
   // An anvil.
   forge: `<path d="${ANVIL}" fill="currentColor" stroke-width="1"/>`,
 
   // A right triangle and its square corner.
-  geom: `<path d="M4.8 15.2h10.4L4.8 4.8z"/><path d="M4.8 12.6h2.6v2.6" stroke-width="1.25"/>`,
+  geom: `<path d="M4.8 15.2h10.4L4.8 4.8z"/><path d="M4.8 12.6h2.6v2.6" stroke-width="1"/>`,
 
   // A closed hand pointing down at a surface: the fist with its curled fingers marked off, the index finger
   // dropping from its corner, and the marks of the touch either side of the fingertip.
@@ -134,7 +135,7 @@ export const PACKAGES = framed({
     <path d="M6.6 9.2 A2.6 1.6 -45 0 1 9.2 6.6" stroke-width="1"/>`,
 
   // A list with its highlighted row.
-  menu: `<path d="M5.4 5.6h9.2M5.4 14.4h9.2"/><rect x="4.4" y="8.4" width="11.2" height="3.2" rx="0.8" fill="currentColor" stroke="none"/>`,
+  menu: `<path d="M5.4 5.6h9.2M5.4 14.4h9.2"/><rect x="4.65" y="8.4" width="10.7" height="3.2" rx="0.75" fill="currentColor" stroke="none"/>`,
 
   // The overview and the viewport you drag in it.
   minimap: `<rect x="4.6" y="5.6" width="10.8" height="8.8" rx="1" stroke-width="1.25"/><rect x="6.6" y="7.4" width="4.6" height="3.8" rx="0.4" fill="currentColor" stroke="none"/>`,
@@ -217,8 +218,8 @@ export const PACKAGES = framed({
 
   // Two halves mirrored across an axis.
   // A square split on its diagonal into two mirrored halves, each with its own border. The halves' long
-  // sides sit √2 · 1.77 = 2.5 apart: a stroke's width and a 1.0 gap.
-  symmetry: `<path d="M4.6 4.6h9.03L4.6 13.63zM15.4 6.37v9.03H6.37z"/>`,
+  // sides sit 5.05 apart, 2.52 either side of the dashed axis (x + y = 20).
+  symmetry: `<path stroke-width="1.25" d="M3.7 3.7h9.03L3.7 12.73zM16.3 7.27v9.03H7.27z"/><path stroke-width="1" stroke-dasharray="1.5 2.5" d="M5.23 14.77L14.77 5.23"/>`,
 
   // A paragraph, wrapped.
   text: `<path d="M4.8 5.8h10.4M4.8 8.6h10.4M4.8 11.4h10.4M4.8 14.2h6"/>`,
