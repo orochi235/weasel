@@ -348,7 +348,8 @@ in a route, `primary` by default and `*` for either. A middle press is only ever
 a drag: it makes no `pointerDown`, click, double click or long-press, and leaves a
 primary click sequence open. A middle press no binding would drag is left to the
 browser — its autoscroll, its paste — and one that some binding would drag is
-default-prevented. The right button is the context menu's and starts no drag. The
+default-prevented. An affordance's claim on the pointer is a claim on its primary
+press and does not bar a middle drag. The right button is the context menu's and starts no drag. The
 `view` preset binds a middle drag to `viewport.dragPan` under every tool
 (`middleDragPanContribution`).
 
