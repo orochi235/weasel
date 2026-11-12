@@ -68,18 +68,29 @@ function addDrafts(scene: DrawScene, drafts: readonly SceneDraft[], keepPages: b
     if (draft.kind === 'effect' && live(draft)) {
       skipped.add(draft.id);
       const sources = draft.dependsOn.map((s) => sceneIdOf.get(s)!);
-      specs.push({ ...pathEffectNode(draft.effect, sources, 'default', derivations!), ...at } as Spec);
+      const effect = pathEffectNode(draft.effect, sources, 'default', derivations!);
+      specs.push({ ...effect, ...named(effect.data as WeaselDrawData, draft), ...at } as Spec);
       continue;
     }
     if (draft.kind === 'effect' && !parents.has(draft.id)) continue;
     const node = draft.kind === 'mark'
       ? { kind: 'mark' as const, ...(draft.boolean ? booleanOfObj(draft.obj, draft.boolean) : leafOfObj(draft.obj)) }
       : { kind: 'group' as const, pose: draft.pose, data: draft.data as WeaselDrawData };
-    specs.push({ ...node, ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
+    specs.push({ ...node, ...named(node.data, draft), ...(draft.clip ? { clip: draft.clip } : {}), layer: 'default', ...at });
   }
   const pageOf = new Map(keepPages ? drafts.flatMap((d) => (d.page === undefined ? [] : [[sceneIdOf.get(d.id)!, d.page]])) : []);
   // A file's geometry is world; each pose is stored in its container's frame.
   addOnPages(scene, localizeWorldPoses(specs, scene.composition), { pageOf: (id) => pageOf.get(id) });
+  // Locked last: nothing can be added under a locked node.
+  for (const d of drafts) {
+    const id = sceneIdOf.get(d.id)!;
+    if (d.locked && scene.get(id) !== undefined) scene.setLocked(id, true);
+  }
+}
+
+/** `data` with the draft's name in it. */
+function named(data: WeaselDrawData, draft: SceneDraft): { data: WeaselDrawData } {
+  return { data: draft.label === undefined ? data : { ...data, label: draft.label } };
 }
 
 /**

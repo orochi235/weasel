@@ -33,7 +33,7 @@ function chartOf(json: ChartSnapshot): ChartFile {
   const systemLayers = (json.systemLayers as ChartSnapshot['systemLayers'] | undefined) ?? CHART_LAYERS;
   const specs = nodeSpecsFromSnapshot(
     { ...json, systemLayers } as ChartSnapshot, CHART_REGISTRY, reviveTypedArrays,
-    { pages: CHART_PAGES },
+    { pages: CHART_PAGES, systemLayers: CHART_LAYERS },
   );
   return { specs, doc: { [DIAGRAM_THEME_KEY]: themeDocValue(CHART_DEFAULT_THEME), ...docFromSnapshot(json) } };
 }
@@ -47,7 +47,7 @@ export function chartToJson(scene: ChartScene): string {
   return JSON.stringify(scene.toJSON(), serializeReplacer);
 }
 
-/** The chart a saved file holds. Throws on text that is not one. */
+/** The chart a saved file holds. Throws on text that is not one, or on one chart's scene cannot hold. */
 export function chartFromJson(text: string): ChartFile {
   const json: unknown = JSON.parse(text);
   if (!isSerializedScene<ChartData, ChartLayer, ChartPose>(json)) throw new Error('Not a saved chart');

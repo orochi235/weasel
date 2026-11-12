@@ -8,9 +8,12 @@
 // wrapper, which the load takes off and reads nothing into.
 
 import type {
-  AddNodeSpec, PagesDoc, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
+  AddNodeSpec, PagesDoc, PoseDescriptor, SceneRegistry, SavedScene, SpecsFromSerializedOptions, SystemLayerSpec,
+  UseSceneOptions,
 } from '@weasel-js/core';
-import { PAGES_DOC_KEY, adoptLegacyPages, asNodeId, sceneFromJSON, setPages, specsFromSerialized } from '@weasel-js/core';
+import {
+  PAGES_DOC_KEY, adoptLegacyPages, asNodeId, createScene, sceneFromJSON, setPages, specsFromSerialized,
+} from '@weasel-js/core';
 import { isRawWrapper, typedArrayReplacerWrapping, untagTypedArray } from '@weasel-js/geom';
 
 const isPathKey = (k: string): k is 'commands' | 'coords' => k === 'commands' || k === 'coords';
@@ -61,6 +64,9 @@ function legacyNumbers(v: unknown): number[] | undefined {
 export type SnapshotLoadOptions<TData, TLayer extends string, TPose> = SpecsFromSerializedOptions<TData, TLayer, TPose> & {
   descriptor?: PoseDescriptor<unknown>;
   pages?: PagesDoc;
+  /** The layers of the scene the specs are for. Given, the specs are built into a scene of them, which throws on a
+   *  node that scene cannot hold: one on a layer it lacks, or under a parent the snapshot does not have. */
+  systemLayers?: readonly SystemLayerSpec<TLayer>[];
 };
 
 /** Whether loading `json` with `opts` rebuilds its tree, its pages made nodes there and then: one saved with
@@ -90,7 +96,7 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   if (!snapshotRebuildsTree(json as never, opts)) return json;
   const saved = json.doc?.[PAGES_DOC_KEY];
   if (saved !== undefined) checkPagesDoc(saved);
-  const { descriptor, pages, ...read } = opts;
+  const { descriptor, pages, systemLayers: _layers, ...read } = opts;
   const taken = new Set<unknown>(json.nodes.map((n) => (n as { id?: unknown } | null)?.id));
   let n = 0;
   // The run is the one node adoption mints; a fixed id loads the same snapshot the same way every time.
@@ -145,7 +151,8 @@ export function docFromSnapshot<TData, TLayer extends string, TPose>(
  *  that function rather than failing the load, unless `opts.unknownKeys` says
  *  `'throw'`; `opts.onSkip` hears each. Pages saved as a `core:pages` value
  *  come back as page nodes, and a snapshot saved without pages gets
- *  `opts.pages` (`adoptSnapshotPages`). `revive` rewrites a copy of each node's
+ *  `opts.pages` (`adoptSnapshotPages`). With `opts.systemLayers`, a snapshot the scene cannot hold throws here,
+ *  where a reader's fallback catches it, and not in the scene's construction. `revive` rewrites a copy of each node's
  *  data on the way in, so `json` is left as it is; the default revives typed arrays only. A scene composed other
  *  than rigidly passes its own `opts.composition`, since the pages are made in
  *  a scene built on it. */
@@ -155,9 +162,15 @@ export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   revive: <T>(node: T) => T = reviveTypedArrays,
   opts: SnapshotLoadOptions<TData, TLayer, TPose> = {},
 ): AddNodeSpec<TData, TLayer, TPose>[] {
-  const { descriptor: _descriptor, pages: _pages, ...read } = opts;
-  return specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...read })
+  const { descriptor: _descriptor, pages: _pages, systemLayers, ...read } = opts;
+  const specs = specsFromSerialized(adoptSnapshotPages(json, registry, opts), registry, { unknownKeys: 'skip', ...read })
     .map((spec) => ({ ...spec, data: revive(copyPlain(spec.data)) }));
+  if (systemLayers) {
+    createScene({
+      systemLayers, registry, initial: specs, ...(read.composition ? { composition: read.composition } : {}),
+    } as UseSceneOptions<TData, TLayer, TPose>);
+  }
+  return specs;
 }
 
 /** `v` with every array and plain object in it copied, own `__proto__` keys included, so a reviver that works in

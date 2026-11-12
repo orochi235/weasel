@@ -2,7 +2,7 @@
 
 import { nodeSpecsFromSnapshot as sharedNodeSpecs, reviveTypedArrays } from '@weasel-js/editor';
 import type {
-  AddNodeSpec, PagesDoc, SceneRegistry, SavedScene, SpecsFromSerializedOptions,
+  AddNodeSpec, PagesDoc, SceneRegistry, SavedScene, SpecsFromSerializedOptions, SystemLayerSpec,
 } from '@weasel-js/core';
 import { solid } from '@weasel-js/core';
 
@@ -124,13 +124,15 @@ export const DRAW_LOAD_OPTIONS = {
 
 /** The shared `nodeSpecsFromSnapshot` with the legacy-paint migration applied to each node's data, and
  *  a snapshot's roots placed on their pages: its `core:pages`
- *  value's, or `pages` for one saved without any. */
+ *  value's, or `pages` for one saved without any. With `systemLayers`, throws on a snapshot a scene of them
+ *  cannot hold. */
 export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
   registry?: SceneRegistry<TPose, TData, TLayer>,
   pages?: PagesDoc,
+  systemLayers?: readonly SystemLayerSpec<TLayer>[],
 ): AddNodeSpec<TData, TLayer, TPose>[] {
   return sharedNodeSpecs(json, registry, reviveSnapshot, {
-    ...DRAW_LOAD_OPTIONS, ...(pages ? { pages } : {}),
+    ...DRAW_LOAD_OPTIONS, ...(pages ? { pages } : {}), ...(systemLayers ? { systemLayers } : {}),
   });
 }

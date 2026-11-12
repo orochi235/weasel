@@ -480,14 +480,12 @@ Owner tags, after the priority (2026-10-26):
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) [waiting] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
-  line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
-  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
-  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
-  and the file format waits on that.
-  Closes when draw can add a second layer and its SVG files round-trip the layer list, or on 2026-12-31
-  with draw still on one layer, delete it.
+- **(P3) [maintainer] draw's SVG Save drops the measurements.** A saved file keeps paper size, title, groups,
+  names, locks and line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`), but no layer list and
+  no layer id on a shape, and `svgExport.ts` leaves out everything on an annotation layer as it leaves out a
+  hidden one. Draw keeps its measurements on the `annotations` layer (`drawDocument.ts`), so a drawing saved and
+  opened again has none, though a reload keeps them. Closes when the maintainer rules whether a saved file
+  carries its measurements (and so the layer each shape is on), and Save and Open do what was ruled.
 
 - **(P2) [maintainer] Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
   asset, each one's default surface, and where switching lives were picked without anyone using

@@ -5,6 +5,8 @@ import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 import { POSE, makeScene, type Data } from './testing/makeScene';
 import { specsFromSerialized } from './serialization';
+import { statedFields } from './statedFields';
+import { createPageRun } from '../pages/pageNodes';
 import { SnapshotKeyError, SnapshotShapeError } from './snapshotShape';
 import { PAGE_RUN, PAGE_RUN_LAYOUT } from '../pages/pageRunLayout';
 import { PAGE_CLIP, pageClip } from '../pages/pageClip';
@@ -402,5 +404,23 @@ describe('user layers survive a round-trip', () => {
     });
     expect(scene.layers.map((l) => l.kind)).toEqual(['system', 'system']);
     expect(scene.layers[1].visible).toBe(false);
+  });
+});
+
+describe('a node\'s stated fields through a snapshot', () => {
+  it('come back as statedFields reads them, each one a copy carries', () => {
+    const scene = createScene<Data, 'structures'>({ systemLayers: [{ id: 'structures' }] });
+    createPageRun(scene, [{ id: 'p', width: 100, height: 100 }]);
+    const g = scene.add({
+      kind: 'group', layer: 'structures', parent: asNodeId('p'), pose: POSE, data: { label: 'g' },
+      pickable: false, hidden: true, clip: 'outline', consumesChildren: true,
+      units: { system: { base: 'mm', units: { mm: 1 } }, scale: 1 },
+    });
+    scene.setLocked(g, true);
+    const reloaded = sceneFromJSON(JSON.parse(JSON.stringify(scene.toJSON())) as never);
+    for (const id of scene.toJSON().nodes.map((n) => n.id as NodeId)) {
+      expect(statedFields(reloaded.get(id)!), id).toEqual(statedFields(scene.get(id)!));
+    }
+    expect(Object.keys(statedFields(scene.get(g)!)).sort()).toEqual(['clip', 'consumesChildren', 'hidden', 'locked', 'pickable', 'units']);
   });
 });
