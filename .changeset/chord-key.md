@@ -2,6 +2,6 @@
 "@weasel-js/ui-input": minor
 ---
 
-`chordKey(e)` and `codeLetter(code)` are exported: the key a shortcut reads a keystroke as, which is the letter its key bears for a chord that typed no Latin character, as `matchKeyEvent` in `@weasel-js/gestures` reads it.
+`chordKey(e)` and `codeLetter(code)` are exported: the key a shortcut reads a keystroke as, on any layout. A chord that typed no Latin character reads as the letter its key bears, so Ctrl+я is Ctrl+Z.
 
 <!-- entry: api -->
