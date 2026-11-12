@@ -175,8 +175,8 @@ function actionClause(parsed: ParsedRoute, arg: string | undefined, required: re
     case 'dblTap':
       return userDoes(required, `double-taps${target}`);
     case 'drag': {
-      const button = arg === 'middle' ? ' with the middle button'
-        : arg === '*' ? ' with either button'
+      const button = parsed.arg === 'middle' ? ' with the middle button'
+        : parsed.arg === '*' ? ' with either button'
         : '';
       return userDoes(required, `drags${target}${button}`);
     }

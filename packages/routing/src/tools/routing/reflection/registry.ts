@@ -203,6 +203,7 @@ function routeArgsForSpec(
   if ('fingers' in spec) return [String(spec.fingers)];
   if ('direction' in spec) return [spec.direction ?? fallback];
   if (spec.kind === 'hover') return [spec.motion ?? fallback];
+  if (spec.kind === 'drag') return [spec.button ?? fallback];
   if ('types' in spec) return [spec.types?.length ? spec.types.join('|') : fallback];
   return [fallback];
 }
