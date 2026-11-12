@@ -154,12 +154,22 @@ function planesOf(boxes: readonly Aabb[]): Map<Axis, Map<number, Vec3[]>> {
 }
 
 /** Options for `groundGridSource`. */
-export interface GroundGridSourceOptions {
+export type GroundGridSourceOptions = {
   /** The grid's pitch, in world units. One that is not positive and finite offers no lines. */
   step: number;
-  /** The ground's normal; the grid lies on `up · p = 0`. Default `+y`. */
-  up?: Vec3;
-}
+} & (
+  | {
+    /** The world the snap runs in; the grid lies on its ground. */
+    world: Pick<World3d<unknown, string>, 'viewport' | 'up'>;
+    up?: never;
+  }
+  | {
+    /** The ground's normal; the grid lies on `up · p = 0`. Default `+y`. A host with a `World3d` passes `world`
+     *  instead, so this cannot disagree with the ground its session probes. */
+    up?: Vec3;
+    world?: never;
+  }
+);
 
 /**
  * A grid on the ground plane as snap targets: for each pointer or geometry
@@ -169,7 +179,7 @@ export interface GroundGridSourceOptions {
  * is a fallback, so it holds every axis no target claims and never displaces one.
  */
 export function groundGridSource(opts: GroundGridSourceOptions): SnapSource<Vec3> {
-  const up = normalize(opts.up ?? DEFAULT_UP);
+  const up = normalize((opts.world ? opts.world.up : opts.up) ?? DEFAULT_UP);
   const [u, v] = planeBasis(up);
   const lines = (c: number): number[] => {
     const k = Math.round(c / opts.step);

@@ -278,7 +278,7 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const kitSettings = useKitSettings();
   const snap = useMemo(
     () => createSnap(world, {
-      sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })],
+      sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1, world })],
       store: snapMarks,
       kitSettings,
     }),
