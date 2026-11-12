@@ -21,7 +21,7 @@ export type {
 /** What a journal needs from a history beyond its public surface: both halves
  *  of every applied entry, and a way to record both on its parent. */
 interface JournalAccess {
-  appliedOps(): { forwardOps: Op[]; baseOps: Op[] };
+  appliedOps(): ReturnType<typeof appliedHalves>;
   record(forwardOps: Op[], baseOps: Op[], label: string, options?: RecordEntryOptions): void;
 }
 

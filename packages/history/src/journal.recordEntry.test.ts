@@ -41,3 +41,37 @@ describe('Journal.recordEntry', () => {
     expect(() => j.recordEntry([setOp({ v: 0 }, 0, 1)], 'Set')).toThrow('not active');
   });
 });
+
+describe('Journal.commit of a keyed run', () => {
+  it('folds into the parent entry recorded under the same key just before the journal opened', () => {
+    const cell = { v: 0 };
+    const parent = createHistory(null);
+    cell.v = 1;
+    parent.recordEntry([setOp(cell, 0, 1)], 'Insert', { coalesceKey: 'k' });
+    const j = parent.beginJournal({ label: 'mode' });
+    cell.v = 2;
+    j.recordEntry([setOp(cell, 1, 2)], 'Type', { coalesceKey: 'k' });
+    j.commit('Mode');
+    expect(parent.entries().undo.map((e) => e.label)).toEqual(['Insert']);
+    parent.undo();
+    expect(cell.v).toBe(0);
+  });
+
+  it('stands alone when the session mixes keys, or the parent was sealed', () => {
+    const cell = { v: 0 };
+    const parent = createHistory(null);
+    parent.recordEntry([setOp(cell, 0, 1)], 'Insert', { coalesceKey: 'k' });
+    const mixed = parent.beginJournal({ label: 'mode' });
+    mixed.recordEntry([setOp(cell, 1, 2)], 'Type', { coalesceKey: 'k' });
+    mixed.recordEntry([setOp(cell, 2, 3)], 'Other');
+    mixed.commit('Mode');
+    expect(parent.entries().undo.map((e) => e.label)).toEqual(['Insert', 'Mode']);
+
+    parent.recordEntry([setOp(cell, 3, 4)], 'Again', { coalesceKey: 'k' });
+    parent.seal();
+    const sealed = parent.beginJournal({ label: 'mode' });
+    sealed.recordEntry([setOp(cell, 4, 5)], 'Type', { coalesceKey: 'k' });
+    sealed.commit('Mode');
+    expect(parent.entries().undo.map((e) => e.label)).toEqual(['Insert', 'Mode', 'Again', 'Mode']);
+  });
+});
