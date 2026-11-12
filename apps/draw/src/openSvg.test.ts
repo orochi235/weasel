@@ -158,6 +158,33 @@ describe('Save then Open: a mark with children', () => {
     expect(mark.clip).toBe(clip);
     expect(reopened.get(reopened.childrenOf(mark.id)[0])!.data.fill).toMatchObject({ paint: { color: '#0000ff' } });
   });
+
+  it('reopens each node with the name and the lock the Layers panel gave it', async () => {
+    const saved = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+    const g = saved.add({ kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 40, height: 40 }, data: { label: 'Frame' } });
+    const m = saved.add({
+      kind: 'mark', layer: 'default', parent: g, pose: { x: 0, y: 0, width: 40, height: 40 },
+      data: { path: rect(40, 40), fill: { paint: solid('#ff0000') }, label: 'Red & <bold>' },
+    });
+    for (const [x, label] of [[5, undefined], [20, 'Second']] as const) {
+      const leaf = saved.add({
+        kind: 'mark', layer: 'default', parent: m, pose: { x, y: 5, width: 10, height: 10 },
+        data: { path: rect(10, 10), fill: { paint: solid('#0000ff') }, ...(label ? { label } : {}) },
+      });
+      if (label) saved.setLocked(leaf, true);
+    }
+    saved.setLocked(m, true);
+    const named = (scene: Drawn) => {
+      const order: NodeId[] = [];
+      const walk = (id: NodeId) => { order.push(id); scene.childrenOf(id).forEach(walk); };
+      contentRoots(scene).forEach(walk);
+      return order.map((id) => [scene.get(id)!.data.label, scene.get(id)!.locked === true]);
+    };
+    const reopened = sceneWithOneShape();
+    openSvgText(reopened, await sceneToSvgString(saved, PAGE), 'page.svg');
+    expect(named(reopened)).toEqual(named(saved));
+    expect(named(reopened)).toEqual([['Frame', false], ['Red & <bold>', true], [undefined, false], ['Second', true]]);
+  });
 });
 
 describe('importSvgText', () => {

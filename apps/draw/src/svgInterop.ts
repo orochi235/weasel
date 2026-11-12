@@ -6,7 +6,8 @@
  *
  * `tool` and `params` ride on `meta.wd.attrs` under the local names `tool`, `params-sides`,
  * `params-points`, `params-ratio`, `params-rotation`; a path's corner shapes under `corners`
- * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, a live path
+ * and `corner-anchors` (`svgCorners.ts`); a leaf's scene id under `leaf-id`, a node's Layers-panel name under
+ * `label` and its lock as `locked="true"`, a live path
  * effect on its group (`svgEffects.ts`), `role="mark"` on the group a mark with children
  * exports as, and `role="page"` with `page-id` on the clipped group a page's content saves in.
  */
@@ -224,7 +225,7 @@ export interface RectBounds { x: number; y: number; width: number; height: numbe
  *
  * A page's group is no draft: each top-level draft under one names that page's id as `page`.
  */
-interface DraftBase { id: string; parentId: string | null; clip?: NodeClip; hidden?: true; page?: string }
+interface DraftBase { id: string; parentId: string | null; clip?: NodeClip; hidden?: true; page?: string; label?: string; locked?: true }
 export type SceneDraft =
   | (DraftBase & { kind: 'mark'; obj: Obj; boolean?: BooleanShapeOp })
   | (DraftBase & { kind: 'group'; pose: RectBounds; data: SvgKitLeafData })
@@ -288,6 +289,7 @@ export function svgNodesToSceneDrafts(
 ): SceneDraft[] {
   const nodes = ('nodes' in input ? input.nodes : input).filter((n) => !isBackgroundNode(n));
   const effects = new Map<string, EffectAttrs>();
+  const marks = new Map<string, Pick<DraftBase, 'label' | 'locked'>>();
   const pageOfGroup = new Map<string, string>();
   const used = new Set<string>();
   const idOf = (n: SvgNode): string => {
@@ -300,6 +302,8 @@ export function svgNodesToSceneDrafts(
     const carried = n.kind === 'group' ? attrs?.['group-id'] ?? attrs?.['leaf-id'] : attrs?.['leaf-id'];
     const id = carried !== undefined && !used.has(carried) ? carried : nextId();
     used.add(id);
+    const named = decodeNodeAttrs(attrs);
+    if (named.label !== undefined || named.locked) marks.set(id, named);
     const effect = n.kind === 'group' ? decodeEffectAttrs(attrs) : null;
     if (effect !== null) effects.set(id, effect);
     return id;
@@ -319,6 +323,7 @@ export function svgNodesToSceneDrafts(
       ...(d.clip ? { clip: d.clip } : {}),
       ...(d.hidden ? { hidden: true as const } : {}),
       ...(page === undefined ? {} : { page }),
+      ...marks.get(d.id),
     };
     if (d.kind === 'mark') return [{ kind: 'mark', ...base, obj: d.data, ...(d.boolean ? { boolean: d.boolean } : {}) }];
     const group = { ...base, pose: d.pose, data: d.data };
@@ -339,6 +344,8 @@ export interface SceneSource extends SvgKitTree<string> {
   isPainted?(id: string): boolean;
   /** The page id (`Page.id`) of a page's node; `undefined` for any other node. */
   pageIdOf?(id: string): string | undefined;
+  /** The name the Layers panel shows for the node, where it was given one, and whether it is locked. */
+  nodeOf?(id: string): { label?: string; locked?: boolean } | undefined;
 }
 
 /**
@@ -351,22 +358,40 @@ export interface SceneSource extends SvgKitTree<string> {
  * export it.
  */
 export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]): SvgNode[] {
+  const named = <T extends SvgNode>(id: string, node: T): T => {
+    const attrs = encodeNodeAttrs(source.nodeOf?.(id));
+    if (attrs === null) return node;
+    return { ...node, meta: { ...node.meta, wd: { ...node.meta?.wd, attrs: { ...node.meta?.wd?.attrs, ...attrs } } } };
+  };
   return svgNodesFromKit(source, {
     ...(roots ? { roots } : {}),
     ...(source.isPainted ? { include: (id: string) => source.isPainted!(id) } : {}),
     leaf: (id) => {
       const obj = source.objOf(id);
       if (obj === undefined) return null;
-      if (!('effect' in obj)) return objToSvgNode(obj);
-      return { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } };
+      if (!('effect' in obj)) return named(id, objToSvgNode(obj));
+      return named(id, { kind: 'group', children: obj.parts.map(objToSvgNode), meta: { wd: { attrs: encodeEffectAttrs(obj) } } });
     },
     group: (id, g) => {
       const page = source.pageIdOf?.(id);
-      const attrs: Record<string, string> = page === undefined ? { 'group-id': id } : { role: PAGE_ROLE, 'page-id': page };
-      return { ...g, meta: { wd: { attrs } } };
+      if (page !== undefined) return { ...g, meta: { wd: { attrs: { role: PAGE_ROLE, 'page-id': page } } } };
+      return named(id, { ...g, meta: { wd: { attrs: { 'group-id': id } } } });
     },
     mark: (_id, g) => ({ ...g, meta: { wd: { attrs: { role: MARK_ROLE } } } }),
   });
+}
+
+/** The `wd:` attributes naming and locking a node: `label`, and `locked="true"`; `null` for neither. */
+function encodeNodeAttrs(node: { label?: string; locked?: boolean } | undefined): Record<string, string> | null {
+  if (node?.label === undefined && node?.locked !== true) return null;
+  return { ...(node.label === undefined ? {} : { label: node.label }), ...(node.locked ? { locked: 'true' } : {}) };
+}
+
+function decodeNodeAttrs(attrs: Record<string, string> | undefined): Pick<DraftBase, 'label' | 'locked'> {
+  return {
+    ...(attrs?.label === undefined ? {} : { label: attrs.label }),
+    ...(attrs?.locked === 'true' ? { locked: true as const } : {}),
+  };
 }
 
 /** `wd:role` on the group a mark with children exports as; its first element is the mark. */
