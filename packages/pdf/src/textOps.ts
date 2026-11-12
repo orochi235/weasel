@@ -9,7 +9,7 @@ import {
   verticalAlignOffset,
 } from '@weasel-js/text';
 import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
-import { isSpace, outlineCommand, skipGlyph } from './textOutlines';
+import { isSpace, outlineCommand, skipGlyph, skipNoOutline } from './textOutlines';
 import { text as pdfText, writeDict } from './objects';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { type SegmentGlyph, type TextSegment, writeSegment } from './textSegment';
@@ -125,8 +125,8 @@ export async function writeText(ctx: PageCtx, cmd: TextDrawCommand, state: DrawS
       }
       if (space) continue;
       const outline = outlineCommand(ctx, g, cmd, dx, dy);
-      if (outline) items.push(outline);
-      else skipGlyph(ctx, g, 'has no glyph to draw');
+      if ('kind' in outline) items.push(outline);
+      else skipNoOutline(ctx, g, outline, 'has no glyph to draw');
     }
   }
 
