@@ -83,7 +83,8 @@ function Inner({
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
+  const edgeEdits = onReconnect !== undefined || onEditRoute !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined;
+  const edgesPick = pickEdges ?? (edgeEdits || onDelete !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
   const placer = useMemo(() => (labels === 'dodge' ? createSpecLabelPlacer() : null), [labels]);
   const routed = useMemo(() => {
@@ -160,7 +161,7 @@ function Inner({
   const moves = onMove !== undefined || onEditContainer !== undefined;
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
-  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick || sequences;
+  const edits = moves || resizes || sequences || edgeEdits || onDelete !== undefined || onConnect !== undefined || onReorder !== undefined;
   const features = useMemo((): FeatureEntry[] => [
     'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
     ...editing.presets,
