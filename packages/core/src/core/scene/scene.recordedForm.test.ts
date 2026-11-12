@@ -52,30 +52,44 @@ function cellOps() {
 }
 
 describe('Scene — which stack an edit lands on while a journal is open', () => {
-  it('an applyBatch goes to the journal; a direct call and scene.history.apply land on the scene stack', () => {
+  it('an applyBatch, a direct call, a batch and scene.history.apply all go to the journal', () => {
     const { scene, adapter, move, x } = fixture();
     const journal = scene.history.beginJournal({ label: 'session' });
     scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
 
     scene.applyBatch([move(A, 0, 5)], 'Move', adapter);
-    expect(scene.history.undoDepth()).toBe(0);
-    expect(journal.entries().undo).toHaveLength(1);
-
     scene.setPose(B, at(140));
-    expect(scene.history.undoDepth()).toBe(1);
-    expect(journal.entries().undo).toHaveLength(1);
-
+    scene.batch('Both', () => { scene.setPose(A, at(7)); scene.setPose(B, at(145)); });
     const bound: Op = { apply: () => { scene.setPose(B, at(150)); }, invert: () => bound };
     scene.history.apply(bound, 'Facade');
-    expect(scene.history.undoDepth()).toBe(2);
-    expect(journal.entries().undo).toHaveLength(1);
+    expect(scene.history.undoDepth()).toBe(0);
+    expect(journal.entries().undo.map((e) => e.label)).toEqual(['Move', 'setPose', 'Both', 'Facade']);
 
-    // The journal's commit is one more entry, above the two made beside it.
-    journal.commit('Session');
-    expect(scene.historyEntries().map((e) => e.label)).toEqual(['setPose', 'Facade', 'Session']);
+    // Undo inside the session takes back the last of them, whichever way it was made.
     scene.undo();
+    expect(x(B)).toBe(145);
+    scene.undo();
+    expect([x(), x(B)]).toEqual([5, 140]);
+    scene.redo();
+    scene.redo();
+
+    journal.commit('Session');
+    expect(scene.historyEntries().map((e) => e.label)).toEqual(['Session']);
+    scene.undo();
+    expect([x(), x(B)]).toEqual([0, 100]);
+  });
+
+  it('a direct call during a journal opened on another history lands there, not on the scene stack', () => {
+    const { scene, x, labels } = fixture();
+    const journal = createHistory(null).beginJournal({ label: 'mode' });
+    scene.setActiveJournalAccessor(() => (journal.isActive() ? journal : null));
+
+    scene.setPose(A, at(5));
+    scene.batch('Batch', () => { scene.setPose(A, at(9)); });
+    expect(labels()).toEqual([]);
+    journal.cancel();
     expect(x()).toBe(0);
-    expect(x(B)).toBe(150);
+    expect(labels()).toEqual([]);
   });
 
   it('a journal opened on another history reverts in place, and leaves the scene stack alone', () => {

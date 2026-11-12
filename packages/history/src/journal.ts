@@ -1,6 +1,6 @@
 import { createEmitter } from '@weasel-js/registry';
 import type { Op } from './op';
-import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry, type HistoryStep } from './history';
+import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type History, type HistoryEntry, type HistoryStep, type RecordEntryOptions } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();
 /** A journal opened inside another, to the one it was opened in. */
@@ -67,6 +67,8 @@ export interface Journal {
 
   // Same operational surface as History
   applyBatch(ops: Op[], label: string): void;
+  /** As `History.recordEntry`, for the journal's own entries: ops that have already applied. */
+  recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   undo(): void;
   redo(): void;
   canUndo(): boolean;
@@ -137,6 +139,10 @@ export function createJournalInternal(
     applyBatch(ops: Op[], label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
       inner.applyOps(ops, label);
+    },
+    recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
+      if (state !== 'active') throw new Error('Journal is not active');
+      inner.recordEntry(ops, label, options);
     },
     undo(): void {
       if (state !== 'active') throw new Error('Journal is not active');
