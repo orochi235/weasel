@@ -76,3 +76,14 @@ test('under forced colors a switch draws its thumb apart from its track', async 
     await commands.forcedColors('none');
   }
 });
+
+test("under prefers-reduced-motion a switch's thumb jumps to its side", async () => {
+  await commands.reducedMotion('reduce');
+  try {
+    matrix();
+    const thumb = document.querySelector('.lk-control-matrix__thumb') as Element;
+    expect(getComputedStyle(thumb).transitionDuration).toBe('0s');
+  } finally {
+    await commands.reducedMotion('no-preference');
+  }
+});
