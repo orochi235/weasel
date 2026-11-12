@@ -189,6 +189,8 @@ function sweepKit(): Sweep {
   s.value(diagram.diagramEdgeEnds({} as never), 'diagram.diagramEdgeEnds');
   s.value(diagram.reorderContribution({} as never), 'diagram.reorderContribution');
   s.value(diagram.groupReorderContribution(() => {}), 'diagram.groupReorderContribution');
+  s.value(diagram.reorderPreset({} as never), 'diagram.reorderPreset');
+  s.value(diagram.groupReorderPreset(() => {}), 'diagram.groupReorderPreset');
   s.value(diagram.diagramContainers({} as never), 'diagram.diagramContainers');
   s.value(diagram.diagramOffPage(), 'diagram.diagramOffPage');
   s.value(diagram.connectorTool({} as never), 'diagram.connectorTool');
