@@ -288,10 +288,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       pushOrCoalesce(ops, label);
     },
     undo() {
+      refuseWhileActive(activeJournal);
       if (undoStack.length === 0) return;
       bump(stepOf('undo', walkTo(undoStack.length - 1)));
     },
     redo() {
+      refuseWhileActive(activeJournal);
       if (redoStack.length === 0) return;
       bump(stepOf('redo', walkTo(undoStack.length + 1)));
     },
@@ -321,6 +323,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       };
     },
     goto(n) {
+      refuseWhileActive(activeJournal);
       // Total length stays constant during this walk (we only shuffle
       // entries between undo and redo stacks).
       const total = undoStack.length + redoStack.length;
