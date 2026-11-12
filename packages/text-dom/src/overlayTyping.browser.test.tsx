@@ -10,6 +10,7 @@ import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import { registerCanvasFont } from '@weasel-js/font';
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { StyledRun, TextStyle } from '@weasel-js/text';
 import { useTextEdit } from '@weasel-js/text-dom';
 import type { TextEditCommit, TextEditScreenPose, UseTextEditReturn } from './textEditTypes';
@@ -113,7 +114,9 @@ describe('typing into the edit overlay', () => {
 
   it('gives an armed style to what is typed after it', async () => {
     await open({ text: 'abc', runs: [{ text: 'abc' }], caret: 3 });
-    await userEvent.keyboard('{Control>}b{/Control}XYZ');
+    // Mod: on a Mac, Ctrl+B belongs to the text and moves the caret back.
+    const mod = isApplePlatform() ? 'Meta' : 'Control';
+    await userEvent.keyboard(`{${mod}>}b{/${mod}}XYZ`);
     expect(committed().runs).toEqual([{ text: 'abc' }, { text: 'XYZ', bold: true }]);
   });
 
