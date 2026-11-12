@@ -48,7 +48,8 @@
     "@weasel-js/quantity": "1.19.0",
     "@weasel-js/react": "1.19.0",
     "@weasel-js/registry": "1.19.0",
-    "@weasel-js/select": "1.19.0"
+    "@weasel-js/select": "1.19.0",
+    "@weasel-js/ui-input": "1.19.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

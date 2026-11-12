@@ -19,7 +19,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/menu": "1.19.0"
+    "@weasel-js/menu": "1.19.0",
+    "@weasel-js/ui-input": "1.19.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
