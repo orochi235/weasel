@@ -398,10 +398,6 @@ Owner tags, after the priority (2026-10-26):
   `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
   (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
   around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
-- **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
-  stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
-  scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
-  frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown

@@ -101,6 +101,18 @@ function paintTiles(frame: SurfaceFrame, painters: ReadonlyMap<string, TilePaint
 }
 
 /**
+ * Calls `onScroll` on a scroll anywhere in `doc`. A scroll moves tiles against the container, and the observers
+ * behind `watch` report that only after the frame has drawn: a press in between lands on the box of whatever tile
+ * was there. The scroll event comes ahead of the frame's callbacks, so measuring on it moves the boxes in the frame
+ * the scroll draws in. The whole document, since the scroller holding a tile need not be inside the container: a
+ * lab's is a layer beside its trials.
+ */
+function onAnyScroll(doc: Document, onScroll: () => void): () => void {
+  doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
+  return () => doc.removeEventListener('scroll', onScroll, true);
+}
+
+/**
  * Share one drawing buffer among tiles laid out by the DOM. Tiles register
  * their elements; the hook measures them against the container, re-measures on
  * resize, and batches invalidations into one visible-only frame that calls
@@ -297,15 +309,18 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
     return scopeChanged.current.subscribe(listener);
   }, []);
 
+  const unlistenScroll = useRef<(() => void) | null>(null);
   const containerRef = useCallback(
     (el: HTMLElement | null) => {
       if (container.current === el) return;
       container.current = el;
       watch('container', el);
+      unlistenScroll.current?.();
+      unlistenScroll.current = el ? onAnyScroll(el.ownerDocument, invalidateRects) : null;
       needsMeasure.current = true;
       schedule();
     },
-    [schedule, watch],
+    [schedule, watch, invalidateRects],
   );
 
   useEffect(() => () => frameLoop.cancel(), [frameLoop]);
