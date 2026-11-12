@@ -460,6 +460,27 @@ describe('LensSlot comparisons', () => {
     }
   });
 
+  it('captures Difference at once under StrictMode, not after the rest a repeat waits', async () => {
+    const pixels = fakeSource('pixels');
+    const capture = vi.fn(async (_r: LensSourceRequest<string>) => ({
+      reason: 'Nothing under the reticle',
+    }));
+    pixels.source.capture = capture;
+    render(
+      <Both
+        settings={settings({ source: 'pixels', compare: 'b', view: 'difference' })}
+        sources={{ pixels: pixels.source }}
+      />,
+      {
+        reactStrictMode: true,
+      },
+    );
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(capture.mock.calls.map(([r]) => r.conditions)).toEqual([null, 'b']);
+  });
+
   it('labels a Live lens in Difference with the Pixels source it really shows', () => {
     const live = fakeSource('live');
     const pixels = fakeSource('pixels', { label: (r) => `Pixels ${r.dpr}×` });

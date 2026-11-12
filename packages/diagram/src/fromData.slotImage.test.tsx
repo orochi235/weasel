@@ -86,13 +86,23 @@ describe('a swapped picture', () => {
 describe('useReleasedImages', () => {
   const specsWith = (...srcs: string[]) => srcs.map((src) => ({ data: { image: { src } } }));
 
-  it('frees an image once the specs stop drawing it, and the rest on unmount', () => {
+  it('frees an image once the specs stop drawing it, and the rest on unmount', async () => {
     const { rerender, unmount } = renderHook(({ specs }) => useReleasedImages(specs), { initialProps: { specs: specsWith('a', 'b') } });
     expect(released).toEqual([]);
     rerender({ specs: specsWith('b', 'c') });
     expect(released).toEqual(['a']);
     unmount();
+    await Promise.resolve();
     expect(released.sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('frees nothing still drawn through StrictMode\'s rehearsal unmount', async () => {
+    const { unmount } = renderHook(({ specs }) => useReleasedImages(specs), { initialProps: { specs: specsWith('a') }, reactStrictMode: true });
+    await Promise.resolve();
+    expect(released).toEqual([]);
+    unmount();
+    await Promise.resolve();
+    expect(released).toEqual(['a']);
   });
 
   it('reads the sources from specs that draw images, and no others', () => {

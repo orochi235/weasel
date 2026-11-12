@@ -1,5 +1,6 @@
 import { imageStatus, releaseImage, subscribeImageReady } from '@weasel-js/core';
 import { useEffect, useMemo, useRef } from 'react';
+import { useReleaseOnUnmount } from './releaseOnUnmount';
 
 type Image = { src: string; previous?: string };
 type WithImage = { id?: unknown; data?: unknown };
@@ -71,8 +72,5 @@ export function useReleasedImages(specs: readonly WithImage[]): void {
     settle();
     return subscribeImageReady(settle);
   }, [specs]);
-  useEffect(() => () => {
-    for (const src of held.current) releaseImage(src);
-    held.current = new Set();
-  }, []);
+  useReleaseOnUnmount(held, releaseImage);
 }

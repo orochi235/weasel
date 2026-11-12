@@ -3,8 +3,8 @@ import { useLatest } from '@weasel-js/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type ThemeColorSpec, useThemeColors } from '../../canvas/useThemeColors';
 import type { LensCapture, LensSource, LensSourceRequest } from './lensSource';
-import { LENS_REST_MS } from './lensTypes';
 import { drawPixelGrid, readBitmap, softEdgeMask } from './pixelGrid';
+import { useCaptureDelay } from './useCaptureDelay';
 
 const GRID_COLORS: ThemeColorSpec<'line' | 'tint'> = {
   line: ['--wzl-fg', '#ffffff'],
@@ -50,7 +50,7 @@ export function GridCanvas<C>({
   const [read, setRead] = useState<Read | null>(null);
   const [tick, setTick] = useState(0);
   const latest = useLatest(request);
-  const started = useRef(false);
+  const captureDelay = useCaptureDelay();
   const { reticle, factor, size, conditions, dpr } = request;
   const { width: w, height: h } = size;
   // The screen's density, which the buffer is sized for; `dpr` is the capture's.
@@ -59,31 +59,27 @@ export function GridCanvas<C>({
   // biome-ignore lint/correctness/useExhaustiveDependencies: the request's fields and `tick` are the signal to capture again; the capture reads `latest`
   useEffect(() => {
     let live = true;
-    const timer = setTimeout(
-      () => {
-        void source.capture?.(latest.current).then(
-          (got) => {
-            if (!live) return;
-            if ('reason' in got) {
-              setRead(null);
-              return;
-            }
-            const m = maskOf(got.bitmap);
-            setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
-          },
-          () => {
-            if (live) setRead(null);
-          },
-        );
-      },
-      started.current ? LENS_REST_MS : 0,
-    );
-    started.current = true;
+    const timer = setTimeout(() => {
+      void source.capture?.(latest.current).then(
+        (got) => {
+          if (!live) return;
+          if ('reason' in got) {
+            setRead(null);
+            return;
+          }
+          const m = maskOf(got.bitmap);
+          setRead({ capture: got, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
+        },
+        () => {
+          if (live) setRead(null);
+        },
+      );
+    }, captureDelay());
     return () => {
       live = false;
       clearTimeout(timer);
     };
-  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest]);
+  }, [source, reticle.x, reticle.y, factor, w, h, conditions, dpr, tick, latest, captureDelay]);
   useEffect(() => {
     const el = canvas.current;
     const ctx = el?.getContext('2d');

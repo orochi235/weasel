@@ -28,11 +28,19 @@ export function useBarHosts(ids: readonly string[]): BarHosts {
       host.className = s.host!;
       host.setAttribute(DOCK_HOST, id);
       let into: HTMLElement | null = null;
-      // React detaches a ref before it attaches the next, so a null here is the slot the host last went into.
+      // React detaches a ref before it attaches the next, and StrictMode detaches and reattaches a new slot's ref
+      // after the commit. Any DOM move blurs the bar's focused handle, so the host leaves a slot only when no slot
+      // has taken it by the next microtask, and never re-enters the slot it is already in.
       const attach = (slot: HTMLElement | null) => {
-        if (slot) slot.appendChild(host);
-        else if (into && host.parentNode === into) into.removeChild(host);
+        const was = into;
         into = slot;
+        if (slot) {
+          if (host.parentNode !== slot) slot.appendChild(host);
+          return;
+        }
+        queueMicrotask(() => {
+          if (into === null && was && host.parentNode === was) was.removeChild(host);
+        });
       };
       e = { host, attach };
       entries.current.set(id, e);
