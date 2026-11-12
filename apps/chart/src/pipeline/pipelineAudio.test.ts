@@ -1,8 +1,13 @@
-import { renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { createAudioEngine } from '@weasel-js/audio';
+import { pickFile } from '@weasel-js/editor';
 import { stageFromType, type EffectPipeline } from '@weasel-js/diagram/effect';
 import { AUDIO_STAGE_TYPES } from '@weasel-js/diagram/effect-audio';
 import { splitDomains, usePipelineAudio } from './pipelineAudio';
+
+vi.mock('@weasel-js/editor', async (original) => ({ ...(await original<object>()), pickFile: vi.fn() }));
+vi.mock('@weasel-js/audio', async (original) => ({ ...(await original<object>()), createAudioEngine: vi.fn() }));
 
 const wire = (id: string, from: string, to: string) => ({ id, from: { stage: from, port: 'out' }, to: { stage: to, port: 'in' } });
 
@@ -41,5 +46,18 @@ describe('usePipelineAudio', () => {
     const { result } = renderHook(() => usePipelineAudio(pipeline, 'off'));
     expect(result.current.runner).toBeNull();
     expect(result.current.run?.stages['audio.file']?.error).toBe('no source audio');
+  });
+
+  it('makes no engine for a file chosen after the component went', async () => {
+    let choose!: (file: File) => void;
+    vi.mocked(pickFile).mockReturnValue(new Promise((resolve) => { choose = resolve; }));
+    const { result, unmount } = renderHook(() => usePipelineAudio({ stages: [], wires: [] }, 'off'));
+    const picking = result.current.chooseSource();
+    unmount();
+    await act(async () => {
+      choose(new File([new Uint8Array(4)], 'a.wav'));
+      await picking.catch(() => {});
+    });
+    expect(createAudioEngine).not.toHaveBeenCalled();
   });
 });
