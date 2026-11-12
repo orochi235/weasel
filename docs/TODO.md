@@ -699,6 +699,10 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] labkit's lint fails on a raw font size in `QuantityText.module.css:15`** (`font-size: 0.7em`),
+  from `d254251e8` (2026-11-11). `check-design-tokens` counts it as a violation, so the release gate's
+  `npm run lint -w @weasel-js/labkit` step is red on `main`. Closes when that size reads a token.
+
 - **(P2) [agent] Two of labkit's floating-sidebar tests fail when their file runs alone.** In
   `Trial.floatPanel.test.tsx`, "closes on a press outside it, and the toggle closes what it opened" and "keeps a
   section torn out of the panel in the workspace once the panel closes" failed 3 of 3 fleet runs of
