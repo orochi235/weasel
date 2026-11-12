@@ -110,6 +110,8 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     historyIndex: () => engine.undoDepth(),
     jumpToHistoryIndex(index) {
       if (Number.isNaN(index) || (Number.isFinite(index) && !Number.isInteger(index))) return false;
+      // The journal's edits are applied over this stack's top, so stepping under them would rewrite what they edit.
+      if (env.activeJournal()) return dwarn('scene', 'jumpToHistoryIndex: refused while a journal is open'), false;
       const total = engine.undoDepth() + engine.redoDepth();
       const target = Math.max(0, Math.min(total, index));
       return step(() => target !== engine.undoDepth(), () => engine.goto(target));

@@ -92,6 +92,19 @@ describe('Scene — which stack an edit lands on while a journal is open', () =>
     expect(labels()).toEqual([]);
   });
 
+  it('a jump through the scene stack is refused while a journal is open over it', () => {
+    const { scene, adapter, move, x, labels } = fixture();
+    scene.applyBatch([move(A, 0, 5)], 'Move', adapter);
+    const journal = scene.history.beginJournal({ label: 'session' });
+    scene.applyBatch([move(A, 5, 9)], 'Move', adapter);
+    expect(scene.jumpToHistoryIndex(0)).toBe(false);
+    expect(x()).toBe(9);
+    journal.commit('Session');
+    expect(labels()).toEqual(['Move', 'Session']);
+    expect(scene.jumpToHistoryIndex(0)).toBe(true);
+    expect(x()).toBe(0);
+  });
+
   it('a journal opened on another history reverts in place, and leaves the scene stack alone', () => {
     const { scene, adapter, move, x, labels } = fixture();
     const outside = createHistory(adapter);
