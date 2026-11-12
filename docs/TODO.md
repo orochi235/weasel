@@ -391,6 +391,10 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
   target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
   screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
+- **(P3) [agent] A list of objects summarizes as raw JSON on its control.** `f.list(def, f.object({ name, width }))`
+  draws its trigger as `{"name":"primary","width":1.5,…}, …` (`summarizeValue`, `written`); a map of objects does
+  the same. Seen in iconfab's Composer, 2026-11-11. Closes when an object entry summarizes by its first string
+  field, or by a summary the schema supplies, with a test on the trigger's text.
 - **(P3) [agent] `params.form.textWaitMs` and `params.panel.textWaitMs` do nothing.** `uiKitSettingsSchema`
   offers a text wait for every surface, but only labkit reads one (`useTextWaitMs`, `useDebouncedText`); a form or
   panel told `settles.string: false` writes text on every keystroke whatever wait it is given. The wait needs a
