@@ -2,9 +2,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { PAGE_TEMPLATES } from '@weasel-js/diagram-formats';
+import { defaultToastQueue } from '@weasel-js/ui/components/Toast';
 import { App } from './App';
 import { PIPELINE_STORAGE_KEY } from './pipeline/usePipelineDoc';
 import { chartPrefs } from './prefs';
+import { reportFailure } from './reportFailure';
 import { withIcons } from './testIcons';
 
 beforeAll(() => {
@@ -19,6 +21,7 @@ afterEach(() => {
   // The store caches what it read, so clearing storage alone would leak prefs into the next test.
   chartPrefs().reset();
   localStorage.clear();
+  act(() => { defaultToastQueue.clear(); });
 });
 
 const mount = () => render(<App />, { wrapper: withIcons });
@@ -347,5 +350,25 @@ describe('App', () => {
     expect(screen.getByRole('dialog', { name: /Page Setup: Page 1/ })).toBeTruthy();
     act(() => { fireEvent.click(screen.getByRole('button', { name: 'Cancel' })); });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('says the chart is not being kept when the browser refuses to store it', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    try {
+      mount();
+      await vi.waitFor(() => expect(screen.getByText('This chart is not being kept in the browser')).toBeTruthy());
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('shows a toast raised in pipeline mode while pipeline mode is on', () => {
+    mount();
+    choose('Mode', 'Pipeline');
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    act(() => { reportFailure('Could not read the image')(new Error('decode failed')); });
+    expect(screen.getByText('Could not read the image')).toBeTruthy();
   });
 });
