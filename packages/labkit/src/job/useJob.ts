@@ -70,6 +70,9 @@ export function useJob<TS, TC, TItem>({
     const controller = new AbortController();
     abort.current = controller;
     setProgress({ ...IDLE, status: 'running' });
+    const begin = capRef.current.begin;
+    const startConfig = configRef.current;
+    if (begin) setStateRef.current((prev) => begin(prev, startConfig));
 
     void (async () => {
       try {

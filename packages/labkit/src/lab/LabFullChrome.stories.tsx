@@ -193,6 +193,7 @@ function scanInstrument(
       auto: true,
       run: ({ signal }) => sweep(spec, signal),
       onItem: (item, state) => ({ ...state, samples: [...state.samples, item] }),
+      begin: (state) => ({ ...state, samples: [] }),
     },
   });
 }

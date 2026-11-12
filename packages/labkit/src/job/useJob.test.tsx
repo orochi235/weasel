@@ -142,6 +142,29 @@ describe('useJob', () => {
     expect(seen.state.items).toEqual([0, 1]);
   });
 
+  it('starts each run from what `begin` makes of the state', async () => {
+    const rerun: JobCapability<State, Config, number> = {
+      ...capability(),
+      key: (config) => [config.n],
+      auto: true,
+      begin: () => ({ items: [] }),
+    };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
+    const onHandle = (h: JobHandle, s: State): void => {
+      seen.handle = h;
+      seen.state = s;
+    };
+    const { rerender } = render(
+      <Harness capability={rerun} config={{ n: 3 }} onHandle={onHandle} />,
+    );
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seen.state.items).toEqual([0, 1, 2]);
+    rerender(<Harness capability={rerun} config={{ n: 2 }} onHandle={onHandle} />);
+    await waitFor(() => expect(seen.handle?.status).toBe('running'));
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seen.state.items).toEqual([0, 1]);
+  });
+
   it('aborts on unmount', async () => {
     const aborted = vi.fn();
     const watching: JobCapability<State, Config, number> = {
