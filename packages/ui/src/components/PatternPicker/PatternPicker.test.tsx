@@ -154,4 +154,50 @@ describe('PatternPicker images', () => {
     expect(onChange).not.toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  describe('a read still in flight', () => {
+    function reads() {
+      const pending: { file: File; resolve: (r: typeof READ) => void }[] = [];
+      const readImage = (file: File) => new Promise<typeof READ>((resolve) => { pending.push({ file, resolve }); });
+      return { pending, readImage };
+    }
+    const settle = () => new Promise((r) => setTimeout(r, 0));
+
+    it('gives way to a file picked after it, whichever finishes first', async () => {
+      const onChange = vi.fn();
+      const { pending, readImage } = reads();
+      render(<PatternPicker value={seedPattern('hatch', '#123456')} color="#123456" onChange={onChange} readImage={readImage} />);
+      upload();
+      upload();
+      pending[1]?.resolve({ ...READ, src: 'data:image/png;base64,BBBB' });
+      await settle();
+      pending[0]?.resolve(READ);
+      await settle();
+      expect(onChange.mock.calls.map((c) => c[0].src)).toEqual(['data:image/png;base64,BBBB']);
+    });
+
+    it('gives way to a tile picked while it reads', async () => {
+      const onChange = vi.fn();
+      const { pending, readImage } = reads();
+      render(<PatternPicker value={seedPattern('hatch', '#123456')} color="#123456" onChange={onChange} readImage={readImage} />);
+      upload();
+      fireEvent.click(screen.getByRole('button', { name: 'dots' }));
+      pending[0]?.resolve(READ);
+      await settle();
+      expect(onChange.mock.calls.map((c) => c[0].kind)).toEqual(['dots']);
+    });
+
+    it('commits nothing once the picker has unmounted', async () => {
+      const onChange = vi.fn();
+      const { pending, readImage } = reads();
+      const { unmount } = render(
+        <PatternPicker value={seedPattern('hatch', '#123456')} color="#123456" onChange={onChange} readImage={readImage} />,
+      );
+      upload();
+      unmount();
+      pending[0]?.resolve(READ);
+      await settle();
+      expect(onChange).not.toHaveBeenCalled();
+    });
+  });
 });
