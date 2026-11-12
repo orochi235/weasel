@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ON_PAGE, PAGE_A, PAGE_B, pagedScene } from 'core/pages/pagedFixture';
 import { asNodeId, type NodeId } from 'core/scene/types';
 import { childVerdict } from './admitsChild';
+import { insertParent } from './insert/parent';
 
 const R2 = asNodeId('r2');
 
@@ -56,5 +57,19 @@ describe('childVerdict on a locked container', () => {
     expect(childVerdict(scene, PAGE_B, [ON_PAGE], () => true)).toBe(false);
     expect(childVerdict(scene, g, [ON_PAGE], () => true)).toBe(false);
     expect(childVerdict(scene, PAGE_A, [ON_PAGE], () => true)).toBe(true);
+  });
+});
+
+describe('childVerdict on a hidden container', () => {
+  it('refuses a group hidden by its own flag or an ancestor\'s, so nothing is inserted or pasted out of sight', () => {
+    const { scene } = pagedScene();
+    const outer = scene.add({ kind: 'group', layer: 'ink', parent: PAGE_B, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const inner = scene.add({ kind: 'group', layer: 'ink', parent: outer, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    scene.setHidden(outer, true);
+    expect(childVerdict(scene, outer, [], () => true)).toBe(false);
+    expect(childVerdict(scene, inner, [ON_PAGE], () => true)).toBe(false);
+    expect(insertParent(scene, inner, undefined)).toBeNull();
+    scene.setHidden(outer, false);
+    expect(insertParent(scene, inner, undefined)).toBe(inner);
   });
 });

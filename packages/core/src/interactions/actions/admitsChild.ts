@@ -10,6 +10,7 @@ interface ChildReader {
     kind: string; parent?: NodeId | null; page?: unknown; pageRun?: unknown; dependsOn?: unknown;
   } | undefined;
   isLocked?(id: NodeId): boolean;
+  isHidden?(id: NodeId): boolean;
 }
 
 /** Where each of `ids` belongs by the follower rule (`followerLandings`) once they land in `parent`: each of
@@ -22,7 +23,7 @@ function followerPages(scene: ChildReader, parent: NodeId, ids: readonly string[
 }
 
 /** The one rule for whether `parent` takes `ids` as children, by drop, insert or paste. A locked parent
- *  takes none. The page run takes only nodes that follow others across pages, and no insert; a page takes a
+ *  takes none, nor does a hidden one, which would put what lands in it out of sight. The page run takes only nodes that follow others across pages, and no insert; a page takes a
  *  node following others only when everything it follows is on that page. Otherwise `canDropInto` decides
  *  when present, else a group does and a mark does not. */
 export function childVerdict(
@@ -32,7 +33,7 @@ export function childVerdict(
   canDropInto: CanDropIntoDep | undefined,
 ): DropVerdict {
   const target = scene.get(parent);
-  if (scene.isLocked?.(parent) === true) return false;
+  if (scene.isLocked?.(parent) === true || scene.isHidden?.(parent) === true) return false;
   if (target?.pageRun !== undefined) {
     return ids.length > 0 && followerPages(scene, parent, ids).every((page) => page === null);
   }

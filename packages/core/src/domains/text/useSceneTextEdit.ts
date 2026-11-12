@@ -267,7 +267,8 @@ export function useSceneTextEditor<
     commit: (id, { text, runs, style }) => {
       const nid = asNodeId(id);
       const node = sceneRef.current.get(nid);
-      if (!node) return;
+      // A node removed or locked during the edit takes no write; the edit still ends.
+      if (!node || sceneRef.current.isLocked(nid)) return;
       drafts.commit(id, editedData(node.data, { text, runs, style }, optsRef.current));
     },
   });

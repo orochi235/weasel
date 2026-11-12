@@ -46,7 +46,7 @@ function projectedGeometry(
 
 /** One transform op per write id, `from` the pose stored at press and `to`
  *  its preview, each preceded by its data op when the geometry projection
- *  answers for the node. */
+ *  answers for the node. A node no longer in the scene is skipped, as the move's commit skips it. */
 export function resizeOps(
   leaves: Pick<ResizeSession, 'scene' | 'writeIds' | 'startPoses' | 'geometryOf' | 'geometryProjection'> & Partial<Pick<ResizeSession, 'held'>>,
   previews: ReadonlyMap<NodeId, unknown>,
@@ -54,6 +54,7 @@ export function resizeOps(
 ): Op[] {
   const ops: Op[] = [];
   for (const [id, h] of leaves.held ?? []) {
+    if (!leaves.scene.get(id)) continue;
     const to = previews.get(id);
     if (to !== undefined) ops.push(createTransformOp<unknown>({ id: id as string, from: h.from, to, label }));
   }
@@ -61,10 +62,10 @@ export function resizeOps(
     const next = previews.get(id);
     if (next === undefined) continue;
     const from = leaves.startPoses.get(id);
-    if (from === undefined) continue;
+    const node = leaves.scene.get(id);
+    if (from === undefined || !node) continue;
     let to: unknown = next;
-    const node = leaves.geometryProjection ? leaves.scene.get(id) : undefined;
-    if (leaves.geometryProjection && node) {
+    if (leaves.geometryProjection) {
       const projected = projectedGeometry(
         leaves.geometryProjection, leaves.geometryOf(id), { id: id as string, data: node.data }, from, next, label,
       );

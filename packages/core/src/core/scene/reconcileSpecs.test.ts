@@ -77,6 +77,15 @@ describe('reconcileSpecs', () => {
     expect(scene.getSelection()).toEqual([id('c'), id('a')]);
   });
 
+  it('keeps a replaced container scrolled, as its selection is kept', () => {
+    const prev = [box('a', 0, { kind: 'group' })];
+    const scene = sceneOf(prev);
+    scene.scroll.set(id('a'), { x: 0, y: 30 });
+    reconcileSpecs(scene, prev, [box('a', 0, { kind: 'group', pickable: false })]);
+    expect(scene.get(id('a'))!.pickable).toBe(false);
+    expect(scene.scroll.get(id('a'))).toEqual({ x: 0, y: 30 });
+  });
+
   it('puts a node added among its siblings where next lists it', () => {
     const prev = [box('a', 0), box('c', 0)];
     const scene = sceneOf(prev);

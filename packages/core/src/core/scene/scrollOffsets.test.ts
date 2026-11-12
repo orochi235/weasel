@@ -127,3 +127,23 @@ describe('the view-side fold', () => {
     expect([...scene.scroll.ids()]).toEqual([]);
   });
 });
+
+describe('a scrolled container leaving the scene', () => {
+  it('takes its offset with it, so a node later added under its id starts unscrolled', () => {
+    const { scene, c } = sceneWith();
+    scene.scroll.set(c, { x: 0, y: 40 });
+    const node = scene.get(c)!;
+    scene.remove(c);
+    expect([...scene.scroll.ids()]).toEqual([]);
+    scene.add({ id: c, kind: node.kind, layer: node.layer, pose: node.pose, data: node.data });
+    expect(scene.scroll.get(c)).toBeUndefined();
+  });
+
+  it('takes it too when an undo takes the container back out', () => {
+    const scene = createScene<Record<string, never>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const c = scene.add({ kind: 'group', layer: 'main', pose: box(0, 0, 100, 100), data: {} });
+    scene.scroll.set(c, { x: 0, y: 40 });
+    scene.undo();
+    expect([...scene.scroll.ids()]).toEqual([]);
+  });
+});
