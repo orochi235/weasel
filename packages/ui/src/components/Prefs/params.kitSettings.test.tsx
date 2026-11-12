@@ -120,7 +120,7 @@ describe('params.<surface>.textWaitMs', () => {
     render(under(live('panel', 100), (
       <SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={properties} routing={routing} />
     )));
-    const label = (): string => (scene.get(asNodeId('a')) as { data: Data }).data.label;
+    const label = (): string | undefined => (scene.get(asNodeId('a')) as { data: Data }).data.label;
     const field = screen.getByLabelText('Label');
     act(() => field.focus());
     typeTwice(field);
