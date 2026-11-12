@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { INHERIT, paintKindOf } from '@weasel-js/core';
 import { qty, unitSymbol } from '@weasel-js/quantity';
 import { solidColorOf } from '../paintValue';
+import { useFieldLocale } from '../../useFieldLocale';
 import { stepDisplay } from './NumberControls';
 import type { PropertyControlProps, PropertyNumberFieldProps } from './fieldTypes';
 import family from './Properties.module.css';
@@ -29,7 +30,7 @@ function readoutBody(p: PropertyControlProps): ReactNode {
     case 'boolean':
       return p.value === true ? 'On' : 'Off';
     case 'number':
-      return numberText(p);
+      return <NumberText {...p} />;
     case 'enum': {
       const option = p.options.find((o) => o.value === p.value);
       if (!option) return none();
@@ -61,9 +62,11 @@ function none(): ReactNode {
   return <span className={s.none}>—</span>;
 }
 
-function numberText(p: PropertyNumberFieldProps): ReactNode {
+/** A number as its editable field would show it, in the same locale. */
+function NumberText(p: PropertyNumberFieldProps): ReactNode {
+  const locale = useFieldLocale();
   if (typeof p.value !== 'number' || Number.isNaN(p.value)) return none();
-  const text = p.format ? p.format(p.value) : qty(p.value, p.display ?? stepDisplay(p.step)).text;
+  const text = p.format ? p.format(p.value) : qty(p.value, p.display ?? stepDisplay(p.step), { locale }).text;
   if (p.unit == null || !Number.isFinite(p.value)) return text;
   if (attachesUnit(p.unit)) return <span className={family.unitHost}>{text}<UnitSuffix unit={p.unit} /></span>;
   return <>{text}<span className={s.unit} data-wzl-subordinate="">{typeof p.unit === 'string' ? unitSymbol(p.unit).text : p.unit}</span></>;

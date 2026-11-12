@@ -1,4 +1,4 @@
-import { decimal, endless, qty, withUnit, type Display } from '@weasel-js/quantity';
+import { decimal, endless, fieldLocale, qty, withUnit, type Display } from '@weasel-js/quantity';
 import type { MenuNumberEntry } from './entries';
 
 const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
@@ -9,10 +9,13 @@ export function menuNumberDisplay(e: Pick<MenuNumberEntry, 'display' | 'infinity
   return e.infinity === undefined ? display : endless(display, e.infinity);
 }
 
-/** A number row's value as a renderer with no field of its own prints it: in {@link menuNumberDisplay}, then its
- *  unit, which an infinity goes without. A dash for none. */
-export function menuNumberText(value: number | undefined, e: Pick<MenuNumberEntry, 'display' | 'infinity' | 'suffix'> = {}): string {
+/** A number row's value as a renderer with no field of its own prints it: in {@link menuNumberDisplay}, written in
+ *  `locale` as `fieldLocale` settles it, as a field would show it, then its unit, which an infinity goes without. A
+ *  dash for none. */
+export function menuNumberText(
+  value: number | undefined, e: Pick<MenuNumberEntry, 'display' | 'infinity' | 'suffix'> = {}, locale = 'en-US',
+): string {
   if (value === undefined) return '—';
-  const text = qty(value, menuNumberDisplay(e)).text;
+  const text = qty(value, menuNumberDisplay(e), { locale: fieldLocale(locale) }).text;
   return Number.isFinite(value) ? withUnit(text, e.suffix) : text;
 }

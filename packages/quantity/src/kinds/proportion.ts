@@ -326,12 +326,12 @@ export function zoom(): ZoomDisplay {
   return { kind: 'zoom' };
 }
 
-function zoomParts(z: number): Part[] {
+function zoomParts(z: number, locale: string): Part[] {
   if (!Number.isFinite(z)) return [{ type: 'number', value: String(z) }];
   const n = (v: number, grouping = false) =>
     ({
       type: 'number',
-      value: signed(unsignedZero(v, (x) => x.toLocaleString('en-US', { useGrouping: grouping, maximumFractionDigits: 1 }))),
+      value: signed(unsignedZero(v, (x) => x.toLocaleString(locale, { useGrouping: grouping, maximumFractionDigits: 1 }))),
     });
   if (z <= 2) return [n(Math.round(z * 100)), { type: 'percentSign', value: '%' }];
   if (z >= 100) return [n(Math.round(z), true), { type: 'symbol', value: 'x' }];
@@ -341,16 +341,16 @@ function zoomParts(z: number): Part[] {
 /** The built-in `zoom` kind, to spread into a `registerDisplayKind` replacement. */
 export const zoomKind: DisplayKind<ZoomDisplay> = {
   kind: 'zoom',
-  format: (value) => zoomParts(value),
-  speak: (value) =>
+  format: (value, _d, ctx) => zoomParts(value, ctx.locale),
+  speak: (value, _d, ctx) =>
     spokenSign(
-      zoomParts(value)
+      zoomParts(value, ctx.locale)
         .map((p) => (p.type === 'percentSign' ? ' percent' : p.type === 'symbol' ? ' times' : p.value))
         .join(''),
     ),
-  parse: (text) => {
+  parse: (text, _d, ctx) => {
     const t = text.trim();
-    if (/[x×X]$/.test(t)) return parseNumber(t.slice(0, -1));
-    return parseNumber(t.replace(/%$/, '')) / 100;
+    if (/[x×X]$/.test(t)) return parseNumber(t.slice(0, -1), undefined, ctx.locale);
+    return parseNumber(t.replace(/[%٪]$/, ''), undefined, ctx.locale) / 100;
   },
 };

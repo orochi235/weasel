@@ -105,6 +105,8 @@ export interface MenuDrawValues {
   swatch?(e: MenuEntry): string | undefined;
   /** Width of a label, which places the caret in typed text. Defaults to {@link measureLabel}. */
   measure?(text: string, fontSize: number, fontFamily: string): number;
+  /** The locale a number row's value is written in. Defaults to `en-US`. */
+  locale?: string;
 }
 
 /** Each value row as it opened, with nothing being typed. */
@@ -164,7 +166,7 @@ export function drawPanel(
       ));
     }
     const ink = { fg, muted, border: t['--wzl-border'], font };
-    if (e.kind === 'number') out.push(...numberCommands(b, r, e, values.number(e), m, ink));
+    if (e.kind === 'number') out.push(...numberCommands(b, r, e, values.number(e), m, ink, values.locale));
     if (e.kind === 'color') out.push(...colorCommands(b, r, e, m, ink));
     if (e.kind === 'text') {
       const edit = values.editing?.entry === e ? values.editing : undefined;
