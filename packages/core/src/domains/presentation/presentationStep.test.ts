@@ -10,7 +10,7 @@ const PAGES = layoutPages([
   { id: 'c', width: 400, height: 300 },
 ]);
 const DIMS = { width: 800, height: 600 };
-const HOME: View = { x: 0, y: 0, scale: 1 };
+const HOME: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 function camera(start: View = HOME) {
   let view = start;
