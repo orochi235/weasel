@@ -60,6 +60,10 @@
       "types": "./dist/layers/index.d.ts",
       "import": "./dist/layers/index.js"
     },
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "import": "./dist/theme/index.js"
+    },
     "./undo": {
       "types": "./dist/undo/index.d.ts",
       "import": "./dist/undo/index.js"
