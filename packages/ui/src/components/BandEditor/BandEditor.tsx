@@ -114,7 +114,7 @@ function keepData<T>(_at: number, from: T): T {
  * |---|---|
  * | drag a seam | resize the two bands either side |
  * | drag `min` / `max` | rescale the whole range, locked bands holding their length (with `onRangeChange`) |
- * | right-click a band, or `l` | lock or unlock it |
+ * | right-click a band, or `l` | lock or unlock it (with `onRangeChange`, the only thing a lock holds against) |
  * | drag a band body | move both its seams, preserving its span |
  * | click the ruler | split the band under the pointer |
  * | `s` | split the selected band at the middle of its drawn span |
