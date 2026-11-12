@@ -192,7 +192,7 @@
 
 .row > input[type='text']:not(.readoutInput):focus,
 .row > input[type='number']:focus {
-  outline: none;
+  outline: 1px solid transparent;
   border-color: var(--wzl-focus-ring);
   box-shadow: 0 0 0 1px var(--wzl-focus-ring);
 }
@@ -229,7 +229,7 @@
 }
 
 .dialogTrigger:focus-visible {
-  outline: none;
+  outline: 1px solid transparent;
   border-color: var(--wzl-focus-ring);
   box-shadow: 0 0 0 1px var(--wzl-focus-ring);
 }

@@ -31,6 +31,7 @@
 }
 
 .switch[data-focus-visible] .track {
+  outline: 2px solid transparent;
   box-shadow: var(--wzl-bevel-sunken, 0 0 0 0 transparent), 0 0 0 2px var(--wzl-focus-ring);
 }
 

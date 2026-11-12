@@ -1,15 +1,16 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
-import { commands } from 'vitest/browser';
+import { commands, userEvent } from 'vitest/browser';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+import { Input } from '@weasel-js/ui/components/Input';
 import { OptionsBar } from '@weasel-js/ui/components/OptionsBar';
 import { Radio, RadioGroup } from '@weasel-js/ui/components/RadioGroup';
 import { Switch } from '@weasel-js/ui/components/Switch';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 
 // Windows high contrast: the browser repaints backgrounds as Canvas and drops box-shadows, so a
-// state drawn only with those is gone.
+// state or a focus ring drawn only with those is gone.
 
 beforeAll(() => commands.forcedColors('active'));
 afterAll(() => commands.forcedColors('none'));
@@ -25,6 +26,12 @@ function canvas(): string {
   const color = bg(probe);
   probe.remove();
   return color;
+}
+
+/** Whether the element shows a ring of its own while focused. */
+function ringed(el: Element): boolean {
+  const s = getComputedStyle(el);
+  return s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0;
 }
 
 test('the emulation is on', () => {
@@ -71,5 +78,31 @@ describe('a chosen control still reads as chosen', () => {
     const [on, off] = screen.getAllByRole('button');
     expect(bg(on!)).not.toBe(bg(off!));
     expect(bg(on!)).not.toBe(canvas());
+  });
+});
+
+describe('a focused control shows a ring forced colors keep', () => {
+  test('checkbox, switch, radio, tab, tab panel and text field', async () => {
+    render(
+      <>
+        <Checkbox>c</Checkbox>
+        <Switch>s</Switch>
+        <RadioGroup aria-label="g"><Radio value="a">r</Radio></RadioGroup>
+        <Tabs><TabList aria-label="t"><Tab id="a">A</Tab></TabList><TabPanel id="a">x</TabPanel></Tabs>
+        <Input label="i" />
+      </>,
+    );
+    const rings: Array<[string, () => Element]> = [
+      ['checkbox', () => screen.getByRole('checkbox')],
+      ['switch', () => part(screen.getByRole('switch').closest('label')!, 'track')],
+      ['radio', () => part(screen.getByRole('radio').closest('label')!, 'dot')],
+      ['tab', () => screen.getByRole('tab')],
+      ['tab panel', () => screen.getByRole('tabpanel')],
+      ['text field', () => part(screen.getByRole('textbox').closest('[class*=field]')!, 'frame')],
+    ];
+    for (const [name, ring] of rings) {
+      await userEvent.keyboard('{Tab}');
+      expect(ringed(ring()), name).toBe(true);
+    }
   });
 });
