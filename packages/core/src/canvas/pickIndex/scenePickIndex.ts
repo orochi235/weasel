@@ -12,6 +12,7 @@ import { getNodeShapes } from 'canvas/NodeShape';
 import { inheritedPaintOf, inheritsPaint } from 'core/scene/inheritedPaint';
 import { nodesAsShown } from 'core/scene/nodeAsShown';
 import { nodeMemoGeneration } from 'core/scene/nodeMemo';
+import { outsideGeneration } from 'core/scene/outsideReads';
 import type { Scene } from 'core/scene/types';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { scenePaintedPoseOf } from '../derivedPath';
@@ -195,13 +196,15 @@ function current(scene: AnyScene, descriptor: PoseDescriptor<unknown>): BuiltInd
   const scrolled = scene.scroll?.getGeneration() ?? 0;
   const memo = nodeMemoGeneration();
   const markers = markerGeneration();
+  // A derived path that read glyph outlines reshapes when a face lands, with nothing in the scene changed.
+  const outside = outsideGeneration();
   let perScene = CACHE.get(scene);
   if (perScene === undefined) CACHE.set(scene, (perScene = new WeakMap()));
   let cache = perScene.get(descriptor);
   if (cache === undefined) perScene.set(descriptor, (cache = createSettledCache()));
   // Boxed as shown, so a data override that grows a node's ink is met where it is painted.
   const order = nodesAsShown(scene.overrides, scene.renderOrderNodes()) as unknown as Order;
-  const index = cache.read([version, overrides, scrolled, memo, markers], () => build(scene, descriptor, order));
+  const index = cache.read([version, overrides, scrolled, memo, markers, outside], () => build(scene, descriptor, order));
   index?.rankBy(order);
   return index;
 }
