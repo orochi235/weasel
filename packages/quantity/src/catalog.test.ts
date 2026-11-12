@@ -48,8 +48,14 @@ describe('unitSymbol', () => {
     expect(unitSymbol('px').attaches).toBe(false);
   });
 
+  it('raises only a glyph that sits on the baseline', () => {
+    expect(unitSymbol('%').raised).toBe(true);
+    expect(unitSymbol('deg').raised).toBe(false);
+    expect(unitSymbol('in', { compact: true }).raised).toBe(false);
+  });
+
   it('writes unknown text as given, unattached', () => {
-    expect(unitSymbol('nodes')).toEqual({ text: 'nodes', attaches: false, aliases: [] });
+    expect(unitSymbol('nodes')).toEqual({ text: 'nodes', attaches: false, raised: false, aliases: [] });
   });
 });
 

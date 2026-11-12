@@ -10,6 +10,13 @@
   color: var(--wzl-fg-muted);
 }
 
+/* An attached `%` is set like `°`: smaller, its top level with the digits'. */
+.quantity [data-raise] {
+  font-size: 0.7em;
+  vertical-align: 0.35em;
+  line-height: 1;
+}
+
 /* A copy takes the hidden text form instead of the MathML's bare digits. */
 .math {
   user-select: none;
