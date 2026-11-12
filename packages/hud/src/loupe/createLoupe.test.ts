@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createHud, type Hud } from '../hud';
 import { createLoupe } from './createLoupe';
+import { LOUPE_AIM_ID } from '@weasel-js/loupe';
+import { createHudContribution } from '../tool';
 import type { RenderLayer, View } from '@weasel-js/core';
 import { releaseImageSource } from '@weasel-js/core/renderer';
 
@@ -35,6 +37,13 @@ function bindHost(hud: Hud): () => void {
   return () => { for (const fn of [...subs]) fn(); };
 }
 
+/** Run `loupe.aim` from the entry built with `hud`, unpressed, at a client point. */
+function aimAt(hud: Hud, x: number, y: number): void {
+  const aim = createHudContribution(hud).actions!.find((a) => a.id === LOUPE_AIM_ID)!;
+  if (aim.invoker?.timing !== 'immediate') throw new Error('loupe.aim is not immediate');
+  aim.invoker.run({} as never, { clientX: x, clientY: y });
+}
+
 const source: RenderLayer<unknown>[] = [{
   id: 'src', label: 'src', space: 'world',
   draw: () => [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { kind: 'solid', color: '#0f0' } } }],
@@ -48,17 +57,37 @@ describe('createLoupe', () => {
     expect(hud.widgets()).toContain(loupe.window);
   });
 
-  it('stops listening once the window is removed through the HUD', () => {
+  it('takes no pointer listeners of its own: its aim comes through the dispatcher', () => {
     const hud = createHud();
     bindHost(hud);
     const el = makeElement();
-    const remove = vi.spyOn(el, 'removeEventListener');
-    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
+    const add = vi.spyOn(el, 'addEventListener');
+    createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
+    expect(add.mock.calls.map(([type]) => type).filter((t) => t.startsWith('pointer'))).toEqual([]);
+  });
+
+  it('stops redrawing once the window is removed through the HUD', () => {
+    const hud = createHud();
+    bindHost(hud);
+    const redraw = vi.fn();
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: redraw });
     hud.remove(loupe.window);
     // The next pointer sample is the one that notices and tears down.
-    el.dispatchEvent(new MouseEvent('pointermove', { clientX: 400, clientY: 300 }));
-    expect(remove).toHaveBeenCalledWith('pointermove', expect.any(Function));
-    remove.mockRestore();
+    aimAt(hud, 400, 300);
+    redraw.mockClear();
+    aimAt(hud, 300, 200);
+    expect(redraw).not.toHaveBeenCalled();
+  });
+
+  it('is driven by the aim of an entry built with its HUD, until disposed', () => {
+    const hud = createHud();
+    bindHost(hud);
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
+    aimAt(hud, 400, 300);
+    expect(loupe.aim).toEqual({ x: 400, y: 300 });
+    loupe.dispose();
+    aimAt(hud, 500, 300);
+    expect(loupe.aim).toEqual({ x: 400, y: 300 });
   });
 
   it('aimAt after dispose does nothing', () => {
@@ -436,14 +465,11 @@ describe('createLoupe', () => {
     vi.unstubAllGlobals();
   });
 
-  it('dispose removes the window and detaches the pointer listener', () => {
+  it('dispose removes the window', () => {
     const hud = createHud();
     bindHost(hud);
-    const el = makeElement();
-    const remove = vi.spyOn(el, 'removeEventListener');
-    const loupe = createLoupe({ hud, canvas: el, source, requestRedraw: () => {} });
+    const loupe = createLoupe({ hud, canvas: makeElement(), source, requestRedraw: () => {} });
     loupe.dispose();
     expect(hud.widgets()).not.toContain(loupe.window);
-    expect(remove).toHaveBeenCalledWith('pointermove', expect.any(Function));
   });
 });

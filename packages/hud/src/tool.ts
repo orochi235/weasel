@@ -2,6 +2,7 @@ import type {
   Action, ActionDeps, CanvasExtensionApi, ClaimableGesture, InvocationCtx, SurfaceContribution,
 } from '@weasel-js/core';
 import { attachHud, type AttachHudOptions } from './attach';
+import { loupeAimActions, surfaceKey } from './loupe/loupeRoutes';
 import type { Hud } from './hud';
 import { hitPredicate, viewToTransform, worldToScreen, type TargetPredicate } from '@weasel-js/core';
 import { claimsOf, type Widget, type HudPointerEvent } from './widget';
@@ -203,19 +204,26 @@ function wheelAction(): Action {
  * The other four are one binding each. Every binding gates on both the
  * affordance kind and the hit widget's claim set, so it fires only for input
  * the HUD's own layer claimed *and* the widget under it consumes.
+ *
+ * It also carries `@weasel-js/loupe`'s `loupe.aim` and `loupe.leave`, which
+ * hear every hover and drive each `createLoupe` lens on the HUD: on `hud`, or,
+ * without one, on whichever HUD is attached to the canvas the entry is
+ * installed on.
  */
 export function createHudContribution(hud?: Hud, options?: AttachHudOptions): SurfaceContribution {
+  const surfaces = new Set<object>();
   return {
     id: 'weasel-hud',
-    ...(hud ? {
-      attach: (api: CanvasExtensionApi) => {
-        const detach = attachHud(api, hud, options);
-        api.requestRedraw();
-        return detach;
-      },
-    } : {}),
+    attach: (api: CanvasExtensionApi) => {
+      const key = surfaceKey(api);
+      surfaces.add(key);
+      const detach = hud ? attachHud(api, hud, options) : null;
+      if (hud) api.requestRedraw();
+      return () => { surfaces.delete(key); detach?.(); };
+    },
     eligibility: { claimed: true },
     actions: [
+      ...loupeAimActions(hud, surfaces),
       pressAction(), releaseAction(), dragAction(),
       pointAction('hud.doubleClick', 'HUD — double-click widget', 'doubleclick'),
       pointAction('hud.contextMenu', 'HUD — right-click widget', 'contextmenu'),

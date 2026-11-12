@@ -7,7 +7,8 @@ Its own bundle entry; nothing in the main bundle imports it, so a lab that
 mounts no lens never loads it.
 
 The magnifier itself is not here. `@weasel-js/loupe` holds the model — aim,
-factor, mode, color, picking — over a `LoupeSurface` it asks five questions.
+factor, mode, color, picking — over a `LoupeSurface` it asks five questions,
+and the `loupe.*` actions (`createLoupeActions`) that hud's loupe aims through too.
 This directory binds that model to a labkit trial and draws it.
 
 ## Files
@@ -17,8 +18,7 @@ This directory binds that model to a labkit trial and draws it.
 | `types.ts` | `LoupeOptions`, and `resolveLoupe` filling in every default |
 | `useLoupe.ts` | The model over a host element, and the input its actions drive |
 | `useLensDamage.ts` | The `onLens` a loupe reports through, dirtying the tiles a hollow lens moves across |
-| `loupeActions.ts` | `loupe.aim`, `loupe.leave`, `loupe.peek`, `loupe.magnify` and the eyedropper's `loupe.pick`, as `Action` descriptors |
-| `LoupeGestures.tsx` | Registers those, and mounts a dispatcher on the host when no camera has one there |
+| `LoupeGestures.tsx` | Registers `@weasel-js/loupe`'s actions over that input, and mounts a dispatcher on the host when no camera has one there |
 | `TrialLoupe.tsx` | Finds its host and the trial's switch, picks the painter, mounts the lens |
 | `LoupeBubble.tsx` | The circle or square clip, positioned on the lens's center |
 | `CanvasLoupe.tsx` | Painter for a `<CanvasStack>` |

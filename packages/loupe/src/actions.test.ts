@@ -1,4 +1,4 @@
-import { heldKeySpec } from '@weasel-js/core';
+import { heldKeySpec } from '@weasel-js/routing';
 import { describe, expect, it } from 'vitest';
 import {
   createLoupeActions,
@@ -6,7 +6,7 @@ import {
   LOUPE_LEAVE_ID,
   LOUPE_PEEK_ID,
   LOUPE_PICK_ID,
-} from './loupeActions';
+} from './actions';
 
 const input = {
   shown: () => false,
@@ -63,15 +63,17 @@ describe('the loupe aim bindings', () => {
     expect(specOf(LOUPE_LEAVE_ID)).toEqual({ kind: 'hover', motion: 'leave', mods: ANY_MODS });
   });
 
-  it('hand the aim its client point', () => {
-    const seen: [number, number][] = [];
-    const aim = createLoupeActions({ ...input, aimAt: (x, y) => seen.push([x, y]) }, null).find(
+  it('hand the aim its client point, and whether a button is held', () => {
+    const seen: [number, number, boolean][] = [];
+    const aim = createLoupeActions({ ...input, aimAt: (x, y, held) => seen.push([x, y, held]) }, null).find(
       (a) => a.id === LOUPE_AIM_ID,
     )!;
     if (aim.invoker?.timing !== 'immediate') throw new Error('aim is not immediate');
     aim.invoker.run({} as never, { clientX: 7, clientY: 9 });
-    expect(seen).toEqual([[7, 9]]);
+    aim.invoker.run({} as never, { clientX: 8, clientY: 9, held: true });
+    expect(seen).toEqual([[7, 9, false], [8, 9, true]]);
   });
+
 });
 
 describe('the eyedropper click', () => {

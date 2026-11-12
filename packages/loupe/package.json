@@ -34,7 +34,8 @@
   "dependencies": {
     "@weasel-js/geom": "1.19.0",
     "@weasel-js/paint": "1.19.0",
-    "@weasel-js/registry": "1.19.0"
+    "@weasel-js/registry": "1.19.0",
+    "@weasel-js/routing": "1.19.0"
   },
   "devDependencies": {
     "@weasel-js/core": "1.19.0"

@@ -1,12 +1,11 @@
 /**
  * The loupe's bindable interactions, as `Action` descriptors the gesture
- * dispatcher routes: aim at the pointer, pressed or not, and put the lens away
- * when it leaves; hold a key to peek; walk the magnification with the wheel;
- * and, while the eyedropper is on, pick the color under a click.
- *
- * Free of React so the routing can be tested without a DOM.
+ * dispatcher routes: aim at the pointer, pressed or not, and learn when it
+ * leaves; hold a key to peek; walk the magnification with the wheel; and,
+ * while the eyedropper is on, pick the color under a click. Every painter's
+ * lens aims through these, so they agree on when it follows.
  */
-import { type Action, heldKeySpec } from '@weasel-js/core';
+import { type Action, heldKeySpec } from '@weasel-js/routing';
 
 /** Canonical id of the hold-to-peek action. */
 export const LOUPE_PEEK_ID = 'loupe.peek';
@@ -32,10 +31,19 @@ const ANY_MODS = {
  *  wheel: the lens' whole range is one order of magnitude. */
 export const WHEEL_RATE = 0.002;
 
-/** What the actions do to a live loupe. Every member is read through the
+/** What the aim actions do to a live loupe. Every member is read through the
  *  object on each invocation, so one stable instance serves the life of the
  *  registration. */
-export interface LoupeInputApi {
+export interface LoupeAimInput {
+  /** The pointer is over the host at this client point; `held` while a button
+   *  is down on it. */
+  aimAt: (clientX: number, clientY: number, held: boolean) => void;
+  /** The pointer has left the host. */
+  leave: () => void;
+}
+
+/** What every loupe action does to a live loupe, read as {@link LoupeAimInput} is. */
+export interface LoupeInputApi extends LoupeAimInput {
   /** Whether the lens is up. The wheel belongs to the loupe only while it is;
    *  otherwise `loupe.magnify` declines and the dispatcher falls through to
    *  the trial camera's zoom. */
@@ -44,16 +52,59 @@ export interface LoupeInputApi {
   setPeeking: (on: boolean) => void;
   /** Multiply the magnification by one wheel notch of `deltaY`. */
   magnifyBy: (deltaY: number) => void;
-  /** The pointer is over the host at this client point. */
-  aimAt: (clientX: number, clientY: number) => void;
-  /** The pointer has left the host. */
-  leave: () => void;
   /** Whether the eyedropper is on. `loupe.pick` declines while it is not, and
    *  the click goes to whatever else binds it. */
   dropping: () => boolean;
   /** Pick the color at the pointer: what a lens shows there, when it is over
    *  one, and the host's own pixels otherwise. */
   pickAtPointer: () => void;
+}
+
+/**
+ * The loupe's aim: `loupe.aim` follows the pointer over the host, pressed or
+ * not, and `loupe.leave` learns when it goes. Whether a press freezes the aim
+ * is the lens's to decide from `held`.
+ */
+export function createLoupeAimActions(input: LoupeAimInput): readonly [Action, Action] {
+  // `held`: the lens keeps following through a drag, which a plain hover
+  // stands down for.
+  const aim: Action = {
+    id: LOUPE_AIM_ID,
+    label: 'Aim (loupe)',
+    group: 'loupe',
+    defaultBinding: [
+      {
+        spec: { kind: 'hover', held: 'optional', mods: ANY_MODS },
+        opts: { id: `${LOUPE_AIM_ID}.hover` },
+      },
+    ],
+    invoker: {
+      timing: 'immediate',
+      run(_deps, params) {
+        input.aimAt(params?.clientX as number, params?.clientY as number, params?.held === true);
+      },
+    },
+  };
+
+  const leave: Action = {
+    id: LOUPE_LEAVE_ID,
+    label: 'Put away (loupe)',
+    group: 'loupe',
+    defaultBinding: [
+      {
+        spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS },
+        opts: { id: `${LOUPE_LEAVE_ID}.hover` },
+      },
+    ],
+    invoker: {
+      timing: 'immediate',
+      run() {
+        input.leave();
+      },
+    },
+  };
+
+  return [aim, leave];
 }
 
 /**
@@ -88,43 +139,7 @@ export function createLoupeActions(
     },
   };
 
-  // `held`: the lens keeps following through a drag, which a plain hover
-  // stands down for.
-  const aim: Action = {
-    id: LOUPE_AIM_ID,
-    label: 'Aim (loupe)',
-    group: 'loupe',
-    defaultBinding: [
-      {
-        spec: { kind: 'hover', held: 'optional', mods: ANY_MODS },
-        opts: { id: `${LOUPE_AIM_ID}.hover` },
-      },
-    ],
-    invoker: {
-      timing: 'immediate',
-      run(_deps, params) {
-        input.aimAt(params?.clientX as number, params?.clientY as number);
-      },
-    },
-  };
-
-  const leave: Action = {
-    id: LOUPE_LEAVE_ID,
-    label: 'Put away (loupe)',
-    group: 'loupe',
-    defaultBinding: [
-      {
-        spec: { kind: 'hover', motion: 'leave', mods: ANY_MODS },
-        opts: { id: `${LOUPE_LEAVE_ID}.hover` },
-      },
-    ],
-    invoker: {
-      timing: 'immediate',
-      run() {
-        input.leave();
-      },
-    },
-  };
+  const [aim, leave] = createLoupeAimActions(input);
 
   // Hotkey scope, so while the eyedropper is on a click picks rather than
   // reaching the trial's active tool. It reads the pointer the hover last
