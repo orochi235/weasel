@@ -14,7 +14,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import type { View } from '../core/viewport/view';
 import { createEmitter } from '@weasel-js/registry';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
-import { chooseBackend, rememberBackend, type CanvasBackend } from './canvasBackend';
+import { chooseBackend, rememberBackend, subscribeDeviceLost, type CanvasBackend } from './canvasBackend';
 import { registerShaders } from './registerShaders';
 
 export type { CanvasBackend } from './canvasBackend';
@@ -111,6 +111,7 @@ interface Held {
   lost: boolean;
   onLost: () => void;
   onRestored: () => void;
+  offDeviceLost: (() => void) | null;
   width: number;
   height: number;
   dpr: number;
@@ -131,6 +132,7 @@ function free(held: Held): void {
   set?.delete(held.renderer);
   held.canvas.removeEventListener('webglcontextlost', held.onLost);
   held.canvas.removeEventListener('webglcontextrestored', held.onRestored);
+  held.offDeviceLost?.();
   if (set && set.size === 0) TENANTS.delete(held.canvas);
   held.renderer.dispose();
 }
@@ -199,7 +201,6 @@ function createRenderer(
     const renderer = createWebGPU(canvas, choice.device, setup);
     if (renderer) {
       rememberBackend(canvas, 'webgpu');
-      void choice.device.lost.then(() => arrivals.emit());
       return renderer;
     }
     if (REFUSED.has(canvas)) return null;
@@ -248,6 +249,8 @@ export function leaseCanvasRenderer(defaults: { backend?: () => CanvasBackend } 
         flattenTolerance: options.flattenTolerance, retainBudget: options.retainBudget,
         imageMinification: options.imageMinification, shaderKey: '',
         lost: false,
+        // A lost WebGPU device does not come back: the next paint rebuilds on another.
+        offDeviceLost: renderer.backend === 'webgpu' ? subscribeDeviceLost(restored.emit) : null,
         onLost: () => { mine.lost = true; },
         onRestored: () => {
           mine.lost = false;

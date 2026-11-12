@@ -3,6 +3,7 @@
  * its whole life, so the choice is made once, when its first renderer is built.
  */
 import { programSourceRegistry, requestRendererDevice, type RendererBackend } from '@weasel-js/renderer';
+import { createEmitter } from '@weasel-js/registry';
 
 /**
  * `'webgl2'`, `'webgpu'`, or `'auto'`: WebGPU where a device is available and
@@ -28,6 +29,12 @@ type DeviceState =
 
 let deviceState: DeviceState | null = null;
 
+const deviceLosses = createEmitter();
+
+/** Run `fn` when the device renderers paint with is lost. Returns an unsubscribe. One reaction on
+ *  the device serves every subscriber, since a reaction holds what it closes over while the device lives. */
+export const subscribeDeviceLost = deviceLosses.subscribe;
+
 function rendererDevice(): DeviceState {
   if (deviceState) return deviceState;
   const ready = requestRendererDevice().then(
@@ -35,6 +42,7 @@ function rendererDevice(): DeviceState {
       deviceState = device ? { status: 'ready', device } : { status: 'none' };
       void device?.lost.then(() => {
         if (deviceState?.status === 'ready' && deviceState.device === device) deviceState = null;
+        deviceLosses.emit();
       });
     },
     () => { deviceState = { status: 'none' }; },
