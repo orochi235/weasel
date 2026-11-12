@@ -1,6 +1,5 @@
 import { createMenuController, withLinks, type MenuController, type Rect } from '@weasel-js/menu';
 import { faceGeneration } from '@weasel-js/font';
-import { matchKeyEvent } from '@weasel-js/gestures';
 import type { ClaimableGesture, OpenMenu } from '@weasel-js/core';
 import { createEmitter } from '@weasel-js/registry';
 import { maxOf, minOf } from '@weasel-js/geom';
@@ -13,7 +12,7 @@ import { caretAt, caretX } from './valueRows';
 import { createTextEditor, editMods } from './textEdit';
 import { DEFAULT_MENU_PALETTE, withColorPickers } from './colorPicker';
 import type { Point } from '@weasel-js/geom';
-import type { StepRepeatOptions } from '@weasel-js/ui-input';
+import { chordKey, type StepRepeatOptions } from '@weasel-js/ui-input';
 import { chipUnder, createChipHold, levelAt } from './chipRepeat';
 
 const CLAIMS: readonly ClaimableGesture[] = ['pointer', 'doubleClick', 'contextMenu', 'longPress', 'wheel'];
@@ -147,8 +146,8 @@ export function createMenuWidget(opts: MenuWidgetOptions): Widget {
   const key = (evt: HudKeyEvent): boolean => {
     if (evt.type !== 'keydown') return false;
     const mods = editMods(evt);
-    // Mod+A is read by the key's letter, so a non-Latin layout's select-all reaches the edit.
-    if (typing.key(mods.mod && matchKeyEvent(evt, 'a') ? 'a' : evt.key, mods)) return true;
+    // A chord is read by the key's letter, so a non-Latin layout's select-all and Ctrl keys reach the edit.
+    if (typing.key(mods.mod || mods.ctrl ? chordKey(evt) : evt.key, mods)) return true;
     const level = c.stack().length - 1;
     const at = c.stack()[level];
     const row = at == null ? undefined : c.entriesAt(level)[at];
