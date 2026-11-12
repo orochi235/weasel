@@ -12,7 +12,9 @@ const dprDescriptor = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio'
 beforeAll(() => {
   // A 2D context that takes every call, so the overview sizes and paints its canvases.
   const ctx = new Proxy({}, { get: () => () => {} });
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => ctx) as unknown as HTMLCanvasElement['getContext'];
+  HTMLCanvasElement.prototype.getContext = vi.fn(
+    () => ctx,
+  ) as unknown as HTMLCanvasElement['getContext'];
 });
 
 afterEach(() => {
@@ -23,7 +25,11 @@ afterEach(() => {
 
 it("resizes the overview's canvases when the display's density changes", async () => {
   Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true });
-  const media = makeMatchMedia({ '(pointer: coarse)': false, '(hover: hover)': true, '(resolution: 1dppx)': true });
+  const media = makeMatchMedia({
+    '(pointer: coarse)': false,
+    '(hover: hover)': true,
+    '(resolution: 1dppx)': true,
+  });
   vi.stubGlobal('matchMedia', media.mm);
   const pictured = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Pictured',
@@ -35,7 +41,9 @@ it("resizes the overview's canvases when the display's density changes", async (
       overlay: () => <TrialOverview width={200} height={150} render={() => <div />} />,
     },
   });
-  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />, { wrapper: withIcons });
+  const r = await renderSettled(<Lab instruments={[pictured]} defaultInstrument="Pictured" />, {
+    wrapper: withIcons,
+  });
   const chrome = r.container.querySelector<HTMLCanvasElement>('.lk-overview__chrome');
   if (!chrome) throw new Error('no overview chrome');
   expect(chrome.width).toBe(200);
