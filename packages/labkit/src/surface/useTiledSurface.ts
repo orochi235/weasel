@@ -2,6 +2,7 @@ import { watchDevicePixelRatio } from '@weasel-js/core/engine';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import { createEmitter } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { measureTiles, type SurfaceScope, sameRects, sameScope, scopeHolds } from './measureTiles';
 import type { Box, Rect } from './rect';
 import { useElementWatch } from './useElementWatch';
@@ -68,8 +69,12 @@ export interface SurfaceHandle {
 }
 
 /** What a tile's painter is handed: where it sits on the surface now, and the
- *  frame that dirtied it, whose `visible` says how much of that shows. */
-export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void;
+ *  frame that dirtied it, whose `visible` says how much of that shows.
+ *
+ *  Every painter of a frame runs inside one `flushSync`, so the state they set commits once, together. A painter
+ *  that has to draw against that committed state returns a function, which runs after the commit. */
+// biome-ignore lint/suspicious/noConfusingVoidType: a painter that returns nothing is the common case
+export type TilePainter = (rect: Rect, frame: SurfaceFrame) => void | (() => void);
 
 /** Erase the whole shared buffer. Device pixels, because that is what a GL
  *  viewport takes. */
@@ -79,6 +84,20 @@ export type SurfaceClear = (size: { width: number; height: number }, dpr: number
  *  tiles, before any tile paints — the place to size the shared buffer. */
 export interface UseTiledSurfaceOptions {
   onFrame: (frame: SurfaceFrame) => void;
+}
+
+/** Every dirty tile's painter, in one commit, then what each asked to run after it. A `flushSync` per tile would
+ *  count each as a nested update while any other work is pending, and React gives up past 50. */
+function paintTiles(frame: SurfaceFrame, painters: ReadonlyMap<string, TilePainter>): void {
+  const after: (() => void)[] = [];
+  flushSync(() => {
+    for (const id of frame.dirty) {
+      const rect = frame.rects.get(id);
+      const then = rect ? painters.get(id)?.(rect, frame) : undefined;
+      if (typeof then === 'function') after.push(then);
+    }
+  });
+  for (const then of after) then();
 }
 
 /**
@@ -174,11 +193,7 @@ export function useTiledSurface({ onFrame }: UseTiledSurfaceOptions): SurfaceHan
       const painting = new Set(frame.dirty);
       for (const id of dirty.current) painting.add(id);
       dirty.current.clear();
-      const paintFrame: SurfaceFrame = { ...frame, dirty: painting };
-      for (const id of painting) {
-        const rect = frame.rects.get(id);
-        if (rect) painters.current.get(id)?.(rect, paintFrame);
-      }
+      paintTiles({ ...frame, dirty: painting }, painters.current);
     },
     // The host attaches its container through `containerRef`, which may land
     // well after this hook's first effect; the gate re-resolves it per request.

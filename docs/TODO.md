@@ -392,12 +392,12 @@ Owner tags, after the priority (2026-10-26):
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
   (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
 
-- **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
-  iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
-  and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
-  avoids it (iconfab's README, "Known problems", 2026-11-11). Reported by the agent that built the lab and
-  not yet reproduced in weasel. Closes when a labkit test mounting 100 targets in one commit renders without
-  the error and iconfab drops its batching.
+- **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
+  update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
+  placement in a `flushSync` of its own; it now commits a frame's tiles together, and
+  `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
+  (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
+  around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
 - **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
   stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
   scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same

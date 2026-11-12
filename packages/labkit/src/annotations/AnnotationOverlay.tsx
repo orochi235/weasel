@@ -17,7 +17,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { createPortal, flushSync } from 'react-dom';
+import { createPortal } from 'react-dom';
 import type { Rect } from '../surface/rect';
 import {
   useSurfaceCanvas,
@@ -237,13 +237,13 @@ export function AnnotationOverlay({
     () =>
       surface?.registerPainter(tileId, (rect, frame) => {
         const next: Placement = { rect, visible: frame.visible.get(tileId) ?? rect };
-        // Committed before the redraw is asked for: the renderer reads its
+        setPlacement((prev) => (samePlacement(prev, next) ? prev : next));
+        // After the surface commits the placement: the renderer reads its
         // position from the last render, so a redraw landing first repaints the
         // tile where it was — after this frame's clear, which leaves a ghost.
-        flushSync(() => setPlacement((prev) => (samePlacement(prev, next) ? prev : next)));
         // The shared buffer was cleared if it resized this frame; this pane's
         // own loop has no way to know that.
-        sceneCanvas.current?.requestRedraw();
+        return () => sceneCanvas.current?.requestRedraw();
       }),
     [surface, tileId],
   );
