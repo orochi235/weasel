@@ -2,7 +2,7 @@
  * Every page of a diagram as one PDF.
  */
 import {
-  commandRasterizer, createRasterSession, holdImageBitmaps, planPixelRender, viewToMat3, warmRender,
+  commandRasterizer, createRasterSession, documentOf, holdImageBitmaps, planPixelRender, viewToMat3, warmRender,
 } from '@weasel-js/core';
 import { registryFontSource, writePdf, type PdfPage, type PdfSkip } from '@weasel-js/pdf';
 import type { PageExportScene, PageRect } from './pageNodes';
@@ -54,7 +54,8 @@ async function writePages(
   const out: PdfPage[] = [];
   for (const page of pages) {
     const args = {
-      scene,
+      // An export draws the document, not what an open gesture or edit is showing.
+      scene: documentOf(scene),
       sourceRect: { x: page.x, y: page.y, width: page.width, height: page.height },
       scale: { x: PT_PER_UNIT, y: PT_PER_UNIT },
     };
