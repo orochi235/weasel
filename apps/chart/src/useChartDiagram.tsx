@@ -5,7 +5,7 @@ import {
   CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
   diagramLabelDrag, diagramOffPage, diagramPorts, diagramWaypoints, editEdgeLabelAction, editEdgeLabelBinding,
   registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
-  themeLabelStyle, useAvoidRouting, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
+  themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
   useSequenceTools, useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
   type SequenceToolsOptions,
 } from '@weasel-js/diagram';
@@ -30,7 +30,7 @@ const edgeLabel = (theme: DiagramTheme): Contribution => ({
 /** Double-click an off-page tag to go to the other page. */
 const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING }).contribution;
 
-/** Labels sized by the renderer's own text metrics, as stencil rows are. */
+/** Labels sized by the renderer's own text metrics, as stencil rows are, and everything measured again when a face lands. */
 const LABEL_PLACEMENT = { measure: rendererMeasure };
 
 /** Every shipped group's stencils, so a chart showing any group can draw it. */
@@ -56,6 +56,7 @@ export function useChartDiagram(
   sequence: Pick<SequenceToolsOptions, 'participant' | 'arrow' | 'fragment' | 'mark'>,
 ): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
+  useFaceRemeasure(scene, LABEL_PLACEMENT);
   useLabelPlacement<ChartPose>(scene as never, LABEL_PLACEMENT);
   const participants = useMemo(() => sceneParticipants<ChartPose>(scene), [scene]);
   const selected = useCallback(() => selection.get() as readonly string[], [selection]);

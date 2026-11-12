@@ -293,18 +293,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
-- **(P3) [agent] A diagram body measured while its face is still loading keeps the fallback's size.**
-  `rendererMeasure` (`packages/diagram/src/rendererMeasure.ts`) measures synchronously through
-  `measureTextBounds`, and `templateSpecs`, `documentSpecs`, `commitSequence` and `applyChartTheme` store
-  the sizes it returns in the scene. A face registered `lazy` (every app's Inter, `apps/shared/defaultFont.ts`)
-  is measured as the fallback until it lands (`subscribeGlyphReady`'s doc), and nothing measures those bodies
-  again when `faceGeneration()` moves, so a chart built before the face loads keeps bodies sized for the wrong
-  font (read from the code, 2026-11-12; not reproduced in a browser). Too big for audit round 19: the fix is
-  either an async wait for the faces a commit names before it measures, or bodies re-measured on a face
-  change, and both touch every diagram commit path.
-  Closes when a body committed while its face is pending ends up sized for the face once it loads, under a
-  test that holds a lazy face pending across the commit.
-
 - **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
   and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
   in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
