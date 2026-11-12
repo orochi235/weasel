@@ -1,4 +1,5 @@
 import { useCommand } from '@weasel-js/core';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import { RESET_ROUTE_ACTION_ID } from '@weasel-js/diagram';
 import { pref } from '@weasel-js/prefs';
 import {
@@ -54,10 +55,10 @@ export function usePipelineCommands(pipeline: PipelineDoc): void {
   });
   useCommand(PIPELINE_ACTIONS.undo, 'Undo', () => pipeline.undo(), {
     enabled: () => can(pipeline.canUndo),
-    keys: { kind: 'key', key: 'z', mods: { mod: true } },
+    keys: { kind: 'key', key: 'z', mods: { mod: true }, phase: BETWEEN_GESTURES },
   });
   useCommand(PIPELINE_ACTIONS.redo, 'Redo', () => pipeline.redo(), {
     enabled: () => can(pipeline.canRedo),
-    keys: { kind: 'key', key: 'z', mods: { mod: true, shift: true } },
+    keys: { kind: 'key', key: 'z', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES },
   });
 }

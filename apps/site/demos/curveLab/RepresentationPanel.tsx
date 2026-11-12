@@ -75,8 +75,9 @@ export function RepresentationPanel({
     }],
   });
 
+  // The path is drawn from the shared anchors, which hold the history: undo here would part the two.
   useEffect(() => {
-    scene.setPose(nodeId, rep.toPath(anchors));
+    scene.untracked(() => scene.setPose(nodeId, rep.toPath(anchors)));
   }, [scene, nodeId, rep, anchors]);
 
   const selection = useSelection({ scene, initial: [nodeId], lock: true });

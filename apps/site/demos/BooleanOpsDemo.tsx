@@ -2,15 +2,14 @@ import { useCallback, useMemo } from 'react';
 import {
   asNodeId,
   boundsOfPath,
-  PATH_L,
-  PATH_M,
-  PATH_Z,
+  circlePath,
   pathDivide,
   pathExclude,
   pathInPoseFrame,
   pathIntersect,
   pathSubtract,
   pathUnion,
+  polygonFromPoints,
   SceneCanvas,
   useScene,
   useSelection,
@@ -26,28 +25,8 @@ import { DemoStage, DemoStageGroup } from './DemoStage';
 const W = 240;
 const H = 200;
 
-/** 32-gon circle approximation centered at (cx, cy). */
-function circle(cx: number, cy: number, r: number, n = 32): PolygonPath {
-  const commands = new Uint8Array(n + 1);
-  const coords = new Float32Array(n * 2);
-  commands[0] = PATH_M;
-  for (let i = 1; i < n; i++) commands[i] = PATH_L;
-  commands[n] = PATH_Z;
-  for (let i = 0; i < n; i++) {
-    const t = (i / n) * Math.PI * 2;
-    coords[i * 2] = cx + Math.cos(t) * r;
-    coords[i * 2 + 1] = cy + Math.sin(t) * r;
-  }
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
-}
-
-const RECT_INPUT: PolygonPath = {
-  kind: 'polygon',
-  commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
-  coords: new Float32Array([40, 50, 140, 50, 140, 140, 40, 140]),
-  fillRule: 'nonzero',
-};
-const CIRCLE_INPUT = circle(120, 115, 55);
+const RECT_INPUT = polygonFromPoints([{ x: 40, y: 50 }, { x: 140, y: 50 }, { x: 140, y: 140 }, { x: 40, y: 140 }]);
+const CIRCLE_INPUT = circlePath(120, 115, 55);
 
 const RECT_COLOR = '#7fb069';
 const CIRCLE_COLOR = '#d4a574';

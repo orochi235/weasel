@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  PathBuilder,
   SceneCanvas,
   WeaselProvider,
   asNodeId,
@@ -8,7 +7,9 @@ import {
   hexToRgba,
   pathFromD,
   polygonFromPoints,
+  polylineFromPoints,
   pressureToWidth,
+  regularPolygonPath,
   rgbaToHex,
   solid,
   strokeOf,
@@ -86,19 +87,6 @@ const TAPER_POINTS = [
 
 const taperWidths = (center: number): number[] => [4, center, center, center, 4];
 
-function heptagon(cx: number, cy: number, r: number): Path {
-  return polygonFromPoints(Array.from({ length: RAINBOW.length }, (_, i) => {
-    const a = -Math.PI / 2 + (i * 2 * Math.PI) / RAINBOW.length;
-    return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
-  }));
-}
-
-function polyline(points: { x: number; y: number }[]): Path {
-  return points
-    .reduce((b, p, i) => (i === 0 ? b.moveTo(p.x, p.y) : b.lineTo(p.x, p.y)), new PathBuilder())
-    .build();
-}
-
 /** A leaf whose pose is its path's bounds — the shape the kit's own tools
  *  produce, so the default painter draws it and `editAnchors` edits it. */
 function leaf(id: ReturnType<typeof asNodeId>, path: Path, data: Omit<PaintedData, 'path'>) {
@@ -128,13 +116,13 @@ function StrokeAndFill() {
         fill: { paint: GRADIENT },
         stroke: strokeOf('#1d2733ff', 6),
       }),
-      leaf(PETAL, heptagon(430, 125, 85), {
+      leaf(PETAL, regularPolygonPath({ x: 430, y: 125 }, 85, RAINBOW.length, -Math.PI / 2), {
         // A placeholder fill: the renderer only enters the per-vertex shader
         // path for a command that has one, and the vertex colors win in it.
         fill: { paint: solid('#ffffffff') },
         vertexColors: RAINBOW.flat(),
       }),
-      leaf(RIBBON, polyline(TAPER_POINTS), {
+      leaf(RIBBON, polylineFromPoints(TAPER_POINTS), {
         stroke: {
           ...strokeOf('#7fb069ff', 4),
           vertexWidths: taperWidths(20),

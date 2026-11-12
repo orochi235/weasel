@@ -2,9 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { IDENTITY_POSE_COMPOSITION,
   type CanvasSize,
   type DrawCommand,
-  PATH_L,
-  PATH_M,
-  PATH_Z,
+  polygonFromPoints,
+  polylineFromPoints,
   type RenderLayer,
   SceneCanvas,
   solid,
@@ -52,12 +51,8 @@ const toScreen = (m: Mat4, p: Vec3, size: CanvasSize): { x: number; y: number } 
   return w > 0.01 ? ndcToScreen({ x: x / w, y: y / w }, { x: 0, y: 0, ...size }) : null;
 };
 
-const polygon = (pts: readonly { x: number; y: number }[], close: boolean) => ({
-  kind: 'polygon' as const,
-  commands: new Uint8Array([PATH_M, ...pts.slice(1).map(() => PATH_L), ...(close ? [PATH_Z] : [])]),
-  coords: new Float32Array(pts.flatMap((p) => [p.x, p.y])),
-  fillRule: 'nonzero' as const,
-});
+const polygon = (pts: readonly { x: number; y: number }[], close: boolean) =>
+  (close ? polygonFromPoints(pts) : polylineFromPoints(pts));
 
 const hex = (rgb: Solid['rgb'], k: number) =>
   `#${rgb.map((c) => Math.round(Math.min(255, c * k)).toString(16).padStart(2, '0')).join('')}`;

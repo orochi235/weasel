@@ -1,4 +1,5 @@
 import { useCommand } from '@weasel-js/core';
+import { BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { EffectEditorApi } from '@weasel-js/diagram/effect';
 import type { RefObject } from 'react';
 import { menuRun, type MenuRuns } from '@weasel-js/editor';
@@ -29,10 +30,10 @@ export function useGroupCommands(editor: RefObject<EffectEditorApi | null>, pick
   useCommand(GROUP_ACTIONS.group, 'Group', () => {
     const made = ids.length === 0 ? null : editor.current?.group(ids) ?? null;
     if (made !== null) pickGroup(made);
-  }, { enabled: () => can(ids.length > 0), keys: { kind: 'key', key: 'g', mods: { mod: true } } });
+  }, { enabled: () => can(ids.length > 0), keys: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES } });
   useCommand(GROUP_ACTIONS.ungroup, 'Ungroup', () => {
     if (group === null) return;
     editor.current?.ungroup(group);
     pickGroup(null);
-  }, { enabled: () => can(group !== null), keys: { kind: 'key', key: 'g', mods: { mod: true, shift: true } } });
+  }, { enabled: () => can(group !== null), keys: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES } });
 }

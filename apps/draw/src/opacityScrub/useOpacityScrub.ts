@@ -7,8 +7,8 @@ import {
 } from './computeScrubbedPaints';
 
 interface ScrubSession {
-  /** The history index just after this session's own entry, once it has written one. */
-  ownIndex: number | null;
+  /** What this session's ticks coalesce under: one entry per run nothing interrupts. */
+  coalesceKey: string;
   snapshots: Map<string, PaintSnapshot>;
   targetAlpha: number;
 }
@@ -26,9 +26,7 @@ export interface UseOpacityScrubArgs {
       id: ReturnType<typeof asNodeId>,
       patch: { data: unknown },
     ) => void;
-    batch: (label: string, fn: () => void) => void;
-    historyIndex: () => number;
-    jumpToHistoryIndex: (n: number) => void;
+    batch: (label: string, fn: () => void, options?: { coalesceKey?: string }) => void;
   };
   selection: { current: ReadonlyArray<string> };
 }
@@ -42,6 +40,7 @@ export interface UseOpacityScrubArgs {
  */
 export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
   const sessionRef = useRef<ScrubSession | null>(null);
+  const sessionCount = useRef(0);
   const [percent, setPercent] = useState<number | null>(null);
 
   const sceneRef = useLatest(scene);
@@ -62,13 +61,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       return Math.max(fill ? paintAlpha(fill.paint) : 0, stroke ? paintAlpha(stroke.paint) : 0);
     }
 
-    // A tick replaces the previous tick's entry, but only while that entry is
-    // still the newest: after any other edit or an undo, it starts a new one.
     function applyLive(session: ScrubSession) {
-      const history = sceneRef.current;
-      if (session.ownIndex !== null && history.historyIndex() === session.ownIndex) {
-        history.jumpToHistoryIndex(session.ownIndex - 1);
-      }
       sceneRef.current.batch('Adjust opacity', () => {
         for (const [id, snap] of session.snapshots) {
           const currentNode = sceneRef.current.get(asNodeId(id));
@@ -82,8 +75,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
             },
           });
         }
-      });
-      session.ownIndex = history.historyIndex();
+      }, { coalesceKey: session.coalesceKey });
     }
 
     function startSession() {
@@ -97,7 +89,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       }
       if (snapshots.size === 0) return;
       sessionRef.current = {
-        ownIndex: null,
+        coalesceKey: `draw.opacityScrub:${++sessionCount.current}`,
         snapshots,
         targetAlpha: sessionBrightest,
       };
@@ -145,7 +137,7 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       onActivate: startSession,
       onDeactivate: commitSession,
     });
-  }, [sceneRef, selectionRef]);
+  }, [sceneRef, selectionRef, sessionCount]);
 
   return { tool, percent };
 }

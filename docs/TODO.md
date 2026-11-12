@@ -230,6 +230,13 @@ Owner tags, after the priority (2026-10-26):
   `apps/draw/src/useSymmetry.ts`).
   Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
   picks are committed.
+- **(P3) [maintainer] Undoing draw's symmetry group leaves Symmetry on, drawing into nothing.** Turning
+  Symmetry on (or a New or Open with it on) makes the group as an undo step of its own; one Undo removes it,
+  the `view.symmetry` pref still reads on, and new shapes draw unmirrored until it is toggled off and on
+  (`apps/draw/src/useSymmetry.ts`). Re-making the group on undo would wipe redo, and turning the pref off
+  breaks Undo past a New, which today lands back in the old document's group. Needs a ruling: whether
+  Symmetry's on/off is a pref or document state that undo moves.
+  Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
