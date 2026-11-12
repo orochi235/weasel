@@ -96,6 +96,12 @@ function pushOwn(env: RecorderEnv, op: Op, label: string): void {
   }
 }
 
+/** End the coalescing run on the engine and on the open journal alike. */
+function sealAll(env: RecorderEnv): void {
+  env.engine.seal();
+  env.journal()?.seal();
+}
+
 export function createRecorder(env: RecorderEnv): Recorder {
   const { notifier, mode, engine, log, arrivals, passes } = env;
   /** The outermost open batch, while it is recording. */
@@ -177,7 +183,7 @@ export function createRecorder(env: RecorderEnv): Recorder {
         return result;
       }), () => {
         if (ownsArrivals) arrivals.abandon();
-        if (notifier.version() !== versionBefore) (env.journal() ?? engine).seal();
+        if (notifier.version() !== versionBefore) sealAll(env);
       });
     },
     joins: () => mode.records() && collecting !== null,

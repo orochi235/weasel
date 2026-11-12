@@ -341,3 +341,15 @@ describe('Scene — what an applyBatch entry holds', () => {
     expect(labels()).toEqual([]);
   });
 });
+
+describe('Scene — a seal while a journal is open', () => {
+  it('ends the keyed run on the scene stack too, so the journal commits as an entry of its own', () => {
+    const { scene, labels } = fixture();
+    scene.batch('Insert', () => scene.setPose(A, at(1)), { coalesceKey: 'k' });
+    const journal = scene.history.beginJournal({ label: 'session' });
+    scene.batch('Type', () => scene.setPose(A, at(2)), { coalesceKey: 'k' });
+    scene.history.seal();
+    journal.commit('Session');
+    expect(labels()).toEqual(['Insert', 'Session']);
+  });
+});

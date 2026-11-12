@@ -163,7 +163,7 @@ export function createSceneHistory(env: SceneHistoryEnv): {
     observe: (listener) => engine.observe(listener),
     serialize: methods.serializeHistory,
     allForwardOps: () => engine.allForwardOps(),
-    seal: () => (journals.target() ?? engine).seal(),
+    seal: () => { engine.seal(); journals.target()?.seal(); },
     currentEntryId: () => engine.currentEntryId(),
     beginJournal: journals.begin,
     resumeJournal: journals.resume,
