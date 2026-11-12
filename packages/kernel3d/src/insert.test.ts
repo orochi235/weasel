@@ -8,6 +8,8 @@ import type { Viewport3d } from './project';
 
 const VP: Viewport3d = { camera: createCamera({}), width: 200, height: 100 };
 const DRAG = { x: 50, y: 25, width: 100, height: 50 };
+/** A camera a hair short of looking straight down its world's up, where `lookAt` would degenerate. */
+const TOP: Viewport3d = { ...VP, camera: createCamera({ pitch: Math.PI / 2 - 1e-6 }) };
 
 function footprintOf(vp: Viewport3d, up: Vec3 | undefined): Footprint | null {
   let seen: Footprint | null = null;
@@ -18,7 +20,7 @@ function footprintOf(vp: Viewport3d, up: Vec3 | undefined): Footprint | null {
 
 describe('createInsert', () => {
   it('casts through the camera of the view it was built for, as the other dep factories do', () => {
-    const right: Viewport3d = { ...VP, camera: createCamera({ target: { x: 5, y: 0, z: 0 } }) };
+    const right: Viewport3d = { ...TOP, camera: { ...TOP.camera, target: { x: 5, y: 0, z: 0 } } };
     const asked: (string | null | undefined)[] = [];
     let seen: Footprint | null = null;
     createInsert({
@@ -32,8 +34,7 @@ describe('createInsert', () => {
   });
 
   it('lays a footprint on the plane at right angles to `up`, across the two axes it is not', () => {
-    // The level default camera looks straight down a z-up world.
-    const f = footprintOf(VP, { x: 0, y: 0, z: 1 })!;
+    const f = footprintOf(TOP, { x: 0, y: 0, z: 1 })!;
     expect(f.center.x).toBeCloseTo(0, 6);
     expect(f.center.y).toBeCloseTo(0, 6);
     expect(f.center.z).toBe(0);
@@ -43,7 +44,7 @@ describe('createInsert', () => {
 
   it('reads an `up` off an axis by rounding as that axis', () => {
     // Rotating +y a quarter turn about +x leaves cos(π/2) in y.
-    const noisy = footprintOf(VP, { x: 0, y: Math.cos(Math.PI / 2), z: 1 })!;
+    const noisy = footprintOf(TOP, { x: 0, y: Math.cos(Math.PI / 2), z: 1 })!;
     expect(noisy.center.z).toBe(0);
     expect(noisy.width).toBeCloseTo(8.2843, 3);
     expect(noisy.depth).toBeCloseTo(4.1421, 3);

@@ -13,7 +13,7 @@ import { createBvh, type Bvh, type HalfSpace } from '@weasel-js/geom/nd';
 import { rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { projectAabbToScreen, screenToNdc, type ScreenBox } from './screen';
 import { padQuery } from './snap/boxIndex';
-import { boxAt, boxIndexable, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
+import { boxAt, boxIndexable, inWorld, worldBoxes, worldPoseOf, type Node3d, type World3d } from './world';
 
 /** Whether the asking view draws `layer`. */
 type LayerGate = (layer: string) => boolean;
@@ -39,7 +39,8 @@ export function screenBoxOf<TData, TLayer extends string>(
   const node = world.scene.get(id) as Node3d<TData, TLayer> | undefined;
   const pose = node && worldPoseOf(world.scene, id);
   const box = node && pose && boxAt(world, node, pose);
-  return box ? projectAabbToScreen(box, viewProjectionOf(viewport), rectOf(viewport)) : null;
+  const vp = inWorld(world, viewport);
+  return box ? projectAabbToScreen(box, viewProjectionOf(vp), rectOf(vp)) : null;
 }
 
 /** Widens each side plane, in NDC, past the rounding between it and the exact screen test. */

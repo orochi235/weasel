@@ -2,7 +2,7 @@
  * The kit's deps, implemented against a 3D world.
  *
  * Every one of these takes its camera from a thunk rather than an argument,
- * `world.viewport(viewId)` for the view it was built for:
+ * `viewportOf(world, viewId)` for the view it was built for:
  * the dispatcher keeps handing actions two numbers, and what makes them mean
  * something in 3D is the camera each dep already closes over.
  */
@@ -16,14 +16,13 @@ import {
   add,
   dot,
   len,
-  normalize,
   quatIdentity,
   scale as scaleBy,
   sub,
   type Aabb,
   type Vec3,
 } from '@weasel-js/geom/3d';
-import { cameraEye, type Camera3d } from './camera';
+import { cameraBasis } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
 import { groundAxes, type Axis } from './ground';
 import { castOntoPlane, rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
@@ -31,7 +30,7 @@ import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
 import { createSession3d } from './snap/session3d';
 
-import { DEFAULT_UP, measuredBoxAt, type Node3d, type World3d } from './world';
+import { DEFAULT_UP, measuredBoxAt, viewportOf, type Node3d, type World3d } from './world';
 
 export type { Viewport3d, ViewportSource } from './project';
 export type { NodeBounds, Node3d, Scene3d, World3d } from './world';
@@ -45,8 +44,8 @@ export { worldPoseOf } from './world';
  * answer is "as far as it already was". Nothing resolved on this plane changes
  * depth, and one screen pixel is the same world distance everywhere on it.
  */
-function viewPlaneAt(camera: Camera3d, p: Vec3): { normal: Vec3; offset: number } {
-  const normal = normalize(sub(camera.target, cameraEye(camera)));
+function viewPlaneAt(vp: Viewport3d, p: Vec3): { normal: Vec3; offset: number } {
+  const normal = cameraBasis(vp.camera, vp.up).forward;
   return { normal, offset: dot(normal, p) };
 }
 
@@ -91,7 +90,7 @@ function pickOnRay<TData, TLayer extends string>(
   exclude?: Iterable<NodeId>,
   layerIsPainted?: (layer: string) => boolean,
 ): NodeId | null {
-  const ray = rayAt(world.viewport(viewId), point);
+  const ray = rayAt(viewportOf(world, viewId), point);
   if (!ray) return null;
   // The ray spans near to far plane at t 0..1.
   return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1, layerIsPainted);
@@ -122,7 +121,7 @@ export function createAreaSelect<TData, TLayer extends string>(
 ): AreaSelectDep {
   return {
     hitTestArea: (bounds, view) =>
-      worldPickIndex(world).inScreenRect(world.viewport(viewId), bounds, layerGateOf(view)),
+      worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view)),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };
@@ -207,7 +206,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   // last one that did, rather than snapping the node back.
   let lastCastable: Viewport3d | null = null;
   function castableViewport(): Viewport3d | null {
-    const vp = world.viewport(viewId);
+    const vp = viewportOf(world, viewId);
     const rect = rectOf(vp);
     if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
     return lastCastable;
@@ -216,7 +215,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
       projectAabbToScreen(worldBox(pose), viewProjectionOf(vp), rectOf(vp));
-    const boundsOf = (pose: Pose3) => boundsIn(world.viewport(viewId), pose);
+    const boundsOf = (pose: Pose3) => boundsIn(viewportOf(world, viewId), pose);
 
     const descriptor: PoseDescriptor<Pose3, Node3d<TData, TLayer>> = {
       forNode(node) {
@@ -260,7 +259,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
           y: from.y + (dst.y - src.y) + (from.y - src.y) * (ky - 1),
         };
 
-        const plane = viewPlaneAt(vp.camera, pose.position);
+        const plane = viewPlaneAt(vp, pose.position);
         const before = onPlane(vp, plane, from);
         const after = onPlane(vp, plane, to);
         if (!before || !after) return pose;
@@ -287,7 +286,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
       fromBounds(bounds, template) {
         const vp = castableViewport();
         if (!vp) return template;
-        const plane = viewPlaneAt(vp.camera, template.position);
+        const plane = viewPlaneAt(vp, template.position);
 
         const corners: Vec3[] = [];
         for (const [x, y] of [

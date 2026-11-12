@@ -9,6 +9,7 @@ import {
   useLatest,
   type Yoke,
 } from '@weasel-js/core';
+import type { Vec3 } from '@weasel-js/geom/3d';
 import {
   type Camera3d,
   type Camera3dDep,
@@ -54,6 +55,9 @@ export interface OrbitProps {
   /** How far the camera turns and travels. Omitted fields are kernel3d's
    *  `DEFAULT_ORBIT_LIMITS`. */
   limits?: Partial<OrbitLimits>;
+  /** The scene's up, which a pan and a dolly slide the target against: the same axis as its `World3d.up`. Default
+   *  +y. */
+  up?: Vec3;
   /** Where the camera opened: what the `home` gesture returns it to, and the
    *  distance the zoom chrome reads as 100%. Omitted, the `home` gesture does
    *  nothing and the chrome reads the camera as it stands. */
@@ -93,6 +97,7 @@ export function Orbit({
   view,
   onViewChange,
   limits,
+  up,
   home,
   viewport,
   onResize,
@@ -145,6 +150,7 @@ export function Orbit({
           view={view}
           onViewChange={onViewChange}
           limits={limits}
+          up={up}
           home={home}
           gestures={gestures}
         />
@@ -168,6 +174,7 @@ interface OrbitInputProps {
   view: Camera3d;
   onViewChange: (v: Camera3d) => void;
   limits?: Partial<OrbitLimits>;
+  up?: Vec3;
   home?: () => Camera3d | null;
   gestures?: CameraGestures;
 }
@@ -238,6 +245,7 @@ function OrbitDispatch({
   view,
   onViewChange,
   limits,
+  up,
   home,
   gestures,
   registry,
@@ -255,9 +263,9 @@ function OrbitDispatch({
 
   // Written by each commit and by `set`, ahead of the render it asks for — two
   // writers, so not `useLatest`. As `useCameraView`'s.
-  const live = useRef({ view, onViewChange, limits, home });
+  const live = useRef({ view, onViewChange, limits, up, home });
   useInsertionEffect(() => {
-    live.current = { view, onViewChange, limits, home };
+    live.current = { view, onViewChange, limits, up, home };
   });
 
   const camera3d = useMemo<Camera3dDep>(() => {
@@ -275,6 +283,7 @@ function OrbitDispatch({
       set,
       size: () => hostSize() ?? { width: 1, height: 1 },
       limits: () => live.current.limits ?? NO_LIMITS,
+      up: () => live.current.up,
       home: () => live.current.home?.() ?? live.current.view,
     };
   }, [hostRef]);

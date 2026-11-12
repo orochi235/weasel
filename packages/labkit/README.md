@@ -599,7 +599,9 @@ view's zoom, or an orbit's opening distance over its distance now.
 An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
 fov, near, far }`, plain numbers in radians and scene units. Whatever draws
 the scene reads it with `useOrbitView()`, and projects it with kernel3d's
-`cameraViewProjection`; chrome reads it with `useTrialOrbit()`.
+`cameraViewProjection`; chrome reads it with `useTrialOrbit()`. A scene
+whose up is not +y declares it as `orbit: { up }`, the same axis as its
+`World3d.up`, and passes it to `cameraViewProjection` too.
 An instrument that draws 3D — through `useOrbitView()`, or a three.js
 renderer in its DOM — without declaring `orbit` has a camera labkit cannot
 move, and in development it warns and marks the trial's title bar. Declare

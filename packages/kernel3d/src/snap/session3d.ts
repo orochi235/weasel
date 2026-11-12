@@ -3,10 +3,10 @@ import { closestOnFlat, resolveSnap, type Flat } from '@weasel-js/geom/nd';
 import {
   add, cross, dot, len, normalize, sub, type Vec3,
 } from '@weasel-js/geom/3d';
-import { cameraEye } from '../camera';
+import { cameraBasis } from '../camera';
 import { castOntoPlane, projectPoint, rectOf, viewProjectionOf, type Viewport3d } from '../project';
 import { projectAabbToScreen } from '../screen';
-import { DEFAULT_UP, type World3d } from '../world';
+import { DEFAULT_UP, viewportOf, type World3d } from '../world';
 import { inputFlat3d, planeBasis, tuple, vec3Of } from './plane';
 import { boxProbes, subjectOf } from './probes3d';
 
@@ -59,7 +59,7 @@ export function createSession3d<TData, TLayer extends string>(inputs: Session3dI
   return {
     at(p, mods) {
       if (!frame) return unsnapped(p);
-      const vp = world.viewport(inputs.viewId);
+      const vp = viewportOf(world, inputs.viewId);
       const screen = frame.anchor(vp);
       const anchor = screen && castOntoPlane(vp, screen, up, frame.offset);
       const hit = screen && castOntoPlane(vp, { x: screen.x + p.x - req.press.x, y: screen.y + p.y - req.press.y }, up, frame.offset);
@@ -155,8 +155,7 @@ function level(locus: Flat, up: Vec3): boolean {
 /** World units per screen px at the farthest probe in front of the camera:
  *  the radius that culls by reach without dropping anything in it. */
 function worldPerPx(vp: Viewport3d, probes: readonly SnapProbeAt<Vec3>[]): number {
-  const eye = cameraEye(vp.camera);
-  const forward = normalize(sub(vp.camera.target, eye));
+  const { eye, forward } = cameraBasis(vp.camera, vp.up);
   const k = (2 * Math.tan(vp.camera.fov / 2)) / Math.max(1, vp.height);
   let depth = 0;
   for (const q of probes) depth = Math.max(depth, dot(sub(q.at, eye), forward));

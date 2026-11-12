@@ -21,6 +21,12 @@ export interface Viewport3d {
    */
   originX?: number;
   originY?: number;
+  /**
+   * The world's up, which the camera turns about and keeps upright on screen. Default +y. Every function taking a
+   * `World3d` sets it from `World3d.up`, overriding what is here, so a `ViewportSource` leaves it out; set it only
+   * on a viewport handed straight to `projectPoint`, `projectSnapMarks` and the like.
+   */
+  up?: Vec3;
 }
 
 /**
@@ -44,7 +50,7 @@ export function rectOf(viewport: Viewport3d): ScreenBox {
 }
 
 export function viewProjectionOf(viewport: Viewport3d) {
-  return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height));
+  return cameraViewProjection(viewport.camera, viewport.width / Math.max(1, viewport.height), viewport.up);
 }
 
 export function rayAt(viewport: Viewport3d, point: Point): Ray | null {

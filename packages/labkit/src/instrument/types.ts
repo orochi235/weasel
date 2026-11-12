@@ -1,4 +1,5 @@
 import type { PointerContextValue } from '@weasel-js/core';
+import type { Vec3 } from '@weasel-js/geom/3d';
 import type { Camera3d, OrbitLimits } from '@weasel-js/kernel3d';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
@@ -151,6 +152,9 @@ export interface OrbitCapability<TS = unknown, TC = unknown> {
   /** How far the camera turns and travels, in the scene's own units.
    *  Omitted fields are kernel3d's `DEFAULT_ORBIT_LIMITS`. */
   limits?: Partial<OrbitLimits>;
+  /** The scene's up, the `World3d.up` its deps are built with: a pan and a dolly slide the target against it. Draw
+   *  with the same axis (`cameraViewProjection(camera, aspect, up)`). Default +y. */
+  up?: Vec3;
   /** As `CanvasCapability.gestures`. A drag turns the camera and Shift+drag
    *  pans its target; the wheel and a pinch dolly; a double click goes home. */
   gestures?: CameraGestures;

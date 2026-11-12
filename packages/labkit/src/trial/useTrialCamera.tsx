@@ -43,6 +43,16 @@ export interface TrialCamera {
 
 const STILL: CameraGestures = { drag: false, wheel: false, pinch: false, tap: false, home: false };
 
+/** The gestures a trial's camera binds: its capability's under the lab's, or none for a fixed orbit. */
+function gesturesOf(
+  camera: ReturnType<typeof cameraOf>,
+  lab: CameraGestures | null,
+): CameraGestures {
+  return camera?.kind === 'orbit' && camera.capability.fixed
+    ? STILL
+    : { ...camera?.capability.gestures, ...lab };
+}
+
 /**
  * Everything a trial does with its camera that does not depend on which kind
  * it is: placement, the `home` gesture, the zoom it reports, and the orbit
@@ -68,11 +78,7 @@ export function useTrialCamera({
     }),
     [pane],
   );
-  const labGestures = useContext(CameraGesturesContext);
-  const gestures =
-    camera?.kind === 'orbit' && camera.capability.fixed
-      ? STILL
-      : { ...camera?.capability.gestures, ...labGestures };
+  const gestures = gesturesOf(camera, useContext(CameraGesturesContext));
   const placement = useViewPlacement({
     instrument,
     view,
@@ -154,6 +160,7 @@ export function useTrialCamera({
             view={view3d ?? createCamera({})}
             onViewChange={setView}
             limits={orbitCap.limits}
+            up={orbitCap.up}
             home={orbitHome}
             viewport={pane}
             onResize={placement.place}

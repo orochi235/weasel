@@ -27,9 +27,10 @@ export function groundAxes(up: Vec3): GroundAxes {
   return { u: 'x', v: 'y', up: 'z', sign: sign(up.z) };
 }
 
-/** Where the ray through `point`, in the coordinates the viewport's pointer points arrive in, meets the ground, or `null`. */
+/** Where the ray through `point`, in the coordinates the viewport's pointer points arrive in, meets the ground, or
+ *  `null`. The camera turns about `up`, the world's. */
 export function groundHit(viewport: Viewport3d, point: { x: number; y: number }, up: Vec3): Vec3 | null {
-  return castOntoPlane(viewport, point, up, 0);
+  return castOntoPlane({ ...viewport, up }, point, up, 0);
 }
 
 /** A world point as a 2D world reads it: its place along the ground axes as x and y, its height as z. */
