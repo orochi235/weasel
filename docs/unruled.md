@@ -242,6 +242,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, audit round 15, scene lane): `sceneToAdapter(scene)` and `useSceneAdapter(scene)` given no
+  `selection` read and write the scene's own selection, where they answered `[]` and dropped writes. The boolean,
+  outline and shape-builder actions read `adapter.getSelection()` and acted on nothing through such an adapter.
 - 2026-11-11 (my call, core actions second property pass): a drag's pointer that is no finite number lands nowhere,
   as routing's sweep and kernel3d's camera already had it. Every drag `inPlane` wraps, the marquee, and the lasso
   decline a press at such a point; move, resize, rotate, clone, insert, the marquee, and the lasso skip such a move
