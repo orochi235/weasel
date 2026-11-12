@@ -36,7 +36,7 @@ export type { DecorationKind } from './layout/decorationMetrics';
 export { transformRunTexts } from './runs/textTransform';
 export type { TextTransform, RunSourceMap, TransformedRunText } from './runs/textTransform';
 export {
-  SMALL_CAPS_SCALE, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
+  SMALL_CAPS_SCALE, ownSmallCaps, smallCapsScale, smallCapsScaleFor, smallCapsText, isSmallCapsLetter,
 } from './runs/smallCaps';
 export type { FontVariantCaps, SmallCapsText } from './runs/smallCaps';
 
