@@ -1,5 +1,33 @@
 # @weasel-js/pdf
 
+## 1.19.1
+
+### Patch Changes
+
+- 425f994: A PDF export whose font source throws for a glyph's outline reports that error in its skipped list, rather than saying the glyph has none.
+  
+  <!-- entry: fix -->
+- Updated dependencies [69b696d]
+- Updated dependencies [08dd689]
+- Updated dependencies [71c3f85]
+- Updated dependencies [16900c1]
+- Updated dependencies [55b0f04]
+- Updated dependencies [2f6b0e9]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [4fb0c17]
+- Updated dependencies [20878ef]
+- Updated dependencies [04ac694]
+- Updated dependencies [92e4fa8]
+- Updated dependencies [f3618cb]
+- Updated dependencies [bce70ba]
+  - @weasel-js/renderer@1.19.1
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/text@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/stroke@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

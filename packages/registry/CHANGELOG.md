@@ -1,5 +1,13 @@
 # @weasel-js/registry
 
+## 1.19.1
+
+### Minor Changes
+
+- 8562ebe: `foldText` exports the fold `matchQuery` reads text through: lowercased, composed, and with final sigma read as `σ`.
+  
+  <!-- entry: api -->
+
 ## 1.19.0
 
 ### Patch Changes

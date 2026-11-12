@@ -1,5 +1,62 @@
 # @weasel-js/text-dom
 
+## 1.19.1
+
+### Patch Changes
+
+- fa19170: On a Mac, a text edit styles on Cmd+B, Cmd+I and Cmd+U only. Ctrl+B and the rest do what a Mac text field does, so Ctrl+B moves back a character.
+  
+  <!-- entry: fix -->
+- 2f6b0e9: The text edit overlay draws small caps from the face's own small capitals wherever the canvas does.
+  
+  <!-- entry: rank=0 fix visual -->
+- 27eabf7: A text edit opening also waits out `fontHold` for the bold and italic faces its runs use in the node's own family, not only the node's face.
+  
+  <!-- entry: rank=-5 fix -->
+- 1d5783f: A text edit takes focus back from a checkbox or slider in its chrome after styling, as from a button.
+  
+  Only a field the user types text into keeps focus and the selection.
+  
+  <!-- entry: fix behavior -->
+- b08cf36: Undo and Redo inside a text edit take back a restyle, a paste, or anything typed, and put the selection back where it was.
+  
+  Mod+Z, Shift+Mod+Z and Mod+Y step a history the edit keeps itself; the edit's `commit` still writes the result as one change.
+  
+  <!-- entry: rank=10 fix -->
+- 12a862d: Bold, italic, underline and strikethrough shortcuts in a text edit work on a non-Latin keyboard layout, read by the letter the key bears.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5159b4f]
+- Updated dependencies [08dd689]
+- Updated dependencies [58309aa]
+- Updated dependencies [5159b4f]
+- Updated dependencies [55b0f04]
+- Updated dependencies [72e6d28]
+- Updated dependencies [8cd600b]
+- Updated dependencies [2f6b0e9]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [bce70ba]
+- Updated dependencies [d40d869]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+- Updated dependencies [72e6d28]
+- Updated dependencies [2c3416d]
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/font@1.19.1
+  - @weasel-js/gestures@1.19.1
+  - @weasel-js/text@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/react@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

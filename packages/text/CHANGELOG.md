@@ -1,5 +1,31 @@
 # @weasel-js/text
 
+## 1.19.1
+
+### Minor Changes
+
+- 2f6b0e9: `ownSmallCaps(family, weight, style)` says whether small caps in that face come from its own `smcp` glyphs or are synthesized.
+  
+  <!-- entry: rank=-5 api -->
+- bce70ba: `graphemeEnds` is exported: the UTF-16 offset past each grapheme cluster of a string, the unit `letter-spacing` tracks.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 55b0f04: A `createMarkdownRenderer` line of only superscript or `fontScale` text keeps the height of a full-size line.
+  
+  <!-- entry: rank=0 fix visual -->
+- Updated dependencies [08dd689]
+- Updated dependencies [71c3f85]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [8562ebe]
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

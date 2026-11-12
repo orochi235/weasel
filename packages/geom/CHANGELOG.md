@@ -1,5 +1,13 @@
 # @weasel-js/geom
 
+## 1.19.1
+
+### Patch Changes
+
+- 71c3f85: `lerp`, and `lerpPoint` and the vector lerps built on it, give `b` itself at `t = 1` rather than a value an ulp away.
+  
+  <!-- entry: fix -->
+
 ## 1.19.0
 
 ### Patch Changes

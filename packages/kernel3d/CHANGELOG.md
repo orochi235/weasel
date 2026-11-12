@@ -1,5 +1,185 @@
 # @weasel-js/kernel3d
 
+## 1.19.1
+
+### Minor Changes
+
+- 718140f: The camera orbits about the world's `up`, so a z-up world keeps its horizon level.
+  
+  `World3d.up` is the one place to set it: every dep, `screenBoxOf` and `createInsert` turn the camera about it. At yaw 0 the eye sits where the turn carrying +y onto `up` carries +z: down -y when z is up. Where no world is in reach, the axis is passed alongside the camera, default +y:
+  
+  ```ts
+  const UP = { x: 0, y: 0, z: 1 };
+  const world = { scene, viewport, up: UP };
+  const viewProjection = cameraViewProjection(camera, aspect, UP); // drawing
+  const camera3d: Camera3dDep = { get, set, size, up: () => UP };  // orbit, pan and dolly
+  projectPoint(p, { camera, width, height, up: UP });              // a viewport built by hand
+  ```
+  
+  `cameraEye`, `cameraView`, `panBy` and `dollyToward` take the same trailing axis, and `cameraBasis(camera, up)` returns the eye and the camera's forward, right and up directions in world terms.
+  
+  <!-- entry: rank=5 new api fix -->
+- 93f0212: `createInsert`'s `viewport` and `up` options and `groundGridSource`'s `up` are deprecated in favor of `world`; they still work.
+  
+  Each is a second place to name the world's up beside `World3d.up`, and the two can disagree:
+  
+  ```ts
+  createInsert({ world, mint });
+  groundGridSource({ step: 1, world });
+  ```
+  
+  <!-- entry: deprecates -->
+- 11e65f8: `groundGridSource` takes a `world`, so its grid lies on the ground its world's `up` names, the one a 3D snap probes.
+  
+  ```ts
+  createSnap(world, { sources: [groundGridSource({ step: 1, world })] });
+  ```
+  
+  <!-- entry: api fix -->
+- a5dbcd7: `createInsert` takes a `world`, so a drag inserts on the ground its world's `up` names, where the world's snap and camera already were.
+  
+  ```ts
+  createInsert({ world, mint });
+  ```
+  
+  Passing `world` reads its `viewport` and `up`. The `viewport` and `up` form stays for a host with no `World3d`; the two cannot be mixed.
+  
+  <!-- entry: api fix -->
+- 3b94644: A 3D marquee can select what a click there would: a nested solid's outermost container, and nothing outside the entered one.
+  
+  `createAreaSelect` takes the entered group to do it:
+  
+  ```ts
+  createAreaSelect(world, selection, viewId, { entered });
+  ```
+  
+  <!-- entry: api fix -->
+
+### Patch Changes
+
+- 85245b2: A solid wholly behind the camera no longer shows selection chrome at the canvas's top-left corner or falls inside a marquee drawn there.
+  
+  <!-- entry: fix visual -->
+- 401c1c8: A move through a camera that casts no ray leaves the solid where it is, rather than moving it through an earlier gesture's camera.
+  
+  A drag whose camera stops casting rays partway, as when its pane collapses, still carries on through the last camera that did.
+  
+  <!-- entry: fix -->
+- fff1b91: A click or a marquee in a 3D view no longer selects a node on a layer that view does not paint.
+  
+  `createPickEvery` and `createAreaSelect` now read the asking view's `layerIsPainted`, as core's own picks do.
+  
+  <!-- entry: fix -->
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [c93b396]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [3fdf6ae]
+- Updated dependencies [58298fa]
+- Updated dependencies [71c3f85]
+- Updated dependencies [7e954c5]
+- Updated dependencies [770768b]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [216d193]
+- Updated dependencies [1691dec]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [25e3464]
+- Updated dependencies [687501a]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [4ff8a4b]
+- Updated dependencies [2de6b88]
+- Updated dependencies [687501a]
+- Updated dependencies [9db6c05]
+- Updated dependencies [42f5a79]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [72e6d28]
+- Updated dependencies [16900c1]
+- Updated dependencies [2c3416d]
+- Updated dependencies [6289e51]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/core@1.19.1
+  - @weasel-js/routing@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/stroke@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

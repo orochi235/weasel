@@ -1,5 +1,29 @@
 # @weasel-js/animator
 
+## 1.19.1
+
+### Patch Changes
+
+- e17dbd6: An animation is painted the frame the animator advances it, not the frame after.
+  
+  <!-- entry: fix -->
+- Updated dependencies [71c3f85]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [8562ebe]
+- Updated dependencies [2c3416d]
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/clock@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

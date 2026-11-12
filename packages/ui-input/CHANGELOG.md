@@ -1,5 +1,35 @@
 # @weasel-js/ui-input
 
+## 1.19.1
+
+### Minor Changes
+
+- 5159b4f: `chordKey(e)` and `codeLetter(code)` are exported: the key a shortcut reads a keystroke as, on any layout. A chord that typed no Latin character reads as the letter its key bears, so Ctrl+я is Ctrl+Z.
+  
+  <!-- entry: api -->
+- a09ed24: `typeaheadSearching(buffer, now, resetMs?)` says whether a typeahead search is under way, the test a list uses to read a space as typed.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 5159b4f: Mod+A selects every row of a list on a non-Latin keyboard layout. `rowKey` reads a `code` on the key it is given.
+  
+  <!-- entry: fix -->
+- 250c105: Typeahead starts a new search on the first key after the system clock is set back, rather than adding it to the last search.
+  
+  <!-- entry: fix -->
+- 8562ebe: Typeahead lands `ασ` on a label spelled `ΑΣ`, folding text the way `matchQuery` does.
+  
+  <!-- entry: fix -->
+- Updated dependencies [c9adfef]
+- Updated dependencies [97be45c]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [8562ebe]
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

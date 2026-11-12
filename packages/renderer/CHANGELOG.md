@@ -1,5 +1,50 @@
 # @weasel-js/renderer
 
+## 1.19.1
+
+### Minor Changes
+
+- 16900c1: New `imageLoadsSettled()`, which settles once every image load in flight has landed or failed.
+  
+  For a render with no next frame to redraw in; `warmRender` waits on it.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 69b696d: The image cache's budget no longer drops a picture the latest frame drew as an image pattern, as it already spared one drawn as an image.
+  
+  <!-- entry: fix -->
+- 4fb0c17: `releaseImage` frees the texture an image pattern drew the picture through, along with its registry entry.
+  
+  <!-- entry: fix perf -->
+- 20878ef: `setImageMinification` on a disposed `WeaselRenderer` does nothing, rather than leaving a cache that caps other renderers' texture size.
+  
+  <!-- entry: fix -->
+- 04ac694: A `WeaselRenderer` that fails to construct on a lost context no longer rebuilds itself, unowned, when the context comes back.
+  
+  <!-- entry: fix -->
+- 92e4fa8: Outlined text shows the new glyphs of a face `registerFontOutlines` registers again, not the shapes it first tessellated.
+  
+  <!-- entry: fix visual -->
+- f3618cb: A disposed WebGPU `WeaselRenderer` is no longer kept alive by the device it drew on. A lost device is logged once, not once per renderer.
+  
+  <!-- entry: fix perf -->
+- Updated dependencies [08dd689]
+- Updated dependencies [71c3f85]
+- Updated dependencies [55b0f04]
+- Updated dependencies [2f6b0e9]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [8562ebe]
+- Updated dependencies [bce70ba]
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/text@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/stroke@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

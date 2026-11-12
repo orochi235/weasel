@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/dither",
-  "version": "1.19.0",
+  "version": "1.19.1",
   "description": "Dithering to 1-bit ink: four methods on the CPU for exported pixels, and threshold and Bayer as a live renderer effect on the screen or an output target's dot grid, with regions kept at plain threshold.",
   "weasel": {
     "tier": "plugin",
@@ -20,8 +20,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/geom": "1.19.0",
-    "@weasel-js/renderer": "1.19.0"
+    "@weasel-js/geom": "1.19.1",
+    "@weasel-js/renderer": "1.19.1"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

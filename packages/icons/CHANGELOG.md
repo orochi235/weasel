@@ -1,5 +1,12 @@
 # @weasel-js/icons
 
+## 1.19.1
+
+### Patch Changes
+
+- Updated dependencies [8562ebe]
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

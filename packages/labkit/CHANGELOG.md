@@ -1,5 +1,332 @@
 # @weasel-js/labkit
 
+## 1.19.1
+
+### Major Changes
+
+- 6817097: The lab store's `setTrialInstrument` is gone; `swapTrial` is how a trial changes instrument.
+  
+  It handed the new instrument the old one's state, config, view and undo under the same id. `swapTrial` opens a fresh trial in its place with a new id.
+  
+  ```ts
+  // before
+  store.getState().setTrialInstrument(id, 'Spectrometer');
+  // after
+  useLabCommands().swapTrial(id, 'Spectrometer');
+  ```
+  
+  <!-- entry: breaking -->
+- 403fd51: The loupe's actions (`createLoupeActions`, `LoupeInputApi` and their ids) are imported from `@weasel-js/loupe`, not `@weasel-js/labkit`.
+  
+  `@weasel-js/loupe` also exports `createLoupeAimActions` (just `loupe.aim` and `loupe.leave`), `LoupeAimInput`, the `LOUPE_AIM_ID`, `LOUPE_LEAVE_ID` and `LOUPE_PICK_ID` ids, and `WHEEL_RATE`. `LoupeInputApi.aimAt` is handed a third argument, `held`, true while a button is down.
+  
+  ```ts
+  // before
+  import { createLoupeActions, type LoupeInputApi } from '@weasel-js/labkit/loupe';
+  // after
+  import { createLoupeActions, type LoupeInputApi } from '@weasel-js/loupe';
+  ```
+  
+  <!-- entry: breaking api -->
+
+### Minor Changes
+
+- 2dcd6b7: `<Lab sidebar="float">` puts each trial's sidebar in a panel over its body, opened from its title bar, so the body keeps its whole width.
+  
+  The toggle is a Trial settings button (contribution id `panel`, so `suppress={['panel']}` drops it), and the panel opens centered under it and closes on Escape or a press outside it. `'dock'` stays the default. `<Trial>` takes the same `sidebar` prop, and its chrome options are exported as `TrialChromeOptions`.
+  
+  <!-- entry: rank=5 api new pick -->
+- 2dcd6b7: `<Lab hide>` drops a trial button and keeps its shortcut: `hide={['undo', 'redo']}` takes away the undo row while Mod+Z still steps the trial.
+  
+  `suppress` still drops both. Like it, `hide` throws on an id that is not there.
+  
+  <!-- entry: new api -->
+- 18e1bee: A job capability takes `begin`, the state each run folds its items into, so a rerun need not add its items to the last run's.
+  
+  An `auto` job runs again whenever its trial mounts, a reloaded one included.
+  
+  ```ts
+  job: {
+    auto: true,
+    run: ({ signal }) => sweep(signal),
+    onItem: (item, state) => ({ ...state, samples: [...state.samples, item] }),
+    begin: (state) => ({ ...state, samples: [] }),
+  }
+  ```
+  
+  <!-- entry: api -->
+- 7d83e08: An orbit trial pans and dollies a scene whose up is not +y the right way, once it declares `orbit: { up }`.
+  
+  `<Orbit up>` takes the same axis for a camera outside a trial. Use the scene's `World3d.up`, and pass it to `cameraViewProjection` when drawing.
+  
+  <!-- entry: api fix -->
+- 2dcd6b7: An instrument's `renderTitle` is handed the trial's config, `renderTitle(title, { config })`, and redraws as it changes.
+  
+  <!-- entry: api -->
+- ea71c8b: `@weasel-js/labkit/theme` exports `interstellarTheme` alone, so an app can theme its chrome as labkit does without loading the kit's barrel.
+  
+  <!-- entry: api -->
+- 40460cc: `useJob` takes `epoch`: a new value drops the run in flight and starts an `auto` job again, even where its `key` is unchanged.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 97c4b91: Under Windows high contrast (`forced-colors: active`), a `ControlMatrix` switch shows its thumb and which side it is on.
+  
+  <!-- entry: fix visual -->
+- 64cc4b8: Text in a lab's control bar waits `params.lab.textWaitMs`, or the leaf's own `debounceMs`, before it drafts, as the panel's rows do.
+  
+  <!-- entry: fix -->
+- d7c333f: A closed trial no longer keeps its instrument's undo history in memory for the life of the lab.
+  
+  <!-- entry: fix perf -->
+- a55b07a: A Difference lens redraws at the new pixel density when the window moves to another display.
+  
+  <!-- entry: fix visual -->
+- 87bf0a8: The export panel's Copy says the browser refused the clipboard.
+  
+  <!-- entry: fix -->
+- 6e34091: A trial config write made after the system clock is set back starts a new undo step rather than continuing the last gesture.
+  
+  <!-- entry: fix -->
+- 9ddae00: A press inside a portal rendered within a `<TileGrip>`, such as a title bar popover, no longer drags the tile.
+  
+  React passes a portal's events up through the component that rendered it, so selecting text in a floating trial sidebar's field picked up the whole trial.
+  
+  <!-- entry: fix -->
+- 40460cc: Reset, or a snapshot loaded over a trial, stops the trial's running job, and an `auto` job runs again on the state it opened on.
+  
+  <!-- entry: fix -->
+- c07a6a7: `ControlPanel` and `ControlBar` follow `params.lab.settles`: a control a provider marks as settling writes only its settled value.
+  
+  <!-- entry: fix -->
+- 3e8a149: Lenses, their Pixel grid and the trial overview's chrome redraw in the new colors when the lab's theme or color mode changes.
+  
+  <!-- entry: fix visual -->
+- 3606766: A Pixels lens's grid redraws at the new pixel density when the window moves to another display.
+  
+  <!-- entry: fix visual -->
+- 34085c0: Disabling an open `<Lightbox>` closes it through `onExpandedChange`, and enabling it again leaves it closed.
+  
+  <!-- entry: fix -->
+- fa5c96b: A `ControlMatrix` number cell shows its value with its suffix or its unit, as the row's field and a dialog row's summary do.
+  
+  <!-- entry: fix -->
+- c9032c7: `<TrialOverview>` redraws at the new pixel density when the window moves to another display.
+  
+  <!-- entry: fix visual -->
+- fad50b0: A paired color cell with alpha keeps its stored alpha in the drafts a drag sends to `draftConfig`, not only in the value it settles on.
+  
+  <!-- entry: fix -->
+- 87bf0a8: Copying the picked color from the toolbar leaves no unhandled rejection when the browser refuses the clipboard.
+  
+  <!-- entry: fix -->
+- 30b17d1: A stored `<Lab>` remounted in one render, by a changed `key` or a move in the tree, opens on the edits the lab it replaced had not yet written.
+  
+  <!-- entry: fix -->
+- a9c89b6: `<SourceLoupe>` resizes its lens when the window moves to a display of another pixel density.
+  
+  <!-- entry: fix visual -->
+- 2b01a38: A number with `.suffix()` keeps its suffix in its auto readout and in a dialog row's summary, as its field shows it.
+  
+  <!-- entry: fix -->
+- 9f44d6d: `useTrialClock` re-renders for a rate, seek or loop change made while it was mounting.
+  
+  <!-- entry: fix -->
+- 3536b27: A Pixels lens's grid and Difference view take their first capture at once under React StrictMode, not after the rest delay.
+  
+  <!-- entry: fix -->
+- 2acd6e6: A `ControlMatrix` switch's thumb jumps to its side under `prefers-reduced-motion` instead of sliding.
+  
+  <!-- entry: fix -->
+- a8223fb: A slider drag in one trial stays one undo step when another trial or lab on the page records an edit during it.
+  
+  <!-- entry: fix -->
+- 6fb7160: A keyed `<TrialTransport>` answers keys pressed in its own trial, so two trials each with one play their own clocks.
+  
+  A key pressed outside every trial goes to the focused trial's transport.
+  
+  <!-- entry: fix -->
+- 2c3416d: `watchElementMove` reports a move that slides a clipped box into view. A labkit surface tile beside a sidebar that settles narrower is then drawn where its pane now is.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e17dbd6]
+- Updated dependencies [793b472]
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [c93b396]
+- Updated dependencies [c9adfef]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [3e4950e]
+- Updated dependencies [3fdf6ae]
+- Updated dependencies [58298fa]
+- Updated dependencies [97be45c]
+- Updated dependencies [88927c3]
+- Updated dependencies [c6944f9]
+- Updated dependencies [e55e22a]
+- Updated dependencies [71c3f85]
+- Updated dependencies [8763373]
+- Updated dependencies [7e954c5]
+- Updated dependencies [85245b2]
+- Updated dependencies [718140f]
+- Updated dependencies [401c1c8]
+- Updated dependencies [93f0212]
+- Updated dependencies [11e65f8]
+- Updated dependencies [a5dbcd7]
+- Updated dependencies [3b94644]
+- Updated dependencies [fff1b91]
+- Updated dependencies [5159b4f]
+- Updated dependencies [770768b]
+- Updated dependencies [403fd51]
+- Updated dependencies [0a483ad]
+- Updated dependencies [8cd600b]
+- Updated dependencies [f611d11]
+- Updated dependencies [c21fbb5]
+- Updated dependencies [ff8270e]
+- Updated dependencies [b7bf6cb]
+- Updated dependencies [687501a]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [4cfff87]
+- Updated dependencies [216d193]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [21e7a85]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [607d991]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [25e3464]
+- Updated dependencies [687501a]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [4ff8a4b]
+- Updated dependencies [2de6b88]
+- Updated dependencies [687501a]
+- Updated dependencies [9db6c05]
+- Updated dependencies [42f5a79]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e70f7a1]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [f265a52]
+- Updated dependencies [a4ef496]
+- Updated dependencies [d66e90e]
+- Updated dependencies [d66e90e]
+- Updated dependencies [fb9e364]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [d6dd797]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [1026b75]
+- Updated dependencies [b94121b]
+- Updated dependencies [d169db7]
+- Updated dependencies [3809dbb]
+- Updated dependencies [c438d4a]
+- Updated dependencies [90a3dd9]
+- Updated dependencies [7ee8a44]
+- Updated dependencies [af15d7a]
+- Updated dependencies [8b5be0f]
+- Updated dependencies [ef15064]
+- Updated dependencies [d254251]
+- Updated dependencies [f431014]
+- Updated dependencies [5526346]
+- Updated dependencies [96a1e29]
+- Updated dependencies [ef15064]
+- Updated dependencies [6b9ac73]
+- Updated dependencies [72e6d28]
+- Updated dependencies [16900c1]
+- Updated dependencies [2c3416d]
+- Updated dependencies [6289e51]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/animator@1.19.1
+  - @weasel-js/ui@1.19.1
+  - @weasel-js/core@1.19.1
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/routing@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/menu@1.19.1
+  - @weasel-js/kernel3d@1.19.1
+  - @weasel-js/loupe@1.19.1
+  - @weasel-js/minimap@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/storage@1.19.1
+  - @weasel-js/svg@1.19.1
+  - @weasel-js/clock@1.19.1
+  - @weasel-js/theme@1.19.1
+  - @weasel-js/icons@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

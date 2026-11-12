@@ -1,5 +1,9 @@
 # @weasel-js/audio
 
+## 1.19.1
+
+No changes in this release.
+
 ## 1.19.0
 
 ### Patch Changes

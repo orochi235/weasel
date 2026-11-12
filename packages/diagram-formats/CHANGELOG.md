@@ -1,5 +1,129 @@
 # @weasel-js/diagram-formats
 
+## 1.19.1
+
+### Patch Changes
+
+- 2bb0e54: draw.io export sizes a group from geom's `unionRects` and now depends on `@weasel-js/geom`.
+  
+  <!-- entry: internal -->
+- 2e9ee3a: `exportPagePng` encodes its PNG on a page canvas where the browser has no `OffscreenCanvas`, instead of throwing.
+  
+  <!-- entry: fix -->
+- 1eb86fa: `exportPagePng` and `exportPagesPdf` draw the document, as `exportPageSvg` does, rather than a drag or edit in flight.
+  
+  <!-- entry: fix -->
+- 06810d2: Writing a shape that has ports or port labels of its own to DOT, Mermaid or draw.io warns that they were dropped.
+  
+  <!-- entry: fix -->
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [c93b396]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [d74dbb8]
+- Updated dependencies [413ee4c]
+- Updated dependencies [1ba8505]
+- Updated dependencies [3d476d8]
+- Updated dependencies [4916272]
+- Updated dependencies [4916272]
+- Updated dependencies [d66e6e4]
+- Updated dependencies [95d4dc0]
+- Updated dependencies [9496bb6]
+- Updated dependencies [58298fa]
+- Updated dependencies [71c3f85]
+- Updated dependencies [7e954c5]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [216d193]
+- Updated dependencies [1691dec]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [425f994]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [c65c8dd]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [d66e90e]
+- Updated dependencies [d66e90e]
+- Updated dependencies [fb9e364]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [16900c1]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/core@1.19.1
+  - @weasel-js/diagram@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/pdf@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/svg@1.19.1
+  - @weasel-js/plot@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

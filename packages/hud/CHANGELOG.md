@@ -1,5 +1,153 @@
 # @weasel-js/hud
 
+## 1.19.1
+
+### Minor Changes
+
+- 7edab52: A HUD loupe follows the pointer through the HUD's own canvas entry, which now carries `loupe.aim` and `loupe.leave`.
+  
+  `createLoupe` adds no pointer listeners of its own; the entry from `createHudContribution` / `useHudContribution` drives every loupe on the HUD attached to its canvas. A canvas that attaches a HUD without installing that entry gets a loupe that no longer follows the pointer.
+  
+  <!-- entry: api behavior -->
+- 8763373: A hud menu's number rows write their value in the browser's locale, as a `@weasel-js/ui` number field beside them would: `2,5` in German.
+  
+  `attachMenuHost` and `createMenuWidget` take a `locale` option to name another, and `menuNumberText(value, entry, locale)` takes one as a third argument, `en-US` by default.
+  
+  <!-- entry: api behavior -->
+
+### Patch Changes
+
+- db4b915: A screen reader hears the focused HUD widget's new name when it changes, such as a button whose label goes from Play to Pause.
+  
+  <!-- entry: fix -->
+- e0a59af: A HUD keeps widgets added while it is detached and shows them when attached again, so they survive StrictMode.
+  
+  <!-- entry: fix behavior -->
+- c386d19: On a Mac, a HUD menu's text row takes Ctrl+Y and Ctrl+T. Ctrl+Y enters what Ctrl+K last cut from any of the menu's text rows, and Ctrl+T swaps the two characters around the caret.
+  
+  <!-- entry: fix -->
+- 01ed670: A HUD menu's text row takes a Mac's Ctrl text-editing keys, and selects all on Cmd+A only. Ctrl+A and Ctrl+E go to the line's start and end, Ctrl+B and Ctrl+F move a character, Ctrl+H and Ctrl+D delete one, and Ctrl+K cuts to the end.
+  
+  <!-- entry: fix -->
+- 5331cd4: A HUD detached before its default font finishes loading no longer asks the canvas it left for a redraw.
+  
+  <!-- entry: fix -->
+- eaa4863: Mod+A selects everything typed into a HUD menu's text row on a non-Latin keyboard layout.
+  
+  <!-- entry: fix -->
+- 687501a: On a canvas an ancestor transform scales, a press focuses the widget under it and the text input sits over the widget being edited.
+  
+  <!-- entry: fix -->
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [5159b4f]
+- Updated dependencies [c93b396]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [08dd689]
+- Updated dependencies [58298fa]
+- Updated dependencies [71c3f85]
+- Updated dependencies [58309aa]
+- Updated dependencies [8763373]
+- Updated dependencies [7e954c5]
+- Updated dependencies [5159b4f]
+- Updated dependencies [403fd51]
+- Updated dependencies [72e6d28]
+- Updated dependencies [0a483ad]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [216d193]
+- Updated dependencies [1691dec]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [d40d869]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+- Updated dependencies [72e6d28]
+- Updated dependencies [16900c1]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/core@1.19.1
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/gestures@1.19.1
+  - @weasel-js/menu@1.19.1
+  - @weasel-js/loupe@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/ui-logic@1.19.1
+  - @weasel-js/theme@1.19.1
+  - @weasel-js/icons@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

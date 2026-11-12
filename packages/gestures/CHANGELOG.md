@@ -1,5 +1,42 @@
 # @weasel-js/gestures
 
+## 1.19.1
+
+### Minor Changes
+
+- 58309aa: `historyKey` is exported from `@weasel-js/gestures`, beside `matchKey` and `matchModifiers`; `@weasel-js/routing` re-exports it as before.
+  
+  <!-- entry: api -->
+- 72e6d28: `matchKeyEvent(e, key)` is exported: whether a keystroke names `key` as a binding matches it, on any layout. A chord on a Russian or Hebrew layout counts as the Latin letter its key bears.
+  
+  <!-- entry: api -->
+- 8cd600b: A middle-button drag pans the view under every tool on a canvas with the `view` preset. A `drag` binding names its button — `DragSpec.button`, written `drag(middle)` or `drag(secondary)` in a route, `primary` by default and `*` for any — and `middleDragPanContribution` adds the pan to a canvas without the preset. A press with another button only drags; one that no binding would drag is left to the browser. On a canvas that binds a secondary drag, a right-click opens its context menu on the release rather than the press.
+  
+  <!-- entry: rank=10 api new behavior pick -->
+- ce1f1a7: A pen's eraser end presses, drags and draws on a canvas and on kit controls as its tip does; its barrel button is a secondary press.
+  
+  `isPrimaryPress(e)` and `pressButtonOf(e)` are new, exported from `@weasel-js/gestures` (and `isPrimaryPress` from `@weasel-js/routing` and `@weasel-js/core`): the one answer to which button a pointer press was made with.
+  
+  <!-- entry: fix api -->
+- d40d869: `textOwnsChord(e, isMac?)` is exported: whether a keystroke in text being edited is the platform's own editing. On a Mac that is every Ctrl chord without Cmd, Cocoa's Emacs-style keys such as Ctrl+A and Ctrl+K.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 72e6d28: Undo, redo and every `matchesKeyBinding` shortcut fire on a non-Latin keyboard layout. They read the letter the key bears, as canvas bindings already did.
+  
+  <!-- entry: fix -->
+- Updated dependencies [5159b4f]
+- Updated dependencies [8763373]
+- Updated dependencies [5159b4f]
+- Updated dependencies [0a483ad]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/menu@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

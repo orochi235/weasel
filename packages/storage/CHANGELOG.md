@@ -1,5 +1,29 @@
 # @weasel-js/storage
 
+## 1.19.1
+
+### Minor Changes
+
+- a4ef496: `onLeave(fn)` runs a flush when the page goes away or turns hidden, the moment a record cache already flushes its writes.
+  
+  ```ts
+  import { onLeave } from '@weasel-js/storage';
+  
+  const stop = onLeave(() => saveNow(), { capture: true });
+  ```
+  
+  `capture` runs it ahead of other flushes on the same event. It may run twice for one leave, so `fn` writes only what is still pending.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- f265a52: An IndexedDB adapter warns when its upgrade waits on another tab. Its reads and writes stay pending until that tab closes the database.
+  
+  <!-- entry: fix -->
+- Updated dependencies [8562ebe]
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

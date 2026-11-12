@@ -1,5 +1,31 @@
 # @weasel-js/quantity
 
+## 1.19.1
+
+### Minor Changes
+
+- c9adfef: The `compact` and `zoom` displays write and read their number in the locale they are given: `40,0K` and `2,5x` in `de-DE`.
+  
+  `formatCompact(value, decimals, locale)` takes the locale as a third argument, `en-US` by default. The `K`/`M`/`B`/`T` suffix stays as it is in every locale, since `parseNumber` reads it and `Intl`'s own compact words (`2 Mio.`) would not read back.
+  
+  <!-- entry: api behavior -->
+- 97be45c: `fieldLocale(locale)` is exported: the locale a number field can show and read in, given the one asked for.
+  
+  It keeps the locale where every number it writes reads back as that number, else writes it with Latin digits (`-u-nu-latn`), else falls back to `en-US`, which is also what no locale, or a tag `Intl` refuses, gets.
+  
+  <!-- entry: api -->
+- d254251: A unit form says whether it is `raised`, set smaller and higher when attached to a number, as `%` is.
+  
+  It marks a glyph that sits full size on the baseline, unlike `°`. `registerUnit` takes `raised` on a form.
+  
+  <!-- entry: new api -->
+
+### Patch Changes
+
+- 039b7ad: Removing a `registerDisplayKind` registration restores the one it replaced, as `registerUnit` does.
+  
+  <!-- entry: fix -->
+
 ## 1.19.0
 
 ### Patch Changes

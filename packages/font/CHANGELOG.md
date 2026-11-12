@@ -1,5 +1,15 @@
 # @weasel-js/font
 
+## 1.19.1
+
+### Patch Changes
+
+- 08dd689: DOM text set through `cssFontFamily` stops using a variant's file once `unregisterFontOutlines` drops that variant.
+  
+  <!-- entry: fix -->
+- Updated dependencies [8562ebe]
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

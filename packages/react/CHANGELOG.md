@@ -1,5 +1,38 @@
 # @weasel-js/react
 
+## 1.19.1
+
+### Minor Changes
+
+- 87bf0a8: `copyText(text)` writes text to the system clipboard and resolves whether it took it. It resolves false rather than throwing where the page has no clipboard or the browser refuses.
+  
+  <!-- entry: api -->
+- 1da0762: `pageLocalStorage()` answers the page's `localStorage`, or undefined where the browser refuses it. With site data blocked, reading `localStorage` itself throws.
+  
+  <!-- entry: api -->
+- 9f44d6d: New `useNotified(source)`: re-renders on each change a `{ subscribe }` source reports, including one made between a render and its effects.
+  
+  <!-- entry: api -->
+- d11f1df: `useVisibleRaf` takes `phase: 'update'` for a loop whose output others paint, so they paint it the same frame.
+  
+  A paint loop on the same clock runs a due update loop's frame ahead of its own, and a paint loop asked for from inside an update's frame runs right after it. Default `'paint'`.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 8725f6c: `watchElementMove` stays stopped: a report already on its way, or a stop made from inside `onMove`, no longer starts it watching again.
+  
+  <!-- entry: fix -->
+- d5593b2: `useNearViewport` leaves no scroll listener behind when its element unmounts while off screen.
+  
+  <!-- entry: fix -->
+- 2c3416d: `watchElementMove` reports a move that slides a clipped box into view. A labkit surface tile beside a sidebar that settles narrower is then drawn where its pane now is.
+  
+  <!-- entry: fix -->
+- Updated dependencies [8562ebe]
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

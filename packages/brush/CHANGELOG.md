@@ -1,5 +1,26 @@
 # @weasel-js/brush
 
+## 1.19.1
+
+### Patch Changes
+
+- Updated dependencies [d3a8b36]
+- Updated dependencies [3fdf6ae]
+- Updated dependencies [770768b]
+- Updated dependencies [8cd600b]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [25e3464]
+- Updated dependencies [687501a]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [4ff8a4b]
+- Updated dependencies [2de6b88]
+- Updated dependencies [687501a]
+- Updated dependencies [9db6c05]
+- Updated dependencies [42f5a79]
+- Updated dependencies [72e6d28]
+- Updated dependencies [6289e51]
+  - @weasel-js/routing@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

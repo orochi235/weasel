@@ -1,5 +1,29 @@
 # @weasel-js/history
 
+## 1.19.1
+
+### Minor Changes
+
+- de8f829: `Journal.recordEntry` records ops that have already applied as an entry of the journal's own, as `History.recordEntry` does on a history.
+  
+  <!-- entry: api -->
+
+### Patch Changes
+
+- 11a14fb: An edit made after the system clock is set back, as a machine waking to a corrected time does, is an undo step of its own.
+  
+  <!-- entry: fix -->
+- 49caa4b: A journal whose entries all share one `coalesceKey` commits under that key, joining the parent's entry of the same run.
+  
+  A text box drawn and then typed into inside a mode stays one undo entry this way.
+  
+  <!-- entry: fix behavior -->
+- c2f8f12: `History.undo`, `redo` and `goto` throw while a journal is active, as `beginJournal` does, rather than stepping the stack under the journal's edits.
+  
+  <!-- entry: fix -->
+- Updated dependencies [8562ebe]
+  - @weasel-js/registry@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

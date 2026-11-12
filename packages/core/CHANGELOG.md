@@ -1,5 +1,373 @@
 # Changelog
 
+## 1.19.1
+
+### Minor Changes
+
+- 3e8a149: `chromeColorOf(el, name, fallback)` is exported: the color custom property `name` read off an element, as `accentColorOf` reads `--wzl-accent`.
+  
+  <!-- entry: api -->
+- 687501a: `clientToWorld`'s origin and `forEachCoalesced`'s `canvasRect` take an optional `scale`, for a canvas an ancestor transform scales.
+  
+  `dragPointOf` reads the scale off its element. Pass `layoutBoxOf(canvas)` as an origin to carry it; `layoutBoxOf`, `clientScaleOf` and `canvasToClient` are re-exported from routing.
+  
+  <!-- entry: api -->
+- 1f42c0c: `pressTarget` is exported: the node a press on a hit selects, given the entered group, as the select tool and the marquee answer it.
+  
+  ```ts
+  pressTarget({ getParent, getNode }, hitId, entered.get());
+  ```
+  
+  <!-- entry: api -->
+- 9b03a7b: The hit `<SceneCanvas onClick>` and `onDoubleClick` report carries `world`, the world point the node was picked at.
+  
+  <!-- entry: api -->
+- c12b7a7: `reachesLocked(scene, ids)` answers whether removing `ids` would take a locked node.
+  
+  That is one of them, one in their subtrees, or a dependent the removal cascades to: the test Delete's `enabled` makes, for a command of your own that removes nodes.
+  
+  <!-- entry: api -->
+- 1ba8505: `refreshNodeShapes()` has every node's painter, silhouette and ink read again. Call it when something a registered painter reads besides the node has changed, as `registerOutline` in `@weasel-js/diagram` does.
+  
+  <!-- entry: api -->
+- c3c9f05: `buildSceneViewCommands` takes the density its commands will paint at as a last argument, which painters read as `NodePaintCtx.pixelScale`.
+  
+  It defaults to `cull`'s density, then to `window.devicePixelRatio`. Every painter `drawOne` reaches through the scene walk now receives a `pixelScale` in its context.
+  
+  <!-- entry: api -->
+- b39b992: A new `setStrokeWidth` action in the `style` preset sets the selection's stroke `width`, or its per-anchor `vertexWidths`, as one undo entry.
+  
+  <!-- entry: api new -->
+- b39b992: A new `setVertexColor` action in the `style` preset recolors one anchor of the selection's `vertexColors`, by `index`, as one undo entry.
+  
+  <!-- entry: api new -->
+- 8ea61a3: `shapePathOf(data, pose)` gives the outline the built-in shape painter draws for a `data.shape` node, or `null` for a kind it does not draw.
+  
+  <!-- entry: api -->
+- 59a1c5f: A snapshot in an unsupported version throws `SnapshotShapeError`; one naming an unregistered key throws the new `SnapshotKeyError`.
+  
+  `SnapshotKeyError` carries the node `id`, the registry `field` and the `key`, so a caller can offer to load again with `unknownKeys: 'skip'`. A later version is now refused for its version before any of its nodes are read.
+  
+  <!-- entry: api fix -->
+- d3a8b36: `undoKeyStep`, labkit's reading of an undo chord for a page-level handler, is exported from routing and core too.
+  
+  It skips a chord typed in a text field or already handled. labkit still exports it.
+  
+  <!-- entry: api -->
+- 8cd600b: A middle-button drag pans the view under every tool on a canvas with the `view` preset. A `drag` binding names its button — `DragSpec.button`, written `drag(middle)` or `drag(secondary)` in a route, `primary` by default and `*` for any — and `middleDragPanContribution` adds the pan to a canvas without the preset. A press with another button only drags; one that no binding would drag is left to the browser. On a canvas that binds a secondary drag, a right-click opens its context menu on the release rather than the press.
+  
+  <!-- entry: rank=10 api new behavior pick -->
+- 216d193: A selection given to `<SceneCanvas selection>` or a `<CanvasView>` drops a node an edit hides, locks or removes, as the scene's does. No key then acts on that node.
+  
+  `Scene.selectable(ids)` answers which of `ids` the scene's selection would keep.
+  
+  <!-- entry: fix api -->
+- b62d643: New `tryParseColor`: `parseColor`'s reading of a string, or null where `parseColor` would throw.
+  
+  <!-- entry: api -->
+- 36b51a0: Path-edit drags preview the path as the scene's output grid stores it, so an edit lands where it showed.
+  
+  This covers anchor and handle drags, balance grips, Lengthen, corners and the Simplify brush. The `editAnchors` dep gains an optional `quantized(id, stored)`, which `<SceneCanvas>`'s dep answers through the scene's quantize rule; `quantizedShape` is exported for a hand-wired dep.
+  
+  <!-- entry: fix visual api -->
+- ce1f1a7: A pen's eraser end presses, drags and draws on a canvas and on kit controls as its tip does; its barrel button is a secondary press.
+  
+  `isPrimaryPress(e)` and `pressButtonOf(e)` are new, exported from `@weasel-js/gestures` (and `isPrimaryPress` from `@weasel-js/routing` and `@weasel-js/core`): the one answer to which button a pointer press was made with.
+  
+  <!-- entry: fix api -->
+- f611d11: `<SceneViewCanvas>` takes `drawOne` as optional, and without one paints each node with the registered node painters, as `<SceneCanvas>` does.
+  
+  <!-- entry: api -->
+- 16900c1: `warmRender` waits for the pictures a render draws, so an export issued after it draws them rather than placeholders.
+  
+  Image nodes and image patterns alike, an SVG at the size the render draws it. A picture that fails to load does not reject: it draws as failed. `renderNeeds` gains `images`, the pictures its commands' image patterns tile.
+  
+  <!-- entry: rank=10 fix api -->
+
+### Patch Changes
+
+- c91c39c: A tool's shortcut pressed while the mode bars that tool goes on to whatever else binds the key, instead of being swallowed.
+  
+  <!-- entry: fix -->
+- d65a34b: A finger dragging or pinching on a `<Canvas>` or `<SceneCanvas>` drives the canvas instead of panning or zooming the page.
+  
+  The canvas element now defaults to `touch-action: none`, at zero specificity: a class setting `touch-action` on the canvas, `pan-y` say, hands that much back to the page. `<SceneViewCanvas>` and other canvases that take no input are unchanged.
+  
+  <!-- entry: behavior fix pick -->
+- c93b396: An Alt-drag clone in a scene with an output grid previews the copy where the grid stores it, so it lands where its ghost showed.
+  
+  <!-- entry: fix visual -->
+- 687501a: A canvas inside a scaled ancestor (a zoomed stage, `transform: scale()`) picks and places its overlays where it draws.
+  
+  <!-- entry: fix -->
+- b1fdbf3: Selection chrome draws nothing for a node whose `poseDescriptor` box is not finite, as a 3D solid behind the camera's is.
+  
+  <!-- entry: fix visual -->
+- de8f829: Every scene edit made while a journal is open records into that journal, not only `applyBatch`.
+  
+  A direct call such as `setPose`, a `scene.batch`, and `scene.history`'s `apply`, `applyOps` and `recordEntry` now land there, so undo inside the journal takes them back and its commit lands them as one entry. `scene.history.seal()` ends a coalescing run on both the journal and the scene's own stack.
+  
+  <!-- entry: rank=10 fix behavior -->
+- e8de9c3: A drop zone whose `onOver` or `onMove` throws no longer strands the drag ghost and blocks every later drag.
+  
+  <!-- entry: fix -->
+- e17dbd6: A drag held at the canvas edge pans the view the frame it moves, not the frame after.
+  
+  <!-- entry: fix -->
+- 2bb5cde: `useElementSize` and `useCanvasSize` measure an element that mounts late, and follow their ref to an element that replaces the first.
+  
+  <!-- entry: fix -->
+- 34e40b2: A canvas `subscribeFrame` listener that throws is reported and skipped; the paint and the other listeners still run.
+  
+  <!-- entry: fix -->
+- d9a7171: `layers.scene.ghostAlpha` sets the opacity of the ghost a dragged node paints, on the page and in worker mode.
+  
+  <!-- entry: fix visual -->
+- f0ef9ba: A tool held on its key reaches the actions it binds with its own options, not the active tool's.
+  
+  <!-- entry: fix -->
+- e17dbd6: A view coasting after a flick is painted the frame it moves, not the frame after.
+  
+  <!-- entry: fix -->
+- a2627b8: `scene.jumpToHistoryIndex` does nothing while a journal is open, and returns false.
+  
+  <!-- entry: fix -->
+- 2a32658: A move drag dropped into a group after one of its nodes was removed mid-drag lands the rest in the group instead of throwing.
+  
+  <!-- entry: fix -->
+- dbbca9f: A shape drawn or pasted while the entered group is hidden lands where it can be seen, not inside the hidden group.
+  
+  <!-- entry: fix -->
+- 3cd42d9: Loading `@weasel-js/core` no longer loads `@weasel-js/renderer/test-seams`, so test-only resets stay out of an app's module graph.
+  
+  <!-- entry: fix perf -->
+- 913a468: `scene.overrides` subscribers hear of a change an edit makes once the whole edit has landed, never with the scene half edited.
+  
+  <!-- entry: fix -->
+- eb6276d: Pasting again lands 12 px on from the last paste in the world, also when that paste went onto a page other than the first.
+  
+  <!-- entry: fix -->
+- 34dfc04: Path snapping follows the outline a node draws after a painter registration or a font load changes it.
+  
+  <!-- entry: fix -->
+- ef4ff01: A click lands on text set as a path once its font loads, where the pick index had kept the box the text had before the face arrived.
+  
+  <!-- entry: fix -->
+- 5e0f965: With `geometry.picking: 'pixels'`, a click passes through nodes on an annotation layer, as it does with shape picking.
+  
+  <!-- entry: fix -->
+- c3c9f05: An image node's SVG rasterizes at the density its canvas paints at (a `dpr` prop, `renderSceneToPixels`' scale), not the window's.
+  
+  <!-- entry: fix visual -->
+- 7f2951f: A pose animated by `tweenPose` or `springPose` through the rect or path descriptor ends on the target pose exactly, not an ulp off it.
+  
+  <!-- entry: fix -->
+- a760b7b: A `usePoseRun`, or a diagram's live layout, started on mount runs under StrictMode instead of claiming to run with no frames.
+  
+  <!-- entry: fix -->
+- d11f1df: A pose run's poses are painted the frame the run produces them, not the frame after.
+  
+  <!-- entry: fix -->
+- baa3137: A headless render draws on a page canvas where `OffscreenCanvas` will not open WebGL 2.
+  
+  <!-- entry: fix -->
+- 500c153: A canvas whose WebGL context was lost before it first painted paints again when the context comes back.
+  
+  <!-- entry: fix visual -->
+- 661582d: Undoing a reparent puts the node back under the parent it had, read from the adapter, even when the op was built with a stale `fromParentId`.
+  
+  <!-- entry: fix -->
+- 5b509a7: A resize or rotate drag whose selection loses a node mid-drag commits the nodes still in the scene, as a move drag does.
+  
+  <!-- entry: fix -->
+- 73bdfc7: A scrolled container that leaves the scene takes its scroll offset with it, so a node added later under its id starts unscrolled.
+  
+  <!-- entry: fix -->
+- 5c1d019: `scene.toJSON` writes `pickable: true` on a node that states it, as a copy of the node carries it.
+  
+  <!-- entry: rank=-5 data -->
+- f0946c4: A text edit whose node is locked before it commits now closes, leaving the text as it was, instead of throwing and staying open.
+  
+  <!-- entry: fix -->
+- 1f55652: `trigger('tool.activate', { toolId })` with a tool the canvas lacks is refused, as `setActive` refuses it, instead of leaving no tool active.
+  
+  <!-- entry: fix -->
+- 635431c: `viewBounds` keeps the view inside it when the canvas resizes or is shown again, and clamps `defaultView`, not only a pan or a `setView`.
+  
+  <!-- entry: fix behavior -->
+- 60d4ba5: A `<SceneCanvas viewport>` zoom runs with the latest render's `animatedZoom` easing, interpolator and `onDone`, not the first render's.
+  
+  <!-- entry: fix -->
+- f6a2555: A canvas the browser will not open WebGL 2 on warns once that it cannot be painted. That covers hardware acceleration off, a blocklisted GPU, and a canvas holding another kind of context.
+  
+  <!-- entry: fix -->
+- 9a0d9d1: A canvas surface painting with WebGPU lets go of its renderer when it unmounts, rather than leaving it held by the page's GPU device.
+  
+  <!-- entry: fix perf -->
+- e45b7e4: A render worker whose paint throws once paints again on the next frame, as the page's canvas does.
+  
+  <!-- entry: fix -->
+- 9bd6635: A render worker warns once for each different failure, not only its first, and reports every animator call in a frame that failed.
+  
+  <!-- entry: fix -->
+- 2a03672: A culled canvas judges each node by the pose its output grid draws it at, so a node drawn into view is painted.
+  
+  <!-- entry: fix visual -->
+- 7036750: A derived path made in parts gets its selection box from each part's own stroke, as it is painted, rather than the node's.
+  
+  <!-- entry: fix -->
+- 58298fa: The eyedropper reports only the latest press's color when a `colorAt` that answers later answers an earlier press last.
+  
+  <!-- entry: fix -->
+- 7e954c5: An `inPlane` action's `onMove` and `onEnd` are handed the dispatcher's empty deps on a parallax layer too, as `InvocationCtx.deps` says.
+  
+  Read deps in `start` and keep what the gesture needs; a move never carries them.
+  
+  <!-- entry: fix -->
+- 57c0cf0: A `registerNodeShape` disposer removes only its own registration, even when run twice or when one painter is registered twice.
+  
+  <!-- entry: fix -->
+- f58d2be: A mounted canvas repaints when a node shape registers or goes, and on `refreshNodeShapes`.
+  
+  <!-- entry: fix visual -->
+- e20a471: The fill, stroke and opacity actions read a binding's `params` given as a function, as every other action does.
+  
+  <!-- entry: fix -->
+- e0e1f22: A click through a `geometry.pickEvery` override, such as a 3D host's ray pick, passes over a layer `layerVisibility` hides.
+  
+  The override is handed the surface's own layer gate, as a view's already was and as the marquee always was.
+  
+  <!-- entry: fix -->
+- 0cbbb94: An animated reflow puts nodes in their slots at once under `prefers-reduced-motion` unless its options name an `ms`.
+  
+  <!-- entry: fix -->
+- 6d1a52e: A rotate in a scene with an output grid previews each node where the grid stores it, so it lands where its preview showed.
+  
+  <!-- entry: fix visual -->
+- ca3a89a: A canvas shows the cursor of the tool its input goes to, so a tool the active mode bars no longer shows its cursor.
+  
+  `ToolsApi.routed` and `ContributionsApi.routed` name that tool: the newest held tool the mode allows, else the active tool if the mode allows it, else `null`.
+  
+  <!-- entry: fix api -->
+- 5461e84: A scene adapter made without a `selection` option reads and writes the scene's own selection.
+  
+  <!-- entry: fix behavior -->
+- 5c64825: A selected node moved onto a hidden layer with `scene.setLayer` leaves the selection, as hiding its layer would.
+  
+  <!-- entry: fix -->
+- 8941d77: `useSceneTextEdit` edits a node with no font size at the size the canvas draws it; its `defaultFontSize` option is deprecated and ignored.
+  
+  The option sized only the editing overlay, never the canvas's glyphs or the double-click's caret, so any value but 16 set the text being typed off the text it stood in for. Remove it.
+  
+  <!-- entry: deprecates fix -->
+- e6959cc: A second finger pressing a slider, a band editor, a timeline or a `useHandleDrag` handle mid-drag leaves the first finger's drag running.
+  
+  <!-- entry: fix -->
+- 59485d4: A scene's selection never holds an id that names no node, including one an undo puts back after an untracked edit removed that node.
+  
+  <!-- entry: fix -->
+- 141697f: A `createSetLayoutOp` that gives a container the layout it already has records no undo step.
+  
+  <!-- entry: fix -->
+- 28404b3: Simplify and Offset Path commit when a gesture or `cancelAll('commit')` ends them, not only when their slider does.
+  
+  <!-- entry: fix -->
+- b4e8f97: Unmounting one of two components passing the same source to `useSnapSource` leaves it snapping for the other.
+  
+  <!-- entry: fix -->
+- 3fd5c6f: A `createTransformOp` whose `from` equals its `to` still records an undo step when the node it moves was somewhere else.
+  
+  <!-- entry: fix -->
+- 98243b2: A render worker draws an SVG at its own size after the picture is dropped and loaded again while a sharper raster of it was on its way.
+  
+  <!-- entry: fix visual -->
+- 184acd6: A render worker given a shader that fails to compile warns and paints the scene without it, as a page canvas does.
+  
+  <!-- entry: fix -->
+- Updated dependencies [e17dbd6]
+- Updated dependencies [69b696d]
+- Updated dependencies [5159b4f]
+- Updated dependencies [c9adfef]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [08dd689]
+- Updated dependencies [3fdf6ae]
+- Updated dependencies [97be45c]
+- Updated dependencies [71c3f85]
+- Updated dependencies [58309aa]
+- Updated dependencies [11a14fb]
+- Updated dependencies [49caa4b]
+- Updated dependencies [c2f8f12]
+- Updated dependencies [16900c1]
+- Updated dependencies [de8f829]
+- Updated dependencies [5159b4f]
+- Updated dependencies [770768b]
+- Updated dependencies [fa19170]
+- Updated dependencies [55b0f04]
+- Updated dependencies [72e6d28]
+- Updated dependencies [8cd600b]
+- Updated dependencies [2f6b0e9]
+- Updated dependencies [27eabf7]
+- Updated dependencies [2f6b0e9]
+- Updated dependencies [1691dec]
+- Updated dependencies [b62d643]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [039b7ad]
+- Updated dependencies [d254251]
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [8562ebe]
+- Updated dependencies [4fb0c17]
+- Updated dependencies [20878ef]
+- Updated dependencies [04ac694]
+- Updated dependencies [92e4fa8]
+- Updated dependencies [f3618cb]
+- Updated dependencies [25e3464]
+- Updated dependencies [687501a]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [4ff8a4b]
+- Updated dependencies [2de6b88]
+- Updated dependencies [687501a]
+- Updated dependencies [9db6c05]
+- Updated dependencies [42f5a79]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [1d5783f]
+- Updated dependencies [b08cf36]
+- Updated dependencies [bce70ba]
+- Updated dependencies [d40d869]
+- Updated dependencies [12a862d]
+- Updated dependencies [250c105]
+- Updated dependencies [a09ed24]
+- Updated dependencies [8562ebe]
+- Updated dependencies [72e6d28]
+- Updated dependencies [2c3416d]
+- Updated dependencies [6289e51]
+  - @weasel-js/animator@1.19.1
+  - @weasel-js/renderer@1.19.1
+  - @weasel-js/ui-input@1.19.1
+  - @weasel-js/quantity@1.19.1
+  - @weasel-js/routing@1.19.1
+  - @weasel-js/font@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/gestures@1.19.1
+  - @weasel-js/history@1.19.1
+  - @weasel-js/text-dom@1.19.1
+  - @weasel-js/text@1.19.1
+  - @weasel-js/paint@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/react@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/simulation@1.19.1
+  - @weasel-js/cursor@1.19.1
+  - @weasel-js/stroke@1.19.1
+  - @weasel-js/icons@1.19.1
+  - @weasel-js/modes@1.19.1
+  - @weasel-js/select@1.19.1
+
 ## 1.19.0
 
 ### Minor Changes

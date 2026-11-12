@@ -1,5 +1,171 @@
 # @weasel-js/editor
 
+## 1.19.1
+
+### Minor Changes
+
+- c12b7a7: Delete Page is disabled while the page holds a locked item, instead of throwing, and `DocPages.removable(id)` says so.
+  
+  `removable` answers `true`, `ActionDisabledReason.NotApplicable` for the last page or one the scene lacks, or `ActionDisabledReason.Locked`; `remove` does nothing where it says no. Use it as a Delete Page command's `enabled`:
+  
+  ```ts
+  useCommand('page.delete', 'Delete Page', () => pages.remove(id), { enabled: () => pages.removable(id) });
+  ```
+  
+  <!-- entry: api fix -->
+- 7465634: `isUnreadableKey` says whether a storage key holds an entry `readStored` kept aside as unreadable.
+  
+  <!-- entry: api -->
+- c29c602: `sessionSaveReporter(notice)` reports a document the browser refuses to store. Pass it as `onSaved` to `useAutosave` or `useSessionPersistence`: it raises a toast that stays up while saves fail and takes it down when one lands.
+  
+  <!-- entry: api new -->
+- f37a6aa: `nodeSpecsFromSnapshot` takes `systemLayers`, and with it throws on a snapshot a scene of those layers cannot hold.
+  
+  That is a node on a layer the scene lacks, or under a parent the snapshot does not have. Read the snapshot inside `readStored` with the layers your scene is built with, and a saved document the app cannot open falls back and is kept aside instead of failing `useScene` on every reload:
+  
+  ```ts
+  readStored(KEY, (raw) => nodeSpecsFromSnapshot(JSON.parse(raw), REGISTRY, reviveTypedArrays, { systemLayers: LAYERS }), starter);
+  ```
+  
+  <!-- entry: api fix -->
+
+### Patch Changes
+
+- 3c9bb27: `useAutosave` writes a pending save when the page turns hidden, so a phone or a discarded background tab keeps the last edits.
+  
+  <!-- entry: fix -->
+- e25f209: Deleting a page also deletes the sources its path effects hid on other pages, in the same undo entry.
+  
+  <!-- entry: fix -->
+- 20574a2: `readStored` keeps an entry it cannot parse under `<key>:unreadable`, with a `console.error`, so the next autosave no longer erases the only copy.
+  
+  <!-- entry: fix data -->
+- b3017e3: `useSessionPersistence` drops the undo stack saved beside a scene whose load fell back, rather than replaying it.
+  
+  <!-- entry: fix -->
+- Updated dependencies [793b472]
+- Updated dependencies [c91c39c]
+- Updated dependencies [d65a34b]
+- Updated dependencies [c93b396]
+- Updated dependencies [687501a]
+- Updated dependencies [3e8a149]
+- Updated dependencies [b1fdbf3]
+- Updated dependencies [687501a]
+- Updated dependencies [de8f829]
+- Updated dependencies [e8de9c3]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [2bb5cde]
+- Updated dependencies [1f42c0c]
+- Updated dependencies [34e40b2]
+- Updated dependencies [d9a7171]
+- Updated dependencies [f0ef9ba]
+- Updated dependencies [9b03a7b]
+- Updated dependencies [e17dbd6]
+- Updated dependencies [a2627b8]
+- Updated dependencies [2a32658]
+- Updated dependencies [dbbca9f]
+- Updated dependencies [3cd42d9]
+- Updated dependencies [913a468]
+- Updated dependencies [eb6276d]
+- Updated dependencies [34dfc04]
+- Updated dependencies [ef4ff01]
+- Updated dependencies [5e0f965]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [7f2951f]
+- Updated dependencies [a760b7b]
+- Updated dependencies [d11f1df]
+- Updated dependencies [baa3137]
+- Updated dependencies [c12b7a7]
+- Updated dependencies [1ba8505]
+- Updated dependencies [500c153]
+- Updated dependencies [661582d]
+- Updated dependencies [5b509a7]
+- Updated dependencies [c3c9f05]
+- Updated dependencies [73bdfc7]
+- Updated dependencies [b39b992]
+- Updated dependencies [b39b992]
+- Updated dependencies [8ea61a3]
+- Updated dependencies [59a1c5f]
+- Updated dependencies [5c1d019]
+- Updated dependencies [f0946c4]
+- Updated dependencies [1f55652]
+- Updated dependencies [d3a8b36]
+- Updated dependencies [635431c]
+- Updated dependencies [60d4ba5]
+- Updated dependencies [f6a2555]
+- Updated dependencies [9a0d9d1]
+- Updated dependencies [e45b7e4]
+- Updated dependencies [9bd6635]
+- Updated dependencies [2a03672]
+- Updated dependencies [7036750]
+- Updated dependencies [3e4950e]
+- Updated dependencies [58298fa]
+- Updated dependencies [88927c3]
+- Updated dependencies [c6944f9]
+- Updated dependencies [e55e22a]
+- Updated dependencies [71c3f85]
+- Updated dependencies [7e954c5]
+- Updated dependencies [5159b4f]
+- Updated dependencies [8cd600b]
+- Updated dependencies [57c0cf0]
+- Updated dependencies [f58d2be]
+- Updated dependencies [4cfff87]
+- Updated dependencies [216d193]
+- Updated dependencies [e20a471]
+- Updated dependencies [b62d643]
+- Updated dependencies [36b51a0]
+- Updated dependencies [21e7a85]
+- Updated dependencies [ce1f1a7]
+- Updated dependencies [e0e1f22]
+- Updated dependencies [8ada2a6]
+- Updated dependencies [607d991]
+- Updated dependencies [0cbbb94]
+- Updated dependencies [8562ebe]
+- Updated dependencies [6d1a52e]
+- Updated dependencies [ca3a89a]
+- Updated dependencies [6976048]
+- Updated dependencies [5461e84]
+- Updated dependencies [5c64825]
+- Updated dependencies [8941d77]
+- Updated dependencies [f611d11]
+- Updated dependencies [e70f7a1]
+- Updated dependencies [e6959cc]
+- Updated dependencies [59485d4]
+- Updated dependencies [141697f]
+- Updated dependencies [28404b3]
+- Updated dependencies [b4e8f97]
+- Updated dependencies [f265a52]
+- Updated dependencies [a4ef496]
+- Updated dependencies [d6dd797]
+- Updated dependencies [3fd5c6f]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [1026b75]
+- Updated dependencies [b94121b]
+- Updated dependencies [d169db7]
+- Updated dependencies [3809dbb]
+- Updated dependencies [c438d4a]
+- Updated dependencies [90a3dd9]
+- Updated dependencies [7ee8a44]
+- Updated dependencies [af15d7a]
+- Updated dependencies [8b5be0f]
+- Updated dependencies [ef15064]
+- Updated dependencies [d254251]
+- Updated dependencies [f431014]
+- Updated dependencies [5526346]
+- Updated dependencies [96a1e29]
+- Updated dependencies [ef15064]
+- Updated dependencies [6b9ac73]
+- Updated dependencies [16900c1]
+- Updated dependencies [98243b2]
+- Updated dependencies [184acd6]
+  - @weasel-js/ui@1.19.1
+  - @weasel-js/core@1.19.1
+  - @weasel-js/geom@1.19.1
+  - @weasel-js/prefs@1.19.1
+  - @weasel-js/registry@1.19.1
+  - @weasel-js/guides@1.19.1
+  - @weasel-js/storage@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes

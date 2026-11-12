@@ -1,5 +1,22 @@
 # @weasel-js/simulation
 
+## 1.19.1
+
+### Patch Changes
+
+- e17dbd6: A simulation's steps are painted the frame they run, not the frame after.
+  
+  <!-- entry: fix -->
+- Updated dependencies [87bf0a8]
+- Updated dependencies [8725f6c]
+- Updated dependencies [d5593b2]
+- Updated dependencies [1da0762]
+- Updated dependencies [9f44d6d]
+- Updated dependencies [d11f1df]
+- Updated dependencies [2c3416d]
+  - @weasel-js/react@1.19.1
+  - @weasel-js/clock@1.19.1
+
 ## 1.19.0
 
 ### Patch Changes
