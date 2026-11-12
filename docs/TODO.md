@@ -231,8 +231,9 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
   picks are committed.
 - **(P3) [maintainer] Undoing draw's symmetry group leaves Symmetry on, drawing into nothing.** Turning
-  Symmetry on (or a New or Open with it on) makes the group as an undo step of its own; one Undo removes it,
-  the `view.symmetry` pref still reads on, and new shapes draw unmirrored until it is toggled off and on
+  Symmetry on (or a New, an Open, or deleting the page its group is on, with it on) makes the group as an undo
+  step of its own; one Undo removes it, the `view.symmetry` pref still reads on, and new shapes draw unmirrored
+  until it is toggled off and on
   (`apps/draw/src/useSymmetry.ts`). Re-making the group on undo would wipe redo, and turning the pref off
   breaks Undo past a New, which today lands back in the old document's group. Needs a ruling: whether
   Symmetry's on/off is a pref or document state that undo moves.

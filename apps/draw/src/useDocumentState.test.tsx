@@ -12,7 +12,7 @@ function pagesShowing(index: number | null): DocPages {
   const placed = layoutPages([{ id: 'page-1', width: 816, height: 1056 }, { id: 'page-2', width: 794, height: 1123 }]);
   return {
     placed, current: null, shown: index === null ? null : placed[index]!,
-    goTo: vi.fn(), step: vi.fn(), add: vi.fn(), remove: vi.fn(), move: vi.fn(), rename: vi.fn(), resize: vi.fn(),
+    goTo: vi.fn(), step: vi.fn(), add: vi.fn(), remove: vi.fn(), removable: vi.fn(() => true as const), move: vi.fn(), rename: vi.fn(), resize: vi.fn(),
   };
 }
 

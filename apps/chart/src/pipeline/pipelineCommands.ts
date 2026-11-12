@@ -38,17 +38,22 @@ export const PIPELINE_MENUS: MenuContributions = {
   run: RUN_MENU,
 };
 
-async function openPipeline(pipeline: PipelineDoc): Promise<void> {
+async function openPipeline(pipeline: PipelineDoc, onReplaced: () => void): Promise<void> {
   const file = await pickFile(`${PIPELINE_FILE_EXTENSION},application/json`);
   if (file === null) return;
   pipeline.change(pipelineFromJson(await file.text()), 'Open pipeline');
+  onReplaced();
 }
 
-/** Registers New, Open and Save, and Undo and Redo over the pipeline doc's own history. */
-export function usePipelineCommands(pipeline: PipelineDoc): void {
-  useNewCommand(PIPELINE_ACTIONS.new, 'New', () => pipeline.change(emptyPipeline(), 'New pipeline'));
+/** Registers New, Open and Save, and Undo and Redo over the pipeline doc's own history. `onReplaced` runs once New
+ *  or Open has replaced the pipeline. */
+export function usePipelineCommands(pipeline: PipelineDoc, onReplaced: () => void): void {
+  useNewCommand(PIPELINE_ACTIONS.new, 'New', () => {
+    pipeline.change(emptyPipeline(), 'New pipeline');
+    onReplaced();
+  });
   useOpenCommand(PIPELINE_ACTIONS.open, 'Open…', () => {
-    openPipeline(pipeline).catch(reportFailure('Could not open the file'));
+    openPipeline(pipeline, onReplaced).catch(reportFailure('Could not open the file'));
   });
   useSaveCommand(PIPELINE_ACTIONS.save, 'Save', () => {
     downloadBlob(new Blob([JSON.stringify(pipeline.doc)], { type: 'application/json' }), `pipeline${PIPELINE_FILE_EXTENSION}`);

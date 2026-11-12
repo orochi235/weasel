@@ -56,17 +56,18 @@ export const CHART_MENUS: MenuContributions = {
   page: PAGE_MENU,
 };
 
-async function openChart(scene: ChartScene): Promise<void> {
+async function openChart(scene: ChartScene, onReplaced: () => void): Promise<void> {
   const file = await pickFile(`${CHART_FILE_EXTENSION},application/json`);
   if (file === null) return;
   replaceChart(scene, chartFromJson(await file.text()), 'Open chart');
+  onReplaced();
 }
 
 /** Registers Open and Save, and View's grid and snapping toggles, on the nearest `<ActionsProvider>`. New… is
- *  `NewChart`'s, which owns its dialog. */
-export function useChartCommands(scene: ChartScene): void {
+ *  `NewChart`'s, which owns its dialog. `onReplaced` runs once Open has replaced the chart. */
+export function useChartCommands(scene: ChartScene, onReplaced: () => void): void {
   useOpenCommand(CHART_ACTIONS.open, 'Open…', () => {
-    openChart(scene).catch(reportFailure('Could not open the file'));
+    openChart(scene, onReplaced).catch(reportFailure('Could not open the file'));
   });
   useSaveCommand(CHART_ACTIONS.save, 'Save', () => {
     downloadBlob(new Blob([chartToJson(scene)], { type: 'application/json' }), `chart${CHART_FILE_EXTENSION}`);

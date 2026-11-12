@@ -68,7 +68,6 @@ export function ChartWorkspace(): ReactElement {
   });
   const selection = useSelection({ mode: 'multi', scene });
   useSessionPersistence(scene, CHART_SESSION);
-  useChartCommands(scene);
   const theme = chartThemeOf(scene);
   const sequence = useSequenceChoices();
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene), sequence.readers);
@@ -82,6 +81,8 @@ export function ChartWorkspace(): ReactElement {
   const dims = useCanvasSize(hostRef);
   const { view, setView, fitTo } = useFittedView(scene, dims);
   const pages = useChartPages(scene, view, dims, setView);
+  const showFirstPage = useCallback(() => fitTo(null), [fitTo]);
+  useChartCommands(scene, showFirstPage);
   useExportCommands(scene, pages);
   const shownRef = useLatest(pages.shown);
   const recenter = useCallback(() => fitTo(shownRef.current?.id ?? null), [fitTo, shownRef]);
@@ -158,8 +159,8 @@ export function ChartWorkspace(): ReactElement {
           {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}
         </Sidebar>
         <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
-        <ImportExportCommands scene={scene} pages={pages} />
-        <NewChart scene={scene} />
+        <ImportExportCommands scene={scene} pages={pages} onReplaced={showFirstPage} />
+        <NewChart scene={scene} onReplaced={showFirstPage} />
         <ToastRegion />
       </div>
     </div>

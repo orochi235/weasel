@@ -5,9 +5,9 @@ import type { ReactElement } from 'react';
 import { PAGE_TAB_MENU_ID, PAGE_TAB_MENUS, usePageCommands } from './pageCommands';
 import './pageStrip.css';
 
-/** The page tabs under the workspace, their context menu, and the page commands. */
-export function DrawPageStrip({ pages }: { pages: DocPages }): ReactElement {
-  usePageCommands(pages);
+/** The page tabs under the workspace, their context menu, and the page commands. `leaveMode` closes the open mode. */
+export function DrawPageStrip({ pages, leaveMode }: { pages: DocPages; leaveMode: () => void }): ReactElement {
+  usePageCommands(pages, leaveMode);
   useMenus(PAGE_TAB_MENUS);
   const host = useMenuHost();
   return (
