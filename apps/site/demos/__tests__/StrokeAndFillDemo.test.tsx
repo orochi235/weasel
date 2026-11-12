@@ -73,6 +73,14 @@ describe('StrokeAndFillDemo', () => {
     expect(after.slice(4)).toEqual(before.slice(4));
   });
 
+  it('sets the stroke width from the panel slider', () => {
+    renderWithIcons(<StrokeAndFillDemo />);
+    act(() => {
+      fireEvent.change(screen.getByLabelText('Stroke width'), { target: { value: '7' } });
+    });
+    expect(data('swatch').stroke!.width).toBe(7);
+  });
+
   it('drives the polyline taper from the panel slider', () => {
     const { container } = renderWithIcons(<StrokeAndFillDemo />);
     const canvas = container.querySelector('canvas')!;

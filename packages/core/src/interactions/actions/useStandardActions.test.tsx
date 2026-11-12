@@ -79,7 +79,7 @@ const KIT_IDS = [
   'viewport.dragPan',
   'clearSelection',
   'enterTextEdit',
-  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
+  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity', 'setStrokeWidth', 'setVertexColor',
   'ingest',
   'clipboard.copy', 'clipboard.cut', 'clipboard.paste',
 ] as const;

@@ -34,9 +34,13 @@ export interface PaintActionSpec<TState, TValue, K extends string> {
   readParams(prev: TState, params: Params): TState | null;
   /** The value to write for one node, from that node's value at gesture start.
    *  `null` writes the absence of paint, which is a value like any other —
-   *  a node with `fill: null` paints no fill. */
+   *  a node with `fill: null` paints no fill. Handing back `prev` itself leaves
+   *  the node out of the preview and the commit. */
   merge(prev: TValue | null | undefined, state: TState): TValue | null;
 }
+
+/** Whether `merge` handed back the value it was given: nothing to write. */
+const unchanged = (prev: unknown, next: unknown): boolean => next === prev || (next === null && prev === undefined);
 
 interface Scratch<TState, TValue, K extends string> {
   ids: NodeId[];
@@ -70,7 +74,7 @@ export function createPaintAction<TState, TValue, K extends string>(
     for (const id of scratch.ids) {
       const prev = scratch.startData.get(id);
       const next = spec.merge(prev?.[spec.dataKey], scratch.state);
-      scratch.previews.set(id, { ...(prev ?? {}), [spec.dataKey]: next } as Data);
+      if (!unchanged(prev?.[spec.dataKey], next)) scratch.previews.set(id, { ...(prev ?? {}), [spec.dataKey]: next } as Data);
     }
   };
 
@@ -131,12 +135,10 @@ export function createPaintAction<TState, TValue, K extends string>(
             }
             const ops: Op[] = [];
             for (const id of scratch.ids) {
-              const merged = spec.merge(
-                scratch.startData.get(id)?.[spec.dataKey],
-                scratch.state,
-              );
+              const start = scratch.startData.get(id)?.[spec.dataKey];
+              const merged = spec.merge(start, scratch.state);
               const nodeNow = scratch.scene.get(id);
-              if (!nodeNow) continue;
+              if (!nodeNow || unchanged(start, merged)) continue;
               const from = { ...(nodeNow.data as object) } as Data;
               const to = { ...from, [spec.dataKey]: merged } as Data;
               ops.push(createSetDataOp<Data>({ id: id as string, from, to }));

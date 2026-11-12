@@ -212,15 +212,13 @@ function PaintPanel({
   const actions = useActionsRegistry();
   const node = nodeId ? scene.get(asNodeId(nodeId)) : undefined;
 
-  // `setFill` / `setStroke` paint the selection, so the panel commits through
-  // them rather than writing `data` itself: one undo entry, and the same path
-  // a color picker or a keybinding takes.
-  const paint = (which: PaintSlot, next: Paint | null): void => {
-    actions?.begin(which === 'fill' ? 'setFill' : 'setStroke', { paint: next })?.end('commit');
+  // The style actions (`setFill`, `setStroke`, `setStrokeWidth`, `setVertexColor`) paint the selection, so the
+  // panel commits through them rather than writing `data` itself: one undo entry each, and the same path a color
+  // picker or a keybinding takes.
+  const run = (actionId: string, params: Record<string, unknown>): void => {
+    actions?.begin(actionId, params)?.end('commit');
   };
-  const write = (data: PaintedData): void => {
-    if (node) scene.update(node.id, { data });
-  };
+  const paint = (which: PaintSlot, next: Paint | null): void => run(which === 'fill' ? 'setFill' : 'setStroke', { paint: next });
 
   if (!node) {
     return (
@@ -252,11 +250,7 @@ function PaintPanel({
                     key={i}
                     value={rgbaToHex(rgba)}
                     aria-label={`Vertex ${i + 1}`}
-                    onChange={(hex) => write({
-                      ...data,
-                      vertexColors: data.vertexColors!.map((v, j) =>
-                        (Math.floor(j / 4) === i ? hexToRgba(hex)[j % 4] : v)),
-                    })}
+                    onChange={(hex) => run('setVertexColor', { index: i, rgba: hexToRgba(hex) })}
                   />
                 ))}
               </div>
@@ -291,10 +285,7 @@ function PaintPanel({
               max={20}
               step={1}
               aria-label="Stroke width"
-              onChange={(e) => write({
-                ...data,
-                stroke: { ...data.stroke!, width: Number(e.target.value) },
-              })}
+              onChange={(e) => run('setStrokeWidth', { width: Number(e.target.value) })}
             />
             <output className={num.numeric}>{width.toFixed(0)}</output>
           </div>
@@ -309,10 +300,7 @@ function PaintPanel({
               max={40}
               step={1}
               aria-label="Center width"
-              onChange={(e) => write({
-                ...data,
-                stroke: { ...data.stroke!, vertexWidths: taperWidths(Number(e.target.value)) },
-              })}
+              onChange={(e) => run('setStrokeWidth', { vertexWidths: taperWidths(Number(e.target.value)) })}
             />
             <output className={num.numeric}>{taper.toFixed(0)}</output>
           </div>
