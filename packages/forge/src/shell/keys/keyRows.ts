@@ -18,7 +18,7 @@ export function describeBinding(spec: GestureSpec): string {
   switch (spec.kind) {
     case 'wheel': return 'Wheel';
     case 'hover': return 'Hover';
-    case 'drag': return spec.button === 'middle' ? 'Middle drag' : 'Drag';
+    case 'drag': return spec.button === 'middle' ? 'Middle drag' : spec.button === 'secondary' ? 'Right drag' : 'Drag';
     case 'click': return 'Click';
     default: return spec.kind[0]!.toUpperCase() + spec.kind.slice(1);
   }

@@ -33,6 +33,7 @@ describe('routeToSpec', () => {
   it('reads a drag arg as its button, leaving primary implicit and keeping *', () => {
     expect(spec('[*:*] drag(primary)')).toEqual({ kind: 'drag' });
     expect(spec('[*:*] drag(middle)')).toEqual({ kind: 'drag', button: 'middle' });
+    expect(spec('[*:*] drag(secondary)')).toEqual({ kind: 'drag', button: 'secondary' });
     expect(spec('[*:*] drag(*)')).toEqual({ kind: 'drag', button: '*' });
   });
 

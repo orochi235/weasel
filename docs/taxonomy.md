@@ -344,14 +344,19 @@ targets the first, and nothing for one that targets neither or both. A press is
 not a leave.
 
 A `drag` names the button that drags it: `DragSpec.button`, written `drag(middle)`
-in a route, `primary` by default and `*` for either. A middle press is only ever
-a drag: it makes no `pointerDown`, click, double click or long-press, and leaves a
-primary click sequence open. A middle press no binding would drag is left to the
-browser — its autoscroll, its paste — and one that some binding would drag is
-default-prevented. An affordance's claim on the pointer is a claim on its primary
-press and does not bar a middle drag. The right button is the context menu's and starts no drag. The
-`view` preset binds a middle drag to `viewport.dragPan` under every tool
-(`middleDragPanContribution`).
+or `drag(secondary)` in a route, `primary` by default and `*` for any. A press
+with any but the primary button makes no `pointerDown`, click, double click or
+long-press, and leaves a primary click sequence open: a middle press only drags,
+and a secondary one drags or, released in place, opens the context menu. A press
+no binding would drag is left to the browser — the middle button's autoscroll and
+paste, the secondary's native menu — and a secondary press drags only while the
+contextmenu channel is on. A middle press some binding would drag is
+default-prevented. A secondary one owns the native `contextmenu` the browser
+raises for it, while held on macOS and Linux or just after the release on
+Windows, so its menu opens on the release in place of the press (2026-11-11). An
+affordance's claim on the pointer is a claim on its primary press and does not
+bar a drag with another button. The `view` preset binds a middle drag to
+`viewport.dragPan` under every tool (`middleDragPanContribution`).
 
 A `hover` spec with `held` keeps reporting while a button is down, read the way
 `mods` reads a modifier: `held: 'optional'` (`hover ?held` in a route) fires

@@ -168,7 +168,7 @@ export interface ContextMenuSpec {
 /** Drag gesture (pointerdown + pointermove past the threshold). */
 export interface DragSpec {
   kind: 'drag';
-  /** The button that drags. Default `'primary'`; `'*'` takes either. */
+  /** The button that drags. Default `'primary'`; `'*'` takes any. */
   button?: PointerButton | '*';
   target?: TargetSpec;
   mods?: ModSpec;

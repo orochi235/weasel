@@ -63,7 +63,7 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
         ...t,
       });
     case 'drag':
-      return withMods({ kind, ...(parsed.arg !== undefined && parsed.arg !== 'primary' ? { button: parsed.arg as 'middle' | '*' } : {}), ...t });
+      return withMods({ kind, ...(parsed.arg !== undefined && parsed.arg !== 'primary' ? { button: parsed.arg as 'middle' | 'secondary' | '*' } : {}), ...t });
     case 'click':
     case 'pointerDown':
     case 'doubleClick':

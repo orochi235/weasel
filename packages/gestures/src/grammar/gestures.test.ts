@@ -52,7 +52,7 @@ describe('GESTURE_DESCRIPTORS', () => {
   it('drag has a target slot and a button arg defaulting to primary', () => {
     const d = getGestureDescriptor('drag');
     expect(d.hasTarget).toBe(true);
-    expect(d.arg).toEqual({ name: 'button', values: ['primary', 'middle', '*'], default: 'primary' });
+    expect(d.arg).toEqual({ name: 'button', values: ['primary', 'middle', 'secondary', '*'], default: 'primary' });
   });
 
   it('getGestureDescriptor throws on unknown name', () => {

@@ -4,7 +4,7 @@
  */
 import {
   createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, pointerDownEvent, stylusOf,
-  type ClickMemory, type HeldPress, type PointerSample, type PressSample, type RecognizerClock,
+  type ClickMemory, type HeldPress, type PointerButton, type PointerSample, type PressSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
@@ -28,6 +28,9 @@ export interface PointerInputOptions {
   hover: Pick<HoverCursorInput, 'moved' | 'released'>;
   /** See `UseGestureDispatcherOptions.controls`. */
   controls(): 'leave' | 'take';
+  /** Whether a secondary press may drag. Only while the contextmenu channel
+   *  is on: a drag has to keep the native menu from opening under it. */
+  secondaryDrags: boolean;
 }
 
 export interface PointerInput {
@@ -39,6 +42,9 @@ export interface PointerInput {
   onNativeDoubleClick(e: MouseEvent): void;
   /** Whether a touch or pen hold is in progress, firing its long-press if still pending. */
   takeNativeHold(): boolean;
+  /** Whether a native `contextmenu` belongs to a secondary press this channel
+   *  took, which opens the menu itself if it never becomes a drag. */
+  takeNativeMenu(e: MouseEvent): boolean;
   /** Cancel every held pointer, each through its session, which reports once. */
   cancelHeld(): void;
   /** Where the pointer held longest is, in client pixels; `null` with none held. */
@@ -194,6 +200,34 @@ function pressClaims(canvas: Element | null, dragPx: () => number | undefined) {
   };
 }
 
+/** `PointerEvent.button`, as a press names it. The back and forward buttons are the browser's. */
+const BUTTONS: readonly PointerButton[] = ['primary', 'middle', 'secondary'];
+
+/** How long after a secondary release its native menu can still arrive. */
+const MENU_AFTER_RELEASE_MS = 500;
+
+/**
+ * The native `contextmenu` each secondary press this channel took also raises:
+ * while it is held on macOS and Linux, just after its release on Windows. Either
+ * is that press's, which has already opened its menu or dragged instead.
+ */
+function nativeMenus() {
+  const held = new Set<number>();
+  let released: { x: number; y: number; at: number } | null = null;
+  return {
+    pressed(pointerId: number): void { held.add(pointerId); released = null; },
+    ended(pointerId: number, up?: PointerEvent): void {
+      if (held.delete(pointerId) && up) released = { x: up.clientX, y: up.clientY, at: up.timeStamp };
+    },
+    take(e: MouseEvent): boolean {
+      if (held.size > 0) return true;
+      const r = released;
+      released = null;
+      return r !== null && r.x === e.clientX && r.y === e.clientY && e.timeStamp - r.at < MENU_AFTER_RELEASE_MS;
+    },
+  };
+}
+
 export function pointerInput(core: PointerDispatchCore, opts: PointerInputOptions): PointerInput {
   const { canvas, routeAt, routeDown, routeRelease, toWorld, target } = core;
   const sessions = new Map<number, PointerSession>();
@@ -205,6 +239,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   // toggles on double-click leaves it alone.
   let claimedDoubleClick = false;
   const hold = holdClock(core);
+  const menus = nativeMenus();
 
   const recognizer = recognizerOf(core, opts, hold.clock);
 
@@ -227,6 +262,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     if (claims.yielded(e, session)) { onCancel(e.pointerId); return; }
     routeAt(e.pointerId, e.clientX, e.clientY);
     drop(e.pointerId);
+    menus.ended(e.pointerId, e);
     const { doubleClick } = recognizer.release(sampleOf(e));
     if (doubleClick) claimedDoubleClick = doubleClick === 'handled' || opts.onDoubleClick() !== undefined;
     // Everything this release synthesizes has been dispatched, so the pointer's view can be unpinned.
@@ -242,6 +278,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     const at = recognizer.positionOf(pointerId);
     if (!at) return;
     drop(pointerId);
+    menus.ended(pointerId);
     routeAt(pointerId, at.x, at.y);
     recognizer.cancel(pointerId);
     routeRelease(pointerId);
@@ -250,10 +287,9 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   return {
     onPointerDown(e) {
       claimedDoubleClick = false;
-      // The primary and middle buttons drive gesture dispatch; the right one is
-      // the context menu's. An absent `button` (synthetic events) is primary.
-      const button = e.button ?? 0;
-      if (button !== 0 && button !== 1) return;
+      // An absent `button` (synthetic events) is primary.
+      const button = BUTTONS[e.button ?? 0];
+      if (!button || (button === 'secondary' && !opts.secondaryDrags)) return;
       if (!canvas) return;
       // A button or field laid over the canvas handles its own press: opening a
       // session here would capture the pointer and retarget its click. A surface
@@ -268,15 +304,16 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       const w = toWorld(e.clientX, e.clientY);
       const where = underPointer(target(), e, w);
       const press: PressSample = {
-        ...sampleOf(e), x: w.x, y: w.y, pointerType: e.pointerType, ...where, ...(button === 1 ? { pointerButton: 'middle' as const } : {}),
+        ...sampleOf(e), x: w.x, y: w.y, pointerType: e.pointerType, ...where, ...(button !== 'primary' ? { pointerButton: button } : {}),
       };
-      if (button === 1) {
-        // A middle press nothing would drag stays the browser's: its autoscroll, its paste.
+      if (button !== 'primary') {
+        // A press nothing would drag stays the browser's: its autoscroll, its paste, its menu.
         if (core.dispatcherNow().resolveOnly(pointerDownEvent(press), core.ctxNow()) === null) {
           routeRelease(e.pointerId);
           return;
         }
-        e.preventDefault();
+        if (button === 'middle') e.preventDefault();
+        else menus.pressed(e.pointerId);
       }
       // The session owns the rest of this pointer: capture, the moves, the
       // release, and recovery from a release that never arrives. A press on a
@@ -299,6 +336,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       claimedDoubleClick = false;
       e.preventDefault();
     },
+    takeNativeMenu: (e) => menus.take(e),
     takeNativeHold: () => {
       hold.routeToPress();
       return recognizer.takeHold();

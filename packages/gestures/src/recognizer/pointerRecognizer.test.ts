@@ -702,6 +702,25 @@ describe('a middle press', () => {
     expect(h.kinds()).toContain('doubleclick');
   });
 
+  it('is a secondary press too, but released in place that one opens the context menu', () => {
+    const h = harness();
+    h.down(1, 0, { pointerButton: 'secondary', bodyTarget: 'empty' });
+    h.recognizer.release(h.at(1, 2));
+    expect(h.log).toEqual(['pointerup', 'contextmenu']);
+    expect(h.events[1]).toEqual({
+      kind: 'contextmenu', target: undefined, x: 100, y: 100, clientX: 0, clientY: 0, bodyTarget: 'empty', ...MODS,
+    });
+  });
+
+  it('opens no context menu for a secondary press that became a drag', () => {
+    const h = harness();
+    h.down(1, 0, { pointerButton: 'secondary' });
+    h.recognizer.move(h.at(1, DRAG_THRESHOLD_PX));
+    h.recognizer.release(h.at(1, 0));
+    expect(h.kinds()).toEqual(['pointerdown', 'pointermove', 'pointerup']);
+    expect(h.events[0]).toMatchObject({ pointerButton: 'secondary' });
+  });
+
   it('is the only press marked with a button', () => {
     const h = harness();
     h.down(1, 0);

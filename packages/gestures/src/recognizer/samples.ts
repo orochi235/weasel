@@ -32,7 +32,7 @@ export interface PressSample extends PointerSample {
   y: number;
   /** `PointerEvent.pointerType`. Only `'touch'` and `'pen'` arm a long-press. */
   pointerType: string;
-  /** Absent is `'primary'`. A middle press is only ever a drag. */
+  /** Absent is `'primary'`. See `PointerDownEvent.pointerButton`. */
   pointerButton?: PointerButton;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
@@ -64,7 +64,7 @@ const at = (s: PointerSample, world: Point) => ({
 export function pointerDownEvent(s: PressSample): PointerDownEvent {
   return {
     kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s),
-    ...(s.pointerButton === 'middle' ? { pointerButton: s.pointerButton } : {}),
+    ...(s.pointerButton !== undefined && s.pointerButton !== 'primary' ? { pointerButton: s.pointerButton } : {}),
   };
 }
 

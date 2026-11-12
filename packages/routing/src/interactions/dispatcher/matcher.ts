@@ -86,7 +86,7 @@ function claimOf(e: InputEvent): Claim | undefined {
 function claimGestureOf(e: InputEvent): ClaimableGesture | null {
   switch (e.kind) {
     // A claim on the pointer is a claim on its primary press: a middle drag pans over a handle.
-    case 'pointerdown': return e.pointerButton === 'middle' ? null : 'pointer';
+    case 'pointerdown': return (e.pointerButton ?? 'primary') === 'primary' ? 'pointer' : null;
     case 'click': return 'pointer';
     case 'doubleclick': return 'doubleClick';
     case 'contextmenu': return 'contextMenu';
