@@ -52,9 +52,15 @@ test('the indeterminate sweep never stalls or backs up while it is on the track'
   }
 });
 
-test('the count holds its width as it climbs, so the controls after it stay put', () => {
+test('the count holds its width as it climbs, so the controls after it stay put', async () => {
   const at = (done: number) => ({ ...running, done, total: 120 });
   const { container, rerender } = render(<JobProgress job={at(9)} />);
+  // The faces load on first use and swap in (`font-display: swap`); one landing mid-loop moved the
+  // cancel button 0.5 px at 100 on a loaded node.
+  const count = container.querySelector('.lk-job__count');
+  if (!count) throw new Error('no count');
+  await document.fonts.load(getComputedStyle(count).font, '0123456789 /');
+  await document.fonts.ready;
   const cancel = () => container.querySelector('.lk-job__cancel')?.getBoundingClientRect().left;
   const first = cancel();
   for (const done of [10, 99, 100, 120]) {

@@ -714,12 +714,6 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
-- **(P3) [agent] labkit's `JobProgress.browser.test.tsx` misses its width check by 0.5 px at 100.**
-  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11), and the
-  same two numbers again in the suite run of `ccecc970d` (2026-11-11) on teitou; it passed 3/3 alone on the fleet
-  after the first. Identical figures twice read as a real width change at three digits, not rasterizing noise
-  (inferred, not measured). Rework the check, or the count's sizing for its total, so 100 holds the width.
-
 ---
 
 ## weaselchart
