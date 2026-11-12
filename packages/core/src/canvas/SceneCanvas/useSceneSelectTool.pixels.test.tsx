@@ -16,7 +16,7 @@ import { useSceneSelectTool, type PickView } from './useSceneSelectTool';
 type Pose = { x: number; y: number; width: number; height: number };
 type Rect = { x: number; y: number; width: number; height: number };
 
-const NODES: UseSceneOptions<object, 'default', Pose>['initial'] = [
+const NODES: UseSceneOptions<object, 'default' | 'notes', Pose>['initial'] = [
   { id: asNodeId('back'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} },
   { id: asNodeId('front'), kind: 'mark', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 }, data: {} },
   { id: asNodeId('aside'), kind: 'mark', layer: 'default', pose: { x: 200, y: 200, width: 10, height: 10 }, data: {} },
@@ -26,7 +26,7 @@ const NODES: UseSceneOptions<object, 'default', Pose>['initial'] = [
  * An id frame where `paint` names, per node, the screen rect it covers, drawn
  * in the order given (so later entries are on top). One id per CSS pixel.
  */
-function fakeFrame(scene: Scene<object, 'default', Pose>, paint: [string, Rect][], log: Rect[] = []) {
+function fakeFrame(scene: Scene<object, 'default' | 'notes', Pose>, paint: [string, Rect][], log: Rect[] = []) {
   const ids = scenePickIds(scene);
   return (rect: Rect, options?: CanvasIdReadOptions): IdBuffer => {
     log.push(rect);
@@ -62,12 +62,14 @@ function harness(opts: {
   interactive?: (id: string) => boolean;
   log?: Rect[];
   /** Fields laid over `front`. */
-  front?: { locked?: boolean; pickable?: boolean };
+  front?: { locked?: boolean; pickable?: boolean; layer?: 'default' | 'notes' };
 }) {
   const view = opts.view ?? { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const { result } = renderHook(() => {
     const initial = opts.front ? NODES!.map((n) => (n.id === 'front' ? { ...n, ...opts.front } : n)) : NODES;
-    const scene = useScene<object, 'default', Pose>({ systemLayers: [{ id: 'default' }], initial });
+    const scene = useScene<object, 'default' | 'notes', Pose>({
+      systemLayers: [{ id: 'default' }, { id: 'notes', annotation: true }], initial,
+    });
     const adapter = useSceneAdapter(scene);
     const read = opts.asyncOnly ? () => null : opts.noFrame ? () => EMPTY : fakeFrame(scene, opts.paint ?? [], opts.log);
     return useSceneSelectTool({
@@ -120,6 +122,12 @@ describe("useSceneSelectTool, geometry.picking: 'pixels'", () => {
     const paint: [string, Rect][] = [['back', { x: 0, y: 0, width: 100, height: 100 }], ['front', { x: 0, y: 0, width: 100, height: 100 }]];
     expect(harness({ paint, front: { locked: true } })(50, 50)).toEqual(['back']);
     expect(harness({ paint, front: { pickable: false } })(50, 50)).toEqual(['back']);
+  });
+
+  it('passes through a node on an annotation layer, as the shape walk does', () => {
+    const paint: [string, Rect][] = [['back', { x: 0, y: 0, width: 100, height: 100 }], ['front', { x: 0, y: 0, width: 100, height: 100 }]];
+    expect(harness({ paint, front: { layer: 'notes' } })(50, 50)).toEqual(['back']);
+    expect(harness({ noFrame: true, front: { layer: 'notes' } })(50, 50)).toEqual(['back']);
   });
 
   it('falls back to the shape walk with no painted frame', () => {

@@ -1,5 +1,5 @@
 import { withKitRegistry } from './kitRegistry';
-import { createPoseOverrides } from './poseOverrides';
+import { createSceneOverrides } from './poseOverrides';
 import { createScrollOffsets } from './scrollOffsets';
 import { createArrivalWindow } from './arrivalWindow';
 import { documentReads, sceneMutators } from './sceneMutators';
@@ -105,7 +105,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   selection.subscribe(notifier.notify);
 
   /** Ephemeral, deliberately not part of `state`: not document content, never in `toJSON` or history. */
-  const overrides = createPoseOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents);
+  const overrides = createSceneOverrides<TPose, TData>((id) => state.nodes.get(id), doc.store.invalidateDependents, notifier.whenSettled);
   const scroll = createScrollOffsets();
 
   const recording = createSceneRecording({

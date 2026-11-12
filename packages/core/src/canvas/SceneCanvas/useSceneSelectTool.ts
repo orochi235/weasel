@@ -8,7 +8,9 @@ import { drawnBoundsScene } from '../derivedPath';
 import { useCallback, useMemo } from 'react';
 import { useKitSetting, useLatest } from '@weasel-js/react';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
-import { pickWalk, scenePickSource, scenePlaneOf, type ViewPickGates } from 'canvas/pickWalk';
+import {
+  passesPickGates, pickWalk, scenePickSource, scenePlaneOf, type PickCandidate, type ViewPickGates,
+} from 'canvas/pickWalk';
 import { rectFromPlane, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
@@ -16,7 +18,6 @@ import { centersAmong } from 'tools/builtin/select/centersBetween';
 import { rangeAmong, type SelectRangeDep } from 'tools/builtin/select/selectRange';
 import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import type { Node, Scene } from 'core/scene/types';
-import { nodeGates } from 'core/scene/nodeGates';
 import { asNodeId } from 'core/scene/types';
 import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
@@ -343,11 +344,14 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   return wiredHitBody;
 }
 
-/** `hits` less what the shape walk passes over and an id frame cannot know: a locked node and
- *  one that is not pickable. */
+/** `hits` less what the shape walk passes over and an id frame cannot know: a locked node, one
+ *  that is not pickable, and one on an annotation layer. */
 function reachableHits<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, hits: string[]): string[] {
-  const gates = nodeGates(scene as never);
-  return hits.filter((id) => (scene.get(asNodeId(id)) as { pickable?: boolean } | undefined)?.pickable !== false && !gates.locked(id));
+  const src = scenePickSource(scene);
+  return hits.filter((id) => {
+    const node = scene.get(asNodeId(id));
+    return node !== undefined && passesPickGates(src, node as unknown as PickCandidate<TPose>);
+  });
 }
 
 /** Whether a pick asked with `view` is asked for the surface's own camera and gates, which

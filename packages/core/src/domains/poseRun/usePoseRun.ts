@@ -147,6 +147,7 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
   // The gate defaults an absent clock to `requestAnimationFrame` itself, so
   // these pass straight through rather than being defaulted twice.
   const loop = useVisibleRaf((_time, loop) => { tick(loop); }, {
+    phase: 'update',
     requestFrame: opts.requestFrame,
     cancelFrame: opts.cancelFrame,
   });

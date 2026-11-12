@@ -32,6 +32,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       else coreRef.current?.tick(t);
     }, [follow, optsRef]),
     {
+      phase: 'update',
       requestFrame: opts.requestFrame,
       cancelFrame: opts.cancelFrame,
       onResume: () => { if (!optsRef.current.clock) coreRef.current?.resumed(); },

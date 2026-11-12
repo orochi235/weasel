@@ -10,6 +10,7 @@
 
 import { type RefObject, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { useLatest } from './useLatest';
+import { useScheduledFrame } from './scheduledFrame';
 
 /** What a loop names as its element, resolved every time the gate is consulted
  *  so a ref filled in after mount still starts the observer. */
@@ -39,6 +40,13 @@ export interface VisibleRafOptions {
   /** Runs once as the loop goes into suspension, the counterpart of `onResume`: where a loop
    *  whose clock runs between frames stops counting. */
   onSuspend?: () => void;
+  /**
+   * `'update'` for a loop that produces what others paint — poses, a camera, a
+   * simulation step. Its frame runs ahead of every `'paint'` loop's on the same
+   * clock in that animation frame, so what it writes is painted the frame it is
+   * written rather than the next. Default `'paint'`.
+   */
+  phase?: 'update' | 'paint';
 }
 
 /** The handle {@link useVisibleRaf} returns. Nothing runs until `request()` is called. */
@@ -81,7 +89,6 @@ export function useVisibleRaf(
   const frameRef = useLatest(frame);
   const optsRef = useLatest(options);
 
-  const rafRef = useRef<number | null>(null);
   const pendingRef = useRef(false);
   const suspendedRef = useRef(false);
   const aliveRef = useRef(true);
@@ -93,25 +100,9 @@ export function useVisibleRaf(
 
   const isVisible = useCallback(() => gateOpen(optsRef.current, intersectingRef.current), [optsRef]);
 
-  const cancelRaf = useCallback(() => {
-    if (rafRef.current === null) return;
-    (optsRef.current.cancelFrame ?? cancelAnimationFrame)(rafRef.current);
-    rafRef.current = null;
-  }, [optsRef]);
-
-  const scheduleRaf = useCallback(() => {
-    if (rafRef.current !== null || !aliveRef.current) return;
-    rafRef.current = (optsRef.current.requestFrame ?? requestAnimationFrame)((time) => {
-      // Released before the frame runs, so a `request()` issued from inside it
-      // schedules the next one instead of being swallowed.
-      rafRef.current = null;
-      if (!aliveRef.current || !pendingRef.current) return;
-      // Hidden with no event to say so (the escape hatch lifted while hidden): suspend, so a return re-arms it.
-      if (!isVisible()) { syncGateRef.current(); return; }
-      pendingRef.current = false;
-      frameRef.current(time, handleRef.current!);
-    });
-  }, [frameRef, isVisible, optsRef]);
+  const { scheduleRaf, cancelRaf } = useScheduledFrame({
+    frameRef, optsRef, handleRef, aliveRef, pendingRef, isVisible, suspendRef: syncGateRef,
+  });
 
   /** Attaches the observer once the named element exists. Ref callbacks and
    *  lazily-mounted hosts fill their refs after this hook's effect has run. */
