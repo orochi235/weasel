@@ -278,6 +278,12 @@ describe('createPoseDescriptor', () => {
     expect(bounds.width).toBeCloseTo(projected.width, 6);
   });
 
+  it('reports a solid wholly behind the camera as on no part of the screen, as core reads a box that is not finite', () => {
+    const descriptor = createPoseDescriptor(world(scene, () => viewport()));
+    const behind = descriptor.getBounds(pose3({ x: 0, y: 0.5, z: 30 }));
+    expect(Number.isFinite(behind.x + behind.y + behind.width + behind.height)).toBe(false);
+  });
+
   it('draws a nearer solid bigger', () => {
     const vp = viewport();
     const descriptor = createPoseDescriptor(world(scene, () => vp));

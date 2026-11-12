@@ -66,6 +66,8 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
 
 export { screenBoxOf } from './pickIndex';
 
+const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
+
 /**
  * Nearest node the camera draws along the ray the screen point names.
  *
@@ -248,8 +250,10 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         return d;
       },
 
+      /** A solid wholly behind the camera is on no part of the screen: a box that is not finite, which core's
+       *  region selects, pick index and unions already pass over, and its chrome does not draw. */
       getBounds(pose) {
-        return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
+        return boundsOf(pose) ?? OFF_SCREEN;
       },
 
       /**
