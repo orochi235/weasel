@@ -1772,3 +1772,14 @@ Calls the lanes made without a ruling:
   registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
   `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
   contribution's `overlay`, which it paints and never hit-tests.
+
+## Audit round eighteen (2026-11-12): a lab's trials
+
+- The lab store's `setTrialInstrument` is gone (`major` changeset): it kept the old instrument's state, config, view
+  and undo under the same id, and `swapTrial` is the way a trial changes instrument (2026-11-12).
+- Reset, or a snapshot loaded over a trial, cancels its running job; an `auto` job then runs again on the new state,
+  and a hand-started one stays idle until started. `useJob` takes `epoch` for it (2026-11-12).
+- A job capability takes `begin(state, config)`, the state a run folds its items into; without it each run still
+  adds to the last, so an `auto` job on a reloaded trial repeats its items unless the instrument clears them
+  (2026-11-12). Open: whether a job with no `begin` should start each run clean, which would need labkit to know
+  which part of the state the job fills.
