@@ -7,6 +7,7 @@ import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { useAnnotations } from './AnnotationsContext';
+import { useHoldMarks } from './labMarks';
 import type { AnnotationsApi } from './types';
 
 beforeAll(() => {
@@ -96,6 +97,34 @@ describe("a lab's Marks switch", () => {
     await act(async () => theLab().setMarks(true));
     expect(shows()).toBe(true);
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('shows marks while something holds them, past a switch that is off, and never stores the hold', async () => {
+    const backing = new Map<string, unknown>();
+    function Holder({ held }: { held: boolean }) {
+      useHoldMarks(held);
+      return null;
+    }
+    const tree = (held: boolean) => (
+      <Lab
+        instruments={[annotating]}
+        defaultInstrument="Annotating"
+        marks={false}
+        storage={createMemoryAdapter(backing)}
+        storageKey="hold-test"
+      >
+        <CaptureLab />
+        <Holder held={held} />
+      </Lab>
+    );
+    const view = await renderSettled(tree(false), { wrapper: withIcons });
+    expect(shows()).toBe(false);
+    view.rerender(tree(true));
+    await waitFor(() => expect(shows()).toBe(true));
+    expect(theLab().marks).toBe(true);
+    view.rerender(tree(false));
+    await waitFor(() => expect(shows()).toBe(false));
+    expect([...backing.values()]).not.toContain(true);
   });
 
   it('is kept by a stored lab over the prop', async () => {

@@ -204,8 +204,8 @@ function LabRuntime({
   const workspacePanels = useMemo(() => panelsOf(undockedPanels), [undockedPanels]);
   const resolvedMode = useResolvedColorMode(modeValue);
 
-  const [marksShown, setMarksShown] = useLabMarks(opened.records, marks);
-  const labChromeAll = useLabChromeAll(instruments, marksShown, tools, labChrome);
+  const labMarks = useLabMarks(opened.records, marks);
+  const labChromeAll = useLabChromeAll(instruments, labMarks.shown, tools, labChrome);
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
   const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
 
@@ -220,8 +220,7 @@ function LabRuntime({
     focus: setFocusPick,
     configRules,
     controls,
-    marks: marksShown,
-    setMarks: setMarksShown,
+    marks: labMarks,
   });
 
   const bar = labBar({

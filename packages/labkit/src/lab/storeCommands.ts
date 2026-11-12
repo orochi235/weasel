@@ -1,6 +1,7 @@
 import type { ClockRegistry } from '@weasel-js/clock';
 import { useMemo } from 'react';
 import { useStore } from 'zustand/react';
+import type { LabMarks } from '../annotations/labMarks';
 import type { ConfigRule, ControlRenderer } from '../config/types';
 import type { InstrumentList } from '../instrument/types';
 import type { LabStore } from '../state/store';
@@ -25,8 +26,7 @@ export interface StoreCommandsOptions {
   focus(id: string): void;
   configRules?: readonly ConfigRule[] | undefined;
   controls?: Record<string, ControlRenderer> | undefined;
-  marks: boolean;
-  setMarks: (shown: boolean) => void;
+  marks: LabMarks;
 }
 
 /** A lab's commands, each written against `store`. */
@@ -40,12 +40,12 @@ export function useStoreCommands(
     configRules,
     controls,
     marks,
-    setMarks,
   }: StoreCommandsOptions,
 ): LabCommands {
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const mode = useStore(store, (s) => s.mode);
   const loadHolds = useLoadHolds(store);
+  const { shown, set, hold } = marks;
   return useMemo<LabCommands>(() => {
     const replaceTrials = (next: TrialRecord[]): void => {
       const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));
@@ -107,8 +107,9 @@ export function useStoreCommands(
       setMode: (m) => {
         store.getState().setMode(m);
       },
-      marks,
-      setMarks,
+      marks: shown,
+      setMarks: set,
+      holdMarks: hold,
       configRules,
       controls,
     };
@@ -123,7 +124,8 @@ export function useStoreCommands(
     store,
     configRules,
     controls,
-    marks,
-    setMarks,
+    shown,
+    set,
+    hold,
   ]);
 }

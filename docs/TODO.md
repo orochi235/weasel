@@ -554,12 +554,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
-  (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
-  opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
-  turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
-  up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
-  Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
