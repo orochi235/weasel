@@ -61,6 +61,11 @@ mount, and every `addTrial`, `rerender` or mark added does the same. Mount throu
 `renderSettled` (`@weasel-js/react/testing/renderSettled`), and make a store-changing
 `act` async, so the notify lands inside it.
 
+**`renderHook` under an arrow-function `StrictMode` wrapper runs each effect once.** `wrapper: ({ children }) =>
+<StrictMode>{children}</StrictMode>` mounts the hook with no double effect, so a test written to catch a missing
+cleanup passes either way; `wrapper: StrictMode` or the `reactStrictMode: true` option runs it twice (measured
+2026-11-12, React 19.2).
+
 **An async `act` never returns while a tree re-renders every frame faster than it can render.**
 React's async `act` keeps flushing until a turn of the event loop finds no update queued; a playing
 clock's transport queues one per frame, and on a loaded node, where a render outlasts a frame, there

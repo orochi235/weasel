@@ -32,6 +32,15 @@ export function parseColor(input: string): [number, number, number, number] {
   return result;
 }
 
+/** {@link parseColor}'s reading of `input`, or null where it would throw. The tuple is read-only, as there. */
+export function tryParseColor(input: string): [number, number, number, number] | null {
+  try {
+    return parseColor(input);
+  } catch {
+    return null;
+  }
+}
+
 const CACHE = new Map<string, [number, number, number, number]>();
 const CACHE_MAX = 1024;
 

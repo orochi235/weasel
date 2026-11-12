@@ -228,7 +228,7 @@ export * from './tools/routing';
 export { reportRouteConflicts, type ToolScopes } from './tools/routing/reflection/conflicts';
 
 // ─── input plumbing ───────────────────────────────────────────────────────
-export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
+export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding, undoKeyStep } from './interactions/keyHelpers';
 export type { KeyBinding } from './interactions/keyHelpers';
 export { BROWSER_RESERVED_CHORDS, browserReservedChord, type ReservedChord } from './interactions/browserReservedKeys';
 export { scratchKey, getScratch, setScratch, deleteScratch } from './interactions/scratchKey';

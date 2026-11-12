@@ -58,9 +58,11 @@ export interface SegmentedGridProps {
   lastRow?: LastRow;
 }
 
-/** The tiling `props` ask for, or `undefined` for a bar on one line. Hand it to `SegmentedRow` and,
- *  through `tilingRoving`, to the bar's `useRovingTabIndex`. */
-export function segmentedTiling(props: SegmentedGridProps): Tiling | undefined {
+/** The tiling `props` ask for, or `undefined` for a bar on one line, a curved `Along` bending it into one whatever
+ *  `columns` says. Hand it to `SegmentedRow` and, through `tilingRoving`, to the bar's `useRovingTabIndex`. */
+export function useSegmentedTiling(props: SegmentedGridProps): Tiling | undefined {
+  const along = useTrackShape();
+  if (along !== null && along.shape.kind !== 'line') return undefined;
   return props.columns ? { columns: props.columns, lastRow: props.lastRow } : undefined;
 }
 

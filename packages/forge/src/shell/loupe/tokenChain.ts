@@ -1,4 +1,4 @@
-import { parseColor } from '@weasel-js/core';
+import { tryParseColor } from '@weasel-js/core';
 import { type LoupePoint, probeUnderLens } from '@weasel-js/labkit/loupe';
 import { compareSpecificity, type Specificity, specificity, splitTopLevel } from '@weasel-js/svg';
 import { cssRulesOf, sheetsOf, varRefs } from '../../frame/cssVarUse';
@@ -40,11 +40,9 @@ export function backgroundOf(
   for (let at: Element | null = el; at; at = at === stop ? null : at.parentElement) {
     const color = getComputedStyle(at).backgroundColor;
     if (color.trim() === '') continue;
-    try {
-      if (parseColor(color)[3] === 1) return { element: at, color };
-    } catch {
-      return { unreadable: color };
-    }
+    const rgba = tryParseColor(color);
+    if (!rgba) return { unreadable: color };
+    if (rgba[3] === 1) return { element: at, color };
   }
   return null;
 }

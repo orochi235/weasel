@@ -6,6 +6,7 @@ import { dropSlot, isDropPath } from './drop';
 import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { prefRailAbove, type PrefRailItem } from './schema';
 import { markScrollbar } from './scrollbar';
+import { useAttachRef } from '../../useAttachRef';
 import s from './Prefs.module.css';
 
 /** Props for {@link PrefsRail}. */
@@ -67,6 +68,7 @@ export function PrefsRail(props: PrefsRailProps) {
     return true;
   });
 
+  const markRail = useAttachRef(markScrollbar);
   const roving = useRovingTabIndex<HTMLDivElement>({
     itemSelector: `.${s.railItem}`,
     orientation: foldable ? 'vertical' : 'both',
@@ -132,7 +134,7 @@ export function PrefsRail(props: PrefsRailProps) {
     });
 
   return (
-    <nav className={s.rail} ref={markScrollbar} aria-label={ariaLabel} data-pref-scroll="">
+    <nav className={s.rail} ref={markRail} aria-label={ariaLabel} data-pref-scroll="">
       {header}
       <div className={s.railList} ref={roving.rootRef} onKeyDown={onKeyDown}>
         {entries(null)}

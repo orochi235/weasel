@@ -97,6 +97,7 @@ export { byteHex, parseHexBytes, hexToRgbBytes, rgbaHex } from './hex';
 export {
   parseColor,
   parseColorToRgba255,
+  tryParseColor,
   resolveColor,
   normalizeHex,
   tryNormalizeHex,

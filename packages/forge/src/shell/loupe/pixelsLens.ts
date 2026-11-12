@@ -109,7 +109,9 @@ export function attachPixelsLens(slot: HTMLElement, first: Request, shared: Pixe
     const side = sideOf(request);
     try {
       const bitmap = await shared.take(target.payload);
-      if (gone || pending !== token || bitmap === null || shared.revision() !== at) return;
+      if (bitmap === null) return;
+      // A capture nothing will show is let go of now rather than left to the collector.
+      if (gone || pending !== token || shared.revision() !== at) return bitmap.close();
       shared.shots.set(side, { key: target.key, revision: at, bitmap, payload: target.payload });
       measure();
     } catch (err) {

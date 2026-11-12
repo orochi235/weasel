@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { StrictMode, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { createModeRegistry, NORMAL, type ModeDefinition } from '@weasel-js/modes';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 import { useTools } from './useTools';
@@ -19,11 +19,9 @@ const MISSING: ModeDefinition = { id: 'missing', kind: 'soft', allows: [], scopi
 
 function setup(initial = 'normal') {
   const modes = createModeRegistry({ modes: [NORMAL, EDIT, BARE, MISSING], initial });
-  // StrictMode runs every effect twice, as a re-run would.
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <StrictMode><ActiveToolContextProvider>{children}</ActiveToolContextProvider></StrictMode>
-  );
-  const { result, rerender } = renderHook(() => useTools({ active: 'select', registry, modes }), { wrapper });
+  const wrapper = ({ children }: { children: ReactNode }) => <ActiveToolContextProvider>{children}</ActiveToolContextProvider>;
+  // StrictMode runs every effect twice, as a re-run would; a StrictMode inside an arrow wrapper does not.
+  const { result, rerender } = renderHook(() => useTools({ active: 'select', registry, modes }), { wrapper, reactStrictMode: true });
   const enter = (id: string) => act(() => modes.setMode(id));
   return { result, rerender, enter };
 }

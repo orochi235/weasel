@@ -7,7 +7,7 @@ import {
   DEFAULT_PORTS, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
-import { normalizeHex, parseColor, rgbaToHex, tryNormalizeHex } from '@weasel-js/paint';
+import { normalizeHex, rgbaToHex, tryNormalizeHex, tryParseColor } from '@weasel-js/paint';
 import { deepEqual } from '@weasel-js/registry';
 import { graphPageOf, writtenPage, type DiagramDocument, type GraphPage, type WriteOptions } from './document';
 import { Warnings } from './graphRead';
@@ -123,12 +123,8 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
 export function hexColor(css: string): string {
   if (css.startsWith('#')) return tryNormalizeHex(css) ?? css;
   if (!/^rgba?\(/i.test(css)) return css;
-  let rgba: readonly [number, number, number, number];
-  try {
-    rgba = parseColor(css);
-  } catch {
-    return css;
-  }
+  const rgba = tryParseColor(css);
+  if (!rgba) return css;
   // An alpha written out is kept, `ff` included: a fourth comma-separated value or one after `/`.
   return normalizeHex(rgbaToHex(rgba), /\/|(?:,[^,]*){3}/.test(css) ? 'rgba' : 'rgb');
 }

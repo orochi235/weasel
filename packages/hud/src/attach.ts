@@ -61,6 +61,15 @@ export function attachHud(
   return () => { forget(); detach(); };
 }
 
+/** Registers the bundled font, and redraws the canvas once it arrives while the HUD is still `attached` there. */
+function loadDefaultFont(api: CanvasExtensionApi, urls: FontAtlasUrls | undefined, attached: () => boolean): void {
+  registerDefaultFont(urls)
+    .then(() => { if (attached()) api.requestRedraw(); })
+    .catch((err) => {
+      console.warn('weasel-hud: failed to register default font', err);
+    });
+}
+
 function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
   const color = hudColor(options.tints ?? { theme: weaselTheme, resolved: theme });
@@ -73,13 +82,8 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   // registered, so there is nothing to fetch and nothing to wait for.
   const font = options.font;
   const defaultFont = typeof font === 'string' ? font : DEFAULT_FONT_FAMILY;
-  if (typeof font !== 'string') {
-    registerDefaultFont(font)
-      .then(() => api.requestRedraw())
-      .catch((err) => {
-        console.warn('weasel-hud: failed to register default font', err);
-      });
-  }
+  let attached = true;
+  if (typeof font !== 'string') loadDefaultFont(api, font, () => attached);
 
   // Track the currently-hovered widget at the closure level.
   let lastHovered: Widget | null = null;
@@ -193,6 +197,7 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
   });
 
   return () => {
+    attached = false;
     // Widgets outlive the attachment. Leaving one believing the pointer is
     // still over it strands it painted as hovered, and a re-attach starts
     // with an empty `lastHovered` so it never sees the leave.

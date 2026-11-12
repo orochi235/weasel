@@ -12,7 +12,11 @@ export interface Bitmap {
   width: number;
   height: number;
   from: string;
+  close(): void;
 }
+
+/** What each stand-in bitmap closed came from, in order; emptied by `stubBitmaps`. */
+export const closed: string[] = [];
 
 /** Lets every answer already given run its course: none of them waits on a timer. */
 export async function settle() {
@@ -94,5 +98,8 @@ export const shown = (slot: HTMLElement) => slot.querySelector('canvas')?.hasAtt
 
 /** Decodes a fake capture to a stand-in bitmap naming it; undo with `vi.unstubAllGlobals()`. */
 export function stubBitmaps() {
-  vi.stubGlobal('createImageBitmap', async (blob: { label: string }) => ({ width: 100, height: 100, from: blob.label }) satisfies Bitmap);
+  closed.length = 0;
+  vi.stubGlobal('createImageBitmap', async (blob: { label: string }) => ({
+    width: 100, height: 100, from: blob.label, close: () => { closed.push(blob.label); },
+  }) satisfies Bitmap);
 }

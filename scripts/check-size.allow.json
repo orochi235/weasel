@@ -72,7 +72,7 @@
     "longestFunction": 228
   },
   "packages/forge/src/shell/useStoryRegistry.ts": {
-    "longestFunction": 185
+    "longestFunction": 183
   },
   "packages/forge/src/vite/depGraph.ts": {
     "longestFunction": 176
@@ -91,7 +91,7 @@
     "longestFunction": 394
   },
   "packages/hud/src/attach.ts": {
-    "longestFunction": 144
+    "longestFunction": 140
   },
   "packages/hud/src/hud.ts": {
     "longestFunction": 125

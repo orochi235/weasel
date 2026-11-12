@@ -23,7 +23,7 @@ export type {
 } from '../core/stylus/usePointerStylus';
 
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
-export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding } from '@weasel-js/routing';
+export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget, matchesKeyBinding, undoKeyStep } from '@weasel-js/routing';
 export type { KeyBinding } from '@weasel-js/routing';
 
 // ─── Key-state poll: which physical keys are down right now ────────────────

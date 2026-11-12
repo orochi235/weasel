@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useReducer, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, type ReactElement } from 'react';
 import { useVisibleRaf } from '@weasel-js/core';
+import { useNotified } from '@weasel-js/react';
 import { type TimelineHandle, type Track } from '@weasel-js/animator';
 import { Timeline, type TimelineProps } from './Timeline';
 
@@ -28,8 +29,7 @@ export function AnimatedTimeline(props: AnimatedTimelineProps): ReactElement {
   const [, bump] = useReducer((n: number) => n + 1, 0);
 
   // `subscribe` fires on `edit` only, so the playhead comes from the frame loop.
-  const [edits, setEdits] = useState(0);
-  useEffect(() => handle.subscribe(() => setEdits((n) => n + 1)), [handle]);
+  const edits = useNotified(handle);
   // A resume, pause, or seek made on the handle from elsewhere: the render it
   // asks for is what restarts the frame loop below.
   useEffect(() => handle.subscribePlayback(bump), [handle]);
