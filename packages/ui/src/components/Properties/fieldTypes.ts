@@ -174,7 +174,8 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
    * "Unset" entry first; each calls this. Absent, the field always holds one.
    */
   onClear?: () => void;
-  /** Shown while no option is chosen. Defaults to "Choose option…". */
+  /** Shown while no option is chosen, by the `select` and `menu` controls. Defaults to "Choose option…", or
+   *  "—" while `unset`. */
   placeholder?: string;
 }
 
