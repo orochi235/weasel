@@ -176,7 +176,7 @@ function buildScene<TData, TLayer extends string, TPose>(
       doc.reset(json.systemLayers.map(layerFromSerialized), json.doc);
       recording.clearHistory();
       poseWrites.quiet(() => edits.construct(specs));
-      selection.replace(selection.legal(selection.get().filter((id) => state.nodes.has(id))));
+      selection.replace(selection.legal(selection.get()));
       notifier.notify();
     },
 
