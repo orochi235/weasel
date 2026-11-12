@@ -2,6 +2,6 @@
 '@weasel-js/ui': patch
 ---
 
-`domMeasureEnv` measures text in a font whose `--wzl-font-ui` is a single family name with a space or digit (`Font 3D`), rather than in the canvas's 10px default.
+`domMeasureEnv` measures in the theme's font when `--wzl-font-ui` is one family name like `Font 3D`, not the canvas's 10px default.
 
 <!-- entry: fix -->
