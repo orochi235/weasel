@@ -125,10 +125,12 @@ inset lives and whether it's interactive:
   renders a `Scene` at an arbitrary `view`. Has its own GL context and DOM
   node. Use for thumbnails, side-by-side previews, printable snapshots, or
   any second view that doesn't accept input.
-- **`<MinimapCanvas>`** — `<SceneViewCanvas>` plus a viewport-rectangle
-  indicator and click/drag-to-recenter against a `mainView` callback. Use as
-  a navigation widget in a sidebar/panel — a distinct DOM location from the
-  main `<SceneCanvas>`.
+- **`<MinimapCanvas>`** (`@weasel-js/minimap`) — `<SceneViewCanvas>` plus a
+  viewport-rectangle indicator and click/drag-to-recenter against a `mainView`
+  callback. Use as a navigation widget in a sidebar/panel — a distinct DOM
+  location from the main `<SceneCanvas>`. The same package's
+  `createMinimapContribution` puts the minimap inside the main canvas instead,
+  as one `ambient` entry.
 - **`createViewportLayer`** — renders an inset *inside* the main
   `<SceneCanvas>`'s drawing buffer (superimposed PiP). Use when the inset
   must live as pixels in the main canvas, e.g. for a screenshot-stable
@@ -141,7 +143,8 @@ something that has no scene, like a package that knows nothing of scenes. Where
 a scene exists, render it with one of the components above.
 
 ```tsx
-import { MinimapCanvas, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import { MinimapCanvas } from '@weasel-js/minimap';
 import { useState } from 'react';
 import type { View } from '@weasel-js/core';
 

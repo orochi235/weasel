@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, localizeWorldPoses, useScene, useSelection } from '@weasel-js/core';
+import { RIGID_POSE_COMPOSITION, SceneCanvas, WeaselProvider, useScene, useSelection } from '@weasel-js/core';
 import {
   parseSvg,
   serializeSvg,
+  svgDraftSpecs,
   svgNodesFromKit,
   svgNodesToKitDrafts,
   warmSvg,
@@ -70,30 +71,12 @@ const PRESETS: { name: string; svg: string }[] = [
   },
 ];
 
-/** Parse a source string and lower it to a scene snapshot — one node per
- *  draft, in the parent-before-child order the drafts arrive in. */
+/** Parse a source string and lower it to the node specs a scene adds, parent before child. */
 function sceneFromSvg(source: string) {
   const parsed = parseSvg(source);
   let seq = 0;
   const drafts = svgNodesToKitDrafts(parsed, () => `svg-${seq++}`);
-  // Drafts are measured in world; a scene stores each pose in its container's frame.
-  const local = localizeWorldPoses(drafts.map((d) => ({ id: d.id, parent: d.parentId, pose: d.pose })), RIGID_POSE_COMPOSITION);
-  return {
-    parsed,
-    json: {
-      version: 3 as const,
-      systemLayers: [{ id: 'default' as const }],
-      nodes: drafts.map((d, i) => ({
-        id: d.id,
-        kind: d.kind,
-        layer: 'default' as const,
-        pose: local[i]!.pose,
-        data: d.data as SvgKitLeafData,
-        ...(d.parentId ? { parent: d.parentId } : {}),
-        ...(d.kind === 'group' && d.clip ? { clip: d.clip } : {}),
-      })),
-    },
-  };
+  return { parsed, specs: svgDraftSpecs(drafts, { layer: 'default' as LayerId, composition: RIGID_POSE_COMPOSITION }) };
 }
 
 /**
@@ -122,9 +105,11 @@ function SvgRoundTrip() {
   }, [source]);
 
   useEffect(() => {
-    if (!('json' in imported)) return;
+    if (!('specs' in imported)) return;
     selection.set([]);
-    scene.loadState(imported.json);
+    scene.loadState({ version: 3, systemLayers: [{ id: 'default' }], nodes: [] });
+    // Loading a source is not an edit: undo stays within the edits made to it.
+    scene.untracked(() => { for (const spec of imported.specs) scene.add(spec); });
   }, [scene, selection, imported]);
 
   const version = useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);

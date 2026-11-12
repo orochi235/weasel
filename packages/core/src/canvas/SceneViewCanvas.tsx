@@ -20,6 +20,7 @@ import type { CanvasBackend, CanvasRendererLease } from './canvasRenderer';
 import { SurfaceCanvas } from './SurfaceCanvas';
 import { useSurfaceSize, type SurfaceSizeProps } from './useSurfaceSize';
 import { sceneViewFrame } from './sceneViewRender';
+import { defaultDrawOne } from './defaultDrawOne';
 import { paintOverrideSources } from './paintOverrides';
 import { subscribeToSources } from '../core/layers/render';
 import type { RenderSceneToCanvasArgs, SceneViewDrawOne, SceneViewLayers } from './sceneViewRender';
@@ -67,9 +68,9 @@ interface SceneViewCanvasCommon<TData, TLayer extends string, TPose> extends Sur
 
 /** The page paints the view: `drawOne` and the props beside it are functions it calls. */
 interface PagePaintedView<TData, TLayer extends string, TPose> {
-  /** Per-node draw callback. See `SceneViewDrawOne`. The consumer is
-   *  responsible for what gets painted — there is no AABB-fill default. */
-  drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
+  /** Per-node draw callback. See `SceneViewDrawOne`. Default `defaultDrawOne`, the registered node
+   *  painters `<SceneCanvas>` paints with when it is given none. */
+  drawOne?: SceneViewDrawOne<TData, TLayer, TPose>;
   /** Where `drawOne`'s output for a node can reach — the scene slot's
    *  `paintBounds`. Defaults to `defaultPaintBounds` when `drawOne` is
    *  `defaultDrawOne`. */
@@ -118,7 +119,7 @@ function PageSceneView<TData, TLayer extends string, TPose>(
   props: SceneViewCanvasCommon<TData, TLayer, TPose> & PagePaintedView<TData, TLayer, TPose>,
 ) {
   const {
-    scene, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
+    scene, drawOne = defaultDrawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
     animator, className, canvasRef, cull, paintBounds, dpr,
   } = props;
   const view = normalizeView(props.view);
@@ -186,5 +187,5 @@ function PageSceneView<TData, TLayer extends string, TPose>(
 export function SceneViewCanvas<TData, TLayer extends string, TPose>(
   props: SceneViewCanvasProps<TData, TLayer, TPose>,
 ) {
-  return props.worker ? <WorkerSceneView {...props} worker={props.worker} /> : <PageSceneView {...props} drawOne={props.drawOne!} />;
+  return props.worker ? <WorkerSceneView {...props} worker={props.worker} /> : <PageSceneView {...props} />;
 }

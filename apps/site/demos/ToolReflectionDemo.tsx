@@ -2,12 +2,14 @@ import { useMemo } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
+  solid,
   useSceneAdapter,
   useScene,
   useSelection,
   useSelectTool,
   useHandTool,
   useTools,
+  type Fill,
 } from '@weasel-js/core';
 import {
   buildRouteRegistry,
@@ -16,17 +18,16 @@ import {
   type RegistryEntry,
   type Conflict,
 } from '@weasel-js/routing';
-import type { DrawCommand } from '@weasel-js/renderer';
 import styles from './ToolReflectionDemo.module.css';
 import { DemoStage } from './DemoStage';
 
-interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
+interface Rect { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
 const W = 360, H = 280;
 const INITIAL: Rect[] = [
-  { id: 'a', x:  40, y:  60, width: 90, height: 70, color: '#7fb069' },
-  { id: 'b', x: 170, y:  90, width: 90, height: 70, color: '#d4a574' },
-  { id: 'c', x:  90, y: 170, width: 90, height: 70, color: '#7ab8d4' },
+  { id: 'a', x:  40, y:  60, width: 90, height: 70, fill: { paint: solid('#7fb069') } },
+  { id: 'b', x: 170, y:  90, width: 90, height: 70, fill: { paint: solid('#d4a574') } },
+  { id: 'c', x:  90, y: 170, width: 90, height: 70, fill: { paint: solid('#7ab8d4') } },
 ];
 
 function ToolReflectionDemoInner() {
@@ -69,15 +70,6 @@ function ToolReflectionDemoInner() {
               scene={scene}
               selection={selection}
               tools={tools}
-              layers={{
-                scene: {
-                  drawOne: (n, p): DrawCommand[] => [{
-                    kind: 'path',
-                    path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                    fill: { paint: { color: (n.data as Rect).color } },
-                  }],
-                },
-              }}
             />
           </DemoStage>
         </div>

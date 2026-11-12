@@ -14,10 +14,32 @@ npm install @weasel-js/hud
 
 ## Usage
 
-```ts
-import { /* … */ } from '@weasel-js/hud';
-import { /* … */ } from '@weasel-js/hud/react';
+A HUD installs on a `<SceneCanvas>` as one `ambient` entry, which draws its widgets and routes
+presses to them ahead of whatever tool is active:
+
+```tsx
+import { useEffect } from 'react';
+import { SceneCanvas } from '@weasel-js/core';
+import { useHud, useHudContribution } from '@weasel-js/hud/react';
+
+function Editor({ scene }) {
+  const hud = useHud();
+  const hudEntry = useHudContribution(hud);
+
+  useEffect(() => {
+    const save = hud.button({ id: 'save', x: 12, y: 12, w: 96, h: 32, label: 'Save' });
+    save.on('press', () => console.log('saved'));
+    return () => save.dispose();
+  }, [hud]);
+
+  return <SceneCanvas scene={scene} ambient={[hudEntry]} />;
+}
 ```
+
+Widgets can be made before the canvas mounts; they paint once the HUD attaches. Give
+`useHudContribution` `{ font: 'sans-serif' }` when the app has already registered that family with
+`registerFont`; without it the HUD loads its own copy of Inter. Outside React, `createHud`,
+`attachHud` and `createHudContribution` from the main entry do the same.
 
 ## Widgets
 

@@ -12,7 +12,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 - Layered canvas rendering with debug overlays
 - Rect, rotated and path poses; first-class compound paths; nested containers
 - Viewport with zoom/pan tools, momentum, and boundary clamping
-- Detached read-only scene views and navigation minimap (`<SceneViewCanvas>`, `<MinimapCanvas>`)
+- Detached read-only scene views (`<SceneViewCanvas>`), which `@weasel-js/minimap`'s `<MinimapCanvas>` is built on
 - WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
 - Custom fragment shaders via `registerProgram`
 
@@ -22,7 +22,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 npm install @weasel-js/core react
 ```
 
-`react` is a peer dependency (>=18).
+`react` (>=18), `@weasel-js/font` and `@msb235/blits` are peer dependencies. npm and pnpm install them for you; with Yarn, add them to the install.
 
 Import core's stylesheet once. It gives every canvas the kit renders its size
 on the page, and styles the canvas's debug overlays (`cursorCoordsHud`,
@@ -111,13 +111,15 @@ An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `
 A tuning applies to whichever descriptor holds the id, whether a preset or a tool registered it, and whether it registered before the tuning or after. Changing `params` never requires knowing what gesture reaches the action.
 
 ```tsx
+import { cornerShapePreset, simplifyBrushPreset } from '@weasel-js/path-tools';
+
 const radius = useRef(8);
 const tune = useMemo<ActionTunings>(() => ({
   simplifyBrush: { params: () => ({ radiusPx: radius.current }) },
   cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] },
 }), []);
 
-<SceneCanvas scene={scene} features={['paths']} tune={tune} />
+<SceneCanvas scene={scene} features={['paths', simplifyBrushPreset, cornerShapePreset]} tune={tune} />
 ```
 
 `ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`, `constrainAnchors`, `unconstrainAnchors`, `editAnchors`); any other id takes a plain record. `editAnchors` takes `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps:
@@ -214,31 +216,7 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 
 ## Packages
 
-Every package is published under `@weasel-js` and released together at one version.
-
-| Package | What it is |
-|---|---|
-| `core` | the scene graph, `<SceneCanvas>`, actions, tools, and the WebGL2 renderer |
-| `geom` | pure geometry — 2D affine, box, curve, polyline; polygon booleans under `./booleans`; 3D vectors, quaternions, matrices and rays under `./3d` |
-| `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
-| `history` | undo/redo with scoped sub-histories; no React, no DOM |
-| `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent` |
-| `paint` | fills, strokes, gradients and dashes as plain data |
-| `text` | styled runs, kerned layout, wrapping and measurement |
-| `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
-| `font` | MSDF atlases, glyph metrics and runtime glyph rasterization |
-| `svg` | SVG import and export |
-| `modes` | app-level modality: capability tags, mode definitions, a mode registry |
-| `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
-| `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
-| `hud` | WebGL-rendered widgets composited into a canvas |
-| `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
-| `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |
-| `audio` | a Web Audio engine: voices, buses, lookahead scheduling, spatialization; no weasel dependencies |
-| `d3` | d3 data-join and transitions over `useScene` |
-| `theme` | design tokens as CSS variables and a parallel TypeScript export |
-| `ui` | React chrome components for weasel apps |
-| `labkit` | React widgets for self-contained interactive lab pages |
+Every package is published under `@weasel-js` and released together at one version. The [repository README](https://github.com/orochi235/weasel#packages) lists them, with what each needs: React, a browser, WebGL2 or Web Audio.
 
 ## Documentation
 

@@ -1761,3 +1761,14 @@ Calls the lanes made without a ruling:
 - Open: Cmd+V pastes the OS clipboard's copy through the weasel-JSON handler at the adapter's fixed offset from the
   copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
   the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
+
+## Audit round seventeen (2026-11-12): consumer setup
+
+- Open: diagram's paired helpers (`diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramLabelDrag`, the
+  container and sequence ones) hand back a layer to `registerLayer` and a contribution for `ambient`, so the README
+  has a consumer hold a canvas ref and register the layer in an effect. `SurfaceContribution.attach` exists for
+  exactly this ("a registered (hit-testable) layer"), and the minimap registers through it. Moving each layer into
+  its contribution's `attach` makes one `ambient` entry the whole install, but breaks a consumer who also
+  registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
+  `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
+  contribution's `overlay`, which it paints and never hit-tests.

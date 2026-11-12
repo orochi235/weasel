@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { SceneCanvas, useDepSource, useScene, useSelection } from '@weasel-js/core';
+import { SceneCanvas, solid, useDepSource, useScene, useSelection, type Fill } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
-import type { DrawCommand } from '@weasel-js/core/renderer';
 import { DemoStage } from './DemoStage';
 
-interface NodeData { color: string }
+/** The kit's default painter fills a rect-posed node with its `data.fill`. */
+interface NodeData { fill: Fill }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
@@ -25,9 +25,9 @@ export function MoveSnapDemo() {
     systemLayers: [{ id: 'default' }],
     initial: [
       // The bins take drops at fixed rectangles, so they stay put: a dragged bin would plant itself.
-      { id: 'binA' as never, kind: 'mark', layer: 'default', pose: BIN_A, pickable: false, data: { color: '#e8efe4' } },
-      { id: 'binB' as never, kind: 'mark', layer: 'default', pose: BIN_B, pickable: false, data: { color: '#efe9e4' } },
-      { id: 'token' as never, kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { color: '#7fb069' } },
+      { id: 'binA' as never, kind: 'mark', layer: 'default', pose: BIN_A, pickable: false, data: { fill: { paint: solid('#e8efe4') } } },
+      { id: 'binB' as never, kind: 'mark', layer: 'default', pose: BIN_B, pickable: false, data: { fill: { paint: solid('#efe9e4') } } },
+      { id: 'token' as never, kind: 'mark', layer: 'default', pose: { x: 210, y: 40, width: 40, height: 40 }, data: { fill: { paint: solid('#7fb069') } } },
     ],
   });
   const selection = useSelection({ scene });
@@ -51,15 +51,6 @@ export function MoveSnapDemo() {
         scene={scene}
         selection={selection}
         selectTool={{ move: { behaviors } }}
-        layers={{
-          scene: {
-            drawOne: (n, p): DrawCommand[] => [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { paint: { color: n.data.color } },
-            }],
-          },
-        }}
       >
         <BinsTakeDrops />
       </SceneCanvas>

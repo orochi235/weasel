@@ -2,19 +2,20 @@ import { useState } from 'react';
 import { EASINGS, PATH_M, PATH_L, type EasingName } from '@weasel-js/geom';
 import {
   SceneCanvas,
+  solid,
   useScene,
   scenePoseTarget,
   textCommandFromRuns,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
-import type { RenderLayer } from '@weasel-js/core';
+import type { Fill, RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { Slider } from '@weasel-js/ui/components/Slider';
 import { Button } from '@weasel-js/ui/components/Button';
 import styles from './EasingsDemo.module.css';
 import { DemoStage } from './DemoStage';
 
-interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
+interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; fill: Fill }
 
 const ALL_EASINGS = Object.keys(EASINGS) as EasingName[];
 
@@ -40,7 +41,7 @@ function buildInitial(): Marker[] {
     width: MARKER_SIZE,
     height: MARKER_SIZE,
     easing: name,
-    color: colorOf(i),
+    fill: { paint: solid(colorOf(i)) },
   }));
 }
 
@@ -149,13 +150,6 @@ export function EasingsDemo() {
           selectable={false}
           layers={{
             tracks: { layer: trackLayer, before: 'scene' },
-            scene: {
-              drawOne: (_n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { color: (p as Marker).color } },
-              }],
-            },
             selectionOverlay: null,
           }}
         />

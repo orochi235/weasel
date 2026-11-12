@@ -65,6 +65,9 @@ jobs:
       # The README's package marks (React, DOM, WebGL2, Web Audio) match what
       # each main entry's import graph measures. See scripts/package-traits.mjs.
       - run: npm run check:needs
+      # Each name a README or doc code block imports from @weasel-js/* is exported
+      # where the snippet imports it from; nothing else compiles those examples.
+      - run: npm run check:doc-imports
       # Every `var(--wzl-*)` names a theme token or a declared override hook;
       # a read of a name nothing declares drops its declaration silently.
       - run: npm run check:token-reads
