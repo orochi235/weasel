@@ -12,6 +12,7 @@ import type { Node } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import { CANVAS_CONTEXT_ATTRIBUTES } from '../contextAttributes';
 import { defaultDrawOne, paintBoundsFor } from '../defaultDrawOne';
+import { subscribeNodeShapes } from '../NodeShape';
 import type { SceneViewDrawOne } from '../nodeShapeTypes';
 import type { PaintBoundsFn } from '../paintCull';
 import { registerShaders } from '../registerShaders';
@@ -96,6 +97,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const answerImage = loadFromPage((src, size) => post({ type: 'image', src, size }));
   subscribeImageReady(dirty);
   subscribeGlyphReady(dirty);
+  subscribeNodeShapes(dirty);
   let painting: Painting | null = null;
   const alphas = new Map<string, number>();
   const alphaFor = (id: string): number => alphas.get(id) ?? 1;

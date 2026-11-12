@@ -12,6 +12,7 @@ import { glyphGeneration } from '@weasel-js/font';
 import { textEngineGeneration } from '@weasel-js/text';
 import { pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
 import { strokeTrimKey, type StrokeTrim } from '@weasel-js/paint';
+import { createEmitter } from '@weasel-js/registry';
 import { bumpNodeMemoGeneration, nodeMemo } from 'core/scene/nodeMemo';
 import { setDepOutlineReader } from 'core/scene/booleanOfChildren';
 import type { Node } from 'core/scene/types';
@@ -51,10 +52,18 @@ const PAINTERS: { high: Registration[]; normal: Registration[] } = {
   normal: [],
 };
 
-/** The painter set is exactly the ambient state `findNodeShape` reads, and a memo keyed on the node alone cannot
- *  see it change. See `nodeMemo`. */
+const changes = createEmitter();
+
+/** The painter set is ambient state `findNodeShape` reads, and a memo keyed on the node alone cannot see it
+ *  change; neither can a canvas that already painted. See `nodeMemo`. */
 function shapesChanged(): void {
   bumpNodeMemoGeneration();
+  changes.emit();
+}
+
+/** Hear every registration, release and {@link refreshNodeShapes}: what a mounted canvas repaints on. */
+export function subscribeNodeShapes(listener: () => void): () => void {
+  return changes.subscribe(listener);
 }
 
 // The built-ins go in on first use, not at module load: a bundler may drop an
@@ -86,7 +95,8 @@ export function registerNodeShape<TData, TPose>(
 
 /**
  * Tell the kit that something a registered painter reads besides the node has changed — a
- * table of named outlines, say — so every node's painter, silhouette and ink are read again.
+ * table of named outlines, say — so every node's painter, silhouette and ink are read again,
+ * and every mounted canvas repaints.
  */
 export function refreshNodeShapes(): void {
   shapesChanged();
