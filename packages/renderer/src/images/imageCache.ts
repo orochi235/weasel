@@ -14,9 +14,14 @@
 import { createEmitter } from '@weasel-js/registry';
 import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
 import { _resetBitmapHoldsForTests, closeDropped, holdImageBitmaps, reclaimed } from './bitmapHolds';
+import {
+  _resetBitmapNamesForTests, bitmapSrc, isBitmapSrc, mintedHere, namedBitmap, retireBitmapName,
+} from './bitmapNames';
 import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
+import { imagePatternTextureId } from '../patterns/imagePatternId';
+import { unregisterTexture } from '../textures/registerTexture';
 
-export { holdImageBitmaps, isVectorImageSrc };
+export { bitmapSrc, holdImageBitmaps, isBitmapSrc, isVectorImageSrc };
 
 /** Public shape of an image node's `data`. `src` round-trips through
  *  serialization; the decoded bitmap is held in this cache, not on the node. */
@@ -55,6 +60,8 @@ interface VectorRaster {
   natural: ImageRasterSize;
   scale: number;
   pending?: number;
+  /** Settles when the re-raster `pending` names lands or fails. */
+  pendingDone?: Promise<unknown>;
   failed: Set<number>;
   /** The scale the last shrink left, until something asks for more. */
   shrunkTo?: number;
@@ -68,6 +75,8 @@ interface Entry {
   status: ImageStatus;
   bitmap?: ImageBitmap;
   vector?: VectorRaster;
+  /** While `'loading'`: settles when the load lands or fails. */
+  done?: Promise<unknown>;
   /** The value of `reads` when this entry was last read. */
   readAt: number;
 }
@@ -146,7 +155,7 @@ export function setImageCacheBudget(bytes: number): number {
 function startLoad(src: string): void {
   const entry: Entry = { status: 'loading', readAt: ++reads };
   cache.set(src, entry);
-  loader(src).then(
+  entry.done = loader(src).then(
     (bitmap) => {
       // The entry may have been replaced/cleared mid-flight (reset, etc.);
       // only commit if this src is still the one we started loading.
@@ -204,7 +213,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
     width: Math.max(1, Math.round(v.natural.width * target)),
     height: Math.max(1, Math.round(v.natural.height * target)),
   };
-  loader(src, size).then(
+  v.pendingDone = loader(src, size).then(
     (bitmap) => {
       if (cache.get(src) !== entry) {
         closeDropped(bitmap);
@@ -244,7 +253,7 @@ function maybeReraster(src: string, entry: Entry, v: VectorRaster, drawnAt: Imag
  *  {@link releaseImage}. Read it again each frame rather than keep it; work
  *  holding it across an `await` takes a {@link holdImageBitmaps} hold. */
 export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBitmap | undefined {
-  if (mintedHere(src)) return held.get(src)?.deref();
+  if (mintedHere(src)) return namedBitmap(src);
   const entry = cache.get(src);
   if (!entry) {
     startLoad(src);
@@ -253,16 +262,6 @@ export function getImageBitmap(src: string, drawnAt?: ImageRasterSize): ImageBit
   entry.readAt = ++reads;
   if (drawnAt && entry.vector) maybeReraster(src, entry, entry.vector, drawnAt);
   return entry.bitmap;
-}
-
-const BITMAP_SCHEME = 'weasel-bitmap:';
-/** Names this realm mints carry its own token, so a page's and a worker's never collide. */
-const REALM = Math.random().toString(36).slice(2, 10);
-const mintedHere = (src: string): boolean => src.startsWith(`${BITMAP_SCHEME}${REALM}.`);
-
-/** True when `src` is a {@link bitmapSrc} name, minted here or in another realm. */
-export function isBitmapSrc(src: string): boolean {
-  return src.startsWith(BITMAP_SCHEME);
 }
 
 /**
@@ -281,34 +280,6 @@ export function adoptBitmapSrc(src: string, bitmap: ImageBitmap): void {
   enforceBudget(src);
   notify();
 }
-let held = new Map<string, WeakRef<ImageBitmap>>();
-let srcOfBitmap = new WeakMap<ImageBitmap, string>();
-let minted = 0;
-const forget = new FinalizationRegistry<string>((src) => {
-  if (held.get(src)?.deref() === undefined) held.delete(src);
-});
-
-/**
- * A `src` that names `bitmap` itself, for an image node to draw a bitmap made
- * at runtime — a canvas snapshot, a frame of video — with no load. The same
- * bitmap always gets the same `src`, so a node handed it again changes no
- * data and its texture is not uploaded again. A bitmap is immutable, so that
- * identity is its content: new pixels are a new bitmap and a new `src`.
- *
- * The cache holds the bitmap weakly and never drops it to fit its budget;
- * whoever made it keeps it alive while it is drawn. {@link releaseImage}
- * frees its textures at once and retires the name, which never loads.
- */
-export function bitmapSrc(bitmap: ImageBitmap): string {
-  let src = srcOfBitmap.get(bitmap);
-  if (src === undefined) {
-    src = `${BITMAP_SCHEME}${REALM}.${++minted}`;
-    srcOfBitmap.set(bitmap, src);
-    held.set(src, new WeakRef(bitmap));
-    forget.register(bitmap, src, bitmap);
-  }
-  return src;
-}
 
 /** The size `src` decoded at before any re-rasterizing, once it has: a
  *  vector source's raster changes with the size it is drawn at, and this
@@ -317,7 +288,7 @@ export function bitmapSrc(bitmap: ImageBitmap): string {
 export function imageNaturalSize(src: string): ImageRasterSize | undefined {
   const entry = cache.get(src);
   if (entry?.vector) return entry.vector.natural;
-  const bitmap = entry?.bitmap ?? held.get(src)?.deref();
+  const bitmap = entry?.bitmap ?? namedBitmap(src);
   return bitmap ? { width: bitmap.width, height: bitmap.height } : undefined;
 }
 
@@ -328,6 +299,22 @@ export function imagePending(src: string): boolean {
   return entry?.status === 'loading' || entry?.vector?.pending !== undefined;
 }
 
+/**
+ * Settles once every load in flight now has landed or failed, a vector source's re-raster
+ * included: what a synchronous render issued after it draws in place of a placeholder.
+ * Resolves with how many loads it waited for; loads started after the call are not among
+ * them. Never rejects: a failed load is an `'error'` status, which the image painter draws
+ * as such.
+ */
+export function imageLoadsSettled(): Promise<number> {
+  const waits: Promise<unknown>[] = [];
+  for (const entry of cache.values()) {
+    if (entry.status === 'loading' && entry.done) waits.push(entry.done);
+    if (entry.vector?.pending !== undefined && entry.vector.pendingDone) waits.push(entry.vector.pendingDone);
+  }
+  return Promise.all(waits).then(() => waits.length);
+}
+
 /** Current load status for `src` (`'idle'` if never requested). */
 export function imageStatus(src: string): ImageStatus {
   if (mintedHere(src)) return getImageBitmap(src) === undefined ? 'idle' : 'ready';
@@ -335,23 +322,20 @@ export function imageStatus(src: string): ImageStatus {
 }
 
 /**
- * Forget `src`: close its decoded bitmap, drop its decoded SVG and the texture every
- * live renderer holds for it, and abandon a load in flight. The cache is keyed
- * by `src` across every scene on the page, so it cannot know when the last use
- * is gone; whoever does know calls this. A later {@link getImageBitmap} for the
+ * Forget `src`: close its decoded bitmap, drop its decoded SVG and the textures
+ * every live renderer holds for it, an image pattern's included, and abandon a
+ * load in flight. The cache is keyed by `src` across every scene on the page,
+ * so it cannot know when the last use is gone; whoever does know calls this. A later {@link getImageBitmap} for the
  * same `src` loads it again.
  */
 export function releaseImage(src: string): void {
-  const bitmap = held.get(src)?.deref();
-  held.delete(src);
-  if (bitmap !== undefined) {
-    srcOfBitmap.delete(bitmap);
-    forget.unregister(bitmap);
-    releaseImageSource(bitmap);
-  }
+  const bitmap = retireBitmapName(src);
+  if (bitmap !== undefined) releaseImageSource(bitmap);
   const entry = cache.get(src);
   cache.delete(src);
   forgetDecodedVector(src);
+  // An image pattern's registry entry would otherwise keep the closed bitmap, and each renderer its texture.
+  unregisterTexture({ id: imagePatternTextureId(src) });
   if (entry?.bitmap) closeDropped(entry.bitmap);
 }
 
@@ -379,8 +363,7 @@ export function __setImageLoaderForTests(fn: ImageLoader): void {
  *  loader. Not part of the public barrel. */
 export function _resetImageCacheForTests(): void {
   cache.clear();
-  held = new Map();
-  srcOfBitmap = new WeakMap();
+  _resetBitmapNamesForTests();
   ready = createEmitter();
   forgetDecodedVector();
   loader = loadImageBitmap;

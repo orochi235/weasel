@@ -94,7 +94,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   const dirty = () => post({ type: 'dirty' });
   const report = (e: unknown) => post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
   const animations = createWorkerAnimations(options.animations ?? {}, dirty);
-  const answerImage = loadFromPage((src, size) => post({ type: 'image', src, size }));
+  const answerImage = loadFromPage(post);
   subscribeImageReady(dirty);
   subscribeGlyphReady(dirty);
   subscribeNodeShapes(dirty);

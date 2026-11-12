@@ -6,32 +6,31 @@
  */
 import {
   getImageBitmap, imagePending, imageStatus, isBitmapSrc, isVectorImageSrc, loadImageBitmap, setImageLoader, subscribeImageReady,
-  type ImageRasterSize,
 } from '@weasel-js/renderer';
 import type { FromWorker, ToWorker } from './protocol';
 
 type Waiter = { resolve: (b: ImageBitmap) => void; reject: (e: Error) => void };
 
 /** Route the worker's loads of what only the page can serve through `ask`. Returns the handler
- *  for the page's answers. */
-export function loadFromPage(ask: (src: string, size?: ImageRasterSize) => void): (
+ *  for the page's answers. Each request carries an id its answer echoes: the page answers a
+ *  request for a sharper raster only once that raster lands, so answers come out of order. */
+export function loadFromPage(ask: (request: Extract<FromWorker, { type: 'image' }>) => void): (
   answer: Extract<ToWorker, { type: 'image' }>,
 ) => void {
-  const waiting = new Map<string, Waiter[]>();
+  const waiting = new Map<number, Waiter>();
+  let next = 0;
   setImageLoader((src, size) => {
     if (!isVectorImageSrc(src) && !isBitmapSrc(src)) return loadImageBitmap(src, size);
     return new Promise<ImageBitmap>((resolve, reject) => {
-      const list = waiting.get(src) ?? [];
-      list.push({ resolve, reject });
-      waiting.set(src, list);
-      ask(src, size);
+      const id = ++next;
+      waiting.set(id, { resolve, reject });
+      ask(size ? { type: 'image', id, src, size } : { type: 'image', id, src });
     });
   });
   return (answer) => {
-    const list = waiting.get(answer.src);
-    const waiter = list?.shift();
-    if (list?.length === 0) waiting.delete(answer.src);
+    const waiter = waiting.get(answer.id);
     if (!waiter) return;
+    waiting.delete(answer.id);
     if (answer.bitmap) waiter.resolve(answer.bitmap);
     else waiter.reject(new Error(answer.error ?? `weasel render worker: the page could not load ${answer.src}`));
   };
@@ -45,7 +44,7 @@ export function answerImage(
   request: Extract<FromWorker, { type: 'image' }>,
   reply: (answer: Extract<ToWorker, { type: 'image' }>) => void,
 ): () => void {
-  const { src, size } = request;
+  const { id, src, size } = request;
   let tries = 0;
   const attempt = (): boolean => {
     const bitmap = getImageBitmap(src, size);
@@ -55,15 +54,15 @@ export function answerImage(
     if (bitmap && (bigEnough || tries > 0 || !imagePending(src))) {
       // A copy, so the page's own stays whole and the worker's cache can own the one it gets.
       createImageBitmap(bitmap).then(
-        (copy) => reply({ type: 'image', src, bitmap: copy }),
-        (e: unknown) => reply({ type: 'image', src, error: String(e) }),
+        (copy) => reply({ type: 'image', id, src, bitmap: copy }),
+        (e: unknown) => reply({ type: 'image', id, src, error: String(e) }),
       );
       return true;
     }
     // A name the page minted and has let go of never loads again.
     const status = imageStatus(src);
     if (status === 'error' || (!bitmap && isBitmapSrc(src) && status === 'idle')) {
-      reply({ type: 'image', src, error: `weasel: could not load ${src}` });
+      reply({ type: 'image', id, src, error: `weasel: could not load ${src}` });
       return true;
     }
     tries++;

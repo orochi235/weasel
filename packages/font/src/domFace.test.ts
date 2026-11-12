@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { cssFontFamily, cssFontFamilyLoading, _resetDomFacesForTests } from './domFace';
 import { _resetFontRegistryForTests } from './registerFont';
 import { registerCanvasFont, _resetDynamicFontsForTests } from './dynamic/dynamicAtlas';
-import { registerFontOutlines, loadFontOutlines, _resetFontOutlinesForTests } from './outline/outlineRegistry';
+import {
+  registerFontOutlines, loadFontOutlines, unregisterFontOutlines, _resetFontOutlinesForTests,
+} from './outline/outlineRegistry';
 import { registerTestFont } from './testing/registerTestFont';
 
 /** jsdom has neither `FontFace` nor `document.fonts`; record what gets built. */
@@ -70,6 +72,17 @@ describe('cssFontFamily', () => {
     cssFontFamily('sans-serif');
     expect(fonts.delete).toHaveBeenCalledWith(StubFace.made[0]);
     expect(StubFace.made[1].source).toBe('url("/fonts/b.ttf")');
+  });
+
+  it('drops the face of a variant whose registration was dropped', async () => {
+    await registerTestFont('sans-serif');
+    registerFontOutlines('sans-serif', {}, '/fonts/inter.ttf');
+    registerFontOutlines('sans-serif', { weight: 700 }, '/fonts/inter-bold.ttf');
+    cssFontFamily('sans-serif');
+    unregisterFontOutlines('sans-serif', { weight: 700 });
+    cssFontFamily('sans-serif');
+    expect(fonts.delete).toHaveBeenCalledWith(StubFace.made[1]);
+    expect(fonts.delete).not.toHaveBeenCalledWith(StubFace.made[0]);
   });
 
   it('takes the registration\'s cssSrc over its source', async () => {

@@ -97,6 +97,12 @@ export class GLImageCache {
     return this.lastDrawn.get(key) === this.frame;
   }
 
+  /** Count `key` as drawn this frame though another cache holds its texture: a registered
+   *  texture's source, which is the image cache's own bitmap for an image pattern. */
+  noteDrawn(key: object): void {
+    this.lastDrawn.set(key, this.frame);
+  }
+
   /** Delete the textures of sources collected since the last call. */
   drainPendingDeletes(): void {
     if (this.pendingDeletes.length === 0) return;

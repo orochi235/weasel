@@ -9,6 +9,8 @@ import { createScene } from 'core/scene/scene';
 import { asNodeId } from 'core/scene/types';
 import type { RectPose } from 'core/scene/composePose';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { getImageBitmap, imageStatus, type ImageRasterSize } from '@weasel-js/renderer';
+import { __setImageLoaderForTests, _resetImageCacheForTests } from '@weasel-js/renderer/test-seams';
 import { warmRender } from './renderSceneToPixels';
 import { renderNeeds } from './renderNeeds';
 
@@ -83,7 +85,14 @@ describe('renderNeeds', () => {
         { family: 'mono', weight: 700, style: 'italic' },
       ],
       paintKinds: ['solid', 'mesh-gradient'],
+      images: [],
     });
+  });
+
+  it('lists the picture each image pattern tiles', () => {
+    const tiled = { kind: 'image', src: 'tile.png' } as unknown as CommandPaint;
+    const needs = renderNeeds([{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: tiled } }]);
+    expect(needs.images).toEqual(['tile.png']);
   });
 
   it('reads the paint of a stroke and of a text run', () => {
@@ -170,6 +179,48 @@ describe('warmRender', () => {
       await warmRender({ render: sceneArgs(), families: [], paintKinds: [] });
       expect(fetch).not.toHaveBeenCalled();
       expect(getPaintKind('mesh-gradient')).toBeUndefined();
+    });
+  });
+
+  describe('with images', () => {
+    beforeEach(() => _resetImageCacheForTests());
+    afterEach(() => _resetImageCacheForTests());
+
+    const raster = (size?: ImageRasterSize) => ({ width: size?.width ?? 10, height: size?.height ?? 10, close() {} }) as ImageBitmap;
+
+    function imageScene(src: string) {
+      const pose = { x: 0, y: 0, width: 40, height: 40 };
+      const scene = createScene<{ image: { src: string } }, 'main', RectPose>({
+        systemLayers: [{ id: 'main' }],
+        initial: [{ id: asNodeId('pic'), kind: 'mark', layer: 'main', pose, data: { image: { src } } }],
+      });
+      return { scene, sourceRect: pose, scale: { x: 1, y: 1 } };
+    }
+
+    it('waits for the pictures the render draws to decode', async () => {
+      let land!: () => void;
+      const landed = new Promise<void>((r) => { land = r; });
+      __setImageLoaderForTests(async (_src, size) => { await landed; return raster(size); });
+      let settled = false;
+      const warm = warmRender({ render: imageScene('photo.png') }).then(() => { settled = true; });
+      await new Promise((r) => setTimeout(r, 0));
+      expect(settled).toBe(false);
+      land();
+      await warm;
+      expect(imageStatus('photo.png')).toBe('ready');
+    });
+
+    it('waits for an SVG to raster at the size the render draws it', async () => {
+      __setImageLoaderForTests(async (_src, size) => raster(size));
+      await warmRender({ render: imageScene('logo.svg') });
+      expect(getImageBitmap('logo.svg')?.width).toBe(40);
+    });
+
+    it('waits for the picture an image pattern tiles', async () => {
+      __setImageLoaderForTests(async (_src, size) => raster(size));
+      const tiled = { kind: 'image', src: 'tile.png' } as unknown as CommandPaint;
+      await warmRender({ commands: [{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 }, fill: { paint: tiled } }] });
+      expect(imageStatus('tile.png')).toBe('ready');
     });
   });
 });
