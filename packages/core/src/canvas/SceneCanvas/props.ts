@@ -451,10 +451,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     getFocused?: () => boolean;
 
-    /** Custom shader programs to compile on the renderer. See `CanvasProps.shaders`. */
+    /** Shader programs for the renderer (`CanvasProps.shaders`); under `worker`, the page's, not `serveSceneRender`'s. */
     shaders?: ShaderProgramHandle[];
 
-    /** Flatness tolerance for curve tessellation. See `CanvasProps.flattenTolerance`. */
+    /** Curve flatness (`CanvasProps.flattenTolerance`); under `worker`, the page's, not `serveSceneRender`'s. */
     flattenTolerance?: FlattenTolerance;
 
     /** Fill for the full canvas behind the scene, drawn as a screen-space layer slotted
