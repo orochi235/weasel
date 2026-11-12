@@ -66,7 +66,27 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
 
 export { screenBoxOf } from './pickIndex';
 
+/** Where a solid wholly behind the camera is: on no part of the screen, a box that is not finite, which core's
+ *  region selects, pick index and unions already pass over, and its chrome does not draw. */
 const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
+
+/**
+ * The viewport a drag casts through. One whose camera stops casting rays mid-gesture keeps moving through the last
+ * that did, rather than snapping the node back. Mid-gesture means a preview is in flight; a call with none, as a
+ * gesture's first frame and a nudge are, starts afresh, so no gesture moves through an earlier one's camera.
+ */
+function castableViewportOf<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>, viewId: string | null | undefined,
+): () => Viewport3d | null {
+  let lastCastable: Viewport3d | null = null;
+  return () => {
+    const vp = viewportOf(world, viewId);
+    const rect = rectOf(vp);
+    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
+    else if (world.scene.overrides.ids().length === 0) lastCastable = null;
+    return lastCastable;
+  };
+}
 
 /**
  * Nearest node the camera draws along the ray the screen point names.
@@ -222,19 +242,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
-  // A drag whose camera stops casting rays mid-gesture keeps moving through the
-  // last one that did, rather than snapping the node back. Mid-gesture means a
-  // preview is in flight; a call with none, as a gesture's first frame and a
-  // nudge are, starts afresh, so no gesture moves through an earlier one's camera.
-  let lastCastable: Viewport3d | null = null;
-  function castableViewport(): Viewport3d | null {
-    const vp = viewportOf(world, viewId);
-    const rect = rectOf(vp);
-    const castable = rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }) !== null;
-    if (castable) lastCastable = vp;
-    else if (world.scene.overrides.ids().length === 0) lastCastable = null;
-    return lastCastable;
-  }
+  const castableViewport = castableViewportOf(world, viewId);
 
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
@@ -254,8 +262,6 @@ export function createPoseDescriptor<TData, TLayer extends string>(
         return d;
       },
 
-      /** A solid wholly behind the camera is on no part of the screen: a box that is not finite, which core's
-       *  region selects, pick index and unions already pass over, and its chrome does not draw. */
       getBounds(pose) {
         return boundsOf(pose) ?? OFF_SCREEN;
       },
