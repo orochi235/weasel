@@ -1812,3 +1812,13 @@ Calls the lanes made without a ruling:
 - Open: whether a text edit's style shortcuts (Bold, Italic, Underline, Strikethrough, super- and subscript)
   answer to Mod alone, as its undo beside them does. `toggleForKey` takes Cmd or Ctrl on any platform and does not
   look at Alt, so Ctrl+B on a Mac, which a Mac text field reads as moving back a character, bolds instead.
+
+## Audit round nineteen (2026-11-12): the user's settings
+
+- Under `prefers-reduced-motion` a kit default that moves something yields: an animated camera move and an animated
+  reflow take no time unless the caller names an `ms`, and ui's switch, radio and `ControlMatrix` switch drop their
+  transitions (2026-11-12).
+- Open: a hand-tool pan with `inertia` still coasts after release under `prefers-reduced-motion`, and with
+  `boundary: 'bounce'` or `'spring'` bounces off the pan limits. `animatedZoom: true` goes instant under the same
+  preference, so the two `viewport` options disagree; but platform scroll views keep their momentum with Reduce
+  Motion on. Whether reduced motion drops the coast, only the bounce, or neither.

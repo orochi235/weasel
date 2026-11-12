@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useLatest } from '@weasel-js/react';
+import { prefersReducedMotion, useLatest } from '@weasel-js/react';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '../core/geometry/poseDescriptor';
 import { documentPose, effectivePose, type PosedNode, type PoseSource } from '../core/scene/effectivePose';
 import type { NodeId, PoseOverride, PoseOverrides } from '../core/scene/types';
@@ -10,7 +10,7 @@ import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator
 
 /** How a reflowed sibling travels: a duration and easing, or a spring. */
 export interface ReflowTransitionOptions<TPose> {
-  /** Default 200. Ignored under `spring`. */
+  /** Default 200, and 0 under `prefers-reduced-motion`. Ignored under `spring`. */
   ms?: number;
   easing?: EasingSpec;
   /** Travel on a spring instead of a duration. A retarget starts a new spring
@@ -58,6 +58,9 @@ interface Glide<TPose> {
 
 /** The animator's cancel-key for one node's glide. */
 const keyFor = (id: string): string => `reflow:${id}`;
+
+/** How long a glide takes when its options name no duration: none where the reader asked for less motion. */
+const defaultMs = (): number => (prefersReducedMotion() ? 0 : 200);
 
 function samePoseDeep(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
@@ -146,7 +149,7 @@ function makeGlides<TPose>(
       if (o.spring) animator.spring<TPose>({ target: g.target, to, ...o.spring, cancelKey, label, onDone });
       else {
         animator.tween<TPose>({
-          target: g.target, to, ms: o.ms ?? 200, easing: o.easing, cancelKey, interrupt: false, label, onDone,
+          target: g.target, to, ms: o.ms ?? defaultMs(), easing: o.easing, cancelKey, interrupt: false, label, onDone,
           interpolate: lerp && ((a, b, t) => lerp(a, b, t)),
         });
       }
@@ -159,7 +162,7 @@ function makeGlides<TPose>(
       };
       // The shared key is what retargets: the new animation interrupts the old.
       if (o.spring) animator.spring<number>({ from: 0, to: 1, ...o.spring, cancelKey, label, onTick, onDone });
-      else animator.tween<number>({ from: 0, to: 1, ms: o.ms ?? 200, easing: o.easing, cancelKey, label, onTick, onDone });
+      else animator.tween<number>({ from: 0, to: 1, ms: o.ms ?? defaultMs(), easing: o.easing, cancelKey, label, onTick, onDone });
     }
     scene.overrides.commit();
   };

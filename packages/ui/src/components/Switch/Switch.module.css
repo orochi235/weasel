@@ -31,6 +31,7 @@
 }
 
 .switch[data-focus-visible] .track {
+  outline: 2px solid transparent;
   box-shadow: var(--wzl-bevel-sunken, 0 0 0 0 transparent), 0 0 0 2px var(--wzl-focus-ring);
 }
 
@@ -58,4 +59,36 @@
 .label {
   composes: toggleText from '../toggleLabel.module.css';
   line-height: 1.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb {
+    transition: none;
+  }
+}
+
+/* Forced colors repaint the track and thumb as Canvas, leaving neither the thumb nor its side visible. */
+@media (forced-colors: active) {
+  .track,
+  .thumb {
+    forced-color-adjust: none;
+  }
+
+  .track {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .thumb {
+    background: CanvasText;
+  }
+
+  .switch[data-selected] .track {
+    background: Highlight;
+    border-color: Highlight;
+  }
+
+  .switch[data-selected] .thumb {
+    background: HighlightText;
+  }
 }

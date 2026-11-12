@@ -323,9 +323,15 @@ function wireFocus(
   const onBlur = (e: FocusEvent) => { if (e.relatedTarget !== text.input) hud.focus(null); };
 
   const region = createLiveRegion(element.ownerDocument);
+  const announce = () => {
+    const name = hud.focused?.accessibleName ?? '';
+    if (region.textContent !== name) region.textContent = name;
+  };
   const unsubscribe = hud.subscribeFocus((w) => {
     region.textContent = w?.accessibleName ?? '';
   });
+  // A widget's change, a button's new label among them, is drawn on the next frame; its name is read there too.
+  const unannounce = hud.subscribeFrame(announce);
   const unmirror = mirrorFocusedTree(element, hud);
 
   element.addEventListener('pointerdown', onPointerDown);
@@ -338,6 +344,7 @@ function wireFocus(
     element.removeEventListener('keyup', onKeyUp);
     element.removeEventListener('blur', onBlur);
     unsubscribe();
+    unannounce();
     unmirror();
     text.detach();
     region.remove();

@@ -231,6 +231,38 @@
   background: var(--wzl-fg-on-accent);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .lk-control-matrix__thumb {
+    transition: none;
+  }
+}
+
+// Forced colors repaint the track and thumb as Canvas, so the thumb, and which side it is on, vanish.
+@media (forced-colors: active) {
+  .lk-control-matrix__track,
+  .lk-control-matrix__thumb {
+    forced-color-adjust: none;
+  }
+
+  .lk-control-matrix__track {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .lk-control-matrix__thumb {
+    background: CanvasText;
+  }
+
+  .lk-control-matrix__switch[aria-checked='true'] .lk-control-matrix__track {
+    background: Highlight;
+    border-color: Highlight;
+  }
+
+  .lk-control-matrix__switch[aria-checked='true'] .lk-control-matrix__thumb {
+    background: HighlightText;
+  }
+}
+
 .lk-control-matrix__swatch {
   display: block;
   width: 100%;
