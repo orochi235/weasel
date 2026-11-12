@@ -24,8 +24,9 @@ import {
   shownSource,
   unavailableText,
 } from './lensSource';
-import { LENS_REST_MS, type LensSettings, type LensSourceKind } from './lensTypes';
+import type { LensSettings, LensSourceKind } from './lensTypes';
 import { gridFits } from './pixelGrid';
+import { useCaptureDelay } from './useCaptureDelay';
 
 /** Which source a lens shows, re-resolved whenever any source's availability changes. */
 export function useLensResolution<C>(
@@ -115,7 +116,7 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
   useEffect(() => subscribe(() => setTick((n) => n + 1)), [subscribe]);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const [said, say] = useState<string | null>(null);
-  const started = useRef(false);
+  const captureDelay = useCaptureDelay();
   const latest = useLatest({ reticle, size });
   const dpr = settings.dprs[0] ?? 1;
   const { compare, factor } = settings;
@@ -151,8 +152,7 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
           if (live) say(messageOf(err));
         });
     // At once the first time; after that, once whatever moved has come to rest.
-    const timer = setTimeout(run, started.current ? LENS_REST_MS : 0);
-    started.current = true;
+    const timer = setTimeout(run, captureDelay());
     return () => {
       live = false;
       clearTimeout(timer);
@@ -170,6 +170,7 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
     dpr,
     tick,
     latest,
+    captureDelay,
   ]);
   const reason = status === true ? said : unavailableText('pixels', status);
   // A message stands in for the image: what was drawn before it no longer answers.
