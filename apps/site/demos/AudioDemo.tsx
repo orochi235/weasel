@@ -5,12 +5,13 @@ import {
   PATH_L,
   PATH_M,
   SceneCanvas,
+  solid,
   textCommandFromRuns,
   useScene,
   useSelection,
 } from '@weasel-js/core';
 import { useAnimator } from '@weasel-js/animator/react';
-import type { DrawCommand, RenderLayer } from '@weasel-js/core';
+import type { DrawCommand, Fill, RenderLayer } from '@weasel-js/core';
 import {
   createAudioEngine, createDelayEffect, createFilterEffect, createPatternPlayer,
   createReverbEffect, spatialize,
@@ -25,7 +26,7 @@ import { Checkbox } from '@weasel-js/ui/components/Checkbox';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { DemoStage } from './DemoStage';
 
-interface Dot { id: string; x: number; y: number; width: number; height: number }
+interface Dot { id: string; x: number; y: number; width: number; height: number; fill: Fill }
 
 const W = 600, H = 340;
 const LISTENER = { x: W / 2, y: 150 };
@@ -33,7 +34,7 @@ const SPATIAL = { refDistance: 40, panWidth: 260, rolloffFactor: 1.6 };
 const BUSES = ['sfx', 'music'] as const;
 type Bus = typeof BUSES[number];
 const BARS = 16;
-const SOURCE: Dot[] = [{ id: 'source', x: 430, y: 70, width: 24, height: 24 }];
+const SOURCE: Dot[] = [{ id: 'source', x: 430, y: 70, width: 24, height: 24, fill: { paint: solid('#d4a574') } }];
 
 interface ToneSpec { freq: number; ms: number; decay: number }
 
@@ -284,13 +285,6 @@ export function AudioDemo() {
             animator={animator}
             layers={{
               audio: { layer: overlay, before: 'scene' },
-              scene: {
-                drawOne: (_n, p): DrawCommand[] => [{
-                  kind: 'path',
-                  path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                  fill: { paint: { color: '#d4a574' } },
-                }],
-              },
               selectionOverlay: { handles: false },
             }}
           />
