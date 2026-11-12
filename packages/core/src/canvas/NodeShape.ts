@@ -43,10 +43,19 @@ export interface RegisterNodeShapeOptions {
   priority?: 'high' | 'normal';
 }
 
-const PAINTERS: { high: NodeShapeEntry[]; normal: NodeShapeEntry[] } = {
+/** One registration. A painter registered twice is two of these, so each disposer takes out its own. */
+interface Registration { readonly entry: NodeShapeEntry }
+
+const PAINTERS: { high: Registration[]; normal: Registration[] } = {
   high: [],
   normal: [],
 };
+
+/** The painter set is exactly the ambient state `findNodeShape` reads, and a memo keyed on the node alone cannot
+ *  see it change. See `nodeMemo`. */
+function shapesChanged(): void {
+  bumpNodeMemoGeneration();
+}
 
 // The built-ins go in on first use, not at module load: a bundler may drop an
 // import kept only for its side effect, and the registry would come up empty.
@@ -57,21 +66,21 @@ function ensureBuiltIns(): void {
   registerBuiltInShapePainters();
 }
 
-/** Register a shape painter. Returns a disposer that removes it. */
+/** Register a shape painter. Returns a disposer that removes this registration, and only it. */
 export function registerNodeShape<TData, TPose>(
   painter: NodeShapeEntry<TData, TPose>,
   opts: RegisterNodeShapeOptions = {},
 ): () => void {
   ensureBuiltIns();
   const list = opts.priority === 'high' ? PAINTERS.high : PAINTERS.normal;
-  list.push(painter as NodeShapeEntry);
-  // The painter set is exactly the ambient state `findNodeShape` reads, and a
-  // memo keyed on the node alone cannot see it change. See `nodeMemo`.
-  bumpNodeMemoGeneration();
+  const registration: Registration = { entry: painter as NodeShapeEntry };
+  list.push(registration);
+  shapesChanged();
   return () => {
-    const i = list.indexOf(painter as NodeShapeEntry);
-    if (i >= 0) list.splice(i, 1);
-    bumpNodeMemoGeneration();
+    const i = list.indexOf(registration);
+    if (i < 0) return;
+    list.splice(i, 1);
+    shapesChanged();
   };
 }
 
@@ -80,7 +89,7 @@ export function registerNodeShape<TData, TPose>(
  * table of named outlines, say — so every node's painter, silhouette and ink are read again.
  */
 export function refreshNodeShapes(): void {
-  bumpNodeMemoGeneration();
+  shapesChanged();
 }
 
 /**
@@ -121,14 +130,11 @@ function matchNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
   ensureBuiltIns();
-  for (const p of PAINTERS.high) {
-    if (p.matches(node as Node<unknown, string, unknown>)) {
-      return p as NodeShapeEntry<TData, TPose>;
-    }
-  }
-  for (const p of PAINTERS.normal) {
-    if (p.matches(node as Node<unknown, string, unknown>)) {
-      return p as NodeShapeEntry<TData, TPose>;
+  for (const tier of [PAINTERS.high, PAINTERS.normal]) {
+    for (const { entry } of tier) {
+      if (entry.matches(node as Node<unknown, string, unknown>)) {
+        return entry as NodeShapeEntry<TData, TPose>;
+      }
     }
   }
   return undefined;
@@ -270,7 +276,7 @@ function trimmedOutlineOf<TData, TPose>(
 /** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */
 export function getNodeShapes(): readonly NodeShapeEntry[] {
   ensureBuiltIns();
-  return [...PAINTERS.high, ...PAINTERS.normal];
+  return [...PAINTERS.high, ...PAINTERS.normal].map((r) => r.entry);
 }
 
 /** Test-only: clear the registry and re-register the built-ins. */
@@ -279,8 +285,8 @@ export function _resetShapePaintersForTests(): void {
   PAINTERS.normal.length = 0;
   builtInsRegistered = false;
   ensureBuiltIns();
-  // `registerNodeShape` already bumps, but the clearing above happens without one.
-  bumpNodeMemoGeneration();
+  // `registerNodeShape` already announces, but the clearing above happens without one.
+  shapesChanged();
 }
 
 function registerBuiltInShapePainters(): void {
