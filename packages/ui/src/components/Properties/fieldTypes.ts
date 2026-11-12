@@ -48,7 +48,8 @@ interface FieldBase {
   readOnly?: boolean;
   /** Class on the control element itself. */
   className?: string;
-  /** Id for the control element, for a `<label htmlFor>` outside it. */
+  /** Id for the control element, for a `<label htmlFor>` outside it. A control no `<label>` may name — a radio
+   *  group, a toggle, a menu, a switch, a paint, a font picker — takes no id, and is named by `name` instead. */
   id?: string;
 }
 
