@@ -89,6 +89,8 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
   }, []);
 
   const sent = useRef<unknown>(null);
+  // Sends numbered as they leave, and the newest that has landed: one landing after a later send must not replace it.
+  const sends = useRef({ left: 0, landed: 0 });
   useEffect(() => {
     sent.current ??= draftKey === undefined ? null : codec.openSent(draftKey, draftStorage);
     if (!taken || sent.current === null) return;
@@ -119,7 +121,10 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
     current: () => emitted.current,
     async send(run) {
       const packed = codec.packSent(emitted.current, base);
+      const mine = ++sends.current.left;
       await run();
+      if (mine < sends.current.landed) return;
+      sends.current.landed = mine;
       sent.current = packed;
       if (draftKey !== undefined) codec.saveSent(draftKey, packed, draftStorage);
     },

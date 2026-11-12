@@ -103,6 +103,21 @@ describe('useDocument', () => {
     expect(sentUnder.size).toBe(0);
   });
 
+  it('keeps the later of two sends as sent when the earlier one lands last', async () => {
+    const { result } = setup();
+    let landFirst!: () => void;
+    let landSecond!: () => void;
+    act(() => result.current.doc.commit({ n: 1 }));
+    let first!: Promise<void>;
+    act(() => { first = result.current.doc.send(() => new Promise<void>((r) => { landFirst = r; })); });
+    act(() => result.current.doc.commit({ n: 2 }));
+    let second!: Promise<void>;
+    act(() => { second = result.current.doc.send(() => new Promise<void>((r) => { landSecond = r; })); });
+    await act(async () => { landSecond(); await second; });
+    await act(async () => { landFirst(); await first; });
+    expect(sentUnder.get('k')).toEqual({ n: 2 });
+  });
+
   describe('told what makes two values the same', () => {
     const sameN = (a: Doc, b: Doc) => a.n === b.n;
 
