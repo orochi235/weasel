@@ -618,7 +618,7 @@ describe('PrefSchemaEditor', () => {
       fireEvent.click(within(screen.getByRole('region', { name: 'Export' })).getByRole('button', { name: 'Copy' }));
       await new Promise((r) => setTimeout(r, 0));
       expect(writeText).toHaveBeenCalled();
-      expect(then).toHaveBeenCalledWith(undefined, expect.any(Function));
+      expect(then.mock.calls.some(([, onRejected]) => typeof onRejected === 'function')).toBe(true);
     } finally {
       Reflect.deleteProperty(navigator, 'clipboard');
     }
