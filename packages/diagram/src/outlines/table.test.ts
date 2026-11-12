@@ -8,6 +8,29 @@ const BOX: Bounds = { x: 10, y: 20, width: 100, height: 40 };
 afterEach(() => vi.restoreAllMocks());
 
 describe('registerOutline', () => {
+  const def = (w: number) => ({ path: (b: Bounds) => rectPath(b.x, b.y, w, b.height) });
+
+  it('a disposer run twice leaves a later registration of the same name alone', () => {
+    const first = registerOutline('test:twice', def(1));
+    first();
+    const second = registerOutline('test:twice', def(2));
+    first();
+    expect(outlinePath('test:twice', BOX)).toEqual(rectPath(10, 20, 2, 40));
+    second();
+  });
+
+  it('a disposer takes out its own registration of a definition registered twice', () => {
+    const shared = def(3);
+    const first = registerOutline('test:shared', shared);
+    const between = registerOutline('test:shared', def(4));
+    const second = registerOutline('test:shared', shared);
+    first();
+    first();
+    expect(outlinePath('test:shared', BOX)).toEqual(rectPath(10, 20, 3, 40));
+    second();
+    between();
+  });
+
   it('resolves a registered name through outlinePath, contentBox, and boxForContent', () => {
     const dispose = registerOutline('test:inset', {
       path: (b) => rectPath(b.x, b.y, b.width, b.height),

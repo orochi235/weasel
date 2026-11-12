@@ -23,9 +23,10 @@ const BUILTINS = {
 /** A name the kit itself registers. */
 export type BuiltinOutline = keyof typeof BUILTINS;
 
-// A stack per name, so a disposer can restore whatever its registration shadowed.
-const table = new Map<string, OutlineDef[]>(
-  Object.entries(BUILTINS).map(([name, def]) => [name, [def as OutlineDef]]),
+// A stack per name, so a disposer can restore whatever its registration shadowed. A record per registration, so
+// one def registered twice is two entries and each disposer takes out its own.
+const table = new Map<string, { def: OutlineDef }[]>(
+  Object.entries(BUILTINS).map(([name, def]) => [name, [{ def: def as OutlineDef }]]),
 );
 const warned = new Set<string>();
 const changes = createEmitter();
@@ -40,13 +41,16 @@ export function onOutlinesChange(fn: () => void): () => void {
  *  Returns the disposer. */
 export function registerOutline(name: string, def: OutlineDef): () => void {
   const stack = table.get(name) ?? [];
-  stack.push(def);
+  const mine = { def };
+  stack.push(mine);
   table.set(name, stack);
   changed();
+  let released = false;
   return () => {
-    const i = stack.lastIndexOf(def);
-    if (i >= 0) stack.splice(i, 1);
-    if (stack.length === 0) table.delete(name);
+    if (released) return;
+    released = true;
+    stack.splice(stack.indexOf(mine), 1);
+    if (stack.length === 0 && table.get(name) === stack) table.delete(name);
     changed();
   };
 }
@@ -54,7 +58,7 @@ export function registerOutline(name: string, def: OutlineDef): () => void {
 /** The definition `name` resolves to. An unregistered name resolves to
  *  `rect`, with one warning per name. */
 export function resolveOutline(name: string): OutlineDef {
-  const def = table.get(name)?.at(-1);
+  const def = table.get(name)?.at(-1)?.def;
   if (def) return def;
   if (!warned.has(name)) {
     warned.add(name);

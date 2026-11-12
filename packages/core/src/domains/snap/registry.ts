@@ -8,12 +8,19 @@ export interface SnapSourceRegistry {
 }
 
 export function createSnapSourceRegistry(): SnapSourceRegistry {
+  // One record per add, so a source two components add is two entries and each release takes out its own.
+  let adds: readonly { source: SnapSource }[] = [];
   let sources: readonly SnapSource[] = [];
+  const set = (next: readonly { source: SnapSource }[]) => {
+    adds = next;
+    sources = next.map((a) => a.source);
+  };
   return {
     list: () => sources,
     add(source) {
-      sources = [...sources, source];
-      return () => { sources = sources.filter((s) => s !== source); };
+      const mine = { source };
+      set([...adds, mine]);
+      return () => { if (adds.includes(mine)) set(adds.filter((a) => a !== mine)); };
     },
   };
 }

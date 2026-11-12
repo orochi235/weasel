@@ -20,18 +20,25 @@ const BUILTIN: Record<string, DisplayKind<never>> = Object.fromEntries(
   ].map((k) => [k.kind, k as DisplayKind<never>]),
 );
 
-const registered = new Map<string, DisplayKind<never>>();
+/** Each kind's registrations, oldest first; the last one is live. */
+const registered = new Map<string, { kind: DisplayKind<never> }[]>();
 
 /**
  * Adds a display kind, or replaces a built-in one — the way to swap in a words
  * library for `fraction`'s spoken form (`{ ...fractionKind, speak }`). Returns
- * a function that removes it again.
+ * a function that removes it again, restoring whatever it shadowed.
  */
 export function registerDisplayKind<D extends Display>(kind: DisplayKind<D>): () => void {
-  const entry = kind as unknown as DisplayKind<never>;
-  registered.set(kind.kind, entry);
+  const id = kind.kind;
+  const stack = registered.get(id) ?? [];
+  const mine = { kind: kind as unknown as DisplayKind<never> };
+  stack.push(mine);
+  registered.set(id, stack);
   return () => {
-    if (registered.get(kind.kind) === entry) registered.delete(kind.kind);
+    const at = stack.indexOf(mine);
+    if (at < 0) return;
+    stack.splice(at, 1);
+    if (stack.length === 0 && registered.get(id) === stack) registered.delete(id);
   };
 }
 
@@ -41,7 +48,7 @@ export function registerDisplayKind<D extends Display>(kind: DisplayKind<D>): ()
  * without it, and its tag survives untouched.
  */
 export function displayKindOf(display: Display | undefined): DisplayKind<Display> {
-  const kind = display === undefined ? undefined : (registered.get(display.kind) ?? (Object.hasOwn(BUILTIN, display.kind) ? BUILTIN[display.kind] : undefined));
+  const kind = display === undefined ? undefined : (registered.get(display.kind)?.at(-1)?.kind ?? (Object.hasOwn(BUILTIN, display.kind) ? BUILTIN[display.kind] : undefined));
   return (kind ?? decimalKind) as unknown as DisplayKind<Display>;
 }
 

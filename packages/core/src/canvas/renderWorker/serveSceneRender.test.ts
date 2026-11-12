@@ -5,6 +5,7 @@ import { createScene } from '../../core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from '../../core/scene/types';
 import { createFrameWriter } from './frameWriter';
 import type { FromWorker, ToWorker } from './protocol';
+import { registerNodeShape } from '../NodeShape';
 import { hostSceneRender, type RenderPort } from './serveSceneRender';
 import type { WorkerAnimation } from './workerAnimations';
 
@@ -104,5 +105,14 @@ describe('hostSceneRender', () => {
     throws = 1;
     frame();
     expect(dirties()).toBe(2);
+  });
+
+  it('asks for a frame when a node shape registers in the worker after it started painting', () => {
+    const { frame, out } = host();
+    frame();
+    const before = out.filter((m) => m.type === 'dirty').length;
+    const off = registerNodeShape({ id: 'test:late', matches: () => false, paint: () => [] });
+    off();
+    expect(out.filter((m) => m.type === 'dirty').length).toBe(before + 2);
   });
 });

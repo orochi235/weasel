@@ -109,6 +109,25 @@ describe('shape painter registry', () => {
     dispose();
     expect(getNodeShapes().map((p) => p.id)).not.toContain('once');
   });
+
+  it('a second dispose leaves another registration of the same painter in place', () => {
+    const shared: NodeShapeEntry = { id: 'shared', matches: () => true, paint: () => [] };
+    const first = registerNodeShape(shared, { priority: 'high' });
+    registerNodeShape(shared, { priority: 'high' });
+    first();
+    first();
+    expect(findNodeShape(node({}))?.id).toBe('shared');
+  });
+
+  it('a disposer takes out its own registration, not an earlier one of the same painter', () => {
+    const p: NodeShapeEntry = { id: 'p', matches: (n) => (n.data as { k?: string }).k !== undefined, paint: () => [] };
+    const q: NodeShapeEntry = { id: 'q', matches: () => true, paint: () => [] };
+    registerNodeShape(p, { priority: 'high' });
+    registerNodeShape(q, { priority: 'high' });
+    const second = registerNodeShape(p, { priority: 'high' });
+    second();
+    expect(findNodeShape(node({ k: 'x' }))?.id).toBe('p');
+  });
 });
 
 describe('findShapeSilhouette rotation', () => {

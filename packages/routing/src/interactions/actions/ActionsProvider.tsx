@@ -59,7 +59,8 @@ function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
  * answers — `list`, `trigger`, `begin` — starts at the node's leaf.
  */
 export class ActionsNode extends ScopeNode<ActionsNode> {
-  private readonly actions = new Map<string, Action[]>();
+  /** A record per registration: a release takes out its own, displaced or live, of an action registered twice. */
+  private readonly actions = new Map<string, { action: Action }[]>();
   private readonly muted = new Map<string, number>();
   private readonly tunings = new Map<string, ActionTuning[]>();
   private readonly overrides: BindingOverrides[] = [];
@@ -86,7 +87,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   private resolve(id: string): Action | undefined {
     for (const n of this.chain()) {
       if (n.muted.has(id)) return undefined;
-      const a = n.actions.get(id)?.at(-1);
+      const a = n.actions.get(id)?.at(-1)?.action;
       if (a) return this.tuned(a);
     }
     return undefined;
@@ -169,7 +170,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   ownActions(): readonly Action[] {
     const out: Action[] = [];
     for (const [id, stack] of this.actions) {
-      if (stack.length > 0 && !this.muted.has(id)) out.push(this.tuned(stack.at(-1)!));
+      if (stack.length > 0 && !this.muted.has(id)) out.push(this.tuned(stack.at(-1)!.action));
     }
     return out;
   }
@@ -212,9 +213,10 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     register: (action: Action) => {
       validateActionId(action.id);
       validateActionDefaultBinding(action);
+      const mine = { action };
       const stack = this.actions.get(action.id);
-      if (stack) stack.push(action);
-      else this.actions.set(action.id, [action]);
+      if (stack) stack.push(mine);
+      else this.actions.set(action.id, [mine]);
       this.changed();
       let released = false;
       return () => {
@@ -222,9 +224,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         released = true;
         const cur = this.actions.get(action.id);
         if (!cur) return;
-        // Our own entry, wherever it now sits: a registrant that was already
-        // displaced must take itself out without disturbing the one above it.
-        const i = cur.lastIndexOf(action);
+        const i = cur.indexOf(mine);
         if (i === -1) return;
         cur.splice(i, 1);
         // An emptied stack holds the id's place in registration order until

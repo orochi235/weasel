@@ -93,9 +93,6 @@
   "packages/hud/src/attach.ts": {
     "longestFunction": 140
   },
-  "packages/hud/src/hud.ts": {
-    "longestFunction": 125
-  },
   "packages/hud/src/loupe/createLoupe.ts": {
     "longestFunction": 212
   },
