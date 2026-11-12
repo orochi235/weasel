@@ -47,6 +47,19 @@ function Toggle({ initial = 'b', variant }: { initial?: string; variant?: 'flat'
 }
 
 describe('segmented controls along a curve', () => {
+  test('move focus along the one line they are drawn on, though given columns', () => {
+    const four = [...ITEMS, { value: 'd', label: 'D' }];
+    render(
+      <Along shape={shape}>
+        <ToggleBar mode="multiple" columns={2} ariaLabel="Pick" items={four} value={[]} onChange={() => {}} />
+      </Along>,
+    );
+    const buttons = screen.getAllByRole('button');
+    buttons[0]!.focus();
+    fireEvent.keyDown(buttons[0]!, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(buttons[1]);
+  });
+
   test('lay their segments edge to edge along the run, centered on it', () => {
     render(<Toggle />);
     const radios = screen.getAllByRole('radio');

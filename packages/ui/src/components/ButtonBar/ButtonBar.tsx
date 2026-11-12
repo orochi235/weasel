@@ -1,6 +1,6 @@
 import { type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
-import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';
+import { SegmentedRow, segmentClassName, segmentPlaceProps, useSegmentedTiling, type SegmentedGridProps } from '../segmentedRow';
 import { tilingRoving } from '../../tiling';
 import type { SegmentedSize, SegmentedVariant } from '../segmentedVariant';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
@@ -53,7 +53,7 @@ export function ButtonBar<V extends string | number = string>(props: ButtonBarPr
     item.onAction();
   };
 
-  const tiles = segmentedTiling(props);
+  const tiles = useSegmentedTiling(props);
   const roving = useRovingTabIndex({ itemSelector: `.${s.segment}`, ...(tiles ? tilingRoving(tiles) : {}), onActivate: fire });
 
   return (
