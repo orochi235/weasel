@@ -309,6 +309,24 @@ describe('viewport.animatedZoom at the keyboard (mac branch)', () => {
     expect(ref.current!.getView().scale.x).toBeCloseTo(1.25, 6);
   });
 
+  it('calls the onDone of the latest render, whose other fields did not change', async () => {
+    const ref = { current: null as SceneCanvasApi | null };
+    const first = vi.fn();
+    const second = vi.fn();
+    const scene = makeScene();
+    const { rerender } = render(
+      <SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} viewport={{ animatedZoom: { ms: 40, onDone: first } }} />,
+    );
+    await act(async () => { await frame(); });
+    rerender(<SceneCanvas<D, L, P> ref={ref} scene={scene} width={400} height={200} viewport={{ animatedZoom: { ms: 40, onDone: second } }} />);
+    await act(async () => { await frame(); });
+
+    act(() => { fireKey('=', { metaKey: true }); });
+    await settle(() => !ref.current!.isViewAnimating());
+    expect(second).toHaveBeenCalledOnce();
+    expect(first).not.toHaveBeenCalled();
+  });
+
   it('three fast presses compound to 1.25 cubed', async () => {
     const ref = { current: null as SceneCanvasApi | null };
     render(<SceneCanvas<D, L, P> ref={ref} scene={makeScene()} width={400} height={200} viewport={ANIMATED} />);
