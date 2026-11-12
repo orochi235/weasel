@@ -87,20 +87,10 @@ describe('f.list', () => {
       none: f.object({}),
     });
     const schema = f.schema({
-      fills: f
-        .list(
-          [
-            { type: 'solid', alpha: 1 },
-            { type: 'none' },
-          ],
-          fill,
-        )
-        .label('Fills'),
+      fills: f.list([{ type: 'solid', alpha: 1 }, { type: 'none' }], fill).label('Fills'),
     });
     renderWithIcons(<Panel schema={schema} />);
-    expect(screen.getByRole('button', { name: 'Edit Fills' }).textContent).toContain(
-      'solid, none',
-    );
+    expect(screen.getByRole('button', { name: 'Edit Fills' }).textContent).toContain('solid, none');
   });
 
   it('is the kind an f.value with a string-array default takes', () => {

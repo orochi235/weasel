@@ -57,9 +57,11 @@ describe('markCommands', () => {
   it("sizes an arrow's head in screen pixels, whatever the target's zoom", () => {
     // A 20-unit target shown at 300px, and a 2000-unit one shown at 300px.
     const head = (k: number) =>
-      (markCommands(mark('arrow', { shape: ENDS }), {}, { x: k, y: k })[0] as {
-        stroke?: { markerEnd?: unknown };
-      }).stroke?.markerEnd;
+      (
+        markCommands(mark('arrow', { shape: ENDS }), {}, { x: k, y: k })[0] as {
+          stroke?: { markerEnd?: unknown };
+        }
+      ).stroke?.markerEnd;
     expect(head(15)).toEqual(head(0.15));
   });
 
