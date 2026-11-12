@@ -70,12 +70,12 @@ function band(chain, h, head, tail) {
 const slid = (C, rho, u, gap, hint) => ({ C: [C[0] + u[0] * gap, C[1] + u[1] * gap], rho, hint });
 
 export function planet() {
-  const R = 3.5; // planet
+  const R = 3.6; // planet
   const HR = 0.6; // half the rim's width
-  const [A, B, R1] = [6.3, 1.4, 0.9]; // the oval's half-length, half-height and end radius
+  const [A, B, R1] = [6.4, 1.4, 0.9]; // the oval's half-length, half-height and end radius
   const HO = 0.5; // half the orbit's width
   const GAP = 0.5;
-  const MOON = 1.05;
+  const MOON = 0.85;
   const TILT = -22;
 
   // The oval: end circles at (±(A - R1), 0), side circles on the y axis, each tangent to both.
@@ -85,22 +85,39 @@ export function planet() {
   const left = [-(A - R1), 0];
   const j = Math.atan2(R2 - B, A - R1) / DEG; // where the sides hand over to the ends
 
-  // The moon sits on the oval's right tip, in front of its orbit, so the orbit stops a gap short of it. What
-  // shows of the orbit runs from the moon, along the near side and round the left end, to where the far side
-  // goes behind the planet; the far side's short run between planet and moon stays hidden.
-  const moon = [A, 0];
-  const fromMoon = nearest(meet(bottom, R2, moon, MOON + GAP), [A - 1, B]);
+  // The moon sits on the near side, centered on the orbit where it crosses in front of the planet, so the orbit
+  // runs straight into it from one side and out the other. The orbit stops a gap short of it both ways: one run
+  // goes from the moon, round the right end, to where the far side goes behind the planet's right; the other
+  // from the moon, round the left end, to the planet's left. The moon clears the rim's inner edge by more than GAP.
+  const moon = [0, B];
+  const moonR = nearest(meet(bottom, R2, moon, MOON + GAP), [MOON + GAP, B]);
+  const moonL = nearest(meet(bottom, R2, moon, MOON + GAP), [-(MOON + GAP), B]);
+  const farRight = nearest(meet(top, R2, [0, 0], R + HR), [R, -B]);
   const farLeft = nearest(meet(top, R2, [0, 0], R + HR), [-R, -B]);
-  const a = angle(top, farLeft) * DEG;
-  const orbit = band(
+  const away = (p, dir) => {
+    const a = angle(top, p) * DEG;
+    return [-Math.sin(a) * dir, Math.cos(a) * dir];
+  };
+  const right = [A - R1, 0];
+  const rightRun = band(
     [
-      { c: bottom, r: R2, from: angle(bottom, fromMoon), to: 180 - j },
+      { c: top, r: R2, from: angle(top, farRight), to: -j },
+      { c: right, r: R1, from: -j, to: j },
+      { c: bottom, r: R2, from: j, to: angle(bottom, moonR) },
+    ],
+    HO,
+    slid([0, 0], R + HR, away(farRight, 1), GAP, farRight),
+    { C: moon, rho: MOON + GAP, hint: moonR },
+  );
+  const leftRun = band(
+    [
+      { c: bottom, r: R2, from: angle(bottom, moonL), to: 180 - j },
       { c: left, r: R1, from: 180 - j, to: 360 - (180 - j) },
       { c: top, r: R2, from: -180 + j, to: angle(top, farLeft) },
     ],
     HO,
-    { C: moon, rho: MOON + GAP, hint: fromMoon },
-    slid([0, 0], R + HR, [Math.sin(a), -Math.cos(a)], GAP, farLeft),
+    { C: moon, rho: MOON + GAP, hint: moonL },
+    slid([0, 0], R + HR, away(farLeft, -1), GAP, farLeft),
   );
 
   // The rim, cut where the near side crosses it: above the crossing by the orbit's upper edge, below by its lower.
@@ -126,7 +143,7 @@ export function planet() {
 
   return `
     <g transform="translate(10 10) rotate(${TILT})" fill="currentColor" stroke="none">
-      <path d="${upper}"/><path d="${lower}"/><path d="${orbit}"/>
-      <circle cx="${q(A)}" cy="0" r="${MOON}"/>
+      <path d="${upper}"/><path d="${lower}"/><path d="${rightRun}"/><path d="${leftRun}"/>
+      <circle cx="0" cy="${B}" r="${MOON}"/>
     </g>`;
 }

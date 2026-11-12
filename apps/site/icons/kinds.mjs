@@ -5,7 +5,7 @@ import { framed } from './frame.mjs';
 // kind-of-change chips.
 export const KINDS = framed({
   // A link pulled apart.
-  breaking: `<path d="M8.6 7.4H7a2.6 2.6 0 0 0 0 5.2h1.6M11.4 7.4H13a2.6 2.6 0 0 1 0 5.2h-1.6"/><path d="M10 4.6v1.4M10 14v1.4" stroke-width="1.1"/>`,
+  breaking: `<g transform="rotate(-45 10 10)"><path d="M8.6 7.4H7a2.6 2.6 0 0 0 0 5.2h1.6M11.4 7.4H13a2.6 2.6 0 0 1 0 5.2h-1.6"/><path d="M10 4.4v1.6M10 14v1.6" stroke-width="1.1"/></g>`,
 
   // Running out: an hourglass.
   deprecates: `<path d="M6.2 4.6h7.6M6.2 15.4h7.6M7 4.6c0 3.4 3 3.6 3 5.4s-3 2-3 5.4M13 4.6c0 3.4-3 3.6-3 5.4s3 2 3 5.4"/><path d="M8.6 14.2h2.8" stroke-width="1.1"/>`,
@@ -26,7 +26,9 @@ export const KINDS = framed({
   visual: `<path d="M4.4 10s2-3.8 5.6-3.8 5.6 3.8 5.6 3.8-2 3.8-5.6 3.8S4.4 10 4.4 10z"/><circle cx="10" cy="10" r="1.6" fill="currentColor"/>`,
 
   // A gauge, needle up toward fast.
-  perf: `<path d="M4.8 13.8a5.2 5.2 0 1 1 10.4 0"/><path d="M10 13.4 13 8.6"/><path d="M10 13.4h0" stroke-width="2.6"/>`,
+  // The needle's tip stops a clear gap inside the dial: the dial's inner edge (r 5.4 − 0.75), less a 0.9 gap
+  // and the needle's round cap, leaves the tip at r 3.
+  perf: `<path d="M4.6 13.6a5.4 5.4 0 0 1 10.8 0"/><path d="M10 13.6 11.72 11.14"/><circle cx="10" cy="13.6" r="1.3" fill="currentColor" stroke="none"/>`,
 
   // A bug.
   fix: `

@@ -1,6 +1,7 @@
 import { chevron } from '../../../packages/icons/scripts/lib/base.mjs';
 import { framed } from './frame.mjs';
 import { planet } from './planet.mjs';
+import { cylinder } from '../../../packages/diagram/icons/network.mjs';
 
 // One badge per published package, keyed by its unscoped name in camelCase: the Releases filter's
 // package chips. Each body is drawn inside FRAME's clear area.
@@ -13,6 +14,24 @@ const atom = [0, 60, 120]
 // underside sweeping into the waist, a squared heel on the right, and feet flaring at the base.
 const ANVIL =
   'M4.4 7H15.6V8.9H13.4C12.4 8.9 11.8 9.6 11.8 10.5V11.4C11.8 12.3 12.8 12.8 13.8 13V14H6.6V13C7.6 12.8 8.6 12.3 8.6 11.4V10.4C8.6 8.6 7 7.6 4.4 7Z';
+
+const DB = cylinder(4.375, 15.625, 6.6, 13.4, 1.9);
+
+/** A slider at height `y` with a hollow thumb at `x`. The track passes behind the thumb, so each half is a
+ *  filled band ending on the thumb's outline grown by a gap; the band crosses the thumb on a radius, so that
+ *  end is concentric with the thumb. */
+function slider(y, x) {
+  const [X0, X1, H, THUMB, THUMB_W, GAP] = [4.6, 15.4, 0.55, 1.4, 1.2, 0.5];
+  const cut = THUMB + THUMB_W / 2 + GAP;
+  const dx = Math.sqrt(cut * cut - H * H);
+  const r = (v) => Math.round(v * 1000) / 1000;
+  const [top, bot] = [r(y - H), r(y + H)];
+  const left = r(x - dx);
+  const right = r(x + dx);
+  const leftBand = `M${X0} ${top}H${left}A${cut} ${cut} 0 0 0 ${left} ${bot}H${X0}A${H} ${H} 0 0 1 ${X0} ${top}Z`;
+  const rightBand = `M${X1} ${top}H${right}A${cut} ${cut} 0 0 1 ${right} ${bot}H${X1}A${H} ${H} 0 0 0 ${X1} ${top}Z`;
+  return `<path d="${leftBand}${rightBand}" fill="currentColor" stroke="none"/><circle cx="${x}" cy="${y}" r="${THUMB}" stroke-width="${THUMB_W}"/>`;
+}
 
 export const PACKAGES = framed({
   // An ease-in-out curve with its start and end held.
@@ -96,16 +115,23 @@ export const PACKAGES = framed({
   iconsPlugin: `<path d="M8 4.4v2.8M12 4.4v2.8M6.4 7.2h7.2v2.4a3.6 3.6 0 0 1-7.2 0z M10 13.2v2.4"/>`,
 
   // Four plain shapes.
-  icons: `
-    <circle cx="7" cy="7" r="2.2"/><rect x="10.8" y="4.8" width="4.4" height="4.4" rx="0.4"/>
-    <path d="M7 10.8 9.4 15.2H4.6z"/><path d="M13 10.8v4.4M10.8 13h4.4"/>`,
+  icons: `<g stroke-width="1.1">
+    <circle cx="7" cy="7" r="1.8"/><rect x="11.2" y="5.2" width="3.6" height="3.6" rx="0.3"/>
+    <path d="M7 11.1 8.9 14.6H5.1z"/><path d="M13 11.2v3.6M11.2 13h3.6"/></g>`,
 
   kernel3d: `<path d="M10 4.4 15 7.2v5.6L10 15.6 5 12.8V7.2z"/><path d="M5 7.2 10 10l5-2.8M10 10v5.6"/>`,
 
   // A flask.
   labkit: `<path d="M8.4 4.6v4L5 14a1 1 0 0 0 .9 1.4h8.2A1 1 0 0 0 15 14l-3.4-5.4v-4M7.6 4.6h4.8"/><path d="M6.6 12h6.8" stroke-width="1.1"/>`,
 
-  loupe: `<circle cx="8.6" cy="8.6" r="3.8"/><path d="M11.4 11.4 15.2 15.2"/>`,
+  // A jeweler's loupe in three-quarter view: the lens rim facing up and left, the barrel running down and
+  // right behind it, and a glint on the glass. The barrel's sides leave the rim at the ends of its long axis,
+  // where the rim's tangent runs along the barrel.
+  loupe: `
+    <g stroke-width="1.2">
+    <path d="M11.711 5.489 14.111 7.889A4.4 3 -45 0 1 7.889 14.111L5.489 11.711A4.4 3 -45 0 1 11.711 5.489z"/>
+    <path d="M11.711 5.489A4.4 3 -45 0 1 5.489 11.711"/></g>
+    <path d="M6.6 9.2 A2.6 1.6 -45 0 1 9.2 6.6" stroke-width="1"/>`,
 
   // A list with its highlighted row.
   menu: `<path d="M5.4 5.6h9.2M5.4 14.4h9.2"/><rect x="4.4" y="8.4" width="11.2" height="3.2" rx="0.8" fill="currentColor" stroke="none"/>`,
@@ -125,10 +151,13 @@ export const PACKAGES = framed({
     <rect x="8.8" y="8.8" width="6.6" height="6.6" rx="0.8"/>`,
 
   // Near and far ridges, each its own plane.
-  parallax: `<path d="M4.4 11.2 7.6 7.6l2 2.2 2.4-3.4 3.6 4.8" stroke-width="1.1"/><path d="M4.4 15.2 8.4 12.2l3 1.8 4.2-2.6"/>`,
+  parallax: `
+    <circle cx="13" cy="6.6" r="1.6"/>
+    <path d="M10.6 14.4C11.4 12 13.6 11.2 15.6 12" stroke-width="1.2"/>
+    <path d="M7 5 9.4 11.2H4.6z"/><path d="M7 11.2v3.2M4.4 14.4h11.2"/>`,
 
   // A pen nib.
-  pathTools: `<path d="M10 15.4 6 9.6 7.8 4.6h4.4L14 9.6z"/><path d="M10 15.4v-3.8"/><circle cx="10" cy="10" r="1.2" stroke-width="1.1"/>`,
+  pathTools: `<g stroke-width="1.15"><path d="M10 15.4 6 9.6 7.8 4.6h4.4L14 9.6z"/><path d="M10 15.4v-3.8"/><circle cx="10" cy="10" r="1.2" stroke-width="0.9"/></g>`,
 
   // A page of text.
   pdf: `<path d="M5.4 4.6h5.6l3.6 3.6v7.2H5.4z"/><path d="M11 4.6v3.6h3.6"/><path d="M7.4 11h5.2M7.4 13.2h3.6" stroke-width="1.1"/>`,
@@ -137,14 +166,15 @@ export const PACKAGES = framed({
   plot: `<path d="M4.8 4.6v10.6h10.6"/><path d="M7 12.6 9.6 9l2 1.8 3.4-4.4"/>`,
 
   // Two sliders.
-  prefs: `
-    <path d="M4.6 7.2h10.8M4.6 12.8h10.8" stroke-width="1.1"/>
-    <circle cx="8" cy="7.2" r="1.6" fill="currentColor"/><circle cx="12.4" cy="12.8" r="1.6" fill="currentColor"/>`,
+  prefs: `${slider(7.2, 8.6)}${slider(12.8, 11.4)}`,
 
   // A ruler: numbers with units.
-  quantity: `
-    <rect x="4.4" y="6.8" width="11.2" height="6.4" rx="0.8"/>
-    <path d="M6.6 6.8v1.6M8.8 6.8v2.8M11.2 6.8v1.6M13.4 6.8v2.8" stroke-width="1.1"/>`,
+  // Vernier calipers: the beam with its fixed jaw, the slider riding it with the moving jaw, and the scale.
+  quantity: `<g stroke-width="1.1">
+    <path d="M9 5.6H5.4a1 1 0 0 0-1 1V7.8L6.6 14.6V7.8H9M12.4 5.6h3.2v2.2h-3.2"/>
+    <rect x="9" y="4.6" width="3.4" height="4.2" rx="0.6"/>
+    <path d="M9.6 8.8v5.8L11.8 8.8"/>
+    <path d="M13.6 7.8v-1M14.8 7.8v-1" stroke-width="0.8"/></g>`,
 
   react: `${atom}<circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/>`,
 
@@ -171,9 +201,8 @@ export const PACKAGES = framed({
   // A planet, lit from its moon's side, and the moon's orbit.
   simulation: planet(),
 
-  storage: `
-    <ellipse cx="10" cy="6.2" rx="4.8" ry="1.6"/>
-    <path d="M5.2 6.2v7.6c0 .9 2.15 1.6 4.8 1.6s4.8-.7 4.8-1.6V6.2M5.2 10c0 .9 2.15 1.6 4.8 1.6s4.8-.7 4.8-1.6"/>`,
+  // diagram's database, drawn by its own `cylinder` at the frame's inner size.
+  storage: `<path d="${DB.body}"/><path d="${DB.rim}"/>`,
 
   // A ribbon that swells and tapers.
   stroke: `<path fill="currentColor" stroke-width="0.6" d="M4.6 15.2C7.4 15.4 8 8.6 15.4 4.8 10.4 9.6 9.4 13.6 4.6 15.2z"/>`,
@@ -207,10 +236,8 @@ export const PACKAGES = framed({
     <path d="M10.8 6.8h4.6"/>
     <rect x="4.6" y="11" width="10.8" height="4.4" rx="2.2"/><circle cx="13.2" cy="13.2" r="1.2" fill="currentColor"/>`,
 
-  // The four ways a key moves focus.
-  uiInput: `
-    <path d="M10 6v8M6 10h8" stroke-width="1.1"/>
-    <path d="${chevron([10, 4.6], [0, -1], 2.2, 45)}M${chevron([10, 15.4], [0, 1], 2.2, 45).slice(1)}M${chevron([4.6, 10], [-1, 0], 2.2, 45).slice(1)}M${chevron([15.4, 10], [1, 0], 2.2, 45).slice(1)}"/>`,
+  // The text cursor: a stem whose ends curl out into serifs either side.
+  uiInput: `<path d="M10 6.4v7.2M7.8 4.6c1.4 0 2.2.6 2.2 1.8 0-1.2.8-1.8 2.2-1.8M7.8 15.4c1.4 0 2.2-.6 2.2-1.8 0 1.2.8 1.8 2.2 1.8M8.8 10h2.4" stroke-width="1.3"/>`,
 
   // A box with its measured width.
   uiLogic: `<rect x="4.6" y="8.4" width="10.8" height="7" rx="1"/><path d="M4.6 4.4v2M15.4 4.4v2M4.6 5.4h10.8" stroke-width="1.1"/>`,
