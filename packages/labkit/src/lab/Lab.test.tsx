@@ -172,12 +172,6 @@ describe('<Lab>', () => {
     expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('light');
   });
 
-  it('throws when instruments is empty', () => {
-    expect(() => renderWithIcons(<Lab instruments={[]} defaultInstrument="Stub" />)).toThrow(
-      /requires a non-empty `instruments` array/,
-    );
-  });
-
   it('throws when defaultInstrument does not match any instrument', () => {
     expect(() => renderWithIcons(<Lab instruments={[stub]} defaultInstrument="Missing" />)).toThrow(
       /Unknown instrument/,

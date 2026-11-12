@@ -56,17 +56,6 @@ Owner tags, after the priority (2026-10-26):
   pointer, clears on Esc, on leave and on drop, and looks right.
 
 
-- **(P3) [agent] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
-  runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
-  the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
-  PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
-  `LabShell` page. Moving them in means making each an instrument and running it in a trial pane,
-  with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
-  `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
-  no trials at all.
-  Ruled (2026-11-07): labkit supports a lab with no trials, rendering its children as the body.
-  Closes when `<Lab>` takes no instruments and `apps/theme-editor` runs as one.
-
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press, so a `contextMenu` binding runs once. Tested only in jsdom

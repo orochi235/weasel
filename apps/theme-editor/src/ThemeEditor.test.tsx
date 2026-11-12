@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -115,7 +116,7 @@ describe('<ThemeEditor>', () => {
     const other: StoredTheme = { name: 'harbor', hash: 'h2', emits: true, definition: starterDefinition('harbor') };
     renderWithIcons(<ThemeEditor api={{ list: async () => [stored, other], get: vi.fn(), put: vi.fn() }} />);
     expect(await screen.findByText(/weasel does not derive/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /Theme/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^weasel/ }));
     await userEvent.click(await screen.findByRole('option', { name: 'harbor' }));
     expect(await screen.findByText('0 of 13 overridden')).toBeInTheDocument();
   });

@@ -1,6 +1,6 @@
 import { isDev } from '@weasel-js/react';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useLabMarks } from '../annotations/labMarks';
@@ -11,10 +11,9 @@ import { LabFooterRegion } from '../chrome/LabChrome';
 import { ClockRegistryContext } from '../clock/contexts';
 import { useLabClocks } from '../clock/useLabClocks';
 import { PersistenceContext } from '../state/Persistence';
-import type { UndockedPanels } from '../state/undock';
 import { useOpenOnce, useWarnIgnoredChange } from '../state/useOpenOnce';
 import { interstellarTheme } from '../theme/interstellar';
-import { Trial } from '../trial/Trial';
+import { TrialHistoryContext } from '../trial/trialHistory';
 import { useLabFitWarning } from './fitCheck';
 import { LabCommands } from './LabCommands';
 import { trialIdsOf } from './LabContext';
@@ -37,9 +36,10 @@ import {
   useLabPresentation,
 } from './presentation';
 import { useStoreCommands } from './storeCommands';
+import { TrialWorkspace } from './TrialWorkspace';
+import { useTriallessHistory, withInstruments } from './trialless';
 import { UnreadableRecords } from './UnreadableRecords';
 import { useFocusPick } from './useFocusPick';
-import { type PanelDescriptor, type TrialLayout, Workspace } from './Workspace';
 
 function LabFallback({
   title,
@@ -74,11 +74,10 @@ function LabFallback({
 }
 
 /** The lab runtime: opens the store, provides it, and renders one trial
- *  per record in a grid. Each trial runs one of `instruments`. */
-export function Lab(props: LabProps) {
-  if (isDev() && props.instruments.length === 0) {
-    throw new Error('[labkit] <Lab> requires a non-empty `instruments` array');
-  }
+ *  per record in a grid. Each trial runs one of `instruments`; with none, the
+ *  lab has no trials and renders its `children` as the body. */
+export function Lab(given: LabProps) {
+  const props = withInstruments(given);
   const { storageKey, storage, present, still, clock } = props;
   useWarnIgnoredChange('<Lab>', { storageKey, storage, present, still, clock });
   const [start] = useState(() => presentationStart(present, still));
@@ -109,26 +108,6 @@ export function Lab(props: LabProps) {
     );
   }
   return <LabRuntime {...props} opened={opened} start={start} />;
-}
-
-function panelsOf(undocked: UndockedPanels): PanelDescriptor[] {
-  return Object.entries(undocked).map(([key, panel]) => ({
-    key,
-    title: panel.sectionId,
-    as: panel.as,
-  }));
-}
-
-/** Whether a double-click opens a trial in its lightbox, asked of its record when the lab's answer is a function. */
-function doubleClickExpands(
-  expand: NonNullable<LabProps['expandOnDoubleClick']>,
-  store: OpenedLab['store'],
-): boolean | ((id: string) => boolean) {
-  if (typeof expand !== 'function') return expand;
-  return (id) => {
-    const trial = store.getState().trials.find((t) => t.id === id);
-    return trial ? expand(trial) : false;
-  };
 }
 
 let seedWarned = false;
@@ -173,7 +152,7 @@ function LabRuntime({
   children,
   opened,
   start,
-}: LabProps & { opened: OpenedLab; start: PresentationStart }) {
+}: ReturnType<typeof withInstruments> & { opened: OpenedLab; start: PresentationStart }) {
   const { store } = opened;
   // The store opened against the list <Lab> mounted with; a later list reaches
   // it here, before paint.
@@ -187,8 +166,8 @@ function LabRuntime({
   const [focusPick, setFocusPick] = useState<string | null>(null);
   const focusedTrialId = trialIds.find((id) => id === focusPick) ?? trialIds[0] ?? null;
   const modeValue = useStore(store, (s) => s.mode);
-  const layout = useStore(store, (s) => s.layout);
-  const undockedPanels = useStore(store, (s) => s.undockedPanels);
+  const trialless = instruments.length === 0;
+  const lone = useTriallessHistory(trialless, labChrome);
 
   // One registry for the lab's lifetime: a panel host is a DOM node the workspace owns and the
   // trial portals into, so it must outlive both ends of a dock/undock without being rebuilt.
@@ -201,11 +180,10 @@ function LabRuntime({
   const options = { transport, messages };
   const presentation = useLabPresentation(start, focusedTrialId, labBody, clocks, store, options);
   const presenting = presentation.active;
-  const workspacePanels = useMemo(() => panelsOf(undockedPanels), [undockedPanels]);
   const resolvedMode = useResolvedColorMode(modeValue);
 
   const labMarks = useLabMarks(opened.records, marks);
-  const labChromeAll = useLabChromeAll(instruments, labMarks.shown, tools, labChrome);
+  const labChromeAll = useLabChromeAll(instruments, labMarks.shown, tools, lone.labChrome);
   const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
   const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
 
@@ -228,34 +206,29 @@ function LabRuntime({
     menuBar,
     presenting,
     menus,
-    zoom,
-    children,
-    addTrial: addTrial ?? true,
+    zoom: zoom && !trialless,
+    children: trialless ? undefined : children,
+    addTrial: !trialless && (addTrial ?? true),
     contributions: labChromeAll,
   });
   const backdropStyle = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
 
-  const trialOptions = { chrome, suppress, hide, sidebar };
-  const workspace = (
-    <Workspace
-      panels={workspacePanels}
+  const body = trialless ? (
+    <TrialHistoryContext.Provider value={lone.mount}>
+      <div className="lk-lab__page">{children}</div>
+    </TrialHistoryContext.Provider>
+  ) : (
+    <TrialWorkspace
+      store={store}
       ids={trialIds}
-      resizable
-      reorderable
-      onReorder={(ids) => commands.reorderTrials(ids)}
-      layout={layout as TrialLayout}
-      onLayoutChange={(next) => store.getState().setLayout(next)}
-      expandOnDoubleClick={doubleClickExpands(expandOnDoubleClick, store)}
-    >
-      {trialIds.map((id) => (
-        <Trial key={id} id={id} {...trialOptions} />
-      ))}
-    </Workspace>
+      expandOnDoubleClick={expandOnDoubleClick}
+      trialOptions={{ chrome, suppress, hide, sidebar }}
+    />
   );
 
   return (
     <LabProviders store={store} commands={commands} contextMenus={contextMenus} over={over}>
-      <LabCommands contributions={labChromeAll} addTrial={addTrial ?? true} />
+      <LabCommands contributions={labChromeAll} addTrial={!trialless && (addTrial ?? true)} />
       <PersistenceContext.Provider value={opened.records}>
         <AnnotationPreloadContext.Provider value={opened.marks}>
           <PresentationContext.Provider value={presentation}>
@@ -294,12 +267,12 @@ function LabRuntime({
                           {hasPaneChrome ? (
                             <LabPanes contributions={labChromeAll}>
                               <LabPalette contributions={labChromeAll} />
-                              {workspace}
+                              {body}
                             </LabPanes>
                           ) : (
                             <>
                               <LabPalette contributions={labChromeAll} />
-                              {workspace}
+                              {body}
                             </>
                           )}
                         </LabSurface>
