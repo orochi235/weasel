@@ -1,5 +1,5 @@
 ---
-"@weasel-js/labkit": patch
+"@weasel-js/labkit": minor
 ---
 
 `<Lab sidebar="float">` puts each trial's sidebar in a panel over its body, opened from its title bar, so the body keeps its whole width.

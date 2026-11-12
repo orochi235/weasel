@@ -1,5 +1,5 @@
 ---
-"@weasel-js/labkit": patch
+"@weasel-js/labkit": minor
 ---
 
 `<Lab hide>` drops a trial button and keeps its shortcut: `hide={['undo', 'redo']}` takes away the undo row while Mod+Z still steps the trial.

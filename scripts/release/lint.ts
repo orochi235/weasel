@@ -10,8 +10,9 @@ export const FIX_LIMIT = 700;
 /** What is wrong with one changeset file, one line per problem; empty when nothing is. */
 export function lintChangeset(text: string): string[] {
   let summary: string;
+  let releases: { type: string }[];
   try {
-    summary = parseChangesetFile(text).summary;
+    ({ summary, releases } = parseChangesetFile(text));
   } catch (e) {
     return [`changesets cannot read it: ${String(e instanceof Error ? e.message : e).split('\n')[0]}`];
   }
@@ -39,7 +40,21 @@ export function lintChangeset(text: string): string[] {
   if (tags.every((t) => t === 'fix' || t === 'visual') && marker.body.length > FIX_LIMIT) {
     problems.push(`a fix runs ${marker.body.length} characters; keep it under ${FIX_LIMIT}, and leave out how it used to fail`);
   }
+  const floor = levelFloor(tags);
+  const level = LEVELS.reduce((top, l) => (releases.some((r) => r.type === l) ? l : top), 'patch');
+  if (LEVELS.indexOf(level) < LEVELS.indexOf(floor)) {
+    problems.push(`its tags (${tags.join(' ')}) make it a \`${floor}\` change, but it says \`${level}\`; write the level semver gives it`);
+  }
   return problems;
+}
+
+const LEVELS = ['patch', 'minor', 'major'];
+
+/** The lowest level semver allows a change with these tags. */
+function levelFloor(tags: readonly Tag[]): string {
+  if (tags.includes('breaking')) return 'major';
+  if (tags.includes('api') || tags.includes('new')) return 'minor';
+  return 'patch';
 }
 
 /** "Fixes to …", "A fix to …", or a "Fix …" title running three or more things together. */

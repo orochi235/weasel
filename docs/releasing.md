@@ -10,6 +10,8 @@ them all to the same number whether or not they changed.
    pick the level semver gives the change (`patch` for a fix, `minor` for new
    API, `major` for a breaking change), and write it as "Writing a changeset"
    below says. The level a changeset names does not decide the release's.
+   `check:changesets` refuses one below what its tags imply: `breaking` is
+   `major`, and `api` or `new` is `minor`.
    `npm run check:changesets` holds every pending one to those rules.
 2. **Pick the highlights.** `npm run release:pick` lists the pending changesets
    by rank. Choose the few a reader of this release should see first; it writes
