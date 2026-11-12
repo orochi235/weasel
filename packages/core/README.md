@@ -12,7 +12,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 - Layered canvas rendering with debug overlays
 - Rect, rotated and path poses; first-class compound paths; nested containers
 - Viewport with zoom/pan tools, momentum, and boundary clamping
-- Detached read-only scene views and navigation minimap (`<SceneViewCanvas>`, `<MinimapCanvas>`)
+- Detached read-only scene views (`<SceneViewCanvas>`), which `@weasel-js/minimap`'s `<MinimapCanvas>` is built on
 - WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
 - Custom fragment shaders via `registerProgram`
 
@@ -22,7 +22,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 npm install @weasel-js/core react
 ```
 
-`react` is a peer dependency (>=18).
+`react` (>=18), `@weasel-js/font` and `@msb235/blits` are peer dependencies. npm and pnpm install them for you; with Yarn, add them to the install.
 
 Import core's stylesheet once. It gives every canvas the kit renders its size
 on the page, and styles the canvas's debug overlays (`cursorCoordsHud`,
