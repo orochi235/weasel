@@ -7,6 +7,7 @@ import { createSetLayerOp } from './setLayer';
 import { createSetDataOp } from './setData';
 import { createTransformOp } from './transform';
 import { createSetDependsOnOp } from './setDependsOn';
+import { createSetLayoutOp } from './setLayout';
 
 function oneNode() {
   const s = makeScene();
@@ -22,6 +23,7 @@ describe('an op writing what the node already holds', () => {
     setData: (id) => createSetDataOp({ id, from: { label: 'x' }, to: { label: 'a' } }),
     transform: (id) => createTransformOp({ id, from: { ...POSE, x: 3 }, to: { ...POSE } }),
     setDependsOn: (id) => createSetDependsOnOp({ id, from: ['q'], to: undefined }),
+    setLayout: (id) => createSetLayoutOp({ id, from: 'grid', to: null }),
   };
   for (const [name, make] of Object.entries(cases)) {
     it(`records no entry: ${name}`, () => {
