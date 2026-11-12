@@ -144,7 +144,12 @@ type RendererSetup = Pick<CanvasPaintOptions, 'flattenTolerance' | 'retainBudget
 /** A WebGL 2 renderer on `canvas`, or `null` where it has no usable context. */
 function createWebGL(canvas: HTMLCanvasElement, shared: boolean, setup: RendererSetup, arrivals: Arrivals): WeaselRenderer | null {
   const gl = canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES);
-  if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') return null;
+  if (!gl) {
+    // jsdom has no WebGL at all; a browser that has it and still answers null will not open it on this canvas.
+    if (typeof WebGL2RenderingContext !== 'undefined') refuse(canvas, 'the browser would not open a WebGL 2 context on it');
+    return null;
+  }
+  if (typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') return null;
   try {
     return new WeaselRenderer({ gl: gl as WebGL2RenderingContext, ...(shared ? {} : { canvas }), ...setup });
   } catch (e) {
