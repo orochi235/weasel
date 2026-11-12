@@ -297,8 +297,9 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   const walk = useMemo(() => {
     return (world: WorldPoint, view?: PickView | null): string[] => {
       if (pickEveryProp) {
-        const r = view?.viewId != null
-          ? pickEveryProp(world, { viewId: view.viewId, ...(view.layerIsPainted ? { layerIsPainted: view.layerIsPainted } : {}) })
+        const gate = view?.layerIsPainted ?? layerIsPainted;
+        const r = view?.viewId != null || gate
+          ? pickEveryProp(world, { ...(view?.viewId != null ? { viewId: view.viewId } : {}), ...(gate ? { layerIsPainted: gate } : {}) })
           : pickEveryProp(world);
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];
