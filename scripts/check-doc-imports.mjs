@@ -7,7 +7,7 @@
  * specifier through the generated `paths` in core's tsconfig, so an entry a package does not
  * export fails too.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -52,7 +52,19 @@ function main() {
   const coreDir = join(ROOT, 'packages/core');
   const config = ts.parseConfigFileTextToJson('tsconfig.json', readFileSync(join(coreDir, 'tsconfig.json'), 'utf8')).config;
   const paths = config.compilerOptions.paths;
-  const entryOf = (spec) => (paths[spec] ? resolve(coreDir, paths[spec][0]) : null);
+  const entryOf = (spec) => {
+    if (paths[spec]) return resolve(coreDir, paths[spec][0]);
+    // A wildcard subpath (`@weasel-js/ui/components/*`) stands for one entry per name.
+    for (const [key, [target]] of Object.entries(paths)) {
+      const star = key.indexOf('*');
+      if (star < 0) continue;
+      const [head, tail] = [key.slice(0, star), key.slice(star + 1)];
+      if (!spec.startsWith(head) || !spec.endsWith(tail) || spec.length < key.length) continue;
+      const file = resolve(coreDir, target.replace('*', spec.slice(head.length, spec.length - tail.length)));
+      if (existsSync(file) && statSync(file).isFile()) return file;
+    }
+    return null;
+  };
 
   const uses = markdownFiles().flatMap((file) =>
     namedImports(readFileSync(file, 'utf8')).map((u) => ({ ...u, file: relative(ROOT, file) })));
