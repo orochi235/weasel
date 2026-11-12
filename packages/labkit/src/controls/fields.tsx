@@ -7,6 +7,7 @@ import {
   prefNumberAt,
 } from '@weasel-js/prefs';
 import {
+  type LiveControl,
   PARAMS_SETTLES,
   type PrefFieldChoice,
   prefFieldProps,
@@ -20,9 +21,16 @@ import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
 
+type Settles = Readonly<Record<LiveControl, boolean>>;
+
 /** A typed value passes through text that is no value at all on its way, `1` and `12` before `120`, so with
  *  nowhere to send its drafts a typed field writes only the value its edit settles on. */
-const TYPED_SETTLE = { ...PARAMS_SETTLES.lab, number: true, string: true };
+const typedSettle = (settles: Settles): Settles => ({ ...settles, number: true, string: true });
+
+/** Which of a lab's live controls write only the value an edit settles on: `params.lab.settles`. */
+export function useLabSettles(): Settles {
+  return useParamsPolicy('lab').settles;
+}
 
 /** Whether this leaf draws as a slider, the one control whose value cannot be
  *  read off the control itself. */
@@ -49,7 +57,8 @@ export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unkn
  * without it, a typed field writes only that settled value. `null` for a kind with no one field: a paint, which a
  * hex swatch would flatten to a solid and the panel declines, and an object,
  * which a flat row would write one field of and the panel opens in a dialog.
- * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by.
+ * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by; `settles` is
+ * {@link useLabSettles}.
  */
 export function labField(
   given: PrefLeaf,
@@ -59,15 +68,16 @@ export function labField(
   disabled = false,
   draft?: (value: unknown) => void,
   read?: PrefBoundReader,
+  settles: Settles = PARAMS_SETTLES.lab,
 ): PropertyControlProps | null {
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (given.kind === 'paint' || given.kind === 'object') return null;
   const leaf = given.kind === 'number' && read ? prefNumberAt(given as PrefNumber, read) : given;
   const state = { value, setValue: write, fields, disabled };
-  const settled = prefFieldProps(leaf, state, 'lab', draft ? undefined : TYPED_SETTLE);
+  const settled = prefFieldProps(leaf, state, 'lab', draft ? settles : typedSettle(settles));
   if (settled === null) return null;
   const field = draft
-    ? withDrafts(settled, prefFieldProps(leaf, { ...state, setValue: draft }, 'lab'), 'lab')
+    ? withDrafts(settled, prefFieldProps(leaf, { ...state, setValue: draft }, 'lab', settles), 'lab', settles)
     : settled;
   switch (field.kind) {
     case 'number':
@@ -112,10 +122,11 @@ export function BareControl({
   /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
   read?: PrefBoundReader;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read);
+  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read, useLabSettles());
+  // `labField` has already decided whether this text drafts, and where to.
   const drafts = useDebouncedText(
     typeof value === 'string' ? value : '',
-    draft ?? unwritten,
+    (draft && field?.kind === 'string' && field.onInput) || unwritten,
     useTextWaitMs(leaf),
   );
   if (field === null) return null;
