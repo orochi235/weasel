@@ -25,7 +25,7 @@ export const floatToggle: TrialContribution = {
 };
 
 /**
- * A titlebar button opening the trial's sidebar sections in a dialog over its body. The body keeps its whole box
+ * A titlebar button opening the trial's sidebar sections in a dialog over its body, centered under the button. The body keeps its whole box
  * while the dialog is open; Escape or a press outside closes it, and focus goes back to the button.
  */
 function FloatSidebar() {
@@ -56,7 +56,7 @@ function FloatSidebar() {
         onOpenChange={setOpen}
         // A press on the toggle is its own to answer; closing here as well would reopen it on the click.
         shouldCloseOnInteractOutside={(el) => !trigger.current?.contains(el)}
-        placement="bottom end"
+        placement="bottom"
         offset={4}
         className="lk-float-sidebar"
         data-weasel-overlay=""
