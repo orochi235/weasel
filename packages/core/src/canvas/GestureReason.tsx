@@ -5,7 +5,7 @@
  * as text.
  */
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { canvasToClient, layoutBoxOf, overlaysOf, type Dispatcher } from '@weasel-js/routing';
+import { canvasToClient, overlaysOf, type Dispatcher } from '@weasel-js/routing';
 import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
@@ -13,6 +13,8 @@ import s from './GestureReason.module.css';
 
 /** How far below and right of the pointer the reason sits, in CSS pixels. */
 const OFFSET = 14;
+/** How far apart the two placements that measure the tag's frame are, in its own pixels. */
+const PROBE = 1000;
 
 export interface GestureReasonProps {
   dispatcher: Dispatcher | null | undefined;
@@ -59,13 +61,19 @@ export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonP
 /**
  * Puts a `position: fixed` element `OFFSET` of its own pixels below and right of a client point.
  * A transformed ancestor makes itself the element's containing block, so `left`/`top` are read in
- * that ancestor's offset, scaled frame: the element is measured at 0, 0 to find where that frame
- * sits. The pointer moves it every frame; nothing but an inline position can follow it.
+ * that ancestor's offset, scaled frame: the element is measured at two positions to find that frame,
+ * since a scale read off `offsetWidth` is rounded. The pointer moves it every frame; nothing but an
+ * inline position can follow it.
  */
 function placeFixedAt(el: HTMLElement, x: number, y: number): void {
-  el.style.left = '0px';
-  el.style.top = '0px';
-  const origin = layoutBoxOf(el);
-  el.style.left = `${(x - origin.left) / origin.scale.x + OFFSET}px`;
-  el.style.top = `${(y - origin.top) / origin.scale.y + OFFSET}px`;
+  const at = (left: number, top: number) => {
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    return el.getBoundingClientRect();
+  };
+  const far = at(PROBE, PROBE);
+  const origin = at(0, 0);
+  const kx = (far.left - origin.left) / PROBE || 1;
+  const ky = (far.top - origin.top) / PROBE || 1;
+  at((x - origin.left) / kx + OFFSET, (y - origin.top) / ky + OFFSET);
 }
