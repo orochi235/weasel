@@ -22,6 +22,11 @@ and `flush()` resolves false until it lands. While a write is queued or on its
 way, another writer's change to that record is ignored. With `retryMs: false`
 a rejected write waits for the next flush.
 
+A cache flushes when the page goes away or turns hidden, the last moment a
+phone or a discarded background tab is sure to give. `onLeave(fn)` runs any
+other pending write at the same moment; `{ capture: true }` runs it ahead of
+the caches' own flush.
+
 `defaultStorage()` is IndexedDB under the database `'weasel'`, or
 `localStorage`, with a warning, where IndexedDB will not open; it chooses once
 per page. `fallbackStorage(preferred, fallback, label)` makes the same choice

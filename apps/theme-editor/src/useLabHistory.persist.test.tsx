@@ -69,6 +69,16 @@ describe('useLabHistory with a store', () => {
     expect(again.result.current.state.n).toBe(0);
   });
 
+  it('saves a step still resting when the page turns hidden', () => {
+    const store = memoryStore<S>();
+    const { result } = renderHook(() => useLabHistory<S>({ n: 0 }, store));
+    act(() => result.current.update({ n: 1 }, 'n'));
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    vi.restoreAllMocks();
+    expect(store.held?.state.n).toBe(1);
+  });
+
   it('drops a history saved against other state than the hook opens on', () => {
     const store = memoryStore<S>();
     const first = renderHook(() => useLabHistory<S>({ n: 0 }, store));

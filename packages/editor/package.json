@@ -19,7 +19,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/registry": "1.19.0"
+    "@weasel-js/registry": "1.19.0",
+    "@weasel-js/storage": "1.19.0"
   },
   "peerDependencies": {
     "react": ">=18",

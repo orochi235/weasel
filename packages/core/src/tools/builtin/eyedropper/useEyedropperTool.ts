@@ -64,8 +64,10 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
 
   // Closing over the option refs here is what lets the consumer's `onPick`
   // stay a plain callback instead of a dep.
-  const pickAction = useMemo<Action>(
-    () => ({
+  const pickAction = useMemo<Action>(() => {
+    // Presses so far: an answer `colorAt` gives late reports only if no press has come since.
+    let presses = 0;
+    return {
       id: 'eyedropper.pick',
       label: 'Eyedropper — sample color',
       // Same tag the tool declares, so a mode that disallows color sampling
@@ -77,6 +79,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
         run: (deps, params) => {
           const press = (params as ImmediateParams | undefined)?.press;
           if (!press) return;
+          const mine = ++presses;
           const colorOf = colorOfRef.current;
           if (colorOf) {
             const id = deps.nodeAtPoint?.(press) ?? null;
@@ -84,14 +87,13 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool {
             return;
           }
           const got = deps.colorAt?.(screenOf(deps, press)) ?? null;
-          const report = (hex: string | null) => { if (hex !== null) onPickRef.current(hex); };
+          const report = (hex: string | null) => { if (hex !== null && mine === presses) onPickRef.current(hex); };
           if (got instanceof Promise) void got.then(report, () => undefined);
           else report(got);
         },
       },
-    }),
-    [onPickRef, colorOfRef],
-  );
+    };
+  }, [onPickRef, colorOfRef]);
 
   return useMemo(() => {
     // `null` means omit; the registry reads `undefined` as "no trigger".

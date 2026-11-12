@@ -4,7 +4,7 @@ import {
 } from '@weasel-js/diagram/effect';
 import { pickFile, menuRun, type MenuRuns } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { can } from '../menuBar';
 import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
 import { reportFailure } from '../reportFailure';
@@ -47,6 +47,8 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   const [showValues, setShowValues] = useState(false);
   const [showPreviews, setShowPreviews] = useState(false);
   const [showSpectrum, setShowSpectrum] = useState(false);
+  const picks = useRef(0);
+  useEffect(() => () => { picks.current += 1; }, []);
   const split = useMemo(() => splitDomains(pipeline), [pipeline]);
   const runner = useEffectRunner({
     pipeline: split.image, evaluators: imageEvaluators, kinds: imageValueKinds, previews: showPreviews,
@@ -74,7 +76,7 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   useCommand(RUN_ACTIONS.pause, 'Pause', () => { r.pause(); audio.runner?.pause(); }, { enabled: () => can(playing()) });
   useCommand(RUN_ACTIONS.reset, 'Reset', () => { r.reset(); audio.runner?.reset(); });
   useCommand(RUN_ACTIONS.source, 'Choose Source Image…', () => {
-    chooseImage().then((image) => { if (image !== null) setSources({ image }); })
+    chooseImage(picks).then((image) => { if (image !== null) setSources({ image }); })
       .catch(reportFailure('Could not read the image'));
   });
   useCommand(RUN_ACTIONS.audioSource, 'Choose Source Audio…', () => {
@@ -91,7 +93,14 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   return { run: merged, rows };
 }
 
-async function chooseImage(): Promise<ImageBitmap | null> {
+/** The image picked, or null for none or for one a later pick has overtaken while it decoded. `picks` counts the
+ *  picks made, and is pushed past every count once the caller is gone. */
+export async function chooseImage(picks: { current: number }): Promise<ImageBitmap | null> {
   const file = await pickFile('image/*');
-  return file === null ? null : createImageBitmap(file);
+  if (file === null) return null;
+  const mine = ++picks.current;
+  const image = await createImageBitmap(file);
+  if (picks.current === mine) return image;
+  image.close();
+  return null;
 }

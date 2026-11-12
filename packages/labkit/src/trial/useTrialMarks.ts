@@ -1,5 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { createEmitter, deepEqual } from '@weasel-js/registry';
+import { onLeave } from '@weasel-js/storage';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { annotationsFromJSON } from '../annotations/store';
 import type {
@@ -158,15 +159,15 @@ function useSavedMarks(
       dirty = false;
       saveRef.current(annotations.toJSON());
     };
-    // Captured on the window, so it runs ahead of the lab storage's own flush on the same event.
-    const onLeave = (event: Event): void => {
-      if (event.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
-      if (timer) clearTimeout(timer);
-      timer = null;
-      flush();
-    };
-    window.addEventListener('pagehide', onLeave, true);
-    window.addEventListener('visibilitychange', onLeave, true);
+    // Captured, so it runs ahead of the lab storage's own flush on the same event.
+    const stopLeave = onLeave(
+      () => {
+        if (timer) clearTimeout(timer);
+        timer = null;
+        flush();
+      },
+      { capture: true },
+    );
     const off = annotations.subscribe(() => {
       dirty = true;
       if (timer) clearTimeout(timer);
@@ -177,8 +178,7 @@ function useSavedMarks(
     });
     return () => {
       off();
-      window.removeEventListener('pagehide', onLeave, true);
-      window.removeEventListener('visibilitychange', onLeave, true);
+      stopLeave();
       if (timer) clearTimeout(timer);
       // A store the record's marks replaced lost to that write, unsaved marks and all.
       // eslint-disable-next-line react-hooks/exhaustive-deps -- read at cleanup on purpose: by then it is the store that took this one's place

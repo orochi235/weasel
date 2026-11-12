@@ -1,4 +1,5 @@
 import type { History, SerializedHistory } from '@weasel-js/history';
+import { onLeave } from '@weasel-js/storage';
 import { useEffect } from 'react';
 
 /** A history saved with the state it ends on. */
@@ -94,7 +95,7 @@ export function fitted(saved: SerializedHistory, budget = SAVED_CHARS): Serializ
 }
 
 /** Save `history` to `store` beside the state `holder` holds, a rest after each change and
- *  whenever the page hides or the caller unmounts. */
+ *  whenever the page goes away or turns hidden, or the caller unmounts. */
 export function useSavedLabHistory<T>(
   history: History,
   holder: { readonly current: { value: T } },
@@ -121,11 +122,11 @@ export function useSavedLabHistory<T>(
       timer = null;
       dirty = false;
     });
-    window.addEventListener('pagehide', flush);
+    const stopLeave = onLeave(flush);
     return () => {
       off();
       offClear?.();
-      window.removeEventListener('pagehide', flush);
+      stopLeave();
       flush();
     };
   }, [history, holder, store]);
