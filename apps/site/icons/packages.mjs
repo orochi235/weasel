@@ -8,6 +8,11 @@ const atom = [0, 60, 120]
   .map((a) => `<ellipse cx="10" cy="10" rx="5.6" ry="2.1" transform="rotate(${a} 10 10)" stroke-width="1.1"/>`)
   .join('');
 
+// The cartoon anvil, side on: a flat face, the horn tapering to a point on the left with its
+// underside sweeping into the waist, a squared heel on the right, and feet flaring at the base.
+const ANVIL =
+  'M4.4 7H15.6V8.9H13.4C12.4 8.9 11.8 9.6 11.8 10.5V11.4C11.8 12.3 12.8 12.8 13.8 13V14H6.6V13C7.6 12.8 8.6 12.3 8.6 11.4V10.4C8.6 8.6 7 7.6 4.4 7Z';
+
 export const PACKAGES = framed({
   // An ease-in-out curve with its start and end held.
   animator: `<path d="M4.6 15.4C9 15.4 11 4.6 15.4 4.6"/><path d="M4.6 15.4h0M15.4 4.6h0" stroke-width="2.6"/>`,
@@ -64,7 +69,7 @@ export const PACKAGES = framed({
   font: `<path d="M5.2 15.4 10 4.6l4.8 10.8M7 11.4h6"/>`,
 
   // An anvil.
-  forge: `<path d="M4.6 6.6h10.8c0 2-1.6 3-3.4 3.2V12h1.6v3H6.4v-3H8V9.8C6 9.6 4.6 8.6 4.6 6.6z"/>`,
+  forge: `<path d="${ANVIL}" fill="currentColor" stroke-width="0.6"/>`,
 
   // A right triangle and its square corner.
   geom: `<path d="M4.8 15.2h10.4L4.8 4.8z"/><path d="M4.8 12.6h2.6v2.6" stroke-width="1.1"/>`,
