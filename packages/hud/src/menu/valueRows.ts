@@ -45,6 +45,7 @@ export interface ValueInk { fg: string; muted: string; border: string; font: { f
 /** A number row's chips and value. A chip with nowhere to step to is muted, as is all of a disabled row. */
 export function numberCommands(
   b: WidgetBounds, r: { y: number; h: number }, e: MenuNumberEntry, value: number | undefined, m: MenuMetrics, ink: ValueInk,
+  locale?: string,
 ): DrawCommand[] {
   const { minus, value: cell, plus } = numberChips(b.w, m);
   const cy = b.y + r.y + r.h / 2;
@@ -55,7 +56,7 @@ export function numberCommands(
   return [
     mark(`M ${cx(minus) - 4} ${cy} L ${cx(minus) + 4} ${cy}`, color(!low)),
     textCommandFromRuns(
-      b.x + cell.x, b.y + r.y, [{ text: menuNumberText(value, e), fill: solid(color(true)) }],
+      b.x + cell.x, b.y + r.y, [{ text: menuNumberText(value, e, locale), fill: solid(color(true)) }],
       { ...ink.font, align: 'center' }, undefined, r.h, 'center', undefined, cell.w,
     ),
     mark(`M ${cx(plus) - 4} ${cy} L ${cx(plus) + 4} ${cy} M ${cx(plus)} ${cy - 4} L ${cx(plus)} ${cy + 4}`, color(!high)),

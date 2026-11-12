@@ -117,6 +117,12 @@ describe('menuNumberText', () => {
     expect(menuNumberText(0.25)).toBe('0.25');
     expect(menuNumberText(undefined, { suffix: '×' })).toBe('—');
   });
+
+  it('writes the value in the locale it is given, en-US by default', () => {
+    expect(menuNumberText(1234.5, { suffix: 'ms' }, 'de-DE')).toBe('1234,5ms');
+    expect(menuNumberText(0.25, {}, 'ar-EG')).toBe('٠٫٢٥');
+    expect(menuNumberText(0.25, {}, 'not a locale!')).toBe('0.25');
+  });
 });
 
 describe('a text row', () => {

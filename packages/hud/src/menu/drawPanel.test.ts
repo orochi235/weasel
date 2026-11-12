@@ -129,5 +129,13 @@ describe('drawPanel', () => {
     const many = Array.from({ length: 1_000_000 }, (): MenuEntry => one);
     expect(panelSize(many, m, measure).w).toBe(panelSize([one], m, measure).w);
   });
-});
 
+  it("writes a number row's value in the locale its values name, en-US without one", () => {
+    const row: MenuEntry = { kind: 'number', key: 'gain', label: 'Gain', value: 2.5, step: 0.5, set: () => {} };
+    const shown = (locale?: string) =>
+      texts(drawPanel(ctx, b, [row], null, m, undefined, { number: () => 2.5, text: () => undefined, locale }))
+        .map((t) => t.runs.map((r) => r.text).join(''));
+    expect(shown('de-DE')).toContain('2,5');
+    expect(shown()).toContain('2.5');
+  });
+});
