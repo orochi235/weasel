@@ -37,8 +37,9 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
   onMainViewChange: (next: View) => void;
   /** Consumer's draw callback. Applied through the derived fit view; same
    *  signature as `<SceneCanvas>`'s scene-slot `drawOne` so the consumer
-   *  can reuse it (typically simplified — just colored AABBs). */
-  drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
+   *  can reuse it, or pass a simplified one (just colored AABBs). Default
+   *  `defaultDrawOne`, which `<SceneCanvas>` also paints with when given none. */
+  drawOne?: SceneViewDrawOne<TData, TLayer, TPose>;
   /** Fit policy. Defaults to `"scene"` (AABB union of leaf poses). See
    *  `MinimapFit` for the full shape.
    *
