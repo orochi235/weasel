@@ -74,9 +74,9 @@ describe('parseNumber, property', () => {
 describe('formatCompact, property', () => {
   it('reads back to three significant figures, or to its places below a thousand', () => {
     const tally = { compact: 0, plain: 0 };
-    fc.assert(fc.property(finite(1e14), fc.integer({ min: 0, max: 3 }), (value, places) => {
-      const text = formatCompact(value, places);
-      const got = parseNumber(text);
+    fc.assert(fc.property(finite(1e14), fc.integer({ min: 0, max: 3 }), locale, (value, places, loc) => {
+      const text = formatCompact(value, places, loc);
+      const got = parseNumber(text, undefined, loc);
       if (Math.abs(got) >= 1000) {
         tally.compact++;
         expect(Math.abs(got - value), text).toBeLessThanOrEqual(Math.abs(value) * 5e-3 * (1 + 1e-9));

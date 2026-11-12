@@ -112,6 +112,13 @@ describe('formatCompact', () => {
   it('signs a negative with U+2212', () => {
     expect(formatCompact(-1500)).toBe('−1.50K');
   });
+
+  it("writes the number in the locale's marks and digits, keeping a suffix parseNumber reads", () => {
+    expect(formatCompact(40_000, 0, 'de-DE')).toBe('40,0K');
+    expect(formatCompact(2.5, 1, 'de-DE')).toBe('2,5');
+    expect(formatCompact(-1500, 0, 'ar-EG')).toBe('−١٫٥٠K');
+    expect(parseNumber(formatCompact(-1500, 0, 'ar-EG'), undefined, 'ar-EG')).toBe(-1500);
+  });
 });
 
 describe('parseNumber', () => {
