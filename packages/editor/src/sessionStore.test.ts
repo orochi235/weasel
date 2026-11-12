@@ -25,6 +25,18 @@ describe('readStored', () => {
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('denied'); });
     expect(readStored('k', parse, () => -3)).toBe(-3);
   });
+
+  it('keeps an entry parse throws on aside, as writeSession keeps the document a failed write would cost, and says so once', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem('k', '"seven"');
+    expect(readStored('k', parse, () => -1)).toBe(-1);
+    expect(readStored('k', parse, () => -1)).toBe(-1);
+    // The fallback's autosave then writes over the key; the text it could not read survives beside it.
+    localStorage.setItem('k', '0');
+    expect(localStorage.getItem('k:unreadable')).toBe('"seven"');
+    expect(error).toHaveBeenCalledOnce();
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('"k:unreadable"'), expect.any(Error));
+  });
 });
 
 /** A store that refuses writes to the keys in `full`, as a quota error does. */
