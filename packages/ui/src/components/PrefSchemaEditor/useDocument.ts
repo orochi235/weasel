@@ -22,7 +22,8 @@ export interface DocumentOptions<V> {
   taken: boolean;
   /** The selection a step records and restores. */
   selection: { get(): string[]; set(ids: readonly string[]): void };
-  /** Called with the value before and after each `commit`, ahead of handing it on. Not called on undo or redo. */
+  /** Called with the value before and after each `commit`, ahead of handing it on: before is the value last handed
+   *  to `onChange`, which a render may not have shown yet. Not called on undo or redo. */
   onCommit?(before: V, after: V): void;
 }
 
@@ -102,7 +103,8 @@ export function useDocument<V>(options: DocumentOptions<V>): EditorDocument<V> {
 
   return {
     commit(next, coalesceKey) {
-      const before = latest.current.value;
+      // What the last commit or step handed on, which a render may not have shown yet.
+      const before = emitted.current;
       latest.current.onCommit?.(before, next);
       history.applyOps([swapOp(before, next, hand, coalesceKey)], 'edit schema');
       keep();
