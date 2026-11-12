@@ -85,19 +85,21 @@ describe('a secondary press on a canvas that binds a secondary drag', () => {
     expect(fired).toEqual(['drag', 'drag:commit']);
   });
 
-  it('released in place opens the menu once, on the release, whenever its native menu comes', () => {
-    const held = mount({ drags: true });
-    held.pointer('pointerdown');
-    held.nativeMenu();
-    expect(held.fired).toEqual([]);
-    held.pointer('pointerup');
-    expect(held.fired).toEqual(['menu']);
+  it('released in place opens the menu once, on the release, though its native menu came while held', () => {
+    const { fired, pointer, nativeMenu } = mount({ drags: true });
+    pointer('pointerdown');
+    nativeMenu();
+    expect(fired).toEqual([]);
+    pointer('pointerup');
+    expect(fired).toEqual(['menu']);
+  });
 
-    const after = mount({ drags: true });
-    after.pointer('pointerdown');
-    after.pointer('pointerup');
-    after.nativeMenu();
-    expect(after.fired).toEqual(['menu']);
+  it('released in place opens the menu once, on the release, though its native menu comes after', () => {
+    const { fired, pointer, nativeMenu } = mount({ drags: true });
+    pointer('pointerdown');
+    pointer('pointerup');
+    nativeMenu();
+    expect(fired).toEqual(['menu']);
   });
 
   it('leaves a later menu somewhere else, from the keyboard say, to open', () => {
