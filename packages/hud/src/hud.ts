@@ -85,7 +85,6 @@ function focusReports(current: () => Widget | null): { emit: FocusListener; subs
 export function createHud(): Hud {
   const list: Widget[] = [];
   let host: HudHost | null = null;
-  let detached = false;
   const frameSubs = createEmitter();
   let hostFrameSub: (() => void) | null = null;
 
@@ -131,27 +130,23 @@ export function createHud(): Hud {
 
   /** A factory method: `create` with redraws and removal wired in, its widget added to the HUD. */
   const factory = <O, W extends Widget>(
-    create: (opts: O & { onChange: () => void; removeFromHud: () => void }) => W, from: string,
+    create: (opts: O & { onChange: () => void; removeFromHud: () => void }) => W,
   ) => (opts: O): W => {
     let w: W | null = null;
     w = create({ ...opts, onChange: () => requestRedraw(), removeFromHud: () => { if (w && drop(w)) requestRedraw(); } });
-    push(w, from);
+    push(w);
     return w;
   };
 
-  /** Every path that puts a widget in the list, so the detached guard is one
-   *  rule rather than one per factory. */
-  const push = (widget: Widget, from: string): void => {
-    if (detached) {
-      console.warn(`weasel-hud: ${from} called on a detached HUD; ignored.`);
-      return;
-    }
+  /** Every path that puts a widget in the list. An unbound HUD keeps what it is given and shows it on its next
+   *  bind, whether or not it was bound before: StrictMode unbinds and rebinds around a child's effect. */
+  const push = (widget: Widget): void => {
     if (!list.includes(widget)) { list.push(widget); requestRedraw(); }
   };
 
   return {
     get attached() { return host !== null; },
-    add(widget) { push(widget, 'add()'); },
+    add(widget) { push(widget); },
     remove(widget) {
       if (!drop(widget)) return;
       try { widget.dispose(); } catch (e) {
@@ -180,7 +175,6 @@ export function createHud(): Hud {
     bind(h) {
       if (host) throw new Error('weasel-hud: HUD is already bound to a host.');
       host = h;
-      detached = false;
       attachFrames();
       if (list.length > 0) requestRedraw();
     },
@@ -188,7 +182,6 @@ export function createHud(): Hud {
       hostFrameSub?.();
       hostFrameSub = null;
       host = null;
-      detached = true;
     },
     subscribeFrame(fn) {
       const off = frameSubs.subscribe(fn);
@@ -198,12 +191,12 @@ export function createHud(): Hud {
         if (frameSubs.size === 0) { hostFrameSub?.(); hostFrameSub = null; }
       };
     },
-    rect: factory(createRect, 'rect()'),
-    text: factory(createText, 'text()'),
-    image: factory(createImage, 'image()'),
-    label: factory(createLabel, 'label()'),
-    button: factory(createButton, 'button()'),
-    window: factory(createWindow, 'window()'),
-    list: factory(createList, 'list()'),
+    rect: factory(createRect),
+    text: factory(createText),
+    image: factory(createImage),
+    label: factory(createLabel),
+    button: factory(createButton),
+    window: factory(createWindow),
+    list: factory(createList),
   };
 }

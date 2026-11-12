@@ -259,7 +259,7 @@ state visually stable while inside a single widget should not cause redraws.
 | Bad widget options at creation (e.g. `w <= 0`) | Throw with a clear message. Programmer error; fail loud. |
 | Default font not yet loaded | Renderer's existing fallback (warn + skip glyph) takes over; once font lands, next redraw paints normally. Boot window is typically one frame. |
 | Multiple HUDs on one canvas | Throw from `attachHud`. v1 supports a single HUD per canvas. Lift this when there's a real use case. |
-| Use-after-detach (mutator on detached HUD) | No-op + `console.warn`. Matches React's "setState on unmounted" tone — friendlier in error paths. |
+| Use-after-detach (mutator on detached HUD) | Kept, and shown on the next bind, as on a HUD never bound. A detach is not final: StrictMode detaches and re-attaches between a child's effects (2026-11-12). |
 | Use-after-dispose (mutator on disposed widget) | Throw. No defensible reason to keep using a disposed reference. |
 | Pointer capture loss (browser cancels) | `onPointer({type:'cancel'})` to the captured widget; press state rolls back. |
 | Renderer context lost / restored | Inherits the renderer's existing context-loss handling. HUD widgets don't hold GL resources directly — they emit DrawCommands; the renderer owns textures and programs. |
