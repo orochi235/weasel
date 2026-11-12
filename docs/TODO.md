@@ -38,6 +38,16 @@ Owner tags, after the priority (2026-10-26):
   pressed in between finds the old selection. A person clicking then typing quickly hits it too. Closes when a
   key pressed straight after a click acts on what the click selected, or the delay is ruled acceptable.
 
+- **(P2) [agent] hud's loupe aims from raw pointer listeners, labkit's from the dispatcher.** labkit binds
+  `loupe.aim` and `loupe.leave` (`packages/labkit/src/loupe/loupeActions.ts`), so the dispatcher decides who
+  owns a press and a held press freezes the aim through `HoverSpec.held`. hud's `createLoupe` instead adds
+  `pointermove`/`pointerdown` listeners to its input element (`packages/hud/src/loupe/pointerAim.ts`) and
+  keeps its own "a press on the lens holds the aim" rule, so the two loupes can disagree on when the lens
+  follows. Too big for an audit pass: the aim actions live in labkit, and hud's loupe has no dispatcher
+  of its own to bind them on, so they have to move to a package both reach (`@weasel-js/loupe` is the
+  candidate) and `createLoupe` has to take a dispatcher or a contribution. Closes when hud's loupe aims
+  through the same `loupe.aim` action as labkit's and `pointerAim.ts` is deleted.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
