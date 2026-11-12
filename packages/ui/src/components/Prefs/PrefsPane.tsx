@@ -10,8 +10,9 @@ import { HiddenBadge, hiddenAttrs, marksHidden } from './hidden';
 import { aliasOfNothing } from './PrefWords';
 import { pathWithin, selectionAttrs, tabAttrs, useHeldTab } from './selection';
 import { markScrollbar } from './scrollbar';
+import { useAttachRef } from '../../useAttachRef';
 import { splitMarks } from './SplitRow';
-import { stuckHeadingRef } from './stuckHeading';
+import { trackStuckHeading } from './stuckHeading';
 import s from './Prefs.module.css';
 import f from './fragment.module.css';
 
@@ -49,10 +50,11 @@ export function PrefsPane(props: PrefsPaneProps) {
   const head = groupHeading(ctx, group, path);
   // Whatever hides it, a page is drawn apart from what it sits in, so it carries the mark itself.
   const marked = ctx.hidden?.has(path) === true;
+  const mark = useAttachRef(markScrollbar);
   const paneRef = useCallback((el: HTMLDivElement | null) => {
     scrollRef.current = el;
-    return markScrollbar(el);
-  }, [scrollRef]);
+    mark(el);
+  }, [scrollRef, mark]);
 
   return (
     // A hidden page is marked whole: its heading and its rows share no element but this one.
@@ -147,13 +149,14 @@ function PaneSection({ ctx, group, path, depth, box }: {
 }) {
   const Heading = depth === 0 ? 'h4' : 'h5';
   const head = groupHeading(ctx, group, path);
+  const stuck = useAttachRef(trackStuckHeading);
   return (
     <section
       className={depth === 0 ? s.paneSection : s.paneSubsection}
       {...selectionAttrs(path, ctx)}
       aria-label={group.name}
     >
-      <Heading className={[depth === 0 ? s.sectionTitle : s.subsectionTitle, head.className].filter(Boolean).join(' ')} data-pref-sticky={depth === 0 ? '' : undefined} ref={depth === 0 ? stuckHeadingRef : undefined}>
+      <Heading className={[depth === 0 ? s.sectionTitle : s.subsectionTitle, head.className].filter(Boolean).join(' ')} data-pref-sticky={depth === 0 ? '' : undefined} ref={depth === 0 ? stuck : undefined}>
         {head.name}
         {marksHidden(ctx.hidden, path) && <HiddenBadge />}
         {head.control}
