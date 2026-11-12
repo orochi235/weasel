@@ -79,6 +79,7 @@ export function ListLeaf({
           values: ctx.values,
           ...(ctx.fields ? { fields: ctx.fields } : {}),
           ...(ctx.settles ? { settles: ctx.settles } : {}),
+          ...(ctx.textWaitMs ? { textWaitMs: ctx.textWaitMs } : {}),
         });
       }}
     />

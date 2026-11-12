@@ -52,7 +52,8 @@ export interface PrefFieldState {
  *
  * Given a `surface`, the control is the one that surface draws for what the
  * leaf asked for ({@link PARAMS_CONTROLS}), and it writes when that surface
- * writes ({@link PARAMS_SETTLES}, or `settles` where given). A leaf naming no
+ * writes ({@link PARAMS_SETTLES}, or `settles` where given), its live text
+ * waiting `textWaitMs` between keystrokes. A leaf naming no
  * control is left without one; {@link withRowControl} fills in a row's.
  */
 export function prefFieldProps(
@@ -60,10 +61,11 @@ export function prefFieldProps(
   state: PrefFieldState,
   surface?: ParamsSurface,
   settles?: Readonly<Record<LiveControl, boolean>>,
+  textWaitMs?: number,
 ): PropertyControlProps | null {
   const made = clearable(leaf, state, enabledFieldProps(leaf, state));
   if (made === null) return null;
-  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles);
+  const field = surface === undefined ? made : withCommitPolicy(withSurfaceControl(made, surface), surface, settles, textWaitMs);
   const shown = (leaf as PrefValueBase<string, unknown>).readout === true ? { ...field, readOnly: true } : field;
   if (!state.disabled) return shown;
   return leaf.disabledReason === undefined ? { ...shown, disabled: true } : { ...shown, disabled: true, disabledReason: leaf.disabledReason };

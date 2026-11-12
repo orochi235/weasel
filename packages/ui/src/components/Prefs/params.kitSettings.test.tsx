@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { asNodeId } from '@weasel-js/core';
 import { pref } from '@weasel-js/prefs';
 import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import { Bar } from '../Bar/Bar';
 import { SelectionPanel } from '../SelectionPanel/SelectionPanel';
 import { makeScene, properties, routing, selectionOf, type Data } from '../SelectionPanel/testing/rectScene';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS } from './commitPolicy';
@@ -70,5 +71,76 @@ describe('params.panel.settles', () => {
     expect(labelAfterTyping(undefined)).toBe('hello');
     cleanup();
     expect(labelAfterTyping({ params: { panel: { settles: { string: false } } } })).toBe('world');
+  });
+});
+
+describe('params.<surface>.textWaitMs', () => {
+  // Live text waits the setting's ms for the next keystroke, then writes once; settling the edit sends it early.
+  const live = (surface: 'form' | 'panel', textWaitMs: number): KitSettingsOverrides =>
+    ({ params: { [surface]: { textWaitMs, settles: { string: false } } } }) as KitSettingsOverrides;
+
+  const typeTwice = (field: HTMLElement): void => {
+    fireEvent.change(field, { target: { value: 'H' } });
+    fireEvent.change(field, { target: { value: 'Hi' } });
+  };
+
+  const waits = (writes: () => unknown[][], field: () => HTMLElement): void => {
+    typeTwice(field());
+    expect(writes()).toEqual([]);
+    act(() => vi.advanceTimersByTime(99));
+    expect(writes()).toEqual([]);
+    act(() => vi.advanceTimersByTime(1));
+    expect(writes()).toEqual([['Hi']]);
+  };
+
+  afterEach(() => vi.useRealTimers());
+
+  it('makes a PrefsForm wait, and sends the waiting text on blur', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    render(under(live('form', 100), <PrefsForm schema={schema} values={{}} onChange={onChange} />));
+    waits(() => onChange.mock.calls.map(([, v]) => [v]), () => screen.getByLabelText('Title'));
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Hey' } });
+    fireEvent.blur(screen.getByLabelText('Title'));
+    expect(onChange.mock.calls.map(([, v]) => v)).toEqual(['Hi', 'Hey']);
+  });
+
+  it("makes PrefControl's leaf wait", () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    render(under(live('form', 100), (
+      <PrefControl pref={{ ...schema.children.title, name: 'Title' }} value="" onChange={onChange} />
+    )));
+    waits(() => onChange.mock.calls, () => screen.getByRole('textbox'));
+  });
+
+  it('makes a SelectionPanel wait before it drafts into the scene', () => {
+    vi.useFakeTimers();
+    const scene = makeScene();
+    render(under(live('panel', 100), (
+      <SelectionPanel scene={scene} selection={selectionOf(['a'])} properties={properties} routing={routing} />
+    )));
+    const label = (): string => (scene.get(asNodeId('a')) as { data: Data }).data.label;
+    const field = screen.getByLabelText('Label');
+    act(() => field.focus());
+    typeTwice(field);
+    expect(label()).toBe('hello');
+    act(() => vi.advanceTimersByTime(100));
+    expect(label()).toBe('Hi');
+  });
+
+  it('makes a Bar wait', () => {
+    vi.useFakeTimers();
+    const onChange = vi.fn();
+    const bar = pref.group('Doc', { title: pref.string('Title', '') });
+    render(under(live('panel', 100), <Bar schema={{ ...bar, as: 'bar' }} onChange={onChange} />));
+    waits(() => onChange.mock.calls.map(([, v]) => [v]), () => screen.getByLabelText('Title'));
+  });
+
+  it('writes every keystroke at the default wait', () => {
+    const onChange = vi.fn();
+    render(under({ params: { form: { settles: { string: false } } } }, <PrefsForm schema={schema} values={{}} onChange={onChange} />));
+    typeTwice(screen.getByLabelText('Title'));
+    expect(onChange).toHaveBeenCalledTimes(2);
   });
 });

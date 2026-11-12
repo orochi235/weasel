@@ -97,6 +97,9 @@ export interface PropertyRenderContext {
   /** Which live controls write only the value an edit settles on, as the panel's kit settings have it. Absent, the
    *  panel's defaults. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** How long live text waits for the next keystroke before it is written, in ms, as the panel's kit settings have
+   *  it. Absent, every keystroke. */
+  textWaitMs?: number;
   /** For a node's fill or stroke, and the paint inside it, which can take the
    *  enclosing container's instead: see {@link PanelInherit}. Absent for any
    *  other leaf, and for a selection holding a node with no container. */

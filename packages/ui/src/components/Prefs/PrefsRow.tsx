@@ -79,6 +79,8 @@ export interface WalkCtx {
   entryAt?: EntryAt;
   /** Which live controls write only the value an edit settles on. */
   settles?: Readonly<Record<LiveControl, boolean>>;
+  /** How long live text waits for the next keystroke before it is written, in ms. */
+  textWaitMs?: number;
   /** What the form was given to split values with, and which rows are open. */
   split?: SplitCtx;
   /** A surface that draws its leaves itself and its groups as the form does: a standalone `Bar`'s opened
@@ -155,6 +157,7 @@ export function prefRenderContext(
     ...(ctx.hidden ? { hidden: ctx.hidden.has(own), hiddenAt: inside?.hiddenAt ?? ((at: string) => ctx.hidden!.has(at)) } : {}),
     ...(entryAt ? { entryAt } : {}),
     ...(ctx.settles ? { settles: ctx.settles } : {}),
+    ...(ctx.textWaitMs ? { textWaitMs: ctx.textWaitMs } : {}),
   };
   return { renderCtx, toggles };
 }
@@ -339,5 +342,6 @@ function leafField(ctx: PrefRenderContext, siblings: Record<string, unknown> | u
     { value: ctx.value, mixed: ctx.mixed, siblings, setValue: ctx.setValue, fields: ctx.fields, disabled: ctx.disabled },
     'form',
     ctx.settles,
+    ctx.textWaitMs,
   );
 }

@@ -35,7 +35,7 @@ export interface PrefControlProps {
  * others' (an `object`, a `list`, a `map`, a `union`) to put in one.
  */
 export function PrefControl({ pref, path = '', value, values, onChange, renderers, fields, disabled, disabledAt, entryAt }: PrefControlProps) {
-  const { settles } = useParamsPolicy('form');
+  const { settles, textWaitMs } = useParamsPolicy('form');
   return renderPrefControl(
     {
       path,
@@ -50,6 +50,7 @@ export function PrefControl({ pref, path = '', value, values, onChange, renderer
       disabledAt,
       ...(entryAt ? { entryAt } : {}),
       settles,
+      textWaitMs,
     },
     renderers,
   );
