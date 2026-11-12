@@ -181,6 +181,52 @@ describe('a 3D move of several roots', () => {
   });
 });
 
+describe('a 3D move through a camera that casts no ray', () => {
+  it('leaves the solid where it is rather than moving it through the camera of an earlier gesture', () => {
+    const scene = createTestScene();
+    const id = [...scene.renderOrder()][0]! as NodeId;
+    const before = scene.get(id)!.pose;
+    let vp = viewport();
+    const poseDescriptor = createPoseDescriptor({ scene, viewport: () => vp, bounds: boundsOfTestNode });
+    const deps = { selection: { get: () => [id], set: () => {} }, scene, poseDescriptor };
+    drag(deps, { x: 40, y: 10 });
+    const after = scene.get(id)!.pose;
+    expect(after).not.toEqual(before);
+    // The pane collapses: no ray from it, for this gesture or any later one.
+    vp = { ...viewport(), width: 0, height: 0 };
+    drag(deps, { x: 40, y: 10 });
+    expect(scene.get(id)!.pose).toEqual(after);
+    moveNodes({ scene, poseDescriptor } as never, [id], { dx: 12, dy: -4 }, 'Nudge');
+    expect(scene.get(id)!.pose).toEqual(after);
+  });
+});
+
+describe('a 3D move whose camera stops casting rays mid-drag', () => {
+  it('keeps moving through the last camera that did', () => {
+    const scene = createTestScene();
+    const id = [...scene.renderOrder()][0]! as NodeId;
+    let vp = viewport();
+    const poseDescriptor = createPoseDescriptor({ scene, viewport: () => vp, bounds: boundsOfTestNode });
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const start = { x: 400, y: 300 };
+    const at = (dx: number) => ({
+      world: { x: start.x + dx, y: start.y }, screen: start,
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { selection: { get: () => [id], set: () => {} }, scene, poseDescriptor },
+      drag: { start, current: { x: start.x + dx, y: start.y }, delta: { x: dx, y: 0 } },
+    }) as unknown as InvocationCtx;
+    const handle = invoker.start({ ...at(0), drag: undefined } as unknown as InvocationCtx, undefined);
+    handle.onMove!(at(20));
+    const expected = poseDescriptor.forNode!(scene.get(id)!).translate!(scene.get(id)!.pose, 40, 0);
+    vp = { ...viewport(), width: 0, height: 0 };
+    handle.onMove!(at(40));
+    handle.onEnd!(at(40), 'commit');
+    expect(scene.get(id)!.pose.position.x).toBeCloseTo(expected.position.x, 9);
+    expect(scene.get(id)!.pose.position.z).toBeCloseTo(expected.position.z, 9);
+  });
+});
+
 describe('a 3D move of several roots, one stored under a container', () => {
   function framedRoots() {
     const { scene, framed, frame } = createFramedTestScene();

@@ -223,12 +223,16 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
   // A drag whose camera stops casting rays mid-gesture keeps moving through the
-  // last one that did, rather than snapping the node back.
+  // last one that did, rather than snapping the node back. Mid-gesture means a
+  // preview is in flight; a call with none, as a gesture's first frame and a
+  // nudge are, starts afresh, so no gesture moves through an earlier one's camera.
   let lastCastable: Viewport3d | null = null;
   function castableViewport(): Viewport3d | null {
     const vp = viewportOf(world, viewId);
     const rect = rectOf(vp);
-    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
+    const castable = rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }) !== null;
+    if (castable) lastCastable = vp;
+    else if (world.scene.overrides.ids().length === 0) lastCastable = null;
     return lastCastable;
   }
 

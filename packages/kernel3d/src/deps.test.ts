@@ -436,14 +436,18 @@ describe('createPoseDescriptor', () => {
     expect(Math.abs(farMoved)).toBeGreaterThan(Math.abs(nearMoved));
   });
 
-  it('keeps dragging through the last camera that cast a ray', () => {
+  it('keeps dragging through the last camera that cast a ray while a preview is in flight, and only then', () => {
     let vp = viewport();
     const descriptor = createPoseDescriptor(world(scene, () => vp));
     const start = pose3({ x: 0, y: 0.5, z: 0 });
     const moved = descriptor.translate!(start, 120, 0);
 
+    const preview = scene.overrides.hold();
+    preview.set([[idsOf(scene)[0]!, moved]]);
     vp = viewport({ camera: createCamera({ distance: 0, target: { x: 0, y: 0.5, z: 0 } }) });
     expect(descriptor.translate!(start, 120, 0)).toEqual(moved);
+    preview.drop();
+    expect(descriptor.translate!(start, 120, 0)).toBe(start);
   });
 
   it('leaves a pose where it is when no camera has cast a ray yet', () => {
