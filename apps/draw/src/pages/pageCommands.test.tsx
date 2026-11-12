@@ -31,7 +31,7 @@ function setup(mode: 'path-edit' | 'text-edit') {
     registry = useActionsRegistry();
   }, { wrapper });
   machine.enterMode(mode, { targetId: shape });
-  return { scene, shape, machine, trigger: (params: object) => act(() => { (registry as unknown as ActionsRegistry).trigger(PAGE_ACTIONS.remove, params); }) };
+  return { scene, shape, machine, trigger: (params: Record<string, unknown>) => act(() => { (registry as unknown as ActionsRegistry).trigger(PAGE_ACTIONS.remove, params); }) };
 }
 
 describe('Delete Page', () => {
