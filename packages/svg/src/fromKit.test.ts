@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  boundsOfPath as boundsOf, createScene, getMarker, pathFromD, registerMarker, solid,
+  boundsOfPath as boundsOf, createScene, getMarker, pathFromD, registerMarker, shapePathOf, solid,
   type Paint, type Path, type PolygonPath, type Stroke,
 } from '@weasel-js/core';
 import {
@@ -216,6 +216,26 @@ describe('svgLeafFromKit', () => {
   it('writes an image leaf, and null for data no built-in painter draws', () => {
     expect(svgLeafFromKit({ image: { src: 'a.png' } }, BOX)).toMatchObject({ kind: 'image', href: 'a.png' });
     expect(svgLeafFromKit({}, BOX)).toBeNull();
+  });
+
+  it.each([
+    { shape: 'rect' }, { shape: 'ellipse' }, { shape: 'polygon', sides: 5 }, { shape: 'star', points: 7 },
+  ])('writes a $shape shape as the outline its painter draws in the box', (data) => {
+    const fill = { paint: solid('#336699') };
+    const node = svgLeafFromKit({ ...data, fill }, BOX) as SvgPathNode;
+    expect(node.kind).toBe('path');
+    expect(node.path).toEqual(shapePathOf(data, BOX));
+    expect(node.fill).toEqual(svgPaintFromKit(fill.paint, BOX));
+  });
+
+  it('turns a shape with its pose, and leaves out a shape kind no painter draws', () => {
+    expect(svgLeafFromKit({ shape: 'ellipse' }, { ...BOX, rotation: 0.5 })).toMatchObject({ kind: 'path', rotation: 0.5 });
+    expect(svgLeafFromKit({ shape: 'blob' }, BOX)).toBeNull();
+  });
+
+  it('writes a path over an image in the same data, as the path painter claims the node first', () => {
+    const path = { kind: 'rect', ...BOX } as const;
+    expect(svgLeafFromKit({ path, image: { src: 'a.png' } }, BOX)).toMatchObject({ kind: 'path' });
   });
 });
 
