@@ -44,12 +44,14 @@
     "@weasel-js/geom": "1.19.0",
     "@weasel-js/paint": "1.19.0",
     "@weasel-js/renderer": "1.19.0",
-    "@weasel-js/text": "1.19.0",
     "bil-lbx": "^0.3.1",
     "obwat": "^0.3.1"
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.0"
+  },
+  "devDependencies": {
+    "@weasel-js/text": "1.19.0"
   },
   "publishConfig": {
     "access": "public",
