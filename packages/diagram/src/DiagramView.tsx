@@ -105,9 +105,9 @@ function Inner({
     registry,
   });
   const selection = useSelection({ scene, mode: selectionMode === 'multiple' ? 'multi' : 'single' });
-  const mirror = useMirroredSelection(selection, selected, onSelect);
-
   useSceneSync(scene, specs, { onMove, onEditContainer });
+  // After the sync, so a `selected` naming a node these specs add finds it in the scene.
+  const mirror = useMirroredSelection(selection, selected, onSelect);
   useReleasedImages(specs);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
