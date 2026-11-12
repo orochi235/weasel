@@ -1728,3 +1728,16 @@ Calls the lanes made without a ruling:
 - Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
 - Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
   ask for `^19.0.0`.
+
+## Audit round seventeen (2026-11-12): params
+
+- A color leaf the selected nodes do not hold draws as `mixed` does, an empty checkered swatch with its opacity
+  locked until a color is picked, rather than the leaf's default; `ColorField` takes `unset` for it (2026-11-12).
+- Open: a paint leaf the nodes do not hold still shows the leaf's default, dimmed, as `PaintField`'s `unset` says
+  ("a value is in effect but was never chosen"). Under `SelectionPanel` that default is not what paints, since
+  `absentIsDefault` is what makes the default the value in effect; `FieldBase.unset` says a control shows no
+  value there. Whether paint follows color to an empty trigger.
+- Open: labkit fills a stored trial's missing config keys from its instrument's defaults on load, and repairs
+  nothing against the config schema: a number past a since-narrowed `max`, or an enum option since removed, reaches
+  the instrument and the panel as stored, and only the next edit clamps it. Repairing on load needs the schema at
+  hydration and has to leave `minAt`/`maxAt` bounds, auto values and encoded leaves alone.
