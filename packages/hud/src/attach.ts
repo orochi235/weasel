@@ -1,4 +1,5 @@
 import type { Hud } from './hud';
+import { recordHudOn } from './loupe/loupeRoutes';
 import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { depsUnchanged, viewToTransform } from '@weasel-js/core';
@@ -54,6 +55,13 @@ export function attachHud(
   hud: Hud,
   options: AttachHudOptions = {},
 ): () => void {
+  const detach = bindHud(api, hud, options);
+  // Recorded so a HUD entry built without this HUD finds its loupes.
+  const forget = recordHudOn(api, hud);
+  return () => { forget(); detach(); };
+}
+
+function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): () => void {
   const theme = options.theme ?? resolveTheme(weaselTheme);
   const color = hudColor(options.tints ?? { theme: weaselTheme, resolved: theme });
   if (hud.attached) {
