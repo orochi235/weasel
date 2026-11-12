@@ -18,6 +18,7 @@ export function leafField(ctx: PropertyRenderContext, nested: boolean): Property
     fields: ctx.fields,
     siblings: ctx.siblings,
     setValue: ctx.setValue,
+    update: ctx.update,
     disabled: ctx.disabled,
     ...perNodeState(ctx),
     // The font pickers read the rest of the font from the leaves beside

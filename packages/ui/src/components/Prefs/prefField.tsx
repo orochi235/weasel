@@ -28,7 +28,8 @@ export interface PrefFieldState {
    * — which a selection whose objects differ needs, having no one `siblings`.
    */
   perNode?: readonly { value: unknown; siblings: Record<string, unknown> | undefined }[];
-  /** Writes each node a value derived from its own `siblings`. */
+  /** Writes each node a value derived from its own: from its own `siblings` for an `encoding`, and from its
+   *  own number for a `+=` / `-=` typed into a number. */
   update?: (fn: (prev: unknown, siblings?: Record<string, unknown>) => unknown) => void;
   /** A font family's weight and slant, where they are not `siblings`' own
    *  `fontWeight` / `fontStyle`. */
@@ -95,16 +96,23 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
   const { value, mixed = false, unset = false, setValue } = state;
   const unit = leaf.unit && resolvePrefUnit(leaf.unit);
   // ±Infinity is a value only where an end of the leaf stands for it.
-  const stored =
+  const held =
     typeof value === 'number' && (Number.isFinite(value) || endlessAllows(leaf.endless, value)) ? value : undefined;
   const bounds = prefDisplayBounds(leaf);
   const clamp = (n: number) => clampToBounds(n, bounds);
-  const store = (n: number) => setValue(unit ? unit.fromDisplay(clamp(n)) : clamp(n));
+  const stored = (n: number) => (unit ? unit.fromDisplay(clamp(n)) : clamp(n));
+  const store = (n: number) => setValue(stored(n));
   const shown = leaf.display ?? unit?.display;
+  // Each node moves from its own value; one holding none is left as it is.
+  const { update } = state;
+  const offset = update
+    ? (delta: number) =>
+        update((prev) => (typeof prev === 'number' ? stored((unit ? unit.toDisplay(prev) : prev) + delta) : prev))
+    : undefined;
   return {
     kind: 'number',
     control: leaf.control,
-    value: stored === undefined ? undefined : unit ? unit.toDisplay(stored) : stored,
+    value: held === undefined ? undefined : unit ? unit.toDisplay(held) : held,
     mixed,
     unset,
     min: bounds.min,
@@ -117,6 +125,7 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     stops: bounds.stops,
     scale: prefNumberScale(leaf.scale),
     onChange: store,
+    ...(offset ? { onOffset: offset } : {}),
   };
 }
 
