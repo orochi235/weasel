@@ -39,6 +39,10 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   /** Set the active-slot tool, or `null` to clear it. The gesture dispatcher
    *  watches the active tool and cancels any in-flight handle itself. */
   setActive: (id: string | null) => void;
+  /** The tool input routes to now, and whose cursor shows: the newest held
+   *  tool the active mode allows, else the active tool if the mode allows it,
+   *  else `null`. */
+  routed: string | null;
   /** Currently hotkey-engaged tool id (or `null`): the top of the hotkey stack. */
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. */
@@ -200,11 +204,13 @@ export function useTools<TOverlay = KernelOverlay>(
   // Memoized: a consumer using `tools` as an effect dep loops infinitely on
   // identity churn when it setStates from inside that effect.
   const active = contributions.focused;
+  const routed = contributions.routed;
   const getActiveOverlays = contributions.overlays;
   return useMemo(
     () => ({
       active,
       setActive,
+      routed,
       hotkeyEngaged,
       engageHotkey,
       disengageHotkey,
@@ -213,6 +219,6 @@ export function useTools<TOverlay = KernelOverlay>(
       has,
       getActiveOverlays,
     }),
-    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted],
+    [active, setActive, routed, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted],
   );
 }

@@ -3,7 +3,8 @@ import { resolveCursorTier, type CursorSink, type ResolvedCursor } from '@weasel
 import type { ToolsApi } from '../tools/overlayBinding';
 
 function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
-  const id = tools.hotkeyEngaged ?? tools.active;
+  // The tool input routes to, so a tool the mode bars shows no cursor of its own.
+  const id = tools.routed;
   const tool = id === null ? undefined : tools.registry[id];
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor !== 'function') return resolveCursorTier(tool.cursor);

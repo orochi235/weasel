@@ -13,7 +13,7 @@ import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
 import { NO_OVERRIDES } from '../interactions/actions/bindingOverrides';
 import type { HotkeyTrigger } from './types';
 import { assembleEntries } from './assemble';
-import { liveScope } from './eligibility';
+import { liveScope, type EligibilityState } from './eligibility';
 import { useInnermostKeymap } from '../keymaps/useInnermostKeymap';
 import type { Contribution, OverlayPosition } from './types';
 import { isDev } from '@weasel-js/react';
@@ -46,6 +46,9 @@ export interface ContributionsApi<TOverlay = KernelOverlay> {
   /** Focus an entry, or pass `null` to focus none. Writes through to the
    *  shared `ActiveToolContext`. */
   setFocused: (id: string | null) => void;
+  /** The tool input routes to now: the newest hold the active mode allows,
+   *  else the focused entry if the mode allows it, else `null`. */
+  routed: string | null;
   /** Overlays of every live entry declaring `position`, ordered active, then
    *  hotkey, then ambient. Live is what the dispatcher routes to: an entry the
    *  active mode bars draws nothing. */
@@ -127,6 +130,8 @@ export function useContributions<TOverlay = KernelOverlay>(
     return [...active, ...hotkey, ...ambient];
   }, [snapshot]);
 
+  const routed = useMemo(() => routedTool(snapshot(), focused), [snapshot, focused]);
+
   useOffhandAction(entries);
 
   useRouteConflictReport(entries, opts.modes);
@@ -135,9 +140,21 @@ export function useContributions<TOverlay = KernelOverlay>(
   // churn every render — which loops infinitely when the consumer setStates
   // from inside such an effect.
   return useMemo(
-    () => ({ entries, focused, setFocused, overlays }),
-    [entries, focused, setFocused, overlays],
+    () => ({ entries, focused, routed, setFocused, overlays }),
+    [entries, focused, routed, setFocused, overlays],
   );
+}
+
+/** The first held entry the mode leaves live, newest first, else the focused one if live. */
+function routedTool(
+  { ordered, state }: { ordered: readonly Contribution<unknown>[]; state: EligibilityState },
+  focused: string | null,
+): string | null {
+  for (const entry of ordered) {
+    if (state.engagedIds?.has(entry.id) && liveScope(entry.id, entry.eligibility ?? {}, state) === 'hotkey') return entry.id;
+  }
+  const entry = focused === null ? undefined : ordered.find((e) => e.id === focused);
+  return entry && liveScope(entry.id, entry.eligibility ?? {}, state) === 'active' ? entry.id : null;
 }
 
 /**
