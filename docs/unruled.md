@@ -1728,3 +1728,14 @@ Calls the lanes made without a ruling:
 - Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
 - Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
   ask for `^19.0.0`.
+
+## Audit round seventeen (2026-11-12): consumer setup
+
+- Open: diagram's paired helpers (`diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramLabelDrag`, the
+  container and sequence ones) hand back a layer to `registerLayer` and a contribution for `ambient`, so the README
+  has a consumer hold a canvas ref and register the layer in an effect. `SurfaceContribution.attach` exists for
+  exactly this ("a registered (hit-testable) layer"), and the minimap registers through it. Moving each layer into
+  its contribution's `attach` makes one `ambient` entry the whole install, but breaks a consumer who also
+  registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
+  `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
+  contribution's `overlay`, which it paints and never hit-tests.
