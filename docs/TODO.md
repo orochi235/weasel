@@ -321,6 +321,12 @@ Owner tags, after the priority (2026-10-26):
   ticks 35% of the strip, labeled steps at most 100 px apart (2026-11-07). Nobody has looked at it in
   a browser yet; draw shows it under View > Show rulers and the site under the Rulers demo. Closes
   when the maintainer settles the look and the component draws it.
+- **(P3) [agent] kernel3d's orbit camera ignores the world's `up`.** `World3d.up` sets the plane every
+  move, insert and snap resolves on, but `Camera3d` orbits about +y whatever it says: `cameraEye`
+  and `cameraView`'s `lookAt` (`packages/kernel3d/src/camera.ts`) hard-code it. A z-up world
+  gets a camera whose horizon stands on end. Too big for the 2026-11-11 audit pass: the camera, the
+  orbit/pan/dolly actions and `aim.ts` all read the axis. Closes when a camera takes the world's `up`
+  and a z-up world orbits about z, with a test.
 - **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
   rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
   SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
