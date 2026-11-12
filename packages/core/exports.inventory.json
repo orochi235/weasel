@@ -2213,6 +2213,7 @@
     "quantizedShape": "function",
     "rangeWeight": "function",
     "rasterToPng": "function",
+    "reachesLocked": "function",
     "readActionSettings": "function",
     "readCanvasPixels": "function",
     "readEffectSource": "function",

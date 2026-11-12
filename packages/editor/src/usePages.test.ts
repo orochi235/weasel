@@ -1,5 +1,9 @@
 import { act, renderHook } from '@testing-library/react';
-import { addPage, createScene, isPaged, pageInView, pagesOf, placedPagesOf, type NodeId, type RectPose, type View } from '@weasel-js/core';
+import {
+  ActionDisabledReason, addPage, asNodeId, createPageRun, createScene, isPaged, pageInView, pagesOf,
+  placedPagesOf, withPathEffectsRegistry, type NodeId, type RectPose, type View,
+} from '@weasel-js/core';
+import { pathFromD } from '@weasel-js/geom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { usePages } from './usePages';
 
@@ -149,5 +153,38 @@ describe('usePages', () => {
     act(() => result.current.add({ make }));
     expect(make).toHaveBeenCalledWith({ index: 1, size: { width: 816, height: 1056 } });
     expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['page-1', 'made']);
+  });
+
+  describe('deleting a page', () => {
+    const BOX = { x: 0, y: 0, width: 100, height: 20 };
+    function twoPages() {
+      const scene = createScene<object, 'main', RectPose>({ systemLayers: [{ id: 'main' }], registry: withPathEffectsRegistry() });
+      createPageRun(scene, [{ id: 'a', width: 100, height: 100 }, { id: 'b', width: 100, height: 100 }]);
+      const on = (id: string, page: string, extra: object = {}) => scene.add({
+        id: asNodeId(id), kind: 'mark', layer: 'main', parent: asNodeId(page), pose: BOX,
+        data: { path: pathFromD('M0 50 L100 50') }, ...extra,
+      });
+      const { result } = renderHook(() => usePages(scene, VIEW, DIMS, () => {}));
+      return { scene, on, pages: () => result.current };
+    }
+
+    it('reads as locked, and deletes nothing, while the page holds a locked node', () => {
+      const { scene, on, pages } = twoPages();
+      on('r', 'a');
+      scene.setLocked(asNodeId('r'), true);
+      expect(pages().removable('a')).toBe(ActionDisabledReason.Locked);
+      expect(pages().removable('b')).toBe(true);
+      expect(() => act(() => pages().remove('a'))).not.toThrow();
+      expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['a', 'b']);
+      expect(scene.get(asNodeId('r'))).toBeDefined();
+    });
+
+    it('reads as not applicable for the last page and a page it does not have', () => {
+      const { scene, pages } = twoPages();
+      expect(pages().removable('nope')).toBe(ActionDisabledReason.NotApplicable);
+      act(() => pages().remove('b'));
+      expect(pages().removable('a')).toBe(ActionDisabledReason.NotApplicable);
+      expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['a']);
+    });
   });
 });

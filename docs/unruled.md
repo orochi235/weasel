@@ -1772,3 +1772,10 @@ Calls the lanes made without a ruling:
   registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
   `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
   contribution's `overlay`, which it paints and never hit-tests.
+
+## Audit round eighteen (2026-11-12): document
+
+- 2026-11-12 (my call, after the 2026-11-09 Delete ruling): Delete Page, in draw and chart alike, is disabled with
+  `ActionDisabledReason.Locked` while the page, anything on it, or anything its delete cascades to is locked
+  (`DocPages.removable`). It used to throw from the scene and change nothing. New and Open still replace locked
+  content, since they replace the whole document.

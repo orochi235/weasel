@@ -46,7 +46,10 @@ export function usePageCommands(pages: ChartPages, openSetup: (id: string) => vo
   useCommand(PAGE_ACTIONS.remove, 'Delete Page', (params) => {
     const id = targetOf(pages, params);
     if (id !== null) pages.remove(id);
-  }, { enabled: () => pages.placed.length > 1 || ActionDisabledReason.NotApplicable });
+  }, { enabled: (params) => {
+    const id = targetOf(pages, params);
+    return id === null ? ActionDisabledReason.NotApplicable : pages.removable(id);
+  } });
   useCommand(PAGE_ACTIONS.next, 'Next Page', () => pages.step(1), { keys: { kind: 'key', key: 'PageDown' } });
   useCommand(PAGE_ACTIONS.previous, 'Previous Page', () => pages.step(-1), { keys: { kind: 'key', key: 'PageUp' } });
 }

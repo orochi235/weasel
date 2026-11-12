@@ -1,6 +1,7 @@
 import {
-  HOME_VIEW, addPage, adjacentPage, fitViewToPage, movePage, nextPageId, pageInView, pagesOf, placedPagesOf, removePage,
-  renamePage, resizePage, useLatest, type PlacedPage, type Scene, type View,
+  ActionDisabledReason, HOME_VIEW, addPage, adjacentPage, fitViewToPage, movePage, nextPageId, pageInView,
+  pageNodeOf, pagesOf, placedPagesOf, reachesLocked, removePage, renamePage, resizePage, useLatest, type PlacedPage,
+  type Scene, type View,
 } from '@weasel-js/core';
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import type { PageSize } from './paperLayer';
@@ -43,8 +44,12 @@ export interface DocPages {
    *  while the view has never been on one. A scene without pages gets its first, and with it the page run
    *  that makes it paged. */
   add(options?: AddPageOptions): void;
-  /** Delete a page and what is on it. The last page cannot go. */
+  /** Delete a page, what is on it, and what derives from that, as one undo entry. Does nothing where
+   *  {@link DocPages.removable} says no. */
   remove(id: string): void;
+  /** Whether page `id` can be deleted: `NotApplicable` for the last page or one the scene does not have, `Locked`
+   *  while the delete would take a locked node, as Delete is (ruled 2026-11-09). A Delete Page command's `enabled`. */
+  removable(id: string): true | ActionDisabledReason;
   move(id: string, index: number): void;
   rename(id: string, name: string): void;
   resize(id: string, size: PageSize): void;
@@ -80,6 +85,13 @@ function samePlaced(a: readonly PlacedPage[], b: readonly PlacedPage[]): boolean
     return p.id === q.id && p.x === q.x && p.y === q.y && p.width === q.width && p.height === q.height
       && p.index === q.index && p.name === q.name && p.meta === q.meta;
   });
+}
+
+/** Whether page `id` can be deleted; see {@link DocPages.removable}. */
+function removable(scene: AnyScene, id: string): true | ActionDisabledReason {
+  const page = pageNodeOf(scene, id);
+  if (page === null || (pagesOf(scene)?.pages.length ?? 0) <= 1) return ActionDisabledReason.NotApplicable;
+  return reachesLocked(scene, [page]) ? ActionDisabledReason.Locked : true;
 }
 
 /** The page the view is on or was last on, held while it sits between pages: `null` until the view has been on
@@ -142,8 +154,9 @@ export function usePages<TData, TLayer extends string, TPose>(
         goTo(make(place));
       },
       remove(id) {
-        if ((pagesOf(scene)?.pages.length ?? 0) > 1) removePage(scene, id);
+        if (removable(scene, id) === true) removePage(scene, id);
       },
+      removable: (id) => removable(scene, id),
       move: (id, index) => movePage(scene, id, index),
       rename: (id, name) => renamePage(scene, id, name),
       resize: (id, size) => resizePage(scene, id, size),
