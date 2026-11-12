@@ -28,7 +28,7 @@ import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanva
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
 import { poseFrameOf, viewScreenToWorld } from '@weasel-js/geom';
-import { isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import { DEFAULT_TEXT_STYLE, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
 import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
 
@@ -85,7 +85,10 @@ export interface UseSceneTextEditOptions<TData> {
    * written as one `scene.update`, so a commit is one undo step.
    */
   setStyle?: (data: TData, style: TextStyle) => TData;
-  /** Fallback fontSize when `style.fontSize` is unset. Default `16`. */
+  /**
+   * @deprecated Ignored. A node with no `style.fontSize` is edited at the size the canvas lays it out at,
+   * `DEFAULT_TEXT_STYLE.fontSize`, which this never changed: it sized only the overlay, off the glyphs.
+   */
   defaultFontSize?: number;
   /**
    * The view to project through. Omit it and the view is read live from the
@@ -254,7 +257,7 @@ export function useSceneTextEditor<
       if (!node) return null;
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
-      return screenPoseOf(node.data, scenePaintedPoseOf(scene)(node), read, view, at?.box, optsRef.current.defaultFontSize);
+      return screenPoseOf(node.data, scenePaintedPoseOf(scene)(node), read, view, at?.box);
     },
     getClipRect: () => surface()?.box ?? null,
     getRuns: (id) => {
@@ -309,14 +312,13 @@ function screenPoseOf<TData extends DefaultTextData>(
   read: ReturnType<typeof projectionsOf<TData>>,
   view: View | undefined,
   origin: TextEditClipRect | undefined,
-  defaultFontSize = 16,
 ): TextEditScreenPose {
   const inset = textBoxOf({ padding: read.padding(d) }, painted);
   const box = screenBoxOf({ ...painted, ...inset }, view, origin);
   return {
     ...box,
     // `kit:text` lays a `{ px }` size out at scale 1, as that many world units.
-    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? defaultFontSize, 1),
+    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, 1),
     pxScale: 1,
     verticalAlign: read.verticalAlign(d),
     ...(read.overflow(d) === 'clip' ? { clip: clipToBox(inset, painted) } : {}),

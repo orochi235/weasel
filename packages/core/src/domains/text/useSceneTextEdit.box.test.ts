@@ -8,21 +8,22 @@ import type { MouseEvent } from 'react';
 import { useScene } from '../../core/scene/useScene';
 import { solid } from '../../util/paint';
 import { asNodeId } from '../../core/scene/types';
-import { useSceneTextEdit } from './useSceneTextEdit';
+import { useSceneTextEdit, type UseSceneTextEditOptions } from './useSceneTextEdit';
+import { DEFAULT_TEXT_STYLE } from '@weasel-js/text';
 
 const STICKY = {
   id: 's', x: 100, y: 50, width: 200, height: 120,
   text: 'hi', style: { fontSize: 16 }, padding: 10,
 };
 
-function mount(item: Record<string, unknown>) {
+function mount(item: Record<string, unknown>, options: UseSceneTextEditOptions<typeof STICKY> = {}) {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const canvas = document.createElement('canvas');
   container.appendChild(canvas);
   const hook = renderHook(() => {
     const scene = useScene({ items: [item as typeof STICKY] });
-    return useSceneTextEdit(scene, container);
+    return useSceneTextEdit(scene, container, options);
   });
   const dblclick = (x: number, y: number) => act(() => hook.result.current.onDoubleClick({
     target: canvas, clientX: x, clientY: y,
@@ -75,6 +76,18 @@ describe('useSceneTextEdit — padding', () => {
     const { hook, dblclick } = mount(STICKY);
     dblclick(305, 165);
     expect(hook.result.current.editingId).toBeNull();
+  });
+});
+
+describe('useSceneTextEdit — font size', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('sets a node with no font size of its own at the size the canvas lays it out at', () => {
+    const { hook, container } = mount({ ...STICKY, style: {} }, { defaultFontSize: 24 });
+    act(() => hook.result.current.startEdit('s'));
+    expect(overlayOf(container).style.fontSize).toBe(`${DEFAULT_TEXT_STYLE.fontSize}px`);
   });
 });
 
