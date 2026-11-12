@@ -1,6 +1,6 @@
 import type { Action } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '@weasel-js/routing';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
@@ -91,7 +91,7 @@ export function createPaintAction<TState, TValue, K extends string>(
         const ids = selection.get() as NodeId[];
         if (ids.length === 0) return {};
 
-        const fallback = opts?.params as Params;
+        const fallback = resolveParams(opts?.params);
         // `??` would lose a `paint: null`, which is None, not "no paint given".
         const pick = (<T>(key: string) =>
           (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]) as T | undefined) as PickParam;
