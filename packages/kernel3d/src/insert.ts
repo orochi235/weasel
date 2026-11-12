@@ -5,7 +5,7 @@ import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
 import type { ViewportSource } from './project';
-import { DEFAULT_UP } from './world';
+import { DEFAULT_UP, type World3d } from './world';
 
 /** The ground-plane rectangle a drag swept out, in world units. */
 export interface Footprint {
@@ -46,6 +46,34 @@ function footprintPoints(
   return hits;
 }
 
+/** Options for `createInsert`: where it casts from, as a world or as its parts. */
+export type InsertOptions = InsertCommon & (
+  | {
+    /** The world the other deps were built from: its viewport, and the up its snap and camera turn about. */
+    world: Pick<World3d<unknown, string>, 'viewport' | 'up'>;
+    viewport?: never;
+    up?: never;
+  }
+  | {
+    /** @deprecated Pass `world`, whose `viewport` this is: `up` then comes from the same place as every other
+     *  dep's. */
+    viewport: ViewportSource;
+    /** @deprecated Pass `world`: a second `up` beside `World3d.up` can disagree with it. Default +y. */
+    up?: Vec3;
+    world?: never;
+  }
+);
+
+interface InsertCommon {
+  /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
+  viewId?: string | null;
+  /** Smallest footprint a click-sized drag produces. Default 0.25. */
+  minExtent?: number;
+  /** Makes the node. Given `select`, it commits that selection change with the
+   *  node, in the same batch when it applies ops (`commitSelectionOps`). */
+  mint(footprint: Footprint, extras: InsertExtras, select?: CommitSelection): NodeId | null;
+}
+
 /**
  * A drag becomes a footprint on the ground plane: its ends, or without them
  * its box's four corners, are cast onto the plane and the hit points give the
@@ -53,24 +81,14 @@ function footprintPoints(
  * not know what it is inserting. The depth the 2D contract cannot express
  * comes from the plane, not from the caller.
  */
-export function createInsert(opts: {
-  viewport: ViewportSource;
-  /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
-  viewId?: string | null;
-  up?: Vec3;
-  /** Smallest footprint a click-sized drag produces. Default 0.25. */
-  minExtent?: number;
-  /** Makes the node. Given `select`, it commits that selection change with the
-   *  node, in the same batch when it applies ops (`commitSelectionOps`). */
-  mint(footprint: Footprint, extras: InsertExtras, select?: CommitSelection): NodeId | null;
-}): InsertDep {
-  const up = opts.up ?? DEFAULT_UP;
+export function createInsert(opts: InsertOptions): InsertDep {
+  const { viewport, up = DEFAULT_UP } = opts.world ?? { viewport: opts.viewport!, up: opts.up };
   const minExtent = opts.minExtent ?? 0.25;
   const { u, v } = groundAxes(up);
 
   return {
     commit(bounds, extras, ends, select) {
-      const vp = opts.viewport(opts.viewId);
+      const vp = viewport(opts.viewId);
       const hits = footprintPoints(bounds, ends, (p) => groundHit(vp, p, up));
       if (hits.length === 0) return null;
 

@@ -201,6 +201,8 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       if (!scene.get(asNodeId(id))) return null;
       const scale = (view ?? getViewRef.current?.() ?? null)?.scale;
       const own = chromeBox(scene, adapter, d, includeStroke, id, pose, scale);
+      // A box that is not finite is on no part of the screen, as a 3D solid behind the camera is.
+      if (!Number.isFinite(own.x + own.y + own.width + own.height)) return null;
       // A plane node is drawn where its plane puts it, and the chrome has to
       // follow it there.
       const plane = wiredPlaneOfNode(id, view);
@@ -297,8 +299,9 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   const walk = useMemo(() => {
     return (world: WorldPoint, view?: PickView | null): string[] => {
       if (pickEveryProp) {
-        const r = view?.viewId != null
-          ? pickEveryProp(world, { viewId: view.viewId, ...(view.layerIsPainted ? { layerIsPainted: view.layerIsPainted } : {}) })
+        const gate = view?.layerIsPainted ?? layerIsPainted;
+        const r = view?.viewId != null || gate
+          ? pickEveryProp(world, { ...(view?.viewId != null ? { viewId: view.viewId } : {}), ...(gate ? { layerIsPainted: gate } : {}) })
           : pickEveryProp(world);
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];

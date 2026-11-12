@@ -103,7 +103,7 @@
     "longestFunction": 228
   },
   "packages/kernel3d/src/deps.ts": {
-    "longestFunction": 147
+    "longestFunction": 139
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
     "longestFunction": 169

@@ -11,8 +11,9 @@ export interface SceneCanvasGeometry {
    *  consumer with domain overlap ordering (e.g. children over their
    *  container) feed the kit's `pickTopMostHit` the true order instead of
    *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape.
-   *  `view` is the view the pick is asked for, when it is not the surface's
-   *  own: a 3D host casts the ray from that view's camera. */
+   *  `view` is the view the pick is asked for: its `viewId` when it is not the
+   *  surface's own, so a 3D host casts the ray from that view's camera, and the
+   *  layer gate of whichever view asks, when it hides anything. */
   pickEvery?: (world: WorldPoint, view?: RegionPickView) => string | string[] | null;
   boundsOf?: (id: string) => Bounds | null;
   /**

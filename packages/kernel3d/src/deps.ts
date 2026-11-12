@@ -9,7 +9,7 @@
 
 import type { AreaSelectDep, HitTestView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
-import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core/engine';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds, createEnteredGroupScope, pressTarget, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,
@@ -66,6 +66,28 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
 
 export { screenBoxOf } from './pickIndex';
 
+/** Where a solid wholly behind the camera is: on no part of the screen, a box that is not finite, which core's
+ *  region selects, pick index and unions already pass over, and its chrome does not draw. */
+const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
+
+/**
+ * The viewport a drag casts through. One whose camera stops casting rays mid-gesture keeps moving through the last
+ * that did, rather than snapping the node back. Mid-gesture means a preview is in flight; a call with none, as a
+ * gesture's first frame and a nudge are, starts afresh, so no gesture moves through an earlier one's camera.
+ */
+function castableViewportOf<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>, viewId: string | null | undefined,
+): () => Viewport3d | null {
+  let lastCastable: Viewport3d | null = null;
+  return () => {
+    const vp = viewportOf(world, viewId);
+    const rect = rectOf(vp);
+    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
+    else if (world.scene.overrides.ids().length === 0) lastCastable = null;
+    return lastCastable;
+  };
+}
+
 /**
  * Nearest node the camera draws along the ray the screen point names.
  *
@@ -112,16 +134,34 @@ function layerGateOf(view: HitTestView | undefined): ((layer: string) => boolean
   return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
 }
 
+/** Options for `createAreaSelect`. */
+export interface AreaSelect3dOptions {
+  /** The entered group, as the canvas's `enteredGroup` dep has it. Given, a marquee reaches only what a press
+   *  can and selects what a press on each hit selects: the outermost container above it that is not entered. */
+  entered?: EnteredGroupApi;
+}
+
 /** Marquee: the nodes whose projected box the screen rectangle touches, in render
  *  order, less those on a layer the view the marquee was drawn in does not paint. */
 export function createAreaSelect<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
   viewId?: string | null,
+  opts: AreaSelect3dOptions = {},
 ): AreaSelectDep {
+  const { scene } = world;
+  const { entered } = opts;
+  const scope = entered && createEnteredGroupScope({ entered, scene: scene as never });
+  const tree = {
+    getParent: (id: string) => scene.get(id as NodeId)?.parent ?? null,
+    getNode: (id: string) => scene.get(id as NodeId),
+  };
   return {
-    hitTestArea: (bounds, view) =>
-      worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view)),
+    hitTestArea: (bounds, view) => {
+      const hits = worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view));
+      return scope ? hits.filter((id) => scope.isPointerInteractive(id)) : hits;
+    },
+    ...(entered ? { targetOf: (id: string) => pressTarget(tree, id, entered.get()) } : {}),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };
@@ -202,15 +242,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
-  // A drag whose camera stops casting rays mid-gesture keeps moving through the
-  // last one that did, rather than snapping the node back.
-  let lastCastable: Viewport3d | null = null;
-  function castableViewport(): Viewport3d | null {
-    const vp = viewportOf(world, viewId);
-    const rect = rectOf(vp);
-    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
-    return lastCastable;
-  }
+  const castableViewport = castableViewportOf(world, viewId);
 
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
@@ -231,7 +263,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
       },
 
       getBounds(pose) {
-        return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
+        return boundsOf(pose) ?? OFF_SCREEN;
       },
 
       /**
