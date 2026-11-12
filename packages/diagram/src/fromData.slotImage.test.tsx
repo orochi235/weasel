@@ -68,6 +68,19 @@ describe('a swapped picture', () => {
     expect(released).toEqual(['a']);
     unmount();
   });
+
+  it('frees the old picture once the new one fails, which the painter no longer draws it for', async () => {
+    __setImageLoaderForTests((src) => (src === 'b' ? Promise.reject(new Error('gone')) : Promise.resolve(bmp)));
+    const { rerender, unmount } = renderHook(({ specs }) => useReleasedImages(useHeldImages(specs)), {
+      initialProps: { specs: [spec('a')] },
+    });
+    getImageBitmap('a');
+    await act(flush);
+    rerender({ specs: [spec('b')] });
+    await act(async () => { getImageBitmap('b'); await flush(); });
+    expect(released).toEqual(['a']);
+    unmount();
+  });
 });
 
 describe('useReleasedImages', () => {

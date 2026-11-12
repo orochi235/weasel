@@ -25,14 +25,17 @@ export function withPreviousImages<T extends WithImage>(specs: readonly T[], bef
   });
 }
 
-/** The images `specs` still need: every `src`, and a `previous` standing in for one that has not decoded. */
+/** The images `specs` still need: every `src`, and a `previous` standing in for one still on its way.
+ *  Once `src` fails the painter draws the failure, not `previous`. */
 export function imagesNeeded(specs: readonly WithImage[]): Set<string> {
   const out = new Set<string>();
   for (const s of specs) {
     const image = imageOf(s);
     if (image === undefined) continue;
     out.add(image.src);
-    if (image.previous !== undefined && imageStatus(image.src) !== 'ready') out.add(image.previous);
+    if (image.previous === undefined) continue;
+    const status = imageStatus(image.src);
+    if (status === 'idle' || status === 'loading') out.add(image.previous);
   }
   return out;
 }
