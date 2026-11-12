@@ -38,3 +38,25 @@ describe('a selected node removed mid-drag', () => {
     });
   }
 });
+
+describe('a selected node removed mid-drag, the rest dropped into a group', () => {
+  it('reparents the rest', () => {
+    const scene = makeScene();
+    const T = asNodeId('target');
+    scene.add({ id: A, kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    scene.add({ id: B, kind: 'mark', layer: 'main', pose: { x: 20, y: 0, width: 10, height: 10 }, data: {} });
+    scene.add({ id: T, kind: 'group', layer: 'main', pose: { x: 100, y: 0, width: 100, height: 100 }, data: {} });
+    scene.setSelection([A, B]);
+    const deps = { ...depsOf(scene), nodeAtPoint: () => T } as never;
+    const start = { x: 5, y: 5 };
+    const end = { x: 125, y: 5 };
+    const inv = moveAction.invoker;
+    if (!inv || inv.timing !== 'ongoing') throw new Error('move is not ongoing');
+    const handle = inv.start(dragCtx(deps, start, start), { params: { reparentOnDrop: 'top' } });
+    handle.onMove?.(dragCtx(deps, start, { x: 60, y: 5 }));
+    scene.remove(A);
+    handle.onMove?.(dragCtx(deps, start, end));
+    handle.onEnd?.(dragCtx(deps, start, end), 'commit');
+    expect(scene.get(B)?.parent).toBe(T);
+  });
+});

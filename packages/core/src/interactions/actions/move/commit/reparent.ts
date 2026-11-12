@@ -112,7 +112,7 @@ export function landedCascadeOps(
   const own = new Map<NodeId, { dx: number; dy: number }>();
   for (const id of ids) {
     const start = session.startPoses.get(id);
-    if (start === undefined || session.carried.has(id)) continue;
+    if (start === undefined || session.carried.has(id) || !session.scene.get(id)) continue;
     const d = session.descriptorOf(id);
     const from = d.getBounds(start);
     const to = d.getBounds(landedLocalPose(session, id, newParent, newLayer ?? session.scene.get(id)!.layer, delta));
@@ -171,8 +171,9 @@ export function reparentOps(
   const siblings = [...(target.newParent === null ? scene.roots : scene.childrenOf(target.newParent))];
   const roots = new Set(outermost(session.ids, (id) => scene.get(id)?.parent ?? null));
   for (const id of roots) {
-    if (!session.startPoses.has(id)) continue;
-    const node = scene.get(id)!;
+    const node = scene.get(id);
+    // A node removed mid-drag is skipped, as the translate commit skips it.
+    if (!session.startPoses.has(id) || node === undefined) continue;
     const to = landedLocalPose(session, id, target.newParent, target.newLayer, delta);
     const toIndex = landAbove(siblings, id, mode === 'above' ? target.hitSibling : null);
     ops.push(...landOps(session, id, target.newParent, toIndex, target.newLayer));
@@ -180,7 +181,8 @@ export function reparentOps(
   }
   const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
   const page = target.newParent === null ? null : pageOfNode(scene, target.newParent);
-  const landed = new Map([...roots].filter((id) => session.startPoses.has(id)).map((id) => [id as string, page]));
+  const landed = new Map([...roots].filter((id) => session.startPoses.has(id) && scene.get(id) !== undefined)
+    .map((id) => [id as string, page]));
   return [
     ...ops,
     ...landedCascadeOps(session, riders, target.newParent, delta, target.newLayer),
