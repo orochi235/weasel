@@ -4,7 +4,7 @@
  * the warnings for what neither format holds.
  */
 import {
-  dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
+  DEFAULT_PORTS, dataEdgeStyle, dataNodeStyle, dataRegionStyle, diagramThemeFrom, type DataEdge, type DataNode, type DiagramTheme,
   type EdgeStyle, type NodeStyle,
 } from '@weasel-js/diagram';
 import { normalizeHex, parseColor, rgbaToHex, tryNormalizeHex } from '@weasel-js/paint';
@@ -35,6 +35,12 @@ export interface GraphOut {
   clusterIds: ReadonlySet<string>;
   edges: DataEdge[];
   warnings: Warnings;
+}
+
+/** Whether `node` has ports or port labels of its own, which no graph format holds. A scene carries a port's label on
+ *  the port, so `documentFromScene` writes `ports` and never `portLabels`. */
+export function ownPorts(node: DataNode): boolean {
+  return node.portLabels !== undefined || (node.ports !== undefined && !deepEqual(node.ports, DEFAULT_PORTS, { undefinedAsAbsent: true }));
 }
 
 /** A node's text, a line per text row. */
@@ -102,6 +108,7 @@ export function graphOut(doc: DiagramDocument, opts: WriteOptions | undefined, f
   for (const n of page.data.nodes) {
     if (n.outline !== undefined && typeof n.outline !== 'string') warnings.add(`${format} has no drawn outlines; those shapes were written as rectangles.`);
     if (n.marks !== undefined && n.marks.length > 0) warnings.add(`${format} has no marks; the marks drawn over shapes were dropped.`);
+    if (ownPorts(n)) warnings.add(`${format} has no ports of a shape's own; shapes' ports and port labels were dropped.`);
   }
   if (page.data.edges.some((e) => e.waypoints !== undefined && e.waypoints.length > 0)) {
     warnings.add(`${format} holds no routes; connectors' bends were dropped.`);

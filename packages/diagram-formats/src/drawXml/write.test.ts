@@ -168,6 +168,24 @@ describe('writing what the format cannot carry', () => {
     expect(warnings).toEqual(expect.arrayContaining([expect.stringMatching(/outline path/), expect.stringMatching(/Marks/)]));
   });
 
+  it('warns that a shape\'s own ports were left out, and writes a connector to one where the port sat', () => {
+    const doc: DiagramDocument = {
+      pages: [{ kind: 'graph',
+        id: 'p', width: 400, height: 200,
+        data: {
+          nodes: [
+            { id: 'a', lines: ['A'], at: { x: 10, y: 10 }, ports: [{ id: 'out', at: { u: 1, v: 0.25 } }] },
+            { id: 'b', lines: ['B'], at: { x: 200, y: 10 } },
+          ],
+          edges: [{ id: 'ab', from: 'a', to: 'b', fromPort: 'out' }],
+        },
+      }],
+    };
+    const { text, warnings } = DRAW_XML.write!(doc);
+    expect(warnings).toContain('Ports of a shape\'s own, and port labels, were left out; connectors meeting them were written meeting the shape where the port sat.');
+    expect(styleOf(xml(text), 'ab').values.get('exitY')).toBe('0.25');
+  });
+
   it('lays out a page whose nodes have no place, and writes where they went', () => {
     const doc: DiagramDocument = {
       pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['A'] }, { id: 'b', lines: ['B'] }], edges: [{ from: 'a', to: 'b' }] } }],
