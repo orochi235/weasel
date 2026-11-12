@@ -1,4 +1,4 @@
-import { useSystemColorScheme } from '@weasel-js/react';
+import { pageLocalStorage, useSystemColorScheme } from '@weasel-js/react';
 import { useCallback, useState } from 'react';
 import { isColorModePreference, type ColorMode, type ColorModePreference } from './colorMode';
 
@@ -34,11 +34,7 @@ export interface ColorModePreferenceState {
 }
 
 function defaultStorage(): ColorModeStorage | undefined {
-  try {
-    return globalThis.localStorage ?? undefined;
-  } catch {
-    return undefined;
-  }
+  return pageLocalStorage();
 }
 
 /**

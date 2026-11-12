@@ -63,6 +63,8 @@ export function retireLegacyDoc(): void {
     for (const k of LEGACY_FIELDS) delete out[k];
     return out;
   });
-  if (next === null || next === localStorage.getItem(DOC_KEY)) return;
-  try { localStorage.setItem(DOC_KEY, next); } catch { /* the next save tries again */ }
+  if (next === null) return;
+  try {
+    if (next !== localStorage.getItem(DOC_KEY)) localStorage.setItem(DOC_KEY, next);
+  } catch { /* the next save tries again */ }
 }

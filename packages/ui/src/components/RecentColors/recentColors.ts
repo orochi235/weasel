@@ -1,5 +1,6 @@
 import { createEmitter, sameList } from '@weasel-js/registry';
 import { toHex8 } from '@weasel-js/core';
+import { pageLocalStorage } from '@weasel-js/react';
 
 /** The slice of the Web Storage API the store reads and writes. */
 export interface RecentColorsStorage {
@@ -45,11 +46,7 @@ export function normalizeRecentColor(color: string): string | null {
 }
 
 function defaultStorage(): RecentColorsStorage | null {
-  try {
-    return globalThis.localStorage ?? null;
-  } catch {
-    return null;
-  }
+  return pageLocalStorage() ?? null;
 }
 
 function merge(head: readonly string[], rest: readonly string[], limit: number): string[] {

@@ -6,6 +6,7 @@ export { useCanvasFocus } from './useCanvasFocus';
 export type { UseCanvasFocusOptions, CanvasFocusReturn } from './useCanvasFocus';
 export { useLatest } from './useLatest';
 export { copyText } from './copyText';
+export { pageLocalStorage } from './pageStorage';
 export { type Notifier, useNotified } from './useNotified';
 export { useNearViewport } from './useNearViewport';
 export { watchElementMove } from './watchElementMove';
