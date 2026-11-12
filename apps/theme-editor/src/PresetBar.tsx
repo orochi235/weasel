@@ -21,6 +21,7 @@ export interface PresetBarProps {
 export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProps) {
   const [name, setName] = useState('');
   const [copied, flashCopied] = useFlash<string | null>(null, 1200);
+  const [unkept, setUnkept] = useState(false);
 
   const all = [...BUILTIN_PRESETS, ...saved];
 
@@ -30,14 +31,14 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
     if (BUILTIN_PRESETS.some((p) => p.name === trimmed)) return;
     const next = [...saved.filter((p) => p.name !== trimmed), { name: trimmed, state }];
     onSavedChange(next);
-    persist(next);
+    setUnkept(!persist(next));
     setName('');
   };
 
   const remove = (target: string) => {
     const next = saved.filter((p) => p.name !== target);
     onSavedChange(next);
-    persist(next);
+    setUnkept(!persist(next));
   };
 
   return (
@@ -92,6 +93,7 @@ export function PresetBar({ state, saved, onSavedChange, onLoad }: PresetBarProp
           Save
         </Button>
       </div>
+      {unkept && <p role="status">Presets are not being kept in the browser, which refused to store them: a reload loses them.</p>}
     </section>
   );
 }

@@ -143,9 +143,11 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   }, [derived, error]);
 
   // Only a draft that derives is stored: the stored one is what a reload opens, with no last good one to show.
+  const [unkept, setUnkept] = useState(false);
   useEffect(() => {
     if (!dirty) clearDraft(draft.name);
-    else if (error === null) persistDraft({ definition: draft, baseHash });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- whether the browser took the write is known only once it is made
+    else if (error === null) setUnkept(!persistDraft({ definition: draft, baseHash }));
   }, [dirty, draft, baseHash, error]);
 
   const contributions = useMemo<readonly LabContribution<LabHistory<ThemeDefinition>>[]>(
@@ -291,6 +293,11 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
               {reloadError && <p className={styles.status}>{reloadError}</p>}
               {report && <SaveReport report={report} onReload={reload} onDismiss={() => setReport(null)} />}
             </div>
+          )}
+          {unkept && dirty && (
+            <p role="status" className={styles.status}>
+              This draft is not being kept in the browser, which refused to store it: a reload loses it. Save or export it to keep it.
+            </p>
           )}
           {error && (
             <p role="status" className={styles.status}>

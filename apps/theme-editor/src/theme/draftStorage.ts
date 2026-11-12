@@ -60,11 +60,13 @@ export function draftNames(): string[] {
   }
 }
 
-export function persistDraft(draft: StoredDraft): void {
+/** Store `draft`; answers whether the browser took it, which a private window or a full quota refuses. */
+export function persistDraft(draft: StoredDraft): boolean {
   try {
     localStorage.setItem(draftKey(draft.definition.name), JSON.stringify(draft));
+    return true;
   } catch {
-    // Private windows and full quotas both land here.
+    return false;
   }
 }
 

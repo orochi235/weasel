@@ -131,11 +131,13 @@ export function loadLive(): LabState | null {
 /** Where the palette lab keeps its undo history, beside the state it ends on. */
 export const liveHistory: LabHistoryStore<LabState> = localHistoryStore(`${LIVE_KEY}.history`);
 
-export function persistLive(state: LabState): void {
+/** Store the lab's state; answers whether the browser took it, which a private window or a full quota refuses. */
+export function persistLive(state: LabState): boolean {
   try {
     localStorage.setItem(LIVE_KEY, JSON.stringify(state));
+    return true;
   } catch {
-    // Private windows and full quotas both land here.
+    return false;
   }
 }
 
@@ -168,11 +170,13 @@ export function serializeSaved(presets: readonly Preset[]): string {
   return JSON.stringify(presets.filter((p) => !p.builtin));
 }
 
-export function persist(presets: readonly Preset[]): void {
+/** Store `presets`; answers whether the browser took them, which a private window or a full quota refuses. */
+export function persist(presets: readonly Preset[]): boolean {
   try {
     localStorage.setItem(KEY, serializeSaved(presets));
+    return true;
   } catch {
-    // Private windows and full quotas both land here; nothing else to do.
+    return false;
   }
 }
 
