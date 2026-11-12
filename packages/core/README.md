@@ -111,13 +111,15 @@ An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `
 A tuning applies to whichever descriptor holds the id, whether a preset or a tool registered it, and whether it registered before the tuning or after. Changing `params` never requires knowing what gesture reaches the action.
 
 ```tsx
+import { cornerShapePreset, simplifyBrushPreset } from '@weasel-js/path-tools';
+
 const radius = useRef(8);
 const tune = useMemo<ActionTunings>(() => ({
   simplifyBrush: { params: () => ({ radiusPx: radius.current }) },
   cycleCornerShape: { bindings: [{ kind: 'key', key: 'k' }] },
 }), []);
 
-<SceneCanvas scene={scene} features={['paths']} tune={tune} />
+<SceneCanvas scene={scene} features={['paths', simplifyBrushPreset, cornerShapePreset]} tune={tune} />
 ```
 
 `ActionParamSchema` types `params` for the kit actions that read them (`flip`, `align.*`, `distribute.*`, `reorder.*`, `nudge.*`, `tool.activate`, `constrainAnchors`, `unconstrainAnchors`, `editAnchors`); any other id takes a plain record. `editAnchors` takes `handleLock` (`'angle'` or `'length'`, held without the Shift or Mod modifier). An action of your own declares its params the way `DepSchema` takes deps:
