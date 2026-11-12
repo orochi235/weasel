@@ -52,6 +52,8 @@ describe('a chosen control still reads as chosen', () => {
     for (const sw of screen.getAllByRole('switch')) {
       const label = sw.closest('label')!;
       expect(bg(part(label, 'thumb'))).not.toBe(bg(part(label, 'track')));
+      // The off track keeps its alpha under forced colors, so its thumb must stand apart from the page too.
+      if (!(sw as HTMLInputElement).checked) expect(bg(part(label, 'thumb'))).not.toBe(canvas());
     }
   });
 

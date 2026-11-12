@@ -294,7 +294,7 @@ describe('assistive tech', () => {
     hud.focus(play);
     expect(region()?.textContent).toBe('Play');
     play.setLabel('Pause');
-    for (const [frame] of vi.mocked(api.subscribeFrame).mock.calls) frame();
+    for (const [frame] of vi.mocked(api.subscribeFrame).mock.calls) frame(0);
     expect(region()?.textContent).toBe('Pause');
   });
 
