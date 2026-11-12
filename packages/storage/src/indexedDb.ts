@@ -41,9 +41,12 @@ function lazyChannel(name: string): () => NodeChannel | null {
  *  past it can create one. */
 function request(database: string, store: string, version: number | undefined): Promise<IDBDatabase | number> {
   return new Promise((resolve, reject) => {
-    // No `onblocked`: a blocked open is still pending, and lands once the
-    // connections in its way close.
     const req = version === undefined ? indexedDB.open(database) : indexedDB.open(database, version);
+    // A blocked open is still pending, and lands once the connections in its way close; until then nothing
+    // this adapter holds reads or writes, so say why.
+    req.onblocked = () => {
+      console.warn(`[storage] IndexedDB database "${database}" waits for another tab to close it before it can add the store "${store}"`);
+    };
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(store)) req.result.createObjectStore(store);
     };

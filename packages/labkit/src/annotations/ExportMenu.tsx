@@ -1,3 +1,4 @@
+import { copyText } from '@weasel-js/react';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import { useId, useState } from 'react';
@@ -30,15 +31,19 @@ function download(result: CaptureResult): void {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+const CLIPBOARD_REFUSED = 'The browser would not let the page write to the clipboard.';
+
 /** PNG goes to the clipboard as an image. SVG goes as text: `image/svg+xml`
  *  needs Chromium's `web ` prefix and nothing else reads it, while the markup
  *  is what a person pasting a vector export actually wants. */
 async function copy(result: CaptureResult): Promise<void> {
   if (result.format === 'svg') {
-    await navigator.clipboard.writeText(await result.blob.text());
+    if (!(await copyText(await result.blob.text()))) throw new Error(CLIPBOARD_REFUSED);
     return;
   }
-  await navigator.clipboard.write([new ClipboardItem({ 'image/png': result.blob })]);
+  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+  if (!clipboard?.write || typeof ClipboardItem === 'undefined') throw new Error(CLIPBOARD_REFUSED);
+  await clipboard.write([new ClipboardItem({ 'image/png': result.blob })]);
 }
 
 /**

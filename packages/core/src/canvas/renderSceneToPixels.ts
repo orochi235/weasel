@@ -109,17 +109,39 @@ function drawnLayers(
   };
 }
 
+function pageCanvas(width: number, height: number): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = width;
+  c.height = height;
+  return c;
+}
+
 function defaultCreateCanvas(width: number, height: number): HeadlessCanvasLike {
   if (typeof OffscreenCanvas !== 'undefined') {
     return new OffscreenCanvas(width, height);
   }
-  if (typeof document !== 'undefined') {
-    const c = document.createElement('canvas');
-    c.width = width;
-    c.height = height;
-    return c;
-  }
+  if (typeof document !== 'undefined') return pageCanvas(width, height);
   throw new Error('renderSceneToPixels: no canvas source in this environment — supply `gl` or `createCanvas`');
+}
+
+const webgl2Of = (canvas: HeadlessCanvasLike): WebGL2RenderingContext | undefined =>
+  (canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES) as WebGL2RenderingContext | null) ?? undefined;
+
+/** A `width × height` canvas from `create`, or the default source, and its WebGL 2 context if it opens one. */
+function openCanvas(
+  create: ((width: number, height: number) => HeadlessCanvasLike) | undefined, width: number, height: number,
+): { canvas: HeadlessCanvasLike; gl: WebGL2RenderingContext | undefined } {
+  const canvas = (create ?? defaultCreateCanvas)(width, height);
+  canvas.width = width;
+  canvas.height = height;
+  const gl = webgl2Of(canvas);
+  // An OffscreenCanvas may offer only a 2D context where the page's own canvas offers WebGL 2.
+  if (!gl && !create && typeof document !== 'undefined' && typeof OffscreenCanvas !== 'undefined'
+    && canvas instanceof OffscreenCanvas) {
+    const page = pageCanvas(width, height);
+    return { canvas: page, gl: webgl2Of(page) };
+  }
+  return { canvas, gl };
 }
 
 /** Where a {@link RasterSession} draws. Pass `gl` or `createCanvas`, or
@@ -192,10 +214,7 @@ export function createRasterSession(options: RasterSessionOptions = {}): RasterS
   function contextFor(width: number, height: number): WebGL2RenderingContext {
     if (!options.gl) {
       if (!canvas) {
-        canvas = (options.createCanvas ?? defaultCreateCanvas)(width, height);
-        canvas.width = width;
-        canvas.height = height;
-        gl = (canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES) as WebGL2RenderingContext | null) ?? undefined;
+        ({ canvas, gl } = openCanvas(options.createCanvas, width, height));
       } else {
         if (canvas.width < width) canvas.width = width;
         if (canvas.height < height) canvas.height = height;

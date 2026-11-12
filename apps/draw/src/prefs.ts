@@ -19,6 +19,7 @@ import {
   type PrefValueAt,
 } from '@weasel-js/prefs';
 import { usePref as usePrefOf } from '@weasel-js/prefs/react';
+import { pageLocalStorage } from '@weasel-js/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import type { ToolbarLayout } from '@weasel-js/ui/components/ToolbarDock';
 import type { RegistryEnumFilter } from './registry/types';
@@ -318,7 +319,7 @@ export function drawPrefs(): PrefsStore<typeof PREFS> {
  *  still waiting on its first read imports when that read lands. */
 export function importLegacyPrefs(
   target: PrefsStore<typeof PREFS>,
-  storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = globalThis.localStorage,
+  storage: Pick<Storage, 'getItem' | 'removeItem'> | undefined = pageLocalStorage(),
 ): void {
   if (!storage) return;
   whenWritable(target, () => foldLegacyPrefs(target, storage));

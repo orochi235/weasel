@@ -78,3 +78,20 @@ describe('<PaletteLab> action rail', () => {
     expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true');
   });
 });
+
+describe('<PaletteLab> with storage refused', () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it('says the palette is not being kept', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => { throw new DOMException('full', 'QuotaExceededError'); },
+      removeItem: () => {},
+    });
+    renderWithIcons(<PaletteLab />);
+    expect(screen.getByText(/This palette is not being kept in the browser/)).toBeInTheDocument();
+  });
+});

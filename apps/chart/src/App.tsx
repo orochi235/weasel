@@ -1,4 +1,5 @@
 import { EditorShell } from '@weasel-js/editor';
+import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { useMemo, useState, type ReactElement } from 'react';
 import './app.css';
 import { CHART_MENUS } from './chartCommands';
@@ -20,6 +21,7 @@ export function App(): ReactElement {
     <div className="wc-app" data-mode={mode}>
       <EditorShell prefs={chartPrefs()} menus={menus} menuTitles={CHART_MENU_TITLES} menuBarClassName="wc-menubar">
         <Modes mode={mode} setMode={setMode} />
+        <ToastRegion />
       </EditorShell>
     </div>
   );

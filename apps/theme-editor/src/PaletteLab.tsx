@@ -46,7 +46,9 @@ export function PaletteLab() {
 
   const palette = useMemo(() => generate(constraints), [constraints]);
 
-  useEffect(() => persistLive(state), [state]);
+  const [unkept, setUnkept] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- whether the browser took the write is known only once it is made
+  useEffect(() => setUnkept(!persistLive(state)), [state]);
 
   const rail = useMemo<readonly LabContribution<LabHistory<LabState>>[]>(
     () => [
@@ -133,6 +135,7 @@ export function PaletteLab() {
             onSavedChange={setSaved}
             onLoad={(next, name) => update(next, `preset:${name}`, `load ${name}`)}
           />
+          {unkept && <p role="status">This palette is not being kept in the browser, which refused to store it: a reload loses it.</p>}
           {!palette.feasible && (
             <p className={styles.infeasible} role="status">
               <strong>No arrangement satisfies these gates.</strong> Showing the closest attempt.{' '}

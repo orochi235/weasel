@@ -1,3 +1,4 @@
+import { copyText } from '@weasel-js/react';
 import { ExportMenu } from '../annotations/ExportMenu';
 import { MarkList } from '../annotations/MarkList';
 import { withOverValues } from '../config/over';
@@ -55,7 +56,7 @@ function pickedColorReadout(hex: string | null): TrialContribution {
       showLabel: true,
       disabled: hex === null,
       onActivate: () => {
-        if (hex) void navigator.clipboard?.writeText(hex);
+        if (hex) void copyText(hex);
       },
     },
   };

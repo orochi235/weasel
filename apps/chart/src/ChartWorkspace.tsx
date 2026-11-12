@@ -8,7 +8,6 @@ import {
 } from '@weasel-js/diagram';
 import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
-import { ToastRegion } from '@weasel-js/ui/components/Toast';
 import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
@@ -18,6 +17,7 @@ import {
   CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
 } from './chartDocument';
 import { CHART_SESSION, loadChartSession } from './chartPersistence';
+import { reportChartSave } from './reportFailure';
 import { NewChart } from './NewChartDialog';
 import { PlotDataSection } from './PlotDataSection';
 import { ChartPageStrip } from './pages/ChartPageStrip';
@@ -67,7 +67,7 @@ export function ChartWorkspace(): ReactElement {
     systemLayers: CHART_LAYERS, registry: CHART_REGISTRY, initial: initial.specs, doc: initial.doc,
   });
   const selection = useSelection({ mode: 'multi', scene });
-  useSessionPersistence(scene, CHART_SESSION);
+  useSessionPersistence(scene, { ...CHART_SESSION, onSaved: reportChartSave });
   const theme = chartThemeOf(scene);
   const sequence = useSequenceChoices();
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene), sequence.readers);
@@ -161,7 +161,6 @@ export function ChartWorkspace(): ReactElement {
         <ThemeCommands scene={scene} onEdit={() => setThemeOpen(true)} />
         <ImportExportCommands scene={scene} pages={pages} onReplaced={showFirstPage} />
         <NewChart scene={scene} onReplaced={showFirstPage} />
-        <ToastRegion />
       </div>
     </div>
   );

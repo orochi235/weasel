@@ -8,10 +8,17 @@ import {
   useLatest,
 } from '@weasel-js/core';
 import type { LoupeMode } from '@weasel-js/hud';
+import { copyText } from '@weasel-js/react';
+import { toast } from '@weasel-js/ui/components/Toast';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { pref } from '@weasel-js/prefs';
 import type { SchemaBinding } from './surfaces/types';
 import { usePickColor } from './usePickColor';
+
+/** Tells the user the clipboard did not take `hex`, and shows it so it can be copied by hand. */
+function reportCopyRefused(hex: string): void {
+  toast.warn(`${hex} was not copied`, { id: 'loupe-copy-refused', description: 'The browser would not let the page write to the clipboard.' });
+}
 
 /** The action that copies the hex under the loupe. */
 export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
@@ -68,7 +75,10 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
     enabled: () => (colorRef.current ? true : ActionDisabledReason.NotApplicable),
     invoker: {
       timing: 'immediate',
-      run: () => { if (colorRef.current) void navigator.clipboard.writeText(colorRef.current); },
+      run: () => {
+        const hex = colorRef.current;
+        if (hex) void copyText(hex).then((took) => { if (!took) reportCopyRefused(hex); });
+      },
     },
   }), [colorRef]);
   useAction(copy);

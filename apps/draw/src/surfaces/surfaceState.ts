@@ -1,6 +1,7 @@
 // Each surface asset's chrome, persisted under the `ui.surfaces` pref so the
 // inline switch, chevron, and ×, the View menu, and the Preferences dialog edit the same map.
 
+import { pageLocalStorage } from '@weasel-js/react';
 import { useCallback, useMemo } from 'react';
 import type { PrefOrder } from '@weasel-js/prefs';
 import type { AppCommands } from '../appCommands';
@@ -80,7 +81,7 @@ const LEGACY_COLLAPSED_KEYS: Record<string, string> = {
  *  `ui.surfaces` wins. A store that cannot persist leaves the flags alone. */
 export function migrateLegacyPanelFlags(
   target = drawPrefs(),
-  storage: Storage | undefined = globalThis.localStorage,
+  storage: Storage | undefined = pageLocalStorage(),
 ): void {
   if (!storage) return;
   whenWritable(target, () => {
