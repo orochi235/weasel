@@ -164,8 +164,8 @@ export type GroundGridSourceOptions = {
     up?: never;
   }
   | {
-    /** The ground's normal; the grid lies on `up · p = 0`. Default `+y`. A host with a `World3d` passes `world`
-     *  instead, so this cannot disagree with the ground its session probes. */
+    /** The ground's normal; the grid lies on `up · p = 0`. Default `+y`.
+     *  @deprecated Pass `world`: a second `up` beside `World3d.up` can disagree with the ground the session probes. */
     up?: Vec3;
     world?: never;
   }

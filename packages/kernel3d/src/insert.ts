@@ -55,8 +55,10 @@ export type InsertOptions = InsertCommon & (
     up?: never;
   }
   | {
+    /** @deprecated Pass `world`, whose `viewport` this is: `up` then comes from the same place as every other
+     *  dep's. */
     viewport: ViewportSource;
-    /** Default +y. A host with a `World3d` passes `world` instead, so this cannot disagree with its `up`. */
+    /** @deprecated Pass `world`: a second `up` beside `World3d.up` can disagree with it. Default +y. */
     up?: Vec3;
     world?: never;
   }
