@@ -2,6 +2,6 @@
 '@weasel-js/storage': patch
 ---
 
-An IndexedDB adapter whose store needs an upgrade another tab is holding up warns that it is waiting for that tab to close, instead of leaving every read and write pending without a word.
+An IndexedDB adapter warns when its upgrade waits on another tab. Its reads and writes stay pending until that tab closes the database.
 
 <!-- entry: fix -->
