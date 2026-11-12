@@ -17,6 +17,7 @@ import {
   CanvasTarget, createTarget, deleteTarget, encodeReadIds, encodeReadTexture, encodeResolve, type WgpuTarget,
 } from './wgpuTargets';
 import { UtilityDraws } from './wgpuUtility';
+import { deviceIsLost, watchDeviceLoss } from './deviceLoss';
 
 const RING_BYTES = 4 << 20;
 
@@ -34,7 +35,6 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
   private readonly ndcGroup: GPUBindGroup;
   private readonly defaultAttribute: GPUBuffer;
   private readonly canvas: CanvasTarget;
-  private lost = false;
 
   constructor(
     readonly device: GPUDevice,
@@ -62,13 +62,11 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
     this.dummyTexture = res.createTexture(this.frame, 'rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' },
       { width: 1, height: 1, data: new Uint8Array(4) });
     this.canvas = new CanvasTarget(this.frame, surface, context, format, antialias ? 4 : 1);
-    void device.lost.then(() => {
-      this.lost = true;
-    });
+    watchDeviceLoss(device);
   }
 
   isContextLost(): boolean {
-    return this.lost;
+    return deviceIsLost(this.device);
   }
 
   canvasSize(): { width: number; height: number } {

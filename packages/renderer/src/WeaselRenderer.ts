@@ -102,9 +102,8 @@ export class WeaselRenderer {
   private idComposite: ShaderProgram | null = null;
 
   constructor(opts: WeaselRendererOptions) {
-    const { device, lossTarget, lost } = opts.gpu ? { ...openWebGPU(opts.gpu), lossTarget: null } : openWebGL(opts);
+    const { device, lossTarget } = opts.gpu ? { ...openWebGPU(opts.gpu), lossTarget: null } : openWebGL(opts);
     this.gpu = device;
-    void lost?.then(() => { this.contextLost = true; });
     this.effectTargets = new EffectTargets(this.gpu);
     this.programs = new CustomPrograms(this.gpu);
     this.retained = new RetainedSurfaces(this.gpu, opts.retainBudget ?? DEFAULT_RETAIN_BUDGET);
@@ -225,7 +224,8 @@ export class WeaselRenderer {
 
   getTarget(): RenderTarget | null { return this.target; }
 
-  isContextLost(): boolean { return this.contextLost; }
+  /** A WebGL context says so by event; a WebGPU device is asked, since it does not come back. */
+  isContextLost(): boolean { return this.contextLost || (this.backend === 'webgpu' && this.gpu.isContextLost()); }
 
   /** The GPU API this renderer draws with. */
   get backend(): RendererBackend { return this.gpu.language === 'wgsl' ? 'webgpu' : 'webgl2'; }
@@ -310,7 +310,7 @@ export class WeaselRenderer {
    * callers with no view concept can keep calling `render(commands)`.
    */
   render(commands: DrawCommand[], viewMatrix?: GlMat3, opts?: RenderOptions): void {
-    if (this.contextLost || this.disposed) return;
+    if (this.disposed || this.isContextLost()) return;
     const t0 = now();
     const counters = { drawCalls: 0 };
     const spanStats: RenderSpanStats[] = [];
@@ -386,7 +386,7 @@ export class WeaselRenderer {
   readPixelsSync(rect: PixelRect): Uint8Array { return readPixelsSync(this.gpu, rect); }
 
   private idFrame(commands: DrawCommand[], viewMatrix: GlMat3 | undefined, opts: RenderIdsOptions, sync: boolean): IdBuffer | Promise<IdBuffer> {
-    if (this.contextLost || this.disposed) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
+    if (this.disposed || this.isContextLost()) return { x: 0, y: 0, width: 0, height: 0, data: new Uint32Array(0) };
     const device = this.deviceRect();
     this.beginFrame();
     const gpu = this.gpu;

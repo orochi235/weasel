@@ -92,4 +92,32 @@ describe('<MinimapCanvas> with no width or height', () => {
 
     expect(sizes).toEqual([{ width: 200, height: 100 }, { width: 50, height: 300 }]);
   });
+
+  it('paints the size it fills, and each it resizes to, through the fit for that size', async () => {
+    const resize = stubMeasurement({ width: 200, height: 100 });
+    const scene = makeScene();
+    const descriptor = RECT_POSE_DESCRIPTOR as unknown as PoseDescriptor<P>;
+    let box = { width: 200, height: 100 };
+    const stale: View[] = [];
+    const drawOne = (_node: unknown, _pose: unknown, view: View) => {
+      const want = computeFitView(scene, box, 'scene', descriptor);
+      if (view.x !== want.x || view.y !== want.y || view.scale.x !== want.scale.x) stale.push(view);
+      return [];
+    };
+    await act(async () => {
+      render(
+        <MinimapCanvas
+          scene={scene}
+          mainView={{ x: 0, y: 0, scale: { x: 1, y: 1 } }}
+          mainViewDims={{ width: 400, height: 300 }}
+          onMainViewChange={() => {}}
+          drawOne={drawOne}
+        />,
+      );
+    });
+    expect(stale).toEqual([]);
+    box = { width: 50, height: 300 };
+    await act(async () => { resize(box); });
+    expect(stale).toEqual([]);
+  });
 });

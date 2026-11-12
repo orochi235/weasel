@@ -1792,3 +1792,11 @@ Calls the lanes made without a ruling:
   `ActionDisabledReason.Locked` while the page, anything on it, or anything its delete cascades to is locked
   (`DocPages.removable`). It used to throw from the scene and change nothing. New and Open still replace locked
   content, since they replace the whole document.
+
+## Audit round eighteen (2026-11-12): canvas view
+
+- `viewBounds` holds the view through a size change as well as a write: a canvas's `defaultView` is clamped
+  once the canvas has a size, and a resize (a window, a panel shown again after `display: none`) moves the view
+  back inside, reporting it to `onViewChange` as an input write would. A `<CanvasView>` does the same when a
+  commit leaves its rect another size. `'content'` bounds never move a view this way, since they always take in
+  what it shows (2026-11-12).

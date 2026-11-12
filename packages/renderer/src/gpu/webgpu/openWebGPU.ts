@@ -26,15 +26,11 @@ export function configureCanvas(context: GPUCanvasContext, device: GPUDevice): G
   return format;
 }
 
-/** The device over `surface`, its canvas configured premultiplied, and a
- *  promise that settles when the device is lost. A lost device does not come
+/** The device over `surface`, its canvas configured premultiplied. A lost device does not come
  *  back: a renderer on it draws nothing until it is rebuilt on a new one. */
-export function openWebGPU(surface: WebGPUSurface): { device: WebGPUDevice; lost: Promise<unknown> } {
+export function openWebGPU(surface: WebGPUSurface): { device: WebGPUDevice } {
   const context = surface.context ?? (surface.canvas.getContext('webgpu') as GPUCanvasContext | null);
   if (!context) throw new Error('WeaselRenderer: the canvas would not open a WebGPU context');
   const format = configureCanvas(context, surface.device);
-  const lost = surface.device.lost.then((info) => {
-    if (info.reason !== 'destroyed') console.error(`weasel: the WebGPU device was lost: ${info.message}`);
-  });
-  return { device: new WebGPUDevice(surface.device, surface.canvas, context, format, surface.antialias ?? true), lost };
+  return { device: new WebGPUDevice(surface.device, surface.canvas, context, format, surface.antialias ?? true) };
 }

@@ -118,7 +118,7 @@ describe('imperative view', () => {
     expect(apiRef.current!.getView().x).toBe(30);
   });
 
-  it('seeds the view from defaultView and clamps imperative writes to viewBounds', async () => {
+  it('seeds the view from defaultView and clamps it, and imperative writes, to viewBounds', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
     render(
       <Canvas
@@ -131,8 +131,10 @@ describe('imperative view', () => {
       />,
     );
     await frame();
-    expect(apiRef.current!.getView()).toEqual({ x: -10, y: -20, scale: { x: 1, y: 1 } });
+    expect(apiRef.current!.getView()).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
+    apiRef.current!.setView({ x: 50, y: 40, scale: { x: 1, y: 1 } });
+    expect(apiRef.current!.getView()).toEqual({ x: 50, y: 40, scale: { x: 1, y: 1 } });
     apiRef.current!.setView({ x: -500, y: -500, scale: { x: 1, y: 1 } });
     // Panning past the bounds is clamped on the way in, not stored raw.
     expect(apiRef.current!.getView()).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });

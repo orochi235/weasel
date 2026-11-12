@@ -97,6 +97,16 @@ describe('<CanvasView> camera', () => {
     expect(seen).toHaveLength(1);
   });
 
+  it('holds its view inside viewBounds as its rect widens', () => {
+    const viewBounds = { x: 0, y: 0, width: 150, height: 100 };
+    const { camera, rerender } = mount({ viewBounds });
+    act(() => { camera.setView(at(50)); });
+    expect(camera.getView().x).toBe(50);
+    // 140 wide shows [x, x + 140], which the 150-wide bounds hold only up to x = 10.
+    act(() => { rerender({ viewBounds, bounds: { ...PANEL, w: 140 } }); });
+    expect(camera.getView().x).toBe(10);
+  });
+
   it('tells subscribers of a write an action made inside the view', () => {
     const { camera, viewDep } = mount();
     const seen = vi.fn();
