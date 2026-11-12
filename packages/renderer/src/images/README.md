@@ -1,6 +1,6 @@
 # images
 
-One file: the kit's per-`src` image loader and cache.
+The kit's per-`src` image loader and cache: `imageCache`, with how a `src` decodes (`imageLoader`), names for bitmaps made at runtime (`bitmapNames`) and holds over a drop (`bitmapHolds`).
 
 ## The problem it solves
 
@@ -16,7 +16,9 @@ bridges the two without making the painter async:
   re-runs and this time gets a bitmap.
 
 So the first frame draws nothing for that node and the next one draws the
-image. No promise ever crosses into the render path.
+image. No promise ever crosses into the render path. A render with no next
+frame — an export, a headless render — waits on `imageLoadsSettled()` instead,
+which `warmRender` does for it.
 
 ## Why the bitmap isn't in node data
 
