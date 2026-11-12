@@ -86,6 +86,7 @@ describe('<CanvasView follows>', () => {
 
   it('acts on and draws the selection of the view it follows, while that view owns one', () => {
     const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
+    for (const id of ['p', 'q', 's']) scene.add({ id: id as NodeId, kind: 'mark', layer: 'main', data: {}, pose: {} });
     let registry: ViewRegistry | null = null;
     function Probe() {
       const r = useOptionalViewRegistry();

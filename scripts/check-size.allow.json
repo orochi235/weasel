@@ -34,7 +34,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 516
+    "lines": 506
   },
   "packages/core/src/domains/paths/penPreviewLayer.ts": {
     "longestFunction": 138

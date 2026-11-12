@@ -162,7 +162,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     scroll,
 
     getSelection: selection.get,
-    setSelection: (ids) => selection.set([...ids]),
+    setSelection: (ids) => selection.set([...ids]), selectable: selection.legal,
 
     loadState(json, opts) {
       // Validate + map up front: throws on a bad version or registry key before live state is touched.

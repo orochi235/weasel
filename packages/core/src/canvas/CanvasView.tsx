@@ -16,6 +16,7 @@ import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
 import { viewportWorldRect } from 'core/viewport/viewportWorldRect';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import { useLegalSelection } from 'core/selection/legalSelection';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
@@ -82,10 +83,10 @@ export function CanvasView(props: CanvasViewProps): null {
 
   // Hooks run unconditionally; the owned selection goes unused unless this
   // view asked for one.
-  const ownSelection = useSelection(selectionOptions);
-  const viewSelection = selectionProp ?? (selectionOptions ? ownSelection : undefined);
-
   const inputs = useOptionalViewInputs();
+  const ownSelection = useSelection(selectionOptions);
+  const kept = useLegalSelection(selectionProp ?? ownSelection, inputs?.selectionRules);
+  const viewSelection = selectionProp || selectionOptions ? kept : undefined;
   const shared = inputs?.selectionApi ?? ownSelection;
 
   // Everything the registration reads is behind a ref: the registration object

@@ -9,6 +9,7 @@ import type { PoseComposition } from './composeFrame';
 import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
 import type { PoseHold, PoseOverride, PoseOverrides, ShownOverride } from './poseOverrideTypes';
 import type { SceneChanges } from './sceneChanges';
+import type { SceneSelectionMembers } from './sceneSelection';
 import type {
   SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2,
 } from './serializedTypes';
@@ -221,7 +222,7 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> ext
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll, SceneQuantize<TData, TPose> {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll, SceneQuantize<TData, TPose>, SceneSelectionMembers {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -403,17 +404,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  Returns false when the arrival handler refused the batch: it is reverted
    *  and unrecorded. Inside `batch` it is true; that batch may still refuse. */
   applyBatch(ops: import('core/ops/types').Op[], label: string, adapter: unknown): boolean;
-
-  // Selection
-
-  /** The transient set of active ids — "operate on these N as a unit".
-   *  Shared by every view over this scene unless a view supplies its own
-   *  (see `CanvasView.selection`). Not document content: it never appears
-   *  in `toJSON`. It does ride on history entries, so undo and redo put
-   *  back the selection an edit was made under; changing it is never an
-   *  undo step of its own. Removing a node deselects it. */
-  getSelection(): readonly NodeId[];
-  setSelection(ids: readonly NodeId[]): void;
 
   // Ephemeral presentation state
 
