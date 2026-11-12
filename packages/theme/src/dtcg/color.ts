@@ -1,4 +1,4 @@
-import { parseColor } from '@weasel-js/paint';
+import { tryParseColor } from '@weasel-js/paint';
 
 /**
  * A resolved color at `alpha`, multiplied into any alpha it already carries. The
@@ -38,11 +38,7 @@ function round(n: number, places: number): number {
 /** Hex, `rgb()`/`rgba()` and `transparent` as 0–255 channels and 0–1 alpha; null for any other form, which goes to the browser. */
 function parseRgba(s: string): Rgba | null {
   if (!/^(?:#|rgba?\(|transparent$)/i.test(s)) return null;
-  let c: readonly [number, number, number, number];
-  try {
-    c = parseColor(s);
-  } catch {
-    return null;
-  }
+  const c = tryParseColor(s);
+  if (!c) return null;
   return [Math.round(c[0] * 255), Math.round(c[1] * 255), Math.round(c[2] * 255), c[3]];
 }

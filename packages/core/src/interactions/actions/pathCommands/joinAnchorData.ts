@@ -1,5 +1,5 @@
 import { countPathAnchors, type PointOrigin, type PolygonPath } from '@weasel-js/geom';
-import { parseColor, type VertexWidth } from '@weasel-js/paint';
+import { tryParseColor, type VertexWidth } from '@weasel-js/paint';
 import { anchorDataPatch } from 'domains/paths/anchorData';
 import type { PathNode } from './pathNodes';
 
@@ -21,11 +21,8 @@ const strokeOf = (node: PathNode) => {
 function solidRgba(paint: unknown): number[] | null {
   const p = paint as { kind?: string; color?: unknown } | null | undefined;
   if (!p || (p.kind !== undefined && p.kind !== 'solid') || typeof p.color !== 'string') return null;
-  try {
-    return [...parseColor(p.color)];
-  } catch {
-    return null;
-  }
+  const rgba = tryParseColor(p.color);
+  return rgba && [...rgba];
 }
 
 /**

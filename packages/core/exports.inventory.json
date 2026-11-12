@@ -2499,6 +2499,7 @@
     "trianglesToPath": "function",
     "trimPathAt": "function",
     "trimPolyline": "function",
+    "tryParseColor": "function",
     "tuneAction": "function",
     "tuneToolOptions": "function",
     "tweenPose": "function",

@@ -3,7 +3,7 @@
  * they were built. Paint is plain data, so the comparison is structural.
  */
 
-import { parseColor } from './color';
+import { tryParseColor } from './color';
 import { isSolidPaint } from './commandPaint';
 import { DEFAULT_MITER_LIMIT, type Fill, type Paint, type Stroke } from './paint';
 import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from './resolvePaint';
@@ -47,12 +47,10 @@ export function paintKey(paint: Paint | null | undefined): string {
 /** A solid's color by its channels with `opacity` folded into its alpha, as a renderer draws it, so `#fff` and
  *  `white` key as one, and every fully transparent solid as one; a color `parseColor` cannot read keys as its own text. */
 function solidColorKey(color: string, opacity: number): string {
-  try {
-    const [r, g, b, a] = parseColor(color);
-    return a * opacity === 0 ? 'clear' : `${r},${g},${b},${a * opacity}`;
-  } catch {
-    return `text:${color}:${opacity}`;
-  }
+  const rgba = tryParseColor(color);
+  if (!rgba) return `text:${color}:${opacity}`;
+  const [r, g, b, a] = rgba;
+  return a * opacity === 0 ? 'clear' : `${r},${g},${b},${a * opacity}`;
 }
 
 /** Whether a fill puts ink down: it does not when it is absent or holds no paint. */

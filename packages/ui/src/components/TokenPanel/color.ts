@@ -1,5 +1,5 @@
 import { parseHexBytes } from '@weasel-js/core';
-import { parseColor, rgbaToHex } from '@weasel-js/paint';
+import { rgbaToHex, tryParseColor } from '@weasel-js/paint';
 
 const COLOR_FUNCTION = /^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color|color-mix)\(.+\)$/i;
 const KEYWORDS = new Set([
@@ -45,12 +45,8 @@ export function parsesAsColor(value: string, supports: Supports = browserSupport
 }
 
 function hexOf(v: string): string | null {
-  try {
-    const [r, g, b] = parseColor(v);
-    return rgbaToHex([r, g, b]);
-  } catch {
-    return null;
-  }
+  const rgba = tryParseColor(v);
+  return rgba && rgbaToHex([rgba[0], rgba[1], rgba[2]]);
 }
 
 let paint: CanvasRenderingContext2D | null | undefined;
