@@ -142,14 +142,17 @@ export function BareControl({
       // The alpha track needs a row of its own to sit under, so a paired
       // swatch edits the color and carries the stored alpha through untouched.
       const stored = typeof value === 'string' ? toHex8(value) : '#000000';
+      const keep =
+        (send: (hex: string) => void) =>
+        (rgb: string): void =>
+          send(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb);
       return (
         <PropertyControl
           {...field}
           name={name}
           alpha={undefined}
-          onChange={(rgb: string) =>
-            write(field.alpha ? withAlpha01(rgb, getAlpha01(stored)) : rgb)
-          }
+          onChange={keep(field.onChange)}
+          onInput={field.onInput && keep(field.onInput)}
         />
       );
     }

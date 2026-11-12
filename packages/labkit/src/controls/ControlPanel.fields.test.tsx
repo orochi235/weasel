@@ -274,6 +274,28 @@ describe('<ControlPanel> color alpha', () => {
     expect(setConfig).toHaveBeenCalledWith('tint', '#33669980');
   });
 
+  it('keeps the stored alpha in a paired swatch, in its drafts too', () => {
+    const setConfig = vi.fn();
+    const draftConfig = vi.fn();
+    renderWithIcons(
+      <ControlPanel
+        schema={resolveConfigSchema(
+          f.schema({
+            fill: f.color('#000000ff').alpha().label('Fill').pair({ with: ['line'], label: 'Ink' }),
+            line: f.color('#000000ff').alpha().label('Line'),
+          }),
+          [],
+        )}
+        config={{ fill: '#336699cc', line: '#000000ff' }}
+        setConfig={setConfig}
+        draftConfig={draftConfig}
+      />,
+    );
+    fireEvent.input(screen.getByLabelText('Fill'), { target: { value: '#00ff00' } });
+    expect(draftConfig).toHaveBeenCalledWith('fill', '#00ff00cc');
+    expect(draftConfig).not.toHaveBeenCalledWith('fill', '#00ff00');
+  });
+
   it('leaves a color leaf without alpha as a bare swatch', () => {
     renderWithIcons(
       <ControlPanel
