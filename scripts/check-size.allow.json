@@ -25,7 +25,7 @@
     "lines": 510
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 179
+    "longestFunction": 167
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 201
