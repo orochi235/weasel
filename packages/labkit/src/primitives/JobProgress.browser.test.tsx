@@ -59,7 +59,9 @@ test('the count holds its width as it climbs, so the controls after it stay put'
   // cancel button 0.5 px at 100 on a loaded node.
   const count = container.querySelector('.lk-job__count');
   if (!count) throw new Error('no count');
-  await document.fonts.load(getComputedStyle(count).font, '0123456789 /');
+  // Not the `font` shorthand: with `font-variant-numeric` set, Chromium computes it as ''.
+  const { fontSize, fontFamily } = getComputedStyle(count);
+  await document.fonts.load(`${fontSize} ${fontFamily}`, '0123456789 /');
   await document.fonts.ready;
   const cancel = () => container.querySelector('.lk-job__cancel')?.getBoundingClientRect().left;
   const first = cancel();
