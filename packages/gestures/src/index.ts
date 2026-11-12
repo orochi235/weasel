@@ -158,4 +158,4 @@ export type { PressFacts, ReleaseFacts } from './recognizer/pressFacts';
 export { CONTROL_SELECTOR, isInControlWithin } from './ui/controlTarget';
 export { isPrimaryPress, pressButtonOf } from './ui/pressButton';
 export { heldPointers, type HeldPointers } from './ui/heldPointers';
-export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from './ui/keyOwner';
+export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget, textOwnsChord } from './ui/keyOwner';
