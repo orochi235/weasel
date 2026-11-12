@@ -91,7 +91,8 @@ export interface EditAnchorsDep {
   /** The handle locks held for every handle drag, on top of the modifiers —
    *  what the `handleLock.angle` and `handleLock.length` toggles set. Absent,
    *  the drag holds what its `handleLock` param names. Unlike the anchor
-   *  selection, they outlast a change of edited path. */
+   *  selection, they outlast a change of edited path. A drag reads it at each
+   *  move from the dep its press was handed, so a dep answers it live. */
   handleLocks?: HandleLocks;
   /** Replace the held handle locks. Absent, the toggles are unavailable. */
   setHandleLocks?(next: HandleLocks): void;

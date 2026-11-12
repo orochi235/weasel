@@ -227,8 +227,8 @@ function livePlane(
           ...(aff?.fixedPoint ? { affordance: { ...aff, fixedPoint: toPlane(m, aff.fixedPoint) } } : {}),
         };
       }
-      // The dispatcher hands `onMove` no deps; only `start` has any to carry.
-      if (c.deps) out.deps = deps;
+      // The dispatcher hands `onMove` and `onEnd` an empty bag; only `start`'s is carried.
+      if (c.deps === bag) out.deps = deps;
       return out;
     },
   };
