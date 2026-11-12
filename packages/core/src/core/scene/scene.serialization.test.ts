@@ -5,6 +5,7 @@ import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 import { POSE, makeScene, type Data } from './testing/makeScene';
 import { specsFromSerialized } from './serialization';
+import { SnapshotKeyError, SnapshotShapeError } from './snapshotShape';
 import { PAGE_RUN, PAGE_RUN_LAYOUT } from '../pages/pageRunLayout';
 import { PAGE_CLIP, pageClip } from '../pages/pageClip';
 
@@ -195,6 +196,12 @@ describe('sceneFromJSON', () => {
   it('throws on unknown version', () => {
     const json = { version: 4, systemLayers: [{ id: 'structures' as const }], nodes: [] };
     expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version/);
+    expect(() => sceneFromJSON(json as never, {})).toThrow(SnapshotShapeError);
+  });
+
+  it('refuses a later version for its version, before reading kinds it may name differently', () => {
+    const json = { version: 4, systemLayers: [{ id: 'structures' }], nodes: [{ id: 'a', kind: 'leaf', layer: 'structures', pose: POSE }] };
+    expect(() => sceneFromJSON(json as never, {})).toThrow(/unsupported version 4/);
   });
 
   it('throws on unknown clipFromPoseKey', () => {
@@ -211,6 +218,12 @@ describe('sceneFromJSON', () => {
       }],
     };
     expect(() => sceneFromJSON(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
+    try {
+      sceneFromJSON(json, { registry: {} });
+    } catch (e) {
+      expect(e).toBeInstanceOf(SnapshotKeyError);
+      expect(e).toMatchObject({ id: 'bed', field: 'clipFromPose', key: 'nonexistent' });
+    }
   });
 
   it('takes no registry key from the registry object\'s prototype', () => {

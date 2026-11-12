@@ -10,17 +10,35 @@ export class SnapshotShapeError extends Error {
   override name = 'SnapshotShapeError';
 }
 
+/** A snapshot naming a registry key the loading scene has no function under, read without `unknownKeys: 'skip'`. */
+export class SnapshotKeyError extends Error {
+  override name = 'SnapshotKeyError';
+
+  constructor(
+    /** The node that names the key. */
+    readonly id: string,
+    /** The registry field the key was looked up in, such as `clipFromPose`. */
+    readonly field: string,
+    readonly key: string,
+  ) {
+    super(`Scene: unknown ${field} key '${key}'. Register a function with this key in the registry option.`);
+  }
+}
+
+const SUPPORTED_VERSIONS: readonly unknown[] = [1, 2, 3];
+
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** Throws a {@link SnapshotShapeError} unless `json` has the shape every reader of a snapshot relies on. The
- *  version is not checked here: an unsupported one has its own refusal. */
+/** Throws a {@link SnapshotShapeError} unless `json` has the shape every reader of a snapshot relies on, in a
+ *  version this reader supports. */
 export function assertSnapshotShape(json: unknown): void {
   const refuse = (what: string): never => {
     throw new SnapshotShapeError(`Scene: malformed snapshot: ${what}`);
   };
   if (!isRecord(json)) refuse('not an object');
   const { systemLayers, nodes, doc, version } = json as Record<string, unknown>;
+  if (!SUPPORTED_VERSIONS.includes(version)) refuse(`unsupported version ${String(version)}; versions 1, 2 and 3 are supported`);
   if (!Array.isArray(systemLayers)) refuse('`systemLayers` is not an array');
   (systemLayers as unknown[]).forEach((layer, i) => {
     if (!isRecord(layer) || typeof layer.id !== 'string') refuse(`layer ${i} has no string \`id\``);

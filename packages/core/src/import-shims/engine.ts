@@ -98,7 +98,7 @@ export type { SceneScroll, ScrollOffsets, ScrollSource } from '../core/scene/scr
 export { isSerializedScene, nodeKindOf, specsFromSerialized } from '../core/scene/serialization';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from '../core/scene/serialization';
 export type { SavedScene, SerializedLayer, SerializedNode, SerializedNodeV1, SerializedScene, SerializedSceneV1, SerializedSceneV2 } from '../core/scene/serializedTypes';
-export { SnapshotShapeError } from '../core/scene/snapshotShape';
+export { SnapshotKeyError, SnapshotShapeError } from '../core/scene/snapshotShape';
 export { statedFields } from '../core/scene/statedFields';
 export type { StatedNodeFields } from '../core/scene/statedFields';
 export { hasChildren, isLeaf } from '../core/scene/treeShape';
