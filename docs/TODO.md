@@ -349,6 +349,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] `params.form.textWaitMs` and `params.panel.textWaitMs` do nothing.** `uiKitSettingsSchema`
+  offers a text wait for every surface, but only labkit reads one (`useTextWaitMs`, `useDebouncedText`); a form or
+  panel told `settles.string: false` writes text on every keystroke whatever wait it is given. The wait needs a
+  path from `useParamsPolicy` to each surface's string control (`PrefsForm`/`PrefControl`'s render context,
+  `SelectionPanel`'s and `Bar`'s), about fifteen sites, which is why the 2026-11-11 design audit left it. Closes
+  when a test sets `params.form.textWaitMs` and `params.panel.textWaitMs` and sees the write wait, or when the two
+  settings are removed from the schema.
 - **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
   lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
   `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
