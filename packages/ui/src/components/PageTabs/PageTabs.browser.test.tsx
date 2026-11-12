@@ -66,6 +66,16 @@ test('dragging a tab past another reorders the strip', async () => {
   await expect.poll(labels).toEqual(['Two', 'Three', 'One']);
 });
 
+test('Enter on the lit tab selects it once, and an arrow to the next tab selects that one once', async () => {
+  const onSelect = vi.fn();
+  render(<Strip onSelect={onSelect} />);
+  screen.getByRole('tab', { name: 'One' }).focus();
+  await userEvent.keyboard('{Enter}');
+  expect(onSelect.mock.calls).toEqual([['a']]);
+  await userEvent.keyboard('{ArrowRight}');
+  expect(onSelect.mock.calls).toEqual([['a'], ['b']]);
+});
+
 test('Alt+Right moves the focused tab one place, rather than moving focus', async () => {
   render(<Strip onSelect={() => {}} />);
   screen.getByRole('tab', { name: 'One' }).focus();
