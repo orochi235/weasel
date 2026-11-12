@@ -29,7 +29,7 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    *  `buildSceneLayer` called without one from its adapter. */
   drawOne: (obj: TNode, pose: TPose, view: View, ctx?: NodePaintCtx) => DrawCommand[];
   /** Where an object is drawn, from its world pose: a scene's quantize rule's
-   *  `drawn` half. Only painting reads it; picking keeps the pose. */
+   *  `drawn` half. Painting and its cull read it; picking keeps the pose. */
   drawnPose?: (obj: TNode, pose: TPose) => TPose;
   /** The path a container derives from its dependencies' poses, for the clip
    *  it imposes on its subtree — `drawOne`'s `ctx` carries the derived path a
@@ -143,9 +143,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       const hidden = hideIds();
       const a = adapter;
       if (a && cfg.objects === undefined && drawOne) {
-        const filteredDrawOne = (obj: TNode, at: TPose, v: View): DrawCommand[] => {
+        const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
           if (hidden && hidden.has(obj.id)) return [];
-          const pose = drawnAt(obj, at);
           const cmds = drawOne(obj, pose, v);
           if (debugSink) {
             const b = boundsOfFn ? boundsOfFn(obj.id) : null;
@@ -175,6 +174,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           slot?.forLayer,
           derivedPathOf as Parameters<typeof buildSceneTree>[4],
           culledIn(view, dims) as Parameters<typeof buildSceneTree>[5],
+          cfg.drawnPose as Parameters<typeof buildSceneTree>[6],
         );
         return finish(postProcess ? postProcess(tree, view, dims) : tree, view, dims);
       }
@@ -185,8 +185,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       for (const obj of objects) {
         if (hidden && hidden.has(obj.id)) continue;
         const pose: TPose = toPose(obj);
-        if (drawOne && !culled?.(obj, pose)) {
-          const at = drawnAt(obj, pose);
+        const at = drawnAt(obj, pose);
+        if (drawOne && !culled?.(obj, at)) {
           const wrapped = wrapNodeOutput(drawOne(obj, at, view), at, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
           for (const cmd of wrapped) children.push(cmd);
         }
