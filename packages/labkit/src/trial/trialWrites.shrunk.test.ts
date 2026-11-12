@@ -1,4 +1,4 @@
-/** Shrunk counterexamples from `trialWrites.pbt.test.ts`, kept as plain examples. */
+/** Plain examples of trial config writes, most of them shrunk counterexamples from `trialWrites.pbt.test.ts`. */
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { f } from '../config/builder';
@@ -55,5 +55,13 @@ describe('a trial config write', () => {
     vi.setSystemTime(1_000_080);
     write(2);
     expect(history()?.undoDepth()).toBe(1);
+  });
+
+  it('after the clock is set back records a step of its own', () => {
+    const { write, history } = open();
+    write(1);
+    vi.setSystemTime(1_000_000 - 3_600_000);
+    write(2);
+    expect(history()?.undoDepth()).toBe(2);
   });
 });

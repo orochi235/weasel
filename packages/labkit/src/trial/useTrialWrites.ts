@@ -111,10 +111,13 @@ export function useTrialWrites({
       // The entry a gesture's first write recorded already holds the state
       // from before it, and reads the state to redo to when it is undone.
       const last = lastWrite.current;
+      // A clock set back since the last write (a machine waking to a corrected time) gives a negative gap: a new gesture.
+      const gap = last === null ? Infinity : Date.now() - last.at;
       const sameGesture =
         last !== null &&
         last.path === path &&
-        Date.now() - last.at < GESTURE_MS &&
+        gap >= 0 &&
+        gap < GESTURE_MS &&
         last.version === version();
       let start = sameGesture ? last.start : null;
       if (!sameGesture) {
