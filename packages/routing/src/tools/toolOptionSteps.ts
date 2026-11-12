@@ -97,7 +97,9 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
         const d = dy !== 0 ? dy : finite(params?.deltaX);
         if (!values || d === 0) return;
         const now = Date.now();
-        const fresh = now - last > WHEEL_SIZE_BURST_MS || (travel !== 0 && Math.sign(travel) !== Math.sign(d));
+        // A clock set back since the last notch gives a negative gap: a new burst, not one going on.
+        const gap = now - last;
+        const fresh = !(gap >= 0 && gap <= WHEEL_SIZE_BURST_MS) || (travel !== 0 && Math.sign(travel) !== Math.sign(d));
         last = now;
         const dir: 1 | -1 = d < 0 ? 1 : -1;
         if (fresh) {
