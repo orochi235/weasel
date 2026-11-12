@@ -78,4 +78,22 @@ describe('hostSceneRender', () => {
     expect(render).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('broken'), expect.any(Error));
   });
+
+  it('asks for one more frame after a paint that threw, as the page loop retries one, and not for a second', () => {
+    let throws = 2;
+    vi.spyOn(WeaselRenderer.prototype, 'render').mockImplementation(() => {
+      if (throws-- > 0) throw new Error('bad node');
+    });
+    const { frame, out } = host();
+    const dirties = () => out.filter((m) => m.type === 'dirty').length;
+    frame();
+    expect(out).toContainEqual({ type: 'error', message: 'bad node' });
+    expect(dirties()).toBe(1);
+    frame();
+    expect(dirties()).toBe(1);
+    frame();
+    throws = 1;
+    frame();
+    expect(dirties()).toBe(2);
+  });
 });

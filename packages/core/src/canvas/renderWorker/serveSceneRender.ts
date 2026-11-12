@@ -98,6 +98,8 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   let painting: Painting | null = null;
   const alphas = new Map<string, number>();
   const alphaFor = (id: string): number => alphas.get(id) ?? 1;
+  /** Whether the last paint that threw has had its retry. */
+  let retried = false;
 
   const frame = (msg: Extract<ToWorker, { type: 'frame' }>): void => {
     if (!painting) return;
@@ -126,7 +128,15 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       try { animations.run(msg.animations, scene); } catch (e) { failed = e; }
     }
     animations.advance();
-    paint(scene);
+    try {
+      paint(scene);
+      retried = false;
+    } catch (e) {
+      // As the page's frame loop does: the page sends a frame only when something changes, so a
+      // failed paint would otherwise stand until then. One retry, so a paint that always throws doesn't spin.
+      if (!retried) { retried = true; dirty(); }
+      throw e;
+    }
     if (failed !== undefined) throw failed;
   };
 
