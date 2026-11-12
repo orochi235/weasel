@@ -4,7 +4,7 @@ import { worldCoords, type PolygonPath } from '@weasel-js/geom';
 import type { Op } from '@weasel-js/history';
 import { createSetDataOp } from '@weasel-js/core';
 import type { NodeId, Scene } from '@weasel-js/core';
-import { defaultCommitAdapter } from '@weasel-js/core';
+import { commitOps } from '@weasel-js/core';
 import type { RigNodeData } from '@weasel-js/core';
 import { jointAt } from '@weasel-js/animator';
 import { skinnable, type Skin } from '@weasel-js/animator';
@@ -112,10 +112,7 @@ function commitPainted(env: WeightEnv, deps: ActionDeps): void {
     const data = scene.get(id)?.data;
     if (data !== undefined) ops.push(createSetDataOp({ id, from: data, to: { ...(data as object), skin }, label: 'Paint weights' }));
   }
-  if (ops.length > 0) {
-    if (deps.applyOps) deps.applyOps(ops, 'Paint weights');
-    else scene.applyBatch(ops, 'Paint weights', defaultCommitAdapter(scene, deps.selection?.adapterMethods));
-  }
+  commitOps({ ...deps, scene }, ops, 'Paint weights');
   env.paint(null);
 }
 

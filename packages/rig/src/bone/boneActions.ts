@@ -3,7 +3,7 @@ import { ActionDisabledReason } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/history';
 import { createSetDataOp } from '@weasel-js/core';
 import type { NodeId, Scene } from '@weasel-js/core';
-import { defaultCommitAdapter } from '@weasel-js/core';
+import { commitOps } from '@weasel-js/core';
 import { unplaceSkeleton, type RigNodeData } from '@weasel-js/core';
 import { addJoint, dropSkinJoints, jointAt, jointPositions, moveJoint, removeJoint } from '@weasel-js/animator';
 import type { Skeleton } from '@weasel-js/animator';
@@ -57,8 +57,7 @@ function commitSkeleton(
     }
   };
   if (removed.length > 0) strip(id);
-  if (deps.applyOps) deps.applyOps(ops, label);
-  else scene.applyBatch(ops, label, defaultCommitAdapter(scene, deps.selection?.adapterMethods));
+  commitOps({ ...deps, scene }, ops, label);
 }
 
 function dragAction(env: BoneEnv, editing: () => true | ActionDisabledReason): Action {
