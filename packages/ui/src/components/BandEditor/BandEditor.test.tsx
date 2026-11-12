@@ -369,6 +369,12 @@ describe('keyboard', () => {
     expect(document.activeElement).toBe(bodies()[1]);
   });
 
+  it('merges on X with Caps Lock on, which reports the letter capitalized', () => {
+    const { bodies, onChange } = setup({ selectedIndex: 2 });
+    fireEvent.keyDown(bodies()[2], { key: 'X' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves the merge key alone when it belongs to a control inside a band', () => {
     const { container, onChange } = setup({
       selectedIndex: 2,

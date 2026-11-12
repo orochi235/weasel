@@ -99,6 +99,14 @@ function keepData<T>(_at: number, from: T): T {
   return from;
 }
 
+/** The band key `e` presses: `x` or Delete merges, `l` locks, `s` splits. Null with a modifier held: `x` is a bare
+ *  letter and Cmd/Ctrl+X is cut, which must not be swallowed. Caps Lock reports the letters capitalized with no Shift. */
+function bandKey(e: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean }): 'x' | 'l' | 's' | 'Delete' | null {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return null;
+  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  return key === 'x' || key === 'l' || key === 's' || key === 'Delete' ? key : null;
+}
+
 /**
  * Divides a numeric axis into contiguous bands and lets you drag the seams
  * between them. Each band carries a payload the consumer supplies and
@@ -273,19 +281,17 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (e.key !== 'x' && e.key !== 'Delete' && e.key !== 'l' && e.key !== 's') return;
-    // `x` is a bare letter and Cmd/Ctrl+X is cut: neither may be swallowed
-    // when the keystroke belongs to something a consumer put in a band.
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = bandKey(e);
+    if (key === null) return;
     if (isEditableTarget(e.target) || focusedControlOwnsKey(e.nativeEvent)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
-    if (e.key === 'l') {
+    if (key === 'l') {
       if (!props.onRangeChange) return;
       e.preventDefault();
       onChange(toggleLock(committed, selectedIndex));
       return;
     }
-    if (e.key === 's') {
+    if (key === 's') {
       // The middle of the band as drawn, so on a log scale the halves look equal.
       const [from, to] = bandBounds(committed, selectedIndex, min, max);
       if (splitAt(fromUnit((toUnit(from) + toUnit(to)) / 2))) e.preventDefault();
