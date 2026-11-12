@@ -10,7 +10,6 @@ import { MODELING_OUTLINES } from './modeling';
 import { STATE_OUTLINES } from './states';
 import { PARTICIPANT_OUTLINES } from './participants';
 import { STORAGE_OUTLINES } from './storage';
-import { refreshNodeShapes } from '@weasel-js/core';
 import type { OutlineDef } from './types';
 
 export { outlineFromD } from './fromD';
@@ -28,6 +27,18 @@ const table = new Map<string, OutlineDef[]>(
   Object.entries(BUILTINS).map(([name, def]) => [name, [def as OutlineDef]]),
 );
 const warned = new Set<string>();
+const listeners = new Set<() => void>();
+const changed = (): void => {
+  for (const fn of listeners) fn();
+};
+
+/** Call `fn` whenever a registration or its disposer changes what a name resolves to. Returns the unsubscriber. */
+export function onOutlinesChange(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
 
 /** Register `def` under `name`, shadowing any definition already there.
  *  Returns the disposer. */
@@ -35,13 +46,12 @@ export function registerOutline(name: string, def: OutlineDef): () => void {
   const stack = table.get(name) ?? [];
   stack.push(def);
   table.set(name, stack);
-  // A node already drawn by this name was painted and picked by what it resolved to then.
-  refreshNodeShapes();
+  changed();
   return () => {
     const i = stack.lastIndexOf(def);
     if (i >= 0) stack.splice(i, 1);
     if (stack.length === 0) table.delete(name);
-    refreshNodeShapes();
+    changed();
   };
 }
 
