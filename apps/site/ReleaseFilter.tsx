@@ -1,6 +1,8 @@
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { type Filter, type Tag, TAGS } from '../shared/releases';
+import { chipIcon } from './ReleaseChipIcon';
+import { PACKAGE_ICONS, TAG_ICONS } from './releaseIcons';
 
 /** The package chips and the tag chips, each with how many entries carry it, and All. */
 export function ReleaseFilter({
@@ -25,7 +27,13 @@ export function ReleaseFilter({
           All
         </Button>
         {packageCounts.map(([name, count]) => (
-          <Button key={name} size="sm" pressed={filter.packages.includes(name)} onClick={() => onTogglePackage(name)}>
+          <Button
+            key={name}
+            size="sm"
+            pressed={filter.packages.includes(name)}
+            onClick={() => onTogglePackage(name)}
+            leadingIcon={chipIcon(PACKAGE_ICONS[name])}
+          >
             {name}
             <span className={`ckd-release-pkg-n ${num.numeric}`}>{count}</span>
           </Button>
@@ -39,6 +47,7 @@ export function ReleaseFilter({
             pressed={filter.tags.includes(tag)}
             onClick={() => onToggleTag(tag)}
             tooltip={TAGS[tag]}
+            leadingIcon={chipIcon(TAG_ICONS[tag])}
           >
             {tag}
             <span className={`ckd-release-pkg-n ${num.numeric}`}>{count}</span>

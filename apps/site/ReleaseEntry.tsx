@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { type ChangelogEntry, type Filter, type Tag, TAGS } from '../shared/releases';
 import { Button } from '@weasel-js/ui/components/Button';
+import { chipIcon } from './ReleaseChipIcon';
+import { PACKAGE_ICONS, TAG_ICONS } from './releaseIcons';
 
 /** One change: its tags and packages, its title, and its body folded behind the title. */
 export function ReleaseEntry({
@@ -21,7 +23,13 @@ export function ReleaseEntry({
           <TagChip key={tag} tag={tag} pressed={filter.tags.includes(tag)} onToggle={onToggleTag} />
         ))}
         {entry.packages.map((name) => (
-          <Button key={name} size="sm" pressed={filter.packages.includes(name)} onClick={() => onTogglePackage(name)}>
+          <Button
+            key={name}
+            size="sm"
+            pressed={filter.packages.includes(name)}
+            onClick={() => onTogglePackage(name)}
+            leadingIcon={chipIcon(PACKAGE_ICONS[name])}
+          >
             {name}
           </Button>
         ))}
@@ -39,6 +47,7 @@ function TagChip({ tag, pressed, onToggle }: { tag: Tag; pressed: boolean; onTog
       className={`ckd-release-tag${tag === 'breaking' ? ' is-breaking' : ''}`}
       pressed={pressed}
       tooltip={TAGS[tag]}
+      leadingIcon={chipIcon(TAG_ICONS[tag])}
       onClick={() => onToggle(tag)}
     >
       {tag}

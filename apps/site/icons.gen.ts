@@ -2,5 +2,225 @@
 
 import { scopedIcon } from '@weasel-js/icons';
 
-/** This package draws no glyphs of its own, so every name it writes is qualified: `icon('ui:close')`. */
-export const icon = scopedIcon<never>('site');
+/** A glyph this package draws, by its bare name. */
+export type SiteIconName =
+  | 'animator'
+  | 'audio'
+  | 'bidi'
+  | 'brush'
+  | 'clock'
+  | 'core'
+  | 'cursor'
+  | 'd3'
+  | 'devtools'
+  | 'diagram'
+  | 'diagramElk'
+  | 'diagramFormats'
+  | 'dither'
+  | 'editor'
+  | 'font'
+  | 'forge'
+  | 'geom'
+  | 'gestures'
+  | 'guides'
+  | 'headless'
+  | 'history'
+  | 'hud'
+  | 'iconsPlugin'
+  | 'icons'
+  | 'kernel3d'
+  | 'labkit'
+  | 'loupe'
+  | 'menu'
+  | 'minimap'
+  | 'modes'
+  | 'pTouch'
+  | 'paint'
+  | 'parallax'
+  | 'pathTools'
+  | 'pdf'
+  | 'plot'
+  | 'prefs'
+  | 'quantity'
+  | 'react'
+  | 'registry'
+  | 'renderer'
+  | 'rig'
+  | 'routing'
+  | 'select'
+  | 'simulation'
+  | 'storage'
+  | 'stroke'
+  | 'svg'
+  | 'symmetry'
+  | 'text'
+  | 'textDom'
+  | 'textShaping'
+  | 'theme'
+  | 'ui'
+  | 'uiInput'
+  | 'uiLogic'
+  | 'breaking'
+  | 'deprecates'
+  | 'api'
+  | 'new'
+  | 'behavior'
+  | 'data'
+  | 'visual'
+  | 'perf'
+  | 'fix'
+  | 'internal';
+
+/** This package's `icon()`: a bare name means `site:<name>`. */
+export const icon = scopedIcon<SiteIconName>('site');
+
+/** This package's glyphs, in the families they were drawn in. */
+export const ICON_GROUPS: readonly { label: string; names: readonly SiteIconName[] }[] = [
+  {
+    "label": "Packages",
+    "names": [
+      "animator",
+      "audio",
+      "bidi",
+      "brush",
+      "clock",
+      "core",
+      "cursor",
+      "d3",
+      "devtools",
+      "diagram",
+      "diagramElk",
+      "diagramFormats",
+      "dither",
+      "editor",
+      "font",
+      "forge",
+      "geom",
+      "gestures",
+      "guides",
+      "headless",
+      "history",
+      "hud",
+      "iconsPlugin",
+      "icons",
+      "kernel3d",
+      "labkit",
+      "loupe",
+      "menu",
+      "minimap",
+      "modes",
+      "pTouch",
+      "paint",
+      "parallax",
+      "pathTools",
+      "pdf",
+      "plot",
+      "prefs",
+      "quantity",
+      "react",
+      "registry",
+      "renderer",
+      "rig",
+      "routing",
+      "select",
+      "simulation",
+      "storage",
+      "stroke",
+      "svg",
+      "symmetry",
+      "text",
+      "textDom",
+      "textShaping",
+      "theme",
+      "ui",
+      "uiInput",
+      "uiLogic"
+    ]
+  },
+  {
+    "label": "Change kinds",
+    "names": [
+      "breaking",
+      "deprecates",
+      "api",
+      "new",
+      "behavior",
+      "data",
+      "visual",
+      "perf",
+      "fix",
+      "internal"
+    ]
+  }
+];
+
+declare module '@weasel-js/icons' {
+  interface IconName {
+    'site:animator': true;
+    'site:audio': true;
+    'site:bidi': true;
+    'site:brush': true;
+    'site:clock': true;
+    'site:core': true;
+    'site:cursor': true;
+    'site:d3': true;
+    'site:devtools': true;
+    'site:diagram': true;
+    'site:diagramElk': true;
+    'site:diagramFormats': true;
+    'site:dither': true;
+    'site:editor': true;
+    'site:font': true;
+    'site:forge': true;
+    'site:geom': true;
+    'site:gestures': true;
+    'site:guides': true;
+    'site:headless': true;
+    'site:history': true;
+    'site:hud': true;
+    'site:iconsPlugin': true;
+    'site:icons': true;
+    'site:kernel3d': true;
+    'site:labkit': true;
+    'site:loupe': true;
+    'site:menu': true;
+    'site:minimap': true;
+    'site:modes': true;
+    'site:pTouch': true;
+    'site:paint': true;
+    'site:parallax': true;
+    'site:pathTools': true;
+    'site:pdf': true;
+    'site:plot': true;
+    'site:prefs': true;
+    'site:quantity': true;
+    'site:react': true;
+    'site:registry': true;
+    'site:renderer': true;
+    'site:rig': true;
+    'site:routing': true;
+    'site:select': true;
+    'site:simulation': true;
+    'site:storage': true;
+    'site:stroke': true;
+    'site:svg': true;
+    'site:symmetry': true;
+    'site:text': true;
+    'site:textDom': true;
+    'site:textShaping': true;
+    'site:theme': true;
+    'site:ui': true;
+    'site:uiInput': true;
+    'site:uiLogic': true;
+    'site:breaking': true;
+    'site:deprecates': true;
+    'site:api': true;
+    'site:new': true;
+    'site:behavior': true;
+    'site:data': true;
+    'site:visual': true;
+    'site:perf': true;
+    'site:fix': true;
+    'site:internal': true;
+  }
+}
