@@ -147,7 +147,7 @@ export class WeaselRenderer {
     this.glyphPaintPrograms = { pattern: glyph('pattern'), gradient: glyph('gradient'), texture: glyph('texture') };
 
     this.meshCache = new GLMeshCache(this.gpu);
-    this.textureCache = new GLTextureCache(this.gpu);
+    this.textureCache = new GLTextureCache(this.gpu, (source) => this.imageCache.noteDrawn(source));
     this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gpu);
     this.uploadQuadGeometry();
@@ -250,7 +250,7 @@ export class WeaselRenderer {
     this.batchFill = createBatchFill(this.gpu);
     this.idComposite = null;
     this.meshCache = new GLMeshCache(this.gpu);
-    this.textureCache = new GLTextureCache(this.gpu);
+    this.textureCache = new GLTextureCache(this.gpu, (source) => this.imageCache.noteDrawn(source));
     this.imageCache.abandon();
     this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gpu);

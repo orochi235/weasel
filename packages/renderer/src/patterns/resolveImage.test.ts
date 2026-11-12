@@ -6,7 +6,9 @@ import { glUniformLocation } from '../gpu/webgl/GlProgram';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
 import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
-import { __setImageLoaderForTests, _resetImageCacheForTests, getImageBitmap, releaseImage } from '../images/imageCache';
+import {
+  __setImageLoaderForTests, _resetImageCacheForTests, getImageBitmap, imageStatus, releaseImage, setImageCacheBudget,
+} from '../images/imageCache';
 import { resolveFillPattern } from './resolveSpec';
 import { stencilledEvenOdd } from '../testing/stencilledEvenOdd';
 
@@ -175,5 +177,37 @@ describe('releasing a picture an image pattern drew', () => {
     r.render([]);
     const deleted = rec.calls.filter((c) => c.name === 'deleteTexture').map((c) => c.args[0]);
     expect(made.every((t) => deleted.includes(t))).toBe(true);
+  });
+});
+
+describe('an image pattern under the image cache budget', () => {
+  beforeEach(() => {
+    _resetImageCacheForTests();
+    _resetTextureRegistryForTests();
+  });
+  afterEach(() => {
+    _resetImageCacheForTests();
+    _resetTextureRegistryForTests();
+    setImageCacheBudget(Infinity);
+  });
+
+  it('keeps a picture the latest frame drew as a pattern, as it does one drawn as an image', async () => {
+    // A 2x2 bitmap decodes to 16 bytes; this holds one.
+    setImageCacheBudget(20);
+    __setImageLoaderForTests(async () => fakeBitmap(2, 2));
+    const paint = resolveFillPattern({ kind: 'image', src: SRC });
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
+    const cmd = [{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand];
+    r.render(cmd);
+    await settle();
+    r.render(cmd);
+    // Two loads land with no frame between them.
+    getImageBitmap('b');
+    await settle();
+    getImageBitmap('c');
+    await settle();
+    expect(imageStatus(SRC)).toBe('ready');
+    r.dispose();
   });
 });
