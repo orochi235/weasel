@@ -87,7 +87,7 @@ function liveZoomAction(zoom: true | ViewportZoomOptions, latest: () => boolean 
       timing: 'immediate',
       run: (deps, params) => {
         const now = makeViewportZoomAction(optionsOf(latest())).invoker;
-        return now.timing === 'immediate' ? now.run(deps, params) : undefined;
+        return now?.timing === 'immediate' ? now.run(deps, params) : undefined;
       },
     },
   };
