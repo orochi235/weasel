@@ -6,7 +6,10 @@ cd "$(dirname "$0")/../.."
 export MEASURE_PKG="${MEASURE_PKG:-geom}"
 export MEASURE_OUT="${MEASURE_OUT:-measure/out/$MEASURE_PKG}"
 TOOLS=node_modules/.stryker-tools
-cleanup() { rm -rf "$TOOLS" node_modules/.stryker-tmp .stryker-tmp; git checkout -- "packages/$MEASURE_PKG/src" 2>/dev/null; }
+LOCK=node_modules/.stryker-lock
+# inPlace mutation edits the tree's sources, so a second run in the same tree reads the first's mutants.
+mkdir "$LOCK" 2>/dev/null || { echo "another Stryker run holds this tree ($LOCK); run items one at a time (onto run -workers 1)"; exit 3; }
+cleanup() { rm -rf "$TOOLS" node_modules/.stryker-tmp .stryker-tmp; git checkout -- "packages/$MEASURE_PKG/src" 2>/dev/null; rmdir "$LOCK"; }
 trap cleanup EXIT
 
 echo "installing stryker into $TOOLS"
