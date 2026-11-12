@@ -43,6 +43,7 @@ import { useCanvasPaint, usePaintedVersion } from './useCanvasPaint';
 import { layerHover } from './layerHover';
 import { useClientToWorld } from './useClientToWorld';
 import { useCanvasWorker, type WorkerStack } from './renderWorker/useWorkerStack';
+import { useReclampOnResize } from './useCanvasView';
 import { WorkerCanvasStack } from './renderWorker/WorkerCanvasStack';
 
 export type { CanvasProps, CanvasRetainOptions } from './canvasProps';
@@ -149,6 +150,7 @@ function CanvasInner<TPose>(
     announceControlled();
   });
 
+  useReclampOnResize(viewState.reclamp, width, height);
   useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw, readIdsRef, stackRef);
   useEffect(() => clearSubscribers, [clearSubscribers]);
 
