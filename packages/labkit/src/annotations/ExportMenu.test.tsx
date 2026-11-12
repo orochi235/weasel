@@ -136,7 +136,9 @@ describe('<ExportMenu>', () => {
       mount(spied().store);
       open();
       fireEvent.click(screen.getByRole('button', { name: /copy/i }));
-      expect(await screen.findByRole('alert')).toHaveTextContent(/would not let the page write to the clipboard/);
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        /would not let the page write to the clipboard/,
+      );
     } finally {
       vi.unstubAllGlobals();
     }
