@@ -85,10 +85,26 @@ describe('useLabHistory', () => {
     ['a text field', () => input('text')],
     ['a number field', () => input('number')],
     ['a textarea', () => document.createElement('textarea')],
+    ['a date field', () => input('date')],
   ])('leaves the accelerator to %s, which undoes its own typing', (_what, make) => {
     const { result } = renderHook(() => useLabHistory(INITIAL));
     act(() => result.current.update({ n: 2, s: 'a' }, 'n'));
     undoFrom(make());
+    expect(result.current.state.n).toBe(2);
+  });
+
+  it('leaves the accelerator to the browser with nothing to undo, and to a handler that took it', () => {
+    const { result } = renderHook(() => useLabHistory(INITIAL));
+    const range = input('range');
+    document.body.append(range);
+    const fresh = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true });
+    act(() => { range.dispatchEvent(fresh); });
+    expect(fresh.defaultPrevented).toBe(false);
+
+    act(() => result.current.update({ n: 2, s: 'a' }, 'n'));
+    const taken = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true });
+    taken.preventDefault();
+    act(() => { range.dispatchEvent(taken); });
     expect(result.current.state.n).toBe(2);
   });
 

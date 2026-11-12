@@ -1,17 +1,16 @@
 import {
-  asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type PathEditHost, type RectPose,
+  asNodeId, boundsOfPath, createScene, ellipsePath, pathFromD, solid, type NodeId, type RectPose,
   type SceneRegistry,
 } from '@weasel-js/core';
 import {
   type ConfigOf, defineInstrument, f, Lab, type RenderContext, type SceneTrialState, TrialSceneCanvas, useTrialScene,
 } from '@weasel-js/labkit';
-import { createEmitter } from '@weasel-js/registry';
 import {
   createSymmetry, symmetryGroupSpec, symmetryRegistry, WALLPAPER_GROUPS, wallpaperSpec, type SymmetryKind,
   type SymmetrySpec, type WallpaperCell, type WallpaperGroup,
 } from '@weasel-js/symmetry';
 import { DEG_TO_RAD } from '@weasel-js/geom';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -95,24 +94,8 @@ function createLabScene() {
   return scene;
 }
 
-/** Which path is open in path edit: the petal, to start with. */
-function usePathEditHost() {
-  const [store] = useState(() => {
-    let id: string | null = PETAL_ID;
-    const listeners = createEmitter();
-    return {
-      host: {
-        editingId: () => id,
-        setEditingId: (next: string | null) => {
-          id = next;
-          listeners.emit();
-        },
-      } satisfies PathEditHost,
-      redraw: { subscribe: listeners.subscribe },
-    };
-  });
-  return store;
-}
+/** The petal opens in path edit. */
+const OPENING = { id: PETAL_ID };
 
 /** The config fields a group's spec and center show as. */
 function fieldsOf(spec: SymmetrySpec, center: { x: number; y: number }) {
@@ -143,8 +126,6 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
   const sym = useMemo(() => createSymmetry(scene as never), [scene]);
   const ambient = useMemo(() => [sym.contribution], [sym]);
-  const pathEdit = usePathEditHost();
-  const redrawOn = useMemo(() => [pathEdit.redraw], [pathEdit]);
   const group = asNodeId(GROUP_ID) as NodeId;
   const { config, setConfig } = ctx;
   const { kind, pattern, drawInto } = config;
@@ -191,8 +172,7 @@ function SymmetryTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       scene={scene}
       trial={ctx.trial}
       ambient={ambient}
-      pathEdit={pathEdit.host}
-      redrawOn={redrawOn}
+      defaultPathEdit={OPENING}
     />
   );
 }

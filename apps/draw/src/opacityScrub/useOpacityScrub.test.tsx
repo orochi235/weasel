@@ -224,4 +224,22 @@ describe('opacity scrub', () => {
     act(() => t.api().scene.undo());
     expect(t.alpha()).toBe(100);
   });
+
+  it('keeps an edit that lands where its last turn was in the undo stack', () => {
+    const t = setup();
+    const scene = t.api().scene;
+    act(() => scene.setPose(ID, { x: 1, y: 0, width: 50, height: 50 }));
+    t.key('keydown');
+    t.wheel();
+    act(() => { scene.undo(); scene.undo(); });
+    act(() => scene.setPose(ID, { x: 2, y: 0, width: 50, height: 50 }));
+    act(() => scene.setPose(ID, { x: 3, y: 0, width: 50, height: 50 }));
+    t.wheel();
+    expect(scene.get(ID)!.pose.x).toBe(3);
+    t.key('keyup');
+    act(() => scene.undo());
+    expect(scene.get(ID)!.pose.x).toBe(3);
+    act(() => scene.undo());
+    expect(scene.get(ID)!.pose.x).toBe(2);
+  });
 });

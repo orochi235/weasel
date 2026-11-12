@@ -13,6 +13,7 @@ export { strokeTrimKey } from './strokeTrim';
 export { paintKey, strokeKey, fillHasInk, strokeHasInk } from './paintKey';
 export { INHERIT, resolveFill, resolveStroke } from './resolvePaint';
 export type { Inherit, PaintedFill, PaintedStroke } from './resolvePaint';
+export { DEFAULT_MITER_LIMIT } from './paint';
 export type {
   Paint,
   PaintUnits,

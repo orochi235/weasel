@@ -12,6 +12,8 @@ import { setFillAction } from 'interactions/actions/defaults/setFill';
 import { setFillOpacityAction } from 'interactions/actions/defaults/setFillOpacity';
 import { setStrokeAction } from 'interactions/actions/defaults/setStroke';
 import { setStrokeOpacityAction } from 'interactions/actions/defaults/setStrokeOpacity';
+import { setStrokeWidthAction } from 'interactions/actions/defaults/setStrokeWidth';
+import { setVertexColorAction } from 'interactions/actions/defaults/setVertexColor';
 import {
   clipboardCopyAction, clipboardCutAction, clipboardPasteAction, clipboardPasteEventAction,
 } from 'interactions/actions/clipboard/action';
@@ -34,9 +36,13 @@ export const groupPreset: FeaturePreset = { id: 'group', label: 'Group', actions
 export const nudgePreset: FeaturePreset = {
   id: 'nudge', label: 'Nudge', actions: [nudgeUpAction, nudgeDownAction, nudgeLeftAction, nudgeRightAction],
 };
-/** Fill and stroke, and their opacities. */
+/** Fill and stroke, their opacities, the stroke's width, and a path's vertex colors. */
 export const stylePreset: FeaturePreset = {
-  id: 'style', label: 'Style', actions: [setFillAction, setStrokeAction, setFillOpacityAction, setStrokeOpacityAction],
+  id: 'style',
+  label: 'Style',
+  actions: [
+    setFillAction, setStrokeAction, setFillOpacityAction, setStrokeOpacityAction, setStrokeWidthAction, setVertexColorAction,
+  ],
 };
 
 /**

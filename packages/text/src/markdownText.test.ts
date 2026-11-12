@@ -252,6 +252,13 @@ describe('createMarkdownRenderer', () => {
       expect(run.y).toBeCloseTo(-20 * 0.333);
     });
 
+    it('holds a line of only a superscript at the inherited size, as the GL tier does', () => {
+      const runs: StyledRun[] = [{ text: 'a' }, { text: '\n' }, { text: '2', script: 'super' }, { text: '\n' },
+        { text: 'b', fontScale: 0.5 }];
+      const layout = layoutMarkdown(runs, Infinity, 20, () => 10);
+      expect(layout.lines.map((l) => l.height)).toEqual([26, 26, 26]);
+    });
+
     it('measures a superscript at its scaled size, not the inherited one', () => {
       const sizes: number[] = [];
       layoutMarkdown(

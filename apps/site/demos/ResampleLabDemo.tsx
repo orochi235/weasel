@@ -1,4 +1,4 @@
-import { type RectPose, useActionsRegistry } from '@weasel-js/core';
+import { type RectPose, useActionsRegistry, useSelection } from '@weasel-js/core';
 import { resamplePreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/labkit';
 import { Button } from '@weasel-js/ui/components/Button';
 import { LastOperationPanel } from '@weasel-js/ui/components/LastOperationPanel';
-import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
+import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
 import { PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -32,7 +32,7 @@ const features = ['draw', resamplePreset] as const;
 
 function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
+  const selection = useSelection({ scene, initial: [EDITED_ID] });
   const actions = useActionsRegistry();
   const bar = (
     <>
@@ -47,8 +47,7 @@ function ResampleTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        pathEdit={pathEdit}
-        redrawOn={redrawOn}
+        defaultPathEdit={EDITED_OPENING}
       />
     </PathLabStage>
   );

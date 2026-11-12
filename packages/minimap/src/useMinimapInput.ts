@@ -4,25 +4,13 @@ import { useActionsRegistry, useDepSource, useGestureDispatcher } from '@weasel-
 import { useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
 import { viewScreenToWorld, type View, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
-import {
-  MINIMAP_CENTER, MINIMAP_PAN, MINIMAP_ZOOM, minimapCenterAction, minimapPanAction, minimapZoomAction,
-} from './actions';
+import { minimapBindings, minimapCenterAction, minimapPanAction, minimapZoomAction } from './actions';
 
-// The minimap's own bindings. Unscoped: this dispatcher routes no views, so
-// every input on it is the minimap's.
-const PAN_BINDINGS: Tool['bindings'] = [
-  { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: 'minimap.pointerDown' } },
-  { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: 'minimap.drag' } },
-];
-// A trackpad pinch arrives as ctrl+wheel, which a bare-wheel spec rejects.
-const ZOOM_BINDINGS: Tool['bindings'] = [
-  { spec: { kind: 'wheel' }, actionId: MINIMAP_ZOOM, opts: { id: 'minimap.wheel' } },
-  { spec: { kind: 'wheel', mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: 'minimap.pinch' } },
-];
-const toolsById = (bindings: Tool['bindings']): ReadonlyMap<string, Tool> =>
-  new Map([['minimap', { id: 'minimap', eligibility: { always: true }, bindings }]]);
-const PAN_TOOLS = toolsById(PAN_BINDINGS);
-const PAN_ZOOM_TOOLS = toolsById([...PAN_BINDINGS, ...ZOOM_BINDINGS]);
+// Unscoped: this dispatcher routes no views, so every input on it is the minimap's.
+const toolsById = (wheel: boolean): ReadonlyMap<string, Tool> =>
+  new Map([['minimap', { id: 'minimap', eligibility: { always: true }, bindings: minimapBindings('minimap', wheel) }]]);
+const PAN_TOOLS = toolsById(false);
+const PAN_ZOOM_TOOLS = toolsById(true);
 const PAN_CHANNELS = { wheel: false, pinch: false, contextMenu: false, ingest: false } as const;
 const PAN_ZOOM_CHANNELS = { ...PAN_CHANNELS, wheel: true } as const;
 

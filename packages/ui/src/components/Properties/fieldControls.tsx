@@ -152,7 +152,9 @@ function StringControl(p: PropertyStringFieldProps) {
         rows={3}
         onChange={(e) => edit.type(e.target.value)}
         onBlur={edit.settle}
-        onKeyDown={edit.keyDown}
+        onKeyDown={(e) => {
+          if (!imeKey(e.nativeEvent)) edit.keyDown(e);
+        }}
       />
     );
   }

@@ -1,6 +1,5 @@
 import { type ActionTunings, asNodeId, boundsOfPath, createScene, type PathConstraint, type PathConstraintKind, type PolygonPath, polygonFromPoints, type RectPose, solid, worldEditToStorage } from '@weasel-js/core';
 import { CONSTRAINT_KIND_LABELS, constraintConflictsOf, constraintsOf, constraintsPreset } from '@weasel-js/path-tools';
-import { createEmitter } from '@weasel-js/registry';
 import {
   type ConfigOf,
   defineInstrument,
@@ -11,7 +10,7 @@ import {
   TrialSceneCanvas,
   useTrialScene,
 } from '@weasel-js/labkit';
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import s from './PathConstraintsLabDemo.module.css';
@@ -62,19 +61,8 @@ function createLabScene() {
   return scene;
 }
 
-/** A path-edit host that opens on the seeded shape. */
-function createEditHost() {
-  let id: string | null = ID;
-  const changed = createEmitter();
-  return {
-    editingId: () => id,
-    setEditingId(next: string | null) {
-      id = next;
-      changed.emit();
-    },
-    subscribe: changed.subscribe,
-  };
-}
+/** The seeded shape opens in path edit. */
+const OPENING = { id: ID };
 
 function describeStatus(scene: ReturnType<typeof createLabScene>): string {
   const node = scene.get(ID);
@@ -88,7 +76,6 @@ function describeStatus(scene: ReturnType<typeof createLabScene>): string {
 
 function ConstraintsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const [host] = useState(createEditHost);
   const { kind, length } = ctx.config;
   const tune = useMemo<ActionTunings>(() => ({
     constrainAnchors: {
@@ -97,7 +84,6 @@ function ConstraintsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     },
     unconstrainAnchors: { bindings: [{ kind: 'key', key: 'c', mods: { shift: true } }] },
   }), [kind, length]);
-  const redrawOn = useMemo(() => [host], [host]);
   useSyncExternalStore(scene.subscribe, scene.getVersion);
 
   return (
@@ -106,8 +92,7 @@ function ConstraintsTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         features={FEATURES}
         scene={scene}
         trial={ctx.trial}
-        pathEdit={host}
-        redrawOn={redrawOn}
+        defaultPathEdit={OPENING}
         tune={tune}
       />
       <p className={s.status} role="status">{describeStatus(scene)}</p>

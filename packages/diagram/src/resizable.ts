@@ -21,3 +21,16 @@ export function diagramResizable(scene: { get(id: never): { data: unknown } | un
         && diagramContainerOf(node)?.role !== 'lane' && sequencePartOf(node) === null);
   };
 }
+
+/** {@link diagramResizable}, narrowed to the boxes a `DiagramView` has a callback to report: a container's or pool's
+ *  resize goes to `onEditContainer` and any other box's to `onResize`, so a box whose callback is unset shows no handles. */
+export function viewResizable(
+  scene: { get(id: never): { data: unknown } | undefined }, reports: { shapes: boolean; regions: boolean },
+): (id: string) => boolean {
+  const resizable = diagramResizable(scene);
+  return (id) => {
+    if (!resizable(id)) return false;
+    const node = scene.get(id as never);
+    return node !== undefined && diagramContainerOf(node) !== null ? reports.regions : reports.shapes;
+  };
+}

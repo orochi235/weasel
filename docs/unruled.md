@@ -242,6 +242,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, audit round 15, scene lane): `sceneToAdapter(scene)` and `useSceneAdapter(scene)` given no
+  `selection` read and write the scene's own selection, where they answered `[]` and dropped writes. The boolean,
+  outline and shape-builder actions read `adapter.getSelection()` and acted on nothing through such an adapter.
 - 2026-11-11 (my call, core actions second property pass): a drag's pointer that is no finite number lands nowhere,
   as routing's sweep and kernel3d's camera already had it. Every drag `inPlane` wraps, the marquee, and the lasso
   decline a press at such a point; move, resize, rotate, clone, insert, the marquee, and the lasso skip such a move
@@ -888,6 +891,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- Open (2026-11-11, audit round 15, leftovers lane): which minus sign a formatted number uses, and one formatter
+  for both. quantity writes a negative with U+2212 (`MINUS_SIGN`, `packages/quantity/src/number.ts`), and plot's
+  `formatTick` (`packages/plot/src/scales/tickFormat.ts`) writes `toFixed`'s hyphen-minus, so a chart's tick reads
+  `-5` beside a readout of `−5`. Left as it is: the fold is either plot formatting ticks through quantity, or both
+  reading one shared sign, and which sign a tick label should carry (U+2212 also changes a copied label) is a call.
 - Ruled 2026-11-10 (my call, overnight sweep): a tiling's `columns` is held to at most 2^24, so an `Infinity`
   count lays its items out in one row with finite, whole tracks; past that, a stretched row's tracks stop being
   whole numbers. Why: an input past the double range is handled at its limit.
@@ -924,6 +932,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is a lone combining mark no longer finds one the text composed into the letter before it.
 - 2026-11-11 (my call, same pass): select's presses, ranges, and store read ids as a `Set` does, `NaN` one id and
   `-0` the same as `0`, as ui-input's selection values do.
+- 2026-11-11 (my call, audit round fifteen): a menu takes a space typed within the typeahead window of a letter
+  as part of the search, as `rowKey` lists and the hud list do, so typing "save a" finds "Save As…" rather than
+  choosing "Save" at the space. A space with no live search still chooses.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
 - Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
   stack rather than answer.
@@ -1068,6 +1079,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- Open (2026-11-11, audit round 15, leftovers lane): how close together two edits must be to undo as one step,
+  and who sets it. labkit merges a trial's config writes to one path within a hardcoded 500 ms (`GESTURE_MS`,
+  `packages/labkit/src/trial/useTrialWrites.ts`); ui exposes the same idea as the kit setting `history.coalesceMs`,
+  default 800 (`packages/ui/src/kitSettings.ts`), read by `PrefSchemaEditor`; ui's Badge lab uses its own 300
+  (`packages/ui/src/components/Badge/lab/useLabState.ts`). Left as they are: folding them means picking one default
+  and whether labkit reads the kit setting.
 - Ruled 2026-11-10 (my call, overnight sweep): the avoid router reroutes a connector its last commit
   found no path for only when something it depends on changes (its ends or stops, an attached shape, an
   obstacle meeting the line it falls back to), so an unchanged scene answers nothing. A commit retries

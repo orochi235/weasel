@@ -19,9 +19,8 @@ import { faceMetricsOf, cachedFontVariant, type FaceMetrics, type FontStyle } fr
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 import { transformRunTexts, type RunSourceMap } from './textTransform';
-import { smallCapsScaleFor, smallCapsText } from './smallCaps';
+import { ownSmallCaps, smallCapsScaleFor, smallCapsText } from './smallCaps';
 import { rejoinSplitPairs } from './codePointCuts';
-import { shapesWithFeature } from '../layout/shaperRegistry';
 
 /** A run with every style resolved against the node's text style — no
  *  optional inheritance left. This is what layout and painting consume. */
@@ -234,7 +233,7 @@ export function resolveRunsInto(
     let fontFeatures: readonly string[] | undefined;
     const smallCaps = (run.fontVariantCaps ?? style.fontVariantCaps) === 'small-caps';
     // A face with small capitals of its own draws them; the rest are synthesized.
-    if (smallCaps && shapesWithFeature(fontFamily, fontWeight, fontStyle, 'smcp')) {
+    if (smallCaps && ownSmallCaps(fontFamily, fontWeight, fontStyle)) {
       fontFeatures = SMALL_CAPS_FEATURES;
     } else if (smallCaps) {
       const caps = smallCapsText(text, srcMap, run.lang ?? style.lang);

@@ -32,3 +32,20 @@ describe('kit:derived — a part with paint of its own', () => {
     expect(paintParts([{ path: RECT, fill: own, stroke: null }])).toEqual([{ fill: own.paint, stroke: null }]);
   });
 });
+
+describe('kit:derived — the drawn box of a path in parts', () => {
+  const box = (parts: DerivedPart[], stroke: Stroke | null = NODE_STROKE) => DERIVED_PAINTER.drawnBounds!(
+    { id: 'n', data: { stroke }, dependsOn: ['a'] } as never,
+    { x: 0, y: 0, width: 0, height: 0 } as never,
+    { derivedPath: pathFromParts(parts)! },
+  );
+
+  it("reaches as far as each part's own stroke", () => {
+    expect(box([{ path: RECT, stroke: strokeOf('#00ff00', 20) }], null)).toEqual({ x: -10, y: -10, width: 30, height: 30 });
+  });
+
+  it("takes the node's stroke for a part that inherits it, and none for a part that has none", () => {
+    expect(box([{ path: RECT, stroke: INHERIT }])).toEqual({ x: -1, y: -1, width: 12, height: 12 });
+    expect(box([{ path: RECT, stroke: null }])).toBeNull();
+  });
+});

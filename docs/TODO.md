@@ -38,6 +38,16 @@ Owner tags, after the priority (2026-10-26):
   pressed in between finds the old selection. A person clicking then typing quickly hits it too. Closes when a
   key pressed straight after a click acts on what the click selected, or the delay is ruled acceptable.
 
+- **(P2) [agent] hud's loupe aims from raw pointer listeners, labkit's from the dispatcher.** labkit binds
+  `loupe.aim` and `loupe.leave` (`packages/labkit/src/loupe/loupeActions.ts`), so the dispatcher decides who
+  owns a press and a held press freezes the aim through `HoverSpec.held`. hud's `createLoupe` instead adds
+  `pointermove`/`pointerdown` listeners to its input element (`packages/hud/src/loupe/pointerAim.ts`) and
+  keeps its own "a press on the lens holds the aim" rule, so the two loupes can disagree on when the lens
+  follows. Too big for an audit pass: the aim actions live in labkit, and hud's loupe has no dispatcher
+  of its own to bind them on, so they have to move to a package both reach (`@weasel-js/loupe` is the
+  candidate) and `createLoupe` has to take a dispatcher or a contribution. Closes when hud's loupe aims
+  through the same `loupe.aim` action as labkit's and `pointerAim.ts` is deleted.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
@@ -230,6 +240,13 @@ Owner tags, after the priority (2026-10-26):
   `apps/draw/src/useSymmetry.ts`).
   Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
   picks are committed.
+- **(P3) [maintainer] Undoing draw's symmetry group leaves Symmetry on, drawing into nothing.** Turning
+  Symmetry on (or a New or Open with it on) makes the group as an undo step of its own; one Undo removes it,
+  the `view.symmetry` pref still reads on, and new shapes draw unmirrored until it is toggled off and on
+  (`apps/draw/src/useSymmetry.ts`). Re-making the group on undo would wipe redo, and turning the pref off
+  breaks Undo past a New, which today lands back in the old document's group. Needs a ruling: whether
+  Symmetry's on/off is a pref or document state that undo moves.
+  Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
@@ -321,9 +338,21 @@ Owner tags, after the priority (2026-10-26):
   ticks 35% of the strip, labeled steps at most 100 px apart (2026-11-07). Nobody has looked at it in
   a browser yet; draw shows it under View > Show rulers and the site under the Rulers demo. Closes
   when the maintainer settles the look and the component draws it.
+- **(P3) [agent] kernel3d's orbit camera ignores the world's `up`.** `World3d.up` sets the plane every
+  move, insert and snap resolves on, but `Camera3d` orbits about +y whatever it says: `cameraEye`
+  and `cameraView`'s `lookAt` (`packages/kernel3d/src/camera.ts`) hard-code it. A z-up world
+  gets a camera whose horizon stands on end. Too big for the 2026-11-11 audit pass: the camera, the
+  orbit/pan/dolly actions and `aim.ts` all read the axis. Closes when a camera takes the world's `up`
+  and a z-up world orbits about z, with a test.
 - **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
   rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
   SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
+- **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
+  pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
+  takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to
+  a grid cell off the container's painted edge. Children still compose from the stored pose, and
+  picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
+  and the walk does what was ruled.
 
 ---
 
@@ -362,12 +391,13 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
   target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
   screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
-
-- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
-  lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
-  `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
-  home both read rather than a second copy (2026-11-10). Closes when both fold through one definition and a
-  typeahead test lands `ασ` on `ΑΣ`.
+- **(P3) [agent] `params.form.textWaitMs` and `params.panel.textWaitMs` do nothing.** `uiKitSettingsSchema`
+  offers a text wait for every surface, but only labkit reads one (`useTextWaitMs`, `useDebouncedText`); a form or
+  panel told `settles.string: false` writes text on every keystroke whatever wait it is given. The wait needs a
+  path from `useParamsPolicy` to each surface's string control (`PrefsForm`/`PrefControl`'s render context,
+  `SelectionPanel`'s and `Bar`'s), about fifteen sites, which is why the 2026-11-11 design audit left it. Closes
+  when a test sets `params.form.textWaitMs` and `params.panel.textWaitMs` and sees the write wait, or when the two
+  settings are removed from the schema.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown

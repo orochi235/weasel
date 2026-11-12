@@ -10,6 +10,7 @@ import { IDENTITY_POSE_COMPOSITION,
   useScene,
   asNodeId,
   textCommandFromRuns,
+  translatePath,
 } from '@weasel-js/core';
 import { joinPaths } from '@weasel-js/geom';
 import styles from './CompoundPathsDemo.module.css';
@@ -126,16 +127,12 @@ function octopus(): Path {
   return b.build();
 }
 
-function translate(p: Path, dx: number, dy: number): Path {
-  return pathPoseDescriptor.translate!(p, dx, dy);
-}
-
 const INITIAL: Shape[] = [
-  { id: 'ghost',      pose: translate(ghost(),      40,  40), fill: '#e8e8f0', stroke: '#1a130d' },
-  { id: 'duck',       pose: translate(duck(),      330,  60), fill: '#f5c542', stroke: '#7a5b10' },
-  { id: 'hamburglar', pose: translate(hamburglar(),540,  60), fill: '#2a2a32', stroke: '#000' },
-  { id: 'goose',      pose: translate(goose(),     620, 200), fill: '#fafafa', stroke: '#1a130d' },
-  { id: 'octopus',    pose: translate(octopus(),    50, 240), fill: '#c47ad4', stroke: '#5a2e6a' },
+  { id: 'ghost',      pose: translatePath(ghost(),      40,  40), fill: '#e8e8f0', stroke: '#1a130d' },
+  { id: 'duck',       pose: translatePath(duck(),      330,  60), fill: '#f5c542', stroke: '#7a5b10' },
+  { id: 'hamburglar', pose: translatePath(hamburglar(),540,  60), fill: '#2a2a32', stroke: '#000' },
+  { id: 'goose',      pose: translatePath(goose(),     620, 200), fill: '#fafafa', stroke: '#1a130d' },
+  { id: 'octopus',    pose: translatePath(octopus(),    50, 240), fill: '#c47ad4', stroke: '#5a2e6a' },
 ];
 
 export function CompoundPathsDemo() {

@@ -10,7 +10,7 @@ import { worldWith } from './worldWith';
 import type { Vec2 } from '@weasel-js/core/math';
 import { useEffect, useRef } from 'react';
 import { diagramContainerOf } from './containers/trait';
-import { diagramEdgeOf, layoutOwnsRoute, samePoints, type DiagramEdge, type EdgeEnd } from './edgeTrait';
+import { diagramEdgeOf, layoutOwnsPort, layoutOwnsRoute, samePoints, type DiagramEdge, type EdgeEnd } from './edgeTrait';
 import type { DiagramSceneData, DiagramSpec } from './dataTypes';
 import type { LayoutPorts } from './layout';
 import { readRegions, regionChanges, type ContainerEdit, type RegionStanding } from './regionSync';
@@ -44,7 +44,7 @@ interface Standing {
 const NONE: readonly Vec2[] = [];
 
 /** The port layout owns at `end`, if it named one. */
-const laidPort = (end: EdgeEnd) => (end.laidOut !== undefined && end.port === end.laidOut ? end.laidOut : undefined);
+const laidPort = (end: EdgeEnd) => (end.port !== undefined && layoutOwnsPort(end) ? end.port : undefined);
 
 function portsOf(from: EdgeEnd, to: EdgeEnd): LayoutPorts {
   const f = laidPort(from);

@@ -1,4 +1,4 @@
-import { editingAnchors, never, type RectPose } from '@weasel-js/core';
+import { editingAnchors, never, type RectPose, useSelection } from '@weasel-js/core';
 import { balancePreset, createCurvatureCombPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -11,7 +11,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { useMemo } from 'react';
-import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
+import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
 import { icon } from '../icons.gen';
@@ -30,7 +30,7 @@ const createLabScene = () =>
 
 function BalanceTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
+  const selection = useSelection({ scene, initial: [EDITED_ID] });
   const { balance, comb, scale } = ctx.config;
 
   const chromeVisibility = useMemo(() => ({
@@ -47,8 +47,7 @@ function BalanceTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
       scene={scene}
       trial={ctx.trial}
       selection={selection}
-      pathEdit={pathEdit}
-      redrawOn={redrawOn}
+      defaultPathEdit={EDITED_OPENING}
       chromeVisibility={chromeVisibility}
     />
   );

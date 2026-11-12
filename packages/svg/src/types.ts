@@ -80,11 +80,7 @@ export interface SvgStroke {
   join?: 'miter' | 'round' | 'bevel';
   /** `stroke-dasharray` as a flat number array. Odd-length inputs are doubled per SVG spec. */
   dash?: number[];
-  /**
-   * `stroke-miterlimit`. SVG's default is 4. Weasel's renderer defaults to
-   * 10 (Canvas2D) when unset, so parsed strokes without an explicit
-   * attribute may render with longer miters than the source SVG intended.
-   */
+  /** `stroke-miterlimit`. Unset, 4: SVG's default and the renderer's. */
   miterLimit?: number;
   /** The kit stroke's `align`. SVG has no stroke alignment, so the serializer
    *  writes an aligned path stroke as its outline, and reads the alignment

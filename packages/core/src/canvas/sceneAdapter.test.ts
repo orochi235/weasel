@@ -44,6 +44,17 @@ describe('sceneToAdapter', () => {
     expect(scene.nodes.has('fixture-0' as never)).toBe(true);
   });
 
+  it('without a selection option, reads and writes the scene\'s own selection', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const adapter = sceneToAdapter(scene);
+    scene.setSelection([a]);
+    expect(adapter.getSelection()).toEqual([a]);
+    adapter.setSelection([b]);
+    expect(scene.getSelection()).toEqual([b]);
+  });
+
   it('insertNode forwards the index arg so re-insert restores z-order', () => {
     // `createInsertOp.apply` calls `insertNode(node, index)`; undo of a
     // multi-delete relies on the index to restore paint order instead of

@@ -1,5 +1,5 @@
-import { historyKey } from '@weasel-js/core';
 import { createHistory, type History, type Op } from '@weasel-js/history';
+import { useUndoKeys } from '@weasel-js/labkit';
 import { deepEqual } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { type LabHistoryStore, useSavedLabHistory } from './historyStorage';
@@ -51,15 +51,6 @@ const sameJson = (a: unknown, b: unknown) => deepEqual(a, b, { undefinedAsAbsent
 /** How many steps a history keeps. */
 const HISTORY_LIMIT = 200;
 
-/** The input types that carry a browser undo stack of their own. A bare `<input>` is one. */
-const TEXT_INPUT = /^(?:|text|search|url|email|tel|password|number)$/;
-
-function editsText(element: HTMLElement | null): boolean {
-  if (!element) return false;
-  if (element.isContentEditable || element.tagName === 'TEXTAREA') return true;
-  return element.tagName === 'INPUT' && TEXT_INPUT.test((element as HTMLInputElement).type.toLowerCase());
-}
-
 export interface LabHistory<T> {
   state: T;
   /** Replace the state. `key` groups a drag into one undo entry. */
@@ -108,21 +99,7 @@ export function useLabHistory<T>(initial: T, store?: LabHistoryStore<T>): LabHis
   const undo = useCallback(() => history.undo(), [history]);
   const redo = useCallback(() => history.redo(), [history]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // A text field owns its own undo; don't steal it. Every other control — a
-      // range, a checkbox, a swatch — has none, and holds the focus right after
-      // the edit you meant to undo.
-      if (editsText(e.target as HTMLElement | null)) return;
-      const step = historyKey(e);
-      if (!step) return;
-      e.preventDefault();
-      if (step === 'redo') history.redo();
-      else history.undo();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [history]);
+  useUndoKeys(history);
 
   return {
     state: holder.current.value,

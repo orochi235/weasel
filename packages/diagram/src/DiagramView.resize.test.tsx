@@ -90,6 +90,16 @@ describe('DiagramView resizing', () => {
     expect(sizeOf(api.current!, 'a')).toEqual({ width: least.width, height: least.height });
   });
 
+  it('shows a shape no handles with only onEditContainer, which reports regions alone: the same drag moves the node', () => {
+    const onMove = vi.fn();
+    const onEditContainer = vi.fn();
+    const { api, canvas } = mount({ onMove, onEditContainer });
+    resizeA(canvas, { x: 160, y: 90 });
+    expect(onMove).toHaveBeenCalled();
+    expect(onEditContainer).not.toHaveBeenCalled();
+    expect(sizeOf(api.current!, 'a')).toEqual({ width: 100, height: 40 });
+  });
+
   it('shows no handles without onResize: the same drag moves the node', () => {
     const onMove = vi.fn();
     const { api, canvas } = mount({ onMove });

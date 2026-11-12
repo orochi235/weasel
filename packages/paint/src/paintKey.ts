@@ -5,7 +5,7 @@
 
 import { parseColor } from './color';
 import { isSolidPaint } from './commandPaint';
-import type { Fill, Paint, Stroke } from './paint';
+import { DEFAULT_MITER_LIMIT, type Fill, type Paint, type Stroke } from './paint';
 import { resolveFill, resolveStroke, type PaintedFill, type PaintedStroke } from './resolvePaint';
 
 /** `value` as JSON with every object's keys sorted and its `undefined`
@@ -88,7 +88,7 @@ export function strokeKey(stroke: Stroke | null | undefined): string {
       width: width ?? 1,
       join: join ?? 'miter',
       cap: cap ?? 'butt',
-      miterLimit: miterLimit ?? 4,
+      miterLimit: miterLimit ?? DEFAULT_MITER_LIMIT,
       align: align ?? 'center',
       dash: dash ?? [],
     });

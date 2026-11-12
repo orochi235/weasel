@@ -29,3 +29,7 @@
   overflow: auto;
   padding: var(--wzl-space-4);
 }
+
+.note {
+  composes: note from './note.module.css';
+}

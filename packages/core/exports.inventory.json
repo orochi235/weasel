@@ -2387,6 +2387,7 @@
     "shapeCoversPoint": "function",
     "shapeGeneratorOf": "function",
     "shapeGeneratorPath": "function",
+    "shapePathOf": "function",
     "shapeToolOptions": "function",
     "shapeToolsPreset": "const",
     "shareToolOptions": "function",

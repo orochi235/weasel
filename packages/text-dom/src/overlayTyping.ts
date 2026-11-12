@@ -21,10 +21,10 @@ import type { TextEditSelection } from './textEditTypes';
 /** Put small-caps letters back in the pieces their case belongs in after
  *  an edit, keeping the caret. Never mid-composition: rewriting the DOM
  *  under an IME ends the composition. */
-function resplitSmallCaps(overlay: HTMLElement, e?: Event): void {
+function resplitSmallCaps(overlay: HTMLElement, base: OverlayRunBase, e?: Event): void {
   if (e instanceof InputEvent && e.isComposing) return;
   const at = readSelectionOffsets(overlay);
-  if (normalizeSmallCaps(overlay) && at) selectOffsets(overlay, at.start, at.end);
+  if (normalizeSmallCaps(overlay, base) && at) selectOffsets(overlay, at.start, at.end);
 }
 
 /** Whether `ie` names a range of its own to replace, apart from a collapsed caret. */
@@ -85,7 +85,7 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
   onCompositionEnd: () => void;
 } {
   const edited = (e?: Event): void => {
-    resplitSmallCaps(overlay, e);
+    resplitSmallCaps(overlay, host.base(), e);
     host.onEdited();
   };
 

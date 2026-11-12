@@ -100,6 +100,22 @@ describe('buildSceneLayer — cull', () => {
     expect(paintedNodeIds(drawOne)).not.toContain(tall);
   });
 
+  it('culls a node by the pose it is drawn at, not the one it is stored at', () => {
+    const scene = createScene<Record<string, never>, 'bg', Pose>({ systemLayers: [{ id: 'bg' }] });
+    // Stored clear of the 400-wide view; drawn 40 units left, into it.
+    const pulled = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 410, y: 50, width: 20, height: 20 }, data: {} });
+    // Stored in view; drawn clear of it.
+    scene.add({ kind: 'mark', layer: 'bg', pose: { x: 50, y: 50, width: 20, height: 20 }, data: {} });
+    const drawOne = vi.fn((): DrawCommand[] => []);
+    const shift = (p: Pose): Pose => (p.x === 50 ? { ...p, y: 5000 } : { ...p, x: p.x - 40 });
+    const layer = buildSceneLayer<TestNode, Pose>(
+      { cull: true, drawOne, paintBounds: testPaintBounds, drawnPose: (_n, p) => shift(p) },
+      sceneToAdapter(scene) as never, () => null, () => null,
+    );
+    layer.draw(null, VIEW, DIMS);
+    expect(paintedNodeIds(drawOne)).toEqual([pulled]);
+  });
+
   it('ignores paint bounds when not asked to cull', () => {
     const { layer, inside, far, edge, drawOne } = layerFor(undefined, true);
     layer.draw(null, VIEW, DIMS);

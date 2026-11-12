@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { WeaselRenderer } from '@weasel-js/renderer';
+import { WeaselRenderer, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { makeGLRecorder } from '@weasel-js/renderer/testing/glRecorder';
 import { createScene } from '../../core/scene/scene';
 import { asNodeId, type RectPose, type Scene } from '../../core/scene/types';
@@ -11,7 +11,7 @@ import type { WorkerAnimation } from './workerAnimations';
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** A worker host on a port the test speaks for the page, painting through a recorded context. */
-function host(animations: Record<string, WorkerAnimation> = {}) {
+function host(animations: Record<string, WorkerAnimation> = {}, shaders?: readonly ShaderProgramHandle[]) {
   const recorder = makeGLRecorder();
   const canvas = Object.assign(new EventTarget(), {
     width: 0, height: 0, getContext: () => recorder.gl,
@@ -22,7 +22,7 @@ function host(animations: Record<string, WorkerAnimation> = {}) {
     postMessage: (m) => { out.push(m as FromWorker); },
     addEventListener: (_type, fn) => { listener = fn; },
   };
-  hostSceneRender(port, { animations });
+  hostSceneRender(port, { animations, ...(shaders ? { shaders } : {}) });
   const send = (msg: ToWorker) => listener({ data: msg } as MessageEvent);
   send({ type: 'init', canvas, width: 20, height: 20, dpr: 1 });
   const scene = createScene<object, 'main', RectPose>({
@@ -67,5 +67,15 @@ describe('hostSceneRender', () => {
     frame();
     send({ type: 'readIds', id: 4, rect: { x: 0, y: 0, width: 2, height: 2 } });
     expect(out).toContainEqual({ type: 'ids', id: 4, ids: expect.objectContaining({ width: 0, height: 0 }) });
+  });
+
+  it('paints without a shader that will not register, as the page does', () => {
+    vi.spyOn(WeaselRenderer.prototype, 'registerProgram').mockImplementation(() => { throw new Error('bad glsl'); });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const render = vi.spyOn(WeaselRenderer.prototype, 'render');
+    const { frame } = host({}, [{ id: 'broken' } as ShaderProgramHandle]);
+    frame();
+    expect(render).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('broken'), expect.any(Error));
   });
 });

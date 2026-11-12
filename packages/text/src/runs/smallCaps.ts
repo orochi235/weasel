@@ -9,6 +9,7 @@
  */
 
 import { faceMetricsOf, cachedFontVariant, type FaceMetrics, type FontStyle } from '@weasel-js/font';
+import { shapesWithFeature } from '../layout/shaperRegistry';
 import { caseLocale, type RunSourceMap } from './textTransform';
 
 /** The CSS `font-variant-caps` keywords the run model carries. `normal` is an
@@ -36,6 +37,13 @@ export function smallCapsScale(face?: FaceMetrics): number {
  *  resolved through the font registry exactly as layout resolves the run. */
 export function smallCapsScaleFor(family: string, weight: number, style: FontStyle): number {
   return smallCapsScale(faceMetricsOf(cachedFontVariant(family, weight, style)));
+}
+
+/** Whether a run set in `(family, weight, style)` draws small caps from the face's own `smcp` glyphs, as a
+ *  registered shaper finds them, rather than synthesizing them as {@link smallCapsText} does. Every reader
+ *  of small caps asks here, so the canvas and the edit overlay set the same capitals. */
+export function ownSmallCaps(family: string, weight: number, style: FontStyle): boolean {
+  return shapesWithFeature(family, weight, style, 'smcp');
 }
 
 /** Whether small caps draws `ch` as a smaller capital: whether it has a

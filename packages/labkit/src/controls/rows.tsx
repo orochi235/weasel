@@ -1,6 +1,7 @@
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { useDebouncedText } from '@weasel-js/ui/components/Prefs';
 import {
+  PropertyCaption,
   type PropertyControlProps,
   PropertyField,
   PropertyRow,
@@ -122,7 +123,9 @@ export function PairedRow<TC extends Record<string, unknown>>({
         // knob it is — without a caption a paired switch reads only to a
         // screen reader. A cell whose leaf is deliberately unnamed keeps none.
         <span key={path} className="lk-pair-cell" title={leaf.description || undefined}>
-          {leaf.name ? <span className="lk-pair-label">{leaf.name}</span> : null}
+          {leaf.name ? (
+            <PropertyCaption className="lk-pair-label">{leaf.name}</PropertyCaption>
+          ) : null}
           <BareControl
             leaf={leaf}
             value={leafValueAt(shown, path, leaf)}

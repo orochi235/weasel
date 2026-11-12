@@ -3,6 +3,7 @@ import { createScene } from 'core/scene/scene';
 import { blur, type DrawCommand } from '@weasel-js/renderer';
 import { buildSceneViewCommands, sceneViewFrame } from './sceneViewRender';
 import { defaultDrawOne, defaultPaintBounds } from './defaultDrawOne';
+import { OUTPUT_GRID_KEY } from 'core/scene/outputGrid';
 
 type Pose = { x: number; y: number; width: number; height: number };
 
@@ -27,6 +28,24 @@ describe('buildSceneViewCommands — cull', () => {
     );
     expect(painted()).toEqual([inside]);
     expect((root as { children: DrawCommand[] }).children).toContain(EXTRA);
+  });
+
+  it('culls a node by the pose its output grid draws it at', () => {
+    const scene = createScene<{ shape: 'rect' }, 'bg', Pose>({
+      systemLayers: [{ id: 'bg' }],
+      // Draws every node 40 units left of where it is stored.
+      quantize: { drawn: ({ pose }) => ({ ...pose, x: pose.x - 40 }) },
+      doc: { [OUTPUT_GRID_KEY]: { pitch: 1, origin: { x: 0, y: 0 } } },
+    });
+    const pulled = scene.add({ kind: 'mark', layer: 'bg', pose: { x: 410, y: 50, width: 20, height: 20 }, data: { shape: 'rect' } });
+    const drawOne = vi.fn(defaultDrawOne) as unknown as typeof defaultDrawOne;
+    buildSceneViewCommands(
+      scene, VIEW, drawOne, undefined, undefined, undefined, undefined,
+      { width: 400, height: 300, dpr: 1, paintBounds: defaultPaintBounds },
+    );
+    const painted = (drawOne as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    expect(painted.map(([n]) => (n as { id: string }).id)).toEqual([pulled]);
+    expect(painted[0]![1]).toMatchObject({ x: 370 });
   });
 
   it('paints every node when not asked to cull', () => {

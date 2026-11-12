@@ -9,7 +9,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { SceneCanvas } from '@weasel-js/core';
-import { createScene } from '@weasel-js/core';
+import { createScene, wheelZoomFactor } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import type { CanvasExtensionApi } from '@weasel-js/core';
 import type { ViewApi } from '@weasel-js/core';
@@ -52,12 +52,12 @@ function pointer(el: Element, type: string, x: number, y: number) {
   }));
 }
 
-function mount(fit?: 'live') {
+function mount(fit?: 'live', more: Partial<Parameters<typeof createMinimapContribution>[0]> = {}) {
   const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
   scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
   scene.add({ kind: 'mark', layer: 'main', pose: { x: 990, y: 790, width: 10, height: 10 }, data: { kind: 'rect' } });
   const onViewChange = vi.fn();
-  const minimap = createMinimapContribution({ rect: RECT, ...(fit ? { fit } : {}) });
+  const minimap = createMinimapContribution({ rect: RECT, ...(fit ? { fit } : {}), ...more });
   const r = render(
     <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} onViewChange={onViewChange} ambient={[minimap]} />,
   );
@@ -117,6 +117,28 @@ describe('input in the minimap', () => {
       pointer(h.canvas, 'pointerup', 50, 40);
     });
     expect(last(h.onViewChange)).toMatchObject({ x: 300, y: 250 });
+  });
+
+  it('zooms the main camera on a wheel, about the world point under the cursor, as <MinimapCanvas> does', () => {
+    const h = mount();
+    // Minimap (50, 40) is world (500, 400), at (500, 400) in the main view.
+    act(() => { h.canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: 50, clientY: 40, deltaY: -100 })); });
+    const next = last(h.onViewChange);
+    expect(next.scale.x).toBeCloseTo(wheelZoomFactor(-100));
+    expect((500 - next.x) * next.scale.x).toBeCloseTo(500);
+    expect((400 - next.y) * next.scale.y).toBeCloseTo(400);
+  });
+
+  it('clamps a wheel zoom to the limits it is given, and leaves the main camera alone with wheelZoom: false', () => {
+    const wheel = (canvas: HTMLCanvasElement) => act(() => {
+      canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: 50, clientY: 40, deltaY: -5000 }));
+    });
+    const clamped = mount(undefined, { wheelZoom: { max: 2.5 } });
+    wheel(clamped.canvas);
+    expect(last(clamped.onViewChange).scale.x).toBe(2.5);
+    const off = mount(undefined, { wheelZoom: false });
+    wheel(off.canvas);
+    expect(off.onViewChange.mock.calls.every(([v]) => (v as View).scale.x === 1)).toBe(true);
   });
 
   it('leaves a drag on the main canvas to the active tool', () => {
