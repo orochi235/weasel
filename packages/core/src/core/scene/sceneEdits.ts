@@ -40,7 +40,7 @@ export interface SceneEditsEnv<TData, TLayer extends string, TPose> {
   layoutFrame: ResolvedLayoutFrame<TPose>;
   generateId(): NodeId;
   narrowSelection(gone?: ReadonlySet<NodeId>): void;
-  clearOverride(id: NodeId): void;
+  forgetViewState(id: NodeId): void;
 }
 
 export interface SceneEdits<TData, TLayer extends string, TPose> {
@@ -67,7 +67,7 @@ export function createSceneEdits<TData, TLayer extends string, TPose>(
     invalidateOrder: env.invalidateOrder,
     fnFields,
     narrowSelection: env.narrowSelection,
-    clearOverride: env.clearOverride,
+    forgetViewState: env.forgetViewState,
     noteWritten: locks.noteWritten,
   });
 

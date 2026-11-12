@@ -134,7 +134,7 @@ function buildScene<TData, TLayer extends string, TPose>(
     layoutFrame,
     generateId,
     narrowSelection: selection.narrow,
-    clearOverride: overrides.clear,
+    forgetViewState: (id) => { overrides.clear(id); scroll.set(id, null); },
   });
   for (const [kind, handler] of Object.entries(options.ops ?? {})) recording.ops.register(kind, handler);
 
