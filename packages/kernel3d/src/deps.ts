@@ -9,7 +9,7 @@
 
 import type { AreaSelectDep, HitTestView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
-import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core/engine';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds, createEnteredGroupScope, pressTarget, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,
@@ -112,16 +112,34 @@ function layerGateOf(view: HitTestView | undefined): ((layer: string) => boolean
   return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
 }
 
+/** Options for `createAreaSelect`. */
+export interface AreaSelect3dOptions {
+  /** The entered group, as the canvas's `enteredGroup` dep has it. Given, a marquee reaches only what a press
+   *  can and selects what a press on each hit selects: the outermost container above it that is not entered. */
+  entered?: EnteredGroupApi;
+}
+
 /** Marquee: the nodes whose projected box the screen rectangle touches, in render
  *  order, less those on a layer the view the marquee was drawn in does not paint. */
 export function createAreaSelect<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
   viewId?: string | null,
+  opts: AreaSelect3dOptions = {},
 ): AreaSelectDep {
+  const { scene } = world;
+  const { entered } = opts;
+  const scope = entered && createEnteredGroupScope({ entered, scene: scene as never });
+  const tree = {
+    getParent: (id: string) => scene.get(id as NodeId)?.parent ?? null,
+    getNode: (id: string) => scene.get(id as NodeId),
+  };
   return {
-    hitTestArea: (bounds, view) =>
-      worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view)),
+    hitTestArea: (bounds, view) => {
+      const hits = worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view));
+      return scope ? hits.filter((id) => scope.isPointerInteractive(id)) : hits;
+    },
+    ...(entered ? { targetOf: (id: string) => pressTarget(tree, id, entered.get()) } : {}),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };
