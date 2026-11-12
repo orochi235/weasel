@@ -14,6 +14,7 @@ function mount(pending: RunStylePatch = {}) {
     lastRange: () => null,
     onWritten: vi.fn(),
     onEdited: vi.fn(),
+    history: { before: vi.fn(), after: vi.fn(), seal: vi.fn(), undo: vi.fn(), redo: vi.fn() },
   };
   return { overlay, host, ...typingHandlers(overlay, host) };
 }
@@ -52,7 +53,7 @@ describe('typingHandlers', () => {
     const sel = window.getSelection()!;
     expect(sel.anchorNode!.nodeType).toBe(Node.TEXT_NODE);
     expect(sel.anchorNode!.parentElement!.closest('[data-run]')).toBe(overlay.children[0]);
-    expect(host.onWritten).toHaveBeenCalledWith(2);
+    expect(host.onWritten).toHaveBeenCalledWith({ start: 2, end: 2 });
     expect(host.onEdited).toHaveBeenCalledTimes(1);
   });
 
@@ -72,7 +73,7 @@ describe('typingHandlers', () => {
     onBeforeInput(ev);
     expect(ev.defaultPrevented).toBe(true);
     expect(domToRuns(overlay)).toEqual([{ text: 'ab' }, { text: 'X', bold: true }]);
-    expect(host.onWritten).toHaveBeenCalledWith(3);
+    expect(host.onWritten).toHaveBeenCalledWith({ start: 3, end: 3 });
     expect(host.onEdited).toHaveBeenCalledTimes(1);
   });
 
@@ -144,7 +145,7 @@ describe('typingHandlers: a composition', () => {
       { text: 'ab', italic: true },
       { text: 'かな', italic: true, bold: true },
     ]);
-    expect(h.host.onWritten).toHaveBeenCalledWith(4);
+    expect(h.host.onWritten).toHaveBeenCalledWith({ start: 4, end: 4 });
   });
 
   it('leaves a composition with nothing armed as the browser typed it', () => {
@@ -190,7 +191,7 @@ describe('typingHandlers: a paste or a drop', () => {
       { text: 'cd' },
     ]);
     expect(overlay.querySelector('p, b')).toBeNull();
-    expect(host.onWritten).toHaveBeenCalledWith(6);
+    expect(host.onWritten).toHaveBeenCalledWith({ start: 6, end: 6 });
     expect(host.onEdited).toHaveBeenCalledTimes(1);
     expect(window.getSelection()!.getRangeAt(0).collapsed).toBe(true);
   });
