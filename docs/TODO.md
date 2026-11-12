@@ -699,12 +699,6 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] Two of labkit's floating-sidebar tests fail when their file runs alone.** In
-  `Trial.floatPanel.test.tsx`, "closes on a press outside it, and the toggle closes what it opened" and "keeps a
-  section torn out of the panel in the workspace once the panel closes" failed 3 of 3 fleet runs of
-  `vitest run --project=labkit <that file>` at `c7b148f5e` (2026-11-11), and 1 of 3 locally, yet pass inside the
-  full suite. Something the suite sets up that the file does not set up itself. Closes when the file passes alone.
-
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
   sighting under load.
