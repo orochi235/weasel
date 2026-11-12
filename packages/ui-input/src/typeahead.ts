@@ -25,9 +25,10 @@ export interface TypeaheadBuffer {
 export const EMPTY_TYPEAHEAD: TypeaheadBuffer = { text: '', at: -Infinity };
 
 /** Whether a search is under way at `now`: something typed, and less than `resetMs` ago. A space typed then is
- *  part of the search, not an activation. */
+ *  part of the search, not an activation. A `now` before the last key (a clock set back since) is no search. */
 export function typeaheadSearching(buffer: TypeaheadBuffer, now: number, resetMs: number = TYPEAHEAD_RESET_MS): boolean {
-  return buffer.text !== '' && now - buffer.at < resetMs;
+  const gap = now - buffer.at;
+  return buffer.text !== '' && gap >= 0 && gap < resetMs;
 }
 
 /** The item a typed `query` lands on, searching forward from `at` with

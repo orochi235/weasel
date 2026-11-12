@@ -27,6 +27,10 @@ describe('typeaheadStep', () => {
     const c = typeaheadStep(names, b.hit, b.buffer, 'c', 100 + TYPEAHEAD_RESET_MS, shape);
     expect(c.buffer.text).toBe('c');
   });
+  it('starts over after the clock is set back', () => {
+    const a = typeaheadStep(names, null, EMPTY_TYPEAHEAD, 'c', 3_600_000, shape);
+    expect(typeaheadStep(names, a.hit, a.buffer, 'l', 0, shape).buffer.text).toBe('l');
+  });
   it('cycles on a repeated letter', () => {
     const a = typeaheadStep(names, 0, EMPTY_TYPEAHEAD, 'c', 0, shape);
     const b = typeaheadStep(names, a.hit, a.buffer, 'c', 10, shape);
