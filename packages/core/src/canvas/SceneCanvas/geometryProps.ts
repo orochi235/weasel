@@ -2,8 +2,9 @@ import type { Bounds } from 'tools/builtin/select';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { RegionPickView } from 'core/adapters/types';
 
-/** `<SceneCanvas geometry>`: hit-test and bounds overrides, consumed by the
- *  internal select tool. Ignored if the consumer passes their own `tools`. */
+/** `<SceneCanvas geometry>`: hit-test and bounds overrides. The surface picks,
+ *  hovers, clicks, draws chrome and runs actions through them, under its own
+ *  select tool or a consumer's `tools`. */
 export interface SceneCanvasGeometry {
   /** Hit-test override. Return the topmost id, the full back-to-front hit
    *  stack (`string[]`), or `null` for empty space. The stack form lets a

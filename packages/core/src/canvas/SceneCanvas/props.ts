@@ -165,14 +165,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  (rect poses and `Path` poses). */
     poseDescriptor?: PoseDescriptor<TPose>;
 
-    // --- Geometry: hit-test + bounds overrides consumed by the internal
-    //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
+    // --- Geometry: hit-test + bounds overrides for the surface's picking,
+    //     hover, clicks, chrome and actions, whatever `tools` it runs. ---
     geometry?: SceneCanvasGeometry;
 
-    // --- Selection options. `pickBest` and `handleHitRadius` configure the
-    //     internal select tool, and are ignored under a `tools` takeover;
-    //     `move`, `resize` and `rotate` configure the `move`,
-    //     `resize` and `rotate` presets, and apply either way. ---
+    // --- Selection options. `pickBest` configures the internal select tool,
+    //     and is ignored under a `tools` takeover; `handleHitRadius` sizes the
+    //     selection handles' hit area, and `move`, `resize` and `rotate`
+    //     configure the `move`, `resize` and `rotate` presets, all three
+    //     either way. ---
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
