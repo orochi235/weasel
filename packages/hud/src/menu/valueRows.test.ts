@@ -225,6 +225,15 @@ describe('createMenuWidget: value rows', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('selects all on Ctrl+A on a Russian layout, which reports the key as ф', () => {
+    const row = textRow();
+    const { w } = widget([row]);
+    type(w, ['ArrowDown', 'Enter']);
+    w.onKey!({ ...keydown('ф'), code: 'KeyA', ctrlKey: true });
+    type(w, ['X', 'Enter']);
+    expect(row.set).toHaveBeenCalledExactlyOnceWith('X');
+  });
+
   it('puts the value back on Escape and stays open; a second Escape closes', () => {
     const row = textRow();
     const { w, close } = widget([row]);

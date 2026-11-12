@@ -9,7 +9,7 @@
  * @packageDocumentation
  */
 
-import { historyKey, isApplePlatform, isEditableTarget, matchKey, matchModifiers } from '@weasel-js/gestures';
+import { historyKey, isApplePlatform, isEditableTarget, matchKeyEvent, matchModifiers } from '@weasel-js/gestures';
 
 export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableTarget } from '@weasel-js/gestures';
 
@@ -23,7 +23,8 @@ export { activatesFocusedControl, focusedControlOwnsKey, historyKey, isEditableT
 export interface KeyBinding {
   /**
    * Key or list of keys to match. Compared case-insensitively against
-   * `event.key`, so `'a'` matches both `'a'` and `'A'`.
+   * `event.key`, so `'a'` matches both `'a'` and `'A'`; a chord on a
+   * non-Latin layout matches by the letter its key bears (`matchKeyEvent`).
    */
   key: string | readonly string[];
   /**
@@ -54,12 +55,12 @@ export interface KeyBinding {
  * gesture dispatcher so the rules can't drift.
  */
 export function matchesKeyBinding(e: KeyBindingEvent, b: KeyBinding, isMac = isApplePlatform()): boolean {
-  if (!matchKey(e.key, b.key)) return false;
+  if (!matchKeyEvent(e, b.key)) return false;
   return matchModifiers(e, { mod: b.mod === true, alt: b.alt === true, shift: b.shift ?? false }, isMac);
 }
 
 /** The fields of a keyboard event {@link matchesKeyBinding} reads, so a React event passes as readily as a DOM one. */
-export type KeyBindingEvent = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'>;
+export type KeyBindingEvent = Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'shiftKey' | 'altKey'> & { code?: string };
 
 /**
  * The history step a keydown asks a page-level handler for: {@link historyKey}'s, but null for a key already

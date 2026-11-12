@@ -1800,3 +1800,15 @@ Calls the lanes made without a ruling:
   back inside, reporting it to `onViewChange` as an input write would. A `<CanvasView>` does the same when a
   commit leaves its rect another size. `'content'` bounds never move a view this way, since they always take in
   what it shows (2026-11-12).
+
+## Audit round nineteen (2026-11-12): not English on a US keyboard
+
+- Open: whether the number fields (`UnitField`, `PropertyPanel`'s number control, the menu value rows) follow the
+  user's locale or stay `en-US`. Today they show and read `en-US` only, with no `locale` prop, so `2,5` typed in a
+  German locale is no number and the field puts the old value back. Both fields set `inputMode="decimal"`, and a
+  phone's decimal keypad in a comma locale offers a comma and no period, so there a fraction cannot be typed at
+  all. `parseNumber` already reads any locale, falling back to `en-US`, but a field has to show and read in the
+  same one: shown `en-US` and read `de-DE`, `1.500` (one and a half at three places) commits as 1500.
+- Open: whether a text edit's style shortcuts (Bold, Italic, Underline, Strikethrough, super- and subscript)
+  answer to Mod alone, as its undo beside them does. `toggleForKey` takes Cmd or Ctrl on any platform and does not
+  look at Alt, so Ctrl+B on a Mac, which a Mac text field reads as moving back a character, bolds instead.

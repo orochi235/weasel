@@ -1,3 +1,4 @@
+import { matchKeyEvent } from '@weasel-js/gestures';
 import type { StyleToggle } from './textEditTypes';
 
 /**
@@ -8,7 +9,8 @@ import type { StyleToggle } from './textEditTypes';
  * the unshifted pair is browser zoom, which a page cannot cancel.
  *
  * Matching is on the *unshifted* character: a US layout reports Cmd+Shift+=
- * as `'+'` and Cmd+Shift+- as `'_'`.
+ * as `'+'` and Cmd+Shift+- as `'_'`. A non-Latin layout's letter is read by
+ * the key it sits on, so Cmd+и on a Russian layout is Cmd+B.
  *
  * Underline has to be intercepted, not merely supported. Left alone, the
  * browser runs its own `formatUnderline` and `domToRuns`' `<u>` flattening
@@ -30,7 +32,7 @@ const UNSHIFT: Readonly<Record<string, string>> = { '+': '=', _: '-' };
 /** The styling `e` toggles, or null when it isn't a styling shortcut. */
 export function toggleForKey(e: KeyboardEvent): StyleToggle | null {
   if (!e.metaKey && !e.ctrlKey) return null;
-  const raw = e.key.toLowerCase();
-  const key = UNSHIFT[raw] ?? raw;
-  return STYLE_SHORTCUTS.find((s) => s.key === key && s.shift === e.shiftKey)?.toggle ?? null;
+  const unshifted = UNSHIFT[e.key];
+  const named = (key: string): boolean => unshifted === key || matchKeyEvent(e, key);
+  return STYLE_SHORTCUTS.find((s) => s.shift === e.shiftKey && named(s.key))?.toggle ?? null;
 }

@@ -1,4 +1,4 @@
-import { oneCodePoint } from './oneCodePoint';
+import { isOneChar } from '@weasel-js/ui-input';
 
 /** The `<input>` types a person types text into. An unknown or missing `type` is `text`. */
 const TEXT_INPUT_TYPES = new Set([
@@ -49,7 +49,7 @@ function selectOwnsKey(e: KeyboardEvent): boolean {
   if (!(e.target instanceof Element) || e.target.tagName !== 'SELECT') return false;
   if (e.metaKey || e.ctrlKey || e.altKey) return false;
   // A one-character `key` is a printable character, which a select reads as type-ahead.
-  return SELECT_NAVIGATION.has(e.key) || oneCodePoint(e.key);
+  return SELECT_NAVIGATION.has(e.key) || isOneChar(e.key);
 }
 
 

@@ -75,4 +75,9 @@ describe('rowKey', () => {
     const fruit = [{ label: '🍎' }, { label: '🍌' }];
     expect(rowKey(fruit, 0, { key: '🍌' }, { typeahead: true })).toEqual({ kind: 'type', held: false });
   });
+  it('takes Mod+A on a non-Latin layout, read by the letter its key bears', () => {
+    const rows = [{ label: 'a' }, { label: 'b' }];
+    expect(rowKey(rows, 0, { key: 'ф', code: 'KeyA', ctrlKey: true }, { selectAll: true })).toEqual({ kind: 'selectAll' });
+    expect(rowKey(rows, 0, { key: 'ф', code: 'KeyA', metaKey: true }, { selectAll: true }, false, true)).toEqual({ kind: 'selectAll' });
+  });
 });

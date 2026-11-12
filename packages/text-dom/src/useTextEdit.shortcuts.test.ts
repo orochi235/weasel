@@ -152,6 +152,19 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
   });
+
+  it('Ctrl-B on a Russian layout, which reports the key as и, toggles bold and keeps the browser off it', () => {
+    const h = makeRichHarness({ a: { text: 'xyz', runs: [{ text: 'xyz' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    const ev = new KeyboardEvent('keydown', { key: 'и', code: 'KeyB', ctrlKey: true, bubbles: true, cancelable: true });
+    act(() => { overlay.dispatchEvent(ev); });
+    expect(ev.defaultPrevented).toBe(true);
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
+  });
 });
 
 describe('useTextEdit — decoration shortcuts route through the run algebra', () => {

@@ -306,6 +306,16 @@ Owner tags, after the priority (2026-10-26):
   Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
   its own bound.
 
+- **(P3) [agent] A HUD menu's text row places its caret, selection and click as though the draft runs left to
+  right.** `offsetsX` in `packages/hud/src/menu/valueRows.ts` puts offset `i` at the row's right edge less the width
+  of the characters after it, which is where it sits only in left-to-right text; with a bidi engine registered the
+  renderer lays a Hebrew or Arabic draft out right to left, so the caret, the selection band and `caretAt`'s click
+  mapping land mirrored (read from the code, 2026-11-12; not run). Fixing it means taking each cluster's x from the
+  laid-out line (`layoutRuns`, with its bidi levels) rather than from prefix widths, a split selection band where a
+  selection crosses a direction change, and a caret affinity at those changes: more than an audit pass. Closes
+  when a test typing a Hebrew draft into a HUD text row finds the caret at the line's left end and a click on a
+  character's left half putting the caret after it.
+
 ---
 
 ## Scene, adapters & layout
