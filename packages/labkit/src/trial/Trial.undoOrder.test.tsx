@@ -85,6 +85,18 @@ describe("a trial's Undo over marks and settings", () => {
   });
 });
 
+describe("a trial's mark between two writes to one setting", () => {
+  it('ends the gesture, so the second write is a step of its own', async () => {
+    await mount();
+    flip();
+    addMark();
+    flip();
+    press('Undo');
+    expect(grid()).not.toBeChecked();
+    expect(marked()).toBe(1);
+  });
+});
+
 describe("a new change on one of a trial's histories", () => {
   const redo = () => screen.getByRole('button', { name: 'Redo' });
 

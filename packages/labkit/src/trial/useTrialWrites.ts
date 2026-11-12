@@ -3,6 +3,7 @@ import { isDev } from '@weasel-js/react';
 import { deepEqual } from '@weasel-js/registry';
 import { useCallback, useContext, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
+import type { AnnotationsApi } from '../annotations/types';
 import { isAuto } from '../config/auto';
 import { resolveAutoConfig } from '../config/autoConfig';
 import { LabOverContext, writesOver } from '../config/over';
@@ -11,7 +12,6 @@ import type { ResolvedConfig } from '../config/types';
 import type { Instrument } from '../instrument/types';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
-import { lastEditStamp } from '../undo/editStamp';
 import { stateOp } from '../undo/stateOp';
 import { readTrialEdit, type TrialEdit } from './trialEdit';
 import type { MountedTrialHistory } from './trialHistory';
@@ -33,6 +33,8 @@ export interface TrialWritesOptions {
   /** The history the instrument handed over with `useTrialHistory`, if any,
    *  which these writes record onto, save and restore. Absent means none. */
   mounted?: Pick<MountedTrialHistory, 'current' | 'history'>;
+  /** The trial's marks, whose edits end a gesture as the trial's own do. Absent means none. */
+  marks?: Pick<AnnotationsApi, 'undoStamp'> | null;
 }
 
 /** A trial's writes that its undo history hears. */
@@ -77,8 +79,10 @@ export function useTrialWrites({
   instrument,
   schema,
   mounted,
+  marks,
 }: TrialWritesOptions): TrialWrites {
   const ownHistory = mounted?.current ?? NO_HISTORY;
+  const marksNow = useLatest(marks ?? null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const over = useLatest(useContext(LabOverContext));
@@ -107,7 +111,7 @@ export function useTrialWrites({
     (path: string, op?: Parameters<TrialSnapshot>[1]): boolean => {
       // Any edit recorded since, on this trial's histories or its marks, ends the gesture.
       const version = (): string =>
-        `${lastEditStamp()}:${stored()?.history?.getVersion() ?? -1}:${ownHistory()?.undoStamp?.() ?? ''}`;
+        `${marksNow.current?.undoStamp() ?? ''}:${stored()?.history?.getVersion() ?? -1}:${ownHistory()?.undoStamp?.() ?? ''}`;
       // The entry a gesture's first write recorded already holds the state
       // from before it, and reads the state to redo to when it is undone.
       const last = lastWrite.current;
@@ -125,7 +129,7 @@ export function useTrialWrites({
       lastWrite.current = { path, at: Date.now(), version: version(), start };
       return sameGesture;
     },
-    [stored, snapshot, ownHistory],
+    [stored, snapshot, ownHistory, marksNow],
   );
 
   /** A gesture back where it started has made no step: take back the one its first write recorded. */

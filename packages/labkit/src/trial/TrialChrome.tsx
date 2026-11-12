@@ -1,6 +1,7 @@
 import { DevtoolsLabel, matchesKeyBinding, undoKeyStep } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
+import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
@@ -36,7 +37,7 @@ import { UndockedSections } from './UndockedSections';
 import { useTrialContributions } from './useTrialContributions';
 import { useTrialKeys } from './useTrialKeys';
 import { useTrialPanels } from './useTrialPanels';
-import { useTrialWrites } from './useTrialWrites';
+import { type TrialWritesOptions, useTrialWrites } from './useTrialWrites';
 
 /** The trial's loupe as its chrome sees it: its switch, the eyedropper's, and
  *  the color last picked through either. */
@@ -128,6 +129,11 @@ const contentClassOf = (instrument: Instrument, presented: boolean): string | un
     .filter(Boolean)
     .join(' ') || undefined;
 
+/** The trial's writes, for chrome mounted without a `setConfig`: its marks end a gesture, as in the trial. */
+function useChromeWrites(opts: Omit<TrialWritesOptions, 'marks' | 'mounted'>) {
+  return useTrialWrites({ ...opts, marks: useContext(AnnotationsContext) });
+}
+
 /** The frame around a running instrument. Builds one chrome context, assembles
  *  the contributions the instrument, the runtime and the lab declare, and hands
  *  each region its slice. */
@@ -164,7 +170,7 @@ export function TrialChrome({
 
   const configSchema = useConfigSchema(instrument);
   const { config: settled, auto } = useResolvedConfig(configSchema, record.config, record.auto);
-  const ownWrites = useTrialWrites({
+  const ownWrites = useChromeWrites({
     store: storeCtx.store,
     trialId,
     instrument,

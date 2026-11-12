@@ -142,14 +142,6 @@ function TrialRuntime({
   });
 
   const { mount: mountHistory, ...mounted } = useMountedHistory();
-  const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
-    store,
-    trialId: record.id,
-    instrument,
-    schema,
-    mounted,
-  });
-
   const setView = (v: unknown): void => updateTrialView(record.id, v);
 
   const cam = useTrialCamera({
@@ -172,6 +164,14 @@ function TrialRuntime({
     capability: instrument.annotations,
     keptMarks,
     save: updateTrialAnnotations,
+  });
+  const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
+    store,
+    trialId: record.id,
+    instrument,
+    schema,
+    mounted,
+    marks: annotationsCap ? annotations : null,
   });
 
   // A trial gets its own slot when its instrument declares tools; otherwise it
