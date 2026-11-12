@@ -5,7 +5,7 @@ import type { ToolsApi } from '../tools/overlayBinding';
 import { useToolCursor } from './useToolCursor';
 
 const toolsWith = (cursor: CursorSpec): ToolsApi =>
-  ({ active: 'brush', hotkeyEngaged: null, registry: { brush: { id: 'brush', cursor } } }) as unknown as ToolsApi;
+  ({ active: 'brush', routed: 'brush', hotkeyEngaged: null, registry: { brush: { id: 'brush', cursor } } }) as unknown as ToolsApi;
 
 describe('useToolCursor', () => {
   it('writes the base again when only a painted cursor\'s mark changes', () => {
@@ -16,5 +16,13 @@ describe('useToolCursor', () => {
     });
     rerender({ tools: toolsWith({ glyph: 'crosshair', mark: 'remove', worldRadius: 4 }) });
     expect(setBase.mock.calls.at(-1)?.[0]).toMatchObject({ kind: 'painted', mark: 'remove' });
+  });
+
+  it('writes no tool cursor when input routes to no tool', () => {
+    const setBase = vi.fn();
+    const sink: CursorSink = { setBase, setOverride: vi.fn() };
+    const tools = { ...toolsWith('crosshair'), routed: null } as ToolsApi;
+    renderHook(() => useToolCursor(sink, tools, null, 'default'));
+    expect(setBase).toHaveBeenLastCalledWith(null, 'default');
   });
 });

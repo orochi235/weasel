@@ -6,6 +6,7 @@ import { useTools } from './overlayBinding';
 import { defineTool } from './overlayBinding';
 import type { RenderLayer } from 'core/layers/render';
 import { ActiveToolContextProvider, useActiveToolContext } from '@weasel-js/routing/react';
+import { createModeRegistry } from '@weasel-js/modes';
 
 const mkLayer = (id: string): RenderLayer<unknown> => ({
   id, label: id, space: 'screen', draw: () => [],
@@ -294,5 +295,37 @@ describe('useTools (context-backed)', () => {
     act(() => { result.current.disengageHotkey(); });
     expect(ctxValue!.hotkeyStack).toEqual([]);
     expect(result.current.hotkeyEngaged).toBeNull();
+  });
+});
+
+describe('ToolsApi.routed', () => {
+  const modes = () => createModeRegistry({
+    modes: [
+      { id: 'look', kind: 'soft', allows: [], scoping: false },
+      { id: 'draw', kind: 'soft', allows: ['creates-paths'], scoping: false },
+    ],
+    initial: 'look',
+  });
+
+  it('is the newest held tool, else the active one', () => {
+    const select = defineTool({ id: 'select' });
+    const hand = defineTool({ id: 'hand' });
+    const { result } = renderHook(() => useTools({ active: 'select', registry: { select, hand } }), { wrapper: makeWrapper('select') });
+    expect(result.current.routed).toBe('select');
+    act(() => result.current.engageHotkey('hand'));
+    expect(result.current.routed).toBe('hand');
+  });
+
+  it('passes over a tool the mode bars, and follows the mode', () => {
+    const select = defineTool({ id: 'select' });
+    const pen = defineTool({ id: 'pen', capabilities: ['creates-paths'] });
+    const registry = modes();
+    const { result } = renderHook(() => useTools({ active: 'pen', registry: { select, pen }, modes: registry }), { wrapper: makeWrapper('pen') });
+    expect(result.current.routed).toBeNull();
+    act(() => result.current.engageHotkey('select'));
+    expect(result.current.routed).toBe('select');
+    act(() => result.current.disengageHotkey());
+    act(() => registry.setMode('draw'));
+    expect(result.current.routed).toBe('pen');
   });
 });

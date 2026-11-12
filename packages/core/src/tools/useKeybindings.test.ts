@@ -433,4 +433,17 @@ describe('useKeybindings', () => {
     expect(abandonedRead).not.toHaveBeenCalled();
     expect(committedRead).toHaveBeenCalled();
   });
+
+  it('refuses a trigger naming a tool the registry does not hold', () => {
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    let ran: boolean | undefined;
+    const { result } = renderHook(() => {
+      const tools = useTools({ active: 'select', registry: { select } });
+      useKeybindings(tools);
+      return { tools, registry: useActionsRegistry() };
+    }, { wrapper: makeWrapper('select', true) });
+    act(() => { ran = result.current.registry!.trigger('tool.activate', { toolId: 'nope' }); });
+    expect(ran).toBe(false);
+    expect(result.current.tools.active).toBe('select');
+  });
 });

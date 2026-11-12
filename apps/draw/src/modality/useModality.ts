@@ -70,12 +70,15 @@ export function useModality(
     [history],
   );
 
-  // Wire the active-journal accessor on the scene. The setter clears any
-  // previous accessor on unmount so a re-mount doesn't leak a stale ref
-  // to a disposed machine.
+  // Wire the active-journal accessor on the scene. Unmounting leaves the open
+  // mode as leaving it would, keeping its edits: its journal would otherwise stay
+  // the scene's innermost and take every later edit.
   useEffect(() => {
     scene.setActiveJournalAccessor(() => machine.getActiveJournal());
-    return () => scene.setActiveJournalAccessor(null);
+    return () => {
+      machine.leaveMode();
+      scene.setActiveJournalAccessor(null);
+    };
   }, [scene, machine]);
 
   const decorations = useMemo(
