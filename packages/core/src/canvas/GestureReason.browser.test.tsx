@@ -2,7 +2,7 @@
  * The reason tag sits beside the pointer on a canvas under a transformed
  * ancestor, which becomes the containing block of the tag's `position: fixed`.
  */
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
@@ -28,7 +28,7 @@ function fakeDispatcher(overlays: readonly OngoingOverlay[]): Dispatcher {
 }
 
 /** The tag's top-left and the pointer's client point, for a reason at world (20, 30) on a canvas under `transform`. */
-function shownUnder(transform: string) {
+async function shownUnder(transform: string) {
   page = document.createElement('div');
   page.style.cssText = 'position: absolute; left: 0; top: 0; padding: 80px 0 0 120px;';
   const stage = document.createElement('div');
@@ -45,7 +45,13 @@ function shownUnder(transform: string) {
   flushSync(() => {
     root!.render(createElement(GestureReason, { dispatcher: fakeDispatcher(overlays), canvasRef: { current: canvas }, viewRef: { current: view } }));
   });
-  const tag = page.querySelector('[role="status"]')!.getBoundingClientRect();
+  // The reason is read in an effect, so the tag arrives a render after the mount.
+  const shown = await vi.waitFor(() => {
+    const el = page!.querySelector('[role="status"]');
+    if (!el) throw new Error('no reason tag yet');
+    return el;
+  });
+  const tag = shown.getBoundingClientRect();
   const c = canvas.getBoundingClientRect();
   const k = c.width / 400;
   // World (20, 30) is screen (20, 60) on the canvas, its camera standing at x 10.
@@ -53,8 +59,8 @@ function shownUnder(transform: string) {
 }
 
 describe('GestureReason under a transformed ancestor', () => {
-  it.each(['none', 'scale(0.5)', 'translate(17px, 9px) scale(1.5)'])('sits just below and right of the pointer under %s', (transform) => {
-    const { tag, pointer, k } = shownUnder(transform);
+  it.each(['none', 'scale(0.5)', 'translate(17px, 9px) scale(1.5)'])('sits just below and right of the pointer under %s', async (transform) => {
+    const { tag, pointer, k } = await shownUnder(transform);
     expect(tag.left).toBeCloseTo(pointer.x + 14 * k, 0);
     expect(tag.top).toBeCloseTo(pointer.y + 14 * k, 0);
   });
