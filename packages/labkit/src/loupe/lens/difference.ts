@@ -68,6 +68,8 @@ export interface DifferenceView {
   /** The interior, in CSS px. */
   size: { width: number; height: number };
   factor: number;
+  /** The screen's device px per CSS px, which the canvas is sized for. Defaults to the window's. */
+  density?: number;
 }
 
 /**
@@ -92,7 +94,7 @@ export function paintDifference(
   diff.height = image.height;
   diff.getContext('2d')?.putImageData(image, 0, 0);
 
-  const sd = doc.defaultView?.devicePixelRatio ?? 1;
+  const sd = view.density ?? doc.defaultView?.devicePixelRatio ?? 1;
   const width = Math.max(1, Math.round(view.size.width * sd));
   const height = Math.max(1, Math.round(view.size.height * sd));
   if (canvas.width !== width) canvas.width = width;

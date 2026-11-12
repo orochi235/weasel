@@ -1,3 +1,4 @@
+import { useDeviceProfile } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
 import {
   type CSSProperties,
@@ -118,6 +119,8 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
   const started = useRef(false);
   const latest = useLatest({ reticle, size });
   const dpr = settings.dprs[0] ?? 1;
+  // The screen's, which the diff is drawn at; `dpr` is the captures'.
+  const { dpr: density } = useDeviceProfile();
   const { compare, factor } = settings;
   const { lensId } = lens;
   // biome-ignore lint/correctness/useExhaustiveDependencies: the reticle, the size and `tick` are the signal to capture again; the capture reads `latest`
@@ -144,7 +147,7 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
             say(missing.reason);
             return;
           }
-          paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor });
+          paintDifference(el, a as LensCapture, b as LensCapture, { size: box, factor, density });
           say(null);
         })
         .catch((err: unknown) => {
@@ -168,6 +171,7 @@ function LensDifference<C>({ lens, settings, sources, reticle, size }: LensSlotP
     factor,
     compare,
     dpr,
+    density,
     tick,
     latest,
   ]);
