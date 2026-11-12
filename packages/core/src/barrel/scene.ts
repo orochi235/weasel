@@ -138,7 +138,7 @@ export type {
 } from '../core/scene';
 export type { SceneDoc, SceneDocValues, SerializedDoc } from '../core/scene/docValues';
 export { replaceDoc } from '../core/scene/docValues';
-export { OUTPUT_GRID_KEY, outputGridOf, quantizeSize } from '../core/scene/outputGrid';
+export { OUTPUT_GRID_KEY, outputGridOf, quantizedShape, quantizeSize } from '../core/scene/outputGrid';
 export type { QuantizeRule, SceneQuantize } from '../core/scene/useSceneOptions';
 export type { SceneDeclaredFieldSetters } from '../core/scene/declaredFieldSetters';
 

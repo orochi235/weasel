@@ -84,7 +84,8 @@ export function pathEditPreview(
   // `origin` is in world; the ghost a preview hands out is what the node stores.
   const storedFrom = (pid: string, from: EditableShape, path: PolygonPath): EditableShape | null => {
     const next = storeEditablePath(from, path, dep.extensions);
-    return next && dep.storedPose ? { ...next, pose: dep.storedPose(pid, next.pose) } : next;
+    const stored = next && dep.storedPose ? { ...next, pose: dep.storedPose(pid, next.pose) } : next;
+    return stored && dep.quantized ? { ...stored, ...dep.quantized(pid, stored) } : stored;
   };
 
   // previewPose and previewData are both asked each frame; store once per path.
