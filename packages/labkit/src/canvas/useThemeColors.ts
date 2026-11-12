@@ -22,7 +22,10 @@ export function useThemeColors<K extends string>(
       setColors((prev) => {
         const keys = Object.keys(spec) as K[];
         const next = Object.fromEntries(
-          keys.map((k) => [k, chromeColorOf(el, ...spec[k])]),
+          keys.map((k) => {
+            const [name, fallback] = spec[k];
+            return [k, chromeColorOf(el, name, fallback)];
+          }),
         ) as Record<K, string>;
         return prev && keys.every((k) => prev[k] === next[k]) ? prev : next;
       });

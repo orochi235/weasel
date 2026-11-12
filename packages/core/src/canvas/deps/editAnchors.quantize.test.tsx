@@ -22,7 +22,7 @@ type Data = { path: PolygonPath };
 const GRID: OutputGrid = { pitch: 1, origin: { x: 0, y: 0 } };
 const RULE: QuantizeRule<Data, RectPose> = {
   stored: ({ data }) => {
-    const coords = Array.from(data.path.coords, Math.round);
+    const coords = Float32Array.from(data.path.coords, Math.round);
     return coords.every((c, i) => c === data.path.coords[i]) ? null : { data: { ...data, path: { ...data.path, coords } } };
   },
 };
