@@ -31,10 +31,12 @@ export function useNearViewport(ref: RefObject<Element | null>, margin: string, 
         win?.removeEventListener('resize', recheck);
       }
     };
+    // Entries queued before `disconnect()` still arrive, and would re-add the scroll listener and wake the observer.
+    let live = true;
     const observer = new IntersectionObserver(
       (entries) => {
         const last = entries.at(-1);
-        if (!last) return;
+        if (!last || !live) return;
         const root = last.rootBounds;
         const box = last.boundingClientRect;
         setNear(
@@ -49,6 +51,7 @@ export function useNearViewport(ref: RefObject<Element | null>, margin: string, 
     );
     observer.observe(el);
     return () => {
+      live = false;
       observer.disconnect();
       watch(false);
     };

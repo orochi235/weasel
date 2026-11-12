@@ -29,8 +29,15 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   let shown: IntersectionObserver | null = null;
   let sized: ResizeObserver | null = null;
   let retry: ReturnType<typeof setTimeout> | undefined;
+  // An observer still delivers entries queued before it disconnected, and `onMove` may stop the watch itself.
+  let stopped = false;
+  const report = (): boolean => {
+    if (stopped) return false;
+    onMove();
+    return !stopped;
+  };
 
-  const stop = (): void => {
+  const disconnect = (): void => {
     clearTimeout(retry);
     observer?.disconnect();
     observer = null;
@@ -46,8 +53,7 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
     sized = new ResizeObserver(() => {
       const box = element.getBoundingClientRect();
       if (box.width === 0 || box.height === 0) return;
-      onMove();
-      frame(1);
+      if (report()) frame(1);
     });
     sized.observe(element);
   };
@@ -59,14 +65,15 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
    */
   const watchShown = (box: DOMRectReadOnly, ratio: number): void => {
     shown?.disconnect();
+    if (stopped) return;
     const slack = 0.5 / Math.max(box.width, box.height);
     let first = true;
     shown = new IntersectionObserver(
       (entries) => {
+        if (stopped) return;
         const entry = entries[0];
         if (!first || entries.length > 1 || movedTo(box, entry.boundingClientRect)) {
-          onMove();
-          frame(1);
+          if (report()) frame(1);
           return;
         }
         first = false;
@@ -82,7 +89,8 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   };
 
   const frame = (threshold: number): void => {
-    stop();
+    disconnect();
+    if (stopped) return;
     const box = element.getBoundingClientRect();
     if (box.width === 0 || box.height === 0) {
       awaitSize();
@@ -97,13 +105,13 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
     let first = true;
     observer = new IntersectionObserver(
       (entries) => {
+        if (stopped) return;
         const ratio = entries[0].intersectionRatio;
         const moved = first
           ? entries.length > 1 || movedTo(box, entries[0].boundingClientRect)
           : ratio !== threshold;
         if (moved) {
-          onMove();
-          frame(1);
+          if (report()) frame(1);
           return;
         }
         first = false;
@@ -116,7 +124,7 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
           watchShown(box, ratio);
         } else {
           retry = setTimeout(() => {
-            if (movedTo(box, element.getBoundingClientRect())) onMove();
+            if (movedTo(box, element.getBoundingClientRect()) && !report()) return;
             frame(1e-7);
           }, 1000);
         }
@@ -127,5 +135,8 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   };
 
   frame(1);
-  return stop;
+  return () => {
+    stopped = true;
+    disconnect();
+  };
 }

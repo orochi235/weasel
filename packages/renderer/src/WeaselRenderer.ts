@@ -135,13 +135,6 @@ export class WeaselRenderer {
       this.canvas.width = Math.round(opts.width * opts.dpr);
       this.canvas.height = Math.round(opts.height * opts.dpr);
     }
-    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
-    if (events && typeof events.addEventListener === 'function') {
-      this.lossTarget = events as EventTarget;
-      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
-      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
-    }
-
     this.gpu.beginFrame();
 
     this.pathFill = new LazyProgram(this.gpu, PATH_FILL_SPEC);
@@ -160,6 +153,13 @@ export class WeaselRenderer {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gpu);
+    // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
+    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
+    if (events && typeof events.addEventListener === 'function') {
+      this.lossTarget = events as EventTarget;
+      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
+      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
+    }
   }
 
   private lazyPrograms(): LazyProgram[] {
@@ -267,7 +267,7 @@ export class WeaselRenderer {
    *  a caller-owned context can host renderer after renderer without
    *  accumulating anything.
    *
-   *  A disposed renderer ignores further `render()` and `registerProgram()`
+   *  A disposed renderer ignores further `render()`, `registerProgram()` and `setImageMinification()`
    *  calls. */
   dispose(): void {
     if (this.disposed) return;
@@ -485,7 +485,7 @@ export class WeaselRenderer {
    *  default. A change frees every image texture, and each re-uploads when next drawn. */
   setImageMinification(mode: ImageMinification | undefined): void {
     const next = mode ?? 'auto';
-    if (next === this.imageMinification) return;
+    if (this.disposed || next === this.imageMinification) return;
     this.imageMinification = next;
     this.imageCache.dispose();
     this.imageCache = new GLImageCache(this.gpu, next);

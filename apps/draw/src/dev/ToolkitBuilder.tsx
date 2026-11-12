@@ -10,6 +10,7 @@ import {
 import { pathTools, usePathToolsTools } from '@weasel-js/path-tools';
 import { Select } from '@weasel-js/ui/components/Select';
 import { Switch } from '@weasel-js/ui/components/Switch';
+import { useRegisteredActions } from '@weasel-js/ui/components/Prefs';
 import { type ReactElement, useEffect, useState } from 'react';
 import { DevShell } from './DevShell';
 import { ActionsWidget } from './toolkit/ActionsWidget';
@@ -18,7 +19,7 @@ import { DispatchTraceWidget } from './toolkit/DispatchTraceWidget';
 import { ResolutionWidget } from './toolkit/ResolutionWidget';
 import { RoutesWidget } from './toolkit/RoutesWidget';
 import { ToolsWidget } from './toolkit/ToolsWidget';
-import { useLiveActions, useToolReflection } from './toolkit/useToolReflection';
+import { useToolReflection } from './toolkit/useToolReflection';
 import s from './ToolkitBuilder.module.css';
 
 const TOOL_PRESETS = SCENE_CANVAS_FEATURES.filter((f) => f.startsWith('tools:'));
@@ -61,7 +62,7 @@ function ToolkitForSetup({ base, tools, paths }: Setup): ReactElement {
     initial: INITIAL_NODES,
   });
   const reflection = useToolReflection();
-  const actions = useLiveActions();
+  const actions = useRegisteredActions();
   const pathToolsTools = usePathToolsTools();
   const features: FeatureEntry[] = [base, ...tools, ...(paths ? [pathTools] : [])];
 

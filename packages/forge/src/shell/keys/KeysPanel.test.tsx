@@ -1,13 +1,13 @@
 import { createMemoryAdapter } from '@weasel-js/labkit';
-import { type BindingOverrides, useActionsRegistry, type ActionsRegistry } from '@weasel-js/core';
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { type Action, ActionsProvider, type BindingOverrides, useAction, useActionsRegistry, type ActionsRegistry } from '@weasel-js/core';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { GestureSpec } from '@weasel-js/core';
 import type { IndexEntry } from '../../story/types';
 import { installResizeObserver } from '../labHarness';
 import { Workshop } from '../Workshop';
-import { describeBinding } from './KeysPanel';
+import { describeBinding, useKeyRows } from './KeysPanel';
 
 installResizeObserver();
 
@@ -64,6 +64,27 @@ describe('describeBinding', () => {
     expect(word({ kind: 'drag' })).toBe('Drag');
     expect(word({ kind: 'click' })).toBe('Click');
     expect(word({ kind: 'key-held', key: 'Space' })).toMatch(/^Hold /);
+  });
+});
+
+const early: Action = {
+  id: 'early.go', label: 'Go early', group: 'test',
+  defaultBinding: { kind: 'key', key: 'g' },
+  invoker: { timing: 'immediate', run: () => {} },
+};
+
+describe('useKeyRows', () => {
+  it('lists an action a sibling registered before the panel subscribed', () => {
+    function Registrant() {
+      useAction(early);
+      return null;
+    }
+    function Rows() {
+      return <ul>{useKeyRows().map((r) => <li key={r.id}>{r.label}</li>)}</ul>;
+    }
+    // The sibling's effect registers before the panel's own effect runs, after the panel rendered its list.
+    render(<ActionsProvider><Registrant /><Rows /></ActionsProvider>);
+    expect(screen.getByText('Go early')).toBeInTheDocument();
   });
 });
 

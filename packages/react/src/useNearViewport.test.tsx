@@ -82,3 +82,23 @@ test('watches the viewport of the document the element is in, as a popout window
   render(<Probe initial={false} />, { container });
   expect(root).toBe(other);
 });
+
+test('a report queued before unmount leaves no scroll listener and wakes no observer', () => {
+  let observes = 0;
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(cb: (entries: Entry[]) => void) { report = cb; }
+      observe() { observes++; }
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  const { unmount } = render(<Probe />);
+  unmount();
+  const after = observes;
+  // The spec delivers entries queued before `disconnect()`: this one is off-screen and clipped.
+  report([{ isIntersecting: false, rootBounds: ROOT, boundingClientRect: rect(2000, 2080) }]);
+  document.dispatchEvent(new Event('scroll'));
+  expect(observes).toBe(after);
+});

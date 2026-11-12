@@ -8,8 +8,8 @@
  * browser behavior, not as the behavior.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { createElement } from 'react';
+import { render, renderHook, act } from '@testing-library/react';
+import { createElement, StrictMode, useEffect } from 'react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { createScene } from '../../core/scene/scene';
 import type { NodeId, RectPose } from '../../core/scene/types';
@@ -168,6 +168,26 @@ describe('usePoseRun', () => {
     act(() => { run().start(); });
     act(() => { clock.frames(1); });
     expect(scene.historyEntries().at(-1)?.label).toBe('Relax');
+  });
+});
+
+describe('usePoseRun — StrictMode', () => {
+  it('runs a run started on mount, after the remount StrictMode rehearses', () => {
+    const scene = createScene<object, 'main', RectPose>({ systemLayers: LAYERS });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: box(0, 0), data: {} });
+    const clock = makeClock();
+    let run: PoseRun | null = null;
+    function Runner() {
+      run = usePoseRun<RectPose>({
+        scene, step: marching(a, 3), requestFrame: clock.requestFrame, cancelFrame: clock.cancelFrame,
+      });
+      useEffect(() => { run!.start(); }, []);
+      return null;
+    }
+    render(createElement(StrictMode, null, createElement(Runner)));
+    act(() => { clock.frames(3); });
+    expect(scene.get(a)!.pose).toEqual(box(30, 0));
+    expect(run!.isRunning()).toBe(false);
   });
 });
 
