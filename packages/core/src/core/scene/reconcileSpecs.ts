@@ -15,7 +15,7 @@ import type { AddNodeSpec, NodeId, Scene } from './types';
  * `next`'s order wherever a parent's children in it differ from `prev`'s, by an
  * addition or a reorder; elsewhere a reorder made in the scene stays. A node whose
  * `kind` or derive functions change is removed and added again, along with
- * everything its removal takes with it, and stays selected if it was.
+ * everything its removal takes with it, and stays selected and scrolled if it was.
  */
 export function reconcileSpecs<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -32,8 +32,12 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
   const removing = scene.removalClosure(gone.filter((id) => scene.get(id) !== undefined));
   const removed = new Set(removing);
 
-  // A replaced node is the same node to whoever selected it.
+  // A replaced node is the same node to whoever selected it or scrolled it.
   const selected = scene.getSelection();
+  const scrolled = removing.flatMap((id) => {
+    const offset = scene.scroll.get(id);
+    return offset === undefined ? [] : [[id, offset] as const];
+  });
   // `setLayer` carries a node's subtree with it, so a member whose own layer did not change is put back after.
   const startLayer = new Map<NodeId, TLayer>();
   for (const spec of next) {
@@ -71,6 +75,7 @@ export function reconcileSpecs<TData, TLayer extends string, TPose>(
       if ((spec.locked === true) !== (before.locked === true)) scene.setLocked(id, spec.locked === true);
     }
     reorderToSpecs(scene, prev, next);
+    for (const [id, offset] of scrolled) if (scene.get(id) !== undefined) scene.scroll.set(id, offset);
     if (selected.some((id) => removed.has(id))) {
       scene.setSelection(selected.filter((id) => scene.get(id) !== undefined));
     }
