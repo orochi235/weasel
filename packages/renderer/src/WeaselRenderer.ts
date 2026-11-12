@@ -135,13 +135,6 @@ export class WeaselRenderer {
       this.canvas.width = Math.round(opts.width * opts.dpr);
       this.canvas.height = Math.round(opts.height * opts.dpr);
     }
-    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
-    if (events && typeof events.addEventListener === 'function') {
-      this.lossTarget = events as EventTarget;
-      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
-      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
-    }
-
     this.gpu.beginFrame();
 
     this.pathFill = new LazyProgram(this.gpu, PATH_FILL_SPEC);
@@ -160,6 +153,15 @@ export class WeaselRenderer {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gpu);
+
+    // Last, so a constructor that throws (a lost context fails the compile above) leaves no listener behind to
+    // rebuild a renderer nobody holds when the context comes back.
+    const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
+    if (events && typeof events.addEventListener === 'function') {
+      this.lossTarget = events as EventTarget;
+      this.lossTarget.addEventListener('webglcontextlost', this.boundOnLost);
+      this.lossTarget.addEventListener('webglcontextrestored', this.boundOnRestored);
+    }
   }
 
   private lazyPrograms(): LazyProgram[] {

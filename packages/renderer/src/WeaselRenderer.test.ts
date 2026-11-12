@@ -162,6 +162,26 @@ describe('WeaselRenderer context loss', () => {
     expect(names).toContain('compileShader');
   });
 
+  it('holds no context-loss listener on a canvas whose context failed it mid-construction', () => {
+    const lost = new Proxy(recorder.gl, {
+      get(target, prop) {
+        if (prop === 'getShaderParameter') return () => false;
+        if (prop === 'isContextLost') return () => true;
+        return Reflect.get(target, prop);
+      },
+    });
+    const live = new Set<string>();
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => lost,
+      addEventListener: (type: string) => { live.add(type); },
+      removeEventListener: (type: string) => { live.delete(type); },
+    } as unknown as HTMLCanvasElement;
+    expect(() => new WeaselRenderer({ canvas, width: 10, height: 10, dpr: 1 })).toThrow();
+    expect([...live]).toEqual([]);
+  });
+
   // A proxy, as with registerProgram below: the recorder answers every lookup,
   // so this proves only that the recompiled program asked for the vertex name.
   it('looks up vertex-stage uniforms when it recompiles a program after restore', () => {
