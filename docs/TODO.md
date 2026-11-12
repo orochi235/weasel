@@ -291,31 +291,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
 
-## Text
-
-- **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
-  and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
-  in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
-  16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
-  Firefox step by quarters to the nearest. A piece that starts between pixels paints from the one
-  below: the small capitals of `"Hgd" Inter 72px small caps` start at 73.508 and paint from 73, so
-  that case's `dRight` runs from -0.07 to -0.91 across the pixel, and is -0.79 at `x` 20 against
-  the test's 0.75. It is the whole configuration, not that case: in
-  `npx vitest run -c scripts/measure-overlay-alignment.config.ts`, 22 of WebKit DPR 1's 160 matrix
-  rows fall outside the test's bounds, every one trailing the canvas (mean `dx` -0.14); WebKit DPR 2
-  has 2, the same Arial 72px rows that Chromium DPR 2 has. Advances are not it: WebKit's DOM width of
-  `GDGDGDGDGD` matches the atlas to 0.001px. Nothing on the overlay moves the grid: `will-change`,
-  `translateZ(0)`, either `text-rendering`, and `-webkit-font-smoothing` left every pixel in place
-  (the last moved the small-caps case 0.76px further left). A WebKit-only nudge only trades one
-  case for another: a half pixel took the matrix mean `dx` to +0.36 and failed three cases, and a
-  sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
-  0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
-  WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
-  Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
-  its own bound.
-
----
-
 ## Scene, adapters & layout
 
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
