@@ -47,7 +47,6 @@ export interface LabStoreActions extends SnapshotActions {
   setTrialHistory: (id: string, history: History) => void;
   /** Record where a trial's clock stands. */
   updateTrialClock: (id: string, clock: ClockPosition) => void;
-  setTrialInstrument: (id: string, instrumentName: string) => void;
   setMode: (mode: LabMode) => void;
   setLabTool: (id: string | null) => void;
   setTrialTool: (trialId: string, id: string | null) => void;
@@ -175,12 +174,6 @@ export function createLabStore(options: CreateLabStoreOptions = {}): LabStore {
     setTrialHistory: (id, history) => {
       set((s) => ({
         trials: s.trials.map((w) => (w.id === id ? { ...w, history } : w)),
-      }));
-    },
-
-    setTrialInstrument: (id, instrumentName) => {
-      set((s) => ({
-        trials: s.trials.map((w) => (w.id === id ? { ...w, instrumentName } : w)),
       }));
     },
 

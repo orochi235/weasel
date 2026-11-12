@@ -239,14 +239,20 @@ describe('save/load/delete snapshots', () => {
       state: { n: 1 },
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
+    s.getState().addTrial({
+      id: 'w2',
+      instrumentName: 'B',
+      config: {},
+      state: { n: 2 },
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+    });
     s.getState().saveSnapshot('w1', 'snap-a');
-    s.getState().setTrialInstrument('w1', 'B');
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const before = s.getState().trials[0];
-    s.getState().loadSnapshot(snapId, 'w1');
+    const before = s.getState().trials[1];
+    s.getState().loadSnapshot(snapId, 'w2');
     expect(warn).toHaveBeenCalled();
-    expect(s.getState().trials[0]).toBe(before);
+    expect(s.getState().trials[1]).toBe(before);
     warn.mockRestore();
   });
 
