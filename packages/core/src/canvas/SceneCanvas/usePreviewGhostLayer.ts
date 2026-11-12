@@ -130,7 +130,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
       const out: DrawCommand[] = [];
       if (settled.length > 0) out.push({ kind: 'group', children: settled });
-      if (ghosted.length > 0) out.push({ kind: 'group', alpha: GHOST_ALPHA, children: ghosted });
+      if (ghosted.length > 0) out.push({ kind: 'group', alpha: slot.ghostAlpha ?? GHOST_ALPHA, children: ghosted });
       return out;
     },
   }), [sceneRef, sceneSlotRef]);
