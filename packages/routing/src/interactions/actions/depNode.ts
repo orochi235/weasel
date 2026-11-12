@@ -51,7 +51,8 @@ export class DepNode extends ScopeNode<DepNode> {
   readonly registry: DepRegistry = {
     register: <K extends DepName>(name: K, source: DepSource<K>) => {
       const key = name as string;
-      const entry = source as Source;
+      // A wrapper per registration, so one source registered twice is two entries each release can tell apart.
+      const entry: Source = (below) => (source as Source)(below);
       const stack = this.sources.get(key);
       if (stack) stack.push(entry);
       else this.sources.set(key, [entry]);
