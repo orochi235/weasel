@@ -1813,9 +1813,11 @@ Calls the lanes made without a ruling:
   without Cmd is Cocoa's Emacs-style editing (Ctrl+A, E, B, F, P, N, D, H, K, Y, T, O, V, L) and belongs to the
   text: no kit shortcut claims it and nothing prevents its default. Off a Mac nothing changed. Built: gestures'
   `textOwnsChord(e, isMac)` holds the rule; text-dom's style shortcuts take Cmd only on a Mac; a HUD menu text row,
-  which edits for itself, takes Cmd+A as select-all and Ctrl+A, E, B, F, P, N, D, H and K as a one-line Cocoa field
-  does. That row does not take Ctrl+Y, T, O, V or L: it has no kill buffer for Ctrl+K to fill. Every other key
-  handler reads `mod` or skips editable targets already.
+  which edits for itself, takes Cmd+A as select-all and Ctrl+A, E, B, F, P, N, D, H, K, Y and T as a one-line Cocoa
+  field does: Ctrl+K cuts into a kill buffer the menu's text rows share, Ctrl+Y enters it at the caret, and Ctrl+T
+  swaps the grapheme clusters either side of the caret, the last two at the line's end. Ctrl+O, V and L open a line,
+  page down and center, which mean nothing in a one-line field. Every other key handler reads `mod` or skips
+  editable targets already.
 
 ## Audit round nineteen (2026-11-12): the user's settings
 
