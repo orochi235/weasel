@@ -1803,12 +1803,15 @@ Calls the lanes made without a ruling:
 
 ## Audit round nineteen (2026-11-12): not English on a US keyboard
 
-- Open: whether the number fields (`UnitField`, `PropertyPanel`'s number control, the menu value rows) follow the
-  user's locale or stay `en-US`. Today they show and read `en-US` only, with no `locale` prop, so `2,5` typed in a
-  German locale is no number and the field puts the old value back. Both fields set `inputMode="decimal"`, and a
-  phone's decimal keypad in a comma locale offers a comma and no period, so there a fraction cannot be typed at
-  all. `parseNumber` already reads any locale, falling back to `en-US`, but a field has to show and read in the
-  same one: shown `en-US` and read `de-DE`, `1.500` (one and a half at three places) commits as 1500.
+- Ruled 2026-11-12 (Mike, 2026-11-12: respect the locale where it can be done reliably): the number fields show and
+  read in the user's locale. `UnitField` takes a `locale` prop and otherwise follows React Aria's (`useFieldLocale`):
+  the nearest `<I18nProvider locale>`, else `navigator.language`, else `en-US`, so one provider sets every field,
+  React Aria's `NumberField` included. `PropertyPanel`'s number controls and read-only numbers, the DOM menu's number
+  rows and, through `navigator.language` or a `locale` option, the hud menu's follow it. Display and parse go through
+  that one locale on every path; `compact` and `zoom`, which wrote `en-US` everywhere, now write the locale too, with
+  the `K`/`M`/`B`/`T` suffix kept. `fieldLocale` keeps a locale only where its numbers read back as shown, else
+  writes it with Latin digits (`-u-nu-latn`), else falls back to `en-US`; every locale tried, non-Latin digits
+  (`ar-EG`, `hi-IN-u-nu-deva`, `fa-IR`, `th-TH-u-nu-thai`) included, reads back without a fallback.
 - Open: whether a text edit's style shortcuts (Bold, Italic, Underline, Strikethrough, super- and subscript)
   answer to Mod alone, as its undo beside them does. `toggleForKey` takes Cmd or Ctrl on any platform and does not
   look at Alt, so Ctrl+B on a Mac, which a Mac text field reads as moving back a character, bolds instead.
