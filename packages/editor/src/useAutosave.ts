@@ -1,5 +1,6 @@
 import { useLatest } from '@weasel-js/core';
 import { after } from '@weasel-js/registry';
+import { onLeave } from '@weasel-js/storage';
 import { useEffect, useRef } from 'react';
 import { type SessionEntry, writeSession } from './sessionStore';
 
@@ -12,7 +13,7 @@ export interface SessionWrite {
 /** When `useAutosave` saves, and what it reports after. */
 export interface AutosaveOptions {
   /** How long after a change the save runs. Defaults to 300 ms. An infinite delay saves only on unmount or when
-   *  the page goes away. */
+   *  the page goes away or turns hidden. */
   delayMs?: number;
   /** When given, a save is scheduled on mount and then only when it changes. Without it, every
    *  render schedules one. */
@@ -23,7 +24,7 @@ export interface AutosaveOptions {
 
 /**
  * Keeps a document in local storage: runs `write` a short delay after each change, and at once on
- * unmount or when the page goes away. `write` returning null skips that save.
+ * unmount or when the page goes away or turns hidden. `write` returning null skips that save.
  */
 export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOptions = {}): void {
   const writeRef = useLatest(write);
@@ -55,9 +56,9 @@ export function useAutosave(write: () => SessionWrite | null, opts: AutosaveOpti
 
   useEffect(() => {
     const flush = (): void => pendingRef.current?.();
-    window.addEventListener('pagehide', flush);
+    const stop = onLeave(flush);
     return () => {
-      window.removeEventListener('pagehide', flush);
+      stop();
       flush();
     };
   }, []);
