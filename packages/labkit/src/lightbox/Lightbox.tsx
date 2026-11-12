@@ -46,6 +46,27 @@ function dialogProps(label: string) {
   } as const;
 }
 
+/** Disabling closes an open lightbox for good: its owner hears it, and enabling it again does not reopen it. */
+function useDisablingCloses(
+  disabled: boolean,
+  open: boolean,
+  setOwn: (open: boolean) => void,
+  onChangeRef: { readonly current: ((expanded: boolean) => void) | undefined },
+): void {
+  const [wasDisabled, setWasDisabled] = useState(disabled);
+  const [closings, setClosings] = useState(0);
+  if (disabled !== wasDisabled) {
+    setWasDisabled(disabled);
+    if (disabled && open) {
+      setOwn(false);
+      setClosings((n) => n + 1);
+    }
+  }
+  useLayoutEffect(() => {
+    if (closings > 0) onChangeRef.current?.(false);
+  }, [closings, onChangeRef]);
+}
+
 /**
  * Shows its content large, over a dimmed page, from the expand button in its
  * corner — or a double-click, where `expandOnDoubleClick` asks for one —
@@ -82,6 +103,7 @@ export function Lightbox({
   const [claims, setClaims] = useState(0);
   const layers = useLightboxLayers();
   const surface = useSurfaceOptional();
+  useDisablingCloses(disabled, expandedProp ?? own, setOwn, onChangeRef);
 
   const set = useCallback(
     (next: boolean) => {
@@ -91,21 +113,6 @@ export function Lightbox({
     },
     [expandedRef, onChangeRef],
   );
-
-  // Disabling closes an open one for good: its owner hears it, and enabling it again does not reopen it.
-  const [wasDisabled, setWasDisabled] = useState(disabled);
-  const [closings, setClosings] = useState(0);
-  if (disabled !== wasDisabled) {
-    setWasDisabled(disabled);
-    if (disabled && (expandedProp ?? own)) {
-      setOwn(false);
-      setClosings((n) => n + 1);
-    }
-  }
-  useLayoutEffect(() => {
-    if (closings > 0) onChangeRef.current?.(false);
-  }, [closings, onChangeRef]);
-
   const ctx = useMemo<LightboxContextValue | null>(
     () =>
       disabled
