@@ -24,7 +24,7 @@ function registerCapsFace(family: string): void {
 const shaper: TextShaper = {
   shape: () => [],
   glyphD: () => '',
-  hasFeature: (_face, tag) => tag === 'smcp',
+  hasFeature: (_face: unknown, tag: string) => tag === 'smcp',
 } as unknown as TextShaper;
 
 describe('domRuns — small caps a face draws itself', () => {

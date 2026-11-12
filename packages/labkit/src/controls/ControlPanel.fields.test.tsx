@@ -281,7 +281,11 @@ describe('<ControlPanel> color alpha', () => {
       <ControlPanel
         schema={resolveConfigSchema(
           f.schema({
-            fill: f.color('#000000ff').alpha().label('Fill').pair({ with: ['line'], label: 'Ink' }),
+            fill: f
+              .color('#000000ff')
+              .alpha()
+              .label('Fill')
+              .pair({ with: ['line'], label: 'Ink' }),
             line: f.color('#000000ff').alpha().label('Line'),
           }),
           [],

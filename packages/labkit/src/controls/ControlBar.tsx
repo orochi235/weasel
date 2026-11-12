@@ -109,6 +109,15 @@ function Cell({
   active: boolean;
   row: () => ReactNode;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read, useLabSettles());
+  const field = labField(
+    leaf,
+    value,
+    write,
+    useFieldChoices(),
+    disabled,
+    draft,
+    read,
+    useLabSettles(),
+  );
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, active, row })}</>;
 }

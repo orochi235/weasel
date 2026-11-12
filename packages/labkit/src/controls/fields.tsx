@@ -77,7 +77,12 @@ export function labField(
   const settled = prefFieldProps(leaf, state, 'lab', draft ? settles : typedSettle(settles));
   if (settled === null) return null;
   const field = draft
-    ? withDrafts(settled, prefFieldProps(leaf, { ...state, setValue: draft }, 'lab', settles), 'lab', settles)
+    ? withDrafts(
+        settled,
+        prefFieldProps(leaf, { ...state, setValue: draft }, 'lab', settles),
+        'lab',
+        settles,
+      )
     : settled;
   switch (field.kind) {
     case 'number':
@@ -122,7 +127,16 @@ export function BareControl({
   /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
   read?: PrefBoundReader;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read, useLabSettles());
+  const field = labField(
+    leaf,
+    value,
+    write,
+    useFieldChoices(),
+    disabled,
+    draft,
+    read,
+    useLabSettles(),
+  );
   // `labField` has already decided whether this text drafts, and where to.
   const drafts = useDebouncedText(
     typeof value === 'string' ? value : '',
