@@ -15,24 +15,10 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { overChildren } from './overChildren';
 import { INHERIT } from '@weasel-js/paint';
 import { poseFrameOf } from '@weasel-js/geom';
+import { pixelScaleAt, pixelScaleCtx } from './pixelScale';
 
-function pixelScaleOf(view: View): number {
-  // `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
-  const dpr = globalThis.devicePixelRatio || 1;
-  return Math.max(Math.abs(view.scale.x), Math.abs(view.scale.y)) * dpr;
-}
-
-// Shared across a frame's nodes, which all arrive with the same view.
-let lastView: View | undefined;
-let lastViewCtx: NodePaintCtx = {};
-function viewOnlyCtx(view: View): NodePaintCtx {
-  const pixelScale = pixelScaleOf(view);
-  if (view !== lastView || lastViewCtx.pixelScale !== pixelScale) {
-    lastView = view;
-    lastViewCtx = { pixelScale };
-  }
-  return lastViewCtx;
-}
+// `globalThis`, not `window`: a render worker has no window, and sets the density it paints at here.
+const ambientDpr = (): number => globalThis.devicePixelRatio || 1;
 
 /** Paint one node the way the kit does by default: dispatch to the first
  *  registered node-shape painter that matches, then draw its `data.label` on
@@ -45,9 +31,10 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
 ): DrawCommand[] {
   // A group is structure: it never paints, whatever its data holds.
   const painter = node.kind === 'group' ? undefined : findNodeShape(node);
+  // A frame builder that knows the density it paints at fills `pixelScale`; the window's is the fallback.
   const paintCtx = !view || ctx?.pixelScale !== undefined
     ? ctx
-    : ctx ? { ...ctx, pixelScale: pixelScaleOf(view) } : viewOnlyCtx(view);
+    : ctx ? { ...ctx, pixelScale: pixelScaleAt(view, ambientDpr()) } : pixelScaleCtx(view, ambientDpr());
   const primary = painter ? painter.paint(node, pose, paintCtx) : [];
 
   // Label overlay — skipped for text nodes (their content is the label).

@@ -149,7 +149,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     (globalThis as { devicePixelRatio?: number }).devicePixelRatio = size.dpr;
     const commands = buildSceneViewCommands(
       scene, view, drawOne, inputs.extraCommands ?? undefined, alphas.size > 0 ? alphaFor : undefined, inputs.layers, animations.animator,
-      inputs.cull ? { ...size, paintBounds } : undefined,
+      inputs.cull ? { ...size, paintBounds } : undefined, size.dpr,
     );
     renderer.render(commands, viewToMat3(view));
     painting.last = { commands, view };

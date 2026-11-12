@@ -19,6 +19,7 @@ import { isCustomEntry, type LayersMap } from '../layerSlots';
 import { wrapWithPoseRotation } from '../poseRotation';
 import { scenePlaneOf } from '../pickWalk';
 import { planeTransform } from '../planeClips';
+import { pixelScaleCtx } from '../pixelScale';
 
 export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
@@ -32,7 +33,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
   return useMemo<RenderLayer<unknown>>(() => ({
     id: 'departure-ghost',
     label: 'Departing nodes',
-    draw: (_data, view) => {
+    draw: (_data, view, dims) => {
       const slot = slotRef.current;
       const leaving = departures.shown();
       if (leaving.length === 0 || !slot || isCustomEntry(slot) || !slot.drawOne) return [];
@@ -59,8 +60,9 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       ): void => {
         const layer = r.node.layer;
         const plane = planeOf?.(layer) ?? null;
+        const v = viewOf(layer);
         const children: DrawCommand[] = shown.has(layer)
-          ? wrapWithPoseRotation(drawOne(r.node, pose, viewOf(layer)), pose) : [];
+          ? wrapWithPoseRotation(drawOne(r.node, pose, v, pixelScaleCtx(v, dims.dpr)), pose) : [];
         for (const c of r.children) draw(c, composes ? compose(pose, c.pose) : c.pose, plane, children);
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });

@@ -11,6 +11,7 @@ import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 import { debugSinkFrom } from './drawEnvelope';
 import type { NodePaintCtx } from './NodeShape';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
+import { pixelScaleCtx } from './pixelScale';
 import { sceneLayerKey } from './sceneLayerPaint';
 import { wrapNodeOutput } from './wrapNodeOutput';
 
@@ -145,7 +146,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       if (a && cfg.objects === undefined && drawOne) {
         const filteredDrawOne = (obj: TNode, pose: TPose, v: View): DrawCommand[] => {
           if (hidden && hidden.has(obj.id)) return [];
-          const cmds = drawOne(obj, pose, v);
+          const cmds = drawOne(obj, pose, v, pixelScaleCtx(v, dims.dpr));
           if (debugSink) {
             const b = boundsOfFn ? boundsOfFn(obj.id) : null;
             if (b) debugSink.recordBounds(obj.id, b);
@@ -187,7 +188,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         const pose: TPose = toPose(obj);
         const at = drawnAt(obj, pose);
         if (drawOne && !culled?.(obj, at)) {
-          const wrapped = wrapNodeOutput(drawOne(obj, at, view), at, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
+          const wrapped = wrapNodeOutput(drawOne(obj, at, view, pixelScaleCtx(view, dims.dpr)), at, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
           for (const cmd of wrapped) children.push(cmd);
         }
         if (debugSink) {

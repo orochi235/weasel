@@ -23,6 +23,7 @@ import { paintedSceneLayers } from './sceneLayerPaint';
 import { cullDrawCommands } from '@weasel-js/renderer';
 import { paintMissesView, type PaintBoundsFn } from './paintCull';
 import { paintBoundsFor } from './defaultDrawOne';
+import { pixelScaleCtx } from './pixelScale';
 import { nodeAsShown, shownLookup } from 'core/scene/nodeAsShown';
 import { withShownNode } from './shownNodes';
 
@@ -145,6 +146,10 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   /** Cull the scene to this CSS-pixel view size — see
    *  `RenderSceneToCanvasArgs.cull`. Omit to paint every node. */
   cull?: SceneViewCull<TData, TLayer, TPose>,
+  /** Device pixels per CSS pixel these commands will be painted at, which
+   *  sizes resolution-dependent paint (`NodePaintCtx.pixelScale`). Defaults
+   *  to `cull`'s, and otherwise to `window.devicePixelRatio`. */
+  dpr: number = cull?.dpr ?? resolveDpr(undefined),
 ): DrawCommand[] {
   const shown = shownLookup(scene);
   const derivedOnly = withDerivedPaths(scene, withInheritedPaints(shown, drawOne));
@@ -159,7 +164,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   ): DrawCommand[] => {
     const overrideAlpha = scene.overrides.read(node.id as NodeId)?.alpha ?? 1;
     return wrapNodeOutput(
-      derived(nodeAsShown(scene.overrides, node), pose, v),
+      derived(nodeAsShown(scene.overrides, node), pose, v, pixelScaleCtx(v, dpr)),
       pose,
       (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
     );
@@ -207,9 +212,11 @@ export function sceneViewFrame<TData, TLayer extends string, TPose>(
     scene, view, width, height, drawOne, extraCommands, alphaFor, layerVisibility, layerOrder,
     overrides, cull, dpr,
   } = args;
+  const density = resolveDpr(dpr);
   return buildSceneViewCommands(
     scene, view, drawOne, extraCommands, alphaFor, { layerVisibility, layerOrder }, overrides,
-    cull ? { width, height, dpr: resolveDpr(dpr), paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
+    cull ? { width, height, dpr: density, paintBounds: args.paintBounds ?? paintBoundsFor(drawOne) } : undefined,
+    density,
   );
 }
 
