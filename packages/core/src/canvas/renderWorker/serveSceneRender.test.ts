@@ -51,6 +51,15 @@ describe('hostSceneRender', () => {
     expect(out).toContainEqual({ type: 'error', message: expect.stringMatching(/nope/) });
   });
 
+  it('reports every animator call in a frame that failed, not only the first', () => {
+    const { frame, out } = host();
+    frame({ animations: [{ op: 'play', id: 1, key: 'nope' }, { op: 'play', id: 2, key: 'gone' }] });
+    expect(out.filter((m) => m.type === 'error')).toEqual([
+      { type: 'error', message: expect.stringMatching(/nope/) },
+      { type: 'error', message: expect.stringMatching(/gone/) },
+    ]);
+  });
+
   it('answers a snapshot it could not take with nothing', async () => {
     vi.stubGlobal('createImageBitmap', () => Promise.reject(new Error('lost')));
     const { send, out, canvas } = host();

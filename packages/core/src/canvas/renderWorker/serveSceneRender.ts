@@ -91,6 +91,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     else port.postMessage(msg);
   };
   const dirty = () => post({ type: 'dirty' });
+  const report = (e: unknown) => post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
   const animations = createWorkerAnimations(options.animations ?? {}, dirty);
   const answerImage = loadFromPage((src, size) => post({ type: 'image', src, size }));
   subscribeImageReady(dirty);
@@ -123,10 +124,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     }
     const { scene } = mirror;
     animations.at(msg.at, msg.resumed === true);
-    let failed: unknown;
-    if (scene && msg.animations) {
-      try { animations.run(msg.animations, scene); } catch (e) { failed = e; }
-    }
+    const failed = scene && msg.animations ? animations.run(msg.animations, scene) : [];
     animations.advance();
     try {
       paint(scene);
@@ -136,8 +134,9 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       // failed paint would otherwise stand until then. One retry, so a paint that always throws doesn't spin.
       if (!retried) { retried = true; dirty(); }
       throw e;
+    } finally {
+      for (const e of failed) report(e);
     }
-    if (failed !== undefined) throw failed;
   };
 
   const paint = (scene: SceneMirror['scene']): void => {
@@ -192,7 +191,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       // The page waits on these answers.
       if (msg.type === 'frame') post({ type: 'drawn' });
       else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: NO_IDS() });
-      post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+      report(e);
     }
   });
 }
