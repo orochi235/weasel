@@ -752,7 +752,7 @@
       "tags": []
     },
     "typeface": {
-      "body": "<path d=\"M9.6 3.2 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4\" stroke-width=\"1\"/><path d=\"M9.4 3.2H11.6L16.5 16H13.9Z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "body": "<path d=\"M9.13 4.4 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4\" stroke-width=\"1\"/><path d=\"M9.06 3.2H11.6L16.5 16H13.9L9.82 4.19 9.43 5H8.36Z\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Instrument",
       "tags": []
     },

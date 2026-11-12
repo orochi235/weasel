@@ -224,11 +224,12 @@ const STATE = {
     <path d="M10 4.2v11.6M7.4 15.8h5.2"/>`,
   // A serif A with a type specimen's contrast: a hairline left leg and crossbar
   // against a heavy right leg, filled rather than stroked so its apex and foot
-  // cut flat instead of ending in round caps. The crossbar's ends sit on the
-  // hairline and on the heavy leg's inner edge at y=11.4.
+  // cut flat instead of ending in round caps. The fill also takes in the hairline's
+  // top, so the apex is one flat cut; the hairline starts inside it to bury its cap.
+  // The crossbar's ends sit on the hairline and on the heavy leg's inner edge at y=11.4.
   typeface: `
-    <path d="M9.6 3.2 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4" stroke-width="1"/>
-    <path d="M9.4 3.2H11.6L16.5 16H13.9Z" fill="currentColor" stroke="none"/>`,
+    <path d="M9.13 4.4 4.6 16M6.4 11.4h5.88M3 16h3.2M13.2 16h4" stroke-width="1"/>
+    <path d="M9.06 3.2H11.6L16.5 16H13.9L9.82 4.19 9.43 5H8.36Z" fill="currentColor" stroke="none"/>`,
   more: `
     <circle cx="4.8" cy="10" r="1.3" fill="currentColor" stroke="none"/>
     <circle cx="10" cy="10" r="1.3" fill="currentColor" stroke="none"/>
