@@ -155,6 +155,8 @@ export function usePoseRun<TPose>(opts: UsePoseRunOptions<TPose>): PoseRun {
     mounted.current = true;
     return () => {
       mounted.current = false;
+      // Not running once unmounted, so the `start` a remount makes (StrictMode's, an Activity shown again) runs.
+      running.current = false;
       loop.cancel();
       // Teardown is not a decision: an unmounted run abandons its frames
       // rather than writing them.
