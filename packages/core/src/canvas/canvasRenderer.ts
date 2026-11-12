@@ -142,17 +142,36 @@ type RendererSetup = Pick<CanvasPaintOptions, 'flattenTolerance' | 'retainBudget
   & { width: number; height: number; dpr: number };
 
 /** A WebGL 2 renderer on `canvas`, or `null` where it has no usable context. */
-function createWebGL(canvas: HTMLCanvasElement, shared: boolean, setup: RendererSetup): WeaselRenderer | null {
+function createWebGL(canvas: HTMLCanvasElement, shared: boolean, setup: RendererSetup, arrivals: Arrivals): WeaselRenderer | null {
   const gl = canvas.getContext('webgl2', CANVAS_CONTEXT_ATTRIBUTES);
   if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') return null;
   try {
     return new WeaselRenderer({ gl: gl as WebGL2RenderingContext, ...(shared ? {} : { canvas }), ...setup });
   } catch (e) {
-    // A lost context fails to compile and may yet come back; anything
-    // else fails the same way next time.
-    if (!(gl as Partial<WebGL2RenderingContext>).isContextLost?.()) refuse(canvas, e);
+    // A lost context fails to compile and may yet come back, with no renderer
+    // listening to say so; anything else fails the same way next time.
+    if ((gl as Partial<WebGL2RenderingContext>).isContextLost?.()) awaitRestore(canvas, arrivals);
+    else refuse(canvas, e);
     return null;
   }
+}
+
+/** Tell the lease when `canvas`'s context, lost before a renderer was built on it, comes back. */
+function awaitRestore(canvas: HTMLCanvasElement, arrivals: Arrivals): void {
+  if (arrivals.restoring?.canvas === canvas) return;
+  arrivals.restoring?.off();
+  const onRestored = (): void => {
+    arrivals.restoring?.off();
+    arrivals.emit();
+  };
+  canvas.addEventListener('webglcontextrestored', onRestored);
+  arrivals.restoring = {
+    canvas,
+    off: () => {
+      canvas.removeEventListener('webglcontextrestored', onRestored);
+      arrivals.restoring = null;
+    },
+  };
 }
 
 /** A WebGPU renderer on `canvas`, or `null` where the canvas will not open a WebGPU context. */
@@ -176,6 +195,8 @@ function refuse(canvas: HTMLCanvasElement, reason: unknown): void {
 interface Arrivals {
   waiting: boolean;
   emit: () => void;
+  /** The canvas whose context was lost before a renderer could be built on it. */
+  restoring: { canvas: HTMLCanvasElement; off: () => void } | null;
 }
 
 /** The renderer `canvas` paints with when it asks for `asked`, or `null` for now. */
@@ -209,7 +230,7 @@ function createRenderer(
       return null;
     }
   }
-  const renderer = createWebGL(canvas, shared, setup);
+  const renderer = createWebGL(canvas, shared, setup, arrivals);
   if (renderer) rememberBackend(canvas, 'webgl2');
   return renderer;
 }
@@ -220,7 +241,7 @@ function createRenderer(
 export function leaseCanvasRenderer(defaults: { backend?: () => CanvasBackend } = {}): CanvasRendererLease {
   let held: Held | null = null;
   const restored = createEmitter();
-  const arrivals: Arrivals = { waiting: false, emit: restored.emit };
+  const arrivals: Arrivals = { waiting: false, emit: restored.emit, restoring: null };
   const bind = (canvas: HTMLCanvasElement, size: CanvasPaintSize, options: CanvasPaintOptions = {}): WeaselRenderer | null => {
     const { width, height } = size;
     const dpr = resolveDpr(size.dpr);
@@ -242,6 +263,7 @@ export function leaseCanvasRenderer(defaults: { backend?: () => CanvasBackend } 
         imageMinification: options.imageMinification,
       }, options.backend ?? defaults.backend?.() ?? 'webgl2', arrivals);
       if (!renderer) return null;
+      arrivals.restoring?.off();
       // Added after the renderer's own listeners, so a subscriber runs against
       // a renderer that has already recompiled.
       const mine: Held = held = {
@@ -316,6 +338,7 @@ export function leaseCanvasRenderer(defaults: { backend?: () => CanvasBackend } 
     release() {
       if (held) free(held);
       held = null;
+      arrivals.restoring?.off();
     },
   };
 }
