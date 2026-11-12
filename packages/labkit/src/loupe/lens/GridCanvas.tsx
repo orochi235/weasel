@@ -1,8 +1,15 @@
+import { FALLBACK_ACCENT } from '@weasel-js/core';
 import { useLatest } from '@weasel-js/react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ThemeColorSpec, useThemeColors } from '../../canvas/useThemeColors';
 import type { LensCapture, LensSource, LensSourceRequest } from './lensSource';
 import { LENS_REST_MS } from './lensTypes';
 import { drawPixelGrid, readBitmap, softEdgeMask } from './pixelGrid';
+
+const GRID_COLORS: ThemeColorSpec<'line' | 'tint'> = {
+  line: ['--wzl-fg', '#ffffff'],
+  tint: ['--wzl-accent', FALLBACK_ACCENT],
+};
 
 interface Read {
   capture: LensCapture;
@@ -20,10 +27,6 @@ function maskOf(bitmap: ImageBitmap): { mask: Uint8Array; columns: number } | nu
   return read;
 }
 
-function colorOf(el: Element, name: string, fallback: string): string {
-  return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
-}
-
 /**
  * The Pixel grid over one cell of a Pixels lens: a line on every boundary
  * between the capture's pixels, and a tint on each pixel that blends its
@@ -38,6 +41,12 @@ export function GridCanvas<C>({
   request: LensSourceRequest<C>;
 }) {
   const canvas = useRef<HTMLCanvasElement | null>(null);
+  const [mounted, setMounted] = useState<HTMLCanvasElement | null>(null);
+  const colors = useThemeColors(mounted, GRID_COLORS);
+  const attach = useCallback((el: HTMLCanvasElement | null) => {
+    canvas.current = el;
+    setMounted(el);
+  }, []);
   const [read, setRead] = useState<Read | null>(null);
   const [tick, setTick] = useState(0);
   const latest = useLatest(request);
@@ -76,7 +85,7 @@ export function GridCanvas<C>({
   useEffect(() => {
     const el = canvas.current;
     const ctx = el?.getContext('2d');
-    if (!el || !ctx) return;
+    if (!el || !ctx || !colors) return;
     const sd = el.ownerDocument.defaultView?.devicePixelRatio ?? 1;
     const width = Math.max(1, Math.round(w * sd));
     const height = Math.max(1, Math.round(h * sd));
@@ -93,10 +102,7 @@ export function GridCanvas<C>({
       x: Math.round(width / 2 - read.capture.at.x * factor * sd) / sd,
       y: Math.round(height / 2 - read.capture.at.y * factor * sd) / sd,
     };
-    drawPixelGrid(ctx, { ...view, origin }, read.mask, {
-      line: colorOf(el, '--wzl-fg', '#ffffff'),
-      tint: colorOf(el, '--wzl-accent', '#4c8dff'),
-    });
-  }, [read, factor, dpr, w, h]);
-  return <canvas ref={canvas} className="lk-lens-grid" />;
+    drawPixelGrid(ctx, { ...view, origin }, read.mask, colors);
+  }, [colors, read, factor, dpr, w, h]);
+  return <canvas ref={attach} className="lk-lens-grid" />;
 }
