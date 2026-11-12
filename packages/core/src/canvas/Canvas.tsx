@@ -175,7 +175,7 @@ function CanvasSurface(
     & { stack: WorkerStack | null; setCanvas: (el: HTMLCanvasElement | null) => void },
 ) {
   const { stack, setCanvas, width, height, className, style } = props;
-  const focus = { tabIndex: props.tabIndex ?? 0, 'aria-label': props['aria-label'] };
+  const focus = { tabIndex: props.tabIndex ?? 0, 'aria-label': props['aria-label'], input: true };
   if (stack) {
     return (
       <WorkerCanvasStack
