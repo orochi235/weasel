@@ -1800,3 +1800,13 @@ Calls the lanes made without a ruling:
   back inside, reporting it to `onViewChange` as an input write would. A `<CanvasView>` does the same when a
   commit leaves its rect another size. `'content'` bounds never move a view this way, since they always take in
   what it shows (2026-11-12).
+
+## Audit round nineteen (2026-11-12): the user's settings
+
+- Under `prefers-reduced-motion` a kit default that moves something yields: an animated camera move and an animated
+  reflow take no time unless the caller names an `ms`, and ui's switch, radio and `ControlMatrix` switch drop their
+  transitions (2026-11-12).
+- Open: a hand-tool pan with `inertia` still coasts after release under `prefers-reduced-motion`, and with
+  `boundary: 'bounce'` or `'spring'` bounces off the pan limits. `animatedZoom: true` goes instant under the same
+  preference, so the two `viewport` options disagree; but platform scroll views keep their momentum with Reduce
+  Motion on. Whether reduced motion drops the coast, only the bounce, or neither.
