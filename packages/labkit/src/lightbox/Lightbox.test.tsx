@@ -214,9 +214,17 @@ describe('Lightbox', () => {
   it('tells a controlled parent an open one closed when disabled', () => {
     const onExpandedChange = vi.fn();
     const { rerender } = renderWithIcons(
-      <Lightbox expanded onExpandedChange={onExpandedChange}><div /></Lightbox>,
+      <Lightbox expanded onExpandedChange={onExpandedChange}>
+        <div />
+      </Lightbox>,
     );
-    act(() => rerender(<Lightbox expanded disabled onExpandedChange={onExpandedChange}><div /></Lightbox>));
+    act(() =>
+      rerender(
+        <Lightbox expanded disabled onExpandedChange={onExpandedChange}>
+          <div />
+        </Lightbox>,
+      ),
+    );
     expect(onExpandedChange).toHaveBeenCalledWith(false);
   });
 });
