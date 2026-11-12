@@ -14,7 +14,7 @@ const wrapper = ({ children }: { children: ReactNode }) => <ActionsProvider>{chi
 describe('pipeline commands', () => {
   it('holds the keys that edit the pipeline off while a gesture is in flight, as the kit undo does', () => {
     const { result } = renderHook(() => {
-      usePipelineCommands(pipeline);
+      usePipelineCommands(pipeline, () => {});
       useGroupCommands({ current: null }, { stage: null, group: null, picked: [], pickGroup: () => {} });
       return useActionsRegistry()!;
     }, { wrapper });

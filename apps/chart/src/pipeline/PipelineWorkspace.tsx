@@ -17,7 +17,6 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
   look: EditorLook;
   setLook: (look: EditorLook) => void;
 }): ReactElement {
-  usePipelineCommands(pipeline);
   const direction = useLookCommands(look, setLook);
   usePipelinePageCommands(pipeline);
   const { doc, change } = pipeline;
@@ -30,6 +29,12 @@ export function PipelineWorkspace({ pipeline, look, setLook }: {
   const selected = picked !== null && doc.pipeline.stages.some((s) => s.id === picked) ? picked : null;
   const group = pickedGroup !== null && doc.pipeline.groups?.some((g) => g.id === pickedGroup) ? pickedGroup : null;
   const [many, setMany] = useState<readonly string[]>([]);
+  const dropPicks = useCallback(() => {
+    setPicked(null);
+    setPickedGroup(null);
+    setMany([]);
+  }, []);
+  usePipelineCommands(pipeline, dropPicks);
   const pickGroup = useCallback((id: string | null) => {
     setPickedGroup(id);
     if (id !== null) setPicked(null);
