@@ -1822,3 +1822,9 @@ Calls the lanes made without a ruling:
   `boundary: 'bounce'` or `'spring'` bounces off the pan limits. `animatedZoom: true` goes instant under the same
   preference, so the two `viewport` options disagree; but platform scroll views keep their momentum with Reduce
   Motion on. Whether reduced motion drops the coast, only the bounce, or neither.
+
+## Audit round nineteen (2026-11-12): touch and pen
+
+- 2026-11-12 (the lane's call): every kit `<Canvas>` that takes input sets `touch-action: none` at zero specificity, so
+  a `<SceneCanvas>` inside a labkit camera with `data-lk-touch='scroll'` keeps one-finger touch for its own tools
+  rather than scrolling the page. A consumer class can set `touch-action` back.
