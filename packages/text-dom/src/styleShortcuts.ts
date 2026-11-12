@@ -1,4 +1,4 @@
-import { matchKeyEvent } from '@weasel-js/gestures';
+import { matchKeyEvent, textOwnsChord } from '@weasel-js/gestures';
 import type { StyleToggle } from './textEditTypes';
 
 /**
@@ -29,9 +29,10 @@ const STYLE_SHORTCUTS: ReadonlyArray<{ key: string; shift: boolean; toggle: Styl
 /** The characters shift produces from the keys the table names. */
 const UNSHIFT: Readonly<Record<string, string>> = { '+': '=', _: '-' };
 
-/** The styling `e` toggles, or null when it isn't a styling shortcut. */
-export function toggleForKey(e: KeyboardEvent): StyleToggle | null {
-  if (!e.metaKey && !e.ctrlKey) return null;
+/** The styling `e` toggles, or null when it isn't a styling shortcut. A Mac's
+ *  Ctrl chords are its text editing ({@link textOwnsChord}), so there only Cmd styles. */
+export function toggleForKey(e: KeyboardEvent, isMac?: boolean): StyleToggle | null {
+  if ((!e.metaKey && !e.ctrlKey) || textOwnsChord(e, isMac)) return null;
   const unshifted = UNSHIFT[e.key];
   const named = (key: string): boolean => unshifted === key || matchKeyEvent(e, key);
   return STYLE_SHORTCUTS.find((s) => s.shift === e.shiftKey && named(s.key))?.toggle ?? null;

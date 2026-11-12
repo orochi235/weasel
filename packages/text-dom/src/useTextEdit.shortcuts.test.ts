@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
 import type { TextStyle } from '@weasel-js/text';
@@ -162,6 +162,37 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     const ev = new KeyboardEvent('keydown', { key: 'и', code: 'KeyB', ctrlKey: true, bubbles: true, cancelable: true });
     act(() => { overlay.dispatchEvent(ev); });
     expect(ev.defaultPrevented).toBe(true);
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
+  });
+});
+
+describe('useTextEdit — a Mac leaves its Ctrl text-editing shortcuts to the text', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('Ctrl-B on a Mac bolds nothing and leaves the key to the browser, which moves back a character', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    const h = makeRichHarness({ a: { text: 'xyz', runs: [{ text: 'xyz' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    let ev: KeyboardEvent | undefined;
+    act(() => { ev = pressKey(overlay, 'b', { ctrl: true }); });
+    expect(ev?.defaultPrevented).toBe(false);
+    act(() => { pressKey(overlay, 'i', { meta: true }); });
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', italic: true }]);
+  });
+
+  it('Cmd-B on a Mac still bolds', () => {
+    vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+    const h = makeRichHarness({ a: { text: 'xyz', runs: [{ text: 'xyz' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    act(() => { pressKey(overlay, 'b', { meta: true }); });
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
   });
