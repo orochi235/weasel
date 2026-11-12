@@ -77,7 +77,10 @@ export function createPixelsSource(opts: PixelsSourceOptions): PixelsSource {
           return { reason: unavailableText('pixels', status === true ? 'the capture was refused' : status) };
         }
         // The source tells its subscribers of the edit, and they ask again.
-        if (opts.revision() !== at) return { reason: STORY_CHANGED };
+        if (opts.revision() !== at) {
+          bitmap.close();
+          return { reason: STORY_CHANGED };
+        }
         shot = { key: aimed.key, revision: at, bitmap, payload: aimed.payload };
         shared.shots.set(side, shot);
       }

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LensCapture } from '@weasel-js/labkit/loupe';
-import { type Bitmap, endpoint, hosts, payload, request, revisions, settle, shown, stubBitmaps } from './pixels.fixture';
+import { type Bitmap, closed, endpoint, hosts, payload, request, revisions, settle, shown, stubBitmaps } from './pixels.fixture';
 import { LENS_REST_MS } from '@weasel-js/labkit/loupe';
 import { createPixelsSource } from './pixelsSource';
 import type { TrialHit } from './trialAt';
@@ -104,6 +104,7 @@ describe('createPixelsSource', () => {
     posts[0]!.answer();
     await settle();
     expect(shown(slot)).toBe(false);
+    expect(closed).toEqual(['png story-of-trial-a #1']);
     await vi.advanceTimersByTimeAsync(LENS_REST_MS);
     expect(posts).toHaveLength(2);
     posts[1]!.answer();
