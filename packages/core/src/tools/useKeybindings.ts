@@ -85,6 +85,8 @@ export function useKeybindings(
       unregisters.push(registry.register(makeToolActivateAction(
         bindings,
         (toolId) => {
+          // `setActive` refuses an id it does not hold; a trigger with one is refused too.
+          if (!Object.hasOwn(toolsRef.current.registry, toolId)) return false;
           const modes = optionsRef.current.modes;
           if (!modes) return true;
           const tags = toolsRef.current.registry[toolId]?.eligibility.capabilities;

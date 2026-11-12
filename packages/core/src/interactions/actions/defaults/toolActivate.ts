@@ -54,7 +54,7 @@ export function buildToolActivateBindings(
  *  the same effect via `registry.trigger('tool.activate', { toolId })`.
  *
  *  `isEligible` gates activation per tool, which the static per-action
- *  `Action.eligible` cannot. Omit it for consumers with no mode registry. */
+ *  `Action.eligible` cannot. Omitted, every id is accepted. */
 export function makeToolActivateAction(
   bindings: BoundGesture[],
   isEligible?: (toolId: string) => boolean,
