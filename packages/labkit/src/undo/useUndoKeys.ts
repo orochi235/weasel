@@ -1,6 +1,5 @@
-import { historyKey, useLatest } from '@weasel-js/core';
+import { historyKey, isEditableTarget, useLatest } from '@weasel-js/core';
 import { useEffect } from 'react';
-import { editsText } from '../trial/editsText';
 import type { TrialHistorySource } from '../trial/trialHistory';
 
 /** What {@link useUndoKeys} steps. */
@@ -15,7 +14,7 @@ export type UndoKeysTarget = Pick<TrialHistorySource, 'canUndo' | 'canRedo' | 'u
 export function undoKeyStep(e: KeyboardEvent): 'undo' | 'redo' | null {
   if (e.defaultPrevented) return null;
   const step = historyKey(e);
-  return step && !editsText(e.target) ? step : null;
+  return step && !isEditableTarget(e.target) ? step : null;
 }
 
 /**
