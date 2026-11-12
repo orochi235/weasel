@@ -16,5 +16,5 @@ export type {
 export { after } from './after';
 export { MIXED } from './mixed';
 export type { Mixed } from './mixed';
-export { matchQuery, hasTag } from './match';
+export { matchQuery, hasTag, foldText } from './match';
 export type { Findable, QueryMatch } from './match';

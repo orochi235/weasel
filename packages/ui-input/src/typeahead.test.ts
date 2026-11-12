@@ -45,3 +45,10 @@ describe('an astral character', () => {
     expect(typeaheadMatch(emoji, 0, '🍎', byLabel)).toBe(2);
   });
 });
+
+describe('typeaheadMatch folds text as matchQuery does', () => {
+  it('lands a word-final small sigma on a capital one', () => {
+    expect(typeaheadMatch(['x', 'ΑΣ'], null, 'ας', shape)).toBe(1);
+    expect(typeaheadMatch(['x', 'ΑΣ'], null, 'ασ', shape)).toBe(1);
+  });
+});

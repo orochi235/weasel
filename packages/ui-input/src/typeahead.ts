@@ -1,3 +1,4 @@
+import { foldText } from '@weasel-js/registry';
 import { heldAt } from './heldAt';
 import type { ListShape } from './list';
 
@@ -30,21 +31,16 @@ export const EMPTY_TYPEAHEAD: TypeaheadBuffer = { text: '', at: -Infinity };
 export function typeaheadMatch<T>(
   items: readonly T[], at: number | null, query: string, shape: TypeaheadShape<T>,
 ): number | null {
-  const q = fold(query);
+  const q = foldText(query);
   const n = items.length;
   const from = heldAt(n, at);
   const start = from == null ? 0 : isOneChar(query) ? from + 1 : from;
   for (let k = 0; k < n; k++) {
     const i = (start + k) % n;
     const item = items[i]!;
-    if ((shape.canStop?.(item) ?? true) && fold(shape.label(item)).startsWith(q)) return i;
+    if ((shape.canStop?.(item) ?? true) && foldText(shape.label(item)).startsWith(q)) return i;
   }
   return null;
-}
-
-/** `s` lowercased and composed, so a label spelling `é` as `e` + U+0301 is found by typing `é`. */
-function fold(s: string): string {
-  return s.toLowerCase().normalize('NFC');
 }
 
 /** One typed character: the new buffer and the item it lands on. A key that
