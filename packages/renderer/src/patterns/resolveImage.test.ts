@@ -5,7 +5,7 @@ import { makeGLRecorder } from '../testing/glRecorder';
 import { glUniformLocation } from '../gpu/webgl/GlProgram';
 import { WeaselRenderer } from '../WeaselRenderer';
 import type { DrawCommand } from '../DrawCommand';
-import { _resetTextureRegistryForTests, getTexture } from '../textures/registerTexture';
+import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
 import { __setImageLoaderForTests, _resetImageCacheForTests, getImageBitmap, releaseImage } from '../images/imageCache';
 import { resolveFillPattern } from './resolveSpec';
 import { stencilledEvenOdd } from '../testing/stencilledEvenOdd';
@@ -143,5 +143,37 @@ describe('drawing an image pattern', () => {
     const loc = glUniformLocation(r._patternFill(), 'u_tileSize');
     const sent = rec.calls.filter((c) => c.name === 'uniform2f' && c.args[0] === loc).at(-1);
     expect(sent?.args.slice(1)).toEqual([8, 4]);
+  });
+});
+
+describe('releasing a picture an image pattern drew', () => {
+  beforeEach(() => {
+    _resetImageCacheForTests();
+    _resetTextureRegistryForTests();
+    __setImageLoaderForTests(async () => fakeBitmap(8, 4));
+  });
+  afterEach(() => {
+    _resetImageCacheForTests();
+    _resetTextureRegistryForTests();
+  });
+
+  it('drops its registry entry, and the renderer frees its texture on the next frame', async () => {
+    const paint = resolveFillPattern({ kind: 'image', src: SRC });
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
+    const cmd = [{ kind: 'path', path: SQUARE, fill: { paint } } as DrawCommand];
+    r.render(cmd);
+    await settle();
+    rec.reset();
+    r.render(cmd);
+    const made = rec.calls.filter((c) => c.name === 'createTexture').map((c) => c.result);
+    expect(made.length).toBeGreaterThan(0);
+
+    releaseImage(SRC);
+    expect(textureRegistry.has(`image:${SRC}`)).toBe(false);
+    rec.reset();
+    r.render([]);
+    const deleted = rec.calls.filter((c) => c.name === 'deleteTexture').map((c) => c.args[0]);
+    expect(made.every((t) => deleted.includes(t))).toBe(true);
   });
 });

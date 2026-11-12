@@ -15,6 +15,8 @@ import { createEmitter } from '@weasel-js/registry';
 import { imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from '../cache/GLImageCache';
 import { _resetBitmapHoldsForTests, closeDropped, holdImageBitmaps, reclaimed } from './bitmapHolds';
 import { forgetDecodedVector, isVectorImageSrc, loadImageBitmap, type ImageLoader } from './imageLoader';
+import { imagePatternTextureId } from '../patterns/imagePatternId';
+import { unregisterTexture } from '../textures/registerTexture';
 
 export { holdImageBitmaps, isVectorImageSrc };
 
@@ -335,8 +337,8 @@ export function imageStatus(src: string): ImageStatus {
 }
 
 /**
- * Forget `src`: close its decoded bitmap, drop its decoded SVG and the texture every
- * live renderer holds for it, and abandon a load in flight. The cache is keyed
+ * Forget `src`: close its decoded bitmap, drop its decoded SVG and the textures every
+ * live renderer holds for it, an image pattern's included, and abandon a load in flight. The cache is keyed
  * by `src` across every scene on the page, so it cannot know when the last use
  * is gone; whoever does know calls this. A later {@link getImageBitmap} for the
  * same `src` loads it again.
@@ -352,6 +354,8 @@ export function releaseImage(src: string): void {
   const entry = cache.get(src);
   cache.delete(src);
   forgetDecodedVector(src);
+  // An image pattern's registry entry would otherwise keep the closed bitmap, and each renderer its texture.
+  unregisterTexture({ id: imagePatternTextureId(src) });
   if (entry?.bitmap) closeDropped(entry.bitmap);
 }
 
