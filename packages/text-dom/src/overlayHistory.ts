@@ -18,11 +18,11 @@ export interface OverlayState {
  *  has not left, one composition joins itself, and anything else is a step alone. */
 export type ChangeKind = 'type' | 'delete' | 'compose' | 'other';
 
-/** The kind of change an `InputEvent` of `inputType` makes. */
-export function changeKind(inputType: string): ChangeKind {
+/** The kind of change an `InputEvent` of `inputType` makes. A script's plain `beforeinput` `Event` has none. */
+export function changeKind(inputType: string | undefined): ChangeKind {
   if (inputType === 'insertText') return 'type';
   if (inputType === 'insertCompositionText') return 'compose';
-  return inputType.startsWith('delete') ? 'delete' : 'other';
+  return inputType?.startsWith('delete') ? 'delete' : 'other';
 }
 
 /** The history step an `InputEvent` of `inputType` asks for, or `null`. */
