@@ -1,5 +1,6 @@
 import { chevron } from '../../../packages/icons/scripts/lib/base.mjs';
 import { framed } from './frame.mjs';
+import { planet } from './planet.mjs';
 
 // One badge per published package, keyed by its unscoped name in camelCase: the Releases filter's
 // package chips. Each body is drawn inside FRAME's clear area.
@@ -12,51 +13,6 @@ const atom = [0, 60, 120]
 // underside sweeping into the waist, a squared heel on the right, and feet flaring at the base.
 const ANVIL =
   'M4.4 7H15.6V8.9H13.4C12.4 8.9 11.8 9.6 11.8 10.5V11.4C11.8 12.3 12.8 12.8 13.8 13V14H6.6V13C7.6 12.8 8.6 12.3 8.6 11.4V10.4C8.6 8.6 7 7.6 4.4 7Z';
-
-/** A planet and an inclined orbit seen nearly edge-on: the orbit's far half passes behind the planet,
- *  its near half crosses in front, and the planet's rim is cut where the near half crosses it. Drawn
- *  level about the origin, then tilted. */
-function orbiting() {
-  const R = 3.8;
-  const [RX, RY] = [6.5, 1.3];
-  const [RIM_W, ORBIT_W, GAP] = [1.2, 1, 0.45];
-  const TILT = -22;
-  const f = (v) => Math.round(v * 1000) / 1000;
-  const rad = (deg) => (deg * Math.PI) / 180;
-  const onRim = (deg) => [R * Math.cos(rad(deg)), R * Math.sin(rad(deg))];
-  const onOrbit = (deg) => [RX * Math.cos(rad(deg)), RY * Math.sin(rad(deg))];
-  // The near half is the orbit's 0–180° (y-down: below the center), the far half 180–360°.
-  const near = Array.from({ length: 721 }, (_, i) => onOrbit(i / 4));
-  const toNear = ([x, y]) => Math.min(...near.map(([u, v]) => Math.hypot(x - u, y - v)));
-  // Round caps reach half a stroke past an end, so an end stops both half-widths and the gap clear.
-  const rimClear = RIM_W / 2 + GAP + ORBIT_W / 2;
-  // Runs of whole degrees that pass `keep`, as path data along `point`, drawn as arcs of `rx ry`.
-  const runs = (from, to, point, keep, [rx, ry]) => {
-    const parts = [];
-    let start = null;
-    for (let d = from; d <= to; d += 0.25) {
-      const ok = keep(point(d));
-      if (ok && start === null) start = d;
-      if ((!ok || d + 0.25 > to) && start !== null) {
-        const end = ok ? d : d - 0.25;
-        const [x0, y0] = point(start).map(f);
-        const [x1, y1] = point(end).map(f);
-        parts.push(`M${x0} ${y0}A${rx} ${ry} 0 ${end - start > 180 ? 1 : 0} 1 ${x1} ${y1}`);
-        start = null;
-      }
-    }
-    return parts.join('');
-  };
-  const rim = runs(0, 360, onRim, (p) => toNear(p) >= rimClear, [R, R]);
-  const far = runs(180, 360, onOrbit, ([x, y]) => Math.hypot(x, y) >= R + rimClear, [RX, RY]);
-  const [moonX, moonY] = onOrbit(145).map(f);
-  return `
-    <g transform="translate(10 10) rotate(${TILT})">
-      <path d="${rim}" stroke-width="${RIM_W}"/>
-      <path d="${far}M${RX} 0A${RX} ${RY} 0 0 1 ${-RX} 0" stroke-width="${ORBIT_W}"/>
-      <circle cx="${moonX}" cy="${moonY}" r="1.3" fill="currentColor" stroke="none"/>
-    </g>`;
-}
 
 export const PACKAGES = framed({
   // An ease-in-out curve with its start and end held.
@@ -213,7 +169,7 @@ export const PACKAGES = framed({
 
   // A body, the orbit it keeps, and the satellite on it.
   // A planet, lit from its moon's side, and the moon's orbit.
-  simulation: orbiting(),
+  simulation: planet(),
 
   storage: `
     <ellipse cx="10" cy="6.2" rx="4.8" ry="1.6"/>
