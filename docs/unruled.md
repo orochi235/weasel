@@ -1809,9 +1809,13 @@ Calls the lanes made without a ruling:
   phone's decimal keypad in a comma locale offers a comma and no period, so there a fraction cannot be typed at
   all. `parseNumber` already reads any locale, falling back to `en-US`, but a field has to show and read in the
   same one: shown `en-US` and read `de-DE`, `1.500` (one and a half at three places) commits as 1500.
-- Open: whether a text edit's style shortcuts (Bold, Italic, Underline, Strikethrough, super- and subscript)
-  answer to Mod alone, as its undo beside them does. `toggleForKey` takes Cmd or Ctrl on any platform and does not
-  look at Alt, so Ctrl+B on a Mac, which a Mac text field reads as moving back a character, bolds instead.
+- Mike, 2026-11-12: respect the Ctrl text-editing shortcuts on macOS. On a Mac, in text being edited, a Ctrl chord
+  without Cmd is Cocoa's Emacs-style editing (Ctrl+A, E, B, F, P, N, D, H, K, Y, T, O, V, L) and belongs to the
+  text: no kit shortcut claims it and nothing prevents its default. Off a Mac nothing changed. Built: gestures'
+  `textOwnsChord(e, isMac)` holds the rule; text-dom's style shortcuts take Cmd only on a Mac; a HUD menu text row,
+  which edits for itself, takes Cmd+A as select-all and Ctrl+A, E, B, F, P, N, D, H and K as a one-line Cocoa field
+  does. That row does not take Ctrl+Y, T, O, V or L: it has no kill buffer for Ctrl+K to fill. Every other key
+  handler reads `mod` or skips editable targets already.
 
 ## Audit round nineteen (2026-11-12): the user's settings
 
