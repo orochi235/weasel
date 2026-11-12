@@ -1,5 +1,212 @@
 # @weasel-js/routing
 
+## 1.19.0
+
+### Patch Changes
+
+- 6646205: `keySpecShortcut` gives no chip to a key binding that requires Ctrl or Meta beside `mod`, since a chip showing only `mod` names a different chord.
+  
+  <!-- entry: rank=-5 fix -->
+- 976bdf2: The route-conflict check reports `mod+ctrl` and `meta+ctrl` as one chord on a Mac, as the matcher reads them.
+  
+  <!-- entry: rank=-5 fix -->
+- d4c2b70: A tool held on a Ctrl or Meta hotkey lets its `mod` bindings fire with that key down, such as a Cmd binding under a Ctrl hold on a Mac. `mod` still requires its own key, and a `mod: false` binding still refuses the held key.
+  
+  <!-- entry: fix -->
+- 82e3877: After one polygon or star is drawn, changing its sides or points in the options row, or with the arrow keys mid-drag, reaches the next one.
+  
+  <!-- entry: fix -->
+- 020f69a: A key that types a character outside the BMP counts as one typed character for chords, `<select>` type-ahead and AltGr bindings.
+  
+  <!-- entry: fix -->
+- 562c8a2: `browserReservedChord` no longer reports Ctrl+Q, or `{ mod, ctrl }`+Q, on a Mac as the reserved Cmd+Q.
+  
+  <!-- entry: rank=-5 fix -->
+- a1911f5: `findConflicts` and `reportRouteConflicts` catch more pairs of key bindings that fire on the same keystroke.
+  
+  - Two owners' bindings that fire together only while one owner is engaged and the other idle, such as one owner's `engaged` binding against another's `initial` one on the same key.
+  - Key bindings whose `code`s overlap, whatever keys they name.
+  - A chord of a letter or digit against a binding naming the physical key that bears it, such as Mod+A against `code: 'KeyA'` under Mod, which both fire on a non-Latin layout.
+  
+  A pair that meets on several keys or codes is reported once. `@weasel-js/gestures` exports `chordCodesFor` and `CHORD_MODIFIERS`, the matcher's own rule for this, and reads only `KeyA`–`KeyZ` and `Digit0`–`Digit9` as bearing a letter or digit.
+  
+  <!-- entry: behavior api -->
+- c0b44f0: `findConflicts` and `reportRouteConflicts` judge phases as the dispatcher ranks them. Bindings whose phases differ in specificity are no longer reported, since the more specific always wins; a `phase: '*'` binding and an `initial`-only one at the same rank now are, since both fire on one keystroke.
+  
+  <!-- entry: fix -->
+- 7736185: A keymap stack's `open()` shows `usedWhileHeld: true`, and notifies subscribers, as soon as input arrives while a level's leader is held.
+  
+  <!-- entry: fix -->
+- f63f932: A held press's `progress()` reads 0 rather than `NaN` when the clock or start is not a number.
+  
+  <!-- entry: rank=-5 fix -->
+- a933054: `mergeMenuDefs` keeps every child of every merged menu, including one keyed `__proto__` or `~sep1`. The separator between two contributions takes the next free key.
+  
+  <!-- entry: rank=-5 fix -->
+- ae820c2: A modifier role named like an `Object.prototype` member, such as `__proto__` or `toString`, resolves by its own keys.
+  
+  `roleKeysOf`, `resolveRoles`, `platformRoleKeys`, `rebindRoles` and `roleReader` all read it that way.
+  
+  <!-- entry: rank=-5 fix -->
+- 8710c48: A multitouch gesture's `rotation` skips an angle that is not a finite number, rather than turning to `NaN` for the rest of the gesture.
+  
+  <!-- entry: rank=-5 fix -->
+- 7d5ab0e: The route-conflict check no longer reports bindings gated by more kinds of rules that can never hold together.
+  
+  `rulesExclusive` now proves a compound rule exclusive of its `not`, the never-rule (`any` of nothing) exclusive of any rule, and an `any` exclusive of an `all` whose parts rule out each of its alternatives.
+  
+  <!-- entry: fix -->
+- ef5634e: `setScratch` stores a slot named `__proto__` as an ordinary slot that `getScratch` reads back.
+  
+  <!-- entry: rank=-5 fix -->
+- 7c02aa8: A tool option's size and strength steps move a value of any magnitude, including one below a millionth. On an option with no endless end, a step stops at the largest double rather than at `Infinity`.
+  
+  <!-- entry: rank=-5 fix -->
+- 08c143e: A sweep skips a move to a point that is not a finite number, and hit-tests at most 4,096 points along any one move. Each move ends with a hit test at the point it went to.
+  
+  <!-- entry: fix -->
+- 11ffe9f: A tool option keyed `__proto__` reaches its action: `toolOptionParams` and `heldToolOptions` read it as an option.
+  
+  <!-- entry: rank=-5 fix -->
+- 81e2cf4: Shift+wheel size stepping takes at most 1,000 steps for one wheel event, so an enormous delta no longer hangs it.
+  
+  <!-- entry: rank=-5 fix -->
+- 744af77: The route-conflict check no longer reports bindings whose rules exclude each other but are written the long way. `rulesExclusive` simplifies both rules first, reading `{ not: { any: [ALWAYS] } }`, a one-member `all`, or `not` of `not` as the constant it is.
+  
+  <!-- entry: fix -->
+- 47a4976: Shift+wheel steps the active tool's `size` option: up grows it, down shrinks it.
+  
+  It is bound as `<tool>.wheelSize` for any tool whose options name a `size`, and while that tool is active it outranks the viewport's Shift+wheel sideways pan. The first event of a burst steps at once, so one mouse-wheel notch is one step; a trackpad's stream of small deltas steps once per 60 px of travel. It reads `deltaX` when `deltaY` is 0, since macOS sends a mouse's Shift+wheel as a horizontal one.
+  
+  <!-- entry: rank=10 new api -->
+- 6bd1b2b: `specificity(spec, isMac?)` counts modifiers as the matcher resolves them on that platform, so `mod` beside the key it stands for counts once.
+  
+  `isMac` is new, optional, and defaults to this platform; the dispatcher ranks and records with its own.
+  
+  <!-- entry: fix api -->
+- 45c01e4: A tool option set to ∞ on an `endless` number leaf acts at infinity, not at its default.
+  
+  The last-operation panel can keep it, and size and strength steps go from that end to infinity and back.
+  
+  <!-- entry: fix -->
+- a7578e7: A tool option's size or strength step moves a value whose `step` is fractional, such as 0.1.
+  
+  <!-- entry: rank=-5 fix -->
+- 0a82772: Tool options hold any prefs leaf, not only numbers, and a shared option is one value that every tool naming it reads and writes.
+  
+  An option names its shared key with `ToolOptions.share`; `shareToolOptions` lays a use site's share over a tool's own, `null` keeping an option per tool. Every read and write resolves its slot through `toolOptionSlot`, with `setToolOption`, `keepToolOptions` and `heldToolOptions` beside `toolOptionParams`. `ToolOptions.actionId` may name several actions. `toolOptionsPrefs` builds the prefs group a host keeps options in, a group per tool and one `shared` group with host-given defaults, and `prefsToolOptionValues` reads and writes them in a prefs store. `withToolOptionDefault` changes one option's default. A tuning marked `under` lies beneath every other tuning of its action. The size and strength step actions are exported as before.
+  
+  Breaking: `ToolOptionValues.get` returns `Record<string, unknown>`, and `set` takes any value and an owner, a tool's id or `SHARED_TOOL_OPTIONS`.
+  
+  <!-- entry: rank=10 breaking api new pick -->
+- 3643214: A tool palette no longer draws an empty stack button for a stack that `withoutTools` cut down to nothing.
+  
+  `toolStacksOf` leaves such a stack out.
+  
+  <!-- entry: rank=-5 fix -->
+- b80eae4: Ungroup, Delete and Cut are disabled while any node they would move, rewrite or remove is locked, and no longer throw from `run` then.
+  
+  They report the new `ActionDisabledReason.Locked`, labeled "Contains a locked item" in the ui's reason labels.
+  
+  <!-- entry: fix api -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [c0845c1]
+- Updated dependencies [cd3e070]
+- Updated dependencies [b1309b2]
+- Updated dependencies [998e8d4]
+- Updated dependencies [c841997]
+- Updated dependencies [253abc5]
+- Updated dependencies [97e890d]
+- Updated dependencies [87c8ed0]
+- Updated dependencies [e3481a9]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [0d828ef]
+- Updated dependencies [0e15698]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [d83feb6]
+- Updated dependencies [98a2b04]
+- Updated dependencies [84e0536]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [7d98f63]
+- Updated dependencies [d8ce575]
+- Updated dependencies [8c040fd]
+- Updated dependencies [020f69a]
+- Updated dependencies [55f85bb]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b62813d]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [b1309b2]
+- Updated dependencies [9451076]
+- Updated dependencies [365b49d]
+- Updated dependencies [eaff448]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [b1309b2]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/cursor@1.19.0
+  - @weasel-js/gestures@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/menu@1.19.0
+  - @weasel-js/modes@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/select@1.19.0
+  - @weasel-js/history@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

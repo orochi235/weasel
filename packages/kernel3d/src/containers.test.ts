@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createEnteredGroup } from '@weasel-js/core';
 import { add, multiply, quatFromAxisAngle, type Aabb, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import { createCamera } from './camera';
 import { POSE3_COMPOSITION } from './composePose3';
@@ -111,6 +112,24 @@ describe('a solid two containers deep', () => {
     expect(at.x).toBeLessThan(box.x + box.width);
     const marquee = createAreaSelect(world, { get: () => [], set: () => {} });
     expect(marquee.hitTestArea({ x: at.x - 1, y: at.y - 1, width: 2, height: 2 })).toEqual([deep]);
+  });
+
+  it('is marqueed as a click selects it: its outermost container, then each level in as one is entered', () => {
+    const { scene, root, outer, inner, deep, deepBox } = nested();
+    const entered = createEnteredGroup(scene as never);
+    const marquee = createAreaSelect(worldOf(scene), { get: () => [], set: () => {} }, null, { entered });
+    const all = { x: 0, y: 0, width: 800, height: 600 };
+    const at = projectPoint(center(deepBox), viewport())!;
+    const onDeep = { x: at.x - 1, y: at.y - 1, width: 2, height: 2 };
+    const targets = (rect: typeof all) => marquee.hitTestArea(rect).map((id) => marquee.targetOf?.(id) ?? id);
+    expect(targets(onDeep)).toEqual([outer]);
+    expect(targets(all)).toEqual(expect.arrayContaining([root, outer]));
+    entered.enter(outer);
+    expect(targets(onDeep)).toEqual([inner]);
+    entered.enter(inner);
+    expect(targets(onDeep)).toEqual([deep]);
+    // Outside the entered container nothing takes a hit, as nothing takes a press.
+    expect(targets(all)).toEqual([deep]);
   });
 
   it('leaves its containers unpicked: they draw nothing, with or without a bounds function', () => {

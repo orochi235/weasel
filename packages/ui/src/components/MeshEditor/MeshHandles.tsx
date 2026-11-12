@@ -7,6 +7,7 @@ import {
   type MeshGradientPaint,
   type MeshHandle,
 } from '@weasel-js/core/mesh';
+import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 import {
   DragPoint,
@@ -44,9 +45,6 @@ export interface MeshHandlesProps {
   className?: string;
 }
 
-const CORNER_RADIUS = handleHalf('--wzl-handle-size-lg');
-const CONTROL_RADIUS = handleHalf('--wzl-handle-size');
-
 /**
  * Direct-manipulation handles for a mesh gradient's geometry, drawn as an
  * SVG overlay: every patch corner, the two controls of each edge, and a
@@ -61,6 +59,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
   const { value, toScreen, toLocal, onInput, onChange, onCancel, width, height, className } = props;
   const { edges, arms } = meshGuides(value);
   const handles = meshHandles(value);
+  const { resolved } = useTints();
 
   const emit = (handle: MeshHandle, p: Point, phase: EditPhase): void => {
     const next = asPaint(moveMeshHandle(value, handle, toLocal(p)));
@@ -91,7 +90,7 @@ export function MeshHandles(props: MeshHandlesProps): ReactElement {
           key={handle.id}
           at={toScreen(handle.at)}
           label={labelOf(handle)}
-          radius={handle.kind === 'corner' ? CORNER_RADIUS : CONTROL_RADIUS}
+          radius={handleHalf(handle.kind === 'corner' ? '--wzl-handle-size-lg' : '--wzl-handle-size', resolved)}
           variant={handle.kind === 'corner' ? 'handle' : 'control'}
           onDrag={(p, phase) => emit(handle, p, phase)}
         />

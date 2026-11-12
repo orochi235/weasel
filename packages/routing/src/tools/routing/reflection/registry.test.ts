@@ -29,7 +29,7 @@ describe('buildRouteRegistry', () => {
     });
     expect(r).toContainEqual<RegistryEntry>({
       ownerId: 'select', actionId: 'move', phase: 'any',
-      gesture: 'drag', arg: undefined, target: 'selected-body', modifiers: {},
+      gesture: 'drag', arg: 'primary', target: 'selected-body', modifiers: {},
       spec: { kind: 'drag', target: 'selected-body' },
     });
     expect(r).toHaveLength(2);
@@ -50,6 +50,14 @@ describe('buildRouteRegistry', () => {
       { spec: { kind: 'multiTouch', fingers: 2 }, actionId: 'pinch' },
     ])]);
     expect(r.map((e) => [e.gesture, e.arg, e.target])).toEqual([['multiTouch', '2', undefined]]);
+  });
+
+  it('carries a drag’s button as the arg', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'drag' }, actionId: 'a' },
+      { spec: { kind: 'drag', button: 'middle' }, actionId: 'b' },
+    ])]);
+    expect(r.map((e) => e.arg)).toEqual(['primary', 'middle']);
   });
 
   it('names drop and paste, carrying the MIME filter as the arg', () => {

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { placeAlongRun, trackRun } from '@weasel-js/geom';
+import { graphemeEnds } from '@weasel-js/text';
 import { TOP_HALF } from './Along';
 import type { AlongArc, RunAlign } from './alongContext';
 import { placeStyle } from './placeOnRun';
@@ -26,8 +27,10 @@ export interface CurvedLabelProps {
   className?: string;
 }
 
-const segmenter = typeof Intl !== 'undefined' && 'Segmenter' in Intl ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
-const graphemes = (text: string): string[] => (segmenter ? [...segmenter.segment(text)].map((g) => g.segment) : [...text]);
+const graphemes = (text: string): string[] => {
+  let at = 0;
+  return graphemeEnds(text).map((end) => text.slice(at, (at = end)));
+};
 
 /**
  * A line of text laid along an arc or a track shape of the box it fills, one span per grapheme, each centered on its

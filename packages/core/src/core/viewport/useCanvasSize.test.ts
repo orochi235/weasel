@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useRef } from 'react';
-import { renderHook, act } from '@testing-library/react';
-import { useCanvasSize } from './useCanvasSize';
+import { createElement } from 'react';
+import { render, renderHook, act } from '@testing-library/react';
+import { useCanvasSize, useElementSize } from './useCanvasSize';
 import { makeMatchMedia } from '../device/testing/matchMedia';
 
 beforeAll(() => {
@@ -164,6 +165,51 @@ describe('useCanvasSize', () => {
     expect(ro.disconnected).toBe(true);
 
     (window as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = original;
+  });
+});
+
+describe('useElementSize', () => {
+  function Sized({ which }: { which: 'a' | 'b' | null }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const { width } = useElementSize(ref);
+    return createElement('section', { 'data-width': width }, which && createElement('div', { key: which, ref, 'data-box': which }));
+  }
+  const widthOf = (container: HTMLElement) => container.querySelector('section')!.getAttribute('data-width');
+
+  function withRects(run: () => void) {
+    const original = window.ResizeObserver;
+    MockResizeObserver.instances = [];
+    (window as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver = MockResizeObserver;
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const width = this.dataset.box === 'a' ? 100 : this.dataset.box === 'b' ? 250 : 0;
+      return { width, height: 50, x: 0, y: 0, left: 0, top: 0, right: width, bottom: 50, toJSON() {} } as DOMRect;
+    });
+    try {
+      run();
+    } finally {
+      rect.mockRestore();
+      (window as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = original;
+    }
+  }
+
+  it('measures an element that mounts after the hook first commits', () => {
+    withRects(() => {
+      const { container, rerender } = render(createElement(Sized, { which: null }));
+      expect(widthOf(container)).toBe('0');
+      rerender(createElement(Sized, { which: 'a' }));
+      expect(widthOf(container)).toBe('100');
+    });
+  });
+
+  it('follows the ref to the element that replaced the one it measured', () => {
+    withRects(() => {
+      const { container, rerender } = render(createElement(Sized, { which: 'a' }));
+      expect(widthOf(container)).toBe('100');
+      rerender(createElement(Sized, { which: 'b' }));
+      expect(widthOf(container)).toBe('250');
+      const ro = MockResizeObserver.instances.at(-1)!;
+      expect(ro.observed.at(-1)?.getAttribute('data-box')).toBe('b');
+    });
   });
 });
 

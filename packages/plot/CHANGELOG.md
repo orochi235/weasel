@@ -1,5 +1,243 @@
 # @weasel-js/plot
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- ca94f2d: `bandScale` takes its default padding for a `paddingInner` of `NaN` or a `paddingOuter` that is not finite.
+  
+  <!-- entry: rank=-5 fix -->
+- 8ac5c6f: Charts draw only finite geometry from any data.
+  
+  A quadrant point is held to the unit square, and one with a `NaN` coordinate is not drawn; a negative or non-finite radius or stroke width takes the default, and a radius past the plot is cut to it. A radar value short of the center's is drawn at the center, and a journey step with a `NaN` score draws no face. A packet field's fractional bit is read as the bit it falls in. Sankey flows whose sum is past the double range keep their proportions.
+  
+  <!-- entry: fix visual -->
+- 5f0d749: An xychart's and a radar's data are cut to the plot area, so nothing past it is drawn on the canvas or in any export.
+  
+  A bar past a fixed end of the value axis is cut at the plot's edge, with its drag handle on that cut end. A line is clipped to the plot, a radar's outline and fill to its rim, and a point whose center falls outside is not drawn.
+  
+  <!-- entry: fix visual -->
+- e6d57fe: The plot clipper holds a rect of zero width or height, or a circle of zero radius, to the segment or point it is.
+  
+  <!-- entry: rank=-5 fix -->
+- e0a3d33: The plot clipper pulls a point that lands a rounding outside the area inside it.
+  
+  <!-- entry: rank=-5 fix -->
+- 7a29e1b: `clipPolygon` no longer answers `NaN` corners where a polygon edge crosses a side of the area only far out.
+  
+  <!-- entry: rank=-5 fix -->
+- 5ea8837: `formatNumber` and a linear, log, pow or warp scale's `format` write a small negative that rounds to zero as `0`, not `-0`.
+  
+  <!-- entry: fix -->
+- a97da18: `formatTick` writes a value or step finer than 1e-100 with an exponent, as `formatNumber` does, so subnormal ticks no longer all read `0`.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `formatGanttEnd` writes a duration's amount in digits (`0.0000001d`), never with an exponent, so `parseGanttEnd` reads it back as a duration.
+  
+  <!-- entry: fix data -->
+- c75559c: A gantt task whose end is past what a `Date` or a number holds is drawn instead of producing `NaN`.
+  
+  A duration of months past the year 275760 ends 30 days a month on, and one past the double range ends at its edge. `parseGanttDate` refuses `x` and `X` digits past the double range. A chart whose tasks all sit too far out for a day to move them spans more than one instant.
+  
+  <!-- entry: rank=-5 fix -->
+- dcbcc5d: Editing or removing a gantt task whose id another task also holds keeps the `after` and `until` dependencies on that id.
+  
+  <!-- entry: fix -->
+- e5cbd2e: A git graph commit given no id takes the first `#n` that no commit holds, so the replay no longer stops with `a commit "#2" already exists`.
+  
+  <!-- entry: fix -->
+- a6fb3c0: A git graph places a branch whose `order` is `NaN` as one with no order, by where it was created.
+  
+  <!-- entry: rank=-5 fix -->
+- a6ffc20: `logScale` places a value between ends whose logarithms round together by its distance from the start, the same both ways round.
+  
+  <!-- entry: rank=-5 fix -->
+- 3137efc: `logScale` keeps about twice the tick count across many decades, every few decades, instead of one tick a decade.
+  
+  <!-- entry: behavior visual -->
+- b1309b2: A `logScale` whose ends are too near for their logarithms to differ maps them to the range's ends and gets no tick from outside it. Its `invert` at the range's ends stays finite.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: A `logScale` of a base other than 10 labels small ticks to their own digits, so 1.09e-12 and 1.2e-12 no longer both read `0.000000000001`.
+  
+  <!-- entry: fix visual -->
+- f77795f: An xychart or radar whose values run to millions no longer overflows the call stack while fitting its value range.
+  
+  <!-- entry: fix -->
+- 9723ed2: `niceDomain`, and a `linearScale` with `nice`, keep a domain near `Number.MAX_VALUE` finite. A span too fine for its step, such as `[0, 5e-324]`, is kept as given.
+  
+  <!-- entry: rank=-5 fix -->
+- cc185ab: `niceStep` keeps a rough step whose rounding up would pass the largest double, so `spacedTicks` over the whole double range gives finite ticks.
+  
+  <!-- entry: rank=-5 fix -->
+- d69b413: A pie whose slice values add up past what a number holds draws and labels each slice at its share.
+  
+  <!-- entry: rank=-5 fix -->
+- 6ead2a8: A quadrant chart finds a point's class among its own `classes` only, never an inherited key such as `constructor` or `__proto__`.
+  
+  <!-- entry: rank=-5 fix -->
+- 46dfb3e: `ordinalScale` and `bandScale` list a key their domain names twice once, at its first place.
+  
+  <!-- entry: fix -->
+- b1309b2: Scale ticks finer than 1e-100 apart keep their values and are labeled with an exponent (`1e-300`) instead of all reading `0`.
+  
+  A span among the subnormals is ticked at multiples of itself, with no tick outside it.
+  
+  <!-- entry: rank=-5 fix -->
+- 3137efc: Linear, power, warp and time scales place a value when the domain's span, or the value's distance from its start, is past the double range.
+  
+  `linearScale({ domain: [-Number.MAX_VALUE, Number.MAX_VALUE] }).map(0)` is the range's middle, and `invert` sends the range's ends to the domain's exactly. An xychart over values near `±Number.MAX_VALUE` draws its bars.
+  
+  <!-- entry: rank=-5 fix -->
+- dcd3f2c: `spacedTicks` returns no ticks where `minSpacing` spans more of the domain than the largest double, instead of ticks at `NaN`.
+  
+  <!-- entry: rank=-5 fix -->
+- cfd1fc7: `spacedTicks` gives no tick past the domain when its step is far wider than the domain.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `tickStep` no longer rounds a span near the largest double up to `Infinity`, so such a scale's ticks are finite.
+  
+  <!-- entry: rank=-5 fix -->
+- 3137efc: A time axis labels a month of a year past 9999 whole, as in `10000-02`.
+  
+  <!-- entry: rank=-5 fix -->
+- dcf2a76: `formatTick` and `toFixedPlain` hold `decimals` to the 0 to 100 places `toFixed` takes, rather than throwing a `RangeError`.
+  
+  <!-- entry: rank=-5 fix -->
+- 36504c7: An xychart in a box too short for its axes keeps its axes, bars and points inside the plot instead of drawing them above the chart.
+  
+  <!-- entry: fix visual -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [2595ad3]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [a547bff]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [eaff448]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [c3dc307]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [33633eb]
+- Updated dependencies [8e8a341]
+- Updated dependencies [ac2ab9d]
+- Updated dependencies [c089fd1]
+- Updated dependencies [b7f10eb]
+- Updated dependencies [355a332]
+- Updated dependencies [ada22ef]
+- Updated dependencies [1379dff]
+- Updated dependencies [b4f5abf]
+- Updated dependencies [3c2cddd]
+- Updated dependencies [263aa62]
+- Updated dependencies [9f52075]
+- Updated dependencies [aa35a8f]
+- Updated dependencies [2c54d23]
+- Updated dependencies [1167180]
+- Updated dependencies [1b24a9a]
+- Updated dependencies [db86b0c]
+- Updated dependencies [fa2b6a2]
+- Updated dependencies [37e0907]
+- Updated dependencies [f7e4000]
+- Updated dependencies [9334505]
+- Updated dependencies [fcd1616]
+- Updated dependencies [54b81ce]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [038a0da]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/theme@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

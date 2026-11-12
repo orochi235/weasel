@@ -2,6 +2,7 @@
  * A uniform spatial hash: each item is filed under every square cell its box
  * touches, so a query visits only the items near it.
  */
+import { rectsIntersect } from '@weasel-js/geom';
 import type { Box } from './types';
 
 /** The cell size the router's hashes use, in world units. */
@@ -16,9 +17,6 @@ interface Filed<T> {
   box: Box;
   seen: number;
 }
-
-const overlaps = (a: Box, b: Box): boolean =>
-  a.x <= b.x + b.width && b.x <= a.x + a.width && a.y <= b.y + b.height && b.y <= a.y + a.height;
 
 /** How many cells `[i0, i1] × [j0, j1]` holds; past {@link MAX_CELLS}, or not finite, it is too many to walk.
  *  Nor can indices past a safe integer be walked, as `i++` stops moving there. */
@@ -90,9 +88,9 @@ export class SpatialHash<T> {
       filed.seen = stamp;
       out.push(filed.item);
     };
-    for (const filed of this.wide) if (overlaps(filed.box, box)) take(filed);
+    for (const filed of this.wide) if (rectsIntersect(filed.box, box)) take(filed);
     if (!walkable(range)) {
-      for (const list of this.cells.values()) for (const filed of list) if (overlaps(filed.box, box)) take(filed);
+      for (const list of this.cells.values()) for (const filed of list) if (rectsIntersect(filed.box, box)) take(filed);
       return out;
     }
     const [i0, j0, i1, j1] = range;

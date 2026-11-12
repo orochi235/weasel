@@ -1,6 +1,6 @@
 import { useState, type MouseEvent } from 'react';
 import type { Tool } from '@weasel-js/core';
-import { detectPlatform } from '@weasel-js/gestures';
+import { isApplePlatform } from '@weasel-js/gestures';
 import type { MenuEntry, MenuShortcut } from '@weasel-js/menu';
 import { ToolButton } from '../ToolButton';
 import { useMenuTrigger } from '../ContextMenu/useMenuTrigger';
@@ -27,7 +27,7 @@ export interface StackMember {
 const held = (e: MouseEvent, mod: StackCycleModifier): boolean =>
   mod === 'alt' ? e.altKey
     : mod === 'shift' ? e.shiftKey
-      : detectPlatform() === 'macos' ? e.metaKey : e.ctrlKey;
+      : isApplePlatform() ? e.metaKey : e.ctrlKey;
 
 const glyph = (tool: Tool) => tool.presentation?.icon ?? icon('core:unknown');
 

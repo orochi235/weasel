@@ -2,16 +2,18 @@ import type { Bounds } from 'tools/builtin/select';
 import type { WorldPoint } from '@weasel-js/routing';
 import type { RegionPickView } from 'core/adapters/types';
 
-/** `<SceneCanvas geometry>`: hit-test and bounds overrides, consumed by the
- *  internal select tool. Ignored if the consumer passes their own `tools`. */
+/** `<SceneCanvas geometry>`: hit-test and bounds overrides. The surface picks,
+ *  hovers, clicks, draws chrome and runs actions through them, under its own
+ *  select tool or a consumer's `tools`. */
 export interface SceneCanvasGeometry {
   /** Hit-test override. Return the topmost id, the full back-to-front hit
    *  stack (`string[]`), or `null` for empty space. The stack form lets a
    *  consumer with domain overlap ordering (e.g. children over their
    *  container) feed the kit's `pickTopMostHit` the true order instead of
    *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape.
-   *  `view` is the view the pick is asked for, when it is not the surface's
-   *  own: a 3D host casts the ray from that view's camera. */
+   *  `view` is the view the pick is asked for: its `viewId` when it is not the
+   *  surface's own, so a 3D host casts the ray from that view's camera, and the
+   *  layer gate of whichever view asks, when it hides anything. */
   pickEvery?: (world: WorldPoint, view?: RegionPickView) => string | string[] | null;
   boundsOf?: (id: string) => Bounds | null;
   /**

@@ -4,180 +4,13 @@ A 2D scene-graph engine for React, rendered on WebGL2. Bring your own node data 
 
 Built for diagram editors, sketch tools, schematic editors, scene composers — anything where "objects on a canvas the user can grab, move, and arrange" is the substrate.
 
-## Features
+## Getting started
 
-- Pointer interactions: move, resize, rotate, insert, clone, area-select, lasso, path-anchor editing, text edit
-- Op-based scene mutation with undo/redo and coalescing
-- A registry of actions with default key and gesture bindings, each one overridable by id
-- Layered canvas rendering with debug overlays
-- Rect, rotated and path poses; first-class compound paths; nested containers
-- Viewport with zoom/pan tools, momentum, and boundary clamping
-- Detached read-only scene views and navigation minimap (`<SceneViewCanvas>`, `<MinimapCanvas>`)
-- WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
-- Custom fragment shaders via `registerProgram`
-
-## Install
-
-```sh
-npm install @weasel-js/core react
-```
-
-`react` is a peer dependency (>=18).
-
-Import core's stylesheet once. It gives every canvas the kit renders its size
-on the page, and styles the canvas's debug overlays (`cursorCoordsHud`,
-`pickHud`, `modalityHud`). Without it a canvas is as large as its drawing
-buffer, which on a high-density screen is twice the size you asked for:
-
-```ts
-import '@weasel-js/core/style.css';
-```
-
-## How it fits together
-
-`useScene` holds the scene: a tree of leaf and container nodes, each carrying your data and a pose. Every change to it is an **op**, which is what makes it undoable. `<SceneCanvas>` renders a scene and routes input to it.
-
-A bare `<SceneCanvas>` only renders. It keeps a selection that nothing sets from input, and it routes any bindings you add, but it has no tools, no standard actions, no keys and no selection chrome. Behavior comes from presets named in `features`, each independent of the others:
-
-| Preset | Turns on |
-|---|---|
-| `view` | wheel pan and zoom, pinch, the zoom keys, the hand tool (H, or hold Space). Passing `viewport` implies it. |
-| `select` | the select tool, active from the start: click to pick, drag on empty to marquee, click on empty to clear |
-| `outline` | the selection outline, whichever tool sets the selection |
-| `pick` | `select` and `outline` |
-| `move` | drag a body to move it, Alt-drag to clone — under any tool that leaves the drag unclaimed |
-| `resize` | resize handles |
-| `rotate` | the rotation handle |
-| `transform` | `resize` and `rotate` |
-| `edit` | undo/redo, delete, duplicate, group/ungroup, nudge, select-all, Escape, cut/copy/paste, fill and stroke, and their keys |
-| `arrange` | align, distribute, reorder, flip |
-| `paths` | pathfinder operations, path editing and anchor editing |
-| `ingest` | dropped and pasted content |
-| `draw` | every preset above |
-
-`defaultTools` adds built-in tools on top, and each brings the actions it binds: `defaultTools={['rect']}` brings `insert`.
-
-Interactions are **actions** — descriptors registered into an actions registry — reached by **gesture bindings**. A tool is a list of `{ spec, actionId }` pairs and nothing more; the kit's own select, shape and viewport tools are built that way.
-
-```tsx
-import { SceneCanvas, BUILTIN_TOOL_IDS, useScene, useSelection } from '@weasel-js/core';
-import { createGridPreset } from '@weasel-js/guides';
-
-const grid = createGridPreset({ spacing: 20 });
-
-export function Editor() {
-  const scene = useScene({ systemLayers: [{ id: 'default' }], initial: [] });
-  const selection = useSelection({ mode: 'multi' });
-
-  // Click to select, drag to move with grid snapping, handles to resize and
-  // rotate, the shape tools, and the standard keyboard actions (Cmd+A, Cmd+Z,
-  // Delete, …):
-  return (
-    <SceneCanvas
-      width={800}
-      height={600}
-      scene={scene}
-      selection={selection}
-      features={['draw', grid]}
-      defaultTools={BUILTIN_TOOL_IDS}
-    />
-  );
-}
-```
-
-To change a behavior you override the descriptor by id, bind a different gesture to it, or register your own — you don't call a hook per interaction. [docs/hooks.md](./docs/hooks.md) has the full action table.
-
-Lower-level surfaces take a narrow **adapter** instead of a scene — a few methods that read your state and apply ops back — so they work over state weasel doesn't own. See [docs/adapters.md](./docs/adapters.md).
+[`packages/core/README.md`](./packages/core/README.md) is the guide: installing, mounting `<SceneCanvas>`, the feature presets, actions and how to tune or replace them, text, custom shaders, and core's subpath imports. It is also the README on npm and the site's "Get started" page.
 
 ## Demo
 
 <https://orochi235.github.io/weasel/> — every kit feature as a small runnable demo, plus the release history for every published version.
-
-## Actions registry
-
-An `Action` is a named operation — `delete`, `duplicate`, `group`, `insert`, `viewport.dragPan` — paired with the input that triggers it. `<ActionsProvider>` holds the registered descriptors, and the gesture dispatcher matches live input against each one's `defaultBinding` and the active tool's bindings. Keystrokes and pointer gestures take the same path, so a keyboard shortcut and a drag are two bindings on one action rather than two mechanisms.
-
-`<SceneCanvas>` mounts a provider when none is above it and registers the kit-standard actions its `features` presets name — under `draw`, all of them: escape, select-all, delete, duplicate, group and ungroup, undo and redo, flip, nudge, reorder, align, distribute, the pathfinder booleans, path-anchor editing, fill and stroke, clipboard, and the pointer-driven move, resize, rotate, clone, area-select and lasso. `FEATURE_ACTION_IDS` lists which preset registers which. A preset can include others: `edit` is `clipboard`, `nudge`, `group`, and the rest, each of which can be named alone, and `pick`, `transform`, and `draw` are presets of that kind. `insert` comes with the shape tools that bind it, which the `tools:shape`, `tools:draw`, `tools:type`, and `tools:page` presets mount.
-
-```tsx
-<SceneCanvas
-  width={W}
-  height={H}
-  scene={scene}
-  selection={selection}
-  features={['draw']}
-  actions={{
-    duplicate: null,                  // drop the default
-    'app.publish': {                  // add your own
-      id: 'app.publish',
-      label: 'Publish',
-      defaultBinding: { kind: 'key', key: 'p', mods: { mod: true } },
-      requires: ['selection'],
-      invoker: {
-        timing: 'immediate',
-        run: (deps) => publish((deps.selection as SelectionApi).get()),
-      },
-    },
-  }}
-/>
-```
-
-The `actions` prop applies on top of what the presets registered. It takes `null` to unregister every default, or a record keyed by action id. Each value is `null` to drop that one id, a partial `Action` to merge onto the default of the same id, or a complete `Action` to register a new one.
-
-An action does its work through `invoker`, not a bare callback. `{ timing: 'immediate' }` runs once; `{ timing: 'ongoing' }` returns a handle so a drag can preview while it moves and commit at the end. The deps an invoker reads (`selection`, `scene`, `applyOps`, …) are declared in `requires` and resolved at invocation time, which is what lets a consumer swap one — see `useDepSource`. To fire an action yourself, wrap the canvas in your own `<ActionsProvider>` and call `trigger(id, params)` on the registry `useActionsRegistry()` returns.
-
-## Text rendering
-
-Text is rendered via MSDF atlases. Register fonts before the first paint:
-
-```tsx
-import { registerFont } from '@weasel-js/core';
-
-await registerFont('Inter', { weight: 400 }, '/fonts/Inter-400.json', '/fonts/Inter-400.png');
-```
-
-Core doesn't ship a prebuilt atlas — bake one from a weasel checkout with `npm run gen:font -- <font.ttf> --name Inter-400 --out public/fonts` (see [`packages/font/scripts/gen-font.ts`](https://github.com/orochi235/weasel/blob/main/packages/font/scripts/gen-font.ts)) and serve the resulting `.json`/`.png` pair. `@weasel-js/hud` bundles its own Inter atlas for its widgets.
-
-`registerFont` lives in `@weasel-js/font` and is re-exported from core. An unregistered family renders in the default family with a one-time warning — see that package's README for `setFontFallbackPolicy`.
-
-## Custom shaders
-
-A render layer can draw with its own fragment shader. Register the program once, then return a `kind: 'shader'` draw command with its uniforms and bounds:
-
-```tsx
-import { registerProgram } from '@weasel-js/core/renderer';
-
-const stripes = registerProgram('stripes', { glsl: { frag: `#version 300 es
-precision highp float;
-in vec2 v_uv;
-uniform float u_time;
-out vec4 outColor;
-void main() {
-  float v = 0.5 + 0.5 * sin(v_uv.x * 40.0 + u_time);
-  outColor = vec4(vec3(v), 1.0);
-}` } });
-
-// Inside a RenderLayer's draw:
-return [{
-  kind: 'shader',
-  program: stripes,
-  uniforms: { u_time: performance.now() / 1000 },
-  bounds: { x: 0, y: 0, w: 256, h: 256 },
-}];
-```
-
-`glsl` is the program's GLSL; a `wgsl` beside it is held for the WebGPU backend, which is not built yet. Leaving out `vert` selects the kit's vertex shader, which provides the `v_uv`, `v_screen` and `v_world` varyings and sets `u_bounds`, `u_view` and `u_proj` itself. Uniforms take a number, a 2–4 element tuple, a `Float32Array`, or a `TextureHandle` from `registerTexture`. Output **premultiplied** alpha — `vec4(rgb * a, a)` — or translucent pixels come out too bright. `bounds` is in CSS pixels.
-
-## Subpath imports
-
-Core's main entry carries the everyday surface. A few narrower ones have their own:
-
-| Import | Holds |
-|---|---|
-| `@weasel-js/core/renderer` | the renderer, `registerProgram`, `registerTexture`, draw commands |
-| `@weasel-js/core/move`, `/resize`, `/clone`, `/clipboard` | helpers for building on those actions, e.g. `snapBackOrDelete`, `clampMinSize` |
-| `@weasel-js/core/patterns-builtin` | the built-in fill patterns |
-| `@weasel-js/core/routing` | route grammar and introspection: parsing, the route registry, conflict checks |
 
 ## Packages
 
@@ -208,7 +41,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `renderer` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | the WebGL2 renderer: draw commands, batched fills and strokes, text, images, gradients, patterns, shader programs, and effects |
 | `pdf` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | PDF documents from draw commands, with selectable embedded text |
 | `dither` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> | pixels to 1-bit ink: four ditherers for an export, and threshold and Bayer as a live effect on a printer's dot grid |
-| `p-touch` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | | Brother P-touch labels from a scene: `.lbx` files, and printing over WebUSB or Web Serial |
+| `p-touch` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | Brother P-touch labels from a scene: `.lbx` files, and printing over WebUSB or Web Serial |
 | `plot` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | scales, axes, and marks, and charts built from them that edit by dragging their values |
 | `text` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | styled runs, kerned layout, wrapping and measurement |
 | `text-dom` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | in-place text editing: a contenteditable overlay that reads and writes styled runs |
@@ -235,7 +68,7 @@ Every package is published under `@weasel-js` and released together at one versi
 | `path-tools` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | path-editing tools as presets an app opts into: brushes, bridge, trim and extend, curvature and handle balance, path constraints, path effects, and warps |
 | `rig` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | rigging tools: the bone tool, which draws and edits a node's skeleton, and the weight tool, which paints how much each joint moves the paths under it |
 | `cursor` |  | tool cursors as authored glyphs, baked to CSS or painted when too large |
-| `loupe` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a magnifier model: where it's aimed, how far it magnifies, what's under it |
+| `loupe` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | a magnifier model: where it's aimed, how far it magnifies, what's under it |
 | `brush` | <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"><img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"> | brushes for tools: one size shared across the tools that link to it |
 | `audio` | <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser: document, window or navigator" title="Needs a browser: document, window or navigator"><img src="docs/badges/webaudio.svg" width="20" height="20" alt="Plays through Web Audio" title="Plays through Web Audio"><img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> | a Web Audio engine: voices, buses, lookahead scheduling, spatialization |
 | `clock` | <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"> | a run of time: a position moved by a signed rate, with passes, ramps, seeking and one frame loop for many clocks |

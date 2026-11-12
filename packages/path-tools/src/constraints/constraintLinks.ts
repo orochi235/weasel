@@ -31,6 +31,7 @@ import {
   type AddNodeSpec, type NodeId, type NodeShapeEntry, type PathEditFinishCtx, type PathEditOther,
   type PathTransformFinishCtx, type RectPose, type Scene,
 } from '@weasel-js/core';
+import { deepEqual } from '@weasel-js/registry';
 import { constraintAxisOf, constraintsOf } from './pathConstraints';
 
 /** What a link node keeps in `data`. */
@@ -118,9 +119,6 @@ function linkedFrom(ctx: LinkReader, starts: readonly string[]): { nodes: string
   return { nodes, links: [...links.values()] };
 }
 
-const same = (a: readonly PathConstraint[], b: readonly PathConstraint[]) =>
-  a.length === b.length && a.every((c, i) => JSON.stringify(c) === JSON.stringify(b[i]));
-
 /** What {@link finishLinkedEdit} answers. */
 export interface LinkedEdit {
   path: PolygonPath;
@@ -161,7 +159,7 @@ export function finishLinkedEdit(
   done.items.forEach((item, k) => {
     if (k === 0) return;
     const had = constraintsOf(ctx.node(nodes[k])?.data);
-    const changed = !same(had, item.constraints);
+    const changed = !deepEqual(had, item.constraints);
     if (item.path !== items[k].after || changed) {
       others.push({ id: nodes[k], path: item.path, ...(changed ? { data: { constraints: item.constraints } } : {}) });
     }
@@ -169,13 +167,13 @@ export function finishLinkedEdit(
   done.links.forEach((l, k) => {
     const link = links[k];
     if (!l.constraint) others.push({ id: link.id, remove: true });
-    else if (JSON.stringify(l.constraint) !== JSON.stringify(link.constraint)) {
+    else if (!deepEqual(l.constraint, link.constraint)) {
       others.push({ id: link.id, data: { constraintLink: l.constraint } });
     }
   });
   const own = constraintsOf(ctx.node(ctx.id)?.data);
   const [first] = done.items;
-  return { path: first.path, constraints: same(own, first.constraints) ? own : first.constraints, others };
+  return { path: first.path, constraints: deepEqual(own, first.constraints) ? own : first.constraints, others };
 }
 
 /**

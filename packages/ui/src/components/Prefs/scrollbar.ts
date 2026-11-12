@@ -1,11 +1,10 @@
 /**
- * A ref that sets `data-scrollbar` on its element while the element's scrollbar takes room of its own (a classic
- * one, as macOS draws with a mouse connected), and clears it while the scrollbar is laid over the box. A stylesheet
- * that pads the far side to clear an overlaid scrollbar drops that padding under the attribute, so the scrollbar
- * is cleared once either way.
+ * Sets `data-scrollbar` on `el` while its scrollbar takes room of its own (a classic one, as macOS draws with a
+ * mouse connected), and clears it while the scrollbar is laid over the box. A stylesheet that pads the far side to
+ * clear an overlaid scrollbar drops that padding under the attribute, so the scrollbar is cleared once either way.
+ * Returns what stops watching; for `useAttachRef`.
  */
-export function markScrollbar(el: HTMLElement | null): (() => void) | undefined {
-  if (el === null) return undefined;
+export function markScrollbar(el: HTMLElement): (() => void) | undefined {
   const read = () => {
     const style = getComputedStyle(el);
     const taken = el.offsetWidth - el.clientWidth - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);

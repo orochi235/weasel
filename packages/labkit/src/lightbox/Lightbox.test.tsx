@@ -193,4 +193,38 @@ describe('Lightbox', () => {
     expect(screen.queryByRole('button', { name: 'Expand' })).toBeNull();
     expect(mounts).toBe(1);
   });
+
+  it('closes an open one when disabled, says so, and stays closed when enabled again', () => {
+    const heard: boolean[] = [];
+    const view = (disabled: boolean) => (
+      <Lightbox expandOnDoubleClick disabled={disabled} onExpandedChange={(e) => heard.push(e)}>
+        <div data-testid="out" />
+      </Lightbox>
+    );
+    const { rerender } = renderWithIcons(view(false));
+    fireEvent.doubleClick(screen.getByTestId('out'));
+    expect(expanded()).toBe(true);
+    act(() => rerender(view(true)));
+    expect(expanded()).toBe(false);
+    expect(heard).toEqual([true, false]);
+    act(() => rerender(view(false)));
+    expect(expanded()).toBe(false);
+  });
+
+  it('tells a controlled parent an open one closed when disabled', () => {
+    const onExpandedChange = vi.fn();
+    const { rerender } = renderWithIcons(
+      <Lightbox expanded onExpandedChange={onExpandedChange}>
+        <div />
+      </Lightbox>,
+    );
+    act(() =>
+      rerender(
+        <Lightbox expanded disabled onExpandedChange={onExpandedChange}>
+          <div />
+        </Lightbox>,
+      ),
+    );
+    expect(onExpandedChange).toHaveBeenCalledWith(false);
+  });
 });

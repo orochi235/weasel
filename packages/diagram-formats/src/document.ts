@@ -98,7 +98,8 @@ export interface DiagramFormat {
   write?(doc: DiagramDocument, opts?: WriteOptions): ExportResult;
   /** Whether {@link write} writes one page rather than the whole document. */
   onePage?: boolean;
-  /** The kinds of page it reads and writes. A writer leaves out a page of any other kind, with a warning. */
+  /** The kinds of page it reads and writes. A writer of the whole document leaves out a page of any other kind,
+   *  with a warning; a {@link onePage} writer throws when the page it writes is of another kind. */
   kinds: readonly PageKind[];
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/audio",
-  "version": "1.18.2",
+  "version": "1.19.0",
   "description": "Web Audio engine for 2D and 3D scenes: voices, buses, lookahead scheduling, spatialization and analysis. No weasel dependencies.",
   "weasel": {
     "tier": "other",

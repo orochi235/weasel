@@ -17,7 +17,7 @@ import { type DrawState, type PageCtx, writeCommands } from './drawCommands';
 import type { EmbeddedFont } from './fonts/embedFont';
 import { num } from './num';
 import { isNative, resolveStroke, strokeStyleOps } from './strokeOps';
-import { isSpace, outlineCommand, placedOutline, skipGlyph } from './textOutlines';
+import { hasOutline, isSpace, outlineCommand, placedOutline, skipNoOutline } from './textOutlines';
 
 /** What one placed code point draws in a text object. */
 export interface SegmentGlyph {
@@ -207,7 +207,7 @@ function longestOutline(ctx: PageCtx, seg: TextSegment, dx: number, dy: number):
   let length = 0;
   for (const { g } of seg.glyphs) {
     const outline = isSpace(g.cp) ? null : placedOutline(ctx, g, dx, dy);
-    if (outline) length = Math.max(length, dashLength(outline));
+    if (outline && hasOutline(outline)) length = Math.max(length, dashLength(outline));
   }
   return length;
 }
@@ -225,8 +225,8 @@ async function paintOutlines(
   for (const { g } of seg.glyphs) {
     if (isSpace(g.cp)) continue;
     const outline = outlineCommand(ctx, g, cmd, dx, dy, paint);
-    if (outline) await writeCommands(ctx, [outline], state);
-    else skipGlyph(ctx, g, 'has no outline to paint its ink with');
+    if ('kind' in outline) await writeCommands(ctx, [outline], state);
+    else skipNoOutline(ctx, g, outline, 'has no outline to paint its ink with');
   }
 }
 

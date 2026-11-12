@@ -1,5 +1,7 @@
 /** GestureSpec — describes the form of a user input event that can fire an action. */
 
+import type { PointerButton } from './inputEvent';
+
 /** Optional modifier-key requirement for a gesture spec.
  *
  *  Matching is strict: an omitted modifier field means the modifier MUST NOT
@@ -166,6 +168,8 @@ export interface ContextMenuSpec {
 /** Drag gesture (pointerdown + pointermove past the threshold). */
 export interface DragSpec {
   kind: 'drag';
+  /** The button that drags. Default `'primary'`; `'*'` takes any. */
+  button?: PointerButton | '*';
   target?: TargetSpec;
   mods?: ModSpec;
   phase?: PhaseSpec;

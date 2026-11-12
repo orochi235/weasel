@@ -32,6 +32,16 @@ describe('useDocumentState', () => {
     vi.useRealTimers();
   });
 
+  it('keeps the paper size and background an older drawing kept beside it, which the scene has yet to take in', () => {
+    vi.useFakeTimers();
+    localStorage.setItem(DOC_KEY, JSON.stringify({ filename: 'a.svg', paperSize: 'a4', backgroundColor: '#ff0000' }));
+    const { result } = renderHook(() => useDocumentState(drawScene(), pagesShowing(0), false));
+    act(() => result.current.setFilename('b.svg'));
+    act(() => { vi.advanceTimersByTime(300); });
+    expect(JSON.parse(localStorage.getItem(DOC_KEY)!)).toEqual({ filename: 'b.svg', paperSize: 'a4', backgroundColor: '#ff0000' });
+    vi.useRealTimers();
+  });
+
   it('reads the paper size off the shown page', () => {
     expect(renderHook(() => useDocumentState(drawScene(), pagesShowing(1), false)).result.current.paperSize).toBe('a4');
     expect(renderHook(() => useDocumentState(drawScene(), pagesShowing(0), false)).result.current.paperSize).toBe('letter');

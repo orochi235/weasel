@@ -102,7 +102,8 @@ export interface CanvasExtensionApi {
    * Run `fn` after every paint, on the frame that painted — for chrome that
    * must observe landed pixels (a loupe readback, a frame counter). `time` is
    * the frame's timestamp, on `performance.now()`'s clock. Returns an
-   * unsubscribe.
+   * unsubscribe. A subscriber that throws is reported to `console.error` and
+   * skipped, here and on the two below, so the paint and the rest still run.
    */
   subscribeFrame(fn: (time: number) => void): () => void;
   /**

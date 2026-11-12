@@ -81,6 +81,7 @@ export type {
   PinchEvent,
   PointerSampleStylus,
   PointerIdentity,
+  PointerButton,
   PointerDownEvent,
   PointerMoveEvent,
   HoverEvent, HoverWhere,
@@ -114,6 +115,7 @@ export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTarg
 export { mimeMatchesGlob, matchIngestTypes, UNKNOWN_MIME } from './ui/ingestTypes';
 export type { PhaseContext, ModifiersEvent, TargetSpecForm } from './ui/match';
 export { isApplePlatform } from './ui/platform';
+export { historyKey } from './ui/historyKey';
 
 // Shortcut legends: how a keyboard prints a binding's keys, per platform
 export { keySpecsFromMods, keySpecFromKey, detectPlatform, MODIFIER_LABELS } from './ui/keySpecsFromMods';
@@ -145,6 +147,7 @@ export { createPointerRecognizer } from './recognizer/pointerRecognizer';
 export type {
   PointerRecognizer, PointerRecognizerOptions, RecognizerObserver, RecognizerSink,
 } from './recognizer/pointerRecognizer';
+export { pointerDownEvent } from './recognizer/samples';
 export type { PointerSample, PressSample } from './recognizer/samples';
 export type { HeldPress, RecognizerClock } from './recognizer/longPressHold';
 export type { ClickMemory, ClickObserver, ReleaseOutcome } from './recognizer/click';

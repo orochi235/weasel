@@ -1,7 +1,7 @@
-// What a changeset asks for, read by changesets' own parser, so a file it versions from is a
-// file the bump check reads the same way: frontmatter after a blank line or a BOM, and any YAML
-// spelling of a level.
+// What a changeset asks for, read by changesets' own parser, so a file it versions from is read
+// here the same way: frontmatter after a blank line or a BOM, and any YAML spelling of a level.
 import { parseChangesetFile } from '@changesets/parse';
+import inc from 'semver/functions/inc.js';
 
 /** The names `@changesets/read` passes over; only README matches without regard to case. */
 const NOT_CHANGESETS = [/^README\.md$/i, 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md'];
@@ -15,30 +15,19 @@ export function isChangesetFile(name) {
   );
 }
 
-/** Everything above `patch` needs sign-off. */
-const GATED = ['minor', 'major'];
-
-/** `<!-- bump-approved: minor: someone — reason -->` */
-function approvalFor(text, level) {
-  return new RegExp(`<!--\\s*bump-approved:\\s*${level}\\s*:\\s*\\S+.*-->`, 'i').test(text);
-}
+/** The release levels `version-packages --bump` takes. */
+export const LEVELS = ['patch', 'minor', 'major'];
 
 /**
- * The bumps above `patch` in a changeset's text, split by whether a marker in its body approves
- * their level, and whether a marker opens the body. Throws on a file changesets cannot read.
+ * `plan` with every package it releases moved to the next `level` version, whatever its changesets
+ * ask for: the release level is chosen when versioning. The changesets themselves are left as
+ * written, so each changelog entry is still listed under its own change's level. A package the
+ * plan does not release stays out.
  */
-export function readBumps(text) {
-  const { releases, summary } = parseChangesetFile(text);
-  const byLevel = new Map();
-  for (const { name, type } of releases) {
-    if (type === 'patch' || type === 'none') continue;
-    byLevel.set(type, [...(byLevel.get(type) ?? []), name]);
-  }
-  const approved = [];
-  const unapproved = [];
-  for (const [level, pkgs] of byLevel) {
-    (GATED.includes(level) && approvalFor(summary, level) ? approved : unapproved).push({ level, pkgs });
-  }
-  // Changesets prints a body's first line beside the commit hash, the entry's title.
-  return { approved, unapproved, leadingMarker: /^<!--\s*bump-approved:/i.test(summary) };
+export function releasedAt(plan, level) {
+  if (!LEVELS.includes(level)) throw new Error(`unknown release level ${JSON.stringify(level)}`);
+  return {
+    ...plan,
+    releases: plan.releases.map((r) => (r.type === 'none' ? r : { ...r, type: level, newVersion: inc(r.oldVersion, level) })),
+  };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/editor",
-  "version": "1.18.2",
+  "version": "1.19.0",
   "description": "The frame and glue of a weasel editor app: a shell with the kit's providers, app-wide command keys, a menu bar, a topbar, and a preferences dialog; and autosave, session persistence, snapshot revival, file download and pick, pages, page fit, and the page's paper and grid.",
   "weasel": {
     "tier": "other"
@@ -19,15 +19,15 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@weasel-js/registry": "1.18.2"
+    "@weasel-js/registry": "1.19.0"
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "1.18.2",
-    "@weasel-js/geom": "1.18.2",
-    "@weasel-js/guides": "1.18.2",
-    "@weasel-js/prefs": "1.18.2",
-    "@weasel-js/ui": "1.18.2"
+    "@weasel-js/core": "1.19.0",
+    "@weasel-js/geom": "1.19.0",
+    "@weasel-js/guides": "1.19.0",
+    "@weasel-js/prefs": "1.19.0",
+    "@weasel-js/ui": "1.19.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

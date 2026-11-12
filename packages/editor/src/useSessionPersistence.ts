@@ -1,6 +1,6 @@
 import { defaultCommitAdapter, isSerializedScene, type PagesDoc, type Scene, useLatest } from '@weasel-js/core';
 import { useEffect, useRef } from 'react';
-import { readStored } from './sessionStore';
+import { keptUnreadable, readStored } from './sessionStore';
 import { reviveTypedArrays, serializeReplacer, snapshotRebuildsTree } from './snapshot';
 import { useAutosave } from './useAutosave';
 
@@ -22,9 +22,10 @@ const parseHistory = (raw: string): unknown => reviveTypedArrays(JSON.parse(raw)
 
 /** Whether an undo stack saved beside the scene under `key` would replay wrongly: the scene loads with its
  *  tree rebuilt (`snapshotRebuildsTree`), or there is no saved scene it can be read as, so the scene
- *  starts from something else. */
+ *  starts from something else, as it does from one its load kept aside as unreadable. */
 const savedStale = (key: string, pages: PagesDoc | undefined): boolean =>
   readStored(key, (raw) => {
+    if (keptUnreadable(key, raw)) return true;
     const json: unknown = JSON.parse(raw);
     return !isSerializedScene(json) || snapshotRebuildsTree(json, { pages });
   }, () => true);

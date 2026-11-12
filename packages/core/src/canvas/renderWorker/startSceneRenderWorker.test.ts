@@ -213,4 +213,15 @@ describe('startSceneRenderWorker, the worker animator', () => {
     expect(frames(posted)[0]).toMatchObject({ scene: { reset: expect.anything() }, view: VIEW, extraCommands: [] });
     warn.mockRestore();
   });
+
+  it('warns once for each different failure the worker reports, not once for its life', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { answer } = start();
+    answer({ type: 'error', message: 'no animation registered as "a"' });
+    answer({ type: 'error', message: 'no animation registered as "a"' });
+    answer({ type: 'error', message: 'no animation registered as "b"' });
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenLastCalledWith(expect.any(String), 'no animation registered as "b"');
+    warn.mockRestore();
+  });
 });

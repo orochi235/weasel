@@ -218,6 +218,10 @@ function sceneSourceOf<TLayer extends string>(
     childrenOf: (id) => scene.childrenOf(id as never).map(String),
     get: (id) => scene.get(id as never),
     pageIdOf: (id) => (scene.get(id as never)?.page === undefined ? undefined : pageOfNode(scene, id as never) ?? undefined),
+    nodeOf: (id) => {
+      const node = scene.get(id as never);
+      return node && { label: node.data?.label, locked: node.locked };
+    },
     composition: scene.composition,
     isPainted: (id) => {
       const layer = scene.get(id as never)?.layer;

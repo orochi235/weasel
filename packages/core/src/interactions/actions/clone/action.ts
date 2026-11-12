@@ -14,6 +14,7 @@ import { defaultCommitAdapter, selectionMethods } from '../defaultCommitAdapter'
 import { createSetSelectionOp } from 'core/ops/select';
 import { runBehaviorCancel, runBehaviorSettled } from '../gestureLifecycle';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
+import type { CloneEnd } from '../../gestures/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { copySelection } from '../defaults/copySubtree';
 import { selectedRoots, translateTargets } from '../selectionSubtree';
@@ -25,6 +26,7 @@ import { recordTransform } from '../transform-again/memory';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { finiteFrame } from '../finiteFrame';
 import { SNAP_ROLES } from 'domains/snap/roles';
+import { quantizedPreview } from 'core/scene/outputGrid';
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -51,37 +53,57 @@ interface CloneScratch {
   applyOps?: (ops: Op[], label: string) => void;
 }
 
-/** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored. */
-function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unknown {
+/** Where the copy of `id` lands for a drag of `(dx, dy)`, in world. */
+function landedWorld(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unknown {
   const origin = scratch.originPoses.get(id);
   const node = scratch.scene.get(id);
   if (origin === undefined || !node) return undefined;
   const d = scratch.descriptorOf(id);
   const moved = translatePoseViaDescriptor(origin, dx, dy, d);
-  return scratch.frame.local(id, carryPose(d, moved, planeOf(scratch.view, node.layer)));
+  return carryPose(d, moved, planeOf(scratch.view, node.layer));
+}
+
+/** Where the copy of `id` lands for a drag of `(dx, dy)`, as stored. */
+function landed(scratch: CloneScratch, id: NodeId, dx: number, dy: number): unknown {
+  const world = landedWorld(scratch, id, dx, dy);
+  return world === undefined ? undefined : scratch.frame.local(id, world);
+}
+
+/** The ops making the copies where the drag left them and selecting them;
+ *  with a `placement`, each copied root goes under its parent instead, at its
+ *  pose there when it has one. */
+function copyOps(scratch: CloneScratch, selection: SelectionApi, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] {
+  const { dx, dy } = scratch.currentDelta;
+  const parent = placement?.parentId as NodeId | null | undefined;
+  const { ops, copies } = copySelection(
+    scratch.scene,
+    scratch.ids,
+    (id, node, isRoot) => {
+      if (placement === undefined || !isRoot) return scratch.originPoses.has(id) ? landed(scratch, id, dx, dy) : node.pose;
+      const world = placement.poses.get(id) ?? landedWorld(scratch, id, dx, dy) ?? node.pose;
+      return scratch.frame.localUnder(parent ?? null, world);
+    },
+    'Clone',
+    parent,
+  );
+  if (ops.length === 0) return [];
+  return [...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })];
 }
 
 /** Commit the drag: a behavior's ops when one claims it, else the copies,
  *  which become the selection. Returns whether anything was committed. */
 function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection: SelectionApi): boolean {
-  const { dx, dy } = scratch.currentDelta;
   // False when a container refused the copies: the scene reverted them.
   const apply = (ops: Op[]): boolean => {
     if (!scratch.applyOps) return scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, selectionMethods(selection)));
     scratch.applyOps(ops, 'Clone');
     return true;
   };
-  const answer = behaviors.end(scratch.currentDelta);
+  const answer = behaviors.end(scratch.currentDelta, (placement) => copyOps(scratch, selection, placement));
   if (answer === null) return false;
   if (answer !== undefined) return answer.length === 0 || apply(answer);
-  const { ops, copies } = copySelection(
-    scratch.scene,
-    scratch.ids,
-    (id, node) => (scratch.originPoses.has(id) ? landed(scratch, id, dx, dy) : node.pose),
-    'Clone',
-  );
-  if (ops.length === 0) return false;
-  return apply([...ops, createSetSelectionOp({ from: selection.get(), to: copies, label: 'Clone' })]);
+  const ops = copyOps(scratch, selection);
+  return ops.length > 0 && apply(ops);
 }
 
 /**
@@ -153,7 +175,10 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
             const delta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
             const previews = new Map<NodeId, unknown>();
             if (delta.dx === 0 && delta.dy === 0) return { delta, previews };
-            for (const id of scratch.originPoses.keys()) previews.set(id, landed(scratch, id, delta.dx, delta.dy)!);
+            // As the scene's quantize rule will store the copy, which shares its source's data.
+            for (const id of scratch.originPoses.keys()) {
+              previews.set(id, quantizedPreview(scene, id, landed(scratch, id, delta.dx, delta.dy)!));
+            }
             return { delta, previews };
           }, (f) => f.previews);
           scratch.currentDelta = next.delta;

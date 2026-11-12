@@ -1,12 +1,12 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { WeaselProvider } from '@weasel-js/core';
+import { WHEEL_RATE } from '@weasel-js/loupe';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { type RefObject, StrictMode, useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LoupeGestures } from './LoupeGestures';
-import { WHEEL_RATE } from './loupeActions';
 import { type LoupeOptions, type LoupeShape, resolveLoupe } from './types';
 import { type LoupeState, useLoupe } from './useLoupe';
 

@@ -16,6 +16,7 @@ import {
   poseLinearOf,
   resolveFill,
   resolveStroke,
+  shapePathOf,
   type ImageNodeData,
   type NodeClip,
   type Path,
@@ -44,6 +45,12 @@ import { asBooleanLeaf, booleanGroupSvg, derivedPathIn } from './booleanGroup';
  *  `svgNodesToKitDrafts` writes. */
 export interface SvgKitLeafData {
   path?: Path;
+  /** A built-in shape kind (`rect`, `ellipse`, `polygon`, `star`), drawn in the pose's box. */
+  shape?: string;
+  /** A `polygon`'s side count. */
+  sides?: number;
+  /** A `star`'s point count. */
+  points?: number;
   /** `'inherit'` takes the enclosing container's. */
   fill?: Fill | Inherit | null;
   stroke?: Stroke | Inherit | null;
@@ -98,9 +105,9 @@ function runInPoseFrame(run: StyledRun, box: SvgKitPose): StyledRun {
 }
 
 /**
- * Write one leaf as the `SvgNode` its built-in painter draws — image, text or
- * path, in the order the painters claim a node. `null` for data none of them
- * draws. A text node with a `background` is a group: the box, then the text.
+ * Write one leaf as the `SvgNode` its built-in painter draws — text, path,
+ * shape or image, in the order the painters claim a node. `null` for data none
+ * of them draws. A text node with a `background` is a group: the box, then the text.
  * One that clips is a group clipped to its box as it is drawn, turned with it.
  *
  * An `'inherit'` fill or stroke is none here, with no container to read;
@@ -114,7 +121,6 @@ export function svgLeafFromKit(
   data: SvgKitLeafData,
   pose: SvgKitPose,
 ): SvgPathNode | SvgTextNode | SvgImageNode | SvgGroupNode | null {
-  if (data.image) return svgImageFromKit(data.image, pose);
   if (data.text != null) {
     const text = svgTextFromKit({ ...data, text: data.text }, pose);
     const boxPath: Path = { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
@@ -134,11 +140,12 @@ export function svgLeafFromKit(
     const framed: SvgNode = { kind: 'group', children: [box, ...over, text], ...clip };
     return under.length > 0 ? { kind: 'group', children: [...under, framed] } : framed;
   }
-  if (!data.path) return null;
+  const outline = data.path ? pathInPoseFrame(data.path, pose) : shapePathOf(data, pose);
+  if (!outline) return data.image ? svgImageFromKit(data.image, pose) : null;
   const stroke = svgStrokeFromKit(resolveStroke(data.stroke), pose);
   const node: SvgPathNode = {
     kind: 'path',
-    path: pathInPoseFrame(data.path, pose),
+    path: outline,
     fill: svgPaintFromKit(resolveFill(data.fill)?.paint ?? null, pose),
   };
   if (stroke) node.stroke = stroke;

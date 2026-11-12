@@ -165,14 +165,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  (rect poses and `Path` poses). */
     poseDescriptor?: PoseDescriptor<TPose>;
 
-    // --- Geometry: hit-test + bounds overrides consumed by the internal
-    //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
+    // --- Geometry: hit-test + bounds overrides for the surface's picking,
+    //     hover, clicks, chrome and actions, whatever `tools` it runs. ---
     geometry?: SceneCanvasGeometry;
 
-    // --- Selection options. `pickBest` and `handleHitRadius` configure the
-    //     internal select tool, and are ignored under a `tools` takeover;
-    //     `move`, `resize` and `rotate` configure the `move`,
-    //     `resize` and `rotate` presets, and apply either way. ---
+    // --- Selection options. `pickBest` configures the internal select tool, and is
+    //     ignored under a `tools` takeover; `handleHitRadius` sizes the handles' hit
+    //     area, and `move`, `resize` and `rotate` configure their presets, either way. ---
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
@@ -337,8 +336,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * of the ones presets bring (`select` from `pick`, `hand` from `view`):
      * ids, or sets of them such as `SHAPE_TOOLS`, or `withoutTools(...)` of one.
      * Default: none. Each tool also registers the kit actions it binds, so
-     * `['rect']` brings `insert`. Ignored when the consumer supplies their own
-     * `tools` prop.
+     * `['rect']` brings `insert`. Ignored under a full `ToolsApi` takeover in
+     * `tools`; the patch form of `tools` lays over it.
      */
     defaultTools?: readonly ToolEntry<BuiltinToolId>[];
 
@@ -452,10 +451,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     getFocused?: () => boolean;
 
-    /** Custom shader programs to compile on the renderer. See `CanvasProps.shaders`. */
+    /** Shader programs for the renderer (`CanvasProps.shaders`); under `worker`, the page's, not `serveSceneRender`'s. */
     shaders?: ShaderProgramHandle[];
 
-    /** Flatness tolerance for curve tessellation. See `CanvasProps.flattenTolerance`. */
+    /** Curve flatness (`CanvasProps.flattenTolerance`); under `worker`, the page's, not `serveSceneRender`'s. */
     flattenTolerance?: FlattenTolerance;
 
     /** Fill for the full canvas behind the scene, drawn as a screen-space layer slotted

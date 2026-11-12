@@ -1,5 +1,26 @@
 # @weasel-js/simulation
 
+## 1.19.0
+
+### Patch Changes
+
+- c7756c5: Alpha decays toward `alphaTarget` without passing it: an `alphaDecay` above 1 acts as 1, and a negative one as 0.
+  
+  <!-- entry: rank=-5 fix -->
+- c7756c5: A simulation stepping on a clock takes the same number of steps over a span of clock time however the frames slice it.
+  
+  <!-- entry: fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [153719c]
+- Updated dependencies [bce00fd]
+- Updated dependencies [98a8020]
+- Updated dependencies [6d7aae1]
+- Updated dependencies [326d7be]
+- Updated dependencies [2740ed4]
+- Updated dependencies [2f5f287]
+  - @weasel-js/clock@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useSessionPersistence } from '@weasel-js/editor';
+import { serializeReplacer, useSessionPersistence } from '@weasel-js/editor';
 import { PAGES_DOC_KEY, commitOps, createScene, isPageStructure, pageRunOf, pagesOf, setPages, type ActionDeps, type NodeId } from '@weasel-js/core';
 import {
-  DIAGRAM_THEME_KEY, DIAGRAM_THEMES, DIAGRAM_TYPE_DOC_KEY, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, diagramTypeDocOf,
+  DIAGRAM_THEME_KEY, DIAGRAM_THEMES, DIAGRAM_TYPE_DOC_KEY, EDGE_DERIVE_PATH, FLOWCHART_STENCILS, applyDiagramTheme, diagramThemeOf, diagramTypeDocOf,
   stencilBuild,
 } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_PAGE, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
@@ -115,7 +115,7 @@ describe('chart persistence', () => {
     replaceChart(scene, chartFromJson(chartToJson(other)), 'Open chart');
     expect([...scene.nodes.values()].every((n) => isPageStructure(n))).toBe(true);
     expect(pagesOf(scene)?.pages).toEqual([{ id: 'p', width: 10, height: 10 }]);
-    expect(scene.doc.keys()).toEqual(['kept']);
+    expect([...scene.doc.keys()].sort()).toEqual([DIAGRAM_THEME_KEY, 'kept']);
     expect(scene.historyIndex()).toBe(before + 1);
     scene.undo();
     expect(scene.doc.get('stale')).toBe(1);
@@ -153,8 +153,22 @@ describe('chart persistence', () => {
     expect(scene.doc.get('stale')).toBe(1);
   });
 
+  it('names the chart theme in a chart that names none, so the kit draws it in paper as the app does', () => {
+    expect(diagramThemeOf(sceneOf(emptyChart()))).toBe(DIAGRAM_THEMES.paper);
+    const { scene } = twoBodiesAndAnEdge();
+    expect(diagramThemeOf(reopened(scene))).toBe(DIAGRAM_THEMES.paper);
+  });
+
   it('rejects text that is not a saved chart', () => {
     expect(() => chartFromJson('{"hello":1}')).toThrow();
+  });
+
+  it('refuses a saved chart this build cannot hold, so the session starts an empty one instead of failing', () => {
+    const scene = sceneOf(emptyChart());
+    scene.add({ kind: 'mark', layer: 'shapes', parent: pagesOf(scene)!.pages[0]!.id as NodeId, pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const json = scene.toJSON();
+    const later = { ...json, nodes: json.nodes.map((n) => (n.layer === 'shapes' ? { ...n, layer: 'later' } : n)) };
+    expect(() => chartFromJson(JSON.stringify(later, serializeReplacer))).toThrow(/layer/);
   });
 
   it('reads a chart saved without a diagram type as a flowchart with its groups', () => {

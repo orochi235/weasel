@@ -88,6 +88,13 @@ function protrudes(stroke: Stroke): boolean {
 
 export const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);
 
+/** The outline the built-in shape painter draws for `data` at `pose`, or `null` when `data.shape` names no kind it
+ *  draws. */
+export function shapePathOf(data: unknown, pose: RectPose): Path | null {
+  const d = data as { shape?: unknown; sides?: number; points?: number } | null;
+  return typeof d?.shape === 'string' && SHAPE_KINDS.has(d.shape) ? pathForShape(d as { shape: string }, pose) : null;
+}
+
 export function pathForShape(
   d: { shape: string; sides?: number; points?: number },
   p: RectPose,

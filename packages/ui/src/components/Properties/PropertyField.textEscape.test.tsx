@@ -56,3 +56,16 @@ describe('a text field ended with Escape', () => {
     expect(input).toHaveFocus();
   });
 });
+
+describe('a textarea ended with Escape', () => {
+  it("leaves an input method's Escape to it", () => {
+    const onChange = vi.fn();
+    render(<PropertyField kind="string" control="textarea" label="Notes" value="old" onChange={onChange} />);
+    const area = screen.getByRole('textbox', { name: 'Notes' });
+    area.focus();
+    fireEvent.change(area, { target: { value: 'にほ' } });
+    fireEvent.keyDown(area, { key: 'Escape', isComposing: true });
+    expect(area).toHaveValue('にほ');
+    expect(area).toHaveFocus();
+  });
+});

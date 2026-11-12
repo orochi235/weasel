@@ -11,6 +11,7 @@ import {
   commandStroke,
   polylineFromPoints,
   RECT_POSE_DESCRIPTOR,
+  refreshNodeShapes,
   registerNodeShape,
   resolveFill,
   resolveStroke,
@@ -22,6 +23,7 @@ import {
   type Inherit,
 } from '@weasel-js/core';
 import { bodyRules } from './bodyRules';
+import { onOutlinesChange } from './outlines/table';
 import { outlineDetail, outlinePath, outlineSolid, type Outline } from './outline';
 import { diagramContainerOf, headerBox, laneOutlineOf } from './containers/trait';
 import { diagramNodeOf, type DiagramNodeReader } from './trait';
@@ -111,5 +113,11 @@ function dividerPath(box: Box, header: Box): Path {
  * node may also carry.
  */
 export function registerDiagramShape<TPose>(opts: DiagramShapeOptions<TPose> = {}): () => void {
-  return registerNodeShape(diagramShape(opts), { priority: 'high' });
+  const unregister = registerNodeShape(diagramShape(opts), { priority: 'high' });
+  // A node already drawn by an outline's name was painted and picked by what the name resolved to then.
+  const unwatch = onOutlinesChange(refreshNodeShapes);
+  return () => {
+    unwatch();
+    unregister();
+  };
 }

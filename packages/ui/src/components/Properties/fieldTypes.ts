@@ -48,7 +48,8 @@ interface FieldBase {
   readOnly?: boolean;
   /** Class on the control element itself. */
   className?: string;
-  /** Id for the control element, for a `<label htmlFor>` outside it. */
+  /** Id for the control element, for a `<label htmlFor>` outside it. A control no `<label>` may name — a radio
+   *  group, a toggle, a menu, a switch, a paint, a font picker — takes no id, and is named by `name` instead. */
   id?: string;
 }
 
@@ -149,6 +150,9 @@ export interface PropertyStringFieldProps extends FieldBase {
    */
   onChange: (next: string) => void;
   onInput?: (next: string) => void;
+  /** How long `onInput` waits for the next keystroke before it gets the text, in ms. Whatever is waiting is
+   *  sent when the edit settles, before `onChange`. Absent or 0, every keystroke. */
+  inputWaitMs?: number;
   placeholder?: string;
   maxLength?: number;
   /** Commit once typing rests, as well as on blur or Enter. Defaults to the `typing.settleWhenIdle` kit setting. */
@@ -174,7 +178,8 @@ export interface PropertyEnumFieldProps<T extends string = string> extends Field
    * "Unset" entry first; each calls this. Absent, the field always holds one.
    */
   onClear?: () => void;
-  /** Shown while no option is chosen. Defaults to "Choose option…". */
+  /** Shown while no option is chosen, by the `select` and `menu` controls. Defaults to "Choose option…", or
+   *  "—" while `unset`. */
   placeholder?: string;
 }
 

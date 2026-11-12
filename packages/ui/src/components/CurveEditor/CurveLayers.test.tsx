@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import type { ColorSource, Palette } from '@weasel-js/paint';
+import { defineTheme } from '@weasel-js/theme';
 import { ThemeProvider } from '@weasel-js/theme/react';
+import { createKeyframeLayer, keyframeLayerState } from './createKeyframeLayer';
 import { LayeredCurveEditor } from './LayeredCurveEditor';
 import type { CurveLayer } from './layerTypes';
 
@@ -41,5 +43,19 @@ describe('a custom layer', () => {
       </ThemeProvider>,
     );
     expect(fillOf(container, 'brand')).toBe('#0000ff');
+  });
+});
+
+describe('the keyframe layer', () => {
+  it('draws its keys at the handle size of the theme in force', () => {
+    const big = defineTheme({ name: 'big-handles', pins: { 'handle-size': '20px' } });
+    const layer = createKeyframeLayer({ label: 'x' });
+    const state = keyframeLayerState([{ t: 0, value: 0 }, { t: 1, value: 1 }]);
+    const { container } = render(
+      <ThemeProvider theme={big}>
+        <LayeredCurveEditor layers={[{ layer, state }]} onLayerChange={() => {}} width={200} height={100} />
+      </ThemeProvider>,
+    );
+    expect(container.querySelector('[data-keyframe-index="0"]')!.getAttribute('width')).toBe('20');
   });
 });

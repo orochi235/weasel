@@ -11,6 +11,7 @@ import {
   ActionsProvider,
   ActiveToolContextProvider,
   DepRegistryProvider,
+  FALLBACK_ACCENT,
   type Tool,
   useActionsRegistry,
   useDepSource,
@@ -37,6 +38,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import {
   CameraContext,
@@ -46,6 +48,7 @@ import {
 } from '../canvas/CameraInput';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 import { fromCameraView } from '../canvas/cameraView';
+import { type ThemeColorSpec, useThemeColors } from '../canvas/useThemeColors';
 import type { ViewportSize, WorldFrame } from '../canvas/worldSpec';
 import { FloatingPanel, type FloatingPanelProps } from '../primitives/FloatingPanel';
 import { OverviewMarks } from './OverviewMarks';
@@ -140,11 +143,6 @@ function prepare(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, size.width, size.height);
   return ctx;
-}
-
-function cssVar(el: Element | null, name: string, fallback: string): string {
-  if (!el) return fallback;
-  return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
 }
 
 /**
@@ -244,6 +242,11 @@ function LayersCanvas({ fit, size, frame }: { fit: View; size: ViewportSize; fra
   return <canvas ref={ref} className="lk-overview__canvas" />;
 }
 
+const CHROME_COLORS: ThemeColorSpec<'frame' | 'crosshair'> = {
+  frame: ['--wzl-fg', '#ffffff'],
+  crosshair: ['--wzl-accent', FALLBACK_ACCENT],
+};
+
 /** The visible-rect indicator and the linked crosshair. */
 function ChromeCanvas({
   fit,
@@ -254,20 +257,21 @@ function ChromeCanvas({
   size: ViewportSize;
   camera: CameraContextValue;
 }) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const colors = useThemeColors(canvas, CHROME_COLORS);
   const pointer = usePointerPosition();
   const root = camera.view.get();
   const host = camera.view.hostSize?.() ?? null;
   // No dependency list: this renders only when the pointer or the trial's
-  // camera moved, and either one moves the chrome.
+  // camera moved or the theme changed, and each one changes the chrome.
   useLayoutEffect(() => {
-    const ctx = prepare(ref.current, size);
-    if (!ctx) return;
+    const ctx = prepare(canvas, size);
+    if (!ctx || !colors) return;
     const s = fit.scale.x;
     const px = (x: number, y: number) => ({ x: (x - fit.x) * s, y: (y - fit.y) * s });
     if (host) {
       const a = px(root.x, root.y);
-      ctx.strokeStyle = cssVar(ref.current, '--wzl-fg', '#ffffff');
+      ctx.strokeStyle = colors.frame;
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 3]);
       ctx.strokeRect(
@@ -285,11 +289,11 @@ function ChromeCanvas({
       const { halo, bars } = crosshairRects(at.x, at.y, { x: 1, y: 1 });
       ctx.fillStyle = 'rgb(0 0 0 / 60%)';
       for (const r of halo) ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.fillStyle = cssVar(ref.current, '--wzl-accent', '#4c8dff');
+      ctx.fillStyle = colors.crosshair;
       for (const r of bars) ctx.fillRect(r.x, r.y, r.w, r.h);
     }
   });
-  return <canvas ref={ref} className="lk-overview__canvas lk-overview__chrome" />;
+  return <canvas ref={setCanvas} className="lk-overview__canvas lk-overview__chrome" />;
 }
 
 /**

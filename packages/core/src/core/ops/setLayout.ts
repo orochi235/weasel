@@ -1,5 +1,6 @@
 import type { Op } from './types';
 import type { LayoutStrategy } from '../../layout/types';
+import { alreadyHolds } from './alreadyHolds';
 import { registerOpFactory } from './registry';
 
 /** A container's layout as an op names it: the strategy itself, its key in
@@ -34,7 +35,11 @@ export function createSetLayoutOp<TPose = unknown>(args: SetLayoutArgs<TPose>): 
     args: { id, from, to, label },
     label: label ?? 'Set layout',
     apply(adapter) {
+      // A key names a strategy only the scene's registry resolves, so only a
+      // strategy or `null` can be seen to be in place already.
+      const held = typeof to !== 'string' && alreadyHolds(adapter, id, (node) => (node.layout ?? null) === to);
       (adapter as SetLayoutAdapter<TPose>).setLayout(id, to);
+      return held ? false : undefined;
     },
     invert() {
       return createSetLayoutOp<TPose>({ id, from: to, to: from, label });

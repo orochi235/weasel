@@ -82,8 +82,9 @@ function mergeAlong(seg: Segment, found: Crossing[], r: number): EdgeHop[] {
  * hopping connector, where its half circle would not fit. Hops on one segment
  * closer than `2r` merge into one longer hop.
  *
- * Answers every connector of `only` (default: all of `order`), with no hops
- * as an empty list.
+ * Answers every connector of `order` that `only` holds (default: all of
+ * them), with no hops as an empty list. An id of `only` that `order` lacks
+ * gets no entry.
  */
 export function edgeHops(
   polylines: ReadonlyMap<string, readonly Vec2[]>,

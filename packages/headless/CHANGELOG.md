@@ -1,5 +1,119 @@
 # @weasel-js/headless
 
+## 1.19.0
+
+### Patch Changes
+
+- c09afdf: `reviveTypedArrays` reads back a plain object shaped like a tagged typed array or a `{ "__raw": … }` wrapper as that plain object. `tagTypedArrays` and `typedArrayReplacer` write such an object inside a `{ "__raw": … }` wrapper, the one `@weasel-js/editor`'s snapshots already use, which `reviveTypedArrays` takes off without reading into what it holds. Everything else is written exactly as before, so older files read the same, unless one holds a plain object whose only key is `__raw`. `sceneToWire` in `@weasel-js/headless` still takes a snapshot whose arrays are already tagged.
+  
+  <!-- entry: fix data -->
+- 44dc241: headless refuses a render request with an empty `sourceRect` or a zero `scale` axis in Node, before Chromium starts.
+  
+  The error names the field, as the page's `renderSceneToPixels` does.
+  
+  <!-- entry: fix -->
+- 437159b: headless refuses the same render requests the page does, with core's messages for `sourceRect` and `scale`.
+  
+  They read "must be a positive finite number" and "must be a nonzero finite number".
+  
+  <!-- entry: behavior -->
+- 20a2f7e: A malformed headless render request rejects before any browser starts, with an error naming the field. That means a missing or non-object scene, a `sourceRect`, `scale` or `screen` entry that is not a finite number, or an unknown `format`; the page refuses one the same way.
+  
+  <!-- entry: fix -->
+- b1309b2: A typed array's `NaN`, `Infinity`, `-Infinity` and `-0` survive a JSON round trip through `tagTypedArrays`, which writes them by name. Files saved before still read as they did. An animation clip still refuses a typed array holding a non-finite number.
+  
+  <!-- entry: fix data -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [eaff448]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

@@ -1,5 +1,198 @@
 # @weasel-js/kernel3d
 
+## 1.19.0
+
+### Patch Changes
+
+- 4ecaf12: The 3D `normalize` maps a vector along an axis to exactly that axis. So kernel3d's `planeBasis`, and the ground grid built on it, line up exactly with the world axes for an `up` that is not unit length, and grid snaps land on their grid values.
+  
+  <!-- entry: fix -->
+- e5b5077: `POSE3_COMPOSITION.decompose` reads a frame axis scaled too small to divide by as collapsed, so poses rebased into it stay finite.
+  
+  <!-- entry: rank=-5 fix -->
+- a278147: `projectPoint` and `projectAabbToScreen` draw nothing through a pane with no area or a camera whose near plane is its far one. `projectAabbToScreen` gives `null` under a zero field of view.
+  
+  <!-- entry: rank=-5 fix -->
+- 3fd015a: `orbitBy`, `dollyBy`, `panBy` and `dollyToward` leave the camera as it is for an input that is `NaN` or would carry it past the double range.
+  
+  <!-- entry: fix -->
+- 2032aaf: `groundGridSource` offers no lines along an axis where the probe is too far out to tell lines a step apart, as guides' grid does.
+  
+  <!-- entry: rank=-5 fix -->
+- 9ff5443: `headFor` gives a head whose `maxShare` is 0 no length when the line's length is left out, instead of `NaN`.
+  
+  <!-- entry: rank=-5 fix -->
+- 4e9c742: `headFor`, and the line pass's shader with it, never give a shaft wider than it was asked for, even near the double range.
+  
+  <!-- entry: rank=-5 fix visual -->
+- c71f636: The 3D pose descriptor's `remapBounds` leaves a pose exactly in place when source and destination are the same rectangle.
+  
+  <!-- entry: rank=-5 fix -->
+- 0a11cbc: An insert drag in a second 3D view lays its footprint where that view's camera ray meets the ground.
+  
+  `createInsert` takes a `viewId`, as the other dep factories do, and casts the drag through that view's camera.
+  
+  <!-- entry: fix api -->
+- 143c898: `clampCamera`, `orbitBy` and `dollyBy` hold pitch inside ±`MAX_PITCH` whatever `minPitch` and `maxPitch` they are given.
+  
+  <!-- entry: fix -->
+- 92c1c26: Picking, inserting, ground hits and snapping work from a 3D camera more than about 300,000 units from the world origin.
+  
+  <!-- entry: fix -->
+- be5d412: A camera drag continues from a camera another writer set mid-gesture, such as `home`, instead of undoing it on its next move.
+  
+  <!-- entry: fix -->
+- 59fc2e8: `aimSpace3d`'s `unproject` answers a ground point at height exactly 0 when `up` lies just off an axis.
+  
+  <!-- entry: rank=-5 fix -->
+- acba0d3: A snap candidate can say with `holds` whether it still holds at the resolved move, and a session resolves again without one that does not.
+  
+  `holds?: (delta) => boolean` is optional; a candidate without it always holds. The 2D and 3D sessions ask it already. A host building its own session calls the new `resolveHolding(candidates, resolve, toPoint)`, which runs `resolve` again without members that do not hold; `GatheredCandidate` is the candidate type it takes.
+  
+  <!-- entry: api -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [6646205]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [976bdf2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [d4c2b70]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [82e3877]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [337b676]
+- Updated dependencies [020f69a]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [3e4a895]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [562c8a2]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [c0b44f0]
+- Updated dependencies [7736185]
+- Updated dependencies [f63f932]
+- Updated dependencies [a933054]
+- Updated dependencies [ae820c2]
+- Updated dependencies [8710c48]
+- Updated dependencies [7d5ab0e]
+- Updated dependencies [ef5634e]
+- Updated dependencies [7c02aa8]
+- Updated dependencies [08c143e]
+- Updated dependencies [11ffe9f]
+- Updated dependencies [81e2cf4]
+- Updated dependencies [744af77]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [47a4976]
+- Updated dependencies [eaff448]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [77cc6e1]
+- Updated dependencies [afa1429]
+- Updated dependencies [582dfcb]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [45c01e4]
+- Updated dependencies [a7578e7]
+- Updated dependencies [0a82772]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [5bc9b94]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/routing@1.19.0
+  - @weasel-js/stroke@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

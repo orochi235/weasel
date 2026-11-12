@@ -32,6 +32,9 @@ export interface GirthEnv {
   /** Screen px around a stroke's edge within which a press takes hold of it,
    *  and along the path within which it takes the anchor there. */
   reachPx(): number;
+  /** Told the reach each drag resolved from its params, which the panel may have set, so `reachPx` can answer
+   *  with it and a hover or a clear reaches as far as the next press would. */
+  noteReach?(px: number): void;
 }
 
 /** What `girth.drag` reads from its params. */
@@ -103,8 +106,11 @@ const edgeOf = (grip: WidthGrip, moved: number): Point => ({
   y: grip.at.y + grip.normal.y * moved * grip.factor,
 });
 
-const reachOf = (params: GirthDragParams | undefined, env: GirthEnv): number =>
-  typeof params?.reach === 'number' && params.reach > 0 ? params.reach : env.reachPx();
+function reachOf(params: GirthDragParams | undefined, env: GirthEnv): number {
+  if (typeof params?.reach !== 'number' || !(params.reach > 0)) return env.reachPx();
+  env.noteReach?.(params.reach);
+  return params.reach;
+}
 
 /** The grip a press at `press` takes with `params`, read against the scene and view as they are now. */
 function gripFor(deps: ActionDeps, env: GirthEnv, press: Point, params: GirthDragParams | undefined): WidthGrip | null {

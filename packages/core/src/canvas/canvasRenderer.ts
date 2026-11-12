@@ -15,6 +15,7 @@ import type { View } from '../core/viewport/view';
 import { createEmitter } from '@weasel-js/registry';
 import { CANVAS_CONTEXT_ATTRIBUTES } from './contextAttributes';
 import { chooseBackend, rememberBackend, type CanvasBackend } from './canvasBackend';
+import { registerShaders } from './registerShaders';
 
 export type { CanvasBackend } from './canvasBackend';
 
@@ -124,17 +125,6 @@ interface Held {
 /** Identifies a set of custom programs by their ids, in order. */
 export const shaderKeyOf = (shaders: readonly ShaderProgramHandle[] | undefined): string =>
   shaders?.map((h) => h.id).join('|') ?? '';
-
-function registerShaders(renderer: WeaselRenderer, shaders: readonly ShaderProgramHandle[] | undefined): void {
-  if (!shaders) return;
-  for (const handle of shaders) {
-    try {
-      renderer.registerProgram(handle);
-    } catch (e) {
-      console.warn(`weasel: failed to register shader "${handle.id}":`, e);
-    }
-  }
-}
 
 function free(held: Held): void {
   const set = TENANTS.get(held.canvas);

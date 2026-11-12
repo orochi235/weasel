@@ -25,6 +25,10 @@ function wrapJournal(raw: Journal, env: SceneHistoryEnv, open: OpenJournals): Jo
         notify();
       }));
     },
+    recordEntry(ops, label, options) {
+      raw.recordEntry(ops, label, options);
+      notify();
+    },
     undo() {
       replay(() => raw.undo());
       notify();
@@ -68,6 +72,8 @@ export interface SceneJournals {
   innermost(): Journal | null;
   /** Every journal opened here not yet closed, suspended ones included, outermost first. */
   opened(): readonly Journal[];
+  /** The journal edits go to now as the engine holds it, unwrapped when it was opened here; or null. */
+  target(): Journal | null;
 }
 
 export function createSceneJournals(env: SceneHistoryEnv): SceneJournals {
@@ -104,5 +110,9 @@ export function createSceneJournals(env: SceneHistoryEnv): SceneJournals {
       return null;
     },
     opened: () => [...opened],
+    target() {
+      const j = env.activeJournal();
+      return j === null ? null : (raws.get(j) ?? j);
+    },
   };
 }

@@ -10,6 +10,7 @@ import { MODELING_OUTLINES } from './modeling';
 import { STATE_OUTLINES } from './states';
 import { PARTICIPANT_OUTLINES } from './participants';
 import { STORAGE_OUTLINES } from './storage';
+import { createEmitter } from '@weasel-js/registry';
 import type { OutlineDef } from './types';
 
 export { outlineFromD } from './fromD';
@@ -27,6 +28,13 @@ const table = new Map<string, OutlineDef[]>(
   Object.entries(BUILTINS).map(([name, def]) => [name, [def as OutlineDef]]),
 );
 const warned = new Set<string>();
+const changes = createEmitter();
+const changed = (): void => changes.emit();
+
+/** Call `fn` whenever a registration or its disposer changes what a name resolves to. Returns the unsubscriber. */
+export function onOutlinesChange(fn: () => void): () => void {
+  return changes.subscribe(fn);
+}
 
 /** Register `def` under `name`, shadowing any definition already there.
  *  Returns the disposer. */
@@ -34,10 +42,12 @@ export function registerOutline(name: string, def: OutlineDef): () => void {
   const stack = table.get(name) ?? [];
   stack.push(def);
   table.set(name, stack);
+  changed();
   return () => {
     const i = stack.lastIndexOf(def);
     if (i >= 0) stack.splice(i, 1);
     if (stack.length === 0) table.delete(name);
+    changed();
   };
 }
 

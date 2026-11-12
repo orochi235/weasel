@@ -64,6 +64,7 @@ export function ObjectLeaf({
       hiddenAt: ctx.hiddenAt,
       entryAt: ctx.entryAt,
       settles: ctx.settles,
+      textWaitMs: ctx.textWaitMs,
     };
   };
   const off = (path: string): boolean => (ctx.disabledAt ? ctx.disabledAt(path) : ctx.disabled === true);

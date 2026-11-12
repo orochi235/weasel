@@ -5,6 +5,7 @@ import type {
   AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,
 } from '@weasel-js/animator';
 import type { Target } from '@weasel-js/animator';
+import { lerp as lerpNumber } from '@weasel-js/geom';
 import { rewindingSpring, rewindingTween } from './rewind';
 
 /** The part of an adapter `tweenPose` and `springPose` use. The adapter `sceneToAdapter` and
@@ -197,7 +198,7 @@ export function springPose<TPose>(
     damping: opts.damping,
     mass: opts.mass,
     cancelKey,
-    interpolate: (a, b, t) => a + (b - a) * t,
+    interpolate: lerpNumber,
     onTick: (progress) => adapter.setPose(opts.id, lerp(from, opts.to, progress)),
     onDone: opts.onDone,
   });

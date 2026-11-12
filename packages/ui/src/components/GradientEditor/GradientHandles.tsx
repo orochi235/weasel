@@ -2,6 +2,7 @@ import { type ReactElement, type ReactNode } from 'react';
 import { gradientGeometry, type GradientPaint } from '@weasel-js/core';
 import { DragPoint, Guide, HandleOverlay, type EditPhase, type OverlayPoint as Point } from './handleOverlay';
 import s from './handleOverlay.module.css';
+import { useTints } from '@weasel-js/theme/react';
 import { handleHalf } from '../../handles';
 
 /**
@@ -56,10 +57,11 @@ export interface GradientHandlesProps {
  */
 export function GradientHandles(props: GradientHandlesProps): ReactElement {
   const { value, toScreen, toLocal, onInput, onChange, onCancel, width, height, className } = props;
+  const handleRadius = handleHalf('--wzl-handle-size-lg', useTints().resolved);
 
   return (
     <HandleOverlay width={width} height={height} className={className} onCancel={onCancel}>
-      {renderForKind(value, toScreen, toLocal, onInput, onChange)}
+      {renderForKind(value, toScreen, toLocal, onInput, onChange, handleRadius)}
     </HandleOverlay>
   );
 }
@@ -70,6 +72,7 @@ function renderForKind(
   toLocal: (p: Point) => Point,
   onInput: ((next: GradientPaint) => void) | undefined,
   onChange: (next: GradientPaint) => void,
+  handleRadius: number,
 ): ReactNode {
   const emit = (next: GradientPaint, phase: EditPhase): void => {
     if (phase === 'input') onInput?.(next);
@@ -83,13 +86,13 @@ function renderForKind(
       <>
         <Guide x1={from.x} y1={from.y} x2={to.x} y2={to.y} />
         <DragPoint
-          radius={HANDLE_RADIUS}
+          radius={handleRadius}
           at={from}
           label="Gradient start"
           onDrag={(p, phase) => emit({ ...value, from: toLocal(p) }, phase)}
         />
         <DragPoint
-          radius={HANDLE_RADIUS}
+          radius={handleRadius}
           at={to}
           label="Gradient end"
           onDrag={(p, phase) => emit({ ...value, to: toLocal(p) }, phase)}
@@ -108,13 +111,13 @@ function renderForKind(
       <>
         <circle className={s.guide} cx={center.x} cy={center.y} r={screenRadius} />
         <DragPoint
-          radius={HANDLE_RADIUS}
+          radius={handleRadius}
           at={center}
           label="Gradient center"
           onDrag={(p, phase) => emit({ ...value, center: toLocal(p) }, phase)}
         />
         <DragPoint
-          radius={HANDLE_RADIUS}
+          radius={handleRadius}
           at={edge}
           label="Gradient radius"
           onDrag={(p, phase) => {
@@ -137,13 +140,13 @@ function renderForKind(
     <>
       <Guide x1={center.x} y1={center.y} x2={tip.x} y2={tip.y} />
       <DragPoint
-        radius={HANDLE_RADIUS}
+        radius={handleRadius}
         at={center}
         label="Gradient center"
         onDrag={(p, phase) => emit({ ...value, center: toLocal(p) }, phase)}
       />
       <DragPoint
-        radius={HANDLE_RADIUS}
+        radius={handleRadius}
         at={tip}
         label="Gradient angle"
         onDrag={(p, phase) => {
@@ -158,5 +161,3 @@ function renderForKind(
 
 /** A radius of zero divides by zero in the shader's `t`; keep it off the floor. */
 const MIN_RADIUS = 1;
-
-const HANDLE_RADIUS = handleHalf('--wzl-handle-size-lg');

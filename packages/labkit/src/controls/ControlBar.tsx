@@ -2,7 +2,7 @@ import type { PrefBoundReader, PrefGroup, PrefLeaf } from '@weasel-js/prefs';
 import { BarLayout, groupBarNodes, renderBarLeaf } from '@weasel-js/ui/components/Bar';
 import type { ReactNode } from 'react';
 import { useFieldChoices } from './fieldChoices';
-import { labField } from './fields';
+import { labField, useLabSettles, useTextWaitMs } from './fields';
 
 export interface ControlBarProps {
   group: PrefGroup;
@@ -109,6 +109,16 @@ function Cell({
   active: boolean;
   row: () => ReactNode;
 }) {
-  const field = labField(leaf, value, write, useFieldChoices(), disabled, draft, read);
+  const field = labField(
+    leaf,
+    value,
+    write,
+    useFieldChoices(),
+    disabled,
+    draft,
+    read,
+    useLabSettles(),
+    useTextWaitMs(leaf),
+  );
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, active, row })}</>;
 }

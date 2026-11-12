@@ -3,7 +3,7 @@
  * drag to keep it there. Both read `rootView` — never `view`, which inside the
  * minimap's own view answers the minimap's camera.
  */
-import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/routing';
+import type { Action, InvocationCtx, OngoingHandle, Tool } from '@weasel-js/routing';
 import { viewWorldToScreen, wheelZoom, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 
@@ -97,4 +97,19 @@ export function minimapZoomAction(clamp?: ZoomClampOpts | (() => ZoomClampOpts |
       },
     },
   };
+}
+
+/** The minimap's bindings, each id prefixed with `id`: press to center, drag to pan, and with `wheel` the wheel
+ *  and a trackpad pinch to zoom. `views` scopes them to the minimap's view on a surface that routes several. */
+export function minimapBindings(id: string, wheel: boolean, views?: readonly string[]): Tool['bindings'] {
+  const scope = views ? { views: [...views] } : {};
+  return [
+    { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: `${id}.pointerDown`, ...scope } },
+    { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: `${id}.drag`, ...scope } },
+    // A trackpad pinch arrives as ctrl+wheel, which a bare-wheel spec rejects.
+    ...(wheel ? [
+      { spec: { kind: 'wheel' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.wheel`, ...scope } },
+      { spec: { kind: 'wheel' as const, mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.pinch`, ...scope } },
+    ] : []),
+  ];
 }

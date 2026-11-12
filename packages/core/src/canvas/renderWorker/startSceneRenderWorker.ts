@@ -130,10 +130,12 @@ export function startSceneRenderWorker<TData, TLayer extends string, TPose>(
   let inFlight = false;
   let owed = false;
   let disposed = false;
-  let warned = false;
+  /** Each failure warned of, so a worker that fails the same way every frame warns once, and a new failure still warns. */
+  const warned = new Set<string>();
   const warnOnce = (what: string, detail: unknown) => {
-    if (warned) return;
-    warned = true;
+    const key = `${what} ${String(detail)}`;
+    if (warned.has(key)) return;
+    warned.add(key);
     console.warn(`weasel: ${what}`, detail);
   };
   const snapshots = createRequests<ImageBitmap | null>();

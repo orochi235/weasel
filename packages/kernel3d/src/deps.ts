@@ -2,38 +2,35 @@
  * The kit's deps, implemented against a 3D world.
  *
  * Every one of these takes its camera from a thunk rather than an argument,
- * `world.viewport(viewId)` for the view it was built for:
+ * `viewportOf(world, viewId)` for the view it was built for:
  * the dispatcher keeps handing actions two numbers, and what makes them mean
  * something in 3D is the camera each dep already closes over.
  */
 
-import type { AreaSelectDep, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
+import type { AreaSelectDep, HitTestView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
-import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core/engine';
+import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds, createEnteredGroupScope, pressTarget, type EnteredGroupApi } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
 import {
   aabbOfPoints,
   add,
   dot,
-  intersectRayPlane,
   len,
-  normalize,
-  pointOnRay,
   quatIdentity,
   scale as scaleBy,
   sub,
   type Aabb,
   type Vec3,
 } from '@weasel-js/geom/3d';
-import { cameraEye, type Camera3d } from './camera';
+import { cameraBasis } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
 import { groundAxes, type Axis } from './ground';
-import { rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
+import { castOntoPlane, rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
 import { createSession3d } from './snap/session3d';
 
-import { DEFAULT_UP, measuredBoxAt, type Node3d, type World3d } from './world';
+import { DEFAULT_UP, measuredBoxAt, viewportOf, type Node3d, type World3d } from './world';
 
 export type { Viewport3d, ViewportSource } from './project';
 export type { NodeBounds, Node3d, Scene3d, World3d } from './world';
@@ -47,8 +44,8 @@ export { worldPoseOf } from './world';
  * answer is "as far as it already was". Nothing resolved on this plane changes
  * depth, and one screen pixel is the same world distance everywhere on it.
  */
-function viewPlaneAt(camera: Camera3d, p: Vec3): { normal: Vec3; offset: number } {
-  const normal = normalize(sub(camera.target, cameraEye(camera)));
+function viewPlaneAt(vp: Viewport3d, p: Vec3): { normal: Vec3; offset: number } {
+  const normal = cameraBasis(vp.camera, vp.up).forward;
   return { normal, offset: dot(normal, p) };
 }
 
@@ -58,10 +55,7 @@ function onPlane(
   plane: { normal: Vec3; offset: number },
   point: { x: number; y: number },
 ): Vec3 | null {
-  const ray = rayAt(vp, point);
-  if (!ray) return null;
-  const t = intersectRayPlane(ray, plane.normal, plane.offset);
-  return t === null ? null : pointOnRay(ray, t);
+  return castOntoPlane(vp, point, plane.normal, plane.offset);
 }
 
 /** `pose` moved by `delta`, kept at its own height along `upAxis`. */
@@ -71,6 +65,28 @@ function movedOnLevel(pose: Pose3, delta: Vec3, upAxis: Axis): Pose3 {
 }
 
 export { screenBoxOf } from './pickIndex';
+
+/** Where a solid wholly behind the camera is: on no part of the screen, a box that is not finite, which core's
+ *  region selects, pick index and unions already pass over, and its chrome does not draw. */
+const OFF_SCREEN = Object.freeze({ x: NaN, y: NaN, width: NaN, height: NaN });
+
+/**
+ * The viewport a drag casts through. One whose camera stops casting rays mid-gesture keeps moving through the last
+ * that did, rather than snapping the node back. Mid-gesture means a preview is in flight; a call with none, as a
+ * gesture's first frame and a nudge are, starts afresh, so no gesture moves through an earlier one's camera.
+ */
+function castableViewportOf<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>, viewId: string | null | undefined,
+): () => Viewport3d | null {
+  let lastCastable: Viewport3d | null = null;
+  return () => {
+    const vp = viewportOf(world, viewId);
+    const rect = rectOf(vp);
+    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
+    else if (world.scene.overrides.ids().length === 0) lastCastable = null;
+    return lastCastable;
+  };
+}
 
 /**
  * Nearest node the camera draws along the ray the screen point names.
@@ -94,31 +110,58 @@ function pickOnRay<TData, TLayer extends string>(
   viewId: string | null | undefined,
   point: { x: number; y: number },
   exclude?: Iterable<NodeId>,
+  layerIsPainted?: (layer: string) => boolean,
 ): NodeId | null {
-  const ray = rayAt(world.viewport(viewId), point);
+  const ray = rayAt(viewportOf(world, viewId), point);
   if (!ray) return null;
   // The ray spans near to far plane at t 0..1.
-  return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1);
+  return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1, layerIsPainted);
 }
 
 /**
  * `<SceneCanvas geometry={{ pickEvery }}>` over a 3D world: the node along the
- * ray the point names, cast from the camera of the view the pick is asked for.
+ * ray the point names, cast from the camera of the view the pick is asked for,
+ * passing over the layers that view does not paint.
  */
 export function createPickEvery<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
-): (point: { x: number; y: number }, view?: { viewId?: string | null }) => NodeId | null {
-  return (point, view) => pickOnRay(world, view?.viewId, point);
+): (point: { x: number; y: number }, view?: HitTestView) => NodeId | null {
+  return (point, view) => pickOnRay(world, view?.viewId, point, undefined, layerGateOf(view));
 }
 
-/** Marquee: the nodes whose projected box the screen rectangle touches, in render order. */
+/** The asking view's layer gate, called as a method so it keeps its receiver. */
+function layerGateOf(view: HitTestView | undefined): ((layer: string) => boolean) | undefined {
+  return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
+}
+
+/** Options for `createAreaSelect`. */
+export interface AreaSelect3dOptions {
+  /** The entered group, as the canvas's `enteredGroup` dep has it. Given, a marquee reaches only what a press
+   *  can and selects what a press on each hit selects: the outermost container above it that is not entered. */
+  entered?: EnteredGroupApi;
+}
+
+/** Marquee: the nodes whose projected box the screen rectangle touches, in render
+ *  order, less those on a layer the view the marquee was drawn in does not paint. */
 export function createAreaSelect<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
   viewId?: string | null,
+  opts: AreaSelect3dOptions = {},
 ): AreaSelectDep {
+  const { scene } = world;
+  const { entered } = opts;
+  const scope = entered && createEnteredGroupScope({ entered, scene: scene as never });
+  const tree = {
+    getParent: (id: string) => scene.get(id as NodeId)?.parent ?? null,
+    getNode: (id: string) => scene.get(id as NodeId),
+  };
   return {
-    hitTestArea: (bounds) => worldPickIndex(world).inScreenRect(world.viewport(viewId), bounds),
+    hitTestArea: (bounds, view) => {
+      const hits = worldPickIndex(world).inScreenRect(viewportOf(world, viewId), bounds, layerGateOf(view));
+      return scope ? hits.filter((id) => scope.isPointerInteractive(id)) : hits;
+    },
+    ...(entered ? { targetOf: (id: string) => pressTarget(tree, id, entered.get()) } : {}),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };
@@ -199,20 +242,12 @@ export function createPoseDescriptor<TData, TLayer extends string>(
   const upAxis = groundAxes(up).up;
   const specialized = new WeakMap<object, PoseDescriptor<Pose3, Node3d<TData, TLayer>>>();
 
-  // A drag whose camera stops casting rays mid-gesture keeps moving through the
-  // last one that did, rather than snapping the node back.
-  let lastCastable: Viewport3d | null = null;
-  function castableViewport(): Viewport3d | null {
-    const vp = world.viewport(viewId);
-    const rect = rectOf(vp);
-    if (rayAt(vp, { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 })) lastCastable = vp;
-    return lastCastable;
-  }
+  const castableViewport = castableViewportOf(world, viewId);
 
   function build(worldBox: (pose: Pose3) => Aabb): PoseDescriptor<Pose3, Node3d<TData, TLayer>> {
     const boundsIn = (vp: Viewport3d, pose: Pose3) =>
       projectAabbToScreen(worldBox(pose), viewProjectionOf(vp), rectOf(vp));
-    const boundsOf = (pose: Pose3) => boundsIn(world.viewport(viewId), pose);
+    const boundsOf = (pose: Pose3) => boundsIn(viewportOf(world, viewId), pose);
 
     const descriptor: PoseDescriptor<Pose3, Node3d<TData, TLayer>> = {
       forNode(node) {
@@ -228,7 +263,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
       },
 
       getBounds(pose) {
-        return boundsOf(pose) ?? { x: 0, y: 0, width: 0, height: 0 };
+        return boundsOf(pose) ?? OFF_SCREEN;
       },
 
       /**
@@ -256,7 +291,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
           y: from.y + (dst.y - src.y) + (from.y - src.y) * (ky - 1),
         };
 
-        const plane = viewPlaneAt(vp.camera, pose.position);
+        const plane = viewPlaneAt(vp, pose.position);
         const before = onPlane(vp, plane, from);
         const after = onPlane(vp, plane, to);
         if (!before || !after) return pose;
@@ -283,7 +318,7 @@ export function createPoseDescriptor<TData, TLayer extends string>(
       fromBounds(bounds, template) {
         const vp = castableViewport();
         if (!vp) return template;
-        const plane = viewPlaneAt(vp.camera, template.position);
+        const plane = viewPlaneAt(vp, template.position);
 
         const corners: Vec3[] = [];
         for (const [x, y] of [

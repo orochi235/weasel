@@ -6,6 +6,7 @@ import {
   useSelection,
   viewRectToScreen,
   WeaselProvider,
+  type FeatureEntry,
   type RectPose,
   type RenderLayer,
   type CanvasSize,
@@ -33,7 +34,7 @@ import { useMirroredSelection } from './mirrorSelection';
 import { useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
 import { registerMarkShape } from './marks';
-import { diagramResizable } from './resizable';
+import { viewResizable } from './resizable';
 import { useSceneSync } from './sceneSync';
 import { registerDiagramShape } from './shape';
 import { useSequenceTextEdit } from './sequence/textEdit';
@@ -82,7 +83,8 @@ function Inner({
   ambient: extraAmbient, tools, onToolsCreated, enableKeybindings, canConnect, portOptions, ports: portMode, live: liveOpts,
   minScale, maxScale, anchor, fitPadding, bounded, refit, background, animator, pages, view, onViewChange, className, apiRef,
 }: DiagramViewProps & { apiRef: Ref<DiagramViewApi> }) {
-  const edgesPick = pickEdges ?? (onReconnect !== undefined || onEditRoute !== undefined || onDelete !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined);
+  const edgeEdits = onReconnect !== undefined || onEditRoute !== undefined || onEditLabel !== undefined || onMoveLabel !== undefined;
+  const edgesPick = pickEdges ?? (edgeEdits || onDelete !== undefined);
   const avoid = useMemo(() => (router === 'avoid' ? createSpecRouter() : null), [router]);
   const placer = useMemo(() => (labels === 'dodge' ? createSpecLabelPlacer() : null), [labels]);
   const routed = useMemo(() => {
@@ -118,7 +120,7 @@ function Inner({
   const { layers: pageLayers, box: pagesBox } = usePagesView(pages);
   const layers = useMemo(() => ({ ...pageLayers, selectionOverlay: SHAPE_OUTLINE }), [pageLayers]);
   const canvasRef = useRef<SceneCanvasApi | null>(null);
-  const { onPointerDownCapture, onClick: headerHit } = useHeaderClick(canvasRef, scene, onHeaderClick);
+  const headerHit = useHeaderClick(scene, onHeaderClick);
   const onClick = useCallback((hit: SceneCanvasHit | null) => {
     mirror();
     headerHit(hit);
@@ -159,16 +161,17 @@ function Inner({
   const moves = onMove !== undefined || onEditContainer !== undefined;
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
-  const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick || sequences;
-  const features = useMemo(() => [
+  const edits = moves || resizes || sequences || edgeEdits || onDelete !== undefined || onConnect !== undefined || onReorder !== undefined;
+  const features = useMemo((): FeatureEntry[] => [
     'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
-  ] as const, [moves, resizes, sequences]);
+    ...editing.presets,
+  ], [moves, resizes, sequences, editing.presets]);
   const textEditor = useSequenceTextEdit(scene, onEditSequence);
-  const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
+  const selectTool = useSelectTool(scene, onResize !== undefined, onEditContainer !== undefined);
 
   const fillsOn = [width === undefined ? 'fill-x' : '', height === undefined ? 'fill-y' : ''].join(' ').trim();
   return (
-    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className} onPointerDownCapture={onPointerDownCapture}>
+    <div ref={adoptViewRule} data-wzl-diagram={fillsOn} className={className}>
       <SceneCanvas
         ref={canvasRef}
         scene={scene}
@@ -191,6 +194,11 @@ function Inner({
       <Overlays canvasRef={canvasRef} scene={scene} overlays={overlays} />
     </div>
   );
+}
+
+/** The select tool's resize handles, on the boxes a callback reports. */
+function useSelectTool(scene: Scene<DiagramSceneData, 'main', RectPose>, shapes: boolean, regions: boolean) {
+  return useMemo(() => ({ resize: { resizable: viewResizable(scene, { shapes, regions }) } }), [scene, shapes, regions]);
 }
 
 /** Each overlay's content, kept over the node it targets. */

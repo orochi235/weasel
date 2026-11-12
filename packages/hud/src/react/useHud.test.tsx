@@ -111,8 +111,12 @@ describe('useHud', () => {
     expect(result.current.hud.attached).toBe(false);
   });
 
-  it('gives an entry with no HUD no attach', () => {
+  it('gives an entry with no HUD an attach that binds no HUD', () => {
     const { result } = renderHook(() => useHudContribution());
-    expect(result.current.attach).toBeUndefined();
+    const api = { element: document.createElement('div'), surface: null, registerLayer: vi.fn(), requestRedraw: vi.fn() };
+    const detach = result.current.attach!(api as unknown as CanvasExtensionApi, { get: () => undefined });
+    expect(api.registerLayer).not.toHaveBeenCalled();
+    expect(api.requestRedraw).not.toHaveBeenCalled();
+    detach();
   });
 });

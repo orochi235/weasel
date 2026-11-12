@@ -85,6 +85,16 @@ describe('DiagramView keyboard', () => {
     expect((await spaceOnBody()).defaultPrevented).toBe(true);
   });
 
+  it('counts onDelete as an edit with edge picking off', async () => {
+    render(<DiagramView specs={diagramScene(DATA)} width={300} height={300} onDelete={() => {}} pickEdges={false} />);
+    expect((await spaceOnBody()).defaultPrevented).toBe(true);
+  });
+
+  it('does not count picking edges as an edit', async () => {
+    render(<DiagramView specs={diagramScene(DATA)} width={300} height={300} pickEdges />);
+    expect((await spaceOnBody()).defaultPrevented).toBe(false);
+  });
+
   it('follows enableKeybindings over the default', async () => {
     render(<DiagramView specs={diagramScene(DATA)} width={300} height={300} onMove={() => {}} enableKeybindings={false} />);
     expect((await spaceOnBody()).defaultPrevented).toBe(false);

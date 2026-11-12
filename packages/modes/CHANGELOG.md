@@ -1,5 +1,27 @@
 # @weasel-js/modes
 
+## 1.19.0
+
+### Patch Changes
+
+- 7d98f63: A mode registry's `list()` no longer changes when the caller later edits the array of modes it passed in.
+  
+  <!-- entry: rank=-5 fix -->
+- d8ce575: A listener on both a mode registry and a `createScopingDim` or `createModeDecorations` built on it keeps hearing mode changes after leaving one.
+  
+  <!-- entry: fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

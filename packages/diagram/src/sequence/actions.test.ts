@@ -41,6 +41,27 @@ const geometry = (scene: Scene) => placedSequences(scene as never)[0]!.geometry;
 const dataOf = (scene: Scene) => sequenceRootOf(scene.get('seq' as never)!)!.sequence;
 
 describe('createSequenceDragAction', () => {
+  it('hands a host commit the deps the drag started with, when its end carries none', () => {
+    const scene = sceneOf();
+    const m5 = geometry(scene).messages.find((m) => m.id === 'm5')!;
+    const press = { x: AT.x + (m5.x1 + m5.x2) / 2, y: AT.y + m5.y };
+    const applyOps = () => {};
+    const seen: unknown[] = [];
+    const invoker = createSequenceDragAction({ commit: (_edit, ctx) => seen.push(ctx.deps.applyOps) }).invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const ctxAt = (p: Vec2, deps: unknown) => ({
+      world: p, screen: p, modifiers: KEYS, deps,
+      drag: { start: press, current: p, delta: { x: p.x - press.x, y: p.y - press.y },
+        affordance: { kind: SEQUENCE_AFFORDANCE_KIND, payload: { targetId: 'seq', root: 'seq', part: 'step', id: 'm5' } } },
+    }) as unknown as InvocationCtx;
+    const handle = invoker.start(ctxAt(press, { scene, applyOps }), undefined) as OngoingHandle;
+    const slot = geometry(scene).slots.find((s) => s.place.parent?.fragment === 'f1' && s.place.parent.section === 1 && s.place.index === 1)!;
+    const to = { x: press.x, y: AT.y + slot.y };
+    handle.onMove!(ctxAt(to, {}));
+    handle.onEnd!(ctxAt(to, {}), 'commit');
+    expect(seen).toEqual([applyOps]);
+  });
+
   it('drags a message into a fragment section as one undo entry, previewing it along the way', () => {
     const scene = sceneOf();
     const g = geometry(scene);

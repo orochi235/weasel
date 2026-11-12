@@ -2,6 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import type { SampledTrack, TimelineHandle, Track } from '@weasel-js/animator';
+import { useLayoutEffect } from 'react';
 import { AnimatedTimeline } from './AnimatedTimeline';
 
 const TRACK_WIDTH = 500;
@@ -54,6 +55,18 @@ describe('AnimatedTimeline', () => {
   it('renders the handle’s tracks', () => {
     renderWithIcons(<AnimatedTimeline handle={fakeHandle()} />);
     expect(screen.getAllByTestId('timeline-key')).toHaveLength(2);
+  });
+
+  it('draws an edit made after it rendered and before it subscribed', () => {
+    const h = fakeHandle();
+    function Editor() {
+      useLayoutEffect(() => {
+        h.edit(() => { (h.live[0] as SampledTrack<number>).keys.push({ t: 900, value: 0 }); });
+      }, []);
+      return null;
+    }
+    renderWithIcons(<><AnimatedTimeline handle={h} /><Editor /></>);
+    expect(screen.getAllByTestId('timeline-key')).toHaveLength(3);
   });
 
   it('routes an edit through edit(), mutating the live array in place', () => {

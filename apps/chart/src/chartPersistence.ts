@@ -1,7 +1,7 @@
 import {
   isSerializedScene, replaceDoc, type AddNodeSpec, type SavedScene, type SerializedDoc,
 } from '@weasel-js/core';
-import { DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue } from '@weasel-js/diagram';
+import { DIAGRAM_THEME_KEY, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_TYPE, diagramTypeDocValue, themeDocValue } from '@weasel-js/diagram';
 import { addDocumentScene, type DocumentScene } from '@weasel-js/diagram-formats';
 import {
   docFromSnapshot, nodeSpecsFromSnapshot, readStored, reviveTypedArrays, serializeReplacer,
@@ -9,6 +9,7 @@ import {
 import {
   CHART_LAYERS, CHART_PAGES, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose, type ChartScene,
 } from './chartDocument';
+import { CHART_DEFAULT_THEME } from './theme/themeCommands';
 
 export const CHART_SCENE_KEY = 'weaselchart:scene-v1';
 export const CHART_HISTORY_KEY = 'weaselchart:history-v1';
@@ -24,16 +25,17 @@ export interface ChartFile {
 }
 
 /**
- * The chart `json` holds, its pages as page nodes. One that kept its pages as the `core:pages` value is converted,
+ * The chart `json` holds, its pages as page nodes, and naming {@link CHART_DEFAULT_THEME} where it names no theme: the
+ * diagram kit's own readers fall back to another. One that kept its pages as the `core:pages` value is converted,
  * and one saved before charts had pages is given {@link CHART_PAGES} (`nodeSpecsFromSnapshot`).
  */
 function chartOf(json: ChartSnapshot): ChartFile {
   const systemLayers = (json.systemLayers as ChartSnapshot['systemLayers'] | undefined) ?? CHART_LAYERS;
   const specs = nodeSpecsFromSnapshot(
     { ...json, systemLayers } as ChartSnapshot, CHART_REGISTRY, reviveTypedArrays,
-    { pages: CHART_PAGES },
+    { pages: CHART_PAGES, systemLayers: CHART_LAYERS },
   );
-  return { specs, doc: docFromSnapshot(json) ?? {} };
+  return { specs, doc: { [DIAGRAM_THEME_KEY]: themeDocValue(CHART_DEFAULT_THEME), ...docFromSnapshot(json) } };
 }
 
 /** A chart of diagram type `type` with nothing on its one page. */
@@ -45,7 +47,7 @@ export function chartToJson(scene: ChartScene): string {
   return JSON.stringify(scene.toJSON(), serializeReplacer);
 }
 
-/** The chart a saved file holds. Throws on text that is not one. */
+/** The chart a saved file holds. Throws on text that is not one, or on one chart's scene cannot hold. */
 export function chartFromJson(text: string): ChartFile {
   const json: unknown = JSON.parse(text);
   if (!isSerializedScene<ChartData, ChartLayer, ChartPose>(json)) throw new Error('Not a saved chart');

@@ -1,5 +1,132 @@
 # @weasel-js/renderer
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- c5202b9: Text cut by a rect clip, such as a sticky note's descenders under `overflow: 'clip'`, no longer draws as black-and-white wedges.
+  
+  <!-- entry: fix visual -->
+- 33bca4e: A hatch or crosshatch tile with a `lineWidth` of 0, a negative one or NaN draws no lines on the canvas, as the SVG export already did.
+  
+  <!-- entry: fix visual -->
+- 63edf95: An arrowhead on a slanted edge is no longer culled while its tip is on screen, and its node's grab reach and paint box cover it.
+  
+  `markerReach` now measures how far a marker head reaches in any direction, not along its own axes.
+  
+  <!-- entry: fix visual -->
+- 043db55: A retained group being redrawn no longer composites pixels from a draw that never finished. After `reserve` hands its surface out, the surface matches no key until `commit` names the one its new pixels were drawn under.
+  
+  <!-- entry: fix visual -->
+- ebab03f: A shadow's spread rounds corners as CSS `box-shadow` does, so a square box casts a square shadow.
+  
+  This holds for `dropShadowLayers`, `dropShadowCommand` and a HUD's inset shadow. The rule is exported as `spreadRadius` from `@weasel-js/renderer` and `@weasel-js/core/renderer`.
+  
+  <!-- entry: fix visual api -->
+- 582dfcb: A `{ px }` stroke under an infinite scale keeps its dashes, rather than drawing solid.
+  
+  Its dashes and dash offset resolve as its width does, left as given, in `strokeAtScale`, `strokeToPath` and the renderer.
+  
+  <!-- entry: rank=-5 fix visual -->
+- 204596e: A `{ px }` stroke with per-vertex widths is no longer culled while on screen under a transform that stretches one axis more than the other.
+  
+  `strokeReachAt`, which culling and retained-surface bounds read, grows those widths by the square of the transform's stretch.
+  
+  <!-- entry: fix visual -->
+- 12f254e: A text node with a `background` can draw an `edge` and a `shadow`, and sticky notes have both by default.
+  
+  `edge` (`{ width, shade }`) is a rule just inside the box in the background's color mixed toward black, keeping the background's hue when it changes; `shadow` (`{ x, y, blur, alpha }`) draws under it. `textFrameOf` describes the frame once, and the canvas painter and the SVG export both draw from it. The renderer's new `dropShadowLayers` and `dropShadowCommand` build a shadow as stacked translucent shapes with no blur pass, and hud's `box-shadow` now draws through them.
+  
+  <!-- entry: rank=10 new api visual -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [2595ad3]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [d83feb6]
+- Updated dependencies [63edf95]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [eaff448]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [77cc6e1]
+- Updated dependencies [afa1429]
+- Updated dependencies [582dfcb]
+- Updated dependencies [c3dc307]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [b1309b2]
+- Updated dependencies [5bc9b94]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/stroke@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

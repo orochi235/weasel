@@ -173,7 +173,9 @@ function trialActions(ctx: TrialChromeContext): TrialContribution[] {
  *  expand toggle only inside a lightbox, and the zoom controls, scale and FPS
  *  meter once the trial has a view, which an `initialView` sized to the
  *  viewport does not until the canvas is measured. Marks, export, and the undo
- *  pair marks alone bring come and go with the lab's Marks switch. */
+ *  pair marks alone bring come and go with the lab's Marks switch. The
+ *  floating sidebar's toggle is there only while the sidebar floats and has a
+ *  section to show. */
 export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'undo',
   'redo',
@@ -190,6 +192,7 @@ export const TRANSIENT_BUILTINS: ReadonlySet<string> = new Set([
   'zoom-control',
   'scale',
   'fps',
+  'panel',
 ]);
 
 /**

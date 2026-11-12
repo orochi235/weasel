@@ -52,6 +52,13 @@ describe('exclusive claims outrank the scope tier', () => {
     expect(sorted[0]?.binding.actionId).toBe('insert');
   });
 
+  it('does not bar a middle drag: the claim is on the primary press', () => {
+    const pan: ScopedBinding = { binding: { spec: { kind: 'drag', button: 'middle' }, actionId: 'pan' }, scope: 'ambient', ownerId: 'view' };
+    const hit = { kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' };
+    const e = { ...dragOn(hit), pointerButton: 'middle' } as unknown as InputEvent;
+    expect(matchSorted(e, [...BINDINGS, pan], false).map(m => m.binding.actionId)).toEqual(['pan']);
+  });
+
   it('leaves unclaimed presses on today’s scope ordering', () => {
     const sorted = matchSorted(dragOn(undefined), BINDINGS, false);
     expect(sorted[0]?.binding.actionId).toBe('insert');

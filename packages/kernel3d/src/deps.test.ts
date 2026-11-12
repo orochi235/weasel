@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createAreaSelect,
   createNodeAtPoint,
+  createPickEvery,
   createPoseDescriptor,
   screenBoxOf,
   type Viewport3d,
@@ -142,6 +143,15 @@ describe('createNodeAtPoint', () => {
   });
 });
 
+describe('createPickEvery', () => {
+  it('passes over a layer the asking view does not paint', () => {
+    const scene = createTestScene();
+    const pick = createPickEvery(world(scene));
+    expect(pick(CENTER, { viewId: null })).toBe(idsOf(scene)[1]);
+    expect(pick(CENTER, { viewId: null, layerIsPainted: (layer) => layer !== 'solids' })).toBeNull();
+  });
+});
+
 describe('createAreaSelect', () => {
   it('catches every solid under a rectangle spanning the viewport', () => {
     const scene = createTestScene();
@@ -174,6 +184,14 @@ describe('createAreaSelect', () => {
     const scene = createTestScene();
     const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });
     expect(area.hitTestArea({ x: 0, y: 0, width: 4, height: 4 })).toHaveLength(0);
+  });
+
+  it('takes nothing on a layer the asking view does not paint', () => {
+    const scene = createTestScene();
+    const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });
+    const all = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
+    expect(area.hitTestArea(all, { layerIsPainted: (layer) => layer !== 'solids' })).toEqual([]);
+    expect(area.hitTestArea(all, { layerIsPainted: () => true })).toHaveLength(3);
   });
 
   it('reads and writes the selection it was handed', () => {
@@ -258,6 +276,12 @@ describe('createPoseDescriptor', () => {
     const projected = screenBoxOf(world(scene, () => vp), id, vp)!;
     expect(bounds.x).toBeCloseTo(projected.x, 6);
     expect(bounds.width).toBeCloseTo(projected.width, 6);
+  });
+
+  it('reports a solid wholly behind the camera as on no part of the screen, as core reads a box that is not finite', () => {
+    const descriptor = createPoseDescriptor(world(scene, () => viewport()));
+    const behind = descriptor.getBounds(pose3({ x: 0, y: 0.5, z: 30 }));
+    expect(Number.isFinite(behind.x + behind.y + behind.width + behind.height)).toBe(false);
   });
 
   it('draws a nearer solid bigger', () => {
@@ -412,14 +436,18 @@ describe('createPoseDescriptor', () => {
     expect(Math.abs(farMoved)).toBeGreaterThan(Math.abs(nearMoved));
   });
 
-  it('keeps dragging through the last camera that cast a ray', () => {
+  it('keeps dragging through the last camera that cast a ray while a preview is in flight, and only then', () => {
     let vp = viewport();
     const descriptor = createPoseDescriptor(world(scene, () => vp));
     const start = pose3({ x: 0, y: 0.5, z: 0 });
     const moved = descriptor.translate!(start, 120, 0);
 
+    const preview = scene.overrides.hold();
+    preview.set([[idsOf(scene)[0]!, moved]]);
     vp = viewport({ camera: createCamera({ distance: 0, target: { x: 0, y: 0.5, z: 0 } }) });
     expect(descriptor.translate!(start, 120, 0)).toEqual(moved);
+    preview.drop();
+    expect(descriptor.translate!(start, 120, 0)).toBe(start);
   });
 
   it('leaves a pose where it is when no camera has cast a ray yet', () => {

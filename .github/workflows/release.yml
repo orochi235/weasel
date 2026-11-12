@@ -45,10 +45,6 @@ jobs:
       # `test:fleet:postbuild` runs them on the commit, under this npm, before it merges.
       # Every import in a published package's source is one its manifest declares.
       - run: npm run check:imports
-      # And refuse to *version* on an unapproved bump above patch. CI already
-      # checks this on the PR, but the release path accepts
-      # `workflow_dispatch`, which bypasses that entirely.
-      - run: npm run check:bumps
       # Every pending changeset carries a valid entry marker. See docs/releasing.md.
       - run: npm run check:changesets
       # A package missing from the `fixed` group versions on its own, which the

@@ -13,6 +13,9 @@ import s from './PageTabs.module.css';
 /** Two presses on one tab this close together are a double press. */
 const DOUBLE_PRESS_MS = 500;
 /** Lit when no page is current: a key no tab has, so React Aria does not light the first. */
+const isActivation = (e: KeyboardEvent): boolean =>
+  (e.key === 'Enter' || e.key === ' ') && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
+
 export const NONE = '\u0000none';
 
 /** What a page strip draws from, straight or along a run. */
@@ -94,6 +97,8 @@ export function usePageTabs<P extends PageTabItem>(props: PageTabsProps<P>, line
     const [back, on] = tab && inlineDirection(tab) === 'rtl' ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
     const by = onMove ? nudgeOf(e, back, on) : null;
     const at = tab ? Array.from(tab.parentElement?.children ?? []).indexOf(tab) : -1;
+    // React Aria selects nothing for the lit tab, so choosing it from the keyboard is reported here.
+    if (e.target === tab && current !== null && pages[at]?.id === current && isActivation(e)) return onSelect(current);
     if (by === null || at < 0 || pages[at] === undefined) return;
     e.preventDefault();
     e.stopPropagation();

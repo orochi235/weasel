@@ -302,6 +302,56 @@ describe('useDragHandle', () => {
     document.body.removeChild(zoneEl);
   });
 
+  it('a zone whose onOver or onMove throws still takes the drop, and the drag still ends, as with onDrop', () => {
+    const onDrop = vi.fn();
+    const { result: zoneRef } = renderHook(() =>
+      useDropZone<HTMLDivElement>({
+        accepts: () => true,
+        onDrop,
+        onOver: () => { throw new Error('over blew up'); },
+        onMove: () => { throw new Error('move blew up'); },
+      }),
+    );
+    const zoneEl = document.createElement('div');
+    document.body.appendChild(zoneEl);
+    zoneRef.current(zoneEl);
+    const fromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(zoneEl);
+    zoneEl.contains = (() => true) as Node['contains'];
+
+    const { result: handle } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['x'] })));
+    const source = document.createElement('div');
+    Object.defineProperty(source, 'getBoundingClientRect', {
+      value: () => ({ width: 20, height: 20, x: 0, y: 0, left: 0, top: 0, right: 20, bottom: 20, toJSON() {} }),
+    });
+    document.body.appendChild(source);
+    const press = () => handle.current.onPointerDown({
+      pointerType: 'mouse', button: 0, pointerId: 1, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const before = document.body.children.length;
+    press();
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    firePointer('pointermove', { clientX: 40, clientY: 0 });
+    firePointer('pointerup', { clientX: 40, clientY: 0 });
+    expect(onDrop).toHaveBeenCalledOnce();
+    expect(document.body.children.length).toBe(before);
+    expect(consoleError).toHaveBeenCalled();
+
+    press();
+    firePointer('pointermove', { clientX: 30, clientY: 0 });
+    expect(document.body.children.length).toBe(before + 1);
+    firePointer('pointercancel', {});
+    expect(document.body.children.length).toBe(before);
+
+    zoneRef.current(null);
+    consoleError.mockRestore();
+    fromPoint.mockRestore();
+    document.body.removeChild(source);
+    document.body.removeChild(zoneEl);
+  });
+
   it('unmounting mid-press drops the pending listeners', () => {
     const getPayload = vi.fn(() => ({ kind: 'item', ids: ['x'] }));
     const { result, unmount } = renderHook(() => useDragHandle(getPayload));

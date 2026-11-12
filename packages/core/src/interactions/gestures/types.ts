@@ -58,7 +58,7 @@ export interface GestureContext<TPose, TNode extends { id: string } = { id: stri
   frames?: GestureFrames<TPose>;
   /**
    * The translation that carries one pose's bounds onto another's, measured by
-   * the canvas's pose descriptor. Set by move; a behavior that knows where a
+   * the canvas's pose descriptor. Set by move and clone; a behavior that knows where a
    * node should land returns it as its `transform`.
    */
   offset?: (from: TPose, to: TPose) => { dx: number; dy: number };
@@ -174,7 +174,12 @@ export interface MoveEnd extends BehaviorEnd {
 /** A behavior on a move — shapes the proposed transform during a drag.
  *  Behaviors receive a `GroupTransform` and return a `BehaviorResult` shaping
  *  it. */
-export type MoveBehavior<TPose> = ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>, MoveEnd>;
+export interface MoveBehavior<TPose> extends ActionBehavior<TPose, GroupTransform, BehaviorResult<TPose>, MoveEnd> {
+  /** What this behavior does on an Alt-drag clone of the selection, whose
+   *  binding the select tool gives the move's behaviors through this. A
+   *  behavior without one does not run on a clone. */
+  clone?: CloneBehavior<TPose>;
+}
 
 // ----- resize -----
 
@@ -350,4 +355,13 @@ export type CloneBehaviorResult<TPose> = Pick<BehaviorResult<TPose>, 'transform'
  * behavior that only reshapes the translation, `snap(strategy)` among them,
  * is one of these.
  */
-export type CloneBehavior<TPose> = ActionBehavior<TPose, GroupTransform, CloneBehaviorResult<TPose>>;
+export type CloneBehavior<TPose> = ActionBehavior<TPose, GroupTransform, CloneBehaviorResult<TPose>, CloneEnd<TPose>>;
+
+/** What a clone behavior's `onEnd` is told. */
+export interface CloneEnd<TPose = unknown> extends BehaviorEnd {
+  /** The ops that make the copies, select them, and put each copied root under
+   *  `parentId`: at its pose in `poses`, in world, or where the drag left it
+   *  when it has none there. Keyed by the original's id. For a behavior that
+   *  claims the commit to drop the copies into a container. */
+  copyOps(placement: { parentId: string | null; poses: ReadonlyMap<string, TPose> }): Op[];
+}

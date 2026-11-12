@@ -20,16 +20,17 @@ const BY_TEXT: QueryMatch = { by: 'text' };
  *  encoded; text is tried before tags. An empty or
  *  whitespace query matches everything, by text. */
 export function matchQuery(query: string, entry: Findable): QueryMatch | null {
-  const q = fold(query.trim());
+  const q = foldText(query.trim());
   if (q === '') return BY_TEXT;
-  if (entry.text.some((t) => t !== undefined && fold(t).includes(q))) return BY_TEXT;
-  const tag = entry.tags?.find((t) => fold(t).includes(q));
+  if (entry.text.some((t) => t !== undefined && foldText(t).includes(q))) return BY_TEXT;
+  const tag = entry.tags?.find((t) => foldText(t).includes(q));
   return tag === undefined ? null : { by: 'tag', tag };
 }
 
-/** `s` lowercased and composed, with final sigma folded to `σ`: the one letter `toLowerCase` spells by its place in
- *  a word, so a text holding the query exactly could otherwise miss it. Composing reads `é` and `e` + U+0301 alike. */
-function fold(s: string): string {
+/** `s` as text is searched: lowercased and composed, with final sigma folded to `σ`, the one letter `toLowerCase`
+ *  spells by its place in a word, so a text holding the query exactly could otherwise miss it. Composing reads `é`
+ *  and `e` + U+0301 alike. */
+export function foldText(s: string): string {
   return s.toLowerCase().normalize('NFC').replaceAll('ς', 'σ');
 }
 

@@ -2,6 +2,7 @@ import {
   boxToBox,
   boundsOfPath,
   coordsFrom,
+  lerp,
   lerpCorners,
   translatePath,
   transformPath,
@@ -32,16 +33,16 @@ export const pathPoseDescriptor: PoseDescriptor<Path> = {
     if (a.kind === 'rect' && b.kind === 'rect') {
       return {
         kind: 'rect',
-        x: a.x + (b.x - a.x) * t,
-        y: a.y + (b.y - a.y) * t,
-        width: a.width + (b.width - a.width) * t,
-        height: a.height + (b.height - a.height) * t,
+        x: lerp(a.x, b.x, t),
+        y: lerp(a.y, b.y, t),
+        width: lerp(a.width, b.width, t),
+        height: lerp(a.height, b.height, t),
       };
     }
     if (a.kind === 'polygon' && b.kind === 'polygon' && a.coords.length === b.coords.length) {
       const aw = worldCoords(a), bw = worldCoords(b);
       const mid = new Float64Array(aw.length);
-      for (let i = 0; i < aw.length; i++) mid[i] = aw[i] + (bw[i] - aw[i]) * t;
+      for (let i = 0; i < aw.length; i++) mid[i] = lerp(aw[i], bw[i], t);
       const next = coordsFrom(a.origin, mid);
       const { corners: _a, ...bare } = a;
       const corners = lerpCorners(a.corners, b.corners, t);

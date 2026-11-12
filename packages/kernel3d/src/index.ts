@@ -10,9 +10,9 @@
  */
 
 export {
-  MAX_PITCH, DEFAULT_ORBIT_LIMITS, createCamera, cameraEye, cameraView, cameraViewProjection,
+  MAX_PITCH, DEFAULT_ORBIT_LIMITS, createCamera, cameraBasis, cameraEye, cameraView, cameraViewProjection,
   clampCamera, orbitBy, dollyBy, dollyToward, panBy,
-  type Camera3d, type OrbitLimits,
+  type Camera3d, type CameraBasis, type OrbitLimits,
 } from './camera';
 export { UNIT_CUBE, pose3, poseMatrix, aabbOfPose, type Pose3 } from './pose3';
 export { POSE3_COMPOSITION } from './composePose3';
@@ -23,10 +23,10 @@ export {
 export {
   screenBoxOf, createNodeAtPoint, createPickEvery, createAreaSelect, createSnap,
   createPoseDescriptor, worldPoseOf,
-  type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
+  type AreaSelect3dOptions, type NodeBounds, type Node3d, type Scene3d, type Snap3dOptions, type Viewport3d,
   type ViewportSource, type World3d,
 } from './deps';
-export { createInsert, type Footprint } from './insert';
+export { createInsert, type Footprint, type InsertOptions } from './insert';
 export { projectPoint } from './project';
 export {
   aimOf3d, aimSpace3d, cameraOfAim3d, type Aim3d, type Aim3dOptions, type Frustum3d,

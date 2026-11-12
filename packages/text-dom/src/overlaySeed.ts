@@ -26,6 +26,9 @@ export interface CaretHolder {
   wrote(overlay: HTMLElement, caret: number): void;
   /** `runs` as read from the overlay, without the holder. */
   trim(runs: StyledRun[]): StyledRun[];
+  /** Call after the overlay was put back to `runs`, read through `trim`: a
+   *  break they end in is theirs, as one a node is seeded with is. */
+  reseed(runs: readonly StyledRun[]): void;
 }
 
 /**
@@ -58,6 +61,9 @@ export function seedOverlay(
       appendOverlayText(el.lastElementChild ?? el, '\n');
     },
     trim: (read) => (ownBreak ? read : trimCaretHolder(read)),
+    reseed(read) {
+      ownBreak = endsInBreak(runsToPlainText(read));
+    },
   };
 }
 

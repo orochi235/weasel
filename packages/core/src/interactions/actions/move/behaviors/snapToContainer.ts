@@ -3,7 +3,7 @@ import { definesFrame } from 'core/scene/effectivePose';
 import { createReparentOp } from 'core/ops/reparent';
 import type { Op } from 'core/ops/types';
 import type { SnapTarget } from 'core/adapters/types';
-import type { BehaviorResult, MoveBehavior, GestureContext } from '../../../gestures/types';
+import type { BehaviorResult, CloneBehavior, MoveBehavior, MoveEnd, GestureContext } from '../../../gestures/types';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
 import { holderOf } from '@weasel-js/select';
 
@@ -48,7 +48,8 @@ function clearTimer<TPose>(s: SnapState<TPose>) {
  * that container rides along with the first, at its offset from it.
  *
  * The dwell is what keeps a drag that merely passes over a container from
- * being captured by it.
+ * being captured by it. On an Alt-drag clone the copies drop in the same way
+ * and the originals stay put.
  */
 export function snapToContainer<TPose>(args: {
   dwellMs: number;
@@ -75,10 +76,11 @@ export function snapToContainer<TPose>(args: {
     return slots;
   };
   // A slot is a world pose; a preview shows it in the frame the node is stored in now.
-  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>): BehaviorResult<TPose> => {
+  // A move's origin is as stored and a clone's is in world.
+  const snapped = (ctx: GestureContext<TPose>, snap: SnapTarget<TPose>, originInWorld: boolean): BehaviorResult<TPose> => {
     const id = ctx.draggedIds[0];
     const start = ctx.origin.get(id);
-    const startWorld = start === undefined ? undefined : ctx.frames?.toWorld(id, start) ?? start;
+    const startWorld = start === undefined || originInWorld ? start : ctx.frames?.toWorld(id, start) ?? start;
     const toSlot = startWorld !== undefined ? ctx.offset?.(startWorld, snap.slotPose) : undefined;
     const poses = new Map<string, TPose>();
     for (const [at, slot] of slotsFor(ctx, snap)) poses.set(at, ctx.frames?.toLocal(at, slot) ?? slot);
@@ -89,82 +91,113 @@ export function snapToContainer<TPose>(args: {
     };
   };
 
-  return {
-    onMove(ctx, _proposed) {
-      const s = getState<TPose>(ctx);
-      const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
-      const target = found && !intoDragged(ctx, found) ? found : null;
+  const track = (ctx: GestureContext<TPose>, originInWorld: boolean): BehaviorResult<TPose> | undefined => {
+    const s = getState<TPose>(ctx);
+    const found = findTarget(ctx.draggedIds[0], ctx.pointer.worldX, ctx.pointer.worldY);
+    const target = found && !intoDragged(ctx, found) ? found : null;
 
-      if (s.committedSnap) {
-        if (target && target.parentId === s.committedSnap.parentId) {
-          return snapped(ctx, s.committedSnap);
-        }
-        s.committedSnap = null;
+    // Leaving a container withdraws the target it announced, which the commit reads.
+    let left: BehaviorResult<TPose> | undefined;
+    if (s.committedSnap) {
+      if (target && target.parentId === s.committedSnap.parentId) {
+        return snapped(ctx, s.committedSnap, originInWorld);
       }
+      s.committedSnap = null;
+      left = { snap: null };
+    }
 
-      if (!target) {
-        clearTimer(s);
-        return;
-      }
-
-      if (isInstant?.(target)) {
-        clearTimer(s);
-        s.committedSnap = target;
-        return snapped(ctx, target);
-      }
-
-      if (s.pendingTargetId === target.parentId) {
-        return;
-      }
+    if (!target) {
       clearTimer(s);
-      s.pendingTargetId = target.parentId;
-      s.pendingTimer = setTimeout(() => {
-        s.committedSnap = target;
-        s.pendingTimer = null;
-      }, dwellMs);
-      return;
-    },
+      return left;
+    }
 
-    onCancel(ctx) { clearTimer(getState<TPose>(ctx)); },
+    if (isInstant?.(target)) {
+      clearTimer(s);
+      s.committedSnap = target;
+      return snapped(ctx, target, originInWorld);
+    }
 
+    if (s.pendingTargetId === target.parentId) {
+      return left;
+    }
+    clearTimer(s);
+    s.pendingTargetId = target.parentId;
+    s.pendingTimer = setTimeout(() => {
+      s.committedSnap = target;
+      s.pendingTimer = null;
+    }, dwellMs);
+    return left;
+  };
+  const cancel = (ctx: GestureContext<TPose>): void => { clearTimer(getState<TPose>(ctx)); };
+
+  const clone: CloneBehavior<TPose> = {
+    onMove: (ctx) => track(ctx, true),
+    onCancel: cancel,
     onEnd(ctx, end) {
-      const s = getState<TPose>(ctx);
-      clearTimer(s);
-      const snap = s.committedSnap ?? ctx.snap;
-      if (!snap || intoDragged(ctx, snap)) return;
-      const ops: Op[] = [];
-      const landed = new Map<string, string | null>();
-      const reparent = (id: string): void => {
-        const oldParent = ctx.adapter.getParent(id);
-        if (oldParent !== snap.parentId) {
-          landed.set(id, snap.parentId);
-          ops.push(createReparentOp({
-            id,
-            fromParentId: oldParent,
-            toParentId: snap.parentId,
-            label: reparentLabel,
-          }));
-        }
-      };
-      const slots = slotsFor(ctx, snap);
-      for (const [id, slot] of slots) {
-        const to = ctx.frames?.toLocalUnder(snap.parentId, slot) ?? slot;
-        ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
-        reparent(id);
-      }
-      // A node with no slot of its own lands where the preview drew it.
-      const rest = ctx.draggedIds.filter((id) => !slots.has(id));
-      const moved = end.translateOps(rest);
-      ops.push(...moved);
-      for (const id of rest) {
-        const was = ctx.adapter.getParent(id);
-        reparent(id);
-        if (was !== snap.parentId) ops.push(...keptInPlace(ctx, snap.parentId, id, moved, reparentLabel));
-      }
-      if (landed.size > 0 && ctx.followerOps) ops.push(...ctx.followerOps(landed, reparentLabel));
-      return ops;
+      const snap = released(ctx);
+      return snap ? end.copyOps({ parentId: snap.parentId, poses: slotsFor(ctx, snap) }) : undefined;
     },
   };
+
+  return {
+    clone,
+    onMove: (ctx) => track(ctx, false),
+    onCancel: cancel,
+    onEnd(ctx, end) {
+      const snap = released(ctx);
+      return snap ? plantOps(ctx, end, snap, slotsFor(ctx, snap), moveLabel, reparentLabel) : undefined;
+    },
+  };
+}
+
+/** The container a drag is let go into, if any; its dwell timer stops either way. */
+function released<TPose>(ctx: GestureContext<TPose>): SnapTarget<TPose> | null {
+  const s = getState<TPose>(ctx);
+  clearTimer(s);
+  const snap = s.committedSnap ?? ctx.snap;
+  return snap && !intoDragged(ctx, snap) ? snap : null;
+}
+
+/** A move's commit into `snap`: each node with a slot goes there, the rest
+ *  land where the drag left them, and every one is reparented under it. */
+function plantOps<TPose>(
+  ctx: GestureContext<TPose>,
+  end: MoveEnd,
+  snap: SnapTarget<TPose>,
+  slots: ReadonlyMap<string, TPose>,
+  moveLabel: string,
+  reparentLabel: string,
+): Op[] {
+  const ops: Op[] = [];
+  const landed = new Map<string, string | null>();
+  const reparent = (id: string): void => {
+    const oldParent = ctx.adapter.getParent(id);
+    if (oldParent !== snap.parentId) {
+      landed.set(id, snap.parentId);
+      ops.push(createReparentOp({
+        id,
+        fromParentId: oldParent,
+        toParentId: snap.parentId,
+        label: reparentLabel,
+      }));
+    }
+  };
+  for (const [id, slot] of slots) {
+    const to = ctx.frames?.toLocalUnder(snap.parentId, slot) ?? slot;
+    ops.push(createTransformOp<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+    reparent(id);
+  }
+  // A node with no slot of its own lands where the preview drew it.
+  const rest = ctx.draggedIds.filter((id) => !slots.has(id));
+  const moved = end.translateOps(rest);
+  ops.push(...moved);
+  for (const id of rest) {
+    const was = ctx.adapter.getParent(id);
+    reparent(id);
+    if (was !== snap.parentId) ops.push(...keptInPlace(ctx, snap.parentId, id, moved, reparentLabel));
+  }
+  if (landed.size > 0 && ctx.followerOps) ops.push(...ctx.followerOps(landed, reparentLabel));
+  return ops;
 }
 
 /**

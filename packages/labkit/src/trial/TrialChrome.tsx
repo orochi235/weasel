@@ -1,18 +1,20 @@
-import { DevtoolsLabel, matchesKeyBinding } from '@weasel-js/core';
+import { DevtoolsLabel, matchesKeyBinding, undoKeyStep } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
-import { withMarks } from '../annotations/labMarks';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
-import { builtinContributions, TRANSIENT_BUILTINS } from '../chrome/builtins';
-import { mergeContributions, suppressContributions } from '../chrome/merge';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
 import { StatusRegion } from '../chrome/regions/StatusRegion';
 import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
-import type { TrialChromeContext, TrialContribution, TrialRegion } from '../chrome/types';
+import type {
+  TrialChromeContext,
+  TrialContribution,
+  TrialRegion,
+  TrialSidebar,
+} from '../chrome/types';
 import type { AutoReports } from '../config/autoReports';
 import { useLabOverValues } from '../config/over';
 import { useConfigSchema } from '../config/useConfigSchema';
@@ -26,11 +28,12 @@ import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
-import { undoKeyStep } from '../undo/useUndoKeys';
+import { FloatSidebarContext } from './FloatSidebar';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';
 import { TrialTitleContext } from './trialTitle';
 import { UndockedSections } from './UndockedSections';
+import { useTrialContributions } from './useTrialContributions';
 import { useTrialKeys } from './useTrialKeys';
 import { useTrialPanels } from './useTrialPanels';
 import { useTrialWrites } from './useTrialWrites';
@@ -65,8 +68,20 @@ export interface UndoBindings {
   redo: () => void;
 }
 
+/** How the lab dresses a trial's chrome, beyond what its instrument declares. */
+export interface TrialChromeOptions {
+  /** Contributions from the lab, merged last. */
+  chrome?: readonly TrialContribution[];
+  /** Built-in contribution ids to drop. Throws on an id that is not there. */
+  suppress?: readonly string[];
+  /** Contribution ids whose buttons to hide, keeping their keys. Throws on an id that is not there. */
+  hide?: readonly string[];
+  /** Where the sidebar sections go. Default `'dock'`. */
+  sidebar?: TrialSidebar;
+}
+
 /** Props for `<TrialChrome>`. */
-export interface TrialChromeProps {
+export interface TrialChromeProps extends TrialChromeOptions {
   trialId: string;
   record: TrialRecord;
   instrument: Instrument;
@@ -85,10 +100,6 @@ export interface TrialChromeProps {
   /** Contributions the trial runtime itself adds — the drag palette and the
    *  layer list, which depend on runtime state the instrument cannot reach. */
   trialChrome?: readonly TrialContribution[];
-  /** Contributions from the lab, merged last. */
-  chrome?: readonly TrialContribution[];
-  /** Built-in contribution ids to drop. Throws on an id that is not there. */
-  suppress?: readonly string[];
   /** The trial's resolved tool slot, and the setter that writes whichever
    *  slot it resolved to. `Trial` owns the resolution. */
   activeToolId?: string | null;
@@ -133,6 +144,8 @@ export function TrialChrome({
   trialChrome,
   chrome,
   suppress,
+  hide,
+  sidebar = 'dock',
   activeToolId = null,
   setActiveTool = NO_OP,
   children,
@@ -150,7 +163,7 @@ export function TrialChrome({
   const view2d = chromeView(record.view);
 
   const configSchema = useConfigSchema(instrument);
-  const { auto } = useResolvedConfig(configSchema, record.config, record.auto);
+  const { config: settled, auto } = useResolvedConfig(configSchema, record.config, record.auto);
   const ownWrites = useTrialWrites({
     store: storeCtx.store,
     trialId,
@@ -239,36 +252,37 @@ export function TrialChrome({
     camera,
   ]);
 
-  const contributions = useMemo(
-    () =>
-      suppressContributions(
-        mergeContributions(
-          builtinContributions(withMarks(instrument, lab.marks), ctx, lab.controls),
-          [...(instrument.chrome ?? [])],
-          [...(trialChrome ?? [])],
-          [...(chrome ?? [])],
-        ),
-        suppress ?? [],
-        TRANSIENT_BUILTINS,
-      ),
-    [instrument, ctx, trialChrome, chrome, suppress, lab.controls, lab.marks],
-  );
+  const floating = sidebar === 'float';
+  const { offered, shown } = useTrialContributions({
+    instrument,
+    ctx,
+    marks: lab.marks,
+    controls: lab.controls,
+    trialChrome,
+    chrome,
+    suppress,
+    hide,
+    sidebar,
+  });
 
   const inRegion = (region: TrialRegion): TrialContribution[] =>
-    contributions.filter((c) => c.region === region);
+    shown.filter((c) => c.region === region);
+  const sections = inRegion('sidebar');
+  const docked = <SidebarRegion key="docked" contributions={sections} ctx={ctx} />;
+  const undocked = <Undocked key="undocked" sections={sections} ctx={ctx} />;
 
   const handleKeyDown = (e: KeyboardEvent): void => {
     // A presented trial has no chrome, so nothing the chrome's keys act on.
     if (presented || e.defaultPrevented) return;
-    // A chord is its button's: suppress the button and the chord goes with it.
-    const offered = (id: string) => contributions.some((c) => c.id === id);
+    // A chord is its button's: suppress the button and the chord goes with it; hide it and the chord stays.
+    const offers = (id: string) => offered.some((c) => c.id === id);
     const step = undoKeyStep(e);
     if (step) {
-      if (!offered(step) || !(step === 'undo' ? ctx.canUndo : ctx.canRedo)) return;
+      if (!offers(step) || !(step === 'undo' ? ctx.canUndo : ctx.canRedo)) return;
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();
-    } else if (matchesKeyBinding(e, { key: 's', mod: true }) && offered('snapshot')) {
+    } else if (matchesKeyBinding(e, { key: 's', mod: true }) && offers('snapshot')) {
       e.preventDefault();
       if (!e.repeat) ctx.saveSnapshot();
     }
@@ -286,13 +300,15 @@ export function TrialChrome({
       aria-label={`Trial ${title}`}
       tabIndex={-1}
     >
-      <TrialTitleBar
-        title={title}
-        titleContent={instrument.renderTitle?.(title)}
-        lead={<TitleBarRegion placement="lead" contributions={inRegion('titlebar')} ctx={ctx} />}
-      >
-        <TitleBarRegion contributions={inRegion('titlebar')} ctx={ctx} />
-      </TrialTitleBar>
+      <FloatSidebarContext.Provider value={floating ? { title, sections: docked } : null}>
+        <TrialTitleBar
+          title={title}
+          titleContent={instrument.renderTitle?.(title, { config: settled })}
+          lead={<TitleBarRegion placement="lead" contributions={inRegion('titlebar')} ctx={ctx} />}
+        >
+          <TitleBarRegion contributions={inRegion('titlebar')} ctx={ctx} />
+        </TrialTitleBar>
+      </FloatSidebarContext.Provider>
       <div className="lk-trial__toolbar">
         <ToolbarRegion contributions={inRegion('toolbar')} ctx={ctx} />
       </div>
@@ -302,21 +318,11 @@ export function TrialChrome({
           width={record.sidebarWidth}
           onWidthChange={(w) => updateTrialSidebarWidth(trialId, w)}
           contentClassName={contentClassOf(instrument, presented)}
-          sidebar={
-            inRegion('sidebar').length === 0 ? null : (
-              <>
-                <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
-                <UndockedSections
-                  trialId={trialId}
-                  sections={inRegion('sidebar').filter((c) => panels.undocked.includes(c.id))}
-                  onDock={ctx.dockPanel}
-                />
-              </>
-            )
-          }
+          sidebar={floating || sections.length === 0 ? null : [docked, undocked]}
         >
           <Titled title={title}>{children}</Titled>
           <ViewportRegion contributions={inRegion('viewport')} ctx={ctx} />
+          {floating ? undocked : null}
         </TrialBody>
       </div>
       <div className="lk-trial__status">
@@ -324,6 +330,17 @@ export function TrialChrome({
         <StatusRegion className="lk-trial__readouts" contributions={inRegion('status')} ctx={ctx} />
       </div>
     </section>
+  );
+}
+
+/** The sidebar sections torn out into the workspace, which the trial goes on rendering wherever the rest are. */
+function Undocked({ sections, ctx }: { sections: TrialContribution[]; ctx: TrialChromeContext }) {
+  return (
+    <UndockedSections
+      trialId={ctx.trialId}
+      sections={sections.filter((c) => ctx.undockedPanels.includes(c.id))}
+      onDock={ctx.dockPanel}
+    />
   );
 }
 

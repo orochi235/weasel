@@ -1,5 +1,48 @@
 # @weasel-js/storage
 
+## 1.19.0
+
+### Patch Changes
+
+- 0f8e7cc: Deleting a record again while its first delete is still waiting to be written does nothing.
+  
+  <!-- entry: rank=-5 fix -->
+- 1077865: `isPlainObject` and `isPlainPrototype` no longer take an object whose prototype is a bare `Object.create(null)` for another realm's plain object. `deepEqual` and everything else that asks follow, and `@weasel-js/storage`'s JSON adapters no longer warn about a foreign object carrying `Symbol.toStringTag`.
+  
+  <!-- entry: rank=-5 fix -->
+- 851bf17: The JSON storage adapters write a `bigint` as its decimal digits, with a warning, rather than rejecting the write.
+  
+  That is `localStorageAdapter`, `sessionStorageAdapter` and `urlHashAdapter`.
+  
+  <!-- entry: fix -->
+- 851bf17: The JSON storage adapters no longer warn about a plain object from another realm, such as an iframe's or one `structuredClone` built.
+  
+  `localStorageAdapter`, `sessionStorageAdapter` and `urlHashAdapter` now warn about an array whose hole sits beside an extra key, which JSON changes.
+  
+  <!-- entry: fix -->
+- 623c0b8: A record cache rereads a record that another writer changed during the cache's own write, so cache and storage cannot disagree for good.
+  
+  Such a change still reaches `onOverruled` when heard; a different value read back reaches listeners as a remote change.
+  
+  <!-- entry: fix -->
+- 2c6c317: `urlHashAdapter.delete` of a key the fragment does not hold leaves the fragment, such as a page anchor, alone.
+  
+  <!-- entry: rank=-5 fix -->
+- 7ca4c3d: `encodeUrlHash` writes a lone surrogate as U+FFFD, with a warning, instead of throwing a `URIError`.
+  
+  <!-- entry: rank=-5 fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

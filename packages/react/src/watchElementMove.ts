@@ -1,3 +1,13 @@
+/** Far enough past the viewport that nothing on the page is clipped by the root it widens. */
+const FAR = 1e5;
+
+// Half a pixel of slack: two measurements that disagreed by rounding would report every
+// frame, and the floored frame cannot see a move that small anyway.
+function movedTo(box: DOMRectReadOnly, now: DOMRectReadOnly): boolean {
+  return Math.abs(now.left - box.left) > 0.5 || Math.abs(now.top - box.top) > 0.5
+    || Math.abs(now.width - box.width) > 0.5 || Math.abs(now.height - box.height) > 0.5;
+}
+
 /**
  * Call `onMove` when `element`'s box moves in the viewport for a reason no
  * event reports: a sibling collapsing, content loading above it. A scroll or a
@@ -16,13 +26,23 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   if (typeof IntersectionObserver === 'undefined') return () => {};
   const root = element.ownerDocument.documentElement;
   let observer: IntersectionObserver | null = null;
+  let shown: IntersectionObserver | null = null;
   let sized: ResizeObserver | null = null;
   let retry: ReturnType<typeof setTimeout> | undefined;
+  // An observer still delivers entries queued before it disconnected, and `onMove` may stop the watch itself.
+  let stopped = false;
+  const report = (): boolean => {
+    if (stopped) return false;
+    onMove();
+    return !stopped;
+  };
 
-  const stop = (): void => {
+  const disconnect = (): void => {
     clearTimeout(retry);
     observer?.disconnect();
     observer = null;
+    shown?.disconnect();
+    shown = null;
     sized?.disconnect();
     sized = null;
   };
@@ -33,14 +53,44 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
     sized = new ResizeObserver(() => {
       const box = element.getBoundingClientRect();
       if (box.width === 0 || box.height === 0) return;
-      onMove();
-      frame(1);
+      if (report()) frame(1);
     });
     sized.observe(element);
   };
 
+  /**
+   * A box an ancestor clips can move without its overlap with the frame changing: the part it hid comes into view
+   * as fast as the part leaving the frame goes. How much of it shows does change, so that is watched too, against
+   * a root too large to clip it, by thresholds either side of the `ratio` it shows now.
+   */
+  const watchShown = (box: DOMRectReadOnly, ratio: number): void => {
+    shown?.disconnect();
+    if (stopped) return;
+    const slack = 0.5 / Math.max(box.width, box.height);
+    let first = true;
+    shown = new IntersectionObserver(
+      (entries) => {
+        if (stopped) return;
+        const entry = entries[0];
+        if (!first || entries.length > 1 || movedTo(box, entry.boundingClientRect)) {
+          if (report()) frame(1);
+          return;
+        }
+        first = false;
+        // Rounding can put what it reports a hair off what the frame did; centre on its own reading.
+        if (Math.abs(entry.intersectionRatio - ratio) > slack) watchShown(box, entry.intersectionRatio);
+      },
+      {
+        rootMargin: `${FAR}px`,
+        threshold: [Math.max(0, ratio - slack), Math.min(1, ratio + slack)],
+      },
+    );
+    shown.observe(element);
+  };
+
   const frame = (threshold: number): void => {
-    stop();
+    disconnect();
+    if (stopped) return;
     const box = element.getBoundingClientRect();
     if (box.width === 0 || box.height === 0) {
       awaitSize();
@@ -52,21 +102,16 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
       Math.floor(root.clientHeight - box.bottom),
       Math.floor(box.left),
     ];
-    // Half a pixel of slack: two measurements that disagreed by rounding would report every
-    // frame, and the floored frame cannot see a move that small anyway.
-    const movedTo = (now: DOMRectReadOnly): boolean =>
-      Math.abs(now.left - box.left) > 0.5 || Math.abs(now.top - box.top) > 0.5
-      || Math.abs(now.width - box.width) > 0.5 || Math.abs(now.height - box.height) > 0.5;
     let first = true;
     observer = new IntersectionObserver(
       (entries) => {
+        if (stopped) return;
         const ratio = entries[0].intersectionRatio;
         const moved = first
-          ? entries.length > 1 || movedTo(entries[0].boundingClientRect)
+          ? entries.length > 1 || movedTo(box, entries[0].boundingClientRect)
           : ratio !== threshold;
         if (moved) {
-          onMove();
-          frame(1);
+          if (report()) frame(1);
           return;
         }
         first = false;
@@ -74,10 +119,12 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
         // A box partly off the root never reaches the threshold asked for, so
         // ask for what it does reach. One wholly off it reports zero for
         // every frame, wherever it goes; look again once it may have come back.
-        if (ratio !== 0) frame(ratio);
-        else {
+        if (ratio !== 0) {
+          frame(ratio);
+          watchShown(box, ratio);
+        } else {
           retry = setTimeout(() => {
-            if (movedTo(element.getBoundingClientRect())) onMove();
+            if (movedTo(box, element.getBoundingClientRect()) && !report()) return;
             frame(1e-7);
           }, 1000);
         }
@@ -88,5 +135,8 @@ export function watchElementMove(element: Element, onMove: () => void): () => vo
   };
 
   frame(1);
-  return stop;
+  return () => {
+    stopped = true;
+    disconnect();
+  };
 }

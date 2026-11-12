@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useLatest, useScene } from '@weasel-js/core';
-import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
+import { SceneCanvas, solid, useLatest, useScene } from '@weasel-js/core';
+import type { Fill, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
@@ -22,7 +22,7 @@ const PAPER = '#6a6a6a';
  *  spec's aim point. */
 const RULING = { x: 400, y: 280, size: 60 };
 
-interface Block { color: string }
+interface Block { fill: Fill }
 type Pose = { x: number; y: number; width: number; height: number };
 
 /** Nodes to edit through the lens, clear of the ruling patch and swatches. */
@@ -108,7 +108,7 @@ function Demo() {
     systemLayers: [{ id: 'default' }],
     initial: BLOCKS.map((b) => ({
       id: b.id as never, kind: 'mark' as const, layer: 'default' as const,
-      pose: b.pose, data: { color: b.color },
+      pose: b.pose, data: { fill: { paint: solid(b.color) } },
     })),
   });
 
@@ -169,13 +169,6 @@ function Demo() {
           backgroundFill={{ kind: 'solid', color: PAPER }}
           ambient={[hudTool]}
           layers={{
-            scene: {
-              drawOne: (n, p): DrawCommand[] => [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { paint: { kind: 'solid', color: n.data.color } },
-              }],
-            },
             // Not registerLayer: extras draw after the hud's own registered
             // layer, so the outer scene would paint over the loupe window.
             detail: { layer: detail, after: 'scene' },

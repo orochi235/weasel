@@ -1,4 +1,5 @@
 import type { PointerContextValue } from '@weasel-js/core';
+import type { Vec3 } from '@weasel-js/geom/3d';
 import type { Camera3d, OrbitLimits } from '@weasel-js/kernel3d';
 import type { ReactNode } from 'react';
 import type { AnnotationsCapability } from '../annotations/types';
@@ -151,6 +152,9 @@ export interface OrbitCapability<TS = unknown, TC = unknown> {
   /** How far the camera turns and travels, in the scene's own units.
    *  Omitted fields are kernel3d's `DEFAULT_ORBIT_LIMITS`. */
   limits?: Partial<OrbitLimits>;
+  /** The scene's up, the `World3d.up` its deps are built with: a pan and a dolly slide the target against it. Draw
+   *  with the same axis (`cameraViewProjection(camera, aspect, up)`). Default +y. */
+  up?: Vec3;
   /** As `CanvasCapability.gestures`. A drag turns the camera and Shift+drag
    *  pans its target; the wheel and a pinch dolly; a double click goes home. */
   gestures?: CameraGestures;
@@ -223,8 +227,9 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   /** What a trial of this instrument and the add-trial menu read. Default: `name`. */
   title?: string;
   /** Draws a trial's title in its title bar — as links, say — where the bare text would go. It is handed the
-   *  title the trial reads, which a rename may have changed; the text still names the trial everywhere else. */
-  renderTitle?: (title: string) => ReactNode;
+   *  title the trial reads, which a rename may have changed, and the trial's config as its instrument reads it, so
+   *  it redraws as that changes; the text still names the trial everywhere else. */
+  renderTitle?: (title: string, trial: { config: TC }) => ReactNode;
   defaultConfig: () => TC;
   initialState: (config: TC) => TS;
   /** The instrument's config, declared once: values, types and controls.

@@ -57,6 +57,7 @@ export function ListLeaf({
             valueAt: ctx.valueAt,
             selectionKey: ctx.selectionKey,
             settles: ctx.settles,
+            textWaitMs: ctx.textWaitMs,
             ...conditions,
           },
           name,

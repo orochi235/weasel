@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, trimNumber, minOf, maxOf, EPS } from './scalar';
+import { clamp, clamp01, cross, dot, sub, len2, sign, approxEq, lerp, trimNumber, minOf, maxOf, EPS } from './scalar';
 
 describe('scalar primitives', () => {
   it('cross product is the 2D wedge', () => {
@@ -82,6 +82,16 @@ describe('clamp01', () => {
   });
   it('passes NaN through', () => {
     expect(clamp01(NaN)).toBeNaN();
+  });
+});
+
+describe('lerp', () => {
+  it('lands on b itself at t = 1, where a + (b - a) * t misses it by an ulp', () => {
+    expect(0.7 + (0.1 - 0.7) * 1).not.toBe(0.1);
+    expect(lerp(0.7, 0.1, 1)).toBe(0.1);
+    expect(lerp(100.1, 0.3, 1)).toBe(0.3);
+    expect(lerp(0.7, 0.1, 0)).toBe(0.7);
+    expect(lerp(0, 4, 0.25)).toBe(1);
   });
 });
 

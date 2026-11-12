@@ -8,7 +8,7 @@ export {
   adoptSnapshotPages, docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer, snapshotRebuildsTree,
   type SnapshotLoadOptions,
 } from './snapshot';
-export { readStored, writeSession, type SessionEntry } from './sessionStore';
+export { isUnreadableKey, readStored, writeSession, type SessionEntry } from './sessionStore';
 export { useAutosave, type AutosaveOptions, type SessionWrite } from './useAutosave';
 export { usePageFit } from './usePageFit';
 export { usePages, type AddPageOptions, type DocPages, type PagePlace, type UsePagesOptions } from './usePages';

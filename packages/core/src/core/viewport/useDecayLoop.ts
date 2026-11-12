@@ -120,6 +120,7 @@ export function useDecayLoop() {
   const frameLoop = useVisibleRaf(
     tick,
     {
+      phase: 'update',
       // Coasting does not continue while suspended: dropping `lastTime` makes
       // the resuming frame seed a fresh interval instead of applying an hour of
       // friction at once, which would end the decay before it was seen.

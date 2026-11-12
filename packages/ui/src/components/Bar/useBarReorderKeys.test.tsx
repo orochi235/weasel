@@ -84,6 +84,16 @@ describe('Alt+arrow reordering', () => {
     expect(onReorder).not.toHaveBeenCalled();
   });
 
+  it('leaves Alt+Arrow alone in editable text inside a unit', () => {
+    const onReorder = vi.fn();
+    render(host(<Bar schema={flat} onReorder={onReorder} />));
+    const editable = document.createElement('span');
+    editable.setAttribute('contenteditable', 'true');
+    button('a').closest('[data-bar-unit]')!.append(editable);
+    alt(editable, 'ArrowRight');
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
   it('Alt+Shift+Right moves the group among its siblings', () => {
     const onReorder = vi.fn();
     render(host(<Bar schema={nested} onReorder={onReorder} />));

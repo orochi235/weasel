@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
+import { maxImageTextureSide } from './cache/GLImageCache';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
@@ -160,6 +161,40 @@ describe('WeaselRenderer context loss', () => {
     // New compileShader should appear in the recorded calls after restore.
     const names = recorder.calls.map((c) => c.name);
     expect(names).toContain('compileShader');
+  });
+
+  it('holds no context-loss listener on a canvas whose context failed it mid-construction', () => {
+    const lost = new Proxy(recorder.gl, {
+      get(target, prop) {
+        if (prop === 'getShaderParameter') return () => false;
+        if (prop === 'isContextLost') return () => true;
+        return Reflect.get(target, prop);
+      },
+    });
+    const live = new Set<string>();
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => lost,
+      addEventListener: (type: string) => { live.add(type); },
+      removeEventListener: (type: string) => { live.delete(type); },
+    } as unknown as HTMLCanvasElement;
+    expect(() => new WeaselRenderer({ canvas, width: 10, height: 10, dpr: 1 })).toThrow();
+    expect([...live]).toEqual([]);
+  });
+
+  it('builds no image cache for a disposed renderer when its minification changes', () => {
+    const small = new Proxy(recorder.gl, {
+      get(target, prop) {
+        if (prop === 'getParameter') return (p: number) => (p === target.MAX_TEXTURE_SIZE ? 7 : target.getParameter(p));
+        return Reflect.get(target, prop);
+      },
+    });
+    const before = maxImageTextureSide();
+    const r = new WeaselRenderer({ gl: small, width: 10, height: 10, dpr: 1 });
+    r.dispose();
+    r.setImageMinification('mipmap');
+    expect(maxImageTextureSide()).toBe(before);
   });
 
   // A proxy, as with registerProgram below: the recorder answers every lookup,

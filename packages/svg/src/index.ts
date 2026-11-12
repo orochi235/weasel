@@ -37,6 +37,7 @@ export {
   type SvgNodesToKitDraftsOptions,
 } from './unpack';
 export type { SvgDraftBounds, SvgDraftPose } from './draftPose';
+export { svgDraftSpecs, type SvgDraftSpecsOptions } from './draftSpecs';
 export {
   svgNodesFromKit,
   svgLeafFromKit,

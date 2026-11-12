@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { draftNames, parseDraft, persistDraft } from './draftStorage';
+import { draftNames, loadDraft, parseDraft, persistDraft } from './draftStorage';
 
 describe('parseDraft', () => {
   const draft = { definition: { name: 'weasel', description: 'x' }, baseHash: 'h1' };
@@ -33,6 +33,21 @@ describe('draftNames', () => {
       setItem: (k: string, v: string) => void items.set(k, v),
     });
     persistDraft({ definition: { name: 'harbor' }, baseHash: null });
+    expect(draftNames()).toEqual(['harbor']);
+  });
+});
+
+describe('loadDraft', () => {
+  afterEach(() => localStorage.clear());
+
+  it('keeps a draft it cannot read aside, so the next save cannot cost it, and does not list the copy', () => {
+    const key = 'weasel.theme-editor.draft.harbor';
+    localStorage.setItem(key, '{"definition":');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(loadDraft('harbor')).toBeNull();
+    expect(localStorage.getItem(`${key}:unreadable`)).toBe('{"definition":');
+    persistDraft({ definition: { name: 'harbor' }, baseHash: null });
+    expect(localStorage.getItem(`${key}:unreadable`)).toBe('{"definition":');
     expect(draftNames()).toEqual(['harbor']);
   });
 });

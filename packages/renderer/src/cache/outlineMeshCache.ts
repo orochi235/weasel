@@ -9,9 +9,12 @@
  * tall before the flattening error covered a single pixel.
  *
  * Eviction is wholesale rather than LRU because the refill cost is bounded by
- * what is actually on screen.
+ * what is actually on screen. A key names a glyph by its face's name, which a
+ * registration can point at other outlines, so the cache is also dropped
+ * whenever `faceGeneration()` moves.
  */
 
+import { faceGeneration } from '@weasel-js/font';
 import { pathFromD } from '@weasel-js/geom';
 import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 
@@ -22,12 +25,17 @@ export const OUTLINE_FLATTEN_TOLERANCE = 1 / 4096;
 export const OUTLINE_MESH_CACHE_LIMIT = 2048;
 
 let cache = new Map<string, Mesh>();
+let faces = faceGeneration();
 
 /**
  * The em-space tessellation of one glyph. `key` identifies the glyph — face
  * identity plus codepoint. `d` is only read on a miss.
  */
 export function outlineMesh(key: string, d: string): Mesh {
+  if (faces !== faceGeneration()) {
+    faces = faceGeneration();
+    cache = new Map();
+  }
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
   if (cache.size >= OUTLINE_MESH_CACHE_LIMIT) cache = new Map();

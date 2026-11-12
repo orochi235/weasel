@@ -116,7 +116,8 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   const optionsRef = useRef<HTMLDivElement | null>(null);
   const activeTool = tools?.active ? tools.registry[tools.active] : undefined;
   const toolOptions = useMemo(() => drawToolOptionValues(), []);
-  useHoldContentUnderChrome(optionsRef, setView, textEdit.effectiveStyle != null || activeTool?.options !== undefined);
+  const optionRows = `${textEdit.effectiveStyle != null ? 'character' : ''} ${activeTool?.options !== undefined ? tools?.active : ''}`;
+  useHoldContentUnderChrome(optionsRef, setView, optionRows);
 
   return (
     <SurfaceHostContext.Provider value={surfaceHost}>

@@ -191,4 +191,22 @@ describe('createTiledLayer', () => {
     const xs = draw.mock.calls.map((c) => c[1].x);
     expect(xs).toEqual([100, -100, -300]);
   });
+
+  it('keeps the other sources when one throws, as a parallax plane does, and reports the one that threw', () => {
+    const bad: RenderLayer<unknown> = { id: 'bad', label: 'bad', draw: () => { throw new Error('boom'); } };
+    const { layer: good } = spyLayer();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+      const tiled = createTiledLayer({ id: 't', label: 'T', source: [bad, good], period: 200 });
+      const plane = createParallaxLayer({ id: 'p', label: 'P', source: [bad, good], parallax: { pan: 1 } });
+      expect(tiled.draw(undefined, view, dims)).toHaveLength(3);
+      expect(plane.draw(undefined, view, dims)).toHaveLength(1);
+      expect(error).toHaveBeenCalledTimes(2);
+      expect(String(error.mock.calls[0]![0])).toContain('"bad"');
+      expect(String(error.mock.calls[1]![0])).toContain('"bad"');
+    } finally {
+      error.mockRestore();
+    }
+  });
 });

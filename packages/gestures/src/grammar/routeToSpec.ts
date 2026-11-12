@@ -12,7 +12,8 @@ import { specKindForRouteGesture } from './specKinds';
  * `[*:*]` phase slot. `[*]` is `[&:*]`, which an ambient binding never
  * matches, so it stays a phase atom. A `keyDown` / `keyHeld` arg is read as a
  * key route, so `keyDown(z?shift)` yields `mods.shift: 'optional'`; a drop, carry, or
- * paste arg is a `|`-separated MIME list.
+ * paste arg is a `|`-separated MIME list. A `drag` arg is the button, and its
+ * `*` takes either button rather than being dropped.
  *
  * Throws on a route no spec can express: `keyUp`, a key or finger-count
  * wildcard, or a target that is not a `TargetSpec` form.
@@ -61,10 +62,11 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
         ...(parsed.held ? { held: parsed.held === 'required' ? (true as const) : ('optional' as const) } : {}),
         ...t,
       });
+    case 'drag':
+      return withMods({ kind, ...(parsed.arg !== undefined && parsed.arg !== 'primary' ? { button: parsed.arg as 'middle' | 'secondary' | '*' } : {}), ...t });
     case 'click':
     case 'pointerDown':
     case 'doubleClick':
-    case 'drag':
     case 'contextMenu':
     case 'longPress':
       return withMods({ kind, ...t });

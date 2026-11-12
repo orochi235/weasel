@@ -38,10 +38,10 @@ import { boundAction } from './boundAction';
 import { type ControlPack, spansGrid } from './controlPack';
 import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
-import { extra, labField, leafValueAt } from './fields';
+import { extra, labField, leafValueAt, useLabSettles, useTextWaitMs } from './fields';
 import { inDialog, summarizeLeaf } from './inDialog';
 import { useRowAuto } from './rowAuto';
-import { DebouncedTextRow, UnwiredRow } from './rows';
+import { UnwiredRow } from './rows';
 
 export interface ControlRowProps<TC extends Record<string, unknown>> {
   path: string;
@@ -251,6 +251,8 @@ function LeafRow<TC extends Record<string, unknown>>({
   const write = (value: unknown): void => setConfig(path, value);
   const draft = draftConfig && ((value: unknown): void => draftConfig(path, value));
   const choices = useFieldChoices();
+  const settles = useLabSettles();
+  const textWaitMs = useTextWaitMs(leaf);
   const pinned = leafValueAt(config, path, leaf);
 
   const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, pinned, auto, setRowAuto });
@@ -329,18 +331,12 @@ function LeafRow<TC extends Record<string, unknown>>({
     );
   }
 
-  const field = labField(leaf, value, write, choices, disabled, draft, (p) =>
-    valueAtPath(shown, p),
-  );
+  const read = (p: string): unknown => valueAtPath(shown, p);
+  const field = labField(leaf, value, write, choices, disabled, draft, read, settles, textWaitMs);
   if (field === null)
     return <UnwiredRow label={label} kind={leaf.kind} description={description} />;
   switch (field.kind) {
     case 'string':
-      return draft ? (
-        <DebouncedTextRow leaf={leaf} field={field} span={spansGrid(field, pack)} {...row} />
-      ) : (
-        <PropertyField {...field} {...row} span={spansGrid(field, pack)} />
-      );
     case 'number':
     case 'enum':
       return <PropertyField {...field} {...row} span={spansGrid(field, pack)} />;

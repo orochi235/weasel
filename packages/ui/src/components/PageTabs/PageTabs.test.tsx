@@ -52,6 +52,13 @@ describe('PageTabs', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  it('reports Enter or Space on the lit tab, which selects nothing new', () => {
+    const { onSelect } = setup();
+    fireEvent.keyDown(tab('Cover'), { key: 'Enter' });
+    fireEvent.keyDown(tab('Cover'), { key: ' ' });
+    expect(onSelect.mock.calls).toEqual([['a'], ['a']]);
+  });
+
   it('reports a press on a tab, the lit one included, once per press', () => {
     const { onSelect } = setup();
     press(tab('Cover'));

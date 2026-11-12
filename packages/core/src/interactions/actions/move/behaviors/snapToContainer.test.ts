@@ -66,6 +66,18 @@ describe('snapToContainer', () => {
     expect(r).toMatchObject({ transform: tt(2, 3), snap: target });
   });
 
+  it('withdraws the snap it announced when the drag leaves the container', () => {
+    const target: SnapTarget<Pose> = { parentId: 'box', slotPose: { x: 2, y: 3 } };
+    const findTarget = vi.fn().mockReturnValueOnce(target).mockReturnValueOnce(target).mockReturnValue(null);
+    const b = snapToContainer<Pose>({ dwellMs: 500, findTarget });
+    const ctx = makeCtx();
+    b.onMove!(ctx, tt(1, 1));
+    vi.advanceTimersByTime(500);
+    expect(b.onMove!(ctx, tt(1, 1))).toMatchObject({ snap: target });
+    expect(b.onMove!(ctx, tt(40, 40))).toEqual({ snap: null });
+    expect(b.onMove!(ctx, tt(41, 41))).toBeUndefined();
+  });
+
   it('moving away from target before dwell cancels timer', () => {
     const target1: SnapTarget<Pose> = { parentId: 'box1', slotPose: { x: 2, y: 3 } };
     const findTarget = vi.fn().mockReturnValueOnce(target1).mockReturnValueOnce(null).mockReturnValue(target1);

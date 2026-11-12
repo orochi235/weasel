@@ -1,5 +1,69 @@
 # @weasel-js/font
 
+## 1.19.0
+
+### Patch Changes
+
+- a5c9cf0: `parseBmFont` refuses an atlas glyph or kerning that is not an object or holds a non-finite field, naming the entry and field.
+  
+  <!-- entry: fix -->
+- 0717d38: A glyph from a CFF (`.otf`) face keeps every vertex of its outline. TrueType outlines now keep the line back to each contour's start before the closing `Z`, which draws the same.
+  
+  <!-- entry: fix visual data -->
+- 0dd9f6e: A CFF glyph whose outline holds a non-finite coordinate is drawn from the SDF tier, as any glyph the outline parser cannot read is.
+  
+  <!-- entry: fix -->
+- 88147f8: A damaged CFF (`.otf`) face is refused at once instead of holding the page for up to a minute while it loads.
+  
+  <!-- entry: fix -->
+- e97950f: A face whose `cmap` names more code points than exist is refused at once instead of running the page out of memory while it loads.
+  
+  <!-- entry: fix -->
+- 874d96f: A truncated font collection is refused with a "font collection is truncated" error instead of an out-of-range `RangeError`.
+  
+  <!-- entry: rank=-5 fix -->
+- 1b65290: A font family name holding a line break or a control character keeps its name in CSS, in `cssFamilyName`, `cssFontFamily`, and DOM text.
+  
+  <!-- entry: fix -->
+- 309adac: An outline face with no `hhea` table embeds in a PDF, or wherever `fontEmbedding` is read, at the ascent and descent its `OS/2` states.
+  
+  <!-- entry: fix -->
+- 0a8d096: An outline face whose font has a `name` table with no names embeds, as a PDF export does, with an empty PostScript name rather than throwing.
+  
+  <!-- entry: rank=-5 fix -->
+- 4355423: `faceMetricsFromTables` leaves out a metric whose value, divided by the em, is not finite or is a rule 0 ems thick.
+  
+  <!-- entry: fix -->
+- 9ce04e0: A font whose GPOS feature or lookup lists point past the end of the file loads as an outline face, skipping the kerning it cannot read.
+  
+  <!-- entry: rank=-5 fix -->
+- 5bd979f: An outline face whose GPOS kerning points a subtable past the end of the file loads and lays out, kerning nothing through that subtable.
+  
+  <!-- entry: rank=-5 fix -->
+- ca98945: `registerFontOutlines` loads an `ArrayBuffer` made in another realm, such as an iframe's.
+  
+  <!-- entry: fix -->
+- b0e09ef: The default outline parser rejects a font with no units per em or no ascent, so its text keeps rendering from the SDF tier. That is a font with no `head` table, or with neither `hhea` nor `OS/2`.
+  
+  <!-- entry: fix visual -->
+- 9975edb: A font collection with one unreadable member still unpacks the others, listing that member's name as `null`. A member is unreadable when its table directory or `name` table runs past the end of the file.
+  
+  <!-- entry: rank=-5 fix -->
+- 88b4697: `warmFonts` waits only on the families it names, so warming `a` no longer waits on, or fails with, a family named `a|400`.
+  
+  <!-- entry: fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

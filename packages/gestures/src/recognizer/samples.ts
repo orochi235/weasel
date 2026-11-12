@@ -3,7 +3,7 @@
  * pump events each becomes.
  */
 import type {
-  BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
+  BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent, PointerButton, PointerDownEvent, PointerSampleStylus,
 } from '../ui/inputEvent';
 import { stylusOf } from '../ui/stylus';
 import type { Point } from './multiTouch';
@@ -32,6 +32,8 @@ export interface PressSample extends PointerSample {
   y: number;
   /** `PointerEvent.pointerType`. Only `'touch'` and `'pen'` arm a long-press. */
   pointerType: string;
+  /** Absent is `'primary'`. See `PointerDownEvent.pointerButton`. */
+  pointerButton?: PointerButton;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
@@ -59,8 +61,13 @@ const at = (s: PointerSample, world: Point) => ({
   pointerId: s.pointerId, x: world.x, y: world.y, clientX: s.clientX, clientY: s.clientY, ...modifiersOf(s),
 });
 
+/** The `drag` copy of a press, as the recognizer buffers it: what a host asks
+ *  `resolveOnly` with to learn whether a press would drag before taking it. */
 export function pointerDownEvent(s: PressSample): PointerDownEvent {
-  return { kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s) };
+  return {
+    kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s),
+    ...(s.pointerButton !== undefined && s.pointerButton !== 'primary' ? { pointerButton: s.pointerButton } : {}),
+  };
 }
 
 export function pointerMoveEvent(s: PointerSample, world: Point): InputEvent {

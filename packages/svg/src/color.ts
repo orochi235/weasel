@@ -7,7 +7,7 @@
  * of the pipeline doesn't have to know about the encoding variants.
  */
 
-import { parseColor, rgbaToHex } from '@weasel-js/core';
+import { rgbaToHex, tryParseColor } from '@weasel-js/core';
 
 /** Result of parsing a `fill=` / `stroke=` attribute value. */
 export type ParsedColor =
@@ -56,15 +56,12 @@ export function parsePaintAttr(raw: string | null | undefined): ParsedColor | nu
     return out;
   }
   // Everything else — hex, rgb()/rgba(), hsl()/hsla(), and named colors —
-  // goes through the kit's CSS parser. It throws on unrecognized input;
-  // we translate that into the `null` the caller expects.
-  try {
-    const [r, g, b, a] = parseColor(s);
-    // Split into the `#rrggbb` + 0..1 alpha contract the rest of the SVG
-    // pipeline depends on. `rgbaToHex` of a 3-tuple always emits 6-char,
-    // lowercase hex; the alpha is carried separately.
-    return { kind: 'solid', color: rgbaToHex([r, g, b]), alpha: a };
-  } catch {
-    return null;
-  }
+  // goes through the kit's CSS parser.
+  const rgba = tryParseColor(s);
+  if (!rgba) return null;
+  const [r, g, b, a] = rgba;
+  // Split into the `#rrggbb` + 0..1 alpha contract the rest of the SVG
+  // pipeline depends on. `rgbaToHex` of a 3-tuple always emits 6-char,
+  // lowercase hex; the alpha is carried separately.
+  return { kind: 'solid', color: rgbaToHex([r, g, b]), alpha: a };
 }

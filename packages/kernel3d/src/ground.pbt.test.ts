@@ -8,7 +8,7 @@ import fc from 'fast-check';
 import type { NodeId } from '@weasel-js/routing';
 import { dot, type Vec3 } from '@weasel-js/geom/3d';
 import { aimSpace3d } from './aim';
-import { createCamera } from './camera';
+import { createCamera, MAX_PITCH } from './camera';
 import { fromAimPoint, groundAxes, groundHit, toAimPoint } from './ground';
 import { createInsert, type Footprint } from './insert';
 import { coord, isFinite3, paneAt, paneFractions, runs, tally, timeoutFor, v3, viewport } from './pbt.fixture';
@@ -29,6 +29,18 @@ const up: fc.Arbitrary<Vec3> = fc.tuple(
 
 const pointOf = (vp: Viewport3d, f: { fx: number; fy: number }) => paneAt(vp, f);
 
+/** `vp` with its camera's target on the ground of a world with `u` up, looking down at it from 0.2 rad or more. The
+ *  fixture draws pitches and pane points near 0 most of the time, and a level camera turning about the world's up sees
+ *  the ground through less than a tenth of those; these see it through enough for the properties below to run. */
+const grounded = (vp: Viewport3d, u: Vec3): Viewport3d => ({
+  ...vp,
+  camera: {
+    ...vp.camera,
+    pitch: 0.2 + (Math.abs(vp.camera.pitch) % (MAX_PITCH - 0.2)),
+    target: { ...vp.camera.target, [groundAxes(u).up]: 0 },
+  },
+});
+
 describe('ground axes and aim points, property', () => {
   it('name three distinct axes, and convert world points both ways exactly', () => {
     fc.assert(fc.property(up, v3(1e6), (u, p) => {
@@ -46,7 +58,8 @@ describe('ground axes and aim points, property', () => {
 describe('groundHit, property', () => {
   it('lies on the ground under the pointer, or there is none', () => {
     const seen = tally();
-    fc.assert(fc.property(viewport, paneFractions(), up, (vp, f, u) => {
+    fc.assert(fc.property(viewport, paneFractions(), up, (free, f, u) => {
+      const vp = grounded(free, u);
       const s = pointOf(vp, f);
       const hit = groundHit(vp, s, u);
       if (hit === null) {
@@ -57,7 +70,7 @@ describe('groundHit, property', () => {
       expect(isFinite3(hit)).toBe(true);
       const scale = 1 + Math.abs(hit.x) + Math.abs(hit.y) + Math.abs(hit.z);
       expect(Math.abs(dot(hit, u))).toBeLessThanOrEqual(1e-9 * scale);
-      const back = projectPoint(hit, vp);
+      const back = projectPoint(hit, { ...vp, up: u });
       if (back === null) return;
       seen.count('drawn');
       const tol = 1e-6 * (vp.width + vp.height) * scale;
@@ -72,14 +85,15 @@ describe('groundHit, property', () => {
 
 describe('aimSpace3d, property', () => {
   it('unprojects onto the ground at height 0, with a near-axis `up` too (shrunk)', () => {
-    const vp: Viewport3d = { camera: createCamera({ distance: 0.5, fov: 0.2 }), width: 207, height: 20 };
+    const vp: Viewport3d = { camera: createCamera({ distance: 0.5, fov: 0.2, pitch: 0.5 }), width: 207, height: 20 };
     const space = aimSpace3d(vp, null, { up: { x: 6.123233995736766e-17, y: 6.123233995736766e-17, z: 1 } });
     expect(space.unproject({ x: 0, y: 0 })!.z).toBe(0);
   });
 
   it('unprojects a pane point onto the ground and projects it back to the same pixel', () => {
     const seen = tally();
-    fc.assert(fc.property(viewport, paneFractions(), up, (vp, { fx, fy }, u) => {
+    fc.assert(fc.property(viewport, paneFractions(), up, (free, { fx, fy }, u) => {
+      const vp = grounded(free, u);
       const space = aimSpace3d(vp, null, { up: u });
       const px = { x: fx * vp.width, y: fy * vp.height };
       const ground = space.unproject(px);
@@ -102,7 +116,7 @@ describe('aimSpace3d, property', () => {
       const space = aimSpace3d(vp, null, { up: u });
       const world = fromAimPoint({ x, y, z }, axes);
       expect(dot(world, u)).toBeCloseTo(z, 9);
-      const s = projectPoint(world, vp);
+      const s = projectPoint(world, { ...vp, up: u });
       const p = space.project({ x, y, z });
       if (s === null) expect(p).toBeNull();
       else expect(p).toEqual({ x: s.x - (vp.originX ?? 0), y: s.y - (vp.originY ?? 0) });
@@ -121,7 +135,8 @@ describe('createInsert, property', () => {
     const seen = tally();
     fc.assert(fc.property(
       viewport, paneFractions(), paneFractions(), up, fc.double({ min: 0, max: 2, noNaN: true }), fc.boolean(),
-      (vp, a, b, u, minExtent, fromCenter) => {
+      (free, a, b, u, minExtent, fromCenter) => {
+        const vp = grounded(free, u);
         const start = pointOf(vp, a);
         const end = pointOf(vp, b);
         const box = { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y), width: Math.abs(end.x - start.x), height: Math.abs(end.y - start.y) };
@@ -162,7 +177,8 @@ describe('createInsert, property', () => {
 
   it('without ends, covers every corner of the dragged box cast onto the ground', () => {
     const seen = tally();
-    fc.assert(fc.property(viewport, paneFractions(), paneFractions(), up, (vp, a, b, u) => {
+    fc.assert(fc.property(viewport, paneFractions(), paneFractions(), up, (free, a, b, u) => {
+      const vp = grounded(free, u);
       const p = pointOf(vp, a);
       const q = pointOf(vp, b);
       const box = { x: Math.min(p.x, q.x), y: Math.min(p.y, q.y), width: Math.abs(q.x - p.x), height: Math.abs(q.y - p.y) };

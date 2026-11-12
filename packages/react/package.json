@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/react",
-  "version": "1.18.2",
+  "version": "1.19.0",
   "description": "Generic React hooks the weasel packages share: a committed-value ref, content-stable identity, and the stylesheet a component adopts into its root. No weasel domain in it.",
   "weasel": {
     "tier": "base"
@@ -25,7 +25,7 @@
     "react": { "optional": true }
   },
   "dependencies": {
-    "@weasel-js/registry": "1.18.2"
+    "@weasel-js/registry": "1.19.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

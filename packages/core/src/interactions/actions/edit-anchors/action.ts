@@ -226,7 +226,7 @@ const roleHeld = roleReader(EDIT_ANCHORS_ROLES);
 function moveHandle(scratch: EditAnchorsScratch, ctx: InvocationCtx, params: EditAnchorsParams): void {
   const side = scratch.part === 'controlIn' ? 'in' : 'out';
   // Modifiers and held locks are read live, so either can change mid-drag.
-  const held = (ctx.deps.editAnchors ?? scratch.dep).handleLocks ?? locksOf(params.handleLock);
+  const held = scratch.dep.handleLocks ?? locksOf(params.handleLock);
   const locks = locksInForce(held, ctx);
   const locked = scratch.handlePress ? lockHandle(scratch.handlePress, ctx.world, locks) : { to: ctx.world, guide: null };
   scratch.guide = locked.guide;

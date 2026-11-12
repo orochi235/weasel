@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { asNodeId, createScene, pagesOf, solid, type NodeId, layoutPages } from '@weasel-js/core';
 import type { WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
-import { importSvgText, openSvgFile, openSvgText, UnreadableSvgError } from './openSvg';
+import { importSvgFile, importSvgText, openSvgFile, openSvgText, UnreadableSvgError } from './openSvg';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { contentRoots } from '@weasel-js/core';
 import { backgroundOf, setBackground } from './docBackground';
 import { drawScene } from './testScenes';
-import { pickSvgFileNamed, SWILL_NAMESPACES } from './svgInterop';
+import { SWILL_NAMESPACES } from './svgInterop';
 import { sceneToSvgString } from './svgExport';
 
 function sceneWithOneShape() {
@@ -158,6 +158,33 @@ describe('Save then Open: a mark with children', () => {
     expect(mark.clip).toBe(clip);
     expect(reopened.get(reopened.childrenOf(mark.id)[0])!.data.fill).toMatchObject({ paint: { color: '#0000ff' } });
   });
+
+  it('reopens each node with the name and the lock the Layers panel gave it', async () => {
+    const saved = createScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({ systemLayers: [{ id: 'default' }] });
+    const g = saved.add({ kind: 'group', layer: 'default', pose: { x: 0, y: 0, width: 40, height: 40 }, data: { label: 'Frame' } });
+    const m = saved.add({
+      kind: 'mark', layer: 'default', parent: g, pose: { x: 0, y: 0, width: 40, height: 40 },
+      data: { path: rect(40, 40), fill: { paint: solid('#ff0000') }, label: 'Red & <bold>' },
+    });
+    for (const [x, label] of [[5, undefined], [20, 'Second']] as const) {
+      const leaf = saved.add({
+        kind: 'mark', layer: 'default', parent: m, pose: { x, y: 5, width: 10, height: 10 },
+        data: { path: rect(10, 10), fill: { paint: solid('#0000ff') }, ...(label ? { label } : {}) },
+      });
+      if (label) saved.setLocked(leaf, true);
+    }
+    saved.setLocked(m, true);
+    const named = (scene: Drawn) => {
+      const order: NodeId[] = [];
+      const walk = (id: NodeId) => { order.push(id); scene.childrenOf(id).forEach(walk); };
+      contentRoots(scene).forEach(walk);
+      return order.map((id) => [scene.get(id)!.data.label, scene.get(id)!.locked === true]);
+    };
+    const reopened = sceneWithOneShape();
+    openSvgText(reopened, await sceneToSvgString(saved, PAGE), 'page.svg');
+    expect(named(reopened)).toEqual(named(saved));
+    expect(named(reopened)).toEqual([['Frame', false], ['Red & <bold>', true], [undefined, false], ['Second', true]]);
+  });
 });
 
 describe('importSvgText', () => {
@@ -170,18 +197,6 @@ describe('importSvgText', () => {
 
     scene.undo();
     expect(contentRoots(scene)).toEqual([asNodeId('old')]);
-  });
-});
-
-describe('pickSvgFileNamed', () => {
-  afterEach(() => vi.restoreAllMocks());
-
-  it('resolves with the picked file\'s name beside its text', async () => {
-    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
-      Object.defineProperty(this, 'files', { value: [new File(['<svg/>'], 'art.svg', { type: 'image/svg+xml' })] });
-      this.dispatchEvent(new Event('change'));
-    });
-    expect(await pickSvgFileNamed()).toEqual({ name: 'art.svg', text: '<svg/>' });
   });
 });
 
@@ -252,5 +267,21 @@ describe('a file that is not an SVG document', () => {
     expect(t.leaveMode).not.toHaveBeenCalled();
     expect(t.showFirstPage).not.toHaveBeenCalled();
     expect(danger).toHaveBeenCalledWith('“broken.svg” was not opened', expect.anything());
+  });
+
+  it('says so when the picked file cannot be read, as Save does when it cannot write, rather than acting canceled', async () => {
+    const unreadable = new File(['<svg/>'], 'gone.svg');
+    vi.spyOn(unreadable, 'text').mockRejectedValue(new DOMException('The file is gone', 'NotFoundError'));
+    vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(function (this: HTMLInputElement) {
+      Object.defineProperty(this, 'files', { value: [unreadable] });
+      this.dispatchEvent(new Event('change'));
+    });
+    const danger = vi.spyOn(toast, 'danger');
+    const t = { scene: sceneWithOneShape(), setFilename: vi.fn(), showFirstPage: vi.fn(), leaveMode: vi.fn() };
+    await openSvgFile(t);
+    expect(danger).toHaveBeenLastCalledWith('“gone.svg” was not opened', expect.objectContaining({ description: 'The file is gone' }));
+    await importSvgFile(t.scene);
+    expect(danger).toHaveBeenLastCalledWith('“gone.svg” was not imported', expect.objectContaining({ description: 'The file is gone' }));
+    expect(contentRoots(t.scene)).toEqual([asNodeId('old')]);
   });
 });

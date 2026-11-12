@@ -7,13 +7,20 @@ them all to the same number whether or not they changed.
 ## The normal path
 
 1. **Write a changeset with the change.** `npx changeset`, pick the packages,
-   pick `patch`, and write it as "Writing a changeset" below says.
+   pick the level semver gives the change (`patch` for a fix, `minor` for new
+   API, `major` for a breaking change), and write it as "Writing a changeset"
+   below says. The level a changeset names does not decide the release's.
+   `check:changesets` refuses one below what its tags imply: `breaking` is
+   `major`, and `api` or `new` is `minor`.
    `npm run check:changesets` holds every pending one to those rules.
 2. **Pick the highlights.** `npm run release:pick` lists the pending changesets
    by rank. Choose the few a reader of this release should see first; it writes
    `pick` into their markers. See "Picking highlights".
-3. **Version on `main`.** `npm run version-packages` bumps every manifest,
-   consumes the changesets and rewrites the `CHANGELOG.md`s. It refuses while
+3. **Version on `main`.** `npm run version-packages -- --bump <level>` bumps
+   every manifest to the next `patch`, `minor` or `major` version (`patch`
+   without the flag), consumes the changesets and rewrites the `CHANGELOG.md`s.
+   Each entry stays under its own changeset's level in the `CHANGELOG.md`s;
+   only the version number follows `--bump`. It refuses while
    no pending changeset is picked (`-- --no-picks` overrides). Read the
    changelog diff, commit it as `chore: version packages`, and push.
 4. **Dispatch the release.** `gh workflow run release.yml -R orochi235/weasel`.
@@ -174,7 +181,7 @@ expires partway through, run it again.
 build, manifest check, consumer smoke test. It runs only when typed: the root
 package is private, so npm never fires it as a lifecycle hook, and the release
 workflow does not call it. The release workflow builds, then runs `check:imports`,
-`check:bumps`, `check:lockstep` and `check:first-publish` before it publishes. It
+`check:lockstep` and `check:first-publish` before it publishes. It
 does not run the manifest check, which fails on any `exports`/`types` path
 promising a file `npm pack` would not include: CI and `test:fleet:postbuild` run
 it on the commit before it merges.

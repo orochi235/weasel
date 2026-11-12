@@ -14,6 +14,7 @@ import { CANVAS_CONTEXT_ATTRIBUTES } from '../contextAttributes';
 import { defaultDrawOne, paintBoundsFor } from '../defaultDrawOne';
 import type { SceneViewDrawOne } from '../nodeShapeTypes';
 import type { PaintBoundsFn } from '../paintCull';
+import { registerShaders } from '../registerShaders';
 import { buildSceneViewCommands } from '../sceneViewRender';
 import type { FrameInputs, FromWorker, ToWorker } from './protocol';
 import { createSceneMirror, type SceneMirror, type SceneMirrorOptions } from './sceneMirror';
@@ -76,7 +77,7 @@ function openRenderer(
     imageMinification: options.imageMinification,
     retainBudget: options.retainBudget,
   });
-  for (const handle of options.shaders ?? []) renderer.registerProgram(handle);
+  registerShaders(renderer, options.shaders);
   return renderer;
 }
 
@@ -90,6 +91,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     else port.postMessage(msg);
   };
   const dirty = () => post({ type: 'dirty' });
+  const report = (e: unknown) => post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
   const animations = createWorkerAnimations(options.animations ?? {}, dirty);
   const answerImage = loadFromPage((src, size) => post({ type: 'image', src, size }));
   subscribeImageReady(dirty);
@@ -97,6 +99,8 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
   let painting: Painting | null = null;
   const alphas = new Map<string, number>();
   const alphaFor = (id: string): number => alphas.get(id) ?? 1;
+  /** Whether the last paint that threw has had its retry. */
+  let retried = false;
 
   const frame = (msg: Extract<ToWorker, { type: 'frame' }>): void => {
     if (!painting) return;
@@ -120,13 +124,19 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
     }
     const { scene } = mirror;
     animations.at(msg.at, msg.resumed === true);
-    let failed: unknown;
-    if (scene && msg.animations) {
-      try { animations.run(msg.animations, scene); } catch (e) { failed = e; }
-    }
+    const failed = scene && msg.animations ? animations.run(msg.animations, scene) : [];
     animations.advance();
-    paint(scene);
-    if (failed !== undefined) throw failed;
+    try {
+      paint(scene);
+      retried = false;
+    } catch (e) {
+      // As the page's frame loop does: the page sends a frame only when something changes, so a
+      // failed paint would otherwise stand until then. One retry, so a paint that always throws doesn't spin.
+      if (!retried) { retried = true; dirty(); }
+      throw e;
+    } finally {
+      for (const e of failed) report(e);
+    }
   };
 
   const paint = (scene: SceneMirror['scene']): void => {
@@ -181,7 +191,7 @@ export function hostSceneRender(port: RenderPort, options: SceneRenderServeOptio
       // The page waits on these answers.
       if (msg.type === 'frame') post({ type: 'drawn' });
       else if (msg.type === 'readIds') post({ type: 'ids', id: msg.id, ids: NO_IDS() });
-      post({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+      report(e);
     }
   });
 }

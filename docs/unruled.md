@@ -242,6 +242,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-11 (my call, audit round 16, history lane): `scene.jumpToHistoryIndex` (draw's History panel) does nothing
+  and returns false while a journal is open, where it walked the scene stack beneath the journal's applied edits.
+  Rejected: committing the journal first, which would end the user's mode from a click on the panel.
+- 2026-11-11 (my call, audit round 15, scene lane): `sceneToAdapter(scene)` and `useSceneAdapter(scene)` given no
+  `selection` read and write the scene's own selection, where they answered `[]` and dropped writes. The boolean,
+  outline and shape-builder actions read `adapter.getSelection()` and acted on nothing through such an adapter.
 - 2026-11-11 (my call, core actions second property pass): a drag's pointer that is no finite number lands nowhere,
   as routing's sweep and kernel3d's camera already had it. Every drag `inPlane` wraps, the marquee, and the lasso
   decline a press at such a point; move, resize, rotate, clone, insert, the marquee, and the lasso skip such a move
@@ -416,6 +422,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   and `remapRotatedLeaf` share. The true factor is past the double range.
 
 ## Rendering, canvas, and paint
+- Open (2026-11-11, audit round 16, errors lane): whether a node whose `drawOne` throws should cost only that node.
+  Today it costs the frame, on the page and in the render worker alike (each retries once, then waits for a change),
+  while a contribution's `beforePaint`/`afterPaint`, an outline glyph, and an ingest handler each cost only
+  themselves. Isolating it means a try in the command build, which every `drawOne` call site in core shares.
 - 2026-11-11 (my call, core canvas second pass): `reconcileSpecs` puts a group's member back on its own layer after
   the group's spec changes layer and the member's does not, wherever the group's new layer allows; `setLayer` alone
   still carries the whole subtree (fef31b751). The member's spec says where it stands, which is what the render
@@ -888,6 +898,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## ui, prefs, and theme
 
+- Open (2026-11-11, audit round 15, leftovers lane): which minus sign a formatted number uses, and one formatter
+  for both. quantity writes a negative with U+2212 (`MINUS_SIGN`, `packages/quantity/src/number.ts`), and plot's
+  `formatTick` (`packages/plot/src/scales/tickFormat.ts`) writes `toFixed`'s hyphen-minus, so a chart's tick reads
+  `-5` beside a readout of `−5`. Left as it is: the fold is either plot formatting ticks through quantity, or both
+  reading one shared sign, and which sign a tick label should carry (U+2212 also changes a copied label) is a call.
 - Ruled 2026-11-10 (my call, overnight sweep): a tiling's `columns` is held to at most 2^24, so an `Infinity`
   count lays its items out in one row with finite, whole tracks; past that, a stretched row's tracks stop being
   whole numbers. Why: an input past the double range is handled at its limit.
@@ -924,6 +939,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is a lone combining mark no longer finds one the text composed into the letter before it.
 - 2026-11-11 (my call, same pass): select's presses, ranges, and store read ids as a `Set` does, `NaN` one id and
   `-0` the same as `0`, as ui-input's selection values do.
+- 2026-11-11 (my call, audit round fifteen): a menu takes a space typed within the typeahead window of a letter
+  as part of the search, as `rowKey` lists and the hud list do, so typing "save a" finds "Save As…" rather than
+  choosing "Save" at the space. A space with no live search still chooses.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
 - Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
   stack rather than answer.
@@ -1068,6 +1086,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- Open (2026-11-11, audit round 15, leftovers lane): how close together two edits must be to undo as one step,
+  and who sets it. labkit merges a trial's config writes to one path within a hardcoded 500 ms (`GESTURE_MS`,
+  `packages/labkit/src/trial/useTrialWrites.ts`); ui exposes the same idea as the kit setting `history.coalesceMs`,
+  default 800 (`packages/ui/src/kitSettings.ts`), read by `PrefSchemaEditor`; ui's Badge lab uses its own 300
+  (`packages/ui/src/components/Badge/lab/useLabState.ts`). Left as they are: folding them means picking one default
+  and whether labkit reads the kit setting.
 - Ruled 2026-11-10 (my call, overnight sweep): the avoid router reroutes a connector its last commit
   found no path for only when something it depends on changes (its ends or stops, an attached shape, an
   obstacle meeting the line it falls back to), so an unchanged scene answers nothing. A commit retries
@@ -1286,6 +1310,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 - 2026-10-18: "Snap to grid" also snaps resize corners, inserts and pen clicks, as its description
   already said.
+- 2026-11-11 (my call, audit round 16, errors lane): a stored document `readStored` cannot parse is copied to
+  `<key>:unreadable` with a `console.error`, then the app starts from its fallback as before, and nothing tells the
+  user. Open: whether draw and chart should toast it, and whether anything should offer the copy back.
 
 ## Build
 
@@ -1553,7 +1580,7 @@ Calls the round made:
 - A `Tree` drop with a zero, negative or NaN indent keeps the row's depth.
 - A pasted table keeps a tab per empty cell before one with text; a trailing empty cell still pastes nothing.
 - A chunks or dots tile with a size that isn't positive draws nothing.
-- `check:bumps` and the site's Releases view read changesets through `@changesets/parse`, which arrives through
+- `version-packages` and the site's Releases view read changesets through `@changesets/parse`, which arrives through
   `@changesets/cli` and is not declared at the root. `import { type A }` counts as a run-time import in
   `scripts/lib/imports.mjs`, as `verbatimModuleSyntax` builds it.
 - `resolveStroke`'s doc says a stroke of base width 0 draws through its per-vertex widths; `tessellateStroke`,
@@ -1661,3 +1688,87 @@ Calls the lanes made without a ruling:
 - Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
 - Open: which edge an RTL menu favors when it fits on neither side, or is wider than the viewport. menu's placement
   property skips both cases (2026-11-10).
+
+## Audit round sixteen (2026-11-11): contracts
+
+- Open: a mixed number slider in `PropertyField` disables its track and reads out a dash that takes no focus, so it
+  cannot be edited, while `PrefsForm`'s `mixed` says editing one calls `onChange` as usual. A test pins the disabled
+  track ("parks a mixed slider").
+- Open: `Slider`'s region drag moves the two thumbs beside it by one track distance with no `step` or stop snapping,
+  and a shift-all drag snaps to `step` even under `snap: 'strict'`, which says `step` no longer applies and every
+  stop is a detent. Under strict stops spaced unevenly, both thumbs cannot land on stops and keep their gap.
+- Open: a `ControlPanel` group drawn `as: 'bar'` hands its cells no `errors`, `changed` or `auto`, so an error, a
+  changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
+- Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`
+  pick the topmost hit, so with alt-cycling `onClick` can name a different node from the one the press selected.
+
+## Audit round sixteen (2026-11-11): leftovers
+
+- A raw `History`'s `undo`, `redo` and `goto` throw while a journal is active, as `beginJournal` does, rather than
+  stepping into the journal as the scene facade's `undo` does (2026-11-12).
+- A snapshot in an unsupported version throws `SnapshotShapeError`, checked before any node; an unregistered
+  function key throws a new `SnapshotKeyError` carrying `id`, `field` and `key` (2026-11-12).
+- A text edit takes focus back from a checkbox or a slider in its chrome after styling, as from a button, since
+  text-dom now asks gestures' `isEditableTarget`; arrow keys on a slider then reach the text, not the slider
+  (2026-11-12).
+- Open: whether Mod+Z in a text field inside an editor with its own history (`PrefSchemaEditor`'s fields,
+  `CssVarsPanel`'s apart from its filter) steps the editor or is left to the field. Page-level handlers leave it to
+  the field (`undoKeyStep`); these two take it.
+- Open: draw's soft modes without a journal cannot discard an edit that coalesced into the entry before the mode,
+  and a text box's typing coalesces into its insert on purpose (`useTextEditSession`'s "one undo entry with its
+  insert"). Sealing the history on entry fixes discard and splits that entry. No soft mode has a coalescing edit
+  today.
+- Open: whether a `LensCapture`'s bitmap stays valid after the source's next capture. The Pixels source closes the
+  captures it throws away, and leaves a replaced shot open because `capture()` handed it to a caller that may paint
+  it later.
+- Open: whether paint keeps a lerp of its own (no dependencies) or takes geom's, which also stays finite where
+  `b - a` overflows. d3's transition pins `t` 0 and 1 over a pose descriptor's lerp; that is not a copy.
+- Open: whether `useGestureDispatcher`'s `views` (multi-view routing, which core fills through
+  `@weasel-js/routing/internal`) becomes public surface.
+- Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
+- Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
+  ask for `^19.0.0`.
+
+## Audit round seventeen (2026-11-12): params
+
+- A color leaf the selected nodes do not hold draws as `mixed` does, an empty checkered swatch with its opacity
+  locked until a color is picked, rather than the leaf's default; `ColorField` takes `unset` for it (2026-11-12).
+- Open: a paint leaf the nodes do not hold still shows the leaf's default, dimmed, as `PaintField`'s `unset` says
+  ("a value is in effect but was never chosen"). Under `SelectionPanel` that default is not what paints, since
+  `absentIsDefault` is what makes the default the value in effect; `FieldBase.unset` says a control shows no
+  value there. Whether paint follows color to an empty trigger.
+- Open: labkit fills a stored trial's missing config keys from its instrument's defaults on load, and repairs
+  nothing against the config schema: a number past a since-narrowed `max`, or an enum option since removed, reaches
+  the instrument and the panel as stored, and only the next edit clamps it. Repairing on load needs the schema at
+  hydration and has to leave `minAt`/`maxAt` bounds, auto values and encoded leaves alone.
+
+## Audit round seventeen (2026-11-12): theme
+
+- Open: whether `PlotView` with no `theme` follows the nearest `ThemeProvider`, as `useHud` does, or keeps drawing
+  `PLOT_THEME`, the weasel theme's dark mode, as documented. In a light-mode provider its text and axes are drawn in
+  dark mode's near-white `fg`. Ties to the `docs/TODO.md` entry on whether the site's `.ckd-canvas` stage follows the
+  mode.
+
+## Audit round seventeen (2026-11-12): persistence
+
+- Pasting again from a canvas's in-memory clipboard re-snapshots what the last paste made, falling back to the
+  made nodes only when the adapter's snapshot comes back empty (a React-state adapter not yet flushed), so the
+  next paste reads them in world as a copy does (2026-11-12).
+- draw's SVG Save writes a node's Layers-panel name as `wd:label` and its lock as `wd:locked="true"`, and Open and
+  Import restore both, locking after the nodes are added (2026-11-12).
+- `nodeSpecsFromSnapshot`'s new `systemLayers` builds the specs into a scene of those layers to prove they load,
+  so draw and chart build one scene more at boot (2026-11-12).
+- Open: Cmd+V pastes the OS clipboard's copy through the weasel-JSON handler at the adapter's fixed offset from the
+  copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
+  the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
+
+## Audit round seventeen (2026-11-12): consumer setup
+
+- Open: diagram's paired helpers (`diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramLabelDrag`, the
+  container and sequence ones) hand back a layer to `registerLayer` and a contribution for `ambient`, so the README
+  has a consumer hold a canvas ref and register the layer in an effect. `SurfaceContribution.attach` exists for
+  exactly this ("a registered (hit-testable) layer"), and the minimap registers through it. Moving each layer into
+  its contribution's `attach` makes one `ambient` entry the whole install, but breaks a consumer who also
+  registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
+  `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
+  contribution's `overlay`, which it paints and never hit-tests.

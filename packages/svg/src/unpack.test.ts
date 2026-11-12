@@ -330,6 +330,16 @@ describe('unpackSvgFiles', () => {
     expect(nodes.every((n) => n.layer === 'main')).toBe(true);
   });
 
+  it('says a file that is not an SVG document failed to parse, and why, rather than that it held nothing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { c, batches } = ctx();
+    await unpackSvgFiles([asFile('<svg xmlns="http://www.w3.org/2000/svg"><rect', 'broken.svg')], c);
+    expect(batches).toHaveLength(0);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/"broken\.svg" failed to parse: SVG parse error/));
+    warn.mockRestore();
+  });
+
   it('keeps hidden content, flagged hidden on the node that hid it', async () => {
     const { c, batches } = ctx({ point: { x: 400, y: 300 } });
     await unpackSvgFiles([asFile(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">

@@ -1,5 +1,20 @@
 # @weasel-js/text-shaping
 
+## 1.19.0
+
+### Patch Changes
+
+- 50b4730: `shape` no longer answers one request with another's cached glyphs when a NUL or a comma made their cache keys run together.
+  
+  A feature setting it cannot read is refused every time.
+  
+  <!-- entry: fix -->
+- eedbdb4: `glyphD` writes an offset of 1e21 ems or more as plain digits, as its doc promises, rather than exponent notation an SVG path parser misreads.
+  
+  <!-- entry: rank=-5 fix -->
+- Updated dependencies [f533898]
+  - @weasel-js/bidi@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

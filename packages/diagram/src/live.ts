@@ -77,7 +77,9 @@ export interface UseLiveLayoutOptions<TPose> {
   /** The undo entry's name. Default `'Layout'`. */
   label?: string;
   /** Fires once the run has settled or been stopped and its poses are in the
-   *  document, with how many participants moved. */
+   *  document, with how many participants moved. Not for a run that never
+   *  starts: a planner's answer arriving after a node moved or resized is
+   *  dropped, and nothing runs until the next `start`. */
   onSettle?: (moved: number) => void;
   /** Hears why a `LayoutPlanner` failed to answer, and no run starts. Unset,
    *  the failure goes to `console.error`. */
@@ -93,7 +95,8 @@ export interface UseLiveLayoutOptions<TPose> {
 /** Controls for a live layout run, from {@link useLiveLayout}. */
 export interface LiveLayout {
   /** Heat and run. Idempotent while running, which includes waiting on a
-   *  planner's answer. */
+   *  planner's answer; an answer that finds a node moved or resized since it
+   *  was asked for is dropped, and leaves nothing running. */
   start(): void;
   /** Finish now: commit where the nodes stand. A planner's answer still to
    *  come is dropped. */

@@ -1,6 +1,7 @@
 import { lookupT } from './arcLookup';
 import { bezierDirection, bezierPoint } from './bezier';
 import { segmentArc, tableInternals, type LengthTable, type SegmentArc } from './lengthTable';
+import { lerp } from '../scalar';
 
 type Comps = [number, number, number];
 
@@ -94,4 +95,3 @@ function direction(t: LengthTable, r: number, i: number): Comps | null {
   return l > 0 ? [d[0] / l, d[1] / l, d[2] / l] : null;
 }
 
-const lerp = (a: number, b: number, f: number): number => a + (b - a) * f;

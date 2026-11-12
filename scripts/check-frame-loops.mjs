@@ -16,7 +16,7 @@ import { judgeUses, matchLines, sourceFiles } from './lib/allowlisted-uses.mjs';
 
 /** Paths that may name `requestAnimationFrame` or `setInterval`, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
-  ['packages/react/src/useVisibleRaf.ts', 'the gate itself'],
+  ['packages/react/src/scheduledFrame.ts', 'the gate itself: `useVisibleRaf` schedules each loop\'s frame here'],
   ['packages/forge/src/test/runStory.tsx', 'not a loop: a story test waits for one painted frame before checking faults'],
   ['packages/forge/src/shell/storyShow.ts', 'not a loop: an in-document story waits for one painted frame after its fonts settle before announcing it rendered'],
   ['packages/forge/src/frame/FrameController.tsx', 'not a loop: a story frame waits for one painted frame after its fonts settle before announcing it rendered'],

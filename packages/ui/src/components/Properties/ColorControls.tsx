@@ -53,8 +53,9 @@ export function ColorControl(p: PropertyColorFieldProps) {
     <ColorField
       id={p.id}
       className={p.className ? `${s.colorField} ${p.className}` : s.colorField}
-      value={p.mixed ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
+      value={p.mixed || p.unset ? undefined : withAlpha ? withAlpha01(split.rgb, alpha) : (p.value ?? '#000000')}
       mixed={p.mixed}
+      unset={p.unset}
       alpha={withAlpha}
       alphaDisabled={p.alphaDisabled}
       disabled={p.disabled}

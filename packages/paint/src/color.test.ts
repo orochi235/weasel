@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
-import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
+import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -329,5 +329,13 @@ describe('resolveColor', () => {
     const after = resolveColor('#00ff00');
     expect(after).not.toBe(before);
     expect([...after]).toEqual([...before]);
+  });
+});
+
+describe('tryParseColor', () => {
+  it("reads what parseColor reads, and is null where parseColor throws", () => {
+    expect(tryParseColor('#ff000080')).toEqual(parseColor('#ff000080'));
+    expect(tryParseColor('not a color')).toBeNull();
+    expect(tryParseColor('currentColor')).toBeNull();
   });
 });

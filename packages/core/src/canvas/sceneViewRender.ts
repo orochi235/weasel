@@ -158,11 +158,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     v: View,
   ): DrawCommand[] => {
     const overrideAlpha = scene.overrides.read(node.id as NodeId)?.alpha ?? 1;
-    const shownNode = nodeAsShown(scene.overrides, node);
-    const at = drawnAt ? drawnAt(shownNode, pose) : pose;
     return wrapNodeOutput(
-      derived(shownNode, at, v),
-      at,
+      derived(nodeAsShown(scene.overrides, node), pose, v),
+      pose,
       (alphaFor ? alphaFor(node.id) : 1) * overrideAlpha,
     );
   };
@@ -180,6 +178,9 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
     undefined,
     derivedPathOf as unknown as Parameters<typeof buildSceneTree>[4],
     culled as Parameters<typeof buildSceneTree>[5],
+    drawnAt
+      ? ((node: Node<TData, TLayer, TPose>, pose: TPose) => drawnAt(nodeAsShown(scene.overrides, node), pose)) as Parameters<typeof buildSceneTree>[6]
+      : undefined,
   );
   const children = cull && cullRect ? cullDrawCommands(tree, viewToMat3(view), cullRect, cull.dpr) : tree;
   if (extraCommands && extraCommands.length > 0) {

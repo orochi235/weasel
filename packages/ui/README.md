@@ -14,12 +14,25 @@ npm install @weasel-js/ui
 
 ## Usage
 
-```ts
-import { /* … */ } from '@weasel-js/ui';
+```tsx
+import '@weasel-js/theme/tokens.css';
 import '@weasel-js/ui/style.css';
+import { Button } from '@weasel-js/ui/components/Button';
+import { Checkbox } from '@weasel-js/ui/components/Checkbox';
+
+export function Toolbar({ snap, setSnap }: { snap: boolean; setSnap: (on: boolean) => void }) {
+  return (
+    <>
+      <Button onClick={() => setSnap(false)}>Reset</Button>
+      <Checkbox isSelected={snap} onChange={setSnap}>Snap</Checkbox>
+    </>
+  );
+}
 ```
 
-The stylesheet is required — component styles ship as one bundled file.
+Both stylesheets are required: component styles ship as one bundled file, and read the design tokens
+`@weasel-js/theme/tokens.css` declares. Each component has its own entry, `@weasel-js/ui/components/<Name>`,
+so a bundle holds only the ones it imports; the main entry re-exports them all.
 
 A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
 scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s

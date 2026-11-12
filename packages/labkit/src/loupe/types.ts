@@ -129,8 +129,9 @@ export interface LoupeOptions<TData = unknown, TLayer extends string = string, T
    *  turns hold-to-peek off. Matched against `KeyboardEvent.key`. */
   peekKey?: string | null;
   /** Called with the color under the aim, wherever the surface can say. The
-   *  canvas painter and a `source` read it back; a DOM loupe with no `source`
-   *  has no pixels to sample. `null` where nothing is drawn under the aim. */
+   *  canvas painter and a `source` read it back; a `render` or `sceneView`
+   *  loupe with no `source` samples nothing and reports `null`. `null` too
+   *  where nothing is drawn under the aim. */
   onColorChange?: (hex: string | null) => void;
 }
 

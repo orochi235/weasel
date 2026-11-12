@@ -27,6 +27,12 @@ describe('renderReadme', () => {
     expect(renderReadme(once, traits)).toBe(once);
   });
 
+  it('reads the description of a row with an extra empty cell, and redraws it with two', () => {
+    const marked = '| `geom` | <img src="docs/badges/dom.svg"> | | pure geometry |';
+    const out = renderReadme(readme(marked), new Map([['geom', none]]));
+    expect(rowOf(out, 'geom')).toBe('| `geom` |  | pure geometry |');
+  });
+
   it('drops a row whose package is gone, and refuses a package with no row', () => {
     const out = renderReadme(readme('| `geom` | g |\n| `gone` | old |'), new Map([['geom', none]]));
     expect(rowOf(out, 'gone')).toBeUndefined();

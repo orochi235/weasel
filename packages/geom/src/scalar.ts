@@ -42,9 +42,13 @@ export function trimNumber(n: number, places = 6): string {
   return String(Number.isFinite(rounded) ? rounded : n);
 }
 
-/** The number `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
+/** The number `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. Exactly `b` at `t = 1`, which
+ *  `a + (b - a) * t` can miss by an ulp, and finite where `b - a` would overflow. */
 export function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
+  if (t === 1) return b;
+  if (a === b) return a;
+  const d = b - a;
+  return Number.isFinite(d) ? a + d * t : a * (1 - t) + b * t;
 }
 
 /** 2D cross (wedge) product of vectors (ax,ay) and (bx,by). */

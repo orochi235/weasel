@@ -36,6 +36,24 @@ describe('createReparentOp', () => {
     ]);
   });
 
+  it('undoes to the parent the node had, read from the adapter, over a stale fromParentId', () => {
+    const parents = new Map<string, string | null>([['a', 'real'], ['x', 'real']]);
+    const children = (p: string | null) => [...parents].filter(([, q]) => q === p).map(([id]) => id);
+    const order = new Map<string | null, string[]>();
+    const adapter = {
+      getParent: (id: string) => parents.get(id) ?? null,
+      getChildren: (p: string | null) => order.get(p) ?? children(p),
+      setParent: (id: string, p: string | null) => { parents.set(id, p); order.delete(p); },
+      setChildOrder: (p: string | null, ids: string[]) => { order.set(p, ids); },
+    };
+    const op = createReparentOp({ id: 'a', fromParentId: 'stale', toParentId: 'new' });
+    op.apply(adapter as never);
+    expect(parents.get('a')).toBe('new');
+    op.invert().apply(adapter as never);
+    expect(parents.get('a')).toBe('real');
+    expect(adapter.getChildren('real')).toEqual(['a', 'x']);
+  });
+
   it('default label is "Reparent"', () => {
     const op = createReparentOp({ id: 'a', fromParentId: null, toParentId: 'p' });
     expect(op.label).toBe('Reparent');

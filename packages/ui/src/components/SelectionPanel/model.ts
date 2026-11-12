@@ -316,9 +316,6 @@ export function sharedValue(values: readonly unknown[]): unknown | Mixed {
   return rest.every((v) => deepEqual(v, first, { undefinedAsAbsent: true })) ? first : MIXED;
 }
 
-/** Whether two stored values are one value: identical, or arrays and plain
- *  objects alike all the way down. Two nodes loaded from a file hold equal
- *  paints as separate objects. */
 /** `'rect ×2 · text'` — kinds in first-seen order with counts. */
 export function kindBreakdown(kinds: readonly string[]): string {
   const counts = new Map<string, number>();

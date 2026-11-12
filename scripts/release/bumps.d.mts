@@ -1,6 +1,4 @@
-export interface Bump {
-  level: string;
-  pkgs: string[];
-}
-export function readBumps(text: string): { approved: Bump[]; unapproved: Bump[]; leadingMarker: boolean };
+import type { ReleasePlan } from '@changesets/types';
+export const LEVELS: readonly ['patch', 'minor', 'major'];
+export function releasedAt(plan: ReleasePlan, level: string): ReleasePlan;
 export function isChangesetFile(name: string): boolean;

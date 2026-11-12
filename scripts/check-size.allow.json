@@ -22,10 +22,10 @@
     "longestFunction": 232
   },
   "packages/core/src/canvas/SceneCanvas/props.ts": {
-    "lines": 510
+    "lines": 509
   },
   "packages/core/src/core/scene/kitOps.ts": {
-    "longestFunction": 179
+    "longestFunction": 167
   },
   "packages/core/src/core/scene/nodeStore.ts": {
     "longestFunction": 201
@@ -34,7 +34,7 @@
     "longestFunction": 164
   },
   "packages/core/src/core/scene/types.ts": {
-    "lines": 517
+    "lines": 516
   },
   "packages/core/src/domains/paths/penPreviewLayer.ts": {
     "longestFunction": 138
@@ -72,7 +72,7 @@
     "longestFunction": 228
   },
   "packages/forge/src/shell/useStoryRegistry.ts": {
-    "longestFunction": 186
+    "longestFunction": 183
   },
   "packages/forge/src/vite/depGraph.ts": {
     "longestFunction": 176
@@ -91,7 +91,7 @@
     "longestFunction": 394
   },
   "packages/hud/src/attach.ts": {
-    "longestFunction": 148
+    "longestFunction": 140
   },
   "packages/hud/src/hud.ts": {
     "longestFunction": 125
@@ -103,7 +103,7 @@
     "longestFunction": 228
   },
   "packages/kernel3d/src/deps.ts": {
-    "longestFunction": 147
+    "longestFunction": 139
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
     "longestFunction": 169
@@ -125,7 +125,7 @@
     "longestFunction": 206
   },
   "packages/labkit/src/lab/Lab.tsx": {
-    "longestFunction": 182
+    "longestFunction": 178
   },
   "packages/labkit/src/lab/Workspace.tsx": {
     "longestFunction": 159
@@ -153,10 +153,10 @@
     "longestFunction": 241
   },
   "packages/labkit/src/trial/Trial.tsx": {
-    "longestFunction": 306
+    "longestFunction": 304
   },
   "packages/labkit/src/trial/TrialChrome.tsx": {
-    "longestFunction": 206
+    "longestFunction": 201
   },
   "packages/renderer/src/WeaselRenderer.ts": {
     "lines": 520
@@ -174,8 +174,8 @@
     "lines": 511
   },
   "packages/text-dom/src/useTextEdit.ts": {
-    "lines": 506,
-    "longestFunction": 361
+    "lines": 427,
+    "longestFunction": 341
   },
   "packages/text/src/layout/lineBreak/lineBreaks.ts": {
     "longestFunction": 126
@@ -210,11 +210,11 @@
     "longestFunction": 290
   },
   "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx": {
-    "lines": 409,
+    "lines": 405,
     "longestFunction": 309
   },
   "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx": {
-    "lines": 435,
+    "lines": 432,
     "longestFunction": 291
   },
   "packages/ui/src/components/DataGrid/DataGrid.tsx": {

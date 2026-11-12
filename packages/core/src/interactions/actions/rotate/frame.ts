@@ -8,6 +8,7 @@ import type { GestureContext, RotateBehavior, RotateProposed } from '../../gestu
 import { carryPose, planeOf } from '../planeInput';
 import { translatePoseViaDescriptor, type PoseDescriptor } from '../resize/geometry';
 import type { RotateFrame, RotateSession, Turn, TurnOrigin } from './session';
+import { quantizedPreview } from 'core/scene/outputGrid';
 
 /** `origin` turned by `delta` radians, its center orbiting `pivot` when one
  *  is given. */
@@ -85,7 +86,7 @@ function shapeDelta(
   return delta;
 }
 
-/** Every rotated id's stored pose under a turn by `delta`; none at zero. */
+/** Every rotated id's stored pose under a turn by `delta`, as the scene's quantize rule stores it; none at zero. */
 export function storedPreviews(
   session: Pick<RotateSession, 'scene' | 'turn' | 'poseFrame' | 'view'>,
   delta: number,
@@ -95,7 +96,8 @@ export function storedPreviews(
   for (const [id, turned] of turnedWorlds(session.turn, delta)) {
     const layer = session.scene.get(id)?.layer;
     const own = layer === undefined ? null : planeOf(session.view, layer);
-    previews.set(id, session.poseFrame.local(id, carryPose(session.turn.descriptorOf(id), turned, own)));
+    const stored = session.poseFrame.local(id, carryPose(session.turn.descriptorOf(id), turned, own));
+    previews.set(id, quantizedPreview(session.scene, id, stored));
   }
   return previews;
 }

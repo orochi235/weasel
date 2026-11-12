@@ -1,4 +1,4 @@
-import { contrastRatio, luminanceContrast, parseColor, relativeLuminance, useLatest, wcagLevels } from '@weasel-js/core';
+import { contrastRatio, luminanceContrast, relativeLuminance, tryParseColor, useLatest, wcagLevels } from '@weasel-js/core';
 import {
   type LensCapture,
   type LensReadoutProps,
@@ -183,11 +183,7 @@ export function tokenAt(
   const { within, point } = aim;
   const at = within ? colorAt(point, within) : null;
   if (!at) return { unavailable: NO_COLOR };
-  try {
-    parseColor(at.value);
-  } catch {
-    return { unavailable: unreadable(at.value) };
-  }
+  if (!tryParseColor(at.value)) return { unavailable: unreadable(at.value) };
   const chain = tokenChain(at);
   // A value naming several tokens branches, and its last branch's literal is not the color: end on what it computes to.
   const branches = chain.some((l) => varRefs(l.declared).size > 1);

@@ -59,12 +59,13 @@ export function withDrafts(
  * `field` writing when `surface` writes it, or as `settles` says. A control given an `onInput` drafts through it and
  * commits through `onChange`, so one that swallows the drafts is what makes a control write settled values only. A
  * typed number or text field commits only once its edit settles, so one the surface leaves live writes through
- * `onInput`.
+ * `onInput`, text waiting `textWaitMs` for the next keystroke (what `useParamsPolicy` resolves; absent, none).
  */
 export function withCommitPolicy(
   field: PropertyControlProps,
   surface: ParamsSurface,
   settles: Readonly<Record<LiveControl, boolean>> = PARAMS_SETTLES[surface],
+  textWaitMs?: number,
 ): PropertyControlProps {
   const live = liveControl(field);
   if (live === null) return field;
@@ -74,7 +75,11 @@ export function withCommitPolicy(
   }
   if (live === 'number' && field.kind === 'number' && field.onInput === undefined)
     return { ...field, onInput: field.onChange, onChange: settledOnly };
-  if (field.kind === 'string' && field.onInput === undefined)
-    return { ...field, onInput: field.onChange, onChange: settledOnly };
+  if (field.kind === 'string') {
+    const waits = textWaitMs ? { inputWaitMs: textWaitMs } : {};
+    return field.onInput === undefined
+      ? { ...field, onInput: field.onChange, onChange: settledOnly, ...waits }
+      : { ...field, ...waits };
+  }
   return field;
 }

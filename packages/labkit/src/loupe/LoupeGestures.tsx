@@ -17,9 +17,9 @@ import {
   useActionsRegistry,
   useGestureDispatcher,
 } from '@weasel-js/core';
+import { createLoupeActions, type LoupeInputApi } from '@weasel-js/loupe';
 import { type RefObject, useContext, useEffect, useMemo } from 'react';
 import { CameraContext } from '../canvas/CameraInput';
-import { createLoupeActions, type LoupeInputApi } from './loupeActions';
 
 /** Props for `<LoupeGestures>`. */
 export interface LoupeGesturesProps {

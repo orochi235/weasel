@@ -1,5 +1,27 @@
 # @weasel-js/select
 
+## 1.19.0
+
+### Patch Changes
+
+- 9451076: `select` and `rangeOf` treat ids as a `Set` does, so a `NaN` id toggles off and can start or end a range, and `-0` is `0`.
+  
+  <!-- entry: rank=-5 fix -->
+- 365b49d: `createSelectionStore` no longer notifies when written the same ids again, even when one of them is `NaN`.
+  
+  <!-- entry: rank=-5 fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

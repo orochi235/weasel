@@ -45,6 +45,13 @@ describe('setFillAction', () => {
     expect(preview).toMatchObject({ fill: { paint: { color: '#ff0000' } } });
   });
 
+  it('reads a binding\'s params given as a thunk', () => {
+    const scene = makeScene({ a: { fill: { paint: solid('#ffffffff') } } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene });
+    const h = getInvoker().start(ctx, { params: () => ({ color: '#ff0000' }) });
+    expect(h.previewData?.('a' as unknown as NodeId)).toMatchObject({ fill: { paint: { color: '#ff0000' } } });
+  });
+
   it('onMove updates the preview color without touching scene', () => {
     const scene = makeScene({ a: { fill: { paint: solid('#ffffffff') } } });
     const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });

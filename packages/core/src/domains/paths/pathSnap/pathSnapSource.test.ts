@@ -7,6 +7,8 @@ import { createSession2d } from 'domains/snap/session2d';
 import type { SnapCollect, SnapSource } from 'domains/snap/types';
 import { ownGeometryAt, pathSnapSource, type PathSnapSourceOptions } from './pathSnapSource';
 import { createSceneSnapIndexer } from './sceneIndex';
+import { registerNodeShape } from 'canvas/NodeShape';
+import { rectPath } from '@weasel-js/geom';
 
 const FREE: SnapMods = { suspend: false, constrain: false };
 const ONE = { x: 1, y: 1 };
@@ -192,5 +194,26 @@ describe('createSceneSnapIndexer', () => {
     expect(bare).not.toBe(withAlso);
     expect(index(also)).toBe(withAlso);
     expect(index()).toBe(bare);
+  });
+});
+
+describe('sceneSnapIndex', () => {
+  it('reads the outline a painter registered after the first snap gives a node', () => {
+    const pose = { x: 0, y: 0, width: 20, height: 20 };
+    const nodes = new Map([[asNodeId('w'), { id: asNodeId('w'), kind: 'mark' as const, layer: 'default', parent: null, pose, data: { wide: true } }]]);
+    const scene = { nodes, layers: [{ id: 'default' }], getVersion: () => 1 } as unknown as Scene<unknown, string, unknown>;
+    const only = { kinds: { intersection: false, midpoint: false } };
+    expect(run(scene, only, {}, { x: 150, y: 2 }).held).toBe(false);
+    const drop = registerNodeShape({
+      id: 'test:wide',
+      matches: (n) => (n.data as { wide?: boolean } | null)?.wide === true,
+      paint: () => [],
+      silhouette: () => rectPath(0, 0, 200, 20),
+    }, { priority: 'high' });
+    try {
+      expect(run(scene, only, {}, { x: 150, y: 2 }).held).toBe(true);
+    } finally {
+      drop();
+    }
   });
 });

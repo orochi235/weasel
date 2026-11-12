@@ -463,7 +463,19 @@ tool slot when pressed and reads as current while the slot names it, and a
 Contributions passed to `<Lab>` apply to every trial; an instrument's own
 `chrome` field applies to its trials only. `suppress` drops a built-in by id and
 throws on an id that is not there. A suppressed button takes its shortcut with
-it: with `snapshot` gone, Mod+S is the browser's again.
+it: with `snapshot` gone, Mod+S is the browser's again. `hide` drops the button
+and keeps its shortcut: `hide={['undo', 'redo']}` takes away each trial's undo
+row while Mod+Z still steps the trial.
+
+`sidebar="float"` takes each trial's sidebar sections out of the pane beside its
+body and puts them in a panel over the body, opened and closed from a Trial
+settings toggle in the title bar (contribution id `panel`). Escape or a press
+outside closes it, and the body keeps the trial's whole box. For a lab of many
+small trials:
+
+```tsx
+<Lab sidebar="float" hide={['undo', 'redo']} instruments={instruments} defaultInstrument="panel" />
+```
 
 `header={false}` drops the lab's own header bar — title, add-trial, zoom, and
 theme switcher — the menu bar, and the zoom keys with them, for a lab embedded in
@@ -587,7 +599,9 @@ view's zoom, or an orbit's opening distance over its distance now.
 An orbit's view is kernel3d's `Camera3d` — `{ target, yaw, pitch, distance,
 fov, near, far }`, plain numbers in radians and scene units. Whatever draws
 the scene reads it with `useOrbitView()`, and projects it with kernel3d's
-`cameraViewProjection`; chrome reads it with `useTrialOrbit()`.
+`cameraViewProjection`; chrome reads it with `useTrialOrbit()`. A scene
+whose up is not +y declares it as `orbit: { up }`, the same axis as its
+`World3d.up`, and passes it to `cameraViewProjection` too.
 An instrument that draws 3D — through `useOrbitView()`, or a three.js
 renderer in its DOM — without declaring `orbit` has a camera labkit cannot
 move, and in development it warns and marks the trial's title bar. Declare

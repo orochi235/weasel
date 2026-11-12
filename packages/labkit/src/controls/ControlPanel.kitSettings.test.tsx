@@ -49,3 +49,42 @@ describe('<ControlPanel> text drafts under kit settings', () => {
     expect(draftConfig).toHaveBeenCalledWith('t', 'a');
   });
 });
+
+describe('<ControlPanel> params.lab.settles', () => {
+  const counts: ConfigField[] = [{ key: 'n', label: 'N', type: 'number', default: 0 }];
+
+  function typeNumber(settles?: { number: boolean }) {
+    const draftConfig = vi.fn();
+    const setConfig = vi.fn();
+    const panel = (
+      <ControlPanel
+        fields={counts}
+        config={{ n: 0 }}
+        setConfig={setConfig}
+        draftConfig={draftConfig}
+      />
+    );
+    render(
+      settles ? (
+        <KitSettingsProvider value={{ params: { lab: { settles } } }}>{panel}</KitSettingsProvider>
+      ) : (
+        panel
+      ),
+    );
+    const input = screen.getByRole('spinbutton', { name: 'N' });
+    input.focus();
+    fireEvent.change(input, { target: { value: '7' } });
+    return { draftConfig, setConfig, input };
+  }
+
+  it('drafts a typed number with no provider', () => {
+    expect(typeNumber().draftConfig).toHaveBeenCalledWith('n', 7);
+  });
+
+  it('writes a typed number only once it settles where a provider says so', () => {
+    const { draftConfig, setConfig, input } = typeNumber({ number: true });
+    expect(draftConfig).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+    expect(setConfig.mock.calls).toEqual([['n', 7]]);
+  });
+});

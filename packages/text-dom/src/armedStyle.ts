@@ -3,6 +3,7 @@
  * caret sits in: a key it sets, and a key it takes off as `false` (a flag) or `undefined`. So a shortcut can take
  * bold off at the end of a bold word, and the character typed next lands as a write of the same patch over it would.
  */
+import { useCallback, useRef, useState } from 'react';
 import { applyStyleToRange, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 
 const FLAGS: ReadonlySet<string> = new Set(['bold', 'italic', 'underline', 'strikethrough', 'overline']);
@@ -45,4 +46,31 @@ export function armedOver(range: RangeStyle, armed: RunStylePatch): RangeStyle {
     else out[key] = value;
   }
   return out as RangeStyle;
+}
+
+/** No pending style. One frozen object so re-publishing an already-empty
+ *  pending style doesn't re-render every consumer. */
+const NO_PENDING: RunStylePatch = Object.freeze({});
+
+/**
+ * The style armed at a collapsed caret, published for render and held in refs for `beforeinput`, which fires well
+ * before React has re-rendered: the patch, and the caret offset it was armed at, `null` when nothing is armed.
+ */
+export function usePendingStyle() {
+  const [pendingStyle, setPendingStyle] = useState<RunStylePatch>(NO_PENDING);
+  const pendingRef = useRef<RunStylePatch>(NO_PENDING);
+  const pendingAtRef = useRef<number | null>(null);
+  const armPending = useCallback((next: RunStylePatch, at: number) => {
+    const empty = Object.keys(next).length === 0;
+    pendingRef.current = empty ? NO_PENDING : next;
+    pendingAtRef.current = empty ? null : at;
+    setPendingStyle(pendingRef.current);
+  }, []);
+  const dropPending = useCallback(() => {
+    if (pendingAtRef.current === null) return;
+    pendingRef.current = NO_PENDING;
+    pendingAtRef.current = null;
+    setPendingStyle(NO_PENDING);
+  }, []);
+  return { pendingStyle, pendingRef, pendingAtRef, armPending, dropPending };
 }

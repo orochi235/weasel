@@ -1,5 +1,52 @@
 # @weasel-js/quantity
 
+## 1.19.0
+
+### Patch Changes
+
+- 0e15698: `fraction` and `ratio` displays read typed text in the locale `parseAs` is given: `0,5` is one half in `de-DE`, and `١/٢` in `ar-EG`.
+  
+  <!-- entry: fix -->
+- 041dbf7: A `duration({ style: 'units' })` reads its own text back in a locale that groups with a period: `0.010s` in `de-DE` is a hundredth of a second.
+  
+  <!-- entry: fix -->
+- 4ff3e3e: `endlessTrack` puts its infinity stops on the step grid, so a step past a max of 4.1 is 4.2, and Page Down from ∞ lands on a grid value.
+  
+  <!-- entry: rank=-5 fix -->
+- 785627a: `parseNumber` and `parseSignedNumber` read a minus sign (U+2212) in the exponent, so `−1e−3` is −0.001 rather than `NaN`.
+  
+  <!-- entry: fix -->
+- 3e4a895: A step of `1e-7` shows seven decimal places, and a value typed at a unit scale written as `1e-7` is stored without binary dust.
+  
+  `@weasel-js/quantity` exports `decimalPlaces`, which counts the decimal places a number is written with, exponent form included, capped at 20. Stepping, a slider step's readout, the token scale slider and a linear pref unit all count with it.
+  
+  <!-- entry: fix api -->
+- 302c660: `snapToStep` rounds a decimal half away from the origin: `0.35` at a step of `0.1` snaps to `0.4`, and `-0.35` to `-0.4`.
+  
+  <!-- entry: fix -->
+- 0cff741: `parseUnitExpr` throws on a compound value with a term that carries no unit, such as `2 3` or `1ft 2`, as `parseNumber` refuses `5ft 3`.
+  
+  A compound of measures such as `5ft 3in` reads as before.
+  
+  <!-- entry: fix -->
+- b1309b2: `parseUnitExpr` throws on a literal past the range of a number instead of reading it as `Infinity`.
+  
+  <!-- entry: rank=-5 fix -->
+- 30c0e8e: A unit catalog in `@weasel-js/quantity` gives each unit one symbol, compact form and spoken name, read wherever units are shown or typed.
+  
+  Each entry has a unit's canonical name, its symbol, a compact form for tight spaces (`″` for `in`, `′` for `ft`), the aliases that read as it, its spoken names or `Intl` unit, its CSS unit, and whether its glyph attaches to the number (`°`, `′`, `″`, `%`). `catalogUnit`, `unitSymbol`, `unitSpellings`, `withUnit` and `speakUnit` read it, and `registerUnit` adds or replaces a unit and returns a function that takes it back out. The `unit` display, the bytes and duration displays' speech, `parseNumber`'s alternate spellings and `prefsCss`'s CSS units all read the catalog, in place of the tables each kept.
+  
+  `UnitDisplay` and a prefs unit take `compact: true` for a unit's compact form, and a unit is written as the catalog writes it, so `unit('deg')` and a prefs unit with `suffix: 'deg'` show `°`.
+  
+  In `@weasel-js/ui`, a field's or readout's unit whose glyph attaches stays on the value's line in every layout, including an inline slider row that hangs word units below its readout, and is out of flow, so the field is the same size with it as without. The catalog decides which units attach: a property field's string `unit`, a menu number row's `suffix` and a read-only readout all ask it. `QuantityText`'s `unit` takes `compact` and marks an attaching unit `data-attach`.
+  
+  Breaking: `unit('"')` now shows `12″` and `unit("'")` shows `1′`, the compact forms those marks are aliases of, and a unit named by an alias shows its symbol (`deg` shows `°`). A degree passed as `<sup>°</sup>` still draws as given but no longer attaches; pass the string `'°'`. `ResolvedPrefUnit.suffix` is the text a field shows, the catalog's form of the one written. Typed text reads every spelling the catalog knows for a unit a table accepts, so a field accepting `deg` also reads `°`. A scale indicator's label is spoken through the catalog, `Scale: 10 feet`.
+  
+  <!-- entry: rank=20 breaking api new visual pick -->
+- 592f6ec: `resolveUnitExpr` throws on a division by zero and on a result past a number's range, rather than returning `Infinity` or `NaN`.
+  
+  <!-- entry: fix -->
+
 ## 1.18.2
 
 No changes in this release.

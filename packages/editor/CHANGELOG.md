@@ -1,5 +1,208 @@
 # @weasel-js/editor
 
+## 1.19.0
+
+### Patch Changes
+
+- 6bd8a56: `useAutosave` writes a save it flushed as the page went away once, and reports it to `onSaved` once.
+  
+  <!-- entry: fix -->
+- b779e72: `useAutosave` waits out a `delayMs` longer than 2³¹ − 1 ms, and an infinite one saves only on unmount or when the page goes away.
+  
+  <!-- entry: fix -->
+- f944665: `docFromSnapshot` reads each document value back as `serializeReplacer` was handed it, so it agrees with the undo stack saved beside it. That includes a value shaped like the writer's `{ "__raw": … }` wrapper or like a tagged typed array.
+  
+  <!-- entry: rank=-5 fix data -->
+- b1309b2: A malformed snapshot is refused with an error naming what is wrong, rather than a `TypeError`. That covers a node that is not an object or lacks a string `id`, `layer` or `kind` (`specsFromSerialized`), `systemLayers` that are not a list of layers (`sceneFromJSON`), and a `core:pages` value that is not a `PagesDoc` (`adoptSnapshotPages`).
+  
+  <!-- entry: fix -->
+- 784fb33: `nodeSpecsFromSnapshot` leaves the snapshot it reads unchanged, handing `revive` a copy of each node's data.
+  
+  <!-- entry: rank=-5 fix -->
+- ca65cf7: A document saved through `serializeReplacer` reads back equal through `reviveTypedArrays`, whatever its data holds. A plain object shaped like a tagged typed array, or plain numbers under a `commands` or `coords` key, is written inside a `{ "__raw": … }` wrapper that the reader takes off; older saves read as before.
+  
+  <!-- entry: fix data -->
+- 25b09cf: `@weasel-js/geom` exports the `{ "__raw": … }` wrapper that keeps lookalike values from being misread on load. `isRawWrapper` and the `RawWrapper` type test for it, and `typedArrayReplacerWrapping` is a `JSON.stringify` replacer that also wraps whatever values a caller's own reader would misread. `typedArrayReplacer` is that replacer with nothing extra to wrap. `@weasel-js/editor`'s `serializeReplacer` and `reviveTypedArrays` build on these.
+  
+  <!-- entry: api -->
+- b1309b2: `@weasel-js/registry` adds `after(ms, fn)`, a timer that waits out any delay. That includes one past the 2³¹ − 1 ms a single timer holds. D3 transition delays use it, and `@weasel-js/editor` and `@weasel-js/d3` now depend on `@weasel-js/registry`.
+  
+  <!-- entry: new api -->
+- 8945e5b: `useSessionPersistence` drops a saved undo stack when the scene saved beside it is missing or unreadable, rather than replaying it.
+  
+  <!-- entry: fix -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [396a24b]
+- Updated dependencies [c73c031]
+- Updated dependencies [4413857]
+- Updated dependencies [5ceed2d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [34b8b1e]
+- Updated dependencies [ba20a9d]
+- Updated dependencies [7b45877]
+- Updated dependencies [6d7fe95]
+- Updated dependencies [c0d8f48]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [efba5cf]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [4fd3050]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [9230203]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [989d2f6]
+- Updated dependencies [d98c770]
+- Updated dependencies [089697b]
+- Updated dependencies [7ab54e8]
+- Updated dependencies [8455e28]
+- Updated dependencies [be3fabb]
+- Updated dependencies [db69c53]
+- Updated dependencies [83730fd]
+- Updated dependencies [3686875]
+- Updated dependencies [ae708f3]
+- Updated dependencies [373e5ee]
+- Updated dependencies [6e71013]
+- Updated dependencies [2475e40]
+- Updated dependencies [0e1a46e]
+- Updated dependencies [77f66de]
+- Updated dependencies [54c2ae4]
+- Updated dependencies [a1ec2f7]
+- Updated dependencies [d49fc0b]
+- Updated dependencies [437159b]
+- Updated dependencies [6af73f3]
+- Updated dependencies [a204d0b]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [d327c41]
+- Updated dependencies [7504d6f]
+- Updated dependencies [a547bff]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [965c7b9]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [faaeb54]
+- Updated dependencies [602c78d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [30f5040]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [3e4a895]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [9ea8393]
+- Updated dependencies [aa61074]
+- Updated dependencies [7b9e651]
+- Updated dependencies [6d62197]
+- Updated dependencies [b06557b]
+- Updated dependencies [efac12a]
+- Updated dependencies [5ebb996]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [eaff448]
+- Updated dependencies [20c4979]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [15bc280]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [c38920e]
+- Updated dependencies [2fff7ea]
+- Updated dependencies [05f0dd7]
+- Updated dependencies [3643214]
+- Updated dependencies [b1309b2]
+- Updated dependencies [d965b03]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [4e68e7c]
+- Updated dependencies [8936d41]
+- Updated dependencies [228d835]
+- Updated dependencies [0c1c414]
+- Updated dependencies [d5f05e2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/guides@1.19.0
+  - @weasel-js/ui@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

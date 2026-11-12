@@ -17,14 +17,15 @@ import { withArmed } from './armedStyle';
 import { clipboardRuns } from './pasteRuns';
 import { replaceRunRange, runStyleAt } from './runSplice';
 import type { TextEditSelection } from './textEditTypes';
+import { changeKind, historyInput, type OverlayHistory } from './overlayHistory';
 
 /** Put small-caps letters back in the pieces their case belongs in after
  *  an edit, keeping the caret. Never mid-composition: rewriting the DOM
  *  under an IME ends the composition. */
-function resplitSmallCaps(overlay: HTMLElement, e?: Event): void {
+function resplitSmallCaps(overlay: HTMLElement, base: OverlayRunBase, e?: Event): void {
   if (e instanceof InputEvent && e.isComposing) return;
   const at = readSelectionOffsets(overlay);
-  if (normalizeSmallCaps(overlay) && at) selectOffsets(overlay, at.start, at.end);
+  if (normalizeSmallCaps(overlay, base) && at) selectOffsets(overlay, at.start, at.end);
 }
 
 /** Whether `ie` names a range of its own to replace, apart from a collapsed caret. */
@@ -71,10 +72,12 @@ export interface TypingHost {
   base: () => OverlayRunBase;
   /** The last range published inside the overlay, for when the DOM selection has left it. */
   lastRange: () => TextEditSelection | null;
-  /** The runs were rewritten with new text in them, any armed style spent, and the caret now sits at `caret`. */
-  onWritten: (caret: number) => void;
+  /** The runs were rewritten, any armed style spent, and the selection now covers `range`. */
+  onWritten: (range: TextEditSelection) => void;
   /** The overlay's text changed, by the browser's hand or this module's. */
   onEdited: () => void;
+  /** The edit's undo, which every input is recorded in and the history inputs step. */
+  history: OverlayHistory;
 }
 
 /** The overlay's `beforeinput`, `input` and composition listeners. */
@@ -85,7 +88,7 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
   onCompositionEnd: () => void;
 } {
   const edited = (e?: Event): void => {
-    resplitSmallCaps(overlay, e);
+    resplitSmallCaps(overlay, host.base(), e);
     host.onEdited();
   };
 
@@ -100,11 +103,18 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     const next = replaceRunRange(runs, at.start, at.end, styledForRange(pasted, runs, at, host.pending()));
     const after = at.start + runsToPlainText(pasted).length;
     writeRunsPreservingSelection(overlay, next, after, after, host.base());
-    host.onWritten(after);
+    host.onWritten({ start: after, end: after });
     host.onEdited();
   };
 
   const onBeforeInput = (ie: InputEvent): void => {
+    const step = historyInput(ie.inputType);
+    if (step) {
+      ie.preventDefault();
+      host.history[step]();
+      return;
+    }
+    host.history.before(changeKind(ie.inputType));
     if (PASTES.has(ie.inputType)) { onPaste(ie); return; }
     if (ie.inputType !== 'insertText' || !ie.data) return;
     const sel = window.getSelection();
@@ -127,7 +137,7 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     const next = replaceRunRange(runs, at.start, at.start, styledForRange([{ text: ie.data }], runs, at, pending));
     const after = at.start + ie.data.length;
     writeRunsPreservingSelection(overlay, next, after, after, host.base());
-    host.onWritten(after);
+    host.onWritten({ start: after, end: after });
     host.onEdited();
   };
 
@@ -136,6 +146,7 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
   let composing: { start: number; pending: RunStylePatch } | null = null;
 
   const onCompositionStart = (): void => {
+    host.history.seal();
     const pending = host.pending();
     const at = readSelectionOffsets(overlay) ?? host.lastRange();
     composing = at && Object.keys(pending).length > 0 ? { start: at.start, pending } : null;
@@ -153,7 +164,7 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     const runs = replaceRunRange(domToRuns(overlay), armed.start, end, []);
     const next = replaceRunRange(runs, armed.start, armed.start, styledForRange([{ text: typed }], runs, at, armed.pending));
     writeRunsPreservingSelection(overlay, next, end, end, host.base());
-    host.onWritten(end);
+    host.onWritten({ start: end, end });
     host.onEdited();
   };
 

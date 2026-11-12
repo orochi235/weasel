@@ -11,6 +11,10 @@ import type { SavedSnapshot } from '../state/types';
  *  the instrument. The lab's own boxes are named in `LabRegion`. */
 export type TrialRegion = 'titlebar' | 'toolbar' | 'palette' | 'sidebar' | 'viewport' | 'status';
 
+/** Where a trial's sidebar sections go: `'dock'` lays them out in a pane beside the trial's body, `'float'` in a
+ *  panel over the body that a toggle in the title bar opens, so the body keeps the trial's whole width. */
+export type TrialSidebar = 'dock' | 'float';
+
 /** A button that runs once when pressed: it holds no focus and binds no
  *  input. `TCtx` is the chrome context its `onActivate` is handed — a trial's,
  *  or the lab's for a lab-level region. */

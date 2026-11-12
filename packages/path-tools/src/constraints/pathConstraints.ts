@@ -14,6 +14,7 @@ import {
   type PolygonPath,
 } from '@weasel-js/geom';
 import { classifyPathStorage, resolveEditablePathOf, type EditableShape } from '@weasel-js/core';
+import { deepEqual } from '@weasel-js/registry';
 
 const NONE: readonly PathConstraint[] = [];
 
@@ -79,9 +80,7 @@ export function constrainNodeEdit(
   if (!before) return { path: worldPath, constraints };
   const edit = constrainPathEdit(before, worldPath, constraints, { origins, axisAngle: constraintAxisOf(node) });
   if (!edit.converged) return null;
-  const same = edit.constraints.length === constraints.length
-    && edit.constraints.every((c, i) => JSON.stringify(c) === JSON.stringify(constraints[i]));
-  return { path: edit.path, constraints: same ? constraints : edit.constraints };
+  return { path: edit.path, constraints: deepEqual(edit.constraints, constraints) ? constraints : edit.constraints };
 }
 
 /**

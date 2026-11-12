@@ -46,6 +46,7 @@ const entries: Record<string, string> = {
   'canvas/index': 'src/canvas/index.ts',
   'layers/index': 'src/layers/index.ts',
   'loupe/index': 'src/loupe/index.ts',
+  'theme/index': 'src/theme/index.ts',
   'undo/index': 'src/undo/index.ts',
   'dragdrop/index': 'src/dragdrop/index.ts',
   'passthrough/weasel-ui': 'src/passthrough/weasel-ui.ts',

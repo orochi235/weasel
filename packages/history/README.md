@@ -14,9 +14,29 @@ npm install @weasel-js/history
 
 ## Usage
 
+A history applies ops and records them; an op knows how to apply itself and how to invert. `swapOp` is
+the op for an edit that replaces one whole value with another:
+
 ```ts
-import { /* … */ } from '@weasel-js/history';
+import { createHistory, swapOp } from '@weasel-js/history';
+
+let title = 'Untitled';
+const history = createHistory(null);
+const rename = (next: string) =>
+  history.apply(swapOp({ name: 'rename', label: 'Rename', before: title, after: next, emit: (v) => { title = v; } }));
+
+rename('Draft');
+history.undo(); // title is 'Untitled'
+history.redo(); // title is 'Draft'
+
+// A journal keeps its own undo steps, then lands in the history as one entry.
+const journal = history.beginJournal({ label: 'Retitle' });
+journal.applyBatch([swapOp({ name: 'rename', label: 'Rename', before: title, after: 'Final', emit: (v) => { title = v; } })], 'Rename');
+journal.commit('Retitle');
 ```
+
+The argument to `createHistory` is the adapter every op's `apply` is handed; `swapOp` needs none. A
+weasel scene keeps one of these for you (`scene.undo()`, `scene.history`).
 
 ## License
 

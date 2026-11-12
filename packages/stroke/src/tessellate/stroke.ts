@@ -1,6 +1,6 @@
 import { remapPerAnchor, resolveCornersWithSources, type Path, type RectPath } from '@weasel-js/geom';
 import type { ScreenLength, Stroke } from '@weasel-js/paint';
-import { alignedStrokeRect, alignedStrokeRectHolds, resolveScreenLength } from '@weasel-js/paint';
+import { alignedStrokeRect, alignedStrokeRectHolds, DEFAULT_MITER_LIMIT, resolveScreenLength } from '@weasel-js/paint';
 import { type Mesh, extractPolylines, type Polyline } from '@weasel-js/geom/tessellate';
 import { dashPolylines } from './dash';
 import { strokeFlattening } from './flattening';
@@ -176,15 +176,6 @@ export function ribbonMesh(out: RibbonOut, path: Path): Mesh {
   };
 }
 
-/**
- * Miter limit for a stroke that does not set one. SVG's default, not
- * Canvas2D's 10, because the serializer omits the attribute when the field is
- * unset — so a kit stroke exported to SVG is read back by every other renderer
- * as 4, and a kit that used 10 would disagree with its own export. 10 also
- * lets an acute corner throw a spike four times the half-width, which is what
- * a glyph outline's sharpest vertices do.
- */
-const DEFAULT_MITER_LIMIT = 4;
 /** Default `Stroke.varyingWidthJoinThreshold`. */
 const DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD = 1.5;
 

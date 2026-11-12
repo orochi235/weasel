@@ -30,6 +30,24 @@ describe('routeToSpec', () => {
     expect(specificity(s)[2]).toBeGreaterThan(specificity(spec('[*:*] click => empty'))[2]!);
   });
 
+  it('reads a drag arg as its button, leaving primary implicit and keeping *', () => {
+    expect(spec('[*:*] drag(primary)')).toEqual({ kind: 'drag' });
+    expect(spec('[*:*] drag(middle)')).toEqual({ kind: 'drag', button: 'middle' });
+    expect(spec('[*:*] drag(secondary)')).toEqual({ kind: 'drag', button: 'secondary' });
+    expect(spec('[*:*] drag(*)')).toEqual({ kind: 'drag', button: '*' });
+  });
+
+  it('matches a drag spec only to a press of its button', () => {
+    const press = (button?: 'middle') => ({ kind: 'pointerdown' as const, ...noMods, ...(button ? { pointerButton: button } : {}) });
+    const ambient: PhaseContext = { selfChannel: null, engagedChannels: new Set() };
+    expect(matchSpec(press(), spec('[*:*] drag'), false, ambient)).toBe(true);
+    expect(matchSpec(press('middle'), spec('[*:*] drag'), false, ambient)).toBe(false);
+    expect(matchSpec(press('middle'), spec('[*:*] drag(middle)'), false, ambient)).toBe(true);
+    expect(matchSpec(press(), spec('[*:*] drag(middle)'), false, ambient)).toBe(false);
+    expect(matchSpec(press('middle'), spec('[*:*] drag(*)'), false, ambient)).toBe(true);
+    expect(matchSpec({ ...press('middle'), stage: 'press' }, spec('[*:*] pointerDown'), false, ambient)).toBe(false);
+  });
+
   it('carries a target form through', () => {
     expect(spec('[*:*] click => empty')).toEqual({ kind: 'click', target: 'empty' });
     expect(spec('[*:*] drag => kind:rect:selected')).toEqual({ kind: 'drag', target: 'kind:rect:selected' });

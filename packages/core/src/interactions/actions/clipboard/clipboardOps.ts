@@ -74,9 +74,10 @@ export function useClipboardOps<TNode extends { id: string }>(
     });
     if (!result) return null;
     dispatchApplyBatch(a, result.ops, label);
-    // The created nodes, not a re-snapshot of their ids: a React-state adapter
-    // has not flushed the insert yet, so a snapshot would come back empty.
-    return { ids: result.newIds, items: result.created };
+    // A snapshot captures roots in world, as a copy does; a created node's pose is local to the page or container
+    // it landed in. A React-state adapter has not flushed the insert yet, and its empty snapshot falls back.
+    const again = a.snapshotSelection?.call(a, [...result.newIds]).items ?? [];
+    return { ids: result.newIds, items: again.length > 0 ? again : result.created };
   }, [live]);
   return useClipboard<unknown>({
     getSelection,

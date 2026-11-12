@@ -1,14 +1,9 @@
 /** The one check every reader makes of a color a file names: whether a diagram can draw it. */
-import { parseColor } from '@weasel-js/paint';
+import { tryParseColor } from '@weasel-js/paint';
 
 /** Whether a diagram can draw `css`: whether paint reads it as a color. */
 export function drawableColor(css: string): boolean {
-  try {
-    parseColor(css);
-    return true;
-  } catch {
-    return false;
-  }
+  return tryParseColor(css) !== null;
 }
 
 /** `css` where a diagram can draw it; else `undefined`, with `css` added to the `format` warning `list` keeps. */

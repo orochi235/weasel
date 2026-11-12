@@ -33,7 +33,7 @@ type DrawSpec = AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
  *  `useScene`'s full-form call signature: the full tree, page run and pages
  *  included, so groups, nesting and pages survive a reload. A drawing saved
  *  before its pages were nodes loads with them as nodes. Best-effort: any
- *  parse error yields a fresh starter scene, one page with one example
+ *  parse error, or a drawing draw's scene cannot hold, yields a fresh starter scene, one page with one example
  *  rectangle on it, so the canvas isn't empty on first run. */
 export function loadInitial(): DrawSpec[] {
   return readStored(LS_KEY, (raw) => {
@@ -75,7 +75,7 @@ function savedScene(raw: string): DrawSnapshot {
  *  before its snapshots listed them. */
 function specsOf(json: DrawSnapshot): DrawSpec[] {
   const systemLayers = (json.systemLayers as DrawSnapshot['systemLayers'] | undefined) ?? DRAW_LAYERS;
-  return nodeSpecsFromSnapshot({ ...json, systemLayers }, DRAW_REGISTRY, fallbackPages());
+  return nodeSpecsFromSnapshot({ ...json, systemLayers }, DRAW_REGISTRY, fallbackPages(), DRAW_LAYERS);
 }
 
 function starterScene(): DrawSpec[] {

@@ -77,6 +77,28 @@ function movesNode<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TL
   };
 }
 
+/** `kit:setLayer`. Onto a hidden layer, the node is out of the selection's reach. */
+function registerSetLayer<TData, TLayer extends string, TPose>(env: KitOpsEnv<TData, TLayer, TPose>): void {
+  const { requireNode, invalidateDependents } = env.store;
+  const place = (id: NodeId, layer: TLayer): void => {
+    (requireNode(id) as { layer: TLayer }).layer = layer;
+    env.invalidateOrder();
+    invalidateDependents(id);
+  };
+  env.register('kit:setLayer', {
+    apply: (p) => {
+      const { id, to } = p as { id: NodeId; to: TLayer };
+      env.requireLayerIndex(to);
+      place(id, to);
+      env.narrowSelection();
+    },
+    revert: (p) => {
+      const { id, from } = p as { id: NodeId; from: TLayer };
+      place(id, from);
+    },
+  });
+}
+
 /** Register every kit op kind. Answers with the table a live `kit:setLayout`
  *  payload's strategies are kept in, which `scene.setLayout` fills. */
 export function registerKitOps<TData, TLayer extends string, TPose>(
@@ -84,7 +106,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
 ): {
   layoutRefs: WeakMap<object, { from: LayoutStrategy<TPose> | null; to: LayoutStrategy<TPose> | null }>;
 } {
-  const { state, requireLayerIndex, invalidateOrder, fnFields } = env;
+  const { state, fnFields } = env;
   const {
     dependents, childDerived, invalidateDependents, invalidateChildDerivedFrom, trackChildDerived, retarget,
     requireNode, detach, attach, addedFns, restoreNodeFunctions,
@@ -201,19 +223,7 @@ export function registerKitOps<TData, TLayer extends string, TPose>(
     },
   });
 
-  registerKitOp<{ id: NodeId; from: TLayer; to: TLayer }>('kit:setLayer', {
-    apply: (p) => {
-      requireLayerIndex(p.to);
-      (requireNode(p.id) as { layer: TLayer }).layer = p.to;
-      invalidateOrder();
-      invalidateDependents(p.id);
-    },
-    revert: (p) => {
-      (requireNode(p.id) as { layer: TLayer }).layer = p.from;
-      invalidateOrder();
-      invalidateDependents(p.id);
-    },
-  });
+  registerSetLayer(env);
 
   registerKitOp<{
     id: NodeId;

@@ -71,7 +71,13 @@ function setup(path: Path = LINE, stroke: Stroke = { paint: { color: '#000' }, w
   const overlay = result.current.overlay as RenderLayer<unknown>;
   const marks = () => overlay.draw(undefined, VIEW, { width: 400, height: 400, dpr: 1 }) as DrawCommand[];
   const bounds = () => defaultPaintBounds(scene.get(line)!, scene.get(line)!.pose, VIEW)!;
-  return { scene, line, drag, altClick, hover, run, data, widths, marks, bounds };
+  /** A press and release at `at` with `params`, as a drag carrying the panel's session params starts. */
+  const pressWith = (at: { x: number; y: number }, params: Record<string, unknown>) => {
+    const invoker = actionOf('girth.drag').invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('girth.drag is not ongoing');
+    invoker.start(ctx(at.x, at.y), { params }).onEnd?.({ ...ctx(0, 0), deps: {} as ActionDeps }, 'cancel');
+  };
+  return { scene, line, drag, pressWith, altClick, hover, run, data, widths, marks, bounds };
 }
 
 describe('useGirthTool', () => {
@@ -208,6 +214,18 @@ describe('useGirthTool', () => {
     t.hover(100, -3);
     t.run('girth.unhover', {});
     expect(t.marks().some((m) => Math.hypot(centerOf(m).x - 100, centerOf(m).y + 2) < 0.5)).toBe(false);
+  });
+
+  it('hovers and clears within the reach a drag last took from the panel', () => {
+    const t = setup(LINE, { paint: { color: '#000' }, width: 4, vertexWidths: [NaN, 8] });
+    const grabbed = () => t.marks().some((m) => Math.abs(centerOf(m).x - 50) < 0.5 && centerOf(m).y > 1);
+    t.hover(50, 15);
+    expect(grabbed()).toBe(false);
+    t.pressWith({ x: 50, y: 2 }, { reach: 20 });
+    t.hover(50, 15);
+    expect(grabbed()).toBe(true);
+    t.altClick(100, 15);
+    expect(t.widths()).toBeUndefined();
   });
 
   it('marks each anchor of the stroke it last touched, and the edges of the ones with a width', () => {

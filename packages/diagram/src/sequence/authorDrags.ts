@@ -5,7 +5,7 @@
  * as gesture chrome and, on release, hands one edit of the root's data to the
  * commit, by default one undo entry in the scene.
  */
-import type { Action, InvocationCtx, OngoingHandle, OngoingOverlay, Scene, Vec2 } from '@weasel-js/core';
+import { resolveParams, type Action, type InvocationCtx, type OngoingHandle, type OngoingOverlay, type Scene, type Vec2 } from '@weasel-js/core';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { SEQ_ARROWS, insertMessage, insertNote, wrapSteps, type SeqArrow, type SeqArrowName } from './authorSteps';
 import { columnNear, sequenceAt, sequenceHitOf, slotNear, type SequenceHit } from './authorPlace';
@@ -30,12 +30,6 @@ interface Proposal { data: SequenceData; label: string; overlay: OngoingOverlay[
 /** Builds a drag's proposal from its press, the pointer now, and its binding's params. */
 type Plan = (press: SequenceHit, now: SequenceHit, params: Record<string, unknown>) => Proposal | null;
 
-/** A binding's params, its thunk called. */
-function paramsOf(opts: { params?: unknown } | undefined): Record<string, unknown> {
-  const p = opts?.params;
-  return ((typeof p === 'function' ? (p as () => unknown)() : p) ?? {}) as Record<string, unknown>;
-}
-
 /** An ongoing action over the root a press lands on, proposing `plan` as the pointer moves and committing it on release. */
 function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: Plan): Action {
   const commit = sequenceCommitOf(opts);
@@ -51,7 +45,7 @@ function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: 
         let proposal: Proposal | null = null;
         const propose = (at: Vec2) => {
           const now = sequenceHitOf(scene, press.root.id, at);
-          proposal = now === null ? null : plan(press, now, paramsOf(binding));
+          proposal = now === null ? null : plan(press, now, resolveParams(binding?.params) ?? {});
         };
         return {
           kind: id,
@@ -62,7 +56,7 @@ function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: 
             const done = proposal;
             proposal = null;
             if (reason !== 'commit' || done === null || done.data === press.data) return;
-            commit({ id: press.root.id, data: done.data, label: done.label }, { deps: { ...end.deps, scene: scene as never } });
+            commit({ id: press.root.id, data: done.data, label: done.label }, { deps: { ...ctx.deps, scene: scene as never } });
           },
         };
       },

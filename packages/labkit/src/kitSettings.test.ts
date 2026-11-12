@@ -1,6 +1,6 @@
+import { WHEEL_RATE } from '@weasel-js/loupe';
 import { describe, expect, it } from 'vitest';
 import { labkitKitSettingsSchema } from './kitSettings';
-import { WHEEL_RATE } from './loupe/loupeActions';
 
 describe('labkitKitSettingsSchema', () => {
   it('defaults every leaf to its constant', () => {

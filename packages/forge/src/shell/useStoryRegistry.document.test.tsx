@@ -154,6 +154,47 @@ describe('useStoryRegistry in the document', () => {
     await waitFor(() => expect(result.current.isReady('x--a')).toBe(true));
     expect(imports['/x.stories.tsx']).toHaveBeenCalledTimes(2);
   });
+
+  it('keeps the reloaded file\'s stories when the import a reload replaced lands after it', async () => {
+    const version = (label: string) => ({
+      default: meta({ title: 'X' }),
+      A: story({ config: f.schema({ label: f.string(label) }), render: () => <p>A</p> }),
+    }) as unknown as Record<string, unknown>;
+    let landOld!: () => void;
+    const old = new Promise<Record<string, unknown>>((resolve) => { landOld = () => resolve(version('old')); });
+    const load = vi.fn().mockReturnValueOnce(old).mockReturnValue(Promise.resolve(version('new')));
+    const { result } = renderHook(() => useStoryRegistry([a], { frameUrl: '/frame.html', importers: { '/x.stories.tsx': load } }));
+    const { rerender } = renderWithIcons(<>{result.current.instruments[0]!.render(ctx)}</>);
+    act(() => result.current.reload('/x.stories.tsx'));
+    rerender(<>{result.current.instruments[0]!.render(ctx)}</>);
+    await waitFor(() => expect(result.current.isReady('x--a')).toBe(true));
+    await act(async () => { landOld(); await old; });
+    expect(result.current.instruments[0]?.config?.defaults()).toEqual({ label: 'new' });
+  });
+
+  it('keeps the reloaded index page when the import a reload replaced lands after it', async () => {
+    const version = (text: string) => ({
+      default: meta({ title: 'X' }),
+      A: story({ render: () => <p>{text}</p> }),
+    }) as unknown as Record<string, unknown>;
+    let landOld!: () => void;
+    const old = new Promise<Record<string, unknown>>((resolve) => { landOld = () => resolve(version('old')); });
+    const load = vi.fn().mockReturnValueOnce(old).mockReturnValue(Promise.resolve(version('new')));
+    const { result } = renderHook(() => useStoryRegistry([a, xIndex], { frameUrl: '/frame.html', importers: { '/x.stories.tsx': load } }));
+    const page = () => (
+      <LabContext.Provider value={{ instruments: [] } as unknown as LabContextValue}>
+        {result.current.instruments[1]!.render(ctx)}
+      </LabContext.Provider>
+    );
+    const { rerender } = renderWithIcons(page());
+    act(() => result.current.reload('/x.stories.tsx'));
+    rerender(page());
+    await waitFor(() => expect(result.current.isReady(xIndex.id)).toBe(true));
+    await act(async () => { landOld(); await old; });
+    rerender(page());
+    expect(screen.queryByText('old')).toBeNull();
+    expect(screen.getAllByText('new').length).toBeGreaterThan(0);
+  });
 });
 
 describe('Workshop in the document', () => {

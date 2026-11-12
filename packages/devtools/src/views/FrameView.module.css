@@ -19,6 +19,5 @@
 }
 
 .note {
-  margin: 0;
-  color: var(--wzl-fg-muted);
+  composes: note from './note.module.css';
 }

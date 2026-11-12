@@ -230,6 +230,13 @@ Owner tags, after the priority (2026-10-26):
   `apps/draw/src/useSymmetry.ts`).
   Closes when the maintainer has driven draw's Symmetry toggle hands-on and the defaults and keys he
   picks are committed.
+- **(P3) [maintainer] Undoing draw's symmetry group leaves Symmetry on, drawing into nothing.** Turning
+  Symmetry on (or a New or Open with it on) makes the group as an undo step of its own; one Undo removes it,
+  the `view.symmetry` pref still reads on, and new shapes draw unmirrored until it is toggled off and on
+  (`apps/draw/src/useSymmetry.ts`). Re-making the group on undo would wipe redo, and turning the pref off
+  breaks Undo past a New, which today lands back in the old document's group. Needs a ruling: whether
+  Symmetry's on/off is a pref or document state that undo moves.
+  Closes when the ruling is made and an Undo of the group leaves the toggle and the drawing agreeing.
 - **(P2) [maintainer] Tune the Measure tool hands-on, with the maintainer driving.** First-draft behavior and
   keys: its tool key, M, which moved Envelope mesh off it when the two met in draw; the Shift angle
   step; that Move by and Rotate by fall back to the newest measurement when none is picked; and the
@@ -302,19 +309,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P3) [agent] A direct scene call made while a journal is open lands on the scene's own stack.**
-  `scene.applyBatch` goes to the open journal; `scene.setPose` and its siblings, `scene.batch`, and
-  `scene.history.apply` do not, so a mode that mixes the two splits its edits across two stacks.
-  Ruled 2026-10-12 to leave it for now. Routing them means `recorder.record` and the history facade
-  consulting the journal accessor. `scene.recordedForm.test.ts` pins today's split. Routing `scene.batch` also needs a new method
-  on `Journal`: `batch` records ops that have already applied (`engine.recordEntry`), and `Journal`
-  has only `applyBatch`, which would apply them again; a direct call that touches a laid-out
-  container runs as a batch. draw opens a journal in every strict mode, and in every soft mode
-  unless the Modes > Undo inside a mode pref says the document's history
-  (`apps/draw/src/modality/machine.ts`), so the change moves where every direct call made during
-  a mode lands.
-  Ruled (2026-11-07), reopening 2026-10-12's: route them to the open journal.
-  Closes when the direct calls reach the open journal and `scene.recordedForm.test.ts` pins that instead.
+- **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
+  stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
+  scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene
+  has painted `MAX_PICK_ID` (2^24 - 1) distinct ids, `idOf` throws in the paint: a particle emitter
+  minting 100 ids a frame reaches it in about 45 minutes at 60 fps. Reusing a removed node's number
+  breaks the "stays good" promise for ids read before the removal, so it needs a ruling. Closes when
+  removed nodes' numbers are reclaimed or the promise is kept some other bounded way (filed 2026-11-11).
 - **(P2) [maintainer] The rulers' look is provisional.** `<Rulers>` (`packages/ui/src/components/Rulers`)
   draws with theme tokens only: `--wzl-surface` strips, `--wzl-fg-muted` ticks and labels at
   `--wzl-font-size-2xs`, a `--wzl-border` edge, an `--wzl-accent` pointer marker, 20 px thick, minor
@@ -324,6 +325,12 @@ Owner tags, after the priority (2026-10-26):
 - **(P3) [maintainer] draw's guides are not saved with the document.** Guides dragged off draw's
   rulers live for the session (`apps/draw/src/useRulers.ts`); saving them is a change to the saved
   SVG. Closes when the maintainer rules whether and how a document keeps its guides, and draw does it.
+- **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
+  pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
+  takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to
+  a grid cell off the container's painted edge. Children still compose from the stored pose, and
+  picking reads it by design. Closes when the maintainer rules whether a clip follows the drawn pose,
+  and the walk does what was ruled.
 
 ---
 
@@ -349,11 +356,28 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
-  lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
-  `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
-  home both read rather than a second copy (2026-11-10). Closes when both fold through one definition and a
-  typeahead test lands `ασ` on `ΑΣ`.
+- **(P3) [maintainer] A labkit tile drag shows its node's UUID as the ghost.** `<Workspace reorderable>` mounts
+  windease's `DragProvider` with its default overlay, which labels the chip with the node's `meta.title` and falls
+  back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
+  (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
+
+- **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
+  iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
+  and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
+  avoids it (iconfab's README, "Known problems", 2026-11-11). Reported by the agent that built the lab and
+  not yet reproduced in weasel. Closes when a labkit test mounting 100 targets in one commit renders without
+  the error and iconfab drops its batching.
+- **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
+  stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
+  scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
+  frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
+- **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
+  target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
+  screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
+- **(P3) [agent] A list of objects summarizes as raw JSON on its control.** `f.list(def, f.object({ name, width }))`
+  draws its trigger as `{"name":"primary","width":1.5,…}, …` (`summarizeValue`, `written`); a map of objects does
+  the same. Seen in iconfab's Composer, 2026-11-11. Closes when an object entry summarizes by its first string
+  field, or by a summary the schema supplies, with a test on the trigger's text.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
@@ -391,6 +415,14 @@ Owner tags, after the priority (2026-10-26):
   disabled.
   Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
   fades when disabled also desaturates.
+
+- **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
+  `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
+  plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's
+  tube lab: a 259px strip with a 140px sidebar put a 160px content pane at x=141), then slides it 41px left
+  once the floors arrive. Since `watchElementMove` reports that slide, surfaces follow it; what is left is the
+  visible jump at load. Closes when a browser test mounts a 260px `TrialBody` with `width={140}` and finds the
+  content inside the strip on its first painted frame.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -448,14 +480,12 @@ Owner tags, after the priority (2026-10-26):
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) [waiting] draw's SVG files do not carry layers.** A saved file keeps paper size, title, groups, and
-  line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`) but no layer list and no
-  layer id on a shape; export only leaves hidden layers out (`svgExport.ts`). Nothing is lost yet:
-  draw has the one layer, `'default'` (`WeaselDrawLayer`, `drawDocument.ts`), and no way to add
-  another, and `openSvg.ts` puts every node on it. Whether a page has its own layers is undecided,
-  and the file format waits on that.
-  Closes when draw can add a second layer and its SVG files round-trip the layer list, or on 2026-12-31
-  with draw still on one layer, delete it.
+- **(P3) [maintainer] draw's SVG Save drops the measurements.** A saved file keeps paper size, title, groups,
+  names, locks and line height under the `wd:` namespace (`apps/draw/src/svgInterop.ts`), but no layer list and
+  no layer id on a shape, and `svgExport.ts` leaves out everything on an annotation layer as it leaves out a
+  hidden one. Draw keeps its measurements on the `annotations` layer (`drawDocument.ts`), so a drawing saved and
+  opened again has none, though a reload keeps them. Closes when the maintainer rules whether a saved file
+  carries its measurements (and so the layer each shape is on), and Save and Open do what was ruled.
 
 - **(P2) [maintainer] Tune draw's surface assets hands-on, with the maintainer driving.** Which groups form which
   asset, each one's default surface, and where switching lives were picked without anyone using
@@ -638,6 +668,24 @@ only story runner in the repo.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] Two of labkit's floating-sidebar tests fail when their file runs alone.** In
+  `Trial.floatPanel.test.tsx`, "closes on a press outside it, and the toggle closes what it opened" and "keeps a
+  section torn out of the panel in the workspace once the panel closes" failed 3 of 3 fleet runs of
+  `vitest run --project=labkit <that file>` at `c7b148f5e` (2026-11-11), and 1 of 3 locally, yet pass inside the
+  full suite. Something the suite sets up that the file does not set up itself. Closes when the file passes alone.
+
+- **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
+  once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
+  sighting under load.
+
+- **(P2) [agent] The site dev server dies on its first edit to a workspace package.** Saving a file
+  under `packages/core/src` logs `re-bundling workspace packages: <file>` (`scripts/vite-prebundle.ts`),
+  then `transport was disconnected, cannot call "fetchModule"` against `scripts/vite-wake.ts` and
+  `server restart failed`. The server keeps answering, but with the code from before the edit, so a
+  browser check after a package change passes or fails on stale source. Seen twice in a row on `npx vite`
+  at `bb2b7ec72` (2026-11-11). Suspect `68004a234`, which reloads the dev config through vite's module
+  runner on this restart.
+
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
   which minimatch 11 removed (`build:forge` exited "mini.matchOne is not a function", 2026-11-07), so it keeps
@@ -649,10 +697,11 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
-- **(P3) [waiting] labkit's `JobProgress.browser.test.tsx` missed its width check once by 0.5 px under load.**
-  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11); it passed
-  3/3 alone on the fleet and in the rerun. The check allows 0.05 px, which a busy node's font rasterizing can
-  exceed. Closes when it is seen a second time (then widen or rework the check), or on 2026-11-30 with none, delete it.
+- **(P3) [agent] labkit's `JobProgress.browser.test.tsx` misses its width check by 0.5 px at 100.**
+  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11), and the
+  same two numbers again in the suite run of `ccecc970d` (2026-11-11) on teitou; it passed 3/3 alone on the fleet
+  after the first. Identical figures twice read as a real width change at three digits, not rasterizing noise
+  (inferred, not measured). Rework the check, or the count's sizing for its total, so 100 holds the width.
 
 
 - **(P2) [agent] Browser test files fail to load when the node's network changes.** A file

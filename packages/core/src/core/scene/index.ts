@@ -5,7 +5,7 @@ export { asNodeId } from './types';
 export { hasChildren, isLeaf } from './treeShape';
 export { statedFields, type StatedNodeFields } from './statedFields';
 export { isSerializedScene, nodeKindOf, specsFromSerialized } from './serialization';
-export { SnapshotShapeError } from './snapshotShape';
+export { SnapshotKeyError, SnapshotShapeError } from './snapshotShape';
 export { localizeInScene, localizeWorldPoses, worldPosesOf, type PlacedSpec } from './worldSave';
 export type { SkippedKey, SpecsFromSerializedOptions, V1Classifier } from './serialization';
 export { SCENE_HISTORY_FORM } from './historyForm';

@@ -12,7 +12,7 @@
 
 import { isSolidPaint, type Fill, type Paint, type ScreenLength } from '@weasel-js/paint';
 import {
-  DEFAULT_TEXT_STYLE, isHardLineBreak, resolveRunFace, smallCapsScaleFor, smallCapsText, transformRunTexts,
+  DEFAULT_TEXT_STYLE, isHardLineBreak, ownSmallCaps, resolveRunFace, smallCapsScaleFor, smallCapsText, transformRunTexts,
   SMALL_CAPS_SCALE,
   type FontVariantCaps, type ResolvedTextStyle, type StyledRun, type TextTransform,
 } from '@weasel-js/text';
@@ -173,7 +173,8 @@ export function runsToDom(
     const span = document.createElement('span');
     span.setAttribute('data-run', '');
     const face = resolveRunFace(run, base);
-    if ((run.fontVariantCaps ?? base.fontVariantCaps) === 'small-caps') {
+    if ((run.fontVariantCaps ?? base.fontVariantCaps) === 'small-caps'
+      && !ownSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
       const scale = smallCapsScaleFor(face.fontFamily, face.fontWeight, face.fontStyle);
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
       writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang, before);
@@ -282,21 +283,25 @@ function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string |
 /**
  * Put every run span's small-caps pieces back where its text now needs them.
  * Returns whether anything was rewritten, which moves the DOM selection: the
- * caller restores it by character offset.
+ * caller restores it by character offset. `base` is the node's style, whose
+ * face a run naming none of its own is set in.
  */
-export function normalizeSmallCaps(parent: HTMLElement): boolean {
+export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = DEFAULT_TEXT_STYLE): boolean {
   let changed = false;
   let before = '';
   const visit = (
     el: HTMLElement, variant: FontVariantCaps, transform: TextTransform, inherited: string | undefined,
+    state: StyleState,
   ): void => {
     const v = cssFontVariant(el) ?? variant;
     const tt = el.style.textTransform;
     const t = TRANSFORMS.has(tt) ? (tt as TextTransform) : transform;
     const lang = el.hasAttribute('lang') ? el.lang || undefined : inherited;
+    const own = el === parent ? state : styleStateFromElement(el, state);
     if (el.hasAttribute('data-run')) {
       const text = sourceText(el);
-      if (v === 'small-caps') {
+      const face = resolveRunFace(toRun(text, own), base);
+      if (v === 'small-caps' && !ownSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
         if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before); changed = true; }
       } else if (el.querySelector('[data-small-caps]')) {
         el.replaceChildren();
@@ -306,8 +311,8 @@ export function normalizeSmallCaps(parent: HTMLElement): boolean {
       before += text;
       return;
     }
-    for (const child of el.children) if (child instanceof HTMLElement) visit(child, v, t, lang);
+    for (const child of el.children) if (child instanceof HTMLElement) visit(child, v, t, lang, own);
   };
-  visit(parent, 'normal', 'none', undefined);
+  visit(parent, 'normal', 'none', undefined, EMPTY_STYLE);
   return changed;
 }

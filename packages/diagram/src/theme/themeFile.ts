@@ -2,7 +2,7 @@
  * A theme as a file, so a custom theme can travel between documents: written
  * as JSON, and checked on the way back in.
  */
-import { parseColor } from '@weasel-js/core';
+import { tryParseColor } from '@weasel-js/core';
 import type { DiagramTheme } from './types';
 
 /** The extension a theme file is saved with. */
@@ -16,13 +16,7 @@ type Raw = Record<string, unknown>;
 const isObject = (v: unknown): v is Raw => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 function isColor(v: unknown): boolean {
-  if (typeof v !== 'string') return false;
-  try {
-    parseColor(v);
-    return true;
-  } catch {
-    return false;
-  }
+  return typeof v === 'string' && tryParseColor(v) !== null;
 }
 
 /** The checks one theme gets, each adding what it finds wrong to `errors`, named by its path. */
