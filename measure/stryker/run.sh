@@ -11,6 +11,7 @@ LOCK=node_modules/.stryker-lock
 mkdir "$LOCK" 2>/dev/null || { echo "another Stryker run holds this tree ($LOCK); run items one at a time (onto run -workers 1)"; exit 3; }
 cleanup() { rm -rf "$TOOLS" node_modules/.stryker-tmp .stryker-tmp; git checkout -- "packages/$MEASURE_PKG/src" 2>/dev/null; rmdir "$LOCK"; }
 trap cleanup EXIT
+git checkout -- "packages/$MEASURE_PKG/src"
 
 echo "installing stryker into $TOOLS"
 mkdir -p "$TOOLS" "$MEASURE_OUT"
