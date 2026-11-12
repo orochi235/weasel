@@ -47,7 +47,7 @@ describe('runsToDom and domToRuns (property)', () => {
       applyOverlayStyle(parent, base);
       runsToDom(rs, parent, base);
       const written = parent.innerHTML;
-      expect(normalizeSmallCaps(parent)).toBe(false);
+      expect(normalizeSmallCaps(parent, base)).toBe(false);
       expect(parent.innerHTML).toBe(written);
       // Typing leaves a run's text in plain text nodes; the pieces come back from the text alone.
       for (const span of parent.querySelectorAll<HTMLElement>('[data-run]')) {
@@ -56,7 +56,7 @@ describe('runsToDom and domToRuns (property)', () => {
         span.replaceChildren();
         appendOverlayText(span, text);
       }
-      normalizeSmallCaps(parent);
+      normalizeSmallCaps(parent, base);
       expect(parent.innerHTML).toBe(written);
     }), runs(RUNS));
     t.atLeast('flattened', 20);

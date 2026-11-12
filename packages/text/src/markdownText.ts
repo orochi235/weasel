@@ -149,8 +149,10 @@ export function layoutMarkdown(
     const tracking = run.letterSpacing !== undefined
       ? resolveScreenLength(run.letterSpacing, 1)
       : opts.letterSpacing ?? 0;
-    // The run's size holds the line, as on the GL tier, however small its capitals.
-    return { run, face, y, runSize, font, tracking };
+    // As on the GL tier: the run's size holds the line, however small its capitals, and a size
+    // relative to the node's holds it at least at the node's (`strutSize`).
+    const holds = run.fontSize === undefined ? Math.max(runSize, fontSize) : runSize;
+    return { run, face, y, runSize, holds, font, tracking };
   });
   /** A UTF-16 span of one run's text, set on the current line; `hyphen` when
    *  it closes a line wrapped at the soft hyphen it ends in, which draws as U+2010. */
@@ -187,7 +189,7 @@ export function layoutMarkdown(
     let maxSize = 0;
     const positioned: PositionedRun[] = [];
     for (const p of line) {
-      const { run, face, font, tracking, y, runSize } = placed[p.run];
+      const { run, face, font, tracking, y, runSize, holds } = placed[p.run];
       const tab = run.text[p.start] === '\t' ? stopOf(p.run) : null;
       const width = tab ? tabAdvance(x, tab.stop, tab.min) : pieceWidth(p);
       positioned.push({
@@ -195,7 +197,7 @@ export function layoutMarkdown(
         ...(face ? { face } : {}),
       });
       x += width;
-      maxSize = Math.max(maxSize, runSize);
+      maxSize = Math.max(maxSize, holds);
     }
     lines.push({ runs: positioned, width: x, height: (maxSize > 0 ? maxSize : fontSize) * lineHeightFactor });
   }

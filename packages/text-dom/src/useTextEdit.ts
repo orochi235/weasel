@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
-import { numericWeight, resolveRunFace, resolveTextStyle } from '@weasel-js/text';
+import { resolveRunFace, resolveTextStyle } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
 import { editEnd, imeKey } from '@weasel-js/ui-input';
 import type { StyledRun } from '@weasel-js/text';
@@ -453,18 +453,18 @@ let OVERLAY_SEQ = 0;
 
 /**
  * The loads the overlay's faces are still waiting on — the node's and each
- * run's that names its own family — or `null` when every one is in hand.
+ * run's, a bold or italic run in the node's family included — or `null` when
+ * every one is in hand.
  */
 function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[]): Promise<unknown> | null {
-  const pending = [
-    cssFontFamilyLoading(style.fontFamily, {
-      weight: numericWeight(style.fontWeight), style: style.fontStyle,
-    }),
-    ...runs.filter((r) => r.fontFamily != null).map((r) => {
-      const face = resolveRunFace(r, style);
-      return cssFontFamilyLoading(face.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
-    }),
-  ].filter((p) => p !== null);
+  const faces = new Map<string, ReturnType<typeof resolveRunFace>>();
+  for (const r of [{ text: '' }, ...runs]) {
+    const face = resolveRunFace(r, style);
+    faces.set(`${face.fontFamily}|${face.fontWeight}|${face.fontStyle}`, face);
+  }
+  const pending = [...faces.values()]
+    .map((f) => cssFontFamilyLoading(f.fontFamily, { weight: f.fontWeight, style: f.fontStyle }))
+    .filter((p) => p !== null);
   return pending.length === 0 ? null : Promise.all(pending);
 }
 
