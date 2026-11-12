@@ -7,7 +7,7 @@
  * something in 3D is the camera each dep already closes over.
  */
 
-import type { AreaSelectDep, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
+import type { AreaSelectDep, HitTestView, NodeAtPointDep, PoseDescriptor, SnapDep, SnapOutcomeStore, SnapSource } from '@weasel-js/core/engine';
 import type { NodeId } from '@weasel-js/routing';
 import { DEFAULT_SNAP_PX, createSnapOutcomeStore, assertSnapSourceIds } from '@weasel-js/core/engine';
 import { isDev, type KitSettingsStore } from '@weasel-js/react';
@@ -94,31 +94,40 @@ function pickOnRay<TData, TLayer extends string>(
   viewId: string | null | undefined,
   point: { x: number; y: number },
   exclude?: Iterable<NodeId>,
+  layerIsPainted?: (layer: string) => boolean,
 ): NodeId | null {
   const ray = rayAt(world.viewport(viewId), point);
   if (!ray) return null;
   // The ray spans near to far plane at t 0..1.
-  return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1);
+  return worldPickIndex(world).nearestOnRay(ray, exclude ? new Set(exclude) : null, 1, layerIsPainted);
 }
 
 /**
  * `<SceneCanvas geometry={{ pickEvery }}>` over a 3D world: the node along the
- * ray the point names, cast from the camera of the view the pick is asked for.
+ * ray the point names, cast from the camera of the view the pick is asked for,
+ * passing over the layers that view does not paint.
  */
 export function createPickEvery<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
-): (point: { x: number; y: number }, view?: { viewId?: string | null }) => NodeId | null {
-  return (point, view) => pickOnRay(world, view?.viewId, point);
+): (point: { x: number; y: number }, view?: HitTestView) => NodeId | null {
+  return (point, view) => pickOnRay(world, view?.viewId, point, undefined, layerGateOf(view));
 }
 
-/** Marquee: the nodes whose projected box the screen rectangle touches, in render order. */
+/** The asking view's layer gate, called as a method so it keeps its receiver. */
+function layerGateOf(view: HitTestView | undefined): ((layer: string) => boolean) | undefined {
+  return view?.layerIsPainted ? (layer) => view.layerIsPainted!(layer) : undefined;
+}
+
+/** Marquee: the nodes whose projected box the screen rectangle touches, in render
+ *  order, less those on a layer the view the marquee was drawn in does not paint. */
 export function createAreaSelect<TData, TLayer extends string>(
   world: World3d<TData, TLayer>,
   selection: { get(): readonly NodeId[]; set(ids: NodeId[]): void },
   viewId?: string | null,
 ): AreaSelectDep {
   return {
-    hitTestArea: (bounds) => worldPickIndex(world).inScreenRect(world.viewport(viewId), bounds),
+    hitTestArea: (bounds, view) =>
+      worldPickIndex(world).inScreenRect(world.viewport(viewId), bounds, layerGateOf(view)),
     getSelection: () => [...selection.get()],
     setSelection: (ids) => selection.set([...ids]),
   };
