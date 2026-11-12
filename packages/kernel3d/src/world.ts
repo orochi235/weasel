@@ -5,7 +5,7 @@ import { composeWorldPose, scenePoseAdapter, scenePoseFrame, type Scene, type Sc
 import { type NodeId } from '@weasel-js/routing';
 import type { Aabb, Vec3 } from '@weasel-js/geom/3d';
 import { aabbOfPose, type Pose3 } from './pose3';
-import type { ViewportSource } from './project';
+import type { Viewport3d, ViewportSource } from './project';
 
 /** A 3D scene is core's scene with a `Pose3`. Nothing wraps it. */
 export type Scene3d<TData, TLayer extends string> = Scene<TData, TLayer, Pose3>;
@@ -38,12 +38,25 @@ export interface World3d<TData, TLayer extends string> {
   scene: Scene3d<TData, TLayer>;
   viewport: ViewportSource;
   bounds?: NodeBounds<TData, TLayer>;
-  /** The axis gestures resolve against. Default `+y`. Give the camera the same `up` (`createCamera({ up })`) so it
-   *  orbits about it and keeps its horizon level. */
+  /** The axis gestures resolve against, and the one every camera seen through `viewport` orbits about and keeps
+   *  upright on screen. Default `+y`. */
   up?: Vec3;
 }
 
 export const DEFAULT_UP: Vec3 = { x: 0, y: 1, z: 0 };
+
+/** `viewport` seen in `world`: its camera turning about the world's up. */
+export function inWorld<TData, TLayer extends string>(world: World3d<TData, TLayer>, viewport: Viewport3d): Viewport3d {
+  return { ...viewport, up: world.up ?? DEFAULT_UP };
+}
+
+/** The viewport the view `viewId` looks through in `world`, its camera turning about the world's up. */
+export function viewportOf<TData, TLayer extends string>(
+  world: World3d<TData, TLayer>,
+  viewId: string | null | undefined,
+): Viewport3d {
+  return inWorld(world, world.viewport(viewId));
+}
 
 /**
  * Where `id` is in world, as it is shown: folded up through every container

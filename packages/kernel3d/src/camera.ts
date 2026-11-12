@@ -24,17 +24,15 @@ import { clamp } from '@weasel-js/geom';
  *  `near`/`far` the clip distances. */
 export interface Camera3d {
   target: Vec3;
-  /** Radians about `up`. At yaw 0 the eye sits where the turn that carries +y onto `up` carries +z: down +z when
-   *  `up` is +y, down -y when it is +z. */
+  /** Radians about the world's up. At yaw 0 the eye sits where the turn that carries +y onto that up carries +z:
+   *  down +z when up is +y, down -y when it is +z. */
   yaw: number;
-  /** Radians above the ground, the plane at right angles to `up`. */
+  /** Radians above the ground, the plane at right angles to the world's up. */
   pitch: number;
   distance: number;
   fov: number;
   near: number;
   far: number;
-  /** The axis the camera orbits about and keeps upright on screen: the world's `up` (`World3d.up`). Default +y. */
-  up?: Vec3;
 }
 
 /** Short of vertical: at exactly ±π/2 the eye lands on the up axis and `lookAt` degenerates. */
@@ -42,7 +40,7 @@ export const MAX_PITCH = Math.PI / 2 - 0.01;
 const Y_UP: Vec3 = { x: 0, y: 1, z: 0 };
 
 /** A camera with defaults for every field not given: origin target, level at
- *  yaw 0, distance 10, fov π/4, near 0.1, far 1000, +y up. */
+ *  yaw 0, distance 10, fov π/4, near 0.1, far 1000. */
 export function createCamera(init: Partial<Camera3d>): Camera3d {
   return {
     target: init.target ?? { x: 0, y: 0, z: 0 },
@@ -52,7 +50,6 @@ export function createCamera(init: Partial<Camera3d>): Camera3d {
     fov: init.fov ?? Math.PI / 4,
     near: init.near ?? 0.1,
     far: init.far ?? 1000,
-    ...(init.up ? { up: init.up } : {}),
   };
 }
 
@@ -82,20 +79,23 @@ function inFrame(frame: OrbitFrame, v: Vec3): Vec3 {
 }
 
 /** Where a camera stands and which ways it faces, in world terms. `right` and `up` are the screen's +x and its upward
- *  direction, unit length, `forward` the unit direction from the eye to the target. */
+ *  direction, unit length, `forward` the unit direction from the eye to the target.
+ *
+ *  Every function here that places the camera takes the world's up (`World3d.up`) as `worldUp`, default +y: the axis
+ *  it orbits about and keeps upright on screen. A camera holds no up of its own; the world it looks at says. */
 export interface CameraBasis {
   eye: Vec3;
   forward: Vec3;
   right: Vec3;
   up: Vec3;
-  /** The axis the camera orbits about: `camera.up`, unit length. */
+  /** The axis the camera orbits about: the world's up, unit length. */
   orbitUp: Vec3;
 }
 
 /** The camera's basis: every reading of where it is and how it is turned goes through this one. */
-export function cameraBasis(camera: Camera3d): CameraBasis {
+export function cameraBasis(camera: Camera3d, worldUp?: Vec3): CameraBasis {
   const { target, yaw, pitch, distance } = camera;
-  const frame = orbitFrame(camera.up);
+  const frame = orbitFrame(worldUp);
   const horizontal = Math.cos(pitch) * distance;
   const offset = inFrame(frame, {
     x: horizontal * Math.sin(yaw),
@@ -117,19 +117,19 @@ export function cameraBasis(camera: Camera3d): CameraBasis {
 }
 
 /** The eye's world position. */
-export function cameraEye(camera: Camera3d): Vec3 {
-  return cameraBasis(camera).eye;
+export function cameraEye(camera: Camera3d, worldUp?: Vec3): Vec3 {
+  return cameraBasis(camera, worldUp).eye;
 }
 
-/** World-to-view matrix, upright about the camera's `up`. */
-export function cameraView(camera: Camera3d): Mat4 {
-  const { eye, orbitUp } = cameraBasis(camera);
+/** World-to-view matrix, upright about `worldUp`. */
+export function cameraView(camera: Camera3d, worldUp?: Vec3): Mat4 {
+  const { eye, orbitUp } = cameraBasis(camera, worldUp);
   return lookAt(eye, camera.target, orbitUp);
 }
 
 /** World-to-clip matrix for a pane of the given width/height `aspect`. */
-export function cameraViewProjection(camera: Camera3d, aspect: number): Mat4 {
-  return multiply(perspective(camera.fov, aspect, camera.near, camera.far), cameraView(camera));
+export function cameraViewProjection(camera: Camera3d, aspect: number, worldUp?: Vec3): Mat4 {
+  return multiply(perspective(camera.fov, aspect, camera.near, camera.far), cameraView(camera, worldUp));
 }
 
 /** How far an orbit camera may turn and travel. Distances are in world units,
@@ -194,10 +194,10 @@ export function dollyBy(camera: Camera3d, factor: number, limits?: Partial<Orbit
  * `paneHeight` pixels tall. Neither angle nor distance changes. A pan that
  * carries the target past the double range leaves the camera as it is.
  */
-export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: number): Camera3d {
+export function panBy(camera: Camera3d, dx: number, dy: number, paneHeight: number, worldUp?: Vec3): Camera3d {
   if (!(paneHeight > 0)) return camera;
   const perPixel = (2 * camera.distance * Math.tan(camera.fov / 2)) / paneHeight;
-  const { right, up } = cameraBasis(camera);
+  const { right, up } = cameraBasis(camera, worldUp);
   const shift = add(scale(right, -dx * perPixel), scale(up, dy * perPixel));
   return heldFinite(camera, { ...camera, target: add(camera.target, shift) });
 }
@@ -215,6 +215,7 @@ export function dollyToward(
   at: { x: number; y: number },
   pane: { width: number; height: number },
   limits?: Partial<OrbitLimits>,
+  worldUp?: Vec3,
 ): Camera3d {
   const dollied = dollyBy(camera, factor, limits);
   // A camera on its target has no point under the pointer to keep.
@@ -224,6 +225,7 @@ export function dollyToward(
     -kept * (at.x - pane.width / 2),
     -kept * (at.y - pane.height / 2),
     pane.height,
+    worldUp,
   );
   return heldFinite(camera, { ...dollied, target: moved.target });
 }

@@ -6,8 +6,10 @@ import { projectPoint, type Viewport3d } from './project';
 
 const VP: Viewport3d = { camera: createCamera({}), width: 200, height: 100 };
 const FLAT = aimSpace2d(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 });
-/** A z-up world, where the level default camera looks straight down at the ground. */
+/** A z-up world. */
 const Z_UP = { up: { x: 0, y: 0, z: 1 } };
+/** A hair short of looking straight down its world's up, where `lookAt` would degenerate. */
+const TOP: Viewport3d = { ...VP, camera: createCamera({ pitch: Math.PI / 2 - 1e-6 }) };
 /** Looking down at the y-up ground, centered on (1, 0, 2). */
 const DOWN: Viewport3d = { ...VP, camera: createCamera({ pitch: MAX_PITCH, target: { x: 1, y: 0, z: 2 } }) };
 const PANE_CORNERS = [[0, 0], [200, 0], [200, 100], [0, 100]] as const;
@@ -29,14 +31,14 @@ describe('aimOf3d', () => {
     }
   });
   it('outlines its footprint on z = 0 in a 2D space when z is up', () => {
-    const out = aimOf3d(VP, 'p', Z_UP).outlineIn(FLAT)!;
+    const out = aimOf3d(TOP, 'p', Z_UP).outlineIn(FLAT)!;
     const xs = out.map((p) => p.x), ys = out.map((p) => p.y);
     expect(Math.min(...xs)).toBeCloseTo(-8.2843, 3); expect(Math.max(...xs)).toBeCloseTo(8.2843, 3);
     expect(Math.min(...ys)).toBeCloseTo(-4.1421, 3); expect(Math.max(...ys)).toBeCloseTo(4.1421, 3);
   });
   it('outlines the part of the ground it sees when the ground runs off past its far plane or its horizon', () => {
     // Grazing z = 0 at about 10 degrees, so the pane's far side looks past it.
-    const grazing: Viewport3d = { ...VP, camera: createCamera({ yaw: 1.4, far: 60 }) };
+    const grazing: Viewport3d = { ...VP, camera: createCamera({ pitch: 0.17, far: 60 }) };
     const out = aimOf3d(grazing, 'p', Z_UP).outlineIn(FLAT)!;
     expect(out.length).toBeGreaterThanOrEqual(3);
     // The camera's target, the origin, is in view, so the outline holds it.
@@ -51,7 +53,8 @@ describe('aimOf3d', () => {
     for (const p of out) expect(Math.hypot(p.x - eye.x, p.y - eye.y, eye.z)).toBeLessThanOrEqual(60 / Math.cos(Math.PI / 4) + 1e-6);
   });
   it('answers null in a 2D space behind it', () => {
-    const away = { ...VP, camera: createCamera({ target: { x: 0, y: 0, z: -40 } }) };
+    // Below the ground and looking further down.
+    const away = { ...VP, camera: createCamera({ target: { x: 0, y: 0, z: -40 }, pitch: 1.2 }) };
     expect(aimOf3d(away, 'p', Z_UP).outlineIn(FLAT)).toBeNull();
   });
   it('pans its camera target across the ground by the world distance in a 2D space', () => {
@@ -109,7 +112,7 @@ describe('aimSpace3d', () => {
     expect(w.z).toBeCloseTo(0, 6);
   });
   it('unprojects frame px onto z = 0 through a pane with an origin when z is up', () => {
-    const w = aimSpace3d(PANE, 'p', Z_UP).unproject(MID)!;
+    const w = aimSpace3d({ ...TOP, originX: 50, originY: 20 }, 'p', Z_UP).unproject(MID)!;
     expect(w.x).toBeCloseTo(0, 6);
     expect(w.y).toBeCloseTo(0, 6);
     expect(w.z).toBeCloseTo(0, 6);
@@ -117,7 +120,7 @@ describe('aimSpace3d', () => {
   it('measures height along `up` when `up` is -y', () => {
     const down = { up: { x: 0, y: -1, z: 0 } };
     const above = aimSpace3d(DOWN, 'p', down).project({ x: 1, y: 2, z: 3 })!;
-    const there = projectPoint({ x: 1, y: -3, z: 2 }, DOWN)!;
+    const there = projectPoint({ x: 1, y: -3, z: 2 }, { ...DOWN, ...down })!;
     expect(above.x).toBeCloseTo(there.x, 6);
     expect(above.y).toBeCloseTo(there.y, 6);
     const hit = aimSpace3d(DOWN, 'p', down).unproject(MID)!;

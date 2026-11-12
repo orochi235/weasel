@@ -25,7 +25,8 @@ export type Aim3d = ViewAim<Frustum3d> & { readonly kind: 'frustum'; readonly vi
 
 /** How a kernel3d view meets a 2D one. */
 export interface Aim3dOptions {
-  /** The axis the ground, where a 2D world lies, is at right angles to: `createInsert`'s `up`. Default `+y`. */
+  /** The world's up: the axis the camera turns about and the ground, where a 2D world lies, is at right angles to.
+   *  `World3d.up`, as `createInsert` takes it. Default `+y`. */
   up?: Vec3;
 }
 
@@ -41,7 +42,7 @@ function paneCorners(viewport: Viewport3d): { x: number; y: number }[] {
 
 function frustumOf(viewport: Viewport3d): Frustum3d {
   const { camera } = viewport;
-  const { eye, forward } = cameraBasis(camera);
+  const { eye, forward } = cameraBasis(camera, viewport.up);
   const at = (depth: number): Vec3[] =>
     paneCorners(viewport).map((c) => {
       const ray = rayAt(viewport, c);
@@ -99,8 +100,9 @@ function projectAll(space: AimSpace, points: readonly AimPoint[]): AimOutline | 
  * The aim of view `viewId` (`null`: a surface's root): the frustum `viewport`'s camera sees. Drawn into a 2D view, it
  * outlines its footprint on the ground, the ground's two axes carrying the 2D world's x and y.
  */
-export function aimOf3d(viewport: Viewport3d, viewId: string | null, opts: Aim3dOptions = {}): Aim3d {
+export function aimOf3d(given: Viewport3d, viewId: string | null, opts: Aim3dOptions = {}): Aim3d {
   const up = opts.up ?? DEFAULT_UP;
+  const viewport = { ...given, up };
   const axes = groundAxes(up);
   const extent = frustumOf(viewport);
   return {
@@ -128,8 +130,9 @@ export function aimOf3d(viewport: Viewport3d, viewId: string | null, opts: Aim3d
  * A 3D pane as a target. Its points are aim points: x and y along the ground's two axes and z, height, along `up`,
  * so a 2D world's points lie on the ground. It projects through `projectPoint` and unprojects onto the ground.
  */
-export function aimSpace3d(viewport: Viewport3d, viewId: string | null, opts: Aim3dOptions = {}): AimSpace {
+export function aimSpace3d(given: Viewport3d, viewId: string | null, opts: Aim3dOptions = {}): AimSpace {
   const up = opts.up ?? DEFAULT_UP;
+  const viewport = { ...given, up };
   const axes = groundAxes(up);
   const { x: ox, y: oy } = rectOf(viewport);
   return {
