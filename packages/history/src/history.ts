@@ -190,12 +190,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     return walked;
   }
 
-  /** Coalesce eligibility: inside the window, and the same keys. Matched by
-   *  multiset rather than position so a multi-id selection can re-emit ops in
-   *  any order between batches without breaking the merge. */
+  /** Coalesce eligibility: inside the window, which a clock set back since (a machine waking to a corrected
+   *  time) is not, and the same keys. Matched by multiset rather than position so a multi-id selection can
+   *  re-emit ops in any order between batches without breaking the merge. */
   function canCoalesce(top: Entry, incoming: Op[]): boolean {
-    const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs;
-    if (!(windowMs > 0) || top.coalesceKey !== undefined || version !== coalesceAnchorVersion || now() - top.timestamp > windowMs) return false;
+    const windowMs = typeof coalesceWindowMs === 'function' ? coalesceWindowMs() : coalesceWindowMs, gap = now() - top.timestamp;
+    if (!(windowMs > 0) || top.coalesceKey !== undefined || version !== coalesceAnchorVersion || !(gap >= 0 && gap <= windowMs)) return false;
     return sameCoalesceKeys(top.forwardOps, incoming);
   }
 

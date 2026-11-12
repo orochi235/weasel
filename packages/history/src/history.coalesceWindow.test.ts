@@ -44,4 +44,12 @@ describe('coalesceWindowMs as a function', () => {
     journal.applyBatch([setOp(1, 2)], 'set');
     expect(journal.entries().undo).toHaveLength(1);
   });
+
+  it('takes a clock set back between two pushes as outside the window', () => {
+    const { history, tick } = open(100);
+    history.applyOps([setOp(0, 1)], 'set');
+    tick(-3_600_000);
+    history.applyOps([setOp(1, 2)], 'set');
+    expect(history.undoDepth()).toBe(2);
+  });
 });
