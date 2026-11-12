@@ -7,6 +7,9 @@
  * test cannot see either: it packs every sibling into one tree.
  *
  * A relative import must also stay inside its own package, so it cannot reach a sibling's source.
+ * A bare import of a sibling must name a subpath its `exports` lists, and shipped code must not
+ * import a sibling's test surface (`./test-seams`, `./testing/*`): that puts test seams in every
+ * consumer's module graph.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
@@ -41,6 +44,19 @@ export function isShipped(rel, own, manifest) {
 // Relative imports that leave their package on purpose, as package directory → target without its
 // extension. The icons plugin loads from source during @weasel-js/icons' own build, before its dist exists.
 const CROSS_PACKAGE = [{ from: 'packages/icons-plugin', to: 'packages/icons/src/names' }];
+
+const TEST_SURFACE = /^\.\/(test-seams$|testing\/)/;
+
+/** Whether `subpath` (`./x`) is one `exports` lists, a `*` pattern included. */
+export function exportsSubpath(exports, subpath) {
+  if (!exports || typeof exports !== 'object') return subpath === '.';
+  return Object.keys(exports).some((key) => {
+    if (key === subpath) return true;
+    const star = key.indexOf('*');
+    return star >= 0 && subpath.length >= key.length
+      && subpath.startsWith(key.slice(0, star)) && subpath.endsWith(key.slice(star + 1));
+  });
+}
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -93,8 +109,18 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     }
   }
 
+  const siblings = new Map();
+  for (const name of readdirSync(PACKAGES)) {
+    const path = join(PACKAGES, name, 'package.json');
+    if (existsSync(path)) {
+      const manifest = JSON.parse(readFileSync(path, 'utf8'));
+      siblings.set(manifest.name, manifest);
+    }
+  }
+
   const offenders = [];
   const escapes = [];
+  const reaches = [];
   let checked = 0;
 
   for (const name of readdirSync(PACKAGES).sort()) {
@@ -117,6 +143,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     for (const file of walk(join(dir, 'src'))) {
       const rel = relative(ROOT, file);
       if (!isShipped(rel, relative(ROOT, dir), manifest)) continue;
+      const testSurface = NOT_SHIPPED.test(rel) || /\/test-seams\.tsx?$/.test(rel);
       for (const written of importSpecifiers(readFileSync(file, 'utf8'), file)) {
         const specifier = written.replace(/\?.*$/, '');
         if (specifier.startsWith('.')) {
@@ -128,6 +155,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
         }
         if (!isBare(specifier)) continue;
         const pkg = packageOf(specifier);
+        const sibling = siblings.get(pkg);
+        if (sibling && pkg !== manifest.name) {
+          const subpath = `.${specifier.slice(pkg.length)}`;
+          if (!exportsSubpath(sibling.exports, subpath)) reaches.push({ file: rel, specifier, why: 'is not in its exports' });
+          else if (!testSurface && TEST_SURFACE.test(subpath)) reaches.push({ file: rel, specifier, why: 'is a test surface' });
+        }
         if (declared.has(pkg) || BUILTINS.has(pkg)) continue;
         if (aliases.some((alias) => specifier === alias || specifier.startsWith(`${alias}/`))) continue;
         if (!missing.has(pkg)) missing.set(pkg, rel);
@@ -147,6 +180,12 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error("\n  Import the other package by name, and declare it. A published package cannot reach a sibling's source.\n");
   }
 
+  if (reaches.length > 0) {
+    console.error(`\n[declared-imports] BLOCKED: ${reaches.length} import(s) reach past a sibling's public entries.\n`);
+    for (const { file, specifier, why } of reaches) console.error(`  ${file}   imports ${specifier}, which ${why}`);
+    console.error('\n  Shipped code imports what a consumer could: an entry the sibling exports, and never its test seams.\n');
+  }
+
   if (offenders.length > 0) {
     console.error(`\n[declared-imports] BLOCKED: ${offenders.length} package(s) import a module they do not declare.\n`);
     for (const { name, missing } of offenders) {
@@ -156,7 +195,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error('\n  Add each to the package\'s dependencies or peerDependencies.\n');
   }
 
-  if (escapes.length > 0 || offenders.length > 0) process.exit(1);
+  if (escapes.length > 0 || reaches.length > 0 || offenders.length > 0) process.exit(1);
 
   console.log(`[declared-imports] OK — ${checked} published package(s), every import declared.`);
 }
