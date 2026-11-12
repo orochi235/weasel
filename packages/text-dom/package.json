@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@weasel-js/font": "1.19.0",
+    "@weasel-js/gestures": "1.19.0",
     "@weasel-js/paint": "1.19.0",
     "@weasel-js/react": "1.19.0",
     "@weasel-js/text": "1.19.0",

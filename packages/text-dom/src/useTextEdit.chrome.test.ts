@@ -175,6 +175,22 @@ describe('useTextEdit — editing chrome', () => {
     expect(overlay.contains(sel.getRangeAt(0).startContainer)).toBe(true);
   });
 
+  it('keeps the caret when a chrome checkbox has focus, as for a button', () => {
+    const h = makeChromeHarness();
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    h.chrome.appendChild(box);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 1, 3);
+    box.focus();
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    const sel = window.getSelection()!;
+    expect(sel.rangeCount).toBe(1);
+    expect(overlay.contains(sel.getRangeAt(0).startContainer)).toBe(true);
+  });
+
   it('styles the remembered range when the DOM selection has left the overlay', async () => {
     const h = makeChromeHarness();
     const { result } = renderHook(() => useTextEdit(h.opts));
