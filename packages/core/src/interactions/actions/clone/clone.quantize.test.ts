@@ -7,12 +7,11 @@ import { alignToGrid, snapToPitch, type OutputGrid } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { OUTPUT_GRID_KEY } from 'core/scene/outputGrid';
-import { asNodeId, type RectPose, type Scene } from 'core/scene/types';
+import { asNodeId, type RectPose } from 'core/scene/types';
 import type { QuantizeRule } from 'core/scene/useSceneOptions';
 import { cloneAction } from './action';
 
 type Data = { kind: 'box' };
-type S = Scene<Data, 'main', RectPose>;
 const GRID: OutputGrid = { pitch: 0.4, origin: { x: 0, y: 0 } };
 const BOX = asNodeId('box');
 const RULE: QuantizeRule<Data, RectPose> = {
