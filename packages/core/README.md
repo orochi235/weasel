@@ -214,31 +214,7 @@ Core's main entry carries the everyday surface. A few narrower ones have their o
 
 ## Packages
 
-Every package is published under `@weasel-js` and released together at one version.
-
-| Package | What it is |
-|---|---|
-| `core` | the scene graph, `<SceneCanvas>`, actions, tools, and the WebGL2 renderer |
-| `geom` | pure geometry — 2D affine, box, curve, polyline; polygon booleans under `./booleans`; 3D vectors, quaternions, matrices and rays under `./3d` |
-| `gestures` | the gesture taxonomy, route grammars and matchers; no React, no DOM |
-| `history` | undo/redo with scoped sub-histories; no React, no DOM |
-| `react` | generic React hooks the other packages share: `useLatest`, `useStableByContent` |
-| `paint` | fills, strokes, gradients and dashes as plain data |
-| `text` | styled runs, kerned layout, wrapping and measurement |
-| `bidi` | the Unicode Bidirectional Algorithm (UAX #9) |
-| `font` | MSDF atlases, glyph metrics and runtime glyph rasterization |
-| `svg` | SVG import and export |
-| `modes` | app-level modality: capability tags, mode definitions, a mode registry |
-| `diagram` | node-link diagrams: ports on any node's perimeter, flowchart-style bodies |
-| `guides` | placement aids: grids, guide lines, alignment and snapping to them, container layout strategies |
-| `hud` | WebGL-rendered widgets composited into a canvas |
-| `cursor` | tool cursors as authored glyphs, baked to CSS or painted when too large |
-| `loupe` | a magnifier model: where it's aimed, how far it magnifies, what's under it |
-| `audio` | a Web Audio engine: voices, buses, lookahead scheduling, spatialization; no weasel dependencies |
-| `d3` | d3 data-join and transitions over `useScene` |
-| `theme` | design tokens as CSS variables and a parallel TypeScript export |
-| `ui` | React chrome components for weasel apps |
-| `labkit` | React widgets for self-contained interactive lab pages |
+Every package is published under `@weasel-js` and released together at one version. The [repository README](https://github.com/orochi235/weasel#packages) lists them, with what each needs: React, a browser, WebGL2 or Web Audio.
 
 ## Documentation
 
