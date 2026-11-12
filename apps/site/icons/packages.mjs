@@ -40,10 +40,8 @@ export const PACKAGES = framed({
   // A level meter: bars of a waveform.
   audio: `<path d="M5 9v2M7.5 6.6v6.8M10 4.6v10.8M12.5 7.8v4.4M15 9.2v1.6"/>`,
 
-  // One run right over one run left.
-  bidi: `
-    <path d="M4.6 7.4h10.4"/><path d="${chevron([15.4, 7.4], [1, 0], 2.4, 45)}"/>
-    <path d="M15.4 12.6H5"/><path d="${chevron([4.6, 12.6], [-1, 0], 2.4, 45)}"/>`,
+  // One run right over one run left, each head keeping only the barb away from the other run.
+  bidi: `<path d="M4.6 8.2h10.8l-2-2M15.4 11.8H4.6l2 2"/>`,
 
   // A brush's footprint and its center: the size every brush tool shares.
   brush: `<circle cx="10" cy="10" r="5"/><path d="M10 10h0" stroke-width="2.4"/>`,
@@ -95,9 +93,12 @@ export const PACKAGES = framed({
   geom: `<path d="M4.8 15.2h10.4L4.8 4.8z"/><path d="M4.8 12.6h2.6v2.6" stroke-width="1.1"/>`,
 
   // A swipe: the touch point and the motion trailing it.
+  // Someone waving: head and shoulders, one arm raised from the shoulder, and the swing of the hand.
   gestures: `
-    <circle cx="13" cy="10" r="2.2" fill="currentColor"/>
-    <path d="M4.6 7.4h4.2M4.6 10h4.2M6.2 12.6h2.6" stroke-width="1.1"/>`,
+    <circle cx="8.2" cy="7.4" r="1.9"/>
+    <path d="M4.6 15.4v-.4a3.6 3.6 0 0 1 7.2 0v.4"/>
+    <path d="M11.2 12.8 13.6 8.4"/>
+    <path d="M14.2 5.4a3 3 0 0 1 1.4 2.2M12.6 5a3 3 0 0 0-1 .6" stroke-width="1.1"/>`,
 
   // A ruler guide each way, and a box snapped into their corner.
   guides: `<path d="M7.2 4.4v11.2M4.4 7.2h11.2" stroke-width="1.1" stroke-dasharray="1.6 1.4"/><rect x="7.2" y="7.2" width="6" height="6" rx="0.8"/>`,
@@ -116,8 +117,8 @@ export const PACKAGES = framed({
 
   // Four plain shapes.
   icons: `<g stroke-width="1.1">
-    <circle cx="7" cy="7" r="1.8"/><rect x="11.2" y="5.2" width="3.6" height="3.6" rx="0.3"/>
-    <path d="M7 11.1 8.9 14.6H5.1z"/><path d="M13 11.2v3.6M11.2 13h3.6"/></g>`,
+    <circle cx="7" cy="7" r="1.8"/><path d="M13 5.2v3.6M11.2 7h3.6"/>
+    <path d="M7 11.1 8.9 14.6H5.1z"/><rect x="11.2" y="11.2" width="3.6" height="3.6" rx="0.3"/></g>`,
 
   kernel3d: `<path d="M10 4.4 15 7.2v5.6L10 15.6 5 12.8V7.2z"/><path d="M5 7.2 10 10l5-2.8M10 10v5.6"/>`,
 
@@ -216,7 +217,9 @@ export const PACKAGES = framed({
     <path d="M5.2 8.4h0" stroke-width="2.4"/>`,
 
   // Two halves mirrored across an axis.
-  symmetry: `<path d="M10 4.4v11.2" stroke-width="1.1" stroke-dasharray="1.6 1.4"/><path d="M8 6 4.6 13.6H8zM12 6l3.4 7.6H12z"/>`,
+  // A square split on its diagonal into two mirrored halves, each with its own border. The halves' long
+  // sides sit √2 · 1.77 = 2.5 apart: a stroke's width and a 1.0 gap.
+  symmetry: `<path d="M4.6 4.6h9.03L4.6 13.63zM15.4 6.37v9.03H6.37z"/>`,
 
   // A paragraph, wrapped.
   text: `<path d="M4.8 5.8h10.4M4.8 8.6h10.4M4.8 11.4h10.4M4.8 14.2h6"/>`,
@@ -228,16 +231,19 @@ export const PACKAGES = framed({
   textShaping: `<path d="M4.4 11.2c1.4 0 1.6-2.8 3-2.8s1.4 2.8 2.8 2.8 1.4-4.4 2.8-4.4c.9 0 1.2 1 1.2 2.2v2.2"/><path d="M7.4 14h0" stroke-width="2.2"/>`,
 
   // Light and dark halves of one disc.
-  theme: `<circle cx="10" cy="10" r="5.2"/><path d="M10 4.8a5.2 5.2 0 0 1 0 10.4z" fill="currentColor"/>`,
+  // A painter's palette: its thumb hole, and wells of paint, one full, two empty.
+  theme: `
+    <path d="M10 4.6c3.2 0 5.4 2.1 5.4 4.6 0 1.7-1.2 2.6-2.6 2.6-1 0-1.6.5-1.6 1.3 0 .5.4.9.4 1.4 0 .7-.7 .9-1.6.9-3 0-5.4-2.3-5.4-5.4s2.4-5.4 5.4-5.4z"/>
+    <circle cx="7.6" cy="8.2" r="1" fill="currentColor"/><circle cx="10.6" cy="7" r="0.9" stroke-width="1.1"/>
+    <circle cx="7.6" cy="11.6" r="0.9" stroke-width="1.1"/><circle cx="13" cy="8.8" r="0.7" stroke-width="1.1"/>`,
 
   // A checkbox, checked, and a toggle beside it.
   ui: `
-    <rect x="4.6" y="4.6" width="4.4" height="4.4" rx="0.8"/><path d="M5.8 6.8 6.6 7.6 8 5.8" stroke-width="1.1"/>
-    <path d="M10.8 6.8h4.6"/>
-    <rect x="4.6" y="11" width="10.8" height="4.4" rx="2.2"/><circle cx="13.2" cy="13.2" r="1.2" fill="currentColor"/>`,
+    <path d="M4.8 6.8 6.4 8.4 9.2 5"/><path d="M11 6.8h4.4"/>
+    <rect x="4.6" y="10.4" width="10.8" height="5" rx="2.5"/><circle cx="12.9" cy="12.9" r="1.1" fill="currentColor"/>`,
 
   // The text cursor: a stem whose ends curl out into serifs either side.
-  uiInput: `<path d="M10 6.4v7.2M7.8 4.6c1.4 0 2.2.6 2.2 1.8 0-1.2.8-1.8 2.2-1.8M7.8 15.4c1.4 0 2.2-.6 2.2-1.8 0 1.2.8 1.8 2.2 1.8M8.8 10h2.4" stroke-width="1.3"/>`,
+  uiInput: `<path d="M10 6.4v7.2M7.8 4.6c1.4 0 2.2.6 2.2 1.8 0-1.2.8-1.8 2.2-1.8M7.8 15.4c1.4 0 2.2-.6 2.2-1.8 0 1.2.8 1.8 2.2 1.8" stroke-width="1.3"/>`,
 
   // A box with its measured width.
   uiLogic: `<rect x="4.6" y="8.4" width="10.8" height="7" rx="1"/><path d="M4.6 4.4v2M15.4 4.4v2M4.6 5.4h10.8" stroke-width="1.1"/>`,

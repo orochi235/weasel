@@ -13,7 +13,7 @@
       "tags": []
     },
     "bidi": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M4.6 7.4h10.4\"/><path d=\"M13.7 5.7 15.4 7.4 13.7 9.1\"/><path d=\"M15.4 12.6H5\"/><path d=\"M6.3 14.3 4.6 12.6 6.3 10.9\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M4.6 8.2h10.8l-2-2M15.4 11.8H4.6l2 2\"/>",
       "group": "Packages",
       "tags": []
     },
@@ -88,7 +88,7 @@
       "tags": []
     },
     "gestures": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><circle cx=\"13\" cy=\"10\" r=\"2.2\" fill=\"currentColor\"/><path d=\"M4.6 7.4h4.2M4.6 10h4.2M6.2 12.6h2.6\" stroke-width=\"1.1\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><circle cx=\"8.2\" cy=\"7.4\" r=\"1.9\"/><path d=\"M4.6 15.4v-.4a3.6 3.6 0 0 1 7.2 0v.4\"/><path d=\"M11.2 12.8 13.6 8.4\"/><path d=\"M14.2 5.4a3 3 0 0 1 1.4 2.2M12.6 5a3 3 0 0 0-1 .6\" stroke-width=\"1.1\"/>",
       "group": "Packages",
       "tags": []
     },
@@ -118,7 +118,7 @@
       "tags": []
     },
     "icons": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><g stroke-width=\"1.1\"><circle cx=\"7\" cy=\"7\" r=\"1.8\"/><rect x=\"11.2\" y=\"5.2\" width=\"3.6\" height=\"3.6\" rx=\"0.3\"/><path d=\"M7 11.1 8.9 14.6H5.1z\"/><path d=\"M13 11.2v3.6M11.2 13h3.6\"/></g>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><g stroke-width=\"1.1\"><circle cx=\"7\" cy=\"7\" r=\"1.8\"/><path d=\"M13 5.2v3.6M11.2 7h3.6\"/><path d=\"M7 11.1 8.9 14.6H5.1z\"/><rect x=\"11.2\" y=\"11.2\" width=\"3.6\" height=\"3.6\" rx=\"0.3\"/></g>",
       "group": "Packages",
       "tags": []
     },
@@ -243,7 +243,7 @@
       "tags": []
     },
     "symmetry": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M10 4.4v11.2\" stroke-width=\"1.1\" stroke-dasharray=\"1.6 1.4\"/><path d=\"M8 6 4.6 13.6H8zM12 6l3.4 7.6H12z\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M4.6 4.6h9.03L4.6 13.63zM15.4 6.37v9.03H6.37z\"/>",
       "group": "Packages",
       "tags": []
     },
@@ -263,17 +263,17 @@
       "tags": []
     },
     "theme": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><circle cx=\"10\" cy=\"10\" r=\"5.2\"/><path d=\"M10 4.8a5.2 5.2 0 0 1 0 10.4z\" fill=\"currentColor\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M10 4.6c3.2 0 5.4 2.1 5.4 4.6 0 1.7-1.2 2.6-2.6 2.6-1 0-1.6.5-1.6 1.3 0 .5.4.9.4 1.4 0 .7-.7 .9-1.6.9-3 0-5.4-2.3-5.4-5.4s2.4-5.4 5.4-5.4z\"/><circle cx=\"7.6\" cy=\"8.2\" r=\"1\" fill=\"currentColor\"/><circle cx=\"10.6\" cy=\"7\" r=\"0.9\" stroke-width=\"1.1\"/><circle cx=\"7.6\" cy=\"11.6\" r=\"0.9\" stroke-width=\"1.1\"/><circle cx=\"13\" cy=\"8.8\" r=\"0.7\" stroke-width=\"1.1\"/>",
       "group": "Packages",
       "tags": []
     },
     "ui": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><rect x=\"4.6\" y=\"4.6\" width=\"4.4\" height=\"4.4\" rx=\"0.8\"/><path d=\"M5.8 6.8 6.6 7.6 8 5.8\" stroke-width=\"1.1\"/><path d=\"M10.8 6.8h4.6\"/><rect x=\"4.6\" y=\"11\" width=\"10.8\" height=\"4.4\" rx=\"2.2\"/><circle cx=\"13.2\" cy=\"13.2\" r=\"1.2\" fill=\"currentColor\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M4.8 6.8 6.4 8.4 9.2 5\"/><path d=\"M11 6.8h4.4\"/><rect x=\"4.6\" y=\"10.4\" width=\"10.8\" height=\"5\" rx=\"2.5\"/><circle cx=\"12.9\" cy=\"12.9\" r=\"1.1\" fill=\"currentColor\"/>",
       "group": "Packages",
       "tags": []
     },
     "uiInput": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M10 6.4v7.2M7.8 4.6c1.4 0 2.2.6 2.2 1.8 0-1.2.8-1.8 2.2-1.8M7.8 15.4c1.4 0 2.2-.6 2.2-1.8 0 1.2.8 1.8 2.2 1.8M8.8 10h2.4\" stroke-width=\"1.3\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><path d=\"M10 6.4v7.2M7.8 4.6c1.4 0 2.2.6 2.2 1.8 0-1.2.8-1.8 2.2-1.8M7.8 15.4c1.4 0 2.2-.6 2.2-1.8 0 1.2.8 1.8 2.2 1.8\" stroke-width=\"1.3\"/>",
       "group": "Packages",
       "tags": []
     },
@@ -283,7 +283,7 @@
       "tags": []
     },
     "breaking": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><g transform=\"rotate(-45 10 10)\"><path d=\"M8.6 7.4H7a2.6 2.6 0 0 0 0 5.2h1.6M11.4 7.4H13a2.6 2.6 0 0 1 0 5.2h-1.6\"/><path d=\"M10 4.4v1.6M10 14v1.6\" stroke-width=\"1.1\"/></g>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><g transform=\"rotate(-45 10 10)\"><path d=\"M7.8 7.4H7a2.6 2.6 0 0 0 0 5.2h.8M12.2 7.4H13a2.6 2.6 0 0 1 0 5.2h-.8\"/><path d=\"M10 4.4v1.6M10 14v1.6\" stroke-width=\"1.1\"/></g>",
       "group": "Change kinds",
       "tags": []
     },
@@ -323,7 +323,7 @@
       "tags": []
     },
     "fix": {
-      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><ellipse cx=\"10\" cy=\"11\" rx=\"2.8\" ry=\"3.8\"/><path d=\"M8.4 6.8a1.6 1.6 0 0 1 3.2 0\"/><path d=\"M7.2 9.4 5 8.4M7.2 11.8H4.6M7.4 13.8 5.2 15M12.8 9.4l2.2-1M12.8 11.8h2.6M12.6 13.8l2.2 1.2M10 9v5.4\" stroke-width=\"1.1\"/>",
+      "body": "<rect x=\"1.875\" y=\"1.875\" width=\"16.25\" height=\"16.25\" rx=\"3.5\" stroke-width=\"0.75\"/><g transform=\"rotate(-45 10 10)\"><rect x=\"3.4\" y=\"7.6\" width=\"13.2\" height=\"4.8\" rx=\"2.4\"/><rect x=\"7.9\" y=\"8.5\" width=\"4.2\" height=\"3\" rx=\"0.5\" stroke-width=\"1.1\"/><path d=\"M5.6 9.3h0M5.6 10.7h0M14.4 9.3h0M14.4 10.7h0\" stroke-width=\"1.2\"/></g>",
       "group": "Change kinds",
       "tags": []
     },
