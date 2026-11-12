@@ -145,3 +145,31 @@ describe('Scene.overrides — baking', () => {
     expect(scene.get(id)!.pose).toEqual(POSE);
   });
 });
+
+describe('Scene.overrides inside an edit', () => {
+  it('tells its listeners of a change an edit makes once the whole edit has landed', () => {
+    const scene = createScene<Data, Layer>({ systemLayers: [{ id: 'main' }] });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'a' } });
+    const b = scene.add({ kind: 'mark', layer: 'main', pose: POSE, data: { label: 'b' } });
+    scene.overrides.set(a, { pose: { x: 50, y: 0, width: 10, height: 10 } });
+    const seen: { a: boolean; bx: number | undefined }[] = [];
+    scene.overrides.subscribe(() => {
+      seen.push({ a: scene.get(a) !== undefined, bx: (scene.get(b)?.pose as typeof POSE | undefined)?.x });
+    });
+
+    scene.batch('tidy', () => {
+      scene.remove(a);
+      scene.setPose(b, { x: 30, y: 0, width: 10, height: 10 });
+    });
+
+    expect(seen).toEqual([{ a: false, bx: 30 }]);
+  });
+
+  it('still tells them at once outside an edit', () => {
+    const { scene, id } = makeScene();
+    const listener = vi.fn();
+    scene.overrides.subscribe(listener);
+    scene.overrides.set(id, { pose: { x: 1, y: 1, width: 10, height: 10 } });
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
