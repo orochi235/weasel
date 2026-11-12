@@ -82,3 +82,37 @@ describe('a WGSL program written by array slot', () => {
     expect(Array.from(new Float32Array(mirror.buffer, 32, 4))).toEqual([1, 2, 3, 4]);
   });
 });
+
+describe('WebGPU renderers built and freed on one shared device', () => {
+  /** `fake`, with each reaction registered on its `device.lost` counted. A reaction on a promise that
+   *  never settles holds what it closes over for as long as the device lives. */
+  function countingLoss() {
+    const fake = fakeGpuDevice();
+    const real = fake.device.lost;
+    const counted = { reactions: 0 };
+    Object.defineProperty(fake.device, 'lost', {
+      value: { then: (ok?: () => unknown, no?: () => unknown) => { counted.reactions++; return real.then(ok, no); } },
+    });
+    return { fake, counted };
+  }
+
+  it('leave nothing of a freed renderer waiting on the device', () => {
+    const { fake, counted } = countingLoss();
+    renderer(fake).r.dispose();
+    const afterOne = counted.reactions;
+    for (let i = 0; i < 5; i++) renderer(fake).r.dispose();
+    expect(counted.reactions).toBe(afterOne);
+  });
+
+  it('still hear the device go, and log it once', async () => {
+    const { fake } = countingLoss();
+    const a = renderer(fake).r;
+    const b = renderer(fake).r;
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    fake.lose();
+    await new Promise((r) => setTimeout(r, 0));
+    expect([a.isContextLost(), b.isContextLost()]).toEqual([true, true]);
+    expect(error).toHaveBeenCalledTimes(1);
+    error.mockRestore();
+  });
+});
