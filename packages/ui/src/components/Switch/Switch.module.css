@@ -61,6 +61,12 @@
   line-height: 1.2;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .thumb {
+    transition: none;
+  }
+}
+
 /* Forced colors repaint the track and thumb as Canvas, leaving neither the thumb nor its side visible. */
 @media (forced-colors: active) {
   .track,

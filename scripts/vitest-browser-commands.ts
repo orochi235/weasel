@@ -91,6 +91,11 @@ const forcedColors: BrowserCommand<[mode: 'active' | 'none']> = async (ctx, mode
   await ctx.page.emulateMedia({ forcedColors: mode });
 };
 
+/** Turn the page's `prefers-reduced-motion` emulation to `'reduce'` or back to `'no-preference'`. */
+const reducedMotion: BrowserCommand<[mode: 'reduce' | 'no-preference']> = async (ctx, mode) => {
+  await ctx.page.emulateMedia({ reducedMotion: mode });
+};
+
 /** Wait until vitest's own commands, `userEvent.keyboard` among them, find this file's frame. */
 const settleFrame: BrowserCommand<[]> = async (ctx) => {
   if (ctx.testPath) await waitForOwnFrame(ctx.page, ctx.testPath);
@@ -217,7 +222,7 @@ const renderInNode: BrowserCommand<[renders: object[]]> = async (_ctx, renders):
 export const browserCommands = {
   renderInNode,
   grantClipboard, holdClipboard, dropClipboard, armDownload, takeDownload, collectGarbage, settleFrame,
-  watchRequests, pointer, clickAcrossStall, forcedColors,
+  watchRequests, pointer, clickAcrossStall, forcedColors, reducedMotion,
 };
 
 declare module 'vitest/browser' {
@@ -234,5 +239,6 @@ declare module 'vitest/browser' {
     clickAcrossStall: (at: [x: number, y: number], stallMs: number) => Promise<void>;
     renderInNode: (renders: object[]) => Promise<NodeRenders>;
     forcedColors: (mode: 'active' | 'none') => Promise<void>;
+    reducedMotion: (mode: 'reduce' | 'no-preference') => Promise<void>;
   }
 }

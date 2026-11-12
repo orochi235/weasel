@@ -79,6 +79,12 @@
   transform: scale(1);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .dot::after {
+    transition: none;
+  }
+}
+
 /* Forced colors repaint the dot's fill as Canvas, so a chosen radio would read as empty. */
 @media (forced-colors: active) {
   .dot::after {
