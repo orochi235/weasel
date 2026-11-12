@@ -15,6 +15,7 @@ import {
   PropertyGroup,
   PropertyList,
   type PropertyListPack,
+  PropertySpan,
   Subpanel,
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
@@ -149,22 +150,23 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     }
     if (found.as === 'bar') {
       return (
-        <ControlBar
-          key={path}
-          group={found}
-          path={path}
-          visible={visible}
-          enabled={enabled}
-          active={active}
-          value={(p, leaf) => leafValueAt(shown, p, leaf)}
-          read={(p) => valueAtPath(shown, p)}
-          write={setConfig}
-          bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
-          draft={draftConfig}
-          custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
-          row={(p) => listOf(rows, node(p, rows))}
-          open={(inner, at) => listOf(rows, body(inner, at, rows))}
-        />
+        <PropertySpan key={path}>
+          <ControlBar
+            group={found}
+            path={path}
+            visible={visible}
+            enabled={enabled}
+            active={active}
+            value={(p, leaf) => leafValueAt(shown, p, leaf)}
+            read={(p) => valueAtPath(shown, p)}
+            write={setConfig}
+            bind={(leaf) => boundAction(leaf, config as Record<string, unknown>, setConfig)}
+            draft={draftConfig}
+            custom={(p, leaf) => drawsOwn(resolved, renderers, p, leaf)}
+            row={(p) => listOf(rows, node(p, rows))}
+            open={(inner, at) => listOf(rows, body(inner, at, rows))}
+          />
+        </PropertySpan>
       );
     }
     // A group with no name contributes its rows and no chrome (core's rule for an empty
@@ -305,18 +307,19 @@ function controlTabs(
   },
 ): ReactNode {
   return (
-    <GroupTabs
-      key={key}
-      className="lk-control-tabs"
-      tabs={paths.map((path) => {
-        const group = at.group(path);
-        return {
-          id: path,
-          name: group.name,
-          disabled: !at.enabled(path),
-          content: at.content(group, path),
-        };
-      })}
-    />
+    <PropertySpan key={key}>
+      <GroupTabs
+        className="lk-control-tabs"
+        tabs={paths.map((path) => {
+          const group = at.group(path);
+          return {
+            id: path,
+            name: group.name,
+            disabled: !at.enabled(path),
+            content: at.content(group, path),
+          };
+        })}
+      />
+    </PropertySpan>
   );
 }
