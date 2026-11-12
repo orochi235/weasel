@@ -1728,3 +1728,16 @@ Calls the lanes made without a ruling:
 - Open: whether `@weasel-js/brush`, one 14-line helper over routing's tool options, stays a package of its own.
 - Open: ui and 19 other packages promise `react >=18`, and nothing runs their tests under React 18. labkit and forge
   ask for `^19.0.0`.
+
+## Audit round seventeen (2026-11-12): persistence
+
+- Pasting again from a canvas's in-memory clipboard re-snapshots what the last paste made, falling back to the
+  made nodes only when the adapter's snapshot comes back empty (a React-state adapter not yet flushed), so the
+  next paste reads them in world as a copy does (2026-11-12).
+- draw's SVG Save writes a node's Layers-panel name as `wd:label` and its lock as `wd:locked="true"`, and Open and
+  Import restore both, locking after the nodes are added (2026-11-12).
+- `nodeSpecsFromSnapshot`'s new `systemLayers` builds the specs into a scene of those layers to prove they load,
+  so draw and chart build one scene more at boot (2026-11-12).
+- Open: Cmd+V pastes the OS clipboard's copy through the weasel-JSON handler at the adapter's fixed offset from the
+  copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
+  the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
