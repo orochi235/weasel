@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   createAreaSelect,
   createNodeAtPoint,
+  createPickEvery,
   createPoseDescriptor,
   screenBoxOf,
   type Viewport3d,
@@ -142,6 +143,15 @@ describe('createNodeAtPoint', () => {
   });
 });
 
+describe('createPickEvery', () => {
+  it('passes over a layer the asking view does not paint', () => {
+    const scene = createTestScene();
+    const pick = createPickEvery(world(scene));
+    expect(pick(CENTER, { viewId: null })).toBe(idsOf(scene)[1]);
+    expect(pick(CENTER, { viewId: null, layerIsPainted: (layer) => layer !== 'solids' })).toBeNull();
+  });
+});
+
 describe('createAreaSelect', () => {
   it('catches every solid under a rectangle spanning the viewport', () => {
     const scene = createTestScene();
@@ -174,6 +184,14 @@ describe('createAreaSelect', () => {
     const scene = createTestScene();
     const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });
     expect(area.hitTestArea({ x: 0, y: 0, width: 4, height: 4 })).toHaveLength(0);
+  });
+
+  it('takes nothing on a layer the asking view does not paint', () => {
+    const scene = createTestScene();
+    const area = createAreaSelect(world(scene), { get: () => [], set: () => {} });
+    const all = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
+    expect(area.hitTestArea(all, { layerIsPainted: (layer) => layer !== 'solids' })).toEqual([]);
+    expect(area.hitTestArea(all, { layerIsPainted: () => true })).toHaveLength(3);
   });
 
   it('reads and writes the selection it was handed', () => {

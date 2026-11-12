@@ -15,7 +15,7 @@ import { IDENTITY_POSE_COMPOSITION,
 } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
-import { multiply, quatFromAxisAngle, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
+import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
   cameraEye, cameraViewProjection, createCamera, createPickEvery, createPoseDescriptor,
   dollyAction, ndcToScreen, orbitAction, panAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
@@ -61,9 +61,6 @@ const polygon = (pts: readonly { x: number; y: number }[], close: boolean) => ({
 
 const hex = (rgb: Solid['rgb'], k: number) =>
   `#${rgb.map((c) => Math.round(Math.min(255, c * k)).toString(16).padStart(2, '0')).join('')}`;
-
-const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
-const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
 
 function groundGrid(vp: Mat4, size: CanvasSize): DrawCommand[] {
   const out: DrawCommand[] = [];
@@ -128,7 +125,7 @@ const deg = (r: number) => qty(wrapAngle(r, 'sign') * RAD_TO_DEG, decimal({ plac
  * Three boxes on a `<SceneCanvas>` whose scene holds `Pose3`s. The kit's own
  * select tool, marquee and selection outline run unchanged: the kernel's
  * `poseDescriptor` answers every bounds question with the box's projected
- * screen rectangle, and its `nodeAtPoint` casts a ray. The view stays at
+ * screen rectangle, and its `pickEvery` casts a ray. The view stays at
  * identity, so the kit's world point is the canvas pixel a ray starts from.
  */
 export function Kernel3dDemo() {
