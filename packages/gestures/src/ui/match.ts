@@ -93,9 +93,19 @@ function matchKeyOrCode(
   spec: { key: string | string[]; code?: string | string[] },
 ): boolean {
   if (spec.code !== undefined && e.code !== undefined && [spec.code].flat().includes(e.code)) return true;
-  if (matchKey(e.key, spec.key)) return true;
+  return matchKeyEvent(e, spec.key);
+}
+
+/** A keystroke against a key name, as a binding matches it: by {@link matchKey} on what it typed, or, for a chord
+ *  that typed no Latin letter or digit, by the letter or digit its key bears, so Ctrl+я on a Russian layout is
+ *  Ctrl+Z. Every handler matching a shortcut by hand reads it this way, so a layout reaches all of them alike. */
+export function matchKeyEvent(
+  e: { key: string; code?: string; altKey?: boolean; ctrlKey?: boolean; metaKey?: boolean },
+  specKey: string | readonly string[],
+): boolean {
+  if (matchKey(e.key, specKey)) return true;
   const latin = chordTypedNoLatin(e) ? latinOfCode(e.code ?? '') : undefined;
-  return latin !== undefined && matchKey(latin, spec.key);
+  return latin !== undefined && matchKey(latin, specKey);
 }
 
 /** The modifiers any one of which makes a keystroke a chord, which {@link chordTypedNoLatin} reads. */
