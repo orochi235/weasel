@@ -398,6 +398,14 @@ describe('inPlane', () => {
     expect(req.plane?.()).toEqual({ scale: { x: 2, y: 2 }, offset: { x: -100, y: 0 } });
   });
 
+  it('hands a move the deps the dispatcher handed it, as off a plane', () => {
+    const { seen, action } = probe();
+    const scene = makeScene();
+    const handle = (action.invoker as OngoingInvoker).start(ctxOf(scene, { x: 110, y: 60 }, { x: 110, y: 60 }));
+    handle.onMove!({ ...ctxOf(scene, { x: 110, y: 60 }, { x: 120, y: 60 }), deps: {} });
+    expect(seen[1].deps).toEqual({});
+  });
+
   it('follows the pointer when the camera pans under a held drag', () => {
     const { seen, action } = probe();
     // A sky that pans at half the camera's rate, so a pan moves it on screen.

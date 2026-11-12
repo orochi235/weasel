@@ -134,6 +134,18 @@ export function quantizedNodePose<TData, TPose>(
   return storedOf(rule, node, grid, anchor)?.pose ?? node.pose;
 }
 
+/** `node`, a stored pose and data of node `id` the scene does not hold yet,
+ *  as its quantize rule would commit them: a live preview's. */
+export function quantizedShape<TData, TPose>(
+  scene: Pick<Scene<TData, string, TPose>, 'doc' | 'quantize'>,
+  node: { data: TData; pose: TPose },
+): { data: TData; pose: TPose } {
+  const rule = scene.quantize;
+  const grid = rule?.stored ? outputGridOf(scene) : undefined;
+  if (!rule || !grid) return node;
+  return storedOf(rule, node, grid) ?? node;
+}
+
 /** Where the scene walk draws a node: `drawn`'s pose for its world pose, when
  *  the scene has a rule with a `drawn` half; `undefined` when nothing moves. */
 export function drawnPoseOf<TData, TPose>(

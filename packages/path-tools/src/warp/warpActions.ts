@@ -10,7 +10,7 @@ import {
 import { createEmitter } from '@weasel-js/registry';
 import { applyToPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
-import { commitOps, createSetDataOp, type Op, type Scene, reshapeTo, pathOperationTags } from '@weasel-js/core';
+import { commitOps, createSetDataOp, type Op, quantizedShape, type Scene, reshapeTo, pathOperationTags } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
 import {
   freshWarpBox, storeWarp, WARP_LABELS, warpTargets, withWarpSettings, type WarpKind, type WarpSettings, type WarpTarget,
@@ -103,8 +103,11 @@ function grabControl(deps: ActionDeps, kind: WarpKind, label: string, scratch: W
   return { session, targets, control: { x, y } };
 }
 
-/** Each target with its warp's control `index` moved to `world`, then remade under `tuned` when given. */
-function shapesWith(targets: readonly WarpTarget[], index: number, world: Point, tuned?: WarpSettings): Shapes {
+/** Each target with its warp's control `index` moved to `world`, then remade under `tuned` when given, as `scene`'s
+ *  quantize rule stores it. */
+function shapesWith(
+  scene: QuantizedScene, targets: readonly WarpTarget[], index: number, world: Point, tuned?: WarpSettings,
+): Shapes {
   const out: Shapes = new Map();
   for (const target of targets) {
     const back = invert(target.toWorld);
@@ -112,10 +115,12 @@ function shapesWith(targets: readonly WarpTarget[], index: number, world: Point,
     const [lx, ly] = applyToPoint(back, world.x, world.y);
     const moved = { ...target.held, warp: moveWarpControl(target.held.warp, index, { x: lx, y: ly }) };
     const shape = storeWarp(target.node, tuned ? withWarpSettings(moved, tuned) : moved, target.toWorld);
-    if (shape) out.set(target.node.id, { target, shape });
+    if (shape) out.set(target.node.id, { target, shape: scene ? quantizedShape(scene, shape) : shape });
   }
   return out;
 }
+
+type QuantizedScene = Parameters<typeof quantizedShape>[0] | undefined;
 
 /**
  * Drag one control of the selection's `kind` warp: a distort's corner, an
@@ -157,7 +162,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             const world = { x: control.x + at.x - press.x, y: control.y + at.y - press.y };
             if (last !== null && last.x === world.x && last.y === world.y) return;
             last = world;
-            current = shapesWith(targets, scratch.index, world);
+            current = shapesWith(deps.scene as QuantizedScene, targets, scratch.index, world);
             publish();
           },
           onEnd(_end: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -172,7 +177,7 @@ export function createWarpDragAction(kind: WarpKind, live?: WarpLive): Action {
             const to = last;
             const again = to && grabControl(deps, kind, label, scratch, settings);
             if (!to || !again) return;
-            const done = shapesWith(again.targets, scratch.index, to, params as WarpSettings);
+            const done = shapesWith(deps.scene as QuantizedScene, again.targets, scratch.index, to, params as WarpSettings);
             if (done.size === 0) again.session.cancel();
             else again.session.commit(() => commitTargets(deps, done, label), label);
           },

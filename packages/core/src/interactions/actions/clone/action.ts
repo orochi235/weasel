@@ -26,6 +26,7 @@ import { recordTransform } from '../transform-again/memory';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { finiteFrame } from '../finiteFrame';
 import { SNAP_ROLES } from 'domains/snap/roles';
+import { quantizedPreview } from 'core/scene/outputGrid';
 
 interface CloneScratch {
   /** The selected ids a copy starts from; each brings its subtree. */
@@ -174,7 +175,10 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
             const delta = behaviors.shape(moveCtx, snappedDelta(snap, moveCtx));
             const previews = new Map<NodeId, unknown>();
             if (delta.dx === 0 && delta.dy === 0) return { delta, previews };
-            for (const id of scratch.originPoses.keys()) previews.set(id, landed(scratch, id, delta.dx, delta.dy)!);
+            // As the scene's quantize rule will store the copy, which shares its source's data.
+            for (const id of scratch.originPoses.keys()) {
+              previews.set(id, quantizedPreview(scene, id, landed(scratch, id, delta.dx, delta.dy)!));
+            }
             return { delta, previews };
           }, (f) => f.previews);
           scratch.currentDelta = next.delta;

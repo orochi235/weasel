@@ -31,6 +31,7 @@ import { useTransformFollower } from './transformFollowers';
 import { createPathEditState, isSelectedNode, type PathEditState } from 'domains/paths/pathEditState';
 import { resolveParams, type ActionTunings } from '@weasel-js/routing';
 import type { Op } from 'core/ops/types';
+import { quantizedShape } from 'core/scene/outputGrid';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
@@ -144,7 +145,7 @@ function pathAccess(
 ): Pick<
   EditAnchorsDep,
   | 'getEditablePath' | 'getOutlinePath' | 'getStorageKind' | 'getNodeShape' | 'applyEdit' | 'editOps' | 'finishEdit'
-  | 'store' | 'storedPose'
+  | 'store' | 'storedPose' | 'quantized'
 > {
   const editOps = (id: string, worldPath: unknown, label: string, origins?: readonly (PointOrigin | null)[]): Op[] => {
     const node = shownNodeOf(sc, id) as EditableNode | undefined;
@@ -180,6 +181,7 @@ function pathAccess(
       const frame = nodeFrameOf(sc, sc.get(id as NodeId));
       return frame ? frame.local(worldPose) : worldPose;
     },
+    quantized: (_id, stored) => quantizedShape(sc, stored),
     applyEdit(id, worldPath, label, origins, select) {
       const ops = editOps(id, worldPath, label, origins);
       if (ops.length > 0) ad.applyOps([...ops, ...commitSelectionOps(select, id, label)], label);

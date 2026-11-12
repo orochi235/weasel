@@ -48,6 +48,10 @@ export interface EditAnchorsDep {
   /** The pose node `id` stores for the world pose `worldPose`: different
    *  where a container's frame holds it. Absent, the world pose is stored. */
   storedPose?(id: string, worldPose: unknown): unknown;
+  /** Node `id`'s stored pose and data as committing them would leave them:
+   *  under the scene's quantize rule, what that rule stores. A drag previews
+   *  through it so it lands where it showed. Absent, they are stored as given. */
+  quantized?(id: string, stored: { pose: unknown; data: unknown }): { pose: unknown; data: unknown };
   /** Commit `worldPath` as the new value for `id`, as one history entry
    *  labeled `label`: a setPose when the pose IS the polygon, a batched
    *  setPose+update when it lives on data.path. Given `origins` (from
@@ -91,7 +95,8 @@ export interface EditAnchorsDep {
   /** The handle locks held for every handle drag, on top of the modifiers —
    *  what the `handleLock.angle` and `handleLock.length` toggles set. Absent,
    *  the drag holds what its `handleLock` param names. Unlike the anchor
-   *  selection, they outlast a change of edited path. */
+   *  selection, they outlast a change of edited path. A drag reads it at each
+   *  move from the dep its press was handed, so a dep answers it live. */
   handleLocks?: HandleLocks;
   /** Replace the held handle locks. Absent, the toggles are unavailable. */
   setHandleLocks?(next: HandleLocks): void;
