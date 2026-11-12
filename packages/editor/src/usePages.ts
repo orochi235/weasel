@@ -1,6 +1,6 @@
 import {
-  ActionDisabledReason, HOME_VIEW, addPage, adjacentPage, fitViewToPage, movePage, nextPageId, pageInView,
-  pageNodeOf, pagesOf, placedPagesOf, reachesLocked, removePage, renamePage, resizePage, useLatest, type PlacedPage,
+  ActionDisabledReason, HOME_VIEW, addPage, adjacentPage, fitViewToPage, hiddenSourcesTakenWith, movePage, nextPageId, pageInView,
+  pageNodeOf, pagesOf, placedPagesOf, reachesLocked, removePage, renamePage, resizePage, useLatest, type NodeId, type PlacedPage,
   type Scene, type View,
 } from '@weasel-js/core';
 import { useMemo, useState, useSyncExternalStore } from 'react';
@@ -44,8 +44,8 @@ export interface DocPages {
    *  while the view has never been on one. A scene without pages gets its first, and with it the page run
    *  that makes it paged. */
   add(options?: AddPageOptions): void;
-  /** Delete a page, what is on it, and what derives from that, as one undo entry. Does nothing where
-   *  {@link DocPages.removable} says no. */
+  /** Delete a page, what is on it, what derives from that, and the sources an effect among them hid, as one undo
+   *  entry. Does nothing where {@link DocPages.removable} says no. */
   remove(id: string): void;
   /** Whether page `id` can be deleted: `NotApplicable` for the last page or one the scene does not have, `Locked`
    *  while the delete would take a locked node, as Delete is (ruled 2026-11-09). A Delete Page command's `enabled`. */
@@ -87,11 +87,18 @@ function samePlaced(a: readonly PlacedPage[], b: readonly PlacedPage[]): boolean
   });
 }
 
-/** Whether page `id` can be deleted; see {@link DocPages.removable}. */
-function removable(scene: AnyScene, id: string): true | ActionDisabledReason {
+/** What deleting page `id` takes: the page node, and the sources an effect going with it hid, wherever they are.
+ *  `null` for the last page, or one the scene does not have. */
+function pageRemoval(scene: AnyScene, id: string): { page: NodeId; taken: NodeId[] } | null {
   const page = pageNodeOf(scene, id);
-  if (page === null || (pagesOf(scene)?.pages.length ?? 0) <= 1) return ActionDisabledReason.NotApplicable;
-  return reachesLocked(scene, [page]) ? ActionDisabledReason.Locked : true;
+  if (page === null || (pagesOf(scene)?.pages.length ?? 0) <= 1) return null;
+  return { page, taken: hiddenSourcesTakenWith(scene, [page]) };
+}
+
+/** {@link DocPages.removable} for what {@link pageRemoval} found. */
+function removalAllowed(scene: AnyScene, removal: ReturnType<typeof pageRemoval>): true | ActionDisabledReason {
+  if (removal === null) return ActionDisabledReason.NotApplicable;
+  return reachesLocked(scene, [removal.page, ...removal.taken]) ? ActionDisabledReason.Locked : true;
 }
 
 /** The page the view is on or was last on, held while it sits between pages: `null` until the view has been on
@@ -154,9 +161,15 @@ export function usePages<TData, TLayer extends string, TPose>(
         goTo(make(place));
       },
       remove(id) {
-        if (removable(scene, id) === true) removePage(scene, id);
+        const removal = pageRemoval(scene, id);
+        if (removal === null || removalAllowed(scene, removal) !== true) return;
+        scene.batch('Delete page', () => {
+          removePage(scene, id);
+          const left = removal.taken.filter((n) => scene.get(n) !== undefined);
+          if (left.length > 0) scene.removeMany(left);
+        });
       },
-      removable: (id) => removable(scene, id),
+      removable: (id) => removalAllowed(scene, pageRemoval(scene, id)),
       move: (id, index) => movePage(scene, id, index),
       rename: (id, name) => renamePage(scene, id, name),
       resize: (id, size) => resizePage(scene, id, size),

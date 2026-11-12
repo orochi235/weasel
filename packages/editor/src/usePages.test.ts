@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import {
-  ActionDisabledReason, addPage, asNodeId, createPageRun, createScene, isPaged, pageInView, pagesOf,
-  placedPagesOf, withPathEffectsRegistry, type NodeId, type RectPose, type View,
+  ActionDisabledReason, PATH_EFFECT_DERIVATIONS, addPage, asNodeId, createPageRun, createScene, isPaged, pageInView, pagesOf,
+  pathEffectNode, placedPagesOf, withPathEffectsRegistry, type NodeId, type PathEffect, type RectPose, type View,
 } from '@weasel-js/core';
 import { pathFromD } from '@weasel-js/geom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -185,6 +185,19 @@ describe('usePages', () => {
       act(() => pages().remove('b'));
       expect(pages().removable('a')).toBe(ActionDisabledReason.NotApplicable);
       expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['a']);
+    });
+
+    it('takes the sources an effect on it hid on another page, in the same undo entry', () => {
+      const { scene, on, pages } = twoPages();
+      on('p', 'a', { hidden: true });
+      on('q', 'b', { hidden: true });
+      const effect = { kind: 'blend', steps: 3, hideSources: true } as PathEffect;
+      scene.add({ ...pathEffectNode(effect, [asNodeId('p'), asNodeId('q')], 'main', PATH_EFFECT_DERIVATIONS), id: asNodeId('fx') } as never);
+      act(() => pages().remove('a'));
+      expect(['p', 'q', 'fx'].map((id) => scene.get(asNodeId(id)) !== undefined)).toEqual([false, false, false]);
+      act(() => { scene.undo(); });
+      expect(['p', 'q', 'fx'].map((id) => scene.get(asNodeId(id))?.hidden ?? 'shown')).toEqual([true, true, 'shown']);
+      expect(pagesOf(scene)!.pages.map((p) => p.id)).toEqual(['a', 'b']);
     });
   });
 });
