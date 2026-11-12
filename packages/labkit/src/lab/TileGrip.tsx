@@ -23,6 +23,8 @@ function Draggable({
       data-lk-tile-grip=""
       onPointerDown={(event) => {
         onPointerDown?.(event);
+        // React bubbles a press up out of a portal: a title bar's popover is outside the bar on the page.
+        if (!event.currentTarget.contains(event.target as Node)) return;
         if (!event.defaultPrevented) handle.onPointerDown(event);
       }}
       // The handle tracks the drop target from its own move events, and ignores
@@ -49,7 +51,8 @@ function Draggable({
  * workspace's `onReorder`. Put it around a tile's own header, or anything else
  * that reads as the tile's handle; a `<Trial>`'s title bar is one already. A
  * press on a control inside still reaches the control, and an `onPointerDown`
- * that calls `preventDefault()` keeps that press from starting a drag.
+ * that calls `preventDefault()` keeps that press from starting a drag. A press
+ * in a portal rendered inside it, such as a popover, never starts one.
  *
  * Outside a reorderable workspace it is a plain `div`, so a tile need not know
  * whether it can be moved. While it can, the element carries
