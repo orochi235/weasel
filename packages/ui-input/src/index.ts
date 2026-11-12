@@ -7,7 +7,7 @@
 export { arrowDir, firstStop, stepStop, rovingKey, rowKey } from './list';
 export type { ListShape, RovingResult, KeyPress, RowKeysShape, RowKeyAction } from './list';
 export {
-  typeaheadMatch, typeaheadStep, isOneChar, EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS,
+  typeaheadMatch, typeaheadStep, typeaheadSearching, isOneChar, EMPTY_TYPEAHEAD, TYPEAHEAD_RESET_MS,
 } from './typeahead';
 export type { TypeaheadBuffer, TypeaheadShape } from './typeahead';
 export { tabSort, tabStep } from './tabOrder';

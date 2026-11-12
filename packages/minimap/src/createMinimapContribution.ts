@@ -128,9 +128,11 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
   let deps: ContributionDepReader | null = null;
 
   // The fit follows the scene, so it is recomputed only when the scene's
-  // version or the minimap's size changes — it is read on every frame and
-  // every event.
-  let cached: { scene: unknown; version: number; shown: number; w: number; h: number; view: View } | null = null;
+  // version, the pose descriptor or the minimap's size changes — it is read on
+  // every frame and every event.
+  let cached: {
+    scene: unknown; descriptor: unknown; version: number; shown: number; w: number; h: number; view: View;
+  } | null = null;
   const fitCamera = (outer: View, dims: Dims): View => {
     const scene = deps?.get('scene') as Scene<unknown, string, unknown> | undefined;
     if (!scene) return FALLBACK_FIT_VIEW;
@@ -138,13 +140,13 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
     const version = scene.getVersion();
     // Only a live fit reads overrides, so only it refits when they publish.
     const shown = fit === 'live' ? scene.overrides.getGeneration() : 0;
-    if (cached && cached.scene === scene && cached.version === version && cached.shown === shown
-        && cached.w === r.w && cached.h === r.h) {
+    const descriptor = (deps?.get('poseDescriptor') ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
+    if (cached && cached.scene === scene && cached.descriptor === descriptor && cached.version === version
+        && cached.shown === shown && cached.w === r.w && cached.h === r.h) {
       return cached.view;
     }
-    const descriptor = (deps?.get('poseDescriptor') ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<unknown>;
     const view = computeFitView(scene, { width: r.w, height: r.h }, fit, descriptor);
-    cached = { scene, version, shown, w: r.w, h: r.h, view };
+    cached = { scene, descriptor, version, shown, w: r.w, h: r.h, view };
     return view;
   };
 

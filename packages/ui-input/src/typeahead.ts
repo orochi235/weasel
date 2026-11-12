@@ -24,6 +24,12 @@ export interface TypeaheadBuffer {
 /** A buffer nothing has been typed into. */
 export const EMPTY_TYPEAHEAD: TypeaheadBuffer = { text: '', at: -Infinity };
 
+/** Whether a search is under way at `now`: something typed, and less than `resetMs` ago. A space typed then is
+ *  part of the search, not an activation. */
+export function typeaheadSearching(buffer: TypeaheadBuffer, now: number, resetMs: number = TYPEAHEAD_RESET_MS): boolean {
+  return buffer.text !== '' && now - buffer.at < resetMs;
+}
+
 /** The item a typed `query` lands on, searching forward from `at` with
  *  wrap. A one-letter query starts after the highlight so repeating a letter
  *  cycles; a longer one starts at it so typing on keeps the match. An index
@@ -54,7 +60,7 @@ export function typeaheadStep<T>(
   shape: TypeaheadShape<T>,
   resetMs: number = TYPEAHEAD_RESET_MS,
 ): { buffer: TypeaheadBuffer; hit: number | null } {
-  const prev = now - buffer.at < resetMs ? buffer.text : '';
+  const prev = typeaheadSearching(buffer, now, resetMs) ? buffer.text : '';
   const k = key.toLowerCase();
   const cycling = prev !== '' && [...prev].every((c) => c.toLowerCase() === k);
   const text = cycling ? key : prev + key;
