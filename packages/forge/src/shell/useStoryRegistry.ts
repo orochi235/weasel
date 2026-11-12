@@ -139,11 +139,7 @@ export function useStoryRegistry(index: readonly IndexEntry[], options: StoryReg
       };
       const fail = (ids: string[], error: unknown) => {
         const fault = toError(error);
-        setFaults((prev) => {
-          const next = new Map(prev);
-          for (const id of ids) next.set(id, fault);
-          return next;
-        });
+        setFaults((prev) => new Map([...prev, ...ids.map((id): [string, Error] => [id, fault])]));
       };
       if (isIndexId(entry.id)) {
         const { index: entries, libraries } = liveRef.current;

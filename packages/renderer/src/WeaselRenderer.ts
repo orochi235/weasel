@@ -153,9 +153,7 @@ export class WeaselRenderer {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(this.gpu);
-
-    // Last, so a constructor that throws (a lost context fails the compile above) leaves no listener behind to
-    // rebuild a renderer nobody holds when the context comes back.
+    // Last: a constructor that throws (a lost context fails the compile above) must leave no listener to rebuild it.
     const events: Partial<EventTarget> | null = opts.gpu ? null : this.canvas ?? lossTarget;
     if (events && typeof events.addEventListener === 'function') {
       this.lossTarget = events as EventTarget;
@@ -487,7 +485,6 @@ export class WeaselRenderer {
    *  default. A change frees every image texture, and each re-uploads when next drawn. */
   setImageMinification(mode: ImageMinification | undefined): void {
     const next = mode ?? 'auto';
-    // A disposed renderer's cache would join every live renderer's texture-size limit and never leave.
     if (this.disposed || next === this.imageMinification) return;
     this.imageMinification = next;
     this.imageCache.dispose();
