@@ -505,10 +505,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  override is cleared.
    *
    *  Throws inside any other edit — `batch`, `untracked`, `applyBatch`, an
-   *  undo — which would revert to a state this replaces. Throws on an unsupported version or unknown registry/layer ids; on a
-   *  malformed snapshot the scene is left empty or partially populated (callers should treat a
-   *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
-   *  always well-formed. `opts` reads it as `specsFromSerialized` does, under the scene's composition. */
+   *  undo — which would revert to a state this replaces. Throws on a malformed snapshot (`SnapshotShapeError`), an
+   *  unsupported version, unknown registry or layer ids, or a tree the scene would refuse, and leaves the scene as it was.
+   *  `opts` reads it as `specsFromSerialized` does, under the scene's composition. */
   loadState(
     json: SavedScene<TData, TLayer, TPose>,
     opts?: Omit<SpecsFromSerializedOptions<TData, TLayer, TPose>, 'composition'>,

@@ -21,21 +21,32 @@ function exportedPage(pages: ChartPages): PlacedPage | undefined {
   return pages.shown ?? undefined;
 }
 
-function exportPage(pages: ChartPages, write: (page: PlacedPage, name: string) => Promise<{ blob: Blob; name: string }>): void {
+/** A page export's file, and what it could not carry, which the toast `warnings` names says. */
+interface ExportedPage {
+  blob: Blob;
+  name: string;
+  warnings?: { toast: string; said: readonly string[] };
+}
+
+function exportPage(pages: ChartPages, write: (page: PlacedPage, name: string) => Promise<ExportedPage>): void {
   const page = exportedPage(pages);
   if (page === undefined) return;
   write(page, pageName(page, page.index))
-    .then(({ blob, name }) => downloadBlob(blob, name))
+    .then(({ blob, name, warnings }) => {
+      downloadBlob(blob, name);
+      if (warnings) reportFileWarnings('Exported', warnings.said, warnings.toast);
+    })
     .catch(reportFailure('Could not export the page'));
 }
 
 /** Registers File › Export's commands: every page as one PDF, the page in view as an SVG document, or as a PNG at 1×, 2×, or 4×. */
 export function useExportCommands(scene: ChartScene, pages: ChartPages): void {
   usePdfCommand(scene, pages);
-  useCommand(EXPORT_ACTIONS.svg, 'Page as SVG…', () => exportPage(pages, async (page, name) => ({
-    blob: new Blob([await exportPageSvg(scene, page, { title: name })], { type: 'image/svg+xml' }),
-    name: `${name}.svg`,
-  })));
+  useCommand(EXPORT_ACTIONS.svg, 'Page as SVG…', () => exportPage(pages, async (page, name) => {
+    const said: string[] = [];
+    const svg = await exportPageSvg(scene, page, { title: name, onWarn: (w) => said.push(w) });
+    return { blob: new Blob([svg], { type: 'image/svg+xml' }), name: `${name}.svg`, warnings: { toast: 'chart-export-svg', said } };
+  }));
   usePngCommand(scene, pages, 1);
   usePngCommand(scene, pages, 2);
   usePngCommand(scene, pages, 4);

@@ -10,6 +10,7 @@
 
 import { useCallback, useInsertionEffect, useLayoutEffect, useRef } from 'react';
 import { useLatest, useVisibleRaf, type VisibleRafTarget } from '@weasel-js/react';
+import { createEmitter, type Emitter } from '@weasel-js/registry';
 
 export interface FrameLoop {
   /** Mark the surface dirty and schedule a frame. Identity is stable for the
@@ -48,9 +49,9 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   const paintingRef = useRef(false);
   const paintRef = useLatest(paint);
   const syncRef = useLatest(options.syncPaint ?? false);
-  const subsRef = useRef<Set<(time: number) => void>>(new Set());
-  const beforeRef = useRef<Set<(time: number) => void>>(new Set());
-  const resumeRef = useRef<Set<() => void>>(new Set());
+  const subsRef = useRef<Emitter<[number]>>(createEmitter());
+  const beforeRef = useRef<Emitter<[number]>>(createEmitter());
+  const resumeRef = useRef<Emitter>(createEmitter());
   /** The last time handed to subscribers. A sync paint reads the clock at the
    *  call and a rAF frame carries its frame's start, so within one animation
    *  frame the second can be the earlier of the two. */
@@ -69,7 +70,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     paintingRef.current = true;
     let landed = false;
     try {
-      for (const fn of beforeRef.current) fn(time);
+      beforeRef.current.emit(time);
       landed = paintRef.current();
       if (!landed) {
         dirtyRef.current = true;
@@ -78,7 +79,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
       retriedRef.current = false;
       // Notified inside the guard: a subscriber calling `requestRedraw` under
       // `syncPaint` would otherwise re-enter this synchronously, without bound.
-      for (const fn of subsRef.current) fn(time);
+      subsRef.current.emit(time);
     } catch (err) {
       // A throw skips the `!landed` branch above, so without this the surface
       // is left clean but unpainted — the pixels on screen are whatever the
@@ -103,7 +104,7 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     }, [runPaint]),
     {
       target: options.target,
-      onResume: useCallback(() => { for (const fn of resumeRef.current) fn(); }, []),
+      onResume: useCallback(() => { resumeRef.current.emit(); }, []),
     },
   );
   useInsertionEffect(() => {
@@ -125,19 +126,9 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   const requestRedraw = useCallback(() => redraw(syncRef.current), [redraw, syncRef]);
   const paintNow = useCallback(() => redraw(true), [redraw]);
 
-  const subscribeFrame = useCallback((fn: (time: number) => void) => {
-    subsRef.current.add(fn);
-    return () => { subsRef.current.delete(fn); };
-  }, []);
-  const subscribeBeforePaint = useCallback((fn: (time: number) => void) => {
-    beforeRef.current.add(fn);
-    return () => { beforeRef.current.delete(fn); };
-  }, []);
-
-  const subscribeResume = useCallback((fn: () => void) => {
-    resumeRef.current.add(fn);
-    return () => { resumeRef.current.delete(fn); };
-  }, []);
+  const subscribeFrame = useCallback((fn: (time: number) => void) => subsRef.current.subscribe(fn), []);
+  const subscribeBeforePaint = useCallback((fn: (time: number) => void) => beforeRef.current.subscribe(fn), []);
+  const subscribeResume = useCallback((fn: () => void) => resumeRef.current.subscribe(fn), []);
 
   // `requestRedraw` outlives the component: `@weasel-js/hud` calls it from a
   // `.then()`, and `viewRegistry.attachSurface` hands it to the consumer.
@@ -146,14 +137,11 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   // sync-paint path runs in one of those.
   useLayoutEffect(() => {
     aliveRef.current = true;
-    const subs = subsRef.current;
-    const before = beforeRef.current;
-    const resume = resumeRef.current;
     return () => {
       aliveRef.current = false;
-      subs.clear();
-      before.clear();
-      resume.clear();
+      subsRef.current = createEmitter();
+      beforeRef.current = createEmitter();
+      resumeRef.current = createEmitter();
     };
   }, []);
 

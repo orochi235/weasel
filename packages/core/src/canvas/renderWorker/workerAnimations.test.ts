@@ -36,8 +36,10 @@ describe('the worker animator', () => {
     expect(anims.animator.isActive()).toBe(true);
     anims.run([{ op: 'cancel', id: 7 }], scene);
     expect(anims.animator.isActive()).toBe(false);
-    expect(() => anims.run([{ op: 'play', id: 8, key: 'nope' }], scene)).toThrow(/nope/);
-    expect(() => anims.run([{ op: 'play', id: 9, key: 'constructor' }], scene)).toThrow(/constructor/);
+    expect(anims.run([{ op: 'play', id: 8, key: 'nope' }, { op: 'play', id: 9, key: 'constructor' }], scene)).toEqual([
+      expect.objectContaining({ message: expect.stringMatching(/nope/) }),
+      expect.objectContaining({ message: expect.stringMatching(/constructor/) }),
+    ]);
   });
 
   it('lets go of a run that ends on its own', () => {

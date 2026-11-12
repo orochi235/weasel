@@ -31,7 +31,7 @@ import type {
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
-import { downloadBlob, pickFile } from '@weasel-js/editor';
+import { downloadBlob } from '@weasel-js/editor';
 import { onePage, paperSizeOf } from './pages/drawPages';
 import { isPaperSize, PAPER_PRESETS } from './paperSizes';
 import { pageElements, pagesOfParsed } from './svgPages';
@@ -383,13 +383,3 @@ export function downloadSvg(svg: string, filename: string): void {
   downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), filename);
 }
 
-/** Pick an SVG file; resolve with its name and text, or null if the user cancelled. */
-export async function pickSvgFileNamed(): Promise<{ name: string; text: string } | null> {
-  const file = await pickFile('.svg,image/svg+xml');
-  if (!file) return null;
-  try {
-    return { name: file.name, text: await file.text() };
-  } catch {
-    return null;
-  }
-}
