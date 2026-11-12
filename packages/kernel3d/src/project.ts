@@ -4,7 +4,7 @@
  * space the host's pointer points arrive in.
  */
 
-import { transformPoint4, type Ray, type Vec3 } from '@weasel-js/geom/3d';
+import { intersectRayPlane, pointOnRay, transformPoint4, type Ray, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraViewProjection, type Camera3d } from './camera';
 import { ndcToScreen, rayThroughScreenPoint, type ScreenBox } from './screen';
 
@@ -49,6 +49,14 @@ export function viewProjectionOf(viewport: Viewport3d) {
 
 export function rayAt(viewport: Viewport3d, point: Point): Ray | null {
   return rayThroughScreenPoint(point, rectOf(viewport), viewProjectionOf(viewport));
+}
+
+/** Where the ray through `point` meets the plane `normal · p = offset`, or
+ *  `null` when the point casts no ray or the ray misses the plane. */
+export function castOntoPlane(viewport: Viewport3d, point: Point, normal: Vec3, offset: number): Vec3 | null {
+  const ray = rayAt(viewport, point);
+  const t = ray && intersectRayPlane(ray, normal, offset);
+  return ray && t !== null ? pointOnRay(ray, t) : null;
 }
 
 /** Where `p` draws in the viewport, or null when it is behind the near plane,

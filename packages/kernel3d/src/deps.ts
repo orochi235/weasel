@@ -15,10 +15,8 @@ import {
   aabbOfPoints,
   add,
   dot,
-  intersectRayPlane,
   len,
   normalize,
-  pointOnRay,
   quatIdentity,
   scale as scaleBy,
   sub,
@@ -28,7 +26,7 @@ import {
 import { cameraEye, type Camera3d } from './camera';
 import { aabbOfPose, type Pose3 } from './pose3';
 import { groundAxes, type Axis } from './ground';
-import { rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
+import { castOntoPlane, rayAt, rectOf, viewProjectionOf, type Viewport3d } from './project';
 import { worldPickIndex } from './pickIndex';
 import { projectAabbToScreen } from './screen';
 import { createSession3d } from './snap/session3d';
@@ -58,10 +56,7 @@ function onPlane(
   plane: { normal: Vec3; offset: number },
   point: { x: number; y: number },
 ): Vec3 | null {
-  const ray = rayAt(vp, point);
-  if (!ray) return null;
-  const t = intersectRayPlane(ray, plane.normal, plane.offset);
-  return t === null ? null : pointOnRay(ray, t);
+  return castOntoPlane(vp, point, plane.normal, plane.offset);
 }
 
 /** `pose` moved by `delta`, kept at its own height along `upAxis`. */
