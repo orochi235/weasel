@@ -5,17 +5,8 @@
 import { writeFileSync } from 'node:fs';
 import type { Plugin } from 'vite';
 import type { Reporter, TestModule, Vitest } from 'vitest/node';
-import { loadReport } from './lib/load-reruns.mjs';
+import { loadReport, networkChanged } from './lib/load-reruns.mjs';
 import { timedOut, timeoutReport } from './vitest-timeout-retries.ts';
-
-// Set by `watchRequests` (`scripts/vitest-browser-commands.ts`), which runs in this process; the config,
-// and so each module it imports, may be evaluated more than once.
-const NETWORK_CHANGED = Symbol.for('weasel:network-changed');
-
-/** Record that a request of a test page failed with `net::ERR_NETWORK_CHANGED`. */
-export function noteNetworkChanged(): void {
-  (globalThis as { [NETWORK_CHANGED]?: true })[NETWORK_CHANGED] = true;
-}
 
 class LoadReporter implements Reporter {
   constructor(
@@ -26,7 +17,7 @@ class LoadReporter implements Reporter {
   onTestRunEnd(modules: readonly TestModule[], unhandledErrors: readonly unknown[]): void {
     const report = loadReport(modules, {
       root: this.vitest.config.root,
-      networkChanged: (globalThis as { [NETWORK_CHANGED]?: true })[NETWORK_CHANGED] === true,
+      networkChanged: networkChanged(),
       unhandledErrors: unhandledErrors.length,
       timeoutBudgetSpent: Boolean(timeoutReport(timedOut(modules.flatMap((m) => [...m.children.allTests()])))?.error),
     });

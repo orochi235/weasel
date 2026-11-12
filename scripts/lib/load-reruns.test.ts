@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadReport, rerunPlan, type ReportedModule } from './load-reruns.mjs';
+import { loadReport, networkChanged, noteNetworkChanged, rerunPlan, type ReportedModule } from './load-reruns.mjs';
 
 const mod = (file: string, tests: string[], errors: unknown[] = []): ReportedModule => ({
   moduleId: `/repo/${file}`,
@@ -39,5 +39,12 @@ describe('rerunPlan', () => {
 
   it('leaves the verdict of a process that failed on anything else', () => {
     expect(rerunPlan([{ ...failedLoad, otherFailures: true }])).toEqual({ files: ['b.browser.test.ts'], settles: [] });
+  });
+});
+
+describe('noteNetworkChanged', () => {
+  it('is read back by networkChanged', () => {
+    noteNetworkChanged();
+    expect(networkChanged()).toBe(true);
   });
 });

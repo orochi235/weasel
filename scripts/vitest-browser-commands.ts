@@ -4,7 +4,7 @@ import type { Download, Page } from '@playwright/test';
 import { createServer, type Server } from 'node:net';
 import { waitForOwnFrame } from './vitest-own-frame.ts';
 import { HOST_GPU_ARGS } from './chromium-gpu-args.ts';
-import { noteNetworkChanged } from './vitest-load-reruns.ts';
+import { noteNetworkChanged } from './lib/load-reruns.mjs';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright

@@ -3,6 +3,20 @@
 // report of its run (`scripts/vitest-load-reruns.ts`), and `scripts/vitest-overlap.mjs` reruns those files.
 import { relative } from 'node:path';
 
+// Set by `watchRequests` (`scripts/vitest-browser-commands.ts`) in the vitest process, read by its reporter
+// (`scripts/vitest-load-reruns.ts`); the config, and so each module it imports, may be evaluated more than once.
+const NETWORK_CHANGED = Symbol.for('weasel:network-changed');
+
+/** Record that a request of a test page failed with `net::ERR_NETWORK_CHANGED`. */
+export function noteNetworkChanged() {
+  globalThis[NETWORK_CHANGED] = true;
+}
+
+/** Whether this process recorded a network change. */
+export function networkChanged() {
+  return globalThis[NETWORK_CHANGED] === true;
+}
+
 /**
  * What one vitest process's run leaves for a rerun: whether a network change dropped a request, the files
  * that loaded no tests, and whether anything else failed, which no rerun of those files can settle.

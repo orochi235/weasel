@@ -1,3 +1,6 @@
+export function noteNetworkChanged(): void;
+export function networkChanged(): boolean;
+
 export interface LoadReport {
   networkChanged: boolean;
   files: string[];
