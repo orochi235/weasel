@@ -83,13 +83,13 @@ export function livePathEdit(spec: LivePathEditSpec): Action & { requires: strin
             params = merged;
             recompute();
           },
-          onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
+          onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
             const done = current;
             current = new Map();
             if (reason === 'cancel' || done.size === 0) return;
-            const ops = spec.commit(endCtx.deps, done, value);
+            const ops = spec.commit(ctx.deps, done, value);
             const after = spec.selectAfter?.(ops);
-            commitOps(endCtx.deps, ops, spec.label, after ? { select: after } : {});
+            commitOps(ctx.deps, ops, spec.label, after ? { select: after } : {});
           },
           previewIds: () => (current.size > 0 ? [...current.keys()] : null),
           previewPose: (id: string) => shapeOf(id)?.pose ?? null,

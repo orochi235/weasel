@@ -81,6 +81,13 @@ describe('simplifyPathAction', () => {
     expect(data.to).toEqual({ tag: 'a' });
   });
 
+  it('commits through the deps it started with, as a dispatcher-ended gesture carries none', () => {
+    const { deps, batches } = setup({ a: circle(120, 50) }, ['a']);
+    const handle = ongoing.start(ctx(deps, { tolerance: 2 }), {});
+    handle.onEnd!(ctx({}), 'commit');
+    expect(batches).toHaveLength(1);
+  });
+
   it('commits nothing on cancel, and is disabled with no path selected', () => {
     const { deps, batches } = setup({ a: circle(60, 50) }, ['a']);
     const handle = ongoing.start(ctx(deps, { tolerance: 1 }), {});

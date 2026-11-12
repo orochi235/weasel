@@ -107,6 +107,8 @@ export interface InvocationCtx {
    */
   screen?: Point2;
   modifiers: ModifierState;
+  /** The action's deps on `start`. A gesture's `onMove` and `onEnd` are handed
+   *  an empty bag, so a handle commits through the deps its `start` was given. */
   deps: ActionDeps;
   drag?: {
     start: WorldPoint;
