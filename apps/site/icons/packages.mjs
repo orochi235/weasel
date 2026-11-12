@@ -93,15 +93,15 @@ export const PACKAGES = framed({
   // A right triangle and its square corner.
   geom: `<path d="M4.8 15.2h10.4L4.8 4.8z"/><path d="M4.8 12.6h2.6v2.6" stroke-width="1"/>`,
 
-  // A closed hand pointing down at a surface: the fist with its curled fingers marked off, the index finger
-  // dropping from its corner, and the marks of the touch either side of the fingertip.
+  // A figure waving: a head, a body standing on two legs, one arm low and the other raised, and a motion arc
+  // beside the raised hand.
   gestures: `
-    <path d="M6.4 12.6V6.4a1.6 1.6 0 0 1 1.6-1.6h4.7a1.6 1.6 0 0 1 1.6 1.6V10a.95.95 0 0 1-1.9 0 .95.95 0 0 1-1.9 0 .95.95 0 0 1-1.9 0v2.6a1.1 1.1 0 0 1-2.2 0z" stroke-width="1.25"/>
-    <path d="M4.6 15.4h10.8"/>
-    <path d="M4.8 13.4 4 12.8M10.2 13.4l.8-.6" stroke-width="1.25"/>`,
+    <circle cx="8.6" cy="5.8" r="1.9"/>
+    <path d="M8.6 8.8V12.6M8.6 12.6 6.4 16M8.6 12.6 10.8 16M8.6 9.8 6.4 12M8.6 9.8l3.2-3.2"/>
+    <path d="M13.34 4.76A2.4 2.4 0 0 1 13.64 8.14" stroke-width="1.25"/>`,
 
-  // A ruler guide each way, and a box snapped into their corner.
-  guides: `<path d="M7.2 4.4v11.2M4.4 7.2h11.2" stroke-width="1.25" stroke-dasharray="1.6 1.4"/><rect x="7.2" y="7.2" width="6" height="6" rx="0.8"/>`,
+  // A grid of nine cells.
+  guides: `<rect x="5.908" y="5.908" width="8.184" height="8.184" rx="0.868"/><path d="M8.636 5.908v8.184M11.364 5.908v8.184M5.908 8.636h8.184M5.908 11.364h8.184" stroke-width="1"/>`,
 
   // A shell prompt.
   headless: `<path d="M5.2 6.6 8.6 10l-3.4 3.4M10.4 13.6h4.4"/>`,

@@ -5,7 +5,7 @@ import { framed } from './frame.mjs';
 // kind-of-change chips.
 export const KINDS = framed({
   // A link pulled apart.
-  breaking: `<g transform="rotate(-45 10 10)"><path d="M7.8 7.4H7a2.6 2.6 0 0 0 0 5.2h.8M12.2 7.4H13a2.6 2.6 0 0 1 0 5.2h-.8"/><path d="M10 4.4v1.6M10 14v1.6" stroke-width="1.25"/></g>`,
+  breaking: `<g transform="rotate(-45 10 10)"><path d="M7.8 7.4H7a2.6 2.6 0 0 0 0 5.2h.8M12.2 7.4H13a2.6 2.6 0 0 1 0 5.2h-.8"/><path d="M10 4.4v1.6M10 7.6v1.6M10 10.8v1.6M10 14v1.6" stroke-width="1.25"/></g>`,
 
   // Running out: an hourglass.
   deprecates: `<path d="M6.2 4.6h7.6M6.2 15.4h7.6M7 4.6c0 3.4 3 3.6 3 5.4s-3 2-3 5.4M13 4.6c0 3.4-3 3.6-3 5.4s3 2 3 5.4"/><path d="M8.6 14.2h2.8" stroke-width="1.25"/>`,
