@@ -15,8 +15,20 @@ npm install @weasel-js/svg
 ## Usage
 
 ```ts
-import { /* … */ } from '@weasel-js/svg';
+import { parseSvg, serializeSvg, svgDraftSpecs, svgNodesFromKit, svgNodesToKitDrafts, warmSvg } from '@weasel-js/svg';
+
+// In: a document's nodes added to a scene.
+const drafts = svgNodesToKitDrafts(parseSvg(text), () => scene.mintId());
+for (const spec of svgDraftSpecs(drafts, { layer: 'main', composition: scene.composition })) scene.add(spec);
+
+// Out: the scene as a document.
+const nodes = svgNodesFromKit(scene);
+await warmSvg(nodes);
+const svg = serializeSvg(nodes);
 ```
+
+For files dropped or pasted on a canvas, `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>` does the
+import, fitting each file to the view.
 
 ## Text fidelity
 
