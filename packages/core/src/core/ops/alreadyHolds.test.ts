@@ -40,4 +40,15 @@ describe('an op writing what the node already holds', () => {
     s.undo();
     expect(s.get(id)?.hidden).toBeFalsy();
   });
+
+  it('records a transform whose stated from and to agree but the node is elsewhere', () => {
+    const { s, id, adapter } = oneNode();
+    const before = s.historyEntries().length;
+    const to = { ...POSE, x: 40 };
+    s.applyBatch([createTransformOp({ id, from: to, to })], 'Move', adapter);
+    expect(s.get(id)?.pose).toEqual(to);
+    expect(s.historyEntries()).toHaveLength(before + 1);
+    s.undo();
+    expect(s.get(id)?.pose).toEqual(POSE);
+  });
 });
