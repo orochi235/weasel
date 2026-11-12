@@ -1,5 +1,132 @@
 # @weasel-js/text
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 2595ad3: A line separator (U+2028), VT or FF ends only a line, not its bidi paragraph, so the next line keeps the paragraph's direction. Embeddings carry over too, and `paragraphDirection` reads past one, as UAX #9 has it. LF, CR, NEL and U+2029 still start a new paragraph.
+  
+  <!-- entry: fix -->
+- 433a5ad: `mergeRegion` keeps an edge two contours share once, so a stroke no longer traces lines inside a merged fill. It also merges a contour drawn twice into one, welds corners within its snap of each other, and drops the zero-width spike two nearly tangent curves leave. Synthetic-bold outlines from `textToPath` and `textClusters` merge their glyphs this way, so they stroke only along the glyph's edge.
+  
+  <!-- entry: fix visual -->
+- 3bedaa8: A line wrapped at a soft hyphen (U+00AD) ends in a visible hyphen, as CSS's `hyphens: manual` draws it.
+  
+  It draws the face's U+2010, or its U+002D where it has no U+2010, on the atlas, canvas and outline tiers and in shaped runs, and `measureText` and `layoutMarkdown` lines carry it. A line ends at a soft hyphen only when the hyphen fits too. A soft hyphen anywhere else draws nothing and takes no room on every tier, even in a face that maps it to a visible glyph, and `textToPath` does not outline it.
+  
+  <!-- entry: behavior visual -->
+- c3dc307: Styling never splits a character in two: a range end inside an emoji or other surrogate pair widens to take the whole character.
+  
+  `applyStyleToRange`, `setFlagOverRange` and `styleAtRange` all read ranges this way; styling a combining mark on its own is unchanged. Runs that already split a pair lay it out and case-map it as one character, in the style of the run holding its first half.
+  
+  <!-- entry: fix -->
+- 2a9727c: A text box fitted to its laid-out width no longer wraps a line under negative `letterSpacing`.
+  
+  That covers `fitTextPose` with `axis: 'both'` and any box sized from `layoutRuns`' `bounds.width`, which now reports the farthest the line's ink reaches at any break opportunity.
+  
+  <!-- entry: fix -->
+- 521bc15: `caretIndexAt` puts the caret on the clicked side of a letter, so clicks where text changes direction reach every offset.
+  
+  <!-- entry: fix -->
+- 997e4f3: `textClusters` returns clusters in the line's visual order and opens the first slot at the line's start, even under tight letter spacing.
+  
+  A cluster whose tracking pulls the next one back reports a negative `advance`.
+  
+  <!-- entry: fix -->
+- 4224853: `runsToMarkdown` no longer writes markers that its own reader reads as something else in a custom grammar.
+  
+  Where markers on one delimiter fuse into another marker (`__` then `_` read as `___`), the change is spelled another way, such as with another delimiter between; where the grammar has no spelling for it, the flags it cannot say are dropped and the text kept. The markdown subset and grammars without such clashes write what they did.
+  
+  <!-- entry: fix -->
+- 4e6aad8: `textTransform` follows a locale's contextual case rules inside a run.
+  
+  Under `lang: 'tr'` a lowercased `I` with a combining dot draws `i`, not a dotless `ı` under the dot, and under `lang: 'el'` an uppercased letter drops its combining accent. The dropped mark's source joins the letter before it in the run's source map, so carets and selections step over both.
+  
+  <!-- entry: fix -->
+- 01b996e: A text sized with `fitTextPose({ axis: 'both' })` no longer wraps its last word.
+  
+  <!-- entry: fix -->
+- 6999cce: A paragraph opening with spaces no longer wraps after them before a character no line may start with, such as `!` or `。`, per UAX #14.
+  
+  `layoutRuns`, `measureText` and `layoutMarkdown` all change together.
+  
+  <!-- entry: fix -->
+- 4d16c8a: A tab followed by text wraps with that text, so a line no longer starts with a character such as `!` that may not open one.
+  
+  A tab carrying a combining mark counts toward the line's width rather than hanging.
+  
+  <!-- entry: fix -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [d83feb6]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [eaff448]
+- Updated dependencies [b1309b2]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

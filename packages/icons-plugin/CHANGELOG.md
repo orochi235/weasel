@@ -1,5 +1,28 @@
 # @weasel-js/icons-plugin
 
+## 1.19.0
+
+### Patch Changes
+
+- ea921e3: An app build refuses an icon ref such as `core:toString` that names an `Object.prototype` member its table does not hold.
+  
+  <!-- entry: rank=-5 fix -->
+- ad30c8b: An app build writes the same `virtual:weasel-icons` bytes from the same modules, whatever order its transforms ran in.
+  
+  It reads icon tables in module id order, so two tables of one namespace that disagree on a glyph settle on the same one every build.
+  
+  <!-- entry: fix -->
+- f1bba9d: An app build fills in a `virtual:weasel-icons/<name>` module whose variant or namespace name holds a quote, a backslash, or a lone surrogate.
+  
+  <!-- entry: rank=-5 fix -->
+- 5d67043: A library build re-annotates an icon ref that a chunk spells with escapes, as ASCII-only output does. An `icon()` name holding a lone surrogate is written escaped, so it reaches the output unchanged.
+  
+  <!-- entry: fix -->
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+  - @weasel-js/icons@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

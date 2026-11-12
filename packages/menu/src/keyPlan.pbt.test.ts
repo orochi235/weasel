@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/ui-logic';
+import { EMPTY_TYPEAHEAD, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { entriesAt, isRow } from './entries';
 import { keyStep, type MenuStack } from './keys';
 import { planKey } from './keyPlan';

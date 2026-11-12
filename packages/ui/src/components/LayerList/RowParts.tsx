@@ -1,5 +1,5 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
-import { imeKey } from '@weasel-js/ui-logic';
+import { imeKey } from '@weasel-js/ui-input';
 import rows from '../ItemList/ItemList.module.css';
 import type { LayerListItem, LayerListProps } from './layerListProps';
 import s from './LayerList.module.css';

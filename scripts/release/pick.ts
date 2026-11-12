@@ -14,7 +14,7 @@ import { isChangesetFile } from './bumps.mjs';
 import { type EntryMeta, readMarker, setMarker } from './entry-marker.ts';
 import { splitSummary } from './summary.ts';
 
-const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.changeset');
+export const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.changeset');
 
 interface Pending {
   file: string;

@@ -1,4 +1,4 @@
-import { gridLayout, rovingGridTarget, rovingKey, type LastRow } from '@weasel-js/ui-logic';
+import { gridLayout, rovingGridTarget, rovingKey, type LastRow } from '@weasel-js/ui-input';
 import {
   useCallback,
   useEffect,
@@ -26,7 +26,7 @@ export type UseRovingTabIndexOptions = {
   /** Defaults to `'both'`. Ignored when `columns` is set. */
   orientation?: RovingOrientation;
   /** Lays the items out as a grid this many across: Left and Right step through them in reading
-   *  order, and Up and Down move a row, keeping the column, by ui-logic's `rovingGridTarget`. */
+   *  order, and Up and Down move a row, keeping the column, by ui-input's `rovingGridTarget`. */
   columns?: number;
   /** With `columns`, where a last row shorter than `columns` sits, so Up and Down land on the item
    *  drawn under this one. Default `'start'`. See {@link tiling}. */

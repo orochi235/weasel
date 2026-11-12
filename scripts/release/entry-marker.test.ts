@@ -65,6 +65,22 @@ describe('lintChangeset', () => {
     expect(lintChangeset(changeset(`Short.\n\n${'x '.repeat(400)}\n\n<!-- entry: fix -->`))[0]).toMatch(/a fix runs/);
   });
 
+  it('refuses a level below what its tags make the change', () => {
+    const at = (level: string, tags: string) =>
+      lintChangeset(`---\n"@weasel-js/core": ${level}\n---\n\nA thing.\n\nWhat to change.\n\n<!-- entry: ${tags} -->\n`);
+    expect(at('patch', 'api')).toEqual([
+      'its tags (api) make it a `minor` change, but it says `patch`; write the level semver gives it',
+    ]);
+    expect(at('minor', 'breaking api')[0]).toMatch(/a `major` change, but it says `minor`/);
+    expect(at('minor', 'new')).toEqual([]);
+    expect(at('major', 'breaking')).toEqual([]);
+    expect(at('minor', 'fix')).toEqual([]);
+  });
+
+  it('reads the highest level a changeset releases any package at', () => {
+    expect(lintChangeset('---\n"a": patch\n"b": minor\n---\n\nA thing.\n\n<!-- entry: api -->\n')).toEqual([]);
+  });
+
   it('refuses a marker that opens the body', () => {
     expect(lintChangeset(changeset('<!-- entry: fix -->\n\nProse.'))).toContain(
       'the entry marker opens the body; move it to the end',

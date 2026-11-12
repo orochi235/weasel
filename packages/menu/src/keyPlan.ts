@@ -3,7 +3,7 @@ import { entriesAt } from './entries';
 import type { MenuEntry } from './entries';
 import { firstRow, keyStep, type KeyEffect, type MenuStack } from './keys';
 import type { MenuDirection } from './placement';
-import { EMPTY_TYPEAHEAD, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-logic';
+import { EMPTY_TYPEAHEAD, isOneChar, type TypeaheadBuffer } from '@weasel-js/ui-input';
 import { typeaheadStep } from './typeahead';
 
 export interface KeyPlan {

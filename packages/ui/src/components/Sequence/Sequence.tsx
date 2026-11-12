@@ -1,4 +1,4 @@
-import { stepsOf, SWEEP_CAP, type Sweep } from '@weasel-js/ui-logic';
+import { stepsOf, SWEEP_CAP, type Sweep } from '@weasel-js/ui-input';
 import type { ReactElement, ReactNode } from 'react';
 import s from './Sequence.module.css';
 

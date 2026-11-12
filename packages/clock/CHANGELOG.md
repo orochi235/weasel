@@ -1,5 +1,48 @@
 # @weasel-js/clock
 
+## 1.19.0
+
+### Patch Changes
+
+- b1309b2: A `declare` that keeps a clock's origin leaves the time within its pass exactly as it was, so it no longer lets go of a hold. A clock at a pass's end also keeps that pass through a `loop` write where the end does not divide evenly.
+  
+  <!-- entry: rank=-5 fix -->
+- 153719c: Assigning a clock's `duration` keeps it in its pass far into a run, past ten billion passes.
+  
+  <!-- entry: rank=-5 fix -->
+- bce00fd: A clock's `pass` and `phase` agree where it stands when the pass duration does not divide evenly. 50 ms into a run of 0.1 ms passes reads pass 500 at phase 0. A `loop` write or `declare` that leaves the clock at a pass's end keeps it there, and one near a pass's start no longer reads as the previous pass's end.
+  
+  <!-- entry: fix -->
+- 98a8020: A clock at the start of a pass stays there through a `declare` or `override`. Raising `loop` on an ended clock leaves it at the end of the pass it ended in, as a `declare` of the same loop does.
+  
+  <!-- entry: rank=-5 fix -->
+- 6d7aae1: A clock's ramp reaches its target rate exactly when its time is up.
+  
+  <!-- entry: rank=-5 fix -->
+- 326d7be: A `declare` or `override` the clock refuses with a `RangeError` leaves the clock as it was. A declaration's own `duration` and `origin` are checked even while an override stands over them, so it throws at the `declare` rather than when the override is lifted.
+  
+  <!-- entry: fix -->
+- 2740ed4: A clock's `sync` keeps the playhead finite across two frame times further apart than a double holds, such as `-1e308` then `1e308`. An endless run stops at the largest time it can hold, and a looping clock that far out keeps its place through a duration or loop write.
+  
+  <!-- entry: rank=-5 fix -->
+- 2f5f287: `shownInPass` takes the clock itself, and a clock at the start of a pass now shows `origin`.
+  
+  Replace `shownInPass(origin, elapsed, duration, loop)` with `shownInPass(clock)`. It reads the time within the pass `clock.pass` names, so it agrees with `clock.phase`; forge's playhead readout follows.
+  
+  <!-- entry: breaking fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

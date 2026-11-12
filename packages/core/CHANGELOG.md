@@ -1,5 +1,472 @@
 # Changelog
 
+## 1.19.0
+
+### Minor Changes
+
+- 6ff27f5: An Alt-drag clone runs the select tool's move behaviors that say what they do on a clone, through a new `clone` field on `MoveBehavior`. `snapToContainer` drops the copies into the container at their slots and leaves the originals where they were, and `snapBackOrDelete` makes no copy when the clone is released anywhere but a snap target. A clone behavior's `onEnd` is told `CloneEnd`, whose `copyOps` makes the copies under a given parent.
+  
+  <!-- entry: new api -->
+
+### Patch Changes
+
+- 0896b71: `addPage` and `addTemplatePage` place a page whose `index` lies past either end of the page order at that end, as `movePage` does. A negative `index` no longer counts from the end, so `index: -1` puts the page first.
+  
+  <!-- entry: fix -->
+- bbfb059: An align or distribute that would carry a pose past the double range is disabled and moves nothing; `moveEachOps` returns no ops for one.
+  
+  <!-- entry: fix -->
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- b5303e3: Distribute by centers keeps the two outermost centers in place and spaces the rest in center order, so a second run moves nothing.
+  
+  <!-- entry: fix -->
+- b1309b2: Duplicate and Clone copy a group holding a locked node, keeping the copy locked, instead of throwing.
+  
+  <!-- entry: fix -->
+- b5303e3: Align, Distribute, Flip and the four reorder commands are disabled where running them would change nothing. They report `NotApplicable`, and their `enabled` asks the same question their `run` answers: aligning one item to the selection's union, a selection already aligned or spaced, flipping in place a shape that is its own mirror, bringing forward what is already in front. A second run of align or distribute no longer records an undo step for a rounding-sized move.
+  
+  <!-- entry: behavior fix -->
+- b5303e3: A reorder that would shift a locked node in the stack is disabled with `Locked` instead of throwing.
+  
+  <!-- entry: fix -->
+- 4977d31: A node squashed by its `transform` is no longer culled while its `{ px }` stroke is still in view. `defaultPaintBounds` measures such a stroke at the scale the pose's frame and the view draw it at together.
+  
+  <!-- entry: fix visual -->
+- 2cc9303: A drag ignores a pointer that is no finite number: a press there starts nothing, and a move there is skipped.
+  
+  Move, resize, rotate, clone, insert, the marquee, and the lasso each go on from their last move.
+  
+  <!-- entry: fix -->
+- b1309b2: A malformed snapshot is refused with an error naming what is wrong, rather than a `TypeError`. That covers a node that is not an object or lacks a string `id`, `layer` or `kind` (`specsFromSerialized`), `systemLayers` that are not a list of layers (`sceneFromJSON`), and a `core:pages` value that is not a `PagesDoc` (`adoptSnapshotPages`).
+  
+  <!-- entry: fix -->
+- ca65cf7: A document saved through `serializeReplacer` reads back equal through `reviveTypedArrays`, whatever its data holds. A plain object shaped like a tagged typed array, or plain numbers under a `commands` or `coords` key, is written inside a `{ "__raw": … }` wrapper that the reader takes off; older saves read as before.
+  
+  <!-- entry: fix data -->
+- 9ec70fe: A box remap from a box of subnormal width or height keeps that axis's scale, as one from a box of no extent does.
+  
+  The rule is geom's new export `extentScale(from, to)`, which `boxToBox`, core's rect pose descriptor, and `remapRotatedLeaf` all read.
+  
+  <!-- entry: rank=-5 fix api -->
+- 056d901: A flip whose mirror image would leave the double range is disabled and writes nothing.
+  
+  <!-- entry: fix -->
+- 3feac74: Grouping members with different parents puts the new group in their lowest common ancestor, in the place of the frontmost member's branch. This holds for Group and the boolean group, and the group stays inside every container its members shared.
+  
+  <!-- entry: rank=10 behavior fix -->
+- b8ea958: Group is disabled where its container would be too large for the double range, rather than writing an infinite pose.
+  
+  <!-- entry: fix -->
+- b8ea958: Group is disabled for a selection on more than one layer, where it already did nothing.
+  
+  <!-- entry: fix behavior -->
+- a98d4ee: A handle lock toggled during a handle drag or a balance-grip drag takes effect at once. The `editAnchors` dep's `handleLocks` is read live.
+  
+  <!-- entry: fix -->
+- a74983a: `hasExtent` reads bounds whose far edge overflows the double range as nothing to fit, so `fitViewToBounds` answers `null` for them.
+  
+  <!-- entry: rank=-5 fix -->
+- a43fd34: An insert drag whose commit throws puts back the selection the press cleared before the error propagates.
+  
+  <!-- entry: rank=-5 fix -->
+- 14398f2: A last-operation panel change made after switching tools is written back to the options of the tool the operation ran with. The next polygon drawn takes the sides the panel set.
+  
+  <!-- entry: fix -->
+- 39c0d34: The warning `<Canvas>` gives for a custom layer it cannot place names the real problem: an undefined key or a cycle.
+  
+  <!-- entry: rank=-5 fix -->
+- 63edf95: An arrowhead on a slanted edge is no longer culled while its tip is on screen, and its node's grab reach and paint box cover it.
+  
+  `markerReach` now measures how far a marker head reaches in any direction, not along its own axes.
+  
+  <!-- entry: fix visual -->
+- 7620d78: A marquee or lasso no longer selects a node its nested clipping groups hide entirely.
+  
+  `PickQuery.intersectClips` opts an area query into being asked about the clips' common part as well as each clip alone.
+  
+  <!-- entry: fix api -->
+- 5f06b1f: A marquee rect with a negative width or height selects what the same rect named from its other corner selects.
+  
+  `hitTestArea` and `rectRegion` read such a rect as reaching back from `x` or `y`, as a drag up and to the left does.
+  
+  <!-- entry: fix -->
+- b8ea958: `moveNodesOps` and `translateNodeOps` leave out a node the translation leaves where it was.
+  
+  <!-- entry: fix behavior -->
+- 1fc9a81: A `createMoveToIndexOp` move read back from saved history redoes as it ran, a move to the top included.
+  
+  The op holds its `index` as a finite integer that places the ids alike: `Infinity` as the top, `NaN` as the bottom, a fraction truncated.
+  
+  <!-- entry: fix data -->
+- e913291: An edit action that would change nothing reports itself disabled (`NotApplicable`) instead of enabled.
+  
+  That covers `deleteAnchors` where the path refuses the delete, such as one anchor of a two-anchor line; `constrainAnchors` where the selection makes no constraint of its kind; `unconstrainAnchors` where there is none to remove; `setCorners` without a shape or radius, or with the ones the corners have; and the anchor nudges and `reversePath` where the selection names no anchor of the path. Selection commands stay enabled when their result is the current selection.
+  
+  <!-- entry: behavior fix -->
+- 44999ca: A nudge is disabled where it would move nothing, as for a node so far out that rounding absorbs the step.
+  
+  <!-- entry: fix behavior -->
+- faaeb54: `deriveParallaxView` with `pan: 1` and `zoom: 1` returns the camera's own view exactly, and `pan: 0` lands exactly on the anchor.
+  
+  <!-- entry: rank=-5 fix -->
+- 0e8df4d: core exports `checkPixelRenderRect(sourceRect, scale, prefix?)`, the check `renderSceneToPixels` makes of its rect and scale.
+  
+  It is exported from the root and from the React-free `@weasel-js/core/math`.
+  
+  <!-- entry: api -->
+- adc2756: A click-to-place insert paints the shape with the tool's fill and stroke options, as a drag insert does, rather than the next palette color.
+  
+  `placeAction` hands its style params to the `insert` dep as `extras.style`.
+  
+  <!-- entry: fix -->
+- 4be628a: Children of containers on different parallax planes are clipped and picked through their own plane when the containers share a clip object.
+  
+  <!-- entry: rank=-5 fix -->
+- fef31b7: A group's members keep their own layers when `reconcileSpecs` moves the group to another layer.
+  
+  A member whose spec layer did not change stays on it wherever the group's new layer allows, so the render worker's copy of a scene draws it where the page does after an undo.
+  
+  <!-- entry: fix visual -->
+- 2bde466: `reconcileSpecs` can move a node into a group on a higher layer in the same specs that raise the node to that layer.
+  
+  The render worker's copy of a scene follows such a change instead of throwing on that sync.
+  
+  <!-- entry: fix -->
+- f137f48: Undoing a removal from a history read back from JSON gives each node back its layout and other function fields.
+  
+  They are restored from their registry keys even where the saved node holds something under that field.
+  
+  <!-- entry: fix data -->
+- f0c159d: Repeat Along lays its copies end to end along the path, so a saved document's repeats land in new places.
+  
+  Each copy is as long along the path as the shape is wide. A count with no spacing puts the first copy's start at the path's start and the last copy's end at its end, rather than centering them on the ends, and `spacing` is the gap between one copy's end and the next one's start, not between their centers. On an open path a copy that `offset` slides partly off an end is kept; one slid wholly off is dropped. `stationsAlongPath` takes the copies' length as a third argument, 0 by default.
+  
+  <!-- entry: rank=10 behavior data visual api -->
+- caffe33: `replaceDoc` clears a document value named like an `Object.prototype` member, such as `toString`, when the new values do not hold it.
+  
+  <!-- entry: rank=-5 fix -->
+- 18122f9: A resize of a group holding a locked node does not start, as Ungroup and Delete are disabled for one; it used to throw on the first move.
+  
+  <!-- entry: fix behavior -->
+- 4bbda04: A resize dragged to a point that is no number, or past the double range, no longer throws.
+  
+  <!-- entry: fix -->
+- 7b9e651: `scene.add`, `scene.move`, and `scene.reorder` record the index a node lands at, so a history read back from JSON places it alike.
+  
+  The index is held to the ends of its siblings: an add or move at `Infinity` records the last index.
+  
+  <!-- entry: fix data -->
+- efac12a: Select All, Copy and Create Outlines wait for an in-flight drag to end, as the other editing keys do.
+  
+  <!-- entry: fix -->
+- ebab03f: A shadow's spread rounds corners as CSS `box-shadow` does, so a square box casts a square shadow.
+  
+  This holds for `dropShadowLayers`, `dropShadowCommand` and a HUD's inset shadow. The rule is exported as `spreadRadius` from `@weasel-js/renderer` and `@weasel-js/core/renderer`.
+  
+  <!-- entry: fix visual api -->
+- 92adc08: A rect's or ellipse's drawn box, which selection chrome and alignment read, takes in marker heads and the square caps a dash or trim opens.
+  
+  Measured boxes flatten curves to the renderer's half-pixel tolerance at the view's scale rather than to half a world unit.
+  
+  <!-- entry: fix visual -->
+- 0a82772: Shape tools draw with fill, stroke and stroke-width tool options that every shape tool shares.
+  
+  Rect, ellipse, polygon, star, line, pencil and pen declare `fill`, `stroke`, `strokeWidth` and (for paths) `fillRule`, each shared with every shape tool; text declares a `fill` shared under `textFill`. Polygon's sides, star's points and inner radius, the pen's auto-commit-on-close, and the sticky note's paper and ink are per-tool options, whose defaults the hooks' `sides`, `points`, `innerRatio` and `autoCommitOnClose` and the sticky tool's `background` and `fill` set. Every insert tool takes a `share`.
+  
+  The insert action hands the style to the `insert` dep as `extras.style`; an insert carrying none still cycles the kit palette. The options tune their actions only while their tool is active, beneath any other tuning, and a canvas whose host publishes no `toolOptionValues` keeps them in memory. `useToolOptionParams` reads a tool's options for an options row, re-rendering on a shared change. The option sets are exported: `RECT_TOOL_OPTIONS` and the rest, `shapeToolOptions`, `DEFAULT_SHAPE_PAINT`.
+  
+  Breaking: `<SceneCanvas insertPaint>`, `InsertPaint` and `paletteInsertPaint` are gone; set the shape tools' options instead. `usePenTool.prefs` is gone, replaced by `PEN_TOOL_OPTIONS`.
+  
+  <!-- entry: rank=20 breaking api new pick -->
+- acba0d3: A snap candidate can say with `holds` whether it still holds at the resolved move, and a session resolves again without one that does not.
+  
+  `holds?: (delta) => boolean` is optional; a candidate without it always holds. The 2D and 3D sessions ask it already. A host building its own session calls the new `resolveHolding(candidates, resolve, toPoint)`, which runs `resolve` again without members that do not hold; `GatheredCandidate` is the candidate type it takes.
+  
+  <!-- entry: api -->
+- 436e3d2: A drag that dwells over a `snapToContainer` container and then leaves it no longer drops into it on release.
+  
+  <!-- entry: fix -->
+- caffe33: `sceneFromJSON`, `Scene.loadState` and `specsFromSerialized` refuse a malformed snapshot with a `SnapshotShapeError` naming what is wrong.
+  
+  They check for a `nodes` and a `systemLayers` array, nodes that are objects with a string `id`, a known `kind`, a `layer` and a `pose`, a `parent`, `dependsOn`, flags and registry keys of the right type, and a `doc` that is an object. They used to throw a `TypeError` from wherever a missing field was first read.
+  
+  <!-- entry: api fix -->
+- 025711f: `stableStringify` writes what `JSON.stringify` writes for every value JSON can write.
+  
+  A boxed `Number`, `String` or `Boolean` is written as its value, and `toJSON` is called once, with its key; one returning its own object no longer overflows the stack.
+  
+  <!-- entry: fix -->
+- 65ae35d: A sticky note drawn with its tool's paper or ink set to none has no background or no text fill, rather than the default.
+  
+  <!-- entry: rank=-5 fix -->
+- 12f254e: A text node with a `background` can draw an `edge` and a `shadow`, and sticky notes have both by default.
+  
+  `edge` (`{ width, shade }`) is a rule just inside the box in the background's color mixed toward black, keeping the background's hue when it changes; `shadow` (`{ x, y, blur, alpha }`) draws under it. `textFrameOf` describes the frame once, and the canvas painter and the SVG export both draw from it. The renderer's new `dropShadowLayers` and `dropShadowCommand` build a shadow as stacked translucent shapes with no blur pass, and hud's `box-shadow` now draws through them.
+  
+  <!-- entry: rank=10 new api visual -->
+- 0866208: A text node with `overflow: 'clip'`, such as a sticky note, scrolls its text inside its box while it is edited.
+  
+  The wheel scrolls it, and a caret moved out of view by the arrow keys, typing, a click or select-all brings it back. The box, and the paper the canvas paints there, stays put. The edit opens scrolled to where `verticalAlign` puts the text on the canvas, so a bottom-aligned note opens on its last line, and the scroll ends with the edit. `TextEditScreenPose.clip` asks for this, so any `useTextEdit` host gets it.
+  
+  <!-- entry: new api -->
+- 96bbb4a: New text takes no fill when the text tool's fill option is set to none, rather than black.
+  
+  <!-- entry: rank=-5 fix -->
+- 3643214: A tool palette no longer draws an empty stack button for a stack that `withoutTools` cut down to nothing.
+  
+  `toolStacksOf` leaves such a stack out.
+  
+  <!-- entry: rank=-5 fix -->
+- b8ea958: A move, resize, rotate, or clone drag skips a move that would carry a pose past the double range, and goes on from its last frame.
+  
+  <!-- entry: fix -->
+- b80eae4: Ungroup, Delete and Cut are disabled while any node they would move, rewrite or remove is locked, and no longer throw from `run` then.
+  
+  They report the new `ActionDisabledReason.Locked`, labeled "Contains a locked item" in the ui's reason labels.
+  
+  <!-- entry: fix api -->
+- b1309b2: Ungroup no longer deletes nodes that derive from the dissolved group: each drops the group from its `dependsOn` in the same undoable batch.
+  
+  <!-- entry: fix -->
+- 73fd11f: `unionBounds` and `unionAABB` skip a box with a corner that is not finite, and a union of only such boxes is `null`.
+  
+  <!-- entry: rank=-5 fix -->
+- 038a0da: `wheelPan` and `computeWheelAction` leave an axis where it was when its delta is not finite or would carry the view past the double range.
+  
+  <!-- entry: rank=-5 fix -->
+- 38223ed: An op that records its undo on first apply, such as reorder, delete or reparent, keeps that undo for the scene it is committed to.
+  
+  `writtenBy` reads a registered op through a copy rebuilt from its args.
+  
+  <!-- entry: rank=-5 fix -->
+- 0a6a876: `zoomAt` keeps each axis's direction and a finite view for any factor or anchor.
+  
+  A negative or `NaN` factor zooms nothing, a factor of 0 keeps a flipped axis flipped, and an anchor that is not finite, or whose world point overflows, zooms about the canvas corner.
+  
+  <!-- entry: rank=-5 fix -->
+- faaeb54: Repeated one-axis zooms (`axisZoomFactor`) no longer drift the view sideways.
+  
+  `zoomAt` leaves the translation of an axis it does not scale exactly where it was.
+  
+  <!-- entry: fix -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [8d3f30f]
+- Updated dependencies [24fe08a]
+- Updated dependencies [ebc9f52]
+- Updated dependencies [63ce1c6]
+- Updated dependencies [ec703b3]
+- Updated dependencies [eb8743c]
+- Updated dependencies [871e410]
+- Updated dependencies [5be32af]
+- Updated dependencies [857c097]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ee0609a]
+- Updated dependencies [93ed93d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [3932826]
+- Updated dependencies [2595ad3]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [c0845c1]
+- Updated dependencies [6646205]
+- Updated dependencies [c5202b9]
+- Updated dependencies [976bdf2]
+- Updated dependencies [cd3e070]
+- Updated dependencies [b1309b2]
+- Updated dependencies [998e8d4]
+- Updated dependencies [c841997]
+- Updated dependencies [253abc5]
+- Updated dependencies [97e890d]
+- Updated dependencies [87c8ed0]
+- Updated dependencies [e3481a9]
+- Updated dependencies [cd31516]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [0d828ef]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [0e15698]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [c913ef0]
+- Updated dependencies [33bca4e]
+- Updated dependencies [d4c2b70]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [d83feb6]
+- Updated dependencies [82e3877]
+- Updated dependencies [98a2b04]
+- Updated dependencies [63edf95]
+- Updated dependencies [7d98f63]
+- Updated dependencies [d8ce575]
+- Updated dependencies [8c040fd]
+- Updated dependencies [337b676]
+- Updated dependencies [020f69a]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [55f85bb]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [60b297c]
+- Updated dependencies [3065fad]
+- Updated dependencies [8c7c11a]
+- Updated dependencies [8e09cb6]
+- Updated dependencies [c6d9ee5]
+- Updated dependencies [56a58c9]
+- Updated dependencies [b1309b2]
+- Updated dependencies [45373d0]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b62813d]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [562c8a2]
+- Updated dependencies [043db55]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [c0b44f0]
+- Updated dependencies [7736185]
+- Updated dependencies [f63f932]
+- Updated dependencies [a933054]
+- Updated dependencies [ae820c2]
+- Updated dependencies [8710c48]
+- Updated dependencies [7d5ab0e]
+- Updated dependencies [ef5634e]
+- Updated dependencies [7c02aa8]
+- Updated dependencies [08c143e]
+- Updated dependencies [11ffe9f]
+- Updated dependencies [81e2cf4]
+- Updated dependencies [744af77]
+- Updated dependencies [b1309b2]
+- Updated dependencies [9451076]
+- Updated dependencies [365b49d]
+- Updated dependencies [ebab03f]
+- Updated dependencies [47a4976]
+- Updated dependencies [eaff448]
+- Updated dependencies [c7756c5]
+- Updated dependencies [c7756c5]
+- Updated dependencies [20c4979]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [77cc6e1]
+- Updated dependencies [afa1429]
+- Updated dependencies [582dfcb]
+- Updated dependencies [204596e]
+- Updated dependencies [c3dc307]
+- Updated dependencies [44aa42f]
+- Updated dependencies [a612a95]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [d13b757]
+- Updated dependencies [b1309b2]
+- Updated dependencies [356d4ec]
+- Updated dependencies [45e74c7]
+- Updated dependencies [e2f8e0e]
+- Updated dependencies [2c2d663]
+- Updated dependencies [a69a38c]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [45c01e4]
+- Updated dependencies [a7578e7]
+- Updated dependencies [0a82772]
+- Updated dependencies [3643214]
+- Updated dependencies [10199c0]
+- Updated dependencies [b1309b2]
+- Updated dependencies [644c5c7]
+- Updated dependencies [521cab5]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [7b56e88]
+- Updated dependencies [279a193]
+- Updated dependencies [521cab5]
+- Updated dependencies [76da952]
+- Updated dependencies [228d835]
+- Updated dependencies [521cab5]
+- Updated dependencies [e198aad]
+- Updated dependencies [7dd964d]
+- Updated dependencies [b80eae4]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+- Updated dependencies [5bc9b94]
+- Updated dependencies [352b221]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/animator@1.19.0
+  - @weasel-js/ui-input@1.19.0
+  - @weasel-js/renderer@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/prefs@1.19.0
+  - @weasel-js/cursor@1.19.0
+  - @weasel-js/routing@1.19.0
+  - @weasel-js/gestures@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/stroke@1.19.0
+  - @weasel-js/modes@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+  - @weasel-js/select@1.19.0
+  - @weasel-js/simulation@1.19.0
+  - @weasel-js/text-dom@1.19.0
+  - @weasel-js/history@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

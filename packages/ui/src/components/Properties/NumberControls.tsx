@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { imeKey } from '@weasel-js/ui-logic';
+import { imeKey } from '@weasel-js/ui-input';
 import { decimal, decimalPlaces, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
 import { inlineDirection } from '../../useRovingTabIndex';

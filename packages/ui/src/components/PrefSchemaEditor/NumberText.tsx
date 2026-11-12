@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { imeKey } from '@weasel-js/ui-logic';
+import { imeKey } from '@weasel-js/ui-input';
 import { Input } from '../Input';
 import s from './PrefSchemaEditor.module.css';
 

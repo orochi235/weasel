@@ -53,6 +53,11 @@ export function selectionMoveBindings<TPose>(
       ...(move.behaviors?.length ? { behaviors: move.behaviors as BindingOpts['behaviors'] } : {}),
     };
   })();
+  const cloneBehaviors = (options.move?.behaviors ?? []).flatMap((b) => (b.clone ? [b.clone] : []));
+  const cloneOpts = (id: string): BindingOpts => ({
+    id,
+    ...(cloneBehaviors.length ? { behaviors: cloneBehaviors as BindingOpts['behaviors'] } : {}),
+  });
 
   return [
     // Alt-drag on a body → clone (Illustrator convention).
@@ -62,8 +67,8 @@ export function selectionMoveBindings<TPose>(
     // select tool's pointerDown classifier calls `selection.applyClick(top, mods)`
     // on an unselected hit before the drag fires, so cloneAction's
     // `start` sees the hit node in `selection.get()` either way.
-    { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { ...SNAP_ROLE_MODS, alt: true } }, actionId: 'clone', opts: { id: 'selection.move.clone' } },
-    { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { ...SNAP_ROLE_MODS, alt: true } }, actionId: 'clone', opts: { id: 'selection.move.cloneUnselected' } },
+    { spec: { kind: 'drag' as const, target: 'selected-body' as const, mods: { ...SNAP_ROLE_MODS, alt: true } }, actionId: 'clone', opts: cloneOpts('selection.move.clone') },
+    { spec: { kind: 'drag' as const, target: 'unselected-body' as const, mods: { ...SNAP_ROLE_MODS, alt: true } }, actionId: 'clone', opts: cloneOpts('selection.move.cloneUnselected') },
     {
       // Body-drag → move, BUT defer when the pointerdown hit a path
       // anchor, control, or segment affordance. Those lie on the curve so

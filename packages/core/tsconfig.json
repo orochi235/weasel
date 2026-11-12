@@ -185,6 +185,7 @@
       "@weasel-js/ui/kit-settings": ["../ui/src/kitSettings.ts"],
       "@weasel-js/ui/floating": ["../ui/src/floating/index.ts"],
       "@weasel-js/ui/testing/*": ["../ui/src/testing/*"],
+      "@weasel-js/ui-input": ["../ui-input/src/index.ts"],
       "@weasel-js/ui-logic": ["../ui-logic/src/index.ts"],
       "core/*": ["./src/core/*"],
       "domains/*": ["./src/domains/*"],

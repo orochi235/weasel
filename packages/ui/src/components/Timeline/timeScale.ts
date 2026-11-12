@@ -1,69 +1,30 @@
 import { linearScale, type LinearScale } from '@weasel-js/plot/scales';
+import type { Span } from '@weasel-js/ui-input';
+import { spanPlace, spanShare } from '@weasel-js/ui-input';
 
 /** A visible span of timeline time, in ms. */
-export interface TimeWindow {
-  from: number;
-  to: number;
-}
+export type TimeWindow = Span;
 
 /** Narrowest window the user can zoom to, in ms. Below this the playhead and
  *  the keys it sits between stop being separable at any sane track width. */
-const MIN_SPAN_MS = 1;
+export const MIN_SPAN_MS = 1;
 
 /** The window laid across a track `widthPx` wide: ms to px along it, and back. */
 export function windowScale(window: TimeWindow, widthPx: number): LinearScale {
   return linearScale({ domain: [window.from, window.to], range: [0, widthPx] });
 }
 
-/** Where `ms` sits in the window, as a fraction. The width-free half of
- *  `windowScale` — a CSS `left: %` needs no pixel width, and asking for one
- *  is what drove three copies of this arithmetic into the lane and the ruler. */
-export function toFraction(window: TimeWindow, ms: number): number {
-  const span = window.to - window.from;
-  return span === 0 ? 0 : (ms - window.from) / span;
-}
+/** Where `ms` sits in the window, as a fraction, and a duration as a fraction of it. */
+export { spanPlace as toFraction, spanShare as spanFraction };
 
-/** `toFraction` as a CSS percentage. */
+/** Where `ms` sits in the window, as a CSS percentage. */
 export function toPercent(window: TimeWindow, ms: number): string {
-  return `${toFraction(window, ms) * 100}%`;
-}
-
-/** A duration as a fraction of the window. Distinct from `toFraction`, which
- *  measures a position and so subtracts `window.from`. */
-export function spanFraction(window: TimeWindow, ms: number): number {
-  const span = window.to - window.from;
-  return span === 0 ? 0 : ms / span;
+  return `${spanPlace(window, ms) * 100}%`;
 }
 
 /** A duration as a CSS percentage, for a width. */
 export function spanPercent(window: TimeWindow, ms: number): string {
-  return `${spanFraction(window, ms) * 100}%`;
-}
-
-function clampWindow(w: TimeWindow, bounds: TimeWindow): TimeWindow {
-  if (w.from >= bounds.from && w.to <= bounds.to) return { from: w.from, to: w.to };
-  const span = Math.min(w.to - w.from, bounds.to - bounds.from);
-  let from = w.from;
-  if (from < bounds.from) from = bounds.from;
-  if (from + span > bounds.to) from = Math.max(bounds.from, bounds.to - span);
-  return { from, to: Math.min(bounds.to, from + span) };
-}
-
-/** Scale the window by `factor` about `atMs`, which stays at the same fraction
- *  of the track. `factor < 1` zooms in. */
-export function zoomWindow(
-  w: TimeWindow, atMs: number, factor: number, bounds: TimeWindow,
-): TimeWindow {
-  const span = w.to - w.from;
-  const maxSpan = bounds.to - bounds.from;
-  const nextSpan = Math.min(maxSpan, Math.max(MIN_SPAN_MS, span * factor));
-  const frac = span === 0 ? 0.5 : (atMs - w.from) / span;
-  return clampWindow({ from: atMs - frac * nextSpan, to: atMs + (1 - frac) * nextSpan }, bounds);
-}
-
-/** Shift the window by `byMs`, preserving its span. */
-export function panWindow(w: TimeWindow, byMs: number, bounds: TimeWindow): TimeWindow {
-  return clampWindow({ from: w.from + byMs, to: w.to + byMs }, bounds);
+  return `${spanShare(window, ms) * 100}%`;
 }
 
 /** Minimum gap between time ticks, in px — the ruler's and the graph grid's. */

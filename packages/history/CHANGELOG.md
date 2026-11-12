@@ -1,5 +1,21 @@
 # @weasel-js/history
 
+## 1.19.0
+
+### Patch Changes
+
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

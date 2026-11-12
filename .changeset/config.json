@@ -17,6 +17,7 @@
       "@weasel-js/gestures",
       "@weasel-js/history",
       "@weasel-js/ui-logic",
+      "@weasel-js/ui-input",
       "@weasel-js/menu",
       "@weasel-js/quantity",
       "@weasel-js/simulation",

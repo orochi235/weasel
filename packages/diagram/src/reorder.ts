@@ -12,6 +12,7 @@ import {
   type Action,
   type ActionDeps,
   type Contribution,
+  type FeaturePreset,
   type GestureBinding,
   type InvocationCtx,
   type OngoingHandle,
@@ -20,7 +21,7 @@ import {
   type Vec2,
 } from '@weasel-js/core';
 import { rectContainsPoint, maxOf, minOf } from '@weasel-js/geom';
-import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-logic';
+import { isNoopDrop, moveItems, nearestGap } from '@weasel-js/ui-input';
 import { carriedBy, slideOthers, type Box } from './reorderSlide';
 
 /** The action that drags an item of a sequence to another place in it. */
@@ -252,5 +253,23 @@ export function reorderContribution(opts: ReorderOptions & { on?: TargetPredicat
     eligibility: { always: true },
     actions: [createReorderAction({ ...opts, id: actionId })],
     bindings: [reorderBinding(actionId, opts.on)],
+  };
+}
+
+/**
+ * The reorder as a preset, to pass in `features` beside `move`: its drag is
+ * tried ahead of the move's on the same press, so a press on an item reorders
+ * and one anywhere else moves, and a drag carried out of `region` hands off
+ * to the move. Passed as `ambient` instead, the move takes every press first.
+ */
+export function reorderPreset(opts: ReorderOptions & { on?: TargetPredicate }): FeaturePreset {
+  const { actions = [], ...entry } = reorderContribution(opts);
+  return {
+    id: entry.id,
+    label: opts.label ?? 'Reorder',
+    refines: ['move'],
+    // The move's own rule: an action with one is ranked ahead of one without, whatever order they register in.
+    actions: actions.map((a) => (a.id === (opts.id ?? REORDER_ACTION_ID) ? { ...a, eligible: { capability: 'transforms-selection' } } : a)),
+    ambient: () => entry,
   };
 }

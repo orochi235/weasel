@@ -32,18 +32,20 @@ export function mergeContributions<T extends { id: string; start?: boolean }>(
  * Drop contributions by id. Throws when an id is not present: a typo that
  * silently suppresses nothing is the same class of bug as a duplicate id
  * silently winning. `transient` names ids that are legitimately absent at
- * times — contributed only while some runtime state holds.
+ * times — contributed only while some runtime state holds. `verb` names the
+ * option in that error.
  */
 export function suppressContributions<T extends { id: string }>(
   bundle: readonly T[],
   ids: readonly string[],
   transient: ReadonlySet<string> = new Set(),
+  verb = 'suppress',
 ): T[] {
   const present = new Set(bundle.map((c) => c.id));
   for (const id of ids) {
     if (!present.has(id) && !transient.has(id)) {
       throw new Error(
-        `[labkit] cannot suppress "${id}": no contribution with that id. ` +
+        `[labkit] cannot ${verb} "${id}": no contribution with that id. ` +
           `Present ids: ${[...present].join(', ')}`,
       );
     }

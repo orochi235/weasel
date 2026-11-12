@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactElement, type ReactNode, type Ref } from 'react';
 import {
-  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart, type ButtonSize as HeadlessButtonSize,
-  type HeadlessComponent,
+  buttonParts, measureButton, type ButtonFace, type ButtonLayout, type ButtonPart,
+  type ButtonSize as HeadlessButtonSize, type HeadlessComponent,
 } from '@weasel-js/ui-logic';
 import { nodeText } from '../../nodeText';
 import type { DomTarget } from '../../domMeasureEnv';

@@ -10,7 +10,7 @@ import { useLatest, useVisibleRaf } from '@weasel-js/react';
 import type { ResolvedTextStyle, TextStyle } from '@weasel-js/text';
 import { numericWeight, resolveRunFace, resolveTextStyle } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
-import { editEnd, imeKey } from '@weasel-js/ui-logic';
+import { editEnd, imeKey } from '@weasel-js/ui-input';
 import type { StyledRun } from '@weasel-js/text';
 import { charOffsetToDomPosition, domToRuns, type OverlayRunBase } from './domRuns';
 import {

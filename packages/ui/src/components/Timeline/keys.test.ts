@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/animator';
-import { deleteKey, insertKey, moveKey, setKeyEasing, setKeyValue, snapTime } from './keys';
+import { deleteKey, insertKey, moveKey, setKeyEasing, setKeyValue } from './keys';
 
 const track = (ts: number[]): Track => ({
   kind: 'sampled',
@@ -122,24 +122,6 @@ describe('setKeyValue', () => {
   it('writes the value without moving the key', () => {
     const r = setKeyValue([track([0, 100])], { trackPath: [0], keyIndex: 1 }, 42);
     expect((r[0] as SampledTrack<number>).keys[1]).toMatchObject({ t: 100, value: 42 });
-  });
-});
-
-describe('snapTime', () => {
-  it('snaps to a candidate inside the tolerance', () => {
-    expect(snapTime(103, [0, 100, 200], 6)).toBe(100);
-  });
-
-  it('leaves a time outside the tolerance alone', () => {
-    expect(snapTime(150, [0, 100, 200], 6)).toBe(150);
-  });
-
-  it('picks the nearest of two candidates in range', () => {
-    expect(snapTime(98, [95, 100], 6)).toBe(100);
-  });
-
-  it('returns the time unchanged with no candidates', () => {
-    expect(snapTime(150, [], 6)).toBe(150);
   });
 });
 

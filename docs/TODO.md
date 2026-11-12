@@ -349,9 +349,23 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
-- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-logic) compares
+- **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
+  iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
+  and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
+  avoids it (iconfab's README, "Known problems", 2026-11-11). Reported by the agent that built the lab and
+  not yet reproduced in weasel. Closes when a labkit test mounting 100 targets in one commit renders without
+  the error and iconfab drops its batching.
+- **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
+  stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
+  scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
+  frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
+- **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
+  target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
+  screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
+
+- **(P3) [agent] Typeahead misses a label ending in capital sigma.** `typeaheadMatch` (ui-input) compares
   lowercased text, and `Σ` lowercases to `ς` at a word's end, so typing `ασ` never lands on `ΑΣ`. registry's
-  `matchQuery` folds the two sigmas since 2026-11-10; ui-logic does not depend on registry, so the fold needs one
+  `matchQuery` folds the two sigmas since 2026-11-10; ui-input does not depend on registry, so the fold needs one
   home both read rather than a second copy (2026-11-10). Closes when both fold through one definition and a
   typeahead test lands `ασ` on `ΑΣ`.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
@@ -391,6 +405,14 @@ Owner tags, after the priority (2026-10-26):
   disabled.
   Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
   fades when disabled also desaturates.
+
+- **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
+  `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
+  plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's
+  tube lab: a 259px strip with a 140px sidebar put a 160px content pane at x=141), then slides it 41px left
+  once the floors arrive. Since `watchElementMove` reports that slide, surfaces follow it; what is left is the
+  visible jump at load. Closes when a browser test mounts a 260px `TrialBody` with `width={140}` and finds the
+  content inside the strip on its first painted frame.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -637,6 +659,14 @@ only story runner in the repo.
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) [agent] The site dev server dies on its first edit to a workspace package.** Saving a file
+  under `packages/core/src` logs `re-bundling workspace packages: <file>` (`scripts/vite-prebundle.ts`),
+  then `transport was disconnected, cannot call "fetchModule"` against `scripts/vite-wake.ts` and
+  `server restart failed`. The server keeps answering, but with the code from before the edit, so a
+  browser check after a package change passes or fails on stale source. Seen twice in a row on `npx vite`
+  at `bb2b7ec72` (2026-11-11). Suspect `68004a234`, which reloads the dev config through vite's module
+  runner on this restart.
 
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,

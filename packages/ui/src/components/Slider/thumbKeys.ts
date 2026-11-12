@@ -1,5 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { sliderKey } from '@weasel-js/ui-logic';
+import { sliderKey } from '@weasel-js/ui-input';
 import { resolveBounds } from './stops';
 import type { SliderProps, Thumb } from './types';
 

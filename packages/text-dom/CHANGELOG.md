@@ -1,5 +1,106 @@
 # @weasel-js/text-dom
 
+## 1.19.0
+
+### Patch Changes
+
+- d13b757: Styling armed at a collapsed caret can take styling off: Cmd+B at the end of a bold word types the next character without bold.
+  
+  The same goes for Cmd+Shift+- at the end of a subscript or a panel clearing a size there, and `effectiveStyle` shows it off. `pendingStyle` may now hold a key as `false` or `undefined`, meaning the next character takes it off.
+  
+  <!-- entry: fix api -->
+- b1309b2: An armed bold or weight lands as a direct write would.
+  
+  Bold armed after a light `fontWeight` run drops the weight, and a weight armed after bold drops the flag.
+  
+  <!-- entry: rank=-5 fix -->
+- 356d4ec: Typing at the start of a line held by a hard break other than a line feed, such as U+2028 or a form feed, keeps that break as it was.
+  
+  <!-- entry: rank=-5 fix -->
+- 45e74c7: A run's `fontScale` passes through the edit overlay unchanged, so `0.07` stays `0.07`.
+  
+  <!-- entry: rank=-5 fix -->
+- e2f8e0e: The edit overlay's `text-align` holds under css-text-4, where `text-align` is a shorthand that resets `text-align-last`.
+  
+  <!-- entry: rank=-5 fix -->
+- 2c2d663: Editing a text node keeps all the styling its runs held.
+  
+  The overlay keeps a run's `fontScale` beside an absolute `fontSize`, its `bold` beside its own `fontWeight`, and a solid fill's color exactly as written, even one the browser cannot parse. Each is held in an attribute on the run's span and read back as written.
+  
+  <!-- entry: fix -->
+- a69a38c: A character typed in the edit overlay takes the styling `rangeStyle` reports at the caret, so a word typed after Cmd+B is bold throughout.
+  
+  Pressing the shortcut again ends it. A caret between two run spans types in the style of the run before it.
+  
+  <!-- entry: fix -->
+- 0866208: A text node with `overflow: 'clip'`, such as a sticky note, scrolls its text inside its box while it is edited.
+  
+  The wheel scrolls it, and a caret moved out of view by the arrow keys, typing, a click or select-all brings it back. The box, and the paper the canvas paints there, stays put. The edit opens scrolled to where `verticalAlign` puts the text on the canvas, so a bottom-aligned note opens on its last line, and the scroll ends with the edit. `TextEditScreenPose.clip` asks for this, so any `useTextEdit` host gets it.
+  
+  <!-- entry: new api -->
+- Updated dependencies [93ed93d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [3932826]
+- Updated dependencies [2595ad3]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [433a5ad]
+- Updated dependencies [c913ef0]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [20c4979]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [c3dc307]
+- Updated dependencies [44aa42f]
+- Updated dependencies [a612a95]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [10199c0]
+- Updated dependencies [644c5c7]
+- Updated dependencies [521cab5]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [7b56e88]
+- Updated dependencies [279a193]
+- Updated dependencies [521cab5]
+- Updated dependencies [76da952]
+- Updated dependencies [228d835]
+- Updated dependencies [521cab5]
+- Updated dependencies [e198aad]
+- Updated dependencies [7dd964d]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+  - @weasel-js/ui-input@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/react@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/text-dom",
-  "version": "1.18.2",
+  "version": "1.19.0",
   "description": "In-place text editing over a canvas: a contenteditable overlay that reads and writes styled runs, with range styling, caret mapping and font-load handling. A React hook; no scene graph.",
   "weasel": {
     "tier": "base"
@@ -22,11 +22,11 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/font": "1.18.2",
-    "@weasel-js/ui-logic": "1.18.2",
-    "@weasel-js/paint": "1.18.2",
-    "@weasel-js/react": "1.18.2",
-    "@weasel-js/text": "1.18.2"
+    "@weasel-js/font": "1.19.0",
+    "@weasel-js/paint": "1.19.0",
+    "@weasel-js/react": "1.19.0",
+    "@weasel-js/text": "1.19.0",
+    "@weasel-js/ui-input": "1.19.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

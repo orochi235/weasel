@@ -12,9 +12,9 @@ import { cubicBezierEasing, resolveEasing } from '@weasel-js/core';
 import { type EasingFn, type Keyframe } from '@weasel-js/animator';
 import { Diamond } from './Diamond';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
-import { arrowMove } from '@weasel-js/ui-logic';
+import { arrowMove, attract } from '@weasel-js/ui-input';
 import { handleHalf } from '../../handles';
-import { snapRadiusPx as kitSnapRadiusPx, snapToNearest } from '../../snap';
+import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
 import s from './CurveEditor.module.css';
 import type {
   CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx, PlotPoint,
@@ -310,7 +310,7 @@ export function createKeyframeLayer(cfg: KeyframeLayerConfig = {}): CurveLayer<K
         let t = clampTo(model.x, cfg.xClamp);
         if (cfg.snapX && !e.altKey) {
           const perPx = (ctx.modelRange.xMax - ctx.modelRange.xMin) / ctx.plotSize.width;
-          t = clampTo(snapToNearest(t, cfg.snapX, Math.abs(perPx) * snapRadiusPx(ctx)), cfg.xClamp);
+          t = clampTo(attract(t, cfg.snapX, Math.abs(perPx) * snapRadiusPx(ctx)), cfg.xClamp);
         }
         return { ...state, drag: { kind: 'key', index, t, value: clampTo(model.y, cfg.yClamp) } };
       },

@@ -11,6 +11,7 @@ import {
   type Action,
   type ActionsProp,
   type Contribution,
+  type FeaturePreset,
   type RectPose,
   type RenderLayer,
   type Scene,
@@ -25,7 +26,7 @@ import type { DiagramSpec } from './dataTypes';
 import type { ParticipantSource } from './portAffordance';
 import { portLayer } from './portLayer';
 import { diagramEdgeEnds, type EndChange } from './reconnect';
-import { groupReorderContribution } from './groupReorder';
+import { groupReorderPreset } from './groupReorder';
 import { regionEditing } from './regionEditing';
 import type { ContainerEdit } from './regionSync';
 import { dataKeyReader } from './trait';
@@ -143,6 +144,8 @@ export interface DiagramEditing {
   /** In registration order: the last is hit first. */
   layers: readonly RenderLayer<unknown>[];
   ambient: readonly Contribution[];
+  /** Presets to pass in `features`, beside the view's own. */
+  presets: readonly FeaturePreset[];
   actions: ActionsProp;
 }
 
@@ -217,7 +220,7 @@ export function useDiagramEditing(
       }
     : null, [labels, report]);
   const reorder = useMemo(
-    () => (reorders ? groupReorderContribution((change) => report.current.onReorder?.(change)) : null),
+    () => (reorders ? groupReorderPreset((change) => report.current.onReorder?.(change)) : null),
     [reorders, report],
   );
   const regions = useMemo(() => (regionEdits ? regionEditing(scene, selected, report) : null), [regionEdits, scene, selected, report]);
@@ -245,10 +248,11 @@ export function useDiagramEditing(
   const extra = props.ambient;
   const ambient = useMemo(() => [
     ...AMBIENT,
-    ...[ports?.contribution, route?.contribution, ends?.contribution, labelDrag?.contribution, label, reorder, sequence?.contribution]
+    ...[ports?.contribution, route?.contribution, ends?.contribution, labelDrag?.contribution, label, sequence?.contribution]
       .filter((c): c is Contribution => c != null),
     ...(regions?.contributions ?? []),
     ...(extra ?? []),
-  ], [ports, route, ends, labelDrag, label, reorder, sequence, regions, extra]);
-  return { layers, ambient, actions };
+  ], [ports, route, ends, labelDrag, label, sequence, regions, extra]);
+  const presets = useMemo(() => (reorder === null ? [] : [reorder]), [reorder]);
+  return { layers, ambient, presets, actions };
 }

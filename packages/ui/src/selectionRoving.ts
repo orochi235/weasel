@@ -1,7 +1,7 @@
-import { selectionKeys, type SelectionModel } from '@weasel-js/ui-logic';
+import { selectionKeys, type SelectionModel } from '@weasel-js/ui-input';
 import type { UseRovingTabIndexOptions } from './useRovingTabIndex';
 
-/** The `useRovingTabIndex` options for `model`'s keyboard behavior (ui-logic's `selectionKeys`). */
+/** The `useRovingTabIndex` options for `model`'s keyboard behavior (ui-input's `selectionKeys`). */
 export function selectionRoving(
   model: SelectionModel,
   count: number,

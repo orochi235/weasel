@@ -1,5 +1,5 @@
 import { matchQuery } from '@weasel-js/registry';
-import { arrowDir } from '@weasel-js/ui-logic';
+import { arrowDir } from '@weasel-js/ui-input';
 import type { IconEntry } from '@weasel-js/icons';
 
 export interface IconGroup {

@@ -1,5 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
-import { arrowSteps } from '@weasel-js/ui-logic';
+import { arrowSteps } from '@weasel-js/ui-input';
 import { clamp01 } from '@weasel-js/geom';
 
 /** One arrow-key step, as a fraction of the track. */

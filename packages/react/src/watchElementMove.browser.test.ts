@@ -85,6 +85,40 @@ describe('watchElementMove', () => {
     await expect.poll(() => onMove.mock.calls.length).toBeGreaterThan(before);
   });
 
+  // A sidebar settling narrower slides the pane beside it this way: the part an ancestor clipped comes into view as
+  // the box moves, so the clipped box overlaps its old frame exactly as much as before.
+  it('reports a move that brings the part a clipping ancestor hid into view', async () => {
+    page = document.createElement('div');
+    page.innerHTML =
+      '<div style="width:250px;height:100px;overflow:hidden;position:relative">' +
+      '<div style="position:absolute;left:100px;top:0;width:200px;height:100px"></div></div>';
+    document.body.appendChild(page);
+    const box = page.firstElementChild!.firstElementChild as HTMLDivElement;
+    const onMove = vi.fn();
+    stop = watchElementMove(box, onMove);
+    await baseline();
+    await baseline();
+    onMove.mockClear();
+    box.style.left = '50px';
+    await expect.poll(() => onMove.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('stays quiet for a still element a clipping ancestor partly hides', async () => {
+    page = document.createElement('div');
+    page.innerHTML =
+      '<div style="width:250px;height:100px;overflow:hidden;position:relative">' +
+      '<div style="position:absolute;left:100px;top:0;width:200px;height:100px"></div></div>';
+    document.body.appendChild(page);
+    const box = page.firstElementChild!.firstElementChild as HTMLDivElement;
+    const onMove = vi.fn();
+    stop = watchElementMove(box, onMove);
+    await baseline();
+    await baseline();
+    onMove.mockClear();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
   it('stays quiet for a still element at a fractional, transformed position', async () => {
     const { box } = await mount();
     page!.style.cssText = 'transform: translate(3.3px, 7.7px) scale(1.37); transform-origin: 0 0';

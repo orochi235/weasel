@@ -1,5 +1,105 @@
 # @weasel-js/geom
 
+## 1.19.0
+
+### Patch Changes
+
+- aaeec8d: `invert` returns null for an affine whose translation is `NaN` or infinite, as the 3D `invert` already did.
+  
+  <!-- entry: rank=-5 fix -->
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 8c4c266: Path booleans no longer throw `Unable to complete output ring` when two inputs have vertices a rounding error apart. When `polygon-clipping` throws, the operation reruns with coordinates snapped to a grid scaled to the inputs, finest first and never coarser than the kernel's `EPS`.
+  
+  <!-- entry: fix -->
+- 6ae419d: `boundsOfPath` includes the origin a path with no opening `M` is drawn from, so its bounds cover the stroke the renderer draws.
+  
+  <!-- entry: rank=-5 fix -->
+- f8a6830: Extend to next path is not enabled for an end that already touches a stroke, so it no longer records an undo step that changes nothing. `extendToMeet` reports no meet from such an end.
+  
+  <!-- entry: fix -->
+- 9ec70fe: A box remap from a box of subnormal width or height keeps that axis's scale, as one from a box of no extent does.
+  
+  The rule is geom's new export `extentScale(from, to)`, which `boxToBox`, core's rect pose descriptor, and `remapRotatedLeaf` all read.
+  
+  <!-- entry: rank=-5 fix api -->
+- d09a6c1: `fitAffine` judges whether its points are distinct against their own scale. One point repeated far from the origin answers null, and distinct points with tiny coordinates are fitted.
+  
+  <!-- entry: rank=-5 fix -->
+- 42e088a: The 3D `invert` gives an affine matrix an inverse whose bottom row is exactly `0, 0, 0, 1`, so the inverse stays affine and inverts back.
+  
+  <!-- entry: rank=-5 fix -->
+- 214a57e: `resolveSnap` and the snap flats under it keep a direction whose squared length leaves the double range, such as `[1e-300, 0]` or `[1e200, 0]`. The flats are `orthonormalize`, `solveLeastSquares` and everything built on them; a line locus with such a direction no longer snaps as a point.
+  
+  <!-- entry: rank=-5 fix -->
+- 8a41dc2: `intersectSegments` reports every crossing's parameters inside 0..1, including one at the very end of a short curve.
+  
+  <!-- entry: rank=-5 fix -->
+- 433a5ad: `mergeRegion` keeps an edge two contours share once, so a stroke no longer traces lines inside a merged fill. It also merges a contour drawn twice into one, welds corners within its snap of each other, and drops the zero-width spike two nearly tangent curves leave. Synthetic-bold outlines from `textToPath` and `textClusters` merge their glyphs this way, so they stroke only along the glyph's edge.
+  
+  <!-- entry: fix visual -->
+- b1309b2: `@weasel-js/geom` adds `minOf` and `maxOf`, the least or greatest of a list of any length. Each answers as spreading the list into `Math.min` or `Math.max` does (`Infinity` or `-Infinity` for none, `NaN` for any `NaN`), but from a loop, so it never overflows the call stack, and optionally through a function of each item.
+  
+  <!-- entry: new api -->
+- 01e5634: `nearestOnCubic` finds the true nearest point beside a fold in the curve or an end whose handle sits on its anchor. `nearestOnQuadratic` and `nearestOnPath` do too, through it.
+  
+  <!-- entry: rank=-5 fix -->
+- 4ecaf12: The 3D `normalize` maps a vector along an axis to exactly that axis. So kernel3d's `planeBasis`, and the ground grid built on it, line up exactly with the world axes for an `up` that is not unit length, and grid snaps land on their grid values.
+  
+  <!-- entry: fix -->
+- 3ed07dc: The 3D `normalize` gives a unit vector for one whose squared length is subnormal, such as `(0, 0, 2.4e-155)`.
+  
+  <!-- entry: rank=-5 fix -->
+- 25b09cf: `@weasel-js/geom` exports the `{ "__raw": … }` wrapper that keeps lookalike values from being misread on load. `isRawWrapper` and the `RawWrapper` type test for it, and `typedArrayReplacerWrapping` is a `JSON.stringify` replacer that also wraps whatever values a caller's own reader would misread. `typedArrayReplacer` is that replacer with nothing extra to wrap. `@weasel-js/editor`'s `serializeReplacer` and `reviveTypedArrays` build on these.
+  
+  <!-- entry: api -->
+- 867f10c: A pointer within reach of a guide snaps to it even when a grid line across it would pull it just out of reach. The grid then holds only the other axis: `resolveSnap` measures a target's reach where the targets alone move the probe.
+  
+  <!-- entry: fix -->
+- d5a83f9: `@weasel-js/geom` exports `tokenizePathData(d)`, the SVG path-data reader behind `pathFromD`.
+  
+  It gives each command's letter as written and its numbers, reading an exponent's `e` as part of a number, `.5` and `1.5.5` as SVG reads them, and an arc's flags without a separator.
+  
+  <!-- entry: api -->
+- 799636f: `pathToD` and `serializeSvg` write coordinates past about 1e302 as numbers, not `Infinity`. `trimNumber` writes such a number as the number it is.
+  
+  <!-- entry: rank=-5 fix -->
+- c09afdf: `reviveTypedArrays` reads back a plain object shaped like a tagged typed array or a `{ "__raw": … }` wrapper as that plain object. `tagTypedArrays` and `typedArrayReplacer` write such an object inside a `{ "__raw": … }` wrapper, the one `@weasel-js/editor`'s snapshots already use, which `reviveTypedArrays` takes off without reading into what it holds. Everything else is written exactly as before, so older files read the same, unless one holds a plain object whose only key is `__raw`. `sceneToWire` in `@weasel-js/headless` still takes a snapshot whose arrays are already tagged.
+  
+  <!-- entry: fix data -->
+- e36ca03: `tagTypedArrays` and `reviveTypedArrays` copy an object's own `__proto__` field as a field. An animator clip's key value keeps it through `bindClip`.
+  
+  <!-- entry: rank=-5 fix -->
+- d83feb6: `intersectSegments` finds crossings on the part of a curve that runs past its chord's ends when its control points lie on the chord's line.
+  
+  <!-- entry: fix -->
+- 7a7c2ef: `portControls` and `portCurvePoints` stay finite between ends whose distance, or its square, passes the double range.
+  
+  <!-- entry: rank=-5 fix -->
+- f718790: `pathIntersectsRect` counts a rect touching a `rect` path's edge as intersecting, as it does for the same shape written as a polygon.
+  
+  <!-- entry: rank=-5 fix -->
+- f0c159d: Repeat Along lays its copies end to end along the path, so a saved document's repeats land in new places.
+  
+  Each copy is as long along the path as the shape is wide. A count with no spacing puts the first copy's start at the path's start and the last copy's end at its end, rather than centering them on the ends, and `spacing` is the gap between one copy's end and the next one's start, not between their centers. On an open path a copy that `offset` slides partly off an end is kept; one slid wholly off is dropped. `stationsAlongPath` takes the copies' length as a third argument, 0 by default.
+  
+  <!-- entry: rank=10 behavior data visual api -->
+- 886642a: `pointAtLength` at the end of a curve whose handle there is retracted gives the curve's own direction, not its chord's.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `runPlaces` and `placeAlongRun` no longer mark an item laid to meet a run's end exactly as past it.
+  
+  <!-- entry: rank=-5 fix -->
+- eaff448: `simplifyPath` folds short straight pieces running in line with a long straight into it.
+  
+  `offsetPath` (`@weasel-js/stroke`) refits through it, so a mitered offset of a shape whose sides are not axis-aligned has one anchor per corner.
+  
+  <!-- entry: fix -->
+- b1309b2: A typed array's `NaN`, `Infinity`, `-Infinity` and `-0` survive a JSON round trip through `tagTypedArrays`, which writes them by name. Files saved before still read as they did. An animation clip still refuses a typed array holding a non-finite number.
+  
+  <!-- entry: fix data -->
+
 ## 1.18.2
 
 No changes in this release.

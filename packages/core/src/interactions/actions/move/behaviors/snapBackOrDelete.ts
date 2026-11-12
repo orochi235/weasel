@@ -15,7 +15,8 @@ const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
  * release inside `radius` and every dragged node returns to its original
  * pose; release outside it and they all either spring back anyway or are
  * deleted, per `onFreeRelease`. The distance is the first dragged node's. A
- * deletion is recorded as undoable ops with paint order preserved.
+ * deletion is recorded as undoable ops with paint order preserved. An Alt-drag
+ * clone released anywhere but a snap target makes no copy.
  */
 export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
   radius: number;
@@ -44,6 +45,7 @@ export function snapBackOrDelete<TPose>(args: {
   const r2 = radius * radius;
 
   return {
+    clone: { onEnd: (ctx) => (ctx.snap ? undefined : null) },
     onStart(ctx) {
       // Snapshot the dragged objects + their z-indexes at gesture start so
       // delete can undo with paint order intact.

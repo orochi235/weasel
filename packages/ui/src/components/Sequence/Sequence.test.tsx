@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { range, until, values } from '@weasel-js/ui-logic';
+import { range, until, values } from '@weasel-js/ui-input';
 import { Sequence } from './Sequence';
 
 describe('Sequence', () => {

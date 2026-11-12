@@ -1,5 +1,32 @@
 # @weasel-js/icons
 
+## 1.19.0
+
+### Patch Changes
+
+- 3b3289a: The icon registry no longer notifies subscribers when `add` gets an empty list or `provideVariants` names only variants it already knows. `entries()` keeps its array, and a `useSyncExternalStore` reader does not re-render.
+  
+  <!-- entry: rank=-5 fix perf -->
+- fbb67d5: The icon registry's `add` throws a `TypeError` for a batch holding a malformed table, before registering any of it.
+  
+  A table needs a string namespace, a string owner, and an object of icons.
+  
+  <!-- entry: fix -->
+- 68383ed: A subscriber that retries a failed icon variant from the registry's failure notice starts a fresh load.
+  
+  <!-- entry: fix -->
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

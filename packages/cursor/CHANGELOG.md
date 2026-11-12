@@ -1,5 +1,87 @@
 # @weasel-js/cursor
 
+## 1.19.0
+
+### Patch Changes
+
+- c0845c1: `@weasel-js/cursor` adds `brushRing(radius, unit)`, the `brush` ring cursor at a radius in screen px. With `unit` set to `'world'`, the radius is in world units and the ring follows the zoom.
+  
+  `brushRingCursor` is gone from `@weasel-js/path-tools`; call `brushRing` instead.
+  
+  <!-- entry: breaking api -->
+- cd3e070: A baked cursor draws at the default size 24 when its size is not a finite positive number. `bakeCursor` and `cursorFor` also keep `NaN` out of the image and hotspot of a cursor turned by an angle near the double range, and `cursorWorldSize` stays finite wherever the ring's size on screen is.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `brushRing` draws a brush too small to round to a pixel at one pixel, rather than at the default 24.
+  
+  <!-- entry: fix visual -->
+- 998e8d4: `haloFitsInBox` and `rotationFitsInBox` read path numbers as SVG does: an exponent (`24e-1`), `.5`, and `1.5.5` all read correctly.
+  
+  <!-- entry: rank=-5 fix -->
+- c841997: `cursorFor` throws for a mark named `''` every time, as it does for any unknown mark.
+  
+  <!-- entry: rank=-5 fix -->
+- 253abc5: `cursorFor` throws a `RangeError` for a size of `Infinity`, as `bakeCursor` does for any size past the 128 px cap.
+  
+  <!-- entry: rank=-5 fix -->
+- 97e890d: A baked cursor's hotspot stays inside its image at a size that is not a whole number of pixels.
+  
+  <!-- entry: rank=-5 fix -->
+- 87c8ed0: `placeCursorPath` reads an arc whose flags have no separator (`A 5 5 0 015 5`) as SVG reads it.
+  
+  `@weasel-js/cursor` now depends on `@weasel-js/geom`, and reads and writes path data through geom's `tokenizePathData` and `trimNumber`.
+  
+  <!-- entry: fix -->
+- e3481a9: `placeCursorPath` throws a `RangeError` for a scale or move that puts a coordinate past the double range or makes it `NaN`.
+  
+  A coordinate past 1e306 is written as itself.
+  
+  <!-- entry: rank=-5 fix -->
+- 55f85bb: The painted-cursor store treats a `NaN` angle, size, radius, or pointer coordinate written again as no change, and does not notify.
+  
+  <!-- entry: rank=-5 fix -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [d83feb6]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [eaff448]
+- Updated dependencies [b1309b2]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

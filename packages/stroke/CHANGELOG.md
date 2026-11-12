@@ -1,5 +1,83 @@
 # @weasel-js/stroke
 
+## 1.19.0
+
+### Patch Changes
+
+- 63edf95: An arrowhead on a slanted edge is no longer culled while its tip is on screen, and its node's grab reach and paint box cover it.
+  
+  `markerReach` now measures how far a marker head reaches in any direction, not along its own axes.
+  
+  <!-- entry: fix visual -->
+- 77cc6e1: The width tool finds the right edge on a path measured from an `origin`.
+  
+  `strokeEdgeNear` measures such a path where its line is, and an inner or outer stroke reads its inked side from the right point.
+  
+  <!-- entry: fix -->
+- afa1429: A round- or square-capped dot more than 2^53 units from the origin is drawn instead of throwing from `tessellateStroke`.
+  
+  <!-- entry: rank=-5 fix -->
+- 582dfcb: A `{ px }` stroke under an infinite scale keeps its dashes, rather than drawing solid.
+  
+  Its dashes and dash offset resolve as its width does, left as given, in `strokeAtScale`, `strokeToPath` and the renderer.
+  
+  <!-- entry: rank=-5 fix visual -->
+- 5bc9b94: A `{ px }` stroke's per-vertex widths draw at their true size under a transform that stretches one axis more than the other.
+  
+  `populatePolylineWidths` given a `scale` splits each corner into two coincident points, one per edge, as a nib already does.
+  
+  <!-- entry: fix visual -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [d83feb6]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f0c159d]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [eaff448]
+- Updated dependencies [b1309b2]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

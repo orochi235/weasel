@@ -1,5 +1,147 @@
 # @weasel-js/p-touch
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 461d89c: `writeLbx` writes no object whose position, points, or pen width is not finite, and rasterizes that command instead.
+  
+  `lbxObjects` placed at such a position are skipped with a reason.
+  
+  <!-- entry: fix data -->
+- 3dd633d: `writeLbx`, `lbxConfig`, and `sceneToLbx` throw a `RangeError` for a label `length` that is not a positive finite number of points.
+  
+  <!-- entry: fix -->
+- 7ea29d9: The `.lbx` writer writes every hard line break in a text box as one line feed, so it reads back as one line. That covers `\r\n`, `\r`, U+2028 and the rest UAX #14 names.
+  
+  <!-- entry: fix data -->
+- b1309b2: The `.lbx` writer rasterizes text XML cannot hold, and a font named with a tab or a break, rather than writing it changed. Without a rasterizer it is reported skipped.
+  
+  <!-- entry: fix data -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [2595ad3]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [c5202b9]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [742cdbd]
+- Updated dependencies [fe51713]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [056d901]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [33bca4e]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [043db55]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [eaff448]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [3bedaa8]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [582dfcb]
+- Updated dependencies [204596e]
+- Updated dependencies [c3dc307]
+- Updated dependencies [2a9727c]
+- Updated dependencies [521bc15]
+- Updated dependencies [997e4f3]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [4224853]
+- Updated dependencies [4e6aad8]
+- Updated dependencies [01b996e]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [038a0da]
+- Updated dependencies [6999cce]
+- Updated dependencies [4d16c8a]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/renderer@1.19.0
+  - @weasel-js/text@1.19.0
+  - @weasel-js/dither@1.19.0
+  - @weasel-js/paint@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

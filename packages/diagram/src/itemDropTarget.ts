@@ -5,7 +5,7 @@
  */
 import { nodeOutline, type Bounds, type NodeId, type OngoingOverlay, type RectPose, type Scene, type Vec2 } from '@weasel-js/core';
 import { asPolygonPath, flatSubpaths } from '@weasel-js/geom';
-import { nearestGap } from '@weasel-js/ui-logic';
+import { nearestGap } from '@weasel-js/ui-input';
 import { bodyAt } from './connectTargets';
 import { diagramDropParentAt, type DropParentScene } from './containers/canDropInto';
 import { diagramContainerOf } from './containers/trait';

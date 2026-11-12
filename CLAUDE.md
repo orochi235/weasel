@@ -103,34 +103,20 @@ if it clears the bar in "Comment sparingly" below: not derivable from the code,
 still true, and costly to rediscover. Verify it against the tree before writing
 it down — most such lessons cite paths that have since moved.
 
-## Releases: always write `patch`
+## Releases: honest changeset levels, the release level set when versioning
 
-**Every changeset you write is `patch`.** Not `minor`, not `major` — regardless
-of how significant the change is, whether it adds API, or what semver would
-say. `minor` and `major` are Mike's calls, made explicitly, in the message
-where he makes them.
+**Write each changeset at the level semver gives the change**: `patch` for a fix,
+`minor` for new API, `major` for a breaking change. Never write a lower level to
+keep a release small (2026-11-11).
 
-Every package is in one changesets `fixed` group, so **one bump
-anywhere moves every package**. weasel is 1.0.0 as of 2026-08-12 — reached by
-accident, from two `major` changesets that sat in `.changeset/` for days until
-an unrelated release consumed them.
-
-`npm run check:bumps` enforces this and runs in CI and in the release workflow.
-The root `prepublishOnly` script runs it too, but only when someone types
-`npm run prepublishOnly`: the root package is private, so npm never fires it.
-Overriding it requires a marker at the end of the changeset body, naming the level it approves
-(never its first line, which the changelog shows as the entry's title):
-
-```
-<!-- bump-approved: minor: <who> — <why> -->
-<!-- bump-approved: major: <who> — <why> -->
-```
-
-The level is part of the marker on purpose: approving a `minor` must not
-authorize a later edit to `major`.
-
-**Writing that marker yourself defeats the entire mechanism.** Treat it like
-`git push` — it needs Mike's explicit OK in the conversation, every time.
+What a release ships as is chosen when versioning, not by the changesets:
+`npm run version-packages -- --bump <patch|minor|major>` sets every package's
+next version at that level, and is `patch` without the flag; each changelog
+entry stays under its own changeset's level. Every package is
+in one changesets `fixed` group, so one level moves every package; weasel reached
+1.0.0 by accident on 2026-08-12, from two `major` changesets an unrelated release
+consumed. So **`--bump minor` and `--bump major` are Mike's calls**, made in the
+message where he makes them, and never inferred from the changesets.
 
 If a change is genuinely breaking or genuinely additive, say so in the
 changeset *prose*. The words are what a reader acts on; the number can always

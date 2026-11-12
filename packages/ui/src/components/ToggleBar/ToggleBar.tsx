@@ -1,5 +1,5 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { selection, type MultipleSelection, type SingleSelection } from '@weasel-js/ui-logic';
+import { selection, type MultipleSelection, type SingleSelection } from '@weasel-js/ui-input';
 import { SegmentSweeper, SWEEP_INDEX_ATTR, useSweepGuard, type SegmentSweep } from '../segmentSweep';
 import s from '../segmentedControl.module.css';
 import { SegmentedRow, segmentClassName, segmentedTiling, segmentPlaceProps, type SegmentedGridProps } from '../segmentedRow';
@@ -68,7 +68,7 @@ export type ToggleBarProps<V extends string | number = string> =
  * `allowDeselect` is set, and its arrow keys move the selection with the
  * focus, as a radio group's do; `followsFocus: false` makes its segments
  * toggle buttons whose arrows only move focus, the way multiple mode's do,
- * with Space and Enter pressing the focused segment. Selection is ui-logic's
+ * with Space and Enter pressing the focused segment. Selection is ui-input's
  * `selection` model.
  */
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {

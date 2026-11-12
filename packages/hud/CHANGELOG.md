@@ -1,5 +1,261 @@
 # @weasel-js/hud
 
+## 1.19.0
+
+### Patch Changes
+
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 56e374e: `Hud.add` leaves a widget already in the HUD where it is, so adding it twice no longer draws it twice. `remove` then takes it out whole.
+  
+  <!-- entry: fix -->
+- c40e88c: A HUD button reports each press, hover and leave to the listeners it held when the report began. A listener that throws no longer stops the others hearing it or leaves the button drawn pressed; one that removes and re-adds itself while heard is not called again, and one added mid-report waits for the next.
+  
+  <!-- entry: fix -->
+- bdc5283: A HUD menu's text row moves and deletes by grapheme cluster, so the caret never lands inside an emoji or between a letter and its mark. The arrows, Backspace, Delete and a click all work this way; offsets stay code-point offsets.
+  
+  <!-- entry: fix -->
+- 80a52ef: A HUD menu color swatch that is not a hex color, such as `red`, reads checked only when it is the color the row holds.
+  
+  <!-- entry: rank=-5 fix visual -->
+- 9a6ff1e: A HUD stops passing a focus report on once a listener has moved focus past it, so later listeners hear only the newer focus. `attachMenuHost` keeps open a menu a focus listener just opened, and the live region, the accessibility mirror and the text input follow the widget that holds focus.
+  
+  <!-- entry: fix -->
+- 2ad3857: An `inset` box-shadow whose spread reaches past the middle of the box covers the whole box, as CSS draws it.
+  
+  <!-- entry: rank=-5 fix visual -->
+- c980c28: Detaching `attachMenuHost` while a menu is open gives focus back to the widget that held it before the menu opened, as closing the menu does.
+  
+  <!-- entry: rank=-5 fix -->
+- c785eff: A HUD's accessibility mirror gives every node a unique id, so `aria-activedescendant` no longer names the wrong row when keys contain `-`.
+  
+  <!-- entry: fix -->
+- 9cb19bc: A HUD menu's text row accepts a key that is a grapheme cluster of several code points, such as an emoji with a skin tone. Moving or deleting by a word in it stops at a cluster boundary.
+  
+  <!-- entry: fix -->
+- ed204a2: `createRect`, `createImage` and `createButton` refuse a width or height of `NaN`, as they refuse zero or negative ones.
+  
+  <!-- entry: rank=-5 fix -->
+- 57e4d05: A HUD window drag canceled where it began reports no move or resize and leaves its frame unchanged.
+  
+  <!-- entry: rank=-5 fix -->
+- c7dc1f3: A HUD window ignores a drag's move to a point that is not finite, and reports no content click for a release at one.
+  
+  <!-- entry: rank=-5 fix -->
+- 6c0bec5: A HUD window's `zoneAt` and `hitTest` treat a point that is not finite as outside the window, so a press there starts no drag.
+  
+  <!-- entry: rank=-5 fix -->
+- ebab03f: A shadow's spread rounds corners as CSS `box-shadow` does, so a square box casts a square shadow.
+  
+  This holds for `dropShadowLayers`, `dropShadowCommand` and a HUD's inset shadow. The rule is exported as `spreadRadius` from `@weasel-js/renderer` and `@weasel-js/core/renderer`.
+  
+  <!-- entry: fix visual api -->
+- 12f254e: A text node with a `background` can draw an `edge` and a `shadow`, and sticky notes have both by default.
+  
+  `edge` (`{ width, shade }`) is a rule just inside the box in the background's color mixed toward black, keeping the background's hue when it changes; `shadow` (`{ x, y, blur, alpha }`) draws under it. `textFrameOf` describes the frame once, and the canvas painter and the SVG export both draw from it. The renderer's new `dropShadowLayers` and `dropShadowCommand` build a shadow as stacked translucent shapes with no blur pass, and hud's `box-shadow` now draws through them.
+  
+  <!-- entry: rank=10 new api visual -->
+- Updated dependencies [0896b71]
+- Updated dependencies [aaeec8d]
+- Updated dependencies [bbfb059]
+- Updated dependencies [93ed93d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [3932826]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [0d828ef]
+- Updated dependencies [056d901]
+- Updated dependencies [a5c9cf0]
+- Updated dependencies [0717d38]
+- Updated dependencies [0dd9f6e]
+- Updated dependencies [88147f8]
+- Updated dependencies [e97950f]
+- Updated dependencies [874d96f]
+- Updated dependencies [1b65290]
+- Updated dependencies [309adac]
+- Updated dependencies [0a8d096]
+- Updated dependencies [4355423]
+- Updated dependencies [9ce04e0]
+- Updated dependencies [5bd979f]
+- Updated dependencies [ca98945]
+- Updated dependencies [b0e09ef]
+- Updated dependencies [9975edb]
+- Updated dependencies [88b4697]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [c913ef0]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [3b3289a]
+- Updated dependencies [fbb67d5]
+- Updated dependencies [68383ed]
+- Updated dependencies [a547bff]
+- Updated dependencies [a43fd34]
+- Updated dependencies [d83feb6]
+- Updated dependencies [14398f2]
+- Updated dependencies [98a2b04]
+- Updated dependencies [39c0d34]
+- Updated dependencies [f94df0d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [84e0536]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [994f696]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [8c040fd]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [337b676]
+- Updated dependencies [020f69a]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [faaeb54]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [b62813d]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [f718790]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [886642a]
+- Updated dependencies [a1911f5]
+- Updated dependencies [b1309b2]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [eaff448]
+- Updated dependencies [20c4979]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [6bd1b2b]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [44aa42f]
+- Updated dependencies [a612a95]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [33633eb]
+- Updated dependencies [8e8a341]
+- Updated dependencies [ac2ab9d]
+- Updated dependencies [c089fd1]
+- Updated dependencies [b7f10eb]
+- Updated dependencies [355a332]
+- Updated dependencies [ada22ef]
+- Updated dependencies [1379dff]
+- Updated dependencies [b4f5abf]
+- Updated dependencies [3c2cddd]
+- Updated dependencies [263aa62]
+- Updated dependencies [9f52075]
+- Updated dependencies [aa35a8f]
+- Updated dependencies [2c54d23]
+- Updated dependencies [1167180]
+- Updated dependencies [1b24a9a]
+- Updated dependencies [db86b0c]
+- Updated dependencies [fa2b6a2]
+- Updated dependencies [37e0907]
+- Updated dependencies [f7e4000]
+- Updated dependencies [9334505]
+- Updated dependencies [fcd1616]
+- Updated dependencies [54b81ce]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [10199c0]
+- Updated dependencies [b1309b2]
+- Updated dependencies [4e68e7c]
+- Updated dependencies [644c5c7]
+- Updated dependencies [521cab5]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [218974c]
+- Updated dependencies [8936d41]
+- Updated dependencies [7b56e88]
+- Updated dependencies [eace261]
+- Updated dependencies [644c5c7]
+- Updated dependencies [279a193]
+- Updated dependencies [521cab5]
+- Updated dependencies [76da952]
+- Updated dependencies [228d835]
+- Updated dependencies [521cab5]
+- Updated dependencies [e198aad]
+- Updated dependencies [7dd964d]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/ui-input@1.19.0
+  - @weasel-js/ui-logic@1.19.0
+  - @weasel-js/gestures@1.19.0
+  - @weasel-js/font@1.19.0
+  - @weasel-js/icons@1.19.0
+  - @weasel-js/theme@1.19.0
+  - @weasel-js/loupe@1.19.0
+  - @weasel-js/menu@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

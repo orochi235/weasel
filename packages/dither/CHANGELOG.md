@@ -1,5 +1,55 @@
 # @weasel-js/dither
 
+## 1.19.0
+
+### Patch Changes
+
+- 742cdbd: `ditherPixels` and `protectMask` return at once for an image with no pixels, however long its other side.
+  
+  <!-- entry: rank=-5 fix perf -->
+- fe51713: `protectMask` protects every pixel under a rect running from minus to plus infinity. `protectRects` makes such a rect of a large document rect on a fine grid.
+  
+  <!-- entry: rank=-5 fix -->
+- Updated dependencies [aaeec8d]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [8c4c266]
+- Updated dependencies [6ae419d]
+- Updated dependencies [c5202b9]
+- Updated dependencies [f8a6830]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [d09a6c1]
+- Updated dependencies [42e088a]
+- Updated dependencies [214a57e]
+- Updated dependencies [8a41dc2]
+- Updated dependencies [433a5ad]
+- Updated dependencies [b1309b2]
+- Updated dependencies [01e5634]
+- Updated dependencies [4ecaf12]
+- Updated dependencies [3ed07dc]
+- Updated dependencies [25b09cf]
+- Updated dependencies [867f10c]
+- Updated dependencies [d5a83f9]
+- Updated dependencies [799636f]
+- Updated dependencies [c09afdf]
+- Updated dependencies [e36ca03]
+- Updated dependencies [33bca4e]
+- Updated dependencies [d83feb6]
+- Updated dependencies [63edf95]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f718790]
+- Updated dependencies [f0c159d]
+- Updated dependencies [043db55]
+- Updated dependencies [886642a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ebab03f]
+- Updated dependencies [eaff448]
+- Updated dependencies [582dfcb]
+- Updated dependencies [204596e]
+- Updated dependencies [12f254e]
+- Updated dependencies [b1309b2]
+  - @weasel-js/geom@1.19.0
+  - @weasel-js/renderer@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

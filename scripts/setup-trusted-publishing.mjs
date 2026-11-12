@@ -21,7 +21,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { addPending, hasTrustedPublish, readPending, writePending } from './lib/first-publish.mjs';
+import { addPending, hasTrustedPublish, listsPublisher, readPending, writePending } from './lib/first-publish.mjs';
 import { fetchPackument } from './lib/registry.mjs';
 import { publishablePackageNames, repoRoot } from './lib/workspaces.mjs';
 
@@ -83,6 +83,19 @@ function selectPackages(all, named) {
   return [...new Set(chosen)];
 }
 
+/** Whether npm already lists this repository and workflow as `pkg`'s trusted publisher. */
+function registered(pkg) {
+  try {
+    const out = execFileSync(npmCmd.bin, [...npmCmd.prefix, 'trust', 'list', pkg], {
+      encoding: 'utf8',
+      stdio: ['inherit', 'pipe', 'inherit'],
+    });
+    return listsPublisher(out, slug, WORKFLOW);
+  } catch {
+    return false;
+  }
+}
+
 const argvIn = process.argv.slice(2);
 const args = new Set(argvIn);
 const dryRun = args.has('--dry-run');
@@ -138,8 +151,15 @@ for (const [i, pkg] of packages.entries()) {
     execFileSync(npmCmd.bin, argv, { stdio: 'inherit' });
     if (!listOnly) configured.push(pkg);
   } catch {
-    failed += 1;
-    console.error(`✗ ${pkg} failed (see npm output above)`);
+    // A package that already has this config answers 409 Conflict. That is a registration, and one the run
+    // still has to record, so ask npm what the package has before calling it a failure.
+    if (!listOnly && registered(pkg)) {
+      configured.push(pkg);
+      console.log(`✓ ${pkg} was already registered`);
+    } else {
+      failed += 1;
+      console.error(`✗ ${pkg} failed (see npm output above)`);
+    }
   }
 
   // Rate limiting, per npm's bulk-configuration guidance.

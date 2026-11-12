@@ -4,7 +4,12 @@ export type { TrialProps } from './Trial';
 export { Trial } from './Trial';
 export type { TrialBodyProps } from './TrialBody';
 export { TrialBody } from './TrialBody';
-export type { LoupeBindings, TrialChromeProps, UndoBindings } from './TrialChrome';
+export type {
+  LoupeBindings,
+  TrialChromeOptions,
+  TrialChromeProps,
+  UndoBindings,
+} from './TrialChrome';
 export { TrialChrome } from './TrialChrome';
 export type { MountTrialHistory, TrialHistorySource } from './trialHistory';
 export { TrialHistoryContext, useTrialHistory } from './trialHistory';

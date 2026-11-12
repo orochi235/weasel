@@ -7,13 +7,20 @@ them all to the same number whether or not they changed.
 ## The normal path
 
 1. **Write a changeset with the change.** `npx changeset`, pick the packages,
-   pick `patch`, and write it as "Writing a changeset" below says.
+   pick the level semver gives the change (`patch` for a fix, `minor` for new
+   API, `major` for a breaking change), and write it as "Writing a changeset"
+   below says. The level a changeset names does not decide the release's.
+   `check:changesets` refuses one below what its tags imply: `breaking` is
+   `major`, and `api` or `new` is `minor`.
    `npm run check:changesets` holds every pending one to those rules.
 2. **Pick the highlights.** `npm run release:pick` lists the pending changesets
    by rank. Choose the few a reader of this release should see first; it writes
    `pick` into their markers. See "Picking highlights".
-3. **Version on `main`.** `npm run version-packages` bumps every manifest,
-   consumes the changesets and rewrites the `CHANGELOG.md`s. It refuses while
+3. **Version on `main`.** `npm run version-packages -- --bump <level>` bumps
+   every manifest to the next `patch`, `minor` or `major` version (`patch`
+   without the flag), consumes the changesets and rewrites the `CHANGELOG.md`s.
+   Each entry stays under its own changeset's level in the `CHANGELOG.md`s;
+   only the version number follows `--bump`. It refuses while
    no pending changeset is picked (`-- --no-picks` overrides). Read the
    changelog diff, commit it as `chore: version packages`, and push.
 4. **Dispatch the release.** `gh workflow run release.yml -R orochi235/weasel`.
@@ -107,8 +114,23 @@ auth misconfiguration.
 
 ### Setting up a new package
 
-Trust config is held per package, with no org-wide setting, so every new
-publishable workspace needs registering once:
+Trust config is held per package, with no org-wide setting, and OIDC cannot create a
+package, so a new publishable workspace is published once by hand and then registered.
+Both commands name the package, and both run in a real terminal:
+
+```sh
+npm run build -w @weasel-js/<pkg>
+npm publish -w @weasel-js/<pkg> --tag pre --provenance=false
+node scripts/setup-trusted-publishing.mjs <pkg>
+```
+
+`--provenance=false` has to be the flag: the manifest's `publishConfig.provenance` outranks
+`NPM_CONFIG_PROVENANCE` for a plain `npm publish`. The setup script records the package in
+`scripts/trust-pending.json`; commit that with the package. A package that already has the
+config answers `409 Conflict`; the script then asks npm what the package has, and counts it
+as registered when that names this repository and workflow.
+
+Without a name the script registers every package, one `npm trust` call each:
 
 ```sh
 node scripts/setup-trusted-publishing.mjs --dry-run   # preview
@@ -123,10 +145,6 @@ re-run with `--otp=<code>` to finish the tail. Re-running is always safe.
 
 Needs npm >= 11.10.0 for `npm trust`. When the local npm does not understand the
 `--allow-publish` permission flag, the script runs `npx npm@latest` instead.
-
-A package must already exist on npm before it can be given a trusted publisher,
-so the very first publish of a brand-new package still has to be done by hand
-from a logged-in machine.
 
 `npm run check:first-publish` runs before the release job publishes anything,
 and fails on a package that is not on npm or that no trusted publisher has ever
@@ -163,7 +181,7 @@ expires partway through, run it again.
 build, manifest check, consumer smoke test. It runs only when typed: the root
 package is private, so npm never fires it as a lifecycle hook, and the release
 workflow does not call it. The release workflow builds, then runs `check:imports`,
-`check:bumps`, `check:lockstep` and `check:first-publish` before it publishes. It
+`check:lockstep` and `check:first-publish` before it publishes. It
 does not run the manifest check, which fails on any `exports`/`types` path
 promising a file `npm pack` would not include: CI and `test:fleet:postbuild` run
 it on the commit before it merges.

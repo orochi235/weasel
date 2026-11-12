@@ -1,5 +1,76 @@
 # @weasel-js/menu
 
+## 1.19.0
+
+### Patch Changes
+
+- 84e0536: An access letter declared decomposed, such as `e` followed by a combining acute, is read composed, so the `é` key chooses its row.
+  
+  <!-- entry: rank=-5 fix -->
+- 994f696: A typeahead or access letter that lands on the row already highlighted leaves the menu as it was and notifies no subscribers.
+  
+  <!-- entry: rank=-5 fix perf -->
+- 994f696: `placeMenuUnder` keeps a menu opened on the `top` or `left` side of its button inside `bounds` when the button sits past the far edge.
+  
+  <!-- entry: fix -->
+- 994f696: A submenu's diagonal allowance no longer holds for a pointer moving away along a flattened triangle's line.
+  
+  <!-- entry: rank=-5 fix -->
+- 30c0e8e: A unit catalog in `@weasel-js/quantity` gives each unit one symbol, compact form and spoken name, read wherever units are shown or typed.
+  
+  Each entry has a unit's canonical name, its symbol, a compact form for tight spaces (`″` for `in`, `′` for `ft`), the aliases that read as it, its spoken names or `Intl` unit, its CSS unit, and whether its glyph attaches to the number (`°`, `′`, `″`, `%`). `catalogUnit`, `unitSymbol`, `unitSpellings`, `withUnit` and `speakUnit` read it, and `registerUnit` adds or replaces a unit and returns a function that takes it back out. The `unit` display, the bytes and duration displays' speech, `parseNumber`'s alternate spellings and `prefsCss`'s CSS units all read the catalog, in place of the tables each kept.
+  
+  `UnitDisplay` and a prefs unit take `compact: true` for a unit's compact form, and a unit is written as the catalog writes it, so `unit('deg')` and a prefs unit with `suffix: 'deg'` show `°`.
+  
+  In `@weasel-js/ui`, a field's or readout's unit whose glyph attaches stays on the value's line in every layout, including an inline slider row that hangs word units below its readout, and is out of flow, so the field is the same size with it as without. The catalog decides which units attach: a property field's string `unit`, a menu number row's `suffix` and a read-only readout all ask it. `QuantityText`'s `unit` takes `compact` and marks an attaching unit `data-attach`.
+  
+  Breaking: `unit('"')` now shows `12″` and `unit("'")` shows `1′`, the compact forms those marks are aliases of, and a unit named by an alias shows its symbol (`deg` shows `°`). A degree passed as `<sup>°</sup>` still draws as given but no longer attaches; pass the string `'°'`. `ResolvedPrefUnit.suffix` is the text a field shows, the catalog's form of the one written. Typed text reads every spelling the catalog knows for a unit a table accepts, so a field accepting `deg` also reads `°`. A scale indicator's label is spoken through the catalog, `Scale: 10 feet`.
+  
+  <!-- entry: rank=20 breaking api new visual pick -->
+- Updated dependencies [93ed93d]
+- Updated dependencies [3932826]
+- Updated dependencies [0e15698]
+- Updated dependencies [c913ef0]
+- Updated dependencies [041dbf7]
+- Updated dependencies [4ff3e3e]
+- Updated dependencies [785627a]
+- Updated dependencies [3e4a895]
+- Updated dependencies [302c660]
+- Updated dependencies [0cff741]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [20c4979]
+- Updated dependencies [44aa42f]
+- Updated dependencies [a612a95]
+- Updated dependencies [10199c0]
+- Updated dependencies [644c5c7]
+- Updated dependencies [521cab5]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [8936d41]
+- Updated dependencies [7b56e88]
+- Updated dependencies [279a193]
+- Updated dependencies [521cab5]
+- Updated dependencies [76da952]
+- Updated dependencies [228d835]
+- Updated dependencies [521cab5]
+- Updated dependencies [e198aad]
+- Updated dependencies [7dd964d]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [592f6ec]
+  - @weasel-js/ui-input@1.19.0
+  - @weasel-js/quantity@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

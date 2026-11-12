@@ -1,5 +1,271 @@
 # @weasel-js/diagram-formats
 
+## 1.19.0
+
+### Patch Changes
+
+- 0896b71: `addPage` and `addTemplatePage` place a page whose `index` lies past either end of the page order at that end, as `movePage` does. A negative `index` no longer counts from the end, so `index: -1` puts the page first.
+  
+  <!-- entry: fix -->
+- 65ee9a0: Layouts, bounds, legends and reports over hundreds of thousands of items no longer overflow the call stack. This covers, for example, a grid of a million nodes, a million pages, a polyline of a million points and a store of a million prefs records.
+  
+  <!-- entry: fix -->
+- 7177e12: The Diagram JSON reader refuses a document with a page that is not an object, or whose `kind` it does not know, with an error saying so.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `detect` recognizes a Graphviz DOT graph whose quoted name holds `//` or `/*`.
+  
+  <!-- entry: rank=-5 fix -->
+- d0312ad: Graphviz DOT keeps a label whose last line is empty.
+  
+  <!-- entry: fix -->
+- b1309b2: The DOT and Mermaid writers write the nodes of containers that hold each other in a loop, with a warning, rather than dropping them.
+  
+  <!-- entry: fix -->
+- 70e7248: The DOT reader refuses subgraphs nested more than 1000 deep with an error naming the line, rather than running out of stack.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: Graphviz DOT quotes an id holding a no-break space or another non-ASCII space, so the file it writes reads back.
+  
+  <!-- entry: fix -->
+- 994f653: Draw-style XML gives every edge its own cell id, numbering a repeat on (`edge:a->b-2`), so an end label reads back on the right edge.
+  
+  <!-- entry: fix data -->
+- 6255268: A draw.io cell with a negative `width` or `height` reads as the box draw.io renders, reaching back from `x` and `y` with a positive size. An edge label cell, placed along its edge by relative geometry, keeps its place as written.
+  
+  <!-- entry: fix data -->
+- b1309b2: A Mermaid architecture diagram's titles are escaped rather than written as markup, so a `<br>` in one no longer breaks the line.
+  
+  <!-- entry: fix -->
+- b1309b2: A Mermaid block's quoted text may hold the other closer of its brackets, as in `[/"/]"\]`, and its shape is taken from the nearest closer.
+  
+  <!-- entry: rank=-5 fix -->
+- 4ea54d9: Mermaid C4 and kanban text reads back as written: quotes, brackets and character references such as `#lt;` survive the round trip.
+  
+  <!-- entry: fix -->
+- b1309b2: A Mermaid composite state's title has its entities read back.
+  
+  <!-- entry: rank=-5 fix -->
+- e4a0526: Mermaid text keeps an `&` written before a character spelled as an entity, such as `&&lt;`, `&#`, or `&(` in a mind map.
+  
+  <!-- entry: fix -->
+- 9275034: A Mermaid gantt reads back as written, `#` and numbered references included. A task named `title …`, `section …` or `%%…` stays a task.
+  
+  <!-- entry: fix -->
+- b1309b2: A Mermaid journey step named `%%…`, `title …`, `section …` or nothing is written as a readable step, with a warning.
+  
+  A leading `%%` is dropped, a step named for a statement is dropped, and a step with no name is written as `(untitled)`.
+  
+  <!-- entry: fix -->
+- 8e6efee: A Mermaid flowchart keyword line (`subgraph`, `click`, `style`, …) ends at a `;` outside quotes only, so a quoted title holding `#quot;` reads back.
+  
+  <!-- entry: rank=-5 fix -->
+- 9275034: Mermaid writes text holding a line break so that its readers read it back.
+  
+  A quoted string spells a line break `#10;`, so a class diagram's labels and a chart's quoted names keep it, and a class diagram spells a `#` as `#35;` and reads entities in its edge labels. A title or name a kind holds on one line (quadrant, packet, pie, radar, journey, gitGraph, requirement, ER rows, architecture titles) is written with each break as a space, with a warning. A flowchart's or architecture group's title that opens or ends with a line break reads back without a stray space.
+  
+  <!-- entry: fix data -->
+- 61bc677: Mermaid readers read a line or paragraph separator (U+2028, U+2029) inside a statement as text instead of throwing or cutting a title at it.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: A Mermaid mind map is written so it reads back as the same tree.
+  
+  Node lines are trimmed as the reader trims them; text that is blank, starts with `%%` or `:::`, or looks like an accessible title is quoted; brackets are spelled as entities; and an id that is not a plain name is renamed, as the flowchart renames one.
+  
+  <!-- entry: fix -->
+- c2900c8: A Mermaid pie, sankey, xychart, radar or quadrant number too large to hold, such as `1e400`, is refused naming its line.
+  
+  <!-- entry: rank=-5 fix -->
+- 3cc5717: A Mermaid quadrant point whose quoted name holds `:[` reads back, as does a radar curve after one whose label holds a brace.
+  
+  <!-- entry: rank=-5 fix -->
+- 3da3293: Mermaid detection and reading no longer throw on text whose first statement starts with `;`. Detection says it is not Mermaid, and reading reports the line.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: A Mermaid sequence diagram keeps an `&` before a `#` or `;` that the writer spells as an entity, and a title opening with `:`.
+  
+  <!-- entry: rank=-5 fix -->
+- 81d5dc0: A Mermaid sequence message, note, `activate`, `deactivate` or `destroy` naming a participant id with a space is refused naming its line.
+  
+  <!-- entry: rank=-5 fix -->
+- e358cf8: A Mermaid sequence participant whose id is not a plain name, or is `title`, is renamed and keeps its text as the label.
+  
+  A blank participant label is dropped with a warning instead of writing `A as`.
+  
+  <!-- entry: fix -->
+- 2369dd8: A Mermaid sequence line ending in a character reference such as `#quot;` keeps it, so a message ending in `"`, `<`, `>` or `#` reads back as written.
+  
+  <!-- entry: rank=-5 fix -->
+- a74805f: A Mermaid timeline reads back as written, `#` and numbered references included. A period named `title …`, `section …` or `%%…` stays a period.
+  
+  A period with no label is written as `(untitled)`, with a warning, keeping it and its events.
+  
+  <!-- entry: fix -->
+- 1f49e32: A Mermaid block's `columns` or span, a gitGraph branch's `order`, or a packet field's bits too long to hold is refused naming its line.
+  
+  <!-- entry: rank=-5 fix -->
+- e4a0526: Mermaid's ER, class and state writers drop, with a warning, a row, member or line their readers would refuse.
+  
+  That is an ER row that is not a type and a name, a class member that is blank or a lone `}`, and a blank line past a state's name.
+  
+  <!-- entry: fix -->
+- Updated dependencies [0896b71]
+- Updated dependencies [bbfb059]
+- Updated dependencies [65ee9a0]
+- Updated dependencies [6ff27f5]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b5303e3]
+- Updated dependencies [b5303e3]
+- Updated dependencies [4977d31]
+- Updated dependencies [01eac83]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [5e38ac7]
+- Updated dependencies [814ff67]
+- Updated dependencies [93d0c9d]
+- Updated dependencies [b1309b2]
+- Updated dependencies [9263a07]
+- Updated dependencies [6d1672c]
+- Updated dependencies [b123a8b]
+- Updated dependencies [7a7c2ef]
+- Updated dependencies [f4d1040]
+- Updated dependencies [48ef8f7]
+- Updated dependencies [8ccd5eb]
+- Updated dependencies [69f482f]
+- Updated dependencies [2cc9303]
+- Updated dependencies [b1309b2]
+- Updated dependencies [ca65cf7]
+- Updated dependencies [9ec70fe]
+- Updated dependencies [056d901]
+- Updated dependencies [471752d]
+- Updated dependencies [3feac74]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b8ea958]
+- Updated dependencies [a98d4ee]
+- Updated dependencies [a74983a]
+- Updated dependencies [a43fd34]
+- Updated dependencies [14398f2]
+- Updated dependencies [39c0d34]
+- Updated dependencies [63edf95]
+- Updated dependencies [7620d78]
+- Updated dependencies [5f06b1f]
+- Updated dependencies [b8ea958]
+- Updated dependencies [1fc9a81]
+- Updated dependencies [e913291]
+- Updated dependencies [44999ca]
+- Updated dependencies [337b676]
+- Updated dependencies [c2465cd]
+- Updated dependencies [458e1c2]
+- Updated dependencies [dd13518]
+- Updated dependencies [b62813d]
+- Updated dependencies [f68d93b]
+- Updated dependencies [6321d2a]
+- Updated dependencies [b1309b2]
+- Updated dependencies [faaeb54]
+- Updated dependencies [1ba5d83]
+- Updated dependencies [048b375]
+- Updated dependencies [1ba5d83]
+- Updated dependencies [ee3cfe4]
+- Updated dependencies [1ba5d83]
+- Updated dependencies [54f3c97]
+- Updated dependencies [f39af93]
+- Updated dependencies [1ba5d83]
+- Updated dependencies [b368c65]
+- Updated dependencies [0e8df4d]
+- Updated dependencies [adc2756]
+- Updated dependencies [4be628a]
+- Updated dependencies [ca94f2d]
+- Updated dependencies [8ac5c6f]
+- Updated dependencies [5f0d749]
+- Updated dependencies [e6d57fe]
+- Updated dependencies [e0a3d33]
+- Updated dependencies [7a29e1b]
+- Updated dependencies [5ea8837]
+- Updated dependencies [a97da18]
+- Updated dependencies [b1309b2]
+- Updated dependencies [c75559c]
+- Updated dependencies [dcbcc5d]
+- Updated dependencies [e5cbd2e]
+- Updated dependencies [a6fb3c0]
+- Updated dependencies [a6ffc20]
+- Updated dependencies [3137efc]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f77795f]
+- Updated dependencies [9723ed2]
+- Updated dependencies [cc185ab]
+- Updated dependencies [d69b413]
+- Updated dependencies [6ead2a8]
+- Updated dependencies [46dfb3e]
+- Updated dependencies [b1309b2]
+- Updated dependencies [3137efc]
+- Updated dependencies [dcd3f2c]
+- Updated dependencies [cfd1fc7]
+- Updated dependencies [b1309b2]
+- Updated dependencies [3137efc]
+- Updated dependencies [dcf2a76]
+- Updated dependencies [36504c7]
+- Updated dependencies [fef31b7]
+- Updated dependencies [2bde466]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [b1309b2]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [2bf3397]
+- Updated dependencies [1077865]
+- Updated dependencies [1077865]
+- Updated dependencies [b1309b2]
+- Updated dependencies [f137f48]
+- Updated dependencies [f0c159d]
+- Updated dependencies [caffe33]
+- Updated dependencies [18122f9]
+- Updated dependencies [4bbda04]
+- Updated dependencies [7b9e651]
+- Updated dependencies [efac12a]
+- Updated dependencies [ebab03f]
+- Updated dependencies [92adc08]
+- Updated dependencies [0a82772]
+- Updated dependencies [acba0d3]
+- Updated dependencies [436e3d2]
+- Updated dependencies [caffe33]
+- Updated dependencies [025711f]
+- Updated dependencies [65ae35d]
+- Updated dependencies [741b33c]
+- Updated dependencies [5f50ea6]
+- Updated dependencies [37e387f]
+- Updated dependencies [741b33c]
+- Updated dependencies [3a1b492]
+- Updated dependencies [4606941]
+- Updated dependencies [aa46f79]
+- Updated dependencies [43755f1]
+- Updated dependencies [cfc03c6]
+- Updated dependencies [57e12cb]
+- Updated dependencies [741b33c]
+- Updated dependencies [12f254e]
+- Updated dependencies [0866208]
+- Updated dependencies [96bbb4a]
+- Updated dependencies [3643214]
+- Updated dependencies [b8ea958]
+- Updated dependencies [b80eae4]
+- Updated dependencies [b1309b2]
+- Updated dependencies [73fd11f]
+- Updated dependencies [30c0e8e]
+- Updated dependencies [038a0da]
+- Updated dependencies [38223ed]
+- Updated dependencies [0a6a876]
+- Updated dependencies [faaeb54]
+  - @weasel-js/core@1.19.0
+  - @weasel-js/diagram@1.19.0
+  - @weasel-js/plot@1.19.0
+  - @weasel-js/svg@1.19.0
+  - @weasel-js/paint@1.19.0
+  - @weasel-js/pdf@1.19.0
+  - @weasel-js/registry@1.19.0
+
 ## 1.18.2
 
 ### Patch Changes

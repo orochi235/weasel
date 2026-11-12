@@ -6,6 +6,7 @@ import {
   useSelection,
   viewRectToScreen,
   WeaselProvider,
+  type FeatureEntry,
   type RectPose,
   type RenderLayer,
   type CanvasSize,
@@ -160,9 +161,10 @@ function Inner({
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
   const edits = moves || onConnect !== undefined || onReorder !== undefined || resizes || edgesPick || sequences;
-  const features = useMemo(() => [
+  const features = useMemo((): FeatureEntry[] => [
     'view', 'pick', ...(moves ? ['move' as const] : []), ...(resizes ? ['resize' as const] : []), ...(sequences ? ['edit' as const] : []),
-  ] as const, [moves, resizes, sequences]);
+    ...editing.presets,
+  ], [moves, resizes, sequences, editing.presets]);
   const textEditor = useSequenceTextEdit(scene, onEditSequence);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 

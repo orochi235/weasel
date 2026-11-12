@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { expect, within } from '@weasel-js/forge/play';
-import { Lab, useLabContext } from '@weasel-js/labkit';
+import { defineInstrument, f, Lab, useLabContext } from '@weasel-js/labkit';
 import { useEffect } from 'react';
 import type { Instrument } from '../instrument/types';
 import './Lab.stories.less';
@@ -86,5 +86,31 @@ export const MenusInHeaderNarrow: Story = {
     const bar = canvas.getByRole('menubar', { name: 'Lab menu bar' }).getBoundingClientRect();
     await expect(bar.width).toBeGreaterThan(0);
     await expect(canvas.queryByRole('button', { name: 'Add trial' })).toBeNull();
+  },
+};
+
+const Tuned = defineInstrument({
+  name: 'Tuned',
+  config: f.schema({ value: f.number(50).range(0, 100).label('Value') }),
+  initialState: () => ({}),
+  render: ({ config }) => <div className="lk-stub-display">value: {config.value}</div>,
+});
+
+/** The trial's settings float over its body, opened from the title bar, and its undo row is hidden while Mod+Z
+ *  still steps it: the body keeps the trial's whole box, for a lab of many small trials. */
+export const FloatingSidebar: Story = {
+  args: {
+    instruments: [Tuned],
+    defaultInstrument: 'Tuned',
+    title: 'Floating sidebar',
+    sidebar: 'float',
+    hide: ['undo', 'redo'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvasElement.querySelector('.lk-trial__sidebar')).toBeNull();
+    await expect(canvas.queryByRole('button', { name: 'Undo' })).toBeNull();
+    const toggle = canvas.getByRole('button', { name: 'Trial settings' });
+    await expect(toggle.getAttribute('aria-expanded')).toBe('false');
   },
 };

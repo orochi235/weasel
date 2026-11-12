@@ -1,5 +1,42 @@
 # @weasel-js/registry
 
+## 1.19.0
+
+### Patch Changes
+
+- b1309b2: `@weasel-js/registry` adds `after(ms, fn)`, a timer that waits out any delay. That includes one past the 2³¹ − 1 ms a single timer holds. D3 transition delays use it, and `@weasel-js/editor` and `@weasel-js/d3` now depend on `@weasel-js/registry`.
+  
+  <!-- entry: new api -->
+- 1077865: `deepEqual` reads an array hole as `undefined`, so `[, 1]` no longer equals `[5, 1]`.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: Under `undefinedAsAbsent`, `deepEqual` compares only a key's own value, never an inherited member of the same name. So `{ __proto__: {} }` (as `JSON.parse` builds it) no longer equals `{}`, and `{ constructor: undefined }` now does.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: Calling a `createEmitter` unsubscribe again after its listener subscribed anew no longer removes the new subscription.
+  
+  <!-- entry: fix -->
+- 1077865: A `createEmitter` listener unsubscribed and resubscribed during an emit waits for the next emit, like any listener subscribing during one.
+  
+  <!-- entry: rank=-5 fix -->
+- 1077865: `freshId` no longer hangs when `from` is past 2^53 and its first id is taken. Counting past the largest number throws a `RangeError`.
+  
+  <!-- entry: rank=-5 fix -->
+- 2bf3397: `matchQuery` matches text however its accents are encoded, so `é` finds an `e` plus a combining acute (as macOS file names spell it).
+  
+  <!-- entry: fix -->
+- 1077865: `matchQuery` matches a Greek capital sigma at the end of a word, where it lowercases to `ς`, as well as inside one.
+  
+  <!-- entry: rank=-5 fix -->
+- 1077865: `isPlainObject` and `isPlainPrototype` no longer take an object whose prototype is a bare `Object.create(null)` for another realm's plain object. `deepEqual` and everything else that asks follow, and `@weasel-js/storage`'s JSON adapters no longer warn about a foreign object carrying `Symbol.toStringTag`.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `@weasel-js/registry` exports `setOwn`, which sets a key as an own property.
+  
+  Prefs' `setOwnPrefValue` and labkit's `setOwn` run through it.
+  
+  <!-- entry: api -->
+
 ## 1.18.2
 
 ### Patch Changes

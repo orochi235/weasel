@@ -1,5 +1,36 @@
 # @weasel-js/paint
 
+## 1.19.0
+
+### Patch Changes
+
+- 337b676: `parseColor` reads a negative `oklch()` chroma as 0, as CSS clamps it: `oklch(0.6 -0.1 30)` is a gray, not a teal.
+  
+  <!-- entry: fix visual -->
+- c2465cd: `dashPhase` answers a phase below the pattern's cycle for a phase just below zero: `dashPhase([1, 2], -1e-17)` is 0.
+  
+  <!-- entry: rank=-5 fix -->
+- 458e1c2: `hslToSrgb` reads a hue of any number of turns: `hslToSrgb(720, 1, 0.5)` is red, as `hsl(720 100% 50%)` is.
+  
+  <!-- entry: fix -->
+- dd13518: `parseColor` reads a unitless `hsl()` saturation or lightness on the percent scale, as CSS Color 4 does: `hsl(120 50 50)` is `hsl(120 50% 50%)`.
+  
+  <!-- entry: fix visual -->
+- b62813d: `paintKey` gives every fully transparent solid one key, whatever its color, so invisible runs of text in different colors share a draw call.
+  
+  <!-- entry: perf -->
+- f68d93b: The last frame of a color tween lands exactly on its target color.
+  
+  `lerpColorArray` lands on `to` at `t = 1`, as `lerpPaint` did: every channel in `'rgb'`, and alpha in the other spaces. `lerpOklab` and `lerpOklch` (lightness and chroma) end on `to` the same way.
+  
+  <!-- entry: rank=-5 fix -->
+- 6321d2a: `lerpPaint` and `lerpStroke` land exactly on the second paint or stroke at `t = 1`, gradient stops, geometry, width and dash offset included.
+  
+  <!-- entry: rank=-5 fix -->
+- b1309b2: `srgbToHsl` keeps saturation in 0..1 for a color within float noise of white or black. An `'hsl'` interpolation or mix of one is no longer `NaN`.
+  
+  <!-- entry: fix -->
+
 ## 1.18.2
 
 ### Patch Changes
