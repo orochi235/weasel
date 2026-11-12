@@ -1,4 +1,6 @@
-import { useColorCss } from '@weasel-js/theme/react';
+import { useColorCss, useTints } from '@weasel-js/theme/react';
+import { useCallback } from 'react';
+import { handleHalf as themeHandleHalf, type HandleSizeToken } from '../../handles';
 import type { CurveLayer, LayerCtx, LayerModifiers } from './layerTypes';
 
 const NO_MODIFIERS: LayerModifiers = { shift: false, alt: false, meta: false, ctrl: false };
@@ -10,11 +12,13 @@ export function CurveLayers({ layers, base, activeLayerId }: {
   activeLayerId: string | null;
 }) {
   const colorCss = useColorCss();
+  const { resolved } = useTints();
+  const handleHalf = useCallback((token: HandleSizeToken) => themeHandleHalf(token, resolved), [resolved]);
   return (
     <>
       {layers.map(({ layer, state }) => (
         <g key={layer.id} data-layer-id={layer.id}>
-          {layer.render(state, { ...base, modifiers: NO_MODIFIERS, colorCss, isActive: activeLayerId === layer.id })}
+          {layer.render(state, { ...base, modifiers: NO_MODIFIERS, colorCss, handleHalf, isActive: activeLayerId === layer.id })}
         </g>
       ))}
     </>
