@@ -23,12 +23,15 @@ function targetOf(pages: DocPages, params?: Readonly<Record<string, unknown>>): 
   return typeof page === 'string' ? page : pages.shown?.id ?? null;
 }
 
-/** Registers the page commands: add, delete, and the next and previous page on Page Down and Page Up. */
-export function usePageCommands(pages: DocPages): void {
+/** Registers the page commands: add, delete, and the next and previous page on Page Down and Page Up. Delete leaves
+ *  the open mode first, keeping its work, as New and Open do, so no mode stays open on a shape the delete took. */
+export function usePageCommands(pages: DocPages, leaveMode: () => void): void {
   useCommand(PAGE_ACTIONS.add, 'Add Page', () => pages.add());
   useCommand(PAGE_ACTIONS.remove, 'Delete Page', (params) => {
     const id = targetOf(pages, params);
-    if (id !== null) pages.remove(id);
+    if (id === null || pages.removable(id) !== true) return;
+    leaveMode();
+    pages.remove(id);
   }, { enabled: (params) => {
     const id = targetOf(pages, params);
     return id === null ? ActionDisabledReason.NotApplicable : pages.removable(id);

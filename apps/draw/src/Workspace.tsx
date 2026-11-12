@@ -271,7 +271,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
           view={view}
         />
       </div>
-      <DrawPageStrip pages={props.pages} />
+      <DrawPageStrip pages={props.pages} leaveMode={machine.leaveMode} />
     </div>
   );
 }
