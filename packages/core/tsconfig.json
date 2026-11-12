@@ -101,6 +101,7 @@
       "@weasel-js/labkit/config": ["../labkit/src/config/index.ts"],
       "@weasel-js/labkit/canvas": ["../labkit/src/canvas/index.ts"],
       "@weasel-js/labkit/layers": ["../labkit/src/layers/index.ts"],
+      "@weasel-js/labkit/theme": ["../labkit/src/theme/index.ts"],
       "@weasel-js/labkit/undo": ["../labkit/src/undo/index.ts"],
       "@weasel-js/labkit/dragdrop": ["../labkit/src/dragdrop/index.ts"],
       "@weasel-js/labkit/state": ["../labkit/src/state/index.ts"],
