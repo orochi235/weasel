@@ -23,8 +23,20 @@ export function readStored<T>(key: string, parse: (raw: string) => T, fallback: 
   }
 }
 
+const asideOf = (key: string): string => `${key}:unreadable`;
+
+/** Whether `raw`, the entry under `key`, is what {@link readStored} last kept aside as unreadable: a load of it fell
+ *  back. */
+export function keptUnreadable(key: string, raw: string): boolean {
+  try {
+    return localStorage.getItem(asideOf(key)) === raw;
+  } catch {
+    return false;
+  }
+}
+
 function keepUnreadable(key: string, raw: string, err: unknown): void {
-  const aside = `${key}:unreadable`;
+  const aside = asideOf(key);
   try {
     if (localStorage.getItem(aside) === raw) return;
     localStorage.setItem(aside, raw);
