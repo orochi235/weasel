@@ -2,6 +2,6 @@
 "@weasel-js/hud": patch
 ---
 
-A HUD keeps a widget added while it is detached and shows it once attached again, so a child component's widgets survive StrictMode's remount.
+A HUD keeps widgets added while it is detached and shows them when attached again, so they survive StrictMode.
 
 <!-- entry: fix behavior -->

@@ -2,6 +2,6 @@
 "@weasel-js/core": patch
 ---
 
-A `registerNodeShape` disposer removes its own registration and only it, even when the same painter is registered more than once or the disposer runs twice.
+A `registerNodeShape` disposer removes only its own registration, even when run twice or when one painter is registered twice.
 
 <!-- entry: fix -->

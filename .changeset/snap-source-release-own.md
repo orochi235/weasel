@@ -2,6 +2,6 @@
 "@weasel-js/core": patch
 ---
 
-Two components that pass one snap source object to `useSnapSource` each hold their own registration: unmounting one leaves the source snapping for the other.
+Unmounting one of two components passing the same source to `useSnapSource` leaves it snapping for the other.
 
 <!-- entry: fix -->

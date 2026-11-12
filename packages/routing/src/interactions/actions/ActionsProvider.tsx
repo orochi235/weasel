@@ -59,7 +59,7 @@ function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
  * answers — `list`, `trigger`, `begin` — starts at the node's leaf.
  */
 export class ActionsNode extends ScopeNode<ActionsNode> {
-  /** A record per registration, so one action registered twice is two entries each release can tell apart. */
+  /** A record per registration: a release takes out its own, displaced or live, of an action registered twice. */
   private readonly actions = new Map<string, { action: Action }[]>();
   private readonly muted = new Map<string, number>();
   private readonly tunings = new Map<string, ActionTuning[]>();
@@ -224,8 +224,6 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
         released = true;
         const cur = this.actions.get(action.id);
         if (!cur) return;
-        // Our own entry, wherever it now sits: a registrant that was already
-        // displaced must take itself out without disturbing the one above it.
         const i = cur.indexOf(mine);
         if (i === -1) return;
         cur.splice(i, 1);
