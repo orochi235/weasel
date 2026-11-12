@@ -59,7 +59,7 @@ describe('resolveFeatures', () => {
   });
 
   it('turns on, under draw, every core preset but the tools that make things and the shorthands beside it', () => {
-    const left = ['tools:shape', 'tools:draw', 'tools:type', 'tools:page', 'pick', 'transform'];
+    const left = ['tools:shape', 'tools:draw', 'tools:type', 'tools:page', 'pick', 'transform', 'whiteboard'];
     expect(ids(['draw']).sort()).toEqual(SCENE_CANVAS_FEATURES.filter((f) => !left.includes(f)).sort());
   });
 

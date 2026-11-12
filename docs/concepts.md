@@ -95,6 +95,7 @@ others, and naming it turns those on too; any of them can also be named alone:
 | `paths` | `anchorKeys` (anchor nudge and delete, Escape out of path edit, each tried ahead of its node-level twin), `pathfinder`, `outlines`, `pathEdit`, `pathCommands` |
 | `ingest` | dropped and pasted content: images, SVG, files, and consumer content handlers, on Cmd/Ctrl+V or an OS drop |
 | `draw` | every preset above but `pick` and `transform`, whose parts it names itself |
+| `whiteboard` | the pencil, text and the sticky note (`WHITEBOARD_TOOLS`), with `view`, `pick`, `move`, `resize` and `edit` |
 | `tools:shape`, `tools:draw`, `tools:type`, `tools:page` | the tools that make things: shapes, the pen and pencil, text and the sticky note, the page slicer |
 
 A preset holding only actions, tools, and includes is a bundle; one with any
