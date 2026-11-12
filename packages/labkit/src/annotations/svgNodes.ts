@@ -1,7 +1,9 @@
 import {
   type DrawCommand,
   isSolidPaint,
+  type MarkerRef,
   type Paint,
+  resolveScreenLength,
   type Stroke,
   type View,
 } from '@weasel-js/core';
@@ -22,28 +24,35 @@ function toSvgPaint(paint: Paint | undefined): SvgPaint {
   return { kind: 'gradient', paint };
 }
 
-function toSvgStroke(stroke: Stroke): SvgStroke {
+/** A marker with its `{ px }` size in the export's user units, which have no camera to hold a screen size through. */
+function exportedMarker(ref: MarkerRef, scale: number): MarkerRef {
+  if (typeof ref === 'string' || ref.size === undefined) return ref;
+  return { ...ref, size: resolveScreenLength(ref.size, scale) };
+}
+
+/** `scale` is output pixels per user unit: what a `{ px }` length is written against. */
+function toSvgStroke(stroke: Stroke, scale: number): SvgStroke {
   return {
     paint: toSvgPaint(stroke.paint),
-    width: stroke.width ?? 1,
+    width: resolveScreenLength(stroke.width ?? 1, scale),
     ...(stroke.cap ? { cap: stroke.cap } : {}),
     ...(stroke.join ? { join: stroke.join } : {}),
     ...(stroke.dash ? { dash: [...stroke.dash] } : {}),
     ...(stroke.miterLimit != null ? { miterLimit: stroke.miterLimit } : {}),
     ...(stroke.align ? { align: stroke.align } : {}),
-    ...(stroke.markerStart ? { markerStart: stroke.markerStart } : {}),
-    ...(stroke.markerMid ? { markerMid: stroke.markerMid } : {}),
-    ...(stroke.markerEnd ? { markerEnd: stroke.markerEnd } : {}),
+    ...(stroke.markerStart ? { markerStart: exportedMarker(stroke.markerStart, scale) } : {}),
+    ...(stroke.markerMid ? { markerMid: exportedMarker(stroke.markerMid, scale) } : {}),
+    ...(stroke.markerEnd ? { markerEnd: exportedMarker(stroke.markerEnd, scale) } : {}),
   };
 }
 
-function toSvgNode(cmd: DrawCommand, m: PaintableMark): SvgNode {
+function toSvgNode(cmd: DrawCommand, m: PaintableMark, scale: number): SvgNode {
   if (cmd.kind === 'path') {
     return {
       kind: 'path',
       path: cmd.path,
       fill: toSvgPaint(cmd.fill?.paint),
-      ...(cmd.stroke ? { stroke: toSvgStroke(cmd.stroke) } : {}),
+      ...(cmd.stroke ? { stroke: toSvgStroke(cmd.stroke, scale) } : {}),
     };
   }
   if (cmd.kind === 'text') {
@@ -76,5 +85,5 @@ export function markSvgNodes(
   style: MarkStyle = {},
   scale?: View['scale'],
 ): SvgNode[] {
-  return markCommands(m, style, scale).map((cmd) => toSvgNode(cmd, m));
+  return markCommands(m, style, scale).map((cmd) => toSvgNode(cmd, m, scale?.x ?? 1));
 }

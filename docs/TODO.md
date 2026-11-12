@@ -402,9 +402,6 @@ Owner tags, after the priority (2026-10-26):
   stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
   scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
   frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
-- **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
-  target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
-  screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
