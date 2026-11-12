@@ -4,8 +4,8 @@
  * the DOM half of the `reason` overlay, which the canvas layers cannot paint
  * as text.
  */
-import { useEffect, useState, type RefObject } from 'react';
-import { overlaysOf, type Dispatcher } from '@weasel-js/routing';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { canvasToClient, layoutBoxOf, overlaysOf, type Dispatcher } from '@weasel-js/routing';
 import { viewToTransform, type View } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { resolveOverlays } from 'interactions/actions/resolveOverlays';
@@ -20,7 +20,8 @@ export interface GestureReasonProps {
   viewRef: RefObject<View>;
 }
 
-interface Shown { left: number; top: number; text: string }
+/** The pointer's client point, and what to say there. */
+interface Shown { x: number; y: number; text: string }
 
 /** The first `reason` overlay of the dispatcher's in-flight gestures, shown beside the pointer. */
 export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonProps) {
@@ -36,9 +37,9 @@ export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonP
         setShown(null);
         return;
       }
-      const r = canvas.getBoundingClientRect();
       const [sx, sy] = worldToScreen(reason.at.x, reason.at.y, viewToTransform(view));
-      setShown({ left: r.left + sx + OFFSET, top: r.top + sy + OFFSET, text: reason.text });
+      const [x, y] = canvasToClient(canvas, sx, sy);
+      setShown({ x, y, text: reason.text });
     };
     read();
     const off = dispatcher.subscribe(read);
@@ -47,7 +48,24 @@ export function GestureReason({ dispatcher, canvasRef, viewRef }: GestureReasonP
       setShown(null);
     };
   }, [dispatcher, canvasRef, viewRef]);
+  const tagRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (tagRef.current && shown) placeFixedAt(tagRef.current, shown.x, shown.y);
+  }, [shown]);
   if (shown === null) return null;
-  // The pointer moves it every frame; nothing but an inline position can follow it.
-  return <div role="status" className={s.reason} style={{ left: shown.left, top: shown.top }}>{shown.text}</div>;
+  return <div ref={tagRef} role="status" className={s.reason}>{shown.text}</div>;
+}
+
+/**
+ * Puts a `position: fixed` element `OFFSET` of its own pixels below and right of a client point.
+ * A transformed ancestor makes itself the element's containing block, so `left`/`top` are read in
+ * that ancestor's offset, scaled frame: the element is measured at 0, 0 to find where that frame
+ * sits. The pointer moves it every frame; nothing but an inline position can follow it.
+ */
+function placeFixedAt(el: HTMLElement, x: number, y: number): void {
+  el.style.left = '0px';
+  el.style.top = '0px';
+  const origin = layoutBoxOf(el);
+  el.style.left = `${(x - origin.left) / origin.scale.x + OFFSET}px`;
+  el.style.top = `${(y - origin.top) / origin.scale.y + OFFSET}px`;
 }

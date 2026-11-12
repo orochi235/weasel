@@ -30,14 +30,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
-- **(P3) [agent] A refused gesture's reason tag lands off the pointer on a canvas under a transformed ancestor.**
-  `GestureReason` (`packages/core/src/canvas/GestureReason.tsx`) is `position: fixed` at the reason's client
-  point, and a transformed ancestor becomes the containing block of a fixed element, so the tag is placed in
-  that ancestor's scaled, offset frame. Not fixed in audit round 19 (2026-11-12) with the rest of the
-  ancestor-transform work: it needs the tag positioned in the canvas root's own frame (absolute, measured the
-  way `useSceneTextEdit` measures its overlay box) or portaled out, and either changes how it clips and stacks
-  against the page. Closes when the tag sits beside the pointer on a canvas inside `transform: scale(0.5)`.
-
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
