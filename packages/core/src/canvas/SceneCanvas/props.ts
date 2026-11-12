@@ -338,8 +338,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * of the ones presets bring (`select` from `pick`, `hand` from `view`):
      * ids, or sets of them such as `SHAPE_TOOLS`, or `withoutTools(...)` of one.
      * Default: none. Each tool also registers the kit actions it binds, so
-     * `['rect']` brings `insert`. Ignored when the consumer supplies their own
-     * `tools` prop.
+     * `['rect']` brings `insert`. Ignored under a full `ToolsApi` takeover in
+     * `tools`; the patch form of `tools` lays over it.
      */
     defaultTools?: readonly ToolEntry<BuiltinToolId>[];
 
