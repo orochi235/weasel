@@ -2,7 +2,7 @@ import type { Hud } from './hud';
 import { recordHudOn } from './loupe/loupeRoutes';
 import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { depsUnchanged, viewToTransform } from '@weasel-js/core';
+import { clientToCanvas, depsUnchanged, viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import {
   DEFAULT_FONT_FAMILY,
@@ -286,8 +286,7 @@ function wireFocus(
   hitAt: (sx: number, sy: number) => Widget | null,
 ): () => void {
   const onPointerDown = (e: PointerEvent) => {
-    const r = element.getBoundingClientRect();
-    const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
+    const hit = hitAt(...clientToCanvas(element, e.clientX, e.clientY));
     hud.focus(hit && isFocusable(hit) ? hit : null, { visible: false });
   };
 

@@ -1,3 +1,4 @@
+import { layoutBoxOf } from '@weasel-js/routing';
 import { type RefObject, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
 import type { CanvasSize } from './clampView';
 import { useDeviceProfile } from '../device/useDeviceProfile';
@@ -41,7 +42,9 @@ function elementSizeStore(containerRef: RefObject<HTMLElement | null>, beforePai
   let pending: ReturnType<typeof setTimeout> | undefined;
   let changed: (() => void) | null = null;
   const measure = (): boolean => {
-    const rect = el?.getBoundingClientRect() ?? UNMEASURED;
+    // The layout box, not the client rect: an ancestor transform shows the element larger or smaller without
+    // resizing what it lays out or paints in, and changes without the observer hearing of it.
+    const rect = el ? layoutBoxOf(el) : UNMEASURED;
     if (rect.width === size.width && rect.height === size.height) return false;
     size = { width: rect.width, height: rect.height };
     return true;

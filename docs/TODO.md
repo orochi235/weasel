@@ -30,6 +30,14 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [agent] A refused gesture's reason tag lands off the pointer on a canvas under a transformed ancestor.**
+  `GestureReason` (`packages/core/src/canvas/GestureReason.tsx`) is `position: fixed` at the reason's client
+  point, and a transformed ancestor becomes the containing block of a fixed element, so the tag is placed in
+  that ancestor's scaled, offset frame. Not fixed in audit round 19 (2026-11-12) with the rest of the
+  ancestor-transform work: it needs the tag positioned in the canvas root's own frame (absolute, measured the
+  way `useSceneTextEdit` measures its overlay box) or portaled out, and either changes how it clips and stacks
+  against the page. Closes when the tag sits beside the pointer on a canvas inside `transform: scale(0.5)`.
+
 - **(P2) [agent] A key pressed right after a click acts before the click's selection lands.** Measured in
   collego (2026-11-10): its `watch.spec` clicks a node and presses Backspace at once. On 1.17.3 the node was
   deleted; on 1.18.2 nothing is deleted, though the node shows as selected within 100 ms. The selection comes

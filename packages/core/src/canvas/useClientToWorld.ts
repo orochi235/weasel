@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { View } from 'core/viewport/view';
+import { layoutBoxOf } from '@weasel-js/routing';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import type { CanvasProps } from './canvasProps';
 
@@ -19,6 +20,6 @@ export function useClientToWorld(
     if (!el) return [clientX, clientY];
     const override = clientToWorldRef.current;
     if (override) return override(el, clientX, clientY);
-    return clientToWorldHelper(clientX, clientY, el.getBoundingClientRect(), viewRef.current);
+    return clientToWorldHelper(clientX, clientY, layoutBoxOf(el), viewRef.current);
   }, [elementRef, clientToWorldRef, viewRef]);
 }

@@ -16,4 +16,9 @@ describe('dragPointOf', () => {
       clientX: 130, clientY: 90, worldX: 20, worldY: 7.5,
     });
   });
+
+  it('reads the position in CSS pixels of an element an ancestor transform shows at half size', () => {
+    const shown = { getBoundingClientRect: () => ({ left: 100, top: 40, width: 100, height: 50 }), offsetWidth: 200, offsetHeight: 100 };
+    expect(dragPointOf({ clientX: 130, clientY: 90 }, shown)).toMatchObject({ worldX: 60, worldY: 100 });
+  });
 });
