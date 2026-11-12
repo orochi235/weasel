@@ -9,6 +9,9 @@ export interface UseJobOptions<TS, TC, TItem> {
   config: TC;
   state: TS;
   setState: (next: TS | ((prev: TS) => TS)) => void;
+  /** A new value drops the run in flight, and starts an `auto` job again even
+   *  where its `key` is unchanged: the state the run was folding into is gone. */
+  epoch?: unknown;
 }
 
 interface Progress {
@@ -37,6 +40,7 @@ export function useJob<TS, TC, TItem>({
   config,
   state,
   setState,
+  epoch,
 }: UseJobOptions<TS, TC, TItem>): JobHandle {
   const [progress, setProgress] = useState<Progress>(IDLE);
 
@@ -105,18 +109,24 @@ export function useJob<TS, TC, TItem>({
 
   // Re-run when the declared key changes. `auto` covers the first mount too.
   const lastKey = useRef<readonly unknown[] | null>(null);
+  const lastEpoch = useRef(epoch);
   const started = useRef(false);
   const auto = capability.auto === true;
   const key = capability.key ? capability.key(config, state) : null;
   // `key` is compared element-wise inside; depending on the array identity here
   // would restart the job on every render.
   useEffect(() => {
-    if (!auto) return;
-    if (started.current && sameKey(lastKey.current, key)) return;
+    const fresh = !Object.is(lastEpoch.current, epoch);
+    lastEpoch.current = epoch;
+    if (!auto) {
+      if (fresh) cancel();
+      return;
+    }
+    if (!fresh && started.current && sameKey(lastKey.current, key)) return;
     lastKey.current = key;
     started.current = true;
     start();
-  }, [auto, key, start]);
+  }, [auto, key, start, cancel, epoch]);
 
   useEffect(
     () => () => {
