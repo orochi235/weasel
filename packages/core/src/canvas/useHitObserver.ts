@@ -19,7 +19,7 @@ export function useHitObserver(
     if (!wired) return undefined;
     return (world) => {
       const result = pickerRef.current?.(world);
-      cbRef.current?.(result ? { id: result.id, kind: result.kind } : null);
+      cbRef.current?.(result ? { id: result.id, kind: result.kind, world: { x: world.x, y: world.y } } : null);
     };
   }, [wired, cbRef, pickerRef]);
 }
