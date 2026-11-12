@@ -69,4 +69,12 @@ describe("an instrument history's last saved form, kept once it unmounts", () =>
     );
     expect(copy).not.toHaveProperty('undo');
   });
+
+  it('is not kept for a trial closed before its history unmounted', () => {
+    const store = storeWithTrial();
+    const release = holdOwnUndo(store, 't', source);
+    store.getState().removeTrial('t');
+    release();
+    expect(ownUndoOf(store, 't')).toBeUndefined();
+  });
 });
