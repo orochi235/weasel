@@ -9,6 +9,7 @@ import { MIXED_HINT } from '../mixedHint';
 import s from './NumberField.module.css';
 import { Steppers } from './Steppers';
 import { useIdleSettle } from '../../useIdleSettle';
+import { useFieldLocale } from '../../useFieldLocale';
 
 /** Props for {@link UnitField}. */
 export interface UnitFieldProps {
@@ -51,6 +52,10 @@ export interface UnitFieldProps {
    *  shows `1/12` and reads `1/12` typed. `accepts`, when given, does the
    *  reading instead. Default: the number with every decimal it has. */
   display?: Display;
+  /** BCP 47 locale the field shows and reads its number in: `2,5` and `1.500` in `de-DE`. Defaults to React Aria's
+   *  locale — an `<I18nProvider>` above, else the browser's — and falls back as `fieldLocale` does where a locale's
+   *  numbers would not read back as shown. */
+  locale?: string;
   placeholder?: string;
   /** The field stands for several values that differ: it shows empty, reading
    *  `Mixed` in place of `placeholder`, whatever `value` is. */
@@ -116,6 +121,7 @@ export function UnitField({
   step = 1,
   accepts,
   display = FULL_PRECISION,
+  locale: localeProp,
   placeholder,
   mixed = false,
   steppers,
@@ -134,12 +140,13 @@ export function UnitField({
   // The value typing began from, and whether any keystroke reached `onInput`.
   const typing = useRef<{ from: number; sent: boolean } | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const locale = { locale: useFieldLocale(localeProp) };
   const known = !Number.isNaN(value);
-  const text = known ? qty(value, display).text : '';
+  const shown = known ? qty(value, display, locale) : null;
   // `accepts` reads units; the display still reads its own words, like infinity's.
   const read = (typed: string) => {
-    const n = accepts ? parseNumber(typed, accepts) : Number.NaN;
-    return Number.isNaN(n) ? parseAs(typed, display) : n;
+    const n = accepts ? parseNumber(typed, accepts, locale.locale) : Number.NaN;
+    return Number.isNaN(n) ? parseAs(typed, display, locale) : n;
   };
   const bounds = { step, min: minValue, max: maxValue, endless };
   const idle = useIdleSettle(() => {
@@ -205,12 +212,12 @@ export function UnitField({
           autoComplete="off"
           aria-label={ariaLabel}
           aria-valuenow={Number.isFinite(value) ? value : undefined}
-          aria-valuetext={known ? qty(value, display).spoken : undefined}
+          aria-valuetext={shown?.spoken}
           aria-valuemin={minValue}
           aria-valuemax={maxValue}
           placeholder={mixed ? MIXED_HINT : placeholder}
           disabled={disabled}
-          value={draft ?? text}
+          value={draft ?? shown?.text ?? ''}
           onChange={(e) => {
             const typed = e.target.value;
             setDraft(typed);

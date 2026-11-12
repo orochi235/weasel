@@ -10,6 +10,7 @@ import {
 import { imeKey } from '@weasel-js/ui-input';
 import { decimal, decimalPlaces, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
+import { useFieldLocale } from '../../useFieldLocale';
 import { inlineDirection } from '../../useRovingTabIndex';
 import { UnitField } from '../NumberField';
 import shared from '../range.module.css';
@@ -311,8 +312,9 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
   // Draft is non-null only while the input is focused; the live value mirrors
   // into the input otherwise.
   const [draft, setDraft] = useState<string | null>(null);
-  const text = (n: number) => (format ? String(format(n)) : qty(n, display).text);
-  const read = (typed: string) => parseAs(typed, display);
+  const locale = { locale: useFieldLocale() };
+  const text = (n: number) => (format ? String(format(n)) : qty(n, display, locale).text);
+  const read = (typed: string) => parseAs(typed, display, locale);
   const displayValue = draft !== null ? draft : text(value);
   // The widest value the range can show, which the stylesheet widens the box to
   // fit: each end of the track, and the stop inside it where the end is infinity's.
@@ -338,7 +340,7 @@ function EditableReadout({ name, value, min, max, step, reach, settle, onTrack, 
         role="spinbutton"
         aria-label={name}
         aria-valuenow={onTrack(value)}
-        aria-valuetext={format ? text(value) : qty(value, display).spoken}
+        aria-valuetext={format ? text(value) : qty(value, display, locale).spoken}
         aria-valuemin={reach.min}
         aria-valuemax={reach.max}
         inputMode="decimal"
