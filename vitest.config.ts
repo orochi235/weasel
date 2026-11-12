@@ -22,6 +22,7 @@ import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
 import { SCOPED, TRIGGERS } from './scripts/lib/fleet-triggers.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
+import { loadReruns } from './scripts/vitest-load-reruns.ts';
 import { devWatch } from './scripts/vite-watch.ts';
 import { cssCacheKey } from './scripts/vitest-css-cache-key.ts';
 import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
@@ -89,7 +90,7 @@ const related = selection(import.meta.dirname, process.env, {
 const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS, scoped: SCOPED });
 
 export default defineConfig({
-  plugins: [timeoutRetries(), devWatch()],
+  plugins: [timeoutRetries(), loadReruns(), devWatch()],
   test: {
     globalSetup: ['./scripts/fleet-tree.setup.ts', './scripts/module-cache.setup.ts'],
     fsModuleCache: true,

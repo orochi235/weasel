@@ -4,6 +4,7 @@ import type { Download, Page } from '@playwright/test';
 import { createServer, type Server } from 'node:net';
 import { waitForOwnFrame } from './vitest-own-frame.ts';
 import { HOST_GPU_ARGS } from './chromium-gpu-args.ts';
+import { noteNetworkChanged } from './vitest-load-reruns.ts';
 
 // Server-side commands for the `browser` vitest project, reached from a test
 // through `commands` in 'vitest/browser'. They run against the Playwright
@@ -118,6 +119,7 @@ const watchRequests: BrowserCommand<[]> = async (ctx) => {
     const failure = request.failure()?.errorText ?? 'failed';
     // A frame torn down mid-load aborts its images and fonts; only a module or page load matters here.
     if (failure === 'net::ERR_ABORTED' && !LOADS.has(request.resourceType())) return;
+    if (failure === 'net::ERR_NETWORK_CHANGED') noteNetworkChanged();
     log(failure, request.resourceType(), request.url());
   });
   page.on('response', (response) => {
