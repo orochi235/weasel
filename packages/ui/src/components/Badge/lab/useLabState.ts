@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { historyKey, useLatest } from '@weasel-js/core';
+import { undoKeyStep, useLatest } from '@weasel-js/core';
 import { createHistory, swapOp } from '@weasel-js/history';
 import { initialSnapshot, loadLabSnapshot, saveLabSnapshot, type LabSnapshot } from './snapshot';
 
@@ -53,10 +53,11 @@ function useSnapshotHistory(snap: LabSnapshot, restore: (snap: LabSnapshot) => v
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const step = historyKey(e);
+      const step = undoKeyStep(e);
       if (!step) return;
-      e.preventDefault();
       settle.current();
+      if (step === 'undo' ? !history.canUndo() : !history.canRedo()) return;
+      e.preventDefault();
       history[step]();
     };
     window.addEventListener('keydown', onKey);

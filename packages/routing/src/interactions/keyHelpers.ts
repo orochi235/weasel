@@ -9,7 +9,7 @@
  * @packageDocumentation
  */
 
-import { isApplePlatform, matchKey, matchModifiers } from '@weasel-js/gestures';
+import { isApplePlatform, isEditableTarget, matchKey, matchModifiers } from '@weasel-js/gestures';
 
 export { activatesFocusedControl, focusedControlOwnsKey, isEditableTarget } from '@weasel-js/gestures';
 
@@ -68,4 +68,18 @@ export function historyKey(e: KeyBindingEvent, isMac = isApplePlatform()): 'undo
   if (matchesKeyBinding(e, { key: 'z', mod: true, shift: true }, isMac) || matchesKeyBinding(e, { key: 'y', mod: true }, isMac))
     return 'redo';
   return null;
+}
+
+/**
+ * The history step a keydown asks a page-level handler for: {@link historyKey}'s, but null for a key already
+ * handled and one where the user types text, whose own undo is what they are asking for. A slider or a checkbox
+ * is not text, so the chord still reaches the page there.
+ */
+export function undoKeyStep(
+  e: KeyBindingEvent & Pick<KeyboardEvent, 'defaultPrevented' | 'target'>,
+  isMac = isApplePlatform(),
+): 'undo' | 'redo' | null {
+  if (e.defaultPrevented) return null;
+  const step = historyKey(e, isMac);
+  return step && !isEditableTarget(e.target) ? step : null;
 }

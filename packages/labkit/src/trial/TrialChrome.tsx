@@ -1,4 +1,4 @@
-import { DevtoolsLabel, matchesKeyBinding } from '@weasel-js/core';
+import { DevtoolsLabel, matchesKeyBinding, undoKeyStep } from '@weasel-js/core';
 import { type ReactNode, useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
@@ -28,7 +28,6 @@ import { JobProgress } from '../primitives/JobProgress';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
 import { as2DView, DEFAULT_VIEW, withZoom } from '../state/view';
-import { undoKeyStep } from '../undo/useUndoKeys';
 import { FloatSidebarContext } from './FloatSidebar';
 import { TrialBody } from './TrialBody';
 import { TrialTitleBar } from './TrialTitleBar';

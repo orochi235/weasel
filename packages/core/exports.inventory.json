@@ -2506,6 +2506,7 @@
     "unboldPatch": "function",
     "unbound": "function",
     "undeclaredMagnifications": "function",
+    "undoKeyStep": "function",
     "unionAABB": "function",
     "unionBounds": "function",
     "unionBoundsPath": "function",

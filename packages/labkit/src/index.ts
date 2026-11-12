@@ -1,3 +1,4 @@
+export { undoKeyStep } from '@weasel-js/core';
 export {
   createIndexedDbAdapter,
   createMemoryAdapter,
@@ -341,4 +342,4 @@ export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export type { ToolCapability, TrialTool } from './tools/types';
 export * from './trial';
-export { type UndoKeysTarget, undoKeyStep, useUndoKeys } from './undo/useUndoKeys';
+export { type UndoKeysTarget, useUndoKeys } from './undo/useUndoKeys';
