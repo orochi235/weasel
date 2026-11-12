@@ -176,6 +176,9 @@ export interface SvgGroupNode {
    *  `data-weasel-boolean`; `parseSvg` keeps such a `<g>` hidden even without
    *  `keepHidden`. */
   boolean?: BooleanShapeOp;
+  /** Set on the group a text node with a background is written as (`svgLeafFromKit`), which
+   *  `svgNodesToKitDrafts` reads back as that one text node. Written as `data-weasel-text-frame`. */
+  textFrame?: true;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }

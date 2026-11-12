@@ -32,6 +32,7 @@ import { textXml } from './serializeText';
 import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
+import { TEXT_FRAME_ATTR } from './framedText';
 import { RAD_TO_DEG } from '@weasel-js/geom';
 
 /**
@@ -245,6 +246,7 @@ function groupXml(
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
   if (node.boolean) attrs.push(`${BOOLEAN_ATTR}="${node.boolean}"`);
+  if (node.textFrame) attrs.push(`${TEXT_FRAME_ATTR}="true"`);
   const metaAttrs = metaAttrsXml(node.meta, namespaces);
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`

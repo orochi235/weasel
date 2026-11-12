@@ -1,3 +1,4 @@
+import type { TextFrameData } from './drawDocument';
 import type { BooleanOp, ImageNodeData, Path, Stroke, StyledRun, TextStyle, TextVerticalAlign, Fill, Inherit } from '@weasel-js/core';
 
 export type ToolKind =
@@ -38,7 +39,8 @@ export interface PathObj extends BaseObj {
   producedBy?: BooleanOp;
 }
 
-export interface TextObj extends BaseObj {
+/** A text object; one with a `background` is a note. */
+export interface TextObj extends BaseObj, TextFrameData {
   tool: 'text';
   text: string;
   style?: TextStyle;

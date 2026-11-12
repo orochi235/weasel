@@ -530,18 +530,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-### Domain bundles
-
-- **(P3) [agent] A presentation bundle and a whiteboard bundle.** Each a `Contribution` bundle, the way
-  `@weasel-js/diagram` is (`createDiagramContribution`). Ruled (2026-11-07): build both.
-  - Presentation: a slide-navigation contribution that sherpa (the presentation runtime) can mount — keys and
-    view animation stepping between pages, over `layoutPages`, `fitViewToPage` and `adjacentPage`
-    (`packages/core/src/core/pages/`). Not an in-canvas slide format (ruled 2026-10-17).
-  - Whiteboard: bundles core's `usePencilTool`, `useTextTool`, and `useStickyTool` (built-in id `sticky`, a text
-    node with a `background`; its look is `toolOptions.sticky`). apps/draw leaves `sticky` out today: its
-    `TextObj` and SVG round trip carry no text `background` or `padding`, and SVG import reads a written note
-    back as a rect and a text node, so that round trip is part of the work.
-  Closes when both contributions ship and draw round-trips a sticky.
 ### d3 integration plugin
 
 - **(P3) [maintainer] `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems

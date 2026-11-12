@@ -29,6 +29,7 @@ import type {
   SvgKitTree,
   SvgLeafNode,
   SvgNode,
+  SvgGroupNode,
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
@@ -39,6 +40,7 @@ import { pageElements, pagesOfParsed } from './svgPages';
 import type { ImageObj, Obj, PathObj, PathParams, PathToolKind, TextObj } from './svgObj';
 import { cornerAttrs, pathWithCorners } from './svgCorners';
 import { decodeEffectAttrs, encodeEffectAttrs, type EffectAttrs, type EffectObj } from './svgEffects';
+import { decodeNoteAttrs, encodeNoteAttrs, textFrameFields } from './svgNote';
 
 /**
  * The `wd:` XML namespace, carrying WeaselDraw-specific metadata on top of standard SVG.
@@ -175,6 +177,7 @@ function decodePathToolAndParams(
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
     const style = o.style ?? {};
+    // A note is a group, which carries the attributes for the whole of it.
     const node = svgLeafFromKit({
       text: o.text,
       ...(Object.keys(style).length > 0 ? { style: style as TextStyle } : {}),
@@ -182,8 +185,9 @@ export function objToSvgNode(o: Obj): SvgNode {
       ...(o.verticalAlign ? { verticalAlign: o.verticalAlign } : {}),
       fill: o.fill === undefined ? DEFAULT_IMPORT_FILL : o.fill,
       ...(o.stroke ? { stroke: o.stroke } : {}),
-    }, o) as SvgTextNode;
-    node.meta = { wd: { attrs: encodeWdAttrs(o) } };
+      ...textFrameFields(o),
+    }, o) as SvgTextNode | SvgGroupNode;
+    node.meta = { wd: { attrs: { ...encodeWdAttrs(o), ...encodeNoteAttrs(o) } } };
     return node;
   }
   if (o.tool === 'image') {
@@ -256,6 +260,7 @@ function kitLeafToObj(
     if (data.stroke) o.stroke = data.stroke;
     if (data.verticalAlign) o.verticalAlign = data.verticalAlign;
     if (pose.rotation) o.rotation = pose.rotation;
+    Object.assign(o, textFrameFields(data), decodeNoteAttrs(attrs));
     const lh = attrs?.['line-height'] != null ? parseFloat(attrs['line-height']) : NaN;
     if (data.style || Number.isFinite(lh)) {
       o.style = { ...(data.style ?? {}) };
