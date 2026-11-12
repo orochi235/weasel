@@ -20,8 +20,9 @@ export function modifierStateOf(e: {
   return { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
 }
 
-/** The world point an event landed on, for `Action.enabled`'s position
- *  argument. Undefined for events with no position (keys, drops, pastes). */
+/** The world point an event landed on: `Action.enabled`'s position argument,
+ *  and the `world` an immediate invoker's params carry. Undefined for events
+ *  with no position (keys, pastes, multitouch). */
 export function worldPointOf(event: InputEvent): { x: number; y: number } | undefined {
   switch (event.kind) {
     case 'pointerdown':
@@ -30,6 +31,7 @@ export function worldPointOf(event: InputEvent): { x: number; y: number } | unde
     case 'click':
     case 'doubleclick':
     case 'contextmenu':
+    case 'drop':
       return event.x !== undefined && event.y !== undefined ? { x: event.x, y: event.y } : undefined;
     case 'carry':
       return { x: event.x, y: event.y };
@@ -78,8 +80,10 @@ export type ImmediateParams = {
   viewId?: string | null;
 };
 
-const at = (x: number | undefined, y: number | undefined): { world?: WorldPoint } =>
-  x !== undefined && y !== undefined ? { world: { x, y } } : {};
+const at = (event: InputEvent): { world?: WorldPoint } => {
+  const world = worldPointOf(event);
+  return world ? { world } : {};
+};
 
 /**
  * The params an immediate invoker runs with: what the event carries, under the
@@ -95,7 +99,7 @@ export function immediateParams(
       return {
         deltaX: event.deltaX, deltaY: event.deltaY,
         clientX: event.clientX, clientY: event.clientY,
-        ...at(event.x, event.y),
+        ...at(event),
         affordance: event.affordance,
         ...resolved,
       };
@@ -109,7 +113,7 @@ export function immediateParams(
     case 'click':
     case 'doubleclick':
       return {
-        ...at(event.x, event.y),
+        ...at(event),
         affordance: event.affordance,
         ...(event.kind === 'click' && event.pressX !== undefined && event.pressY !== undefined
           ? { press: { x: event.pressX, y: event.pressY } } : {}),
@@ -120,7 +124,7 @@ export function immediateParams(
     // buffered copy matches `drag` specs, which are ongoing.
     case 'contextmenu':
       return {
-        ...at(event.x, event.y),
+        ...at(event),
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
@@ -131,7 +135,7 @@ export function immediateParams(
     case 'pointerdown':
     case 'longpress':
       return {
-        ...at(event.x, event.y),
+        ...at(event),
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
         mods: modifierStateOf(event),
@@ -139,7 +143,7 @@ export function immediateParams(
       };
     case 'hover':
       return {
-        ...at(event.x, event.y),
+        ...at(event),
         clientX: event.clientX, clientY: event.clientY,
         affordance: event.affordance,
         bodyTarget: event.bodyTarget,
@@ -149,7 +153,7 @@ export function immediateParams(
       };
     case 'carry':
       return {
-        ...at(event.x, event.y),
+        ...at(event),
         clientX: event.clientX, clientY: event.clientY,
         carry: { type: event.type, value: event.value },
         affordance: event.affordance,
@@ -163,7 +167,7 @@ export function immediateParams(
       return {
         items: event.items,
         via: event.kind,
-        ...(event.kind === 'drop' ? at(event.x, event.y) : {}),
+        ...at(event),
         ...resolved,
       };
     default:

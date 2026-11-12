@@ -47,6 +47,17 @@ describe('what an event carries reaches Action.enabled', () => {
     expect(d.resolveOnly(carrying('drop', 'application/pdf'), ctx)).toBeNull();
   });
 
+  it('hands enabled a drop\'s world point, as the invoker gets it', () => {
+    const { d, ctx } = setup();
+    const seen: unknown[] = [];
+    const take = ctx.actions.list()[0]!;
+    const inner = take.enabled!;
+    take.enabled = (deps, at, carried, ...rest) => { seen.push(at); return inner(deps, at, carried, ...rest); };
+    d.resolveOnly(carrying('drop', 'image/png'), ctx);
+    d.handleInput(carrying('drop', 'image/png'), ctx);
+    expect(seen).toEqual([{ x: 1, y: 2 }, { x: 1, y: 2 }]);
+  });
+
   it('leaves a paste the action refuses unhandled', () => {
     const { d, ctx, ran } = setup();
     expect(d.handleInput(carrying('paste', 'application/pdf'), ctx)).toBe('unhandled');
