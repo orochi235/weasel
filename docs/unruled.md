@@ -1783,3 +1783,5 @@ Calls the lanes made without a ruling:
   adds to the last, so an `auto` job on a reloaded trial repeats its items unless the instrument clears them
   (2026-11-12). Open: whether a job with no `begin` should start each run clean, which would need labkit to know
   which part of the state the job fills.
+- Open: a snapshot saves a trial's config, state and clock but not its view, so loading one keeps the pan and zoom
+  the trial shows now rather than what it showed when saved. Saving the view would change every snapshot record.
