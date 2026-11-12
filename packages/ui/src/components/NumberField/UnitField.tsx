@@ -86,6 +86,14 @@ const FULL_PRECISION = decimal({ maxPlaces: 20, grouping: false });
 
 type Bounds = Parameters<typeof clampToBounds>[1];
 
+/** How typed text reads in `locale`: `accepts` reads units, and the display still reads its own words, like infinity's. */
+function reader(accepts: Readonly<UnitTable> | undefined, display: Display, locale: string): (typed: string) => number {
+  return (typed) => {
+    const n = accepts ? parseNumber(typed, accepts, locale) : Number.NaN;
+    return Number.isNaN(n) ? parseAs(typed, display, { locale }) : n;
+  };
+}
+
 /** Whether the field can hold `n`: a finite number, or an infinity an endless end stands for. */
 const holds = (n: number, endless: Endless | undefined): boolean => Number.isFinite(n) || endlessAllows(endless, n);
 
@@ -143,11 +151,7 @@ export function UnitField({
   const locale = { locale: useFieldLocale(localeProp) };
   const known = !Number.isNaN(value);
   const shown = known ? qty(value, display, locale) : null;
-  // `accepts` reads units; the display still reads its own words, like infinity's.
-  const read = (typed: string) => {
-    const n = accepts ? parseNumber(typed, accepts, locale.locale) : Number.NaN;
-    return Number.isNaN(n) ? parseAs(typed, display, locale) : n;
-  };
+  const read = reader(accepts, display, locale.locale);
   const bounds = { step, min: minValue, max: maxValue, endless };
   const idle = useIdleSettle(() => {
     const n = idleValue(draft, read, bounds);
