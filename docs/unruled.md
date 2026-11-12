@@ -924,6 +924,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   is a lone combining mark no longer finds one the text composed into the letter before it.
 - 2026-11-11 (my call, same pass): select's presses, ranges, and store read ids as a `Set` does, `NaN` one id and
   `-0` the same as `0`, as ui-input's selection values do.
+- 2026-11-11 (my call, audit round fifteen): a menu takes a space typed within the typeahead window of a letter
+  as part of the search, as `rowKey` lists and the hud list do, so typing "save a" finds "Save As…" rather than
+  choosing "Save" at the space. A space with no live search still chooses.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
 - Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
   stack rather than answer.
