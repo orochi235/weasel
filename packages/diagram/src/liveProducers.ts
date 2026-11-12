@@ -9,6 +9,7 @@ import {
   type PoseDescriptor,
 } from '@weasel-js/core';
 import type { EasingFn } from '@weasel-js/animator';
+import { lerp } from '@weasel-js/geom';
 import { forceRelaxation, type ForceOptions } from './force';
 import type { Graph } from './graph';
 import { center, type LayoutFn, type LayoutOptions, type LayoutResult } from './layout';
@@ -118,13 +119,6 @@ export function forceProducer<TPose>(
     const done = still >= restTicks || relaxation.sim.isSettled();
     return { result: relaxation.placed(), done };
   };
-}
-
-/** `a` to `b` by `u`: exactly `b` at 1, and finite where `b - a` would overflow. */
-function lerp(a: number, b: number, u: number): number {
-  if (u === 1 || a === b) return u === 1 ? b : a;
-  const d = b - a;
-  return Number.isFinite(d) ? a + d * u : a * (1 - u) + b * u;
 }
 
 /** Options for {@link easedProducer}. */
