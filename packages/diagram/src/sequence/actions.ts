@@ -129,7 +129,7 @@ export function createSequenceDragAction(opts: SequenceEditOptions = {}): Action
             open = false;
             if (reason !== 'commit' || at === null) return;
             const next = proposed(p, { x: end.world.x, y: end.world.y });
-            if (next.data !== p.data) commit({ id: p.scratch.root, data: next.data, label: next.label }, { ...end, deps: { ...end.deps, scene: p.scene as never } });
+            if (next.data !== p.data) commit({ id: p.scratch.root, data: next.data, label: next.label }, { deps: { ...ctx.deps, scene: p.scene as never } });
           },
         };
       },

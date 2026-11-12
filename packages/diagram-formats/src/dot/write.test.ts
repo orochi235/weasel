@@ -112,10 +112,21 @@ describe('writing DOT', () => {
     };
     expect(writeDot(pageOf(data)).warnings).toEqual([
       'DOT has no groups; they were written as clusters, which read back as containers.',
+      'DOT has no ports of a shape\'s own; shapes\' ports and port labels were dropped.',
       'DOT has no drawn outlines; those shapes were written as rectangles.',
       'DOT has only compass ports; connectors\' other ports were dropped.',
       'DOT joins nodes only; connectors to containers and groups were dropped.',
     ]);
+  });
+
+  it('warns that a shape\'s own ports and port labels were dropped, carried from a scene as `ports` alone', () => {
+    const data: DiagramData = {
+      nodes: [{ id: 'a', ports: [{ id: 'n', at: { u: 0.5, v: 0 }, label: 'top' }, { id: 'e', at: { u: 1, v: 0.5 } }] }, { id: 'b' }],
+      edges: [{ from: 'a', to: 'b' }],
+    };
+    expect(writeDot(pageOf(data)).warnings).toEqual(['DOT has no ports of a shape\'s own; shapes\' ports and port labels were dropped.']);
+    expect(writeDot(pageOf({ nodes: [{ id: 'a', portLabels: { n: 'top' } }], edges: [] })).warnings)
+      .toEqual(['DOT has no ports of a shape\'s own; shapes\' ports and port labels were dropped.']);
   });
 
   it('writes the outlines DOT has a shape for, and the rest as boxes with a warning', () => {

@@ -89,6 +89,22 @@ describe('the Message and Note actions', () => {
     expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'message', from: 'c', to: 'c', line: 'dashed' });
   });
 
+  it('hands a host commit the deps the drag started with, when its end carries none', () => {
+    const scene = sceneOf();
+    const y = AT.y + geometry(scene).slots[0]!.y;
+    const press = { x: col(scene, 'a'), y };
+    const to = { x: col(scene, 'b'), y };
+    const applyOps = () => {};
+    const seen: unknown[] = [];
+    const invoker = createDrawMessageAction({ commit: (_edit, ctx) => seen.push(ctx.deps.applyOps) }).invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
+    const ctxAt = (p: Vec2, deps: unknown) => ({ world: p, screen: p, modifiers: KEYS, deps, drag: { start: press, current: p, delta: { x: 0, y: 0 } } }) as unknown as InvocationCtx;
+    const handle = invoker.start(ctxAt(press, { scene, applyOps }), { params: () => ({}) }) as OngoingHandle;
+    handle.onMove?.(ctxAt(to, {}));
+    handle.onEnd?.(ctxAt(to, {}), 'commit');
+    expect(seen).toEqual([applyOps]);
+  });
+
   it('starts nothing off every sequence, so the press falls through', () => {
     const scene = sceneOf();
     const invoker = createDrawMessageAction().invoker as { start: (ctx: unknown) => OngoingHandle };

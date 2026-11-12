@@ -3,6 +3,7 @@ import {
   EDGE_STROKE_WIDTH, LANE_STROKE_WIDTH, NODE_STROKE_WIDTH, dataEdgeStyle, dataNodeStyle, dataRegionStyle, type ContainerHeader, type DataContainer,
   type DataEdge, type DataLane, type DataNode, type DiagramTheme, type NodeStyle, type Row, type RowTextStyle,
 } from '@weasel-js/diagram';
+import { ownPorts } from '../graphWrite';
 import { rowLines } from '../rowLines';
 import { SHAPES, STADIUM_ARC, markerStyle } from './mapping';
 import type { Warn } from './readStyle';
@@ -54,7 +55,7 @@ const VERTICAL: Readonly<Record<string, string>> = { top: 'top', center: 'middle
 /** A shape's style: its outline, its colors under `theme`, its font, and where its text sits. */
 export function nodeStyle(node: DataNode, theme: DiagramTheme, warn: Warn): string {
   if ((node.marks ?? []).length > 0) warn('Marks drawn over shapes were left out.');
-  if (node.portLabels !== undefined) warn('Port labels were left out.');
+  if (ownPorts(node)) warn('Ports of a shape\'s own, and port labels, were left out; connectors meeting them were written meeting the shape where the port sat.');
   return writeStyle([
     ...outlineParts(node, warn), ['whiteSpace', 'wrap'],
     ...colorParts(dataNodeStyle(node, theme), true), ...fontParts(node.rows),

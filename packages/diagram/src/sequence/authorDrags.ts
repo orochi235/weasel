@@ -56,7 +56,7 @@ function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: 
             const done = proposal;
             proposal = null;
             if (reason !== 'commit' || done === null || done.data === press.data) return;
-            commit({ id: press.root.id, data: done.data, label: done.label }, { deps: { ...end.deps, scene: scene as never } });
+            commit({ id: press.root.id, data: done.data, label: done.label }, { deps: { ...ctx.deps, scene: scene as never } });
           },
         };
       },
