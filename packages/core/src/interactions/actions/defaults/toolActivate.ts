@@ -1,4 +1,4 @@
-import type { Action } from '@weasel-js/routing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import type { BoundGesture } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
@@ -65,8 +65,6 @@ export function makeToolActivateAction(
       const activeTool = deps.activeTool;
       const toolId = params?.toolId as string | undefined;
       if (!activeTool || !toolId) return;
-      // Grayed out in the palette ⇒ not reachable by shortcut either.
-      if (isEligible && !isEligible(toolId)) return;
       activeTool.setActive(toolId);
     },
   };
@@ -76,6 +74,14 @@ export function makeToolActivateAction(
     label: 'Activate tool',
     defaultBinding: bindings,
     scope: 'hotkey',
+    // Grayed out in the palette ⇒ not reachable by shortcut either, and the
+    // key goes on to whatever else binds it.
+    ...(isEligible ? {
+      enabled: (_deps, _at, _carried, params) => {
+        const toolId = params?.toolId;
+        return typeof toolId !== 'string' || isEligible(toolId) ? true : ActionDisabledReason.NotApplicable;
+      },
+    } satisfies Pick<Action, 'enabled'> : {}),
     invoker,
     requires: ['activeTool'],
   } as Action & { requires: string[] };
