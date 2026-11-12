@@ -67,8 +67,8 @@ function asBooleanGroup(op: BooleanShapeOp, data: Record<string, unknown>) {
  * drop point (or the viewport center), with later files cascading by a fixed
  * offset. A multi-root file is wrapped in one container so it arrives as a
  * single selectable unit. Content the file hides arrives hidden
- * (`SceneNode.hidden`) rather than being left out. A file that fails to parse, or parses to nothing,
- * is skipped with a `console.warn`.
+ * (`SceneNode.hidden`) rather than being left out. A file that fails to parse, parses to nothing,
+ * or cannot be inserted is skipped with a `console.warn` saying which.
  */
 export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<void> {
   const layer = ((ctx.scene.layers[0]?.id as string | undefined) ?? 'default');
@@ -77,6 +77,10 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
     try {
       const text = await readFileText(file);
       const parsed = parseSvg(text, { keepHidden: true });
+      if (parsed.error !== undefined) {
+        console.warn(`weasel ingest: svg "${file.name}" failed to parse: ${parsed.error}`);
+        continue;
+      }
       for (const w of parsed.warnings) dwarn('ingest', `svg "${file.name}":`, w);
       let drafts = svgNodesToKitDrafts(parsed, () => ctx.scene.mintId());
       if (drafts.length === 0) {
@@ -143,7 +147,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
       ctx.applyOps(ops, 'Insert SVG');
       index++;
     } catch (err) {
-      console.warn(`weasel ingest: svg "${file.name}" failed to parse`, err);
+      console.warn(`weasel ingest: svg "${file.name}" was not inserted`, err);
     }
   }
 }
