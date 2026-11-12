@@ -91,7 +91,7 @@
     "longestFunction": 394
   },
   "packages/hud/src/attach.ts": {
-    "longestFunction": 144
+    "longestFunction": 140
   },
   "packages/hud/src/hud.ts": {
     "longestFunction": 125
