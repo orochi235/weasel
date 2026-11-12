@@ -82,7 +82,7 @@ others, and naming it turns those on too; any of them can also be named alone:
 
 | Preset | Registers |
 |---|---|
-| `view` | wheel pan and zoom, pinch, the zoom keys; the hand tool (`tools:view`), held on Space |
+| `view` | wheel pan and zoom, pinch, the zoom keys; a middle-button drag pans under any tool; the hand tool (`tools:view`), held on Space |
 | `select` | the select and lasso tools (`tools:select`), the select tool as the initial active tool and Escape's return target |
 | `outline` | the selection outline, whichever tool sets the selection |
 | `pick` | `select` and `outline` |

@@ -80,6 +80,7 @@ export function attachInput(
     clicks: src.clicks,
     hover,
     controls: src.controls,
+    secondaryDrags: channels.contextMenu,
   });
 
   // A window that loses focus never delivers the keyup, so without this every
@@ -134,7 +135,7 @@ export function attachInput(
     listeners.on(canvas, 'gestureend', pinch.onGestureEnd);
   }
   if (channels.contextMenu) {
-    listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold));
+    listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold, pointer.takeNativeMenu));
   }
   if (channels.ingest) {
     listeners.on(canvas, 'dragenter', ingest.onDragOver);

@@ -27,6 +27,7 @@ import {
   SELECTION_RESIZE_ID,
   SELECTION_ROTATE_ID,
 } from 'tools/builtin/select/selectionContributions';
+import { MIDDLE_DRAG_PAN_ID } from 'tools/builtin/hand/dragPanContribution';
 
 const resolve = (features?: readonly FeatureEntry[], opts?: { viewport?: boolean }) =>
   resolveFeatures(features, CORE_NAMED_PRESETS, opts);
@@ -196,13 +197,17 @@ describe('FEATURE_PRESETS', () => {
       const entries = presetAmbient(resolve([id]), {});
       expect(entries.map((e) => e.id), id).toEqual(row.ambient ? [row.ambient({}).id] : []);
     }
-    expect(presetAmbient(all, {}).map((e) => e.id)).toEqual([
+    const ids = presetAmbient(all, {}).map((e) => e.id);
+    expect(ids).toContain(MIDDLE_DRAG_PAN_ID);
+    expect(ids.filter((id) => id !== MIDDLE_DRAG_PAN_ID)).toEqual([
       SELECTION_RESIZE_ID, SELECTION_ROTATE_ID, SELECTION_MOVE_ID,
     ]);
   });
 
   it('hands the move and rotate options to the entries they configure', () => {
-    const [, rotate, move] = presetAmbient(all, { move: { dragThresholdPx: 9 }, rotate: { rotateLabel: 'Spin' } });
+    const entries = presetAmbient(all, { move: { dragThresholdPx: 9 }, rotate: { rotateLabel: 'Spin' } });
+    const rotate = entries.find((e) => e.id === SELECTION_ROTATE_ID)!;
+    const move = entries.find((e) => e.id === SELECTION_MOVE_ID)!;
     expect(move.bindings!.find((b) => b.actionId === 'move')!.opts!.dragThresholdPx).toBe(9);
     expect(rotate.bindings![0].opts!.params).toMatchObject({ label: 'Spin' });
   });

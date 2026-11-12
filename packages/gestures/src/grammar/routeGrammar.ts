@@ -27,6 +27,7 @@
  *   [*:engaged] keyDown(Delete)                -- when any tool is mid-gesture
  *   [initial,engaged] contextMenu => empty     -- either self phase
  *   [*] click => empty                         -- self, any phase
+ *   [*:*] drag(middle)                         -- a middle-button drag, any tool, any phase
  */
 import { getGestureDescriptor, isKnownGestureName, type GestureName } from './gestures';
 import type { RoutePhase } from '../ui/phase';

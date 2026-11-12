@@ -33,7 +33,7 @@ export type { PressTargetTree } from './pressTarget';
 // dispatcher-driven via `resizeAction` + the `resizePolicy` dep (constraints,
 // point snap, group expansion); pose geometry comes from `poseDescriptor`.
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
-export { useHandTool, dragPanContribution, DRAG_PAN_ID } from './hand';
+export { useHandTool, dragPanContribution, DRAG_PAN_ID, middleDragPanContribution, MIDDLE_DRAG_PAN_ID } from './hand';
 export { anchorsTool, ANCHORS_TOOL_ID } from './anchors';
 export { useTextTool, TEXT_TOOL_OPTIONS } from './text';
 export {

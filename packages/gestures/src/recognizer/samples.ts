@@ -3,7 +3,7 @@
  * pump events each becomes.
  */
 import type {
-  BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent, PointerDownEvent, PointerSampleStylus,
+  BodyKind, BodyTarget, DoubleClickBody, EventModifiers, InputEvent, PointerButton, PointerDownEvent, PointerSampleStylus,
 } from '../ui/inputEvent';
 import { stylusOf } from '../ui/stylus';
 import type { Point } from './multiTouch';
@@ -32,6 +32,8 @@ export interface PressSample extends PointerSample {
   y: number;
   /** `PointerEvent.pointerType`. Only `'touch'` and `'pen'` arm a long-press. */
   pointerType: string;
+  /** Absent is `'primary'`. See `PointerDownEvent.pointerButton`. */
+  pointerButton?: PointerButton;
   affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
@@ -60,7 +62,10 @@ const at = (s: PointerSample, world: Point) => ({
 });
 
 export function pointerDownEvent(s: PressSample): PointerDownEvent {
-  return { kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s) };
+  return {
+    kind: 'pointerdown', target: s.target, ...at(s, s), ...stylusOf(s), ...pressedOn(s),
+    ...(s.pointerButton !== undefined && s.pointerButton !== 'primary' ? { pointerButton: s.pointerButton } : {}),
+  };
 }
 
 export function pointerMoveEvent(s: PointerSample, world: Point): InputEvent {

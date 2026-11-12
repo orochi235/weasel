@@ -8,15 +8,19 @@ import { underPointer } from '../underPointer';
  * its long-press if that is still pending. A browser that sends `contextmenu`
  * for a hold (Android Chrome) is reporting the same hold the dispatcher times,
  * so the event stands for the long-press and never dispatches a second menu.
+ * `takeNativeMenu` answers the same for a secondary press the pointer channel
+ * took for a drag, which opens its own menu when it is released in place.
  */
-export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boolean): (e: MouseEvent) => void {
+export function contextMenuInput(
+  core: DispatchCore, takeNativeHold: () => boolean, takeNativeMenu: (e: MouseEvent) => boolean,
+): (e: MouseEvent) => void {
   const { routeAt, toWorld, target, dispatch } = core;
 
   const onContextMenu = (e: MouseEvent) => {
     // Suppress native menu so tools/actions own the right-click UX.
     e.preventDefault();
     if (eventTaken(e)) return;
-    if (takeNativeHold()) {
+    if (takeNativeHold() || takeNativeMenu(e)) {
       takeEvent(e);
       return;
     }
@@ -25,8 +29,8 @@ export function contextMenuInput(core: DispatchCore, takeNativeHold: () => boole
     core.activate(e);
     routeAt(null, e.clientX, e.clientY);
     const w = toWorld(e.clientX, e.clientY);
-    // A secondary button never reaches `onPointerDown`, so unlike click and
-    // long-press there is no press to replay the classification from.
+    // A secondary press reaches the pointer channel only where it could drag,
+    // so here there is no press to replay the classification from.
     const ev: InputEvent = {
       kind: 'contextmenu',
       target: e.target,

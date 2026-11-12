@@ -81,6 +81,7 @@ export type {
   PinchEvent,
   PointerSampleStylus,
   PointerIdentity,
+  PointerButton,
   PointerDownEvent,
   PointerMoveEvent,
   HoverEvent, HoverWhere,
@@ -145,6 +146,7 @@ export { createPointerRecognizer } from './recognizer/pointerRecognizer';
 export type {
   PointerRecognizer, PointerRecognizerOptions, RecognizerObserver, RecognizerSink,
 } from './recognizer/pointerRecognizer';
+export { pointerDownEvent } from './recognizer/samples';
 export type { PointerSample, PressSample } from './recognizer/samples';
 export type { HeldPress, RecognizerClock } from './recognizer/longPressHold';
 export type { ClickMemory, ClickObserver, ReleaseOutcome } from './recognizer/click';

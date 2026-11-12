@@ -190,6 +190,9 @@ function matchPress(
   isMac: boolean,
 ): boolean {
   if (e.kind !== 'pointerdown') return false;
+  const button = e.pointerButton ?? 'primary';
+  const wants = spec.kind === 'drag' ? spec.button ?? 'primary' : 'primary';
+  if (wants !== '*' && wants !== button) return false;
   if (spec.kind === 'drag') {
     // Drag begins at pointerdown; the dispatcher promotes to drag after
     // threshold is crossed. Without this gate the eager dispatch would open
