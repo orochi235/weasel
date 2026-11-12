@@ -339,6 +339,16 @@ describe('registerDisplayKind', () => {
     expect(displayKindOf(fraction())).toBe(fractionKind);
     expect(qty(1 / 12, fraction()).spoken).toBe('1 over 12');
   });
+
+  it('removing the newer of two registrations of one kind restores the older, as registerUnit does', () => {
+    const older = registerDisplayKind({ ...fractionKind, speak: () => 'older' });
+    const newer = registerDisplayKind({ ...fractionKind, speak: () => 'newer' });
+    expect(qty(1 / 12, fraction()).spoken).toBe('newer');
+    newer();
+    expect(qty(1 / 12, fraction()).spoken).toBe('older');
+    older();
+    expect(displayKindOf(fraction())).toBe(fractionKind);
+  });
 });
 
 describe('infinity', () => {
