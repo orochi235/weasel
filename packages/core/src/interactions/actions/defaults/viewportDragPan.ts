@@ -60,7 +60,8 @@ export interface DragPanParams {
  * Translates the viewport by the screen-space drag delta so the canvas content
  * follows the pointer. Produces no scene ops — view changes are not undoable.
  * It has no binding of its own: the hand tool binds a drag to it, and a canvas
- * that pans on any unclaimed drag adds `dragPanContribution`.
+ * that pans on any unclaimed drag adds `dragPanContribution`. The `view` preset
+ * binds a middle-button drag to it with `middleDragPanContribution`.
  */
 // No `eligible` field → viewport pan is always eligible across all modes.
 export const viewportDragPanAction: Action & { requires: string[] } = {

@@ -94,9 +94,16 @@ export interface PointerIdentity {
   pointerId?: number;
 }
 
+/** The mouse button a press was made with. Pen and touch press with `'primary'`. */
+export type PointerButton = 'primary' | 'middle';
+
 /** A pointer press — the start of any drag, and the richest event shape. */
 export interface PointerDownEvent extends EventModifiers, PointerSampleStylus, PointerIdentity {
   kind: 'pointerdown';
+  /** Absent is `'primary'`. A middle press is only ever a drag: it makes no
+   *  `'press'` stage, click, double click or long-press. Not `button`, which is
+   *  the DOM's number, and events are often built by spreading a DOM one. */
+  pointerButton?: PointerButton;
   /**
    * Which of the two dispatches this press produces. A physical pointerdown
    * is dispatched twice:

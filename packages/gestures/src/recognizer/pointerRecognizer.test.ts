@@ -673,3 +673,38 @@ describe('thresholds read through options', () => {
     expect(wide.kinds()).toContain('multitouchtap');
   });
 });
+
+describe('a middle press', () => {
+  it('makes no press stage, and goes out as a middle drag once past the threshold', () => {
+    const h = harness();
+    h.down(1, 0, { pointerButton: 'middle' });
+    expect(h.kinds()).toEqual([]);
+    h.recognizer.move(h.at(1, DRAG_THRESHOLD_PX));
+    expect(h.kinds()).toEqual(['pointerdown', 'pointermove']);
+    expect(h.events[0]).toMatchObject({ kind: 'pointerdown', pointerButton: 'middle' });
+    expect(h.events[0]).not.toHaveProperty('stage');
+  });
+
+  it('neither clicks when released in place nor long-presses when held', () => {
+    const h = harness({ handles: ['longpress', 'contextmenu'] });
+    h.down(1, 0, { pointerButton: 'middle', pointerType: 'pen' });
+    h.clock.advance(LONG_PRESS_MS * 2);
+    h.recognizer.release(h.at(1, 0));
+    expect(h.log).toEqual(['pointerup']);
+  });
+
+  it('leaves a click sequence open, so primary clicks either side of it still double-click', () => {
+    const h = harness();
+    h.click();
+    h.down(1, 0, { pointerButton: 'middle' });
+    h.recognizer.release(h.at(1, 0));
+    h.click();
+    expect(h.kinds()).toContain('doubleclick');
+  });
+
+  it('is the only press marked with a button', () => {
+    const h = harness();
+    h.down(1, 0);
+    expect(h.events[0]).not.toHaveProperty('pointerButton');
+  });
+});

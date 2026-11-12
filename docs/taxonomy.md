@@ -343,6 +343,15 @@ Crossing from one target to another is therefore a leave for a binding that
 targets the first, and nothing for one that targets neither or both. A press is
 not a leave.
 
+A `drag` names the button that drags it: `DragSpec.button`, written `drag(middle)`
+in a route, `primary` by default and `*` for either. A middle press is only ever
+a drag: it makes no `pointerDown`, click, double click or long-press, and leaves a
+primary click sequence open. A middle press no binding would drag is left to the
+browser — its autoscroll, its paste — and one that some binding would drag is
+default-prevented. The right button is the context menu's and starts no drag. The
+`view` preset binds a middle drag to `viewport.dragPan` under every tool
+(`middleDragPanContribution`).
+
 A `hover` spec with `held` keeps reporting while a button is down, read the way
 `mods` reads a modifier: `held: 'optional'` (`hover ?held` in a route) fires
 pressed or not, `held: true` (`hover +held`) only pressed, and without it a held

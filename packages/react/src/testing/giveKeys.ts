@@ -6,7 +6,8 @@ import { act, render, type RenderOptions, type RenderResult } from '@testing-lib
  * reach the page go to the canvas last pressed or scrolled, and to none before
  * that, so a test that fires a key at `window` presses first. The press is a
  * middle-button one, released at once, which activates the canvas's input
- * scope and starts no gesture, so nothing is picked, dragged, or clicked.
+ * scope and starts no gesture: a middle press only ever drags, and this one
+ * never moves, so nothing is picked, dragged, or clicked.
  *
  * `canvas` defaults to the first `<canvas>` in the document.
  */

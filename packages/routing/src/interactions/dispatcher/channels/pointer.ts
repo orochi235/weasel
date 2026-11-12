@@ -3,8 +3,8 @@
  * and does for it what needs a DOM — sessions, timers, haptics.
  */
 import {
-  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, stylusOf,
-  type ClickMemory, type HeldPress, type PointerSample, type RecognizerClock,
+  createPointerRecognizer, isInControlWithin, longPressEvents, pastDragThreshold, pointerDownEvent, stylusOf,
+  type ClickMemory, type HeldPress, type PointerSample, type PressSample, type RecognizerClock,
 } from '@weasel-js/gestures';
 import type { KitSettingsStore } from '@weasel-js/react';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
@@ -250,10 +250,10 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   return {
     onPointerDown(e) {
       claimedDoubleClick = false;
-      // Only the primary button drives gesture dispatch; the others are left
-      // for the consumer's own tools and the browser context menu. An absent
-      // `button` (synthetic events) counts as primary.
-      if ((e.button ?? 0) !== 0) return;
+      // The primary and middle buttons drive gesture dispatch; the right one is
+      // the context menu's. An absent `button` (synthetic events) is primary.
+      const button = e.button ?? 0;
+      if (button !== 0 && button !== 1) return;
       if (!canvas) return;
       // A button or field laid over the canvas handles its own press: opening a
       // session here would capture the pointer and retarget its click. A surface
@@ -267,6 +267,17 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       routeDown(e.pointerId, e.clientX, e.clientY);
       const w = toWorld(e.clientX, e.clientY);
       const where = underPointer(target(), e, w);
+      const press: PressSample = {
+        ...sampleOf(e), x: w.x, y: w.y, pointerType: e.pointerType, ...where, ...(button === 1 ? { pointerButton: 'middle' as const } : {}),
+      };
+      if (button === 1) {
+        // A middle press nothing would drag stays the browser's: its autoscroll, its paste.
+        if (core.dispatcherNow().resolveOnly(pointerDownEvent(press), core.ctxNow()) === null) {
+          routeRelease(e.pointerId);
+          return;
+        }
+        e.preventDefault();
+      }
       // The session owns the rest of this pointer: capture, the moves, the
       // release, and recovery from a release that never arrives. A press on a
       // pointer one is already open for cancels that stale gesture before this
@@ -276,9 +287,9 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
         onMove, onEnd: (up) => { onUp(up, session); }, onCancel: () => { onCancel(e.pointerId); },
       }, { capture: !onControl });
       sessions.set(e.pointerId, session);
-      const sample = lastSample.set(e.pointerId, sampleOf(e)).get(e.pointerId)!;
-      if (onControl) claims.uncaptured(sample);
-      recognizer.press({ ...sample, x: w.x, y: w.y, pointerType: e.pointerType, ...where });
+      lastSample.set(e.pointerId, sampleOf(e));
+      if (onControl) claims.uncaptured(press);
+      recognizer.press(press);
     },
     onHoverMove(e) {
       if (!sessions.has(e.pointerId)) onMove(e);

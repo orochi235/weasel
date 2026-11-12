@@ -57,6 +57,8 @@ describe('describeRoute — modifiers', () => {
   it('reads a pointer gesture with no, one, two and three modifiers', () => {
     expect(action('[initial] drag')).toBe('the user drags anywhere');
     expect(action('[initial] drag +alt')).toBe('the user Alt-drags anywhere');
+    expect(action('[initial] drag(middle)')).toBe('the user drags anywhere with the middle button');
+    expect(action('[initial] drag(*)')).toBe('the user drags anywhere with either button');
     expect(action('[initial] drag +mod +alt')).toBe('the user holds Mod and Alt and drags anywhere');
     expect(action('[initial] drag +mod +shift +alt')).toBe(
       'the user holds Mod, Shift, and Alt and drags anywhere',

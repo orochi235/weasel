@@ -20,7 +20,7 @@ export const ROUTE_TERMS = {
 export const ROUTE_FIELD_DEFINITIONS = {
   phases: 'Which lifecycle stage(s) a channel must be in for this route to fire. `initial` = the channel is idle; `engaged` = the channel is mid-gesture. The channel is the binding\'s own tool (`&`), any tool (`*`), or a named tool id.',
   gesture: 'The class of input event that triggers this route: a click, a drag, a keystroke, a wheel turn, content dropped or pasted, and so on.',
-  arg: 'Sub-class of the gesture: the direction of a wheel or pinch, the key of a keystroke, the finger count of a multitouch, the MIME globs of a drop, carry or paste, whether a hover moves or leaves. Other gestures have no arg slot.',
+  arg: 'Sub-class of the gesture: the button of a drag, the direction of a wheel or pinch, the key of a keystroke, the finger count of a multitouch, the MIME globs of a drop, carry or paste, whether a hover moves or leaves. Other gestures have no arg slot.',
   target: 'Which hit-test result the gesture must land on. `*` matches any target; `empty` matches the empty canvas; otherwise the value names a specific hit-target kind.',
   modifiers: 'Modifier keys the user must hold (`+key`) or may optionally hold (`?key`) for this route to match. Unlisted modifiers must not be held.',
 } as const;
@@ -174,8 +174,12 @@ function actionClause(parsed: ParsedRoute, arg: string | undefined, required: re
     }
     case 'dblTap':
       return userDoes(required, `double-taps${target}`);
-    case 'drag':
-      return userDoes(required, `drags${target}`);
+    case 'drag': {
+      const button = arg === 'middle' ? ' with the middle button'
+        : arg === '*' ? ' with either button'
+        : '';
+      return userDoes(required, `drags${target}${button}`);
+    }
     case 'drop':
       return userDoes(required, `drops ${arg ?? 'any'} content onto the canvas`);
     case 'carry':
