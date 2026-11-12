@@ -208,6 +208,21 @@ describe('usePreviewGhostLayer — previewOpaqueIds', () => {
     const cmds = result.current.draw(env([handle]), VIEW, DIMS) as GroupDrawCommand[];
     expect(cmds.map((c) => c.alpha)).toEqual([0.85]);
   });
+
+  it("paints the ghost at the scene slot's ghostAlpha", () => {
+    const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const a = scene.add({ kind: 'mark', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+    const handle: OngoingHandle = { previewIds: () => [a], previewPose: () => PREVIEW_POSE };
+    const { result } = renderHook(() =>
+      usePreviewGhostLayer<Data, 'main', Pose>({
+        scene,
+        sceneSlot: { drawOne, ghostAlpha: 0.4 },
+        dispatcher: makeDispatcher([handle]),
+      }),
+    );
+    const cmds = result.current.draw(env([handle]), VIEW, DIMS) as GroupDrawCommand[];
+    expect(cmds.map((c) => c.alpha)).toEqual([0.4]);
+  });
 });
 
 describe('usePreviewGhostLayer — a render React abandons', () => {

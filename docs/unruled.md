@@ -1688,3 +1688,16 @@ Calls the lanes made without a ruling:
 - Open: `Slider` commits through `onChange` when a press or keystroke moves nothing.
 - Open: which edge an RTL menu favors when it fits on neither side, or is wider than the viewport. menu's placement
   property skips both cases (2026-11-10).
+
+## Audit round sixteen (2026-11-11): contracts
+
+- Open: a mixed number slider in `PropertyField` disables its track and reads out a dash that takes no focus, so it
+  cannot be edited, while `PrefsForm`'s `mixed` says editing one calls `onChange` as usual. A test pins the disabled
+  track ("parks a mixed slider").
+- Open: `Slider`'s region drag moves the two thumbs beside it by one track distance with no `step` or stop snapping,
+  and a shift-all drag snaps to `step` even under `snap: 'strict'`, which says `step` no longer applies and every
+  stop is a detent. Under strict stops spaced unevenly, both thumbs cannot land on stops and keep their gap.
+- Open: a `ControlPanel` group drawn `as: 'bar'` hands its cells no `errors`, `changed` or `auto`, so an error, a
+  changed mark or an auto readout on a bar leaf does not show. A paired row shows errors and `changed`, not `auto`.
+- Open: `selectTool.pickBest` steers only the internal select tool's own pick; the dispatcher, hover and `onClick`
+  pick the topmost hit, so with alt-cycling `onClick` can name a different node from the one the press selected.

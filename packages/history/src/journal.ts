@@ -58,8 +58,9 @@ export interface BeginJournalOptions {
  *
  * A journal is active, suspended or closed. `commit` and `cancel` are
  * terminal; `suspend` lets the parent be used again and can be reversed with
- * `history.resumeJournal()`. Every mutating method throws when the journal is
- * not active.
+ * `history.resumeJournal()`. Every method that changes its entries or its
+ * state throws when the journal is not active; `seal`, which only ends a
+ * coalescing run, does not.
  */
 export interface Journal {
   readonly targetId: string | undefined;

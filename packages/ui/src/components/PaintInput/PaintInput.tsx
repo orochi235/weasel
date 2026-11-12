@@ -273,6 +273,7 @@ function PaintBody(props: PaintBodyProps): ReactElement | null {
         <ColorField
           mixed
           aria-label={ariaLabel}
+          onInput={(color) => onInput?.(solidFromField(color))}
           onChange={(color) => onChange(solidFromField(color))}
         />
       );

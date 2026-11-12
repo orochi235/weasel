@@ -38,6 +38,13 @@ describe('exportPagePng', () => {
     expect(rgb(img, 240, 160)).toEqual([0, 255, 0]);
   });
 
+  it('draws the document, not what an override is showing', async () => {
+    const { scene, pages } = pageScene();
+    scene.overrides.set('b' as never, { data: (d) => ({ ...(d as object), fill: { paint: { kind: 'solid', color: '#0000ff' } } }) });
+    const img = await pixels(await exportPagePng(scene, pages[0]!, { scale: 2, background: '#fafafa' }));
+    expect(rgb(img, 240, 160)).toEqual([0, 255, 0]);
+  });
+
   it('draws the page it is given, from its own corner', async () => {
     const { scene, pages } = pageScene();
     const img = await pixels(await exportPagePng(scene, pages[1]!, { scale: 1, background: '#fafafa' }));

@@ -11,8 +11,8 @@
  *     fall back to the clipper in the same cases.
  *   - Divide and the face pieces trace the arrangement of every outline
  *     (`curveFaces`) and write each face back with the inputs' curves.
- *   - Open contours are treated as closed (a polyline has zero area and would
- *     otherwise be silently dropped).
+ *   - An open contour counts as a fill counts it: closed by a straight edge
+ *     where `fillsOpenSubpaths` says a fill closes it, and left out where not.
  *   - Output `fillRule` is always `'nonzero'`.
  *
  * This is the only geom module that depends on `polygon-clipping`; it lives in
