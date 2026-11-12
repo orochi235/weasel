@@ -1,4 +1,4 @@
-import { type RectPose } from '@weasel-js/core';
+import { type RectPose, useSelection } from '@weasel-js/core';
 import { addExtremesPreset, anchorSelectionPreset } from '@weasel-js/path-tools';
 import {
   type ConfigOf,
@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/labkit';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { LastOperationPanel } from '@weasel-js/ui/components/LastOperationPanel';
-import { createPathLabScene, useSeededPathEdit } from './pathEditLabSeed';
+import { createPathLabScene, EDITED_ID, EDITED_OPENING } from './pathEditLabSeed';
 import { OpeningSteps, PathLabStage } from './pathLab/pathLab';
 import '@weasel-js/labkit/styles.css';
 import 'windease/styles.css';
@@ -31,7 +31,7 @@ const features = ['draw', addExtremesPreset, anchorSelectionPreset] as const;
 
 function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
   const scene = useTrialScene(ctx, createLabScene);
-  const { selection, pathEdit, redrawOn } = useSeededPathEdit(scene);
+  const selection = useSelection({ scene, initial: [EDITED_ID] });
   return (
     <PathLabStage bar={<><ActionBar group="anchors" /><LastOperationPanel /></>}>
       <TrialSceneCanvas
@@ -39,8 +39,7 @@ function AddExtremesTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
         scene={scene}
         trial={ctx.trial}
         selection={selection}
-        pathEdit={pathEdit}
-        redrawOn={redrawOn}
+        defaultPathEdit={EDITED_OPENING}
       />
       {/* Anchors 0 and 2: the segment closing the blob is selected. */}
       <OpeningSteps steps={[['selectEveryNthAnchor', { n: 2 }]]} />
