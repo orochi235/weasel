@@ -52,6 +52,27 @@ function press(target: HTMLDivElement, clientX: number, clientY: number): React.
 }
 
 describe('useHandleDrag', () => {
+  it('leaves a live drag to its finger when a second finger presses the handle', () => {
+    const onMove = vi.fn();
+    const onStart = vi.fn();
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove, onStart, onCancel, onEnd }));
+    const target = mount();
+    const finger = (pointerId: number, x: number) =>
+      ({ ...press(target, x, 0), pointerType: 'touch', button: 0, pointerId }) as unknown as React.PointerEvent<HTMLDivElement>;
+
+    result.current.onPointerDown(finger(1, 10));
+    result.current.onPointerDown(finger(2, 60));
+    target.dispatchEvent(makePointerEvent('pointermove', { pointerId: 1, pointerType: 'touch', clientX: 20, clientY: 0 }));
+    target.dispatchEvent(makePointerEvent('pointerup', { pointerId: 1, pointerType: 'touch', clientX: 20, clientY: 0 }));
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onMove).toHaveBeenCalledWith({ x: 20, y: 0 }, expect.anything());
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores a right or middle mouse press, and leaves a live drag alone', () => {
     const onMove = vi.fn();
     const onStart = vi.fn();

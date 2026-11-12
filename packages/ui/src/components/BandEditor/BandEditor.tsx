@@ -185,13 +185,13 @@ export function BandEditor<T, F extends Quantity = number>(props: BandEditorProp
     return width === 0 ? unit : attract(unit, ticks.map((tick) => toUnit(tick.at)), snapRadiusPx / width);
   };
 
-  // An edge drag. One that ends without a release commits nothing.
+  // An edge drag, which a second finger's press leaves to the first. One that ends without a release commits nothing.
   const drag = (
     down: ReactPointerEvent<HTMLElement>,
     onMove: (ev: PointerEvent) => void,
     onEnd: () => void,
   ): void => {
-    sessionRef.current?.cancel();
+    if (sessionRef.current?.active) return;
     sessionRef.current = openPointerSession(down.currentTarget, down, {
       onMove,
       onEnd: () => { sessionRef.current = null; setDraft(null); onEnd(); },

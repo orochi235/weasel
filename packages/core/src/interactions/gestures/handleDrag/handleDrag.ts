@@ -74,10 +74,9 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<T>) => {
-      // A right press is the context menu's, and a second button mid-drag is not a new drag.
-      if (!isPrimaryPress(e)) return;
+      // A right press is the context menu's, and a second button or finger mid-drag is not a new drag.
+      if (!isPrimaryPress(e) || live.current?.active) return;
       e.preventDefault();
-      live.current?.cancel();
 
       const target = e.currentTarget;
       const { getRect, onStart } = optsRef.current;

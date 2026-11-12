@@ -45,6 +45,8 @@ export function useKeyDrag(a: KeyDragArgs) {
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
     if (!isPrimaryPress(e)) return;
     e.stopPropagation();
+    // A key drag belongs to the finger that started it: a second finger's press selects nothing and drags nothing.
+    if (sessionRef.current?.active) return;
     onSelect(i);
 
     const at = (ev: { clientX: number; altKey: boolean }): number => {
@@ -67,7 +69,6 @@ export function useKeyDrag(a: KeyDragArgs) {
       sessionRef.current = null;
     };
     // No pointer capture — see `Ruler`, same idiom across the timeline.
-    sessionRef.current?.cancel();
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
         if (!traveled(ev)) return;

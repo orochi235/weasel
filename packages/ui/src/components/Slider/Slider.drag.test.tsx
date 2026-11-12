@@ -242,3 +242,30 @@ describe('Slider pointer capture', () => {
     expect(capture).not.toHaveBeenCalled();
   });
 });
+
+describe('Slider under two fingers', () => {
+  it('leaves a thumb drag to its finger when a second finger presses the other thumb', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    const { container } = render(
+      <Slider
+        min={0} max={1} step={0.01} thumbs={[{ value: 0.25 }, { value: 0.75 }]}
+        onInput={onInput} onChange={onChange} onCancel={onCancel}
+      />,
+    );
+    const [a, b] = Array.from(container.querySelectorAll('[role="slider"]')) as HTMLElement[];
+    stubRect(a.parentElement!, { left: 0, width: 200 });
+
+    fireEvent.pointerDown(a, { clientX: 50, clientY: 12, pointerId: 1, pointerType: 'touch', button: 0 });
+    fireEvent.pointerDown(b, { clientX: 150, clientY: 12, pointerId: 2, pointerType: 'touch', button: 0 });
+    fireEvent.pointerMove(document, { clientX: 80, clientY: 12, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerUp(document, { clientX: 80, clientY: 12, pointerId: 1, pointerType: 'touch' });
+    fireEvent.pointerUp(document, { clientX: 150, clientY: 12, pointerId: 2, pointerType: 'touch' });
+
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0][0].value).toBeCloseTo(0.4, 2);
+    expect(onChange.mock.calls[0][0][1].value).toBeCloseTo(0.75, 2);
+  });
+});

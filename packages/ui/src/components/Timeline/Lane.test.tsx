@@ -85,6 +85,21 @@ describe('Lane', () => {
     expect(onSelect).toHaveBeenCalledWith(1);
   });
 
+  it('leaves a key drag to its finger when a second finger presses another key', () => {
+    const onKeyCommit = vi.fn();
+    const onSelect = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} onSelect={onSelect} onKeyCommit={onKeyCommit} />);
+    const [first, second] = screen.getAllByTestId('timeline-key');
+    const touch = (pointerId: number, clientX: number) => ({ clientX, clientY: 10, button: 0, pointerId, pointerType: 'touch' });
+    fireEvent.pointerDown(second, touch(1, 250));
+    fireEvent.pointerDown(first, touch(2, 0));
+    fireEvent.pointerMove(document, touch(1, 350));
+    fireEvent.pointerUp(document, touch(1, 350));
+    fireEvent.pointerUp(document, touch(2, 0));
+    expect(onSelect.mock.calls).toEqual([[1]]);
+    expect(onKeyCommit.mock.calls).toEqual([[1, 700]]);
+  });
+
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
     const onKeyCommit = vi.fn();

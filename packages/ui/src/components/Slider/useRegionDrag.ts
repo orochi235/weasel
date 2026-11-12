@@ -43,7 +43,7 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
 
   return (index: number) => (e: ReactPointerEvent) => {
-    if (!isPrimaryPress(e)) return;
+    if (!isPrimaryPress(e) || sessionRef.current?.active) return;
     const { thumbs } = props;
     if (index === 0 || index >= thumbs.length) return;
     const start = geometry.measure(e.clientX, e.clientY);
@@ -55,7 +55,6 @@ export function useRegionDrag<T extends Thumb>({ props, min, max, scale, geometr
     const moved = (shift: number): T[] => thumbs.map((t, i) =>
       (shift !== 0 && (i === index - 1 || i === index) ? { ...t, value: fractionToValue(f[i] + shift) } : { ...t }));
 
-    sessionRef.current?.cancel();
     // No capture: a region draws content of its own, and capture would retarget pointerup and kill the click on it.
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {

@@ -52,10 +52,9 @@ export function Ruler(props: RulerProps): ReactElement {
   // and capture would retarget pointerup and kill the click on non-native
   // children of the scrubbed track.
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>): void => {
-    if (!isPrimaryPress(e)) return;
+    if (!isPrimaryPress(e) || sessionRef.current?.active) return;
     onScrub(msAt(e.clientX));
 
-    sessionRef.current?.cancel();
     const end = (): void => { sessionRef.current = null; };
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => { onScrub(msAt(ev.clientX)); },
