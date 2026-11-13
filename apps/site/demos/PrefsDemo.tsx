@@ -49,12 +49,12 @@ const show = (value: unknown) => (value === undefined ? '—' : JSON.stringify(v
 
 export function PrefsDemo() {
   const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-prefs.' });
-  const { values, set, unset, stored, reset } = usePrefsValues(store);
+  const { form, values, unset, stored, reset } = usePrefsValues(store);
   const [, setSize] = usePref(store, 'grid.size');
 
   return (
     <div className={s.demo}>
-      <PrefsForm layout="list" schema={SCHEMA} values={values} onChange={set} />
+      <PrefsForm layout="list" {...form} />
       <div className={s.side}>
         <table className={s.table}>
           <thead>

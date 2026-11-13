@@ -118,4 +118,21 @@ describe('usePrefsValues', () => {
     expect(result.current.values.gap).toBe(9);
     expect(result.current.scopes.get('gap')).toBe(held.get('gap'));
   });
+
+  it('binds a form through `form`, under the props\' own names', () => {
+    const store = open();
+    const { result, rerender } = renderHook(() => usePrefsValues(store));
+    const { form } = result.current;
+    expect(form.schema).toBe(store.schema);
+    expect(form.values).toBe(result.current.values);
+    act(() => form.onChange('density', 90));
+    expect(store.get('density')).toBe(90);
+    act(() => result.current.form.onAutoChange('density', true));
+    expect(result.current.form.auto.has('density')).toBe(true);
+    act(() => result.current.form.onAutoChange('grid', false));
+    expect(store.isSet('grid')).toBe(true);
+    const held = result.current.form;
+    rerender();
+    expect(result.current.form).toBe(held);
+  });
 });

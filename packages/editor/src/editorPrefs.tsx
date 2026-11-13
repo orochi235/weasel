@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { openPrefsSync, type PrefGroup, type PrefsStore } from '@weasel-js/prefs';
-import { usePrefsValues } from '@weasel-js/prefs/react';
+import { usePrefsValues, type PrefsFormBinding } from '@weasel-js/prefs/react';
 import { PrefsDialog, type PrefsDialogProps } from '@weasel-js/ui/components/Prefs';
 
 /** What `openPrefsSync` takes besides the schema. */
@@ -13,7 +13,7 @@ export type EditorPrefs<S extends PrefGroup = PrefGroup> = PrefsStore<S> | ({ sc
 /** What the preferences dialog takes past the store's own binding: `layout`, `renderers` for the app's own kinds,
  *  `headerExtra`, `showHidden`, and the rest of `PrefsDialog`'s props. `layout` defaults to `'rail'`. */
 export type EditorPrefsDialogProps = Partial<
-  Omit<PrefsDialogProps, 'isOpen' | 'onOpenChange' | 'schema' | 'values' | 'onChange' | 'auto' | 'onAutoChange'>
+  Omit<PrefsDialogProps, 'isOpen' | 'onOpenChange' | keyof PrefsFormBinding>
 >;
 
 interface EditorPrefsValue {
@@ -44,25 +44,14 @@ export function useOpenPreferences(): () => void {
   return useContext(EditorPrefsContext)?.open ?? NOTHING;
 }
 
-/** `PrefsDialog` bound to `store`: each change is written at once, and turning a leaf's Auto on resets it. */
+/** `PrefsDialog` bound to `store`: each change is written at once, turning a leaf's Auto on resets it, and a
+ *  scoped leaf splits into its members. */
 export function EditorPrefsDialog({ store, isOpen, onOpenChange, dialog }: {
   store: PrefsStore<PrefGroup>;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   dialog?: EditorPrefsDialogProps;
 }) {
-  const { values, set, unset, setAuto } = usePrefsValues(store);
-  return (
-    <PrefsDialog
-      layout="rail"
-      {...dialog}
-      isOpen={isOpen}
-      onOpenChange={onOpenChange}
-      schema={store.schema}
-      values={values}
-      onChange={set}
-      auto={unset}
-      onAutoChange={setAuto}
-    />
-  );
+  const { form } = usePrefsValues(store);
+  return <PrefsDialog layout="rail" {...dialog} {...form} isOpen={isOpen} onOpenChange={onOpenChange} />;
 }
