@@ -90,7 +90,7 @@ const labels = () => [...screen.getAllByRole('menu').at(-1)!.querySelectorAll<HT
   .map((r) => r.children[1]!.textContent);
 
 const ROWS = {
-  File: ['New', 'Open…', 'Import…', 'Save', 'Export Page as SVG…'],
+  File: ['New', 'Open…', 'Import…', 'Save', 'Export Page as SVG…', 'Export Page as PNG…', 'Export Pages as PDF…'],
   Edit: ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Duplicate', 'Delete', 'Select All'],
   Arrange: ['Group', 'Ungroup', 'Bring Forward', 'Bring to Front', 'Send Backward', 'Send to Back',
     'Align Left', 'Align Centers Horizontally', 'Align Right', 'Align Top', 'Align Centers Vertically', 'Align Bottom',

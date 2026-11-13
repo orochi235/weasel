@@ -1,8 +1,9 @@
-import { ActionDisabledReason, useCommand, type PlacedPage } from '@weasel-js/core';
+import { ActionDisabledReason, placedPagesOf, useCommand, type PlacedPage } from '@weasel-js/core';
 import { useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
 import { backgroundOf, setBackground } from './docBackground';
 import { DEFAULT_BG_COLOR, DEFAULT_FILENAME } from './docPersistence';
+import { exportPagePngFile, exportPagesPdfFile } from './exportPage';
 import { importSvgFile, openSvgFile, type OpenSvgTarget } from './openSvg';
 import { onePage, replacePages } from './pages/drawPages';
 import { DEFAULT_PAPER_SIZE, isPaperSize, PAPER_PRESETS, PAPER_SIZES, type PaperSizeKey } from './paperSizes';
@@ -10,6 +11,7 @@ import { exportPageSvgFile, saveSvgFile } from './saveSvg';
 
 export const FILE_ACTIONS = {
   new: 'file.new', open: 'file.open', import: 'file.import', save: 'file.save', exportPage: 'file.exportPage',
+  exportPng: 'file.exportPng', exportPdf: 'file.exportPdf',
 } as const;
 
 /** New, opening onto one row per paper size, in the File menu. A new document is one page, untitled, on white;
@@ -25,13 +27,13 @@ export interface FileCommandsTarget extends OpenSvgTarget {
   filename: string;
   /** The shown page's paper size: what New with no size makes while no page is shown. */
   paperSize: PaperSizeKey | null;
-  /** The page Export Page writes, and whose size New with no size keeps: the one in view, or the last that was. */
+  /** The page Export Page writes as SVG or PNG, and whose size New with no size keeps: the one in view, or the last that was. */
   page: PlacedPage | null;
 }
 
 const NEW_VARIANTS = PAPER_SIZES.map(({ key, label }) => ({ key, label, params: { size: key } }));
 
-/** Register New, Open, Import and Save as actions on the nearest `<ActionsProvider>`. */
+/** Register New, Open, Import, Save and the page exports as actions on the nearest `<ActionsProvider>`. */
 export function useFileCommands(target: FileCommandsTarget): void {
   const { scene } = target;
   useNewCommand(FILE_ACTIONS.new, 'New', (params) => {
@@ -57,4 +59,12 @@ export function useFileCommands(target: FileCommandsTarget): void {
     const { filename, page } = target;
     if (page !== null) void exportPageSvgFile(scene, page, { filename, backgroundColor: backgroundOf(scene) });
   }, { enabled: () => target.page !== null || ActionDisabledReason.NotApplicable });
+  useCommand(FILE_ACTIONS.exportPng, 'Export Page as PNG…', () => {
+    const { filename, page } = target;
+    if (page !== null) void exportPagePngFile(scene, page, { filename, backgroundColor: backgroundOf(scene) });
+  }, { enabled: () => target.page !== null || ActionDisabledReason.NotApplicable });
+  useCommand(FILE_ACTIONS.exportPdf, 'Export Pages as PDF…', () => {
+    const pages = placedPagesOf(scene);
+    if (pages.length > 0) void exportPagesPdfFile(scene, pages, { filename: target.filename, backgroundColor: backgroundOf(scene) });
+  }, { enabled: () => placedPagesOf(scene).length > 0 || ActionDisabledReason.NotApplicable });
 }
