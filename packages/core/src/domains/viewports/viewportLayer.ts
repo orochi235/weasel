@@ -3,7 +3,7 @@ import { drawOneLayer, subscribeToSources, type Dims, type RenderLayer } from 'c
 import { backgroundFillCommands } from 'core/layers/backgroundFill';
 import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import type { ResolvableView } from './viewResolver';
+import type { ResolvableView, ViewRect } from './viewResolver';
 
 /**
  * A "viewport node" — a screen-space rectangle on the outer canvas that
@@ -53,11 +53,11 @@ export interface CreateViewportLayerOptions<TData, TSource = TData> {
   view: View | ((outer: View, dims: Dims) => View);
   /** Where on the outer canvas this viewport is painted, in screen-space
    *  CSS pixels. Recomputed every frame. */
-  bounds: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
+  bounds: (outer: View, dims: Dims) => ViewRect;
   /** The part of the outer canvas the viewport shows through, in the same
    *  space as `bounds` and recomputed with it — the rect of a viewport it is
    *  nested in. Omit to show all of `bounds`. */
-  clip?: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
+  clip?: (outer: View, dims: Dims) => ViewRect;
   /** Optional opaque background painted before the source layers. */
   background?: string;
 }
@@ -126,10 +126,9 @@ export function createViewportLayer<TData, TSource = TData>(
   };
 }
 
-type Rect = { x: number; y: number; w: number; h: number };
 
 /** `clip` cut to `b`, measured from `b`'s top-left. */
-function clipWithin(b: Rect, clip: Rect): { kind: 'rect'; x: number; y: number; width: number; height: number } {
+function clipWithin(b: ViewRect, clip: ViewRect): { kind: 'rect'; x: number; y: number; width: number; height: number } {
   const x0 = Math.max(b.x, clip.x);
   const y0 = Math.max(b.y, clip.y);
   const x1 = Math.min(b.x + b.w, clip.x + clip.w);

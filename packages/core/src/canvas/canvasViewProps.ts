@@ -8,8 +8,8 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { AimRect } from 'domains/viewports/aim';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
 
-/** A rect on the surface, in CSS pixels from the canvas top-left. */
-export interface ViewRect { x: number; y: number; w: number; h: number }
+import type { ViewRect } from 'domains/viewports/viewResolver';
+export type { ViewRect } from 'domains/viewports/viewResolver';
 
 /** The props every `<CanvasView>` takes, whichever side it holds. */
 export interface CanvasViewCommonProps {

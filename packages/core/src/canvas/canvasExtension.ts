@@ -9,6 +9,7 @@ import type { DrawCommand, IdBuffer } from '@weasel-js/renderer';
 import type { CanvasViewProps } from './CanvasView';
 import type { CanvasDebugSink } from '../debug/types';
 import type { ViewAim } from '../domains/viewports/aim';
+import type { ViewRect } from '../domains/viewports/viewResolver';
 import type { Target } from '@weasel-js/animator';
 import type { Animator } from '@weasel-js/animator';
 
@@ -31,7 +32,7 @@ export interface ViewAt {
   id: string | null;
   view: View;
   /** Where the view paints, in canvas CSS px. */
-  rect: { x: number; y: number; w: number; h: number };
+  rect: ViewRect;
 }
 
 /**

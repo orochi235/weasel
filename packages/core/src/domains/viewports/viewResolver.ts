@@ -1,4 +1,7 @@
 import type { View } from 'core/viewport/view';
+
+/** A rect on the surface, in CSS pixels from the canvas top-left. */
+export interface ViewRect { x: number; y: number; w: number; h: number }
 import { viewScreenToWorld } from '@weasel-js/geom';
 
 /**
@@ -9,17 +12,16 @@ import { viewScreenToWorld } from '@weasel-js/geom';
 export interface ResolvableView {
   id: string;
   view: View;
-  rect: { x: number; y: number; w: number; h: number };
+  rect: ViewRect;
   /** The part of `rect` the view is seen through, in the same space — a view
    *  nested in another is cut to it. Omitted, the whole rect. */
-  clip?: { x: number; y: number; w: number; h: number };
+  clip?: ViewRect;
 }
 
-type Rect = { x: number; y: number; w: number; h: number };
 
-/** Right and bottom edges are exclusive, so neighbouring views never both
+/** Right and bottom edges are exclusive, so neighboring views never both
  *  claim a pixel. */
-const inside = (r: Rect, x: number, y: number): boolean =>
+const inside = (r: ViewRect, x: number, y: number): boolean =>
   x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 
 /** Whether `v` takes a canvas-local point: inside its rect and its clip. */
@@ -43,7 +45,7 @@ export interface ViewTarget {
  * gesture started in.
  *
  * Stickiness is the point. A drag that leaves its view's rect — over a
- * neighbouring view, or off the canvas — must keep reporting coordinates in
+ * neighboring view, or off the canvas — must keep reporting coordinates in
  * the space it began in, or a marquee crossing a panel edge silently starts
  * measuring against the wrong camera.
  */
