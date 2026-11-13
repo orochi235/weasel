@@ -980,8 +980,8 @@ view.current.layout(elkPlanner({ direction: 'right' }));
 ```
 
 Labels paint only in a registered font family, and the default is
-sans-serif, so call `registerCanvasFont('sans-serif')` once or they render
-blank. The view opens fitted to the diagram and fits again when `width` or
+sans-serif, so call `registerCanvasFont('sans-serif')` from `@weasel-js/font`
+once or they render blank. The view opens fitted to the diagram and fits again when `width` or
 `height` changes or a layout run settles, until the user pans or zooms. `minScale` stops the fit from
 shrinking a wide diagram past readable; the rest is a pan away.
 
@@ -1124,7 +1124,7 @@ Keep `look` and `options` steady between renders: a new object for either lays
 the chart out again and opens it fitted afresh, as a pipeline whose content
 changes does. Ports that
 carry a value type are drawn, colored by type. As with `DiagramView`, call
-`registerCanvasFont('sans-serif')` once or labels render blank.
+`registerCanvasFont('sans-serif')` (from `@weasel-js/font`) once or labels render blank.
 
 #### Runs
 
