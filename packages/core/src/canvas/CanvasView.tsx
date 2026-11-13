@@ -10,7 +10,6 @@ import {
 } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
-import { clientToWorld } from 'core/viewport/clientToWorld';
 import { createViewportLayer } from 'domains/viewports/viewportLayer';
 import { createDispatcher } from '@weasel-js/routing';
 import type { IngestionDep, ViewApi } from 'interactions/actions/depSchema';
@@ -35,9 +34,9 @@ import { useOptionalViewInputs, type SurfaceViewInputs, type ViewRuleInputs } fr
 import type { CanvasViewProps, ViewRect } from './canvasViewProps';
 export type { CanvasViewProps, ViewRect } from './canvasViewProps';
 import { NO_RECT, sizeOf, useViewNesting } from './useViewNesting';
+import { useViewClientMaps } from './useViewClientMaps';
 import {
   useOptionalViewRegistry,
-  surfaceLocal,
   IDENTITY_VIEW,
   UNMEASURED_DIMS,
   type ViewRegistration,
@@ -185,20 +184,7 @@ export function CanvasView(props: CanvasViewProps): null {
   });
   const helpersRef = useLatest(helpers);
 
-  /** A client point in this view's world. The rect moves with the outer
-   *  camera, so it is read per call rather than closed over. */
-  const clientToWorldHere = useCallback((cx: number, cy: number): { x: number; y: number } => {
-    const local = surfaceLocal(registry?.surface() ?? null, cx, cy);
-    const rect = rectNow();
-    const [x, y] = clientToWorld(local.x, local.y, { left: rect.x, top: rect.y }, camera());
-    return { x, y };
-  }, [registry, rectNow, camera]);
-  /** A client point in CSS px from this view's top-left, where its camera anchors. */
-  const clientToLocalHere = useCallback((cx: number, cy: number): { x: number; y: number } => {
-    const local = surfaceLocal(registry?.surface() ?? null, cx, cy);
-    const rect = rectNow();
-    return { x: local.x - rect.x, y: local.y - rect.y };
-  }, [registry, rectNow]);
+  const { toWorld: clientToWorldHere, toLocal: clientToLocalHere } = useViewClientMaps(registry, rectNow, camera);
 
   // Anchors are hit in this view's camera world, where its plane draws them.
   const getAnchorState = useMemo(() => anchorStateFrom(
