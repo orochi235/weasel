@@ -18,7 +18,7 @@
  * a space its ribbon is not.
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { resolveColor, type CommandPaint, type StrokeTrim } from '@weasel-js/paint';
+import { parseColor, type CommandPaint, type StrokeTrim } from '@weasel-js/paint';
 import { clipWindow, type ClipRibbon, type ClipWindow, type StrokeSpaces } from '@weasel-js/stroke';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
 import { strokeClipRibbon } from '../cache/strokeMeshCache';
@@ -138,7 +138,7 @@ function coverMesh(ribbon: ClipRibbon): Mesh {
 
 /** Whether `paint` reaches the target with alpha 1 under the group drawing now. */
 function opaque(ctx: DrawContext, paint: { color: string; opacity?: number }): boolean {
-  if (resolveColor(paint.color)[3] * (paint.opacity ?? 1) < 1 || ctx.state.alpha < 1) return false;
+  if (parseColor(paint.color)[3] * (paint.opacity ?? 1) < 1 || ctx.state.alpha < 1) return false;
   // Row-major 4x5: the alpha row must pass alpha through untouched.
   const m = ctx.state.colorMatrix;
   return m[15] === 0 && m[16] === 0 && m[17] === 0 && m[18] === 1 && m[19] === 0;

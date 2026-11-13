@@ -5,7 +5,7 @@ import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import type { GlMat3 } from '@weasel-js/geom';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { isSolidPaint, resolveColor } from '@weasel-js/paint';
+import { isSolidPaint, parseColor } from '@weasel-js/paint';
 import {
   ensureFontTexture,
   textureCacheKey,
@@ -205,7 +205,7 @@ function drawTextGroup(
     drawPaintedGlyphs(ctx, group, dx, dy, paintKind, atlasId, mode, bold, tanItalic, fieldScale);
     return;
   }
-  const color = isSolidPaint(fill) ? resolveColor(fill.color) : BLACK;
+  const color = isSolidPaint(fill) ? parseColor(fill.color) : BLACK;
   const opacity = isSolidPaint(fill) ? fill.opacity ?? 1 : 1;
 
   const batch = ctx.drawBatch;

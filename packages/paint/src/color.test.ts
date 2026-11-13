@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
-import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
+import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorToRgba255, rgbaToHex, __resetParseColorCache } from './color';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -299,34 +299,27 @@ describe('rgbaToHex', () => {
   });
 });
 
-describe('resolveColor', () => {
-  beforeEach(() => __resetResolveColorCache());
-
-  it('returns the same values as parseColor', () => {
-    const known = '#ff0000';
-    const direct = parseColor(known);
-    const cached = resolveColor(known);
-    expect([...cached]).toEqual(direct);
-  });
+describe('parseColor cache', () => {
+  beforeEach(() => __resetParseColorCache());
 
   it('returns the same array reference for repeated calls (memoization)', () => {
-    const a = resolveColor('#00ff00');
-    const b = resolveColor('#00ff00');
+    const a = parseColor('#00ff00');
+    const b = parseColor('#00ff00');
     expect(a).toBe(b);
   });
 
   it('different inputs return different references', () => {
-    const a = resolveColor('#ff0000');
-    const b = resolveColor('#00ff00');
+    const a = parseColor('#ff0000');
+    const b = parseColor('#00ff00');
     expect(a).not.toBe(b);
   });
 
   it('clears the cache when it exceeds the cap', () => {
-    const before = resolveColor('#00ff00');
+    const before = parseColor('#00ff00');
     for (let i = 0; i < 1024; i++) {
-      resolveColor(`#${i.toString(16).padStart(6, '0')}`);
+      parseColor(`#${i.toString(16).padStart(6, '0')}`);
     }
-    const after = resolveColor('#00ff00');
+    const after = parseColor('#00ff00');
     expect(after).not.toBe(before);
     expect([...after]).toEqual([...before]);
   });

@@ -2300,7 +2300,6 @@
     "resolveAxes": "function",
     "resolveBindingOverrides": "function",
     "resolveBooleanOperands": "function",
-    "resolveColor": "function",
     "resolveCorners": "function",
     "resolveCornersWithSources": "function",
     "resolveCursor": "function",

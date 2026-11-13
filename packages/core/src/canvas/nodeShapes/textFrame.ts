@@ -3,7 +3,7 @@
  * shade of the background, and a shadow under it. Described once here, and
  * drawn by the canvas painter and written by the SVG export from it.
  */
-import { isSolidPaint, mixOklab, resolveColor, resolveFill, rgbaToHex, type Fill } from '@weasel-js/paint';
+import { isSolidPaint, mixOklab, parseColor, resolveFill, rgbaToHex, type Fill } from '@weasel-js/paint';
 import { dropShadowLayers } from '@weasel-js/renderer';
 import type { Path, Rect } from '@weasel-js/geom';
 
@@ -39,7 +39,7 @@ const BLACK = [0, 0, 0, 1] as const;
 export function edgeColor(background: Fill, shade: number): string | null {
   const paint = background.paint;
   if (paint === undefined || !isSolidPaint(paint)) return null;
-  return rgbaToHex(mixOklab(BLACK, resolveColor(paint.color), Math.min(1, Math.max(0, shade))));
+  return rgbaToHex(mixOklab(BLACK, parseColor(paint.color), Math.min(1, Math.max(0, shade))));
 }
 
 /** The frame of a text node with `d`'s background, edge and shadow, round `box`. */

@@ -28,7 +28,7 @@ const f2u = (v: number): number => Math.max(0, Math.min(255, Math.round(v * 255)
 
 /**
  * Convert a 0..1 float sRGB triple to OKLab — the renderer's own color space,
- * and what a caller holding a `resolveColor` result has. Rounds into the u8
+ * and what a caller holding a `parseColor` result has. Rounds into the u8
  * grid the way every other float→u8 crossing in this file does, rather than
  * leaving each caller to pick a convention.
  */

@@ -2,7 +2,7 @@ import type { ColorSpace, GradStop } from '@weasel-js/paint';
 import { IDENTITY_COLOR_MATRIX } from '../state/GroupState';
 import { foldColorInto, foldsColor, texturedUnder, type Tint } from './foldColor';
 import type { Mesh } from '@weasel-js/geom/tessellate';
-import { resolveColor } from '@weasel-js/paint';
+import { parseColor } from '@weasel-js/paint';
 import { PAINT_MODE_PLAIN, WHITE_SLOT, packSlot, withMatrix } from '../shaders/batchFill';
 import type { DrawContext } from './drawContext';
 import { retryUncut, flushForOwnDraw } from './clip';
@@ -161,7 +161,7 @@ function stageRamps(
 
 /** Straight-alpha rgba for a solid paint, its `opacity` taken into the alpha. */
 export function solidColor(paint: { color: string; opacity?: number }): [number, number, number, number] {
-  const [r, g, b, a] = resolveColor(paint.color);
+  const [r, g, b, a] = parseColor(paint.color);
   return [r, g, b, a * (paint.opacity ?? 1)];
 }
 
@@ -172,7 +172,7 @@ const STAGED: [number, number, number, number] = [0, 0, 0, 0];
 function stagedColor(
   ctx: DrawContext, paint: { color: string; opacity?: number },
 ): readonly [number, number, number, number] {
-  const c = resolveColor(paint.color);
+  const c = parseColor(paint.color);
   return foldColorInto(ctx, c[0], c[1], c[2], c[3] * (paint.opacity ?? 1), STAGED);
 }
 

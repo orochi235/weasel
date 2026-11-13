@@ -20,10 +20,10 @@ import { wrapDeg } from './hue';
  * Not supported: `lab()`, `lch()`, other `color()` spaces, `currentColor`, system
  * colors. Throws on anything unrecognized.
  *
- * Results are cached by input-string identity. Callers MUST treat the
- * returned tuple as read-only — mutation would corrupt the cache.
+ * Results are cached by input-string identity and shared, which is why the
+ * tuple is read-only: renderer hot paths call this per frame.
  */
-export function parseColor(input: string): [number, number, number, number] {
+export function parseColor(input: string): readonly [number, number, number, number] {
   const cached = CACHE.get(input);
   if (cached !== undefined) return cached;
   const result = parseColorUncached(input);
@@ -33,7 +33,7 @@ export function parseColor(input: string): [number, number, number, number] {
 }
 
 /** {@link parseColor}'s reading of `input`, or null where it would throw. The tuple is read-only, as there. */
-export function tryParseColor(input: string): [number, number, number, number] | null {
+export function tryParseColor(input: string): readonly [number, number, number, number] | null {
   try {
     return parseColor(input);
   } catch {
@@ -72,15 +72,9 @@ function parseColorUncached(input: string): [number, number, number, number] {
   throw new Error(`parseColor: unrecognized color "${input}"`);
 }
 
-/** `parseColor`, typed read-only: the form for renderer hot paths (per-frame
- *  draw callbacks, gradient ramp builds), which share its cache. */
-export function resolveColor(input: string): readonly [number, number, number, number] {
-  return parseColor(input);
-}
-
 /** @internal Test-only: drops the color cache so tests can assert behavior in
  *  isolation. Never call from production code. */
-export function __resetResolveColorCache(): void {
+export function __resetParseColorCache(): void {
   CACHE.clear();
 }
 

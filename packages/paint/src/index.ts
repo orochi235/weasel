@@ -98,7 +98,6 @@ export {
   parseColor,
   parseColorToRgba255,
   tryParseColor,
-  resolveColor,
   normalizeHex,
   tryNormalizeHex,
   hexToRgba,

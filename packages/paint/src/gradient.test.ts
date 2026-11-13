@@ -7,7 +7,7 @@ import {
   gradientForBounds,
 } from './gradient';
 import { srgbU8ToOklab, oklabToOklch } from './colorSpaces';
-import { resolveColor } from './color';
+import { parseColor } from './color';
 import type { GradStop, GradientPaint } from './paint';
 
 const BW: GradStop[] = [
@@ -246,16 +246,16 @@ describe('interpolation space', () => {
   });
 
   it('keeps chroma through the midpoint in oklch, where rgb loses it', () => {
-    const rgbMid = resolveColor(sampleGradientStops(RB, 0.5, 'rgb'));
-    const lchMid = resolveColor(sampleGradientStops(RB, 0.5, 'oklch'));
+    const rgbMid = parseColor(sampleGradientStops(RB, 0.5, 'rgb'));
+    const lchMid = parseColor(sampleGradientStops(RB, 0.5, 'oklch'));
     expect(chromaOf(lchMid)).toBeGreaterThan(chromaOf(rgbMid) * 1.2);
   });
 
   it('puts black-to-white halfway by OKLab lightness, which sRGB overshoots', () => {
     const lightnessOf = (c: readonly number[]): number =>
       srgbU8ToOklab(c[0] * 255, c[1] * 255, c[2] * 255)[0];
-    expect(lightnessOf(resolveColor(sampleGradientStops(BW, 0.5, 'oklab')))).toBeCloseTo(0.5, 2);
-    expect(lightnessOf(resolveColor(sampleGradientStops(BW, 0.5, 'rgb')))).toBeGreaterThan(0.55);
+    expect(lightnessOf(parseColor(sampleGradientStops(BW, 0.5, 'oklab')))).toBeCloseTo(0.5, 2);
+    expect(lightnessOf(parseColor(sampleGradientStops(BW, 0.5, 'rgb')))).toBeGreaterThan(0.55);
   });
 
   it('interpolates alpha linearly whatever the space', () => {
@@ -264,7 +264,7 @@ describe('interpolation space', () => {
       { offset: 1, color: 'rgba(0,0,255,0)' },
     ];
     for (const space of ['rgb', 'oklab', 'oklch'] as const) {
-      const mid = resolveColor(sampleGradientStops(fade, 0.5, space));
+      const mid = parseColor(sampleGradientStops(fade, 0.5, space));
       expect(mid[3]).toBeCloseTo(0.5, 2);
     }
   });

@@ -10,7 +10,7 @@
 import type { GradStop } from '@weasel-js/paint';
 import { DEG_TO_RAD, mat3, trimNumber, maxOf, minOf } from '@weasel-js/geom';
 import type { PaintBindContext, PaintBinding, PaintDrawKind, PaintResources, PaintTexture } from '../paintKinds';
-import { resolveColor, rgbaToHex } from '@weasel-js/paint';
+import { parseColor, rgbaToHex } from '@weasel-js/paint';
 import { oklabToOklch, oklabToSrgbU8, oklchToOklab, srgbFloatToOklab } from '@weasel-js/paint';
 import type { ColorSpace, Paint, PaintUnits } from '@weasel-js/paint';
 import type { FillPoseBox } from '../fillInPoseFrame';
@@ -66,7 +66,7 @@ function asFill(mesh: MeshGradientPaint): Paint {
  * differ enough to read as a mesh rather than as a flat fill.
  */
 function shifted(color: string, dL: number, cScale: number, dHueDeg: number): string {
-  const [r, g, b, a] = resolveColor(color);
+  const [r, g, b, a] = parseColor(color);
   const [L, A, B] = srgbFloatToOklab(r, g, b);
   const [, C, h] = oklabToOklch(L, A, B);
   const [nL, nA, nB] = oklchToOklab(
