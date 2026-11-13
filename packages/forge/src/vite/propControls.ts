@@ -56,7 +56,8 @@ export function storyExports(
   if (api) {
     try {
       const live = reader.api(file, fallback);
-      const read = live && typedoc ? withTypedoc(live, typedoc.docs()) : live;
+      const docs = typedoc?.docs() ?? null;
+      const read = live && docs ? withTypedoc(live, docs) : live;
       const table = read && {
         props: read.props,
         inherited: read.inherited,
@@ -66,7 +67,8 @@ export function storyExports(
       };
       code += `\nexport const ${API_EXPORT} = ${JSON.stringify(table)};\n`;
       if (read) sources.push(...read.sources);
-      if (read && typedoc && read.component) sources.push(typedoc.file);
+      // Watched only once it exists: vite resolves a watched file as an import, and a missing one fails the story.
+      if (read && typedoc && docs && read.component) sources.push(typedoc.file);
     } catch (err) {
       warn(`could not read the API for ${file}: ${errorText(err)}`);
     }

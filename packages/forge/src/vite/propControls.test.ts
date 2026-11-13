@@ -49,6 +49,13 @@ describe('storyExports', () => {
     expect(out.sources).toEqual(['/repo/Chip.ts', '/repo/dist/typedoc.json']);
   });
 
+  it('leaves a TypeDoc JSON that is not there out of what the story watches', () => {
+    const read: ReadApi = { ...API, component: { name: 'Chip', file: '/repo/Chip.ts' } };
+    const typedoc = { file: '/repo/dist/typedoc.json', docs: () => null };
+    const out = storyExports(readerOf({ api: () => read }), '/repo/chip.stories.ts', 'Chip', { controls: false, api: true }, vi.fn(), typedoc);
+    expect(out.sources).toEqual(['/repo/Chip.ts']);
+  });
+
   it('passes the fallback name to the reader', () => {
     const api = vi.fn(() => API);
     storyExports(readerOf({ api }), '/repo/chip.stories.ts', 'Chip', { controls: true, api: true }, vi.fn());
