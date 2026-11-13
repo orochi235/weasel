@@ -329,23 +329,12 @@ Owner tags, after the priority (2026-10-26):
   back to its id; labkit sets no title, so dragging a trial by its title bar shows a UUID in an unthemed blue chip
   (seen 2026-11-11). Closes when the ghost shows the trial's title, or labkit draws its own.
 
-- **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
-  iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
-  and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
-  avoids it (iconfab's README, "Known problems", 2026-11-11). Reported by the agent that built the lab and
-  not yet reproduced in weasel. Closes when a labkit test mounting 100 targets in one commit renders without
-  the error and iconfab drops its batching.
-- **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
-  stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
-  scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
-  frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
-- **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
-  target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
-  screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
-- **(P3) [agent] A list of objects summarizes as raw JSON on its control.** `f.list(def, f.object({ name, width }))`
-  draws its trigger as `{"name":"primary","width":1.5,…}, …` (`summarizeValue`, `written`); a map of objects does
-  the same. Seen in iconfab's Composer, 2026-11-11. Closes when an object entry summarizes by its first string
-  field, or by a summary the schema supplies, with a test on the trigger's text.
+- **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
+  update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
+  placement in a `flushSync` of its own; it now commits a frame's tiles together, and
+  `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
+  (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
+  around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
@@ -383,14 +372,6 @@ Owner tags, after the priority (2026-10-26):
   disabled.
   Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
   fades when disabled also desaturates.
-
-- **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
-  `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
-  plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's
-  tube lab: a 259px strip with a 140px sidebar put a 160px content pane at x=141), then slides it 41px left
-  once the floors arrive. Since `watchElementMove` reports that slide, surfaces follow it; what is left is the
-  visible jump at load. Closes when a browser test mounts a 260px `TrialBody` with `width={140}` and finds the
-  content inside the strip on its first painted frame.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:

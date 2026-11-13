@@ -50,8 +50,19 @@ describe('markCommands', () => {
     const cmds = markCommands(mark('arrow', { shape: ENDS }));
     expect(cmds).toHaveLength(1);
     const stroke = (cmds[0] as { stroke?: { markerEnd?: unknown } }).stroke;
-    expect(stroke?.markerEnd).toBe('arrow');
+    expect(stroke?.markerEnd).toEqual({ key: 'arrow', size: { px: 2 } });
     expect(anchors(cmds)).toEqual([35, 10, 80, 30]);
+  });
+
+  it("sizes an arrow's head in screen pixels, whatever the target's zoom", () => {
+    // A 20-unit target shown at 300px, and a 2000-unit one shown at 300px.
+    const head = (k: number) =>
+      (
+        markCommands(mark('arrow', { shape: ENDS }), {}, { x: k, y: k })[0] as {
+          stroke?: { markerEnd?: unknown };
+        }
+      ).stroke?.markerEnd;
+    expect(head(15)).toEqual(head(0.15));
   });
 
   it('threads a freehand stroke through every point', () => {

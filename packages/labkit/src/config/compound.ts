@@ -66,6 +66,12 @@ function listOf<T>(def: readonly T[], item?: ConfigNode<T>): ListNode<T> {
 /** One value with named fields, built by `f.object`: a single leaf, where `f.group` would be a leaf per field. */
 export class ObjectNode<T> extends BaseNode<T> {
   readonly kind = 'object';
+
+  /** What this value reads as where it is one entry of a list's or a map's summary. Without it an entry reads as
+   *  its first non-empty string field. */
+  summary(summary: (value: T) => string): this {
+    return this.ann({ summary });
+  }
 }
 
 /** A record of one kind of value by arbitrary key, built by `f.map`. */
@@ -76,6 +82,12 @@ export class MapNode<T> extends BaseNode<Record<string, T>> {
 /** One of several objects told apart by a tag field, built by `f.union`. */
 export class UnionNode<T> extends BaseNode<T> {
   readonly kind = 'union';
+
+  /** What this value reads as where it is one entry of a list's or a map's summary. Without it an entry reads as
+   *  its variant's first non-empty string field, or else its tag. */
+  summary(summary: (value: T) => string): this {
+    return this.ann({ summary });
+  }
 }
 
 /** The fields of an `f.object`, by key. */

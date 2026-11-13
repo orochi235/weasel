@@ -49,25 +49,46 @@ export function numberText(leaf: PrefNumber, value: number): string | undefined 
   return Number.isFinite(value) && typeof unit === 'string' ? withUnit(text, unit) : text;
 }
 
+/** The fields that describe `value`: an object's own, or the variant's of a union. */
+function objectOf(leaf: PrefLeaf, value: Record<string, unknown>): PrefObject | undefined {
+  if (leaf.kind === 'union') return prefVariantOf(leaf as PrefUnion, value)?.[1];
+  return leaf.kind === 'object' ? (leaf as PrefObject) : undefined;
+}
+
+/** An object or union value as one entry of a list or a map: the schema's own summary, else its first non-empty
+ *  string field, else a union's tag. `undefined` where none of those says anything. */
+function entryText(leaf: PrefLeaf, value: unknown): string | undefined {
+  if (!isPlainObject(value)) return undefined;
+  const own = extra<(v: unknown) => string>(leaf, 'summary');
+  if (own) return own(value);
+  const object = objectOf(leaf, value);
+  for (const [key] of object ? prefSectionLeaves(object.children) : []) {
+    const field = value[key];
+    if (typeof field === 'string' && field !== '') return field;
+  }
+  if (leaf.kind !== 'union') return undefined;
+  const tag = value[(leaf as PrefUnion).tag];
+  return typeof tag === 'string' ? tag : undefined;
+}
+
+/** One entry of a list or a map, as its summary shows it. */
+const shownEntry = (item: PrefLeaf, entry: unknown): unknown =>
+  entryText(item, entry) ?? shownValue(item, entry);
+
 /** `value` with each number that has a unit as its field writes it, at any depth of a compound leaf. */
 function shownValue(leaf: PrefLeaf, value: unknown): unknown {
   if (leaf.kind === 'number')
     return typeof value === 'number' ? (numberText(leaf as PrefNumber, value) ?? value) : value;
   if (leaf.kind === 'list') {
     const { item } = leaf as PrefList;
-    return Array.isArray(value) ? value.map((entry) => shownValue(item, entry)) : value;
+    return Array.isArray(value) ? value.map((entry) => shownEntry(item, entry)) : value;
   }
   if (!isPlainObject(value)) return value;
   if (leaf.kind === 'map') {
     const { item } = leaf as PrefMap;
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, shownValue(item, v)]));
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, shownEntry(item, v)]));
   }
-  const object =
-    leaf.kind === 'union'
-      ? prefVariantOf(leaf as PrefUnion, value)?.[1]
-      : leaf.kind === 'object'
-        ? (leaf as PrefObject)
-        : undefined;
+  const object = objectOf(leaf, value);
   if (!object) return value;
   const fields = new Map(prefSectionLeaves(object.children));
   return Object.fromEntries(

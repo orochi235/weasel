@@ -139,16 +139,15 @@ describe('Split', () => {
           </Split>,
         );
         const zone = container.querySelector('.lk-split') as HTMLElement;
-        const report = () =>
+        const report = (el: Element | null) =>
           act(async () => {
-            for (const o of observed.filter((seen) => seen.el === zone)) o.report(176);
+            for (const o of observed.filter((seen) => seen.el === el)) o.report(176);
           });
-        // The strip renders no pane until it has an extent, and Split measures from a pane.
-        await report();
+        // The strip renders no pane until it has an extent.
+        await report(zone);
         expect(widths(container)).toEqual(['140px', '160px']);
-        // Split starts observing the zone a task after the pane mounts.
-        await act(() => new Promise((done) => setTimeout(done, 0)));
-        await report();
+        // Split measures what the zone fills, not the zone, which grows to hold an overflow.
+        await report(zone.closest('.lk-split__frame')?.parentElement ?? null);
         expect(widths(container)).toEqual(['16px', '160px']);
       } finally {
         vi.unstubAllGlobals();
