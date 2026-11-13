@@ -50,7 +50,8 @@ export interface AudioGraph {
   start(): void;
   /** Fade the graph's output to silence over `fadeMs`, then stop every source. */
   stop(): void;
-  playing(): boolean;
+  /** Whether its sources are running: started and not yet stopped. */
+  isPlaying(): boolean;
   has(id: string): boolean;
   ids(): string[];
   /** Listens to a node's output; survives `replace`; disposed with the node. */

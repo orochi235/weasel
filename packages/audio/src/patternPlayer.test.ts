@@ -14,14 +14,14 @@ describe('createPatternPlayer', () => {
     player.start(0);
     await run(800);
     expect(starts()).toEqual([0, 250, 500, 750]);
-    expect(player.playing()).toBe(true);
+    expect(player.isPlaying()).toBe(true);
   });
 
   it('refuses a start time that is not finite and stays stopped, so it can still start', async () => {
     const { engine, run, starts } = await harness();
     const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
     expect(() => player.start(Number.NaN)).toThrow(RangeError);
-    expect(player.playing()).toBe(false);
+    expect(player.isPlaying()).toBe(false);
     player.start(0);
     await run(100);
     expect(starts()).toEqual([0]);
@@ -61,7 +61,7 @@ describe('createPatternPlayer', () => {
     });
     player.start(0);
     await run(400);
-    expect(player.playing()).toBe(true);
+    expect(player.isPlaying()).toBe(true);
     expect(seen).toEqual([0, 1, 2, 3, 4]);
     error.mockRestore();
   });
@@ -143,7 +143,7 @@ describe('createPatternPlayer', () => {
     player.start(0);
     await run(1000);
     expect(starts()).toEqual([0]);
-    expect(player.playing()).toBe(false);
+    expect(player.isPlaying()).toBe(false);
   });
 
   it('stops booking on stop, and releases what is still sounding', async () => {
@@ -155,7 +155,7 @@ describe('createPatternPlayer', () => {
     player.start(0);
     await run(100);
     player.stop();
-    expect(player.playing()).toBe(false);
+    expect(player.isPlaying()).toBe(false);
     expect(ctx._oscillators[0].stopped.at(-1)).toBeCloseTo(0.12, 9);
     await run(1000);
     expect(starts()).toEqual([0]);

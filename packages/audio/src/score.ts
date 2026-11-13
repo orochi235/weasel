@@ -33,7 +33,7 @@ export interface Score {
   start(when?: number): void;
   /** Book nothing further, and release every voice the score started. */
   stop(): void;
-  playing(): boolean;
+  isPlaying(): boolean;
   /** The mood last set, which the next bar will take. */
   mood(): ScoreMood;
   /** Takes effect at the next bar line. */
@@ -101,14 +101,14 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
 
   return {
     start(when) {
-      if (player.playing()) return;
+      if (player.isPlaying()) return;
       reported = -1;
       current = next = stateAt(0, null);
       write(current);
       player.start(when);
     },
     stop: () => player.stop(),
-    playing: () => player.playing(),
+    isPlaying: () => player.isPlaying(),
     mood: () => target,
     setMood(mood) { target = mood; },
     state: () => current,

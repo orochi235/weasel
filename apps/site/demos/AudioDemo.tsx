@@ -187,9 +187,9 @@ export function AudioDemo() {
 
   const togglePattern = (): void => {
     if (!kit) return;
-    if (kit.pattern.playing()) kit.pattern.stop();
+    if (kit.pattern.isPlaying()) kit.pattern.stop();
     else kit.pattern.start();
-    setPatternOn(kit.pattern.playing());
+    setPatternOn(kit.pattern.isPlaying());
   };
   const changeTempo = (bpm: number): void => {
     setTempo(bpm);

@@ -79,7 +79,7 @@ describe('createScore', () => {
         if (c.kind === 'advance') await h.advance(c.ms, c.pace);
         else if (c.kind === 'mood') { score.setMood(c.mood); moods.push(c.mood); }
         else if (c.kind === 'stop') { score.stop(); runStart = null; }
-        else if (!score.playing()) {
+        else if (!score.isPlaying()) {
           runStart = { at: Math.max(0, h.engine.now() + c.offset), from: bars.length };
           score.start(runStart.at);
         }
