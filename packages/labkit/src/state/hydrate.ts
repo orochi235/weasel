@@ -1,3 +1,4 @@
+import { repairedConfig } from '../config/leaves';
 import { fillConfigDefaults, ownAt } from '../config/path';
 import { deserializeTrials } from './helpers';
 import type {
@@ -10,7 +11,10 @@ import type {
 } from './types';
 
 /** How a stored config is brought up to date on the way in. */
-export type ConfigHydration = Pick<CreateLabStoreOptions, 'configDefaults' | 'configMigrations'>;
+export type ConfigHydration = Pick<
+  CreateLabStoreOptions,
+  'configDefaults' | 'configMigrations' | 'configSchemas'
+>;
 
 function hydratedConfig(
   hydration: ConfigHydration,
@@ -30,14 +34,19 @@ function migratedConfig(
   return migrate ? migrate(config) : config;
 }
 
+/** `moved` with its gaps filled from its instrument's defaults, and each value its schema describes
+ *  read as that leaf reads a stored value, so a value of the wrong kind or out of range reaches
+ *  neither the panel nor the instrument. */
 function filledConfig(hydration: ConfigHydration, instrumentName: string, moved: unknown): unknown {
   const all = hydration.configDefaults;
   const defaults = all && ownAt(all, instrumentName);
-  return defaults ? fillConfigDefaults(moved, defaults()) : moved;
+  const filled = defaults ? fillConfigDefaults(moved, defaults()) : moved;
+  const schema = hydration.configSchemas && ownAt(hydration.configSchemas, instrumentName);
+  return schema ? repairedConfig(schema.group, filled) : filled;
 }
 
 /** Rebuild stored trials: migrate each config, fill its gaps from its
- *  instrument's defaults, then run the deserializer against the result. A
+ *  instrument's defaults and repair its values against its schema, then run the deserializer against the result. A
  *  trial either step throws on is left out, with a warning, and reported to
  *  `onUnreadable`. */
 export function hydrateTrials(

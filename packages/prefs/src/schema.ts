@@ -160,6 +160,9 @@ export interface PrefString extends PrefValueBase<'string', string> {
   control?: PrefStringControl;
   /** What an empty field shows in its place: the value something else falls back to, as a file name does. */
   placeholder?: string;
+  /** The most characters the field takes, counted as an `<input>`'s `maxLength` counts them. A longer stored
+   *  value reads cut to this length. */
+  maxLength?: number;
 }
 /**
  * Stored-value bridge for an enum leaf whose value is not the option string —

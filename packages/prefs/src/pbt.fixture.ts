@@ -4,10 +4,11 @@
  * in the package imports it.
  */
 import fc from 'fast-check';
+import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { isPlainObject } from '@weasel-js/registry';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
-import type { PrefBoolean, PrefColor, PrefEnum, PrefField, PrefLeaf, PrefNumber, PrefObject, PrefString } from './schema';
+import type { PrefBoolean, PrefColor, PrefEnum, PrefField, PrefLeaf, PrefNumber, PrefObject, PrefPaint, PrefString } from './schema';
 import type { PrefUnion } from './union';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
@@ -46,7 +47,7 @@ export const own = (entries: readonly (readonly [string, unknown])[]): Record<st
 export const stored: fc.Arbitrary<unknown> = fc.letrec<{ v: unknown }>((tie) => ({
   v: fc.oneof(
     { depthSize: 'small', withCrossShrink: true },
-    fc.constantFrom(null, undefined, true, false, 0, -0, 1, -1, 0.5, NaN, Infinity, -Infinity, 'Infinity', '-Infinity', '', 'a', '#ff0000'),
+    fc.constantFrom(null, undefined, true, false, 0, -0, 1, -1, 0.5, NaN, Infinity, -Infinity, 'Infinity', '-Infinity', '', 'a', '#ff0000', 'red', '#ff00', 'notacolor', { color: '#0f0' }, { kind: 'linear-gradient' }),
     fc.double(),
     fc.string({ maxLength: 6 }),
     fc.array(tie('v'), { maxLength: 4 }),
@@ -93,6 +94,7 @@ const scalarLeaf: fc.Arbitrary<PrefLeaf> = fc.oneof(
   fc.string({ maxLength: 4 }).map((d): PrefString => ({ kind: 'string', ...base, default: d })),
   fc.constant<PrefColor>({ kind: 'color', ...base, default: '#000000' }),
   fc.constant<PrefField>({ kind: 'field', ...base, default: '' }),
+  fc.constant<PrefPaint>({ kind: 'paint', ...base, default: { color: '#000000' } }),
   enumLeaf,
 );
 
@@ -148,9 +150,12 @@ export function admits(leaf: PrefLeaf, value: unknown): boolean {
     case 'boolean':
       return typeof value === 'boolean';
     case 'string':
-    case 'color':
     case 'field':
       return typeof value === 'string';
+    case 'color':
+      return typeof value === 'string' && tryParseColor(value) !== null;
+    case 'paint':
+      return value === null || isPaint(value);
     case 'enum':
       return (leaf as PrefEnum).options.some((o) => o.value === value);
     case 'object':
@@ -194,7 +199,9 @@ export function valueOf(leaf: PrefLeaf): fc.Arbitrary<unknown> {
     case 'field':
       return fc.string({ maxLength: 6 });
     case 'color':
-      return fc.constantFrom('#000000', '#ff8800', '#12345678');
+      return fc.constantFrom('#000000', '#ff8800', '#12345678', 'red');
+    case 'paint':
+      return fc.constantFrom(null, { color: '#ff8800' }, { kind: 'solid', color: 'red' }, { kind: 'radial-gradient', stops: [] });
     case 'enum':
       return fc.constantFrom(...(leaf as PrefEnum).options.map((o) => o.value));
     case 'object':

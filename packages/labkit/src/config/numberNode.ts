@@ -37,10 +37,12 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
     return this.ann({ step });
   }
 
-  /** The unit shown after the value, as the unit catalog writes it — `'px'`, `'ms'`, `'°'`. Presentation only:
-   *  it is never parsed, and the stored value stays a plain number. */
+  /** The unit shown after the value, as the unit catalog writes it — `'px'`, `'ms'`, `'°'`: the `suffix` of the
+   *  leaf's `unit`, which is `{ scale: 1 }` where `.unit` gave none, so the stored value stays the shown one. A
+   *  field also reads the suffix typed after a number. Last said wins between this and `.unit`'s own `suffix`. */
   suffix(suffix: string): this {
-    return this.ann({ suffix });
+    const { unit } = this.annotations;
+    return this.ann({ unit: unit ? { ...unit, suffix } : { scale: 1, suffix } });
   }
 
   /** Show, speak and read the value through a display — `compact()` reads
@@ -58,7 +60,10 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
    * is not.
    */
   unit(unit: PrefNumberUnit): this {
-    return this.ann({ unit });
+    const said = this.annotations.unit?.suffix;
+    return this.ann({
+      unit: unit.suffix === undefined && said !== undefined ? { ...unit, suffix: said } : unit,
+    });
   }
 
   /**

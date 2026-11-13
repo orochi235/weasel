@@ -1,3 +1,4 @@
+import { isPaint, tryParseColor } from '@weasel-js/paint';
 import { endlessAllows } from '@weasel-js/quantity';
 import { isPlainObject } from '@weasel-js/registry';
 import { prefClampNumber } from './bounds';
@@ -5,7 +6,7 @@ import { prefSectionLeaves } from './helpers';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import { prefVariantOf, type PrefUnion } from './union';
-import type { PrefBoolean, PrefEnum, PrefLeaf, PrefNumber, PrefObject } from './schema';
+import type { PrefBoolean, PrefEnum, PrefLeaf, PrefNumber, PrefObject, PrefString } from './schema';
 
 /** Decides what a stored value reads as for one kind of leaf: the value to
  *  read, or `undefined` for "invalid, read the default". */
@@ -36,10 +37,17 @@ export function repairPrefValue(
       return repairNumber(leaf as PrefNumber, stored);
     case 'boolean':
       return (leaf as PrefBoolean).encoding || typeof stored === 'boolean' ? stored : leaf.default;
-    case 'string':
-    case 'color':
+    case 'string': {
+      const { maxLength } = leaf as PrefString;
+      if (typeof stored !== 'string') return leaf.default;
+      return maxLength !== undefined && stored.length > maxLength ? stored.slice(0, maxLength) : stored;
+    }
     case 'field':
       return typeof stored === 'string' ? stored : leaf.default;
+    case 'color':
+      return typeof stored === 'string' && tryParseColor(stored) !== null ? stored : leaf.default;
+    case 'paint':
+      return stored === null || isPaint(stored) ? stored : leaf.default;
     case 'enum': {
       const e = leaf as PrefEnum;
       if (e.encoding) return stored;

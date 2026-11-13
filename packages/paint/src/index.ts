@@ -8,6 +8,7 @@ export type {
   CommandFill, CommandPaint, CommandPaintUnits, CommandStroke, InCommandUnits, PosedPaint, SolidPaint,
 } from './commandPaint';
 export { isSolidPaint } from './commandPaint';
+export { isPaint } from './isPaint';
 export type { StrokeTrim, TrimAt, TrimPace } from './strokeTrim';
 export { strokeTrimKey } from './strokeTrim';
 export { paintKey, strokeKey, fillHasInk, strokeHasInk } from './paintKey';

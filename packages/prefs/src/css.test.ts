@@ -39,10 +39,10 @@ describe('prefsCss', () => {
     expect(blocksOf(prefsCss(store))[':where(:root)']).toContain(String.raw`--face: 'Two\a lines\a here';`);
   });
 
-  it('leaves out a held color whose text would end its declaration or its block', () => {
+  it('writes a held color whose text would end its declaration or its block as its default', () => {
     const css = prefsCss(make([['surface', 'red; } :root { --hijack: 1']]));
     expect(css).not.toContain('hijack');
-    expect(blocksOf(css)[':where(:root)']).not.toContainEqual(expect.stringMatching(/^--surface/));
+    expect(blocksOf(css)[':where(:root)']).toContain('--surface: #000000;');
   });
 
   it('sets every leaf with a CSS form on the root, by kind, and leaves out a kind with none', () => {

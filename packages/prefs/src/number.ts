@@ -32,6 +32,8 @@ export interface PrefNumberBase extends PrefValueBase<'number', number | undefin
   maxAt?: PrefBoundAt;
   step?: number;
   control?: PrefNumberControl;
+  /** What an empty field shows: what an unset value stands for, on a `clearable` leaf. */
+  placeholder?: string;
   /** How the value shows, speaks and reads back when typed — `compact()`
    *  reads `2.00M`. Presentation only: the stored value stays a number. */
   display?: Display;

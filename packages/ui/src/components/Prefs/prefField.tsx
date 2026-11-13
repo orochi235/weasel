@@ -1,9 +1,9 @@
 import { numericWeight, type Paint } from '@weasel-js/core';
+import { isPaint } from '@weasel-js/paint';
 import { clampToBounds, endlessAllows, endless as withInfinity } from '@weasel-js/quantity';
 import { isBuiltinPref, prefDisplayBounds, prefUnitAccepts, resolvePrefUnit, type PrefEnumOption, type PrefField, type PrefLeaf, type PrefNumber, type PrefValueBase } from '@weasel-js/prefs';
 import { stepDisplay } from '../Properties/NumberControls';
 import { resolveIcon } from '../../icons/resolveIcon';
-import { isPaint } from '../paintValue';
 import type { PropertyControlProps } from '../Properties/PropertyField';
 import type { PropertyOption } from '../Properties/fieldTypes';
 import { type LiveControl, type ParamsSurface, withCommitPolicy } from './commitPolicy';
@@ -123,6 +123,7 @@ function numberFieldProps(leaf: PrefNumber, state: PrefFieldState): PropertyCont
     display: leaf.infinity === undefined ? shown : withInfinity(shown ?? stepDisplay(bounds.step), leaf.infinity),
     endless: bounds.endless,
     stops: bounds.stops,
+    placeholder: leaf.placeholder,
     scale: prefNumberScale(leaf.scale),
     onChange: store,
     ...(offset ? { onOffset: offset } : {}),
@@ -184,7 +185,7 @@ function enabledFieldProps(leaf: PrefLeaf, state: PrefFieldState): PropertyContr
         value: typeof value === 'string' ? value : '',
         mixed,
         unset,
-        onChange: setValue, placeholder: leaf.placeholder,
+        onChange: setValue, placeholder: leaf.placeholder, maxLength: leaf.maxLength,
       };
     case 'enum': {
       // An encoding reads an absent field too (no dash is `solid`), which is

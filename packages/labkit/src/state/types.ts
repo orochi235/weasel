@@ -159,7 +159,8 @@ export interface CreateLabStoreOptions {
   configMigrations?: Record<string, (stored: unknown) => unknown>;
   /** Each instrument's resolved config schema, keyed by instrument name. What
    *  a trial's auto paths are read against, away from the lab that would
-   *  otherwise supply the rules. */
+   *  otherwise supply the rules, and what a stored config's values are
+   *  repaired against on the way in, as a prefs store repairs its own. */
   configSchemas?: Record<string, ResolvedConfig>;
   /** How each instrument's state survives a reload. Hydration is the first
    *  thing `createLabStore` does, so these have to arrive with the store. */
