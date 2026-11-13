@@ -38,7 +38,7 @@ describe('buildRouteRegistry', () => {
   it('maps spec kinds onto route-grammar gesture names', () => {
     const r = buildRouteRegistry([tool('t', [
       { spec: { kind: 'key', key: 'Escape' }, actionId: 'a' },
-      { spec: { kind: 'key-held', key: ' ' }, actionId: 'b' },
+      { spec: { kind: 'keyHeld', key: ' ' }, actionId: 'b' },
       { spec: { kind: 'doubleClick' }, actionId: 'c' },
       { spec: { kind: 'pointerDown' }, actionId: 'd' },
     ])]);
@@ -170,7 +170,7 @@ describe('buildRouteRegistry', () => {
  *  place and forgotten in another. */
 const SPEC_BY_KIND: Record<GestureSpec['kind'], GestureSpec> = {
   key: { kind: 'key', key: 'Escape' },
-  'key-held': { kind: 'key-held', key: ' ' },
+  'keyHeld': { kind: 'keyHeld', key: ' ' },
   wheel: { kind: 'wheel' },
   pinch: { kind: 'pinch' },
   click: { kind: 'click' },

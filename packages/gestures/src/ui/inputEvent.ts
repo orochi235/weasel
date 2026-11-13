@@ -21,7 +21,7 @@ export interface KeyEvent extends EventModifiers {
 
 /** A held key transitioning down or up (e.g. space-to-pan). */
 export interface KeyHeldEvent extends EventModifiers {
-  kind: 'key-held';
+  kind: 'keyHeld';
   key: string;
   /** `KeyboardEvent.code`, when the source event had one. */
   code?: string;

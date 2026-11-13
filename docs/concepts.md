@@ -794,7 +794,7 @@ them:
   `buildToolActivateBindings(specs)`.
 - `createToolOffhandAction(bindings)` — single parametric action registered
   under id `tool.offhand` for hold-to-engage hotkeys (e.g. Space-for-hand).
-  `defaultBinding` is a `BoundGesture[]` of `key-held` specs, each carrying
+  `defaultBinding` is a `BoundGesture[]` of `keyHeld` specs, each carrying
   `opts.params.toolId`. On `start` the invoker pushes the tool id onto the
   active-tool context's hotkey stack; `onEnd` pops it. The dispatcher's
   `inFlightOwners` machinery advances the channel through the same
@@ -809,7 +809,7 @@ any other key such as `'o'` — that becomes `eligibility.offhand`, and assembly
 registers the consolidated `tool.offhand` action from the declaration. A tool
 that is only ever held sets `presentation.hide` to stay off the palette.
 
-A `key-held` binding is an edge — a press opens an invocation, the release
+A `keyHeld` binding is an edge — a press opens an invocation, the release
 closes it — and a key only reaches it if the binding wins the route. A game loop
 asking "is Left down this step?" wants neither: `useKeyState()` /
 `createKeyState()` poll which physical keys (`KeyboardEvent.code`) are down,

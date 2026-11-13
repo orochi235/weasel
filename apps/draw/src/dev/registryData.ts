@@ -28,7 +28,7 @@ import {
 /** `GestureSpec.kind` -> `GestureChannels` key, for the two that differ
  *  (the channel names avoid the hyphen). */
 const GESTURE_KEY_FOR: Readonly<Record<string, string>> = {
-  'key-held': 'keyHeld',
+  'keyHeld': 'keyHeld',
   multiTouch: 'multiTouch',
 };
 

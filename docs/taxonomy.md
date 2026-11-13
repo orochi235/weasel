@@ -575,7 +575,7 @@ a surface hears only because the pointer is over it are not the keymap's. A
 leader held with Cmd is released by Cmd's keyup, since macOS sends none for a
 key let go while Cmd is down. `'modal'` against `'cascade'` is the `gestures.keymapUnbound` kit setting, which
 a keymap's own `eligibility.keymap.unbound` overrides (decided 2026-10-20). The
-`key` and `key-held` halves of one keystroke are ruled on together: closes made
+`key` and `keyHeld` halves of one keystroke are ruled on together: closes made
 during one raw input apply when it ends, and the keymap's verdict on the first
 half decides the second. `<KeymapHint>` (`@weasel-js/ui`) lists the open
 keymap's rows, Escape first, from `useOpenKeymap`; a `MenuShortcut` carries the

@@ -56,7 +56,7 @@ export function followPointer(
       const on = core.dispatcherNow();
       const codeField = code !== undefined ? { code } : {};
       const ev: InputEvent = {
-        kind: 'key-held', key, ...codeField, phase: 'down',
+        kind: 'keyHeld', key, ...codeField, phase: 'down',
         altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
       };
       if (core.dispatch(ev, on, OVER_ONLY) === 'handled') held.set(physical, { key, ...codeField, withCmd, on, view: core.routedView() });
@@ -67,7 +67,7 @@ export function followPointer(
     for (const [physical, down] of [...held]) {
       const { key, code } = down;
       const ev: InputEvent = {
-        kind: 'key-held', key, ...(code !== undefined ? { code } : {}), phase: 'up',
+        kind: 'keyHeld', key, ...(code !== undefined ? { code } : {}), phase: 'up',
         altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
       };
       if (releaseIn(core, down, ev, OVER_ONLY) === 'handled') held.delete(physical);

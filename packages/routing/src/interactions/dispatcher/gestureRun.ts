@@ -124,7 +124,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
   const ended = (reason: Reason): Outcome =>
     (endGesture(run, gestureIdFor(event), event, reason) ? 'handled' : 'unhandled');
 
-  if (event.kind === 'key-held' && event.phase === 'up') {
+  if (event.kind === 'keyHeld' && event.phase === 'up') {
     if (reach !== undefined && !(inFlight.openedOver(gestureIdFor(event)) ? reach.over : reach.held)) return 'unhandled';
     return ended('commit');
   }
@@ -132,7 +132,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
   // A key-held DOWN for an already-engaged key is a no-op. Autorepeat
   // keydowns would otherwise fire `start()` again — each start pushes an
   // offhand hotkey, only one keyup ever fires onEnd, so the stack would leak.
-  if (event.kind === 'key-held' && event.phase === 'down') {
+  if (event.kind === 'keyHeld' && event.phase === 'down') {
     return inFlight.handles.has(gestureIdFor(event)) ? 'handled' : undefined;
   }
 

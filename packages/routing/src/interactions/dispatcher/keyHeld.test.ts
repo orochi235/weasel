@@ -98,7 +98,7 @@ function keyHeldDown(
   mods: Partial<{ altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }> = {},
 ): InputEvent {
   return {
-    kind: 'key-held',
+    kind: 'keyHeld',
     key,
     phase: 'down',
     altKey: mods.altKey ?? false,
@@ -111,7 +111,7 @@ function keyHeldDown(
 /** Synthesise a key-held up event. */
 function keyHeldUp(key: string): InputEvent {
   return {
-    kind: 'key-held',
+    kind: 'keyHeld',
     key,
     phase: 'up',
     altKey: false,
@@ -157,7 +157,7 @@ describe('keyHeld engagement', () => {
     const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     const engageAction = ongoingAction('space-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: ' ',
       phase: 'initial',
     }, engageStart);
@@ -170,7 +170,7 @@ describe('keyHeld engagement', () => {
 
     const registry = makeRegistry([engageAction, engagedKeyAction]);
     const { entriesById } = makeTool('myTool', [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'key', key: 'x', phase: 'engaged' }, actionId: 'engaged-key' },
     ]);
 
@@ -199,7 +199,7 @@ describe('keyHeld engagement', () => {
     const engageStart = vi.fn().mockReturnValue({ onEnd });
 
     const engageAction = ongoingAction('space-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: ' ',
       phase: 'initial',
     }, engageStart);
@@ -212,7 +212,7 @@ describe('keyHeld engagement', () => {
 
     const registry = makeRegistry([engageAction, engagedKeyAction]);
     const { entriesById } = makeTool('myTool', [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'key', key: 'x', phase: 'engaged' }, actionId: 'engaged-key' },
     ]);
 
@@ -240,7 +240,7 @@ describe('keyHeld engagement', () => {
     const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     const engageAction = ongoingAction('space-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: ' ',
       phase: 'initial',
     }, engageStart);
@@ -252,7 +252,7 @@ describe('keyHeld engagement', () => {
 
     const registry = makeRegistry([engageAction, clickAction]);
     const { entriesById } = makeTool('myTool', [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'click', phase: 'engaged' }, actionId: 'engaged-click' },
     ]);
 
@@ -293,7 +293,7 @@ describe('keyHeld engagement', () => {
     const engagedRun = vi.fn();
 
     const engageAction = ongoingAction('space-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: ' ',
       phase: 'initial',
     }, engageStart);
@@ -307,7 +307,7 @@ describe('keyHeld engagement', () => {
 
     const registry = makeRegistry([engageAction, engagedAction]);
     const { entriesById } = makeTool('myTool', [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'key', key: 'z', phase: 'engaged' }, actionId: 'engaged-action' },
     ]);
 
@@ -319,7 +319,7 @@ describe('keyHeld engagement', () => {
     expect(dispatcher.inFlight().size).toBe(1);
 
     // Press Shift mid-hold (a modifier key — should not end the hold).
-    // Modifier keys produce `kind: 'key'` events, not `kind: 'key-held'`,
+    // Modifier keys produce `kind: 'key'` events, not `kind: 'keyHeld'`,
     // so they don't trigger the keyHeld up-pump.
     dispatcher.handleInput(keyDown('Shift', { shiftKey: true }), ctx);
 
@@ -339,7 +339,7 @@ describe('keyHeld engagement', () => {
     const engageStart = vi.fn().mockReturnValue({ onEnd: () => {} });
 
     const engageAction = ongoingAction('space-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: ' ',
       phase: 'initial',
     }, engageStart);
@@ -359,7 +359,7 @@ describe('keyHeld engagement', () => {
 
     const registry = makeRegistry([engageAction, dragNoShift, dragShift]);
     const { entriesById } = makeTool('myTool', [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'space-held' },
       { spec: { kind: 'drag', phase: 'engaged' }, actionId: 'engaged-drag' },
       { spec: { kind: 'drag', mods: { shift: true }, phase: 'engaged' }, actionId: 'engaged-drag-shift' },
     ]);
@@ -396,8 +396,8 @@ describe('keyHeld engagement', () => {
 
     const channel = (id: string, phase: 'initial' | 'engaged') => [{ channel: id, phase }];
     const registry = makeRegistry([
-      ongoingAction('a-held', { kind: 'key-held', key: ' ', phase: channel('toolA', 'initial') }, aStart),
-      ongoingAction('b-held', { kind: 'key-held', key: ' ', phase: channel('toolB', 'initial') }, bStart),
+      ongoingAction('a-held', { kind: 'keyHeld', key: ' ', phase: channel('toolA', 'initial') }, aStart),
+      ongoingAction('b-held', { kind: 'keyHeld', key: ' ', phase: channel('toolB', 'initial') }, bStart),
       immediateAction('a-engaged', { kind: 'key', key: 'z', phase: channel('toolA', 'engaged') }, aEngagedRun),
       immediateAction('b-engaged', { kind: 'key', key: 'q', phase: channel('toolB', 'engaged') }, bEngagedRun),
     ]);
@@ -405,7 +405,7 @@ describe('keyHeld engagement', () => {
       id,
       eligibility: { focus: true },
       bindings: [
-        { spec: { kind: 'key-held', key: ' ', phase: channel(id, 'initial') }, actionId: held },
+        { spec: { kind: 'keyHeld', key: ' ', phase: channel(id, 'initial') }, actionId: held },
         { spec: { kind: 'key', key, phase: channel(id, 'engaged') }, actionId: engaged },
       ],
     });
@@ -443,7 +443,7 @@ describe('keyHeld engagement', () => {
 
     // Tool A: holds Space → [engaged] 'z' fires.
     const spaceHeld = ongoingAction('space-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: ' ',
       phase: 'initial',
     }, spaceStart);
@@ -457,7 +457,7 @@ describe('keyHeld engagement', () => {
     // Tool B: holds 'a' → [engaged] 'z' also fires (different channel).
     // Use the same 'z' key but routed via tool B's channel.
     const aHeld = ongoingAction('a-held', {
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: 'a',
       phase: [{ channel: 'toolB', phase: 'initial' }],
     }, aStart);
@@ -474,7 +474,7 @@ describe('keyHeld engagement', () => {
       id: 'toolA',
       eligibility: { focus: true },
       bindings: [
-        { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
+        { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'space-held' },
         { spec: { kind: 'key', key: 'z', phase: 'engaged' }, actionId: 'space-engaged' },
       ],
     };
@@ -482,7 +482,7 @@ describe('keyHeld engagement', () => {
       id: 'toolB',
       eligibility: { focus: true },
       bindings: [
-        { spec: { kind: 'key-held', key: 'a', phase: [{ channel: 'toolB', phase: 'initial' }] }, actionId: 'a-held' },
+        { spec: { kind: 'keyHeld', key: 'a', phase: [{ channel: 'toolB', phase: 'initial' }] }, actionId: 'a-held' },
         { spec: { kind: 'key', key: 'q', phase: [{ channel: 'toolB', phase: 'engaged' }] }, actionId: 'a-engaged' },
       ],
     };

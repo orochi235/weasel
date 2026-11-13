@@ -48,7 +48,7 @@ describe('keys by physical position', () => {
     const key = mount({
       id: 'constrain',
       label: 'constrain',
-      defaultBinding: { kind: 'key-held', key: 'Shift', mods: { shift: 'optional' } },
+      defaultBinding: { kind: 'keyHeld', key: 'Shift', mods: { shift: 'optional' } },
       invoker: { timing: 'ongoing', start: () => ({ onEnd: ended }) },
     });
     key('keydown', { key: 'Shift', code: 'ShiftLeft', shiftKey: true });

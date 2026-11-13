@@ -19,7 +19,7 @@ describe('GestureBinding', () => {
   it('accepts every GestureSpec variant via the spec field', () => {
     const bindings: GestureBinding[] = [
       { spec: { kind: 'key', key: 'a' }, actionId: 'x' },
-      { spec: { kind: 'key-held', key: ' ' }, actionId: 'x' },
+      { spec: { kind: 'keyHeld', key: ' ' }, actionId: 'x' },
       { spec: { kind: 'wheel' }, actionId: 'x' },
       { spec: { kind: 'click', target: 'empty' }, actionId: 'x' },
       { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'x' },

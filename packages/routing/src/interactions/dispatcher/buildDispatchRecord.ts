@@ -55,7 +55,7 @@ export function buildDispatchRecord(
       walk: step,
     };
   });
-  const eventKey = event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
+  const eventKey = event.kind === 'key' || event.kind === 'keyHeld' ? event.key : undefined;
   const world = worldPointOf(event);
   return {
     kind: 'dispatch',

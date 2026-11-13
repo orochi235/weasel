@@ -31,7 +31,7 @@ describe('key', () => {
 
 describe('held', () => {
   it('is the key-held form of the same keystroke', () => {
-    expect(held('Alt+Space')).toEqual({ kind: 'key-held', key: ' ', mods: { alt: true } });
+    expect(held('Alt+Space')).toEqual({ kind: 'keyHeld', key: ' ', mods: { alt: true } });
   });
 });
 

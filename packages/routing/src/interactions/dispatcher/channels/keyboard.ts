@@ -1,4 +1,4 @@
-/** The keyboard channel: window keydown and keyup as `key` and `key-held` input. */
+/** The keyboard channel: window keydown and keyup as `key` and `keyHeld` input. */
 import { codeLetter, isOneChar } from '@weasel-js/ui-input';
 import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
@@ -22,22 +22,22 @@ function typedWithAltGraph(e: KeyboardEvent): boolean {
   return base === undefined || base.toLowerCase() !== e.key.toLowerCase();
 }
 
-/** The `key` and `key-held` down events one keydown dispatches as, with `mods` for its Alt and Ctrl. */
+/** The `key` and `keyHeld` down events one keydown dispatches as, with `mods` for its Alt and Ctrl. */
 function keystrokeEvents(e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }): { keyEv: InputEvent; heldEv: InputEvent } {
   const common = { key: e.key, ...(e.code ? { code: e.code } : {}), ...mods, metaKey: e.metaKey, shiftKey: e.shiftKey };
   return {
     keyEv: { kind: 'key', ...common, repeat: e.repeat },
-    heldEv: { kind: 'key-held', ...common, phase: 'down' },
+    heldEv: { kind: 'keyHeld', ...common, phase: 'down' },
   };
 }
 
 type Mods = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
 const NO_MODS: Mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 
-/** The `key-held` up event releasing `down`, with the modifiers of `mods`. */
+/** The `keyHeld` up event releasing `down`, with the modifiers of `mods`. */
 function releaseOf(down: HeldKey, mods: Mods): InputEvent {
   return {
-    kind: 'key-held', key: down.key, ...(down.code !== undefined ? { code: down.code } : {}), phase: 'up',
+    kind: 'keyHeld', key: down.key, ...(down.code !== undefined ? { code: down.code } : {}), phase: 'up',
     altKey: mods.altKey, ctrlKey: mods.ctrlKey, metaKey: mods.metaKey, shiftKey: mods.shiftKey,
   };
 }
@@ -110,7 +110,7 @@ export function keyboardInput(core: DispatchCore): {
       : press(e, { altKey: e.altKey, ctrlKey: e.ctrlKey }, reach) || (altGr && press(e, typed, reach)))));
   };
 
-  /** Dispatch `e` as both `key` and `key-held` with `mods` for its Alt and Ctrl. True when either was handled. */
+  /** Dispatch `e` as both `key` and `keyHeld` with `mods` for its Alt and Ctrl. True when either was handled. */
   const press = (e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }, reach: KeyReach): boolean => {
     // Both forms dispatch unconditionally. The dispatcher
     // de-dupes naturally because each form uses a different gestureId and

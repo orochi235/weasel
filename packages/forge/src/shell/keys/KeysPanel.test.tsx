@@ -63,7 +63,7 @@ describe('describeBinding', () => {
     expect(word({ kind: 'hover' })).toBe('Hover');
     expect(word({ kind: 'drag' })).toBe('Drag');
     expect(word({ kind: 'click' })).toBe('Click');
-    expect(word({ kind: 'key-held', key: 'Space' })).toMatch(/^Hold /);
+    expect(word({ kind: 'keyHeld', key: 'Space' })).toMatch(/^Hold /);
   });
 });
 

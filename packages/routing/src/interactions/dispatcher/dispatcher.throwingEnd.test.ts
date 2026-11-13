@@ -42,7 +42,7 @@ function setup(log: string[]) {
     bindings: [
       { spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h === 'bad') } }, actionId: 'bad' },
       { spec: { kind: 'drag', target: { kindOf: hitPredicate((h: unknown) => h === 'good') } }, actionId: 'good' },
-      { spec: { kind: 'key-held', key: 'h' }, actionId: 'hold' },
+      { spec: { kind: 'keyHeld', key: 'h' }, actionId: 'hold' },
     ],
   } as unknown as Tool;
   const actions = {
@@ -63,7 +63,7 @@ function setup(log: string[]) {
     ...(affordance !== undefined ? { affordance } : {}),
   } as unknown as InputEvent);
   const held = (phase: 'down' | 'up'): InputEvent =>
-    ({ kind: 'key-held', key: 'h', phase, ...MODS } as unknown as InputEvent);
+    ({ kind: 'keyHeld', key: 'h', phase, ...MODS } as unknown as InputEvent);
   return { d, ctx, pointer, held };
 }
 

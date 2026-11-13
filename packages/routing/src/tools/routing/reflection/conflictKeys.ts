@@ -78,7 +78,7 @@ export function argKeysOf(entry: RegistryEntry): readonly string[] {
  *  digits, which match it when a chord types no Latin character (Ctrl+я is Ctrl+Z). Read with
  *  `modifierTieKeys(…, true)`. */
 export function chordArgsOf(entry: RegistryEntry): readonly string[] {
-  if (entry.spec.kind !== 'key' && entry.spec.kind !== 'key-held') return [];
+  if (entry.spec.kind !== 'key' && entry.spec.kind !== 'keyHeld') return [];
   const own = argKeysOf(entry);
   return [...new Set([entry.spec.key].flat().flatMap(chordCodesFor).map((c) => `code:${c}`))].filter((a) => !own.includes(a));
 }

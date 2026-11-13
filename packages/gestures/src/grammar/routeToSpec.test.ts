@@ -94,9 +94,9 @@ describe('routeToSpec', () => {
   });
 
   it('names a key as the KeyboardEvent spells it, so keyHeld(Space) matches the space bar', () => {
-    expect(spec('[*:*] keyHeld(Space)')).toEqual({ kind: 'key-held', key: ' ' });
+    expect(spec('[*:*] keyHeld(Space)')).toEqual({ kind: 'keyHeld', key: ' ' });
     expect(spec('[*:*] keyDown(Esc)')).toEqual({ kind: 'key', key: 'Escape' });
-    const space = { kind: 'key-held' as const, key: ' ', phase: 'down' as const, ...noMods };
+    const space = { kind: 'keyHeld' as const, key: ' ', phase: 'down' as const, ...noMods };
     expect(matchSpec(space, spec('[initial] keyHeld(Space)'), false, { selfChannel: 'hand', engagedChannels: new Set() })).toBe(true);
   });
 

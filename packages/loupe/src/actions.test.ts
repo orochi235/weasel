@@ -33,7 +33,7 @@ function peekSpec(peekKey: string): unknown {
 describe('the loupe peek binding', () => {
   it('lets a modifier peek key match whatever modifiers are down', () => {
     expect(peekSpec('Alt')).toEqual({
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: 'Alt',
       mods: { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' },
     });
@@ -41,7 +41,7 @@ describe('the loupe peek binding', () => {
 
   it('holds any other peek key to the rule every held key follows', () => {
     expect(peekSpec('z')).toEqual({
-      kind: 'key-held',
+      kind: 'keyHeld',
       key: 'z',
       mods: { alt: 'optional', shift: 'optional' },
     });

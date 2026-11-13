@@ -10,7 +10,7 @@ import { createKeymapStack, type KeymapStack, type KeymapUnbound } from '../../k
 
 const mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 const down = (k: string): InputEvent => ({ kind: 'key', key: k, ...mods });
-const heldDown = (k: string): InputEvent => ({ kind: 'key-held', key: k, phase: 'down', ...mods });
+const heldDown = (k: string): InputEvent => ({ kind: 'keyHeld', key: k, phase: 'down', ...mods });
 const click: InputEvent = { kind: 'click', x: 0, y: 0, ...mods };
 
 function act(id: string): Action & { run: ReturnType<typeof vi.fn> } {

@@ -106,7 +106,7 @@ export interface KeySpec {
 /** Key-held gesture (keydown opens, keyup closes). Drives "hold space for
  *  hand tool"-style interactions. */
 export interface KeyHeldSpec {
-  kind: 'key-held';
+  kind: 'keyHeld';
   /** A single key, or an array of acceptable keys (case-insensitive match). */
   key: string | string[];
   /** The physical key or keys, as on {@link KeySpec.code}. */

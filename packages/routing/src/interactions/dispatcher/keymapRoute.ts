@@ -52,7 +52,7 @@ export function routeThroughKeymap(
   const stack = ctx.keymaps;
   const open = stack?.innermost();
   if (!stack || !open || event.kind === 'hover') return undefined;
-  const isKey = event.kind === 'key' || event.kind === 'key-held';
+  const isKey = event.kind === 'key' || event.kind === 'keyHeld';
   // A key this surface hears only because the pointer is over it belongs to whoever holds the keys.
   if (isKey && ctx.keyReach && !ctx.keyReach.held) return undefined;
   if (!stillLive(open.id, ctx)) {
@@ -82,7 +82,7 @@ export function routeThroughKeymap(
 
   if (isKey) {
     // A keymap that binds only the held form takes the keystroke on its twin.
-    if (event.kind === 'key' && passes.binds({ ...event, kind: 'key-held', phase: 'down' })) return 'unhandled';
+    if (event.kind === 'key' && passes.binds({ ...event, kind: 'keyHeld', phase: 'down' })) return 'unhandled';
     // A bare modifier, a Ctrl or Cmd chord, and Tab go on as usual and close nothing:
     // a keymap is no reason to lose copy, paste or focus.
     if (MODIFIER_KEYS.has(event.key) || event.ctrlKey || event.metaKey || event.key === 'Tab') {

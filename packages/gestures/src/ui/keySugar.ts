@@ -41,10 +41,10 @@ export function key(shortcut: string): KeySpec {
   return Object.keys(mods).length > 0 ? { kind: 'key', key: k, mods } : { kind: 'key', key: k };
 }
 
-/** The same keystroke held down, as a `key-held` spec. */
+/** The same keystroke held down, as a `keyHeld` spec. */
 export function held(shortcut: string): KeyHeldSpec {
   const { key: k, mods } = parse(shortcut);
-  return Object.keys(mods).length > 0 ? { kind: 'key-held', key: k, mods } : { kind: 'key-held', key: k };
+  return Object.keys(mods).length > 0 ? { kind: 'keyHeld', key: k, mods } : { kind: 'keyHeld', key: k };
 }
 
 /** A binding override that removes the binding. */
@@ -93,7 +93,7 @@ const sameAtoms = (a: readonly PhaseAtom[], b: readonly PhaseAtom[]): boolean =>
 function readsBack(route: string, k: string, phases: readonly PhaseAtom[]): boolean {
   try {
     const back = bindingSpec(route);
-    return back !== null && (back.kind === 'key' || back.kind === 'key-held') && back.key === k
+    return back !== null && (back.kind === 'key' || back.kind === 'keyHeld') && back.key === k
       && sameAtoms(phaseAtoms(back.phase), phases);
   } catch {
     return false;

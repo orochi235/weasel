@@ -243,7 +243,7 @@ export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
  *  could live in either. One grammar, one list. */
 export const GESTURE_CATALOG_KEYS: readonly string[] = [
   'click', 'doubleClick', 'pointerDown', 'drag', 'wheel', 'pinch',
-  'key', 'key-held', 'contextMenu', 'multiTouch', 'multiTouchTap',
+  'key', 'keyHeld', 'contextMenu', 'multiTouch', 'multiTouchTap',
 ];
 
 /** Non-gesture declarations — the tool emits these rather than reacting to

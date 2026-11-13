@@ -30,7 +30,7 @@ export interface DispatchRecord {
 export interface DispatchRecordInput {
   /** `InputEvent.kind`: `'key'`, `'pointerdown'`, `'wheel'`, … */
   eventKind: string;
-  /** For `key` / `key-held` events, the key id (`'Escape'`, `' '`, `'a'`). */
+  /** For `key` / `keyHeld` events, the key id (`'Escape'`, `' '`, `'a'`). */
   key?: string;
   modifiers: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
   /** The view the input was routed to; `null` for the surface's own camera. */

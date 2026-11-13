@@ -6,8 +6,8 @@ import type { InputEvent } from './matcher';
 import { makeCtx, makeRegistry } from './testing/dispatcherStubs';
 
 const NO_MODS = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-const spaceDown: InputEvent = { kind: 'key-held', key: ' ', phase: 'down', ...NO_MODS };
-const spaceUp: InputEvent = { kind: 'key-held', key: ' ', phase: 'up', ...NO_MODS };
+const spaceDown: InputEvent = { kind: 'keyHeld', key: ' ', phase: 'down', ...NO_MODS };
+const spaceUp: InputEvent = { kind: 'keyHeld', key: ' ', phase: 'up', ...NO_MODS };
 const keyX: InputEvent = { kind: 'key', key: 'x', ...NO_MODS };
 
 function holdAction(id: string, start: Mock): Action {
@@ -29,7 +29,7 @@ function setup() {
     id: 'focused',
     eligibility: { focus: true },
     bindings: [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'focused.hold' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'focused.hold' },
       { spec: { kind: 'key', key: 'x', phase: 'engaged' }, actionId: 'focused.engaged' },
     ],
   };
@@ -37,7 +37,7 @@ function setup() {
     id: 'ambient',
     eligibility: { always: true },
     bindings: [
-      { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'ambient.hold' },
+      { spec: { kind: 'keyHeld', key: ' ', phase: 'initial' }, actionId: 'ambient.hold' },
       { spec: { kind: 'key', key: 'x', phase: 'engaged' }, actionId: 'ambient.engaged' },
     ],
   };

@@ -200,7 +200,7 @@ function matchPress(
 /**
  * Match a single GestureSpec against an InputEvent.
  *
- * For `key-held`, only `phase: 'down'` returns true. The dispatcher tracks the
+ * For `keyHeld`, only `phase: 'down'` returns true. The dispatcher tracks the
  * held state independently and handles `phase: 'up'` itself.
  */
 export function matchSpec(
@@ -223,8 +223,8 @@ export function matchSpec(
       return matchModifiers(e, spec.mods, isMac);
     }
 
-    case 'key-held': {
-      if (e.kind !== 'key-held') return false;
+    case 'keyHeld': {
+      if (e.kind !== 'keyHeld') return false;
       if (e.phase !== 'down') return false; // only match the down phase
       if (!matchKeyOrCode(e, spec)) return false;
       return matchModifiers(e, spec.mods, isMac);

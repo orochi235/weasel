@@ -3,7 +3,7 @@ import { captureGesture } from './captureGesture';
 
 /** Options for {@link captureKey}. */
 export interface CaptureKeyOptions {
-  /** Capture the held form, `key-held`, rather than the keystroke. */
+  /** Capture the held form, `keyHeld`, rather than the keystroke. */
   held?: boolean;
   /** Stop listening and resolve `null`. */
   signal?: AbortSignal;
@@ -19,7 +19,7 @@ export interface CaptureKeyOptions {
  */
 export function captureKey(target: EventTarget, opts: CaptureKeyOptions = {}): Promise<KeySpec | KeyHeldSpec | null> {
   return captureGesture(target, {
-    kinds: [opts.held ? 'key-held' : 'key'],
+    kinds: [opts.held ? 'keyHeld' : 'key'],
     ...(opts.signal ? { signal: opts.signal } : {}),
     ...(opts.apple !== undefined ? { apple: opts.apple } : {}),
   }) as Promise<KeySpec | KeyHeldSpec | null>;
