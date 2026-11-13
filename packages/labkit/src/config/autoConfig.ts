@@ -1,5 +1,6 @@
-import { isPrefLeaf, type PrefGroup, type PrefLeaf } from '@weasel-js/prefs';
+import type { PrefLeaf } from '@weasel-js/prefs';
 import { isAuto } from './auto';
+import { configLeaves } from './leaves';
 import { isRecord, withValueAtPath } from './path';
 import type { ResolvedConfig } from './types';
 
@@ -31,21 +32,11 @@ export function leafCanAuto(leaf: PrefLeaf): boolean {
   return typeof leaf.auto === 'object';
 }
 
-/** Every leaf in a resolved schema, in schema order, with its dotted path.
- *  Not `prefLeaves`, which rejects the `$version` key a prefs store reserves. */
-function* leaves(group: PrefGroup, at = ''): Generator<[string, PrefLeaf]> {
-  for (const [key, child] of Object.entries(group.children)) {
-    const path = at === '' ? key : `${at}.${key}`;
-    if (isPrefLeaf(child)) yield [path, child];
-    else yield* leaves(child, path);
-  }
-}
-
 /** The dotted paths a schema declares as starting auto — every leaf that said
  *  `.initial(auto)`. This is what seeds a new trial's unpinned set. */
 export function autoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
-  for (const [path, leaf] of leaves(resolved.group)) {
+  for (const [path, leaf] of configLeaves(resolved.group)) {
     if (leaf.auto !== false && leaf.auto?.on === true) out.push(path);
   }
   return out;
@@ -67,7 +58,7 @@ export function resolveAutoConfig<TC>(
   if (autoPaths.size === 0) return config;
 
   const resolvers = new Map<string, Resolver | undefined>();
-  for (const [path, leaf] of leaves(resolved.group)) {
+  for (const [path, leaf] of configLeaves(resolved.group)) {
     if (autoPaths.has(path)) resolvers.set(path, autoResolverOf(leaf));
   }
   if (resolvers.size === 0) return config;
