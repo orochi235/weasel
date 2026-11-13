@@ -79,8 +79,8 @@ const shapeBuilderInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'shapeBuilder',
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'shapeBuilder', label: 'Shape Builder', icon: icon('core:union'), shortcut: 'Shift+M' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'shapeBuilder', label: 'Shape Builder', icon: icon('core:union') },
     ],
   },
   render: (ctx) => <ShapeBuilderTrial ctx={ctx} />,

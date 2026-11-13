@@ -141,8 +141,8 @@ const widthInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'girth', label: 'Girth', icon: icon('path-tools:girth'), shortcut: 'Shift+W' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'girth', label: 'Girth', icon: icon('path-tools:girth') },
     ],
     initial: 'girth',
   },

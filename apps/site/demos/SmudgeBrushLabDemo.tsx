@@ -62,8 +62,8 @@ const smudgeInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'smudgeBrush', label: 'Smudge brush', icon: icon('ui:crosshair'), shortcut: 'S' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'smudgeBrush', label: 'Smudge brush', icon: icon('ui:crosshair') },
     ],
     initial: 'smudgeBrush',
   },

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
-import { createScene, createToolOptionValues, type Tool, type ToolsApi } from '@weasel-js/core';
+import { createScene, createToolOptionValues, declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
 import { findStep, sequenceRootOf, sequenceSpecs, sequenceTools, type SequenceData } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
 import { isSequenceTool, SequencePanel } from './SequencePanel';
@@ -19,7 +19,8 @@ const DATA: SequenceData = {
 
 function chartTools(): ToolsApi {
   const list: Tool[] = [{ id: 'select', presentation: { label: 'Select' } } as Tool, ...Object.values(sequenceTools())];
-  return { active: null, setActive: vi.fn(), registry: Object.fromEntries(list.map((t) => [t.id, t])) } as unknown as ToolsApi;
+  const registry = Object.fromEntries(list.map((t) => [t.id, t]));
+  return { active: null, setActive: vi.fn(), registry, shortcuts: declaredToolShortcuts(registry) } as unknown as ToolsApi;
 }
 
 const sceneOf = (withSequence = true) => createScene<ChartData, ChartLayer, ChartPose>({

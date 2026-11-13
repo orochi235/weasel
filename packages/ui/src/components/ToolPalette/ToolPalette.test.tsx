@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
-import { toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry } from '@weasel-js/modes';
 import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 
@@ -19,8 +19,9 @@ function fakeTools(list: Tool[], active: string | null = null): ToolsApi {
   return {
     active: active ?? (list[0]?.id ?? ''),
     registry,
+    shortcuts: declaredToolShortcuts(registry),
     setActive: vi.fn(),
-    // ToolsApi has more members; component only reads active/registry/setActive.
+    // ToolsApi has more members; component only reads active/registry/shortcuts/setActive.
   } as unknown as ToolsApi;
 }
 
@@ -178,18 +179,6 @@ describe('ToolPalette — shortcuts', () => {
     expect(screen.getByText('V')).toBeTruthy();
   });
 
-  it('shows the override from presentation.shortcut when set', () => {
-    const tool = {
-      id: 'select',
-      keybinding: { key: 'v' },
-      presentation: { label: 'Select', group: 'select', shortcut: 'Sel' },
-    } as Tool;
-    const tools = fakeTools([tool]);
-    renderWithIcons(<ToolPalette tools={tools} />);
-    expect(screen.getByText('Sel')).toBeTruthy();
-    expect(screen.queryByText('V')).toBeNull();
-  });
-
   it('button tooltip combines label and shortcut', () => {
     const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
     renderWithIcons(<ToolPalette tools={tools} />);
@@ -332,7 +321,7 @@ describe('ToolPalette — mode eligibility', () => {
   function makeTools(...list: Tool[]): ToolsApi {
     const registry: Record<string, Tool> = {};
     for (const t of list) registry[t.id] = t;
-    return { active: list[0]?.id ?? '', registry, setActive: vi.fn() } as unknown as ToolsApi;
+    return { active: list[0]?.id ?? '', registry, shortcuts: declaredToolShortcuts(registry), setActive: vi.fn() } as unknown as ToolsApi;
   }
 
   it('when mode is "normal", select and hand tools are not aria-disabled', () => {

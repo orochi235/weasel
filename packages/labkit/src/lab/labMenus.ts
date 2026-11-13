@@ -1,7 +1,7 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
 import { MARKS_COMMAND, takesMarks } from '../annotations/labMarks';
-import type { LabContribution } from '../chrome/labTypes';
+import { type LabContribution, labItemCommandId } from '../chrome/labTypes';
 import { groupsOf } from '../chrome/regions/groupsOf';
 import type { InstrumentList } from '../instrument/types';
 import { MODES } from './labModes';
@@ -47,7 +47,7 @@ function itemSections(contributions: readonly LabContribution[]): Children {
   groupsOf(header).forEach((g, n) => {
     const rows: Children = {};
     for (const c of g.entries) {
-      if (c.item) rows[`c-${c.id}`] = pref.action(`lab.item.${c.id}`);
+      if (c.item) rows[`c-${c.id}`] = pref.action(labItemCommandId(c.id));
     }
     if (Object.keys(rows).length > 0) sections[`s${n}`] = pref.group('', rows);
   });

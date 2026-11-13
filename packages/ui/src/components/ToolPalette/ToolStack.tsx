@@ -17,9 +17,9 @@ export interface StackMember {
   label: string;
   /** What the tool does: the button's tooltip while it is the stack's face, and its menu row's hint. */
   description?: string;
-  /** The binding the menu row draws. */
+  /** The key that activates it, which the menu row draws. */
   keys?: MenuShortcut;
-  /** The binding as the button's chip reads, which a presentation may override. */
+  /** `keys` as the button's chip reads. */
   shortcut?: string;
   enabled: boolean;
 }

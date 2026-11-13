@@ -67,7 +67,7 @@ const harmonizeInstrument = defineInstrument<State, Config>({
   name: 'Harmonize',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
   render: (ctx) => <HarmonizeTrial ctx={ctx} />,
 });
 

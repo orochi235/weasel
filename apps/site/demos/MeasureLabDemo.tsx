@@ -113,9 +113,9 @@ const measureInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'measure', label: 'Measure', icon: icon('core:measure'), shortcut: 'M' },
-      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'measure', label: 'Measure', icon: icon('core:measure') },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
     ],
   },
   render: (ctx) => <MeasureTrial ctx={ctx} />,

@@ -1,4 +1,3 @@
-import { formatShortcut } from '@weasel-js/ui/components/ToolPalette';
 import type { LabChromeContext, LabHeaderItem } from '@weasel-js/labkit';
 import { icon } from '../../icons.gen';
 
@@ -9,7 +8,6 @@ export function infoItem(open: () => void): LabHeaderItem<LabChromeContext> {
   return {
     icon: icon('ui:info'),
     label: 'Info',
-    shortcut: formatShortcut({ key: KEYS.key, mod: KEYS.mods.mod }),
     keys: KEYS,
     onActivate: open,
   };

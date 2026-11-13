@@ -2,7 +2,9 @@
 import {
   actionBindings, buildDepsFromRequires, evaluateActive, evaluateEnabled, overriddenBindings, routesForSpec,
   type Action, type ActionSource, type Contribution, type DepRegistry, type GestureBinding, type ResolvedBindingOverrides,
+  type ToolShortcuts,
 } from '@weasel-js/routing';
+import { formatShortcut } from '@weasel-js/gestures';
 import type {
   DevtoolsActionEntry, DevtoolsBinding, DevtoolsRegistry, DevtoolsToolEntry,
 } from './protocol';
@@ -16,7 +18,8 @@ type Entry = Contribution<unknown> & { cursor?: unknown };
 
 /** The live registries {@link describeRegistry} reads. */
 export interface RegistryInputs {
-  tools: { registry: Readonly<Record<string, Entry>>; ambient: readonly Entry[] };
+  /** `shortcuts` is the keys that activate each tool now (`ToolsApi.shortcuts`). */
+  tools: { registry: Readonly<Record<string, Entry>>; ambient: readonly Entry[]; shortcuts: ToolShortcuts };
   /** The entries a `features` preset brought beside the tools. */
   contributions: readonly Entry[];
   actions: ActionSource | null;
@@ -44,7 +47,9 @@ function bindingOf(binding: GestureBinding): DevtoolsBinding {
   };
 }
 
-function toolOf(entry: Entry, slot: DevtoolsToolEntry['slot'], overrides: ResolvedBindingOverrides | undefined): DevtoolsToolEntry {
+function toolOf(
+  entry: Entry, slot: DevtoolsToolEntry['slot'], overrides: ResolvedBindingOverrides | undefined, shortcuts: ToolShortcuts,
+): DevtoolsToolEntry {
   const p = entry.presentation;
   return {
     id: entry.id,
@@ -52,7 +57,7 @@ function toolOf(entry: Entry, slot: DevtoolsToolEntry['slot'], overrides: Resolv
     label: p?.label ?? entry.id,
     icon: iconText(p?.icon),
     group: p?.group ?? null,
-    shortcut: p?.shortcut ?? null,
+    shortcut: formatShortcut(shortcuts[entry.id]?.[0]) ?? null,
     hotkey: entry.eligibility?.offhand ?? null,
     hidden: p?.hide === true,
     cursor: serialize(entry.cursor),
@@ -97,7 +102,7 @@ export function describeRegistry(inputs: RegistryInputs): DevtoolsRegistry {
     for (const e of entries) {
       if (seen.has(e.id)) continue;
       seen.add(e.id);
-      tools.push(toolOf(e, slot, inputs.overrides));
+      tools.push(toolOf(e, slot, inputs.overrides, inputs.tools.shortcuts));
     }
   };
   add(Object.values(inputs.tools.registry), 'tool');

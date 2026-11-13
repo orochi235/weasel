@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Icon } from '../../passthrough/weasel-ui';
+import { formatShortcut, Icon } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Which end of the title bar a `<TitleBarRegion>` lays out: `'lead'` renders
@@ -31,7 +31,8 @@ function renderEntry(c: TrialContribution, ctx: TrialChromeContext): ReactNode {
   } = c.item;
   // Natively disabled, a button gets no hover, so its tooltip could not say why.
   const explained = disabled && disabledReason !== undefined;
-  const name = shortcut ? `${label} (${shortcut})` : label;
+  const keys = formatShortcut(shortcut);
+  const name = keys ? `${label} (${keys})` : label;
   const className = [
     'lk-titlebar-button',
     danger && 'lk-titlebar-button--danger',

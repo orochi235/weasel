@@ -106,8 +106,8 @@ const spiroInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'spiro', label: 'Spiro', icon: icon('path-tools:spiro'), shortcut: 'Shift+P' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'spiro', label: 'Spiro', icon: icon('path-tools:spiro') },
     ],
   },
   render: (ctx) => <SpiroTrial ctx={ctx} />,

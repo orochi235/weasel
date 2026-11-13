@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
-import type { Tool, ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 
 afterEach(cleanup);
@@ -14,7 +14,8 @@ const LIST = [tool('select', 'select'), tool('rect'), tool('ellipse'), tool('sta
 
 function Palette() {
   const [active, setActive] = useState('select');
-  const tools = { registry: Object.fromEntries(LIST.map((t) => [t.id, t])), active, setActive } as unknown as ToolsApi;
+  const registry = Object.fromEntries(LIST.map((t) => [t.id, t]));
+  const tools = { registry, shortcuts: declaredToolShortcuts(registry), active, setActive } as unknown as ToolsApi;
   return <ToolPalette tools={tools} stacks={[['rect', 'ellipse', 'star']]} />;
 }
 

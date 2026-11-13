@@ -7,7 +7,7 @@ import {
   type TrialHistorySource,
   useMountedHistory,
 } from '../trial/trialHistory';
-import { undoShortcuts, useUndoKeys } from '../undo/useUndoKeys';
+import { REDO_SHORTCUT, UNDO_SHORTCUT, useUndoKeys } from '../undo/useUndoKeys';
 import type { LabProps } from './labProps';
 
 const NO_INSTRUMENTS: InstrumentList = [];
@@ -38,7 +38,7 @@ function historyItems(
       item: {
         icon: icon('core:undo'),
         label: 'Undo',
-        shortcut: undoShortcuts().undo,
+        shortcut: UNDO_SHORTCUT,
         disabled: !canUndo,
         onActivate: () => history.undo(),
       },
@@ -50,7 +50,7 @@ function historyItems(
       item: {
         icon: icon('core:redo'),
         label: 'Redo',
-        shortcut: undoShortcuts().redo,
+        shortcut: REDO_SHORTCUT,
         disabled: !canRedo,
         onActivate: () => history.redo(),
       },

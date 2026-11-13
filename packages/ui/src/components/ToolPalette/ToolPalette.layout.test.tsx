@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
-import type { Tool, ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette } from './ToolPalette';
@@ -8,8 +8,9 @@ import { ToolPalette } from './ToolPalette';
 const tool = (id: string, group?: string): Tool => ({ id, presentation: { label: id, group } }) as Tool;
 
 function fakeTools(list: Tool[]): ToolsApi {
-  // The palette reads only these three.
-  return { active: null, setActive: vi.fn(), registry: Object.fromEntries(list.map((t) => [t.id, t])) } as unknown as ToolsApi;
+  // The palette reads only these four.
+  const registry = Object.fromEntries(list.map((t) => [t.id, t]));
+  return { active: null, setActive: vi.fn(), registry, shortcuts: declaredToolShortcuts(registry) } as unknown as ToolsApi;
 }
 
 const groups = () => [...document.querySelectorAll<HTMLElement>('[role="toolbar"] [role="group"]')];

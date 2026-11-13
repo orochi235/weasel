@@ -51,7 +51,7 @@ const instrument = defineInstrument<State, Config>({
   name: 'Add extremes',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
   render: (ctx) => <AddExtremesTrial ctx={ctx} />,
 });
 

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import { ToolPalette, type ToolPaletteProps } from './ToolPalette';
-import { toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, toolSet, type Tool, type ToolsApi } from '@weasel-js/core';
 
 const tool = (id: string, group = 'shape'): Tool =>
   ({ id, keybinding: { key: id[0] }, presentation: { label: id, group } }) as Tool;
@@ -13,7 +13,8 @@ const SHAPES = ['rect', 'ellipse', 'star'];
 
 function Palette(props: Partial<ToolPaletteProps> & { start?: string }) {
   const [active, setActive] = useState(props.start ?? 'select');
-  const tools = { registry: Object.fromEntries(LIST.map((t) => [t.id, t])), active, setActive } as unknown as ToolsApi;
+  const registry = Object.fromEntries(LIST.map((t) => [t.id, t]));
+  const tools = { registry, shortcuts: declaredToolShortcuts(registry), active, setActive } as unknown as ToolsApi;
   return <ToolPalette stacks={[SHAPES]} {...props} tools={tools} />;
 }
 
@@ -88,7 +89,8 @@ describe('ToolPalette stacks', () => {
 
   it('reads a stack face\'s description in its tooltip', () => {
     const described = { ...LIST[1], presentation: { label: 'rect', group: 'shape', description: 'Drag out a rectangle' } } as Tool;
-    const tools = { registry: { rect: described, ellipse: LIST[2] }, active: null, setActive: () => {} } as unknown as ToolsApi;
+    const registry = { rect: described, ellipse: LIST[2] };
+    const tools = { registry, shortcuts: declaredToolShortcuts(registry), active: null, setActive: () => {} } as unknown as ToolsApi;
     renderWithIcons(<ToolPalette tools={tools} stacks={[['rect', 'ellipse']]} />);
     fireEvent.keyDown(document.body, { key: 'Tab' });
     act(() => screen.getByRole('button', { name: /rect/ }).focus());
@@ -97,7 +99,8 @@ describe('ToolPalette stacks', () => {
 
   it('gives a stacked tool\'s menu row its description', () => {
     const described = { ...LIST[1], presentation: { label: 'rect', group: 'shape', description: 'Drag out a rectangle' } } as Tool;
-    const tools = { registry: { rect: described, ellipse: LIST[2] }, active: null, setActive: () => {} } as unknown as ToolsApi;
+    const registry = { rect: described, ellipse: LIST[2] };
+    const tools = { registry, shortcuts: declaredToolShortcuts(registry), active: null, setActive: () => {} } as unknown as ToolsApi;
     renderWithIcons(<ToolPalette tools={tools} stacks={[['rect', 'ellipse']]} />);
     press(screen.getByRole('button', { name: /rect/ }));
     expect(screen.getByRole('menuitem', { name: /rect/ })).toHaveAccessibleDescription(expect.stringContaining('Drag out a rectangle'));

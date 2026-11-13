@@ -133,8 +133,8 @@ const brushInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'anchors', label: 'Anchors', icon: icon('core:anchors'), shortcut: 'A' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'anchors', label: 'Anchors', icon: icon('core:anchors') },
       { id: 'simplifyBrush', label: 'Simplify brush', icon: icon('core:simplifyBrush') },
     ],
     initial: 'simplifyBrush',

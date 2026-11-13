@@ -60,8 +60,8 @@ const extendInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'extend',
     tools: [
-      { id: 'extend', label: 'Extend to next path', icon: icon('ui:arrowRight'), shortcut: 'U' },
-      { id: 'select', label: 'Select (then E extends the selection)', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'extend', label: 'Extend to next path', icon: icon('ui:arrowRight') },
+      { id: 'select', label: 'Select (then E extends the selection)', icon: icon('core:select') },
     ],
   },
   render: (ctx) => <ExtendTrial ctx={ctx} />,

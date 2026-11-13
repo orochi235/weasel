@@ -1,13 +1,10 @@
 import { undoKeyStep, useLatest } from '@weasel-js/core';
 import { useEffect } from 'react';
-import { formatShortcut } from '../passthrough/weasel-ui';
 import type { TrialHistorySource } from '../trial/trialHistory';
 
-/** The undo and redo chords as a tooltip writes them on this platform: `⌘Z` on a Mac, `Ctrl+Z` elsewhere. */
-export const undoShortcuts = (): { undo: string | undefined; redo: string | undefined } => ({
-  undo: formatShortcut({ key: 'z', mod: true }),
-  redo: formatShortcut({ key: 'z', mod: true, shift: true }),
-});
+/** The undo and redo chords `undoKeyStep` answers to, as a tooltip shows them. */
+export const UNDO_SHORTCUT = { key: 'z', mod: true } as const;
+export const REDO_SHORTCUT = { key: 'z', mod: true, shift: true } as const;
 
 /** What {@link useUndoKeys} steps. */
 export type UndoKeysTarget = Pick<TrialHistorySource, 'canUndo' | 'canRedo' | 'undo' | 'redo'>;

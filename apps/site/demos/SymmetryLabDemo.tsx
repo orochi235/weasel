@@ -183,11 +183,11 @@ const symmetryInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
-      { id: 'ellipse', label: 'Ellipse', icon: icon('core:ellipse'), shortcut: 'E' },
-      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
-      { id: 'pencil', label: 'Pencil', icon: icon('core:pencil'), shortcut: 'N' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
+      { id: 'ellipse', label: 'Ellipse', icon: icon('core:ellipse') },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen') },
+      { id: 'pencil', label: 'Pencil', icon: icon('core:pencil') },
     ],
   },
   render: (ctx) => <SymmetryTrial ctx={ctx} />,

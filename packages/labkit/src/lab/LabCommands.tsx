@@ -1,6 +1,8 @@
 import { ActionDisabledReason, useCommand } from '@weasel-js/core';
 import { MARKS_COMMAND, takesMarks } from '../annotations/labMarks';
 import { type LabContribution, type LabHeaderItem, useLabChromeContext } from '../chrome';
+import { labItemCommandId } from '../chrome/labTypes';
+import { formatShortcut } from '../passthrough/weasel-ui';
 import type { LabMode } from '../state/types';
 import { useLabContext } from './LabContext';
 import { MODES } from './labModes';
@@ -66,9 +68,11 @@ function MarksCommand() {
 
 function HeaderItemCommand({ id, item }: { id: string; item: LabHeaderItem }) {
   const ctx = useLabChromeContext();
-  useCommand(`lab.item.${id}`, item.label, () => item.onActivate(ctx), {
+  // With keys of its own, the command's bindings say what its shortcut is, a rebound one included.
+  const shortcut = item.keys === undefined ? formatShortcut(item.shortcut) : undefined;
+  useCommand(labItemCommandId(id), item.label, () => item.onActivate(ctx), {
     icon: item.icon,
-    ...(item.shortcut === undefined ? {} : { shortcut: item.shortcut }),
+    ...(shortcut === undefined ? {} : { shortcut }),
     ...(item.danger ? { grade: 'danger' as const } : {}),
     enabled: () =>
       item.disabled ? (item.disabledReason ?? ActionDisabledReason.NotApplicable) : true,

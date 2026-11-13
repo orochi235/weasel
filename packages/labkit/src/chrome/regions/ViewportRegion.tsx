@@ -1,4 +1,4 @@
-import { Button, Icon, useRovingTabIndex } from '../../passthrough/weasel-ui';
+import { Button, formatShortcut, Icon, useRovingTabIndex } from '../../passthrough/weasel-ui';
 import type { TrialChromeContext, TrialContribution } from '../types';
 
 /** Props for `<ViewportRegion>`. */
@@ -40,7 +40,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
             iconOnly
             aria-label={label}
             tooltip={shortcut ? undefined : label}
-            shortcut={shortcut}
+            shortcut={formatShortcut(shortcut)}
             grade={danger ? 'danger' : undefined}
             pressed={pressed}
             disabled={disabled}

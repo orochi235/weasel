@@ -6,7 +6,6 @@ import {
   SHAPE_TOOLS,
   TOOL_GROUP_ORDER,
   type ToolsApi,
-  useActionsRegistry,
   useCanvasSize,
   type View,
   withoutTools,
@@ -23,7 +22,6 @@ import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
-import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { EditorShell, usePageFit, usePages } from '@weasel-js/editor';
 import { DRAW_PREFERENCES_COMMAND } from './appCommands/actions';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS } from './paperSizes';
@@ -213,16 +211,13 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
   );
 }
 
-/** The tool palette, each tool's tooltip naming the key the actions registry binds to it. */
 function DrawToolPalette({ tools, modeRegistry }: { tools: ToolsApi; modeRegistry: ModeRegistry }): ReactElement {
-  const actionsReg = useActionsRegistry();
   return (
     <ToolPalette
       tools={tools}
       groupOrder={TOOL_GROUPS}
       stacks={TOOL_STACKS}
       orientation="vertical"
-      lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
       modeRegistry={modeRegistry}
       ineligible="hide"
     />

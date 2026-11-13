@@ -1,11 +1,18 @@
-import { useContext, useMemo } from 'react';
+import { type Action, actionShortcuts, useActionsRegistry } from '@weasel-js/core';
+import { useContext, useMemo, useSyncExternalStore } from 'react';
 import { useStore } from 'zustand/react';
 import { useLabContext } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 import { usePersistedState } from '../state/usePersistedState';
 import { resolveLabTool } from '../tools/labTool';
 import type { TrialTool } from '../tools/types';
-import type { LabChromeContext, LabContribution, LabRegion } from './labTypes';
+import {
+  type LabChromeContext,
+  type LabContribution,
+  type LabHeaderItem,
+  type LabRegion,
+  labItemCommandId,
+} from './labTypes';
 import { mergeContributions } from './merge';
 import { SidebarPanes } from './regions/SidebarPanes';
 import { StatusRegion } from './regions/StatusRegion';
@@ -76,9 +83,34 @@ export function LabHeaderRegion({ contributions }: LabRegionProps) {
     <ToolbarRegion
       region="header"
       label="Lab actions"
-      contributions={contributionsIn(contributions, 'header')}
+      contributions={useBoundShortcuts(contributionsIn(contributions, 'header'))}
       ctx={ctx}
     />
+  );
+}
+
+const NO_ACTIONS: readonly Action[] = [];
+const noSubscribe = () => () => {};
+
+/** `header` with each item that binds `keys` showing the key its command answers to now, so a rebind reaches it. */
+function useBoundShortcuts(header: LabContribution[]): LabContribution[] {
+  const registry = useActionsRegistry();
+  const actions = useSyncExternalStore(
+    registry ? registry.subscribe : noSubscribe,
+    () => registry?.list() ?? NO_ACTIONS,
+  );
+  return useMemo(
+    () =>
+      header.map((c) => {
+        if (!c.item || (c.item as { kind?: string }).kind === 'menu') return c;
+        const item = c.item as LabHeaderItem;
+        if (item.keys === undefined) return c;
+        const action = actions.find((a) => a.id === labItemCommandId(c.id));
+        const { shortcut: _declared, ...rest } = item;
+        const bound = action ? actionShortcuts(action)[0] : undefined;
+        return { ...c, item: bound ? { ...rest, shortcut: bound } : rest } as LabContribution;
+      }),
+    [header, actions],
   );
 }
 

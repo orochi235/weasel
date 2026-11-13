@@ -104,7 +104,7 @@ const constraintsInstrument = defineInstrument<State, Config>({
   name: 'Constraints',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
   render: (ctx) => <ConstraintsTrial ctx={ctx} />,
 });
 

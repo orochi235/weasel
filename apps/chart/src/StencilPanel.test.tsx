@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
-import { createScene, type Tool, type ToolsApi } from '@weasel-js/core';
+import { createScene, declaredToolShortcuts, type Tool, type ToolsApi } from '@weasel-js/core';
 import { CONTAINER_STENCILS, DIAGRAM_TYPE_DOC_KEY, FLOWCHART_STENCILS, STENCIL_GROUPS, stencilTool } from '@weasel-js/diagram';
 import { toIconRef, type IconSpec } from '@weasel-js/icons';
 import { Icon } from '@weasel-js/ui/components/Icon';
@@ -13,8 +13,9 @@ afterEach(cleanup);
 
 function chartTools(active: string | null = null): ToolsApi {
   const list: Tool[] = [{ id: 'select', presentation: { label: 'Select' } } as Tool, ...[...FLOWCHART_STENCILS, ...CONTAINER_STENCILS].map(stencilTool)];
-  // The palette reads only these three.
-  return { active, setActive: vi.fn(), registry: Object.fromEntries(list.map((t) => [t.id, t])) } as unknown as ToolsApi;
+  // The palette reads only these four.
+  const registry = Object.fromEntries(list.map((t) => [t.id, t]));
+  return { active, setActive: vi.fn(), registry, shortcuts: declaredToolShortcuts(registry) } as unknown as ToolsApi;
 }
 
 const newScene = () => createScene<ChartData, ChartLayer, ChartPose>({ systemLayers: CHART_LAYERS, registry: CHART_REGISTRY });

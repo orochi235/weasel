@@ -55,7 +55,7 @@ const combInstrument = defineInstrument<State, Config>({
   name: 'Comb',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
   render: (ctx) => <CombTrial ctx={ctx} />,
 });
 

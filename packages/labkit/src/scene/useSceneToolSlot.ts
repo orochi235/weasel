@@ -3,9 +3,11 @@ import { useEffect, useRef } from 'react';
 import type { RenderContext } from '../instrument/types';
 
 /** The two halves of the trial a scene's tool slot follows. */
-export type TrialToolSlot = Pick<RenderContext['trial'], 'activeToolId' | 'setActiveTool'>;
+export type TrialToolSlot = Pick<RenderContext['trial'], 'activeToolId' | 'setActiveTool'> &
+  Partial<Pick<RenderContext['trial'], 'setToolShortcuts'>>;
 
 /**
+ * Reports the canvas's live tool keys to the trial, so its rail shows the key each tool answers to.
  * Keeps a scene canvas's active tool and the trial's tool slot one value, in
  * whichever direction it last moved: picking a tool in the trial's palette
  * activates it on the canvas, and a canvas hotkey that changes tool moves the
@@ -37,6 +39,9 @@ export function useSceneToolSlot(
   const reported = (next: ToolsApi): void => {
     tools.current = next;
     onToolsCreated?.(next);
+    slot.setToolShortcuts?.(
+      Object.fromEntries(Object.keys(next.registry).map((id) => [id, next.shortcuts[id] ?? []])),
+    );
     const before = sceneSaw.current;
     sceneSaw.current = next.active;
     // Settling, by the rule above: catching up with a request, or not yet holding a tool.

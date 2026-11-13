@@ -28,7 +28,11 @@ export type LabRegion = 'header' | 'palette' | 'sidebar' | 'aside' | 'footer' | 
  */
 export interface LabChromeContext extends LabContextValue, ToolSlotContext {}
 
-/** A header button that is also a lab command, which `keys` can bind. */
+/** The id of the lab command a header item contribution registers. */
+export const labItemCommandId = (contributionId: string): string => `lab.item.${contributionId}`;
+
+/** A header button that is also a lab command, which `keys` can bind. With `keys`, its tooltip shows the key its
+ *  command answers to now, a rebound one included, and `shortcut` is for a key bound elsewhere. */
 export interface LabHeaderItem<TCtx = LabChromeContext> extends ToolbarItem<TCtx> {
   /** The keys that run it, wherever focus is in the lab. */
   keys?: CommandOptions['keys'];

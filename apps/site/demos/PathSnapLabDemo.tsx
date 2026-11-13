@@ -74,9 +74,9 @@ const snapInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'line',
     tools: [
-      { id: 'line', label: 'Line', icon: icon('core:line'), shortcut: '\\' },
-      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'line', label: 'Line', icon: icon('core:line') },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen') },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
     ],
   },
   render: (ctx) => <PathSnapTrial ctx={ctx} />,

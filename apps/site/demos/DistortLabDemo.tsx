@@ -77,8 +77,8 @@ const distortInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'distort', label: 'Distort', icon: icon('path-tools:distort'), shortcut: 'F' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'distort', label: 'Distort', icon: icon('path-tools:distort') },
     ],
     initial: 'distort',
   },

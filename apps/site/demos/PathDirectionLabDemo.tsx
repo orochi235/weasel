@@ -95,7 +95,7 @@ const directionInstrument = defineInstrument<State, Config>({
   name: 'Direction',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
   render: (ctx) => <DirectionTrial ctx={ctx} />,
 });
 

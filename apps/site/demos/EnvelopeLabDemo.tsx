@@ -76,8 +76,8 @@ const envelopeInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'envelope', label: 'Envelope', icon: icon('path-tools:envelope'), shortcut: 'M' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'envelope', label: 'Envelope', icon: icon('path-tools:envelope') },
     ],
     initial: 'envelope',
   },
