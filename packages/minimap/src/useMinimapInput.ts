@@ -12,7 +12,7 @@ const toolsById = (wheel: boolean): ReadonlyMap<string, Tool> =>
 const PAN_TOOLS = toolsById(false);
 const PAN_ZOOM_TOOLS = toolsById(true);
 const PAN_CHANNELS = { wheel: false, pinch: false, contextMenu: false, ingest: false } as const;
-const PAN_ZOOM_CHANNELS = { ...PAN_CHANNELS, wheel: true } as const;
+const PAN_ZOOM_CHANNELS = { ...PAN_CHANNELS, wheel: true, pinch: true } as const;
 
 /** What `useMinimapInput` reads. */
 export interface MinimapInputOptions {

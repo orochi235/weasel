@@ -1,6 +1,6 @@
-/** Wheel over `<MinimapCanvas>` zooms the main view about the point under the cursor. */
+/** Wheel and trackpad pinch over `<MinimapCanvas>` zoom the main view about the point under the cursor. */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { createScene, RECT_POSE_DESCRIPTOR, wheelZoomFactor, DEFAULT_MAX_ZOOM } from '@weasel-js/core';
 import type { DrawCommand, PoseDescriptor, Scene, View, ZoomClampOptions } from '@weasel-js/core';
 import { MinimapCanvas } from './MinimapCanvas';
@@ -81,6 +81,26 @@ describe('<MinimapCanvas> wheel zoom', () => {
     fireEvent.wheel(canvas, { clientX: 50, clientY: 50, deltaY: 10, ctrlKey: true });
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0]![0].scale.x).toBeLessThan(MAIN.scale.x);
+  });
+
+  it('zooms on a Safari trackpad pinch, about the point under it', () => {
+    const { canvas, onChange, fit } = mount();
+    const gesture = (type: string, scale: number): boolean => {
+      const ev = Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
+        scale, rotation: 0, clientX: 30, clientY: 60, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+      });
+      act(() => { canvas.dispatchEvent(ev); });
+      return ev.defaultPrevented;
+    };
+    expect(gesture('gesturestart', 1)).toBe(true);
+    gesture('gesturechange', 1.5);
+    gesture('gestureend', 1.5);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const next = onChange.mock.calls[0]![0];
+    expect(next.scale.x).toBeCloseTo(MAIN.scale.x * 1.5);
+    const world = { x: fit.x + 30 / fit.scale.x, y: fit.y + 60 / fit.scale.y };
+    expect(onMain(next, world).x).toBeCloseTo(onMain(MAIN, world).x);
+    expect(onMain(next, world).y).toBeCloseTo(onMain(MAIN, world).y);
   });
 
   it('clamps to the kit default limits', () => {

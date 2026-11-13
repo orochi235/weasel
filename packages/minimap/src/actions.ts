@@ -4,7 +4,7 @@
  * minimap's own view answers the minimap's camera.
  */
 import type { Action, InvocationCtx, OngoingHandle, Tool } from '@weasel-js/routing';
-import { viewWorldToScreen, wheelZoom, type ViewApi, type ZoomClampOptions } from '@weasel-js/core';
+import { viewWorldToScreen, wheelZoomFactor, zoomAt, type ViewApi, type ZoomClampOptions } from '@weasel-js/core';
 import type { ImmediateParams } from '@weasel-js/routing';
 
 /** Action id for `minimapCenterAction`. */
@@ -77,10 +77,10 @@ export function minimapPanAction(): Action {
   };
 }
 
-/** Zoom the main camera by one wheel sample about the world point under the
- *  cursor, which keeps its place in the main view. `clamp` is the main view's
- *  zoom limits, or a getter read on each sample; omitted, the kit defaults
- *  `viewport.zoom` also uses. */
+/** Zoom the main camera by one wheel or pinch sample about the world point
+ *  under the cursor, which keeps its place in the main view. `clamp` is the
+ *  main view's zoom limits, or a getter read on each sample; omitted, the kit
+ *  defaults `viewport.zoom` also uses. */
 export function minimapZoomAction(clamp?: ZoomClampOptions | (() => ZoomClampOptions | undefined)): Action {
   return {
     id: MINIMAP_ZOOM,
@@ -91,25 +91,28 @@ export function minimapZoomAction(clamp?: ZoomClampOptions | (() => ZoomClampOpt
       run: (deps, params) => {
         const p = params as ImmediateParams | undefined;
         const root = rootOf(deps);
-        if (!root || !p?.world || !p.deltaY) return;
+        if (!root || !p?.world) return;
+        const factor = p.scale !== undefined ? p.scale : wheelZoomFactor(p.deltaY ?? 0);
+        if (!(factor > 0) || !Number.isFinite(factor) || factor === 1) return;
         const v = root.get();
-        root.set(wheelZoom(v, viewWorldToScreen(v, p.world), p.deltaY, typeof clamp === 'function' ? clamp() : clamp));
+        root.set(zoomAt(v, viewWorldToScreen(v, p.world), factor, typeof clamp === 'function' ? clamp() : clamp));
       },
     },
   };
 }
 
 /** The minimap's bindings, each id prefixed with `id`: press to center, drag to pan, and with `wheel` the wheel
- *  and a trackpad pinch to zoom. `views` scopes them to the minimap's view on a surface that routes several. */
+ *  and a trackpad pinch to zoom, as `viewport.zoom` takes them. `views` scopes them to the minimap's view on a surface that routes several. */
 export function minimapBindings(id: string, wheel: boolean, views?: readonly string[]): Tool['bindings'] {
   const scope = views ? { views: [...views] } : {};
   return [
     { spec: { kind: 'pointerDown' }, actionId: MINIMAP_CENTER, opts: { id: `${id}.pointerDown`, ...scope } },
     { spec: { kind: 'drag' }, actionId: MINIMAP_PAN, opts: { id: `${id}.drag`, ...scope } },
-    // A trackpad pinch arrives as ctrl+wheel, which a bare-wheel spec rejects.
+    // A trackpad pinch arrives as ctrl+wheel, which a bare-wheel spec rejects, and in Safari as WebKit's pinch.
     ...(wheel ? [
       { spec: { kind: 'wheel' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.wheel`, ...scope } },
-      { spec: { kind: 'wheel' as const, mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.pinch`, ...scope } },
+      { spec: { kind: 'wheel' as const, mods: { ctrl: true } }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.trackpad`, ...scope } },
+      { spec: { kind: 'pinch' as const }, actionId: MINIMAP_ZOOM, opts: { id: `${id}.pinch`, ...scope } },
     ] : []),
   ];
 }

@@ -129,6 +129,23 @@ describe('input in the minimap', () => {
     expect((400 - next.y) * next.scale.y).toBeCloseTo(400);
   });
 
+  it('zooms the main camera on a Safari trackpad pinch, about the world point under it', () => {
+    const h = mount();
+    const gesture = (type: string, scale: number) => {
+      const ev = Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
+        scale, rotation: 0, clientX: 50, clientY: 40, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+      });
+      act(() => { h.canvas.dispatchEvent(ev); });
+    };
+    gesture('gesturestart', 1);
+    gesture('gesturechange', 2);
+    gesture('gestureend', 2);
+    const next = last(h.onViewChange);
+    expect(next.scale.x).toBeCloseTo(2);
+    expect((500 - next.x) * next.scale.x).toBeCloseTo(500);
+    expect((400 - next.y) * next.scale.y).toBeCloseTo(400);
+  });
+
   it('clamps a wheel zoom to the limits it is given, and leaves the main camera alone with wheelZoom: false', () => {
     const wheel = (canvas: HTMLCanvasElement) => act(() => {
       canvas.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: 50, clientY: 40, deltaY: -5000 }));

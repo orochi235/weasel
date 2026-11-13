@@ -2141,3 +2141,9 @@ Calls the lanes made without a ruling:
 - 2026-11-13 (the lane's call): a HUD widget treats any `move` as the end of its click, since the dispatcher sends
   `move` only once a press crossed the `gestures.dragPx` kit setting. The window widget no longer restates the
   threshold as `DRAG_THRESHOLD_PX`, which under a smaller kit setting let a drag of a few pixels also click.
+- 2026-11-13 (the lane's call): the minimap zooms on both forms of trackpad pinch, ctrl+wheel (`<id>.trackpad`) and
+  WebKit's `pinch` (`<id>.pinch`), as `viewport.zoom` and `camera.dolly` do, and its dispatcher now listens for
+  WebKit's gesture events when wheel zoom is on. A WebKit pinch carries the world point under its focal point, as a
+  wheel does, so an action can zoom about it without its own client-to-world map.
+- Open: the minimap takes no two-finger touch pinch; one finger pans it. A pinch there needs the minimap's own camera
+  at the action, which `<MinimapCanvas>` keeps in its hook rather than as a dep.
