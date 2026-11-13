@@ -1,4 +1,5 @@
 import {
+  BUILTIN_TOOL_GROUPS,
   createMeasurements,
   placedPagesOf,
   type SceneCanvasApi,
@@ -11,7 +12,7 @@ import {
   withoutTools,
 } from '@weasel-js/core';
 import type { ModeRegistry } from '@weasel-js/modes';
-import { PATH_OVERLAYS_GROUP, WARP_TOOLS } from '@weasel-js/path-tools';
+import { PATH_EDIT_TOOLS, PATH_OVERLAYS_GROUP, PATH_TOOLS_TOOLS, RESHAPE_TOOLS, WARP_TOOLS } from '@weasel-js/path-tools';
 import { ActionBar } from '@weasel-js/ui/components/ActionBar';
 import { CharacterOptions } from '@weasel-js/ui/components/CharacterOptions';
 import { ActiveToolOptions } from './ui/ToolOptions';
@@ -22,7 +23,7 @@ import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { type CSSProperties, type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActiveSwatches } from './ActiveSwatches';
-import { EditorShell, usePageFit, usePages } from '@weasel-js/editor';
+import { EditorShell, EditorTools, usePageFit, usePages } from '@weasel-js/editor';
 import { DRAW_PREFERENCES_COMMAND } from './appCommands/actions';
 import { DEFAULT_PAPER_SIZE, PAPER_PRESETS } from './paperSizes';
 import { ANNOTATION_LAYER, type DrawScene } from './drawDocument';
@@ -54,6 +55,8 @@ import { Workspace } from './Workspace';
 /** The palette's groups: core's, then path-tools' reshaping tools and its warps. */
 const TOOL_GROUPS = [...TOOL_GROUP_ORDER, 'path', 'warp'];
 const TOOL_STACKS = [withoutTools(SHAPE_TOOLS, 'line'), ['pen', 'spiro', 'pencil'], ['trim', 'extend'], WARP_TOOLS];
+/** What the shortcut sheet groups the tools by: core's sets, then path-tools' path-edit, reshaping, and the rest. */
+const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, PATH_EDIT_TOOLS, RESHAPE_TOOLS, PATH_TOOLS_TOOLS];
 /** What the view fits before the scene has a page to fit. */
 const FALLBACK_PAGE = { x: 0, y: 0, ...PAPER_PRESETS[DEFAULT_PAPER_SIZE] };
 
@@ -145,6 +148,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
           >
             <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
               <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
+              <EditorTools tools={tools} toolSets={SHEET_TOOL_SETS} />
               <StripDock className="wd-dock">
                 <div className="wd-dock-main">
                   <div ref={optionsRef}>

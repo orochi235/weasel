@@ -1,14 +1,14 @@
 import {
-  SceneCanvas, createToolOptionValues, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
+  BUILTIN_TOOL_GROUPS, SceneCanvas, createToolOptionValues, isToolSet, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
   useToolOptionValues, type Tool, type ToolOptionValues, type ToolsApi,
 } from '@weasel-js/core';
 import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
-  offPageTagOf, rendererMeasure, sequencePartOf,
+  offPageTagOf, rendererMeasure, SEQUENCE_TOOLS, sequencePartOf, STENCIL_TOOLS,
 } from '@weasel-js/diagram';
 import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
-import { usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
+import { useEditorTools, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
 import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
@@ -66,6 +66,9 @@ function endTextEdit(scene: ChartScene, id: string): void {
  *  Sequence panel. */
 const isPaletteTool = (tool: Tool): boolean => !isStencilTool(tool) && !isSequenceTool(tool);
 
+/** What the shortcut sheet groups the tools by: core's sets, the sequence tools, then each stencil group. */
+const SHEET_TOOL_SETS = [...BUILTIN_TOOL_GROUPS, SEQUENCE_TOOLS, ...STENCIL_TOOLS.members.filter(isToolSet)];
+
 /** Chart mode: the scene is the document — stencil bodies joined by edges, on a page. */
 export function ChartWorkspace(): ReactElement {
   const [initial] = useState(loadChartSession);
@@ -100,6 +103,7 @@ export function ChartWorkspace(): ReactElement {
     ...(gridLayer ? { grid: { layer: gridLayer } } : {}),
   }), [paperLayer, gridLayer]);
   const [tools, setTools] = useState<ToolsApi | null>(null);
+  useEditorTools(tools, SHEET_TOOL_SETS);
   const [themeOpen, setThemeOpen] = useState(false);
 
   const textEdit = useSceneTextEdit(scene, host, { escape: 'commit', isText: isEditableText, onEnd: (id) => endTextEdit(scene, id) });

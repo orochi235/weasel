@@ -1,7 +1,8 @@
 import { type BoundGesture, type CommandOptions, type KeySpec, useActionsRegistry, useCommand, useGestureDispatcher } from '@weasel-js/core';
+import { SHORTCUT_SHEET_ID } from '@weasel-js/ui/components/ShortcutSheet';
 
 /** The ids of the commands `<EditorShell>` registers. */
-export const EDITOR_ACTIONS = { preferences: 'editor.preferences' } as const;
+export const EDITOR_ACTIONS = { preferences: 'editor.preferences', shortcuts: SHORTCUT_SHEET_ID } as const;
 
 /** How the shell registers one of its commands. */
 export interface EditorCommandOptions extends Pick<CommandOptions, 'icon' | 'group' | 'tags'> {
