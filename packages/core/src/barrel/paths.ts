@@ -84,6 +84,7 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
+  PEN_CLOSE_HIT_PX,
   createPathEditingOverlayLayer,
   GEOMETRY_BOUND_DATA,
   withoutGeometryBoundData,
