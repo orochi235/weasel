@@ -113,7 +113,7 @@ class HarfBuzzShaper implements TextShaper {
     let f = this.#features.get(tag);
     if (!f) {
       const parsed = this.#hb.Feature.fromString(tag);
-      if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting`);
+      if (!parsed) throw new Error(`weasel shape: "${tag}" is not an OpenType feature setting; pass one per entry, a tag such as "smcp" or a setting such as "liga=0"`);
       f = parsed;
       this.#features.set(tag, f);
     }
