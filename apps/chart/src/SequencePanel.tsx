@@ -28,8 +28,11 @@ const FRAGMENT: Choice = { tool: 'diagram.sequence.fragment', options: SEQUENCE_
 const MARK: Choice = { tool: 'diagram.sequence.mark', options: SEQUENCE_MARK_OPTIONS, option: 'mark' };
 
 /** The picker's choices, as the option's schema lists them. */
-const choicesOf = <T extends string>(c: Choice): readonly { value: T; label: string }[] =>
-  (c.options.prefs.children[c.option] as { options: readonly PrefEnumOption<T>[] }).options.map(({ value, label }) => ({ value, label }));
+function choicesOf<T extends string>(c: Choice): readonly { value: T; label: string }[] {
+  const leaf = c.options.prefs.children[c.option];
+  const options = leaf && 'options' in leaf ? (leaf.options as readonly PrefEnumOption<T>[]) : [];
+  return options.map(({ value, label }) => ({ value, label }));
+}
 
 /** What `c`'s tool adds now, from `values`, and the setter its picker calls. */
 function useChoice<T extends string>(c: Choice, values: ToolOptionValues): [T, (value: T) => void] {

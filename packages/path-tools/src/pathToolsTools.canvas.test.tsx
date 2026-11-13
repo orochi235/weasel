@@ -8,7 +8,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { act, cleanup } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import {
-  SceneCanvas, asNodeId, createScene, pathFromD, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type PolygonPath,
+  IDENTITY_POSE_COMPOSITION, SceneCanvas, asNodeId, createScene, pathFromD, toolGaps, toolIdsOf, useActionsRegistry, type ActionsRegistry, type PolygonPath,
   type ToolsApi,
 } from '@weasel-js/core';
 import { pathTools } from './presets';
@@ -26,7 +26,7 @@ type Data = { stroke?: unknown };
 /** Strokes in world units: jsdom's canvas rect is all zeros and the view is identity. */
 function mount(paths: Record<string, string>, selected: string[] = []) {
   // Each stroke is its own pose, as a drawn path is.
-  const scene = createScene<Data, 'main', PolygonPath>({ systemLayers: [{ id: 'main' }] });
+  const scene = createScene<Data, 'main', PolygonPath>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   for (const [id, d] of Object.entries(paths)) {
     scene.add({
       id: asNodeId(id), kind: 'mark', layer: 'main', data: { stroke: { paint: { color: '#000' }, width: 2 } },
