@@ -54,13 +54,10 @@ export interface ToolDef<TOverlay = KernelOverlay> {
    *  Read off the def via `Tool.def` (the reflection escape hatch). */
   hookName?: string;
   presentation?: ToolPresentation;
-  /** Optional caller-supplied activation key. Most built-in tools have their
-   *  activation key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`;
-   *  this field is for tools that want their activation key to be
-   *  configurable by the host (currently Lasso and Eyedropper). The dynamic
-   *  loop in `useKeybindings.ts` picks this up and appends a binding entry
-   *  to the consolidated `tool.activate` action (with `opts.params.toolId`
-   *  set so the invoker knows which tool to switch to). */
+  /** The key that makes this the active tool, bound to the consolidated
+   *  `tool.activate` action (with `params.toolId` naming this tool) on any
+   *  canvas whose keybindings are on. Every built-in tool declares its own
+   *  here — `R` for the rectangle — and a consumer tool does the same. */
   keybinding?: ToolKeybinding;
   /** Held-key trigger: this tool engages while the key is down and
    *  disengages on release — a modifier, `'space'`, or any other key

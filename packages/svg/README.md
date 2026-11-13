@@ -28,6 +28,18 @@ await warmSvg(nodes);
 const svg = serializeSvg(nodes);
 ```
 
+`svgNodesFromKit` writes what core's built-in painters draw: text, paths, shapes and images. A node a
+painter of your own draws (`registerNodeShape`) is left out unless `leaf` writes it; return `undefined`
+for every other node to keep the default:
+
+```ts
+const nodes = svgNodesFromKit(scene, {
+  leaf: (_id, node) => isHeart(node.data)
+    ? { kind: 'path', path: heartIn(node.pose), fill: { kind: 'solid', color: node.data.heart.color } }
+    : undefined,
+});
+```
+
 For files dropped or pasted on a canvas, `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>` does the
 import, fitting each file to the view.
 

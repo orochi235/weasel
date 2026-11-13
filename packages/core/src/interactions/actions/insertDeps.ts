@@ -10,8 +10,9 @@ import type { CommitSelection } from './defaultCommitAdapter';
  * Built-in tools populate a typed variant so the kit's default factory can
  * render the true tool params (line endpoints, polygon side count, star
  * geometry, pencil sample list). Consumer-defined tools may pass any
- * `{ kind: string; ... }` payload; the kit's factory falls back to AABB
- * inscription for unknown kinds. The sticky tool's extras are its
+ * `{ kind: string; ... }` payload, the binding's `params` as they stand; a
+ * kind the kit builds no node for needs an entry in `<SceneCanvas
+ * insertNodeFactories>`, or the insert is skipped. The sticky tool's extras are its
  * `StickyStyle` (`stickyNode.ts`) under `kind: 'sticky'`.
  *
  * `bounds` is still passed alongside as a useful AABB pose hint — factories

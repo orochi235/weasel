@@ -62,20 +62,18 @@ export interface GridLayerOpts {
 
 type Point = { x: number; y: number };
 
-// Defaults express weight via opacity rather than a fixed dark color so the
-// grid reads correctly against any background fill (kit demos use a neutral
-// gray; consumer apps may use cream / dark / themed surfaces). Override
-// per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.
+// A mid gray, weighted by opacity, shows on a white canvas and a dark one alike.
+// Override per-canvas via `style.{line,accent,sub}.paint` if a hard color is needed.
 const DEFAULT_LINE: CommandStroke = {
-  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.08)' },
+  paint: { kind: 'solid', color: 'rgba(128, 128, 128, 0.25)' },
   width: 1,
 };
 const DEFAULT_ACCENT: CommandStroke = {
-  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.16)' },
+  paint: { kind: 'solid', color: 'rgba(128, 128, 128, 0.45)' },
   width: 1,
 };
 const DEFAULT_SUB: CommandStroke = {
-  paint: { kind: 'solid', color: 'rgba(255, 255, 255, 0.04)' },
+  paint: { kind: 'solid', color: 'rgba(128, 128, 128, 0.12)' },
   width: 1,
 };
 

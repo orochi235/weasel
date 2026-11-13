@@ -222,7 +222,12 @@ export function useInsertDepSource(
 
         let data = kitData(kind, extent, extras, painted);
         if (data === null) {
-          if (!quiet) console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
+          if (!quiet) {
+            console.warn(
+              `weasel insertDep: no factory for kind="${kind}", so nothing was inserted. ` +
+              `Give <SceneCanvas insertNodeFactories={{ '${kind}': (bounds, extras) => ({ data }) }}> one.`,
+            );
+          }
           return null;
         }
         data = withFillRule(data, style?.fillRule);

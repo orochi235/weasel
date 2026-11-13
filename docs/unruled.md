@@ -1873,3 +1873,13 @@ Calls the lanes made without a ruling:
 - Open: scrubbing `<AnimatedTransport>` or `<AnimatedTimeline>` seeks a playing timeline and leaves it playing, as
   `<AnimatedTimeline>` always has. The timeline demo, which wired `<Transport>` by hand until 2026-11-12, paused on a
   scrub. Whether a scrub pauses playback.
+
+## Audit round twenty (2026-11-12): a vector drawing app
+
+- 2026-11-12 (the lane's call): a drag inserting a consumer-defined kind previews the outline of the box it will
+  fill, as a rect drag does, where it used to show nothing until release. A kind whose descriptor sets
+  `insertPreview: false` (pen, lasso) still shows none. The alternative is previewing the node itself, through the
+  insert dep's `peek` and its painter.
+- 2026-11-12 (the lane's call): `registerNodeShape` at the default priority puts a painter ahead of
+  `kit:rect-fallback`, which used to match every rect-posed node first and left a default-priority painter unable
+  to paint one.

@@ -350,13 +350,15 @@ describe('insertAction descriptor', () => {
       expect((ov.extras as { sides: number }).sides).toBe(9);
     });
 
-    it('returns null for unknown (consumer-defined) kinds — no kit-side preview', () => {
+    it('previews a consumer-defined kind as the box it will fill', () => {
       const invoker = getOngoingInvoker(insertAction);
       const dep = makeInsertDep();
       const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
       const handle = invoker.start(ctx, { params: { kind: 'my-custom-widget' } });
       handle.onMove!({ ...ctx, world: { x: 30, y: 30 } });
-      expect((overlaysOf(handle)[0] ?? null)).toBeNull();
+      expect(overlaysOf(handle)[0]).toMatchObject({
+        kind: 'insertPreview', shape: 'my-custom-widget', bounds: { x: 0, y: 0, width: 30, height: 30 },
+      });
     });
 
     it('returns null after onEnd (gesture closed)', () => {

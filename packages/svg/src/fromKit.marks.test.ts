@@ -48,6 +48,17 @@ describe('svgNodesFromKit: a mark with children', () => {
     expect(inner.children.map((c) => c.kind)).toEqual(['text']);
   });
 
+  it('writes the default leaf, inherited paint resolved, for a node a custom leaf returns undefined for', () => {
+    const child: SvgKitTreeNode = { kind: 'mark', data: { path: square, fill: 'inherit' }, pose: BOX };
+    const own = { kind: 'path' as const, path: square, fill: { kind: 'none' as const } };
+    const [g] = svgNodesFromKit(tree({ p: box(), k: child }, { p: ['k'] }), {
+      leaf: (id) => (id === 'p' ? own : undefined),
+    }) as SvgGroupNode[];
+    expect(g.children[0]).toBe(own);
+    expect((g.children[1] as SvgNode & { inherits?: unknown }).inherits).toEqual({ fill: true });
+    expect(serializeSvg([g])).toMatch(/<g fill="#ff0000"><path [^>]*\/><path d="M0 0h10v10h-10Z" stroke="none"\/>/);
+  });
+
   it.each(['mark', 'group'] as const)('clips the children of a %s to the outline the canvas clips them to', (kind) => {
     const node: SvgKitTreeNode = { kind, data: { shape: 'ellipse' }, pose: BOX, clip: 'outline' };
     const out = svgNodesFromKit(tree({ p: node, k: kid }, { p: ['k'] })) as SvgGroupNode[];
