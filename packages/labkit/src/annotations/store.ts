@@ -15,6 +15,7 @@ import {
   worldToFrac,
 } from './frac';
 import { MarkHistory, markHistoryOf, markUndo, restoreSceneHistory } from './history';
+import { markDataFrom } from './markData';
 import { markIdOf, splitMarkId } from './markId';
 import { migrateLegacyPoints, type SerializedMarks, shapeFor } from './markShape';
 import { matchesQuery } from './query';
@@ -302,19 +303,7 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
       const target = targetOf(init.target);
       const frac = roundFrac(init.frac);
       const shape = shapeFor(init.kind, init.points, frac);
-      const data: AnnotationData = {
-        target: init.target,
-        kind: init.kind,
-        ...(shape ? { shape } : {}),
-        ...(init.title !== undefined ? { title: init.title } : {}),
-        ...(init.status !== undefined ? { status: init.status } : {}),
-        ...(init.tags !== undefined ? { tags: init.tags } : {}),
-        ...(init.meta !== undefined ? { meta: init.meta } : {}),
-        ...(init.width !== undefined ? { width: init.width } : {}),
-        ...(init.color !== undefined ? { color: init.color } : {}),
-        ...(init.fontSize !== undefined ? { fontSize: init.fontSize } : {}),
-        seen: seenFrom(config, target?.positionDependsOn ?? []),
-      };
+      const data = markDataFrom(init, shape, seenFrom(config, target?.positionDependsOn ?? []));
       const node = sceneFor(init.target).add({
         kind: 'mark',
         layer: 'marks',

@@ -103,14 +103,13 @@
     "longestFunction": 139
   },
   "packages/labkit/src/annotations/AnnotationOverlay.tsx": {
-    "longestFunction": 169
+    "longestFunction": 154
   },
   "packages/labkit/src/annotations/ExportMenu.tsx": {
     "longestFunction": 126
   },
   "packages/labkit/src/annotations/store.ts": {
-    "lines": 402,
-    "longestFunction": 296
+    "longestFunction": 293
   },
   "packages/labkit/src/chrome/builtins.tsx": {
     "longestFunction": 155

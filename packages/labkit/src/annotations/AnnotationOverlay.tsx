@@ -29,6 +29,7 @@ import {
 import { createMarkDrawOne } from './drawOne';
 import { boundsOf, roundPoints, toShape, type WorldRect } from './frac';
 import { markStyleFrom } from './options';
+import { useOverlayTile } from './overlayTile';
 import { POINT_MARK_SHAPE } from './paint';
 import { seenFrom } from './staleness';
 import type { MarkScene } from './store';
@@ -182,23 +183,7 @@ export function AnnotationOverlay({
   // Out of scope while another trial is expanded: nothing paints this tile
   // then, and its box would sit over the expanded one.
   const inScope = useTileInScope(tileId);
-  const lastTile = useRef<HTMLElement | null>(null);
-  useEffect(() => {
-    const el = target.ref.current ?? null;
-    if (el === lastTile.current) return;
-    lastTile.current = el;
-    surface?.registerTile(tileId, el);
-  });
-  useEffect(
-    () => () => {
-      // Clearing this is what lets the effect above re-register on the next
-      // commit. StrictMode's mount / unmount / mount would otherwise take the
-      // tile out and never put it back, and the surface would measure nothing.
-      lastTile.current = null;
-      surface?.registerTile(tileId, null);
-    },
-    [surface, tileId],
-  );
+  useOverlayTile(surface, tileId, target.ref);
 
   // Erases the whole shared buffer when the tiles move: a tile that moved took
   // its scissor with it, and what it painted last frame stays where it was.

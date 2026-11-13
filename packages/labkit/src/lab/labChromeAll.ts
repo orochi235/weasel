@@ -5,16 +5,15 @@ import type { LabContribution } from '../chrome/labTypes';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
 
-/** Every tool the lab's rail carries: the annotation tools while the lab shows marks, then the lab's own. */
-export function useLabTools(
-  instruments: InstrumentList,
-  marks: boolean,
-  tools: readonly TrialTool[] | undefined,
-): readonly TrialTool[] {
-  return useMemo(
-    () => [...(marks ? labAnnotationTools(instruments) : []), ...(tools ?? [])],
-    [instruments, marks, tools],
-  );
+/** The lab's chrome, as its regions and its options palette read it. */
+export interface LabChromeAll {
+  /** Every tool the rail carries: the annotation tools while the lab shows marks, then the lab's own. */
+  tools: readonly TrialTool[];
+  /** Every contribution, the tools' palette items among them. */
+  all: LabContribution[];
+  hasFooter: boolean;
+  /** Whether anything goes in a sidebar or aside pane. */
+  hasPanes: boolean;
 }
 
 /**
@@ -24,8 +23,19 @@ export function useLabTools(
  * across every trial.
  */
 export function useLabChromeAll(
-  allTools: readonly TrialTool[],
+  instruments: InstrumentList,
+  marks: boolean,
+  tools: readonly TrialTool[] | undefined,
   labChrome: readonly LabContribution[] | undefined,
-): LabContribution[] {
-  return useMemo(() => labContributions(allTools, labChrome), [allTools, labChrome]);
+): LabChromeAll {
+  return useMemo(() => {
+    const allTools = [...(marks ? labAnnotationTools(instruments) : []), ...(tools ?? [])];
+    const all = labContributions(allTools, labChrome);
+    return {
+      tools: allTools,
+      all,
+      hasFooter: all.some((c) => c.region === 'footer'),
+      hasPanes: all.some((c) => c.region === 'sidebar' || c.region === 'aside'),
+    };
+  }, [instruments, marks, tools, labChrome]);
 }

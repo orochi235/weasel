@@ -4,7 +4,6 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import { useStore } from 'zustand/react';
 import { useShallow } from 'zustand/react/shallow';
 import { AnnotationOptions } from '../annotations/AnnotationOptions';
-import { createLabMarkStores, LabMarkStoresContext } from '../annotations/labMarkStores';
 import { useLabMarks } from '../annotations/labMarks';
 import { AnnotationPreloadContext } from '../annotations/preload';
 import { CameraGesturesContext } from '../canvas/cameraGestures';
@@ -25,7 +24,7 @@ import { LabPanes } from './LabPanes';
 import { LabProviders } from './LabProviders';
 import { LabShell } from './LabShell';
 import { LabSurface } from './LabSurface';
-import { useLabChromeAll, useLabTools } from './labChromeAll';
+import { useLabChromeAll } from './labChromeAll';
 import type { LabBaseProps, LabProps } from './labProps';
 import { nebulaStyle } from './nebula';
 import { type OpenedLab, openStoredLab, openUnstoredLab, presentStorageKey } from './openLab';
@@ -174,7 +173,6 @@ function LabRuntime({
   // One registry for the lab's lifetime: a panel host is a DOM node the workspace owns and the
   // trial portals into, so it must outlive both ends of a dock/undock without being rebuilt.
   const [panelHosts] = useState(createPanelHostRegistry);
-  const [markStores] = useState(createLabMarkStores);
 
   const [labBody, setLabBody] = useState<HTMLDivElement | null>(null);
   useLabFitWarning(labBody);
@@ -186,10 +184,8 @@ function LabRuntime({
   const resolvedMode = useResolvedColorMode(modeValue);
 
   const labMarks = useLabMarks(opened.records, marks);
-  const labTools = useLabTools(instruments, labMarks.shown, tools);
-  const labChromeAll = useLabChromeAll(labTools, lone.labChrome);
-  const hasFooterChrome = labChromeAll.some((c) => c.region === 'footer');
-  const hasPaneChrome = labChromeAll.some((c) => c.region === 'sidebar' || c.region === 'aside');
+  const chromeAll = useLabChromeAll(instruments, labMarks.shown, tools, lone.labChrome);
+  const labChromeAll = chromeAll.all;
 
   useEffect(() => {
     if (mode && mode !== store.getState().mode) store.getState().setMode(mode);
@@ -234,63 +230,61 @@ function LabRuntime({
     <LabProviders store={store} commands={commands} contextMenus={contextMenus} over={over}>
       <LabCommands contributions={labChromeAll} addTrial={!trialless && (addTrial ?? true)} />
       <PersistenceContext.Provider value={opened.records}>
-        <LabMarkStoresContext.Provider value={markStores}>
-          <AnnotationPreloadContext.Provider value={opened.marks}>
-            <PresentationContext.Provider value={presentation}>
-              <CameraRegistryContext.Provider value={cameras}>
-                <CameraGesturesContext.Provider value={gestures ?? null}>
-                  <ClockRegistryContext.Provider value={clocks}>
-                    <ThemeProvider
-                      theme={theme}
-                      selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
-                      className={labClassName(presentation)}
-                      style={backdropStyle}
+        <AnnotationPreloadContext.Provider value={opened.marks}>
+          <PresentationContext.Provider value={presentation}>
+            <CameraRegistryContext.Provider value={cameras}>
+              <CameraGesturesContext.Provider value={gestures ?? null}>
+                <ClockRegistryContext.Provider value={clocks}>
+                  <ThemeProvider
+                    theme={theme}
+                    selection={{ mode: resolvedMode, density: density ?? 'comfortable' }}
+                    className={labClassName(presentation)}
+                    style={backdropStyle}
+                  >
+                    <LabShell
+                      title={title ?? 'Labkit'}
+                      bar={header}
+                      menuBar={bar.menuBar}
+                      mode={modeValue}
+                      {...(documentTitle !== undefined ? { documentTitle } : {})}
+                      {...(pages ? { pages } : {})}
+                      {...(path !== undefined ? { path } : {})}
+                      footer={
+                        chromeAll.hasFooter ? (
+                          <>
+                            {footer}
+                            <LabFooterRegion contributions={labChromeAll} />
+                          </>
+                        ) : (
+                          footer
+                        )
+                      }
+                      header={bar.header}
                     >
-                      <LabShell
-                        title={title ?? 'Labkit'}
-                        bar={header}
-                        menuBar={bar.menuBar}
-                        mode={modeValue}
-                        {...(documentTitle !== undefined ? { documentTitle } : {})}
-                        {...(pages ? { pages } : {})}
-                        {...(path !== undefined ? { path } : {})}
-                        footer={
-                          hasFooterChrome ? (
-                            <>
-                              {footer}
-                              <LabFooterRegion contributions={labChromeAll} />
-                            </>
+                      <UnreadableRecords />
+                      <PanelHostContext.Provider value={panelHosts}>
+                        <LabSurface bodyRef={setLabBody} contributions={labChromeAll}>
+                          <AnnotationOptions tools={chromeAll.tools} />
+                          {chromeAll.hasPanes ? (
+                            <LabPanes contributions={labChromeAll}>
+                              <LabPalette contributions={labChromeAll} />
+                              {body}
+                            </LabPanes>
                           ) : (
-                            footer
-                          )
-                        }
-                        header={bar.header}
-                      >
-                        <UnreadableRecords />
-                        <PanelHostContext.Provider value={panelHosts}>
-                          <LabSurface bodyRef={setLabBody} contributions={labChromeAll}>
-                            <AnnotationOptions tools={labTools} />
-                            {hasPaneChrome ? (
-                              <LabPanes contributions={labChromeAll}>
-                                <LabPalette contributions={labChromeAll} />
-                                {body}
-                              </LabPanes>
-                            ) : (
-                              <>
-                                <LabPalette contributions={labChromeAll} />
-                                {body}
-                              </>
-                            )}
-                          </LabSurface>
-                        </PanelHostContext.Provider>
-                      </LabShell>
-                    </ThemeProvider>
-                  </ClockRegistryContext.Provider>
-                </CameraGesturesContext.Provider>
-              </CameraRegistryContext.Provider>
-            </PresentationContext.Provider>
-          </AnnotationPreloadContext.Provider>
-        </LabMarkStoresContext.Provider>
+                            <>
+                              <LabPalette contributions={labChromeAll} />
+                              {body}
+                            </>
+                          )}
+                        </LabSurface>
+                      </PanelHostContext.Provider>
+                    </LabShell>
+                  </ThemeProvider>
+                </ClockRegistryContext.Provider>
+              </CameraGesturesContext.Provider>
+            </CameraRegistryContext.Provider>
+          </PresentationContext.Provider>
+        </AnnotationPreloadContext.Provider>
       </PersistenceContext.Provider>
     </LabProviders>
   );

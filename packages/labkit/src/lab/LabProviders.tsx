@@ -1,6 +1,7 @@
 import type { MenuDef } from '@weasel-js/core';
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { useStore } from 'zustand/react';
+import { createLabMarkStores, LabMarkStoresContext } from '../annotations/labMarkStores';
 import { type LabOver, LabOverContext, useKeptOver } from '../config/over';
 import { LabStoreProvider } from '../state/context';
 import type { LabStore } from '../state/store';
@@ -18,7 +19,7 @@ export interface LabProvidersProps {
 }
 
 /**
- * A lab's store, its two contexts, and its actions registry. `LabContext`
+ * A lab's store, its two contexts, the registry of its trials' marks, and its actions registry. `LabContext`
  * carries `trials`, so its value is new whenever any trial's record changes;
  * `LabCommandsContext` is the same value without them, for a reader that must
  * not re-render then.
@@ -28,12 +29,15 @@ export function LabProviders({ store, commands, contextMenus, over, children }: 
   const trials = useStore(store, (s) => s.trials);
   const lab = useMemo(() => ({ ...commands, trials }), [commands, trials]);
   const kept = useKeptOver(over);
+  const [markStores] = useState(createLabMarkStores);
   return (
     <LabStoreProvider store={store}>
       <LabOverContext.Provider value={kept}>
         <LabCommandsContext.Provider value={commands}>
           <LabContext.Provider value={lab}>
-            <LabActions contextMenus={contextMenus}>{children}</LabActions>
+            <LabMarkStoresContext.Provider value={markStores}>
+              <LabActions contextMenus={contextMenus}>{children}</LabActions>
+            </LabMarkStoresContext.Provider>
           </LabContext.Provider>
         </LabCommandsContext.Provider>
       </LabOverContext.Provider>
