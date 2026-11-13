@@ -39,7 +39,7 @@ export interface UseRigToolsOptions {
    *  `useRigNode` as `painting` so a stroke shows as it is painted. Default the hook's own. */
   state?: RigEditState;
   /** Screen px around a joint within which a press takes it. */
-  reach?: number;
+  reachPx?: number;
 }
 
 /**
@@ -56,8 +56,8 @@ export function useRigTools(options: UseRigToolsOptions): Record<RigToolId, Tool
   }, [latest]);
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
-  const { reach } = options;
-  const bone = useBoneTool({ scene, rig, state, reach });
-  const weight = useWeightTool({ scene, rig, state, reach });
+  const { reachPx } = options;
+  const bone = useBoneTool({ scene, rig, state, reachPx });
+  const weight = useWeightTool({ scene, rig, state, reachPx });
   return useMemo(() => ({ bone, weight }), [bone, weight]);
 }

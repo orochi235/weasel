@@ -23,7 +23,7 @@ export interface UseBoneToolOptions {
   /** Override the default keybinding (`{ key: 'J' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Screen px around a joint within which a press takes it. Default 10. */
-  reach?: number;
+  reachPx?: number;
 }
 
 /**
@@ -37,7 +37,7 @@ export interface UseBoneToolOptions {
 export function useBoneTool(options: UseBoneToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
-  const opts = useLatest({ scene: options.scene, rig: options.rig, reach: options.reach ?? 10 });
+  const opts = useLatest({ scene: options.scene, rig: options.rig, reachPx: options.reachPx ?? 10 });
   /** The skeleton a drag is shaping, in the scene's space. */
   const liveRef = useRef<Skeleton | null>(null);
 
@@ -46,7 +46,7 @@ export function useBoneTool(options: UseBoneToolOptions): Tool {
     const tool: BoneEnv & { listen(fn: () => void): () => void } = {
       state,
       scene: () => opts.current.scene,
-      reachPx: () => opts.current.reach,
+      reachPx: () => opts.current.reachPx,
       placed: () => placedRig(opts.current.scene, opts.current.rig()),
       shown: () => liveRef.current,
       show(skeleton) {

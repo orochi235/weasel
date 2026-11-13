@@ -21,7 +21,7 @@ export interface UseWeightToolOptions {
   /** Override the default keybinding (`{ key: 'W' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Screen px around a joint within which a click picks it. Default 10. */
-  reach?: number;
+  reachPx?: number;
   /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
    *  brush naming that key shares. Keep it stable across renders. */
   share?: ToolOptionShare;
@@ -41,13 +41,13 @@ export function useWeightTool(options: UseWeightToolOptions): Tool {
   const ownState = useMemo(() => createRigEditState(), []);
   const state = options.state ?? ownState;
   const opts = useLatest({
-    scene: options.scene, rig: options.rig, reach: options.reach ?? 10,
+    scene: options.scene, rig: options.rig, reachPx: options.reachPx ?? 10,
   });
   const env = useMemo((): WeightEnv => ({
     state,
     scene: () => opts.current.scene,
     placed: () => placedRig(opts.current.scene, opts.current.rig()),
-    reachPx: () => opts.current.reach,
+    reachPx: () => opts.current.reachPx,
     painted: state.painted,
     paint: state.paint,
   }), [opts, state]);
