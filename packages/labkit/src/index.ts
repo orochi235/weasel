@@ -135,15 +135,25 @@ export { ExportMenu } from './annotations/ExportMenu';
 export { useHoldMarks } from './annotations/labMarks';
 export type { MarkListProps } from './annotations/MarkList';
 export { MarkList } from './annotations/MarkList';
+export {
+  labToolOptionValues,
+  MARK_COLOR_KEY,
+  MARK_LINE_OPTIONS,
+  MARK_TEXT_OPTIONS,
+  MARK_WIDTH_KEY,
+  markStyleFrom,
+} from './annotations/options';
 export type { MarkStyle, PaintableMark } from './annotations/paint';
-export { markCommands } from './annotations/paint';
+export { MARK_COLOR, MARK_TEXT_SIZE, MARK_WIDTH, markCommands } from './annotations/paint';
 export { markSvgNodes } from './annotations/svgNodes';
 export type { AnnotationToolInfo } from './annotations/toolMap';
 export {
   ANNOTATION_TOOLS,
   ANNOTATION_WEASEL_TOOLS,
   annotationToolInfo,
+  annotationToolOptions,
 } from './annotations/toolMap';
+export { useLabToolOptionValues } from './annotations/useLabToolOptions';
 export type { ContentSize, ContentWindow, PaneSize } from './annotations/view';
 export { fitView, fromWeaselView, toWeaselView } from './annotations/view';
 export type {

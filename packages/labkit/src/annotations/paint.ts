@@ -13,17 +13,14 @@ import type { AnnotationData } from './types';
 
 /** One loud color, not a themed one: a mark sits over the instrument's own
  *  picture and has to be legible against whatever that picture is. */
-const MARK_COLOR = '#e5484d';
+export const MARK_COLOR = '#e5484d';
 /** World units, so a mark thickens with the picture it annotates. */
-const MARK_WIDTH = 2;
-const TEXT_SIZE = 14;
+export const MARK_WIDTH = 2;
+export const MARK_TEXT_SIZE = 14;
 const STALE_DASH = [6, 4];
 /** Screen pixels: a point marks a place rather than a region of the picture,
  *  so it holds its size like a selection handle. */
 const POINT_RADIUS_PX = HANDLE_BASE_PX / 2;
-/** Screen pixels per unit of an arrow's head: the head is a pointer at a place, so it reads the same however far the
- *  picture under it is zoomed. The width a head was drawn at on an unzoomed target. */
-const ARROW_HEAD_PX = MARK_WIDTH;
 const UNIT_SCALE: View['scale'] = { x: 1, y: 1 };
 
 /** The subset of a mark's scene node this needs: where it is, and what it is. */
@@ -35,7 +32,7 @@ export interface PaintableMark {
 /** How a mark is drawn, as opposed to where. Resolved by the overlay from the
  *  instrument's vocabulary and the mark's own staleness. */
 export interface MarkStyle {
-  /** The status's color, or the default. */
+  /** The status's color, which wins over the mark's own. */
   color?: string;
   /** A mark whose stored position no longer describes the picture. Drawn
    *  dashed rather than hidden: it still describes *something*, and dropping
@@ -81,10 +78,10 @@ export function markCommands(
   style: MarkStyle = {},
   scale: View['scale'] = UNIT_SCALE,
 ): DrawCommand[] {
-  const color = style.color ?? MARK_COLOR;
+  const color = style.color ?? m.data.color ?? MARK_COLOR;
   const stroke: CommandStroke = {
     paint: { color },
-    width: MARK_WIDTH,
+    width: m.data.width ?? MARK_WIDTH,
     cap: 'round',
     join: 'round',
     ...(style.stale ? { dash: STALE_DASH } : {}),
@@ -104,7 +101,8 @@ export function markCommands(
     case 'arrow': {
       const [a, b] = vertices(m);
       // The spec's arrow: a line carrying an end marker, not its own geometry.
-      const markerEnd = { key: 'arrow', size: { px: ARROW_HEAD_PX } };
+      // Screen pixels per unit of the head, so it reads the same at any zoom; a wider line gets a wider head.
+      const markerEnd = { key: 'arrow', size: { px: m.data.width ?? MARK_WIDTH } };
       return [{ kind: 'path', path: linePath(a, b), stroke: { ...stroke, markerEnd } }];
     }
     case 'stroke':
@@ -126,7 +124,7 @@ export function markCommands(
           m.pose.x,
           m.pose.y,
           text,
-          { fontSize: TEXT_SIZE },
+          { fontSize: m.data.fontSize ?? MARK_TEXT_SIZE },
           undefined,
           undefined,
           undefined,

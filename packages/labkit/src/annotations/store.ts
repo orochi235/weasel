@@ -310,6 +310,9 @@ export function createAnnotationStore(opts: AnnotationStoreOptions): Annotations
         ...(init.status !== undefined ? { status: init.status } : {}),
         ...(init.tags !== undefined ? { tags: init.tags } : {}),
         ...(init.meta !== undefined ? { meta: init.meta } : {}),
+        ...(init.width !== undefined ? { width: init.width } : {}),
+        ...(init.color !== undefined ? { color: init.color } : {}),
+        ...(init.fontSize !== undefined ? { fontSize: init.fontSize } : {}),
         seen: seenFrom(config, target?.positionDependsOn ?? []),
       };
       const node = sceneFor(init.target).add({

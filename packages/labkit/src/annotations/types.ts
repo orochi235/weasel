@@ -58,6 +58,12 @@ export interface AnnotationData {
   status?: string;
   tags?: readonly string[];
   meta?: unknown;
+  /** Line width in world units; omitted, the default mark width. */
+  width?: number;
+  /** CSS color; omitted, the default mark color. A status's own color wins over it. */
+  color?: string;
+  /** A text mark's font size in world units; omitted, the default. */
+  fontSize?: number;
   /** The target's `positionDependsOn` values when the mark was made. Compared
    *  against the live config to answer whether the mark still describes the
    *  same picture. */
@@ -87,6 +93,9 @@ export interface AnnotationInit {
   status?: string;
   tags?: readonly string[];
   meta?: unknown;
+  width?: number;
+  color?: string;
+  fontSize?: number;
 }
 
 /** Filters, ANDed. A mark matches `tags` when it carries every tag listed. */
@@ -102,7 +111,10 @@ export interface AnnotationQuery {
  *  `points`; everything else is the meaning tier. `frac` alone carries the
  *  vertices with it; `points` alone moves the bounds to enclose them. */
 export type AnnotationPatch = Partial<
-  Pick<Annotation, 'frac' | 'points' | 'title' | 'status' | 'tags' | 'meta'>
+  Pick<
+    Annotation,
+    'frac' | 'points' | 'title' | 'status' | 'tags' | 'meta' | 'width' | 'color' | 'fontSize'
+  >
 >;
 
 /** A target's own picture, handed over for an export to draw marks on top of.

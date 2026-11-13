@@ -2,6 +2,7 @@ import type { BuiltinToolId } from '@weasel-js/core';
 import { icon } from '../icons.gen';
 import type { InstrumentList } from '../instrument/types';
 import type { TrialTool } from '../tools/types';
+import { MARK_LINE_OPTIONS, MARK_TEXT_OPTIONS } from './options';
 import type { AnnotationKind } from './types';
 
 /** Which weasel tool an annotation tool drives, and what kind of mark that
@@ -30,12 +31,48 @@ export const ANNOTATION_TOOLS: readonly TrialTool[] = [
   // Not in `TOOLS`: an id the map does not carry is what leaves the overlay idle.
   { id: 'pointer', label: 'Interact', icon: icon('core:hand'), group: 'annotate' },
   { id: 'select', label: 'Select', icon: icon('core:select'), group: 'annotate' },
-  { id: 'stroke', label: 'Freehand', icon: icon('core:pencil'), group: 'annotate' },
-  { id: 'line', label: 'Line', icon: icon('core:line'), group: 'annotate' },
-  { id: 'arrow', label: 'Arrow', icon: icon('core:arrow'), group: 'annotate' },
-  { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), group: 'annotate' },
-  { id: 'ellipse', label: 'Ellipse', icon: icon('core:ellipse'), group: 'annotate' },
-  { id: 'text', label: 'Text', icon: icon('core:text'), group: 'annotate' },
+  {
+    id: 'stroke',
+    options: MARK_LINE_OPTIONS,
+    label: 'Freehand',
+    icon: icon('core:pencil'),
+    group: 'annotate',
+  },
+  {
+    id: 'line',
+    options: MARK_LINE_OPTIONS,
+    label: 'Line',
+    icon: icon('core:line'),
+    group: 'annotate',
+  },
+  {
+    id: 'arrow',
+    options: MARK_LINE_OPTIONS,
+    label: 'Arrow',
+    icon: icon('core:arrow'),
+    group: 'annotate',
+  },
+  {
+    id: 'rect',
+    options: MARK_LINE_OPTIONS,
+    label: 'Rectangle',
+    icon: icon('core:rect'),
+    group: 'annotate',
+  },
+  {
+    id: 'ellipse',
+    options: MARK_LINE_OPTIONS,
+    label: 'Ellipse',
+    icon: icon('core:ellipse'),
+    group: 'annotate',
+  },
+  {
+    id: 'text',
+    options: MARK_TEXT_OPTIONS,
+    label: 'Text',
+    icon: icon('core:text'),
+    group: 'annotate',
+  },
 ];
 
 /** The annotation tools a lab's rail carries for these instruments: none
@@ -48,6 +85,11 @@ export function labAnnotationTools(instruments: InstrumentList): readonly TrialT
     for (const id of i.annotations.tools) wanted.add(id);
   }
   return ANNOTATION_TOOLS.filter((t) => wanted.has(t.id));
+}
+
+/** The options of annotation tool `id`, or undefined for one with none. */
+export function annotationToolOptions(id: string | null): TrialTool['options'] {
+  return ANNOTATION_TOOLS.find((t) => t.id === id)?.options;
 }
 
 /** What `id` drives, or undefined for a tool that is not one of these. */
