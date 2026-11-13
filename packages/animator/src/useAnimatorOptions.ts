@@ -12,5 +12,6 @@ export interface UseAnimatorOptions {
   now?: () => number;
   /** Optional rAF / cAF injection for tests. Defaults to window.requestAnimationFrame. */
   requestFrame?: (cb: (t: number) => void) => number;
+  /** Optional cAF injection for tests, paired with `requestFrame`. Defaults to window.cancelAnimationFrame. */
   cancelFrame?: (handle: number) => void;
 }
