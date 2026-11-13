@@ -24,6 +24,9 @@ import type {
   SectionSpec,
 } from './types';
 
+const optedIn = (auto: PrefAuto | undefined): { auto?: PrefAuto } =>
+  auto === undefined ? {} : { auto };
+
 /** The `auto` a leaf's own fields gave it, where an object: a prefs leaf `fromPrefs` carried over. */
 const ownAuto = (patch: LeafPatch): PrefAuto | undefined => {
   const { auto } = patch as { auto?: unknown };
@@ -177,8 +180,7 @@ function resolveEntry(
     // back with its `extra<T>` helper, the same as `min`, `step` and the rest.
     ...(autoResolve === undefined ? {} : { autoResolve }),
     ...(autoQuote === undefined ? {} : { autoQuote }),
-    // labkit's auto is opt-in, where a leaf with no `auto` can be auto to any other reader. A leaf
-    // `fromPrefs` carried over keeps the `auto` its schema gave it.
-    auto: auto ?? ownAuto(patch) ?? false,
+    // A leaf `fromPrefs` carried over keeps the `auto` its schema gave it; one with none never is auto.
+    ...optedIn(auto ?? ownAuto(patch)),
   } as PrefLeaf;
 }

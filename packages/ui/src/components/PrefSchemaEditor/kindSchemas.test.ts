@@ -37,7 +37,7 @@ describe('kindSchemas', () => {
 
   it('describes what a leaf with a value does when auto, and nothing for a group or an action', () => {
     const { auto, readOnly } = attributeSchema({ ...num, auto: { on: true, value: 4 } } as PrefLeaf);
-    expect(Object.keys(auto)).toEqual(['never', 'on', 'value']);
+    expect(Object.keys(auto)).toEqual(['can', 'on', 'value']);
     expect(auto.value).toMatchObject({ kind: 'number', name: 'Auto value', min: 0, max: 10 });
     expect(readOnly.map(([k]) => k)).toEqual(['unit']);
     expect(attributeSchema({ name: 'G', children: {} }).auto).toEqual({});

@@ -96,16 +96,16 @@ export interface PrefsFormProps extends MarkHiddenProps, PrefSplitProps {
    *  value's other fields. */
   mixed?: ReadonlySet<string>;
   /** Given, a leaf's label toggles whether it is auto: `next` true unpins it,
-   *  false pins it at the value it shows (a store's `setAuto`). Leaves `canInherit` refuses, and
-   *  leaves that say `auto: false`, keep a plain label. */
+   *  false pins it at the value it shows (a store's `setAuto`). Only a leaf whose schema declares `auto`
+   *  gets the toggle; one `canInherit` refuses keeps a plain label too. */
   onAutoChange?: (path: string, next: boolean) => void;
   /** Puts the leaf or the group at `path` back as its schema says (`prefResets`): a store's `reset`. Every row
    *  offers a reset while its leaf is not as a reset leaves it, and so does the heading of a group that says
    *  `resettable`. Unset, the form resets leaf by leaf: `onAutoChange(path, true)` for a leaf that starts auto
-   *  where the form keeps its auto state, else `onChange` with what the leaf reads after a reset. */
+   *  where the form keeps its auto state, else `onChange` with its default. */
   onReset?: (path: string) => void;
-  /** Which leaves can inherit, and so get a label toggle. Default: every leaf
-   *  but one that says `auto: false`, once `onAutoChange` is given. */
+  /** Which of the leaves that declare `auto` get a label toggle. Default: all of them, once `onAutoChange`
+   *  is given. */
   canInherit?: (path: string) => boolean;
   /** The fields a `field` leaf may name. Default: this schema's own — a form
    *  that edits another schema passes that one's. */

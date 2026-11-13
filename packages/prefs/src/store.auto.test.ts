@@ -1,11 +1,12 @@
 import { createMemoryAdapter, createRecordCache } from '@weasel-js/storage';
 import fc from 'fast-check';
 import { describe, expect, it, vi } from 'vitest';
-import { prefAutoValue, prefIsReset, prefResetOf, prefResets } from './autoReset';
+import { prefAutoValue, prefCanAuto, prefIsReset, prefResetOf, prefResets } from './autoReset';
 import { prefLeafAt } from './helpers';
 import type { PrefGroup } from './groups';
 import { openPrefsSync } from './open';
 import { createPrefsStore } from './store';
+import { autoRecord } from './stamp';
 
 const SCHEMA = {
   name: 'Test',
@@ -14,16 +15,16 @@ const SCHEMA = {
       name: 'View',
       resettable: true,
       children: {
-        // Can be auto, starts pinned at its default, and reads its `auto.value` while auto.
+        // Opts in, starts pinned at its default, and reads its `auto.value` while auto.
         size: { kind: 'number', name: 'Size', description: '', default: 10, min: 0, max: 100, auto: { value: 40 } },
-        // Starts auto, and reads its default while it is.
+        // Opts in and starts auto, with no `auto.value`: it reads `undefined` while auto, never its default.
         gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, auto: { on: true } },
-        // Never auto.
-        grid: { kind: 'boolean', name: 'Grid', description: '', default: true, auto: false },
+        // Declares no `auto`: never auto.
+        grid: { kind: 'boolean', name: 'Grid', description: '', default: true },
       },
     },
-    // Unset `auto`: can be auto, starts pinned.
-    name: { kind: 'string', name: 'Name', description: '', default: 'untitled' },
+    // Opts in with neither field.
+    name: { kind: 'string', name: 'Name', description: '', default: 'untitled', auto: {} },
   },
 } satisfies PrefGroup;
 
@@ -35,10 +36,16 @@ const make = (backing = new Map<string, unknown>()) => {
 };
 
 describe('a prefs store honors auto', () => {
-  it('starts a leaf auto only where it says `auto.on`, and reads `auto.value`, else the default, while auto', () => {
+  it('lets a leaf be auto only where its schema declares `auto`', () => {
+    expect(prefCanAuto(SCHEMA.children.view.children.size)).toBe(true);
+    expect(prefCanAuto(SCHEMA.children.name)).toBe(true);
+    expect(prefCanAuto(SCHEMA.children.view.children.grid)).toBe(false);
+  });
+
+  it('starts a leaf auto only where it says `auto.on`, and reads only `auto.value` while auto', () => {
     const { store } = make();
     expect([...store.auto()]).toEqual(['view.gap']);
-    expect(store.get('view.gap')).toBe(4);
+    expect(store.get('view.gap')).toBeUndefined();
     expect(store.get('view.size')).toBe(10);
     store.setAuto('view.size', true);
     expect(store.isAuto('view.size')).toBe(true);
@@ -56,13 +63,32 @@ describe('a prefs store honors auto', () => {
     expect(store.get('view.gap')).toBe(7);
   });
 
-  it('keeps a leaf that says `auto: false` pinned', () => {
+  it('pins a leaf that reads nothing while auto at its default when Auto turns off', () => {
+    const { store } = make();
+    store.setAuto('view.gap', false);
+    expect(store.isAuto('view.gap')).toBe(false);
+    expect(store.isSet('view.gap')).toBe(true);
+    expect(store.get('view.gap')).toBe(4);
+  });
+
+  it('keeps a leaf that declares no `auto` pinned', () => {
     const { store } = make();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     store.setAuto('view.grid', true);
     expect(store.isAuto('view.grid')).toBe(false);
     expect(warn).toHaveBeenCalledOnce();
     warn.mockRestore();
+  });
+
+  it('repairs a stored auto mark for a leaf that does not opt in to nothing stored', () => {
+    const backing = new Map<string, unknown>([['p.view.grid', autoRecord(0)]]);
+    const { store } = make(backing);
+    expect(store.isAuto('view.grid')).toBe(false);
+    expect(store.isSet('view.grid')).toBe(false);
+    expect(store.unset().has('view.grid')).toBe(true);
+    expect(store.get('view.grid')).toBe(true);
+    store.set('view.grid', false);
+    expect(store.get('view.grid')).toBe(false);
   });
 
   it('keeps a leaf auto across a reopen, where its schema starts it pinned', async () => {
@@ -72,7 +98,7 @@ describe('a prefs store honors auto', () => {
     await store.flush();
     const reopened = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(backing), prefix: 'p.' });
     expect(reopened.isAuto('name')).toBe(true);
-    expect(reopened.get('name')).toBe('untitled');
+    expect(reopened.get('name')).toBeUndefined();
   });
 
   it('resets a leaf or a group back to what the schema says', () => {
@@ -119,9 +145,11 @@ describe('a prefs store against the one rule', () => {
             store.set(s.path, s.value as never);
             model.set(s.path, { auto: false, value: s.value });
           } else if (s.op === 'auto') {
-            store.setAuto(s.path, s.next);
             const was = model.get(s.path)!;
-            if (leafAt(s.path).auto !== false && was.auto !== s.next) model.set(s.path, { auto: s.next, value: s.next ? undefined : store.get(s.path) });
+            store.setAuto(s.path, s.next);
+            if (prefCanAuto(leafAt(s.path)) && was.auto !== s.next) {
+              model.set(s.path, { auto: s.next, value: s.next ? undefined : (prefAutoValue(leafAt(s.path)) ?? leafAt(s.path).default) });
+            }
           } else {
             store.reset(s.path);
             for (const r of prefResets(nodeAt(s.path), s.path)) model.set(r.path as Path, { auto: r.auto, value: r.value });

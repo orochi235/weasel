@@ -25,7 +25,8 @@ export interface PrefChange {
 export interface PrefsStore<S extends PrefGroup> {
   readonly schema: S;
   /**
-   * The leaf's value, repaired against the schema; its default when unset. A
+   * The leaf's value, repaired against the schema; its default when unset, and while it is auto its
+   * `auto.value` (`undefined` where it declares none). A
    * split value is folded: under the selectors' own values it is the member
    * they name, and under `weights` it is the blend its kind makes of the
    * members that weigh something. A selector `weights` leaves out keeps its
@@ -47,15 +48,15 @@ export interface PrefsStore<S extends PrefGroup> {
    *  where it says `auto.on`, else at its default. With no path, all. */
   reset(path?: string): void;
   /** Whether anything is stored for the leaf: a value it is pinned at, or a mark that it is auto where its
-   *  schema starts it pinned. */
+   *  schema starts it pinned. A mark for a leaf that does not opt into auto is read as nothing stored. */
   isSet(path: PrefPath<S>): boolean;
-  /** The leaves now auto: unpinned, each reading its `auto.value`, else its default (`prefAutoValue`). The same
-   *  set until something changes. */
+  /** The leaves now auto: unpinned, each reading its `auto.value` (`prefAutoValue`; a store computes nothing
+   *  else), never its default. The same set until something changes. */
   auto(): ReadonlySet<string>;
   /** Whether the leaf is auto now. */
   isAuto(path: PrefPath<S>): boolean;
-  /** Unpin the leaf, given true; given false, pin it at the value it reads now. A leaf that says `auto: false`
-   *  is always pinned, and turning it auto warns and does nothing. */
+  /** Unpin the leaf, given true; given false, pin it at the value it reads now. A leaf whose schema does not
+   *  declare `auto` is always pinned, and turning it auto warns and does nothing. */
   setAuto(path: PrefPath<S>, next: boolean): void;
   /** Every leaf's value as a nested tree. The same object until something
    *  changes. With `at`, the tree as it would read with each selector named
@@ -179,7 +180,8 @@ export function createPrefsStore<S extends PrefGroup>(
       }
       const now = current();
       if (now.auto.has(path) === next) return;
-      if (!next) writes.set(path, now.held.get(path));
+      // Pinning a leaf that reads nothing while auto pins what its control shows: its default.
+      if (!next) writes.set(path, now.held.get(path) ?? leaf.default);
       else if (prefStartsAuto(leaf)) cache.delete(path);
       else cache.set(path, autoRecord(version));
     },
@@ -203,7 +205,7 @@ export function createPrefsStore<S extends PrefGroup>(
         if (path === undefined || p === path || p.startsWith(`${path}.`)) cache.delete(p);
       }
     },
-    isSet: (path) => cache.has(path),
+    isSet: (path) => (leaves.has(path) ? !current().unset.has(path) : cache.has(path)),
     values: (read) => {
       const now = current();
       if (!read?.at) return now.tree;

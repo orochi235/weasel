@@ -1,4 +1,10 @@
-import { type PrefLeaf, type PrefNumber, prefAutoValue, prefCanAuto } from '@weasel-js/prefs';
+import {
+  type PrefLeaf,
+  type PrefNumber,
+  prefAutoValue,
+  prefCanAuto,
+  prefLeafValue,
+} from '@weasel-js/prefs';
 import { PropertyAutoReadout } from '@weasel-js/ui/components/Properties';
 import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
@@ -73,14 +79,14 @@ export function useRowAuto(source: RowAutoSource) {
   // two diverge as soon as a resolver reads another auto path.
   const resolvedValue = isAutoRow ? valueAtPath(shown, path) : undefined;
   // An auto row's control stays live, so it draws the value in effect (`prefAutoValue`: the report or the
-  // resolver's, else `auto.value`, else the default), never the stale pinned value underneath. Pinning keeps it.
-  const value = isAutoRow ? prefAutoValue(leaf, resolvedValue) : pinned;
+  // resolver's, else `auto.value`), never the stale pinned value underneath. Pinning keeps it. With none yet,
+  // the control has to draw something, and draws what a field holding nothing draws.
+  const value = isAutoRow ? prefLeafValue(leaf, prefAutoValue(leaf, resolvedValue)) : pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are. Only where something
   // computes it: a leaf the instrument works out has nothing to quote until it reports.
-  const computes =
-    autoResolverOf(leaf) !== undefined || (leaf.auto !== false && leaf.auto?.value !== undefined);
+  const computes = autoResolverOf(leaf) !== undefined || leaf.auto?.value !== undefined;
   const unpinned = useUnpinned(
     source,
     canAuto && (computes || resolvedValue !== undefined),

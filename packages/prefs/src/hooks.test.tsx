@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { usePref, usePrefsValues } from './react';
 import { openPrefsSync } from './open';
 import type { PrefGroup } from './groups';
@@ -9,7 +9,7 @@ const SCHEMA = {
   name: 'Test',
   children: {
     grid: { kind: 'boolean', name: 'Grid', description: '', default: true },
-    density: { kind: 'number', name: 'Density', description: '', default: 72, min: 4, max: 288 },
+    density: { kind: 'number', name: 'Density', description: '', default: 72, min: 4, max: 288, auto: { value: 96 } },
   },
 } satisfies PrefGroup;
 
@@ -70,9 +70,10 @@ describe('usePrefsValues', () => {
     expect(result.current.auto.has('density')).toBe(false);
     act(() => result.current.setAuto('density', true));
     expect(result.current.auto.has('density')).toBe(true);
+    expect(result.current.values.density).toBe(96);
     act(() => result.current.setAuto('density', false));
     expect(result.current.auto.has('density')).toBe(false);
-    expect(store.stored()).toEqual({ density: 72 });
+    expect(store.stored()).toEqual({ density: 96 });
     act(() => result.current.set('density', 90));
     act(() => result.current.reset('density'));
     expect(result.current.unset.has('density')).toBe(true);
@@ -132,9 +133,12 @@ describe('usePrefsValues', () => {
     expect(store.get('density')).toBe(90);
     act(() => result.current.form.onAutoChange('density', true));
     expect(result.current.form.auto.has('density')).toBe(true);
+    // `grid` declares no `auto`, so it is never auto.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     act(() => result.current.form.onAutoChange('grid', true));
-    act(() => result.current.form.onAutoChange('grid', false));
+    warn.mockRestore();
     expect(store.isAuto('grid')).toBe(false);
+    act(() => result.current.form.onChange('grid', false));
     expect(store.isSet('grid')).toBe(true);
     act(() => result.current.form.onReset('grid'));
     expect(store.isSet('grid')).toBe(false);

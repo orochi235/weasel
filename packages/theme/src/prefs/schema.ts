@@ -38,13 +38,13 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
   const name = shortName(row);
   const leaf = {
     ...tokenLeafKind(row), name, description: row.description, default: undefined as unknown,
-    // Auto is following the theme; a pin goes over it.
-    auto: { on: true },
     ...(name === row.name ? {} : { tags: [row.name] }),
   } as PrefLeaf;
   const fallback = row.css[selectionKey(table.axes, {})] ?? Object.values(row.css)[0];
   const held = foldAxes(table.axes, (selection) => prefOfCss(leaf, row.css[selectionKey(table.axes, selection)] ?? fallback), scopeByAxis);
   leaf.default = prefOfCss(leaf, fallback);
+  // Auto is following the theme, which computes the value; a pin goes over it.
+  leaf.auto = { on: true, value: held };
   const differs = prefScopeSelectors(held);
   const scopes = Object.keys(table.axes)
     .filter((axis) => differs.has(themeAxisPath(axis)) || row.scope?.includes(axis))
@@ -63,10 +63,11 @@ function tokenLeaf(row: TokenRow, table: ReturnType<typeof tokenTable>): PrefLea
  * neither holds. A leaf is at `<group>.<token>`, the token named without
  * `--wzl-`, and is scoped by the axes its value differs along.
  *
- * A leaf's default is what the theme resolves the token to, already split
- * along the axes it differs by, and a token starts auto (`auto.on`), following
- * it, so a store nothing was written to reads the theme as it is. An axis is
- * always pinned. {@link themeFromPrefs} turns what was written into a theme.
+ * A token starts auto (`auto.on`), following the theme: its `auto.value` is
+ * what the theme resolves the token to, already split along the axes it
+ * differs by, so a store nothing was written to reads the theme as it is. Its
+ * default is that value where no axis is set. An axis declares no `auto`, so
+ * it is always pinned. {@link themeFromPrefs} turns what was written into a theme.
  */
 export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
   const table = tokenTable(theme);
@@ -77,7 +78,6 @@ export function themePrefsSchema(theme: Theme = weaselTheme): PrefGroup {
       name: labeled(axis),
       description: '',
       default: def.default,
-      auto: false,
       options: Object.keys(def.values).map((value) => ({ value, label: labeled(value) })),
     };
   }

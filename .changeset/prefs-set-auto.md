@@ -2,13 +2,13 @@
 '@weasel-js/prefs': minor
 ---
 
-`usePrefsValues` returns `setAuto`, the handler `PrefsForm`'s `onAutoChange` takes: false pins a leaf at the value it reads now, true resets it.
+`usePrefsValues` returns `setAuto`, the handler `PrefsForm`'s `onAutoChange` takes: false pins a leaf at the value it reads now, true unpins it.
 
-Its documentation said `reset` served as `onAutoChange`, but `reset` ignores the second argument, so clicking an inheriting leaf's label to pin it reset it again and left it inheriting.
+It is `store.setAuto`, which does nothing to a leaf whose schema declares no `auto`.
 
 ```tsx
-const { values, set, unset, setAuto } = usePrefsValues(store);
-<PrefsForm schema={schema} values={values} onChange={set} auto={unset} onAutoChange={setAuto} />
+const { values, set, auto, setAuto } = usePrefsValues(store);
+<PrefsForm schema={schema} values={values} onChange={set} auto={auto} onAutoChange={setAuto} />
 ```
 
 <!-- entry: api fix -->

@@ -16,7 +16,7 @@ const SCHEMA = {
       children: {
         size: { kind: 'number', name: 'Size', description: '', default: 10, min: 0, max: 100, auto: { value: 40 } },
         gap: { kind: 'number', name: 'Gap', description: '', default: 4, min: 0, max: 100, auto: { on: true } },
-        grid: { kind: 'boolean', name: 'Grid', description: '', default: true, auto: false, control: 'switch' },
+        grid: { kind: 'boolean', name: 'Grid', description: '', default: true, control: 'switch' },
       },
     },
   },

@@ -29,14 +29,15 @@ const SCHEMA: PrefSection = {
 };
 
 describe('f.prefs', () => {
-  it('keeps the auto a leaf says, and gives one that says none `auto: false`', () => {
+  it('keeps the auto a leaf says, and gives one that says none no `auto`', () => {
     const config = f.prefs({
       name: 'Box',
-      members: { a: num('A', { auto: { on: true } }), b: num('B'), c: num('C', { auto: false }) },
+      members: { a: num('A', { auto: { on: true } }), b: num('B') },
     });
     const resolved = resolveConfigSchema(config, []);
-    const auto = (path: string) => (schemaNodeAtPath(resolved.group, path) as PrefLeaf).auto;
-    expect([auto('a'), auto('b'), auto('c')]).toEqual([{ on: true }, false, false]);
+    const leaf = (path: string) => schemaNodeAtPath(resolved.group, path) as PrefLeaf;
+    expect(leaf('a').auto).toEqual({ on: true });
+    expect('auto' in leaf('b')).toBe(false);
   });
 
   it("keeps a leaf's .quote() through a round trip to a prefs schema", () => {

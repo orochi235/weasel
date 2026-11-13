@@ -64,7 +64,7 @@ const SECTION_ATTRS: KindAttrs = {
 };
 
 const AUTO_FLAGS: KindAttrs = {
-  never: flag('Never auto', 'The app can never choose its value: its row has no way to hand it to the app.'),
+  can: flag('Can be auto', 'The app may choose its value, and its row offers Auto. Off, the value is always the one set, else the default.'),
   on: flag('Starts auto', 'Starts with the app choosing its value, instead of at its default.'),
 };
 

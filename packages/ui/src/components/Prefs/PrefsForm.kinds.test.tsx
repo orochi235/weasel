@@ -241,7 +241,7 @@ describe('PrefsForm alias leaf', () => {
   const schema: PrefGroup = {
     name: 'Root',
     children: {
-      view: { name: 'View', children: { grid: { kind: 'boolean', name: 'Show grid', description: '', default: false } } },
+      view: { name: 'View', children: { grid: { kind: 'boolean', name: 'Show grid', description: '', default: false, auto: {} } } },
       play: {
         name: 'Play',
         children: {

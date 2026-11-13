@@ -92,10 +92,9 @@ export interface PrefBase<K extends string, Value> {
    *  shows the longest of them that fits. `name` stays the accessible name, so
    *  these abbreviate without costing anything. */
   short?: readonly string[];
-  /** Whether the leaf can be auto: unpinned, reading a computed value (`prefAutoValue`). Unset, it can, and
-   *  starts pinned at `default`; `false`, never, and it is always pinned; an object, as it says. A store and
-   *  every surface honor it alike. */
-  auto?: false | PrefAuto<Value>;
+  /** Opts the leaf into being auto: unpinned, reading what its owner computes (`prefAutoValue`), never its
+   *  `default`. Unset, the leaf can never be auto. A store and every surface honor it alike. */
+  auto?: PrefAuto<Value>;
   /** The name of the type this leaf was made from, set by `prefType`. A
    *  schema editor shows such a leaf as one closed thing and prints the name
    *  in place of its literal. */
@@ -117,12 +116,13 @@ export interface PrefBase<K extends string, Value> {
   defaultScope?: PrefScope;
 }
 
-/** How a leaf that can be auto is auto. */
+/** How a leaf that opts into auto is auto; `{}` opts in and says neither. */
 export interface PrefAuto<Value = unknown> {
   /** Starts auto, unpinned, where it would start pinned at `default`; a reset puts it back so. */
   on?: boolean;
-  /** What it reads while auto, where its owner computes nothing. Unset, its `default`. */
-  value?: Value;
+  /** What it reads while auto, where its owner computes nothing; on a leaf with `scopes`, a split value as
+   *  `defaultScope` is one. Unset, `undefined`: never its `default`. */
+  value?: Value | PrefScope;
 }
 
 /** The fields every leaf holding a value shares, besides {@link PrefBase}'s. */

@@ -10,7 +10,7 @@ import { isPrefScope, scopeSelectors, repairScope, selectionWeights, weighScope,
 import { type PrefValidator, repairPrefValue } from './repair';
 import type { PrefLeaf } from './schema';
 import { isAutoRecord, recordValue } from './stamp';
-import { prefAutoValue, prefCanAuto, prefStartsAuto } from './autoReset';
+import { prefCanAuto, prefStartsAuto } from './autoReset';
 
 export interface Snapshot {
   /** Each leaf's value as read: a split one folded under `selection`. */
@@ -79,11 +79,11 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     return unsetScopes.get(path);
   };
   const autoValues = new Map<string, unknown>();
-  /** What an auto leaf holds: its `auto.value`, repaired once, else what it holds unset. */
+  /** What an auto leaf holds: its `auto.value`, repaired once. A store computes nothing else, so else `undefined`. */
   const autoHeld = (path: string, leaf: PrefLeaf): unknown => {
     if (!autoValues.has(path)) {
-      const declared = prefAutoValue(leaf, undefined, () => undefined);
-      autoValues.set(path, declared === undefined ? unsetHeld(path, leaf) : readStored(source, leaf, declared));
+      const declared = leaf.auto?.value;
+      autoValues.set(path, declared === undefined ? undefined : readStored(source, leaf, declared));
     }
     return autoValues.get(path);
   };
@@ -94,9 +94,11 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
     const unset = new Set<string>();
     const auto = new Set<string>();
     for (const [path, leaf] of leaves) {
-      const has = cache.has(path);
+      const mark = cache.has(path) && isAutoRecord(cache.get(path));
+      // A mark for a leaf that does not opt into auto is repaired to nothing stored.
+      const has = cache.has(path) && (!mark || prefCanAuto(leaf));
       if (!has) unset.add(path);
-      if (has ? prefCanAuto(leaf) && isAutoRecord(cache.get(path)) : prefStartsAuto(leaf)) {
+      if (has ? mark : prefStartsAuto(leaf)) {
         held.set(path, autoHeld(path, leaf));
         auto.add(path);
         continue;

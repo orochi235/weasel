@@ -3,6 +3,7 @@
 
 import type { ReactNode } from 'react';
 import {
+  prefCanAuto,
   prefIsReset,
   prefLeafValue,
   prefResets,
@@ -13,10 +14,10 @@ import {
 import { ResetControl } from '../Properties/ResetControl';
 import type { WalkCtx } from './PrefsRow';
 
-/** Whether the form keeps the auto state of the leaf at `path`: it was handed `onAutoChange`, the leaf can be
- *  auto, and `canInherit` lets it. */
+/** Whether the form keeps the auto state of the leaf at `path`: it was handed `onAutoChange`, the leaf opts
+ *  into auto (`prefCanAuto`), and `canInherit` lets it. */
 export function autoTracked(ctx: WalkCtx, path: string, leaf: PrefLeaf): boolean {
-  return ctx.onAutoChange !== undefined && leaf.auto !== false && (ctx.canInherit?.(path) ?? true);
+  return ctx.onAutoChange !== undefined && prefCanAuto(leaf) && (ctx.canInherit?.(path) ?? true);
 }
 
 /** Whether the leaf at `path` already is what a reset makes of it, as the form shows it. */
@@ -26,7 +27,8 @@ export function leafIsReset(ctx: WalkCtx, path: string, leaf: PrefLeaf): boolean
 }
 
 /** Put `node`, the leaf or the group at `path`, back as the schema says: through the owner's `onReset` where
- *  it gave one, else leaf by leaf through `onAutoChange` and `onChange`. */
+ *  it gave one, else leaf by leaf through `onAutoChange`, and `onChange` with the default of a leaf the form
+ *  keeps no auto state for. */
 export function resetIn(ctx: WalkCtx, path: string, node: PrefLeaf | PrefGroup): void {
   if (ctx.onReset) {
     ctx.onReset(path);
@@ -34,7 +36,7 @@ export function resetIn(ctx: WalkCtx, path: string, node: PrefLeaf | PrefGroup):
   }
   for (const r of prefResets(node, path)) {
     if (r.auto && autoTracked(ctx, r.path, r.leaf)) ctx.onAutoChange!(r.path, true);
-    else ctx.onChange(r.path, r.value);
+    else ctx.onChange(r.path, r.leaf.default);
   }
 }
 

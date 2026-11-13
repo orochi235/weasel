@@ -2,7 +2,6 @@ import { type PrefLeaf, prefAutoValue, prefStartsAuto } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { configLeaves } from './leaves';
 import { isRecord, setOwn, valueAtPath, withValueAtPath } from './path';
-import { storedDefault } from './storedDefault';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;
@@ -37,9 +36,9 @@ export function autoPathsOf(resolved: ResolvedConfig): string[] {
 /**
  * The config an instrument reads: the stored one, with every unpinned path at
  * what it reads while auto (`prefAutoValue`): its resolver's value, else its
- * `auto.value`, else its default. A path with no resolver and no `auto.value`
- * is removed instead: the instrument is that leaf's resolver (`.auto()`), and
- * reading `undefined` is how it knows to work the value out.
+ * `auto.value`, never its default. A path where neither gives one is removed:
+ * the instrument is that leaf's resolver (`.auto()`), and reading `undefined`
+ * is how it knows to work the value out.
  *
  * Resolution is demand-driven — a resolver reading another unpinned path
  * forces that one first, whatever order the schema declared them in — so a
@@ -85,9 +84,7 @@ export function resolveAutoConfig<TC>(
       // Read `out` only after the resolver has run: it forces its own
       // dependencies, and each of those replaced `out`.
       const computed = resolve?.(demand(() => out, resolvers, need));
-      const value = prefAutoValue(leaf, computed, () =>
-        resolve ? storedDefault(leaf) : undefined,
-      );
+      const value = prefAutoValue(leaf, computed);
       if (value !== undefined) out = withValueAtPath(out, path, value);
     } finally {
       inFlight.delete(path);

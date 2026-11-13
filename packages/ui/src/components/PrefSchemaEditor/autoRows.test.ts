@@ -8,27 +8,27 @@ const num = (auto?: PrefLeaf['auto']) => ({ kind: 'number', name: 'N', descripti
 describe('autoRowsOf', () => {
   it('reads each row out of the one field', () => {
     expect(autoRowsOf(num())).toEqual({});
-    expect(autoRowsOf(num(false))).toEqual({ never: true });
-    expect(autoRowsOf(num({ on: true, value: 0 }))).toEqual({ on: true, value: 0 });
+    expect(autoRowsOf(num({}))).toEqual({ can: true });
+    expect(autoRowsOf(num({ on: true, value: 0 }))).toEqual({ can: true, on: true, value: 0 });
   });
 });
 
 describe('withAutoRow', () => {
-  it('makes never auto false, and clears it back to unset', () => {
-    expect(withAutoRow({ on: true }, 'never', true)).toBe(false);
-    expect(withAutoRow(false, 'never', false)).toBeUndefined();
-    expect(withAutoRow({ on: true }, 'never', false)).toEqual({ on: true });
+  it('opts a leaf in with can be auto, and clearing it drops the whole field', () => {
+    expect(withAutoRow(undefined, 'can', true)).toEqual({});
+    expect(withAutoRow({ on: true }, 'can', true)).toEqual({ on: true });
+    expect(withAutoRow({ on: true, value: 3 }, 'can', false)).toBeUndefined();
   });
 
-  it('sets starts auto or a value beside the other, and clears never auto to do so', () => {
+  it('sets starts auto or a value beside the other, opting the leaf in to do so', () => {
     expect(withAutoRow({ value: 3 }, 'on', true)).toEqual({ value: 3, on: true });
-    expect(withAutoRow(false, 'value', false)).toEqual({ value: false });
+    expect(withAutoRow(undefined, 'value', false)).toEqual({ value: false });
     expect(withAutoRow({ on: true, value: 3 }, 'value', undefined)).toEqual({ on: true });
-    expect(withAutoRow({ on: true }, 'on', false)).toBeUndefined();
+    expect(withAutoRow({ on: true }, 'on', false)).toEqual({});
   });
 
-  it('leaves a leaf that is never auto so when a row it does not show is cleared', () => {
-    expect(withAutoRow(false, 'value', undefined)).toBe(false);
+  it('leaves a leaf that does not opt in so when a row it does not show is cleared', () => {
+    expect(withAutoRow(undefined, 'value', undefined)).toBeUndefined();
   });
 });
 
@@ -37,8 +37,8 @@ describe('convertLeaf', () => {
     const kept = convertLeaf(num({ on: true, value: 4 }), 'string');
     expect(kept.leaf.auto).toEqual({ on: true });
     expect(kept.dropped).toContain('auto.value');
-    const never = convertLeaf(num(false), 'string');
-    expect(never.leaf.auto).toBe(false);
-    expect(never.dropped).not.toContain('auto.value');
+    const plain = convertLeaf(num(), 'string');
+    expect(plain.leaf.auto).toBeUndefined();
+    expect(plain.dropped).not.toContain('auto.value');
   });
 });

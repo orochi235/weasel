@@ -41,6 +41,7 @@ const SCHEMA = pref.group('Preferences', {
     split: pref.number('A split number', 4, { min: 0, max: 10, scopes: [{ selector: 'all.enum' }] }),
     latch: pref.action('', { name: 'A latch', label: 'Latch', run: () => {}, activeIf: { path: 'all.boolean' } }),
     gated: pref.string('A gated string', '', { enableIf: { path: 'all.boolean' } }),
+    chosen: pref.number('An auto number', 5, { min: 0, max: 100, auto: { value: 7 } }),
   }),
 });
 
@@ -95,17 +96,23 @@ describe('EditorPrefsDialog over a stored schema', () => {
     expect(store.get('all.number')).toBe(30);
   });
 
-  it("turns a leaf auto from its label's toggle, and a reopen reads it auto, at its default", async () => {
+  it('offers Auto only on a leaf that declares it', () => {
+    dialog(opened(new Map()));
+    expect(screen.queryByRole('button', { name: 'Pin A number' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pin An auto number' })).toBeInTheDocument();
+  });
+
+  it("turns a leaf auto from its label's toggle, and a reopen reads it auto, at its auto value", async () => {
     const backing = new Map<string, unknown>();
     const store = opened(backing);
-    store.set('all.number', 9);
+    store.set('all.chosen', 9);
     dialog(store);
-    act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Pin A number' })[0]!); });
-    expect(store.isAuto('all.number')).toBe(true);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Pin An auto number' })); });
+    expect(store.isAuto('all.chosen')).toBe(true);
     expect(await store.flush()).toBe(true);
     const again = opened(backing);
-    expect(again.isAuto('all.number')).toBe(true);
-    expect(again.get('all.number')).toBe(5);
+    expect(again.isAuto('all.chosen')).toBe(true);
+    expect(again.get('all.chosen')).toBe(7);
   });
 
   it('resets a leaf from its row, and a reopen reads it as its schema starts it', async () => {
@@ -122,13 +129,13 @@ describe('EditorPrefsDialog over a stored schema', () => {
   it('pins an auto leaf from its toggle at the value it shows', async () => {
     const backing = new Map<string, unknown>();
     const store = opened(backing);
-    store.setAuto('all.string', true);
+    store.setAuto('all.chosen', true);
     dialog(store);
-    act(() => { fireEvent.click(screen.getAllByRole('button', { name: 'Pin A string' })[0]!); });
-    expect(store.isAuto('all.string')).toBe(false);
-    expect(store.isSet('all.string')).toBe(true);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Pin An auto number' })); });
+    expect(store.isAuto('all.chosen')).toBe(false);
+    expect(store.get('all.chosen')).toBe(7);
     expect(await store.flush()).toBe(true);
-    expect(opened(backing).isAuto('all.string')).toBe(false);
+    expect(opened(backing).isAuto('all.chosen')).toBe(false);
   });
 
   it('splits a scoped leaf into its members and writes one at its selection', async () => {

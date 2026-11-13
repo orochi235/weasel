@@ -1,8 +1,8 @@
-import { cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { coreKitSettingsSchema } from '@weasel-js/core';
 import { kernel3dKitSettingsSchema } from '@weasel-js/kernel3d';
 import { labkitKitSettingsSchema } from '@weasel-js/labkit';
-import { mergePrefGroups, openPrefsSync, prefLeaves, type PrefPath } from '@weasel-js/prefs';
+import { mergePrefGroups, openPrefsSync, prefCanAuto, prefLeaves, type PrefPath } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsValues } from '@weasel-js/prefs/react';
 import { useKitSettings, type KitSettingPath } from '@weasel-js/react';
 import { rigKitSettingsSchema } from '@weasel-js/rig';
@@ -59,5 +59,19 @@ describe("the bundled packages' kit settings schemas", () => {
     const { container } = renderWithIcons(<Form />);
     const missing = LEAVES.map(([path]) => path).filter((path) => !container.querySelector(`[data-pref-path="${path}"]`));
     expect(missing).toEqual([]);
+  });
+
+  it('offer Auto on just the leaves that declare it, which is none, and Reset once a leaf is set', () => {
+    const store = openPrefsSync(ALL, { storage: createMemoryAdapter(), prefix: PREFIX });
+    function Form() {
+      return <PrefsForm layout="list" {...usePrefsValues(store).form} />;
+    }
+    const { container } = renderWithIcons(<Form />);
+    expect(LEAVES.filter(([, leaf]) => prefCanAuto(leaf))).toEqual([]);
+    expect(screen.queryAllByRole('button', { name: /^Pin / })).toEqual([]);
+    const [path, leaf] = LEAVES[0]!;
+    act(() => store.set(path, other(leaf)));
+    const row = container.querySelector(`[data-pref-path="${path}"]`) as HTMLElement;
+    expect(within(row).getByRole('button', { name: `Reset ${leaf.name}` })).toBeInTheDocument();
   });
 });

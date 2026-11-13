@@ -6,29 +6,27 @@ import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue } from './helpers';
 import type { PrefLeaf } from './schema';
 
-/** Whether a leaf can be auto: every leaf holding a value, but one that says `auto: false`. */
+/** Whether a leaf can be auto: one holding a value that opts in by declaring `auto`. A leaf without it never is. */
 export function prefCanAuto(leaf: PrefLeaf): boolean {
-  return leaf.auto !== false && prefHoldsValue(leaf);
+  return typeof leaf.auto === 'object' && leaf.auto !== null && prefHoldsValue(leaf);
 }
 
 /** Whether a leaf starts auto, unpinned: one that says `auto: { on: true }`. */
 export function prefStartsAuto(leaf: PrefLeaf): boolean {
-  return prefCanAuto(leaf) && leaf.auto !== undefined && leaf.auto !== false && leaf.auto.on === true;
+  return prefCanAuto(leaf) && leaf.auto!.on === true;
 }
 
 /**
- * What a leaf reads while it is auto: what its owner `computed`, where it computed one; else its `auto.value`;
- * else its default, which `otherwise` gives where a reader holds the default in another form (a split default
- * as a scope, an encoded leaf's stored form) or computes it elsewhere.
+ * What a leaf reads while it is auto: what its owner `computed` (a labkit `.auto(fn)` resolver, a value an
+ * instrument reports), where it computed one; else its `auto.value`. Never its `default`: with neither, it reads
+ * `undefined`.
  */
-export function prefAutoValue(leaf: PrefLeaf, computed?: unknown, otherwise: () => unknown = () => leaf.default): unknown {
-  if (computed !== undefined) return computed;
-  const declared = leaf.auto === false ? undefined : leaf.auto?.value;
-  return declared !== undefined ? declared : otherwise();
+export function prefAutoValue(leaf: PrefLeaf, computed?: unknown): unknown {
+  return computed !== undefined ? computed : leaf.auto?.value;
 }
 
 /** What a reset makes of a leaf: unpinned (`auto`) where its schema starts it so, else pinned at its default.
- *  `value` is what it reads afterward. */
+ *  `value` is what it reads afterward where nothing computes it. */
 export interface PrefReset {
   auto: boolean;
   value: unknown;
@@ -40,20 +38,20 @@ export function prefResetOf(leaf: PrefLeaf): PrefReset {
   return { auto, value: auto ? prefAutoValue(leaf) : leaf.default };
 }
 
-/** What a holder that keeps a leaf's stored form writes to reset it while pinned: nothing for a leaf with an
- *  `encoding`, which reads holding nothing as its default; else the value it reads after the reset. */
+/** What a holder that keeps a leaf's stored form and no auto state writes to reset it: nothing for a leaf with
+ *  an `encoding`, which reads holding nothing as its default; else its default. */
 export function prefStoredReset(leaf: PrefLeaf): unknown {
-  return (leaf as { encoding?: unknown }).encoding !== undefined ? undefined : prefResetOf(leaf).value;
+  return (leaf as { encoding?: unknown }).encoding !== undefined ? undefined : leaf.default;
 }
 
 /**
  * Whether `leaf` already is what a reset makes of it. `auto` is whether it is unpinned now, or `undefined` on a
- * surface that keeps no auto state, which then compares `value` with what the leaf reads after a reset; `value`
+ * surface that keeps no auto state, where nothing is auto and a reset leaves the leaf at its default; `value`
  * is the value it holds while pinned.
  */
 export function prefIsReset(leaf: PrefLeaf, state: { auto: boolean | undefined; value: unknown }): boolean {
+  if (state.auto === undefined) return deepEqual(state.value, leaf.default);
   const reset = prefResetOf(leaf);
-  if (state.auto === undefined) return deepEqual(state.value, reset.value);
   if (reset.auto) return state.auto;
   return !state.auto && deepEqual(state.value, reset.value);
 }

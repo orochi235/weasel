@@ -34,12 +34,15 @@ describe('PrefSchemaEditor auto attributes', () => {
   it('sets whether a leaf can be auto and whether it starts so, in its one auto field', () => {
     renderWithIcons(<Live />);
     select('gap');
-    fireEvent.click(attributes().getByRole('checkbox', { name: 'Never auto' }));
-    expect(leaf('gap').auto).toBe(false);
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Can be auto' }));
+    expect(leaf('gap').auto).toEqual({});
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Starts auto' }));
     expect(leaf('gap').auto).toEqual({ on: true });
-    expect(attributes().getByRole('checkbox', { name: 'Never auto' })).not.toBeChecked();
     fireEvent.click(attributes().getByRole('checkbox', { name: 'Starts auto' }));
+    expect(leaf('gap').auto).toEqual({});
+    expect(attributes().getByRole('checkbox', { name: 'Can be auto' })).toBeChecked();
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Starts auto' }));
+    fireEvent.click(attributes().getByRole('checkbox', { name: 'Can be auto' }));
     expect('auto' in leaf('gap')).toBe(false);
   });
 
@@ -57,7 +60,8 @@ describe('PrefSchemaEditor auto attributes', () => {
     expect(on()).toBeChecked();
     expect(attributes().getByRole('spinbutton', { name: 'Auto value' })).toBeEnabled();
     fireEvent.click(on());
-    expect('auto' in leaf('gap')).toBe(false);
+    // Setting a value opted the leaf in, and clearing it leaves it so.
+    expect(leaf('gap').auto).toEqual({});
   });
 
   it('keeps an auto value of false, which an optional attribute would drop', () => {

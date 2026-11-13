@@ -226,6 +226,12 @@ function customRow(
   );
 }
 
+/** `leaf` with no `auto`, for a renderer that reads it to decide whether to offer the toggle. */
+const withoutAuto = (leaf: PrefLeaf): PrefLeaf => {
+  const { auto: _auto, ...rest } = leaf;
+  return rest as PrefLeaf;
+};
+
 const spanned = (row: ReactNode): ReactNode =>
   row === null || row === undefined || row === false ? null : (
     <PropertySpan className="lk-control-custom">{row}</PropertySpan>
@@ -306,7 +312,7 @@ function LeafRow<TC extends Record<string, unknown>>({
     return spanned(
       custom({
         path,
-        pref: offered ? bound : { ...bound, auto: false },
+        pref: offered ? bound : withoutAuto(bound),
         value,
         values: config,
         changed,
