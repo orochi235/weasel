@@ -5,6 +5,7 @@
     "ANCHOR_HIT_BASE_PX": "const",
     "ANCHOR_TOOLS": "const",
     "ANGLE_RADIANS": "const",
+    "ANY_MODS": "const",
     "AREA_SELECT_ID": "const",
     "AUTO_ORIGIN_PROJECTION": "const",
     "AUTO_POSE_DESCRIPTOR": "const",

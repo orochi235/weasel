@@ -1,3 +1,4 @@
+import { ANY_MODS } from '@weasel-js/gestures';
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import {
@@ -9,8 +10,6 @@ import { BETWEEN_GESTURES } from '@weasel-js/routing';
 
 /** Id of the entry {@link createGroupEntryContribution} builds. */
 export const GROUP_ENTRY_ID = 'group.entry';
-
-const ANY_MODS = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 
 /**
  * `group.enter` and `group.leave`, bound under any tool that leaves the gesture unclaimed. A

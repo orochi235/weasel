@@ -20,6 +20,7 @@
  * `via` ('drop' | 'paste'), plus `world` for drops. Absent
  * coords → `point: null`; handlers pick their own placement policy.
  */
+import { ANY_MODS } from '@weasel-js/gestures';
 import type { Action } from '@weasel-js/routing';
 import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
 import {
@@ -30,10 +31,6 @@ import { previewIngest } from 'domains/ingestion/ghost';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { MOVE_NODES_REQUIRES } from '../moveNodes';
 import type { ImmediateParams } from '@weasel-js/routing';
-
-export const ANY_INGEST_MODS = {
-  alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional',
-} as const;
 
 /** The deps {@link ingestFromEvent} reads, and the ones `IngestCtx.deps` carries for a handler
  *  that moves what it inserts with `moveNodes`; an action calling it declares these. */
@@ -107,8 +104,8 @@ export const ingestAction: Action & { requires: string[] } = {
   id: 'ingest',
   label: 'Insert external content',
   defaultBinding: [
-    { spec: { kind: 'drop', mods: ANY_INGEST_MODS }, opts: { id: 'ingest.drop' } },
-    { spec: { kind: 'paste', mods: ANY_INGEST_MODS }, opts: { id: 'ingest.paste' } },
+    { spec: { kind: 'drop', mods: ANY_MODS }, opts: { id: 'ingest.drop' } },
+    { spec: { kind: 'paste', mods: ANY_MODS }, opts: { id: 'ingest.paste' } },
   ],
   requires: [...INGEST_REQUIRES, 'previewPaths'],
   invoker: {

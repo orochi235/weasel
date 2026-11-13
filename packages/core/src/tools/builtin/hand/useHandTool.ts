@@ -1,3 +1,4 @@
+import { ANY_MODS } from '@weasel-js/gestures';
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '../../overlayBinding';
@@ -5,8 +6,6 @@ import type { Tool } from '../../overlayBinding';
 import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import { icon } from '../../../icons.gen';
 import { THROUGH_CHROME } from '../throughChrome';
-
-const ANY_MODS = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' } as const;
 
 export type { InertiaConfig };
 

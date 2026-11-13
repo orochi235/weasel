@@ -1,3 +1,4 @@
+import { ANY_MODS } from '@weasel-js/routing';
 import { useMemo } from 'react';
 import type { IconRef } from '@weasel-js/icons';
 import { useLatest } from '@weasel-js/react';
@@ -48,8 +49,6 @@ export interface UseEnvelopeToolOptions extends WarpToolOptions {
 
 /** Options for {@link usePuppetTool}. */
 export type UsePuppetToolOptions = WarpToolOptions;
-
-const ANY_MODS = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 
 function bindingsFor(kind: WarpKind, settings: () => Record<string, unknown>): GestureBinding[] {
   const target = `affordance:layer:${warpLayerId(kind)}` as const;

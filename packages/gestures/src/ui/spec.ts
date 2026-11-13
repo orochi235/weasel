@@ -24,6 +24,9 @@ export type ModSpec = Partial<{
   shift: boolean | 'optional';
 }>;
 
+/** Every modifier held or not: a binding that reads its modifiers as data, or answers whatever is held. */
+export const ANY_MODS: Readonly<ModSpec> = Object.freeze({ alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' });
+
 /** The predicate form of {@link TargetSpec}. `hit` is the affordance hit
  *  under the pointer, for every gesture kind; `bodyTarget` is the optional
  *  body-class string ('empty' | 'selected-body' | 'unselected-body') when

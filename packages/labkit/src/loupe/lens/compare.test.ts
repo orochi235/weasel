@@ -122,10 +122,12 @@ describe('the seam', () => {
     const preview = createSeamPreview();
     const action = seamAction(api, preview);
     expect(action.id).toBe('loupe.seam');
-    expect(action.defaultBinding).toEqual({
-      kind: 'drag',
-      target: `affordance:layer:${SEAM_LAYER_ID}`,
-    });
+    expect(action.defaultBinding).toEqual([
+      {
+        spec: { kind: 'drag', target: `affordance:layer:${SEAM_LAYER_ID}` },
+        opts: { id: 'loupe.seam.drag' },
+      },
+    ]);
     if (action.invoker?.timing !== 'ongoing') throw new Error('the seam is a drag');
     const handle = action.invoker.start(ctxAt(LEFT + BODY_SIZE / 2, lensId));
     handle.onMove?.(ctxAt(LEFT + BODY_SIZE * 0.75));

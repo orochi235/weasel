@@ -5,6 +5,7 @@
  *
  * Free of React so the actions can be tested without a DOM.
  */
+
 import {
   type Action,
   ActionDisabledReason,
@@ -16,6 +17,7 @@ import {
   type Op,
 } from '@weasel-js/core';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
+import { ANY_MODS } from '@weasel-js/routing';
 import { lensClosure, lensesOf, lensIdsOf, setAimOps, setLensOps, settingsOf } from './lensScene';
 import type {
   LensReadout,
@@ -110,13 +112,6 @@ export const FACTOR_STOPS: readonly number[] = Array.from(
   { length: Math.log2(FACTOR_MAX / FACTOR_MIN) + 1 },
   (_, i) => FACTOR_MIN * 2 ** i,
 );
-
-const ANY_MODS = {
-  alt: 'optional',
-  ctrl: 'optional',
-  meta: 'optional',
-  shift: 'optional',
-} as const;
 
 /** The DPR set after `dprs`: 1× → 2× → 1×|2× → 1×. */
 function nextDprs(dprs: readonly number[]): readonly number[] {
@@ -247,7 +242,12 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     id: LENS_ACTION_IDS.followMove,
     label: 'Follow the pointer',
     group: 'loupe',
-    defaultBinding: [{ spec: { kind: 'hover', held: 'optional', mods: ANY_MODS }, opts: {} }],
+    defaultBinding: [
+      {
+        spec: { kind: 'hover', held: 'optional', mods: ANY_MODS },
+        opts: { id: `${LENS_ACTION_IDS.followMove}.hover` },
+      },
+    ],
     enabled: () => {
       const lensId = api.current();
       const aim = lensId === null ? null : settingsOf(scene, lensId)?.aim;

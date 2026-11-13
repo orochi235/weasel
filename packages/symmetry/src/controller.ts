@@ -1,5 +1,5 @@
 import { createEmitter } from '@weasel-js/registry';
-import { hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
+import { ANY_MODS, hitPredicate, type Action, type NodeId, type Scene, type SurfaceContribution } from '@weasel-js/core';
 import { bakeSymmetry, type BakeResult } from './bake';
 import {
   centerUnder, editSymmetries, isSymmetryGroup, poseAtCenter, readGroup, specOfData, symmetryGroupOf,
@@ -10,7 +10,6 @@ import { handleDragAction, SYMMETRY_HANDLE_ACTION_ID } from './handleDrag';
 import { SYMMETRY_HANDLE_KIND, symmetryGuideLayer, type SymmetryGuideStyle } from './guide';
 import type { SymmetrySpec } from './kinds';
 import type { Point } from '@weasel-js/geom';
-
 
 /** What changes on a group: its spec, its center, or both. */
 export interface SymmetryChange {
@@ -63,7 +62,6 @@ const grabHandle: Action = {
   enabled: () => true as const,
 };
 
-const MODS_ANY = { shift: 'optional', alt: 'optional', meta: 'optional', ctrl: 'optional' } as const;
 const onHandle = hitPredicate((hit) => (hit as { kind?: string } | null | undefined)?.kind === SYMMETRY_HANDLE_KIND);
 
 /** Live symmetry for `scene`. Pass `symmetryRegistry` to the scene too, so its groups save. */
@@ -135,7 +133,7 @@ export function createSymmetry(scene: Scene<unknown, string, unknown>, opts: Cre
     },
     actions: [action, grabHandle],
     bindings: [
-      { spec: { kind: 'drag', target: { kindOf: onHandle }, mods: MODS_ANY }, actionId: SYMMETRY_HANDLE_ACTION_ID, opts: { id: 'weasel-symmetry.drag' } },
+      { spec: { kind: 'drag', target: { kindOf: onHandle }, mods: ANY_MODS }, actionId: SYMMETRY_HANDLE_ACTION_ID, opts: { id: 'weasel-symmetry.drag' } },
       // A handle's claim bars every other binding for the whole press, so its
       // pointer-down and a click that never becomes a drag need one too.
       { spec: { kind: 'pointerDown', target: `affordance:${SYMMETRY_HANDLE_KIND}` }, actionId: GRAB_HANDLE_ID, opts: { id: 'weasel-symmetry.pointerDown' } },

@@ -3,7 +3,8 @@ import { commitDeleteToScene, deleteEnabled } from '../defaults/delete';
 import type { NodeId } from 'core/scene/types';
 import { requiresSelection } from '../defaults/requiresSelection';
 import { kitWeaselJsonHandler } from 'domains/ingestion/weaselJsonHandler';
-import { ANY_INGEST_MODS, claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
+import { claimable, INGEST_REQUIRES, ingestFromEvent } from '../defaults/ingest';
+import { ANY_MODS } from '@weasel-js/gestures';
 import { icon } from '../../../icons.gen';
 import type { ImmediateParams } from '@weasel-js/routing';
 import { BETWEEN_GESTURES } from '@weasel-js/routing';
@@ -107,7 +108,7 @@ const PASTE_EVENT_HANDLERS = [kitWeaselJsonHandler];
 export const clipboardPasteEventAction: Action & { requires: string[] } = {
   id: 'clipboard.pasteEvent',
   label: 'Paste copied nodes',
-  defaultBinding: [{ spec: { kind: 'paste', types: ['text/plain'], mods: ANY_INGEST_MODS }, opts: { id: 'clipboard.pasteEvent.paste' } }],
+  defaultBinding: [{ spec: { kind: 'paste', types: ['text/plain'], mods: ANY_MODS }, opts: { id: 'clipboard.pasteEvent.paste' } }],
   requires: [...INGEST_REQUIRES],
   invoker: {
     timing: 'immediate',
