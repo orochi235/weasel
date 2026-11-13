@@ -16,7 +16,7 @@ function counter(journalSoftModes?: () => boolean) {
   });
   const bump = (by: number): void => {
     const journal = m.getActiveJournal();
-    if (journal) journal.applyBatch([add(by)], 'bump');
+    if (journal) journal.applyOps([add(by)], 'bump');
     else history.applyOps([add(by)], 'bump');
   };
   return { state, history, m, bump };

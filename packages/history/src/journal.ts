@@ -67,8 +67,8 @@ export interface Journal {
   readonly targetId: string | undefined;
   readonly forkedAtEntryId: number;
 
-  // Same operational surface as History
-  applyBatch(ops: Op[], label: string): void;
+  /** As `History.applyOps`, for the journal's own entries. */
+  applyOps(ops: Op[], label: string): void;
   /** As `History.recordEntry`, for the journal's own entries: ops that have already applied. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   undo(): void;
@@ -139,7 +139,7 @@ export function createJournalInternal(
     targetId,
     forkedAtEntryId,
 
-    applyBatch(ops: Op[], label: string): void {
+    applyOps(ops: Op[], label: string): void {
       if (state !== 'active') throw new Error('Journal is not active');
       inner.applyOps(ops, label);
     },

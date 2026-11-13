@@ -53,7 +53,7 @@ function applyEdit(
 ): void {
   env.labeled(label, () => env.runArrivalEdit(ops, (all) => {
     env.applying(() => {
-      if (journal) journal.applyBatch(all.map(env.causing), label);
+      if (journal) journal.applyOps(all.map(env.causing), label);
       else if (one && all.length === 1) env.engine.apply(env.causing(all[0]!), one.given);
       else env.engine.applyOps(all.map(env.causing), label);
     });

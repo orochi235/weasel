@@ -22,7 +22,7 @@ const STRETCH_PARAMS = pref.group('Stretch', { factor: pref.number('Factor', 1, 
 /** Apply `ops` where a scene would: the open journal, else the history. */
 function push(history: History, ops: Op[]): void {
   const journal = history.activeJournal?.();
-  if (journal) journal.applyBatch(ops, 'Stretch');
+  if (journal) journal.applyOps(ops, 'Stretch');
   else history.applyOps(ops, 'Stretch');
 }
 

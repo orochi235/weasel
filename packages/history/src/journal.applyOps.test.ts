@@ -18,24 +18,24 @@ function pushOp(value: number): Op {
   } as Op;
 }
 
-describe('Journal.applyBatch / undo / redo', () => {
-  it('applyBatch applies ops to the adapter and records on the inner history', () => {
+describe('Journal.applyOps / undo / redo', () => {
+  it('applyOps applies ops to the adapter and records on the inner history', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'edit' });
 
-    j.applyBatch([pushOp(1)], 'first');
+    j.applyOps([pushOp(1)], 'first');
     expect(adapter.values).toEqual([1]);
     expect(j.canUndo()).toBe(true);
     expect(j.canRedo()).toBe(false);
   });
 
-  it('applyBatch does NOT push to the parent history', () => {
+  it('applyOps does NOT push to the parent history', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'edit' });
 
-    j.applyBatch([pushOp(1)], 'first');
+    j.applyOps([pushOp(1)], 'first');
     expect(parent.canUndo()).toBe(false);
   });
 
@@ -44,8 +44,8 @@ describe('Journal.applyBatch / undo / redo', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'edit' });
 
-    j.applyBatch([pushOp(1)], 'first');
-    j.applyBatch([pushOp(2)], 'second');
+    j.applyOps([pushOp(1)], 'first');
+    j.applyOps([pushOp(2)], 'second');
     expect(adapter.values).toEqual([1, 2]);
 
     j.undo();
@@ -59,7 +59,7 @@ describe('Journal.applyBatch / undo / redo', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'edit' });
 
-    j.applyBatch([pushOp(1)], 'first');
+    j.applyOps([pushOp(1)], 'first');
     j.undo();
     expect(adapter.values).toEqual([]);
 

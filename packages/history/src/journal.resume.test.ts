@@ -19,17 +19,17 @@ function pushOp(value: number): Op {
 }
 
 describe('history.resumeJournal', () => {
-  it('re-activates a suspended journal so applyBatch works again', () => {
+  it('re-activates a suspended journal so applyOps works again', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
+    j.applyOps([pushOp(1)], 'a');
     j.suspend();
 
     parent.resumeJournal(j);
     expect(j.isActive()).toBe(true);
-    j.applyBatch([pushOp(2)], 'b');
+    j.applyOps([pushOp(2)], 'b');
     expect(adapter.values).toEqual([1, 2]);
   });
 
@@ -38,8 +38,8 @@ describe('history.resumeJournal', () => {
     const parent = createHistory(adapter);
     const j = parent.beginJournal({ label: 'session' });
 
-    j.applyBatch([pushOp(1)], 'a');
-    j.applyBatch([pushOp(2)], 'b');
+    j.applyOps([pushOp(1)], 'a');
+    j.applyOps([pushOp(2)], 'b');
     j.suspend();
 
     parent.resumeJournal(j);

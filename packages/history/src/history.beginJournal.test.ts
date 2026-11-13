@@ -29,7 +29,7 @@ describe('history.activeJournal and journal.observe', () => {
     const steps: string[] = [];
     j.observe((step) => steps.push(step.kind));
     const op = { apply: () => { adapter.n++; }, invert: () => ({ apply: () => { adapter.n--; } }) } as never;
-    j.applyBatch([op], 'bump');
+    j.applyOps([op], 'bump');
     j.undo();
     expect(steps).toEqual(['push', 'undo']);
     j.suspend();

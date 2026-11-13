@@ -24,8 +24,8 @@ describe('Journal.commit — undoing the committed entry throws partway', () => 
     const cells: Cells = { a: 0, b: 0 };
     const parent = createHistory(cells);
     const j = parent.beginJournal({ label: 'session' });
-    j.applyBatch([bumpOp('a', 1)], 'a');
-    j.applyBatch([bumpOp('b', 1)], 'b');
+    j.applyOps([bumpOp('a', 1)], 'a');
+    j.applyOps([bumpOp('b', 1)], 'b');
     j.commit('session');
 
     // Undo inverts b, then a: a fails after b was already inverted.

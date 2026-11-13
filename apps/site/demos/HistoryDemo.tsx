@@ -90,7 +90,7 @@ export function HistoryDemo() {
   useSyncExternalStore(journal?.subscribe ?? noSubscribe, journal?.getVersion ?? noVersion);
 
   const run = (ops: Op[], label: string) => {
-    if (journal) journal.applyBatch(ops, label);
+    if (journal) journal.applyOps(ops, label);
     else history.applyOps(ops, label);
   };
   const step = (dir: 'undo' | 'redo') => (journal ?? history)[dir]();

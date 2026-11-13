@@ -91,7 +91,7 @@ export function createOuterOps(env: OuterOpsEnv): OuterOps {
         // Neither engine was built with an adapter, so an op is bound to
         // this call's before either applies or stores it.
         const bound = ops.map((op) => causing(op, bindOpToAdapter(op, adapter)));
-        if (journal) journal.applyBatch(bound, label);
+        if (journal) journal.applyOps(bound, label);
         else engine.applyOps(bound, label);
       });
     },

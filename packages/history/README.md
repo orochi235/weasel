@@ -31,7 +31,7 @@ history.redo(); // title is 'Draft'
 
 // A journal keeps its own undo steps, then lands in the history as one entry.
 const journal = history.beginJournal({ label: 'Retitle' });
-journal.applyBatch([swapOp({ name: 'rename', label: 'Rename', before: title, after: 'Final', emit: (v) => { title = v; } })], 'Rename');
+journal.applyOps([swapOp({ name: 'rename', label: 'Rename', before: title, after: 'Final', emit: (v) => { title = v; } })], 'Rename');
 journal.commit('Retitle');
 ```
 

@@ -245,7 +245,7 @@ describe('scene.history journals', () => {
     const listener = vi.fn();
     scene.subscribe(listener);
 
-    journal.applyBatch([addNodeOp(scene, 'n1' as NodeId, 'a')], 'insert');
+    journal.applyOps([addNodeOp(scene, 'n1' as NodeId, 'a')], 'insert');
     expect(scene.nodes.size).toBe(1);
     // The journal's entry belongs to the journal, not the parent stack.
     expect(scene.history.undoDepth()).toBe(0);
@@ -266,7 +266,7 @@ describe('scene.history journals', () => {
   it('cancel rewinds the session and notifies', () => {
     const scene = makeScene();
     const journal = scene.history.beginJournal({ label: 'session' });
-    journal.applyBatch([addNodeOp(scene, 'n1' as NodeId, 'a')], 'insert');
+    journal.applyOps([addNodeOp(scene, 'n1' as NodeId, 'a')], 'insert');
     const listener = vi.fn();
     scene.subscribe(listener);
 
@@ -285,7 +285,7 @@ describe('scene.history journals', () => {
     scene.history.resumeJournal(journal);
     expect(journal.isActive()).toBe(true);
 
-    journal.applyBatch([addNodeOp(scene, 'n1' as NodeId, 'a')], 'insert');
+    journal.applyOps([addNodeOp(scene, 'n1' as NodeId, 'a')], 'insert');
     expect(scene.nodes.size).toBe(1);
     journal.commit('session');
   });

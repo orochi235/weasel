@@ -88,7 +88,7 @@ function pushOwn(env: RecorderEnv, op: Op, label: string): void {
   env.mode.enter('own');
   try {
     const journal = env.journal();
-    if (journal) journal.applyBatch([op], label);
+    if (journal) journal.applyOps([op], label);
     else env.engine.apply(op, label);
   } finally {
     env.mode.leave('own');

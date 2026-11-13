@@ -34,7 +34,7 @@ describe('a throwing subscriber', () => {
     const after = vi.fn();
     j.subscribe(() => { throw new Error('boom'); });
     j.subscribe(after);
-    expect(() => j.applyBatch([setOp(t, 0, 1)], 'a')).not.toThrow();
+    expect(() => j.applyOps([setOp(t, 0, 1)], 'a')).not.toThrow();
     expect(after).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalled();
   });

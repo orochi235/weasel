@@ -25,9 +25,9 @@ describe('Journal.commit after coalescing', () => {
   it('undoes to the value the session opened on, and redoes to the one it closed on', () => {
     const { box, parent, tick } = open(0);
     const j = parent.beginJournal({ label: 'session' });
-    j.applyBatch([setOp(0, 1)], 'set');
+    j.applyOps([setOp(0, 1)], 'set');
     tick(10);
-    j.applyBatch([setOp(1, 2)], 'set');
+    j.applyOps([setOp(1, 2)], 'set');
     expect(j.entries().undo).toHaveLength(1);
     j.commit('Edit');
 
@@ -42,13 +42,13 @@ describe('Journal.commit after coalescing', () => {
   it('round-trips a session mixing coalesced and separate entries', () => {
     const { box, parent, tick } = open(5);
     const j = parent.beginJournal({ label: 'session' });
-    j.applyBatch([setOp(5, 6)], 'set');
+    j.applyOps([setOp(5, 6)], 'set');
     tick(10);
-    j.applyBatch([setOp(6, 7)], 'set');
+    j.applyOps([setOp(6, 7)], 'set');
     tick(1000);
-    j.applyBatch([setOp(7, 8)], 'set');
+    j.applyOps([setOp(7, 8)], 'set');
     tick(10);
-    j.applyBatch([setOp(8, 9)], 'set');
+    j.applyOps([setOp(8, 9)], 'set');
     expect(j.entries().undo).toHaveLength(2);
     j.commit('Edit');
 
@@ -62,9 +62,9 @@ describe('Journal.commit after coalescing', () => {
   it('keeps both halves through serialize and restore', () => {
     const { box, parent, tick } = open(0);
     const j = parent.beginJournal({ label: 'session' });
-    j.applyBatch([setOp(0, 1)], 'set');
+    j.applyOps([setOp(0, 1)], 'set');
     tick(10);
-    j.applyBatch([setOp(1, 2)], 'set');
+    j.applyOps([setOp(1, 2)], 'set');
     j.commit('Edit');
 
     const restored = createHistory(box, {
@@ -86,13 +86,13 @@ describe('BeginJournalOptions.coalesceWindowMs', () => {
     const { parent, tick } = open(0);
     let window = 0;
     const j = parent.beginJournal({ label: 'session', coalesceWindowMs: () => window });
-    j.applyBatch([setOp(0, 1)], 'set');
+    j.applyOps([setOp(0, 1)], 'set');
     tick(10);
-    j.applyBatch([setOp(1, 2)], 'set');
+    j.applyOps([setOp(1, 2)], 'set');
     expect(j.entries().undo).toHaveLength(2);
     window = 500;
     tick(10);
-    j.applyBatch([setOp(2, 3)], 'set');
+    j.applyOps([setOp(2, 3)], 'set');
     expect(j.entries().undo).toHaveLength(2);
   });
 });
