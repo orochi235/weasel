@@ -25,7 +25,7 @@ describe('colorResetAction', () => {
   });
 
   it('has defaultBinding for key d', () => {
-    expect(colorResetAction.defaultBinding).toEqual({ kind: 'key', key: 'd' });
+    expect(colorResetAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: 'd' }, opts: { id: 'color.reset.key' } }]);
   });
 
   it('requires color dep', () => {
@@ -77,7 +77,7 @@ describe('colorToggleFocusedNoneAction', () => {
   });
 
   it('has defaultBinding for key /', () => {
-    expect(colorToggleFocusedNoneAction.defaultBinding).toEqual({ kind: 'key', key: '/' });
+    expect(colorToggleFocusedNoneAction.defaultBinding).toEqual([{ spec: { kind: 'key', key: '/' }, opts: { id: 'color.toggleFocusedNone.key' } }]);
   });
 
   it('requires color dep', () => {

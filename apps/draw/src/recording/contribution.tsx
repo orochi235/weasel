@@ -20,7 +20,7 @@ const recordAction: RecordingAction = {
   label: 'Record input',
   icon: icon('record'),
   group: 'record',
-  defaultBinding: { kind: 'key', key: RECORD_KEY },
+  defaultBinding: [{ spec: { kind: 'key', key: RECORD_KEY }, opts: { id: 'record.toggle.key' } }],
   requires: ['recording'],
   active: (deps) => read(deps)?.recording === true,
   enabled: (deps) => read(deps)?.playing !== true || ActionDisabledReason.NotApplicable,

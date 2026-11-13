@@ -53,6 +53,6 @@ function useDocClipboardCommand(
   options: DocClipboardCommandOptions | undefined,
 ): void {
   const { label = defaultLabel, keys, ...rest } = options ?? {};
-  const bound = keys === null ? {} : { keys: keys ?? DOC_CLIPBOARD_KEYS[slot] };
+  const bound = keys === null ? {} : { keys: keys ?? { spec: DOC_CLIPBOARD_KEYS[slot], opts: { id: `${DOC_CLIPBOARD_ACTIONS[slot]}.key` } } };
   useCommand(DOC_CLIPBOARD_ACTIONS[slot], label, run, { group: 'clipboard', ...rest, ...bound, enabled });
 }

@@ -127,11 +127,11 @@ export function useOpacityScrub({ scene, selection }: UseOpacityScrubArgs) {
       presentation: { label: 'Opacity scrub', hide: true },
       actions: [nudge],
       bindings: [
-        { spec: { kind: 'wheel' }, actionId: OPACITY_SCRUB_NUDGE, opts: { params: { step: COARSE_STEP } } },
+        { spec: { kind: 'wheel' }, actionId: OPACITY_SCRUB_NUDGE, opts: { id: 'opacityScrub.wheel.coarse', params: { step: COARSE_STEP } } },
         {
           spec: { kind: 'wheel', mods: { shift: true } },
           actionId: OPACITY_SCRUB_NUDGE,
-          opts: { params: { step: FINE_STEP } },
+          opts: { id: 'opacityScrub.wheel.fine', params: { step: FINE_STEP } },
         },
       ],
       onActivate: startSession,

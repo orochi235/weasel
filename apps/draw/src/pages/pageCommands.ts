@@ -36,6 +36,6 @@ export function usePageCommands(pages: DocPages, leaveMode: () => void): void {
     const id = targetOf(pages, params);
     return id === null ? ActionDisabledReason.NotApplicable : pages.removable(id);
   } });
-  useCommand(PAGE_ACTIONS.next, 'Next Page', () => pages.step(1), { keys: { kind: 'key', key: 'PageDown' } });
-  useCommand(PAGE_ACTIONS.previous, 'Previous Page', () => pages.step(-1), { keys: { kind: 'key', key: 'PageUp' } });
+  useCommand(PAGE_ACTIONS.next, 'Next Page', () => pages.step(1), { keys: { spec: { kind: 'key', key: 'PageDown' }, opts: { id: `${PAGE_ACTIONS.next}.key` } } });
+  useCommand(PAGE_ACTIONS.previous, 'Previous Page', () => pages.step(-1), { keys: { spec: { kind: 'key', key: 'PageUp' }, opts: { id: `${PAGE_ACTIONS.previous}.key` } } });
 }
