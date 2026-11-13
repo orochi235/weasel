@@ -39,7 +39,7 @@ export function createPinchZoomAction(
     id: 'viewport.pinchZoom',
     label: 'Pinch Zoom',
     group: 'viewport',
-    defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.pinchZoom.pinch' } }],
+    defaultBinding: [{ spec: { kind: 'multiTouch', fingers: 2 }, opts: { id: 'viewport.pinchZoom.multiTouch' } }],
     requires: ['view', 'debug'],
     invoker: {
       timing: 'ongoing',
