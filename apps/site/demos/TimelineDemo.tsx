@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   asNodeId,
   lerpOklab,
@@ -7,7 +7,6 @@ import {
   sceneClipTargets,
   solid,
   srgbU8ToOklab,
-  useLatest,
   useScene,
 } from '@weasel-js/core';
 import { bindClip, createTarget } from '@weasel-js/animator';
@@ -15,7 +14,7 @@ import { useAnimator } from '@weasel-js/animator/react';
 import type { Paint, RectPose, Fill } from '@weasel-js/core';
 import type { Clip, SampledTrack, TimelineHandle } from '@weasel-js/animator';
 import { Button } from '@weasel-js/ui/components/Button';
-import { Transport } from '@weasel-js/ui/components/Timeline';
+import { AnimatedTransport } from '@weasel-js/ui/components/Timeline';
 import { DemoStage } from './DemoStage';
 
 type Lab = [number, number, number];
@@ -88,15 +87,8 @@ export function TimelineDemo() {
   const animator = useAnimator();
 
   const [log, setLog] = useState<{ id: number; text: string }[]>([]);
-  const [loop, setLoop] = useState(true);
-  const [playing, setPlaying] = useState(true);
-  const [now, setNow] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [timeScale, setTimeScale] = useState(1);
-  const scaleRef = useLatest(timeScale);
 
-  // Bound once and mutated only through `timeline.edit`, so keys added at
-  // runtime survive the rebuild a loop-toggle forces.
+  // Bound once and mutated only through `timeline.edit`.
   const [live] = useState(() => {
     let lab = COLD;
     // A color is not a pose, so the track gets a target of its own: it shows the tint as the node's fill.
@@ -115,44 +107,18 @@ export function TimelineDemo() {
     });
   });
 
-  const handle = useRef<TimelineHandle | null>(null);
+  const [handle, setHandle] = useState<TimelineHandle | null>(null);
   useEffect(() => {
-    const tl = animator.timeline({ ...live, loop });
-    tl.setTimeScale(scaleRef.current);
-    handle.current = tl;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- reads back the timeline this effect creates
-    setDuration(tl.duration());
-    setPlaying(true);
-    const unsubscribe = tl.subscribe(() => setDuration(tl.duration()));
-    return () => { unsubscribe(); tl.cancel(); handle.current = null; };
-  }, [animator, loop, scaleRef, live]);
-
-  useEffect(() => animator.onTick(() => setNow(handle.current?.time() ?? 0)), [animator]);
-
-  const play = (): void => { handle.current?.resume(); setPlaying(true); };
-  const pause = (): void => { handle.current?.pause(); setPlaying(false); };
-
-  // Scrubbing pauses first: a playhead the user is dragging and a playhead the
-  // animator is advancing are two different intents.
-  const scrub = (t: number): void => {
-    const tl = handle.current;
-    if (!tl) return;
-    tl.pause();
-    setPlaying(false);
-    tl.seek(t);
-    setNow(t);
-  };
-
-  const onTimeScale = (s: number): void => {
-    setTimeScale(s);
-    handle.current?.setTimeScale(s);
-  };
+    const tl = animator.timeline({ ...live, loop: true });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hands over the timeline this effect creates
+    setHandle(tl);
+    return () => { tl.cancel(); };
+  }, [animator, live]);
 
   const addKey = (): void => {
-    const tl = handle.current;
-    if (!tl) return;
+    if (!handle) return;
     const track = live.tracks[0] as SampledTrack<RectPose>;
-    tl.edit(() => {
+    handle.edit(() => {
       const last = track.keys[track.keys.length - 1];
       track.keys.push({ t: last.t + 600, value: box(last.value.x === 20 ? FAR : 20, 24), easing: 'easeInOutCubic' });
     });
@@ -161,18 +127,7 @@ export function TimelineDemo() {
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
-        <Transport
-          paused={!playing}
-          loop={loop}
-          rate={timeScale}
-          playhead={now}
-          duration={duration}
-          onPlay={play}
-          onPause={pause}
-          onLoopChange={(next) => setLoop(next !== false && next !== 0)}
-          onRateChange={onTimeScale}
-          onSeek={scrub}
-        />
+        {handle ? <AnimatedTransport handle={handle} /> : null}
         <Button onClick={addKey}>add x keyframe</Button>
       </div>
       <div className="ckd-row">
