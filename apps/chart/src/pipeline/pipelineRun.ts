@@ -6,6 +6,7 @@ import { pickFile, menuRun, type MenuRuns } from '@weasel-js/editor';
 import { pref } from '@weasel-js/prefs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { can } from '../menuBar';
+import { useChartPref } from '../prefs';
 import { mergeRuns, splitDomains, usePipelineAudio } from './pipelineAudio';
 import { reportFailure } from '../reportFailure';
 
@@ -44,9 +45,9 @@ export interface PipelineRun {
  *  chosen, plays its audio stages live, and registers the Run menu and View's run rows. */
 export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   const [sources, setSources] = useState<{ image: ImageBitmap } | undefined>(undefined);
-  const [showValues, setShowValues] = useState(false);
-  const [showPreviews, setShowPreviews] = useState(false);
-  const [showSpectrum, setShowSpectrum] = useState(false);
+  const [showValues, setShowValues] = useChartPref('pipeline.showValues');
+  const [showPreviews, setShowPreviews] = useChartPref('pipeline.showPreviews');
+  const [showSpectrum, setShowSpectrum] = useChartPref('pipeline.showSpectrum');
   const picks = useRef(0);
   useEffect(() => () => { picks.current += 1; }, []);
   const split = useMemo(() => splitDomains(pipeline), [pipeline]);
@@ -82,9 +83,9 @@ export function usePipelineRun(pipeline: EffectPipeline): PipelineRun {
   useCommand(RUN_ACTIONS.audioSource, 'Choose Source Audio…', () => {
     audio.chooseSource().catch(reportFailure('Could not read the audio'));
   });
-  useCommand(RUN_ACTIONS.showValues, 'Show Values', () => setShowValues((v) => !v), { active: () => showValues });
-  useCommand(RUN_ACTIONS.showPreviews, 'Show Previews', () => setShowPreviews((v) => !v), { active: () => showPreviews });
-  useCommand(RUN_ACTIONS.showSpectrum, 'Show Spectrum', () => setShowSpectrum((v) => !v), {
+  useCommand(RUN_ACTIONS.showValues, 'Show Values', () => setShowValues(!showValues), { active: () => showValues });
+  useCommand(RUN_ACTIONS.showPreviews, 'Show Previews', () => setShowPreviews(!showPreviews), { active: () => showPreviews });
+  useCommand(RUN_ACTIONS.showSpectrum, 'Show Spectrum', () => setShowSpectrum(!showSpectrum), {
     active: () => showSpectrum, enabled: () => can(showPreviews),
   });
 
