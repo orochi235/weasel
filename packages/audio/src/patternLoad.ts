@@ -8,7 +8,7 @@ export interface PatternLoadOptions {
   stepsPerBeat?: number;
   length?: number;
   loop?: boolean;
-  /** The bus of an event that names none: the engine's first. Default 'sfx'. */
+  /** The bus of an event that names none. Default 'sfx', the engine's first bus when it is built with its default buses; pass the engine's own first bus where it has others. */
   bus?: string;
   /** The engine's `lookahead` in ms. Default 100. */
   lookahead?: number;

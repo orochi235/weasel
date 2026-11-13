@@ -91,7 +91,7 @@ export interface SpringOptions<T> {
   subtract?: (a: T, b: T) => T;
   scale?: (v: T, k: number) => T;
   magnitude?: (v: T) => number;
-  /** Velocity magnitude below which the spring is considered settled. Default 0.01. */
+  /** Distance from the target and speed below which the spring is considered settled: both must be under it. Default 0.01. */
   restThreshold?: number;
   onTick: (value: T) => void;
   onDone?: () => void;
