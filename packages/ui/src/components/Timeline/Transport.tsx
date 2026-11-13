@@ -135,7 +135,7 @@ export function Transport(props: TransportProps): ReactElement {
           aria-label="Rate"
           items={rates.map((r) => ({ value: r, ariaLabel: rateSpoken(r) }))}
           value={rate}
-          onChange={onRateChange}
+          onInput={onRateChange}
           formatLabel={rateText}
           labels="none"
           className={s.rateSlider}

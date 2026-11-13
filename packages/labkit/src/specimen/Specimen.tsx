@@ -362,7 +362,7 @@ function FieldsAndPickers() {
         <DetentSlider
           items={[0.25, 0.5, 1, 2, 4]}
           value={rate}
-          onChange={setRate}
+          onInput={setRate}
           formatLabel={(r) => `${r}×`}
           labels="all"
           aria-label="Playback rate"

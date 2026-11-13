@@ -6,16 +6,16 @@ import { DetentSlider } from './DetentSlider';
 const RATES = [0.25, 0.5, 1, 2, 4];
 
 function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> = {}) {
+  const onInput = vi.fn();
   const onChange = vi.fn();
-  const onCommit = vi.fn();
   const view = render(
     <DetentSlider
       aria-label="Playback rate"
       items={RATES}
       value={1}
       formatLabel={(r) => `${r}×`}
+      onInput={onInput}
       onChange={onChange}
-      onCommit={onCommit}
       {...props}
     />,
   );
@@ -23,7 +23,7 @@ function renderRate(props: Partial<Parameters<typeof DetentSlider<number>>[0]> =
   const track = thumb.parentElement as HTMLElement;
   const full: DOMRect = { x: 0, y: 0, width: 200, height: 24, top: 0, left: 0, right: 200, bottom: 24, toJSON: () => ({}) };
   track.getBoundingClientRect = () => full;
-  return { ...view, thumb, track, onChange, onCommit };
+  return { ...view, thumb, track, onInput, onChange };
 }
 
 const ticks = (c: HTMLElement) => Array.from(c.querySelectorAll<HTMLElement>('[data-slider-tick]'));
@@ -125,77 +125,77 @@ describe('DetentSlider accessibility', () => {
 
 describe('DetentSlider keyboard', () => {
   it('steps one detent per arrow press', () => {
-    const { thumb, onChange } = renderRate({ value: 1 });
+    const { thumb, onInput } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-    expect(onChange).toHaveBeenCalledWith(2, 3);
+    expect(onInput).toHaveBeenCalledWith(2, 3);
   });
 
   it('steps back down', () => {
-    const { thumb, onChange } = renderRate({ value: 1 });
+    const { thumb, onInput } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'ArrowLeft' });
-    expect(onChange).toHaveBeenCalledWith(0.5, 1);
+    expect(onInput).toHaveBeenCalledWith(0.5, 1);
   });
 
   it('holds at the ends', () => {
-    const { thumb, onChange } = renderRate({ value: 4 });
+    const { thumb, onInput } = renderRate({ value: 4 });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalled();
   });
 
   it('jumps to either end', () => {
-    const { thumb, onChange } = renderRate({ value: 1 });
+    const { thumb, onInput } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'Home' });
-    expect(onChange).toHaveBeenLastCalledWith(0.25, 0);
+    expect(onInput).toHaveBeenLastCalledWith(0.25, 0);
     fireEvent.keyDown(thumb, { key: 'End' });
-    expect(onChange).toHaveBeenLastCalledWith(4, 4);
+    expect(onInput).toHaveBeenLastCalledWith(4, 4);
   });
 
   it('offers a detent again after the consumer declined it', () => {
-    const { thumb, onChange } = renderRate({ value: 1 });
+    const { thumb, onInput } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onInput).toHaveBeenCalledTimes(2);
   });
 
   it('commits a keystroke, since there is no gesture to wait out', () => {
-    const { thumb, onCommit } = renderRate({ value: 1 });
+    const { thumb, onChange } = renderRate({ value: 1 });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
-    expect(onCommit).toHaveBeenCalledWith(2, 3);
+    expect(onChange).toHaveBeenCalledWith(2, 3);
   });
 });
 
 describe('DetentSlider pointer', () => {
   it('picks the detent nearest a track click', () => {
-    const { track, onChange } = renderRate({ value: 1 });
+    const { track, onInput } = renderRate({ value: 1 });
     // 155/200 = 0.775, nearest detent 0.75 -> index 3 -> 2x.
     fireEvent.pointerDown(track, { clientX: 155, clientY: 12, button: 0 });
-    expect(onChange).toHaveBeenCalledWith(2, 3);
+    expect(onInput).toHaveBeenCalledWith(2, 3);
   });
 
   it('commits on release', () => {
-    const { track, onCommit } = renderRate({ value: 1 });
+    const { track, onChange } = renderRate({ value: 1 });
     fireEvent.pointerDown(track, { clientX: 155, clientY: 12, button: 0 });
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
     fireEvent.pointerUp(document, { clientX: 155, clientY: 12 });
-    expect(onCommit).toHaveBeenCalledWith(2, 3);
+    expect(onChange).toHaveBeenCalledWith(2, 3);
   });
 
   it('does not commit a press that chose nothing', () => {
-    const { track, onChange, onCommit } = renderRate({ value: 1 });
+    const { track, onInput, onChange } = renderRate({ value: 1 });
     // Dead centre is the detent the thumb already sits on.
     fireEvent.pointerDown(track, { clientX: 100, clientY: 12, button: 0 });
     fireEvent.pointerUp(document, { clientX: 100, clientY: 12 });
+    expect(onInput).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
-    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('reports each detent a drag crosses exactly once', () => {
-    const { thumb, onChange } = renderRate({ value: 1 });
+    const { thumb, onInput } = renderRate({ value: 1 });
     fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, button: 0 });
     fireEvent.pointerMove(document, { clientX: 152, clientY: 12 });
     fireEvent.pointerMove(document, { clientX: 158, clientY: 12 });
     fireEvent.pointerMove(document, { clientX: 196, clientY: 12 });
-    expect(onChange.mock.calls).toEqual([
+    expect(onInput.mock.calls).toEqual([
       [2, 3],
       [4, 4],
     ]);
@@ -209,15 +209,15 @@ describe('DetentSlider value resolution', () => {
   });
 
   it('does not emit while resolving a stray value', () => {
-    const { onChange, onCommit } = renderRate({ value: 1.6 });
+    const { onInput, onChange } = renderRate({ value: 1.6 });
+    expect(onInput).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
-    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it('falls back to the first detent when the values are not numeric', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
-      <DetentSlider items={['low', 'mid', 'high']} value={'gone' as 'low'} onChange={onChange} />,
+      <DetentSlider items={['low', 'mid', 'high']} value={'gone' as 'low'} onInput={onInput} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     expect(thumb.getAttribute('aria-valuenow')).toBe('0');
@@ -227,7 +227,7 @@ describe('DetentSlider value resolution', () => {
 
 describe('DetentSlider degenerate input', () => {
   it('renders nothing rather than crashing on an empty list', () => {
-    const { container } = render(<DetentSlider items={[]} value={1} onChange={() => {}} />);
+    const { container } = render(<DetentSlider items={[]} value={1} onInput={() => {}} />);
     expect(container.querySelector('[role="slider"]')).toBeNull();
     expect(ticks(container)).toHaveLength(0);
   });

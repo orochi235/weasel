@@ -22,16 +22,16 @@ export type DetentItem<V extends DetentValue = number> = {
  * `items` takes bare values or `DetentItem`s interchangeably — a bare value is
  * a detent with no label of its own.
  *
- * `onChange` fires on every detent the control passes through, including
+ * `onInput` fires on every detent the control passes through, including
  * mid-drag: each one is a complete, legal choice, so there is no in-flight
- * value to withhold. `onCommit` fires once the gesture that changed things
- * ends, and is the one to write to history.
+ * value to withhold. `onChange` fires once the gesture that changed things
+ * ends, and is the one to write to history, as with `Slider`.
  */
 export type DetentSliderProps<V extends DetentValue = number> = {
   items: readonly (V | DetentItem<V>)[];
   value: V;
-  onChange: (value: V, index: number) => void;
-  onCommit?: (value: V, index: number) => void;
+  onInput: (value: V, index: number) => void;
+  onChange?: (value: V, index: number) => void;
   formatLabel?: (value: V, index: number) => ReactNode;
   labels?: 'all' | 'ends' | 'none';
   trackHeight?: number;
@@ -84,7 +84,7 @@ function plainText(label: ReactNode, fallback: DetentValue): string {
  * with `spacing="even"` and magnetic stops.
  */
 export function DetentSlider<V extends DetentValue = number>(props: DetentSliderProps<V>): ReactElement {
-  const { value, onChange, onCommit, formatLabel, 'aria-label': ariaLabel, className } = props;
+  const { value, onInput, onChange, formatLabel, 'aria-label': ariaLabel, className } = props;
   const items = normalize(props.items);
   const index = resolveIndex(items, value);
   const lastIndex = Math.max(0, items.length - 1);
@@ -106,7 +106,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
     if (i === liveRef.current) return;
     liveRef.current = i;
     changedRef.current = true;
-    onChange(items[i].value, i);
+    onInput(items[i].value, i);
   };
 
   const handleCommit = (next: Thumb[]) => {
@@ -115,7 +115,7 @@ export function DetentSlider<V extends DetentValue = number>(props: DetentSlider
     if (!changedRef.current) return;
     changedRef.current = false;
     const i = next[0].value;
-    onCommit?.(items[i].value, i);
+    onChange?.(items[i].value, i);
   };
 
   const current = items[index];

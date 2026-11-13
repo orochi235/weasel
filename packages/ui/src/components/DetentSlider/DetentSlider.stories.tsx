@@ -28,11 +28,11 @@ function Wrapper<V extends DetentValue>({
   initial,
   width = 260,
   ...rest
-}: { initial: V; width?: number } & Omit<DetentSliderProps<V>, 'value' | 'onChange'>) {
+}: { initial: V; width?: number } & Omit<DetentSliderProps<V>, 'value' | 'onInput'>) {
   const [value, setValue] = useState<V>(initial);
   return (
     <div style={{ width }}>
-      <DetentSlider {...rest} value={value} onChange={setValue} />
+      <DetentSlider {...rest} value={value} onInput={setValue} />
       <p style={{ margin: '12px 0 0', fontSize: 11, fontFamily: 'var(--wzl-font-mono)', color: 'var(--wzl-fg-muted)' }}>
         value: {String(value)}
       </p>
