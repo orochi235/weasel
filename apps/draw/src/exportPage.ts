@@ -2,7 +2,7 @@ import {
   exportPages, exportRegions, pageName, selectionRegion, type ExportFormat, type ExportOptions, type PlacedPage,
 } from '@weasel-js/core';
 import { downloadBlob, reportFileWarnings } from '@weasel-js/editor';
-import { registerPdfExport } from '@weasel-js/pdf';
+import { registerPdfExport } from '@weasel-js/pdf/export';
 import { registerSvgExport } from '@weasel-js/svg';
 import { DEFAULT_FILENAME } from './docPersistence';
 import type { DrawScene } from './drawDocument';

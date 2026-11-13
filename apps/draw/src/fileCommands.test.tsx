@@ -21,7 +21,7 @@ import { importSvgFile, openSvgFile } from './openSvg';
 import { contentRoots } from '@weasel-js/core';
 import { saveSvgFile } from './saveSvg';
 import { exportPagesFile, exportSelectionFile } from './exportPage';
-import { registerPdfExport } from '@weasel-js/pdf';
+import { registerPdfExport } from '@weasel-js/pdf/export';
 import { registerSvgExport } from '@weasel-js/svg';
 import { backgroundOf, setBackground } from './docBackground';
 import { withIcons } from './testIcons';

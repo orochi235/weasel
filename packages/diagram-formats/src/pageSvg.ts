@@ -6,7 +6,8 @@ import {
   exportRegionPng, type ExportRegion, type ExportRegionPngOptions, type ExportScene, type RectPose,
 } from '@weasel-js/core';
 import { diagramShape, diagramThemeOf, markShape } from '@weasel-js/diagram';
-import { exportRegionsPdf, type ExportRegionsPdfOptions, type PdfSkip } from '@weasel-js/pdf';
+import type { PdfSkip } from '@weasel-js/pdf';
+import { exportRegionsPdf, type ExportRegionsPdfOptions } from '@weasel-js/pdf/export';
 import { exportRegionSvg, regionSvgNodes, type ExportRegionSvgOptions, type SvgNode } from '@weasel-js/svg';
 
 /** A scene as the page exports read it: world-space `RectPose`s. Core's `ExportScene`. */
@@ -75,7 +76,7 @@ export function exportPagePng(scene: PageExportScene, page: PageRect, opts: Expo
 
 /**
  * Write each of `pages` of `scene` as a page of one PDF, as
- * `@weasel-js/pdf`'s `exportRegionsPdf` does, on the diagram theme's page
+ * `@weasel-js/pdf/export`'s `exportRegionsPdf` does, on the diagram theme's page
  * color unless told otherwise. The caller has registered what the scene needs
  * painting with, as for {@link exportPagePng}, including each font's outlines.
  */

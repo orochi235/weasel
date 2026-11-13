@@ -35,12 +35,13 @@ the pages without one are numbered.
 
 ## Exporting a scene
 
-`exportRegionsPdf(scene, regions, opts)` writes each world-space region of a
+`exportRegionsPdf(scene, regions, opts)`, from the `@weasel-js/pdf/export` entry, writes each world-space region of a
 core scene as a page of one PDF, in order, at 0.75 points per unit (96 units
 to the inch), labeled with its region's `name`. It answers `{ blob, skipped }`.
 It draws the document through core's renderer, so the painters and fonts are
 the caller's to register, and needs WebGL2 and `OffscreenCanvas`; annotation
-layers are left out. `background` is painted under each page (default none),
+layers are left out. That entry is the only one that reads core, which is an
+optional peer: `writePdf` and the main entry need neither core nor React. `background` is painted under each page (default none),
 and `title` and `lang` are passed to `writePdf`.
 
 `registerPdfExport()` registers this as core's `pdf` export format, which

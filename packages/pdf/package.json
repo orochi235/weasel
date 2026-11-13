@@ -16,6 +16,10 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./export": {
+      "import": "./dist/export.js",
+      "types": "./dist/export.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -35,6 +39,11 @@
   },
   "peerDependencies": {
     "@weasel-js/core": "1.19.1"
+  },
+  "peerDependenciesMeta": {
+    "@weasel-js/core": {
+      "optional": true
+    }
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

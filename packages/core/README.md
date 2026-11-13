@@ -207,7 +207,7 @@ return [{
 
 Core keeps a registry of export formats, each writing one or more world-space
 rectangles of a scene to a file. Core registers `png`; `@weasel-js/svg`
-registers `svg` (`registerSvgExport()`) and `@weasel-js/pdf` registers `pdf`
+registers `svg` (`registerSvgExport()`) and `@weasel-js/pdf/export` registers `pdf`
 (`registerPdfExport()`), so core depends on neither.
 
 ```ts

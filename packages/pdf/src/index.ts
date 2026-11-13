@@ -9,10 +9,3 @@ export type {
   WritePdfOptions,
 } from './writePdf';
 export { writePdf } from './writePdf';
-export {
-  exportRegionsPdf,
-  registerPdfExport,
-  PDF_EXPORT,
-  type ExportRegionsPdfOptions,
-  type PdfExportOptions,
-} from './regionsPdf';

@@ -124,6 +124,7 @@
       "@weasel-js/path-tools": ["../path-tools/src/index.ts"],
       "@weasel-js/path-tools/icons": ["../path-tools/src/icons.table.ts"],
       "@weasel-js/pdf": ["../pdf/src/index.ts"],
+      "@weasel-js/pdf/export": ["../pdf/src/export.ts"],
       "@weasel-js/pdf/testing/*": ["../pdf/src/testing/*"],
       "@weasel-js/plot": ["../plot/src/index.ts"],
       "@weasel-js/plot/scales": ["../plot/src/scales.entry.ts"],

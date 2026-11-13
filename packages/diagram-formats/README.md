@@ -390,7 +390,7 @@ is written as its own `activate` or `deactivate` line.
 `exportPageSvg`, `exportPagePng`, `exportPagesPdf` and `pageSvgNodes` are
 the region exports that work on any scene, taken a page at a time: core's
 `exportRegionPng`, `@weasel-js/svg`'s `exportRegionSvg` and `regionSvgNodes`,
-and `@weasel-js/pdf`'s `exportRegionsPdf`, whose READMEs cover options and
+and `@weasel-js/pdf/export`'s `exportRegionsPdf`, whose READMEs cover options and
 what each format carries. The ones here add what a diagram needs:
 
 - `background` defaults to the page color of the scene's diagram theme

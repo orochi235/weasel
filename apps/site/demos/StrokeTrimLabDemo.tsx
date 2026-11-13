@@ -23,7 +23,7 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { dashForStrokeStyle } from '@weasel-js/paint';
-import { exportRegionsPdf } from '@weasel-js/pdf';
+import { exportRegionsPdf } from '@weasel-js/pdf/export';
 import { exportRegionSvg } from '@weasel-js/svg';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
