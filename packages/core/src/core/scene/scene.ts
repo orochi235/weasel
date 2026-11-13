@@ -23,6 +23,7 @@ import { RIGID_POSE_COMPOSITION } from './composePose';
 import { placingOnPageRunWrite } from '../pages/placeOnPages';
 import { installQuantize, quantizedSpecs } from './outputGrid';
 import type { SceneOptions } from './useSceneOptions';
+import { isTrivialOptions, trivialSceneOptions, type DefaultLayer, type UseSceneTrivialOptions } from './trivialScene';
 import {
   asNodeId,
   type AddNodeSpec,
@@ -57,13 +58,21 @@ function freshIds(mint: () => NodeId, taken: (id: NodeId) => boolean): () => Nod
   };
 }
 
+/** Build a scene outside React from a flat list of items: one layer named
+ *  `'default'`, each item added as a leaf with `pose === data === item`. */
+export function createScene<TItem extends { id: string }>(
+  options: UseSceneTrivialOptions<TItem>,
+): Scene<TItem, DefaultLayer, TItem>;
 /** Build a scene outside React. `useScene` is the usual entry point; reach for
  *  this in tests, in headless rendering, or wherever a scene must outlive a
- *  component. Throws if no system layers are declared. */
+ *  component. Takes the same two call shapes `useScene` does. Throws if no
+ *  system layers are declared. */
 export function createScene<TData, TLayer extends string, TPose = import('./composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
-): Scene<TData, TLayer, TPose> {
-  return buildScene(options, (options.systemLayers ?? []).map(systemLayerRecord), () => options.initial, options.doc);
+): Scene<TData, TLayer, TPose>;
+export function createScene(options: unknown): Scene<unknown, string, unknown> {
+  const full = (isTrivialOptions(options) ? trivialSceneOptions(options) : options) as UseSceneOptions<unknown, string, unknown>;
+  return buildScene(full, (full.systemLayers ?? []).map(systemLayerRecord), () => full.initial, full.doc);
 }
 
 type SceneConfig<TData, TLayer extends string, TPose> =

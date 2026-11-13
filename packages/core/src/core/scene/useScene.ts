@@ -1,62 +1,13 @@
 import { useRef, useSyncExternalStore } from 'react';
-import { IDENTITY_POSE_COMPOSITION } from './composeFrame';
 import { createScene } from './scene';
-import type { NodeId, Scene, UseSceneOptions } from './types';
-import { asNodeId } from './types';
+import type { DefaultLayer, UseSceneTrivialOptions } from './trivialScene';
+import type { Scene, UseSceneOptions } from './types';
 
-/** Trivial-form options: a flat list of items, no layers, no parenting. The
- *  full `useScene` form is reachable any time by adding `systemLayers`.
- *
- *  `historyLimit` and `generateId` are accepted because they're orthogonal to
- *  the "what's in the scene" question. `ops` is intentionally omitted — if
- *  you need custom ops, your app state already lives outside the "flat list
- *  of rects" frame and you should reach for the full `UseSceneOptions`. */
-export interface UseSceneTrivialOptions<TItem extends { id: string }> {
-  items: readonly TItem[];
-  historyLimit?: number;
-  generateId?: () => NodeId;
-  /** Re-render the host on every scene mutation. Default `true`. See
-   *  {@link UseSceneOptions.subscribe}. */
-  subscribe?: boolean;
-}
+export type { UseSceneTrivialOptions } from './trivialScene';
 
 /** A subscribe function that never notifies. `useSyncExternalStore` still runs
  *  (hooks are unconditional) but the host is never re-rendered by the store. */
 const NEVER_SUBSCRIBE = () => () => {};
-
-const DEFAULT_LAYER = 'default' as const;
-type DefaultLayer = typeof DEFAULT_LAYER;
-
-function isTrivialOptions<TItem extends { id: string }>(
-  options: unknown,
-): options is UseSceneTrivialOptions<TItem> {
-  return (
-    !!options
-    && typeof options === 'object'
-    && 'items' in (options as Record<string, unknown>)
-    && !('systemLayers' in (options as Record<string, unknown>))
-  );
-}
-
-function buildScene(options: unknown): Scene<unknown, string, unknown> {
-  if (!isTrivialOptions(options)) {
-    return createScene(options as UseSceneOptions<unknown, string, unknown>);
-  }
-  // A flat list: its items are whatever the caller holds, and nothing nests.
-  return createScene<unknown, DefaultLayer, unknown>({
-    composition: IDENTITY_POSE_COMPOSITION,
-    systemLayers: [{ id: DEFAULT_LAYER }],
-    historyLimit: options.historyLimit,
-    generateId: options.generateId,
-    initial: options.items.map((item) => ({
-      kind: 'mark',
-      layer: DEFAULT_LAYER,
-      pose: item,
-      data: item,
-      id: asNodeId(item.id),
-    })),
-  });
-}
 
 /** React hook returning a kit-owned `Scene`. The Scene is constructed once
  *  per host component and tracked via `useSyncExternalStore`, so React re-
@@ -80,7 +31,7 @@ export function useScene<TData, TLayer extends string, TPose = import('./compose
 /** Create and subscribe to a scene. */
 export function useScene(options: unknown): unknown {
   const sceneRef = useRef<Scene<unknown, string, unknown> | null>(null);
-  if (sceneRef.current === null) sceneRef.current = buildScene(options);
+  if (sceneRef.current === null) sceneRef.current = createScene(options as UseSceneOptions<unknown, string, unknown>);
   const scene = sceneRef.current;
   const subscribed = (options as { subscribe?: boolean } | null)?.subscribe !== false;
   useSyncExternalStore(
