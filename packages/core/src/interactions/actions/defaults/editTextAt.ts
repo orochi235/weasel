@@ -1,4 +1,4 @@
-import { ActionDisabledReason, BETWEEN_GESTURES, isBody, type Action, type ImmediateInvoker, type ImmediateParams } from '@weasel-js/routing';
+import { ActionDisabledReason, isBody, type Action, type ImmediateInvoker, type ImmediateParams } from '@weasel-js/routing';
 
 /**
  * Opens the top-most text node at the pointer in place, the caret at the glyph
@@ -11,7 +11,7 @@ export const editTextAtAction: Action & { requires: string[] } = {
   id: 'editTextAt',
   label: 'Edit text here',
   defaultBinding: [{
-    spec: { kind: 'doubleClick', target: { kindOf: isBody }, phase: BETWEEN_GESTURES },
+    spec: { kind: 'doubleClick', target: { kindOf: isBody } },
     opts: { id: 'editTextAt.doubleClick' },
   }],
   eligible: { mode: 'normal' },
