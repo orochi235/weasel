@@ -9,7 +9,7 @@ import { mergeRegion } from './mergeRegion';
 import { pathFromD } from './pathFromD';
 import { pathToD } from './pathToD';
 
-const inPath = (p: Path, x: number, y: number) => pointInPath(p, x, y, { tolerance: 1e-4 });
+const inPath = (p: Path, x: number, y: number) => pointInPath(p, x, y, { flattenTolerance: 1e-4 });
 
 /** Every grid point is filled by `merged` exactly where it is by `src`. */
 function expectSameRegion(src: Path, merged: Path, step: number): void {

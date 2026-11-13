@@ -108,7 +108,7 @@ export interface FaceArrangementOptions {
    * How far the flattening the arrangement is cut from may stray from a
    * curve, in path units. Default a hundred-thousandth of the inputs' extent.
    */
-  tolerance?: number;
+  flattenTolerance?: number;
 }
 
 /**
@@ -121,7 +121,7 @@ export interface FaceArrangementOptions {
  *
  * The arrangement is cut and traced on a fine flattening of the outlines, so
  * curves that touch or run nearly along each other are resolved as their
- * flattenings are: where two curves lie within `tolerance` of each other
+ * flattenings are: where two curves lie within `flattenTolerance` of each other
  * they may part into slivers. Where two curves cross cleanly, the crossing is
  * then moved onto the curves' own intersection; it stays where the flattening
  * put it where the curves meet nearly tangent or the move would disturb any
@@ -131,7 +131,7 @@ export interface FaceArrangementOptions {
  */
 export function pathFaceArrangement(paths: readonly Path[], options: FaceArrangementOptions = {}): FaceArrangement {
   if (paths.length === 0) return { faces: [], neighbors: [] };
-  const { faces, neighbors, clockwise } = curveFaces(paths, options.tolerance);
+  const { faces, neighbors, clockwise } = curveFaces(paths, options.flattenTolerance);
   return {
     faces: faces.map(({ loops, sources }) => ({ path: keepCorners(paths, writeLoops(loops, clockwise[sources[0]!]!)), sources })),
     neighbors,

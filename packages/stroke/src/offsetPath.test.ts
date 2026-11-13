@@ -23,7 +23,7 @@ function samples(p: PolygonPath): { x: number; y: number }[] {
 /** How far `pt` is from the outline of the region `p` draws. */
 function distanceToOutline(p: Path, pt: { x: number; y: number }): number {
   let best = Infinity;
-  for (const poly of pathToMultiPolygon(p, { tolerance: 0.001 })) {
+  for (const poly of pathToMultiPolygon(p, { flattenTolerance: 0.001 })) {
     for (const ring of poly) {
       for (let i = 0; i + 1 < ring.length; i++) {
         const [ax, ay] = ring[i]!, [bx, by] = ring[i + 1]!;

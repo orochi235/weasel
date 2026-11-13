@@ -27,7 +27,7 @@ const KEEP: Record<Op, (i: boolean[]) => boolean> = {
   exclude: (i) => i[0] !== i[1],
 };
 const flatArea = (op: Op, a: Path, b: Path): number =>
-  mpArea(FLAT[op](pathToMultiPolygon(a, { tolerance: 0.005 }), pathToMultiPolygon(b, { tolerance: 0.005 })));
+  mpArea(FLAT[op](pathToMultiPolygon(a, { flattenTolerance: 0.005 }), pathToMultiPolygon(b, { flattenTolerance: 0.005 })));
 
 describe('curve-preserving booleans', () => {
   it('gives back the original cubics for a union of two disjoint circles', () => {
@@ -90,7 +90,7 @@ describe('curve-preserving booleans', () => {
   it('excludes three circles by parity, as the clipper does', () => {
     const cs = [circle(0, 0, 10), circle(12, 0, 10), circle(6, 10, 10)];
     const out = pathExclude(...cs);
-    const flat = polygonClipping.xor(...cs.map((c) => pathToMultiPolygon(c, { tolerance: 0.005 })) as [MultiPolygon]);
+    const flat = polygonClipping.xor(...cs.map((c) => pathToMultiPolygon(c, { flattenTolerance: 0.005 })) as [MultiPolygon]);
     expect(area(out)).toBeCloseTo(mpArea(flat), 1);
     expect(pointInPath(out, 6, 3)).toBe(true); // inside all three
   });
@@ -210,7 +210,7 @@ describe('agreement with the flattened clipper on random shapes', () => {
         const want = flatArea(op, a, b);
         const got = area(out);
         expect(Math.abs(got - want), `trial ${trial}`).toBeLessThan(0.5 + 0.002 * Math.abs(want));
-        const flat = FLAT[op](pathToMultiPolygon(a, { tolerance: 0.005 }), pathToMultiPolygon(b, { tolerance: 0.005 }));
+        const flat = FLAT[op](pathToMultiPolygon(a, { flattenTolerance: 0.005 }), pathToMultiPolygon(b, { flattenTolerance: 0.005 }));
         const ref = multiPath(flat);
         for (let k = 0; k < 40; k++) {
           const x = -30 + r() * 100, y = -30 + r() * 100;

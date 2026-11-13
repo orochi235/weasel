@@ -12,7 +12,7 @@ const probes = fc.array(fc.tuple(coord(110), coord(110)), { minLength: 20, maxLe
 
 /** Each probe clear of every outline, where flattening and float32 coords cannot move it across one. */
 function clear(paths: readonly Path[], pts: readonly (readonly [number, number])[]): (readonly [number, number])[] {
-  return pts.filter(([x, y]) => paths.every((p) => !strokeHitTest(p, x, y, 0.75, { tolerance: 0.05 })));
+  return pts.filter(([x, y]) => paths.every((p) => !strokeHitTest(p, x, y, 0.75, { flattenTolerance: 0.05 })));
 }
 
 describe('path booleans, near-coincident vertices (shrunk counterexample)', () => {

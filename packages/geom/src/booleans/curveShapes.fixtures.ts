@@ -20,7 +20,7 @@ export const mpArea = (mp: MultiPolygon): number =>
   mp.reduce((s, poly) => s + poly.reduce((t, ring, i) => t + (i === 0 ? 1 : -1) * Math.abs(ringArea(ring)), 0), 0);
 
 /** `p` flattened finely enough that areas compare to a tenth. */
-export const fine = (p: Path): MultiPolygon => pathToMultiPolygon(p, { tolerance: 0.005 });
+export const fine = (p: Path): MultiPolygon => pathToMultiPolygon(p, { flattenTolerance: 0.005 });
 
 /** Area a fill of `p` covers, from a fine flattening resolved by the clipper. */
 export const area = (p: Path): number => {

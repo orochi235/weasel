@@ -6,7 +6,7 @@ import type { Path, PolygonPath } from '../path';
 import { PATH_C, PATH_L, PATH_M, PATH_Z } from '../commands';
 
 /** Flattening fine enough that a curved piece and the clipped flattening of its inputs agree to a tenth. */
-const fine = (p: Path): MultiPolygon => pathToMultiPolygon(p, { tolerance: 0.005 });
+const fine = (p: Path): MultiPolygon => pathToMultiPolygon(p, { flattenTolerance: 0.005 });
 
 /** The subset-by-subset clipping `pathFacePieces` used before it traced the arrangement. */
 function oracleFaces(paths: Path[]): Map<string, MultiPolygon> {
