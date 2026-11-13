@@ -63,7 +63,8 @@ export function useChartDiagram(
   const router = type.edge?.router ?? ROUTER;
   useAutoLayoutCommand(scene, type, participants);
   const ports = useMemo(
-    () => diagramPorts<ChartPose>({ participants, bodies: true, router, edgeStroke }),
+    // Chart has always drawn no port marks: its ports are hit targets only.
+    () => diagramPorts<ChartPose>({ participants, bodies: true, router, edgeStroke, sizePx: 0 }),
     [participants, router, edgeStroke],
   );
   const ends = useMemo(
