@@ -20,7 +20,7 @@ export interface SceneLayerListAnnotations {
 }
 
 /** Arguments for {@link useSceneLayerList}. */
-export interface UseSceneLayerListArgs<TData, TLayer extends string, TPose> {
+export interface UseSceneLayerListOptions<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   selection: SelectionApi;
   /** What the reorder op is dispatched against. Default: the scene itself, as one history entry. */
@@ -53,7 +53,7 @@ export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selec
  * Annotation layers are left out unless `annotations` says how to show them.
  */
 export function useSceneLayerList<TData, TLayer extends string, TPose>(
-  args: UseSceneLayerListArgs<TData, TLayer, TPose>,
+  args: UseSceneLayerListOptions<TData, TLayer, TPose>,
 ): SceneLayerListProps {
   const { scene, selection, adapter, itemFor, rename, label = 'Reorder', annotations } = args;
   const annotationLayers = scene.layers.filter(isAnnotationLayer);
