@@ -115,6 +115,17 @@ describe('duplicateAction', () => {
     expect(lastTransform(scene)).toBeUndefined();
   });
 
+  it('offsets the copies by `params.dx` and `params.dy`, which Transform Again repeats', () => {
+    const scene = makeScene([['a', { x: 5, y: 5 }]]);
+    let committed: Op[] = [];
+    (duplicateAction.invoker as ImmediateInvoker).run({
+      scene, selection: makeSelection(['a']), applyOps: (ops: Op[]) => { committed = ops; },
+    } as never, { dx: 40, dy: -10 });
+    expect(inserted(committed)[0]!.pose).toEqual({ x: 45, y: -5 });
+    expect(lastTransform(scene)).toMatchObject({ kind: 'duplicate', dx: 40, dy: -10 });
+    expect(duplicateAction.params).toMatchObject({ children: { dx: { default: 12 }, dy: { default: 12 } } });
+  });
+
   it('no-ops on an empty selection', () => {
     const scene = makeScene([['a', {}]]);
     const applyOps = vi.fn();
