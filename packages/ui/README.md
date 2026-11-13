@@ -31,8 +31,10 @@ export function Toolbar({ snap, setSnap }: { snap: boolean; setSnap: (on: boolea
 ```
 
 Both stylesheets are required: component styles ship as one bundled file, and read the design tokens
-`@weasel-js/theme/tokens.css` declares. Each component has its own entry, `@weasel-js/ui/components/<Name>`,
-so a bundle holds only the ones it imports; the main entry re-exports them all.
+`@weasel-js/theme/tokens.css` declares. Each component has an entry of its own or of its family,
+`@weasel-js/ui/components/<Name>`, so a bundle holds only the ones it imports; the main entry re-exports them all. A
+family shares one: `PrefsForm` and `PrefsDialog` come from `components/Prefs`, and `PropertyPanel`, `PropertyField`
+and `PropertyRow` from `components/Properties`.
 
 Components that draw glyphs — `ThemeSwitcher`, the paint and stroke rows of `SelectionPanel`, tool palettes — look
 them up by name in the icon registry. Register ui's table, and core's where a panel shows scene properties, as
