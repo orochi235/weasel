@@ -150,9 +150,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Routing-trait classifiers. The kit builds a `NodeRouting` registry per `<SceneCanvas>`
      * from this prop and uses it to derive each hit's `kind`, which tool routing tables
-     * (e.g. `{ target: 'rect', actionId: 'move' }`) match against. Pass `defaultNodeRouting`
-     * for the kit's built-in shape kinds; spread additional entries for consumer-defined
-     * kinds.
+     * (e.g. `{ target: 'rect', actionId: 'move' }`) match against. Default
+     * `inferredNodeRouting`: groups, boolean groups, and data shaped as text, a path or an
+     * image. A list given here replaces it, so add consumer kinds by spreading it
+     * (`[...inferredNodeRouting, mine]`), or `defaultNodeRouting` for data carrying a
+     * `kind` tag. An empty list routes every hit as `'unknown'`.
      *
      * **Memoize the `routing` value.** The registry is memoized on the prop's reference
      * identity: a fresh array each render rebuilds it and cascades into a new adapter,
