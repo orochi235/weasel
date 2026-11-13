@@ -73,9 +73,9 @@ function canvasSnap(
   };
 }
 
-interface CtxOpts { affordance?: unknown; scale?: number; snap?: SnapDep; mods?: Mods }
+interface CtxOptions { affordance?: unknown; scale?: number; snap?: SnapDep; mods?: Mods }
 
-function ctxAt(start: Vec2, x: number, y: number, o: CtxOpts = {}): InvocationCtx {
+function ctxAt(start: Vec2, x: number, y: number, o: CtxOptions = {}): InvocationCtx {
   const scale = o.scale ?? 1;
   return {
     world: { x, y },
@@ -88,7 +88,7 @@ function ctxAt(start: Vec2, x: number, y: number, o: CtxOpts = {}): InvocationCt
 
 function open(
   opts: Partial<RouteEditOptions<Rect>>, edgeId: string, handle: RouteHandle, waypoints: Vec2[] = [],
-  o: Omit<CtxOpts, 'affordance'> = {},
+  o: Omit<CtxOptions, 'affordance'> = {},
 ) {
   const invoker = createRouteEditAction<Rect>({ participants: participants(waypoints), selected: () => [edgeId], ...opts }).invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected an ongoing invoker');
@@ -99,7 +99,7 @@ function open(
 
 /** The waypoints committed by dragging `handle` of `edgeId` to `to`. */
 function dragTo(
-  edgeId: string, handle: RouteHandle, to: Vec2, o: Omit<CtxOpts, 'affordance'> & { waypoints?: Vec2[] } = {},
+  edgeId: string, handle: RouteHandle, to: Vec2, o: Omit<CtxOptions, 'affordance'> & { waypoints?: Vec2[] } = {},
 ): readonly Vec2[] | undefined {
   const commit = vi.fn();
   const { waypoints = [], ...ctxOpts } = o;

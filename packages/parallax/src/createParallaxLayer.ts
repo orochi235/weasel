@@ -4,7 +4,7 @@ import { deriveParallaxView, type ParallaxOpts } from '@weasel-js/core';
 import { isParallaxSource, type ParallaxSource } from './createParallaxPlane';
 
 /** Options for `createParallaxLayer`. */
-export interface CreateParallaxLayerOpts<TData> {
+export interface CreateParallaxLayerOptions<TData> {
   id: string;
   label: string;
   /** Layers re-rendered through the derived inner view. */
@@ -39,7 +39,7 @@ export interface CreateParallaxLayerOpts<TData> {
  * the derived view by definition. Same constraint as `createViewportLayer`.
  */
 export function createParallaxLayer<TData>(
-  opts: CreateParallaxLayerOpts<TData>,
+  opts: CreateParallaxLayerOptions<TData>,
 ): RenderLayer<TData> {
   const { id, label, source, parallax, getOuterView } = opts;
   const read = isParallaxSource(parallax) ? () => parallax.get() : () => parallax;
