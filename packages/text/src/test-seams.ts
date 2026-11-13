@@ -12,3 +12,4 @@
 
 export { _resetLayoutCacheForTests } from './layout/layoutCache';
 export { _resetBidiWarningForTests } from './layout/bidiRegistry';
+export { _resetShapingWarningForTests } from './layout/shaperRegistry';

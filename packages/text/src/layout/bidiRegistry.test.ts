@@ -84,7 +84,7 @@ describe('registerBidi', () => {
     }
     expect(warn).not.toHaveBeenCalled();
     layoutRuns([RUN('\u0627\u0661')], OPTS);
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls.filter(([message]) => String(message).includes('right-to-left'))).toHaveLength(1);
     warn.mockRestore();
   });
 

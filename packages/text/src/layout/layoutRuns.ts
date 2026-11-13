@@ -35,6 +35,7 @@ import type { ResolvedRun } from '../runs/resolveRuns';
 import { resolveAlign } from '../textStyle';
 import { analyzeParagraphs, isParagraphSeparator, orderLine } from './bidiLines';
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
+import { warnShapingWithoutEngine } from './shaperRegistry';
 import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
 import { breakLines, placeLine, type LineOptions } from './layoutLines';
@@ -237,6 +238,7 @@ export function layoutRuns(
     ? analyzeParagraphs(bidi, cps, paragraphBreakAt, direction)
     : null;
   if (!bidi) warnRtlWithoutEngine(cps);
+  if (!shaper) warnShapingWithoutEngine(cps);
 
   const lineOpts = LINE_OPTS;
   lineOpts.maxWidth = maxWidth; lineOpts.alignWidth = alignWidth;
