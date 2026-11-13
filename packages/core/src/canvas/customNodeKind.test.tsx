@@ -44,7 +44,7 @@ function drawGem(from: { x: number; y: number }, to: { x: number; y: number }) {
     return null;
   }
   render(<DepRegistryProvider><Wire /></DepRegistryProvider>);
-  const binding = (gemTool.def?.bindings ?? [])[0] as GestureBinding;
+  const binding = gemTool.bindings![0] as GestureBinding;
   const invoker = insertAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
   const ctx = {
