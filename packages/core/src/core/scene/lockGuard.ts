@@ -51,11 +51,11 @@ export function createLockGuard<TData, TLayer extends string, TPose>(
     isHidden: (id) => isNodeHidden(source, id),
     refuse(id, verb) {
       if (bypass > 0 || !isLocked(id)) return;
-      throw new Error(`Scene: cannot ${verb} "${id}" — it is locked`);
+      throw new Error(`Scene: cannot ${verb} "${id}" — it, a group holding it, or its layer is locked. Unlock it, or make the edit inside scene.unlocked(() => …)`);
     },
     refuseLayer(layer, verb) {
       if (bypass > 0 || !state.layers[state.layerIndex.get(layer) ?? -1]?.locked) return;
-      throw new Error(`Scene: cannot ${verb} layer "${layer}" — it is locked`);
+      throw new Error(`Scene: cannot ${verb} layer "${layer}" — it is locked. Unlock it with setLayerLocked, or make the edit inside scene.unlocked(() => …)`);
     },
     reachable(ids) {
       if (ids.length === 0) return ids;

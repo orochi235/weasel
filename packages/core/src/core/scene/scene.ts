@@ -86,7 +86,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   initialNodes: (registry: SceneRegistry<TPose, TData, TLayer>) => readonly AddNodeSpec<TData, TLayer, TPose>[] | undefined,
   initialDoc: SerializedDoc | undefined,
 ): Scene<TData, TLayer, TPose> {
-  if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer');
+  if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer, or pass { items } for a one-layer scene of plain items');
 
   // The kit's own registry entries sit under the consumer's, so a snapshot carrying a kit-attached
   // function (a grouped container's derived pose) reloads in any scene, not only one that registered it.
