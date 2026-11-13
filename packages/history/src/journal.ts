@@ -123,7 +123,7 @@ export function createJournalInternal(
     changed.emit();
   }
   inner.subscribe(bump);
-  const forkedAtEntryId = parent.currentEntryId();
+  const forkedAtEntryId = parent.nextEntryId();
   // The whole session collapses to one parent entry, so the selection that
   // entry restores is the one the session opened under — not whatever the
   // last keystroke left.

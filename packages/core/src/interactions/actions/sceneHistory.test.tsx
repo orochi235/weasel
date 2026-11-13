@@ -233,7 +233,7 @@ describe('scene.history façade routing', () => {
     expect(scene.history.canRedo()).toBe(false);
     expect(scene.history.entries().undo).toHaveLength(1);
     expect(scene.history.allForwardOps()).toHaveLength(1);
-    expect(scene.history.currentEntryId()).toBeGreaterThan(0);
+    expect(scene.history.nextEntryId()).toBeGreaterThan(0);
     off();
   });
 });

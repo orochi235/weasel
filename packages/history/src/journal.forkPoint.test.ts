@@ -25,7 +25,7 @@ describe('forkedAtEntryId', () => {
 
     parent.applyOps([pushOp(1)], 'a');
     parent.applyOps([pushOp(2)], 'b');
-    const frontier = parent.currentEntryId();
+    const frontier = parent.nextEntryId();
 
     const j = parent.beginJournal({ label: 's' });
     expect(j.forkedAtEntryId).toBe(frontier);
@@ -46,6 +46,6 @@ describe('forkedAtEntryId', () => {
     parent.applyOps([pushOp(99)], 'after-fork');
 
     expect(j.forkedAtEntryId).toBe(captured);
-    expect(parent.currentEntryId()).toBeGreaterThan(captured);
+    expect(parent.nextEntryId()).toBeGreaterThan(captured);
   });
 });

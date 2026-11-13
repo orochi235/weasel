@@ -159,7 +159,7 @@ export interface History {
   allForwardOps(): Op[];
   /** The id that will be assigned to the *next* pushed entry. Stable
    *  monotonic counter; callers use it to tag a fork point (see Journal). */
-  currentEntryId(): number;
+  nextEntryId(): number;
   /** Open a scoped sub-history. All apply/undo/redo on the returned Journal
    *  affect the same adapter; on commit, the Journal's net forward ops are
    *  flushed to this History as one entry. */
@@ -169,7 +169,7 @@ export interface History {
    *  active — at most one journal writes to the adapter at a time, on resume
    *  as well as on open. Staleness checking is the caller's
    *  responsibility — consult `journal.forkedAtEntryId` against
-   *  `currentEntryId()` and your own op-semantic rules to decide whether
+   *  `nextEntryId()` and your own op-semantic rules to decide whether
    *  to resume or discard before calling this. */
   resumeJournal(journal: Journal): void;
   /** The journal open on this history now, which applies and undoes in its place, or null. Optional, so a
