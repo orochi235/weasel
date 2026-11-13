@@ -1893,3 +1893,20 @@ Calls the lanes made without a ruling:
   snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
   the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
   itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
+
+## Audit round twenty-one (2026-11-12): text
+
+- 2026-11-12: The bidi and shaping contracts take the implementing packages' names where they had two:
+  `BidiEngine` (as `@weasel-js/bidi` already called it, over text's `BidiResolver`) and `TextShaper` (as
+  `@weasel-js/text` already called it, over text-shaping's `Shaper`).
+- 2026-11-12: Face addressing splits by job. Registering and loading take a `FontVariant` object
+  (`registerFont`, `registerFontOutlines`, `unregisterFontOutlines`, `loadFontOutlines`, `warmFonts`'s
+  `FontRequest`); a lookup of one face takes `(family, weight = 400, style = 'normal')` positionally (`getFont`,
+  `fontPending`, `hasFontOutlines`, `outlineStatus`, `cssFontFamily`, `cssFontFamilyLoading`), since those run per
+  run and per frame. `cssFontFamily` moved to the lookup shape.
+- 2026-11-12: The scripts the no-shaper warning names are Arabic, Syriac, Thaana, N'Ko, the Indic blocks, Tibetan,
+  Myanmar, Khmer and Mongolian, letters and marks only. Thai and Lao are left out: set one glyph per code point,
+  they read, if with marks placed less well.
+- Open: `fitTextPose` sizes a text pose's box to its text, and `fittedTextPose` (new this batch) sizes the text to
+  its box and writes the sizes out. The names differ by two letters and do opposite things. Whether either gets
+  renamed, and to what, is a naming call left for review.
