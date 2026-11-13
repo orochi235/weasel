@@ -12,6 +12,16 @@ describe('createGridLayer', () => {
     expect(layer.label).toBe('Grid');
   });
 
+  it('draws its default lines in a color that shows on a white canvas and a black one', () => {
+    const layer = createGridLayer({ spacing: 10, bounds: () => ({ x: 0, y: 0, width: 10, height: 10 }) });
+    const line = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100, dpr: 1 })
+      .find((c): c is PathDrawCommand => c.kind === 'path')!;
+    const [r, , , a] = (line.stroke!.paint as { color: string }).color.match(/[\d.]+/g)!.map(Number);
+    // The channel the line leaves over each background, which has to move by a visible step.
+    expect(Math.abs(r! * a! + 255 * (1 - a!) - 255)).toBeGreaterThan(20);
+    expect(Math.abs(r! * a!)).toBeGreaterThan(20);
+  });
+
   it('draw emits one path per cell line', () => {
     const layer = createGridLayer({
       spacing: 10,
