@@ -14,7 +14,8 @@ import {
   intersectRayPlane,
   invert,
   len,
-  lerp,
+  lerpPoint,
+  distance2,
   lookAt,
   multiply,
   normalize,
@@ -347,7 +348,8 @@ describe('closest points', () => {
 
   it('measures, interpolates, and bounds points', () => {
     expect(distance({ x: 1, y: 2, z: 3 }, { x: 4, y: 6, z: 3 })).toBeCloseTo(5, 12);
-    expectVecClose(lerp({ x: 0, y: 0, z: 0 }, { x: 4, y: 2, z: -2 }, 0.25), { x: 1, y: 0.5, z: -0.5 });
+    expect(distance2({ x: 1, y: 2, z: 3 }, { x: 4, y: 6, z: 3 })).toBe(25);
+    expectVecClose(lerpPoint({ x: 0, y: 0, z: 0 }, { x: 4, y: 2, z: -2 }, 0.25), { x: 1, y: 0.5, z: -0.5 });
     expectVecClose(pointOnRay({ origin: { x: 1, y: 1, z: 1 }, direction: { x: 0, y: 2, z: 0 } }, 1.5), { x: 1, y: 4, z: 1 });
     const box = aabbOfPoints([{ x: 1, y: -2, z: 3 }, { x: -1, y: 5, z: 0 }]);
     expectVecClose(box.min, { x: -1, y: -2, z: 0 });
