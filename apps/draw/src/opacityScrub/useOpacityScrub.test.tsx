@@ -12,10 +12,12 @@ import {
   inferredNodeProperties,
   paintAlpha,
   solid,
+  toolGaps,
   useScene,
   useSelection,
   type View,
   type Fill,
+  type Tool,
 } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui/components/SelectionPanel';
 import { WD_RENDERERS } from '../paintRenderers';
@@ -48,6 +50,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
   let api!: {
     scene: ReturnType<typeof useScene<D, L, P>>;
     percent: number | null;
+    tool: Tool;
   };
   function Harness() {
     const scene = useScene<D, L, P>({
@@ -63,7 +66,7 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
       scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
       selection,
     });
-    api = { scene, percent };
+    api = { scene, percent, tool };
     return (
       <ActionsProvider>
       <SelectionPanel
@@ -102,6 +105,11 @@ function setup({ selected = true, data = { fill: { paint: solid('#ff0000') } } a
 }
 
 describe('opacity scrub', () => {
+  it('is a complete held tool, off palettes', () => {
+    const t = setup();
+    expect(toolGaps(t.api().tool)).toEqual([]);
+  });
+
   it('scrubs the selection while O is held, without moving the view', () => {
     const t = setup();
     t.key('keydown');
