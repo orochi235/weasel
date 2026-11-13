@@ -90,11 +90,6 @@ export interface UseSceneTextEditOptions<TData> {
    */
   setStyle?: (data: TData, style: TextStyle) => TData;
   /**
-   * @deprecated Ignored. A node with no `style.fontSize` is edited at the size the canvas lays it out at,
-   * `DEFAULT_TEXT_STYLE.fontSize`, which this never changed: it sized only the overlay, off the glyphs.
-   */
-  defaultFontSize?: number;
-  /**
    * The view to project the overlay through. Omit it and the view is read
    * live from the weasel canvas mounted inside `container` (the first, when
    * there are several). With no canvas there, the node's world box is passed

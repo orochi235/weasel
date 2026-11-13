@@ -83,7 +83,7 @@ describe('useSceneTextEdit — font size', () => {
   });
 
   it('sets a node with no font size of its own at the size the canvas lays it out at', () => {
-    const { hook, container } = mount({ ...STICKY, style: {} }, { defaultFontSize: 24 });
+    const { hook, container } = mount({ ...STICKY, style: {} });
     act(() => hook.result.current.startEdit('s'));
     expect(overlayOf(container).style.fontSize).toBe(`${DEFAULT_TEXT_STYLE.fontSize}px`);
   });
