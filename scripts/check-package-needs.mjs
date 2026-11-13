@@ -14,6 +14,10 @@ import { join } from 'node:path';
 import { packageTraits, probeEntries, repoRoot } from './package-traits.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 import { renderReadme } from './readme-packages.mjs';
+import { exitUnlessOwnInstall } from './lib/own-install.mjs';
+
+// The probes cache their answers under node_modules, and resolve React's types through it.
+exitUnlessOwnInstall(repoRoot);
 
 const write = process.argv.includes('--write');
 const problems = [];

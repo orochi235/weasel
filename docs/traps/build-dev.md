@@ -95,7 +95,3 @@ leaves the server serving the code from before the edit; in a hook, it throws `V
 which forge's prop controls and capture caught as "typescript/playwright is not installed" (2026-11-12). Load
 lazily with `createRequire(import.meta.url)`, which is Node's own. `scripts/vite-runner-lazy.vite.test.ts` imports
 each such module through the runner and calls its loader after; a new one goes there.
-
-**`check:needs -- --write` redraws the README package table from every package's `dist/`.** Run in a
-tree with no fresh build, it strips real badges from core, routing and react; its own error suggests
-the flag. Add a new package's row by hand, matching a sibling's badges, and let the fleet check it.
