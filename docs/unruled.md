@@ -1837,3 +1837,13 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): every kit `<Canvas>` that takes input sets `touch-action: none` at zero specificity, so
   a `<SceneCanvas>` inside a labkit camera with `data-lk-touch='scroll'` keeps one-finger touch for its own tools
   rather than scrolling the page. A consumer class can set `touch-action` back.
+
+## Audit round twenty (2026-11-12): a tuning lab
+
+- A settings edit that sends drafts (a slider drag, a number typed, a color dragged) is one undo step from its first
+  draft to the value it settles on, however long it pauses; a write with no drafts still runs together with the
+  next by labkit's 500 ms gap, which the round-15 entry above leaves open (2026-11-12).
+- Open: a trial's Load snapshot menu offers only the snapshots that trial saved, though the store loads any
+  snapshot of the same instrument into any trial. So a snapshot cannot be loaded into a clone to compare it with
+  the trial that saved it, and a lab wanting presets shared across trials lists `useLabContext().savedSnapshots`
+  itself. Whether the menu offers every snapshot of the instrument, groups them by trial, or stays per trial.
