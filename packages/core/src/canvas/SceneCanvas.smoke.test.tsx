@@ -505,7 +505,7 @@ describe('useStarTool smoke', () => {
         height={400}
         features={['draw']}
         defaultTools={['select', 'star']}
-        initialActiveTool="star"
+        defaultActiveTool="star"
       />,
     );
 
@@ -722,7 +722,7 @@ describe('useLassoTool smoke', () => {
         height={400}
         features={['draw']}
         defaultTools={['select', 'lasso']}
-        initialActiveTool="lasso"
+        defaultActiveTool="lasso"
         {...(mode ? { toolOptions: { lasso: { mode } } } : {})}
         selection={selection as unknown as Parameters<typeof SceneCanvas>[0]['selection']}
       />,

@@ -94,7 +94,7 @@ export function CursorDemo() {
           backgroundFill={{ color: '#ffffff' }}
           scene={scene}
           tools={{ cursor: tool }}
-          initialActiveTool="cursor"
+          defaultActiveTool="cursor"
         />
       </DemoStage>
     </div>

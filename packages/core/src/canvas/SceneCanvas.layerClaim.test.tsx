@@ -90,7 +90,7 @@ function RectHarness({ apiOut }: { apiOut: { sceneRef: { current: ReturnType<typ
       scene={scene}
       layers={{}}
       defaultTools={['rect']}
-      initialActiveTool="rect"
+      defaultActiveTool="rect"
     />
   );
 }
@@ -151,7 +151,7 @@ function OwnerProbeHarness({ apiOut, layerId }: {
       scene={scene}
       layers={{}}
       defaultTools={['rect']}
-      initialActiveTool="rect"
+      defaultActiveTool="rect"
     />
   );
 }

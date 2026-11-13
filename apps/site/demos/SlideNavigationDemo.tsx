@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  SceneCanvas, asNodeId, createPageRun, createPresentationContribution, createScene, fitViewToPage, pagesLayer, placedPagesOf,
+  SceneCanvas, asNodeId, createPageRun, createPresentationContribution, createScene, fitViewToPage, createPagesLayer, placedPagesOf,
   solid, type Path, type PlacedPage, type RectPose,
 } from '@weasel-js/core';
 
@@ -37,7 +37,7 @@ export function SlideNavigationDemo() {
   const pages = useMemo(() => placedPagesOf(scene), [scene]);
   const [shown, setShown] = useState<PlacedPage>(pages[0]!);
   const ambient = useMemo(() => [createPresentationContribution({ onPage: setShown })], []);
-  const layers = useMemo(() => ({ pages: { layer: pagesLayer(pages, { fill: '#ffffff' }), before: 'scene' as const } }), [pages]);
+  const layers = useMemo(() => ({ pages: { layer: createPagesLayer(pages, { fill: '#ffffff' }), before: 'scene' as const } }), [pages]);
   const start = useMemo(() => fitViewToPage(pages[0]!, { width: W, height: H }, { x: 0, y: 0, scale: { x: 1, y: 1 } }) ?? undefined, [pages]);
   return (
     <div>

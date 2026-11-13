@@ -18,7 +18,7 @@ import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
 import { emitFramePanel, emitLayersPanel, emitTextPanel, LINE_H, rectPath } from './overlayPanels';
 
 /** What `createDebugOverlayLayer` paints from: a sink to snapshot and the features to draw. */
-export interface CreateDebugOverlayLayerOpts {
+export interface CreateDebugOverlayLayerOptions {
   sink: { snapshot(): DebugSnapshot };
   config: DebugConfig;
 }
@@ -35,7 +35,7 @@ const FPS_WINDOW = 60;
 export function createDebugOverlayLayer({
   sink,
   config,
-}: CreateDebugOverlayLayerOpts): RenderLayer<unknown> {
+}: CreateDebugOverlayLayerOptions): RenderLayer<unknown> {
   // Timestamps of the last FPS_WINDOW draws, kept for the life of the layer.
   const fpsHistory: number[] = [];
   return {

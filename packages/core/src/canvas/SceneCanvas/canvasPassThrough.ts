@@ -8,7 +8,7 @@ const OWN_PROPS = [
   'ingestion', 'layoutDropTarget', 'reflowTransition', 'poseTransition', 'geometryProjection', 'routing',
   'selection', 'selectionOptions', 'selectable', 'tools', 'features', 'enableKeybindings',
   'claimKeys', 'enableGestureDispatcher', 'onToolsCreated', 'defaultTools', 'toolOptions',
-  'initialActiveTool', 'ambient', 'versionCheck', 'longPress', 'viewport', 'layers', 'actions',
+  'defaultActiveTool', 'ambient', 'versionCheck', 'longPress', 'viewport', 'layers', 'actions',
   'tune', 'bindingOverrides', 'describeKind', 'animator', 'views', 'children', 'debug', 'alphaFor', 'layerVisibility',
   'layerOrder', 'isPointerInteractive', 'enteredGroup', 'onDoubleClick', 'onClick', 'onHover', 'chromeVisibility', 'modes',
   'pathEdit', 'defaultPathEdit', 'getFocused', 'cursorCoordsHud', 'pickHud', 'modalityHud', 'view',

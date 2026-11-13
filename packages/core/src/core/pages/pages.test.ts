@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds, type Page } from './pages';
-import { pagesLayer } from './pagesLayer';
+import { createPagesLayer } from './pagesLayer';
 import { fitViewToPage, pageInView } from './fitViewToPage';
 
 const A: Page = { id: 'a', width: 100, height: 200 };
@@ -85,10 +85,10 @@ describe('adjacentPage', () => {
   });
 });
 
-describe('pagesLayer', () => {
+describe('createPagesLayer', () => {
   it('paints one filled rect per page, in world space', () => {
     const placed = layoutPages([A, B], { gap: 10 });
-    const layer = pagesLayer(placed, { fill: '#ffffff' });
+    const layer = createPagesLayer(placed, { fill: '#ffffff' });
     const commands = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 10, height: 10, dpr: 1 });
     expect(commands).toEqual([
       { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 100, height: 200 }, fill: { paint: { kind: 'solid', color: '#ffffff' } } },
@@ -99,7 +99,7 @@ describe('pagesLayer', () => {
 
   it('takes a fill per page', () => {
     const placed = layoutPages([A, B]);
-    const layer = pagesLayer(placed, { fill: (page) => (page.id === 'a' ? '#111111' : '#222222') });
+    const layer = createPagesLayer(placed, { fill: (page) => (page.id === 'a' ? '#111111' : '#222222') });
     const fills = layer
       .draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 10, height: 10, dpr: 1 })
       .map((c) => (c.kind === 'path' ? c.fill : null));

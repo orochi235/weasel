@@ -23,12 +23,12 @@ import { RIGID_POSE_COMPOSITION } from './composePose';
 import { placingOnPageRunWrite } from '../pages/placeOnPages';
 import { installQuantize, quantizedSpecs } from './outputGrid';
 import type { SceneOptions } from './useSceneOptions';
+import { isTrivialOptions, trivialSceneOptions, type DefaultLayer, type UseSceneTrivialOptions } from './trivialScene';
 import {
   asNodeId,
   type AddNodeSpec,
   type LayerRecord,
   type NodeId,
-  type RegisteredOp,
   type Scene,
   type SceneRegistry,
   type SavedScene,
@@ -57,13 +57,21 @@ function freshIds(mint: () => NodeId, taken: (id: NodeId) => boolean): () => Nod
   };
 }
 
+/** Build a scene outside React from a flat list of items: one layer named
+ *  `'default'`, each item added as a leaf with `pose === data === item`. */
+export function createScene<TItem extends { id: string }>(
+  options: UseSceneTrivialOptions<TItem>,
+): Scene<TItem, DefaultLayer, TItem>;
 /** Build a scene outside React. `useScene` is the usual entry point; reach for
  *  this in tests, in headless rendering, or wherever a scene must outlive a
- *  component. Throws if no system layers are declared. */
+ *  component. Takes the same two call shapes `useScene` does. Throws if no
+ *  system layers are declared. */
 export function createScene<TData, TLayer extends string, TPose = import('./composePose').RectPose>(
   options: UseSceneOptions<TData, TLayer, TPose>,
-): Scene<TData, TLayer, TPose> {
-  return buildScene(options, (options.systemLayers ?? []).map(systemLayerRecord), () => options.initial, options.doc);
+): Scene<TData, TLayer, TPose>;
+export function createScene(options: unknown): Scene<unknown, string, unknown> {
+  const full = (isTrivialOptions(options) ? trivialSceneOptions(options) : options) as UseSceneOptions<unknown, string, unknown>;
+  return buildScene(full, (full.systemLayers ?? []).map(systemLayerRecord), () => full.initial, full.doc);
 }
 
 type SceneConfig<TData, TLayer extends string, TPose> =
@@ -78,7 +86,7 @@ function buildScene<TData, TLayer extends string, TPose>(
   initialNodes: (registry: SceneRegistry<TPose, TData, TLayer>) => readonly AddNodeSpec<TData, TLayer, TPose>[] | undefined,
   initialDoc: SerializedDoc | undefined,
 ): Scene<TData, TLayer, TPose> {
-  if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer');
+  if (layers.length === 0) throw new Error('Scene: systemLayers must declare at least one layer, or pass { items } for a one-layer scene of plain items');
 
   // The kit's own registry entries sit under the consumer's, so a snapshot carrying a kit-attached
   // function (a grouped container's derived pose) reloads in any scene, not only one that registered it.
@@ -193,6 +201,13 @@ function buildScene<TData, TLayer extends string, TPose>(
   return scene;
 }
 
+/** Options for {@link sceneFromJSON}: the scene settings a snapshot does not
+ *  carry, and how its nodes are read back. */
+export type SceneFromJSONOptions<TData, TLayer extends string, TPose> = Pick<
+  SceneOptions<TData, TLayer, TPose>,
+  'registry' | 'historyLimit' | 'coalesceWindowMs' | 'generateId' | 'ops' | 'composition' | 'layoutFrame' | 'quantize'
+> & SpecsFromSerializedOptions<TData, TLayer, TPose>;
+
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.
  *  Function fields (e.g., `clipFromPose`) are resolved by string key via the
  *  registry passed in `options`. Throws on unknown version, unknown registry
@@ -200,16 +215,7 @@ function buildScene<TData, TLayer extends string, TPose>(
  *  The scene starts with empty history. */
 export function sceneFromJSON<TData, TLayer extends string, TPose>(
   json: SavedScene<TData, TLayer, TPose>,
-  options: {
-    registry?: SceneRegistry<TPose, TData, TLayer>;
-    historyLimit?: number;
-    coalesceWindowMs?: number;
-    generateId?: () => NodeId;
-    ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
-    composition?: SceneOptions<TData, TLayer, TPose>['composition'];
-    layoutFrame?: SceneOptions<TData, TLayer, TPose>['layoutFrame'];
-    quantize?: SceneOptions<TData, TLayer, TPose>['quantize'];
-  } & SpecsFromSerializedOptions<TData, TLayer, TPose> = {},
+  options: SceneFromJSONOptions<TData, TLayer, TPose> = {},
 ): Scene<TData, TLayer, TPose> {
   assertSnapshotShape(json);
   return buildScene(

@@ -39,7 +39,7 @@ export const viewportWheelPanAction: Action & { requires: string[] } = {
 };
 
 /** Tuning for {@link createViewportWheelPanAction}. */
-export interface WheelPanOptions {
+export interface ViewportWheelPanOptions {
   /** Lock the pan to one axis. Default `'both'`. */
   axis?: 'both' | 'x' | 'y';
 }
@@ -47,7 +47,7 @@ export interface WheelPanOptions {
 /** Builds a `viewport.wheelPan` descriptor with `opts` baked into both of its
  *  default bindings. `viewportWheelPanAction` is the unconfigured one. */
 export function createViewportWheelPanAction(
-  opts: WheelPanOptions = {},
+  opts: ViewportWheelPanOptions = {},
 ): Action & { requires: string[] } {
   const axis = opts.axis ?? 'both';
   return {

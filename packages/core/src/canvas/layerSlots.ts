@@ -1,5 +1,5 @@
 import type { RenderLayer } from '../core/layers/render';
-import type { SelectionOverlayLayerOpts } from 'domains/selection/overlay';
+import type { SelectionOverlayLayerOptions } from 'domains/selection/overlay';
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { PathEditingOverlayStyle } from 'domains/paths/pathEditingOverlayLayer';
 
@@ -35,7 +35,7 @@ export function isCustomEntry(v: unknown): v is CustomLayerEntry {
  *  minus the `getSelection`/`getPose` the canvas wires automatically and the
  *  `resizeHandles` it takes from the hit-test, so the two cannot disagree. */
 export type SelectionOverlaySlotConfig<TPose> = Omit<
-  SelectionOverlayLayerOpts<TPose>,
+  SelectionOverlayLayerOptions<TPose>,
   'getSelection' | 'getPose' | 'resizeHandles'
 > & {
   /** Override the auto-wired pose lookup (overlay-aware → adapter fallback). */

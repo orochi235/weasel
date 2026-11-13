@@ -66,7 +66,7 @@ export function LassoDemo() {
           selection={selection}
           features={['pick']}
           defaultTools={['lasso']}
-          initialActiveTool="lasso"
+          defaultActiveTool="lasso"
           toolOptions={{ lasso: { mode } }}
         />
       </DemoStage>

@@ -21,7 +21,7 @@ import { clippedToBox } from '../../canvas/nodeShapes/textPainter';
 
 
 /** Options for `createTextLayer`. */
-export interface CreateTextLayerOpts<T> {
+export interface CreateTextLayerOptions<T> {
   id?: string;
   label?: string;
   getTexts: () => readonly T[];
@@ -36,7 +36,7 @@ export interface CreateTextLayerOpts<T> {
 }
 
 /** Build a `RenderLayer` that emits one `TextDrawCommand` per text node. */
-export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<unknown> {
+export function createTextLayer<T>(opts: CreateTextLayerOptions<T>): RenderLayer<unknown> {
   const { id = 'text', label = 'Text', getTexts, getPose, isHidden, clipToBounds = false } = opts;
   return {
     id,

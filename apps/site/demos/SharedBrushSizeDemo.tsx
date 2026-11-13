@@ -124,7 +124,7 @@ export function SharedBrushSizeDemo() {
           scene={scene}
           selection={selection}
           tools={registry}
-          initialActiveTool="dots"
+          defaultActiveTool="dots"
           onToolsCreated={setTools}
         >
           <OptionValues values={values} />

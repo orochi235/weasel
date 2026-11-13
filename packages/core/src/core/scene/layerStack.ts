@@ -50,7 +50,9 @@ export function createLayerStack<TLayer extends string>(
 
   function requireLayerIndex(layer: TLayer): number {
     const i = state.layerIndex.get(layer);
-    if (i === undefined) throw new Error(`Scene: unknown layer "${layer}"`);
+    if (i === undefined) {
+      throw new Error(`Scene: unknown layer "${layer}"; its layers are ${state.layers.map((l) => `"${l.id}"`).join(', ')}`);
+    }
     return i;
   }
 

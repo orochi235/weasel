@@ -20,7 +20,7 @@ beforeAll(() => {
 
 const START: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
-interface DragOpts {
+interface DragOptions {
   features?: 'view'[];
   /** `PointerEvent.button` of the press. */
   button?: number;
@@ -28,7 +28,7 @@ interface DragOpts {
 
 /** Mount a canvas, drag 30px right and 20px down, and return the last view it
  *  reported and whether the press was default-prevented. */
-function drag(ambient: Contribution[], { features = ['view'], button = 0 }: DragOpts = {}): { view: View; prevented: boolean } {
+function drag(ambient: Contribution[], { features = ['view'], button = 0 }: DragOptions = {}): { view: View; prevented: boolean } {
   const scene = createScene<unknown, 'main', { x: number; y: number }>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   let last = START;
   const { container } = render(

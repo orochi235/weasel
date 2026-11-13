@@ -23,6 +23,8 @@ export type { PaintBoundsFn } from '../canvas/paintCull';
 export type { SceneCanvasProps, SceneCanvasHit, SceneCanvasLayers, SceneCanvasLongPress } from '../canvas/SceneCanvas';
 export type { SceneCanvasTextEditor } from '../canvas/SceneCanvas/defaultTextEditor';
 export type { SceneCanvasGeometry } from '../canvas/SceneCanvas/geometryProps';
+export type { SceneCanvasIngestion } from '../canvas/SceneCanvas/ingestionProps';
+export type { SceneCanvasSelectTool } from '../canvas/SceneCanvas/selectToolProps';
 export type { SceneCanvasViewport } from '../canvas/SceneCanvas/viewportProp';
 export type { EdgePanOptions } from '../canvas/SceneCanvas/useEdgePan';
 export { DEFAULT_CONTENT_MARGIN, type ContentViewBounds, type SceneCameraProps } from '../canvas/SceneCanvas/sceneViewBounds';
@@ -152,12 +154,12 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 
 // ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from '../core/layers/render';
-export { workspaceTintLayer, modeDecorationLayer } from '../domains/modes/modeLayers';
+export { createWorkspaceTintLayer, createModeDecorationLayer } from '../domains/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
 export { modeTriggers } from '../domains/modes/modeTriggers';
 export type { ModeTriggerHandlers } from '../domains/modes/modeTriggers';
 export { createChildrenLayer } from '../core/layers/children';
-export type { CreateChildrenLayerOpts } from '../core/layers/children';
+export type { CreateChildrenLayerOptions } from '../core/layers/children';
 
 // ─── Debug overlay subsystem (URL-flagged tree-shakeable) ───────────────────
 export * from '../debug';

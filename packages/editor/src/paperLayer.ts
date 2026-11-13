@@ -1,4 +1,4 @@
-import { pagesLayer, type PlacedPage, type RenderLayer } from '@weasel-js/core';
+import { createPagesLayer, type PlacedPage, type RenderLayer } from '@weasel-js/core';
 import { useMemo } from 'react';
 
 /** A page's size, in world units. */
@@ -9,7 +9,7 @@ export interface PageSize { width: number; height: number }
  *  draw nothing themselves; this is their paper. Empty in a document without pages. */
 export function usePaperLayer(pages: readonly PlacedPage[], backgroundColor: string): RenderLayer<unknown> {
   return useMemo<RenderLayer<unknown>>(
-    () => pagesLayer(pages, { fill: backgroundColor, id: 'paper', label: 'Paper' }),
+    () => createPagesLayer(pages, { fill: backgroundColor, id: 'paper', label: 'Paper' }),
     [pages, backgroundColor],
   );
 }

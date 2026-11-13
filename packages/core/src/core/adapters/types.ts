@@ -1,5 +1,5 @@
 import type { Op } from '../ops/types';
-import type { ParallaxOpts } from '../viewport/parallax';
+import type { ParallaxOptions } from '../viewport/parallax';
 import type { View } from '../viewport/view';
 import type { PoseDescriptor } from '../geometry/poseDescriptor';
 import type { Target } from '@weasel-js/animator';
@@ -243,7 +243,7 @@ export interface InsertAdapter<TNode extends { id: string }> {
  * parallax planes where it is there.
  */
 export interface LayerEnumerableAdapter<TLayer extends string = string> {
-  getLayers?(): readonly { id: TLayer; visible: boolean; parallax?: ParallaxOpts }[];
+  getLayers?(): readonly { id: TLayer; visible: boolean; parallax?: ParallaxOptions }[];
   /** Call `listener` whenever the list `getLayers` answers may have changed.
    *  A canvas reads the list at mount and again on each call, so an adapter
    *  whose list never changes leaves this out. */

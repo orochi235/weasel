@@ -14,7 +14,7 @@ import { measuredSegmentCommands, tickedSegment, viewWorldToScreen, type DrawCom
 import type { Guide, SpacingGap } from './types';
 
 /** Options for `createGuidesLayer`. */
-export interface GuidesLayerOpts {
+export interface GuidesLayerOptions {
   /** Stable getter for the live guide list — typically `useGuides().getGuides`. */
   getGuides: () => readonly Guide[];
   /** Where the layer hears that `getGuides` changed, so the canvas repaints:
@@ -51,7 +51,7 @@ export interface GuidesLayerOpts {
 const DEFAULT_COLOR = '#3aa0ff';
 /** Build a `RenderLayer` that draws guide lines and spacing gaps in screen
  *  space, projected from world coordinates via the active view. */
-export function createGuidesLayer(opts: GuidesLayerOpts): RenderLayer<unknown> {
+export function createGuidesLayer(opts: GuidesLayerOptions): RenderLayer<unknown> {
   const lineWidth = opts.lineWidth ?? 1;
   const color = opts.color ?? DEFAULT_COLOR;
   const gapColor = opts.gapColor ?? color;

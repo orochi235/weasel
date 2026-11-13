@@ -9,7 +9,7 @@ type Props = SceneCanvasProps<unknown, string, unknown>;
 export type SceneCanvasToolProps = Pick<
   Props,
   | 'tools' | 'defaultTools' | 'toolOptions' | 'viewport' | 'ambient' | 'longPress'
-  | 'initialActiveTool' | 'modes' | 'onToolsCreated' | 'selectTool' | 'actions'
+  | 'defaultActiveTool' | 'modes' | 'onToolsCreated' | 'selectTool' | 'actions'
 >;
 
 /** The canvas's tools, and the contributions and standard actions its presets bring. */
@@ -35,7 +35,7 @@ export function useSceneCanvasTools(args: {
     ambient: props.ambient,
     actions: props.actions,
     pressFeedback: props.longPress?.feedback,
-    initialActiveTool: props.initialActiveTool,
+    defaultActiveTool: props.defaultActiveTool,
     modes: props.modes,
     onToolsCreated: props.onToolsCreated,
   });

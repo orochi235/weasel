@@ -1,5 +1,5 @@
 export { createTextLayer } from './textLayer';
-export type { CreateTextLayerOpts } from './textLayer';
+export type { CreateTextLayerOptions } from './textLayer';
 export { useTextEdit, TEXT_EDIT_FONT_HOLD } from '@weasel-js/text-dom';
 export type {
   TextEditScreenPose,

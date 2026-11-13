@@ -3,7 +3,7 @@ export { parseDebugFlags } from './parseDebugFlags';
 export { DEBUG_FEATURES } from './features';
 export { createDebugSink } from './createDebugSink';
 export { createDebugOverlayLayer, buildDebugOverlayCommands } from './createDebugOverlayLayer';
-export type { CreateDebugOverlayLayerOpts } from './createDebugOverlayLayer';
+export type { CreateDebugOverlayLayerOptions } from './createDebugOverlayLayer';
 export { DEFAULT_DEBUG_THEME, DEFAULT_DEBUG_STROKES } from './defaultTheme';
 export type {
   DebugConfig,

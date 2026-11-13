@@ -1,9 +1,8 @@
-import type { History, SerializedHistory } from '@weasel-js/history';
-import type { SerializedSceneHistory } from './historyForm';
-import type { ParallaxOpts } from '../viewport/parallax';
+import type { History } from '@weasel-js/history';
+import type { SceneHistoryPersistence } from './historyForm';
 import type { UnitScope } from '@weasel-js/quantity';
 import type { LayoutStrategy } from '../../layout/types';
-import type { AddLayerSpec, LayerRecord, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
+import type { AddLayerSpec, LayerRecord, SceneLayerMembers, SystemLayerRecord, SystemLayerSpec, UserLayerRecord } from './layerTypes';
 import type { LayoutFrame, LayoutMove } from './layoutTypes';
 import type { PoseComposition } from './composeFrame';
 import type { PoseRemoval, PoseWrite, PoseWriteOrigin, RemovedNode, ScenePoseReports } from './poseWrites';
@@ -222,7 +221,8 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> ext
  * default; `TLayer` is the union of layer names.
  */
 export interface Scene<TData, TLayer extends string, TPose = RectPose>
-  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll, SceneQuantize<TData, TPose>, SceneSelectionMembers {
+  extends ScenePoseReports<TPose, Node<TData, TLayer, TPose>>, SceneChanges, SceneDocValues, SceneEditPasses, SceneDeclaredFieldSetters, SceneScroll, SceneQuantize<TData, TPose>, SceneSelectionMembers,
+  SceneLayerMembers<TLayer>, SceneHistoryPersistence {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;
   readonly roots: readonly NodeId[];
@@ -231,6 +231,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   readonly registry: SceneRegistry<TPose, TData, TLayer>;
   /** See {@link SceneOptions.composition}. */
   readonly composition: PoseComposition<TPose>;
+  /** The node `id` names, or `undefined` when it is not in the scene. */
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   /** A token for the node `id` names right now, for telling one node from a
    *  later one that reuses its id. It holds for as long as the node stays in
@@ -239,8 +240,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  by `loadState`. `undefined` when `id` is not in the scene. Compare tokens
    *  for equality only; their order means nothing. */
   incarnation(id: NodeId): number | undefined;
+  /** `id`'s children, first painted first; empty for a mark or an unknown id. */
   childrenOf(id: NodeId): readonly NodeId[];
+  /** `id`'s parent, its parent's parent, and so on up to a root. */
   ancestorsOf(id: NodeId): readonly NodeId[];
+  /** Every node id in paint order: layer by layer from the bottom, and
+   *  depth-first within a layer, a parent before its children. */
   renderOrder(): Iterable<NodeId>;
   /** The same layer-major sequence as {@link Scene.renderOrder}, as the nodes
    *  themselves. Prefer this wherever the ids are only going to be resolved
@@ -259,6 +264,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   mintId(): NodeId;
 
   // Mutations (all auto-undoable)
+  /** Add a node, under `spec.parent` when it names one, as one undoable step.
+   *  Returns its id: `spec.id`, or a fresh one from {@link Scene.mintId}. */
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;
   /** Delete `id`, its **entire subtree**, and **everything that derives from**
    *  any of those nodes — a node listing one of them in `dependsOn` goes too,
@@ -280,7 +287,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  A set, not a restore order: a dependent can be reached before the parent
    *  it sits under, which is also in the closure. */
   removalClosure(ids: readonly NodeId[]): readonly NodeId[];
+  /** Replace `id`'s `data` with `patch.data`, as one undoable step. Throws
+   *  on a locked node; data equal to what the node holds records nothing. */
   update(id: NodeId, patch: { data: TData }): void;
+  /** Write `id`'s pose, as one undoable step. Throws on a locked node; the
+   *  pose it already holds records nothing. A container with a layout
+   *  re-arranges in the same step, whether the write moves one of its
+   *  children or resizes the container. */
   setPose(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant
    *  is moved to the same layer, recorded as a **single** undo step.
@@ -332,17 +345,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Shift `id` to `index` within its **current** parent's child list. Unlike
    *  {@link move}, the parent never changes — only sibling order. */
   reorder(id: NodeId, index: number): void;
-  /** Show or hide a layer. Hiding drops its nodes from the selection. */
-  setLayerVisible(layer: TLayer, visible: boolean): void;
-  /** Lock or unlock a layer. A locked layer still paints, but its nodes are
-   *  out of reach: picking and area selection pass over them, the selection
-   *  drops them, and every node mutation on them throws. Locking is never
-   *  blocked by the lock, and neither are the other layer operations. */
-  setLayerLocked(layer: TLayer, locked: boolean): void;
-  /** Set or clear (`undefined`) a layer's parallax — see
-   *  `LayerRecord.parallax`. Undoable; an animation tweening it writes inside
-   *  {@link Scene.untracked} so no frame becomes an undo step. */
-  setLayerParallax(layer: TLayer, parallax: ParallaxOpts | undefined): void;
   /** Whether `id` is locked: it or an ancestor carries `locked`, or sits on a
    *  locked layer. A lock covers its whole subtree, whatever layers the
    *  descendants are tagged to. An id not in the scene is not locked. */
@@ -362,16 +364,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Run `fn` with the lock guard lifted, for a programmatic edit that has to
    *  reach a locked node. Undo and redo never need it. */
   unlocked<T>(fn: () => T): T;
-  addLayer(spec: AddLayerSpec<TLayer>): void;
-  /** Drop a user layer and every node tagged to it, as one undoable step.
-   *  Removal cascades, so this also deletes nodes **on other layers** that
-   *  derive from a node on this one. */
-  removeLayer(layer: TLayer): void;
-  renameLayer(layer: TLayer, name: string): void;
-  moveLayer(layer: TLayer, index: number): void;
 
   // Custom op seam
+  /** Teach the scene an op kind of its own: how to apply a payload and how to
+   *  revert it. `kit:` kinds are reserved and throw. */
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
+  /** Apply a payload of a kind {@link Scene.registerOp} taught, recorded as
+   *  any other edit is: one undoable step, or part of the open `batch`. */
   recordOp<P>(op: { kind: string; payload: P }): void;
 
   /** Install (or clear with `null`) the active-journal accessor after scene
@@ -421,10 +420,17 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  {@link Scene.undo} does; `getVersion` / `subscribe` on it report the
    *  engine's history version, not the scene's. */
   readonly history: History;
+  /** Step back one history entry. Returns false when there is none. */
   undo(): boolean;
+  /** Step forward one history entry. Returns false when there is none. */
   redo(): boolean;
+  /** Whether {@link Scene.undo} has an entry to step back. */
   canUndo(): boolean;
+  /** Whether {@link Scene.redo} has an entry to step forward. */
   canRedo(): boolean;
+  /** Run `fn`, recording every edit it makes as one undo entry labeled
+   *  `label`, and return what it returns. A batch inside another joins it.
+   *  When `fn` throws, its edits are reverted and nothing is recorded. */
   batch<T>(label: string, fn: () => T, options?: import('./recorder').SceneBatchOptions): T;
   /** The layout group `id` declares, or `null` for a mark or a group with none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
@@ -447,38 +453,6 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Jump to the given history index, clamped to [0, total]. Returns true if any
    *  movement occurred; false, moving nothing, while a journal is open over the stack. */
   jumpToHistoryIndex(index: number): boolean;
-
-  // History persistence
-  /** Snapshot the undo/redo history in a JSON-serializable form (the
-   *  engine's `SerializedHistory`, marked with the scene's recorded form).
-   *  An entry holds the scene's own ops, whichever way the edit was made.
-   *  An op handed to `applyBatch` that wrote no scene state is held as
-   *  itself, and an entry with a nameless one is dropped. Payload
-   *  JSON-safety (e.g. typed arrays inside poses) is the caller's concern.
-   *  Do not call mid-`batch` — the open batch's ops are not yet recorded. */
-  serializeHistory(): SerializedSceneHistory;
-  /** Replace the undo/redo history from a `serializeHistory()` snapshot.
-   *  Call on a scene whose node/layer state already matches the snapshot's
-   *  head state (i.e. right after `loadState` from the paired scene
-   *  snapshot); node state is NOT mutated. Ops re-registered via
-   *  `registerOp` before this call round-trip; unknown kinds become no-op
-   *  placeholders; external ops rebuild via the global op-factory registry
-   *  and replay against the `setHistoryAdapter` accessor. Restored entries
-   *  never coalesce with new ones. Notifies once. A snapshot that is not in
-   *  the current recorded form (see `SCENE_HISTORY_FORM`) is dropped:
-   *  the history is left as it was. Do not call mid-`batch`:
-   *  the stacks are replaced underneath the open batch, whose eventual
-   *  flush would graft onto (and evict against) the restored stacks. */
-  restoreHistory(snapshot: SerializedHistory): void;
-  /** Install (or clear with `null`) the accessor for the adapter that
-   *  RESTORED external ops apply against on undo/redo: the ops handed to
-   *  `applyBatch` that wrote no scene state, such as a selection change,
-   *  rebuilt from a `restoreHistory` snapshot. Resolved lazily at each
-   *  apply, so wiring order relative to `restoreHistory` doesn't matter.
-   *  Live `applyBatch` entries are unaffected (they bind their call-site
-   *  adapter). If unset when a restored op applies, the op is a debug-warned
-   *  no-op. */
-  setHistoryAdapter(fn: (() => unknown) | null): void;
 
   // Serialization
   /** Snapshot the current scene state to a JSON-serializable shape.

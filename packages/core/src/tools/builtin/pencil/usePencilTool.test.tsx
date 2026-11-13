@@ -28,7 +28,7 @@ describe('usePencilTool through <SceneCanvas>', () => {
     });
     const { container } = render(
       <SceneCanvas scene={scene} layers={{}} width={400} height={400} features={['draw']}
-        defaultTools={['select', 'pencil']} initialActiveTool="pencil" />,
+        defaultTools={['select', 'pencil']} defaultActiveTool="pencil" />,
     );
     const canvas = container.querySelector('canvas')!;
     const pointer = (type: string, x: number, y: number) =>

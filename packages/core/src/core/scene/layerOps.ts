@@ -2,11 +2,11 @@
  * The kit's layer op kinds: visibility, lock, parallax, and adding, removing,
  * renaming, and moving a layer.
  */
-import type { ParallaxOpts } from 'core/viewport/parallax';
+import type { ParallaxOptions } from 'core/viewport/parallax';
 import type { KitOpsEnv } from './kitOps';
 import type { LayerRecord, RegisteredOp, UserLayerRecord } from './types';
 
-function setParallax(record: { parallax?: ParallaxOpts }, to: ParallaxOpts | undefined): void {
+function setParallax(record: { parallax?: ParallaxOptions }, to: ParallaxOptions | undefined): void {
   if (to === undefined) delete record.parallax;
   else record.parallax = to;
 }
@@ -30,7 +30,7 @@ export function registerLayerOps<TData, TLayer extends string, TPose>(
     revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
   });
 
-  registerKitOp<{ layer: TLayer; from?: ParallaxOpts; to?: ParallaxOpts }>('kit:setLayerParallax', {
+  registerKitOp<{ layer: TLayer; from?: ParallaxOptions; to?: ParallaxOptions }>('kit:setLayerParallax', {
     apply: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.to); },
     revert: (p) => { setParallax(state.layers[requireLayerIndex(p.layer)], p.from); },
   });

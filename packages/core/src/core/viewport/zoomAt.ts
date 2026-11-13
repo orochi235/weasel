@@ -4,7 +4,7 @@ import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, normalizeZoom } from './zoomBounds'
 
 /** Optional clamp bounds for `zoomAt`. Defaults: {@link DEFAULT_MIN_ZOOM} /
  *  {@link DEFAULT_MAX_ZOOM} (per axis). */
-export interface ZoomClampOpts {
+export interface ZoomClampOptions {
   min?: ZoomBound;
   max?: ZoomBound;
 }
@@ -48,7 +48,7 @@ export function zoomAt(
   input: View,
   anchor: { x: number; y: number },
   factor: ZoomFactor,
-  opts?: ZoomClampOpts,
+  opts?: ZoomClampOptions,
 ): View {
   const view = normalizeView(input);
   const fx = zoomBy(typeof factor === 'number' ? factor : factor.x);

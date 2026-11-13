@@ -247,7 +247,7 @@ describe('<SceneCanvas features>', () => {
     const { seen, canvas, id, scene, tools } = mount({
       features: ['move'],
       tools: { idle: { id: 'idle', eligibility: {}, bindings: [] } },
-      initialActiveTool: 'idle',
+      defaultActiveTool: 'idle',
     });
     expect(tools().active).toBe('idle');
     act(() => seen.selection!.set([id]));
@@ -289,8 +289,8 @@ describe('<SceneCanvas features>', () => {
     expect(seen.actionIds).toContain('insert');
   });
 
-  it('initialActiveTool overrides the select default', () => {
-    const { tools } = mount({ features: ['pick'], defaultTools: ['rect'], initialActiveTool: 'rect' });
+  it('defaultActiveTool overrides the select default', () => {
+    const { tools } = mount({ features: ['pick'], defaultTools: ['rect'], defaultActiveTool: 'rect' });
     expect(tools().active).toBe('rect');
   });
 
@@ -304,7 +304,7 @@ describe('<SceneCanvas features>', () => {
     const { seen, canvas, id, scene } = mount({
       features: ['draw'],
       tools: { idle: { id: 'idle', eligibility: {}, bindings: [] } },
-      initialActiveTool: 'idle',
+      defaultActiveTool: 'idle',
     });
     act(() => seen.selection!.set([id]));
     const before = JSON.stringify(scene.get(id)!.pose);

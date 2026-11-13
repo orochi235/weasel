@@ -16,7 +16,7 @@ export interface DrawEnteredGroup {
   entered: EnteredGroupApi;
   /** Dims what is outside the entered group; `<SceneCanvas>` already keeps it from taking hits. */
   scope: NodeScope;
-  /** `workspaceTintLayer`'s `fallback`. */
+  /** `createWorkspaceTintLayer`'s `fallback`. */
   tint: { visual: () => WorkspaceVisual | null; subscribe: (fn: () => void) => () => void };
 }
 

@@ -344,7 +344,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-13 (pass 6): A scene slot's `toPose` is handed the node at its effective pose, and a
   dependency's `path` in a scene that composes frames answers a pose override's path.
 - 2026-10-13 (pass 6): Pages are rects in one world space over one scene, in core: `layoutPages`,
-  `pageAt`, `pageOfBounds`, `pagesBounds`, `adjacentPage`, `pagesLayer`, and `fitViewToPage`. An
+  `pageAt`, `pageOfBounds`, `pagesBounds`, `adjacentPage`, `createPagesLayer`, and `fitViewToPage`. An
   object is on the page it overlaps most.
 - 2026-10-13 (pass 6): A slider drag in `SelectionPanel` is one undo step: moves are written
   through `scene.untracked`, and letting go records one batch. `PropertyRenderContext` gains
@@ -1967,3 +1967,29 @@ Calls the lanes made without a ruling:
 - Open: which platform a key is read for is spelled `platform` (`formatShortcut`, `describeKeymap`), `apple`
   (`captureKey`, `captureGesture`, `browserReservedChord`) and `isMac` (the matchers, `DispatcherContext`). Which
   one name these take.
+
+## Audit round twenty-one (2026-11-12): core's canvas and scene surface
+
+- 2026-11-12: Options bags are named `*Options` (now in `docs/conventions.md`), and 19 `*Opts` types in
+  core, guides and parallax were renamed to it: the layer factories', `ParallaxOpts`, `NestedHitOpts`,
+  `SceneNodeClientRectOpts`, `CreateViewResolverOpts`, `ComposeSelectionPoseOpts`, `UseViewHelpersOpts`.
+- 2026-11-12: The rest of core's `*Opts` types went to `*Options` too, with routing's `BindingOpts` and
+  renderer's `TilePatternOpts` that core re-exports. Core's `wheelPan()` options and
+  `makeViewportWheelPanAction`'s were `WheelPanOpts` and `WheelPanOptions`: the first is now `WheelPanOptions`,
+  named for `wheelPan`, and the second `ViewportWheelPanOptions`, named for its action. Text's five `*Opts`
+  types, which core's barrel re-exports, are the text lane's.
+- 2026-11-12: Layer factories are named `create*Layer` (now in `docs/conventions.md`); core's `pagesLayer`,
+  `workspaceTintLayer` and `modeDecorationLayer` were renamed to it.
+- Open: diagram's `edgeEndLayer`, `labelDragLayer`, `laneLayer`, `portLayer`, `seamLayer`, `sequenceLayer`
+  and `waypointLayer`, and guides' `rulersHitLayer`, are bare-named layer factories outside this lane.
+- 2026-11-12: `useSliceDep` was removed rather than given siblings: it was `useDepSource('slice', () => dep)`
+  under another name, and no other dep had one.
+- 2026-11-12: `<SceneCanvas initialActiveTool>` became `defaultActiveTool`, the prefix `defaultView` and
+  `defaultPathEdit` use for a read-once starting value.
+- Open: `Scene.update(id, { data })` is the one node-field mutator not named `setX`; the adapter and the op
+  already say `setData`. Renaming it reaches `packages/export`'s tests, which this round leaves alone.
+- Open: `<SceneCanvas onHover>` reports an id where `onClick` and `onDoubleClick` report a `SceneCanvasHit`
+  (`id`, `kind`, `world`); `DiagramView`'s `onHover` follows it.
+- Open: `ActiveToolContextProvider`'s `initialActive` (tools lane) still uses `initial` where `<SceneCanvas>`
+  now says `defaultActiveTool`.
+

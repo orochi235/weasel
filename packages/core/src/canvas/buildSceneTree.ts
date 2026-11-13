@@ -3,7 +3,7 @@ import type { View } from 'core/viewport/view';
 import { ownClipOf, type ClipBearing } from './ownClip';
 import { mat3, type Affine, type Path } from '@weasel-js/geom';
 import { definesFrame } from 'core/scene/effectivePose';
-import { deriveParallaxView, planeMap, type ParallaxOpts } from 'core/viewport/parallax';
+import { deriveParallaxView, planeMap, type ParallaxOptions } from 'core/viewport/parallax';
 import { scenePlaneOf } from './pickWalk';
 import { clipCarrier, planeTransform } from './planeClips';
 import { splitOverChildren } from './overChildren';
@@ -11,7 +11,7 @@ import { hidesSubtree } from 'core/scene/nodeGates';
 
 /** The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter` is one. */
 export interface HierarchicalAdapter<TNode, TPose> {
-  getLayers(): readonly { id: string; visible: boolean; parallax?: ParallaxOpts }[];
+  getLayers(): readonly { id: string; visible: boolean; parallax?: ParallaxOptions }[];
   getNode(id: string): TNode | undefined;
   getChildren(parentId: string | null): readonly string[];
   getPose(id: string): TPose;

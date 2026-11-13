@@ -136,7 +136,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'slice',
     title: 'Slice',
     category: 'Tools',
-    description: 'The knife, mounted as `defaultTools={[\'slice\']}`. A drag cuts along a straight line and an Alt-drag along its freehand trail. Clicks place a cut one point at a time; Enter or a double-click cuts along them, and a click on the first point closes the cut into a loop, which cuts the region it encloses out of the fill as its own piece. `<SceneCanvas>` publishes the `slice` dep the tool commits through: every path the cut crosses is swapped for its pieces in one undo step, and the pieces of a selected shape stay selected. A consumer replaces that with `useSliceDep`.',
+    description: 'The knife, mounted as `defaultTools={[\'slice\']}`. A drag cuts along a straight line and an Alt-drag along its freehand trail. Clicks place a cut one point at a time; Enter or a double-click cuts along them, and a click on the first point closes the cut into a loop, which cuts the region it encloses out of the fill as its own piece. `<SceneCanvas>` publishes the `slice` dep the tool commits through: every path the cut crosses is swapped for its pieces in one undo step, and the pieces of a selected shape stay selected. A consumer replaces that with `useDepSource(\'slice\', …)`.',
     hint: 'Drag across a shape to cut it. Click points and press <kbd>Enter</kbd>, or click back on the first point to cut out a hole. <kbd>Mod+Z</kbd> undoes a cut. Pick Select, or press <kbd>V</kbd>, to drag the pieces apart; <kbd>K</kbd> returns to the knife.',
     load: () => import('./demos/SliceDemo').then((m) => m.SliceDemo),
     path: 'apps/site/demos/SliceDemo.tsx',

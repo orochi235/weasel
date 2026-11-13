@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import { useActionsRegistry, useDepSource, useGestureDispatcher } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import type { Tool } from '@weasel-js/routing';
-import { clientToCanvas, viewScreenToWorld, type View, type ViewApi, type ZoomClampOpts } from '@weasel-js/core';
+import { clientToCanvas, viewScreenToWorld, type View, type ViewApi, type ZoomClampOptions } from '@weasel-js/core';
 import { minimapBindings, minimapCenterAction, minimapPanAction, minimapZoomAction } from './actions';
 
 // Unscoped: this dispatcher routes no views, so every input on it is the minimap's.
@@ -22,7 +22,7 @@ export interface MinimapInputOptions {
   onMainViewChange: (next: View) => void;
   /** The minimap's own camera, through which a client point becomes a world one. */
   fitView: View;
-  wheelZoom: boolean | ZoomClampOpts;
+  wheelZoom: boolean | ZoomClampOptions;
 }
 
 /** Wire `<MinimapCanvas>`'s dispatcher: its actions, bound unscoped, moving the

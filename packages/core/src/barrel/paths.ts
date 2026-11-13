@@ -144,7 +144,7 @@ export type {
   PathFillRule,
   PenAnchor,
   PointInPathOptions,
-  CreatePathLayerOpts,
+  CreatePathLayerOptions,
   CreatePenPreviewLayerOptions,
   PenPreviewStyle,
   CreatePathEditingOverlayLayerOptions,

@@ -3,7 +3,7 @@ import { drawOneLayer, subscribeToSources, type Dims, type RenderLayer } from 'c
 import { backgroundFillCommands } from 'core/layers/backgroundFill';
 import { normalizeView, type View } from 'core/viewport/view';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import type { ResolvableView } from './viewResolver';
+import type { ResolvableView, ViewRect } from './viewResolver';
 
 /**
  * A "viewport node" — a screen-space rectangle on the outer canvas that
@@ -26,7 +26,7 @@ import type { ResolvableView } from './viewResolver';
  * draw in the viewport's own CSS-pixel space: their coords are relative to
  * the rect's top-left, and they clip to it, rather than to the outer canvas.
  */
-export interface CreateViewportLayerOpts<TData, TSource = TData> {
+export interface CreateViewportLayerOptions<TData, TSource = TData> {
   id: string;
   label: string;
   /** Layers re-rendered through `view`. Each receives `(data, view, dims)`
@@ -53,11 +53,11 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
   view: View | ((outer: View, dims: Dims) => View);
   /** Where on the outer canvas this viewport is painted, in screen-space
    *  CSS pixels. Recomputed every frame. */
-  bounds: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
+  bounds: (outer: View, dims: Dims) => ViewRect;
   /** The part of the outer canvas the viewport shows through, in the same
    *  space as `bounds` and recomputed with it — the rect of a viewport it is
    *  nested in. Omit to show all of `bounds`. */
-  clip?: (outer: View, dims: Dims) => { x: number; y: number; w: number; h: number };
+  clip?: (outer: View, dims: Dims) => ViewRect;
   /** Optional opaque background painted before the source layers. */
   background?: string;
 }
@@ -81,7 +81,7 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
 /** Build a layer that renders other layers through a second view, inside a
  *  sub-region of the canvas — a minimap, an inset, a magnifier. */
 export function createViewportLayer<TData, TSource = TData>(
-  opts: CreateViewportLayerOpts<TData, TSource>,
+  opts: CreateViewportLayerOptions<TData, TSource>,
 ): ViewportLayer<TData> {
   const { id, label, source, view, bounds, clip: clipAt, background, data: sourceData } = opts;
   const fixedView = typeof view === 'function' ? null : normalizeView(view);
@@ -126,10 +126,9 @@ export function createViewportLayer<TData, TSource = TData>(
   };
 }
 
-type Rect = { x: number; y: number; w: number; h: number };
 
 /** `clip` cut to `b`, measured from `b`'s top-left. */
-function clipWithin(b: Rect, clip: Rect): { kind: 'rect'; x: number; y: number; width: number; height: number } {
+function clipWithin(b: ViewRect, clip: ViewRect): { kind: 'rect'; x: number; y: number; width: number; height: number } {
   const x0 = Math.max(b.x, clip.x);
   const y0 = Math.max(b.y, clip.y);
   const x1 = Math.min(b.x + b.w, clip.x + clip.w);

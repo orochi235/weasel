@@ -35,9 +35,9 @@ interface Empty { id: string }
  * `useHudContribution()` bindings gate on that.
  */
 function Harness(
-  { apiOut, initialActiveTool, items, extraAmbient }:
+  { apiOut, defaultActiveTool, items, extraAmbient }:
   {
-    apiOut: HarnessApi; initialActiveTool?: BuiltinToolId; items?: readonly Empty[];
+    apiOut: HarnessApi; defaultActiveTool?: BuiltinToolId; items?: readonly Empty[];
     extraAmbient?: readonly Contribution[];
   },
 ) {
@@ -59,8 +59,8 @@ function Harness(
       selection={selection}
       layers={{}}
       ambient={[hudTool, ...(extraAmbient ?? [])]}
-      {...(initialActiveTool
-        ? { initialActiveTool, defaultTools: ['select', initialActiveTool] }
+      {...(defaultActiveTool
+        ? { defaultActiveTool, defaultTools: ['select', defaultActiveTool] }
         : {})}
     />
   );
@@ -69,14 +69,14 @@ function Harness(
 async function mount(
   apiOut: HarnessApi,
   opts: {
-    initialActiveTool?: BuiltinToolId; items?: readonly Empty[];
+    defaultActiveTool?: BuiltinToolId; items?: readonly Empty[];
     extraAmbient?: readonly Contribution[];
   } = {},
 ) {
   const r = render(
     <Harness
       apiOut={apiOut}
-      initialActiveTool={opts.initialActiveTool}
+      defaultActiveTool={opts.defaultActiveTool}
       items={opts.items}
       extraAmbient={opts.extraAmbient}
     />,
@@ -150,7 +150,7 @@ describe('weasel-hud integration', () => {
 describe('a HUD window is reachable while a drawing tool is active', () => {
   it('drags the window instead of starting a rect insert', async () => {
     const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null }, sceneRef: { current: null } };
-    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+    const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     let win!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['window']>;
     await act(async () => {
@@ -177,7 +177,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
     const apiOut: HarnessApi = {
       press: vi.fn(), hudRef: { current: null }, sceneRef: { current: null }, selectionRef: { current: null },
     };
-    const { container } = await mount(apiOut, { initialActiveTool: 'select', items: [{ id: 'n1' }] });
+    const { container } = await mount(apiOut, { defaultActiveTool: 'select', items: [{ id: 'n1' }] });
     const nodeId = apiOut.sceneRef!.current!.roots[0];
     act(() => { apiOut.selectionRef!.current!.set([nodeId]); });
 
@@ -202,7 +202,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
 
   it('hovering a resize band sets the matching cursor', async () => {
     const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
-    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+    const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
       apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe' });
@@ -228,7 +228,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
 
   it('a titlebar-less window reports move over the interior that drags it', async () => {
     const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
-    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+    const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
       apiOut.hudRef.current!.window({
@@ -247,7 +247,7 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
 describe('decorative widgets stay transparent to input', () => {
   it('a rect backdrop covering the canvas does not block a rect-tool drag', async () => {
     const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null }, sceneRef: { current: null } };
-    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+    const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
       apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, w: 200, h: 200, fill: '#0008' });
@@ -265,7 +265,7 @@ describe('decorative widgets stay transparent to input', () => {
 
   it('a button beneath that backdrop still receives the press', async () => {
     const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
-    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+    const { container } = await mount(apiOut, { defaultActiveTool: 'rect' });
 
     await act(async () => {
       const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });

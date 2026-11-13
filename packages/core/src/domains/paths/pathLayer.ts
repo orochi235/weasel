@@ -23,7 +23,7 @@ const PLACEHOLDER_STROKE: CommandStroke = { paint: { color: '#ffffff' }, width: 
  *  comes before `getVertexColors`, `getStrokeVertexColors` and `getStroke`'s
  *  trim; a function-form color override receives the base colors and the
  *  timestamp `now` gives. The layer repaints for a `set` or `clear` on either registry. */
-export interface CreatePathLayerOpts<T> extends PaintOverrides {
+export interface CreatePathLayerOptions<T> extends PaintOverrides {
   id?: string;
   label?: string;
   getNodes: () => readonly T[];
@@ -81,7 +81,7 @@ function strokeWith(
 }
 
 /** Build a `RenderLayer` that fills/strokes `Path` instances enumerated from a node list. */
-export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<unknown> {
+export function createPathLayer<T>(opts: CreatePathLayerOptions<T>): RenderLayer<unknown> {
   const {
     id = 'paths', label = 'Paths',
     getNodes, getPath, getFill, getStroke, isHidden,

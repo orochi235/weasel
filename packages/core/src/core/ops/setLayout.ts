@@ -18,6 +18,7 @@ export interface SetLayoutArgs<TPose = unknown> {
   from: LayoutRef<TPose>;
   to: LayoutRef<TPose>;
   label?: string;
+  coalesceKey?: string;
 }
 
 /**
@@ -29,11 +30,12 @@ export interface SetLayoutArgs<TPose = unknown> {
  * persisted history names its layouts by registry key.
  */
 export function createSetLayoutOp<TPose = unknown>(args: SetLayoutArgs<TPose>): Op {
-  const { id, from, to, label } = args;
+  const { id, from, to, label, coalesceKey } = args;
   return {
     name: 'setLayout',
-    args: { id, from, to, label },
+    args: { id, from, to, label, coalesceKey },
     label: label ?? 'Set layout',
+    coalesceKey,
     apply(adapter) {
       // A key names a strategy only the scene's registry resolves, so only a
       // strategy or `null` can be seen to be in place already.
@@ -42,7 +44,7 @@ export function createSetLayoutOp<TPose = unknown>(args: SetLayoutArgs<TPose>): 
       return held ? false : undefined;
     },
     invert() {
-      return createSetLayoutOp<TPose>({ id, from: to, to: from, label });
+      return createSetLayoutOp<TPose>({ id, from: to, to: from, label, coalesceKey });
     },
   };
 }

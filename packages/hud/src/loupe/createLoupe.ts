@@ -200,7 +200,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
     if (host) return lens ? [backdrop(ctx), ...lens.draw(ctx.data, ctx.view, ctx.dims)] : [backdrop(ctx)];
-    // A fresh lens per frame: CreateViewportLayerOpts.view is static, and the
+    // A fresh lens per frame: CreateViewportLayerOptions.view is static, and the
     // inner view moves with the pointer.
     const picture = createViewportLayer<unknown>({
       id: `${win.id}:lens`,

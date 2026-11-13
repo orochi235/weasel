@@ -55,7 +55,7 @@ export {
   createToolActivateAction,
   buildToolActivateBindings,
   TOOL_ACTIVATE_ID,
-  type ToolActivateKeyOpts,
+  type ToolActivateKeyOptions,
   type ToolActivateBindingSpec,
 } from './toolActivate';
 export { moveAction } from '../move/action';

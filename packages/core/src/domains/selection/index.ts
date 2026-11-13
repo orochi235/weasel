@@ -9,11 +9,11 @@
  * @packageDocumentation
  */
 export type {
-  ComposeSelectionPoseOpts,
-  SelectionHandlesLayerOpts,
+  ComposeSelectionPoseOptions,
+  SelectionHandlesLayerOptions,
   SelectionHandleStyle,
-  SelectionOutlineLayerOpts,
-  SelectionOverlayLayerOpts,
+  SelectionOutlineLayerOptions,
+  SelectionOverlayLayerOptions,
 } from './overlay';
 export {
   composeSelectionPose,

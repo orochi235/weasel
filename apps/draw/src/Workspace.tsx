@@ -14,7 +14,7 @@ import {
   useMeasureTool,
   type RenderLayer,
   type View,
-  workspaceTintLayer
+  createWorkspaceTintLayer
 } from '@weasel-js/core';
 import { usePathToolsTools } from '@weasel-js/path-tools';
 import { unpackSvgFiles } from '@weasel-js/svg';
@@ -111,7 +111,7 @@ export function Workspace(props: WorkspaceProps): ReactElement {
   );
   // The mode tint covers the workspace around the page, not the page itself.
   // Bolder than the modes' own 0.12 so it reads through the stripes.
-  const workspaceTint = useMemo(() => workspaceTintLayer({
+  const workspaceTint = useMemo(() => createWorkspaceTintLayer({
     registry: machine.registry,
     page: () => ({ x: page.x, y: page.y, width: page.width, height: page.height }),
     intensity: 0.4,

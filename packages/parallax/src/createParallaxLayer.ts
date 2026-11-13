@@ -1,10 +1,10 @@
 import { drawOneLayer, subscribeToSources, type RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
-import { deriveParallaxView, type ParallaxOpts } from '@weasel-js/core';
+import { deriveParallaxView, type ParallaxOptions } from '@weasel-js/core';
 import { isParallaxSource, type ParallaxSource } from './createParallaxPlane';
 
 /** Options for `createParallaxLayer`. */
-export interface CreateParallaxLayerOpts<TData> {
+export interface CreateParallaxLayerOptions<TData> {
   id: string;
   label: string;
   /** Layers re-rendered through the derived inner view. */
@@ -12,7 +12,7 @@ export interface CreateParallaxLayerOpts<TData> {
   /** How the plane tracks the camera. Pass a `ParallaxSource` (such as
    *  `createParallaxPlane`) to change it after the layer is built — an
    *  animator tweening `pan` or `zoom` writes the plane, not the layer. */
-  parallax: ParallaxOpts | ParallaxSource;
+  parallax: ParallaxOptions | ParallaxSource;
   /** Where the camera view comes from. Defaults to the view the Canvas hands
    *  the layer — the `view` prop. A consumer running a 60 Hz camera through
    *  refs pins that prop to identity, and would otherwise get identity back
@@ -39,7 +39,7 @@ export interface CreateParallaxLayerOpts<TData> {
  * the derived view by definition. Same constraint as `createViewportLayer`.
  */
 export function createParallaxLayer<TData>(
-  opts: CreateParallaxLayerOpts<TData>,
+  opts: CreateParallaxLayerOptions<TData>,
 ): RenderLayer<TData> {
   const { id, label, source, parallax, getOuterView } = opts;
   const read = isParallaxSource(parallax) ? () => parallax.get() : () => parallax;

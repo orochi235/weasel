@@ -12,7 +12,7 @@ import {
 import { useAnimator } from '@weasel-js/animator/react';
 import { createParallaxLayer, createParallaxPlane, createTiledLayer } from '@weasel-js/parallax';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { ParallaxOpts, Path, View, RenderLayer, Fill } from '@weasel-js/core';
+import type { ParallaxOptions, Path, View, RenderLayer, Fill } from '@weasel-js/core';
 import { InlineRange } from '@weasel-js/ui/components/InlineRange';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Checkbox } from '@weasel-js/ui/components/Checkbox';
@@ -119,7 +119,7 @@ const DEPTH = {
 };
 type Plane = keyof typeof DEPTH;
 const INTRO_FROM = -1200;
-const opts = (p: Plane, zoomParallax: boolean, anchorX: number): ParallaxOpts => ({
+const opts = (p: Plane, zoomParallax: boolean, anchorX: number): ParallaxOptions => ({
   pan: DEPTH[p].pan,
   zoom: zoomParallax ? DEPTH[p].zoom : 1,
   anchor: { x: anchorX, y: 0 },

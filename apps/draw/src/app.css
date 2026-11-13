@@ -129,7 +129,7 @@
   overflow: hidden;
 }
 
-/* Mode tint is painted by the kit's `workspaceTintLayer`
+/* Mode tint is painted by the kit's `createWorkspaceTintLayer`
  * (see Workspace.tsx) so it can leave the document page uncovered.
  * No CSS-side tint here. */
 

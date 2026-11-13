@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useScene } from './useScene';
+import { createScene } from './scene';
 import { asNodeId } from './types';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -22,6 +23,14 @@ describe('useScene — trivial overload', () => {
     // pose === data === item (by reference)
     expect(a?.pose).toBe(A);
     expect(a?.data).toBe(A);
+  });
+
+  it('is the same scene createScene builds from the same items', () => {
+    const scene = createScene({ items: [A, B] });
+    expect(scene.layers.map((l) => l.id)).toEqual(['default']);
+    expect(scene.roots).toEqual(['a', 'b']);
+    expect(scene.get(asNodeId('b'))?.pose).toBe(B);
+    expect(scene.canUndo()).toBe(false);
   });
 
   it('starts with empty undo history (initial items are not undoable)', () => {

@@ -26,7 +26,7 @@ describe('a chart\'s diagram type and its pages\' notation', () => {
   it('lets a page\'s own notation win over its chart\'s type', () => {
     const { scene } = authoredScene('umlClass');
     const pages = { pages: [{ id: 'p', width: 800, height: 600, meta: { [GRAPH_PAGE_META_KEY]: { notation: FLOWCHART_NOTATION } } }] };
-    setPages(scene, pages, 'Pages');
+    setPages(scene, pages, { label: 'Pages' });
     const page = documentFromScene(scene).pages[0] as GraphPage;
     expect(page.notation).toBeUndefined();
     expect(DIAGRAM_MERMAID.write!(documentFromScene(scene)).text).toMatch(/^flowchart/m);

@@ -7,7 +7,7 @@
  */
 import type { ResizeHandleLayout } from 'interactions/actions/resize/cornerHandles';
 import { createContext, useContext, type ReactNode } from 'react';
-import type { UseViewHelpersOpts } from './useViewHelpers';
+import type { UseViewHelpersOptions } from './useViewHelpers';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { SelectionRules } from 'core/selection/legalSelection';
 import type { View } from 'core/viewport/view';
@@ -26,7 +26,7 @@ export type { ViewRuleInputs } from 'domains/chrome-caps/useChromeCaps';
  * the asking view's own dispatcher, not from here.
  */
 export interface SurfaceViewInputs
-  extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry'> {
+  extends Pick<UseViewHelpersOptions<unknown>, 'adapter' | 'geometry'> {
   /** A node's box for chrome, drawn under `view` — the camera of the view
    *  asking, since a node on a parallax plane lands somewhere else in each. */
   boundsOf: ((id: string, view?: View | null) => Bounds | null) | undefined;

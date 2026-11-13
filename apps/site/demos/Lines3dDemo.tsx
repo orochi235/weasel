@@ -103,7 +103,7 @@ export function Lines3dDemo() {
         backgroundFill={{ color: '#1e1610' }}
         scene={scene}
         tools={{ orbit }}
-        initialActiveTool="orbit"
+        defaultActiveTool="orbit"
         ambient={[cameraRig]}
         onResize={(next) => { size.current = next; }}
         layers={{ scene: { drawOne: () => [] } }}

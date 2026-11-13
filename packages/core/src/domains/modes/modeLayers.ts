@@ -5,7 +5,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 
-/** Options for {@link workspaceTintLayer}. */
+/** Options for {@link createWorkspaceTintLayer}. */
 export interface WorkspaceTintLayerOptions {
   registry: ModeRegistry;
   /** The page, in world coordinates. When given, the tint covers only the
@@ -27,7 +27,7 @@ const DEFAULT_INTENSITY = 0.12;
  * mode without one: a wash at `intensity`, else that visual's own, bottom-up or top-down when it
  * names a gradient.
  */
-export function workspaceTintLayer(opts: WorkspaceTintLayerOptions): RenderLayer<unknown> {
+export function createWorkspaceTintLayer(opts: WorkspaceTintLayerOptions): RenderLayer<unknown> {
   const { registry } = opts;
   return {
     id: opts.id ?? 'mode-tint',
@@ -92,7 +92,7 @@ export function workspaceTintLayer(opts: WorkspaceTintLayerOptions): RenderLayer
 /** A world-space layer drawing a `ModeDecorations`' active painter. It
  *  subscribes to the decorations, so a mode switch or a new painter repaints
  *  it. */
-export function modeDecorationLayer(
+export function createModeDecorationLayer(
   decorations: ModeDecorations,
   opts: { id?: string; label?: string } = {},
 ): RenderLayer<unknown> {

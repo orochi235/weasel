@@ -12,7 +12,7 @@ export * from '../domains/viewports';
 export {
   deriveParallaxView, planeMap, toPlane, fromPlane, rectToPlane, rectFromPlane, planeToPlane, planeMatrix,
 } from '../core/viewport/parallax';
-export type { ParallaxOpts, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
+export type { ParallaxOptions, ScalarOrXY, PlaneMap } from '../core/viewport/parallax';
 export {
   createSimulation,
   DEFAULT_ALPHA_DECAY,
@@ -71,7 +71,7 @@ export { HOME_VIEW, resetView } from '../core/viewport/homeView';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewport/fitViewToBounds';
 export { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
-export { pagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
+export { createPagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
 export { fitViewToPage, pageInView } from '../core/pages/fitViewToPage';
 export {
   PAGES_DOC_KEY, addPage, movePage, nextPageId, pageMembers, pagesOf, placedPagesOf, removePage, renamePage, resizePage,
@@ -87,12 +87,12 @@ export { addOnPages, placeOnPages, type PlaceOnPagesOptions } from '../core/page
 export { followerHome, pasteboardOn } from '../core/pages/pagePlacement';
 export { zoomAt, axisZoomFactor } from '../core/viewport/zoomAt';
 export { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM, ZOOM_FLOOR, normalizeZoom } from '../core/viewport/zoomBounds';
-export type { ZoomClampOpts, ZoomAxis } from '../core/viewport/zoomAt';
+export type { ZoomClampOptions, ZoomAxis } from '../core/viewport/zoomAt';
 export { clampView } from '../core/viewport/clampView';
 export { viewportWorldRect } from '../core/viewport/viewportWorldRect';
 export type { ClampBounds, CanvasSize } from '../core/viewport/clampView';
 export { sceneNodeClientRect } from '../core/viewport/sceneNodeClientRect';
-export type { SceneNodeClientRectOpts, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
+export type { SceneNodeClientRectOptions, NodeClientRect } from '../core/viewport/sceneNodeClientRect';
 export * from '../core/viewport/useAutoCenter';
 
 // ─── Scheduling: the visibility gate every weasel frame loop runs behind ────

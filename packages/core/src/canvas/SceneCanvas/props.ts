@@ -3,20 +3,21 @@ import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
-import type { SceneCanvasActionProps } from './actionProps'; import type { SceneCanvasSampleProps } from './sampleProps';
+import type { SceneCanvasActionProps } from './actionProps';
+import type { SceneCanvasIngestion } from './ingestionProps';
+import type { SceneCanvasSelectTool } from './selectToolProps';
+export type { SceneCanvasIngestion } from './ingestionProps';
+export type { SceneCanvasSelectTool } from './selectToolProps';
+import type { SceneCanvasLongPress } from './longPressProps';
+import type { SceneCanvasSampleProps } from './sampleProps';
+export type { SceneCanvasLongPress } from './longPressProps';
 import { Yoke } from '@weasel-js/routing/react';
-import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
 import type { Node, Scene, SerializedScene } from 'core/scene/types';
 import type { SelectionApi, UseSelectionOptions } from 'core/selection/useSelection';
-import type { ContentHandlerEntry, KitHandlersOption } from 'domains/ingestion';
 import type { SceneCanvasSnap } from 'domains/snap/types';
-import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
-import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { PoseDescriptor } from 'interactions/actions/resize/geometry';
-import type { UseResizeOptions } from 'interactions/actions/resize/options';
-import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { ReactNode } from 'react';
 import type { Animator } from '@weasel-js/animator';
 import type { PoseTransitionSeat } from '../../animation/poseTransition';
@@ -52,24 +53,6 @@ export interface BridgeAdapter {
  *  hit-test radius, at `targetScale = 1`. Deliberately unscaled; kit-internal
  *  use sites multiply by `DeviceProfile.targetScale`. */
 export const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
-
-/** `<SceneCanvas longPress>`. */
-export interface SceneCanvasLongPress {
-  /**
-   * Shown while a long-press is held and some binding would fire on it.
-   * Default: a ring that fills around the press point
-   * (`createLongPressFeedbackContribution()`), static under
-   * `prefers-reduced-motion`. `false` shows nothing; a contribution replaces
-   * it, reading the `longPress` dep. Installed beside `ambient` and beside a `tools`
-   * takeover, unless the takeover's ambient holds an entry of the same id.
-   */
-  feedback?: boolean | SurfaceContribution;
-  /** Default true. A long-press some binding handled pulses
-   *  `navigator.vibrate` briefly, for touch and pen, where the API exists. */
-  haptics?: boolean;
-  /** Hold time in ms. Default `LONG_PRESS_MS` (500). */
-  duration?: number;
-}
 
 /** `<SceneCanvas layers>`: a {@link LayersMap} whose scene slot may be partial,
  *  since the defaults fill in whatever it leaves out. */
@@ -150,9 +133,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Routing-trait classifiers. The kit builds a `NodeRouting` registry per `<SceneCanvas>`
      * from this prop and uses it to derive each hit's `kind`, which tool routing tables
-     * (e.g. `{ target: 'rect', actionId: 'move' }`) match against. Pass `defaultNodeRouting`
-     * for the kit's built-in shape kinds; spread additional entries for consumer-defined
-     * kinds.
+     * (e.g. `{ target: 'rect', actionId: 'move' }`) match against. Default
+     * `inferredNodeRouting`: groups, boolean groups, and data shaped as text, a path or an
+     * image. A list given here replaces it, so add consumer kinds by spreading it
+     * (`[...inferredNodeRouting, mine]`), or `defaultNodeRouting` for data carrying a
+     * `kind` tag. An empty list routes every hit as `'unknown'`.
      *
      * **Memoize the `routing` value.** The registry is memoized on the prop's reference
      * identity: a fresh array each render rebuilds it and cascades into a new adapter,
@@ -169,22 +154,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     //     hover, clicks, chrome and actions, whatever `tools` it runs. ---
     geometry?: SceneCanvasGeometry;
 
-    // --- Selection options. `pickBest` configures the internal select tool, and is
-    //     ignored under a `tools` takeover; `handleHitRadius` sizes the handles' hit
-    //     area, and `move`, `resize` and `rotate` configure their presets, either way. ---
-    selectTool?: {
-      move?: UseMoveOptions<TPose>;
-      resize?: UseResizeOptions<TPose>;
-      /** Rotation options, or `false` to hide the rotation handle and bind it to
-       *  nothing; the `rotate` action stays, for other tools and `actions.rotate`. */
-      rotate?: UseRotateOptions<TPose> | false;
-      handleHitRadius?: number;
-      /** Override the body-pick used on click/pointerdown. Alt-aware: receives
-       *  the live alt state + current selection so consumers can implement
-       *  alt-cycling through an overlapping stack. Default: top-most hit
-       *  (alt ignored). */
-      pickBest?: (world: import('@weasel-js/routing').WorldPoint, alt: boolean, sel: readonly string[], viewId?: string | null) => string | null;
-    };
+    /** The select tool's options, and the move, resize and rotate presets'. See {@link SceneCanvasSelectTool}. */
+    selectTool?: SceneCanvasSelectTool<TPose>;
 
     /** Consumer node factories for the `insert` action, keyed by tool `kind`.
      *  Each factory receives the drag AABB + tool `extras` and returns the
@@ -195,37 +166,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
 
-    /** External-content ingestion (OS drop / clipboard paste / picker).
-     *
-     *  - `handlers` — content handlers for this canvas alone, priority 0 by default, above
-     *    the kit's. One for every canvas on the page goes through `registerContentHandler`.
-     *  - `kitHandlers` — which kit handlers it keeps (`KitHandlersOption`); default all.
-     *  - `resolveSrc` — overrides the image handler's `data:`-URI embed (e.g.
-     *    upload to an asset store, return the URL).
-     *  - `svg.unpack` — makes the kit SVG handler parse dropped SVG files into
-     *    native scene nodes instead of one embedded-image node each.
-     *  - `clipboard` — the kit weasel-JSON paste handler, enabled by default.
-     *    `reviver` restores JSON-unfriendly values the copying side encoded via
-     *    `jsonReplacer`. `enabled: false` opts the canvas out, but the kit
-     *    handler still consumes weasel-matching items and declines them inert
-     *    rather than letting them fall through. Also governs Cmd/Ctrl+V under
-     *    the `edit` preset; the rest takes the `ingest` preset.
-     *
-     *  Memoize `handlers` and `clipboard.reviver`: inline literals rebuild them every render. */
-    ingestion?: {
-      handlers?: ContentHandlerEntry[];
-      kitHandlers?: KitHandlersOption;
-      resolveSrc?: (file: File) => Promise<string>;
-      svg?: SvgIngestOptions;
-      clipboard?: {
-        reviver?: (key: string, value: unknown) => unknown;
-        enabled?: boolean;
-        /** Called when a paste left copied nodes out, with each one and the
-         *  reason. `useClipboardOps` takes the same callback as
-         *  `onPasteOmitted` for a paste from its own in-memory copy. */
-        onOmitted?: (omitted: PasteOmission[]) => void;
-      };
-    };
+    /** External-content ingestion: OS drop, clipboard paste, the file picker. See {@link SceneCanvasIngestion}. */
+    ingestion?: SceneCanvasIngestion;
 
     selection?: SelectionApi;
     selectionOptions?: UseSelectionOptions;
@@ -272,6 +214,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * - `ingest` — dropped and pasted content: images, SVG, files, and
      *   whatever `ingestion.handlers` accept, on Cmd/Ctrl+V or an OS drop.
      * - `draw` — all of the above.
+     * - `whiteboard` — `view`, `pick`, `move`, `resize` and `edit`, with the
+     *   pencil, text and sticky-note tools.
+     * - `tools:select`, `tools:view`, `tools:shape`, `tools:draw`,
+     *   `tools:type`, `tools:page` — a built-in tool set and nothing else.
+     *
+     * The parts of `edit`, `arrange` and `paths` are names of their own
+     * (`nudge`, `clipboard`, `align`, `pathfinder`, …), for a canvas that
+     * wants one without the rest; `SCENE_CANVAS_FEATURES` lists every name.
      *
      * Any `FeaturePreset` object goes beside the names: core's own
      * (`pathsPreset`), or one a package ships.
@@ -352,7 +302,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  registered, otherwise none — a canvas can run on ambient bindings
      *  alone. Must be one of the registered tools. Ignored when the consumer
      *  supplies their own `tools` prop. */
-    initialActiveTool?: string;
+    defaultActiveTool?: string;
 
     /** Always-on entries to register alongside the internal tools — every one
      *  a `SurfaceContribution`, whose views, deps, overlay, bindings, actions

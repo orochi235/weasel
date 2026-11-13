@@ -69,7 +69,7 @@ export {
 export {
   viewportWheelPanAction,
   createViewportWheelPanAction,
-  type WheelPanOptions,
+  type ViewportWheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export {
   containerScrollAction, scrollRange, scrollableAt, type ScrollRange,
@@ -169,7 +169,7 @@ export {
 export type {
   CornerAnchor, CornerEdge, HandleEdge, ResizeHandleAnchor, ResizeHandleLayout,
 } from '../interactions/actions/resize/cornerHandles';
-export { useSliceDep, useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
+export { useSliceDepSource, type OpsApplier } from '../canvas/deps/slice';
 export { useBooleansAdapterSource } from '../canvas/deps/booleans';
 export {
   computeSliceOps,

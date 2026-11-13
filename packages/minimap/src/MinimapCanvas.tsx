@@ -6,7 +6,7 @@ import { PointerProviderIfRoot, useDeviceProfile, useElementSize, usePublishPoin
 import { usePointerPosition } from '@weasel-js/routing/react';
 import { useMinimapInput } from './useMinimapInput';
 import { createLinkedCursorLayer } from './layers';
-import type { SurfaceSizeProps, ZoomClampOpts } from '@weasel-js/core';
+import type { SurfaceSizeProps, ZoomClampOptions } from '@weasel-js/core';
 import { SceneViewCanvas } from '@weasel-js/core';
 import { computeIndicatorCommand } from './minimapMath';
 import { useFitView } from './useFitView';
@@ -79,7 +79,7 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> extends
    *  view. Default `true`, clamped to the kit's default zoom limits; pass the
    *  main view's own `{ min, max }` when it zooms further, or `false` to leave
    *  the wheel to the page. */
-  wheelZoom?: boolean | ZoomClampOpts;
+  wheelZoom?: boolean | ZoomClampOptions;
 }
 
 const NO_ELEMENT: RefObject<HTMLElement | null> = { current: null };

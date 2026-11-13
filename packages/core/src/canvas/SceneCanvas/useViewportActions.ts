@@ -17,7 +17,7 @@ import { useLatest } from '@weasel-js/react';
 import { containerScrollAction } from 'interactions/actions/defaults/containerScroll';
 import {
   createViewportWheelPanAction,
-  type WheelPanOptions,
+  type ViewportWheelPanOptions,
 } from 'interactions/actions/defaults/viewportWheelPan';
 import {
   createViewportZoomAction,
@@ -30,8 +30,8 @@ import {
 
 export function useViewportActions(args: {
   /** `true`/`false` toggles wheel pan; an object locks its axis (see
-   *  {@link WheelPanOptions}). */
-  pan: boolean | WheelPanOptions;
+   *  {@link ViewportWheelPanOptions}). */
+  pan: boolean | ViewportWheelPanOptions;
   /** `true`/`false` toggles the default Cmd+wheel zoom; an object tunes the
    *  wheel trigger + scale clamp (see {@link ViewportZoomOptions}). */
   zoom: boolean | ViewportZoomOptions;

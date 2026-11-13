@@ -108,7 +108,7 @@ export function adoptSnapshotPages<TData, TLayer extends string, TPose>(
   };
   const scene = sceneFromJSON(json, { registry, unknownKeys: 'skip', generateId, ...read });
   const place = descriptor ? { descriptor } : {};
-  if (!adoptLegacyPages(scene, place)) scene.untracked(() => setPages(scene, pages!, 'Adopt pages', place));
+  if (!adoptLegacyPages(scene, place)) scene.untracked(() => setPages(scene, pages!, { ...place, label: 'Adopt pages' }));
   return scene.toJSON();
 }
 

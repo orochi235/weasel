@@ -10,7 +10,7 @@ import type { PoseDescriptor } from '@weasel-js/core';
 import { AUTO_POSE_DESCRIPTOR } from '@weasel-js/core';
 import type { PointerWorldPos } from '@weasel-js/routing/react';
 import type { CanvasExtensionApi } from '@weasel-js/core';
-import type { ViewRect, ZoomClampOpts } from '@weasel-js/core';
+import type { ViewRect, ZoomClampOptions } from '@weasel-js/core';
 import type { ContributionDepReader, SurfaceContribution } from '@weasel-js/core';
 import {
   computeFitView, FALLBACK_FIT_VIEW, type IndicatorStyle, type MinimapFit,
@@ -106,7 +106,7 @@ export interface MinimapContributionOptions<TData = unknown, TLayer extends stri
   /** The wheel, and a trackpad pinch, over the minimap zoom the main camera about the world point under the
    *  cursor, as `<MinimapCanvas wheelZoom>` does. Pass the main view's zoom limits to clamp to them, or `false`
    *  to bind no wheel. Default `true`. */
-  wheelZoom?: boolean | ZoomClampOpts;
+  wheelZoom?: boolean | ZoomClampOptions;
 }
 
 const DEFAULT_BACKGROUND = '#18181c';

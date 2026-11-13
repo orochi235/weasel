@@ -140,7 +140,7 @@ describe('page edits', () => {
   it('makes a scene with no pages paged, moving nothing', () => {
     const scene = createScene<{ n: string }, 'l', Pose>({ systemLayers: [{ id: 'l' }] });
     const id = scene.add({ kind: 'mark', layer: 'l', pose: { x: 5, y: 5, width: 1, height: 1 }, data: { n: '' } });
-    setPages(scene, TWO, 'Pages');
+    setPages(scene, TWO, { label: 'Pages' });
     expect(pagesOf(scene)).toEqual(TWO);
     expect(placedPagesOf(scene).map((p) => p.x)).toEqual([0, 120]);
     expect(scene.get(id)!.pose.x).toBe(5);
@@ -148,7 +148,7 @@ describe('page edits', () => {
 
   it('lays the pages out again when only the run\'s settings change', () => {
     const { scene } = setup({ pages: [{ id: 'a', width: 100, height: 100 }, { id: 'b', width: 100, height: 40 }], layout: { gap: 20 } });
-    setPages(scene, { ...pagesOf(scene)!, layout: { gap: 20, align: 'center' } }, 'Align');
+    setPages(scene, { ...pagesOf(scene)!, layout: { gap: 20, align: 'center' } }, { label: 'Align' });
     expect(placedPagesOf(scene).map((p) => [p.id, p.y])).toEqual([['a', 0], ['b', 30]]);
     scene.undo();
     expect(placedPagesOf(scene).map((p) => p.y)).toEqual([0, 0]);

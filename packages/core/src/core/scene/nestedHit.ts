@@ -12,7 +12,7 @@ interface HitAdapter<TNode extends { id: string }, TPose> {
 }
 
 /** Options for `nestedHitTester`. */
-export interface NestedHitOpts<TNode extends { id: string }, TPose> {
+export interface NestedHitOptions<TNode extends { id: string }, TPose> {
   /** Compose a child's local pose into world coords given its parent's world
    *  pose. Same shape as `composeRectPose` (the default expectation). */
   composePose: (parent: TPose, child: TPose) => TPose;
@@ -46,7 +46,7 @@ export interface NestedHitTester {
  *  the leaf actually under the pointer. */
 export function nestedHitTester<TNode extends { id: string }, TPose>(
   adapter: HitAdapter<TNode, TPose>,
-  opts: NestedHitOpts<TNode, TPose>,
+  opts: NestedHitOptions<TNode, TPose>,
 ): NestedHitTester {
   const d = (opts.poseDescriptor ?? AUTO_POSE_DESCRIPTOR) as PoseDescriptor<TPose>;
   const isGroup = opts.isGroup ?? (() => false);

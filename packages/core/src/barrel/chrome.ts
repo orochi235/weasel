@@ -147,9 +147,9 @@ export {
   createSelectionOverlayLayer,
 } from '../domains/selection';
 export type {
-  ComposeSelectionPoseOpts,
-  SelectionOutlineLayerOpts,
-  SelectionHandlesLayerOpts,
-  SelectionOverlayLayerOpts,
+  ComposeSelectionPoseOptions,
+  SelectionOutlineLayerOptions,
+  SelectionHandlesLayerOptions,
+  SelectionOverlayLayerOptions,
   SelectionHandleStyle,
 } from '../domains/selection';

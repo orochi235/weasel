@@ -2,7 +2,7 @@ import type { InertiaConfig } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
 import type { EdgePanOptions } from './useEdgePan';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
-import type { WheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
+import type { ViewportWheelPanOptions } from 'interactions/actions/defaults/viewportWheelPan';
 import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 
 /** `<SceneCanvas viewport>`: configures the `view` preset, and implies
@@ -28,7 +28,7 @@ export interface SceneCanvasViewport {
   animatedZoom?: boolean | ViewportZoomAnimateOptions;
   /** Wheel pan. `true`/omitted = on; `false` disables; an object locks the
    *  axis (`{ axis: 'x' }`) so a single-axis viewport needs no commit clamp. */
-  pan?: boolean | WheelPanOptions;
+  pan?: boolean | ViewportWheelPanOptions;
   /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
    *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
    *  object to bind zoom to plain wheel (`wheel: 'plain'`, pair with

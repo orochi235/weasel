@@ -224,7 +224,7 @@ declare module '@weasel-js/routing' {
     canDropInto?: CanDropIntoDep;
     /**
      * Slice dep — the commit for the Slice action. `<SceneCanvas>` publishes
-     * `useSliceDepSource`; a consumer overrides it with `useSliceDep`.
+     * `useSliceDepSource`; a consumer overrides it with `useDepSource('slice', …)`.
      *
      * Optional: when absent, `sliceAction` is a no-op.
      */
