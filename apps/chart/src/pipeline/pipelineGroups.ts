@@ -30,10 +30,10 @@ export function useGroupCommands(editor: RefObject<EffectEditorApi | null>, pick
   useCommand(GROUP_ACTIONS.group, 'Group', () => {
     const made = ids.length === 0 ? null : editor.current?.group(ids) ?? null;
     if (made !== null) pickGroup(made);
-  }, { enabled: () => can(ids.length > 0), keys: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES } });
+  }, { enabled: () => can(ids.length > 0), keys: { spec: { kind: 'key', key: 'g', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: `${GROUP_ACTIONS.group}.key` } } });
   useCommand(GROUP_ACTIONS.ungroup, 'Ungroup', () => {
     if (group === null) return;
     editor.current?.ungroup(group);
     pickGroup(null);
-  }, { enabled: () => can(group !== null), keys: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES } });
+  }, { enabled: () => can(group !== null), keys: { spec: { kind: 'key', key: 'g', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: `${GROUP_ACTIONS.ungroup}.key` } } });
 }

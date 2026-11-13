@@ -78,7 +78,7 @@ export function useChartCommands(scene: ChartScene, onReplaced: () => void): voi
   useCommand(CHART_ACTIONS.grid, 'Show grid', () => setGridVisible(!gridVisible), {
     icon: icon('ui:grid'),
     active: () => gridVisible,
-    keys: { kind: 'key', key: "'", code: 'Quote', mods: { mod: true } },
+    keys: { spec: { kind: 'key', key: "'", code: 'Quote', mods: { mod: true } }, opts: { id: `${CHART_ACTIONS.grid}.key` } },
   });
   useCommand(CHART_ACTIONS.snapToGrid, 'Snap to grid', () => setSnapToGrid(!snapToGrid), {
     icon: icon('ui:snap'),

@@ -60,10 +60,10 @@ export function usePipelineCommands(pipeline: PipelineDoc, onReplaced: () => voi
   });
   useCommand(PIPELINE_ACTIONS.undo, 'Undo', () => pipeline.undo(), {
     enabled: () => can(pipeline.canUndo),
-    keys: { kind: 'key', key: 'z', mods: { mod: true }, phase: BETWEEN_GESTURES },
+    keys: { spec: { kind: 'key', key: 'z', mods: { mod: true }, phase: BETWEEN_GESTURES }, opts: { id: `${PIPELINE_ACTIONS.undo}.key` } },
   });
   useCommand(PIPELINE_ACTIONS.redo, 'Redo', () => pipeline.redo(), {
     enabled: () => can(pipeline.canRedo),
-    keys: { kind: 'key', key: 'z', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES },
+    keys: { spec: { kind: 'key', key: 'z', mods: { mod: true, shift: true }, phase: BETWEEN_GESTURES }, opts: { id: `${PIPELINE_ACTIONS.redo}.key` } },
   });
 }

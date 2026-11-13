@@ -2128,5 +2128,5 @@ Calls the lanes made without a ruling:
 - Open: `@weasel-js/hud`'s long-press binding is tested for its target and kind, not by a touch held on a widget
   through the dispatcher; core's long-press tests drive the gesture itself. Pinch dolly is now driven by two touch
   pointers (`pinchDolly.integration.test.tsx`).
-- Open: chart's own commands (`apps/chart/src/chartCommands.ts`) bind keys without ids, as draw's did; chart is
-  outside this lane.
+- Chart's command keys (grid, undo and redo, group and ungroup, the page keys) take `<action>.key` ids, as draw's do
+  (2026-11-13, in the batch).
