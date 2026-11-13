@@ -5,7 +5,7 @@ import { usePageFit } from './usePageFit';
 describe('usePageFit', () => {
   it('fits a page to the workspace once it is measured', () => {
     const setView = vi.fn();
-    renderHook(() => usePageFit({ width: 200, height: 200 }, 'doc', { x: 0, y: 0, width: 100, height: 100 }, setView, 0));
+    renderHook(() => usePageFit({ width: 200, height: 200 }, 'doc', { x: 0, y: 0, width: 100, height: 100 }, setView, { padding: 0 }));
     expect(setView).toHaveBeenCalledWith({ x: 0, y: 0, scale: { x: 2, y: 2 } });
   });
 

@@ -54,20 +54,27 @@ function usePointerDown(on: boolean): boolean {
   return down;
 }
 
+/** Options for {@link usePageSettle}. */
+export interface PageSettleOptions {
+  /** `'single'` settles the view onto one page; `'continuous'` leaves it alone. */
+  paging: Paging;
+  /** What the fit leaves around the page, in screen pixels. Default 24. */
+  padding?: number;
+}
+
 /**
  * With `'single'` paging, brings the view to rest fitted to one page: `PAGE_SETTLE_MS` after the view last
  * moved, and never while a pointer is down, it goes to the page the view shows most of, or with none
  * showing the nearest. A view zoomed in past that page's fit is left where it is, to pan freely, unless it
  * was fitted to that page before the host's size changed, when it is fitted again. Animated when `setView`
- * is a view dep with `animate`. With `'continuous'` it does nothing. `padding` is what the fit leaves around the page, in screen pixels.
+ * is a view dep with `animate`. With `'continuous'` it does nothing.
  */
 export function usePageSettle(
   pages: { readonly placed: readonly PlacedPage[] },
   view: View,
   dims: { width: number; height: number },
   setView: ViewSink,
-  paging: Paging,
-  padding = 24,
+  { paging, padding = 24 }: PageSettleOptions,
 ): void {
   const single = paging === 'single';
   const down = usePointerDown(single);

@@ -22,7 +22,7 @@ describe('usePageSettle', () => {
   it('with single, settles a view between two pages onto the nearer after 150 ms', () => {
     vi.useFakeTimers();
     const setView = vi.fn();
-    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, 'single'));
+    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, { paging: 'single' }));
     vi.advanceTimersByTime(149);
     expect(setView).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1);
@@ -34,7 +34,7 @@ describe('usePageSettle', () => {
     const setView = vi.fn();
     // World y 110–224: 10 below A, 176 above B.
     const gap: View = { x: 0, y: 110, scale: { x: 3.5, y: 3.5 } };
-    renderHook(() => usePageSettle(pages, gap, DIMS, setView, 'single'));
+    renderHook(() => usePageSettle(pages, gap, DIMS, setView, { paging: 'single' }));
     vi.advanceTimersByTime(150);
     expect(setView).toHaveBeenCalledWith(fit(A, gap));
   });
@@ -42,7 +42,7 @@ describe('usePageSettle', () => {
   it('animates when the view it is handed can', () => {
     vi.useFakeTimers();
     const sink = { set: vi.fn(), animate: vi.fn() };
-    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, sink, 'single'));
+    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, sink, { paging: 'single' }));
     vi.advanceTimersByTime(150);
     expect(sink.animate).toHaveBeenCalledWith(fit(B, BETWEEN));
     expect(sink.set).not.toHaveBeenCalled();
@@ -51,7 +51,7 @@ describe('usePageSettle', () => {
   it('restarts its wait on each view change and holds while a pointer is down', () => {
     vi.useFakeTimers();
     const setView = vi.fn();
-    const { rerender } = renderHook(({ view }) => usePageSettle(pages, view, DIMS, setView, 'single'), {
+    const { rerender } = renderHook(({ view }) => usePageSettle(pages, view, DIMS, setView, { paging: 'single' }), {
       initialProps: { view: BETWEEN },
     });
     vi.advanceTimersByTime(100);
@@ -71,7 +71,7 @@ describe('usePageSettle', () => {
   it('leaves a view already fitted to a page alone', () => {
     vi.useFakeTimers();
     const setView = vi.fn();
-    renderHook(() => usePageSettle(pages, fit(A, BETWEEN), DIMS, setView, 'single'));
+    renderHook(() => usePageSettle(pages, fit(A, BETWEEN), DIMS, setView, { paging: 'single' }));
     vi.advanceTimersByTime(1000);
     expect(setView).not.toHaveBeenCalled();
   });
@@ -79,7 +79,7 @@ describe('usePageSettle', () => {
   it('with continuous, never sets the view', () => {
     vi.useFakeTimers();
     const setView = vi.fn();
-    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, 'continuous'));
+    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, { paging: 'continuous' }));
     vi.advanceTimersByTime(1000);
     pointer('pointerup', 1);
     vi.advanceTimersByTime(1000);
@@ -89,7 +89,7 @@ describe('usePageSettle', () => {
   it('holds while any finger of a pinch is still down', () => {
     vi.useFakeTimers();
     const setView = vi.fn();
-    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, 'single'));
+    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, { paging: 'single' }));
     pointer('pointerdown', 1);
     pointer('pointerdown', 2);
     pointer('pointerup', 1);
@@ -103,7 +103,7 @@ describe('usePageSettle', () => {
   it('lets go of the held pointers when the window loses focus', () => {
     vi.useFakeTimers();
     const setView = vi.fn();
-    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, 'single'));
+    renderHook(() => usePageSettle(pages, BETWEEN, DIMS, setView, { paging: 'single' }));
     pointer('pointerdown', 1);
     act(() => { window.dispatchEvent(new Event('blur')); });
     vi.advanceTimersByTime(150);
@@ -117,7 +117,7 @@ describe('usePageSettle', () => {
     const s = fitted.scale.x * 4;
     // 4x the fit, looking at B's middle.
     const zoomed: View = { x: 40, y: 440, scale: { x: s, y: s } };
-    renderHook(() => usePageSettle(pages, zoomed, DIMS, setView, 'single'));
+    renderHook(() => usePageSettle(pages, zoomed, DIMS, setView, { paging: 'single' }));
     vi.advanceTimersByTime(150);
     vi.advanceTimersByTime(1000);
     expect(setView).not.toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe('usePageSettle', () => {
     const setView = vi.fn();
     const fitted = fit(A, BETWEEN);
     const small = { width: 200, height: 200 };
-    const { rerender } = renderHook(({ view, dims }) => usePageSettle(pages, view, dims, setView, 'single'), {
+    const { rerender } = renderHook(({ view, dims }) => usePageSettle(pages, view, dims, setView, { paging: 'single' }), {
       initialProps: { view: fitted, dims: DIMS },
     });
     vi.advanceTimersByTime(150);

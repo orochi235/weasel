@@ -67,7 +67,7 @@ describe('usePages', () => {
     vi.useFakeTimers();
     const scene = continuous();
     const setView = vi.fn();
-    const { result } = renderHook(() => usePages(scene, OUT, DIMS, setView, 24, { paging: 'single' }));
+    const { result } = renderHook(() => usePages(scene, OUT, DIMS, setView, { paging: 'single' }));
     act(() => result.current.add());
     setView.mockClear();
     act(() => { vi.advanceTimersByTime(150); });

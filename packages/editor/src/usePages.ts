@@ -14,6 +14,8 @@ const FIRST_PAGE = { width: 816, height: 1056 } as const;
 export interface UsePagesOptions {
   /** How the view moves through the pages; `'single'` settles it onto one page (`usePageSettle`). */
   paging?: Paging;
+  /** What fitting the view to a page leaves around it, in screen pixels. Default 24. */
+  padding?: number;
 }
 
 /** Where {@link DocPages.add} puts a new page: its index in the page list, and the size of the page it
@@ -113,8 +115,7 @@ function useShown(placed: readonly PlacedPage[], current: string | null): { held
 
 /**
  * A scene's pages, read from its page nodes, with the view following them. Each edit is one of
- * core's page edits, so it moves what is on a page with it, in one undo entry. `padding` is what
- * fitting the view to a page leaves around it, in screen pixels. `setView` may be a view dep with
+ * core's page edits, so it moves what is on a page with it, in one undo entry. `setView` may be a view dep with
  * `animate`, and then going to a page and `'single'` paging's settle animate.
  */
 export function usePages<TData, TLayer extends string, TPose>(
@@ -122,9 +123,9 @@ export function usePages<TData, TLayer extends string, TPose>(
   view: View,
   dims: { width: number; height: number },
   setView: ViewSink,
-  padding = 24,
   options: UsePagesOptions = {},
 ): DocPages {
+  const padding = options.padding ?? 24;
   const scene = sceneIn as unknown as AnyScene;
   const placed = usePlaced(scene);
   const current = dims.width > 0 && dims.height > 0 ? pageInView(placed, view, dims)?.id ?? null : null;
@@ -175,6 +176,6 @@ export function usePages<TData, TLayer extends string, TPose>(
       resize: (id, size) => resizePage(scene, id, size),
     };
   }, [scene, placed, current, shown, latest, padding]);
-  usePageSettle(result, view, dims, setView, options.paging ?? 'continuous', padding);
+  usePageSettle(result, view, dims, setView, { paging: options.paging ?? 'continuous', padding });
   return result;
 }

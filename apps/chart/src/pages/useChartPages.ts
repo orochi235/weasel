@@ -15,5 +15,5 @@ export function useChartPages(
   dims: { width: number; height: number },
   setView: (view: View) => void,
 ): ChartPages {
-  return usePages(scene, view, dims, setView, PAGE_FIT_PADDING);
+  return usePages(scene, view, dims, setView, { padding: PAGE_FIT_PADDING });
 }

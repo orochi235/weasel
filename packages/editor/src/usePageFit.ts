@@ -4,6 +4,12 @@ import type { PageSize } from './paperLayer';
 
 const NOT_FIT = Symbol('not fit yet');
 
+/** Options for {@link usePageFit}. */
+export interface PageFitOptions {
+  /** What the fit leaves around the page, in screen pixels. Default 24. */
+  padding?: number;
+}
+
 /**
  * Fits the page — at the world origin unless it says where it is — to the workspace on the first measured size and whenever `fitKey` changes,
  * deliberately not on later resizes, which would hijack the user's pan and zoom. `page` is
@@ -15,7 +21,7 @@ export function usePageFit(
   fitKey: unknown,
   page: (PageSize & { x?: number; y?: number }) | null,
   setView: (view: View) => void,
-  padding = 24,
+  { padding = 24 }: PageFitOptions = {},
 ): () => void {
   const lastFitKeyRef = useRef<unknown>(NOT_FIT);
   const workspaceRef = useLatest(workspace);

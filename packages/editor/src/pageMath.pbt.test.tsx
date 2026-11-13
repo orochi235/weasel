@@ -27,7 +27,7 @@ describe('usePageFit', () => {
       fc.integer({ min: 0, max: 200 }), fc.record({ width: fc.integer({ min: 1, max: 3000 }), height: fc.integer({ min: 1, max: 3000 }) }),
       (ws, page, padding, resized) => {
         const views: View[] = [];
-        const hook = renderHook(({ dims, key }) => usePageFit(dims, key, page, (v) => views.push(v), padding),
+        const hook = renderHook(({ dims, key }) => usePageFit(dims, key, page, (v) => views.push(v), { padding }),
           { initialProps: { dims: ws, key: 'one' } });
         if (ws.width === 0 || ws.height === 0) {
           seen.count('unmeasured');
