@@ -16,11 +16,15 @@ export function useToolShortcuts(
   registry: ActionsRegistry | null,
   tools: Readonly<Record<string, AnyTool>>,
 ): ToolShortcuts {
-  const last = useRef<ToolShortcuts>(NONE);
+  // The last few answers, so a value the keys pass through and return from (a tool's keys unregistered and registered
+  // again in one effect) comes back as the object it was, and nothing holding the api re-runs for it.
+  const recent = useRef<ToolShortcuts[]>([NONE]);
   const read = useCallback((): ToolShortcuts => {
     const next = registry ? toolShortcutsOf(registry.list(), Object.keys(tools)) : declaredToolShortcuts(tools);
-    if (!deepEqual(next, last.current)) last.current = next;
-    return last.current;
+    const known = recent.current.find((r) => deepEqual(r, next));
+    if (known) return known;
+    recent.current = [next, ...recent.current].slice(0, 4);
+    return next;
   }, [registry, tools]);
   return useSyncExternalStore(registry ? registry.subscribe : noSubscribe, read, read);
 }
