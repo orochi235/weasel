@@ -1,6 +1,7 @@
 /**
  * A history's entries, their wire form, and the trip between the two.
  */
+import { deepEqual } from '@weasel-js/registry';
 import type { Op } from './op';
 
 export interface Entry {
@@ -268,13 +269,7 @@ function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild 
 }
 
 function sameSerialOps(a: readonly SerializedOp[], b: readonly SerializedOp[]): boolean {
-  if (a === b) return true;
-  if (a.length !== b.length) return false;
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
-  }
+  return a === b || deepEqual(a, b);
 }
 
 /** Rebuild a runtime entry from its serialized form. Unknown op names become
