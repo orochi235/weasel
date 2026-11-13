@@ -45,7 +45,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
   const optsRef = useLatest(opts);
   return useMemo(
     () =>
-      Object.assign(defineTool({
+      defineTool({
         id: 'hand',
         keybinding: { key: 'H' },
         capabilities: ['navigation'],
@@ -57,11 +57,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
           group: 'view',
         },
         cursor: 'grab',
-      }), {
-        // Declarative binding routes drag through the dispatcher +
-        // viewportDragPanAction, which also owns the grabbing cursor
-        // (`Action.activeCursor`) the tool used to declare as an `engaged`
-        // phase entry.
+        // `viewport.dragPan` owns the gesture and the grabbing cursor (`Action.activeCursor`).
         bindings: [{
           // Any modifiers: the hand always pans, so a held key never hands the drag to a move or a clone.
           spec: { kind: 'drag' as const, target: THROUGH_CHROME, mods: ANY_MODS },
@@ -74,7 +70,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool {
             }),
           },
         }],
-      }) as Tool,
+      }),
     [optsRef],
   );
 }
