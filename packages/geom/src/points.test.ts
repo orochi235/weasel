@@ -7,7 +7,7 @@ import {
   pointSegmentDist2 as pointSegmentDist2D2, segmentT as segmentT2D,
 } from './points2';
 import { nearestOnLine } from './nearest';
-import { closestPointOnSegment as closestPointOnSegment3, distance as distance3, lerp as lerp3 } from './3d';
+import { closestPointOnSegment as closestPointOnSegment3, distance as distance3, lerpPoint as lerp3 } from './3d';
 
 describe('the nearest point of a segment', () => {
   it('projects onto the segment and clamps to its ends', () => {
