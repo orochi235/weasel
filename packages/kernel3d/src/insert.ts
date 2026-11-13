@@ -54,6 +54,9 @@ export interface InsertNode3d<TData, TLayer extends string> {
   pose: Pose3;
   /** Default the scene's first layer. */
   layer?: TLayer;
+  /** The container it goes in. Default the top of the tree. `pose` is stored as given, so under a composition
+   *  that carries children it is the pose in that container's frame. */
+  parent?: NodeId | null;
 }
 
 /** Options for `createInsert`: where it casts from, as a world or as its parts, and what it makes there. */
@@ -74,6 +77,7 @@ export type InsertOptions<TData = unknown, TLayer extends string = string> = Ins
     world?: never;
     mint: MintFn;
     node?: never;
+    selection?: never;
   }
 );
 
@@ -88,6 +92,9 @@ type InsertMake<TData, TLayer extends string> =
      * does in 2D. Needs `world.scene`.
      */
     node(footprint: Footprint, extras: InsertExtras): InsertNode3d<TData, TLayer> | null;
+    /** Where the insert's selection change lands, and undo puts it back. Default the scene's own selection, which
+     *  `<SceneCanvas>` uses unless it is handed a `selection`. */
+    selection?: InsertSelection;
     mint?: never;
   }
   | {
@@ -95,7 +102,14 @@ type InsertMake<TData, TLayer extends string> =
      *  same batch when it applies ops (`commitSelectionOps`). `node` does all of this for you. */
     mint: MintFn;
     node?: never;
+    selection?: never;
   };
+
+/** A selection a `node` insert commits its change to, as the `selection` dep reads and writes one. */
+export interface InsertSelection {
+  get(): readonly NodeId[];
+  set(ids: NodeId[]): void;
+}
 
 interface InsertCommon {
   /** The view whose camera a drag is cast through, for a `<CanvasView deps>` of its own. Default the surface's. */
@@ -107,10 +121,11 @@ interface InsertCommon {
 type Built = { id: NodeId; ops: ReturnType<typeof createInsertOp>[] };
 
 /** `node`'s answer as the ops that insert it into `scene` (`build`), and committed there as one entry with
- *  `select`'s change, on the scene's own selection (`mint`). */
+ *  `select`'s change, on `selection` or else the scene's own (`mint`). */
 function nodeMinter<TData, TLayer extends string>(
   scene: Scene3d<TData, TLayer> | undefined,
   node: (footprint: Footprint, extras: InsertExtras) => InsertNode3d<TData, TLayer> | null,
+  selection: InsertSelection | undefined,
 ): { mint: MintFn; build(footprint: Footprint, extras: InsertExtras): Built | null } {
   if (!scene) throw new Error('createInsert: a `node` factory needs `world.scene`, the scene its node goes into.');
   const build = (footprint: Footprint, extras: InsertExtras): Built | null => {
@@ -118,7 +133,7 @@ function nodeMinter<TData, TLayer extends string>(
     if (!made) return null;
     const id = scene.mintId();
     const layer = made.layer ?? scene.layers[0]?.id;
-    const inserted = { id, kind: 'mark' as const, layer, parent: null, data: made.data, pose: made.pose };
+    const inserted = { id, kind: 'mark' as const, layer, parent: made.parent ?? null, data: made.data, pose: made.pose };
     return { id, ops: [createInsertOp({ node: inserted, label: `Insert ${extras.kind}` })] };
   };
   return {
@@ -128,7 +143,11 @@ function nodeMinter<TData, TLayer extends string>(
       if (!built) return null;
       const label = `Insert ${extras.kind}`;
       const ops = [...built.ops, ...commitSelectionOps(select, built.id, label)];
-      return scene.applyBatch(ops, label, defaultCommitAdapter(scene as never)) ? built.id : null;
+      const adapter = defaultCommitAdapter(scene as never, selection && {
+        getSelection: () => [...selection.get()],
+        setSelection: (ids) => selection.set(ids),
+      });
+      return scene.applyBatch(ops, label, adapter) ? built.id : null;
     },
   };
 }
@@ -144,7 +163,7 @@ export function createInsert<TData = unknown, TLayer extends string = string>(op
   const { viewport, up = DEFAULT_UP } = opts.world ?? { viewport: opts.viewport!, up: opts.up };
   const minExtent = opts.minExtent ?? 0.25;
   const { u, v } = groundAxes(up);
-  const made = opts.node ? nodeMinter(opts.world?.scene, opts.node) : null;
+  const made = opts.node ? nodeMinter(opts.world?.scene, opts.node, opts.selection) : null;
   const mint = made ? made.mint : opts.mint!;
 
   const footprintOf = (

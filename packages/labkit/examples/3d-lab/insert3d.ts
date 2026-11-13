@@ -19,21 +19,22 @@ export function useBoxInsert(scene: SolidScene, viewport: ViewportSource): Inser
       return into != null && scene.get(into as NodeId)?.kind === 'group' ? into as NodeId : null;
     };
     return createInsert({
-      viewport,
-      mint: ({ center, width, depth }, _extras, select) => {
+      world: { scene, viewport },
+      // The lab keeps its selection in React state, behind the `selection` dep.
+      selection: {
+        get: () => registry.get('selection')?.get() ?? [],
+        set: (ids) => registry.get('selection')?.set(ids),
+      },
+      node: ({ center, width, depth }) => {
         const height = (width + depth) / 2;
+        const parent = parentOf();
         // Under the scene's identity composition a child's pose is a world
         // pose, so the box needs no conversion into its container.
-        const id = scene.add({
-          kind: 'mark',
-          layer: 'solids',
-          parent: parentOf(),
+        return {
+          ...(parent ? { parent, layer: scene.get(parent)!.layer } : {}),
           pose: pose3({ x: center.x, y: height / 2, z: center.z }, { x: width, y: height, z: depth }),
           data: { kind: 'box', color: '#c49a3f' },
-        });
-        // `scene.add` applies no ops for the selection to join.
-        if (select) registry.get('selection')?.set(select.selectNode ? [id] : []);
-        return id;
+        };
       },
     });
   }, [registry, scene, viewport]);

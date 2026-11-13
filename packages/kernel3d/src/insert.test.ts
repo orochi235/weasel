@@ -131,3 +131,21 @@ describe('createInsert with a node factory', () => {
     expect(() => createInsert({ world: { viewport: () => TOP }, node: boxOn })).toThrow(/needs `world.scene`/);
   });
 });
+
+describe('createInsert with a node factory and a selection of its own', () => {
+  it('commits the selection change to that selection, and undo puts it back there', () => {
+    const sc = createScene<{ tag: string }, 'solids', Pose3>({ composition: POSE3_COMPOSITION, systemLayers: [{ id: 'solids' }] });
+    let held: readonly NodeId[] = ['before' as NodeId];
+    const selection = { get: () => held, set: (ids: NodeId[]) => { held = ids; } };
+    const insert = createInsert({
+      world: { scene: sc, viewport: () => TOP, up: { x: 0, y: 0, z: 1 } },
+      selection,
+      node: (f) => ({ data: { tag: 'box' }, pose: pose3(f.center) }),
+    });
+    const id = insert.commit(DRAG, { kind: 'rect' }, undefined, { from: held, selectNode: true })!;
+    expect(held).toEqual([id]);
+    expect(sc.getSelection()).toEqual([]);
+    sc.history.undo();
+    expect(held).toEqual(['before']);
+  });
+});
