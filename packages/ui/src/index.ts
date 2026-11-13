@@ -130,7 +130,7 @@ export * from './components/Jog';
 export * from './components/Timeline';
 export * from './components/Sequence';
 export { paintGradientTrack } from './paintGradientTrack';
-export type { GradientTrackOpts } from './paintGradientTrack';
+export type { GradientTrackOptions } from './paintGradientTrack';
 export { paintPreviewCss } from './paintPreview';
 export { oklchToHex, chromaAt } from './color/oklch';
 export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';

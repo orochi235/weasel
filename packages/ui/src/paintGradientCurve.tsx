@@ -1,10 +1,10 @@
 import { useId, type ReactElement } from 'react';
 import { trackShapeD, type TrackRun } from '@weasel-js/geom';
 import type { TrackCtx } from './components/Slider';
-import type { GradientTrackOpts } from './paintGradientTrack';
+import type { GradientTrackOptions } from './paintGradientTrack';
 import s from './paintGradientTrack.module.css';
 
-type Hatch = Required<NonNullable<GradientTrackOpts['hatch']>>;
+type Hatch = Required<NonNullable<GradientTrackOptions['hatch']>>;
 
 /** How far each segment runs on under the next, in px, so no antialiased seam shows between them. */
 const OVERLAP = 0.5;
