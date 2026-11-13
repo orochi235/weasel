@@ -5,7 +5,7 @@
  * `useSceneTextEdit` whose container holds the canvas, or a `textEdit` dep
  * registered over it.
  */
-import { useEffect, useLayoutEffect, useMemo, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type MutableRefObject } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { useDepRegistry, useDepSource } from '@weasel-js/routing/react';
 import type { TextEditDep } from 'interactions/actions/depSchema';
@@ -13,7 +13,7 @@ import type { Node, Scene } from 'core/scene/types';
 import {
   useSceneTextEditor, type DefaultTextData, type UseSceneTextEditOptions, type UseSceneTextEditReturn,
 } from 'domains/text/useSceneTextEdit';
-import { hostTextEditorHolds } from 'domains/text/hostTextEditors';
+import { hostTextEditing, hostTextEditorHolds, subscribeHostTextEditing } from 'domains/text/hostTextEditors';
 import { drawOneEditing, type EditingDrawOne } from 'domains/text/editingDrawOne';
 import { defaultDrawOne, defaultPaintBounds, paintBoundsFor } from '../defaultDrawOne';
 import { isCustomEntry } from '../layerSlots';
@@ -92,7 +92,9 @@ export function DefaultTextEditDep({ editor, onDoubleClick }: {
 
 /**
  * The canvas's own editor, and its `layers` with the edited node's glyphs left
- * out. Not mounted under `paintInto`, where the canvas element is the host's.
+ * out — the node its own editor has open, or a host's `useSceneTextEdit`
+ * holding the canvas. Not mounted under `paintInto`, where the canvas element
+ * is the host's.
  */
 export function useCanvasTextEditor<TData, TLayer extends string, TPose>(
   scene: Scene<TData, string, unknown>,
@@ -104,7 +106,11 @@ export function useCanvasTextEditor<TData, TLayer extends string, TPose>(
   },
 ): { editor: DefaultTextEditor; layers: SceneCanvasLayers<Node<TData, TLayer, TPose>, TPose> | undefined } {
   const editor = useDefaultTextEditor(scene, elementRef, props.textEditor, !props.paintInto);
-  const editingId = editor.edit.editingId;
+  const hostEditing = useSyncExternalStore(
+    subscribeHostTextEditing,
+    useCallback(() => (elementRef.current ? hostTextEditing(elementRef.current, scene) : null), [elementRef, scene]),
+  );
+  const editingId = editor.edit.editingId ?? hostEditing;
   const layers = useMemo(() => layersWhileEditing(props.layers, editingId), [props.layers, editingId]);
   return { editor, layers };
 }

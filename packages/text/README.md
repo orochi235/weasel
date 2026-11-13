@@ -21,11 +21,15 @@ npm install @weasel-js/text
 lines they wrap into, with every glyph placed. `paintRuns` turns that into what
 to draw: the glyphs gathered into groups that share a face and a paint, and the
 decoration rules. Paint is read only there, so recoloring text reuses its layout.
+Paint is not part of a `TextStyle`: it is `resolveTextStyle`'s second argument, the
+node's `fill` and `stroke`, and text resolved with no fill paints nothing.
 
 ```ts
-import { toRuns, resolveTextStyle, resolveRuns, layoutRuns, paintRuns } from '@weasel-js/text';
+import {
+  toRuns, resolveTextStyle, resolveRuns, layoutRuns, paintRuns, DEFAULT_TEXT_FILL,
+} from '@weasel-js/text';
 
-const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 64 });
+const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 64 }, { fill: DEFAULT_TEXT_FILL });
 const runs = resolveRuns(toRuns('Hello'), style);
 const laid = layoutRuns(runs, { maxWidth: 900, lineHeight: 1.2, align: 'center' });
 const { lines, bounds } = laid;

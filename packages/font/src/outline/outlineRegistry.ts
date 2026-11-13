@@ -312,8 +312,8 @@ async function runLoad(slot: FaceSlot): Promise<void> {
     notifyGlyphReady();
     warnOnce(`load|${slotKey(slot.family, slot.weight, slot.style)}`,
       `weasel registerFontOutlines("${slot.family}" ${slot.weight}/${slot.style}): ` +
-      `${err instanceof Error ? err.message : String(err)}. Large text in this face ` +
-      `keeps rendering from the SDF tier.`);
+      `${err instanceof Error ? err.message : String(err)}. Text in this face draws from its ` +
+      `atlas or canvas face if it has one, and is otherwise set as an unregistered family is.`);
   }
 }
 

@@ -17,7 +17,7 @@ import { scenePaintedPoseOf } from '../../canvas/derivedPath';
 import type { Scene } from '../../core/scene/types';
 import { drawOneEditing, type EditingDrawOne } from './editingDrawOne';
 import { textHitAt } from './textHitAt';
-import { registerHostTextEditor } from './hostTextEditors';
+import { registerHostTextEditor, type HostTextEditorHandle } from './hostTextEditors';
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import { resolveScreenLength } from '@weasel-js/paint';
@@ -139,9 +139,9 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /**
    * `defaultDrawOne`, less the glyphs of the node being edited: the overlay
    * stands in for its text, and the rest of the node, a `background` among
-   * it, goes on painting. Pass it as `layers.scene.drawOne`, with
-   * `paintBounds: defaultPaintBounds`, in place of an `alphaFor` that hides
-   * the whole node.
+   * it, goes on painting. A `<SceneCanvas>` inside `container` drawing this
+   * scene already leaves those glyphs out; this is for anything else that
+   * draws the node.
    */
   drawOne: EditingDrawOne;
 }
@@ -168,7 +168,8 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
 
 /** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
  *  over the node being edited and writes the result back as an undoable op.
- *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`. */
+ *  `<SceneCanvas>`'s own editor stands down for any canvas inside `container`,
+ *  and such a canvas leaves out the glyphs of the node being edited. */
 export function useSceneTextEdit<
   TData extends DefaultTextData,
   TLayer extends string,
@@ -178,8 +179,19 @@ export function useSceneTextEdit<
   container: HTMLElement | null,
   options: UseSceneTextEditOptions<TData> = {},
 ): UseSceneTextEditReturn {
-  useEffect(() => (container ? registerHostTextEditor(container) : undefined), [container]);
-  return useSceneTextEditor(scene, container, options);
+  const host = useRef<HostTextEditorHandle | null>(null);
+  useEffect(() => {
+    if (!container) return undefined;
+    const handle = registerHostTextEditor(container, scene);
+    host.current = handle;
+    return () => {
+      handle.dispose();
+      if (host.current === handle) host.current = null;
+    };
+  }, [container, scene]);
+  const edit = useSceneTextEditor(scene, container, options);
+  useEffect(() => { host.current?.setEditing(edit.editingId); }, [edit.editingId, container, scene]);
+  return edit;
 }
 
 /** `useSceneTextEdit` without announcing itself as a host's editor: what

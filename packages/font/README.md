@@ -17,6 +17,15 @@ no glyphs at all.
 | `textureSink` | The `GlyphTextureSink` seam — the renderer injects GL texture upload, so this package never imports one |
 | `textSdf` | The GLSL that turns an atlas sample into glyph coverage, for the renderer's batch program to paste in |
 
+## Faces from font files
+
+`registerFontOutlines(family, { weight, style }, source)` registers one face from its font file: a
+URL, an `ArrayBuffer`, a `Blob`, or a function returning one. TrueType, OpenType, WOFF and
+collections (`.ttc`, `.dfont`) load; WOFF2 does not, and its load fails with a warning saying so.
+A family with no atlas lays out and draws from these outlines, and the text edit overlay sets its
+glyphs in the same bytes. `loadFontOutlines(family, variant)` resolves to `'ready'` or `'failed'`
+once the bytes are parsed.
+
 ## Without a browser
 
 `@weasel-js/font/metrics` carries the part that runs in Node or a worker:
