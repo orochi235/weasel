@@ -37,7 +37,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
   },
   "dependencies": {
     "@weasel-js/export": "1.19.1",

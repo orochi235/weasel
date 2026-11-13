@@ -28,7 +28,7 @@
     "@weasel-js/registry": "1.19.1"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "node ../../scripts/package-test.mjs",
     "build": "tsup"
   },
   "author": "orochi235",

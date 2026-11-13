@@ -116,7 +116,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json && cp src/icons.table.json dist/ && node ../labkit/scripts/build-css.mjs --if-built"
+    "build": "vite build && tsc -p tsconfig.build.json && cp src/icons.table.json dist/ && node ../labkit/scripts/build-css.mjs --if-built",
+    "test": "node ../../scripts/package-test.mjs"
   },
   "publishConfig": {
     "access": "public",

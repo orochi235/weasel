@@ -115,6 +115,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "test": "node ../../scripts/package-test.mjs",
     "build": "vite build && tsup && cp src/icons.table.json dist/ && node ../labkit/scripts/build-css.mjs --if-built",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

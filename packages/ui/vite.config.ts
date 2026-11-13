@@ -15,9 +15,9 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
 import { weaselIcons } from '../icons-plugin/src/index.ts';
-import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
+import { assertPackageBuild } from '../../scripts/lib/own-install.mjs';
 
-assertOwnInstall(resolve(import.meta.dirname, '../..'));
+assertPackageBuild(import.meta.dirname);
 
 /**
  * One entry per component directory, plus the barrel, backing the

@@ -261,11 +261,12 @@ What a branch run selects, the gate, `test:fleet:postbuild`, the draw view check
 
 ## Test and typecheck commands
 
-Core's tests run under the root vitest config, not the package: `npx vitest run --project=core`.
-The `core` workspace has no `test` script at all. `npm test` runs every project.
-`packages/text` and `packages/bidi` run under the `weasel-ui` project, not `core` — and running
-vitest from inside a package finds zero files and looks like a pass. `npm run check:test-projects`
-prints which project owns each directory, and fails on a test file no project collects.
+Every test runs under the root vitest config's projects: `npx vitest run --project=core <file>`
+from the root, or `npm test -- <file>` inside a package, which runs its files from the root under
+whichever projects own them (`scripts/package-test.mjs`). `npm test` at the root runs every project.
+`packages/text` and `packages/bidi` run under the `weasel-ui` project, not `core`.
+`npm run check:test-projects` prints which project owns each directory, and fails on a test file no
+project collects.
 A check that needs a real browser — layout, real IndexedDB, CSS jsdom can't resolve — is a
 `*.browser.test.{ts,tsx}` file, not a story `play`: the `browser` project runs it in headless
 Chromium (`npm run test:browser`, part of `npm test` and CI).

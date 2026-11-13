@@ -41,6 +41,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "test": "node ../../scripts/package-test.mjs",
     "build": "tsup"
   },
   "dependencies": {

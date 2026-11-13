@@ -41,3 +41,19 @@ export function exitUnlessOwnInstall(root) {
   console.error(problem);
   process.exit(1);
 }
+
+/**
+ * For a package's own build config: refuses a checkout with no install, and a vitest run, which
+ * would otherwise read the build config as its test config from inside the package and run the
+ * package's files with no project's environment, setup or aliases.
+ * @param {string} packageDir
+ */
+export function assertPackageBuild(packageDir) {
+  assertOwnInstall(join(packageDir, '..', '..'));
+  if (!process.env.VITEST) return;
+  throw new Error(
+    `${packageDir}/vite.config.ts builds the package and is no test config. ` +
+      'Run `npm test` in the package (`-- <file>` for one file), or from the repo root ' +
+      '`npx vitest run --project=<project> <path>`; `npm run check:test-projects` names the project.',
+  );
+}
