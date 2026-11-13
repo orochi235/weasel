@@ -14,6 +14,7 @@ import { noteAt } from './authorActions';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SEQ } from './metrics';
 import type { SeqFragment, SequenceData } from './types';
+import { SEQUENCE_FRAGMENT_PARAMS, SEQUENCE_MESSAGE_PARAMS } from './authorParams';
 
 /** The action a Message tool's drag runs. */
 export const DRAW_MESSAGE_ACTION_ID = 'diagram.sequence.drawMessage';
@@ -27,14 +28,14 @@ type AnyScene = Scene<unknown, string, unknown>;
 /** What a drag proposes with the pointer at a point: the edit, and the chrome previewing it. */
 interface Proposal { data: SequenceData; label: string; overlay: OngoingOverlay[] }
 
-/** Builds a drag's proposal from its press, the pointer now, and its binding's params. */
+/** Builds a drag's proposal from its press, the pointer now, and its params: its binding's, its tool's options over them. */
 type Plan = (press: SequenceHit, now: SequenceHit, params: Record<string, unknown>) => Proposal | null;
 
 /** An ongoing action over the root a press lands on, proposing `plan` as the pointer moves and committing it on release. */
-function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: Plan): Action {
+function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: Plan, params?: Action['params']): Action {
   const commit = sequenceCommitOf(opts);
   return {
-    id, label, group: 'diagram', requires: ['scene'],
+    id, label, group: 'diagram', requires: ['scene'], ...(params ? { params } : {}),
     invoker: {
       timing: 'ongoing',
       start(ctx: InvocationCtx, binding): OngoingHandle {
@@ -43,21 +44,30 @@ function authorDrag(id: string, label: string, opts: SequenceEditOptions, plan: 
         const press = scene === undefined ? null : sequenceAt(scene, start);
         if (scene === undefined || press === null) return {};
         let proposal: Proposal | null = null;
-        const propose = (at: Vec2) => {
+        let last: Vec2 = start;
+        const planAt = (at: Vec2, given: Record<string, unknown>): Proposal | null => {
           const now = sequenceHitOf(scene, press.root.id, at);
-          proposal = now === null ? null : plan(press, now, resolveParams(binding?.params) ?? {});
+          return now === null ? null : plan(press, now, given);
+        };
+        const propose = (at: Vec2, live: InvocationCtx) => {
+          last = at;
+          proposal = planAt(at, { ...resolveParams(binding?.params), ...live.params });
+        };
+        const land = (done: Proposal | null) => {
+          if (done === null || done.data === press.data) return;
+          commit({ id: press.root.id, data: done.data, label: done.label }, { deps: { ...ctx.deps, scene: scene as never } });
         };
         return {
           kind: id,
-          onMove(move) { propose({ x: move.world.x, y: move.world.y }); },
+          onMove(move) { propose({ x: move.world.x, y: move.world.y }, move); },
           overlay: () => proposal?.overlay ?? null,
           onEnd(end, reason) {
-            if (reason === 'commit') propose({ x: end.world.x, y: end.world.y });
+            if (reason === 'commit') propose({ x: end.world.x, y: end.world.y }, end);
             const done = proposal;
             proposal = null;
-            if (reason !== 'commit' || done === null || done.data === press.data) return;
-            commit({ id: press.root.id, data: done.data, label: done.label }, { deps: { ...ctx.deps, scene: scene as never } });
+            if (reason === 'commit') land(done);
           },
+          replay(replayed) { land(planAt(last, replayed)); },
         };
       },
     },
@@ -90,7 +100,7 @@ export function createDrawMessageAction(opts: SequenceEditOptions = {}): Action 
       ? [world(press, from.x, y), world(press, from.x + SEQ.loopWidth, y), world(press, from.x + SEQ.loopWidth, y + SEQ.loopHeight), world(press, from.x, y + SEQ.loopHeight)]
       : [world(press, from.x, y), world(press, now.local.x, y)];
     return { data, label: 'Add message', overlay: [{ kind: 'polyline', points, role: 'connector' }] };
-  });
+  }, SEQUENCE_MESSAGE_PARAMS);
 }
 
 /** A box's outline as a closed run of world points. */
@@ -135,5 +145,5 @@ export function createWrapFragmentAction(opts: SequenceEditOptions = {}): Action
     const [x0, x1] = [Math.min(minOf(xs), press.local.x) - SEQ.fragmentPad, Math.max(maxOf(xs), press.local.x) + SEQ.fragmentPad];
     const [y0, y1] = [Math.min(first.y, last.y), Math.max(first.y, last.y, Math.min(first.y, last.y) + SEQ.rowGap)];
     return { data, label: 'Add fragment', overlay: [{ kind: 'polyline', points: outline(press, x0, y0, x1, y1), role: 'target' }] };
-  });
+  }, SEQUENCE_FRAGMENT_PARAMS);
 }

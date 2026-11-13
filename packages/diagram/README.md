@@ -482,6 +482,14 @@ useStencilInsert(FLOWCHART_STENCILS, { layer: 'diagram' });
 const decision = useStencilTool(FLOWCHART_STENCILS[1]);
 ```
 
+`useDiagramTools` builds every tool the package ships at once: the connector, a
+tool per stencil (`stencilTools`), and the sequence tools. `DIAGRAM_TOOLS` names
+them, with one set per stencil group under `STENCIL_TOOLS`.
+
+```tsx
+const tools = useDiagramTools({ connector: { participants }, stencils: FLOWCHART_STENCILS });
+```
+
 A drop from your own palette goes through the canvas's `ingestion` handlers:
 a handler gets the drop's world point as `ctx.point` and calls
 `ctx.insert.commit`. Elsewhere, `SceneCanvasApi.clientToWorld` turns a client
@@ -1044,7 +1052,10 @@ between two (or starts a sequence on empty canvas), Message drags from one
 lifeline to another, Note clicks or drags across lifelines, and Fragment drags
 across rows, and Mark clicks an activation's start or end, a creation, or a
 destruction onto a lifeline. Pass them as `tools` to `DiagramView` or
-`<SceneCanvas>`. `sequenceSelectionOf(scene, ids)` reads a selection as one
+`<SceneCanvas>`. What each adds (a participant or an actor, the message's arrow,
+the fragment's type, the mark) is its tool option, kept in the `toolOptionValues`
+dep: `<DiagramView toolOptionValues>` takes one, and `SEQUENCE_MESSAGE_OPTIONS`
+and its siblings are the schema an options row draws. `sequenceSelectionOf(scene, ids)` reads a selection as one
 sequence's participants, messages, notes, fragments, and boxes, for a panel
 that offers the edits fitting it. A click
 on a sequence's part selects it, and `createSequenceDeleteAction` (which

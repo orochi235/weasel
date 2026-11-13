@@ -1,5 +1,5 @@
 export { defineTool } from './overlayBinding';
-export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas, toolStacksOf } from '@weasel-js/routing';
+export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas, toolStacksOf, toolGaps } from '@weasel-js/routing';
 export {
   createToolOptionValues, heldToolOptions, keepToolOptions, prefsToolOptionValues, setToolOption, shareToolOptions,
   SHARED_TOOL_OPTIONS, steppedOption, toolOptionActionIds, toolOptionLeaf, toolOptionNumberLeaf, toolOptionParams,

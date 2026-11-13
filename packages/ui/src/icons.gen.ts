@@ -77,16 +77,6 @@ export type UiIconName =
   | 'narrower'
   | 'tallest'
   | 'shortest'
-  | 'dollyIn'
-  | 'dollyOut'
-  | 'turnLeft'
-  | 'turnRight'
-  | 'pitchUp'
-  | 'pitchDown'
-  | 'rise'
-  | 'sink'
-  | 'orbit'
-  | 'home'
   | 'settings'
   | 'sidebar'
   | 'legend'
@@ -428,21 +418,6 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
       "narrower",
       "tallest",
       "shortest"
-    ]
-  },
-  {
-    "label": "Camera moves",
-    "names": [
-      "dollyIn",
-      "dollyOut",
-      "turnLeft",
-      "turnRight",
-      "pitchUp",
-      "pitchDown",
-      "rise",
-      "sink",
-      "orbit",
-      "home"
     ]
   },
   {
@@ -814,16 +789,6 @@ declare module '@weasel-js/icons' {
     'ui:narrower': true;
     'ui:tallest': true;
     'ui:shortest': true;
-    'ui:dollyIn': true;
-    'ui:dollyOut': true;
-    'ui:turnLeft': true;
-    'ui:turnRight': true;
-    'ui:pitchUp': true;
-    'ui:pitchDown': true;
-    'ui:rise': true;
-    'ui:sink': true;
-    'ui:orbit': true;
-    'ui:home': true;
     'ui:settings': true;
     'ui:sidebar': true;
     'ui:legend': true;

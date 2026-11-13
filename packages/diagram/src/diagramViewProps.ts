@@ -1,5 +1,5 @@
 import type { Animator } from '@weasel-js/animator';
-import type { Contribution, Paint, PlacedPage, RectPose, Tool, ToolsApi, View } from '@weasel-js/core';
+import type { Contribution, Paint, PlacedPage, RectPose, Tool, ToolOptionValues, ToolsApi, View } from '@weasel-js/core';
 import type { Vec2 } from '@weasel-js/core/math';
 import type { CanConnect } from './connect';
 import type { CanReparent } from './containers/canDropInto';
@@ -178,6 +178,9 @@ export interface DiagramViewProps {
   tools?: Record<string, Tool>;
   /** Called with the canvas's tools, for a palette to pick them from. */
   onToolsCreated?: (tools: ToolsApi) => void;
+  /** Where the tools' options are kept (the `toolOptionValues` dep): what the sequence tools add, say, which a
+   *  host's options row writes. Default: values the canvas holds in memory. */
+  toolOptionValues?: ToolOptionValues;
   /** Whether ports are drawn. `'connect'` draws them and lets one be dragged
    *  onto another; `'show'` only draws them. Default: `'connect'` when
    *  `onConnect` is set, else `'none'`. */

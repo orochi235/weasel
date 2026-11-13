@@ -41,6 +41,7 @@ glyph is explicit, through the registry's `override(ref, glyph)`.
 | `ui` | `@weasel-js/ui` | `packages/ui/icons/` | Chrome, state, playback, arrows, key legends, marks, shapes and the rest of the component set |
 | `path-tools` | `@weasel-js/path-tools` | `packages/path-tools/icons/` | The path tools and their commands |
 | `rig` | `@weasel-js/rig` | `packages/rig/icons/` | The bone and weight tools |
+| `kernel3d` | `@weasel-js/kernel3d` | `packages/kernel3d/icons/` | The 3D camera's moves: orbit, dolly, turn, pitch, rise and sink, and home |
 | `shape` | `@weasel-js/icons` | `packages/icons/icons/` | Plain geometry: polygons, round shapes, stars |
 | `diagram` | `@weasel-js/diagram` | `packages/diagram/icons/` | The container, org chart, network, BPMN, mind map, UML, and ERD stencils |
 | `draw` | `apps/draw` | `apps/draw/icons/` | WeaselDraw's own actions |

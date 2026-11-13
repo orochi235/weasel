@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { defineTool, type Action, type InvocationCtx, type Tool } from '@weasel-js/routing';
 import { dollyToward, orbitBy, panBy, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
+import { icon } from './icons.gen';
 
 /** Radians per CSS pixel of drag. A full pane width is a bit over half a turn. */
 export const ORBIT_RATE = 0.006;
@@ -92,6 +93,7 @@ function dragCamera(
 export const orbitAction: Action = {
   id: 'camera.orbit',
   label: 'Orbit',
+  icon: icon('orbit'),
   group: 'viewport',
   cursor: 'grab',
   activeCursor: 'grabbing',
@@ -151,6 +153,7 @@ function wheelPoint(params: Record<string, unknown> | undefined): { x: number; y
 export const dollyAction: Action = {
   id: 'camera.dolly',
   label: 'Dolly',
+  icon: icon('dollyIn'),
   group: 'viewport',
   defaultBinding: [
     { spec: { kind: 'wheel' }, opts: { id: 'camera.dolly.wheel' } },
@@ -214,6 +217,7 @@ export const pinchDollyAction: Action = {
 export const homeAction: Action = {
   id: 'camera.home',
   label: 'Reset Camera',
+  icon: icon('home'),
   group: 'viewport',
   defaultBinding: [{ spec: { kind: 'doubleClick' }, opts: { id: 'camera.home.doubleClick' } }],
   requires: ['camera3d'],
@@ -236,7 +240,7 @@ export function useOrbitTool(): Tool {
     id: 'orbit',
     hookName: 'useOrbitTool',
     cursor: 'grab',
-    presentation: { label: 'Orbit', group: 'view' },
+    presentation: { label: 'Orbit', icon: icon('orbit'), group: 'view' },
     actions: [orbitAction, panAction],
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'camera.orbit', opts: { id: 'orbit.orbit' } },

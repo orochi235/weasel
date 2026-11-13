@@ -2,7 +2,7 @@ import { createScene, type ActionDeps, type InvocationCtx, type OngoingHandle, t
 import { describe, expect, it } from 'vitest';
 import { withDiagramRegistry } from '../edge';
 import { createAddMarkAction, createAddNoteAction, createAddParticipantAction } from './authorActions';
-import { createDrawMessageAction, createDrawNoteAction } from './authorDrags';
+import { createDrawMessageAction, createDrawNoteAction, createWrapFragmentAction } from './authorDrags';
 import { findStep } from './edit';
 import { pagedScene } from '../offPage/pagedFixture';
 import { SEQ_FIXTURE as data } from './fixture';
@@ -87,6 +87,29 @@ describe('the Message and Note actions', () => {
     const { overlay } = drag(createDrawMessageAction(), scene, { x: col(scene, 'c'), y }, { x: col(scene, 'c') + 5, y: y + 10 }, { arrow: 'reply' });
     expect(overlay).toMatchObject([{ kind: 'polyline', role: 'connector' }]);
     expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'message', from: 'c', to: 'c', line: 'dashed' });
+  });
+
+  it('reads its arrow from the tool options a drag carries, and replays with another as one undo entry', () => {
+    const scene = sceneOf();
+    const y = AT.y + geometry(scene).slots[0]!.y;
+    const before = scene.historyIndex();
+    const { handle } = drag(createDrawMessageAction(), scene, { x: col(scene, 'a'), y }, { x: col(scene, 'b'), y });
+    expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'message', from: 'a', to: 'b', line: 'solid', head: 'arrow' });
+    scene.undo();
+    handle.replay?.({ arrow: 'async' });
+    expect(dataOf(scene).steps[0]).toMatchObject({ kind: 'message', from: 'a', to: 'b', head: 'open', async: true });
+    expect(scene.historyIndex()).toBe(before + 1);
+  });
+
+  it('replays a fragment drag with another type', () => {
+    const scene = sceneOf();
+    const slots = geometry(scene).slots;
+    const { handle } = drag(createWrapFragmentAction(), scene, { x: col(scene, 'a'), y: AT.y + slots[0]!.y }, { x: col(scene, 'a'), y: AT.y + slots[1]!.y });
+    const id = dataOf(scene).steps.find((s) => s.kind === 'fragment')!.id;
+    expect(findStep(dataOf(scene).steps, id)).toMatchObject({ type: 'loop' });
+    scene.undo();
+    handle.replay?.({ type: 'par' });
+    expect(findStep(dataOf(scene).steps, id)).toMatchObject({ type: 'par' });
   });
 
   it('hands a host commit the deps the drag started with, when its end carries none', () => {

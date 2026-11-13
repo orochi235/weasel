@@ -145,6 +145,7 @@
       "@weasel-js/renderer/testing/*": ["../renderer/src/testing/*"],
       "@weasel-js/rig": ["../rig/src/index.ts"],
       "@weasel-js/rig/icons": ["../rig/src/icons.table.ts"],
+      "@weasel-js/kernel3d/icons": ["../kernel3d/src/icons.table.ts"],
       "@weasel-js/routing": ["../routing/src/index.ts"],
       "@weasel-js/routing/react": ["../routing/src/react.ts"],
       "@weasel-js/routing/internal": ["../routing/src/internal.ts"],

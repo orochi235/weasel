@@ -4,7 +4,7 @@
  * picked part is deleted with the Delete key. Each reports one edit.
  */
 import { act, cleanup } from '@testing-library/react';
-import type { ToolsApi } from '@weasel-js/core';
+import { createToolOptionValues, setToolOption, type ToolsApi } from '@weasel-js/core';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DiagramView, type DiagramViewProps } from './DiagramView';
@@ -14,6 +14,7 @@ import { SEQ_FIXTURE as data } from './sequence/fixture';
 import { sequenceLayout } from './sequence/layout';
 import { sequenceSpecs } from './sequence/specs';
 import { sequenceTools, type SequenceToolId } from './sequence/tools';
+import { SEQUENCE_FRAGMENT_OPTIONS, SEQUENCE_MARK_OPTIONS } from './sequence/toolOptions';
 
 afterEach(() => { cleanup(); });
 
@@ -26,11 +27,14 @@ function mount(tool: SequenceToolId | null, extra: Partial<DiagramViewProps> = {
   const edits: SequenceEdit[] = [];
   const onEditSequence = (e: SequenceEdit) => edits.push(e);
   let api: ToolsApi | null = null;
-  const tools = sequenceTools({ commit: onEditSequence, fragment: () => 'opt', mark: () => 'destroy' });
+  const tools = sequenceTools({ commit: onEditSequence });
+  const values = createToolOptionValues();
+  setToolOption('diagram.sequence.fragment', SEQUENCE_FRAGMENT_OPTIONS, values, 'type', 'opt');
+  setToolOption('diagram.sequence.mark', SEQUENCE_MARK_OPTIONS, values, 'mark', 'destroy');
   const { container } = render(
     <DiagramView
       specs={SPECS} width={layout.width} height={layout.height} view={VIEW} onViewChange={() => {}}
-      onEditSequence={onEditSequence} tools={tools} onToolsCreated={(t) => { api = t; }} {...extra}
+      onEditSequence={onEditSequence} tools={tools} toolOptionValues={values} onToolsCreated={(t) => { api = t; }} {...extra}
     />,
   );
   if (tool !== null) act(() => api!.setActive(tool));

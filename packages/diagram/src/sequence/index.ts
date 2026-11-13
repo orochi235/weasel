@@ -42,3 +42,9 @@ export {
 } from './select';
 export { sequenceSelectionOf, type SequenceSelection } from './selected';
 export { SEQUENCE_TOOLS, sequenceTools, useSequenceTools, type SequenceToolId, type SequenceToolsOptions } from './tools';
+export {
+  SEQUENCE_FRAGMENT_PARAMS, SEQUENCE_MARK_PARAMS, SEQUENCE_MESSAGE_PARAMS, SEQUENCE_PARTICIPANT_PARAMS,
+} from './authorParams';
+export {
+  SEQUENCE_FRAGMENT_OPTIONS, SEQUENCE_MARK_OPTIONS, SEQUENCE_MESSAGE_OPTIONS, SEQUENCE_PARTICIPANT_OPTIONS,
+} from './toolOptions';

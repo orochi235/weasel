@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
-import { createScene, type Tool, type ToolsApi } from '@weasel-js/core';
+import { createScene, createToolOptionValues, type Tool, type ToolsApi } from '@weasel-js/core';
 import { findStep, sequenceRootOf, sequenceSpecs, sequenceTools, type SequenceData } from '@weasel-js/diagram';
 import { CHART_LAYERS, CHART_REGISTRY, type ChartData, type ChartLayer, type ChartPose } from './chartDocument';
-import { isSequenceTool, SequencePanel, type SequenceChoices } from './SequencePanel';
+import { isSequenceTool, SequencePanel } from './SequencePanel';
 import { renderWithIcons } from './testIcons';
 
 afterEach(cleanup);
@@ -28,13 +28,11 @@ const sceneOf = (withSequence = true) => createScene<ChartData, ChartLayer, Char
 });
 type Scene = ReturnType<typeof sceneOf>;
 
-const CHOICES: SequenceChoices = { participant: 'participant', arrow: 'sync', fragment: 'loop', mark: 'activate' };
-
 /** The panel over `scene`, drawn again on every change to it, as the workspace does. */
-function panel(scene: Scene, selected: string[] = []) {
+function panel(scene: Scene, selected: string[] = [], values = createToolOptionValues()) {
   act(() => scene.setSelection(selected as never));
   const ui = () => (
-    <SequencePanel tools={chartTools()} scene={scene} selected={scene.getSelection() as readonly string[]} choices={CHOICES} onChoose={() => {}} />
+    <SequencePanel tools={chartTools()} scene={scene} selected={scene.getSelection() as readonly string[]} values={values} />
   );
   const view = renderWithIcons(ui());
   scene.subscribe(() => view.rerender(ui()));
@@ -123,6 +121,15 @@ describe('SequencePanel', () => {
     press('Draw head at top');
     expect(dataOf(scene)).toEqual(DATA);
     expect(screen.queryByRole('button', { name: 'Draw head at top' })).toBeNull();
+  });
+
+  it('keeps what each tool adds in its options, with nothing selected', () => {
+    const values = createToolOptionValues();
+    panel(sceneOf(), [], values);
+    pick(/Arrow/, 'Async');
+    pick(/. Mark/, 'Destroy');
+    expect(values.get('diagram.sequence.message')).toEqual({ arrow: 'async' });
+    expect(values.get('diagram.sequence.mark')).toEqual({ mark: 'destroy' });
   });
 
   it('numbers the only sequence\'s messages with nothing selected', () => {

@@ -5,7 +5,7 @@
  * message, or note is claimed by that layer and reaches only bindings that
  * name it.
  */
-import { defineTool, toolSet, useLatest, type BindingOptions, type GestureBinding, type Tool, type ToolSet } from '@weasel-js/core';
+import { defineTool, toolSet, useLatest, type GestureBinding, type Tool, type ToolSet } from '@weasel-js/core';
 import { useMemo } from 'react';
 import { icon } from '../icons.gen';
 import {
@@ -16,10 +16,8 @@ import {
   createDrawMessageAction, createDrawNoteAction, createWrapFragmentAction, DRAW_MESSAGE_ACTION_ID, DRAW_NOTE_ACTION_ID,
   WRAP_FRAGMENT_ACTION_ID,
 } from './authorDrags';
-import type { SeqParticipantKind } from './author';
-import type { SeqArrow, SeqArrowName } from './authorSteps';
 import { SEQUENCE_AFFORDANCE_KIND } from './layer';
-import type { SeqFragment, SeqMark } from './types';
+import { SEQUENCE_FRAGMENT_OPTIONS, SEQUENCE_MARK_OPTIONS, SEQUENCE_MESSAGE_OPTIONS, SEQUENCE_PARTICIPANT_OPTIONS } from './toolOptions';
 
 /** The ids `useSequenceTools` keys its tools by. */
 export type SequenceToolId =
@@ -32,23 +30,15 @@ export const SEQUENCE_TOOLS: ToolSet<SequenceToolId> = toolSet('sequence', [
   'diagram.sequence.mark',
 ]);
 
-/** Options for {@link sequenceTools} and {@link useSequenceTools}. */
-export interface SequenceToolsOptions extends SequenceAuthorOptions {
-  /** What the Participant tool adds, read at each click. Default a plain participant. */
-  participant?: () => SeqParticipantKind;
-  /** The arrow the Message tool draws, read as each drag moves. Default `'sync'`. */
-  arrow?: () => SeqArrowName | SeqArrow;
-  /** The type the Fragment tool wraps rows in, read as each drag moves. Default `'loop'`. */
-  fragment?: () => SeqFragment['type'];
-  /** The mark the Mark tool puts on a lifeline, read at each click. Default `'activate'`. */
-  mark?: () => SeqMark['kind'];
-}
+/** Options for {@link sequenceTools} and {@link useSequenceTools}. What each tool adds is its options
+ *  (`SEQUENCE_PARTICIPANT_OPTIONS` and the rest), which a host keeps in the `toolOptionValues` dep. */
+export type SequenceToolsOptions = SequenceAuthorOptions;
 
 const ON_SEQUENCE = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
 
 /** `kind` bound to `actionId`, plain and on the sequence layer. */
-function both(tool: string, kind: 'click' | 'drag', actionId: string, params?: BindingOptions['params']): GestureBinding[] {
-  const at = (id: string) => ({ id: `${tool}.${id}`, ...(params ? { params } : {}) });
+function both(tool: string, kind: 'click' | 'drag', actionId: string): GestureBinding[] {
+  const at = (id: string) => ({ id: `${tool}.${id}` });
   return [
     { spec: { kind }, actionId, opts: at(kind) },
     { spec: { kind, target: ON_SEQUENCE }, actionId, opts: at(`${kind}.onSequence`) },
@@ -62,7 +52,8 @@ function both(tool: string, kind: 'click' | 'drag', actionId: string, params?: B
  * the press, Note clicks or drags across lifelines, Fragment drags across
  * rows to wrap them, and Mark clicks an activation's start or end, a
  * creation, or a destruction onto a lifeline. Each commits one undo entry
- * through `commit`.
+ * through `commit`. What the Participant, Message, Fragment, and Mark tools add
+ * is their options, the same form as their actions' last-operation panel.
  */
 export function sequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceToolId, Tool> {
   const participant = 'diagram.sequence.participant';
@@ -75,13 +66,15 @@ export function sequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceT
       id: participant, hookName: 'useSequenceTools', cursor: 'copy',
       presentation: { label: 'Participant', icon: icon('umlActor'), group: 'sequence' },
       actions: [createAddParticipantAction(opts)],
-      bindings: both(participant, 'click', ADD_PARTICIPANT_ACTION_ID, () => ({ kind: opts.participant?.() ?? 'participant' })),
+      options: SEQUENCE_PARTICIPANT_OPTIONS,
+      bindings: both(participant, 'click', ADD_PARTICIPANT_ACTION_ID),
     }),
     [message]: defineTool({
       id: message, hookName: 'useSequenceTools', cursor: 'crosshair',
       presentation: { label: 'Message', icon: icon('core:arrow'), group: 'sequence' },
       actions: [createDrawMessageAction(opts)],
-      bindings: both(message, 'drag', DRAW_MESSAGE_ACTION_ID, () => ({ arrow: opts.arrow?.() ?? 'sync' })),
+      options: SEQUENCE_MESSAGE_OPTIONS,
+      bindings: both(message, 'drag', DRAW_MESSAGE_ACTION_ID),
     }),
     [note]: defineTool({
       id: note, hookName: 'useSequenceTools', cursor: 'copy',
@@ -93,21 +86,23 @@ export function sequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceT
       id: fragment, hookName: 'useSequenceTools', cursor: 'crosshair',
       presentation: { label: 'Fragment', icon: icon('container'), group: 'sequence' },
       actions: [createWrapFragmentAction(opts)],
-      bindings: both(fragment, 'drag', WRAP_FRAGMENT_ACTION_ID, () => ({ type: opts.fragment?.() ?? 'loop' })),
+      options: SEQUENCE_FRAGMENT_OPTIONS,
+      bindings: both(fragment, 'drag', WRAP_FRAGMENT_ACTION_ID),
     }),
     [mark]: defineTool({
       id: mark, hookName: 'useSequenceTools', cursor: 'copy',
       presentation: { label: 'Mark', icon: icon('task'), group: 'sequence' },
       actions: [createAddMarkAction(opts)],
-      bindings: both(mark, 'click', ADD_MARK_ACTION_ID, () => ({ mark: opts.mark?.() ?? 'activate' })),
+      options: SEQUENCE_MARK_OPTIONS,
+      bindings: both(mark, 'click', ADD_MARK_ACTION_ID),
     }),
   } as Record<SequenceToolId, Tool>;
 }
 
 /**
  * {@link sequenceTools}, built once per change of what draws an edit. The
- * commit and the participant, arrow, fragment, and mark readers are read through a
- * ref, so a host can pass fresh closures every render.
+ * commit and `start` are read through a ref, so a host can pass fresh closures
+ * every render.
  */
 export function useSequenceTools(opts: SequenceToolsOptions = {}): Record<SequenceToolId, Tool> {
   const latest = useLatest(opts);
@@ -118,9 +113,5 @@ export function useSequenceTools(opts: SequenceToolsOptions = {}): Record<Sequen
     ...(measure ? { measure } : {}), ...(theme ? { theme } : {}),
     ...(custom ? { commit: (edit, ctx) => latest.current.commit?.(edit, ctx) } : {}),
     ...(starts === 'none' ? { start: null } : starts === 'own' ? { start: (at, data, deps) => latest.current.start?.(at, data, deps) } : {}),
-    participant: () => latest.current.participant?.() ?? 'participant',
-    arrow: () => latest.current.arrow?.() ?? 'sync',
-    fragment: () => latest.current.fragment?.() ?? 'loop',
-    mark: () => latest.current.mark?.() ?? 'activate',
   }), [latest, measure, theme, custom, starts]);
 }
