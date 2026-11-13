@@ -100,5 +100,3 @@ export class NumberNode<T extends number | undefined = number> extends BaseNode<
     return this.ann({ control: 'input' });
   }
 }
-
-/** A true/false leaf, built by `f.boolean`; a checkbox unless `.toggle()`. */

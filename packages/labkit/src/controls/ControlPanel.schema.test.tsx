@@ -21,10 +21,10 @@ describe('<ControlPanel> schema', () => {
     expect(setConfig).toHaveBeenCalledWith('showGrid', false);
   });
 
-  it('draws a switch for a toggle() leaf and a checkbox for a plain one', () => {
+  it('draws a switch for a switch() leaf and a checkbox for a plain one', () => {
     const setConfig = vi.fn();
     const schema = resolveConfigSchema(
-      f.schema({ showGrid: f.boolean(true), snap: f.boolean(true).toggle() }),
+      f.schema({ showGrid: f.boolean(true), snap: f.boolean(true).switch() }),
       [],
     );
     render(

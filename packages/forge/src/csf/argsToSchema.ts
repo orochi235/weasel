@@ -187,7 +187,7 @@ function controlled(control: Control, argType: ArgType, has: boolean, value: unk
     case 'boolean':
       return f.boolean(def());
     case 'switch':
-      return f.boolean(def()).toggle();
+      return f.boolean(def()).switch();
     case 'text':
     case 'textarea':
       return f.string(def());

@@ -347,13 +347,13 @@ const inline = f.schema({
     .list(['**/node_modules/**', '**/dist/**', 'package-lock.json'])
     .label('Draw as icons'),
   detail: f.number(1200).range(0, 4000).suffix('nodes'),
-  showCameraRoute: f.boolean(false).toggle().label('Show camera route'),
+  showCameraRoute: f.boolean(false).switch().label('Show camera route'),
   routeColor: f.enum('sweep', ['sweep', 'depth']).label('Route color'),
-  minimap: f.boolean(true).toggle(),
+  minimap: f.boolean(true).switch(),
   minimapSize: f.number(280).range(80, 600).label('Minimap size'),
-  pickHud: f.boolean(true).toggle().label('Pick HUD'),
-  pickOutlines: f.boolean(true).toggle().label('Pick outlines'),
-  markOverlay: f.boolean(false).toggle().label('Mark overlay'),
+  pickHud: f.boolean(true).switch().label('Pick HUD'),
+  pickOutlines: f.boolean(true).switch().label('Pick outlines'),
+  markOverlay: f.boolean(false).switch().label('Mark overlay'),
 });
 
 /** The shape a lab's sidebar draws: `layout="inline"` paired two to a row, in a

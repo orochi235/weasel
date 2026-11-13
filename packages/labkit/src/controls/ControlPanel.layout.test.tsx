@@ -146,7 +146,7 @@ describe('<ControlPanel> pair', () => {
           .radio()
           .label('')
           .pair({ with: 'hold', label: 'Camera' }),
-        hold: f.boolean(true).toggle().label('Hold front'),
+        hold: f.boolean(true).switch().label('Hold front'),
       }),
       [],
     );
