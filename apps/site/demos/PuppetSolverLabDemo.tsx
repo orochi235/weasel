@@ -84,8 +84,8 @@ const solverInstrument = defineInstrument<State, Config>({
   onConfigChange: (next, prev, state) => (next.preset === prev.preset ? state : { scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'puppet', label: 'Puppet Warp', icon: icon('path-tools:puppetWarp'), shortcut: 'B' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'puppet', label: 'Puppet Warp', icon: icon('path-tools:puppetWarp') },
     ],
     initial: 'puppet',
   },

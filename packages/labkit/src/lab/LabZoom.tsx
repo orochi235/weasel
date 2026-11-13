@@ -2,6 +2,7 @@ import {
   type Action,
   ActionDisabledReason,
   type ActionsRegistry,
+  actionShortcuts,
   createViewportZoomAction,
   type ImmediateInvoker,
   useActionsRegistry,
@@ -43,11 +44,6 @@ const KEY_BINDINGS = (BASE.defaultBinding as KeyBinding[])
   .filter((b) => b.spec.kind === 'key' && VARIANTS.some((v) => v.key === b.opts?.params?.kind))
   .map((b) => ({ ...b, opts: { ...b.opts, id: `${ZOOM_ID}.${b.opts?.params?.kind}` } }));
 const BASE_RUN = (BASE.invoker as ImmediateInvoker).run;
-
-function shortcutFor(kind: ZoomKind): string | undefined {
-  const spec = KEY_BINDINGS.find((b) => b.opts?.params?.kind === kind)?.spec;
-  return spec?.key ? formatShortcut({ key: spec.key, mod: spec.mods?.mod }) : undefined;
-}
 
 /** The focused trial's camera, with the zoom's reset meaning actual size about
  *  the middle of the view. */
@@ -126,8 +122,12 @@ function LabZoomControls() {
   const run = (kind: ZoomKind) => () => {
     registry.trigger(ZOOM_ID, { kind });
   };
+  // The keys `lab.zoom` answers to now, so a rebound one reads as rebound.
+  const zoomAction = useSyncExternalStore(registry.subscribe, () =>
+    registry.list().find((a) => a.id === ZOOM_ID),
+  );
   const hint = (label: string, kind: ZoomKind): string => {
-    const keys = shortcutFor(kind);
+    const keys = zoomAction && formatShortcut(actionShortcuts(zoomAction, { kind })[0]);
     return keys ? `${label} (${keys})` : label;
   };
   const shown = live && zoom !== null ? percent.format(zoom) : null;

@@ -75,8 +75,8 @@ const spacingInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
     ],
   },
   render: (ctx) => <SpacingTrial ctx={ctx} />,

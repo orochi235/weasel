@@ -10,8 +10,12 @@ import { undoCapability } from '../instrument/undo';
 import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
-import { undoShortcuts } from '../undo/useUndoKeys';
+import type { TrialTool } from '../tools/types';
+import { REDO_SHORTCUT, UNDO_SHORTCUT } from '../undo/useUndoKeys';
 import type { TrialChromeContext, TrialContribution } from './types';
+
+/** The chord that saves a snapshot of the focused trial, as the trial's keys match it and its button shows it. */
+export const SNAPSHOT_SHORTCUT = { key: 's', mod: true } as const;
 
 const ZOOM_STEP = 1.25;
 
@@ -147,7 +151,7 @@ function trialActions(ctx: TrialChromeContext): TrialContribution[] {
     item: {
       icon: icon('ui:snapshot'),
       label: 'Save snapshot',
-      shortcut: 'Mod+S',
+      shortcut: SNAPSHOT_SHORTCUT,
       onActivate: () => ctx.saveSnapshot(),
     },
   });
@@ -165,6 +169,12 @@ function trialActions(ctx: TrialChromeContext): TrialContribution[] {
     },
   });
   return out;
+}
+
+/** The key a tool's rail button shows: the one its instrument reports it answers to now, else the one it declares. */
+function shownKey(t: TrialTool, ctx: TrialChromeContext): TrialTool['shortcut'] {
+  const live = ctx.toolShortcuts?.[t.id];
+  return live ? live[0] : t.shortcut;
 }
 
 /** Built-in ids contributed only while runtime state says so — the loupe
@@ -218,7 +228,7 @@ export function builtinContributions(
       item: {
         icon: icon('core:undo'),
         label: 'Undo',
-        shortcut: undoShortcuts().undo,
+        shortcut: UNDO_SHORTCUT,
         disabled: !ctx.canUndo,
         onActivate: ctx.undo,
       },
@@ -230,7 +240,7 @@ export function builtinContributions(
       item: {
         icon: icon('core:redo'),
         label: 'Redo',
-        shortcut: undoShortcuts().redo,
+        shortcut: REDO_SHORTCUT,
         disabled: !ctx.canRedo,
         onActivate: ctx.redo,
       },
@@ -248,7 +258,7 @@ export function builtinContributions(
       item: {
         icon: t.icon,
         label: t.label,
-        shortcut: t.shortcut,
+        shortcut: shownKey(t, ctx),
         disabled: t.disabled,
         disabledReason: t.disabledReason,
       },

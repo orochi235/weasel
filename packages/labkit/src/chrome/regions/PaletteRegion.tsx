@@ -1,4 +1,10 @@
-import { Icon, ToolButton, ToolGroup, useRovingTabIndex } from '../../passthrough/weasel-ui';
+import {
+  formatShortcut,
+  Icon,
+  ToolButton,
+  ToolGroup,
+  useRovingTabIndex,
+} from '../../passthrough/weasel-ui';
 import type { RailItem, RegionContribution, ToolSlotContext, TrialChromeContext } from '../types';
 import { groupsOf } from './groupsOf';
 
@@ -45,7 +51,7 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
                 key={c.id}
                 icon={<Icon name={icon} size={16} />}
                 label={label}
-                shortcut={shortcut}
+                shortcut={formatShortcut(shortcut)}
                 active={command ? command.pressed === true : ctx.activeToolId === c.id}
                 disabled={disabled}
                 disabledReason={disabledReason}

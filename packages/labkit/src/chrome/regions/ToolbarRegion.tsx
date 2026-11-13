@@ -1,6 +1,6 @@
 import { Toolbar } from '@weasel-js/ui/components/Toolbar';
 import type { ReactNode } from 'react';
-import { Icon, MenuButton } from '../../passthrough/weasel-ui';
+import { formatShortcut, Icon, MenuButton } from '../../passthrough/weasel-ui';
 import type {
   RegionContribution,
   ToolbarEntry,
@@ -36,7 +36,7 @@ function renderMenu<TCtx>(id: string, item: ToolbarMenuItem<TCtx>, ctx: TCtx): R
           </>
         )
       }
-      shortcut={shortcut}
+      shortcut={formatShortcut(shortcut)}
       disabled={disabled}
       disabledReason={disabledReason}
       entries={typeof entries === 'function' ? () => entries(ctx) : entries}
@@ -70,7 +70,7 @@ function renderEntry<TCtx>(c: RegionContribution<TCtx>, ctx: TCtx, region: strin
       pressed={pressed}
       aria-label={label}
       title={label}
-      shortcut={shortcut}
+      shortcut={formatShortcut(shortcut)}
       icon={showLabel ? <Icon name={icon} size={16} /> : undefined}
       onClick={() => onActivate(ctx)}
     >

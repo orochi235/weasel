@@ -37,6 +37,7 @@ import { useTrialCamera } from './useTrialCamera';
 import { useTrialJob } from './useTrialJob';
 import { useTrialLayers } from './useTrialLayers';
 import { useTrialMarks } from './useTrialMarks';
+import { useTrialToolSlot } from './useTrialToolSlot';
 import { useTrialUndo } from './useTrialUndo';
 import { useTrialWrites } from './useTrialWrites';
 
@@ -184,10 +185,9 @@ function TrialRuntime({
   const resolvedToolId = declaresTools
     ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
     : labTool;
-  const setActiveTool = (id: string): void => {
-    if (declaresTools) setTrialTool(record.id, id);
-    else setLabTool(id);
-  };
+  const toolSlot = useTrialToolSlot(resolvedToolId, (id) =>
+    declaresTools ? setTrialTool(record.id, id) : setLabTool(id),
+  );
 
   const job = useTrialJob({
     store,
@@ -213,8 +213,7 @@ function TrialRuntime({
       setView,
       zoom: cam.zoom,
       setZoom: cam.setZoom,
-      activeToolId: resolvedToolId,
-      setActiveTool,
+      ...toolSlot.trial,
       visibleLayers,
       pointer,
       ...(clockHandle ? { clock: clockHandle.clock } : {}),
@@ -369,8 +368,7 @@ function TrialRuntime({
                   reported={reports}
                   trialChrome={extraChrome}
                   {...options}
-                  activeToolId={resolvedToolId}
-                  setActiveTool={setActiveTool}
+                  toolSlot={toolSlot.chrome}
                 >
                   {scopedBody}
                   {annotationOverlays}

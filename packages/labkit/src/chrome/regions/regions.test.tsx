@@ -174,7 +174,7 @@ describe('ViewportRegion', () => {
             item: {
               icon: Glyph,
               label: 'Grid',
-              shortcut: 'G',
+              shortcut: { key: 'G' },
               pressed: true,
               danger: true,
               onActivate: () => {},

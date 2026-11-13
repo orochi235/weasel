@@ -48,7 +48,7 @@ const softInstrument = defineInstrument<PathLabState, Config>({
   name: 'Soft selection',
   config,
   initialState: () => ({ scene: null }),
-  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' }] },
+  tools: { tools: [{ id: 'select', label: 'Select', icon: icon('core:select') }] },
   render: (ctx) => <SoftSelectionTrial ctx={ctx} />,
 });
 

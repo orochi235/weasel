@@ -28,9 +28,9 @@ const FullInstrument: Instrument<DemoState, DemoConfig> = {
   layers: { ids: ['wheel'] },
   tools: {
     tools: [
-      { id: 'draw', label: 'Draw', icon: icon('core:pencil'), shortcut: 'D' },
-      { id: 'pan', label: 'Pan', icon: icon('core:hand'), shortcut: 'H' },
-      { id: 'measure', label: 'Measure', icon: icon('ui:crosshair'), shortcut: 'M' },
+      { id: 'draw', label: 'Draw', icon: icon('core:pencil'), shortcut: { key: 'D' } },
+      { id: 'pan', label: 'Pan', icon: icon('core:hand'), shortcut: { key: 'H' } },
+      { id: 'measure', label: 'Measure', icon: icon('ui:crosshair'), shortcut: { key: 'M' } },
     ],
   },
   canvas: {

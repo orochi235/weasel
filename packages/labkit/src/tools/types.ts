@@ -1,4 +1,5 @@
 import type { IconSpec } from '@weasel-js/icons';
+import type { MenuShortcut } from '@weasel-js/menu';
 import type { ToolOptions } from '@weasel-js/routing';
 
 /**
@@ -11,8 +12,8 @@ export interface TrialTool {
   id: string;
   label: string;
   icon: IconSpec;
-  /** Shown in the tooltip. Not bound here — the instrument owns its keymap. */
-  shortcut?: string;
+  /** Shown in the tooltip, written for the platform it runs on. Not bound here — the instrument owns its keymap. */
+  shortcut?: MenuShortcut;
   /** Shown but cannot be chosen. */
   disabled?: boolean;
   /** Why it is disabled, read in its tooltip while it is. */

@@ -99,8 +99,8 @@ const lengthenInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'anchors', label: 'Anchors', icon: icon('core:anchors'), shortcut: 'A' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'anchors', label: 'Anchors', icon: icon('core:anchors') },
       { id: 'lengthen', label: 'Lengthen', icon: icon('path-tools:lengthen') },
     ],
     initial: 'lengthen',

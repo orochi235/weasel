@@ -58,8 +58,8 @@ const trimInstrument = defineInstrument<State, Config>({
   tools: {
     initial: 'trim',
     tools: [
-      { id: 'trim', label: 'Trim segment', icon: icon('core:slice'), shortcut: 'Y' },
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
+      { id: 'trim', label: 'Trim segment', icon: icon('core:slice') },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
     ],
   },
   render: (ctx) => <TrimTrial ctx={ctx} />,

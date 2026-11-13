@@ -4,6 +4,7 @@ import { useStore } from 'zustand/react';
 import { AnnotationsContext } from '../annotations/AnnotationsContext';
 import { CameraRegistryContext } from '../canvas/cameraRegistry';
 import { zoomCameraTo } from '../canvas/cameraZoom';
+import { SNAPSHOT_SHORTCUT } from '../chrome/builtins';
 import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
 import { StatusRegion } from '../chrome/regions/StatusRegion';
@@ -11,6 +12,7 @@ import { TitleBarRegion } from '../chrome/regions/TitleBarRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
 import { ViewportRegion } from '../chrome/regions/ViewportRegion';
 import type {
+  ToolSlotContext,
   TrialChromeContext,
   TrialContribution,
   TrialRegion,
@@ -103,14 +105,14 @@ export interface TrialChromeProps extends TrialChromeOptions {
   /** Contributions the trial runtime itself adds — the drag palette and the
    *  layer list, which depend on runtime state the instrument cannot reach. */
   trialChrome?: readonly TrialContribution[];
-  /** The trial's resolved tool slot, and the setter that writes whichever
-   *  slot it resolved to. `Trial` owns the resolution. */
-  activeToolId?: string | null;
-  setActiveTool?: (id: string) => void;
+  /** The trial's resolved tool slot, the setter that writes whichever slot it resolved to, and the live keys its
+   *  instrument reported (`RenderContext.trial.setToolShortcuts`). `Trial` owns the resolution. */
+  toolSlot?: ToolSlotContext;
   children: ReactNode;
 }
 
 const NO_OP = (): void => {};
+const NO_SLOT: ToolSlotContext = { activeToolId: null, setActiveTool: NO_OP };
 
 /** One frozen empty map, so a trial that has folded nothing keeps a stable
  *  context identity across renders. */
@@ -166,8 +168,7 @@ export function TrialChrome({
   suppress,
   hide,
   sidebar = 'dock',
-  activeToolId = null,
-  setActiveTool = NO_OP,
+  toolSlot = NO_SLOT,
   children,
 }: TrialChromeProps) {
   const lab = useLabCommands();
@@ -240,8 +241,7 @@ export function TrialChrome({
       undockPanel: panels.undockPanel,
       dockPanel: panels.dockPanel,
       ...labOpsOn(lab, trialId),
-      activeToolId,
-      setActiveTool,
+      ...toolSlot,
     };
   }, [
     trialId,
@@ -256,8 +256,7 @@ export function TrialChrome({
     loupe,
     lightbox,
     view2d,
-    activeToolId,
-    setActiveTool,
+    toolSlot,
     configSchema,
     auto,
     reported,
@@ -298,7 +297,7 @@ export function TrialChrome({
       e.preventDefault();
       if (step === 'redo') ctx.redo();
       else ctx.undo();
-    } else if (matchesKeyBinding(e, { key: 's', mod: true }) && offers('snapshot')) {
+    } else if (matchesKeyBinding(e, SNAPSHOT_SHORTCUT) && offers('snapshot')) {
       e.preventDefault();
       if (!e.repeat) ctx.saveSnapshot();
     }

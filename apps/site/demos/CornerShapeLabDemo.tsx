@@ -128,8 +128,8 @@ const cornersInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen') },
     ],
   },
   render: (ctx) => <CornersTrial ctx={ctx} />,

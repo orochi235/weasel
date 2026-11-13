@@ -1,6 +1,6 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createScene, type Scene, type ToolsApi } from '@weasel-js/core';
+import { createScene, key, type Scene, type ToolsApi } from '@weasel-js/core';
 import { giveKeys } from '@weasel-js/react/testing/giveKeys';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -154,6 +154,41 @@ describe('<TrialSceneCanvas>', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
     expect(live.scene).toBe(scene);
     expect(live.scene.nodes.size).toBe(1);
+  });
+});
+
+describe('<TrialSceneCanvas> tool keys', () => {
+  function Rebound({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
+    const scene = useTrialScene(ctx, create);
+    return (
+      <TrialSceneCanvas
+        features={['draw']}
+        defaultTools={['rect']}
+        scene={scene}
+        trial={ctx.trial}
+        bindingOverrides={{ 'tool.activate.rect': key('Q') }}
+      />
+    );
+  }
+  const rebound = defineInstrument<State, Record<string, never>>({
+    ...instrument,
+    tools: {
+      tools: [
+        { id: 'select', label: 'Select', icon: icon('core:select') },
+        // A stale declaration: the scene's binding, not this, is what the rail shows.
+        { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: { key: 'X' } },
+        { id: 'note', label: 'Note', icon: icon('core:select'), shortcut: { key: 'Y' } },
+      ],
+    },
+    render: (ctx) => <Rebound ctx={ctx} />,
+  });
+
+  it('shows each tool the scene holds with the key the scene binds it to, a rebound one included', async () => {
+    await mount(rebound);
+    const rail = within(screen.getByRole('toolbar', { name: 'Tools' }));
+    expect(rail.getByRole('button', { name: 'Select' })).toHaveTextContent(/^SelectV$/);
+    expect(rail.getByRole('button', { name: 'Rectangle' })).toHaveTextContent(/^RectangleQ$/);
+    expect(rail.getByRole('button', { name: 'Note' })).toHaveTextContent(/^NoteY$/);
   });
 });
 

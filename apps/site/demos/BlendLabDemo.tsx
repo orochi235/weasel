@@ -109,9 +109,9 @@ const blendInstrument = defineInstrument<State, Config>({
   initialState: () => ({ scene: null }),
   tools: {
     tools: [
-      { id: 'select', label: 'Select', icon: icon('core:select'), shortcut: 'V' },
-      { id: 'rect', label: 'Rectangle', icon: icon('core:rect'), shortcut: 'R' },
-      { id: 'pen', label: 'Pen', icon: icon('core:pen'), shortcut: 'P' },
+      { id: 'select', label: 'Select', icon: icon('core:select') },
+      { id: 'rect', label: 'Rectangle', icon: icon('core:rect') },
+      { id: 'pen', label: 'Pen', icon: icon('core:pen') },
     ],
   },
   render: (ctx) => <BlendTrial ctx={ctx} />,

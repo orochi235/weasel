@@ -1,11 +1,12 @@
-import { act, fireEvent } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import {
   type ActionsRegistry,
   evaluateActive,
   evaluateEnabled,
+  key,
   useActionsRegistry,
 } from '@weasel-js/core';
-import { isApplePlatform } from '@weasel-js/gestures';
+import { formatShortcut, isApplePlatform } from '@weasel-js/gestures';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -168,6 +169,37 @@ describe('a lab’s header commands', () => {
     expect(onActivate).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a header item’s key in its tooltip as its command binds it, a rebind included', async () => {
+    const labChrome: LabContribution[] = [
+      {
+        id: 'x-key',
+        region: 'header',
+        item: {
+          icon: icon('ui:add'),
+          label: 'Key',
+          onActivate: () => {},
+          keys: { kind: 'key', key: 'j', mods: { mod: true } },
+        },
+      },
+    ];
+    await renderSettled(
+      <Lab instruments={[Staged]} labChrome={labChrome}>
+        <Grab />
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    const tip = () => {
+      fireEvent.keyDown(document.body, { key: 'Tab' });
+      act(() => screen.getByRole('button', { name: 'Key' }).focus());
+      return screen.getByRole('tooltip').textContent;
+    };
+    expect(tip()).toBe(`Key (${formatShortcut({ key: 'j', mod: true })})`);
+    await act(async () => {
+      registry?.overrideBindings({ 'lab.item.x-key@0': key('Mod+K') });
+    });
+    expect(tip()).toBe(`Key (${formatShortcut({ key: 'K', mod: true })})`);
+  });
+
   it('registers nothing for a header menu, which has no single action', async () => {
     const labChrome: LabContribution[] = [
       { id: 'x-menu', region: 'header', item: { kind: 'menu', label: 'Menu', entries: [] } },
@@ -212,7 +244,13 @@ describe('a lab’s header commands', () => {
       {
         id: 'x-wipe',
         region: 'header',
-        item: { icon: glyph, label: 'Wipe', shortcut: '⌘⌫', danger: true, onActivate: () => {} },
+        item: {
+          icon: glyph,
+          label: 'Wipe',
+          shortcut: { key: 'Backspace', mod: true },
+          danger: true,
+          onActivate: () => {},
+        },
       },
     ];
     await renderSettled(
@@ -223,7 +261,7 @@ describe('a lab’s header commands', () => {
     );
     expect(registry?.list().find((a) => a.id === 'lab.item.x-wipe')).toMatchObject({
       icon: glyph,
-      shortcut: '⌘⌫',
+      shortcut: formatShortcut({ key: 'Backspace', mod: true }),
       grade: 'danger',
     });
   });
