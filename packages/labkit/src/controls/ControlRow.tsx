@@ -40,7 +40,7 @@ import { CurveRow } from './CurveRow';
 import { type ControlPack, spansGrid } from './controlPack';
 import { DraftDialogRow, type DraftDialogRowProps } from './DraftDialogRow';
 import { useFieldChoices } from './fieldChoices';
-import { extra, labField, leafValueAt, useLabSettles, useTextWaitMs } from './fields';
+import { extra, labField, useLabSettles, useTextWaitMs } from './fields';
 import { inDialog, summarizeLeaf } from './inDialog';
 import { useRowAuto } from './rowAuto';
 import { UnwiredRow } from './rows';
@@ -293,19 +293,7 @@ function LeafRow<TC extends Record<string, unknown>>({
   const choices = useFieldChoices();
   const settles = useLabSettles();
   const textWaitMs = useTextWaitMs(leaf);
-  const pinned = leafValueAt(config, path, leaf);
-
-  const rowAuto = useRowAuto({
-    path,
-    leaf,
-    resolved,
-    config,
-    shown,
-    pinned,
-    auto,
-    setRowAuto,
-    setConfig,
-  });
+  const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, auto, setRowAuto, setConfig });
   const { isAutoRow, value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
 
   const changed = changedPaths?.has(path) === true;

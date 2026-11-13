@@ -4,6 +4,7 @@ import { createElement, type ReactNode, useMemo } from 'react';
 import { autoQuotes, autoResolverOf, resolveAutoConfig } from '../config/autoConfig';
 import { valueAtPath } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
+import { leafValueAt } from './fields';
 import { numberText, summarizeLeaf, summarizeValue } from './inDialog';
 import { leafIsReset, resetWrite } from './leafReset';
 
@@ -26,8 +27,6 @@ export interface RowAutoSource {
   config: Record<string, unknown>;
   /** `config` with every auto path resolved. */
   shown: Record<string, unknown>;
-  /** The value the row holds while pinned. */
-  pinned: unknown;
   auto: ReadonlySet<string> | undefined;
   setRowAuto: ((path: string, next: boolean, value: unknown) => void) | undefined;
   /** Writes one value, the `auto` sentinel included: what a reset goes through. */
@@ -65,7 +64,8 @@ function useUnpinned(
  * row takes to show and toggle it, and to reset it while it is not what a reset makes it.
  */
 export function useRowAuto(source: RowAutoSource) {
-  const { path, leaf, shown, pinned, auto, setRowAuto } = source;
+  const { path, leaf, config, shown, auto, setRowAuto } = source;
+  const pinned = leafValueAt(config, path, leaf);
   const isAutoRow = auto?.has(path) ?? false;
   const canAuto = setRowAuto !== undefined && prefCanAuto(leaf);
   // Read out of the resolved config rather than re-running this leaf's own

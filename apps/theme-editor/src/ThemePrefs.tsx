@@ -1,9 +1,8 @@
 import { Lab } from '@weasel-js/labkit';
-import { prefValueAtPath, type PrefGroup, type PrefsStore } from '@weasel-js/prefs';
+import type { PrefGroup, PrefsStore } from '@weasel-js/prefs';
 import { usePrefsStore, usePrefsValues } from '@weasel-js/prefs/react';
 import { localStorageAdapter, type SyncStorageAdapter } from '@weasel-js/storage';
 import {
-  themeAxisPath,
   themeFromPrefs,
   themePrefsReferences,
   themePrefsSchema,
@@ -37,12 +36,10 @@ const PREFIX = 'theme-prefs.';
 export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter }: ThemePrefsProps) {
   const schema = useMemo(() => themePrefsSchema(theme), [theme]);
   const store = usePrefsStore(schema, { storage, prefix: PREFIX }) as PrefsStore<PrefGroup>;
-  const { unset } = usePrefsValues(store);
-  const { history, set, reset, setAt } = usePrefsHistory(store);
+  const { auto } = usePrefsValues(store);
+  const { history, set, setAuto, reset, setAt } = usePrefsHistory(store);
   const { values, scopes } = themePrefsValues(store, theme);
   const { mode: _mode, ...selection } = themePrefsSelection(store);
-  const axis = themeAxisPath('');
-  const tokens = (path: string): boolean => !path.startsWith(axis);
   // A reference followed to its token selects that token's row, which opens its page and brings it into view.
   const [opened, setOpened] = useState<readonly string[]>([]);
   const renderers = useMemo(
@@ -62,9 +59,9 @@ export function ThemePrefs({ theme = weaselTheme, storage = localStorageAdapter 
             scopes={scopes}
             onChange={set}
             onChangeAt={setAt}
-            auto={new Set([...unset].filter(tokens))}
-            canInherit={tokens}
-            onAutoChange={(path, next) => (next ? reset(path) : set(path, prefValueAtPath(values, path)))}
+            auto={auto}
+            onAutoChange={setAuto}
+            onReset={reset}
             inheritHint={() => 'from theme'}
             renderers={renderers}
             selected={opened}

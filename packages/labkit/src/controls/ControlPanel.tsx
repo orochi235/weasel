@@ -12,7 +12,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { type ReactNode, useMemo, useState } from 'react';
 import { auto as autoValue, isAuto } from '../config/auto';
-import { applyConfigWrite, resolveAutoConfig } from '../config/autoConfig';
+import { applyConfigWrite, autoPathsOf, resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
 import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
@@ -93,9 +93,9 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
   onCollapse?: (key: string, collapsed: boolean) => void;
   /** Dotted paths currently unpinned. A row in this set reads out `auto` beside its live, ghosted control,
    *  an edit to which writes the new value and so pins it, and clicking its label writes the sentinel back
-   *  through `setConfig`. Omitted, the panel keeps the set itself: the labels still
-   *  toggle and the sentinel never reaches `setConfig`, which would otherwise
-   *  store it as the row's value. */
+   *  through `setConfig`. Omitted, the panel keeps the set itself, starting from the leaves that say
+   *  `.initial(auto)`: the labels still toggle and the sentinel never reaches `setConfig`, which would
+   *  otherwise store it as the row's value. */
   auto?: ReadonlySet<string>;
   /** Values the instrument says it used for auto paths, by dotted path: what `RenderContext.reportAuto`
    *  collects. An auto row reads its report over its resolver's value; a pinned row's report is ignored. */
@@ -122,8 +122,6 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> extends A
   className?: string;
 }
 
-const NO_AUTO: ReadonlySet<string> = new Set();
-
 type Write = (path: string, value: unknown) => void;
 
 /**
@@ -134,10 +132,12 @@ type Write = (path: string, value: unknown) => void;
  */
 function usePanelAuto(
   given: ReadonlySet<string> | undefined,
+  resolved: ResolvedConfig,
   config: Record<string, unknown>,
   writes: { setConfig: Write; draftConfig?: Write },
 ) {
-  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(NO_AUTO);
+  // A panel keeping its own set opens with the leaves its schema starts auto, as a trial does.
+  const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(() => new Set(autoPathsOf(resolved)));
   const mark = (path: string, next: boolean): void =>
     setOwnAuto((prev) => {
       if (prev.has(path) === next) return prev;
@@ -231,7 +231,10 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   const choices = useFieldChoicesOf(resolved.group);
   const over = overGiven ?? resolved.over;
 
-  const { auto, setRowAuto, ...writes } = usePanelAuto(given, config, { setConfig, draftConfig });
+  const { auto, setRowAuto, ...writes } = usePanelAuto(given, resolved, config, {
+    setConfig,
+    draftConfig,
+  });
 
   const shown = useShown(resolved, config, auto, reported);
 
