@@ -682,6 +682,11 @@ only story runner in the repo.
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
 
+- **(P3) [maintainer] `@weasel-js/export` has no release badge.** The site's Releases filter draws each
+  package's chip from `PACKAGE_ICONS` (`apps/site/releaseIcons.ts`, glyphs in `apps/site/icons/packages.mjs`),
+  and the package added on 2026-11-12 has none, so its chip shows a bare name. Badges are drawn in review rounds,
+  so the glyph is the maintainer's call. Closes when `export` has a badge in both files.
+
 ---
 
 ## weaselchart
