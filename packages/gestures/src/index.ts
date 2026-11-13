@@ -22,10 +22,6 @@ export type {
   ClaimableGesture,
 } from './grammar/gestures';
 
-// Modifier helpers
-export { mods } from './grammar/modifiers';
-export type { ModifierCombo } from './grammar/modifiers';
-
 // Route grammar (v3)
 export {
   parseRoute,
@@ -61,7 +57,7 @@ export { describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS
 export type { DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './grammar/describeRoute';
 
 // Modifier-key reflection helpers
-export { modifierComboToParsed, canonicalModifiers } from './grammar/modifierComboToParsed';
+export { canonicalModifiers } from './grammar/canonicalModifiers';
 
 // ─── ui ───────────────────────────────────────────────────────────────────
 
