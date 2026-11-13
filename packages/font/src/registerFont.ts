@@ -412,9 +412,6 @@ export function ensureFontTexture(
 
 export { textureCacheKey } from './textureCacheKey';
 
-/** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
-export function markAllFontsNotUploaded(): void {}
-
 /** What `resolveFontVariant` found: the atlas to draw with, the face it
  *  actually landed on after walking the fallback chain, and what has to be
  *  synthesized to cover the difference. */

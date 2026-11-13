@@ -7,7 +7,7 @@ import {
   LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC, GLYPH_PAINT_SPECS,
   BatchVariantPrograms, createBatchFill,
 } from './shaders/builtinPrograms';
-import { glyphGeneration, markAllFontsNotUploaded, resetBakeBudget, DEFAULT_BAKE_BUDGET } from '@weasel-js/font';
+import { glyphGeneration, resetBakeBudget, DEFAULT_BAKE_BUDGET } from '@weasel-js/font';
 import { textEngineGeneration } from '@weasel-js/text';
 import { PaintScratch } from './paintScratch';
 import { GLMeshCache } from './cache/GLMeshCache';
@@ -254,7 +254,6 @@ export class WeaselRenderer {
     this.imageCache.abandon();
     this.imageCache = new GLImageCache(this.gpu, this.imageMinification);
     this.gradRamps = new GradientRampAtlas(this.gpu);
-    markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(this.gpu, this.batchFill);

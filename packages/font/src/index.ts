@@ -15,7 +15,6 @@ export {
   faceMetricsFor,
   ensureFontTexture,
   textureCacheKey,
-  markAllFontsNotUploaded,
   resolveFontVariant,
   cachedFontVariant,
   resolveGlyphFallback,
