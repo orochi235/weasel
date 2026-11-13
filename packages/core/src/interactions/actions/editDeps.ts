@@ -2,7 +2,6 @@
  * The deps behind text editing, the clipboard, and Slice.
  */
 import type { Point2, WorldPoint } from '@weasel-js/routing';
-import type { StartEditOptions } from '@weasel-js/text-dom';
 
 /**
  * Dep for `enterTextEditAction`. `<SceneCanvas>` answers it with its own
@@ -24,7 +23,7 @@ import type { StartEditOptions } from '@weasel-js/text-dom';
  */
 export interface TextEditDep {
   /** Begin editing the node with `id`. */
-  startEdit(id: string, opts?: StartEditOptions): void;
+  startEdit(id: string, opts?: { caret?: number | 'all' }): void;
   /**
    * Optional predicate: returns `true` when the node with `id` is a text node.
    * When absent the action fires on any selected node (binding spec is the gate).
