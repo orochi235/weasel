@@ -456,6 +456,68 @@ binding's param. They use the same hooks as any other behavior:
 `end.pointer` is where the pointer was let go, in world coordinates; without one
 on the release, it is the last move's.
 
+## Custom node kinds
+
+A node kind of your own takes three pieces: a painter that draws it and says
+what part of it is grabbable, a factory the `insert` action builds it with, and
+a tool binding a drag to that action.
+
+```tsx
+import {
+  SceneCanvas, defineTool, registerNodeShape, solid,
+  INSERT_DRAG_MODS, INSERT_REPOSITION_BINDING,
+  type InsertNodeFactory, type NodeShapeEntry, type RectPose,
+} from '@weasel-js/core';
+import { pathFromD, transformPath } from '@weasel-js/geom';
+
+const UNIT_GEM = pathFromD('M50 0 L100 40 L50 100 L0 40 Z'); // in a 100 × 100 box
+const gemIn = (p: RectPose) => transformPath(UNIT_GEM, [p.width / 100, 0, 0, p.height / 100, p.x, p.y]);
+const isGem = (data: unknown): data is { gem: { color: string } } =>
+  typeof data === 'object' && data !== null && 'gem' in data;
+
+// Paints the gem, and picks it by its outline rather than its pose box.
+registerNodeShape<unknown, RectPose>({
+  id: 'app:gem',
+  matches: (node) => isGem(node.data),
+  paint: (node, pose) => [{ kind: 'path', path: gemIn(pose), fill: { paint: solid((node.data as { gem: { color: string } }).gem.color) } }],
+  silhouette: (_node, pose) => gemIn(pose),
+});
+
+// The data an insert of kind `gem` gets; the dep adds the id, layer, pose and undo.
+const gemFactory: InsertNodeFactory = () => ({ data: { gem: { color: '#3a7bd5' } } });
+
+// A declarative shell over `insert`: the binding's `params.kind` names the factory.
+const gemTool = defineTool({
+  id: 'gem',
+  keybinding: { key: 'J' },
+  capabilities: ['creates-shapes'],
+  cursor: 'crosshair',
+  presentation: { label: 'Gem', group: 'shape' },
+  bindings: [
+    { spec: { kind: 'drag', mods: INSERT_DRAG_MODS }, actionId: 'insert', opts: { params: { kind: 'gem' } } },
+    INSERT_REPOSITION_BINDING,
+  ],
+});
+
+<SceneCanvas
+  scene={scene}
+  features={['draw']}
+  defaultTools={['select', 'rect']}
+  tools={{ gem: gemTool }}
+  insertNodeFactories={{ gem: gemFactory }}
+/>;
+```
+
+`paint` and `silhouette` work in world coordinates, before the pose's rotation,
+which the kit applies around them. `INSERT_DRAG_MODS` and `INSERT_REPOSITION_BINDING`
+give the tool the built-in shape tools' Shift to constrain, Alt to draw from the
+center and Space to reposition. A painter registered at the default priority
+runs after the built-ins that claim a node by its data (`text`, `path`, `shape`,
+`image`), so keep its `matches` off those fields or pass `{ priority: 'high' }`.
+`@weasel-js/svg` writes the built-in kinds only: give `svgNodesFromKit` a
+`leaf` for yours (its README shows one).
+`packages/core/src/canvas/customNodeKind.test.tsx` runs this example.
+
 ## Non-rect poses
 
 Resize, area-select, snap-origin, and the selection overlay are all
