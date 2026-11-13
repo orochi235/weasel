@@ -42,7 +42,7 @@ function frames(n: number, spacing: number): () => void {
   const world = { scene, viewport: () => vp };
   const id = [...scene.renderOrder()][Math.floor(n / 2)] as NodeId;
   const snap = createSnap(world, {
-    sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })],
+    sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ world, step: 1 })],
   });
   const box = screenBoxOf(world, id, vp)!;
   const press = { x: box.x + box.width / 2, y: box.y + box.height / 2 };

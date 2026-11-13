@@ -13,6 +13,4 @@ createInsert({ world, mint });
 groundGridSource({ step: 1, world });
 ```
 
-`groundGridSource`'s `world` needs only `up`, so a host with no viewport passes `{ up }`.
-
 <!-- entry: breaking -->

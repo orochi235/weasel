@@ -16,6 +16,9 @@ import type { Scene3d, World3d } from '../world';
 import { boxCorner } from './probes3d';
 import { alignPlaneSource, boxSnapSource, groundGridSource } from './sources';
 
+/** A world for a grid source, which reads only its `up`. */
+const GROUND = { viewport: () => ({ camera: createCamera({}), width: 800, height: 600 }) };
+
 const RUNS = 300;
 const T = timeoutFor(RUNS, 5);
 
@@ -39,7 +42,7 @@ describe('groundGridSource, property', () => {
   it('offers finite lines on the lattice bracketing a ground probe, at any pitch and any distance out', () => {
     const seen = tally();
     fc.assert(fc.property(magnitude, signed, signed, (step, a, b) => {
-      const src = groundGridSource({ world: {}, step });
+      const src = groundGridSource({ world: GROUND, step });
       const out = [...src.collect(collectOf([{ id: 'p', at: { x: a, y: 0, z: b }, role: 'pointer' }]))];
       for (const c of out) expect(isFinite3(c.locus.at as Vec3)).toBe(true);
       for (const [axis, c, lines] of [

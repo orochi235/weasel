@@ -28,7 +28,7 @@
  * default heap: run with `NODE_OPTIONS=--max-old-space-size=12288`.
  */
 import { renderHook } from '@testing-library/react';
-import { easeOut } from '@weasel-js/geom';
+import { easeOutQuad } from '@weasel-js/geom';
 import * as blits from '@msb235/blits';
 import { keys, kit, mix, patch, spring, sum, vec, type Mix } from '@msb235/blits';
 import { createTarget, type Animator } from '@weasel-js/animator';
@@ -44,7 +44,7 @@ const KIT = kit<Delta>({ pos: vec(2, sum()) });
 /** Undamped, so nothing comes to rest during a run. */
 const SPRING = { stiffness: 1, damping: 0, mass: 1 };
 /** Read once: a module export read per call adds vitest getter overhead. */
-const EASE = easeOut;
+const EASE = easeOutQuad;
 
 interface Case {
   ids: string[];

@@ -158,7 +158,7 @@ export type GroundGridSourceOptions = {
   /** The grid's pitch, in world units. One that is not positive and finite offers no lines. */
   step: number;
   /** The world the snap runs in; the grid lies on its ground. */
-  world: Pick<World3d<unknown, string>, 'up'>;
+  world: Pick<World3d<unknown, string>, 'viewport' | 'up'>;
 };
 
 /**
