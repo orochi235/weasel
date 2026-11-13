@@ -2,7 +2,7 @@
 '@weasel-js/prefs': minor
 ---
 
-`usePrefsValues` returns `form`, everything a `PrefsForm` or `PrefsDialog` takes from the store under the props' own names, so one spread binds values, Auto, and scoped values.
+`usePrefsValues` returns `form`, which binds a `PrefsForm` or `PrefsDialog` to the store in one spread: values, Auto, and scoped values.
 
 ```tsx
 const { form } = usePrefsValues(store);
