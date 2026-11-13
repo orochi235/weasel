@@ -2,9 +2,7 @@ import { cleanup, render } from '@testing-library/react';
 import { coreKitSettingsSchema } from '@weasel-js/core';
 import { kernel3dKitSettingsSchema } from '@weasel-js/kernel3d';
 import { labkitKitSettingsSchema } from '@weasel-js/labkit';
-import {
-  mergePrefGroups, openPrefsSync, prefLeaves, type PrefEnum, type PrefLeaf, type PrefNumber, type PrefPath,
-} from '@weasel-js/prefs';
+import { mergePrefGroups, openPrefsSync, prefLeaves, type PrefPath } from '@weasel-js/prefs';
 import { KitSettingsFromPrefs, usePrefsValues } from '@weasel-js/prefs/react';
 import { useKitSettings, type KitSettingPath } from '@weasel-js/react';
 import { rigKitSettingsSchema } from '@weasel-js/rig';
@@ -12,6 +10,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { PrefsForm } from '@weasel-js/ui/components/Prefs';
 import { uiKitSettingsSchema } from '@weasel-js/ui/kit-settings';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
+import { otherPrefValue as other } from '../../shared/prefsRoundTrip';
 import { renderWithIcons } from '../testIcons';
 
 afterEach(cleanup);
@@ -22,17 +21,6 @@ type Declared = { [I in keyof typeof SCHEMAS]: PrefPath<(typeof SCHEMAS)[I]> }[n
 const ALL = mergePrefGroups('Kit settings', ...SCHEMAS);
 const LEAVES = [...prefLeaves(ALL)];
 const PREFIX = 'kit.';
-
-/** A value the leaf holds that is not its default. */
-function other(leaf: PrefLeaf): unknown {
-  if (leaf.kind === 'boolean') return !leaf.default;
-  if (leaf.kind === 'enum') return (leaf as PrefEnum).options.find((o) => o.value !== leaf.default)!.value;
-  if (leaf.kind === 'number') {
-    const { min, max, default: d } = leaf as PrefNumber & { default: number };
-    return max !== undefined && max !== d ? max : min !== undefined && min !== d ? min : d + 1;
-  }
-  throw new Error(`no other value for a ${leaf.kind} kit setting`);
-}
 
 describe("the bundled packages' kit settings schemas", () => {
   it('declare every KitSettings path between them, and nothing else', () => {

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createMemoryAdapter } from '@weasel-js/storage';
-import { CHART_PREFS_PREFIX, openChartPrefs } from './prefs';
+import { prefsRoundTrip } from '../../shared/prefsRoundTrip';
+import { CHART_PREFS, CHART_PREFS_PREFIX, openChartPrefs } from './prefs';
 
 type Store = ReturnType<typeof openChartPrefs>;
 const stores: Store[] = [];
@@ -38,5 +39,10 @@ describe('openChartPrefs', () => {
 
   it('a stored look the schema does not list falls back to nodeGraph', () => {
     expect(make(new Map([[`${CHART_PREFS_PREFIX}pipeline.look`, 'tree']])).get('pipeline.look')).toBe('nodeGraph');
+  });
+
+  it('keeps a value at every leaf through storage and a reopen', async () => {
+    const { sent, read } = await prefsRoundTrip(CHART_PREFS, openChartPrefs);
+    expect(read).toEqual(sent);
   });
 });
