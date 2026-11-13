@@ -16,20 +16,27 @@ import {
   type SimulationOptions,
 } from './types';
 
+/** `value`, or a `RangeError` naming `what` when it is not a finite number. */
+function finite(what: string, value: number): number {
+  if (!Number.isFinite(value)) throw new RangeError(`a simulation's ${what} is a finite number, not ${value}`);
+  return value;
+}
+
 /**
  * A d3-force-compatible simulation with no clock: nothing moves until `tick()`.
  * Nodes are mutated in place, and primed with `index`, `vx` and `vy` on creation.
+ * A rate, threshold or tick count that is not a finite number throws a `RangeError`.
  */
 export function createSimulation<TNode extends SimulationNode>(
   opts: SimulationOptions<TNode>,
 ): SimulationCore<TNode> {
   let nodes = opts.nodes;
   let forces = opts.forces ?? [];
-  let alpha = opts.alpha ?? 1;
-  let alphaMin = opts.alphaMin ?? DEFAULT_ALPHA_MIN;
-  let alphaDecay = opts.alphaDecay ?? DEFAULT_ALPHA_DECAY;
-  let alphaTarget = opts.alphaTarget ?? 0;
-  let velocityDecay = opts.velocityDecay ?? DEFAULT_VELOCITY_DECAY;
+  let alpha = finite('alpha', opts.alpha ?? 1);
+  let alphaMin = finite('alphaMin', opts.alphaMin ?? DEFAULT_ALPHA_MIN);
+  let alphaDecay = finite('alphaDecay', opts.alphaDecay ?? DEFAULT_ALPHA_DECAY);
+  let alphaTarget = finite('alphaTarget', opts.alphaTarget ?? 0);
+  let velocityDecay = finite('velocityDecay', opts.velocityDecay ?? DEFAULT_VELOCITY_DECAY);
   const random = opts.random ?? Math.random;
 
   /** `index` is what `forceLink` and friends address nodes by, and a d3 force
@@ -101,31 +108,32 @@ export function createSimulation<TNode extends SimulationNode>(
     },
     alpha(value?: number) {
       if (value === undefined) return alpha;
-      alpha = value;
+      alpha = finite('alpha', value);
       return core;
     },
     alphaTarget(value?: number) {
       if (value === undefined) return alphaTarget;
-      alphaTarget = value;
+      alphaTarget = finite('alphaTarget', value);
       return core;
     },
     alphaDecay(value?: number) {
       if (value === undefined) return alphaDecay;
-      alphaDecay = value;
+      alphaDecay = finite('alphaDecay', value);
       return core;
     },
     alphaMin(value?: number) {
       if (value === undefined) return alphaMin;
-      alphaMin = value;
+      alphaMin = finite('alphaMin', value);
       return core;
     },
     velocityDecay(value?: number) {
       if (value === undefined) return velocityDecay;
-      velocityDecay = value;
+      velocityDecay = finite('velocityDecay', value);
       return core;
     },
     tick(iterations: number = 1) {
-      for (let i = 0; i < iterations; i++) step();
+      const n = finite('tick count', iterations);
+      for (let i = 0; i < n; i++) step();
       return core;
     },
     isSettled() {
