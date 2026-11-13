@@ -129,6 +129,7 @@ const DEFAULT_HIT_PX = 8;
 const DEFAULT_SIZE_PX = 7;
 /** A port's look when its options give neither `fill` nor `stroke`. */
 export const DEFAULT_PORT_FILL: CommandFill = { paint: { color: '#7ba7c7' } };
+/** A port's outline when its options give neither `fill` nor `stroke`. */
 export const DEFAULT_PORT_STROKE: CommandStroke = { paint: { color: '#16222c' }, width: 1 };
 
 /** Read a port press's scratch back off the hit an action was handed. */
