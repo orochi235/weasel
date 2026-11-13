@@ -2,6 +2,6 @@
 '@weasel-js/core': minor
 ---
 
-`<SceneCanvas selectTool>` and `<SceneCanvas ingestion>` have named types, `SceneCanvasSelectTool` and `SceneCanvasIngestion`, as its other option props do.
+`<SceneCanvas>`'s `selectTool` and `ingestion` props have named types: `SceneCanvasSelectTool`, `SceneCanvasIngestion`.
 
 <!-- entry: api -->
