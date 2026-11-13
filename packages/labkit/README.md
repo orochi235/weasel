@@ -306,6 +306,7 @@ provide the corresponding chrome; they compose freely.
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
 | `undo` | On by default: undo and redo buttons, snapshotting state and settings together on `state.change` and `config.change`, or the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory`. `undo: false` turns it off |
 | `job` | Starts async work, aborts it on unmount and on a key change, and renders progress and a cancel control |
+| `clock` | Playback time on `ctx.trial.clock`, which a canvas layer marked `timed` redraws from. Outside a presentation the trial draws no play controls: put a `<TrialTransport>` in a chrome contribution, as `{ id: 'transport', region: 'status', render: () => <TrialTransport /> }` |
 | `tools` | A tool palette and a tool slot on the trial |
 | `chrome` | Anything else, as contributions keyed to a region |
 
