@@ -20,11 +20,13 @@ import { FILE_ACTIONS, useFileCommands, type FileCommandsTarget } from './fileCo
 import { importSvgFile, openSvgFile } from './openSvg';
 import { contentRoots } from '@weasel-js/core';
 import { exportPageSvgFile, saveSvgFile } from './saveSvg';
+import { exportPagePngFile, exportPagesPdfFile } from './exportPage';
 import { backgroundOf, setBackground } from './docBackground';
 import { withIcons } from './testIcons';
 import { drawScene } from './testScenes';
 
 vi.mock('./saveSvg', () => ({ saveSvgFile: vi.fn(async () => {}), exportPageSvgFile: vi.fn(async () => {}) }));
+vi.mock('./exportPage', () => ({ exportPagePngFile: vi.fn(async () => {}), exportPagesPdfFile: vi.fn(async () => {}) }));
 vi.mock('./openSvg', () => ({ openSvgFile: vi.fn(async () => {}), importSvgFile: vi.fn(async () => {}) }));
 
 beforeAll(() => {
@@ -158,6 +160,26 @@ describe('useFileCommands', () => {
     expect(enabled()).toBe(true);
     rerender({ ...target, page: null });
     expect(enabled()).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('Export Page as PNG writes the page in view on the background, and nothing with none', () => {
+    const { registry, scene, target, rerender } = setup();
+    setBackground(scene, '#336699');
+    act(() => { registry.trigger(FILE_ACTIONS.exportPng); });
+    expect(exportPagePngFile).toHaveBeenCalledWith(scene, target.page, { filename: 'a', backgroundColor: '#336699' });
+    vi.mocked(exportPagePngFile).mockClear();
+    rerender({ ...target, page: null });
+    act(() => { registry.trigger(FILE_ACTIONS.exportPng); });
+    expect(exportPagePngFile).not.toHaveBeenCalled();
+    expect(registry.list().find((a) => a.id === FILE_ACTIONS.exportPng)!.enabled?.({})).toBe(ActionDisabledReason.NotApplicable);
+  });
+
+  it('Export Pages as PDF writes every page, whichever is in view', () => {
+    const { registry, scene, target, rerender } = setup();
+    rerender({ ...target, page: null });
+    act(() => { registry.trigger(FILE_ACTIONS.exportPdf); });
+    expect(exportPagesPdfFile).toHaveBeenCalledWith(scene, placedPagesOf(scene), { filename: 'a', backgroundColor: '#ffffff' });
+    expect(vi.mocked(exportPagesPdfFile).mock.calls[0]![1]).toHaveLength(2);
   });
 
   it('mod+S saves, and keeps the browser from saving the page', () => {

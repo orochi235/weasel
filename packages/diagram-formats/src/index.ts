@@ -26,7 +26,7 @@ export { addDocumentScene, documentSpecs, pageSpecs, type DocumentScene, type Do
 export { addOnPages } from '@weasel-js/core';
 export { PAGE_TEMPLATES, TEMPLATE_PAGE_SIZE, type PageTemplate, type PageTemplateGroup } from './templates/catalog';
 export { addTemplatePage, templateSpecs, type AddTemplatePageOptions } from './templates/templateScene';
-export { exportPageSvg, type ExportPageSvgOptions } from './pageSvg';
-export { exportPagePng, type ExportPagePngOptions } from './pagePng';
-export { exportPagesPdf, type ExportPagesPdfOptions } from './pagesPdf';
-export { pageSvgNodes, type PageExportScene, type PageRect } from './pageNodes';
+export {
+  exportPagePng, exportPageSvg, exportPagesPdf, pageSvgNodes,
+  type ExportPagePngOptions, type ExportPageSvgOptions, type ExportPagesPdfOptions, type PageExportScene, type PageRect,
+} from './pageSvg';

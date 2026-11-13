@@ -40,6 +40,7 @@
     "build": "tsup"
   },
   "dependencies": {
+    "@weasel-js/export": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/paint": "1.19.1",
     "@weasel-js/pdf": "1.19.1",

@@ -10,7 +10,7 @@ import {
   type Stroke,
   type StrokeAlign,
 } from '@weasel-js/core';
-import { exportPageSvg, exportPagesPdf, type PageExportScene } from '@weasel-js/diagram-formats';
+import { exportPageSvg, exportPagesPdf, type PageExportScene } from '@weasel-js/export';
 import { asPolygonPath } from '@weasel-js/geom';
 import {
   type ConfigOf,

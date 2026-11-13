@@ -1,20 +1,18 @@
 /**
- * Every page of a diagram as one PDF.
+ * Every page of a scene as one PDF.
  */
 import {
   commandRasterizer, createRasterSession, documentOf, holdImageBitmaps, planPixelRender, viewToMat3, warmRender,
 } from '@weasel-js/core';
 import { registryFontSource, writePdf, type PdfPage, type PdfSkip } from '@weasel-js/pdf';
 import type { PageExportScene, PageRect } from './pageNodes';
-import { pageBackground } from './pageSvg';
 
 /** PDF points per page unit: 72 points to the inch over 96 units to the inch. */
 const PT_PER_UNIT = 0.75;
 
 /** Options for {@link exportPagesPdf}. */
 export interface ExportPagesPdfOptions {
-  /** The color painted under each page. Default: the page color of the
-   *  scene's diagram theme. `null` leaves it unpainted. */
+  /** The color painted under each page. Default none: the page is left unpainted. */
   background?: string | null;
   /** The document's title. */
   title?: string;
@@ -38,7 +36,7 @@ export async function exportPagesPdf(
   pages: readonly PageRect[],
   opts: ExportPagesPdfOptions = {},
 ): Promise<{ blob: Blob; skipped: readonly PdfSkip[] }> {
-  const background = pageBackground(scene, opts.background);
+  const background = opts.background ?? null;
   // A page's commands hold bitmaps while the next page's images load.
   const release = holdImageBitmaps();
   try {

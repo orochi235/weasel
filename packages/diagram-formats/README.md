@@ -4,7 +4,7 @@ Turns `@weasel-js/diagram` scenes into files and files into scenes. Every
 format reads and writes one interchange document, built on the diagram
 package's `DiagramData`. One page at a time exports as an SVG document or a
 PNG image, and every page together as one PDF, each showing the page as the
-canvas draws it.
+canvas draws it, through `@weasel-js/export`.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -386,10 +386,15 @@ is written as its own `activate` or `deactivate` line.
 
 ## Exporting a page
 
-A page is a rect in world space; a `PlacedPage` from core's `placedPagesOf` is
-one. Pages sit apart in one world, and a connector between two pages draws as
-two stubs and their off-page tags, so cutting the scene to the page rect leaves
-nothing from another page.
+`exportPageSvg`, `exportPagePng`, `exportPagesPdf` and `pageSvgNodes` are
+`@weasel-js/export`'s page exports, which work on any scene; its README covers
+pages, options and what each format carries. The ones here add what a diagram
+needs:
+
+- `background` defaults to the page color of the scene's diagram theme
+  (`diagram:theme`), where `@weasel-js/export` paints none. `null` paints none.
+- The SVG draws diagram outlines and drawn marks with the diagram painters
+  whether or not they are registered.
 
 ```ts
 import { placedPagesOf } from '@weasel-js/core';
@@ -401,43 +406,19 @@ const png = await exportPagePng(scene, pages[0], { scale: 2 });
 const { blob, skipped } = await exportPagesPdf(scene, pages, { title: 'Chart' });
 ```
 
-None writes to the scene, so an export takes no undo entry. Each takes
-`background`, the color painted under the page: by default the page color of
-the scene's diagram theme (`diagram:theme`), and `null` for none.
-
-### SVG
-
-`exportPageSvg` returns the document as a string. Its `viewBox` is the page
-rect and its `width` and `height` the page's size. Only nodes whose box meets
-the page are written, in paint order, on the scene's visible layers;
-annotation layers are left out.
+Pages sit apart in one world, and a connector between two pages draws as two
+stubs and their off-page tags, so cutting the scene to the page rect leaves
+nothing from another page.
 
 | In the scene | In the SVG |
 | --- | --- |
 | A shape's outline (`diagram.outline`) | A path of that outline in the shape's box, with its fill and stroke; a container's divider under its header as a second path. A container's members follow inside its group. |
-| A connector, or any node that derives its path | One path along the route, with its stroke and its `marker-start` and `marker-end`. A path made of parts writes one path per part. |
 | A drawn mark | Its unit-square path stretched over its box. |
 | A plot's mark | Its path or its text, in the plot root's frame. |
 | Rows, labels, text marks, and off-page tags | Text, laid out in the lines the canvas lays it into; a tag's background is a rect behind it. |
-| Anything else | What `@weasel-js/svg`'s `svgLeafFromKit` writes for it. |
 
-It waits for the paint kinds and font faces the document uses before
-writing it. A load that fails goes to `onWarn`, and so does anything SVG cannot
-say the way weasel draws it. `title` and `pretty` are passed on to
-`serializeSvg`.
-
-`pageSvgNodes(scene, page)` is the walk on its own: the `SvgNode`s, with no
-background, for a caller assembling its own document.
-
-### PNG
-
-`exportPagePng` draws the page with core's `renderSceneToPixels`, the renderer
-the canvas uses, so its pixels are the canvas's. The image is the page's size
-times `scale`, and the result is a `Blob` of type `image/png`. It needs WebGL2
-and `OffscreenCanvas`.
-
-Paint kinds and fonts that load on demand are waited for, but the painters are
-the caller's to register, as they are to draw the scene at all:
+The PNG and the PDF draw through the renderer, so the diagram painters are the
+caller's to register, as they are to draw the scene at all:
 
 ```ts
 import { registerDiagramShape, registerMarkShape } from '@weasel-js/diagram';
@@ -445,23 +426,6 @@ import { registerDiagramShape, registerMarkShape } from '@weasel-js/diagram';
 registerDiagramShape();
 registerMarkShape();
 ```
-
-### PDF
-
-`exportPagesPdf` writes each of `pages` as a page of one PDF, in the order
-given, at 0.75 points per unit (96 units to the inch). It answers the `Blob`,
-of type `application/pdf`, and `skipped`: what the PDF could not carry, each a
-`{ kind, detail }` from `@weasel-js/pdf`. Annotation layers are left out.
-
-Shapes and strokes are written as vectors and text as selectable text in its
-embedded face, which needs the face's outlines registered from a TrueType file
-(`registerFontOutlines` in `@weasel-js/font`). A face that cannot be embedded
-is drawn as glyph outlines, so its text is not selectable; a glyph with no
-outline at all is left out and listed in `skipped`.
-
-Effects, custom shaders, and fills in a registered paint kind are drawn through
-the renderer and placed as images, so the painters are the caller's to
-register, as for the PNG, and this needs WebGL2 and `OffscreenCanvas`.
 
 ## Scenes it reads
 

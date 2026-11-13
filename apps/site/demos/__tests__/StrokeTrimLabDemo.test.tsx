@@ -3,8 +3,8 @@ import { act, fireEvent } from '@testing-library/react';
 import { renderWithIcons } from '../../testIcons';
 
 let finish!: () => void;
-vi.mock('@weasel-js/diagram-formats', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@weasel-js/diagram-formats')>()),
+vi.mock('@weasel-js/export', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@weasel-js/export')>()),
   exportPagesPdf: () => new Promise((resolve) => { finish = () => resolve({ blob: new Blob(['%PDF']) }); }),
 }));
 

@@ -41,6 +41,7 @@
       "@weasel-js/diagram",
       "@weasel-js/diagram-elk",
       "@weasel-js/diagram-formats",
+      "@weasel-js/export",
       "@weasel-js/plot",
       "@weasel-js/p-touch",
       "@weasel-js/guides",

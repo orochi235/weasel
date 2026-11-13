@@ -39,7 +39,7 @@ export interface ToolbarProps {
   showFirstPage: () => void;
   /** Leave the open mode, before New or Open replaces the document. */
   leaveMode: () => void;
-  /** The page Export Page writes. */
+  /** The page Export Page writes as SVG or PNG. */
   page: PlacedPage | null;
   filename: string;
   setFilename: (name: string) => void;

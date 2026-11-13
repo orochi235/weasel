@@ -17,7 +17,9 @@ export const DRAW_MENU_TITLES: readonly MenuTitle[] = [
 export const DRAW_MENU_CONTRIBUTIONS: MenuContributions = {
   file: {
     open: pref.group('', { new: FILE_NEW_MENU, open: act(FILE_ACTIONS.open), import: act(FILE_ACTIONS.import) }),
-    save: menuRun({ save: FILE_ACTIONS.save, exportPage: FILE_ACTIONS.exportPage }),
+    save: menuRun({
+      save: FILE_ACTIONS.save, exportPage: FILE_ACTIONS.exportPage, exportPng: FILE_ACTIONS.exportPng, exportPdf: FILE_ACTIONS.exportPdf,
+    }),
   },
   edit: {
     history: menuRun({ undo: 'undo', redo: 'redo' }),

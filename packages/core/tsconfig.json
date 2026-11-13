@@ -60,6 +60,8 @@
       "@weasel-js/dither": ["../dither/src/index.ts"],
       "@weasel-js/dither/testing/*": ["../dither/src/testing/*"],
       "@weasel-js/editor": ["../editor/src/index.ts"],
+      "@weasel-js/export": ["../export/src/index.ts"],
+      "@weasel-js/export/testing/*": ["../export/src/testing/*"],
       "@weasel-js/font": ["../font/src/index.ts"],
       "@weasel-js/font/metrics": ["../font/src/metrics.entry.ts"],
       "@weasel-js/font/test-seams": ["../font/src/test-seams.ts"],

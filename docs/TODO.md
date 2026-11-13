@@ -358,13 +358,6 @@ Owner tags, after the priority (2026-10-26):
   taking a `RecordCache` opened before the scene is made (its reads are synchronous once open), with
   `localStorage` the default; whether entries stay JSON text or become structured-clone values is the call
   to make. Closes when an app can keep its session in IndexedDB through the editor's hooks (filed 2026-11-12).
-- **(P2) [recheck] Exporting a page as SVG, PNG or PDF lives only in `@weasel-js/diagram-formats`.**
-  `exportPageSvg`, `exportPagePng` and `exportPagesPdf` (`packages/diagram-formats/src/page*.ts`) read
-  nothing diagram-specific except the default background (the `diagram:theme` page color) and the diagram
-  painters `pageSvgNodes` consults, yet an editor of any other kind must install `@weasel-js/diagram` and
-  `@weasel-js/plot` to get them, or copy the walk from page rect through `planPixelRender` to `writePdf`.
-  draw has no PNG or PDF export. Closes when a page of any scene exports through a package
-  that does not depend on diagram, and diagram-formats builds its exports on it (filed 2026-11-12).
 - **(P2) [agent] A sync layer can hear a scene's ops but cannot apply them to another scene.**
   `scene.history.observe` reports each entry's ops as `{ name, args }` (`kit:add`, `kit:setPose`, and an
   inverse as `revert:<kind>`), but those are the scene's registered ops, which `rebuildOp`
@@ -688,6 +681,11 @@ only story runner in the repo.
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
+
+- **(P3) [maintainer] `@weasel-js/export` has no release badge.** The site's Releases filter draws each
+  package's chip from `PACKAGE_ICONS` (`apps/site/releaseIcons.ts`, glyphs in `apps/site/icons/packages.mjs`),
+  and the package added on 2026-11-12 has none, so its chip shows a bare name. Badges are drawn in review rounds,
+  so the glyph is the maintainer's call. Closes when `export` has a badge in both files.
 
 ---
 
