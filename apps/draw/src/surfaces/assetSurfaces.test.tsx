@@ -111,12 +111,12 @@ describe('the Properties asset', () => {
 
   it('shows the paper size of the shown page', () => {
     renderWithIcons(<App docSelected />);
-    expect(sidebar().getByRole('button', { name: /Paper/ }).textContent).toContain('A4');
+    expect(sidebar().getByRole('button', { name: /^(?!Reset ).*Paper/ }).textContent).toContain('A4');
   });
 
   it('shows Custom for a page of none of the paper sizes, and offers it only to show', () => {
     renderWithIcons(<App docSelected paperSize={null} />);
-    const paper = sidebar().getByRole('button', { name: /Paper/ });
+    const paper = sidebar().getByRole('button', { name: /^(?!Reset ).*Paper/ });
     expect(paper.textContent).toContain('Custom');
     expect(paper.textContent).not.toContain('US Letter');
     click(paper);
