@@ -93,9 +93,7 @@ export function ReleaseSection({
         ) : release.version === UNRELEASED ? (
           <span className="ckd-release-date">merged, not yet published</span>
         ) : null}
-        <span className={`ckd-release-count ${num.numeric}`}>
-          {counts.map((g) => `${g.count} ${g.label.toLowerCase()}`).join(' · ')}
-        </span>
+        <ReleaseCount counts={counts} />
       </summary>
 
       {open ? (
@@ -120,6 +118,24 @@ export function ReleaseSection({
         </>
       ) : null}
     </details>
+  );
+}
+
+/** The release's total, with its per-group breakdown on a smaller line below. */
+function ReleaseCount({ counts }: { counts: readonly { id: string; label: string; count: number }[] }) {
+  const total = counts.reduce((sum, g) => sum + g.count, 0);
+  if (total === 0) return null;
+  return (
+    <span className={`ckd-release-count ${num.numeric}`}>
+      <span className="ckd-release-total">
+        {total} {total === 1 ? 'change' : 'changes'}
+      </span>
+      {counts.length > 1 ? (
+        <span className="ckd-release-breakdown">
+          {counts.map((g) => `${g.count} ${g.label.toLowerCase()}`).join(' · ')}
+        </span>
+      ) : null}
+    </span>
   );
 }
 
