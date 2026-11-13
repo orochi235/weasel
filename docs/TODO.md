@@ -511,26 +511,13 @@ also maps every set of components that overlap in functionality. An entry marked
 from the code, not a reading of it; check that first. Paths are under `packages/ui/src/components/` unless they
 name a package. Breaking changes are in scope.
 
-- **(P2) [agent] `FillStrokeSwatch` turns a gradient into a solid.** `FillStrokeSwatch/`'s `Chip` takes
-  `fill: Paint`, but its native picker shows `solidColorOf(paint) ?? PICKER_FALLBACK` and reports
-  `onChange(slot, color: string)`, so touching a gradient chip writes a solid back. Make each slot a `PaintField`
-  trigger reporting `Paint`, with one `ColorChip` shared with `ColorField` (which repeats the same draft,
-  `usePickerClose`, and `useRecordRecentColor` pattern). Closes when a gradient survives opening and closing a
-  slot's picker, under a test.
-
-- **(P2) [agent] labkit's `PaletteRegion` draws no group separators.** `labkit/src/chrome/regions/PaletteRegion.tsx`
-  copies `ToolPalette`'s frame and flattens the groups (`groupsOf(...).flatMap(g => g.entries)`). Closes with the
-  `ToolPalette` rail entry below, or sooner when the lab's rail shows its groups' separators.
-
-- **(P2) [agent] A `Toolbar` or `ToolPalette` inside `ToolbarDock` probably gets no move handle** *(inferred)*.
-  Only `Bar/BarLayout.tsx` reads `DockBarContext` and `useReportDockLeast`. Closes when a story shows a docked
-  `Toolbar` with a handle, or the `Bar` + `Toolbar` merge lands.
-
-- **(P3) [agent] `TextArea`, `OptionsBar`, and labkit's `ControlBar` have drifted from their siblings.** `TextArea`
-  hand-copies `FieldFoot`/`fieldRootClass` and has no `orientation` or `mixed`; `OptionsBar` has no
-  `SegmentTooltip`, `disabledReason`, `orientation`, or `FitScope`; `ControlBar` never fuses paired flags
-  *(inferred)*. Closes when each matches its sibling, which the `Field`, segmented-bar, and `barCells` entries
-  below do as a side effect.
+- **(P3) [maintainer] A `FillStrokeSwatch` chip cannot edit a gradient.** Each chip is a native color picker: on a
+  gradient it opens at the slot's fallback color, and a pick writes a solid, by design and under test (`opens the
+  picker on a non-solid paint at the slot fallback`); opening and closing it leaves the paint alone. Making each slot a
+  `PaintField` trigger that reports `Paint` would let draw's swatch edit any paint, sharing one `ColorChip` with
+  `ColorField`, which repeats the chip's draft, `usePickerClose`, and `useRecordRecentColor` code. Whether the swatch
+  should open a paint editor is the maintainer's call. Closes when a slot edits a gradient, or the maintainer rules it
+  stays a solid picker.
 
 - **(P2) [agent] Make `<Along>` the only way to curve a control.** `Slider` (`Slider/SliderBody.tsx:61`), `Jog`
   (`Jog/Jog.tsx:61`), `DetentSlider`, `Bar`, `Tabs`, `SwatchGrid`, `SwatchStrip`, and `segmentedRow.tsx` each do
@@ -604,7 +591,8 @@ name a package. Breaking changes are in scope.
   `barLabel.module.css`; `StatusBarSpacer` duplicates `ToolbarSpacer`; `Bar/Bar.tsx` imports Prefs, SelectionPanel,
   and Properties. `BarLayout` plus `Toolbar`'s Group/Spacer/Title, roving, orientation, and the dock handle become
   `Bar`; the schema walker becomes `PrefsBar` beside Prefs; `StatusBar` and `ToolOptionsBar` fold in; move
-  `Bar/barStoryFields.tsx` out of source. Closes when there is one strip component.
+  `Bar/barStoryFields.tsx` out of source. Only `BarLayout` reads `DockBarContext`, so a `Toolbar` placed in a
+  `ToolbarDock` would draw no move handle; nothing docks one today. Closes when there is one strip component.
 
 - **(P2) [agent] One slider: retire `RangeSlider`, turn `DetentSlider` into `useDetents()`.** `RangeSlider` is a
   React Aria slider with its own `localeWritten` workaround, though `Slider` is already multi-thumb and follows
@@ -645,7 +633,8 @@ name a package. Breaking changes are in scope.
 
 - **(P2) [agent] Export `Bar`'s cell step and drop `ControlBar`'s copy.** Both share `BarLayout` and
   `groupBarNodes`, but `labkit/src/controls/ControlBar.tsx` maps leaves through its own `Cell`/`labField` and
-  filters with its own `visible`. Export `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
+  filters with its own `visible`, and never calls `pairRows`, so paired leaves don't fuse in a lab bar. Export
+  `barCells(leaves, cellFor)` with a pluggable cell factory. Closes when
   `ControlBar` calls it.
 
 - **(P3) [agent] Draw hud's menu from a shared headless panel.** `hud/src/menu/drawPanel.ts` hard-codes
