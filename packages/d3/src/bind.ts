@@ -143,7 +143,7 @@ export function d3Bind<
             exitData,
             exitPoses,
             options.animator,
-            options.geometry,
+            options.poseDescriptor,
           ),
         );
       }
@@ -154,7 +154,7 @@ export function d3Bind<
         [...data],
         priorPoses,
         options.animator,
-        options.geometry,
+        options.poseDescriptor,
       );
     },
   };
