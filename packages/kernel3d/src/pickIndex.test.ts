@@ -102,7 +102,7 @@ function scanNearest(world: World3d<TestData, TestLayer>, point: { x: number; y:
     if (excluded?.has(node.id)) continue;
     const box = world.bounds!(node);
     if (!box) continue;
-    const t = intersectRayAabb(ray, box.min, box.max);
+    const t = intersectRayAabb(ray, box);
     if (t !== null && t < bestT) {
       bestT = t;
       best = node.id;
@@ -143,7 +143,7 @@ function scanRay(world: World3d<TestData, TestLayer>, ray: Ray, excluded: Readon
     if (excluded?.has(node.id)) continue;
     const box = world.bounds!(node);
     if (!box) continue;
-    const t = intersectRayAabb(ray, box.min, box.max);
+    const t = intersectRayAabb(ray, box);
     if (t !== null && t < bestT) {
       bestT = t;
       best = node.id;

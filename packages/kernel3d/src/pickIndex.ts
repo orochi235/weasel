@@ -93,7 +93,7 @@ class BuiltIndex<TData, TLayer extends string> implements WorldPickIndex {
       const box = boxes[i]!;
       const node = order[i]!;
       if (excluded?.has(node.id) || layerIsPainted?.(node.layer) === false) return;
-      const t = intersectRayAabb(ray, box.min, box.max);
+      const t = intersectRayAabb(ray, box);
       if (t !== null && t <= maxT && (t < bestT || (t === bestT && i < best))) {
         bestT = t;
         best = i;

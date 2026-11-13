@@ -19,7 +19,8 @@ export interface Aabb {
 }
 
 /** Distance along the ray to the box, or null; null too for a ray with a NaN component. A ray starting inside returns 0. */
-export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null {
+export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
+  const { min, max } = box;
   let tMin = Number.NEGATIVE_INFINITY;
   let tMax = Number.POSITIVE_INFINITY;
 

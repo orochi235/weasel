@@ -309,7 +309,7 @@ describe('createBvh', () => {
     const direction = { x: 0.7 - origin.x, y: 0.3 - origin.y, z: 1.3 - origin.z };
     const min = { x: 0, y: 0, z: 0 };
     const max = { x: 0.7, y: 0.6, z: 1.3 };
-    expect(intersectRayAabb({ origin, direction }, min, max)).toBe(1);
+    expect(intersectRayAabb({ origin, direction }, { min, max })).toBe(1);
     const tree = createBvh<string>(3, [['a', [0, 0, 0, 0.7, 0.6, 1.3]]]);
     const got: [string, number][] = [];
     tree.raycast([origin.x, origin.y, origin.z], [direction.x, direction.y, direction.z], (k, t) => { got.push([k, t]); });
@@ -322,7 +322,7 @@ describe('createBvh', () => {
     const direction = { x: 5e-324, y: 1, z: 0 };
     const min = { x: 0, y: 0, z: -1 };
     const max = { x: 1, y: 3e13, z: 1 };
-    const t = intersectRayAabb({ origin, direction }, min, max);
+    const t = intersectRayAabb({ origin, direction }, { min, max });
     expect(t).not.toBeNull();
     const tree = createBvh<string>(3, [['a', [0, 0, -1, 1, 3e13, 1]]]);
     const got: [string, number][] = [];
