@@ -48,7 +48,7 @@ describe('the default edge-label edit', () => {
     const { scene, hook, entries, open, type } = setup();
     open();
     type('weight');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect((label(scene)!.data as { text: string }).text).toBe('weight');
     expect(scene.historyEntries()).toHaveLength(entries + 1);
     scene.undo();
@@ -61,10 +61,10 @@ describe('the default edge-label edit', () => {
     const { scene, hook, entries, open, type } = setup();
     open();
     type('weight');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     open();
     type('cost');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(scene.historyEntries()).toHaveLength(entries + 2);
     scene.undo();
     expect((label(scene)!.data as { text: string }).text).toBe('weight');
@@ -74,7 +74,7 @@ describe('the default edge-label edit', () => {
     const { scene, hook, entries, open } = setup();
     open();
     expect(label(scene)).toBeDefined();
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(label(scene)).toBeUndefined();
     expect(scene.historyEntries()).toHaveLength(entries + 1);
     scene.undo();
@@ -88,7 +88,7 @@ describe('the default edge-label edit', () => {
     open();
     type('w');
     type('');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(label(scene)).toBeUndefined();
     expect(scene.historyEntries()).toHaveLength(entries + 1);
     scene.undo();

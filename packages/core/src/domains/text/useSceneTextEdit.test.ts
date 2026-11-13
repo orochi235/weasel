@@ -145,7 +145,7 @@ describe('useSceneTextEdit — setStyle', () => {
 
     const style = hook.result.current.scene.get(asNodeId('a'))?.data.style;
     expect(style?.fontWeight).toBe(700);
-    act(() => hook.result.current.edit.commit());
+    act(() => hook.result.current.edit.commitEdit());
     const runs = hook.result.current.scene.get(asNodeId('a'))?.data.runs;
     expect(runs).toEqual([{ text: 'ab', fontWeight: 400 }, { text: 'cd', bold: true }]);
   });
@@ -621,7 +621,7 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
   it('writes no text onto a node that had none', () => {
     const { hook } = mount({ id: 'box', x: 0, y: 0, width: 100, height: 100 });
     act(() => hook.result.current.edit.startEdit('box'));
-    act(() => hook.result.current.edit.commit());
+    act(() => hook.result.current.edit.commitEdit());
     const { scene } = hook.result.current;
     expect('text' in scene.get(asNodeId('box'))!.data).toBe(false);
     expect(scene.canUndo()).toBe(false);
@@ -630,7 +630,7 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
   it('leaves no undo step behind an untouched text or its runs', () => {
     const { hook } = mount({ ...NODE, runs: [{ text: 'hel', bold: true }, { text: 'lo' }] });
     act(() => hook.result.current.edit.startEdit('a'));
-    act(() => hook.result.current.edit.commit());
+    act(() => hook.result.current.edit.commitEdit());
     expect(hook.result.current.scene.canUndo()).toBe(false);
   });
 
@@ -638,7 +638,7 @@ describe('useSceneTextEdit — a commit that changes nothing', () => {
     const { hook, container } = mount(NODE);
     act(() => hook.result.current.edit.startEdit('a'));
     overlayOf(container).textContent = 'goodbye';
-    act(() => hook.result.current.edit.commit());
+    act(() => hook.result.current.edit.commitEdit());
     const { scene } = hook.result.current;
     expect(scene.get(asNodeId('a'))!.data.text).toBe('goodbye');
     expect(scene.canUndo()).toBe(true);
@@ -689,7 +689,7 @@ describe('useSceneTextEdit — one undo step per edit', () => {
   it('undoes text, runs, and a rewritten node style together', async () => {
     const { hook, overlay } = mount();
     await press(overlay, 'i', [4, 7]);
-    act(() => hook.result.current.edit.commit());
+    act(() => hook.result.current.edit.commitEdit());
     const { scene } = hook.result.current;
     const after = scene.get(asNodeId('a'))!.data;
     expect(after.style).toEqual({ fontSize: 16, fontStyle: 'normal' });
@@ -705,7 +705,7 @@ describe('useSceneTextEdit — one undo step per edit', () => {
   it('undoes changed text and its runs in one step', () => {
     const { hook, overlay } = mount();
     overlay.querySelector('span[data-run]')!.textContent = 'three';
-    act(() => hook.result.current.edit.commit());
+    act(() => hook.result.current.edit.commitEdit());
     const { scene } = hook.result.current;
     expect(scene.get(asNodeId('a'))!.data.text).toBe('three');
     expect(scene.get(asNodeId('a'))!.data.runs).toEqual([{ text: 'three' }]);

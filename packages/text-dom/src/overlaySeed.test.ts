@@ -42,7 +42,7 @@ describe('useTextEdit: text that ends in a line break', () => {
       const { result } = renderHook(() => useTextEdit(h.opts));
       act(() => result.current.startEdit('a'));
       typeAtStart(h.container, 'x');
-      act(() => result.current.commit());
+      act(() => result.current.commitEdit());
       expect(h.texts.map((t) => JSON.stringify(t))).toEqual([JSON.stringify(`x${text}`)]);
     });
   }
@@ -52,7 +52,7 @@ describe('useTextEdit: text that ends in a line break', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     typeAtStart(h.container, 'x');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits).toEqual([[{ text: 'xa' }, { text: 'b\n', bold: true }]]);
   });
 
@@ -63,7 +63,7 @@ describe('useTextEdit: text that ends in a line break', () => {
       act(() => result.current.startEdit('a'));
       const overlay = h.container.querySelector<HTMLElement>('[contenteditable]')!;
       overlay.textContent = typed;
-      act(() => result.current.commit());
+      act(() => result.current.commitEdit());
       expect(h.texts).toEqual([kept]);
     });
   }

@@ -22,7 +22,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     const { h, edit, overlay } = editAtEnd([{ text: 'a', script: 'sub' }]);
     act(() => { pressKey(overlay, '-', { meta: true, shift: true }); });
     act(() => dispatchBeforeInput(overlay, 'b'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', script: 'sub' }, { text: 'b' }]);
   });
 
@@ -31,7 +31,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     act(() => { pressKey(overlay, 'b', { meta: true }); });
     expect(edit().effectiveStyle?.bold).toBe(false);
     act(() => dispatchBeforeInput(overlay, 'b'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', bold: true }, { text: 'b' }]);
   });
 
@@ -39,7 +39,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     const { h, edit, overlay } = editAtEnd([{ text: 'a', bold: true }]);
     act(() => edit().applyStyleToSelection({ fontWeight: 700 }));
     act(() => dispatchBeforeInput(overlay, 'a'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', bold: true }, { text: 'a', fontWeight: 700 }]);
   });
 
@@ -48,7 +48,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     act(() => { pressKey(overlay, 'b', { meta: true }); });
     expect(edit().effectiveStyle?.bold).toBe(true);
     act(() => dispatchBeforeInput(overlay, 'b'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'b', bold: true }]);
   });
 
@@ -57,7 +57,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     placeCaretAtChar(overlay, 0);
     act(() => edit().applyStyleToSelection({ fill: undefined }));
     act(() => dispatchBeforeInput(overlay, 'a'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a' }, { text: 'a', fill: null }]);
   });
 
@@ -67,7 +67,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     expect(edit().effectiveStyle?.bold).toBe(false);
     act(() => { pressKey(overlay, 'b', { meta: true }); });
     act(() => dispatchBeforeInput(overlay, 'a'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a', fontWeight: 300 }, { text: 'a', bold: true }]);
   });
 
@@ -77,7 +77,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     act(() => dispatchBeforeInput(overlay, 'a'));
     expect(edit().rangeStyle?.bold).toBe(true);
     act(() => dispatchBeforeInput(overlay, 'a'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'a' }, { text: 'aa', bold: true }]);
   });
 
@@ -89,7 +89,7 @@ describe('useTextEdit armed style (shrunk)', () => {
     });
     expect(edit().rangeStyle?.italic).toBe(true);
     act(() => dispatchBeforeInput(overlay, 'X'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(h.runCommits[0]!.runs).toEqual([{ text: 'aX', italic: true }, { text: 'b' }]);
   });
 });

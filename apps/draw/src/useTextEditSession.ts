@@ -57,7 +57,7 @@ export function useTextEditSession(
   // would leave the editor over the canvas swallowing keystrokes. Commit it, as Escape does.
   const edit = useLatest(textEdit);
   useEffect(() => machine.registry.subscribe(() => {
-    if (open.current !== null && !inModeOn(machine, open.current)) edit.current.commit();
+    if (open.current !== null && !inModeOn(machine, open.current)) edit.current.commitEdit();
   }), [machine, edit]);
 
   return textEdit;

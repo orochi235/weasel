@@ -138,7 +138,7 @@ describe('useTextEdit — a clipped node scrolls in its box', () => {
   it('removes the box, and with it the scroll, when the edit ends', () => {
     const { h, hook, box } = open(POSE);
     box.scrollTop = 40;
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(box.isConnected).toBe(false);
     act(() => hook.result.current.startEdit('a'));
     expect(getOverlay(h.container)!.parentElement!.scrollTop).toBe(0);

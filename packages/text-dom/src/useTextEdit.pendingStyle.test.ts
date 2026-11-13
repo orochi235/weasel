@@ -20,7 +20,7 @@ describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
     placeCaretAtChar(overlay, 3);
     act(() => pressKey(overlay, 'b', { meta: true }));
     act(() => dispatchBeforeInput(overlay, 'X'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'abc' },
       { text: 'X', bold: true },
@@ -36,7 +36,7 @@ describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
     act(() => pressKey(overlay, 'b', { meta: true }));
     act(() => pressKey(overlay, 'i', { meta: true }));
     act(() => dispatchBeforeInput(overlay, 'Y'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'Y', bold: true, italic: true },
@@ -53,7 +53,7 @@ describe('useTextEdit — Cmd-B/I with collapsed caret (pending style)', () => {
     act(() => dispatchBeforeInput(overlay, 'X'));
     act(() => dispatchBeforeInput(overlay, 'Y'));
     expect(result.current.pendingStyle).toEqual({});
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'XY', bold: true },
@@ -72,7 +72,7 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     placeCaretAtChar(overlay, 1);
     act(() => result.current.applyStyleToSelection({ fontSize: 32, baselineShift: 0.25 }));
     act(() => dispatchBeforeInput(overlay, 'B'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'B', fontSize: 32, baselineShift: 0.25 },
@@ -90,7 +90,7 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     await placeCaretAndSettle(overlay, 1);
     expect(result.current.pendingStyle).toEqual({});
     act(() => dispatchBeforeInput(overlay, 'X'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'aXbc' }]);
   });
 
@@ -104,7 +104,7 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     expect(result.current.effectiveStyle).toMatchObject({ fontSize: 16, italic: true, bold: false });
     act(() => result.current.applyStyleToSelection({ bold: true }));
     expect(result.current.effectiveStyle).toMatchObject({ fontSize: 16, italic: true, bold: true });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(result.current.effectiveStyle).toBeNull();
   });
 
@@ -135,7 +135,7 @@ describe('useTextEdit — pending style at a collapsed caret', () => {
     expect(styles.a.fontWeight).toBe(700);
     expect(result.current.pendingStyle).toEqual({ fontWeight: 400 });
     act(() => dispatchBeforeInput(overlay, 'c'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'ab' }, { text: 'c', fontWeight: 400 }]);
   });
 });
@@ -152,7 +152,7 @@ describe('useTextEdit — pending style through an input method', () => {
     (overlay.querySelector('[data-run]')!.firstChild as Text).appendData('かな');
     await placeCaretAndSettle(overlay, 4);
     act(() => { overlay.dispatchEvent(new CompositionEvent('compositionend', { data: 'かな' })); });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'ab' }, { text: 'かな', bold: true }]);
   });
 });

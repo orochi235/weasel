@@ -202,7 +202,7 @@ describe('useTextEdit — editing chrome', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     act(() => result.current.applyStyleToSelection({ underline: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'bc', underline: true },

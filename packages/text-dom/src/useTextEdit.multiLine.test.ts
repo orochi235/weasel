@@ -16,7 +16,7 @@ describe('useTextEdit', () => {
       const overlay = getOverlay(h.container)!;
       expect(overlay.textContent).toBe('first line\nsecond line\nthird line');
       appendChar(overlay, '!');
-      act(() => result.current.commit());
+      act(() => result.current.commitEdit());
       expect(h.commits).toEqual([{ id: 'a', text: 'first line\nsecond line\nthird line!' }]);
     });
 
@@ -60,7 +60,7 @@ describe('useTextEdit', () => {
       const overlay = getOverlay(h.container)!;
       expect(overlay.textContent).toBe('top\n\nbottom');
       appendChar(overlay, '!');
-      act(() => result.current.commit());
+      act(() => result.current.commitEdit());
       expect(h.commits).toEqual([{ id: 'a', text: 'top\n\nbottom!' }]);
     });
   });

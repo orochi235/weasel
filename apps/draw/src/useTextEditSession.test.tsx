@@ -46,7 +46,7 @@ describe('useTextEditSession keeps the text-edit mode in step with the edit', ()
   it('leaves the mode when the edit ends', () => {
     const { mode, edit } = session({ t: 'Hello' });
     act(() => edit().startEdit('t'));
-    act(() => edit().commit());
+    act(() => edit().commitEdit());
     expect(mode()).toBe('normal');
   });
 

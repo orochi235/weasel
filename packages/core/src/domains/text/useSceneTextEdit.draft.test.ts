@@ -78,7 +78,7 @@ describe('useSceneTextEdit — drafts', () => {
     type(container, '?');
     expect(glyphsAlong(scene)).toBe(7);
     expect(scene.get(T)!.data).toBe(stored);
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(scene.get(T)!.data.text).toBe('hello!?');
     expect(scene.overrides.ids()).toEqual([]);
     expect(glyphsAlong(scene)).toBe(7);
@@ -118,7 +118,7 @@ describe('useSceneTextEdit — drafts', () => {
     act(() => hook.result.current.startEdit('lone'));
     type(container, '!');
     scene.setLocked(LONE, true);
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(hook.result.current.editingId).toBeNull();
     expect(scene.overrides.ids()).toEqual([]);
     expect(scene.get(LONE)!.data.text).toBe('alone');
@@ -139,7 +139,7 @@ describe('useSceneTextEdit — drafts', () => {
     act(() => hook.result.current.startEdit('lone'));
     type(container, '!');
     expect(scene.get(LONE)!.data.text).toBe('alone');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(scene.get(LONE)!.data.text).toBe('alone!');
   });
 
@@ -149,7 +149,7 @@ describe('useSceneTextEdit — drafts', () => {
     act(() => hook.result.current.startEdit('t'));
     type(container, '!');
     type(container, '?');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(scene.historyEntries()).toHaveLength(before + 1);
     scene.undo();
     expect(scene.get(T)!.data.text).toBe('hello');
@@ -178,7 +178,7 @@ describe('useSceneTextEdit — drafts', () => {
     act(() => hook.result.current.startEdit('t'));
     type(container, '!');
     type(container, '?');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     scene.undo();
     expect(scene.get(T)!.data.text).toBe('hello');
     scene.redo();
@@ -204,7 +204,7 @@ describe('useSceneTextEdit — drafts', () => {
     type(container, '!');
     scene.update(T, { data: { ...scene.get(T)!.data, fill: RED } });
     type(container, '?');
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(scene.get(T)!.data).toEqual({ text: 'hello!?', style: STYLE, fill: RED });
     scene.undo();
     expect(scene.get(T)!.data).toEqual({ text: 'hello', style: STYLE, fill: RED });
@@ -218,7 +218,7 @@ describe('useSceneTextEdit — drafts', () => {
     for (const ch of ['!', '?']) {
       act(() => hook.result.current.startEdit('t'));
       type(container, ch);
-      act(() => hook.result.current.commit());
+      act(() => hook.result.current.commitEdit());
     }
     expect(scene.historyEntries()).toHaveLength(before + 2);
     scene.undo();
@@ -234,7 +234,7 @@ describe('useSceneTextEdit — drafts', () => {
     for (const [h, c, ch] of [[hook, container, '!'], [second, other, '?']] as const) {
       act(() => h.result.current.startEdit('t'));
       type(c, ch);
-      act(() => h.result.current.commit());
+      act(() => h.result.current.commitEdit());
     }
     expect(scene.get(T)!.data.text).toBe('hello!?');
     expect(scene.historyEntries()).toHaveLength(before + 2);

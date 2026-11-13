@@ -23,7 +23,7 @@ describe('useTextEdit — superscript and subscript', () => {
     expect(result.current.rangeStyle?.script).toBe('super');
 
     act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     // Off is the enum's absence, not `script: false` — so the runs coalesce
     // back to one, exactly as they were, and there is nothing to write.
     expect(h.runCommits).toEqual([]);
@@ -37,7 +37,7 @@ describe('useTextEdit — superscript and subscript', () => {
     selectChars(overlay, 1, 2);
     act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
     act(() => { pressKey(overlay, '_', { meta: true, shift: true }); });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'x' }, { text: '2', script: 'sub' }]);
   });
 
@@ -51,7 +51,7 @@ describe('useTextEdit — superscript and subscript', () => {
     act(() => dispatchBeforeInput(overlay, '2'));
     act(() => { pressKey(overlay, '+', { meta: true, shift: true }); });
     act(() => dispatchBeforeInput(overlay, 'y'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'x' },
       { text: '2', script: 'super' },
@@ -92,7 +92,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 4, 7);  // 'two'
     act(() => pressKey(overlay, 'b', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'one ' },
       { text: 'two', bold: true },
@@ -112,7 +112,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 4, 7);
     act(() => pressKey(overlay, 'b', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'one two three' }]);
   });
 
@@ -127,7 +127,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     act(() => pressKey(overlay, 'b', { meta: true }));
     selectChars(overlay, 1, 2);
     act(() => pressKey(overlay, 'b', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'a', bold: true }, { text: 'b' }]);
   });
 
@@ -138,7 +138,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 3);
     act(() => pressKey(overlay, 'i', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abc', bold: true, italic: true }]);
   });
 
@@ -149,7 +149,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 3);
     act(() => pressKey(overlay, 'b', { ctrl: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
   });
 
@@ -162,7 +162,7 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     const ev = new KeyboardEvent('keydown', { key: 'и', code: 'KeyB', ctrlKey: true, bubbles: true, cancelable: true });
     act(() => { overlay.dispatchEvent(ev); });
     expect(ev.defaultPrevented).toBe(true);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
   });
 });
@@ -181,7 +181,7 @@ describe('useTextEdit — a Mac leaves its Ctrl text-editing shortcuts to the te
     act(() => { ev = pressKey(overlay, 'b', { ctrl: true }); });
     expect(ev?.defaultPrevented).toBe(false);
     act(() => { pressKey(overlay, 'i', { meta: true }); });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', italic: true }]);
   });
 
@@ -193,7 +193,7 @@ describe('useTextEdit — a Mac leaves its Ctrl text-editing shortcuts to the te
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 3);
     act(() => { pressKey(overlay, 'b', { meta: true }); });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
   });
 });
@@ -206,7 +206,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 4, 7);
     act(() => pressKey(overlay, 'u', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'one ' },
       { text: 'two', underline: true },
@@ -225,7 +225,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 3);
     act(() => pressKey(overlay, 'u', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
   });
 
@@ -238,7 +238,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 2);
     act(() => pressKey(overlay, 'u', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'ab', underline: true }]);
   });
 
@@ -251,7 +251,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     const cut = pressKey(overlay, 'x', { meta: true });
     expect(cut.defaultPrevented).toBe(false);
     act(() => { pressKey(overlay, 'x', { meta: true, shift: true }); });
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'abc', strikethrough: true }]);
   });
 
@@ -264,7 +264,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     act(() => pressKey(overlay, 'u', { meta: true }));
     act(() => dispatchBeforeInput(overlay, 'X'));
     act(() => dispatchBeforeInput(overlay, 'Y'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'XY', underline: true },
@@ -282,7 +282,7 @@ describe('useTextEdit — decoration shortcuts route through the run algebra', (
     act(() => pressKey(overlay, 'u', { meta: true }));
     act(() => pressKey(overlay, 'x', { meta: true, shift: true }));
     act(() => dispatchBeforeInput(overlay, 'Z'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'a' },
       { text: 'Z', underline: true, strikethrough: true },

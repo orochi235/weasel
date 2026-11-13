@@ -52,7 +52,7 @@ describe('useTextEdit — rich-text init and commit', () => {
     tail.setAttribute('data-run', '');
     tail.textContent = ' c';
     overlay.appendChild(tail);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits).toEqual([{
       id: 'a',
       runs: [{ text: 'a ' }, { text: 'b', bold: true }, { text: ' c' }],
@@ -85,7 +85,7 @@ describe('useTextEdit — one write per session', () => {
     expect(setStyle).not.toHaveBeenCalled();
     expect(result.current.nodeStyle).toEqual({ fontSize: 16, fontStyle: 'normal' });
 
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(setStyle).toHaveBeenCalledTimes(1);
     expect(setStyle).toHaveBeenCalledWith('a', { fontSize: 16, fontStyle: 'normal' });
     expect(h.runCommits[0].runs).toEqual([{ text: 'one ', italic: true }, { text: 'two' }]);
@@ -117,7 +117,7 @@ describe('useTextEdit — one write per session', () => {
     unslantTwo(overlay);
     // "two" is upright now, so the same key slants it again as a run flag.
     unslantTwo(overlay);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(setStyle).toHaveBeenCalledTimes(1);
     expect(h.runCommits[0].runs).toEqual([{ text: 'one two', italic: true }]);
   });
@@ -130,7 +130,7 @@ describe('useTextEdit — one write per session', () => {
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     unslantTwo(overlay);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(commit).toHaveBeenCalledTimes(1);
     expect(commit).toHaveBeenCalledWith('a', {
       text: 'one two',
@@ -150,7 +150,7 @@ describe('useTextEdit — one write per session', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     unslantTwo(getOverlay(h.container)!);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(commit.mock.calls[0][1].style).toEqual({ fontSize: 16, fontStyle: 'normal' });
   });
 
@@ -161,7 +161,7 @@ describe('useTextEdit — one write per session', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     appendChar(getOverlay(h.container)!, 'd');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(commit).toHaveBeenCalledWith('a', { text: 'abcd' });
   });
 });
@@ -181,7 +181,7 @@ describe('useTextEdit — decoration and tracking survive the commit path', () =
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     appendChar(getOverlay(h.container)!, 'd');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits).toEqual([
       { id: 'a', runs: [runs[0], runs[1], { text: 'cd', letterSpacing: 0 }] },
     ]);
@@ -197,7 +197,7 @@ describe('useTextEdit — decoration and tracking survive the commit path', () =
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 3);
     act(() => pressKey(overlay, 'b', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([
       { text: 'one', bold: true, underline: true, letterSpacing: 2 },
       { text: ' two', underline: true, letterSpacing: 2 },
@@ -217,7 +217,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     seedPlainOverlay(overlay, 'one two');
     await selectCharsAndSettle(overlay, 0, 3);
     act(() => result.current.applyStyleToSelection({ bold: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.runCommits).toEqual([{
       id: 'a',
       runs: [{ text: 'one', bold: true }, { text: ' two' }],
@@ -232,7 +232,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     const overlay = getOverlay(h.container)!;
     seedPlainOverlay(overlay, 'one too');
     await selectCharsAndSettle(overlay, 0, 3);
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     // No pointless single-run array written back to the node.
     expect(h.runCommits).toEqual([]);
     expect(h.textCommits).toEqual([{ id: 'a', text: 'one too' }]);
@@ -245,7 +245,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 0, 2);
     act(() => pressKey(overlay, 'b', { meta: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     // Routing on "did the edit produce styling" alone would leave the node's
     // stale bold run in place; the node's prior runs have to keep it rich.
     expect(h.runCommits).toEqual([{ id: 'a', runs: [{ text: 'ab' }] }]);
@@ -263,7 +263,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     overlay.replaceChildren(document.createTextNode('one'), document.createElement('br'));
     await selectCharsAndSettle(overlay, 0, 3);
     act(() => result.current.applyStyleToSelection({ bold: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.textCommits).toEqual([{ id: 'a', text: 'one' }]);
     expect(h.runCommits[0].runs).toEqual([{ text: 'one', bold: true }]);
   });
@@ -282,7 +282,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     );
     await selectCharsAndSettle(overlay, 0, 3);
     act(() => result.current.applyStyleToSelection({ bold: true }));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.textCommits).toEqual([{ id: 'a', text: 'one\n' }]);
   });
 
@@ -295,7 +295,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
       const ev = new InputEvent('beforeinput', { inputType: 'insertFromPaste', cancelable: true, bubbles: true });
       Object.defineProperty(ev, 'dataTransfer', { value: { getData: (t: string) => (t === 'text/plain' ? 'x\n' : '') } });
       act(() => { overlay.dispatchEvent(ev); });
-      act(() => result.current.commit());
+      act(() => result.current.commitEdit());
       expect(h.commits).toEqual([{ id: 'a', text: want }]);
     });
   }
@@ -305,7 +305,7 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     appendChar(getOverlay(h.container)!, 'c');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.textCommits).toEqual([{ id: 'a', text: 'a\nbc' }]);
   });
 });

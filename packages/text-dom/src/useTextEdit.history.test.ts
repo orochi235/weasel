@@ -52,7 +52,7 @@ describe('useTextEdit — undo inside the edit', () => {
     undo(el);
     expect(domToRuns(el)).toEqual([{ text: 'ab' }]);
     expect(readSelectionOffsets(el)).toEqual({ start: 2, end: 2 });
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
   });
 
   it('undoes a character typed under an armed style', () => {
@@ -76,7 +76,7 @@ describe('useTextEdit — undo inside the edit', () => {
     expect(el.style.fontStyle).toBe('italic');
     let written: unknown = 'nothing';
     h.opts.commit = (_id, edit) => { written = edit; };
-    act(() => hook.result.current.commit());
+    act(() => hook.result.current.commitEdit());
     expect(written).toBe('nothing');
   });
 

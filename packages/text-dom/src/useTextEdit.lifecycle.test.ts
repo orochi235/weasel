@@ -34,7 +34,7 @@ describe('useTextEdit — an edit that changed nothing writes nothing', () => {
     const h = makeHarness({ a: 'abc\n' });
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.commits).toEqual([]);
     expect(h.texts.a).toBe('abc\n');
   });
@@ -45,7 +45,7 @@ describe('useTextEdit — an edit that changed nothing writes nothing', () => {
     h.opts.commit = commit;
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(commit).not.toHaveBeenCalled();
   });
 
@@ -56,7 +56,7 @@ describe('useTextEdit — an edit that changed nothing writes nothing', () => {
     const overlay = getOverlay(h.container)!;
     overlay.textContent = 'hello';
     overlay.textContent = 'hi';
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.commits).toEqual([]);
   });
 
@@ -65,7 +65,7 @@ describe('useTextEdit — an edit that changed nothing writes nothing', () => {
     const { result } = renderHook(() => useTextEdit(h.opts));
     act(() => result.current.startEdit('a'));
     getOverlay(h.container)!.textContent = 'hello';
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.commits).toEqual([{ id: 'a', text: 'hello' }]);
   });
 });
@@ -98,7 +98,7 @@ describe('useTextEdit', () => {
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     seedPlainOverlay(overlay, 'goodbye');
-    act(() => result.current.commit());
+    act(() => result.current.commitEdit());
     expect(h.commits).toEqual([{ id: 'a', text: 'goodbye' }]);
     expect(result.current.editingId).toBeNull();
     expect(getOverlay(h.container)).toBeNull();
