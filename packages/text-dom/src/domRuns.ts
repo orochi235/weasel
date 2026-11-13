@@ -197,7 +197,7 @@ export function runsToDom(
       if (run.fontScale != null) span.setAttribute(FONT_SCALE_ATTR, String(run.fontScale));
     } else if (run.fontScale != null) span.style.fontSize = fontScalePercent(run.fontScale);
     if (run.fontFamily != null) {
-      span.style.fontFamily = cssFontFamily(run.fontFamily, { weight: face.fontWeight, style: face.fontStyle });
+      span.style.fontFamily = cssFontFamily(run.fontFamily, face.fontWeight, face.fontStyle);
       span.setAttribute('data-font-family', run.fontFamily);
     }
     const color = solidColor(run.fill?.paint);

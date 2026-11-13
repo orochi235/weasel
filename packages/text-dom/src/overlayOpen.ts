@@ -17,7 +17,7 @@ export function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[
     faces.set(`${face.fontFamily}|${face.fontWeight}|${face.fontStyle}`, face);
   }
   const pending = [...faces.values()]
-    .map((f) => cssFontFamilyLoading(f.fontFamily, { weight: f.fontWeight, style: f.fontStyle }))
+    .map((f) => cssFontFamilyLoading(f.fontFamily, f.fontWeight, f.fontStyle))
     .filter((p) => p !== null);
   return pending.length === 0 ? null : Promise.all(pending);
 }

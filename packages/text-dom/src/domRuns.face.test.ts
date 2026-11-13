@@ -17,12 +17,12 @@ describe('domRuns — a run naming its own family', () => {
   it("asks for the face in the node's weight and style when the run sets neither", () => {
     const base = resolveTextStyle({ fontWeight: 700, fontStyle: 'italic' });
     runsToDom([{ text: 'a', fontFamily: 'Serif X' }], document.createElement('div'), base);
-    expect(cssFontFamily).toHaveBeenCalledWith('Serif X', { weight: 700, style: 'italic' });
+    expect(cssFontFamily).toHaveBeenCalledWith('Serif X', 700, 'italic');
   });
 
   it("asks for the run's own weight over the node's", () => {
     const base = resolveTextStyle({ fontWeight: 700 });
     runsToDom([{ text: 'a', fontFamily: 'Serif X', fontWeight: 300 }], document.createElement('div'), base);
-    expect(cssFontFamily).toHaveBeenCalledWith('Serif X', { weight: 300, style: 'normal' });
+    expect(cssFontFamily).toHaveBeenCalledWith('Serif X', 300, 'normal');
   });
 });
