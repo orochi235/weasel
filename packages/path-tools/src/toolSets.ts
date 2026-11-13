@@ -21,18 +21,18 @@ export type PathEditToolId = 'simplifyBrush' | 'lengthen';
 
 /** The tools that pull a selected path's shape around as a whole: distort, envelope mesh, and puppet warp.
  *  A palette stacks them on one button. */
-export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'envelope', 'puppet'], { stack: true });
+export const WARP_TOOLS: ToolSet<PathToolId> = toolSet('warp', ['distort', 'envelope', 'puppet'], { stack: true, label: 'Warp' });
 
 /** The tools that reshape paths already drawn: girth, the stroke tools, the smudge brush, and the warps. */
-export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'trim', 'extend', 'smudgeBrush', WARP_TOOLS]);
+export const RESHAPE_TOOLS: ToolSet<PathToolId> = toolSet('reshape', ['girth', 'trim', 'extend', 'smudgeBrush', WARP_TOOLS], { label: 'Reshape' });
 
 /** The path-edit tools: each changes what a drag in path edit does, and carries `edits-anchors`.
  *  Core's `anchors` tool sits in the same palette group. */
-export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['simplifyBrush', 'lengthen']);
+export const PATH_EDIT_TOOLS: ToolSet<PathToolId> = toolSet('path-edit', ['simplifyBrush', 'lengthen'], { label: 'Path edit' });
 
 /** Every tool `@weasel-js/path-tools` ships: the reshaping tools, the spiro pen, the shape builder, and the
  *  path-edit tools. */
-export const PATH_TOOLS_TOOLS: ToolSet<PathToolId> = toolSet('path-tools', [RESHAPE_TOOLS, 'spiro', 'shapeBuilder', PATH_EDIT_TOOLS]);
+export const PATH_TOOLS_TOOLS: ToolSet<PathToolId> = toolSet('path-tools', [RESHAPE_TOOLS, 'spiro', 'shapeBuilder', PATH_EDIT_TOOLS], { label: 'Path tools' });
 
 /** Every tool in {@link PATH_EDIT_TOOLS}, keyed by id, each its own hook with its default options. */
 export function usePathEditTools(): Record<PathEditToolId, Tool> {

@@ -4,4 +4,4 @@ import { toolSet, type ToolSet } from '@weasel-js/core';
 export type RigToolId = 'bone' | 'weight';
 
 /** The rigging tools: bones, and the weights that bind a mesh to them. */
-export const RIG_TOOLS: ToolSet<RigToolId> = toolSet('rig', ['bone', 'weight']);
+export const RIG_TOOLS: ToolSet<RigToolId> = toolSet('rig', ['bone', 'weight'], { label: 'Rig' });

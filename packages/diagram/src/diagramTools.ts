@@ -21,14 +21,14 @@ export function stencilTools(stencils: readonly Stencil[]): Record<string, Tool>
 
 /** The tools of `group`'s stencils, as a set named for the group. */
 export function stencilToolSet(group: StencilGroup): ToolSet {
-  return toolSet(group.id, group.stencils.map((s) => stencilKind(s.id)));
+  return toolSet(group.id, group.stencils.map((s) => stencilKind(s.id)), { label: group.label });
 }
 
 /** One set per shipped stencil group, in menu order. */
-export const STENCIL_TOOLS: ToolSet = toolSet('stencils', Object.values(STENCIL_GROUPS).map(stencilToolSet));
+export const STENCIL_TOOLS: ToolSet = toolSet('stencils', Object.values(STENCIL_GROUPS).map(stencilToolSet), { label: 'Stencils' });
 
 /** Every tool `@weasel-js/diagram` ships: the connector, the stencils, and the sequence tools. */
-export const DIAGRAM_TOOLS: ToolSet = toolSet('diagram', [CONNECTOR_TOOL_ID, STENCIL_TOOLS, SEQUENCE_TOOLS]);
+export const DIAGRAM_TOOLS: ToolSet = toolSet('diagram', [CONNECTOR_TOOL_ID, STENCIL_TOOLS, SEQUENCE_TOOLS], { label: 'Diagram' });
 
 /** Options for {@link useDiagramTools}. */
 export interface UseDiagramToolsOptions<TPose> {

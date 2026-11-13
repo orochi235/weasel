@@ -222,6 +222,8 @@ export { toolOptionSteps } from './tools/toolOptionSteps';
 export { prefsToolOptionValues, toolOptionsPrefs } from './tools/toolOptionPrefs';
 export { declaredToolShortcuts, TOOL_ACTIVATE_ID, toolShortcutsOf } from './tools/toolShortcuts';
 export type { ToolShortcuts } from './tools/toolShortcuts';
+export { describeShortcuts } from './tools/describeShortcuts';
+export type { DescribeShortcutsOptions, ShortcutGroup, ShortcutRow, ShortcutsDescription, ShortcutTool } from './tools/describeShortcuts';
 export type { OptionedTool, ToolOptionPrefsStore, ToolOptionsPrefsSpec } from './tools/toolOptionPrefs';
 export { returnToModeDefault } from './tools/returnToModeDefault';
 export { toolSet, isToolSet, toolIdsOf, withoutTools, toolSetHas, toolStacksOf } from './tools/toolSet';

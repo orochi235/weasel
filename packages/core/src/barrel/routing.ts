@@ -47,6 +47,8 @@ export { actionShortcuts, keySpecShortcut } from '@weasel-js/routing';
 export type { ActionShortcut } from '@weasel-js/routing';
 export { declaredToolShortcuts, toolShortcutsOf } from '@weasel-js/routing';
 export type { ToolShortcuts } from '@weasel-js/routing';
+export { describeShortcuts } from '@weasel-js/routing';
+export type { DescribeShortcutsOptions, ShortcutGroup, ShortcutRow, ShortcutsDescription, ShortcutTool } from '@weasel-js/routing';
 export { moveAction } from '../interactions/actions/move/action';
 export { flipAction } from '../interactions/actions/flip/action';
 export { createResizeAction, resizeAction, type ResizeActionOptions } from '../interactions/actions/resize/action';

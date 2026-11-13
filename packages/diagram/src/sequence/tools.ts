@@ -28,7 +28,7 @@ export type SequenceToolId =
 export const SEQUENCE_TOOLS: ToolSet<SequenceToolId> = toolSet('sequence', [
   'diagram.sequence.participant', 'diagram.sequence.message', 'diagram.sequence.note', 'diagram.sequence.fragment',
   'diagram.sequence.mark',
-]);
+], { label: 'Sequence' });
 
 /** Options for {@link sequenceTools} and {@link useSequenceTools}. What each tool adds is its options
  *  (`SEQUENCE_PARTICIPANT_OPTIONS` and the rest), which a host keeps in the `toolOptionValues` dep. */

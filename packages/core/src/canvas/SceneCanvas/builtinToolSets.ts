@@ -5,19 +5,19 @@ import { toolIdsOf, toolSet, type ToolSet } from '@weasel-js/routing';
 export type BuiltinToolId = 'select' | 'anchors' | 'hand' | BuiltinShapeToolId | 'slice';
 
 /** The selection tools: click and marquee, and the lasso. */
-export const SELECT_TOOLS: ToolSet<BuiltinToolId> = toolSet('select', ['select', ...kitShapeKindsOf('select')]);
+export const SELECT_TOOLS: ToolSet<BuiltinToolId> = toolSet('select', ['select', ...kitShapeKindsOf('select')], { label: 'Select' });
 /** Path edit's anchor editing. Path-edit tools of other packages join this group. */
-export const ANCHOR_TOOLS: ToolSet<BuiltinToolId> = toolSet('path-edit', ['anchors']);
+export const ANCHOR_TOOLS: ToolSet<BuiltinToolId> = toolSet('path-edit', ['anchors'], { label: 'Path edit' });
 /** The view tools. */
-export const VIEW_TOOLS: ToolSet<BuiltinToolId> = toolSet('view', ['hand']);
+export const VIEW_TOOLS: ToolSet<BuiltinToolId> = toolSet('view', ['hand'], { label: 'View' });
 /** The tools that drag out a closed or open primitive. */
-export const SHAPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('shape', kitShapeKindsOf('shape'));
+export const SHAPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('shape', kitShapeKindsOf('shape'), { label: 'Shapes' });
 /** The freehand and bezier path tools. */
-export const DRAW_TOOLS: ToolSet<BuiltinToolId> = toolSet('draw', kitShapeKindsOf('draw'));
+export const DRAW_TOOLS: ToolSet<BuiltinToolId> = toolSet('draw', kitShapeKindsOf('draw'), { label: 'Draw' });
 /** The text tools: text and the sticky note. */
-export const TYPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('type', kitShapeKindsOf('type'));
+export const TYPE_TOOLS: ToolSet<BuiltinToolId> = toolSet('type', kitShapeKindsOf('type'), { label: 'Type' });
 /** The tools that cut the page itself. */
-export const PAGE_TOOLS: ToolSet<BuiltinToolId> = toolSet('page', ['slice']);
+export const PAGE_TOOLS: ToolSet<BuiltinToolId> = toolSet('page', ['slice'], { label: 'Page' });
 
 /** The built-in tool sets in palette order: selection and anchor editing, then navigation, then
  *  the tools that make things. Each set is named for the presentation group its tools sit in. */
@@ -30,7 +30,7 @@ export const TOOL_GROUP_ORDER: readonly string[] = BUILTIN_TOOL_GROUPS.map((set)
 
 /** Every built-in tool, in palette order: {@link BUILTIN_TOOL_GROUPS} one after another, then any
  *  shape kind in no family. */
-export const BUILTIN_TOOLS: ToolSet<BuiltinToolId> = toolSet('builtin', [...BUILTIN_TOOL_GROUPS, ...KIT_SHAPE_KINDS]);
+export const BUILTIN_TOOLS: ToolSet<BuiltinToolId> = toolSet('builtin', [...BUILTIN_TOOL_GROUPS, ...KIT_SHAPE_KINDS], { label: 'Tools' });
 
 /** Every built-in tool id, in palette order: {@link BUILTIN_TOOLS} opened. A palette orders the
  *  tools within each group by it. */
