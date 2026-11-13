@@ -1,7 +1,7 @@
 import { effectivePose, type View, viewRectToScreen } from '@weasel-js/core';
 import type { LoupeRect } from '@weasel-js/loupe';
 import { SEAM_GRAB, type SeamPreview, seamOf, showsSeam, splitRects } from './compare';
-import { lensShapeOf } from './lensScene';
+import { lensShapeOf, settingsOf } from './lensScene';
 import type { LensScene } from './lensTypes';
 
 /** How far a selected body's box reaches past it on every side, in px: enough
@@ -32,7 +32,7 @@ export function interiorOf(rect: LoupeRect, grown: boolean): LoupeRect {
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** Every body and reticle's box, through `view`, in paint order, with a split
- *  body's seam above it. Leaders take no input, so they get none. */
+ *  body's seam above it. Leaders and Glass reticles take no input, so they get none. */
 export function hitBoxesOf<C>(
   scene: LensScene<C>,
   selected: ReadonlySet<string>,
@@ -43,6 +43,8 @@ export function hitBoxesOf<C>(
   for (const node of scene.renderOrderNodes()) {
     const { data } = node;
     if (data.role === 'lens-leader') continue;
+    // A Glass reticle is the patch under its own body: it is not shown, and the body takes the pointer there.
+    if (data.role === 'lens-reticle' && settingsOf(scene, data.lensId)?.aim === 'glass') continue;
     const p = effectivePose(scene, node);
     const s = viewRectToScreen(view, p);
     let rect: LoupeRect = { x: s.x, y: s.y, w: s.width, h: s.height };

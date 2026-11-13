@@ -56,8 +56,9 @@ inside the rim (`--lk-lens-rim-in`, half of `RIM_PX`).
 The reticle's aim is `pinned`, `follow` or `glass`. Glass is the reticle's pose
 derived from the body (`GLASS_POSE_KEY`), so `setAimOps` switches to it by
 setting the reticle's `dependsOn` and leaves it with a transform to where the
-derived pose put it. The ops are built and tested; no action aims a lens at
-Glass yet.
+derived pose put it. A Glass reticle is neither painted nor given a hit box: it
+sits under its own body, which takes the pointer there. `follow` moves a Glass
+lens by its body (`aimedNodeOf`), and the reticle comes with it.
 
 `<LensOverlay>` paints into the surface's `top` buffer (`useSurfaceCanvas('top')`,
 `src/surface/AGENTS.md`), a layer no other tenant shares, so a lens redraw never
@@ -102,8 +103,10 @@ The lens actions (`lens/lensActionDefs.ts`) live in one keymap,
 `code: 'KeyL'` because Alt changes the produced character on macOS. Inside it
 the keys are plain (`LENS_KEYS`), each binding's `opts.id` is its action id so
 `bindingOverrides` can rebind it, and Escape closes it (`docs/taxonomy.md`,
-"Keymap and leader"). One action binds outside the keymap: `loupe.quick`, on `QUICK_KEY`
-(F2), opens a Follow lens with no leader and closes the one it opened on the next press. The host supplies a `LensActionApi` and mounts
+"Keymap and leader"). One action binds outside the keymap: `loupe.quick`, held on `QUICK_KEY`
+(F2) with no leader. A press opens a Glass lens centered on the pointer, or picks up the one it opened; while the key
+is down the lens follows the pointer (`loupe.follow` is enabled for it whatever its aim), and on release it stays
+where it was carried. A press shorter than `QUICK_TAP_MS` on a lens already open closes it instead. The host supplies a `LensActionApi` and mounts
 `<LensActions>`; `loupe.seam` alone registers on the lens canvas, since a drag
 on the seam reaches that dispatcher and not the lab's.
 

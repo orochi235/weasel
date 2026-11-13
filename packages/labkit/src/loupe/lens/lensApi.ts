@@ -7,7 +7,7 @@ import {
 } from '@weasel-js/core';
 import { type RefObject, useCallback, useRef } from 'react';
 import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
-import { addLensOps, lensesOf, lensIdsOf, reticleAt, settingsOf } from './lensScene';
+import { addLensOps, aimAt, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import type { LensSources } from './lensSource';
 import { BODY_SIZE, type LensScene, type LensSourceKind, type LoupePoint } from './lensTypes';
 
@@ -73,15 +73,16 @@ export interface LensApiRefs<C> {
 /** The lens API the lens actions drive, in client px at its edges and lab-body px in the scene. */
 export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): LensActionApi<C> {
   let next = 0;
-  const holds = new Map<string, PoseHold<RectPose>>();
+  // Each held lens, and the aim it was held under: the hold is on the node that aim moves.
+  const holds = new Map<string, { hold: PoseHold<RectPose>; aim: string | undefined }>();
   const release = (lensId: string) => {
-    holds.get(lensId)?.drop();
+    holds.get(lensId)?.hold.drop();
     holds.delete(lensId);
   };
-  // An undo, a redo or a write from outside the actions can also take a lens out of Follow.
+  // An undo, a redo or a write from outside the actions can also change a held lens's aim.
   scene.subscribe(() => {
-    for (const lensId of [...holds.keys()])
-      if (settingsOf(scene, lensId)?.aim !== 'follow') release(lensId);
+    for (const [lensId, { aim }] of [...holds])
+      if (settingsOf(scene, lensId)?.aim !== aim) release(lensId);
   });
   const toBody = (client: LoupePoint, box: DOMRect) => ({
     x: client.x - box.left,
@@ -112,15 +113,18 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
       refs.focus.current = lensId;
       return lensId;
     },
-    follow(client) {
-      const lensId = current();
+    follow(client, named) {
+      const lensId = named ?? current();
       const body = refs.body.current;
       if (lensId === null || !body) return;
-      const pose = reticleAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
-      if (pose === null) return;
-      const hold = holds.get(lensId) ?? scene.overrides.hold();
-      holds.set(lensId, hold);
-      hold.set([[`${lensId}:reticle` as never, pose]]);
+      const aimed = aimAt(scene, lensId, toBody(client, body.getBoundingClientRect()));
+      if (aimed === null) return;
+      const held = holds.get(lensId) ?? {
+        hold: scene.overrides.hold(),
+        aim: settingsOf(scene, lensId)?.aim,
+      };
+      holds.set(lensId, held);
+      held.hold.set([[aimed.id as never, aimed.pose]]);
     },
     unfollow: release,
     sourceAvailable: (kind: LensSourceKind) =>

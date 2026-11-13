@@ -11,6 +11,7 @@ import {
   ActionDisabledReason,
   createDeleteOp,
   createTransformOp,
+  held,
   key,
   keymapContribution,
   type NodeId,
@@ -18,7 +19,17 @@ import {
 } from '@weasel-js/core';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
 import { ANY_MODS } from '@weasel-js/routing';
-import { lensClosure, lensesOf, lensIdsOf, setAimOps, setLensOps, settingsOf } from './lensScene';
+import {
+  aimedNodeOf,
+  keepHeldOps,
+  lensClosure,
+  lensesOf,
+  lensIdsOf,
+  patchAt,
+  setAimOps,
+  setLensOps,
+  settingsOf,
+} from './lensScene';
 import type {
   LensReadout,
   LensScene,
@@ -37,8 +48,9 @@ export interface LensActionApi<C> {
   add(at?: LoupePoint): string | null;
   apply(ops: readonly Op[]): void;
   scene: LensScene<C>;
-  /** Writes the current lens's reticle to the client point through `scene.overrides.hold()`. */
-  follow(client: LoupePoint): void;
+  /** Moves a lens, the current one unless named, to the client point through `scene.overrides.hold()`: its reticle,
+   *  or under Glass its body. */
+  follow(client: LoupePoint, lensId?: string): void;
   /** Lets go of the lens's reticle that `follow` holds, leaving any other writer's override on it and every other
    *  lens's hold. */
   unfollow(lensId: string): void;
@@ -78,8 +90,12 @@ export const LENS_ACTION_IDS = {
 
 type LensActionId = (typeof LENS_ACTION_IDS)[keyof typeof LENS_ACTION_IDS];
 
-/** The key, outside the Loupe keymap, that opens a lens following the pointer and closes it again. */
+/** The key, outside the Loupe keymap, that opens a Glass lens at the pointer, carries it while held, and closes it
+ *  on a tap. */
 export const QUICK_KEY = 'F2';
+
+/** A press of the quick key shorter than this is a tap: on an open quick lens, it closes it. */
+export const QUICK_TAP_MS = 250;
 
 /** The Loupe keymap's keys, by action. */
 export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
@@ -200,12 +216,8 @@ function settingActions<C>(api: LensActionApi<C>, comparisons: { opposite: () =>
 function pinOps<C>(scene: LensScene<C>, lensId: string, from: LensSettings<C>): Op[] {
   const ops = setAimOps(scene, lensId, 'pinned');
   const reticleId = lensIdsOf(scene, `${lensId}:body`)?.reticle;
-  const reticle = reticleId === undefined ? undefined : scene.get(reticleId);
-  const held = reticleId === undefined ? undefined : scene.overrides.read(reticleId)?.pose;
-  if (from.aim === 'follow' && reticle && held) {
-    const to = { ...held };
-    ops.push(createTransformOp({ id: reticle.id, from: reticle.pose, to, label: 'set lens aim' }));
-  }
+  if (from.aim === 'follow' && reticleId !== undefined)
+    ops.push(...keepHeldOps(scene, reticleId, 'set lens aim'));
   return ops;
 }
 
@@ -246,6 +258,8 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     api.apply(setAimOps(scene, lensId, 'glass'));
     if (s.aim === 'follow') api.unfollow(lensId);
   });
+  // The quick lens while its key is down: it follows the pointer whatever its aim.
+  let carried: string | null = null;
   // `held`: the reticle keeps following through a drag, which a plain hover stands down for.
   const followMove: Action = {
     id: LENS_ACTION_IDS.followMove,
@@ -258,6 +272,7 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
       },
     ],
     enabled: () => {
+      if (carried !== null) return true;
       const lensId = api.current();
       const aim = lensId === null ? null : settingsOf(scene, lensId)?.aim;
       return aim === 'follow' ? true : ActionDisabledReason.NotApplicable;
@@ -265,30 +280,59 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
     invoker: {
       timing: 'immediate',
       run(_deps, params) {
-        api.follow({ x: params?.clientX as number, y: params?.clientY as number });
+        const at = { x: params?.clientX as number, y: params?.clientY as number };
+        api.follow(at, carried ?? undefined);
       },
     },
   };
-  // The lens F2 opened, which the next F2 closes; one per host.
+  // The lens the quick key opened, which a tap of it closes; one per host.
   let quickLens: string | null = null;
+  const openGlass = (): string | null => {
+    const lensId = api.add();
+    const ids = lensId === null ? null : lensIdsOf(scene, `${lensId}:body`);
+    const body = ids && scene.get(ids.body);
+    const reticle = ids && scene.get(ids.reticle);
+    if (lensId === null || !body || !reticle) return lensId;
+    const at = {
+      x: reticle.pose.x + reticle.pose.width / 2,
+      y: reticle.pose.y + reticle.pose.height / 2,
+    };
+    const label = 'open quick lens';
+    api.apply([
+      createTransformOp({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
+      ...setAimOps(scene, lensId, 'glass'),
+    ]);
+    return lensId;
+  };
   const quick: Action = {
     id: LENS_ACTION_IDS.quick,
     label: 'Quick lens',
     group: 'loupe',
     scope: 'hotkey',
-    defaultBinding: [{ spec: key(QUICK_KEY), opts: { id: LENS_ACTION_IDS.quick } }],
+    defaultBinding: [{ spec: held(QUICK_KEY), opts: { id: LENS_ACTION_IDS.quick } }],
     invoker: {
-      timing: 'immediate',
-      run() {
-        if (quickLens !== null && settingsOf(scene, quickLens)) {
-          closeLens(api, quickLens);
-          quickLens = null;
-          return;
-        }
-        const lensId = api.add();
-        if (lensId === null) return;
-        api.apply(setAimOps(scene, lensId, 'follow'));
+      timing: 'ongoing',
+      start() {
+        const pressed = performance.now();
+        const open = quickLens !== null && settingsOf(scene, quickLens) ? quickLens : null;
+        const lensId = open ?? openGlass();
+        if (lensId === null) return {};
         quickLens = lensId;
+        carried = lensId;
+        return {
+          onEnd: () => {
+            carried = null;
+            if (open !== null && performance.now() - pressed < QUICK_TAP_MS) {
+              closeLens(api, lensId);
+              quickLens = null;
+              return;
+            }
+            // Where the pointer carried it, and the reticle with it under Glass.
+            const aimed = aimedNodeOf(scene, lensId);
+            if (aimed !== null) api.apply(keepHeldOps(scene, aimed, 'move quick lens'));
+            api.unfollow(lensId);
+          },
+        };
       },
     },
   };

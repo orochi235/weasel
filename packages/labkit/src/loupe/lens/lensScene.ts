@@ -197,6 +197,39 @@ export function reticleAt<C>(scene: LensScene<C>, lensId: string, at: LoupePoint
   return patchAt(effectivePose(scene, body), factorOf(body), at);
 }
 
+/** The node that moves a lens: under Glass its body, which its reticle derives from; under any other aim its reticle.
+ *  Null when the lens is gone. */
+export function aimedNodeOf<C>(scene: LensScene<C>, lensId: string): string | null {
+  const ids = idsFor(lensId);
+  const aim = bodyOf(scene, lensId)?.aim;
+  if (aim === undefined) return null;
+  return aim === 'glass' ? ids.body : ids.reticle;
+}
+
+/** The aimed node of a lens (see {@link aimedNodeOf}) and its pose centered on `at`: a body keeps its size, a reticle
+ *  is sized as {@link reticleAt} sizes it. Null when the lens is gone. */
+export function aimAt<C>(
+  scene: LensScene<C>,
+  lensId: string,
+  at: LoupePoint,
+): { id: string; pose: RectPose } | null {
+  const id = aimedNodeOf(scene, lensId);
+  const body = scene.get(idsFor(lensId).body);
+  if (id === null || !body) return null;
+  if (id === body.id) return { id, pose: patchAt(effectivePose(scene, body), 1, at) };
+  const pose = reticleAt(scene, lensId, at);
+  return pose === null ? null : { id, pose };
+}
+
+/** Commits the pose a hold puts `nodeId` at as one transform, so the node stays there once the hold is dropped. */
+export function keepHeldOps<C>(scene: LensScene<C>, nodeId: string, label: string): Op[] {
+  const node = scene.get(nodeId as never);
+  const held = scene.overrides.read(nodeId as never)?.pose;
+  return node && held
+    ? [createTransformOp({ id: node.id, from: node.pose, to: { ...held }, label })]
+    : [];
+}
+
 /** The shape a lens's body, and so its reticle, is drawn in; null when the lens is gone. */
 export function lensShapeOf<C>(
   scene: LensScene<C>,

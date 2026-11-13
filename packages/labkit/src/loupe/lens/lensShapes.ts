@@ -1,5 +1,5 @@
 import { ellipsePath, type NodeShapeEntry, type RectPose, rectPath } from '@weasel-js/core';
-import { lensShapeOf } from './lensScene';
+import { lensShapeOf, settingsOf } from './lensScene';
 import type { LensNodeData, LensScene, LensSettings } from './lensTypes';
 
 /** The rim's stroke width, drawn centered on a body's edge. */
@@ -39,7 +39,10 @@ export function lensShapes<C>(
     },
     {
       id: 'labkit:lens-reticle',
-      matches: (node) => isRole(node, 'lens-reticle') && scene.get(node.id) === node,
+      matches: (node) =>
+        isRole(node, 'lens-reticle') &&
+        scene.get(node.id) === node &&
+        settingsOf(scene, (node.data as LensNodeData<unknown>).lensId)?.aim !== 'glass',
       paint: (node, p) => [{ kind: 'path', path: patch(node, p), stroke: ring(colors.reticle) }],
       silhouette: (node, p) => patch(node, p),
     },

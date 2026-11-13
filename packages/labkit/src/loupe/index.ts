@@ -39,6 +39,7 @@ export {
   LOUPE_LEADER,
   MAX_LENSES,
   QUICK_KEY,
+  QUICK_TAP_MS,
 } from './lens/lensActionDefs';
 export type { LensApiRefs } from './lens/lensApi';
 export { createLensApi, lensClient, useLensFocus } from './lens/lensApi';
