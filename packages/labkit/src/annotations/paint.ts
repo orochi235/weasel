@@ -16,6 +16,7 @@ import type { AnnotationData } from './types';
 export const MARK_COLOR = '#e5484d';
 /** World units, so a mark thickens with the picture it annotates. */
 export const MARK_WIDTH = 2;
+/** A text mark's size, in world units, when it names none. */
 export const MARK_TEXT_SIZE = 14;
 const STALE_DASH = [6, 4];
 const UNTITLED_DASH = [3, 3];

@@ -6,8 +6,9 @@ import { valueRecord } from '../state/labRecords';
 import { MARK_COLOR, MARK_TEXT_SIZE, MARK_WIDTH } from './paint';
 import type { AnnotationData } from './types';
 
-/** The keys the annotation tools share their style under: one width and one color for every tool that draws. */
+/** The key every annotation tool that draws a line shares its width under. */
 export const MARK_WIDTH_KEY = 'markWidth';
+/** The key every annotation tool shares its color under, text included. */
 export const MARK_COLOR_KEY = 'markColor';
 
 /** Each style option's leaf: what the options palette draws for it. */

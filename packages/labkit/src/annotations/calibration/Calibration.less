@@ -42,7 +42,7 @@
 
   th,
   td {
-    padding: 2px var(--wzl-space-sm);
+    padding: var(--wzl-space-1) var(--wzl-space-sm);
     text-align: start;
     border-bottom: 1px solid var(--wzl-border);
   }
@@ -60,7 +60,7 @@
 // Read down the column: digits of one width, every cell to two places.
 .lk-cal__table .lk-cal__num {
   text-align: end;
-  font-variant-numeric: tabular-nums;
+  .numeric();
   min-width: 7ch;
 }
 
@@ -84,5 +84,5 @@
 
 .lk-cal__summary {
   color: var(--wzl-fg-muted);
-  font-variant-numeric: tabular-nums;
+  .numeric();
 }
