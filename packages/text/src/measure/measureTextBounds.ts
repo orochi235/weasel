@@ -2,6 +2,7 @@ import type { TextStyle } from '../textStyle';
 import { resolveTextStyle } from '../textStyle';
 import { resolveRuns } from '../runs/resolveRuns';
 import { cachedLayoutRuns } from '../layout/layoutCache';
+import { scaleRuns, shrinkScale } from '../layout/textFit';
 
 /** Options for `measureTextBounds`. */
 export interface MeasureTextBoundsOpts {
@@ -12,6 +13,9 @@ export interface MeasureTextBoundsOpts {
   /** View scale any `{ px }` size in `style` resolves against. Default 1,
    *  which measures a `{ px }` size as that many world units. */
   scale?: number;
+  /** Measure the text at the size a node with `fit: 'shrink'` sets it at in
+   *  a box this size: scaled down, wrapping at `maxWidth`, until it fits. */
+  fitBox?: { width: number; height: number };
 }
 
 /**
@@ -30,14 +34,18 @@ export function measureTextBounds(
   opts?: MeasureTextBoundsOpts,
 ): { width: number; height: number } {
   const resolved = resolveTextStyle(style, undefined, opts?.scale);
-  const runs = resolveRuns([{ text }], resolved, opts?.scale);
-  const { bounds } = cachedLayoutRuns(runs, {
+  const authored = resolveRuns([{ text }], resolved, opts?.scale);
+  const layout = {
     maxWidth: opts?.maxWidth ?? Infinity,
     lineHeight: opts?.lineHeight ?? resolved.lineHeight,
     align: resolved.align,
     direction: resolved.direction,
     tabSize: resolved.tabSize,
-  }, 'read');
+  };
+  const box = opts?.fitBox;
+  const k = box ? shrinkScale(authored, layout, box.width, box.height) : 1;
+  const runs = k === 1 ? authored : scaleRuns(authored, k);
+  const { bounds } = cachedLayoutRuns(runs, layout, 'read');
   // Copied: the layout behind it is shared, and handing a caller a mutable
   // reference into a cache entry is how one measurement corrupts the next.
   return { width: bounds.width, height: bounds.height };

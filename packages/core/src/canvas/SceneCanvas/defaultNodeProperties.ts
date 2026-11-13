@@ -94,6 +94,13 @@ const overflowEncoding: PrefBooleanEncoding = {
   write: (on) => (on ? 'clip' : undefined),
 };
 
+/** `data.fit` as a flag: on is `'shrink'`, and off removes the key, since
+ *  absent sets the text at its own size. */
+const fitEncoding: PrefBooleanEncoding = {
+  read: (stored) => stored === 'shrink',
+  write: (on) => (on ? 'shrink' : undefined),
+};
+
 type MarkerOptions = PrefEnum['options'];
 
 /** The glyph of each built-in marker. A marker a consumer registers has none, and its option reads as text. */
@@ -342,6 +349,7 @@ function shapeSchema(opts: { text?: boolean; generators?: readonly string[]; boo
                 'data.padding': { kind: 'number', display: TWO_PLACES, measure: 'length', name: 'Padding', description: 'Inset from the box to the text on every side, world units.', absentIsDefault: true, default: 0, min: 0, step: 1 },
                 'data.verticalAlign': { kind: 'enum', name: 'Vertical', description: 'Where the lines sit in the box\'s height.', absentIsDefault: true, default: 'top', control: 'toggle', options: [{ value: 'top', label: 'Top', icon: icon('textAlignTop') }, { value: 'center', label: 'Middle', icon: icon('textAlignMiddle') }, { value: 'bottom', label: 'Bottom', icon: icon('textAlignBottom') }] },
                 'data.overflow': { kind: 'boolean', name: 'Clip', description: 'Cut the text at the box\'s edge instead of drawing it past.', default: false, control: 'switch', encoding: overflowEncoding },
+                'data.fit': { kind: 'boolean', name: 'Shrink to fit', description: 'Set the text smaller, never larger, until its lines fit the box.', default: false, control: 'switch', encoding: fitEncoding },
               },
             },
           }

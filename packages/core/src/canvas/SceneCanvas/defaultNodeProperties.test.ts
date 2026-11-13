@@ -368,7 +368,7 @@ describe('inferredNodeProperties', () => {
   it('offers the padding and the box alignment beside the style, as fields of the node', () => {
     const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
     const text = entry.schema.members.text as PrefSection;
-    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign', 'data.overflow']);
+    expect(Object.keys(text.members)).toEqual(['data.style', 'data.padding', 'data.verticalAlign', 'data.overflow', 'data.fit']);
     const vertical = text.members['data.verticalAlign'] as PrefEnum;
     expect(vertical.options.map((o) => o.value)).toEqual(['top', 'center', 'bottom']);
   });
@@ -382,6 +382,18 @@ describe('inferredNodeProperties', () => {
     expect(read('visible', undefined)).toBe(false);
     expect(read(undefined, undefined)).toBe(false);
     expect(write(true, undefined)).toBe('clip');
+    expect(write(false, undefined)).toBeUndefined();
+  });
+
+  it('offers shrinking the text to its box as a switch over `data.fit`', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const fit = (entry.schema.members.text as PrefSection).members['data.fit'] as PrefBoolean;
+    expect(fit.control).toBe('switch');
+    const { read, write } = fit.encoding!;
+    expect(read('shrink', undefined)).toBe(true);
+    expect(read('none', undefined)).toBe(false);
+    expect(read(undefined, undefined)).toBe(false);
+    expect(write(true, undefined)).toBe('shrink');
     expect(write(false, undefined)).toBeUndefined();
   });
 

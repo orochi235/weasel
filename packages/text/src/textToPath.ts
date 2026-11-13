@@ -23,6 +23,7 @@ import type { TextPose } from './pose';
 import type { StyledRun } from './runs';
 import type { ResolvedRun } from './runs/resolveRuns';
 import type { TextStyle } from './textStyle';
+import type { TextFit } from './layout/textFit';
 
 export { TextOutlinesError, type TextOutlinesFailure } from './glyphOutlines';
 
@@ -33,6 +34,8 @@ export interface TextOutlineSource {
   runs?: readonly StyledRun[];
   style?: TextStyle;
   verticalAlign?: TextVerticalAlign;
+  /** The node's `data.fit`: `'shrink'` sets the glyphs at the size that fits the box. */
+  fit?: TextFit;
   /** The node's `data.fill`: `null` is no fill, absent the default black. */
   fill?: Fill | null;
   /** The node's `data.stroke`: absent or `null` is no stroke. */
@@ -91,6 +94,7 @@ export function outlineLayoutInput(
     runs: data.runs as StyledRun[] | undefined,
     style: data.style,
     verticalAlign: data.verticalAlign,
+    fit: data.fit,
     fill: data.fill,
     stroke: data.stroke,
   };

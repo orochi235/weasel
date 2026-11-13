@@ -11,17 +11,18 @@ import {
   type SelectionApi,
   type TextNodeSource,
   inheritedPaintIn,
+  textBoxOf,
   withInheritedPaint,
 } from '@weasel-js/core';
 import { carriedData, type DrawScene, type WeaselDrawData, type WeaselDrawLayer, type WeaselDrawPose } from './drawDocument';
 
-/** A text leaf as the kit's outline extraction reads it. */
+/** A text leaf as the kit's outline extraction reads it, in the box its padding insets, where it is painted. */
 export function textSourceOf(scene: DrawScene, id: string): TextNodeSource | undefined {
   const node = scene.get(asNodeId(id));
   if (!node || node.kind !== 'mark') return undefined;
-  const { text, runs, style, verticalAlign, path, fill, stroke } = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
+  const { text, runs, style, verticalAlign, fit, path, fill, stroke } = withInheritedPaint(node.data, inheritedPaintIn(scene, node));
   if (text === undefined || path) return undefined;
-  return { data: { text, runs, style, verticalAlign, fill, stroke }, pose: node.pose };
+  return { data: { text, runs, style, verticalAlign, fit, fill, stroke }, pose: { ...node.pose, ...textBoxOf(node.data, node.pose) } };
 }
 
 /** A path leaf's geometry in world space. */

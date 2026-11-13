@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { boundsOfPath, pathFromD, registerFontOutlines, textToPathsByPaint } from '@weasel-js/core';
+import { boundsOfPath, pathFromD, registerFontOutlines, textFitScale, textToPathsByPaint } from '@weasel-js/core';
 import { _resetFontOutlinesForTests, _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import type { OutlineFace } from '@weasel-js/font';
@@ -109,6 +109,16 @@ describe("text: 'outline'", () => {
     expect(pathsIn(svg)).toHaveLength(1);
   });
 
+  it('writes a text frame whose text it outlines as a plain group, which reads back as its parts', async () => {
+    registerFontOutlines('svg-inter', {}, interBytes());
+    const note = svgLeafFromKit(
+      { text: 'Hi', style: { fontFamily: 'svg-inter', fontSize: 32 }, fill: INK, background: { paint: { kind: 'solid', color: '#ffe97a' } } },
+      { x: 0, y: 0, width: 200, height: 60 },
+    )!;
+    expect(serializeSvg([note])).toContain('data-weasel-text-frame');
+    expect((await warmed([note], 'outline')).svg).not.toContain('data-weasel-text-frame');
+  });
+
   it('keeps a node live, and says so, when its face has no outlines loaded', () => {
     registerFontOutlines('svg-inter', {}, interBytes());
     const warnings: string[] = [];
@@ -156,5 +166,33 @@ describe("text: 'embed'", () => {
     expect(svg).not.toContain('<text');
     expect(svg).not.toContain('@font-face');
     expect(warnings).toEqual(['the face "svg-bare" 400 normal has no font file to embed; text set in it is written as outlines']);
+  });
+});
+
+describe('a text node that shrinks to fit its box', () => {
+  const wide = (extra: Partial<SvgTextNode> = {}) =>
+    text('svg-inter', { text: 'HEADLINE', width: 300, height: 200, style: { fontFamily: 'svg-inter', fontSize: 100 }, ...extra });
+
+  it('is outlined at the fitted size', async () => {
+    registerFontOutlines('svg-inter', {}, interBytes());
+    const own = boundsOfPath(pathFromD(pathsIn((await warmed([wide()], 'outline')).svg)[0]!));
+    const fitted = boundsOfPath(pathFromD(pathsIn((await warmed([wide({ fit: 'shrink' })], 'outline')).svg)[0]!));
+    const k = textFitScale(wide({ fit: 'shrink' }));
+    expect(k).toBeLessThan(1);
+    expect(own.width).toBeGreaterThan(300);
+    expect(fitted.width).toBeLessThanOrEqual(300);
+    expect(fitted.width / own.width).toBeCloseTo(k, 2);
+  });
+
+  it('is written as live text at the fitted size, and from a kit leaf', async () => {
+    registerFontOutlines('svg-inter', {}, interBytes());
+    const leaf = svgLeafFromKit(
+      { text: 'HEADLINE', style: { fontFamily: 'svg-inter', fontSize: 100 }, fill: INK, fit: 'shrink' },
+      { x: 10, y: 20, width: 300, height: 200 },
+    ) as SvgTextNode;
+    expect(leaf.fit).toBe('shrink');
+    await warmSvg([leaf]);
+    const size = Number(/font-size="([\d.]+)"/.exec(serializeSvg([leaf]))![1]);
+    expect(size).toBeCloseTo(100 * textFitScale(leaf), 3);
   });
 });

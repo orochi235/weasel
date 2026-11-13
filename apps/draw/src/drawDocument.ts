@@ -6,6 +6,7 @@ import type {
   StyledRun,
   TextStyle,
   TextVerticalAlign,
+  TextFit,
   Fill,
   Inherit,
   PathEffect,
@@ -51,6 +52,8 @@ export interface WeaselDrawData extends TextFrameData {
   /** Where the lines sit in the box's height — read by the `kit:text`
    *  painter and the editor, edited beside the Paragraph group. */
   verticalAlign?: TextVerticalAlign;
+  /** `'shrink'` sets the text at the largest size that fits the box. */
+  fit?: TextFit;
   /** The node's paint — solid, gradient or pattern. Absent and `null` are
    *  no fill, as `Fill` says; `'inherit'` takes the enclosing group's. */
   fill?: Fill | Inherit | null;
@@ -80,7 +83,7 @@ export const DRAW_REGISTRY: SceneRegistry<WeaselDrawPose, WeaselDrawData, Weasel
   });
 
 const CONTENT_KEYS: ReadonlySet<string> = new Set<keyof WeaselDrawData>([
-  'path', 'generator', 'text', 'style', 'runs', 'verticalAlign', 'fill', 'stroke', 'image',
+  'path', 'generator', 'text', 'style', 'runs', 'verticalAlign', 'fit', 'fill', 'stroke', 'image',
 ]);
 
 /** What a node made from `data`'s node keeps of it: everything but the content

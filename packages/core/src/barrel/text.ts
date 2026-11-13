@@ -60,6 +60,9 @@ export {
   paragraphDirection,
   layoutTextPose,
   textPoseLayoutInput,
+  textFitScale,
+  fittedTextPose,
+  TEXT_FIT_TOLERANCE,
   measureText,
   measuredWidth,
   measureTextBounds,
@@ -70,6 +73,7 @@ export {
 } from '@weasel-js/text';
 export type {
   CacheUse,
+  TextFit,
   PointInTextPoseOpts,
   FitTextPoseOptions,
   LabelOptions,

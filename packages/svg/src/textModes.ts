@@ -4,7 +4,7 @@
  * in `@font-face` rules.
  */
 import {
-  resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns, type FontStyle,
+  fittedTextPose, resolveRunFace, resolveTextStyle, TextOutlinesError, toRuns, type FontStyle,
 } from '@weasel-js/core';
 import { cachedFontVariant, outlineMetrics, type FaceEmbedding } from '@weasel-js/font';
 import { svgTextOutlines } from './textOutlines';
@@ -49,7 +49,7 @@ const faceName = (f: TextFace): string => `"${f.family}" ${f.weight} ${f.style}`
 
 /**
  * `nodes` with their text written as `mode` asks, and the faces an `'embed'`
- * document carries. Under `'outline'` every text node is its outlines; under
+ * document carries. A node that shrinks to fit is set at its fitted size in every mode. Under `'outline'` every text node is its outlines; under
  * `'embed'` a node set in a face that cannot be embedded is, and `warn` names
  * the face. A node whose outlines cannot be had stays live text, with a warning.
  */
@@ -57,7 +57,6 @@ export function withTextMode(
   nodes: readonly SvgNode[], mode: SvgTextMode, warn: Warn,
 ): { nodes: SvgNode[]; faces: EmbeddedFace[] } {
   const faces = new Map<string, EmbeddedFace>();
-  if (mode === 'live') return { nodes: [...nodes], faces: [] };
 
   const outlined = (node: SvgTextNode): SvgNode => {
     try {
@@ -83,18 +82,34 @@ export function withTextMode(
     return node.style?.fontFamily ? node : { ...node, style: { ...node.style, fontFamily: resolveTextStyle(node.style).fontFamily } };
   };
 
-  const walk = (list: readonly SvgNode[]): SvgNode[] => list.map((n) => {
+  // Text written as outlines, which a text frame holding it is no longer one of.
+  const lowered = new Set<SvgNode>();
+  const walk = (list: readonly SvgNode[]): SvgNode[] => list.map((n): SvgNode => {
     if (n.kind === 'group') {
       const children = walk(n.children);
+      if (!children.some((c) => lowered.has(c))) return { ...n, children };
       // Read back, a text frame is one text node; with its text outlined it is a group like any other.
-      if (!n.textFrame || !children.some((c, i) => c !== n.children[i] && c.kind !== 'text')) return { ...n, children };
       const { textFrame: _, ...rest } = n;
-      return { ...rest, children };
+      const out = { ...rest, children };
+      lowered.add(out);
+      return out;
     }
     if (n.kind !== 'text') return n;
-    return mode === 'outline' ? outlined(n) : embedded(n);
+    const set = settled(n);
+    const out = mode === 'outline' ? outlined(set) : mode === 'embed' ? embedded(set) : set;
+    if (out.kind !== 'text') lowered.add(out);
+    return out;
   });
   return { nodes: walk(nodes), faces: [...faces.values()] };
+}
+
+/** `node` with the sizes its `fit` resolves to written out, which `<text>`
+ *  needs: a reader sets the text at the size its attributes state. */
+function settled(node: SvgTextNode): SvgTextNode {
+  if (node.fit !== 'shrink') return node;
+  const { fit: _, ...plain } = node;
+  const { style, runs } = fittedTextPose(node);
+  return { ...plain, style, ...(runs ? { runs } : {}) };
 }
 
 /** One `@font-face` rule per face, each carrying its sfnt as a base64 data URL, in a `<style>`; `''` for none. */

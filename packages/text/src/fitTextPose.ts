@@ -29,9 +29,11 @@ export function fitTextPose(
 ): TextPose {
   const axis = opts.axis ?? 'height';
   const { padX, padY } = resolvePadding(opts.padding);
+  // The box follows the text at its own size; a fit would size the text to the box it is sizing.
+  const own: TextPose = { ...pose, fit: undefined };
   const { bounds } = layoutTextPose(axis === 'height'
-    ? { ...pose, width: pose.width - padX * 2 }
-    : { ...pose, style: { ...pose.style, wrap: false } }).laid;
+    ? { ...own, width: pose.width - padX * 2 }
+    : { ...own, style: { ...pose.style, wrap: false } }).laid;
   if (axis === 'height') return { ...pose, height: bounds.height + padY * 2 };
   return {
     ...pose,

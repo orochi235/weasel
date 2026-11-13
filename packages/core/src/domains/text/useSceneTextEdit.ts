@@ -20,17 +20,18 @@ import { textHitAt } from './textHitAt';
 import { registerHostTextEditor, type HostTextEditorHandle } from './hostTextEditors';
 import { editedData, sceneTextDrafts } from './sceneTextDrafts';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
-import { resolveScreenLength } from '@weasel-js/paint';
 import { inheritedPaintIn } from '../../canvas/inheritedPaints';
 import { withInheritedPaint } from '../../core/scene/inheritedPaint';
 import { clientToCanvas, layoutBoxOf } from '@weasel-js/routing';
 import { findMountedCanvas, type MountedCanvas } from '../../canvas/mountedCanvases';
 import type { View } from '../../core/viewport/view';
 import type { RectPose } from 'core/geometry/unionBounds';
-import { poseFrameOf, viewScreenToWorld } from '@weasel-js/geom';
-import { DEFAULT_TEXT_STYLE, isTextData, type StyledRun, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
-import { textBoxOf, type TextOverflow } from '../../canvas/nodeShapes/textPainter';
-import { useTextEdit, type TextEditClipRect, type TextEditScreenPose, type UseTextEditReturn } from '@weasel-js/text-dom';
+import { viewScreenToWorld } from '@weasel-js/geom';
+import { isTextData, type StyledRun, type TextFit, type TextPaint, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import type { TextOverflow } from '../../canvas/nodeShapes/textPainter';
+import { screenPoseOf } from './textEditScreenPose';
+import { shownLookup } from '../../core/scene/nodeAsShown';
+import { useTextEdit, type TextEditClipRect, type UseTextEditReturn } from '@weasel-js/text-dom';
 
 /** Shape the default projections expect `data` to satisfy. All fields
  *  optional so any object satisfies the constraint — projections fill in
@@ -44,6 +45,7 @@ export interface DefaultTextData {
   verticalAlign?: TextVerticalAlign;
   padding?: number;
   overflow?: TextOverflow;
+  fit?: TextFit;
 }
 
 /** All-optional projections + fontSize fallback. */
@@ -70,6 +72,9 @@ export interface UseSceneTextEditOptions<TData> {
    *  then does too, and scrolls the text in the box while it is edited.
    *  Default: `data.overflow`. */
   getOverflow?: (data: TData) => TextOverflow | undefined;
+  /** Read how the node's text size answers to its box from `data`. The overlay
+   *  sets the text at the size the canvas fits it to. Default: `data.fit`. */
+  getFit?: (data: TData) => TextFit | undefined;
   /** Produce updated data with new text. Default: `{ ...data, text }`. */
   setText?: (data: TData, text: string) => TData;
   /** Produce updated data with new runs. Default: `{ ...data, runs }`. */
@@ -163,6 +168,8 @@ function projectionsOf<TData extends DefaultTextData>(opts: { readonly current: 
       opts.current.getPadding ? opts.current.getPadding(data) : data.padding,
     overflow: (data: TData): TextOverflow | undefined =>
       opts.current.getOverflow ? opts.current.getOverflow(data) : data.overflow,
+    fit: (data: TData): TextFit | undefined =>
+      opts.current.getFit ? opts.current.getFit(data) : data.fit,
   };
 }
 
@@ -266,7 +273,7 @@ export function useSceneTextEditor<
     },
     getScreenPose: (id) => {
       const scene = sceneRef.current;
-      const node = scene.get(asNodeId(id));
+      const node = shownLookup(scene).get(asNodeId(id)); // As shown, so a fit follows the draft being typed.
       if (!node) return null;
       const at = surface();
       const view = resolveView(optsRef.current.view) ?? at?.canvas.getView();
@@ -315,75 +322,6 @@ export function useSceneTextEditor<
 
   const drawOne = useMemo(() => drawOneEditing(edit.editingId), [edit.editingId]);
   return { ...edit, onDoubleClick, isTextNode, drawOne };
-}
-
-/** The overlay's pose for a node painted at `painted`: its text box, inset
- *  about the box center, which is all the overlay's frame needs, projected
- *  through `view`. */
-function screenPoseOf<TData extends DefaultTextData>(
-  d: TData,
-  painted: RectPose,
-  read: ReturnType<typeof projectionsOf<TData>>,
-  view: View | undefined,
-  origin: TextEditClipRect | undefined,
-): TextEditScreenPose {
-  const inset = textBoxOf({ padding: read.padding(d) }, painted);
-  const box = screenBoxOf({ ...painted, ...inset }, view, origin);
-  return {
-    ...box,
-    // `kit:text` lays a `{ px }` size out at scale 1, as that many world units.
-    fontSize: resolveScreenLength(read.style(d)?.fontSize ?? DEFAULT_TEXT_STYLE.fontSize, 1),
-    pxScale: 1,
-    verticalAlign: read.verticalAlign(d),
-    ...(read.overflow(d) === 'clip' ? { clip: clipToBox(inset, painted) } : {}),
-  };
-}
-
-/** How far `box` reaches past `inner` on each side: the overlay's cut at
- *  `box` when its own pose is `inner`. */
-function clipToBox(inner: RectPose, box: RectPose): NonNullable<TextEditScreenPose['clip']> {
-  return {
-    top: inner.y - box.y,
-    left: inner.x - box.x,
-    bottom: box.y + box.height - (inner.y + inner.height),
-    right: box.x + box.width - (inner.x + inner.width),
-  };
-}
-
-/**
- * `pose`'s box as the overlay takes it, `origin` being the canvas's corner in
- * container pixels. Only the box center is projected, since the overlay's
- * frame is about it. Width and height stay in world units and reach the
- * screen through the overlay's own `scale(zoom)` — see
- * `TextEditScreenPose.zoom`.
- */
-function screenBoxOf(
-  pose: RectPose,
-  view: View | undefined,
-  origin: { x: number; y: number } | undefined,
-): Pick<TextEditScreenPose, 'x' | 'y' | 'width' | 'height' | 'frame'> & { zoom: number } {
-  const zoom = view ? view.scale.x : 1;
-  const zoomY = view ? view.scale.y : 1;
-  const cx = (origin?.x ?? 0) + (pose.x + pose.width / 2 - (view?.x ?? 0)) * zoom;
-  const cy = (origin?.y ?? 0) + (pose.y + pose.height / 2 - (view?.y ?? 0)) * zoomY;
-  return {
-    x: cx - (pose.width * zoom) / 2,
-    y: cy - (pose.height * zoom) / 2,
-    width: pose.width,
-    height: pose.height,
-    zoom,
-    frame: frameLinearOf(pose, zoomY / zoom),
-  };
-}
-
-/** The linear part of the frame `pose` is drawn in, as the overlay takes it.
- *  `stretch` is the view's y scale over its x scale: the overlay scales both
- *  axes by the x scale, so the frame carries what is left of y. */
-function frameLinearOf(pose: unknown, stretch: number): TextEditScreenPose['frame'] {
-  const m = poseFrameOf(pose);
-  if (!m && stretch === 1) return undefined;
-  const [a, b, c, d] = m ?? [1, 0, 0, 1];
-  return [a, b * stretch, c, d * stretch];
 }
 
 /** A text node's paint as the canvas paints it: an inherited one is its container's. */

@@ -16,7 +16,8 @@ type WarmOptions = Pick<SerializeOptions, 'textLayout' | 'text'>;
  * serializer's own paint pre-pass, so the two cannot disagree. Registered
  * kinds are included. Given the `textLayout` the export will run, every face
  * a text node is set in, which that layout measures with; so too under a
- * `text` mode other than `'live'`, which outlines or embeds those faces.
+ * `text` mode other than `'live'`, which outlines or embeds those faces, and
+ * for a node that shrinks to fit, which is measured to find its size.
  */
 export function svgNeeds(nodes: readonly SvgNode[], opts: WarmOptions = {}): RenderNeeds {
   const registry = new PaintServerRegistry();
@@ -27,7 +28,7 @@ export function svgNeeds(nodes: readonly SvgNode[], opts: WarmOptions = {}): Ren
     for (const n of list) {
       if (n.kind === 'group') walk(n.children);
       else if (n.kind === 'text') {
-        if (opts.textLayout || readsOutlines(opts)) requestedFaces(n).forEach(add);
+        if (opts.textLayout || readsOutlines(opts) || n.fit === 'shrink') requestedFaces(n).forEach(add);
         for (const run of n.runs ?? []) {
           const face = scriptSizeFace(run, n.style);
           if (face) add(face);

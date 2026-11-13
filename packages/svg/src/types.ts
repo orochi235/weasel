@@ -9,6 +9,7 @@ import type { SvgMediaEnvironment } from './media';
 import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
+  TextFit,
   Fill,
   StrokeNib,
   VertexWidth,
@@ -211,6 +212,9 @@ export interface SvgTextNode {
    *  `data.verticalAlign`. SVG text has no box to align in, so this rides in
    *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
   verticalAlign?: TextVerticalAlign;
+  /** `kit:text`'s `data.fit`. `serializeSvg` writes the text at the size it
+   *  resolves to, which is what is read back. */
+  fit?: TextFit;
   /**
    * Node-wide glyph paint, as the kit's `Fill` / `Stroke` rather than
    * the path nodes' `SvgPaint`. `StyledRun.fill` / `.stroke` override these

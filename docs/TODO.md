@@ -283,15 +283,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Text
 
-- **(P2) [agent] Text cannot shrink to fit its box.** A poster's headline in a fixed box needs the largest
-  size at which its text fits; `fitTextPose` only does the reverse, sizing the box to the text. The seam is one
-  decision every reader shares, not a helper: a text node field (`fit: 'shrink'`) that `layoutTextPose` resolves to
-  a scale on the node's and every run's `fontSize` and `letterSpacing`, `{ px }` sizes included, so the `kit:text`
-  painter, `textToPath`, `measureTextBounds`, `caretIndexAt` and the edit overlay all set the text at the fitted
-  size. A search over `layoutTextPose`'s bounds is the easy part; threading the scale through those readers is not
-  an audit pass (found building a poster designer, audit round 20, 2026-11-12). Closes when a node with
-  `fit: 'shrink'` paints, outlines and opens its editor at the fitted size under a test.
-
 ## Scene, adapters & layout
 
 - **(P3) [agent] Moving a node along a path takes a hand-built pose descriptor.** `tweenPose` follows
