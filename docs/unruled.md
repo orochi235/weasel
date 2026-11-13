@@ -2034,3 +2034,20 @@ Calls the lanes made without a ruling:
 - Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
   `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
   ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.
+
+## Audit round twenty-two (2026-11-13): tools outside core
+
+- 2026-11-13 (the lane's call): what each sequence tool adds (a lifeline's figure, a message's arrow, a fragment's
+  type, a lifeline mark) is kept per tool, not under a shared key: no two tools add the same thing.
+- 2026-11-13 (the lane's call): the path-edit tools (the simplify brush, lengthen) declare no cursor of their own,
+  as core's `anchors` tool does not: the cursor over an anchor or a stroke is the action's. The path-tools canvas
+  test exempts them from `toolGaps`'s cursor line and nothing else.
+- 2026-11-13 (the lane's call): the camera glyphs moved from `ui` to a `kernel3d` namespace, so the orbit tool and
+  the camera actions name their glyphs without kernel3d depending on ui.
+- Open: these bundled tools have no default key: kernel3d's orbit, diagram's connector, its stencil tools and its
+  sequence tools, and path-tools' simplify brush and lengthen. No two bundled tools share a key now. Of plain
+  letters, C, Q and Z are free across the kit; D, X and `/` are WeaselDraw's color keys and O its opacity scrub's
+  held key. With Shift, every letter is free but U, W, M, P, F and X.
+- Open: core's `anchors` tool has no bindings and no cursor (`toolGaps` names both), since path edit's drags are
+  ambient. Whether a tool that binds nothing should exist as one, or path edit's entry is a mode with no tool, is
+  core's lane.
