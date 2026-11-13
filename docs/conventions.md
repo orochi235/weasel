@@ -154,6 +154,20 @@ is a reach, a threshold, or anything that only moves the view.
 `kitActionParams.test.tsx` in core holds every bundled action to this, and its
 allowlist says why each number left outside a form is there.
 
+## Auto and reset mean one thing on every surface
+
+A leaf is **auto** when no value is pinned for it. While auto it reads the first of these that is set: what its
+owner computes (labkit's `.auto(fn)`, or a value the instrument reports), the leaf's `auto.value`, its `default`.
+`prefAutoValue` (`@weasel-js/prefs`) is that rule. `auto.on` starts the leaf auto; `auto: false` keeps it pinned
+for good. Turning Auto on unpins the leaf; turning it off pins the value it shows; an edit pins.
+
+**Reset** puts a leaf back as its schema says (`prefResetOf`): auto where it says `auto.on`, otherwise pinned at
+`default`. Every row that edits a leaf offers `ResetControl` (`@weasel-js/ui/components/Properties`) while
+`prefIsReset` says the leaf differs, and the heading of a group or section that says `resettable` offers one for
+everything under it (`prefResets`). A prefs store, `PrefsForm`, `PrefsDialog`, `SelectionPanel`, labkit's
+`ControlPanel` and the theme editor all go through these. A surface never writes its own reading of either word,
+and never draws a second reset control.
+
 ## Factories are `create…`
 
 A function that builds and returns a fresh object, store or descriptor is `create…`: `createDispatcher`,
