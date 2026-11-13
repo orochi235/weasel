@@ -5,7 +5,7 @@ import { describeRegistry } from './registry';
 const rect = {
   id: 'rect',
   eligibility: { focus: true },
-  presentation: { label: 'Rectangle', icon: 'core:rect', group: 'shapes', shortcut: 'R' },
+  presentation: { label: 'Rectangle', icon: 'core:rect', group: 'shapes' },
   bindings: [{ spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { shape: 'rect' } } }],
   cursor: 'crosshair',
 } as unknown as Contribution<unknown>;
@@ -38,7 +38,7 @@ function setup() {
   const deps = createDepRegistry();
   deps.register('selection' as DepName, (() => []) as never);
   return describeRegistry({
-    tools: { registry: { rect }, ambient: [wheel] },
+    tools: { registry: { rect }, ambient: [wheel], shortcuts: { rect: [{ key: 'R', mod: false, alt: false, shift: false }] } },
     contributions: [preset],
     actions: { list: () => actions },
     deps,
@@ -78,7 +78,7 @@ describe('describeRegistry', () => {
 
   it('lists tool bindings under their overrides', () => {
     const { tools } = describeRegistry({
-      tools: { registry: { rect }, ambient: [wheel] },
+      tools: { registry: { rect }, ambient: [wheel], shortcuts: { rect: [{ key: 'R', mod: false, alt: false, shift: false }] } },
       contributions: [],
       actions: null,
       overrides: new Map([['rect#0', { kind: 'click' }], ['wheel-zoom#0', null]]),

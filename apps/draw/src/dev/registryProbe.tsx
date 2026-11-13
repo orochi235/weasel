@@ -126,12 +126,11 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           routes,
           declaredRoutes,
           slot,
-          switchShortcut: def?.keybinding,
+          switchShortcut: tools.shortcuts[t.id]?.[0],
           hotkey: def?.hotkey,
           presentation: def?.presentation ? {
             label: def.presentation.label,
             group: def.presentation.group,
-            shortcut: def.presentation.shortcut,
             icon: actionIcon(def.presentation.icon),
           } : undefined,
           surface,

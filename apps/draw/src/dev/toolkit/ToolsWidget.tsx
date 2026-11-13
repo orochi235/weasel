@@ -1,9 +1,8 @@
-import type { Action, ToolDef } from '@weasel-js/core';
+import { toolShortcutsOf, type Action, type ActionShortcut, type ToolDef } from '@weasel-js/core';
 import { DataGrid, type DataGridColumn } from '@weasel-js/ui/components/DataGrid';
 import { KeySequence, keySpecsFromShortcut } from '@weasel-js/ui/components/Keycaps';
 import { PropertyPanel } from '@weasel-js/ui/components/Properties';
 import type { ReactElement } from 'react';
-import { lookupShortcutByToolId } from '../keybindingsView';
 import s from '../ToolkitBuilder.module.css';
 import type { ToolSlots } from './useToolReflection';
 
@@ -17,11 +16,12 @@ export function ToolsWidget({
   actions: readonly Action[];
 }): ReactElement {
   const ambientSet = new Set(slots.ambient);
+  const keys = toolShortcutsOf(actions, defs.map((d) => d.id));
   const rows: ToolRow[] = defs.map((d) => ({
     id: d.id,
     hookName: d.hookName,
     slot: ambientSet.has(d.id) ? 'ambient' : 'registry',
-    shortcut: lookupShortcutByToolId(d.id, actions),
+    shortcut: keys[d.id]?.[0],
   }));
   return (
     <PropertyPanel stance="debug" className={s.widget} title={`Tools · ${defs.length}`}>
@@ -40,7 +40,7 @@ interface ToolRow {
   id: string;
   hookName: string | undefined;
   slot: 'ambient' | 'registry';
-  shortcut: ReturnType<typeof lookupShortcutByToolId>;
+  shortcut: ActionShortcut | undefined;
 }
 
 const TOOL_COLUMNS: readonly DataGridColumn<ToolRow>[] = [

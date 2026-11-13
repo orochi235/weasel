@@ -32,9 +32,6 @@ export interface ToolPresentation {
    *  with separators between groups. Free-form string; core's
    *  `TOOL_GROUP_ORDER` names the kit's own groups, in palette order. */
   group?: string;
-  /** Display override for the keyboard shortcut. When omitted the palette
-   *  derives one from `Tool.keybinding` via its own formatter. */
-  shortcut?: string;
   /** Keep the tool off palettes — for a tool that is only ever held, like a
    *  scrub engaged by its `hotkey`. It stays registered and selectable by
    *  id; only the palette leaves it out. */

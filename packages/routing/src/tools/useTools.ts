@@ -10,6 +10,9 @@ import type { Contribution, Eligibility, OverlayPosition } from '../contribution
 import type { KernelOverlay } from '../index';
 import { sameList, useLatest, useStableByContent } from '@weasel-js/react';
 import { useModeDefaultTool } from './useModeDefaultTool';
+import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
+import type { ToolShortcuts } from './toolShortcuts';
+import { useToolShortcuts } from './useToolShortcuts';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
@@ -54,6 +57,10 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   ambient: readonly Contribution<TOverlay>[];
   /** Full registry — for userland UI (palette buttons, etc.). */
   registry: Readonly<Record<string, Tool<TOverlay>>>;
+  /** The keys that activate each tool now, as `tool.activate` binds them in the actions scope `useTools` runs
+   *  in: a key rebound by `bindingOverrides` reads as rebound, and one unbound is gone. With no actions scope,
+   *  the keys the tools declare. What a palette's chip and tooltip show. */
+  shortcuts: ToolShortcuts;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
   /** Overlay layers from currently-engaged tools that declare `position`.
@@ -200,6 +207,7 @@ export function useTools<TOverlay = KernelOverlay>(
   );
 
   useModeDefaultTool(opts.modes, { active: contributions.focused, initial: initialActive, setActive, has });
+  const shortcuts = useToolShortcuts(useActionsRegistry(), slotted.registry);
 
   // Memoized: a consumer using `tools` as an effect dep loops infinitely on
   // identity churn when it setStates from inside that effect.
@@ -216,9 +224,10 @@ export function useTools<TOverlay = KernelOverlay>(
       disengageHotkey,
       ambient: slotted.ambient,
       registry: slotted.registry,
+      shortcuts,
       has,
       getActiveOverlays,
     }),
-    [active, setActive, routed, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted],
+    [active, setActive, routed, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, slotted, shortcuts],
   );
 }

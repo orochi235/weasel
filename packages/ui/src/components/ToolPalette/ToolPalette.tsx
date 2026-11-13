@@ -8,7 +8,7 @@ import { ToolGroup } from '../ToolGroup';
 import type { Orientation } from '../orientation';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
-import { formatShortcut, type ShortcutInput } from '@weasel-js/gestures';
+import { formatShortcut } from '@weasel-js/gestures';
 import { icon } from '../../icons.gen';
 import { Icon } from '../../icons/Icon';
 import { groupTools } from './order';
@@ -25,10 +25,6 @@ export interface ToolPaletteProps {
   tools: ToolsApi;
   orientation?: Orientation;
   className?: string;
-  /** Derive the keyboard shortcut for a tool button from the action registry.
-   *  Called with the tool's id; return `undefined` to suppress a chip. When
-   *  omitted, falls back to `tool.keybinding` (legacy path). */
-  lookupShortcut?: (toolId: string) => ShortcutInput | undefined;
   /**
    * Optional mode registry. When provided, tools whose
    * `eligibility.capabilities` do not match the current mode are shown as
@@ -94,7 +90,8 @@ const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.t
 /**
  * Toolbar of the registered tools, split into separator-divided groups by
  * each tool's presentation group and navigable by arrow keys. Clicking a
- * button makes that tool active. A tool whose presentation sets `hide`, or
+ * button makes that tool active. Each button's chip and tooltip show the key
+ * that activates its tool now (`tools.shortcuts`), so a rebound key shows rebound. A tool whose presentation sets `hide`, or
  * that `include` turns down, is left out. Tools listed together in `stacks`
  * share one button, which opens a menu of them.
  *
@@ -103,7 +100,7 @@ const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.t
  */
 export function ToolPalette(props: ToolPaletteProps) {
   const {
-    tools, orientation = 'vertical', className, lookupShortcut, modeRegistry, ineligible = 'dim',
+    tools, orientation = 'vertical', className, modeRegistry, ineligible = 'dim',
     groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, 'aria-label': ariaLabel = 'Tools', stacks, stackCycle = 'alt',
     columns, onToolDragStart, carryTool, carryGhost,
   } = props;
@@ -124,11 +121,11 @@ export function ToolPalette(props: ToolPaletteProps) {
   const modeName = modeRegistry ? modeRegistry.current().id : undefined;
   const describe = (tool: Tool): StackMember => {
     const label = tool.presentation?.label ?? tool.id;
-    const keys = lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding;
+    const keys = tools.shortcuts[tool.id]?.[0];
     return {
       tool, label, keys,
       description: tool.presentation?.description,
-      shortcut: tool.presentation?.shortcut ?? formatShortcut(keys),
+      shortcut: formatShortcut(keys),
       enabled: allowed(tool),
     };
   };

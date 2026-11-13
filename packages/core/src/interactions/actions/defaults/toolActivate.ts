@@ -1,11 +1,8 @@
-import { ActionDisabledReason, BETWEEN_GESTURES, type Action } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, TOOL_ACTIVATE_ID, type Action } from '@weasel-js/routing';
 import type { BoundGesture } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
-/** Canonical id of the consolidated tool-activation action. One descriptor
- *  serves every tool; the matched binding (or imperative caller) supplies
- *  `params.toolId` to select which tool to activate. */
-export const TOOL_ACTIVATE_ID = 'tool.activate';
+export { TOOL_ACTIVATE_ID };
 
 /** Per-tool key spec consumed by `createToolActivateAction`. `mod/alt/shift`
  *  sit at the top level, mirroring the `KeyBinding` shape tools declare. */

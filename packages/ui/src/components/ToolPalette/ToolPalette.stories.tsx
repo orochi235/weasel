@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import { useState } from 'react';
-import { DRAW_TOOLS, SHAPE_TOOLS, withoutTools, type Tool, type ToolsApi } from '@weasel-js/core';
+import { declaredToolShortcuts, DRAW_TOOLS, SHAPE_TOOLS, withoutTools, type Tool, type ToolsApi } from '@weasel-js/core';
 import { createModeRegistry, DEFAULT_MODES } from '@weasel-js/modes';
 import { ToolPalette, type ToolPaletteProps } from '@weasel-js/ui/components/ToolPalette';
 import { icon } from '../../icons.gen';
@@ -36,6 +36,7 @@ function makeFakeToolsApi(list: Tool[], active: string, setActive: (id: string) 
   const registry: Record<string, Tool> = Object.fromEntries(list.map((t) => [t.id, t]));
   return {
     registry,
+    shortcuts: declaredToolShortcuts(registry),
     active,
     setActive,
   } as unknown as ToolsApi;

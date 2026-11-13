@@ -106,7 +106,7 @@ export interface ToolEntry {
    *  covers the regular active/hotkey slots; `ambient` is the always-on
    *  slot. */
   slot: 'registry' | 'ambient';
-  /** The tool-switch keybinding (`ToolDef.keybinding`). Distinct from
+  /** The key that switches to the tool now (`ToolsApi.shortcuts`). Distinct from
    *  gesture shortcuts inside the tool. */
   switchShortcut?: ShortcutInput;
   /** Hotkey-slot trigger key (`space|alt|ctrl|meta|shift`) when set — the
@@ -117,7 +117,6 @@ export interface ToolEntry {
   presentation?: {
     label?: string;
     group?: string;
-    shortcut?: string;
     icon?: import('react').ReactNode;
   };
   /** Which gesture kinds this tool binds, and what it declares. */

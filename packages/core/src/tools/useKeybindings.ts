@@ -111,6 +111,7 @@ export function useKeybindings(
     })));
 
     return () => { for (const u of unregisters) u(); };
-  }, [registry, tools, toolsRef, optionsRef, disable]);
+    // `tools.registry`, not `tools`: the api changes as the keys this registers do, and keying on it re-registers forever.
+  }, [registry, tools.registry, toolsRef, optionsRef, disable]);
 }
 
