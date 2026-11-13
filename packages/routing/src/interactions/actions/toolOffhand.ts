@@ -71,7 +71,7 @@ const SHIFT_OR_ALT: ModSpec = { alt: 'optional', shift: 'optional' };
  *  reads `params.toolId` from the matched binding, pushes the tool id onto
  *  the active-tool context's hotkey stack on `start`, and pops it on `onEnd`.
  *  Mirrors the parametric shape of `tool.activate`. */
-export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
+export function createToolOffhandAction(bindings: BoundGesture[]): Action {
   return {
     id: TOOL_OFFHAND_ID,
     label: 'Engage tool (offhand)',

@@ -785,14 +785,14 @@ are registered as actions in the actions registry, not as fields on
 `ToolDef`. The factories in `packages/core/src/interactions/actions/defaults/` produce
 them:
 
-- `makeToolActivateAction(bindings)` — single parametric action registered
+- `createToolActivateAction(bindings)` — single parametric action registered
   under id `tool.activate`. Its `defaultBinding` is a `BoundGesture[]` with
   one entry per tool; each entry carries `opts.params.toolId`. The invoker
   reads `params.toolId` and calls `activeTool.setActive(toolId)`. Imperative
   callers (palette, toolbar) reach the same effect via
   `registry.trigger('tool.activate', { toolId })`. Build entries with
   `buildToolActivateBindings(specs)`.
-- `makeToolOffhandAction(bindings)` — single parametric action registered
+- `createToolOffhandAction(bindings)` — single parametric action registered
   under id `tool.offhand` for hold-to-engage hotkeys (e.g. Space-for-hand).
   `defaultBinding` is a `BoundGesture[]` of `key-held` specs, each carrying
   `opts.params.toolId`. On `start` the invoker pushes the tool id onto the

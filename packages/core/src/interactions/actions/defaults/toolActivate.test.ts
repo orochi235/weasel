@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  makeToolActivateAction,
+  createToolActivateAction,
   buildToolActivateBindings,
   TOOL_ACTIVATE_ID,
 } from './toolActivate';
 
-describe('makeToolActivateAction', () => {
+describe('createToolActivateAction', () => {
   it('produces a single action with id `tool.activate`', () => {
-    const a = makeToolActivateAction([]);
+    const a = createToolActivateAction([]);
     expect(a.id).toBe(TOOL_ACTIVATE_ID);
     expect(a.id).toBe('tool.activate');
   });
@@ -17,7 +17,7 @@ describe('makeToolActivateAction', () => {
       { toolId: 'rect', keyOpts: { key: 'R' } },
       { toolId: 'ellipse', keyOpts: { key: 'E' } },
     ]);
-    const a = makeToolActivateAction(bindings);
+    const a = createToolActivateAction(bindings);
     expect(Array.isArray(a.defaultBinding)).toBe(true);
     const arr = a.defaultBinding as unknown as Array<{ opts: { params: { toolId: string } } }>;
     expect(arr).toHaveLength(2);
@@ -26,12 +26,12 @@ describe('makeToolActivateAction', () => {
   });
 
   it('has hotkey scope so it beats active-tool bindings', () => {
-    const a = makeToolActivateAction([]);
+    const a = createToolActivateAction([]);
     expect(a.scope).toBe('hotkey');
   });
 
   it('has requires: [activeTool]', () => {
-    const a = makeToolActivateAction([]);
+    const a = createToolActivateAction([]);
     expect((a as { requires?: string[] }).requires).toEqual(['activeTool']);
   });
 
@@ -44,7 +44,7 @@ describe('makeToolActivateAction', () => {
       pushHotkey: () => {},
       popHotkey: () => {},
     };
-    const action = makeToolActivateAction([]);
+    const action = createToolActivateAction([]);
     if (!action.invoker || action.invoker.timing !== 'immediate') {
       throw new Error('Expected immediate invoker');
     }
@@ -53,12 +53,12 @@ describe('makeToolActivateAction', () => {
   });
 
   it('has timing immediate', () => {
-    const a = makeToolActivateAction([]);
+    const a = createToolActivateAction([]);
     expect(a.invoker?.timing).toBe('immediate');
   });
 
   it('run is a no-op when activeTool is absent from deps', () => {
-    const action = makeToolActivateAction([]);
+    const action = createToolActivateAction([]);
     if (!action.invoker || action.invoker.timing !== 'immediate') {
       throw new Error('Expected immediate invoker');
     }
@@ -77,7 +77,7 @@ describe('makeToolActivateAction', () => {
       pushHotkey: () => {},
       popHotkey: () => {},
     };
-    const action = makeToolActivateAction([]);
+    const action = createToolActivateAction([]);
     if (!action.invoker || action.invoker.timing !== 'immediate') {
       throw new Error('Expected immediate invoker');
     }

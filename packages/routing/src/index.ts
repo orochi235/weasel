@@ -155,7 +155,7 @@ export type {
   OverlayRole, OngoingOverlay, OngoingHandle, ImmediateInvoker, OngoingInvoker, Invoker,
 } from './interactions/actions/invoker';
 export {
-  TOOL_OFFHAND_ID, buildToolOffhandBindings, heldKeySpec, makeToolOffhandAction, offhandKeyFor,
+  TOOL_OFFHAND_ID, buildToolOffhandBindings, heldKeySpec, createToolOffhandAction, offhandKeyFor,
 } from './interactions/actions/toolOffhand';
 export type { ToolOffhandBindingSpec } from './interactions/actions/toolOffhand';
 export { BETWEEN_GESTURES } from './interactions/actions/betweenGestures';

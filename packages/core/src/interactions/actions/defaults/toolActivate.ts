@@ -7,7 +7,7 @@ import type { ImmediateInvoker } from '@weasel-js/routing';
  *  `params.toolId` to select which tool to activate. */
 export const TOOL_ACTIVATE_ID = 'tool.activate';
 
-/** Per-tool key spec consumed by `makeToolActivateAction`. `mod/alt/shift`
+/** Per-tool key spec consumed by `createToolActivateAction`. `mod/alt/shift`
  *  sit at the top level, mirroring the `KeyBinding` shape tools declare. */
 export interface ToolActivateKeyOpts {
   key: string;
@@ -55,7 +55,7 @@ export function buildToolActivateBindings(
  *
  *  `isEligible` gates activation per tool, which the static per-action
  *  `Action.eligible` cannot. Omitted, every id is accepted. */
-export function makeToolActivateAction(
+export function createToolActivateAction(
   bindings: BoundGesture[],
   isEligible?: (toolId: string) => boolean,
 ): Action {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { viewportWheelPanAction, makeViewportWheelPanAction } from './viewportWheelPan';
+import { viewportWheelPanAction, createViewportWheelPanAction } from './viewportWheelPan';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 
@@ -144,9 +144,9 @@ describe('viewportWheelPanAction axis locking', () => {
   });
 });
 
-describe('makeViewportWheelPanAction', () => {
+describe('createViewportWheelPanAction', () => {
   it('bakes the axis into both default bindings', () => {
-    const action = makeViewportWheelPanAction({ axis: 'x' });
+    const action = createViewportWheelPanAction({ axis: 'x' });
     expect(action.defaultBinding).toEqual([
       { spec: { kind: 'wheel' }, opts: { id: 'viewport.wheelPan.wheel', params: { axis: 'x' } } },
       { spec: { kind: 'wheel', mods: { shift: true } }, opts: { id: 'viewport.wheelPan.swapAxis', params: { swapAxis: true, axis: 'x' } } },
@@ -154,7 +154,7 @@ describe('makeViewportWheelPanAction', () => {
   });
 
   it("defaults to 'both' and keeps the descriptor's id and invoker", () => {
-    const action = makeViewportWheelPanAction();
+    const action = createViewportWheelPanAction();
     expect(action.id).toBe('viewport.wheelPan');
     expect(action.invoker).toBe(viewportWheelPanAction.invoker);
     expect(action.defaultBinding).toEqual([

@@ -5,7 +5,7 @@ import { useActiveToolContext } from '../interactions/actions/activeToolContext'
 import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import {
   buildToolOffhandBindings,
-  makeToolOffhandAction,
+  createToolOffhandAction,
   offhandKeyFor,
   type ToolOffhandBindingSpec,
 } from '../interactions/actions/toolOffhand';
@@ -224,6 +224,6 @@ export function useOffhandAction(entries: readonly Contribution<unknown>[]): voi
     const specs: ToolOffhandBindingSpec[] = pairs.map(([toolId, trigger]) => (
       { toolId, key: offhandKeyFor(trigger) }
     ));
-    return actionsRegistry.register(makeToolOffhandAction(buildToolOffhandBindings(specs)));
+    return actionsRegistry.register(createToolOffhandAction(buildToolOffhandBindings(specs)));
   }, [actionsRegistry, offhandSig]);
 }

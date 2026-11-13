@@ -28,8 +28,8 @@ import * as builtins from 'tools/builtin';
 import { createMeasurements } from 'domains/measure/measurements';
 import { measurementsContribution } from 'domains/measure/measureContribution';
 import { modeTriggers } from 'domains/modes/modeTriggers';
-import { buildToolActivateBindings, makeToolActivateAction } from 'interactions/actions/defaults/toolActivate';
-import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
+import { buildToolActivateBindings, createToolActivateAction } from 'interactions/actions/defaults/toolActivate';
+import { createToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 
 interface Found { id: string | undefined; where: string; binding: GestureBinding }
 
@@ -142,12 +142,12 @@ function sweepKit(): Sweep {
   }), 'core builtin tools');
 
   // Core's generated and factory-built bindings.
-  s.value(makeToolActivateAction(buildToolActivateBindings([
+  s.value(createToolActivateAction(buildToolActivateBindings([
     { toolId: 'rect', keyOpts: { key: 'R' } }, { toolId: 'rect', keyOpts: { key: 'M' } },
     { toolId: 'hand', keyOpts: { key: 'H' } },
   ])), 'tool.activate');
-  s.value(makeToolResetToDefaultAction(() => null), 'tool.resetToDefault');
-  s.value(routing.makeToolOffhandAction(routing.buildToolOffhandBindings([
+  s.value(createToolResetToDefaultAction(() => null), 'tool.resetToDefault');
+  s.value(routing.createToolOffhandAction(routing.buildToolOffhandBindings([
     { toolId: 'hand', trigger: { key: 'Space' } },
   ] as never)), 'tool.offhand');
   s.value(core.selectionMoveContribution({ reparentOnDrop: 'top' }), 'selectionMoveContribution');

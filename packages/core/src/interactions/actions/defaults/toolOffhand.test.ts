@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { matchModifiers, type ModifiersEvent } from '@weasel-js/gestures';
-import { makeToolOffhandAction, buildToolOffhandBindings, heldKeySpec, offhandKeyFor, TOOL_OFFHAND_ID } from '@weasel-js/routing';
+import { createToolOffhandAction, buildToolOffhandBindings, heldKeySpec, offhandKeyFor, TOOL_OFFHAND_ID } from '@weasel-js/routing';
 
-describe('makeToolOffhandAction', () => {
+describe('createToolOffhandAction', () => {
   it("declares scope:'hotkey' so the offhand action beats the active tool", () => {
-    const a = makeToolOffhandAction([]);
+    const a = createToolOffhandAction([]);
     expect(a.scope).toBe('hotkey');
   });
 
   it('produces a single Action with id `tool.offhand` and ongoing timing', () => {
-    const action = makeToolOffhandAction([]);
+    const action = createToolOffhandAction([]);
     expect(action.id).toBe(TOOL_OFFHAND_ID);
     expect(action.id).toBe('tool.offhand');
     expect(action.invoker).toBeDefined();
@@ -21,7 +21,7 @@ describe('makeToolOffhandAction', () => {
       { toolId: 'hand', key: ' ' },
       { toolId: 'eyedropper', key: 'i' },
     ]);
-    const action = makeToolOffhandAction(bindings);
+    const action = createToolOffhandAction(bindings);
     expect(Array.isArray(action.defaultBinding)).toBe(true);
     const arr = action.defaultBinding as unknown as Array<{
       spec: { kind: string; key: string | string[] };
@@ -43,7 +43,7 @@ describe('makeToolOffhandAction', () => {
       pushHotkey: pushSpy,
       popHotkey: popSpy,
     };
-    const action = makeToolOffhandAction([]);
+    const action = createToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     const handle = action.invoker.start(
       {
@@ -66,7 +66,7 @@ describe('makeToolOffhandAction', () => {
       active: 'select', hotkeyStack: [], setActive: () => {},
       pushHotkey: pushSpy, popHotkey: () => {},
     };
-    const action = makeToolOffhandAction([]);
+    const action = createToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     action.invoker.start(
       { deps: { activeTool } } as never,
@@ -76,7 +76,7 @@ describe('makeToolOffhandAction', () => {
   });
 
   it('start is a no-op when activeTool dep is missing', () => {
-    const action = makeToolOffhandAction([]);
+    const action = createToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     const handle = action.invoker.start({ deps: {} } as never, { params: { toolId: 'hand' } });
     expect(handle).toEqual({});
@@ -88,7 +88,7 @@ describe('makeToolOffhandAction', () => {
       active: 'select', hotkeyStack: [], setActive: () => {},
       pushHotkey: pushSpy, popHotkey: () => {},
     };
-    const action = makeToolOffhandAction([]);
+    const action = createToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     const handle = action.invoker.start({ deps: { activeTool } } as never, undefined);
     expect(handle).toEqual({});

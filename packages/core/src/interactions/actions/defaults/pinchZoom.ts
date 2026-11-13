@@ -13,7 +13,7 @@ interface PinchScratch {
 }
 
 /**
- * Tuning for {@link makePinchZoomAction}.
+ * Tuning for {@link createPinchZoomAction}.
  */
 export interface PinchZoomOptions {
   /** Lower clamp on the resulting view scale, forwarded to `zoomAt`. Default 0.1. */
@@ -30,7 +30,7 @@ export interface PinchZoomOptions {
  * clamp. The same two-finger gesture zooms and pans, applied each frame.
  */
 // No `eligible` field → pinch zoom is always eligible across all modes.
-export function makePinchZoomAction(
+export function createPinchZoomAction(
   opts: PinchZoomOptions = {},
 ): Action & { requires: string[] } {
   const clamp = { min: opts.min ?? DEFAULT_MIN_ZOOM, max: opts.max ?? DEFAULT_MAX_ZOOM };
@@ -92,6 +92,6 @@ export function makePinchZoomAction(
 
 /**
  * Default `viewport.pinchZoom` descriptor: two-finger pinch with the kit's
- * default 0.1–8 scale clamp. Equivalent to `makePinchZoomAction()`.
+ * default 0.1–8 scale clamp. Equivalent to `createPinchZoomAction()`.
  */
-export const pinchZoomAction: Action & { requires: string[] } = makePinchZoomAction();
+export const pinchZoomAction: Action & { requires: string[] } = createPinchZoomAction();

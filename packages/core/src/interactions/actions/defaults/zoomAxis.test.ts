@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { stubDeps } from '../testUtils';
-import { makeViewportZoomAction } from './viewportZoom';
-import { makePinchZoomAction } from './pinchZoom';
+import { createViewportZoomAction } from './viewportZoom';
+import { createPinchZoomAction } from './pinchZoom';
 import { axisZoomFactor } from 'core/viewport/zoomAt';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
@@ -19,7 +19,7 @@ function makeView(initial: View): ViewApi & { current: View } {
 
 function run(axis: 'both' | 'x' | 'y' | undefined, params: Record<string, unknown>): View {
   const view = makeView({ x: 10, y: 20, scale: { x: 1, y: 1 } });
-  const action = makeViewportZoomAction(axis === undefined ? {} : { axis });
+  const action = createViewportZoomAction(axis === undefined ? {} : { axis });
   if (action.invoker?.timing !== 'immediate') throw new Error('Expected immediate invoker');
   action.invoker.run({ view }, params);
   return view.current;
@@ -33,7 +33,7 @@ describe('axisZoomFactor', () => {
   });
 });
 
-describe('makeViewportZoomAction axis', () => {
+describe('createViewportZoomAction axis', () => {
   const wheel = { kind: 'wheel', deltaY: -100, deltaX: 0, clientX: 50, clientY: 50 };
 
   it('zooms both axes when axis is omitted', () => {
@@ -73,10 +73,10 @@ describe('makeViewportZoomAction axis', () => {
   });
 });
 
-describe('makePinchZoomAction axis', () => {
+describe('createPinchZoomAction axis', () => {
   function pinch(axis: 'x' | 'y'): View {
     const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-    const action = makePinchZoomAction({ axis });
+    const action = createPinchZoomAction({ axis });
     if (action.invoker?.timing !== 'ongoing') throw new Error('Expected ongoing invoker');
     const base = {
       world: { x: 0, y: 0 },

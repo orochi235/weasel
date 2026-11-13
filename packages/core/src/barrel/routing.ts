@@ -62,13 +62,13 @@ export { viewportDragPanAction } from '../interactions/actions/defaults/viewport
 export type { DragPanParams } from '../interactions/actions/defaults/viewportDragPan';
 export {
   viewportZoomAction,
-  makeViewportZoomAction,
+  createViewportZoomAction,
   type ViewportZoomOptions,
   type ViewportZoomAnimateOptions,
 } from '../interactions/actions/defaults/viewportZoom';
 export {
   viewportWheelPanAction,
-  makeViewportWheelPanAction,
+  createViewportWheelPanAction,
   type WheelPanOptions,
 } from '../interactions/actions/defaults/viewportWheelPan';
 export {
@@ -90,7 +90,7 @@ export {
 export { reachesLocked } from '../interactions/actions/defaults/lockedReach';
 export {
   pinchZoomAction,
-  makePinchZoomAction,
+  createPinchZoomAction,
   type PinchZoomOptions,
 } from '../interactions/actions/defaults/pinchZoom';
 export {

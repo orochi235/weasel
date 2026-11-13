@@ -20,7 +20,7 @@ export const TOOL_RESET_TO_DEFAULT_ID = 'tool.resetToDefault';
  * `getTarget` returns the tool id to return to, or `null` when the behavior
  * is disabled (consumer passed `defaultTool: null`) or already satisfied.
  */
-export function makeToolResetToDefaultAction(
+export function createToolResetToDefaultAction(
   getTarget: () => string | null,
 ): Action {
   const invoker: ImmediateInvoker = {

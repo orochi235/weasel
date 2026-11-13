@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { actionItems, actionShortcuts } from '@weasel-js/routing';
-import { viewportZoomAction, makeViewportZoomAction } from './viewportZoom';
+import { viewportZoomAction, createViewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 
@@ -126,7 +126,7 @@ describe('viewportZoomAction invoker', () => {
 
     it('clamps to the configured bounds', () => {
       const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-      const invoker = getImmediateInvoker(makeViewportZoomAction({ max: 2 }));
+      const invoker = getImmediateInvoker(createViewportZoomAction({ max: 2 }));
       invoker.run({ view }, { kind: 'pinch', scale: 5, clientX: 0, clientY: 0 });
       expect(view._value.scale.x).toBeCloseTo(2, 10);
     });
@@ -220,12 +220,12 @@ describe('viewportZoomAction invoker', () => {
 });
 
 // ---------------------------------------------------------------------------
-// makeViewportZoomAction — configurable wheel trigger + clamp
+// createViewportZoomAction — configurable wheel trigger + clamp
 // ---------------------------------------------------------------------------
 
-describe('makeViewportZoomAction', () => {
+describe('createViewportZoomAction', () => {
   it('binds the wheel gesture to plain wheel when wheel: "plain"', () => {
-    const action = makeViewportZoomAction({ wheel: 'plain' });
+    const action = createViewportZoomAction({ wheel: 'plain' });
     const specs = (action.defaultBinding as Array<{ spec: unknown }>).map((b) => b.spec);
     // Plain wheel: no mods (forbids any modifier).
     expect(specs).toContainEqual({ kind: 'wheel' });
@@ -235,14 +235,14 @@ describe('makeViewportZoomAction', () => {
   });
 
   it('defaults the wheel gesture to Cmd/Ctrl+wheel', () => {
-    const action = makeViewportZoomAction();
+    const action = createViewportZoomAction();
     const specs = (action.defaultBinding as Array<{ spec: unknown }>).map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
   });
 
   it('binds bare ctrl+wheel in both wheel modes — a mac trackpad pinch arrives that way', () => {
     for (const opts of [{}, { wheel: 'plain' as const }]) {
-      const specs = (makeViewportZoomAction(opts).defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>);
+      const specs = (createViewportZoomAction(opts).defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>);
       const trackpad = specs.find((b) => JSON.stringify(b.spec) === JSON.stringify({ kind: 'wheel', mods: { ctrl: true } }));
       expect(trackpad).toBeDefined();
       expect(trackpad!.opts.params.kind).toBe('wheel');
@@ -250,7 +250,7 @@ describe('makeViewportZoomAction', () => {
   });
 
   it('clamps the resulting scale to [min, max] on wheel zoom', () => {
-    const action = makeViewportZoomAction({ wheel: 'plain', min: 5, max: 500 });
+    const action = createViewportZoomAction({ wheel: 'plain', min: 5, max: 500 });
     const invoker = getImmediateInvoker(action);
 
     // Zoom out hard from scale 5 — clamp floor holds it at 5.
@@ -265,7 +265,7 @@ describe('makeViewportZoomAction', () => {
   });
 
   it('default clamp (0.1–8) matches the shared viewportZoomAction instance', () => {
-    const action = makeViewportZoomAction();
+    const action = createViewportZoomAction();
     const invoker = getImmediateInvoker(action);
     const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     // Huge zoom-in is clamped at the kit default ceiling of 8.
@@ -293,9 +293,9 @@ function makeAnimatedView(initial: View = { x: 0, y: 0, scale: { x: 1, y: 1 } })
   return { api, calls, current: () => v };
 }
 
-describe('makeViewportZoomAction with animate', () => {
+describe('createViewportZoomAction with animate', () => {
   it('animates Cmd+= instead of setting the view', () => {
-    const action = makeViewportZoomAction({ animate: { ms: 400 } });
+    const action = createViewportZoomAction({ animate: { ms: 400 } });
     const { api, calls } = makeAnimatedView();
     getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
 
@@ -307,7 +307,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('compounds successive steps off the pending target', () => {
-    const action = makeViewportZoomAction({ animate: true });
+    const action = createViewportZoomAction({ animate: true });
     const { api, calls } = makeAnimatedView();
     const invoker = getImmediateInvoker(action);
 
@@ -318,7 +318,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('never animates wheel zoom — the input already samples every frame', () => {
-    const action = makeViewportZoomAction({ animate: true });
+    const action = createViewportZoomAction({ animate: true });
     const { api, calls } = makeAnimatedView();
     getImmediateInvoker(action).run({ view: api }, { kind: 'wheel', deltaY: -100, clientX: 0, clientY: 0 });
 
@@ -327,7 +327,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('sets rather than animates when the view dep has no animate', () => {
-    const action = makeViewportZoomAction({ animate: true });
+    const action = createViewportZoomAction({ animate: true });
     const view = makeView();
     view.hostSize = () => ({ width: 400, height: 200 });
     getImmediateInvoker(action).run({ view }, { kind: 'in' });
@@ -336,7 +336,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('sets rather than animates when animate is off', () => {
-    const action = makeViewportZoomAction();
+    const action = createViewportZoomAction();
     const { api, calls } = makeAnimatedView();
     getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
 
@@ -345,7 +345,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('animates the reset branch to identity, honoring resetMs', () => {
-    const action = makeViewportZoomAction({ animate: { ms: 200, resetMs: 500 } });
+    const action = createViewportZoomAction({ animate: { ms: 200, resetMs: 500 } });
     const { api, calls } = makeAnimatedView({ x: 30, y: 40, scale: { x: 3, y: 3 } });
     getImmediateInvoker(action).run({ view: api }, { kind: 'reset' });
 
@@ -355,7 +355,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('animates to the view a recenter callback returns', () => {
-    const action = makeViewportZoomAction({ animate: true });
+    const action = createViewportZoomAction({ animate: true });
     const { api, calls } = makeAnimatedView({ x: 30, y: 40, scale: { x: 3, y: 3 } });
     api.recenter = () => ({ x: -8, y: -8, scale: { x: 0.5, y: 0.5 } });
     getImmediateInvoker(action).run({ view: api }, { kind: 'reset' });
@@ -364,7 +364,7 @@ describe('makeViewportZoomAction with animate', () => {
   });
 
   it('leaves a void-returning recenter alone — it dispatched the view itself', () => {
-    const action = makeViewportZoomAction({ animate: true });
+    const action = createViewportZoomAction({ animate: true });
     const { api, calls } = makeAnimatedView();
     const recenter = vi.fn(() => undefined);
     api.recenter = recenter;
@@ -379,7 +379,7 @@ describe('makeViewportZoomAction with animate', () => {
     const onDone = vi.fn();
     const easing = (t: number) => t;
     const interpolator = () => (t: number) => ({ x: t, y: t, scale: { x: 1, y: 1 } });
-    const action = makeViewportZoomAction({
+    const action = createViewportZoomAction({
       animate: { ms: 300, resetMs: 500, easing, interpolator, onDone },
     });
     const { api, calls } = makeAnimatedView();
@@ -391,7 +391,7 @@ describe('makeViewportZoomAction with animate', () => {
 
 describe('viewport.zoom variants', () => {
   it('lists in, out, reset, and fit as variants, and nothing for wheel or pinch', () => {
-    expect(actionItems(makeViewportZoomAction()).map((i) => [i.key, i.label, i.params])).toEqual([
+    expect(actionItems(createViewportZoomAction()).map((i) => [i.key, i.label, i.params])).toEqual([
       ['viewport.zoom:in', 'Zoom In', { kind: 'in' }],
       ['viewport.zoom:out', 'Zoom Out', { kind: 'out' }],
       ['viewport.zoom:reset', 'Reset Zoom', { kind: 'reset' }],
@@ -400,7 +400,7 @@ describe('viewport.zoom variants', () => {
   });
 
   it('finds each variant its key binding as a shortcut', () => {
-    const action = makeViewportZoomAction();
+    const action = createViewportZoomAction();
     const keyOf = (kind: string) => {
       const s = actionShortcuts(action, { kind })[0];
       return [s.key, s.mod, s.alt ?? false];
