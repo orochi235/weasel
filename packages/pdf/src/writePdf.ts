@@ -1,4 +1,4 @@
-import { type GlMat3, mat3 } from '@weasel-js/geom';
+import { type GlMat3, mat3, type Rect } from '@weasel-js/geom';
 import { holdImageBitmaps, type DrawCommand } from '@weasel-js/renderer';
 import { ContentStream } from './content';
 import { deflate as zlibDeflate } from './deflate';
@@ -8,9 +8,6 @@ import type { PdfFontSource } from './fonts/fontSource';
 import { num } from './num';
 import { type Deflater, name, PdfObjects, type PdfRef, text } from './objects';
 import { PageResources } from './resources';
-
-/** An axis-aligned rectangle in page units. */
-export type Rect = { x: number; y: number; width: number; height: number };
 
 /** One page of the document: its size in points and the draw commands painted onto it. */
 export interface PdfPage {
