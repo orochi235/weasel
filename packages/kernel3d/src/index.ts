@@ -44,6 +44,7 @@ export { createLinePass, type LineDrawOptions, type LinePass } from './lines/pas
 export {
   orbitAction, panAction, dollyAction, pinchDollyAction, homeAction, useOrbitTool,
 } from './tools';
+export { KERNEL3D_TOOLS, useKernel3dTools, type Kernel3dToolId } from './toolSets';
 export type { Camera3dDep } from './cameraDep';
 export { createCameraDep, type CameraDepOptions } from './createCameraDep';
 export { kernel3dKitSettingsSchema, type Orbit3dKitSettings } from './kitSettings';

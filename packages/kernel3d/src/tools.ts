@@ -229,14 +229,15 @@ export const homeAction: Action = {
   },
 };
 
-/** A tool that binds a drag to `camera.orbit` and Shift+drag to `camera.pan`.
- *  Register both actions alongside it; the tool only declares the bindings. */
+/** A tool that binds a drag to `camera.orbit` and Shift+drag to `camera.pan`, and carries both actions.
+ *  The wheel dolly, the pinch and the double-click home are actions of their own, for the canvas to register. */
 export function useOrbitTool(): Tool {
   return useMemo(() => defineTool({
     id: 'orbit',
     hookName: 'useOrbitTool',
     cursor: 'grab',
     presentation: { label: 'Orbit', group: 'view' },
+    actions: [orbitAction, panAction],
     bindings: [
       { spec: { kind: 'drag' }, actionId: 'camera.orbit', opts: { id: 'orbit.orbit' } },
       { spec: { kind: 'drag', mods: { shift: true } }, actionId: 'camera.pan', opts: { id: 'orbit.pan' } },
