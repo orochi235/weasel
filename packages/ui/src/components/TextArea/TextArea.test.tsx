@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { Input } from '../Input';
 import { TextArea } from './TextArea';
 
 describe('TextArea', () => {
@@ -22,5 +23,16 @@ describe('TextArea', () => {
     render(<TextArea label="Z" description="A hint." isInvalid errorMessage="Required" />);
     expect(screen.getByText('A hint.')).toBeTruthy();
     expect(screen.getByText('Required')).toBeTruthy();
+  });
+
+  it('reads Mixed over its placeholder when mixed', () => {
+    render(<TextArea label="Notes" placeholder="None yet" mixed />);
+    expect(screen.getByLabelText('Notes')).toHaveAttribute('placeholder', 'Mixed');
+  });
+
+  it('sets its label beside the box in a row, as Input does', () => {
+    const { container: area } = render(<TextArea label="Notes" orientation="row" />);
+    const { container: input } = render(<Input label="Name" orientation="row" />);
+    expect(area.firstElementChild!.className).toBe(input.firstElementChild!.className);
   });
 });
