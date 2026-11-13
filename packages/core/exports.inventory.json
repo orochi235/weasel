@@ -3142,6 +3142,7 @@
     "createEnteredGroup": "function",
     "createEnteredGroupScope": "function",
     "createHistory": "function",
+    "createInsertOp": "function",
     "createPageRun": "function",
     "createPathEffectDerivations": "function",
     "createPoseFeed": "function",
