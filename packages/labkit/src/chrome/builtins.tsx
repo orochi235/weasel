@@ -84,12 +84,10 @@ function settingsConfig(ctx: TrialChromeContext): Record<string, unknown> {
   return ctx.configSchema.over && ctx.overValues ? withOverValues(own, ctx.overValues) : own;
 }
 
-/** How the Settings panel writes a trial's config. The trial's writes already run together into one undo step
- *  per gesture, so its drafts go there too, and the instrument follows every keystroke. */
-
+/** How the Settings panel writes a trial's config: its drafts reach the instrument on every move and keystroke,
+ *  and the trial records them with the value they settle on as one undo step. */
 function settingsWrites(ctx: TrialChromeContext) {
-  const write = (path: string, value: unknown): void => ctx.setConfig(path, value);
-  return { setConfig: write, draftConfig: write };
+  return { setConfig: ctx.setConfig, draftConfig: ctx.draftConfig ?? ctx.setConfig };
 }
 
 const settingsAuto = (ctx: TrialChromeContext) => ({ auto: ctx.auto, reported: ctx.reported });

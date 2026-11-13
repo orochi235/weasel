@@ -48,8 +48,13 @@ export interface TrialWrites {
    *  `config.change:<path>`, one entry for a run of writes to one path, then runs
    *  the instrument's `onConfigChange` against the stored record. A path of
    *  the schema the config is drawn over goes to the lab's `over` instead,
-   *  recorded the same way. */
+   *  recorded the same way. A write after drafts to the same path is the value
+   *  their edit settled on: it joins their entry, and ends it. */
   setConfig: (path: string, value: unknown) => void;
+  /** Write a value an edit is passing through, as `setConfig` does, into an entry
+   *  that stays open, however long the edit pauses, until a `setConfig` to the
+   *  same path settles it or another edit intervenes: a slider's drag is one step. */
+  draftConfig: (path: string, value: unknown) => void;
 }
 
 /** Whether writing `value` at `path` would leave `record` as it is. A write that changes nothing records nothing,
@@ -87,12 +92,14 @@ export function useTrialWrites({
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const over = useLatest(useContext(LabOverContext));
   /** The gesture the last write began or continued. `start` is the record as the gesture found it, where its step
-   *  is the trial's own snapshot, which a gesture ending where it started can take back. */
+   *  is the trial's own snapshot, which a gesture ending where it started can take back. `open` while drafts run,
+   *  which no pause ends. */
   const lastWrite = useRef<{
     path: string;
     at: number;
     version: string;
     start: TrialEdit | null;
+    open: boolean;
   } | null>(null);
   // Undoing an entry ends the gesture that recorded it, on whichever history holds it.
   const { snapshot, stored } = useTrialSnapshot({
@@ -108,7 +115,7 @@ export function useTrialWrites({
 
   /** Snapshots for a write to `path`, unless it continues the gesture the last one began. */
   const recordWrite = useCallback(
-    (path: string, op?: Parameters<TrialSnapshot>[1]): boolean => {
+    (path: string, draft: boolean, op?: Parameters<TrialSnapshot>[1]): boolean => {
       // Any edit recorded since, on this trial's histories or its marks, ends the gesture.
       const version = (): string =>
         `${marksNow.current?.undoStamp() ?? ''}:${stored()?.history?.getVersion() ?? -1}:${ownHistory()?.undoStamp?.() ?? ''}`;
@@ -120,8 +127,7 @@ export function useTrialWrites({
       const sameGesture =
         last !== null &&
         last.path === path &&
-        gap >= 0 &&
-        gap < GESTURE_MS &&
+        (last.open || (gap >= 0 && gap < GESTURE_MS)) &&
         last.version === version();
       let start = sameGesture ? last.start : null;
       if (!sameGesture) {
@@ -129,7 +135,7 @@ export function useTrialWrites({
         const recorded = snapshot('config.change', op) || snapshot(`config.change:${path}`, op);
         start = recorded && !op && !ownHistory() && before ? readTrialEdit(before) : null;
       }
-      lastWrite.current = { path, at: Date.now(), version: version(), start };
+      lastWrite.current = { path, at: Date.now(), version: version(), start, open: draft };
       return sameGesture;
     },
     [stored, snapshot, ownHistory, marksNow],
@@ -146,22 +152,28 @@ export function useTrialWrites({
     lastWrite.current = null;
   }, [stored]);
 
-  const setConfig = useCallback(
-    (path: string, value: unknown): void => {
+  /** A settled write to `path` ends the drafts that ran there before it. */
+  const settle = useCallback((path: string, draft: boolean): void => {
+    if (!draft && lastWrite.current?.open && lastWrite.current.path === path)
+      lastWrite.current = null;
+  }, []);
+
+  const apply = useCallback(
+    (path: string, value: unknown, draft: boolean): void => {
       if (writesOver(schema, path)) {
         const lab = over.current;
         if (!lab) return;
         const read = () => valueAtPath(over.current?.values, path);
         if (!isAuto(value) && deepEqual(read(), value)) return;
-        const write = (v: unknown) => over.current?.set(path, v);
-        recordWrite(path, stateOp(structuredClone(read()), read, write));
+        const put = (v: unknown) => over.current?.set(path, v);
+        recordWrite(path, draft, stateOp(structuredClone(read()), read, put));
         lab.set(path, value);
         return;
       }
       const before = stored();
       if (!before || changesNothing(before, path, value)) return;
       warnUnknownPath(before, schema, path);
-      const continued = recordWrite(path);
+      const continued = recordWrite(path, draft);
       updateTrialConfig(trialId, path, value);
       const after = stored();
       if (instrument.onConfigChange && after) {
@@ -185,5 +197,21 @@ export function useTrialWrites({
     ],
   );
 
-  return useMemo(() => ({ snapshot, setConfig }), [snapshot, setConfig]);
+  const write = useCallback(
+    (path: string, value: unknown, draft: boolean): void => {
+      apply(path, value, draft);
+      settle(path, draft);
+    },
+    [apply, settle],
+  );
+  const setConfig = useCallback(
+    (path: string, value: unknown): void => write(path, value, false),
+    [write],
+  );
+  const draftConfig = useCallback(
+    (path: string, value: unknown): void => write(path, value, true),
+    [write],
+  );
+
+  return useMemo(() => ({ snapshot, setConfig, draftConfig }), [snapshot, setConfig, draftConfig]);
 }

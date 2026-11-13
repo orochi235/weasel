@@ -165,7 +165,11 @@ function TrialRuntime({
     keptMarks,
     save: updateTrialAnnotations,
   });
-  const { snapshot: snapshotIfNeeded, setConfig } = useTrialWrites({
+  const {
+    snapshot: snapshotIfNeeded,
+    setConfig,
+    draftConfig,
+  } = useTrialWrites({
     store,
     trialId: record.id,
     instrument,
@@ -366,6 +370,7 @@ function TrialRuntime({
                   isLastTrial={isLast}
                   undoBindings={undoBindings}
                   setConfig={setConfig}
+                  draftConfig={draftConfig}
                   reported={reports}
                   trialChrome={extraChrome}
                   {...options}

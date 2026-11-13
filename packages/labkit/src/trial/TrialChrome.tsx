@@ -91,6 +91,8 @@ export interface TrialChromeProps extends TrialChromeOptions {
   /** The trial's one config write, which `Trial` hands its instrument too.
    *  Omitted, a chrome mounted without a trial makes its own. */
   setConfig?: (path: string, value: unknown) => void;
+  /** The trial's write of a value an edit is passing through, given with `setConfig`. */
+  draftConfig?: (path: string, value: unknown) => void;
   /** What the instrument reported for its auto paths, which the settings panel quotes. */
   reported?: AutoReports;
   /** Supplied when the instrument declares a `job`. */
@@ -144,6 +146,7 @@ export function TrialChrome({
   isLastTrial,
   undoBindings,
   setConfig: setConfigProp,
+  draftConfig: draftConfigProp,
   reported,
   job,
   loupe,
@@ -177,6 +180,7 @@ export function TrialChrome({
     schema: configSchema,
   });
   const setConfig = setConfigProp ?? ownWrites.setConfig;
+  const draftConfig = setConfigProp ? (draftConfigProp ?? setConfigProp) : ownWrites.draftConfig;
   const overValues = useLabOverValues();
 
   const title = record.title ?? instrument.title ?? instrument.name;
@@ -218,6 +222,7 @@ export function TrialChrome({
       auto,
       reported,
       setConfig,
+      draftConfig,
       overValues,
       collapsedSections: record.collapsedSections ?? NO_SECTIONS,
       setSectionCollapsed: (key, collapsed) => setTrialSectionCollapsed(trialId, key, collapsed),
@@ -242,6 +247,7 @@ export function TrialChrome({
     isLastTrial,
     updateTrialView,
     setConfig,
+    draftConfig,
     undoBindings,
     loupe,
     lightbox,
