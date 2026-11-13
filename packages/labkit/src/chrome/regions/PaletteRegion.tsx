@@ -59,7 +59,7 @@ export function PaletteRegion<TCtx extends ToolSlotContext = TrialChromeContext>
     >
       {railRuns(contributions, region).map((run, i) => (
         <Fragment key={run.id}>
-          {i > 0 && <div className="lk-palette-region__rule" role="separator" aria-orientation="horizontal" />}
+          {i > 0 && <hr className="lk-palette-region__rule" />}
           <ToolGroup orientation="vertical" groupKey={run.group} aria-label={run.group}>
             {run.entries.map(entry)}
           </ToolGroup>
