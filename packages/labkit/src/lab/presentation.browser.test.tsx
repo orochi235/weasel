@@ -22,7 +22,6 @@ afterEach(cleanup);
 
 const Painted: Instrument = {
   name: 'Painted',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   canvas: {
     layers: [

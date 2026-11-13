@@ -11,7 +11,6 @@ import { LabContext, type LabContextValue } from './LabContext';
 
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };

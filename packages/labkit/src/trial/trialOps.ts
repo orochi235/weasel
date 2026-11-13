@@ -2,6 +2,7 @@ import { withoutMarkHistory } from '../annotations/history';
 import { isAuto } from '../config/auto';
 import { autoPathsOf } from '../config/autoConfig';
 import { fillConfigDefaults, isRecord, setOwn } from '../config/path';
+import { defaultConfigOf } from '../instrument/defineInstrument';
 import { unruledConfigSchema } from '../instrument/serializers';
 import type { Instrument, InstrumentList } from '../instrument/types';
 import { newId } from '../state/helpers';
@@ -18,13 +19,13 @@ function findInstrument(instruments: InstrumentList, name: string): Instrument {
 
 /** What a trial opens on beyond its instrument's own defaults. */
 export interface AddTrialOptions<TC = Record<string, unknown>> {
-  /** Overlaid on `defaultConfig()` before `initialState` reads it, so a trial
+  /** Overlaid on the instrument's default config before `initialState` reads it, so a trial
    *  opened on a subject is running that subject from its first frame. Keys
    *  whose value is `undefined` are left to the default. */
   config?: Partial<TC>;
 }
 
-/** `defaultConfig()` with `seed` written over it, down the tree: a seed naming
+/** The default config with `seed` written over it, down the tree: a seed naming
  *  one leaf of a group leaves that group's other leaves at their defaults. */
 function seedConfig<TC>(defaults: TC, seed: Partial<TC> | undefined): TC {
   return seed ? fillConfigDefaults(seed, defaults) : defaults;
@@ -71,7 +72,7 @@ export function addTrial(
   const instrument = findInstrument(instruments, instrumentName);
   const seeded = splitAutoSeed(options.config as Record<string, unknown> | undefined);
   const autoPaths = [...new Set([...schemaAutoPaths(instrument), ...seeded.autoPaths])];
-  const config = seedConfig(instrument.defaultConfig(), seeded.config);
+  const config = seedConfig(defaultConfigOf(instrument), seeded.config);
   const state = instrument.initialState(config);
   const record: TrialRecord = {
     id: newId(),
@@ -123,7 +124,7 @@ export function resetTrial(
   const current = trials[idx];
   if (!current) return trials;
   const instrument = findInstrument(instruments, current.instrumentName);
-  const config = seedConfig(instrument.defaultConfig(), current.configSeed);
+  const config = seedConfig(defaultConfigOf(instrument), current.configSeed);
   const state = instrument.initialState(config);
   const autoPaths = [...new Set([...schemaAutoPaths(instrument), ...(current.autoSeed ?? [])])];
   const { auto: _unpinnedNow, ...kept } = current;

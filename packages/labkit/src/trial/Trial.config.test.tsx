@@ -98,7 +98,6 @@ describe('lab-wide config seams', () => {
   it('omits the settings section for an instrument with no config', async () => {
     const inst = defineInstrument({
       name: 'Bare',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => null,
     });

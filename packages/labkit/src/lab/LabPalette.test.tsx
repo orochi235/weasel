@@ -9,7 +9,6 @@ import { Lab } from './Lab';
 const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };

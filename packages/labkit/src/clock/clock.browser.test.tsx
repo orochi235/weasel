@@ -22,7 +22,6 @@ let pausedAt = Number.NaN;
 /** Fills the view with a red that steps with the clock, 1 a frame-ish. */
 const Ticking: Instrument = {
   name: 'Ticking',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { rate: 1 },
   canvas: {

@@ -213,7 +213,6 @@ function SeedTrials() {
 
 const runLog = defineInstrument<{ lines: string[] }, Record<string, never>>({
   name: 'Run log',
-  defaultConfig: () => ({}),
   initialState: () => ({
     lines: ['09:04 lamp warm', '09:06 slit 50 µm', '09:12 calibrated', '09:14 sweep armed'],
   }),

@@ -17,7 +17,6 @@ function instrumentWith(nodes: ConfigSchema<unknown>['nodes']): Instrument<unkno
   return {
     name: ENTRY.id,
     config: { nodes, defaults: () => ({}) },
-    defaultConfig: () => ({}),
     initialState: () => null,
     render: () => null,
   };

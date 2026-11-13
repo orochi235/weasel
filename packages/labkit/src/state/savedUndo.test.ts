@@ -7,7 +7,6 @@ import { createLabStore } from './store';
 
 const counter: Instrument = {
   name: 'Counter',
-  defaultConfig: () => ({}),
   initialState: () => ({ n: 0 }),
   render: () => null,
 };

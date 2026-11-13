@@ -41,7 +41,6 @@ function makeInstrument(
 ) {
   return defineInstrument<St, Record<string, never>>({
     name: 'Probe',
-    defaultConfig: () => ({}),
     initialState: () => ({ n: 7 }),
     render: ({ state }) => <output data-testid="readout">n = {state.n}</output>,
     canvas: {
@@ -221,7 +220,6 @@ describe('LabProps.instruments', () => {
     let seen: readonly string[] = [];
     const instrument = defineInstrument<St, Record<string, never>>({
       name: 'Probe',
-      defaultConfig: () => ({}),
       initialState: () => ({ n: 1 }),
       render: ({ trial }) => {
         seen = trial.visibleLayers;
@@ -247,7 +245,6 @@ describe('LabProps.instruments', () => {
   it('records an undo step on a layer toggle the instrument snapshots on', async () => {
     const instrument = defineInstrument<St, Record<string, never>>({
       name: 'Probe',
-      defaultConfig: () => ({}),
       initialState: () => ({ n: 1 }),
       render: () => null,
       undo: { snapshotOn: ['layers.toggle'] },

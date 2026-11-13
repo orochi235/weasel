@@ -26,7 +26,6 @@ function Probe() {
 
 const reader = defineInstrument<{ hits: number }, Record<string, never>>({
   name: 'Reader',
-  defaultConfig: () => ({}),
   initialState: () => ({ hits: 7 }),
   render: () => <Probe />,
 });

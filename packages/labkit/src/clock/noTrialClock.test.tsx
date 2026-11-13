@@ -19,7 +19,6 @@ function NoClock() {
 
 const mixed: Instrument = {
   name: 'Mixed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 60_000, mix: () => ({ sync() {}, seek() {}, now: 0 }) },
   render: (ctx) => {

@@ -14,7 +14,6 @@ afterEach(cleanup);
 
 const Stub: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div>stub</div>,
 };

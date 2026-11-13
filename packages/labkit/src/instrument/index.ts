@@ -1,5 +1,5 @@
 export type { ToolCapability, TrialTool } from '../tools/types';
-export { defineInstrument } from './defineInstrument';
+export { defaultConfigOf, defineInstrument } from './defineInstrument';
 export type {
   CanvasCapability,
   CanvasLayer,

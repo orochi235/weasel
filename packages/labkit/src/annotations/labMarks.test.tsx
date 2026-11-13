@@ -42,7 +42,6 @@ function theLab(): LabContextValue {
 
 const annotating = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Annotating',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   // Undo stays only while the marks need it.

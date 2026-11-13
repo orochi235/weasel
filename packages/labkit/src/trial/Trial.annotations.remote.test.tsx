@@ -33,7 +33,6 @@ function marks(): AnnotationsApi {
 
 const inspector = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Inspector',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {

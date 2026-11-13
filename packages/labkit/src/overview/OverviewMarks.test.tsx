@@ -51,7 +51,6 @@ async function mount() {
   }
   const marked = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Marked',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => <Body />,
     stage: {

@@ -8,7 +8,6 @@ import { useViewPlacement } from './useViewPlacement';
 const SIZE = { width: 400, height: 300 };
 const staged: Instrument = {
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   stage: { size: SIZE },
@@ -85,7 +84,6 @@ describe('a view placed by its viewport size', () => {
 
 const orbiting: Instrument = {
   name: 'Orbiting',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   // The distance follows the viewport's width, so the placement depends on it.

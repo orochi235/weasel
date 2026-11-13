@@ -37,7 +37,6 @@ export function storyInstrument(options: StoryInstrumentOptions): Instrument<unk
     name: entry.id,
     ...crumbTitle(entry),
     config,
-    defaultConfig: () => config.defaults(),
     initialState: () => null,
     render: (ctx) => (
       <>

@@ -19,7 +19,6 @@ function Board() {
 
 const instrument = defineInstrument<null, Record<string, never>>({
   name: 'Plain board',
-  defaultConfig: () => ({}),
   initialState: () => null,
   render: () => <Board />,
 });

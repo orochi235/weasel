@@ -16,7 +16,6 @@ let lab: LabContextValue | null = null;
 
 const counter: Instrument<{ n: number }> = {
   name: 'Counter',
-  defaultConfig: () => ({}),
   initialState: () => ({ n: 0 }),
   render: (ctx) => {
     renders[ctx.trial.id] = (renders[ctx.trial.id] ?? 0) + 1;

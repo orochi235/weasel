@@ -21,7 +21,6 @@ const Gridded = defineInstrument({
 
 const Bare = defineInstrument({
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 });

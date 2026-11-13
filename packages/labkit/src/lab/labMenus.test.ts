@@ -8,7 +8,6 @@ import { labMenuBar } from './labMenus';
 const make = (name: string, title?: string) => ({
   name,
   ...(title ? { title } : {}),
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 });

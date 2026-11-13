@@ -15,7 +15,6 @@ afterEach(cleanup);
 
 const Bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="output" />,
 };

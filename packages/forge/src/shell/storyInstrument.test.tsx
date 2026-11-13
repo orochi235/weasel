@@ -1,4 +1,4 @@
-import { Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
+import { defaultConfigOf, Lab, LabContext, type LabContextValue, type InstrumentList, type RenderContext } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
@@ -45,7 +45,7 @@ describe('storyInstrument', () => {
     const instrument = storyInstrument(base);
     expect(instrument.name).toBe(entry.id);
     expect(instrument.config?.defaults()).toEqual({});
-    expect(instrument.defaultConfig()).toEqual({});
+    expect(defaultConfigOf(instrument)).toEqual({});
     expect(instrument.initialState({})).toBeNull();
     expect(instrument.stage).toBeUndefined();
   });

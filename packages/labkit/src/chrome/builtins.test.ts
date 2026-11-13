@@ -48,7 +48,6 @@ const ctx: TrialChromeContext = {
 
 const bare: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };

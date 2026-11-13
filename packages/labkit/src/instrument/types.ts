@@ -229,11 +229,12 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
    *  title the trial reads, which a rename may have changed, and the trial's config as its instrument reads it, so
    *  it redraws as that changes; the text still names the trial everywhere else. */
   renderTitle?: (title: string, trial: { config: TC }) => ReactNode;
-  defaultConfig: () => TC;
+  /** The config a new trial starts from. Default: `config`'s defaults, or `{}` where the instrument declares no
+   *  `config`. Read it through `defaultConfigOf`. */
+  defaultConfig?: () => TC;
   initialState: (config: TC) => TS;
   /** The instrument's config, declared once: values, types and controls.
-   *  Supplying this makes `defaultConfig` optional — `defineInstrument`
-   *  synthesizes it. Without it the instrument has no settings panel. */
+   *  Without it the instrument has no settings panel. */
   config?: ConfigSchema<TC>;
   /** The instrument's DOM. With `canvas`, this renders as an overlay above the
    *  layers rather than instead of them; return `null` for canvas only. */

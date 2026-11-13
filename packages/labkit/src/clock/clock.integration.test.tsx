@@ -31,7 +31,6 @@ function ResetButton({ trialId }: { trialId: string }) {
 
 const timed: Instrument = {
   name: 'Timed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 1000 },
   render: (ctx) => (

@@ -8,7 +8,6 @@ import { LabContext, type LabContextValue } from './LabContext';
 
 const stub: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="stub-content">stub</div>,
 };

@@ -274,7 +274,7 @@ export {
 } from './controls/ControlMatrix';
 export { type ControlPack, ControlPanel, type ControlPanelProps } from './controls/ControlPanel';
 export { type InDialogOptions, inDialog, summarizeLeaf, summarizeValue } from './controls/inDialog';
-export { defineInstrument, type InstrumentSpec } from './instrument/defineInstrument';
+export { defaultConfigOf, defineInstrument } from './instrument/defineInstrument';
 export type {
   CanvasCapability,
   CanvasLayer,

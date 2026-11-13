@@ -157,7 +157,6 @@ describe('<Stage>', () => {
 
 const staged = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="art" />,
   stage: { size: { width: 240, height: 160 }, initialView: { zoom: 1, pan: { x: 0, y: 0 } } },
@@ -165,7 +164,6 @@ const staged = defineInstrument<Record<string, never>, Record<string, never>>({
 
 const plain = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Plain',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="art" />,
 });
@@ -233,7 +231,6 @@ describe('an instrument that declares a stage', () => {
   it('draws its overlay on the stage, outside the camera', async () => {
     const overlaid = defineInstrument<{ n: number }, Record<string, never>>({
       name: 'Overlaid',
-      defaultConfig: () => ({}),
       initialState: () => ({ n: 7 }),
       render: () => <div data-testid="art" />,
       stage: {

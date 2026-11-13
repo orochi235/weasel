@@ -17,7 +17,6 @@ const LAYOUT = { width: 200, height: 100 };
 
 const staged: Instrument = {
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   stage: { size: CONTENT },

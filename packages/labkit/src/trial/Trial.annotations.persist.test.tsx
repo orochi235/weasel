@@ -65,7 +65,6 @@ let loads = 0;
 let gate: Promise<void> = Promise.resolve();
 const selfStoring = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'SelfStoring',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {

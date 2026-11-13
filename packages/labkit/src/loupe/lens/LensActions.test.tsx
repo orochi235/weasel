@@ -26,7 +26,6 @@ beforeAll(() => {
 
 const Story = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Story',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <input aria-label="Story text" />,
 });

@@ -4,7 +4,6 @@ import type { InstrumentList } from './types';
 
 const instrument = (name: string, extra: Record<string, unknown> = {}) => ({
   name,
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   ...extra,

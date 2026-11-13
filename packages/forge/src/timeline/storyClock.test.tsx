@@ -113,7 +113,6 @@ describe('a story clock inside a lab', () => {
     let trialClock: Clock | null = null;
     const timed: Instrument = {
       name: 'Timed',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       clock: { duration: 60_000 },
       render: (ctx) => {

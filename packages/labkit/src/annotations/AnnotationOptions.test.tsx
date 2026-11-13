@@ -24,7 +24,6 @@ function Pane() {
 
 const annotating = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Annotating',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Pane />,
   annotations: {

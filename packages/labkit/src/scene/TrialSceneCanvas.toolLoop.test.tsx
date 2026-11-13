@@ -64,7 +64,6 @@ function Body({
 const instrument = (pick: string, everyRender = false) =>
   defineInstrument<State, Record<string, never>>({
     name: 'Scene',
-    defaultConfig: () => ({}),
     initialState: () => ({ scene: null }),
     tools: {
       tools: [

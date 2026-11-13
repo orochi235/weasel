@@ -41,7 +41,6 @@ function Readout() {
 
 const Solid = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Solid',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Readout />,
   orbit: { initialView: { distance: 20, pitch: 0.4 }, limits: { minDistance: 2, maxDistance: 80 } },

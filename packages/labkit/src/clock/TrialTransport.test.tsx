@@ -14,7 +14,6 @@ let clock: TrialClock | null = null;
 function timed(spec: ClockCapability | undefined, props: TrialTransportProps = {}): Instrument {
   return {
     name: 'Timed',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     ...(spec ? { clock: spec } : {}),
     render: (ctx) => {

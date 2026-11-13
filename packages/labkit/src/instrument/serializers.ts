@@ -2,6 +2,7 @@ import { setOwn } from '../config/path';
 import { resolveConfigSchema } from '../config/resolve';
 import type { ResolvedConfig } from '../config/types';
 import type { InstrumentSerializers } from '../state/types';
+import { defaultConfigOf } from './defineInstrument';
 import type { Instrument, InstrumentList } from './types';
 
 /**
@@ -38,7 +39,7 @@ export function configSchemasOf(instruments: InstrumentList): Record<string, Res
 export function configDefaultsOf(instruments: InstrumentList): Record<string, () => unknown> {
   const out: Record<string, () => unknown> = {};
   for (const instrument of instruments)
-    setOwn(out, instrument.name, () => instrument.defaultConfig());
+    setOwn(out, instrument.name, () => defaultConfigOf(instrument));
   return out;
 }
 

@@ -33,7 +33,6 @@ it("resizes the overview's canvases when the display's density changes", async (
   vi.stubGlobal('matchMedia', media.mm);
   const pictured = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Pictured',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => <div />,
     stage: {

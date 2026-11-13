@@ -359,7 +359,7 @@ export type ValueAtPath<T, P extends string> = unknown extends T
 /** An instrument's config, declared once. */
 export interface ConfigSchema<TC> {
   readonly nodes: ConfigShape;
-  /** The starting config — what `defaultConfig()` would have returned. */
+  /** The starting config, which a new trial opens on. */
   defaults(): TC;
   /** Another schema this one is drawn over: an `f.alias` may show a leaf of it, and a condition may
    *  read a setting of it. Its values are not the config's; a lab keeps them (`<Lab over>`). */

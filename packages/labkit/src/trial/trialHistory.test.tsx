@@ -52,7 +52,6 @@ function Body({ ctx }: { ctx: RenderContext<{ n: number }, Record<string, never>
 
 const instrument = defineInstrument<{ n: number }, Record<string, never>>({
   name: 'Own',
-  defaultConfig: () => ({}),
   initialState: () => ({ n: 0 }),
   undo: {},
   render: (ctx) => <Body ctx={ctx} />,

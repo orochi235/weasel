@@ -17,7 +17,6 @@ beforeAll(() => {
 
 const Staged = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   stage: {

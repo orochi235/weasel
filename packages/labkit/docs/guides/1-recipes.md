@@ -327,7 +327,6 @@ By default, the trial snapshots state on `'state.change'`. To make a non-state o
 ```tsx
 const Editor = defineInstrument<{ items: Item[] }, {}>({
   name: "Editor",
-  defaultConfig: () => ({}),
   initialState: () => ({ items: [] }),
   render: (ctx) => (
     <button

@@ -21,7 +21,6 @@ interface DropState {
 
 const Drop = defineInstrument<DropState, Record<string, never>>({
   name: 'Drop',
-  defaultConfig: () => ({}),
   initialState: () => ({ items: [] }),
   render: ({ state }) => (
     <output data-testid="items">{state.items.map((i) => `${i.id}@${i.x},${i.y}`).join(' ')}</output>

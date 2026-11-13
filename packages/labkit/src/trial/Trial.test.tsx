@@ -18,7 +18,6 @@ const Glyph = icon('ui:add');
 
 const stubInstrument: Instrument = {
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };
@@ -475,7 +474,6 @@ describe('<TrialChrome> — state that outlives a mount', () => {
 describe('state undo in a mounted lab', () => {
   const counter: Instrument<{ n: number }> = {
     name: 'Counter',
-    defaultConfig: () => ({}),
     initialState: () => ({ n: 0 }),
     undo: { snapshotOn: ['bump'] },
     render: (ctx) => (

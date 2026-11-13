@@ -35,7 +35,6 @@ function Controls() {
 const orbit = defineInstrument({
   name: 'Orbit',
   initialState: () => ({}),
-  defaultConfig: () => ({}),
   clock: { duration: 4000, loop: true },
   canvas: {
     initialView: (size) => ({ zoom: 1, pan: { x: size.width / 2, y: size.height / 2 } }),

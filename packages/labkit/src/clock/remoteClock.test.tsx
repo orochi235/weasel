@@ -22,7 +22,6 @@ function Readout() {
 
 const timed: Instrument = {
   name: 'Timed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 3000 },
   render: (ctx) => (

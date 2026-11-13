@@ -13,7 +13,6 @@ beforeAll(() => {
 
 const canvas = (gestures?: CameraGestures): Instrument => ({
   name: 'Canvas',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   canvas: { layers: [], ...(gestures ? { gestures } : {}) },
@@ -21,7 +20,6 @@ const canvas = (gestures?: CameraGestures): Instrument => ({
 
 const stage = (gestures?: CameraGestures): Instrument => ({
   name: 'Stage',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div />,
   stage: { size: { width: 100, height: 100 }, ...(gestures ? { gestures } : {}) },

@@ -26,7 +26,6 @@ afterEach(() => {
 
 const Timed: Instrument = {
   name: 'Timed',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   clock: { duration: 4000, rate: 1 },
   canvas: {

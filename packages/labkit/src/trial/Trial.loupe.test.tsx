@@ -22,7 +22,6 @@ beforeAll(() => {
 
 const canvasInstrument = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Drawn',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <TrialLoupe />,
   canvas: { layers: [{ id: 'main', draw: () => undefined }] },
@@ -30,7 +29,6 @@ const canvasInstrument = defineInstrument<Record<string, never>, Record<string, 
 
 const domInstrument = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Written',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <TrialLoupe render={({ view }) => <p data-testid="lens-body">zoom {view.zoom}</p>}>
@@ -41,7 +39,6 @@ const domInstrument = defineInstrument<Record<string, never>, Record<string, nev
 
 const noLoupe = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Plain',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   canvas: { layers: [{ id: 'main', draw: () => undefined }] },
@@ -126,7 +123,6 @@ describe('a lens the instrument mounts', () => {
   it('raises a lens told `enabled` without the trial toggle', async () => {
     const always = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Always',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => <TrialLoupe enabled />,
       canvas: { layers: [{ id: 'main', draw: () => undefined }] },
@@ -164,7 +160,6 @@ describe('the loupe and the trial camera share one dispatcher', () => {
     const zooms: number[] = [];
     const drawn = defineInstrument<Record<string, never>, Record<string, never>>({
       name: 'Zoomed',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => <TrialLoupe />,
       canvas: {

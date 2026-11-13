@@ -13,7 +13,6 @@ import { ToolbarRegion } from './regions/ToolbarRegion';
 const Glyph = icon('ui:add');
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 };

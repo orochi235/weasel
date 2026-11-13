@@ -25,7 +25,6 @@ const MOD = isApplePlatform() ? { metaKey: true } : { ctrlKey: true };
 const make = (name: string) =>
   defineInstrument<Record<string, never>, Record<string, never>>({
     name,
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => null,
   });

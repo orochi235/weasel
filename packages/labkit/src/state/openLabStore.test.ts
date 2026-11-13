@@ -267,7 +267,6 @@ describe('openLabStore — config migrations', () => {
 describe('openLabStore — instruments set after opening', () => {
   const plain: Instrument = {
     name: 'T',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => null,
   };
@@ -310,7 +309,6 @@ describe('openLabStore — an instrument set after opening whose config migratio
     const opened = await open(backing);
     const late: Instrument = {
       name: 'T',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => null,
       migrateConfig: (stored) => {

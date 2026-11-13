@@ -18,7 +18,6 @@ const cells = Array.from({ length: COUNT }, () => ({ current: null as HTMLDivEle
 
 const Grid = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Grid',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <div className="lk-many-lab-grid">
@@ -70,7 +69,6 @@ function Targets() {
 // Two targets stacked in a window one target tall: scrolled by one, the lower sits where the upper was.
 const Stacked = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Stacked',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <>

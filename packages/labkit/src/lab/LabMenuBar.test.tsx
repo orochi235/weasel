@@ -22,7 +22,6 @@ afterEach(() => {
 
 const Staged = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
   stage: {
@@ -34,7 +33,6 @@ const Staged = defineInstrument<Record<string, never>, Record<string, never>>({
 
 const Stub = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Stub',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => null,
 });

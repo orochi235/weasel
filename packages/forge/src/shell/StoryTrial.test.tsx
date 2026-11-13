@@ -1,4 +1,4 @@
-import { Lab } from '@weasel-js/labkit';
+import { defaultConfigOf, Lab } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { useState } from 'react';
@@ -169,7 +169,7 @@ describe('StoryTrial', () => {
     const entry = { id: 'test-seeded--seeded', title: 'Test/Seeded', name: 'Seeded', exportName: 'Seeded', file: '/seeded.stories.tsx' };
     const globals = { mode: { label: 'Mode', default: 'light', options: [{ value: 'light', label: 'Light' }] } };
     const instrument = documentInstrument({ entry, loaded: { kind: 'story', story: seeded! }, setup: {}, globals });
-    instrument.initialState(instrument.defaultConfig());
+    instrument.initialState(defaultConfigOf(instrument));
     expect(seen).toHaveBeenCalledWith({ n: 1 });
   });
 

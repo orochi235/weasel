@@ -34,7 +34,6 @@ function marks(): AnnotationsApi {
 
 const annotating = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Annotating',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: (ctx) => <Pane tool={ctx.trial.activeToolId} />,
   annotations: {
@@ -49,7 +48,6 @@ function PlainPane() {
 
 const plain = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Plain',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <PlainPane />,
 });
@@ -214,7 +212,6 @@ describe('targets that follow the trial state', () => {
     // pass as the change sees the one before; the trial tells it to read again.
     const growing = defineInstrument<{ n: number }, Record<string, never>>({
       name: 'Growing',
-      defaultConfig: () => ({}),
       initialState: () => ({ n: 1 }),
       render: (ctx) => (
         <GrowingPane n={ctx.state.n} grow={() => ctx.setState((s) => ({ n: s.n + 1 }))} />

@@ -25,7 +25,6 @@ beforeAll(() => {
 
 const staged = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Staged',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="art" />,
   stage: {
@@ -37,7 +36,6 @@ const staged = defineInstrument<Record<string, never>, Record<string, never>>({
 
 const plain = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Plain',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div data-testid="plain" />,
 });

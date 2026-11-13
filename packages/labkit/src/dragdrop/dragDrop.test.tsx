@@ -14,7 +14,6 @@ interface DropState {
 
 const testInstrument = defineInstrument<DropState, Record<string, never>>({
   name: 'TestDrop',
-  defaultConfig: () => ({}),
   initialState: () => ({ items: [] }),
   render: () => null,
   canvas: {

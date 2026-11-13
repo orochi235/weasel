@@ -22,7 +22,6 @@ vi.mock('./Workspace', async (original) => {
 
 const counter: Instrument<{ n: number }> = {
   name: 'Counter',
-  defaultConfig: () => ({}),
   initialState: () => ({ n: 0 }),
   render: (ctx) => (
     <button type="button" onClick={() => ctx.setState((s) => ({ n: s.n + 1 }))}>

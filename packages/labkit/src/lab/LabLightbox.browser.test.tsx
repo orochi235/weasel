@@ -81,7 +81,6 @@ function underPixelAt(x: number, y: number): [number, number, number] {
 
 const Marked = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Marked',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: (ctx) => (
     <>

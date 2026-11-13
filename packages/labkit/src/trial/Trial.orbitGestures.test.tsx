@@ -88,7 +88,6 @@ function Body({ withCanvas }: { withCanvas: boolean }) {
 const orbitOnly = (withCanvas: boolean) =>
   defineInstrument<Record<string, never>, Record<string, never>>({
     name: withCanvas ? 'WithCanvas' : 'Bare',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     orbit: {
       initialView: { distance: 20, pitch: 0.4 },

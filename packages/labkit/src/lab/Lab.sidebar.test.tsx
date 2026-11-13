@@ -8,7 +8,6 @@ import { Lab } from './Lab';
 
 const bare: Instrument = {
   name: 'Bare',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <p data-testid="output">out</p>,
 };

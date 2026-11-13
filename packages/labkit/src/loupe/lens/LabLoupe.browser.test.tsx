@@ -17,7 +17,6 @@ beforeEach(async () => {
 
 const Glyphs = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Glyphs',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <svg

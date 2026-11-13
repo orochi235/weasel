@@ -72,7 +72,6 @@ function Probe() {
 
 const probeInstrument = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Probe',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <Probe />,
 });
@@ -249,7 +248,6 @@ describe('<Lab> under an owner that offers no top buffer', () => {
   let top: HTMLCanvasElement | null = null;
   const topInstrument = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Top',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: function TopProbe() {
       top = useSurfaceCanvas('top');

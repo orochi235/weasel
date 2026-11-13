@@ -22,7 +22,6 @@ const config = f.schema({
  *  regions render at once. */
 const FullInstrument: Instrument<DemoState, DemoConfig> = {
   name: 'Every Region',
-  defaultConfig: config.defaults,
   config,
   initialState: () => ({ spokes: 7 }),
   undo: {},

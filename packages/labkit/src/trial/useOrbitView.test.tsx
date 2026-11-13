@@ -114,7 +114,6 @@ type Orbit = OrbitCapability<Record<string, never>, Record<string, never>> | fal
 function solid(name: string, orbit?: Orbit, scene = <Scene3d />): Instrument {
   return defineInstrument<Record<string, never>, Record<string, never>>({
     name,
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: () => scene,
     ...(orbit !== undefined ? { orbit } : {}),

@@ -26,7 +26,6 @@ let scene: LensScene<string>;
 
 const Story = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Story',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => <div className="lk-lens-test-floor" />,
 });

@@ -274,7 +274,6 @@ describe('instruments that change while mounted', () => {
     }
     const v1: Instrument = {
       name: 'Keep',
-      defaultConfig: () => ({}),
       initialState: () => ({}),
       render: () => <Probe />,
     };

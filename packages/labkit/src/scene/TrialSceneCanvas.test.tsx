@@ -55,7 +55,6 @@ function Body({ ctx }: { ctx: RenderContext<State, Record<string, never>> }) {
 
 const instrument = defineInstrument<State, Record<string, never>>({
   name: 'Scene',
-  defaultConfig: () => ({}),
   initialState: () => ({ scene: null }),
   undo: {},
   tools: {

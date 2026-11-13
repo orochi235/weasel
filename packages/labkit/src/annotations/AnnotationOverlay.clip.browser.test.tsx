@@ -36,7 +36,6 @@ const storedFrac = (): { x: number; y: number; w: number; h: number } =>
 
 const Clipped = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Clipped',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <>
@@ -202,7 +201,6 @@ const scroller: { current: HTMLDivElement | null } = { current: null };
 // The target is the scroller's own box; its marks live in the content it scrolls.
 const Scrolling = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Scrolling',
-  defaultConfig: () => ({}),
   initialState: () => ({}),
   render: () => (
     <>

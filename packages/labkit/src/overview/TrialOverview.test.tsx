@@ -46,7 +46,6 @@ async function mount() {
   let store: PointerContextValue | null = null;
   const pictured = defineInstrument<Record<string, never>, Record<string, never>>({
     name: 'Pictured',
-    defaultConfig: () => ({}),
     initialState: () => ({}),
     render: (ctx) => {
       store = ctx.trial.pointer;
