@@ -4,7 +4,8 @@
  * about a new kind of shape goes through this registry rather than by overriding `drawOne`.
  *
  * The first entry whose `matches` predicate returns true paints the node: `'high'` entries
- * first, then the built-ins, then `'normal'` ones, in registration order within a tier. Every
+ * first, then the built-ins, then `'normal'` ones, in registration order within a tier, and
+ * last `kit:rect-fallback`, which takes any rect-posed node nothing else claimed. Every
  * built-in but `kit:derived` additionally requires a rect-shaped pose — a scene whose poses are
  * some other shape matches none of them, and paints through a consumer painter or not at all.
  */
@@ -40,16 +41,18 @@ export const DEFAULT_INK: Readonly<NodeInk> = Object.freeze({ filled: true, outs
 /** Options for `registerNodeShape`. */
 export interface RegisterNodeShapeOptions {
   /** `'high'` puts the painter ahead of all normally-registered ones (so
-   *  it can win over a kit built-in). `'normal'` appends at the end. */
+   *  it can win over a kit built-in). `'normal'`, the default, appends after
+   *  the built-ins that claim a node by its data, ahead of the rect fallback. */
   priority?: 'high' | 'normal';
 }
 
 /** One registration. A painter registered twice is two of these, so each disposer takes out its own. */
 interface Registration { readonly entry: NodeShapeEntry }
 
-const PAINTERS: { high: Registration[]; normal: Registration[] } = {
+const PAINTERS: { high: Registration[]; normal: Registration[]; fallback: Registration[] } = {
   high: [],
   normal: [],
+  fallback: [],
 };
 
 const changes = createEmitter();
@@ -140,7 +143,7 @@ function matchNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
   ensureBuiltIns();
-  for (const tier of [PAINTERS.high, PAINTERS.normal]) {
+  for (const tier of [PAINTERS.high, PAINTERS.normal, PAINTERS.fallback]) {
     for (const { entry } of tier) {
       if (entry.matches(node as Node<unknown, string, unknown>)) {
         return entry as NodeShapeEntry<TData, TPose>;
@@ -283,16 +286,17 @@ function trimmedOutlineOf<TData, TPose>(
   return derivedPath != null ? build() : nodeMemo(node as { data?: unknown }, TRIM_PICK_SLOT, pose, build, strokeTrimKey(trim));
 }
 
-/** The current painters in evaluation order — `'high'` tier first, then `'normal'`. */
+/** The current painters in evaluation order — `'high'` tier first, then `'normal'`, then the rect fallback. */
 export function getNodeShapes(): readonly NodeShapeEntry[] {
   ensureBuiltIns();
-  return [...PAINTERS.high, ...PAINTERS.normal].map((r) => r.entry);
+  return [...PAINTERS.high, ...PAINTERS.normal, ...PAINTERS.fallback].map((r) => r.entry);
 }
 
 /** Test-only: clear the registry and re-register the built-ins. */
 export function _resetShapePaintersForTests(): void {
   PAINTERS.high.length = 0;
   PAINTERS.normal.length = 0;
+  PAINTERS.fallback.length = 0;
   builtInsRegistered = false;
   ensureBuiltIns();
   // `registerNodeShape` already announces, but the clearing above happens without one.
@@ -309,5 +313,5 @@ function registerBuiltInShapePainters(): void {
   registerNodeShape(PATH_PAINTER);
   registerNodeShape(SHAPE_PAINTER);
   registerNodeShape(IMAGE_PAINTER);
-  registerNodeShape(RECT_FALLBACK_PAINTER);
+  PAINTERS.fallback.push({ entry: RECT_FALLBACK_PAINTER as NodeShapeEntry });
 }
