@@ -43,6 +43,7 @@ function Harness() {
     setMode: noop,
     marks: true,
     setMarks: noop,
+    holdMarks: () => noop,
   };
   return (
     <LabStoreContext.Provider value={{ store }}>

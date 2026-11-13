@@ -28,3 +28,20 @@ export function effectSourceFor<TData, TLayer extends string, TPose>(
   if (found === undefined) return null;
   return role === 'text' && !isTextData(found.data) ? null : source!;
 }
+
+/**
+ * The path effects that `effectSourceFor` sends a `role` edit of `source` to:
+ * each effect hiding `source` that shows it, in render order. What a mode
+ * scoped to a hidden source lights, since the effect is what draws it.
+ */
+export function effectsShowing<TData, TLayer extends string, TPose>(
+  scene: Pick<Scene<TData, TLayer, TPose>, 'get' | 'renderOrderNodes'>,
+  source: NodeId,
+  role: 'text' | 'path',
+): NodeId[] {
+  const out: NodeId[] = [];
+  for (const node of scene.renderOrderNodes()) {
+    if (pathEffectOf(node) !== null && effectSourceFor(scene, node.id, role) === source) out.push(node.id);
+  }
+  return out;
+}

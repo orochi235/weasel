@@ -47,8 +47,12 @@ were different experiments. Use one probe across the whole range.
 
 **A browser test file that loads no tests, beside `weasel-request … net::ERR_NETWORK_CHANGED`
 lines, lost its imports to the node's network and not to the change under test.** Chromium on
-macOS drops every request in flight when the network changes, those to vite on localhost included.
-`docs/TODO.md` ("fail to load when the node's network changes") has the evidence.
+macOS drops every request in flight when the network changes, those to vite on localhost included;
+headless Chromium has no switch to ignore it, and vitest retries tests, never a file's import. On studio
+on 2026-10-28, 66 ms after configd logged `IPMonitor] network changed`, 376 module requests failed and one
+file loaded no tests (measured). `scripts/vitest-overlap.mjs` runs such files once more when the run logged
+`ERR_NETWORK_CHANGED` (`scripts/lib/load-reruns.mjs`), and their second run's verdict stands in for the first
+where nothing else failed (ruled 2026-11-07).
 
 **Run vitest with `--reporter=default` to see a passing test's console output.** The
 reporter vitest picks on its own when an agent runs it drops stderr from passing tests, so

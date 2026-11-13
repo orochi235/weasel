@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/core';
-import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { asNodeId, createNode, Store, stripStrategy } from 'windease';
 import { type ChromeMap, Container, Provider, StrategyRegistryProvider } from 'windease/react';
 import { splitFloors, useZoneWidth } from './splitFloors';
@@ -139,13 +139,8 @@ export function Split({
   // The cross-axis half of every size hint below is inert: a horizontal strip
   // stretches its panes to the container's height and never reads `h`.
   const hasSidebar = sidebar !== null;
-  const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null);
-  const floors = splitFloors(
-    useZoneWidth(contentEl, viewport?.w),
-    hasSidebar,
-    minWidth,
-    contentMinWidth,
-  );
+  const [zoneWidth, frameRef] = useZoneWidth(viewport?.w);
+  const floors = splitFloors(zoneWidth, hasSidebar, minWidth, contentMinWidth);
   const storeRef = useRef<Store | null>(null);
   if (storeRef.current === null) {
     storeRef.current = createSplitStore({
@@ -170,7 +165,8 @@ export function Split({
     else if (!hasSidebar && shown) store.hideNode(SIDEBAR_ID);
   }, [store, hasSidebar]);
 
-  useEffect(() => {
+  // Before paint, with the floors the zone's first measurement gives.
+  useLayoutEffect(() => {
     store.setHints(SIDEBAR_ID, {
       minSize: { w: floors.sidebar, h: 0 },
       maxSize: { w: maxWidth, h: 0 },
@@ -207,26 +203,26 @@ export function Split({
   const chrome = useMemo<ChromeMap>(
     () => ({
       sidebar: () => <div className={sidebarClassName}>{sidebar}</div>,
-      content: () => (
-        <div ref={setContentEl} className={contentClassName}>
-          {children}
-        </div>
-      ),
+      content: () => <div className={contentClassName}>{children}</div>,
     }),
     [sidebar, children, sidebarClassName, contentClassName],
   );
 
   return (
-    <Provider store={store}>
-      <StrategyRegistryProvider strategies={STRATEGIES}>
-        <Container
-          parentId={ZONE_ID}
-          chrome={chrome}
-          className={className ? `lk-split windease-zone ${className}` : 'lk-split windease-zone'}
-          affordances
-          viewport={viewport}
-        />
-      </StrategyRegistryProvider>
-    </Provider>
+    // Boxless, so the zone is laid out in the parent as before; it is there to be measured from before the strip
+    // lays out its first pane.
+    <div ref={frameRef} className="lk-split__frame">
+      <Provider store={store}>
+        <StrategyRegistryProvider strategies={STRATEGIES}>
+          <Container
+            parentId={ZONE_ID}
+            chrome={chrome}
+            className={className ? `lk-split windease-zone ${className}` : 'lk-split windease-zone'}
+            affordances
+            viewport={viewport}
+          />
+        </StrategyRegistryProvider>
+      </Provider>
+    </div>
   );
 }

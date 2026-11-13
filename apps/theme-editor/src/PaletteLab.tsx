@@ -1,4 +1,4 @@
-import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
+import { Lab, type LabContribution } from '@weasel-js/labkit';
 import { LABS, PALETTE_LAB } from '../../shared/labs';
 import { PropertyField, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { useEffect, useMemo, useState } from 'react';
@@ -14,7 +14,8 @@ import {
   type Preset,
   type SurfaceKey,
 } from './presets';
-import { useLabHistory, type LabHistory } from './useLabHistory';
+import { HistorySlot } from './HistorySlot';
+import { useLabHistory } from './useLabHistory';
 import styles from './PaletteLab.module.css';
 import { PalettePreview } from './PalettePreview';
 import { AnchorList } from './AnchorList';
@@ -30,7 +31,7 @@ export function PaletteLab() {
   // configuration someone was in the middle of building.
   const [initial] = useState<LabState>(() => loadLive() ?? INITIAL);
   const history = useLabHistory<LabState>(initial, liveHistory);
-  const { state, update, canUndo, canRedo } = history;
+  const { state, update } = history;
   const [saved, setSaved] = useState<readonly Preset[]>(loadSaved);
   const { c, surfaceKey, anchors } = state;
 
@@ -50,57 +51,20 @@ export function PaletteLab() {
   // eslint-disable-next-line react-hooks/set-state-in-effect -- whether the browser took the write is known only once it is made
   useEffect(() => setUnkept(!persistLive(state)), [state]);
 
-  const rail = useMemo<readonly LabContribution<LabHistory<LabState>>[]>(
+  const labChrome = useMemo<readonly LabContribution[]>(
     () => [
-      {
-        id: 'undo',
-        group: 'history',
-        region: 'header',
-        item: {
-          icon: icon('core:undo'),
-          label: 'Undo',
-          shortcut: '⌘Z',
-          showLabel: true,
-          disabled: !canUndo,
-          onActivate: (h) => h.undo(),
-        },
-      },
-      {
-        id: 'redo',
-        group: 'history',
-        region: 'header',
-        item: {
-          icon: icon('core:redo'),
-          label: 'Redo',
-          shortcut: '⇧⌘Z',
-          showLabel: true,
-          disabled: !canRedo,
-          onActivate: (h) => h.redo(),
-        },
-      },
       {
         id: 'reset',
         region: 'header',
-        item: {
-          icon: icon('ui:reset'),
-          label: 'Reset',
-          showLabel: true,
-          onActivate: (h) => h.update(INITIAL, 'reset'),
-        },
+        item: { icon: icon('ui:reset'), label: 'Reset', showLabel: true, onActivate: () => update(INITIAL, 'reset') },
       },
     ],
-    [canUndo, canRedo],
+    [update],
   );
 
   return (
-    <LabShell
-      title="Palette lab"
-      pages={LABS}
-      path={PALETTE_LAB.href}
-      header={
-        <ToolbarRegion region="header" label="Lab actions" contributions={rail} ctx={history} />
-      }
-    >
+    <Lab title="Palette lab" pages={LABS} path={PALETTE_LAB.href} labChrome={labChrome}>
+      <HistorySlot history={history.history} />
       <div className={styles.page}>
       <div className={styles.layout}>
         <aside className={styles.controls}>
@@ -147,6 +111,6 @@ export function PaletteLab() {
       </div>
       <SwatchPanel anchors={anchors} onChange={setAnchors} count={c.count} />
       </div>
-    </LabShell>
+    </Lab>
   );
 }

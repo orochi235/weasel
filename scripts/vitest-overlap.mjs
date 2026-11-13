@@ -8,14 +8,15 @@
 // skips the check. Beside the rest, the browser project takes fewer Chromiums than alone
 // (`scripts/lib/browser-shape.mjs`).
 import { spawn } from 'node:child_process';
-import { writeSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { cpus } from 'node:os';
+import { cpus, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { mergeProgress } from './lib/merge-progress.mjs';
 import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
 import { browserShape } from './lib/browser-shape.mjs';
+import { rerunPlan } from './lib/load-reruns.mjs';
 
 const require = createRequire(import.meta.url);
 const pkg = require.resolve('vitest/package.json');
@@ -70,16 +71,41 @@ const expected = Number(process.env.ONTO_EXPECT_TESTS) || 0;
 const env = { ...process.env, ONTO_EXPECT_TESTS: expected ? '1' : '' };
 const merge = mergeProgress(runs.length, expected);
 
+const reports = mkdtempSync(join(tmpdir(), 'weasel-load-'));
+const reportOf = (i) => join(reports, `${i}.json`);
+const exited = (child) => new Promise((resolve) => child.on('close', (code, signal) => resolve(signal ? 1 : (code ?? 1))));
+
 const children = runs.map((argv, i) => {
-  const own = i === 1 ? { ...env, ...browserEnv } : env;
+  const own = { ...(i === 1 ? { ...env, ...browserEnv } : env), WEASEL_LOAD_REPORT: reportOf(i) };
   const child = spawn(process.execPath, [VITEST, ...argv], { env: own, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
   createInterface({ input: child.stdio[3] }).on('line', (text) => merge.line(i, text).forEach(emit));
   return child;
 });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => children.forEach((c) => c.kill(signal)));
 
-const codes = await Promise.all(
-  children.map((c) => new Promise((resolve) => c.on('close', (code, signal) => resolve(signal ? 1 : (code ?? 1))))),
-);
+const codes = await Promise.all(children.map(exited));
 merge.finish().forEach(emit);
+
+// Files a macOS network change kept from loading run once more, and their run's verdict stands in for
+// the first one's where nothing else failed (`scripts/lib/load-reruns.mjs`).
+const readReport = (i) => {
+  try {
+    return JSON.parse(readFileSync(reportOf(i), 'utf8'));
+  } catch {
+    return null;
+  }
+};
+const plan = rerunPlan(runs.map((_, i) => readReport(i)));
+rmSync(reports, { recursive: true, force: true });
+if (plan.files.length) {
+  console.log(`\nvitest-overlap: the network changed and ${plan.files.length} file(s) loaded no tests; running them again:`);
+  for (const f of plan.files) console.log(`  ${f}`);
+  const again = spawn(process.execPath, [VITEST, ...args, ...plan.files], {
+    env: { ...env, ...browserEnv, WEASEL_LOAD_REPORT: '' },
+    stdio: ['inherit', 'inherit', 'inherit', 'ignore'],
+  });
+  children.push(again);
+  for (const i of plan.settles) codes[i] = 0;
+  codes.push(await exited(again));
+}
 process.exit(codes.find((c) => c !== 0) ?? 0);

@@ -1,5 +1,4 @@
 import { createHistory, type History, type Op } from '@weasel-js/history';
-import { useUndoKeys } from '@weasel-js/labkit';
 import { deepEqual } from '@weasel-js/registry';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { type LabHistoryStore, useSavedLabHistory } from './historyStorage';
@@ -98,8 +97,6 @@ export function useLabHistory<T>(initial: T, store?: LabHistoryStore<T>): LabHis
 
   const undo = useCallback(() => history.undo(), [history]);
   const redo = useCallback(() => history.redo(), [history]);
-
-  useUndoKeys(history);
 
   return {
     state: holder.current.value,

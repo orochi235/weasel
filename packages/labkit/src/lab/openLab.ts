@@ -56,7 +56,8 @@ function seedPresentedTrial(
   const instrument = seed.instrument ?? defaultInstrument;
   const fingerprint = stableStringify({ ...seed, instrument });
   const trials = store.getState().trials;
-  if (trials.length > 0 && records.get(SEED_RECORD) === fingerprint) return;
+  if (instruments.length === 0 || (trials.length > 0 && records.get(SEED_RECORD) === fingerprint))
+    return;
   const record = addTrialOp([], instruments, instrument, { config: seed.config })[0];
   if (!record) return;
   store.setState({ trials: [] });
@@ -72,7 +73,7 @@ function seedDefaultTrials(
   store: LabStore,
   { instruments, defaultInstrument, opening }: OpenLabOptions,
 ): void {
-  if (store.getState().trials.length > 0) return;
+  if (instruments.length === 0 || store.getState().trials.length > 0) return;
   let trials: ReturnType<typeof addTrialOp> = [];
   for (const name of opening ?? [defaultInstrument]) trials = addTrialOp(trials, instruments, name);
   for (const record of trials) store.getState().addTrial(record);

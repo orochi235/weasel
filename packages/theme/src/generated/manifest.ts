@@ -114,6 +114,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-stance-preview-title-size', type: "dimension", group: "stance", defaultValue: "12px", description: "", hook: false },
   { name: '--wzl-stance-preview-title-case', type: "string", group: "stance", defaultValue: "none", description: "", hook: false },
   { name: '--wzl-stance-preview-title-inset', type: "dimension", group: "stance", defaultValue: "6px 10px 0", description: "", hook: false },
+  { name: '--wzl-disabled-filter', type: "string", group: "disabled", defaultValue: "grayscale(1)", description: "A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled).", hook: false },
   { name: '--wzl-danger-base', type: "color", group: "status", defaultValue: "#d94a3f", description: "", hook: false },
   { name: '--wzl-warning-base', type: "color", group: "status", defaultValue: "#d99a3f", description: "", hook: false },
   { name: '--wzl-success-base', type: "color", group: "status", defaultValue: "#2ec27e", description: "", hook: false },

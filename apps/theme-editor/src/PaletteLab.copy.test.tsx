@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

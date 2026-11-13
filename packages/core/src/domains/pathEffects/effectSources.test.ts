@@ -4,7 +4,7 @@ import { pathEffectNode } from 'core/scene/pathEffects/derive';
 import type { PathEffect } from 'core/scene/pathEffects/effects';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type RectPose } from 'core/scene/types';
-import { effectSourceFor } from './effectSources';
+import { effectSourceFor, effectsShowing } from './effectSources';
 import { hiddenSourcesTakenWith } from './hiddenSources';
 import { PATH_EFFECT_DERIVATIONS, withPathEffectsRegistry } from './index';
 
@@ -63,6 +63,20 @@ describe('effectSourceFor', () => {
     expect(effectSourceFor(shown, FX, 'path')).toBeNull();
     expect(effectSourceFor(shown, T, 'text')).toBeNull();
     expect(effectSourceFor(shown, asNodeId('missing'), 'path')).toBeNull();
+  });
+});
+
+describe('effectsShowing', () => {
+  it('answers the effects hiding a source in the role it is edited as', () => {
+    const scene = sceneWith({ kind: 'textAlong', hideSources: true }, ['t', 'p']);
+    expect(effectsShowing(scene, P, 'path')).toEqual([FX]);
+    expect(effectsShowing(scene, T, 'text')).toEqual([FX]);
+    expect(effectsShowing(scene, T, 'path')).toEqual([]);
+    expect(effectsShowing(scene, Q, 'path')).toEqual([]);
+  });
+
+  it('answers none for an effect that shows its sources', () => {
+    expect(effectsShowing(sceneWith({ kind: 'textAlong' }, ['t', 'p']), P, 'path')).toEqual([]);
   });
 });
 

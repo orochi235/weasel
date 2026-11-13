@@ -99,6 +99,8 @@ export interface Annotations {
   /** The field of a union leaf's value that names its variant. */
   tag?: string;
   variants?: Record<string, PrefObject>;
+  /** What an object or union value reads as where it is one entry of a list or a map's summary. */
+  summary?: (value: never) => string;
   /** What an action leaf's button calls. */
   run?: ConfigActionRun;
   /** The path of the leaf an alias shows. */

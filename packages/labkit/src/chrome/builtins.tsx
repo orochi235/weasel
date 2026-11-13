@@ -10,6 +10,7 @@ import { undoCapability } from '../instrument/undo';
 import { FpsMeter } from '../primitives/FpsMeter';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { ZoomControl } from '../primitives/ZoomControl';
+import { undoShortcuts } from '../undo/useUndoKeys';
 import type { TrialChromeContext, TrialContribution } from './types';
 
 const ZOOM_STEP = 1.25;
@@ -217,7 +218,7 @@ export function builtinContributions(
       item: {
         icon: icon('core:undo'),
         label: 'Undo',
-        shortcut: 'Mod+Z',
+        shortcut: undoShortcuts().undo,
         disabled: !ctx.canUndo,
         onActivate: ctx.undo,
       },
@@ -229,7 +230,7 @@ export function builtinContributions(
       item: {
         icon: icon('core:redo'),
         label: 'Redo',
-        shortcut: 'Mod+Shift+Z',
+        shortcut: undoShortcuts().redo,
         disabled: !ctx.canRedo,
         onActivate: ctx.redo,
       },

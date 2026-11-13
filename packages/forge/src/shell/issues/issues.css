@@ -85,4 +85,5 @@
 .fg-issues__actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--wzl-space-xs);
 }

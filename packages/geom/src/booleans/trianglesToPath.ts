@@ -6,7 +6,8 @@
 import { clipper } from './clipper';
 import { multiPolygonToPath } from './adapter';
 import { junctionRings } from './meshJunctions';
-import { meshOutline } from './meshOutline';
+import { meshEdges, meshOutline } from './meshOutline';
+import { coverageBoundary } from './coverageBoundary';
 import type { PolygonPath } from '../path';
 
 /**
@@ -25,6 +26,13 @@ export function trianglesToPath(vertices: ArrayLike<number>, indices: ArrayLike<
     kept.push(indices[i], indices[i + 1], indices[i + 2]);
   }
   if (kept.length === 0) return multiPolygonToPath([]);
-  const outline = meshOutline(junctionRings(vertices, kept));
-  return multiPolygonToPath(outline ? clipper.union([[outline]]) : []);
+  const rings = junctionRings(vertices, kept);
+  const loops = coverageBoundary(meshEdges(rings));
+  if (loops === null) {
+    const outline = meshOutline(rings);
+    return multiPolygonToPath(outline ? clipper.union([[outline]]) : []);
+  }
+  // The loops bound the region, outer ones counterclockwise and holes clockwise, so they fill it as they stand. A
+  // clipper pass over them would only rebuild them, and at a stroke a million wide it dropped some of its slivers.
+  return multiPolygonToPath(loops.map((loop) => [loop]));
 }

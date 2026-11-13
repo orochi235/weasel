@@ -82,7 +82,7 @@ export function ToolStack(props: {
         shortcut={face.shortcut}
         active={activeHere}
         ariaDisabled={!anyEnabled}
-        className={[s.paletteBtn, !anyEnabled && s.ineligibleBtn].filter(Boolean).join(' ')}
+        className={[s.paletteBtn, !anyEnabled && s.disabledBtn].filter(Boolean).join(' ')}
         menu={{ ref: trigger.button, id: trigger.id, expanded: trigger.open, onPointerDown: trigger.press }}
         onClick={onClick}
       />

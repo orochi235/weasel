@@ -35,6 +35,7 @@ import { parseTextElement } from './readText';
 import { ingestMarkers } from './readMarkers';
 import { groupPaint, inheritsFrom, NO_GROUP_PAINT, viewportPaintFrom, type GroupPaintFrom } from './groupPaint';
 import { booleanAttrOf } from './booleanGroup';
+import { textFrameAttrOf } from './framedText';
 import { conditionsHold, drawnChildren } from './conditional';
 import { parseUse } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
@@ -329,7 +330,7 @@ function parseGroup(
   const paint = groupPaint(el, from, childStyle, childCtm, gradients, onWarn);
   const children = parseChildren(drawnChildren(el, onWarn), childCtm, childStyle, paint.children, gradients, clips, onWarn, uriToPrefix, keepHidden);
   const opacity = ownValue(el, 'opacity');
-  const group: SvgNode = { kind: 'group', children, ...paint.paint, ...booleanAttrOf(el) };
+  const group: SvgNode = { kind: 'group', children, ...paint.paint, ...booleanAttrOf(el), ...textFrameAttrOf(el) };
   const clip = clipFor(el, childCtm, clips, onWarn);
   if (clip) group.clip = clip;
   if (opacity != null) group.opacity = opacity;

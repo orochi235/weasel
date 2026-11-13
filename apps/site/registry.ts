@@ -106,6 +106,15 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/InsertDemo.tsx',
   },
   {
+    id: 'whiteboard',
+    title: 'Whiteboard',
+    category: 'Tools',
+    description: 'One preset, `features={[\'whiteboard\']}` (or the `whiteboardPreset` object): the pencil, the text tool and the sticky note (`WHITEBOARD_TOOLS`) on an open canvas, with the `view`, `pick`, `move`, `resize` and `edit` presets it includes. Nothing else is wired in the demo: the palette lists the tools the preset mounted.',
+    hint: '<kbd>S</kbd> sticky note · <kbd>N</kbd> pencil · <kbd>T</kbd> text · <kbd>V</kbd> select · hold <kbd>Space</kbd> and drag, or the wheel, to pan.',
+    load: () => import('./demos/WhiteboardDemo').then((m) => m.WhiteboardDemo),
+    path: 'apps/site/demos/WhiteboardDemo.tsx',
+  },
+  {
     id: 'sticky-notes',
     title: 'Sticky notes',
     category: 'Tools',
@@ -413,6 +422,15 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Drag fast and release to coast · <kbd>Mod+=</kbd> / <kbd>Mod+-</kbd> / <kbd>Mod+0</kbd> to zoom with easing · pan mid-zoom to interrupt it · pinch or <kbd>Mod</kbd>+wheel to zoom · toggle boundary to see stop vs bounce.',
     load: () => import('./demos/ViewportDemo').then((m) => m.ViewportDemo),
     path: 'apps/site/demos/ViewportDemo.tsx',
+  },
+  {
+    id: 'slide-navigation',
+    title: 'Slide navigation',
+    category: 'Viewport',
+    description: 'A paged scene shown one page at a time. `createPresentationContribution()` is one entry for `<SceneCanvas ambient>`: its `present.step` action fits the view to a page with `fitViewToPage` and glides there through the `view` dep\'s animation, and its key bindings step through the page order with `adjacentPage`. The page a step starts from is whichever the view shows most, so a pan in between steps on from where it left off. `onPage` reports each arrival, which is all the readout reads. A presentation runtime with keys of its own passes `keys: false` and steps a canvas handle with `stepPresentation(canvasCamera(api), pages, { by: 1 })`.',
+    hint: '<kbd>→</kbd> / <kbd>↓</kbd> / <kbd>Page Down</kbd> next · <kbd>←</kbd> / <kbd>↑</kbd> / <kbd>Page Up</kbd> previous · <kbd>Home</kbd> / <kbd>End</kbd> first and last. Click the canvas first to give it the keys.',
+    load: () => import('./demos/SlideNavigationDemo').then((m) => m.SlideNavigationDemo),
+    path: 'apps/site/demos/SlideNavigationDemo.tsx',
   },
   {
     id: 'canvas-view',

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 
 /** The least each pane may be laid out at. */
 export interface SplitFloors {
@@ -21,28 +21,40 @@ export function splitFloors(
   return { sidebar: hasSidebar ? held : sidebar, content: Math.min(content, zone - held) };
 }
 
+/** `el`'s content box width, as a `ResizeObserver` entry's `contentRect` gives it. */
+function contentWidth(el: Element): number {
+  const style = getComputedStyle(el);
+  const padding =
+    (Number.parseFloat(style.paddingLeft) || 0) + (Number.parseFloat(style.paddingRight) || 0);
+  return Math.max(0, el.clientWidth - padding);
+}
+
 /**
- * The width of the strip `inside` is rendered in: `fixed` when the caller supplies an extent, else the strip's own
- * measured box. Null until it has been measured, which waits on `inside`: a strip renders no pane before its first
- * layout.
+ * The width of the strip whose boxless wrapper the returned ref attaches to: `fixed` when the caller supplies an
+ * extent, else the content box of the element the strip fills. Null until it has been measured. Read as the
+ * wrapper attaches, ahead of the strip's own first layout, so the floors hold from the first painted frame. The zone
+ * itself is not what is measured: it grows past what it fills to hold panes that overflow, which the floors decide.
  */
-export function useZoneWidth(inside: Element | null, fixed: number | undefined): number | null {
+export function useZoneWidth(
+  fixed: number | undefined,
+): [width: number | null, frameRef: (el: HTMLElement | null) => void] {
   const [measured, setMeasured] = useState<number | null>(null);
+  const [strip, setStrip] = useState<Element | null>(null);
+  const frameRef = useCallback((el: HTMLElement | null) => {
+    const parent = el?.parentElement ?? null;
+    setStrip(parent);
+    // Nothing laid out yet reads as no width: the observer reports it.
+    const now = parent ? contentWidth(parent) : 0;
+    if (now > 0) setMeasured(now);
+  }, []);
   useLayoutEffect(() => {
-    if (fixed !== undefined || typeof ResizeObserver === 'undefined') return;
-    const zone = inside?.closest('[data-node-container]');
-    if (!zone) return;
+    if (fixed !== undefined || !strip || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver((entries) => {
       const width = entries[0]?.contentRect.width;
       if (width !== undefined) setMeasured(width);
     });
-    // The pane mounts inside windease's own observer callback, and an element observed during that delivery at
-    // the strip's depth is skipped, which Chrome reports as a ResizeObserver loop. Start after it.
-    const start = setTimeout(() => observer.observe(zone), 0);
-    return () => {
-      clearTimeout(start);
-      observer.disconnect();
-    };
-  }, [inside, fixed]);
-  return fixed ?? measured;
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, [strip, fixed]);
+  return [fixed ?? measured, frameRef];
 }

@@ -274,6 +274,7 @@
 
 .crayon:disabled {
   opacity: 0.4;
+  filter: var(--wzl-disabled-filter);
   cursor: default;
 }
 

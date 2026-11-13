@@ -22,7 +22,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
-import { createPortal, flushSync } from 'react-dom';
+import { createPortal } from 'react-dom';
 import { useSurfaceCanvas, useSurfaceOptional } from '../../surface/useSurfaceTile';
 import { createSeamPreview, type SeamPreview, seamAction, seamLayer, seamOf } from './compare';
 import { LensChrome } from './LensChrome';
@@ -192,10 +192,10 @@ function useLensTile(layer: HTMLElement | null, redraw: () => void) {
     () =>
       surface?.registerPainter(TILE, (rect) => {
         const next = { w: rect.w, h: rect.h };
-        // Committed before the redraw: the renderer reads its size from the
-        // last render, and a redraw landing first paints at the old one.
-        flushSync(() => setSize((prev) => (sameSize(prev, next) ? prev : next)));
-        redraw();
+        setSize((prev) => (sameSize(prev, next) ? prev : next));
+        // After the surface commits the size: the renderer reads its size from
+        // the last render, and a redraw landing first paints at the old one.
+        return redraw;
       }),
     [surface, redraw],
   );

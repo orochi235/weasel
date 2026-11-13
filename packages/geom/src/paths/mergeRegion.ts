@@ -13,13 +13,18 @@ import { pathSignedArea } from './winding';
 
 /** Options for {@link mergeRegion}. */
 export interface MergeRegionOptions {
-  /** How far from an edge a point is taken to tell which side is filled, in
-   *  the path's units; a sliver of region thinner than this may be lost.
-   *  Default 0.01. */
+  /** The path's precision, in its units: ends a thousandth of this apart
+   *  are joined, and which side of each piece is filled is read from curves
+   *  flattened to a sixty-fourth of it. Default 0.01. */
   tolerance?: number;
 }
 
 type Pt = [number, number];
+
+/** Curves are flattened to this fraction of the tolerance to tell which side of a piece is filled, and probed this
+ *  fraction of it to either side: near-tangent curves a tolerance apart keep their order when flattened. */
+const SIDE_FLATTEN = 64;
+const SIDE_PROBE = 1024;
 
 /** A cut on a segment: where, and the point both cut ends move onto. */
 interface Cut {
@@ -50,14 +55,15 @@ export function mergeRegion(path: Path, opts: MergeRegionOptions = {}): PolygonP
     cuts[x.b]!.push({ t: x.t, p });
   }
   overlapCuts(segs, cuts, snap);
-  const rings = flattenAll(all, tol / 4);
+  const lines = new Map<CubicSegment, number[]>();
+  const rings = flattenAll(all, tol / SIDE_FLATTEN, lines);
   const pieces: CubicSegment[] = [];
   let changed = segs.length < all.length;
   segs.forEach((seg, i) => {
     const parts = cutSegment(seg, cuts[i]!);
     if (parts.length > 1) changed = true;
     for (const part of parts) {
-      const side = filledSide(part, rings, tol);
+      const side = filledSide(part, lines.get(seg)!, rings, tol);
       if (side === null) changed = true;
       else if (side === fillLeft) pieces.push(part);
       else {
@@ -248,17 +254,21 @@ function reversed(s: CubicSegment): CubicSegment {
 }
 
 /** Each contour's polyline, for counting winding against. */
-function flattenAll(segs: readonly CubicSegment[], tol: number): number[][] {
+function flattenAll(segs: readonly CubicSegment[], tol: number, lines: Map<CubicSegment, number[]>): number[][] {
   const rings: number[][] = [];
   let ring: number[] = [];
-  for (const { c, line } of segs) {
+  for (const seg of segs) {
+    const { c, line } = seg;
     if (ring.length === 0) ring.push(c[0], c[1]);
     else if (ring[ring.length - 2] !== c[0] || ring[ring.length - 1] !== c[1]) {
       rings.push(ring);
       ring = [c[0], c[1]];
     }
-    if (line) ring.push(c[6], c[7]);
-    else flattenCubic(...c, tol, ring);
+    const own = [c[0], c[1]];
+    if (line) own.push(c[6], c[7]);
+    else flattenCubic(...c, tol, own);
+    lines.set(seg, own);
+    for (let k = 2; k < own.length; k++) ring.push(own[k]!);
   }
   if (ring.length > 0) rings.push(ring);
   return rings;
@@ -282,17 +292,26 @@ function winding(rings: readonly number[][], x: number, y: number): number {
 
 /** Whether the fill lies left of `seg`'s travel (`true`) or right of it, or
  *  `null` when it lies on both sides or neither. Judged at its middle. */
-function filledSide(seg: CubicSegment, rings: readonly number[][], tol: number): boolean | null {
-  const c = seg.c;
-  const [x, y] = cubicEvalAt(...c, 0.5);
-  const dx = c[6] + c[4] - c[2] - c[0],
-    dy = c[7] + c[5] - c[3] - c[1];
+function filledSide(seg: CubicSegment, own: readonly number[], rings: readonly number[][], tol: number): boolean | null {
+  const [x, y] = cubicEvalAt(...seg.c, 0.5);
+  // Probe beside the stretch of the segment's own polyline nearest the piece's middle, a hair either side: a
+  // probe a tolerance out landed past a second curve running nearly tangent to it.
+  let best = Infinity, px = x, py = y, dx = 0, dy = 0;
+  for (let k = 0; k + 3 < own.length; k += 2) {
+    const ax = own[k]!, ay = own[k + 1]!, ex = own[k + 2]! - ax, ey = own[k + 3]! - ay;
+    const l2 = ex * ex + ey * ey;
+    if (l2 === 0) continue;
+    const t = Math.max(0, Math.min(1, ((x - ax) * ex + (y - ay) * ey) / l2));
+    const fx = ax + ex * t, fy = ay + ey * t, d = Math.hypot(fx - x, fy - y);
+    if (d < best) { best = d; px = fx; py = fy; dx = ex; dy = ey; }
+  }
   const len = Math.hypot(dx, dy);
   if (len < 1e-12) return null;
-  const nx = (dy / len) * tol,
-    ny = (-dx / len) * tol;
-  const left = winding(rings, x + nx, y + ny) !== 0,
-    right = winding(rings, x - nx, y - ny) !== 0;
+  const probe = tol / SIDE_PROBE;
+  const nx = (dy / len) * probe,
+    ny = (-dx / len) * probe;
+  const left = winding(rings, px + nx, py + ny) !== 0,
+    right = winding(rings, px - nx, py - ny) !== 0;
   return left === right ? null : left;
 }
 

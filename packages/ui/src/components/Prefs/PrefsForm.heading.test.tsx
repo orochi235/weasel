@@ -91,10 +91,10 @@ describe('a leaf marked `heading`', () => {
     expect(within(panel).getByRole('checkbox', { name: 'Glow' })).toBeEnabled();
     expect(within(panel).getByRole('spinbutton', { name: 'Size' })).toBeDisabled();
     // The class is a proxy: the CSS-module proxy answers any key, so this shows only that the title asked to dim.
-    expect(within(panel).getByText('Glow').className).toMatch(/_titleOff_/);
+    expect(within(panel).getByText('Glow').className).toMatch(/_titleDisabled_/);
     rerender(<PrefsForm layout="rail" schema={schema} values={{ view: { glow: { on: true } } }} onChange={() => {}} />);
     expect(within(panel).getByRole('spinbutton', { name: 'Size' })).toBeEnabled();
-    expect(within(panel).getByText('Glow').className).not.toMatch(/_titleOff_/);
+    expect(within(panel).getByText('Glow').className).not.toMatch(/_titleDisabled_/);
   });
 
   it('stays a row where its control does not fit a heading, or its group has no heading', () => {

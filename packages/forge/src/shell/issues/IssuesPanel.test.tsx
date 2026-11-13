@@ -1,3 +1,4 @@
+import { type LabCommands, LabCommandsContext } from '@weasel-js/labkit';
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
@@ -26,9 +27,10 @@ describe('IssuesPanel', () => {
     expect(screen.getByText('The GitHub CLI (gh) is not logged in.')).toBeTruthy();
   });
 
-  it('hands a report to its host and clears the form', () => {
+  it('hands a report to its host and closes the form', () => {
     const onReport = vi.fn();
     renderWithIcons(<IssuesPanel component="Slider" storyId="slider--basic" issues={[]} onReport={onReport} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Report an issue…' }));
     const report = screen.getByRole('button', { name: 'Report' });
     expect(report.hasAttribute('disabled')).toBe(true);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: '  Thumb drifts  ' } });
@@ -40,11 +42,29 @@ describe('IssuesPanel', () => {
       title: 'Thumb drifts',
       body: 'Drag past the end.',
     });
-    expect((screen.getByLabelText('Title') as HTMLInputElement).value).toBe('');
+    expect(screen.queryByLabelText('Title')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Report an issue…' })).toBeTruthy();
+  });
+
+  it('holds the lab’s marks on while a report is open', () => {
+    const release = vi.fn();
+    const holdMarks = vi.fn(() => release);
+    renderWithIcons(
+      <LabCommandsContext.Provider value={{ holdMarks } as unknown as LabCommands}>
+        <IssuesPanel component="Slider" storyId="slider--basic" issues={[]} onReport={vi.fn()} />
+      </LabCommandsContext.Provider>,
+    );
+    expect(holdMarks).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Report an issue…' }));
+    expect(holdMarks).toHaveBeenCalledTimes(1);
+    expect(release).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(release).toHaveBeenCalledTimes(1);
   });
 
   it('keeps Report disabled when nothing takes reports', () => {
     renderWithIcons(<IssuesPanel component="Slider" storyId="slider--basic" issues={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Report an issue…' }));
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Thumb drifts' } });
     expect(screen.getByRole('button', { name: 'Report' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByText('Reporting is not connected yet.')).toBeTruthy();

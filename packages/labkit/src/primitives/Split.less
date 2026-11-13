@@ -25,3 +25,8 @@
     --wzl-prop-columns: minmax(0, 1fr);
   }
 }
+
+// Split's own wrapper, there to be measured from: boxless, so the strip lays out in the parent as it would without.
+.lk-split__frame {
+  display: contents;
+}

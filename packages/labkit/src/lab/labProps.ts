@@ -22,9 +22,12 @@ import type { PresentationMessageOptions } from './presentationMessages';
 export interface LabBaseProps {
   /** May change while mounted. An instrument that is a different object from
    *  the last render counts as replaced and its open trials' configs are
-   *  refilled, so hoist or memoize the list. */
-  instruments: InstrumentList;
-  defaultInstrument: string;
+   *  refilled, so hoist or memoize the list. Omitted or empty, the lab has no
+   *  trials: `children` are its body, and a history the body hands over with
+   *  `useTrialHistory` gets the lab's Undo and Redo and their keys. */
+  instruments?: InstrumentList;
+  /** The instrument a lab with no trials opens. Default the first of `instruments`. */
+  defaultInstrument?: string;
   /** The instruments a lab with no trials opens, a trial of each, in order.
    *  Default `[defaultInstrument]`. */
   opening?: readonly string[];
@@ -125,6 +128,7 @@ export interface LabBaseProps {
    *  their writer: the app's, which its own surfaces for that schema read too. Omitted, the lab keeps
    *  them in memory, shared by every trial. */
   over?: LabOver;
+  /** Header content after the lab's own controls; in a lab with no trials, its body instead. */
   children?: ReactNode;
   /** Start presenting: one trial, opened on `seed`, without the lab's chrome or
    *  its own. `?present` in the page's URL does the same. Read once, at mount.

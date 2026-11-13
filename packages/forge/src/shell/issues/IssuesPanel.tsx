@@ -1,4 +1,5 @@
 import './issues.css';
+import { useHoldMarks } from '@weasel-js/labkit';
 import num from '@weasel-js/theme/numeric.module.css';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
@@ -43,8 +44,13 @@ function IssueList({ component, issues, note }: { component: string; issues?: re
   );
 }
 
-/** A component's open issues, and a form for reporting a new one. */
-export function IssuesPanel({ component, storyId, issues, listNote, onReport }: IssuesPanelProps) {
+interface ReportFormProps extends Pick<IssuesPanelProps, 'component' | 'storyId' | 'onReport'> {
+  onClose: () => void;
+}
+
+/** The open report. The lab shows its marks while it is open, so the trial can be marked up for the screenshot. */
+function ReportForm({ component, storyId, onReport, onClose }: ReportFormProps) {
+  useHoldMarks(true);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const canReport = onReport !== undefined && title.trim() !== '';
@@ -52,26 +58,50 @@ export function IssuesPanel({ component, storyId, issues, listNote, onReport }: 
     event.preventDefault();
     if (!canReport) return;
     onReport({ component, storyId, title: title.trim(), body });
-    setTitle('');
-    setBody('');
+    onClose();
   };
+  return (
+    <form className="fg-issues__group" aria-label="Report an issue" onSubmit={submit}>
+      <h3 className="fg-issues__heading">Report</h3>
+      <p className="fg-issues__note">Draw on the trial with the rail’s mark tools, then take the screenshot to paste.</p>
+      <Input label="Title" value={title} onChange={setTitle} />
+      <TextArea label="Description" value={body} onChange={setBody} placeholder="What did you expect, and what happened?" />
+      <div className="fg-issues__actions">
+        <Button size="sm" variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button size="sm" type="submit" disabled={!canReport}>
+          Report
+        </Button>
+      </div>
+      {onReport ? null : <p className="fg-issues__note">Reporting is not connected yet.</p>}
+    </form>
+  );
+}
+
+/** A component's open issues, and a report to open against it. */
+export function IssuesPanel({ component, storyId, issues, listNote, onReport }: IssuesPanelProps) {
+  const [reporting, setReporting] = useState(false);
   return (
     <div className="fg-issues">
       <section className="fg-issues__group" aria-label="Open issues">
         <h3 className="fg-issues__heading">Open</h3>
         <IssueList component={component} {...(issues ? { issues } : {})} {...(listNote ? { note: listNote } : {})} />
       </section>
-      <form className="fg-issues__group" aria-label="Report an issue" onSubmit={submit}>
-        <h3 className="fg-issues__heading">Report</h3>
-        <Input label="Title" value={title} onChange={setTitle} />
-        <TextArea label="Description" value={body} onChange={setBody} placeholder="What did you expect, and what happened?" />
+      {reporting ? (
+        <ReportForm
+          component={component}
+          storyId={storyId}
+          {...(onReport ? { onReport } : {})}
+          onClose={() => setReporting(false)}
+        />
+      ) : (
         <div className="fg-issues__actions">
-          <Button size="sm" type="submit" disabled={!canReport}>
-            Report
+          <Button size="sm" onClick={() => setReporting(true)}>
+            Report an issue…
           </Button>
         </div>
-        {onReport ? null : <p className="fg-issues__note">Reporting is not connected yet.</p>}
-      </form>
+      )}
     </div>
   );
 }

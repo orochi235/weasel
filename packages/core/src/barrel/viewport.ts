@@ -29,6 +29,7 @@ export type {
 } from '@weasel-js/simulation';
 export { useSimulation } from '@weasel-js/simulation/react';
 export * from '../domains/poseRun';
+export * from '../domains/presentation';
 export { useNodeOverlayFrame } from '../core/viewport/useNodeOverlayFrame';
 export type {
   NodeOverlayFrame,

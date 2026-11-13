@@ -173,6 +173,7 @@ export {
 } from '../canvas/SceneCanvas/presets/tools';
 export { drawPreset, pickPreset, transformPreset } from '../canvas/SceneCanvas/presets/composites';
 export { ingestPreset } from '../canvas/SceneCanvas/presets/ingest';
+export { WHITEBOARD_TOOLS, whiteboardPreset } from '../canvas/SceneCanvas/presets/whiteboard';
 export { KIT_SHAPE_KINDS, SHAPE_KINDS } from '../core/shapeKinds';
 export type {
   BuiltinShapeToolId, KitInsertShape, ShapeKind, ShapeKindDescriptor, ShapeKindsWhere,

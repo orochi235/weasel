@@ -4,6 +4,7 @@ import { menuNumberCanStep, menuNumberText, type MenuColorEntry, type MenuEntry,
 import type { WidgetBounds } from '../widget';
 import type { MenuMetrics } from './drawPanel';
 import { clusterStops, selectionOf, shownEdit, type HudTextEdit } from './textEdit';
+import { typedLine } from './typedLine';
 
 /** A span across a panel, from its left edge. */
 export interface Span { x: number; w: number }
@@ -80,24 +81,17 @@ const typedRight = (w: number, m: MenuMetrics) => w - m.padX - 3;
 /** The code-point offset in `draft`, typed into a row of panel width `w`, at the grapheme cluster boundary nearest
  *  panel-local `x`, or undefined when `x` is left of the text, over the row's label. `measure` gives the width of a run of the row's text. */
 export function caretAt(draft: string, w: number, m: MenuMetrics, x: number, measure: (text: string) => number): number | undefined {
-  const xAt = offsetsX(draft, w, m, measure);
-  if (x < xAt(0) - m.padX) return undefined;
+  const line = typedLine(draft, typedRight(w, m), measure);
+  if (x < line.left - m.padX) return undefined;
   let best = 0;
-  for (const i of clusterStops(draft)) if (Math.abs(xAt(i) - x) < Math.abs(xAt(best) - x)) best = i;
+  for (const i of clusterStops(draft)) if (Math.abs(line.xAt(i) - x) < Math.abs(line.xAt(best) - x)) best = i;
   return best;
-}
-
-/** Panel-local x of each offset into `draft`, typed into a row of panel width `w`. */
-function offsetsX(draft: string, w: number, m: MenuMetrics, measure: (text: string) => number): (i: number) => number {
-  const right = typedRight(w, m);
-  const chars = Array.from(draft);
-  return (i) => right - measure(chars.slice(i).join(''));
 }
 
 /** Panel-local x of the caret `edit` draws, after any composition in progress. */
 export function caretX(edit: HudTextEdit, w: number, m: MenuMetrics, measure: (text: string) => number): number {
   const shown = shownEdit(edit).edit;
-  return offsetsX(shown.draft, w, m, measure)(shown.caret) + 1;
+  return typedLine(shown.draft, typedRight(w, m), measure).xAt(shown.caret) + 1;
 }
 
 /** A text row being typed into: what is typed at the row's end, the selection behind it in `selection`, an input
@@ -108,17 +102,17 @@ export function typingCommands(
   measure: (text: string) => number,
 ): DrawCommand[] {
   const { edit: shown, preedit } = shownEdit(edit);
-  const at = offsetsX(shown.draft, b.w, m, measure);
-  const xAt = (i: number) => b.x + at(i);
+  const line = typedLine(shown.draft, typedRight(b.w, m), measure);
+  const xAt = (i: number) => b.x + line.xAt(i);
   // Room after the last character, so a caret at the end clears it.
   const right = b.x + typedRight(b.w, m);
   const half = ink.font.fontSize * 0.6;
   const cy = b.y + r.y + r.h / 2;
   const out: DrawCommand[] = [];
   const [from, to] = selectionOf(shown);
-  if (from !== to) {
+  for (const [x0, x1] of from === to ? [] : line.spans(from, to)) {
     out.push({
-      kind: 'path', path: { kind: 'rect', x: xAt(from), y: cy - half, width: xAt(to) - xAt(from), height: half * 2 },
+      kind: 'path', path: { kind: 'rect', x: b.x + x0, y: cy - half, width: x1 - x0, height: half * 2 },
       fill: solid(selection),
     });
   }
@@ -126,7 +120,9 @@ export function typingCommands(
     b.x + m.padX, b.y + r.y, [{ text: shown.draft, fill: solid(ink.fg) }],
     { ...ink.font, align: 'right' }, undefined, r.h, 'center', undefined, right - b.x - m.padX,
   ));
-  if (preedit) out.push(mark(`M ${xAt(preedit[0])} ${cy + half} L ${xAt(preedit[1])} ${cy + half}`, ink.fg));
+  for (const [x0, x1] of preedit ? line.spans(preedit[0], preedit[1]) : []) {
+    out.push(mark(`M ${b.x + x0} ${cy + half} L ${b.x + x1} ${cy + half}`, ink.fg));
+  }
   const x = xAt(shown.caret) + 1;
   out.push(mark(`M ${x} ${cy - half} L ${x} ${cy + half}`, ink.fg));
   return out;

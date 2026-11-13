@@ -81,6 +81,7 @@
 .range:where(:disabled) {
   cursor: not-allowed;
   opacity: 0.55;
+  filter: var(--wzl-disabled-filter);
 }
 
 /* Alpha variant: a fainter track, used where the row already carries a color

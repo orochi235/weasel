@@ -39,14 +39,6 @@ Owner tags, after the priority (2026-10-26):
   too big for audit round 20's pass (2026-11-12). Closes when the demo's factory reads `extras.samples` with no
   cast.
 
-- **(P3) [agent] A refused gesture's reason tag lands off the pointer on a canvas under a transformed ancestor.**
-  `GestureReason` (`packages/core/src/canvas/GestureReason.tsx`) is `position: fixed` at the reason's client
-  point, and a transformed ancestor becomes the containing block of a fixed element, so the tag is placed in
-  that ancestor's scaled, offset frame. Not fixed in audit round 19 (2026-11-12) with the rest of the
-  ancestor-transform work: it needs the tag positioned in the canvas root's own frame (absolute, measured the
-  way `useSceneTextEdit` measures its overlay box) or portaled out, and either changes how it clips and stacks
-  against the page. Closes when the tag sits beside the pointer on a canvas inside `transform: scale(0.5)`.
-
 - **(P2) [recheck] A kernel3d host has no way to drag a node up or down, or along one axis.** kernel3d's
   `translate` keeps a node at its height (`movedOnLevel` in `packages/kernel3d/src/deps.ts`), and the kernel
   ships no translate gizmo: an editor building one writes its own action, chrome, hit test and snap plane
@@ -65,14 +57,6 @@ Owner tags, after the priority (2026-10-26):
   position (or delta) from the session to the commit. Closes when a ground-grid snap in kernel3d stores
   `k * step` exactly.
 
-- **(P2) [agent] A key pressed right after a click acts before the click's selection lands.** Measured in
-  collego (2026-11-10): its `watch.spec` clicks a node and presses Backspace at once. On 1.17.3 the node was
-  deleted; on 1.18.2 nothing is deleted, though the node shows as selected within 100 ms. The selection comes
-  from `@weasel-js/core`'s select binding. Inferred, not traced: since 1.18 a press is dispatched again as the
-  click it settles into, so the selection commits on release (or later) instead of on press, and a key
-  pressed in between finds the old selection. A person clicking then typing quickly hits it too. Closes when a
-  key pressed straight after a click acts on what the click selected, or the delay is ruled acceptable.
-
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can
@@ -82,17 +66,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when the maintainer has watched a real OS drag in WeaselDraw and the ghost follows the
   pointer, clears on Esc, on leave and on drop, and looks right.
 
-
-- **(P3) [agent] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
-  runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
-  the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
-  PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
-  `LabShell` page. Moving them in means making each an instrument and running it in a trial pane,
-  with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
-  `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
-  no trials at all.
-  Ruled (2026-11-07): labkit supports a lab with no trials, rendering its children as the body.
-  Closes when `<Lab>` takes no instruments and `apps/theme-editor` runs as one.
 
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
@@ -128,16 +101,6 @@ Owner tags, after the priority (2026-10-26):
 ---
 
 ## Paths & booleans
-
-- **(P3) [agent] Path edit through a text-along effect dims the curved text with everything else.** Ruled
-  (2026-11-07): light it, and let a press on it edit the text. Closes when path edit does both.
-- **(P3) [agent] `mergeRegion` leaves edges inside the fill where two curves cross nearly tangent.** Two
-  round-joined synthetic-bold outlines whose corner arcs lie 0.001 em apart (`M0 -0.001h0.02v0.02h-0.02Z` and
-  `M0 0h0.021v0.1h-0.021Z`, grown by the canvas tier's 1/75 em) merge with spikes and slivers a stroke traces.
-  The pass on 2026-11-10 fixed shared and near-shared straight edges and exact duplicate contours; this needs
-  near-tangent curve crossings snapped or merged, a change to the curve boolean core. Closes when
-  `glyphGeometry.pbt.test.ts` checks the bake's round-joined outlines for inner edges too (it checks the
-  mitered atlas ones only).
 
 ### Path editing tricks
 
@@ -338,51 +301,6 @@ Owner tags, after the priority (2026-10-26):
   (found building a poster designer, audit round 20, 2026-11-12). Closes when both write a text node set in a
   registered outline face, under a test, and an unembeddable face falls back to outlines with a warning.
 
-- **(P3) [agent] A diagram body measured while its face is still loading keeps the fallback's size.**
-  `rendererMeasure` (`packages/diagram/src/rendererMeasure.ts`) measures synchronously through
-  `measureTextBounds`, and `templateSpecs`, `documentSpecs`, `commitSequence` and `applyChartTheme` store
-  the sizes it returns in the scene. A face registered `lazy` (every app's Inter, `apps/shared/defaultFont.ts`)
-  is measured as the fallback until it lands (`subscribeGlyphReady`'s doc), and nothing measures those bodies
-  again when `faceGeneration()` moves, so a chart built before the face loads keeps bodies sized for the wrong
-  font (read from the code, 2026-11-12; not reproduced in a browser). Too big for audit round 19: the fix is
-  either an async wait for the faces a commit names before it measures, or bodies re-measured on a face
-  change, and both touch every diagram commit path.
-  Closes when a body committed while its face is pending ends up sized for the face once it loads, under a
-  test that holds a lazy face pending across the commit.
-
-- **(P3) [agent] WebKit at DPR 1 sets the overlay's glyphs on a third-pixel grid, rounding down,
-  and starts each inline box on a whole pixel.** Measured 2026-10-29 by stepping `x` through a pixel
-  in eighths: WebKit's overlay ink moves in steps of a third of a pixel, each taken late (Inter
-  16px stays put from `x` 20 to 20.25 and moves next at 20.375 and 20.75), where Chromium and
-  Firefox step by quarters to the nearest. A piece that starts between pixels paints from the one
-  below: the small capitals of `"Hgd" Inter 72px small caps` start at 73.508 and paint from 73, so
-  that case's `dRight` runs from -0.07 to -0.91 across the pixel, and is -0.79 at `x` 20 against
-  the test's 0.75. It is the whole configuration, not that case: in
-  `npx vitest run -c scripts/measure-overlay-alignment.config.ts`, 22 of WebKit DPR 1's 160 matrix
-  rows fall outside the test's bounds, every one trailing the canvas (mean `dx` -0.14); WebKit DPR 2
-  has 2, the same Arial 72px rows that Chromium DPR 2 has. Advances are not it: WebKit's DOM width of
-  `GDGDGDGDGD` matches the atlas to 0.001px. Nothing on the overlay moves the grid: `will-change`,
-  `translateZ(0)`, either `text-rendering`, and `-webkit-font-smoothing` left every pixel in place
-  (the last moved the small-caps case 0.76px further left). A WebKit-only nudge only trades one
-  case for another: a half pixel took the matrix mean `dx` to +0.36 and failed three cases, and a
-  sixth of a pixel halved the mean `dx` at 40 and 72px but took Inter 16px's worst `dRight` from
-  0.32 to 0.74. CI runs Chromium only. What is left is a ruling: accept it as WebKit's and give
-  WebKit DPR 1 its own bound in the alignment test, or detect WebKit in text-dom and nudge.
-  Ruled (2026-11-07): accept it as WebKit's. Closes when `overlayAlignment.browser.test.tsx` gives WebKit DPR 1
-  its own bound.
-
-- **(P3) [agent] A HUD menu's text row places its caret, selection and click as though the draft runs left to
-  right.** `offsetsX` in `packages/hud/src/menu/valueRows.ts` puts offset `i` at the row's right edge less the width
-  of the characters after it, which is where it sits only in left-to-right text; with a bidi engine registered the
-  renderer lays a Hebrew or Arabic draft out right to left, so the caret, the selection band and `caretAt`'s click
-  mapping land mirrored (read from the code, 2026-11-12; not run). Fixing it means taking each cluster's x from the
-  laid-out line (`layoutRuns`, with its bidi levels) rather than from prefix widths, a split selection band where a
-  selection crosses a direction change, and a caret affinity at those changes: more than an audit pass. Closes
-  when a test typing a Hebrew draft into a HUD text row finds the caret at the line's left end and a click on a
-  character's left half putting the caret after it.
-
----
-
 ## Scene, adapters & layout
 
 - **(P3) [agent] Moving a node along a path takes a hand-built pose descriptor.** `tweenPose` follows
@@ -499,23 +417,12 @@ Owner tags, after the priority (2026-10-26):
   `ControlRow` that sizes the field to the row and sends drafts through the panel's `draftConfig`. Too big for an
   audit pass: new API in two packages. Closes when `f.curve` ships and a dragged, paused curve undoes in one step.
 
-- **(P2) [agent] labkit's annotation overlay crashes once about two dozen targets mount in one commit.**
-  iconfab's lab (`~/src/iconfab/apps/lab`, labkit 1.19.0) declared one target per glyph proof, 66 at once,
-  and the page died with React's "Maximum update depth exceeded"; registering the targets 12 at a time
-  avoids it (iconfab's README, "Known problems", 2026-11-11). Reported by the agent that built the lab and
-  not yet reproduced in weasel. Closes when a labkit test mounting 100 targets in one commit renders without
-  the error and iconfab drops its batching.
-- **(P3) [agent] labkit's annotation overlay trails a scrolled pane by a frame or two.** In the same lab, a
-  stroke begun in the instant a pane scrolls lands on the target that was under the pointer before the
-  scroll (2026-11-11, reported, not reproduced here). Closes when the overlay reads target rects in the same
-  frame as the scroll, with a browser test that starts a stroke mid-scroll and finds it on the right target.
-- **(P3) [agent] Annotation arrowheads scale with the target's content box, not the screen.** On a 20-unit
-  target shown at 300px the heads draw very large (iconfab, 2026-11-11). Closes when a head's size is set in
-  screen pixels, so the same arrow reads the same on a 20-unit and a 2000-unit target.
-- **(P3) [agent] A list of objects summarizes as raw JSON on its control.** `f.list(def, f.object({ name, width }))`
-  draws its trigger as `{"name":"primary","width":1.5,…}, …` (`summarizeValue`, `written`); a map of objects does
-  the same. Seen in iconfab's Composer, 2026-11-11. Closes when an object entry summarizes by its first string
-  field, or by a summary the schema supplies, with a test on the trigger's text.
+- **(P3) [agent] iconfab still mounts its annotation targets 12 at a time.** labkit's overlay died with "Maximum
+  update depth exceeded" past about two dozen targets in one commit, because the surface committed each tile's
+  placement in a `flushSync` of its own; it now commits a frame's tiles together, and
+  `AnnotationOverlay.many.browser.test.tsx` mounts 100 (2026-11-12). iconfab's Review page
+  (`~/src/iconfab/apps/lab/src/review/Review.tsx`, `TARGET_BATCH`) and its README's "Known problems" still work
+  around it, on labkit 1.19.0 from npm. Closes when a labkit release carries the fix and iconfab drops the batching.
 - **(P3) [maintainer] `<Sequence>` past two sweeps.** It lays one sweep out as a list and two as a grid
   (`sweep` × `across`), both spatial. A third parameter and beyond needs some other way of showing it, not
   necessarily another spatial axis: color, opacity or overlay (onion skin) within a cell, or a sweep shown
@@ -546,21 +453,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [agent] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
-  0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
-  subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
-  cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
-  disabled.
-  Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
-  fades when disabled also desaturates.
-
-- **(P3) [agent] labkit's `Split` lays its content out past a narrow strip until its floors are measured.**
-  `useZoneWidth` starts its `ResizeObserver` a tick after mount, so a trial narrower than a stored sidebar width
-  plus the content's 160px floor first lays the content out overflowing the trial (seen 2026-11-11 in klieg's
-  tube lab: a 259px strip with a 140px sidebar put a 160px content pane at x=141), then slides it 41px left
-  once the floors arrive. Since `watchElementMove` reports that slide, surfaces follow it; what is left is the
-  visible jump at load. Closes when a browser test mounts a 260px `TrialBody` with `width={140}` and finds the
-  content inside the strip on its first painted frame.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -637,18 +529,6 @@ Owner tags, after the priority (2026-10-26):
 
 ---
 
-### Domain bundles
-
-- **(P3) [agent] A presentation bundle and a whiteboard bundle.** Each a `Contribution` bundle, the way
-  `@weasel-js/diagram` is (`createDiagramContribution`). Ruled (2026-11-07): build both.
-  - Presentation: a slide-navigation contribution that sherpa (the presentation runtime) can mount — keys and
-    view animation stepping between pages, over `layoutPages`, `fitViewToPage` and `adjacentPage`
-    (`packages/core/src/core/pages/`). Not an in-canvas slide format (ruled 2026-10-17).
-  - Whiteboard: bundles core's `usePencilTool`, `useTextTool`, and `useStickyTool` (built-in id `sticky`, a text
-    node with a `background`; its look is `toolOptions.sticky`). apps/draw leaves `sticky` out today: its
-    `TextObj` and SVG round trip carry no text `background` or `padding`, and SVG import reads a written note
-    back as a rect and a text node, so that round trip is part of the work.
-  Closes when both contributions ship and draw round-trips a sticky.
 ### d3 integration plugin
 
 - **(P3) [maintainer] `d3-zoom` / `d3-drag` adapters — parked.** Both duplicate kit systems
@@ -669,12 +549,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
-  (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
-  opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
-  turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
-  up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
-  Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither
@@ -794,35 +668,15 @@ only story runner in the repo.
   output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
   Closes when output deeper than 8 bits lands and the ramp's error is measured under one step of it, or
   on 2027-01-01 with none, delete it.
-- **(P3) [agent] Batched pattern fills may lose tile precision far from the origin.** Read from the code, not
-  run: `draw/patternBatch.ts` stores tile coordinates per vertex as float32 without taking whole tiles out
-  first, where the unbatched `bindPattern` does (audit round eleven, 2026-11-09). It would show around 1e7 world
-  units. Needs a GPU to confirm. Closes when a batched pattern at 1e7 draws the same tile as an unbatched one, in
-  a browser test.
-
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
 
 ---
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] Two of labkit's floating-sidebar tests fail when their file runs alone.** In
-  `Trial.floatPanel.test.tsx`, "closes on a press outside it, and the toggle closes what it opened" and "keeps a
-  section torn out of the panel in the workspace once the panel closes" failed 3 of 3 fleet runs of
-  `vitest run --project=labkit <that file>` at `c7b148f5e` (2026-11-11), and 1 of 3 locally, yet pass inside the
-  full suite. Something the suite sets up that the file does not set up itself. Closes when the file passes alone.
-
 - **(P3) [waiting] `workerRender.browser.test.tsx` "dims a node by the alpha the page computes" read a null pixel
   once under the full suite** at `b7ed8c10f` (2026-11-11), then passed 3 of 3 runs alone. Waiting on a second
   sighting under load.
-
-- **(P2) [agent] The site dev server dies on its first edit to a workspace package.** Saving a file
-  under `packages/core/src` logs `re-bundling workspace packages: <file>` (`scripts/vite-prebundle.ts`),
-  then `transport was disconnected, cannot call "fetchModule"` against `scripts/vite-wake.ts` and
-  `server restart failed`. The server keeps answering, but with the code from before the edit, so a
-  browser check after a package change passes or fails on stale source. Seen twice in a row on `npx vite`
-  at `bb2b7ec72` (2026-11-11). Suspect `68004a234`, which reloads the dev config through vite's module
-  runner on this restart.
 
 - **(P3) [waiting] typedoc's own minimatch 10 carries GHSA-g3hv-75wg-m249 (moderate, dev only).** The root
   overrides minimatch to `^11.0.5` under eslint, typescript-eslint and ts-morph; typedoc 0.28 calls `matchOne`,
@@ -834,45 +688,6 @@ only story runner in the repo.
   `test:fleet:postbuild` run of `34de8c76d` under Node 24 (2026-10-21); labkit's build passed alone
   on the same node and on the rerun. Not looked at.
   Closes when it is seen a second time, which makes it a fix, or on 2026-11-30 with none, delete it.
-
-- **(P3) [agent] labkit's `JobProgress.browser.test.tsx` misses its width check by 0.5 px at 100.**
-  "at 100: expected 182.96875 to be close to 182.453125" in the batch run of `d7714ec60` (2026-11-11), and the
-  same two numbers again in the suite run of `ccecc970d` (2026-11-11) on teitou; it passed 3/3 alone on the fleet
-  after the first. Identical figures twice read as a real width change at three digits, not rasterizing noise
-  (inferred, not measured). Rework the check, or the count's sizing for its total, so 100 holds the width.
-
-
-- **(P2) [agent] Browser test files fail to load when the node's network changes.** A file
-  fails whole with `Failed to import test file … Caused by: TypeError: Failed to fetch dynamically
-  imported module`, along with any file loading in the same tenth of a second, and the next run
-  passes. The cause is Chromium: on a macOS network change it drops every request in flight, those
-  to vite on localhost included, with `net::ERR_NETWORK_CHANGED`. Seen once since `watchRequests`
-  (`scripts/vitest-browser-commands.ts`) began logging failed loads (2026-10-26): in the
-  palette-carry run on studio, configd logged `IPMonitor] network changed` at 18:13:55.736 on
-  2026-10-28, and 66 ms later 376 module requests failed with `ERR_NETWORK_CHANGED` and
-  `apps/chart/src/pipeline/pages.browser.test.tsx` loaded no tests (measured, from the job log and
-  `log show --process configd` on the node). It was the only weasel test job of 491 run from
-  2026-10-25 to 10-29 that overlapped a logged network change, and the only one with a load failure.
-  - **How often.** `IPMonitor] network changed` events, 2026-10-28 to 10-29: studio about 35 a day,
-    msb-uai 9 in 13 h, keiei 6 in 25 h, teitou 4 in 19 h (measured). Studio alone is on both
-    Ethernet (en0) and Wi-Fi (en1), and its event came right after an IPv6 republish on en1; that
-    the Wi-Fi link is why studio has the most is inferred. Some events are the whole LAN's: at
-    16:12:32 on 10-29 all four nodes logged one within 0.4 s (measured). That explains the
-    2026-10-25 bursts 3 s apart on studio and msb-uai (inferred: the nodes' logs no longer reach back).
-  - **Where to find a sighting.** A run's log holds `weasel-request <epoch ms> <ISO> net::ERR_NETWORK_CHANGED script …`
-    lines at the failed import's `browserv` stamp, and the node's `log show --process configd`
-    holds the event, for a day or two before it rotates. onto keeps each job's log in
-    `~/.config/onto/archive/<node>/<job>/`.
-  - **Not available.** Headless Chromium has no switch to ignore address changes (searched the
-    strings of Playwright's `chrome-headless-shell` 1248, 2026-10-29), and vitest retries tests,
-    never a file's import.
-  - **The decision.** Either take studio's Wi-Fi down while it has Ethernet, which removes its own
-    events and leaves the LAN-wide ones, or have `scripts/vitest-overlap.mjs` run again only the
-    files that loaded no tests when the run logged `ERR_NETWORK_CHANGED`. The second is a rerun the
-    suite does on its own, which nothing in it does today.
-    Ruled (2026-11-07): the rerun. Closes when `scripts/vitest-overlap.mjs` reruns the files that loaded no
-    tests in a run that logged `ERR_NETWORK_CHANGED`.
-
 
 ---
 

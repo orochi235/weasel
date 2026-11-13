@@ -202,6 +202,13 @@ and `npm run check:on-accent` fails on one that doesn't. In dark mode that pair 
 0.98 and 0.96, so on the accent the steps all but disappear: legibility won over
 hierarchy.
 
+A disabled control fades, and a fade alone reads like subtle text at the same
+alpha. So the rule that fades it also sets `filter: var(--wzl-disabled-filter)`,
+which desaturates it onto the neutral ramp (ruled 2026-11-07), and
+`npm run check:disabled` fails on a disabled-state rule that sets an opacity
+below 1 without it. A dimmed class that stands for a disabled state carries
+"disabled" in its name, so the check can see it.
+
 ### Sizing
 
 Sizes are baked px, never `calc()` against a root variable. `tokenPx()` is how a

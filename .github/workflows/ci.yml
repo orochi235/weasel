@@ -77,6 +77,8 @@ jobs:
       # Text on an accent fill redirects muted and subtle to their on-accent pair,
       # or they fall below 4.5:1 there.
       - run: npm run check:on-accent
+      # A control that fades when disabled also desaturates, or it reads as subtle text.
+      - run: npm run check:disabled
       # The stylesheet rules docs/conventions.md states: a spacing literal that
       # has a rung, a control height frozen in px, a label restating the
       # panel-label recipe, a z-index off the layer ladder.
