@@ -39,7 +39,7 @@ describe('groundGridSource, property', () => {
   it('offers finite lines on the lattice bracketing a ground probe, at any pitch and any distance out', () => {
     const seen = tally();
     fc.assert(fc.property(magnitude, signed, signed, (step, a, b) => {
-      const src = groundGridSource({ step });
+      const src = groundGridSource({ world: {}, step });
       const out = [...src.collect(collectOf([{ id: 'p', at: { x: a, y: 0, z: b }, role: 'pointer' }]))];
       for (const c of out) expect(isFinite3(c.locus.at as Vec3)).toBe(true);
       for (const [axis, c, lines] of [
@@ -80,7 +80,7 @@ describe('groundGridSource, property', () => {
       });
       const vp = { camera: createCamera({ target: at, distance: 6, pitch: 0.6, yaw: 0.4 }), width: 800, height: 600 };
       const world: W = { scene, viewport: () => vp };
-      const snap = createSnap(world, { sources: [boxSnapSource(world), groundGridSource({ step })], reachPx: 12 });
+      const snap = createSnap(world, { sources: [boxSnapSource(world), groundGridSource({ world, step })], reachPx: 12 });
       const c = projectPoint({ ...boxCorner(aabbOfPose(p), corner), y: 0 }, vp);
       if (!c) return;
       const press = { x: c.x + 3, y: c.y - 2 };

@@ -126,7 +126,7 @@ describe('aimSpace3d, property', () => {
 
 function footprintOf(vp: Viewport3d, u: Vec3, minExtent: number, ...commit: Parameters<ReturnType<typeof createInsert>['commit']>): Footprint | null {
   let seen: Footprint | null = null;
-  createInsert({ viewport: () => vp, up: u, minExtent, mint: (f) => ((seen = f), 'n' as NodeId) }).commit(...commit);
+  createInsert({ world: { viewport: () => vp, up: u }, minExtent, mint: (f) => ((seen = f), 'n' as NodeId) }).commit(...commit);
   return seen;
 }
 

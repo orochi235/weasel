@@ -214,7 +214,7 @@ describe('createInsert', () => {
     const vp = viewport();
     const seen: Footprint[] = [];
     const insert = createInsert({
-      viewport: () => vp,
+      world: { viewport: () => vp },
       mint: (footprint) => {
         seen.push(footprint);
         return 'minted' as NodeId;
@@ -246,7 +246,7 @@ describe('createInsert', () => {
     const shallow = viewport({
       camera: createCamera({ distance: 12, pitch: 0.05, target: { x: 0, y: 0.5, z: 0 } }),
     });
-    const insert = createInsert({ viewport: () => shallow, mint: mintBox(scene) });
+    const insert = createInsert({ world: { viewport: () => shallow }, mint: mintBox(scene) });
     expect(
       insert.commit({ x: 0, y: 0, width: 10, height: 10 }, { kind: 'rect' } as never),
     ).toBeNull();
@@ -255,7 +255,7 @@ describe('createInsert', () => {
   it('inserts nothing when the camera casts no ray', () => {
     const scene = createTestScene();
     const flat = viewport({ camera: createCamera({ distance: 0, target: { x: 0, y: 0.5, z: 0 } }) });
-    const insert = createInsert({ viewport: () => flat, mint: mintBox(scene) });
+    const insert = createInsert({ world: { viewport: () => flat }, mint: mintBox(scene) });
     expect(
       insert.commit({ x: 300, y: 300, width: 120, height: 120 }, { kind: 'rect' } as never),
     ).toBeNull();

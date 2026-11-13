@@ -6,7 +6,6 @@ import type { NodeId } from '@weasel-js/routing';
 import { scale as scaleBy, sub, type Vec3 } from '@weasel-js/geom/3d';
 import { groundAxes, groundHit } from './ground';
 import type { Pose3 } from './pose3';
-import type { ViewportSource } from './project';
 import { DEFAULT_UP, type Scene3d, type World3d } from './world';
 
 /** The ground-plane rectangle a drag swept out, in world units. */
@@ -60,26 +59,11 @@ export interface InsertNode3d<TData, TLayer extends string> {
 }
 
 /** Options for `createInsert`: where it casts from, as a world or as its parts, and what it makes there. */
-export type InsertOptions<TData = unknown, TLayer extends string = string> = InsertCommon & (
-  | ({
-    /** The world the other deps were built from: its viewport, the up its snap and camera turn about, and the
-     *  scene a `node` factory's node goes into. */
-    world: Pick<World3d<TData, TLayer>, 'viewport' | 'up'> & { scene?: Scene3d<TData, TLayer> };
-    viewport?: never;
-    up?: never;
-  } & InsertMake<TData, TLayer>)
-  | {
-    /** @deprecated Pass `world`, whose `viewport` this is: `up` then comes from the same place as every other
-     *  dep's. */
-    viewport: ViewportSource;
-    /** @deprecated Pass `world`: a second `up` beside `World3d.up` can disagree with it. Default +y. */
-    up?: Vec3;
-    world?: never;
-    mint: MintFn;
-    node?: never;
-    selection?: never;
-  }
-);
+export type InsertOptions<TData = unknown, TLayer extends string = string> = InsertCommon & {
+  /** The world the other deps were built from: its viewport, the up its snap and camera turn about, and the
+   *  scene a `node` factory's node goes into. */
+  world: Pick<World3d<TData, TLayer>, 'viewport' | 'up'> & { scene?: Scene3d<TData, TLayer> };
+} & InsertMake<TData, TLayer>;
 
 type MintFn = (footprint: Footprint, extras: InsertExtras, select?: CommitSelection) => NodeId | null;
 
@@ -160,7 +144,7 @@ function nodeMinter<TData, TLayer extends string>(
  * comes from the plane, not from the caller.
  */
 export function createInsert<TData = unknown, TLayer extends string = string>(opts: InsertOptions<TData, TLayer>): InsertDep {
-  const { viewport, up = DEFAULT_UP } = opts.world ?? { viewport: opts.viewport!, up: opts.up };
+  const { viewport, up = DEFAULT_UP } = opts.world;
   const minExtent = opts.minExtent ?? 0.25;
   const { u, v } = groundAxes(up);
   const made = opts.node ? nodeMinter(opts.world?.scene, opts.node, opts.selection) : null;

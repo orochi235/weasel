@@ -101,7 +101,7 @@ describe('createSnap: a 3D move', () => {
   it('still snaps, with nothing NaN, looking straight down', () => {
     const vp = viewport(createCamera({ distance: 12, pitch: MAX_PITCH, target: { x: 1, y: 0.5, z: 0 } }));
     const { world, ids } = worldOf([pose3({ x: 0, y: 0.5, z: 0 }), pose3({ x: 3, y: 0.5, z: 0 })], vp);
-    const snap = createSnap(world, { sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ step: 1 })] });
+    const snap = createSnap(world, { sources: [boxSnapSource(world), alignPlaneSource(world), groundGridSource({ world, step: 1 })] });
     const move = moveOf(world, ids[0]!);
     const out = snap.begin({ gesture: 'move', ids: [ids[0]!], press: move.press })
       .at(move.pointerFor({ x: 2.02, y: 0, z: 0.015 }), FREE);
@@ -249,8 +249,8 @@ describe('createSnap: a 3D insert', () => {
     const vp = world.viewport();
     let minted: Footprint | null = null;
     const deps = {
-      insert: createInsert({ viewport: world.viewport, mint: (f) => ((minted = f), 'n' as NodeId) }),
-      snap: createSnap(world, { sources: [groundGridSource({ step: 1 })] }),
+      insert: createInsert({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap(world, { sources: [groundGridSource({ world, step: 1 })] }),
     };
     const ctx = (p: Vec3): InvocationCtx => {
       const s = projectPoint(p, vp)!;
@@ -273,7 +273,7 @@ describe('createSnap: a 3D insert', () => {
     const vp = world.viewport();
     let minted: Footprint | null = null;
     const deps = {
-      insert: createInsert({ viewport: world.viewport, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      insert: createInsert({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
       snap: createSnap(world),
     };
     const ctx = (p: Vec3): InvocationCtx => {
@@ -296,8 +296,8 @@ describe('createSnap: a 3D insert', () => {
     const vp = world.viewport();
     let minted: Footprint | null = null;
     const deps = {
-      insert: createInsert({ viewport: world.viewport, mint: (f) => ((minted = f), 'n' as NodeId) }),
-      snap: createSnap(world, { sources: [groundGridSource({ step: 1 })] }),
+      insert: createInsert({ world, mint: (f) => ((minted = f), 'n' as NodeId) }),
+      snap: createSnap(world, { sources: [groundGridSource({ world, step: 1 })] }),
     };
     const click = projectPoint({ x: 1.3, y: 0, z: -0.8 }, vp)!;
     (placeAction.invoker as ImmediateInvoker).run(deps as never, {
@@ -312,7 +312,7 @@ describe('createSnap: a 3D insert', () => {
   it('snaps an insert onto a box corner on the ground ahead of the grid', () => {
     const { world } = worldOf([pose3({ x: 0.3, y: 0.5, z: 0.3 })]);
     const vp = world.viewport();
-    const snap = createSnap(world, { sources: [boxSnapSource(world), groundGridSource({ step: 1 })] });
+    const snap = createSnap(world, { sources: [boxSnapSource(world), groundGridSource({ world, step: 1 })] });
     const press = projectPoint({ x: 0.81, y: 0, z: 0.79 }, vp)!;
     const ground = cast(vp, snap.begin({ gesture: 'point', press }).at(press, FREE).point, 0);
     expect(ground.x).toBeCloseTo(0.8, 6);

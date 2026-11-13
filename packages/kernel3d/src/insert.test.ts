@@ -15,7 +15,7 @@ const TOP: Viewport3d = { ...VP, camera: createCamera({ pitch: Math.PI / 2 - 1e-
 
 function footprintOf(vp: Viewport3d, up: Vec3 | undefined): Footprint | null {
   let seen: Footprint | null = null;
-  createInsert({ viewport: () => vp, up, mint: (f) => ((seen = f), 'n' as NodeId) })
+  createInsert({ world: { viewport: () => vp, up }, mint: (f) => ((seen = f), 'n' as NodeId) })
     .commit(DRAG, { kind: 'rect' } as never);
   return seen;
 }
@@ -26,9 +26,8 @@ describe('createInsert', () => {
     const asked: (string | null | undefined)[] = [];
     let seen: Footprint | null = null;
     createInsert({
-      viewport: (viewId) => { asked.push(viewId); return viewId === 'right' ? right : VP; },
+      world: { viewport: (viewId) => { asked.push(viewId); return viewId === 'right' ? right : VP; }, up: { x: 0, y: 0, z: 1 } },
       viewId: 'right',
-      up: { x: 0, y: 0, z: 1 },
       mint: (f) => ((seen = f), 'n' as NodeId),
     }).commit(DRAG, { kind: 'rect' } as never);
     expect(asked).toEqual(['right']);
@@ -85,7 +84,7 @@ describe('createInsert', () => {
       height: 600,
     };
     const minted: Footprint[] = [];
-    const insert = createInsert({ viewport: () => shallow, mint: (f) => (minted.push(f), 'n' as NodeId) });
+    const insert = createInsert({ world: { viewport: () => shallow }, mint: (f) => (minted.push(f), 'n' as NodeId) });
     // The top two corners leave above the horizon; the bottom two reach the ground.
     const across = { x: 300, y: 0, width: 200, height: 599 };
     const ends = { start: { x: 300, y: 0 }, end: { x: 500, y: 599 } };
