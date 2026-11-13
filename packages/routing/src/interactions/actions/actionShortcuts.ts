@@ -49,14 +49,19 @@ export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
  * With `params` — an `ActionItem`'s — only the bindings that pass those same
  * values count, so each variant of `flip` gets its own key. A binding passes
  * what the action runs with from it, a tuning's params included.
+ *
+ * With `kind`, only the bindings of that kind count: `'key'` for a key that
+ * runs the action when pressed, `'keyHeld'` for one held down to keep it on.
  */
 export function actionShortcuts(
   action: Action,
   params?: Readonly<Record<string, unknown>>,
+  kind?: 'key' | 'keyHeld',
 ): readonly ActionShortcut[] {
   const out: ActionShortcut[] = [];
   const seen = new Set<string>();
   for (const { spec, opts } of actionBindings(action)) {
+    if (kind && spec.kind !== kind) continue;
     if (params && !paramsMatch(invokedParams(action, resolveParams(opts?.params)), params)) continue;
     const shortcut = keySpecShortcut(spec);
     if (!shortcut) continue;

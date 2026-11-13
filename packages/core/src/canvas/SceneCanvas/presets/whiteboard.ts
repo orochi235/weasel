@@ -7,7 +7,7 @@ import { movePreset, resizePreset } from './transform';
 import { viewPreset } from './view';
 
 /** The tools a whiteboard makes things with: the pencil, text, and the sticky note. */
-export const WHITEBOARD_TOOLS: ToolSet<BuiltinToolId> = toolSet('whiteboard', ['pencil', 'text', 'sticky']);
+export const WHITEBOARD_TOOLS: ToolSet<BuiltinToolId> = toolSet('whiteboard', ['pencil', 'text', 'sticky'], { label: 'Whiteboard' });
 
 /**
  * A whiteboard: {@link WHITEBOARD_TOOLS} on an open canvas you pan and zoom, with the select tool, moving,

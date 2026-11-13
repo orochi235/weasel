@@ -8,6 +8,8 @@
 export interface ToolSet<TId extends string = string> {
   readonly id: string;
   readonly members: readonly (TId | ToolSet<TId>)[];
+  /** What a surface listing the set by name calls it: a shortcut sheet's heading. Absent, the id. */
+  readonly label?: string;
   /** Its tools share one palette button, which opens a menu of them. See {@link toolStacksOf}. */
   readonly stack?: boolean;
 }
@@ -16,6 +18,8 @@ export interface ToolSet<TId extends string = string> {
 export interface ToolSetOptions {
   /** {@link ToolSet.stack}. */
   stack?: boolean;
+  /** {@link ToolSet.label}. */
+  label?: string;
 }
 
 /** One entry of a list of tools to mount: an id, or a set of them. */
@@ -25,7 +29,9 @@ export type ToolEntry<TId extends string = string> = TId | ToolSet<TId>;
 export function toolSet<TId extends string>(
   id: string, members: readonly ToolEntry<TId>[], options: ToolSetOptions = {},
 ): ToolSet<TId> {
-  return options.stack ? { id, members, stack: true } : { id, members };
+  return {
+    id, members, ...(options.label !== undefined ? { label: options.label } : {}), ...(options.stack ? { stack: true } : {}),
+  };
 }
 
 /** Whether `entry` is a set rather than a single id. */
@@ -63,10 +69,10 @@ export function withoutTools<TId extends string>(set: ToolSet<TId>, ...omit: rea
     if (members.length === 0) return null;
     return members.every((m, i) => m === inner.members[i]) && members.length === inner.members.length
       ? inner
-      : toolSet(`${inner.id}-without`, members, { stack: inner.stack });
+      : toolSet(`${inner.id}-without`, members, { stack: inner.stack, label: inner.label });
   };
   const kept = cut(set);
-  return toolSet(`${set.id}-without`, kept?.members ?? [], { stack: set.stack });
+  return toolSet(`${set.id}-without`, kept?.members ?? [], { stack: set.stack, label: set.label });
 }
 
 /** The ids of each set `entries` hold, at any depth, that is marked `stack`, sets inside it opened: the

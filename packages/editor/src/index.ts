@@ -22,6 +22,7 @@ export {
 } from './useDocClipboard';
 export { usePageGrid, type PageGridOptions } from './usePageGrid';
 export { EditorShell, type EditorShellProps } from './EditorShell';
+export { EditorTools, useEditorTools } from './shortcutSheet';
 export { EDITOR_CONTEXT_MENUS, EDITOR_CONTEXT_MENUS_CONTRIBUTION } from './contextMenus';
 export { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, SNAPPING_KEY, useEditorKeys, type EditorCommandOptions } from './editorCommands';
 export {

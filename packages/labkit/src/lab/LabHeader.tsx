@@ -61,6 +61,8 @@ export interface LabBarInput {
   addTrial: boolean;
   zoom: boolean;
   contributions: readonly LabContribution[];
+  /** Whether the lab offers the shortcut sheet, which the Lab menu then lists. */
+  shortcuts?: boolean;
   children?: ReactNode;
 }
 
@@ -77,6 +79,7 @@ export function labBar(input: LabBarInput): { menuBar: ReactNode; header: ReactN
         contributions={contributions}
         addTrial={addTrial}
         zoom={zoom}
+        shortcuts={input.shortcuts ?? false}
       />
     ),
     header: header && (

@@ -1,7 +1,9 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
 import {
-  type ActionsRegistry, createScene, type MenuHost, SceneCanvas, useActionsRegistry, useCommand, useMenuHost,
+  type ActionsRegistry, createScene, type MenuHost, SceneCanvas, SHAPE_TOOLS, type ToolsApi, useActionsRegistry, useCommand,
+  useMenuHost,
 } from '@weasel-js/core';
+import { useState } from 'react';
 import { pref } from '@weasel-js/prefs';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { renderWithIcons as render } from '@weasel-js/ui/testing/withIcons';
@@ -9,6 +11,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { EDITOR_ACTIONS } from './editorCommands';
 import { EditorShell } from './EditorShell';
 import { menuRun } from './menuBar';
+import { useEditorTools } from './shortcutSheet';
 
 beforeAll(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: (...args: unknown[]) => unknown };
@@ -64,6 +67,24 @@ describe('EditorShell', () => {
     unmount();
     render(<EditorShell prefs={prefs()} preferences={null}><Probe /></EditorShell>);
     expect(registry?.list().some((a) => a.id === EDITOR_ACTIONS.preferences)).toBe(false);
+  });
+
+  it('opens the shortcut sheet on Shift+/, listing the tools a canvas publishes', () => {
+    function Workspace() {
+      const [tools, setTools] = useState<ToolsApi | null>(null);
+      useEditorTools(tools, [SHAPE_TOOLS]);
+      return <SceneCanvas features={['draw']} scene={scene()} layers={{}} width={64} height={64} defaultTools={[SHAPE_TOOLS]} onToolsCreated={setTools} />;
+    }
+    render(<EditorShell><Probe /><Workspace /></EditorShell>);
+    key({ key: '?', code: 'Slash', shiftKey: true });
+    const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    expect(within(within(sheet).getByRole('region', { name: 'Shapes' })).getByText('Rectangle')).toBeTruthy();
+    expect(within(sheet).getAllByRole('listitem').map((li) => li.textContent)).toContain('QQ');
+  });
+
+  it('registers no shortcut sheet for `shortcuts={null}`', () => {
+    render(<EditorShell shortcuts={null}><Probe /></EditorShell>);
+    expect(registry?.list().some((a) => a.id === EDITOR_ACTIONS.shortcuts)).toBe(false);
   });
 
   it("runs an app command's key with no canvas mounted", () => {

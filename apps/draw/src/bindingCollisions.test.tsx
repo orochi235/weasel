@@ -17,6 +17,7 @@ import { usePathToolsTools } from '@weasel-js/path-tools';
 import { EDITOR_ACTIONS, EDITOR_PREFERENCES_KEY, useNewCommand, useOpenCommand, useSaveCommand } from '@weasel-js/editor';
 import { createSpacingHintsPreset } from '@weasel-js/guides';
 import type { DocPages } from '@weasel-js/editor';
+import { useShortcutSheetCommand } from '@weasel-js/ui/components/ShortcutSheet';
 import { useMemo } from 'react';
 import { appCommandsContribution, type AppCommands } from './appCommands';
 import { colorContribution } from './tools/colorContext';
@@ -51,7 +52,8 @@ const history = {
   entries: () => ({ undo: [], redo: [] }),
 };
 
-/** The commands draw registers through `useCommand` beside the canvas: the file and page commands and Preferences. */
+/** The commands draw registers through `useCommand` beside the canvas: the file and page commands, Preferences, and
+ *  the shortcut sheet. */
 function Commands() {
   useNewCommand(FILE_ACTIONS.new, 'New', noop);
   useOpenCommand(FILE_ACTIONS.open, 'Open', noop);
@@ -60,6 +62,8 @@ function Commands() {
   usePageCommands(pages, noop);
   // `<EditorShell>`'s Preferences, which it registers with this key.
   useCommand(EDITOR_ACTIONS.preferences, 'Preferences', noop, { keys: EDITOR_PREFERENCES_KEY });
+  // `<EditorShell>`'s shortcut sheet, with its default key.
+  useShortcutSheetCommand(noop);
   return null;
 }
 

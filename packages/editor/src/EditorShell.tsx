@@ -9,6 +9,7 @@ import {
   type EditorPrefs, EditorPrefsContext, EditorPrefsDialog, type EditorPrefsDialogProps, useOpenedPrefs,
 } from './editorPrefs';
 import { editorMenuBar, type MenuContributions, type MenuTitle } from './menuBar';
+import { ShortcutSheetHost } from './shortcutSheet';
 
 /** Props for {@link EditorShell}. */
 export interface EditorShellProps<S extends PrefGroup = PrefGroup> {
@@ -18,6 +19,11 @@ export interface EditorShellProps<S extends PrefGroup = PrefGroup> {
   prefsDialog?: EditorPrefsDialogProps;
   /** How `editor.preferences` registers; `null` registers none. Ignored without `prefs`. */
   preferences?: EditorCommandOptions | null;
+  /**
+   * How `shortcuts.show` registers, which opens the keyboard shortcut sheet: bound to Shift+/ unless `keys` says
+   * otherwise. `null` registers none and draws no sheet. The sheet lists the tools `useEditorTools` publishes.
+   */
+  shortcuts?: EditorCommandOptions | null;
   /** What each menu holds, by title key. Without it there is no menu bar. Pass a new value to change the menus. */
   menus?: MenuContributions;
   /** The menu titles and their order. Default `EDITOR_MENU_TITLES`. */
@@ -42,7 +48,7 @@ export interface EditorShellProps<S extends PrefGroup = PrefGroup> {
 /**
  * The frame of an editor app: the kit's providers where none is in scope already (deps, actions, the active tool,
  * the selection, and the pointer), a dispatcher that runs the app's command keys with no canvas holding them, the
- * menu bar and topbar, the preferences store and dialog, the context menu host, and the default context menus
+ * menu bar and topbar, the preferences store and dialog, the keyboard shortcut sheet, the context menu host, and the default context menus
  * (`contextMenus`). `children` render below the topbar. Draws no element of its own: what it renders is laid out by the app's container.
  */
 export function EditorShell<S extends PrefGroup = PrefGroup>(props: EditorShellProps<S>) {
@@ -57,8 +63,8 @@ const DEFAULT_AMBIENT = [EDITOR_CONTEXT_MENUS_CONTRIBUTION];
 const NO_AMBIENT: typeof DEFAULT_AMBIENT = [];
 
 function ShellBody({
-  prefs, prefsDialog, preferences, menus, menuTitles, menuBar = 'row', menuBarClassName, topbar, contextMenus = true,
-  children,
+  prefs, prefsDialog, preferences, shortcuts = {}, menus, menuTitles, menuBar = 'row', menuBarClassName, topbar,
+  contextMenus = true, children,
 }: EditorShellProps) {
   useEditorKeys();
   const store = useOpenedPrefs(prefs);
@@ -73,9 +79,11 @@ function ShellBody({
   return (
     <EditorPrefsContext.Provider value={prefsValue}>
       <AmbientContributionsProvider contributions={contextMenus ? DEFAULT_AMBIENT : NO_AMBIENT}>
-        {!inline && bar}
-        {top}
-        {children}
+        <ShortcutSheetHost options={shortcuts}>
+          {!inline && bar}
+          {top}
+          {children}
+        </ShortcutSheetHost>
         {store && preferences !== null && <PreferencesCommand options={preferences} open={open} />}
         {store && (
           <EditorPrefsDialog store={store} isOpen={prefsOpen} onOpenChange={setPrefsOpen} dialog={prefsDialog} />

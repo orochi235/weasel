@@ -6,7 +6,7 @@ import { useOrbitTool } from './tools';
 export type Kernel3dToolId = 'orbit';
 
 /** The 3D camera tools. */
-export const KERNEL3D_TOOLS: ToolSet<Kernel3dToolId> = toolSet('kernel3d', ['orbit']);
+export const KERNEL3D_TOOLS: ToolSet<Kernel3dToolId> = toolSet('kernel3d', ['orbit'], { label: '3D view' });
 
 /** Every tool in {@link KERNEL3D_TOOLS}, keyed by id, for `<SceneCanvas tools>`. */
 export function useKernel3dTools(): Record<Kernel3dToolId, Tool> {

@@ -1,5 +1,6 @@
 import { isPrefLeaf, type PrefGroup, type PrefLeaf, pref } from '@weasel-js/prefs';
 import { mergeMenuDefs } from '@weasel-js/routing';
+import { SHORTCUT_SHEET_ID } from '@weasel-js/ui/components/ShortcutSheet';
 import { MARKS_COMMAND, takesMarks } from '../annotations/labMarks';
 import { type LabContribution, labItemCommandId } from '../chrome/labTypes';
 import { groupsOf } from '../chrome/regions/groupsOf';
@@ -26,6 +27,8 @@ export interface LabMenuBarInput {
   /** The lab's chrome contributions; its header items become rows in the Lab menu. */
   header: readonly LabContribution[];
   declared?: PrefGroup;
+  /** End the Lab menu with the shortcut sheet's row. */
+  shortcuts?: boolean;
 }
 
 const isMenu = (node: PrefLeaf | PrefGroup | undefined): node is PrefGroup =>
@@ -54,9 +57,12 @@ function itemSections(contributions: readonly LabContribution[]): Children {
   return sections;
 }
 
-function labMenu({ instruments, addTrial, header }: LabMenuBarInput): PrefGroup {
+function labMenu({ instruments, addTrial, header, shortcuts }: LabMenuBarInput): PrefGroup {
   const children: Children = addTrial ? { add: addRows(instruments) } : {};
-  return pref.group('Lab', { ...children, ...itemSections(header) }, { as: 'menu' });
+  const help: Children = shortcuts
+    ? { help: pref.group('', { shortcuts: pref.action(SHORTCUT_SHEET_ID) }) }
+    : {};
+  return pref.group('Lab', { ...children, ...itemSections(header), ...help }, { as: 'menu' });
 }
 
 function viewMenu(zoom: boolean, marks: boolean): PrefGroup {
