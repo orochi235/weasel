@@ -28,7 +28,16 @@ export type Paint =
   | PatternPaint
   | { kind: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
   | { kind: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number }
-  | { kind: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: PaintUnits; interpolate?: ColorSpace; opacity?: number };
+  | {
+    kind: 'conic-gradient';
+    center: { x: number; y: number };
+    /** Where offset 0 starts, in radians from +x toward +y (clockwise on a y-down screen); the stops run the same way. */
+    angle: number;
+    stops: GradStop[];
+    units?: PaintUnits;
+    interpolate?: ColorSpace;
+    opacity?: number;
+  };
 
 /**
  * Which coordinate space a gradient's geometry (`from`/`to`, `center`,
