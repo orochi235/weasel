@@ -30,6 +30,15 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P3) [agent] An `insertNodeFactories` entry for a kit kind cannot read its own extras without a cast.**
+  `InsertNodeFactory` takes the whole `InsertExtras` union, whose last member is `{ kind: string; [extra]:
+  unknown }`, so `extras.kind === 'pencil'` narrows to that member too and `extras.samples` is `unknown`:
+  StrokeAndFillDemo's pencil factory casts `extras` for that reason. The seam is a factory map typed per key
+  (`{ pencil?: (bounds, extras: Extract<InsertExtras, { kind: 'pencil' }>) => … }` beside an open string
+  index), which needs the factory type made bivariant so the narrower entries still fit the record; new API,
+  too big for audit round 20's pass (2026-11-12). Closes when the demo's factory reads `extras.samples` with no
+  cast.
+
 - **(P3) [agent] A refused gesture's reason tag lands off the pointer on a canvas under a transformed ancestor.**
   `GestureReason` (`packages/core/src/canvas/GestureReason.tsx`) is `position: fixed` at the reason's client
   point, and a transformed ancestor becomes the containing block of a fixed element, so the tag is placed in
@@ -339,6 +348,14 @@ Owner tags, after the priority (2026-10-26):
 ---
 
 ## Scene, adapters & layout
+
+- **(P3) [agent] SVG export leaves out a node only a consumer painter draws.** `svgNodesFromKit` writes what
+  core's built-in painters draw, so a kind registered with `registerNodeShape` vanishes from the file unless the
+  app passes `leaf` (the svg README shows it, 2026-11-12). The painter already returns the node's `path` draw
+  commands; lowering those (path, fill, stroke) to `SvgPathNode`s through `findNodeShape` would export any
+  painted kind with no `leaf`. Left because a command's gradient fill is in a different frame from the
+  `svgPaintFromKit` one and needs working out. Closes when a node drawn by a registered painter's solid-filled
+  path commands exports with no `leaf`.
 
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
   stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
