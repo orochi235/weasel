@@ -2130,3 +2130,24 @@ Calls the lanes made without a ruling:
   pointers (`pinchDolly.integration.test.tsx`).
 - Chart's command keys (grid, undo and redo, group and ungroup, the page keys) take `<action>.key` ids, as draw's do
   (2026-11-13, in the batch).
+
+## Audit round twenty-three (2026-11-13): the apps
+
+- 2026-11-13 (the lane's call): a double-click on text opens it through `editTextAt`, an action of its own in the
+  `textEdit` feature (part of `edit`), rather than a default binding on `enterTextEdit`: that one opens the
+  selection and is what the text and sticky tools' clicks reach, which should keep opening the selected node
+  whatever glyph is under the click. `editTextAt` declines where the double-click names a group, so text
+  in a group enters the group first and opens on the next double-click, as path edit does.
+- 2026-11-13 (the lane's call): a canvas inside a host's `useSceneTextEdit` container answers the `textEdit` dep
+  with that editor, so a host binds nothing for a double-click or a text tool to reach it. `TextEditDepPublisher`
+  stays for a host whose container does not hold the canvas.
+- 2026-11-13 (the lane's call): draw keeps the loupe's mode and magnification as prefs (`loupe.mode`,
+  `loupe.factor`) and whether it shows as session state; its color mode is `ui.colorMode`, and a choice saved under
+  the old `wd-mode` key is not carried over. Chart keeps its pipeline Show toggles as `pipeline.*` prefs.
+- 2026-11-13 (the lane's call): theme-editor's last-open theme stays a localStorage record beside the drafts: it says
+  which document was open, not how the user wants the editor to behave. Its preview surface (`surfaceKey`) stays in
+  the saved state too, since a preset records the surface it was tuned on.
+- 2026-11-13 (the lane's call): the site's own shell keeps its DOM handlers: the demo frame's resize handles (a drag,
+  arrow keys and a double-click reset) and the command palette's `/` key. Neither is a demo, and the shell mounts no
+  dispatcher; running each through one would mean an actions registry, a dep registry and a dispatcher for one
+  affordance.
