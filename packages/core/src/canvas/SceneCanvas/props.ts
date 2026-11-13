@@ -347,7 +347,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  registered, otherwise none — a canvas can run on ambient bindings
      *  alone. Must be one of the registered tools. Ignored when the consumer
      *  supplies their own `tools` prop. */
-    initialActiveTool?: string;
+    defaultActiveTool?: string;
 
     /** Always-on entries to register alongside the internal tools — every one
      *  a `SurfaceContribution`, whose views, deps, overlay, bindings, actions

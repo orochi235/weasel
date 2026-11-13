@@ -123,7 +123,7 @@ describe('entering path-edit from the keyboard', () => {
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={64} height={64}
         ambient={[keys]} modes={machine.registry} pathEdit={pathEdit}
-        {...(tool ? { defaultTools: ['select', tool] as const, initialActiveTool: tool } : {})} />
+        {...(tool ? { defaultTools: ['select', tool] as const, defaultActiveTool: tool } : {})} />
     );
   }
   const depsRef: { current: DepRegistry | null } = { current: null };

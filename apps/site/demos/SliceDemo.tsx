@@ -52,7 +52,7 @@ export function SliceDemo() {
           selection={selection}
           features={['pick', 'move', 'edit']}
           defaultTools={['slice']}
-          initialActiveTool="slice"
+          defaultActiveTool="slice"
           onToolsCreated={setTools}
         />
       </DemoStage>

@@ -41,7 +41,7 @@ function mount() {
         width={200} height={200}
         layers={{}}
         defaultTools={BUILTIN_TOOL_IDS}
-        initialActiveTool="pen"
+        defaultActiveTool="pen"
         onToolsCreated={(t) => { captured.tools = t; }}
       />
     );

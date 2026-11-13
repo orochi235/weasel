@@ -53,7 +53,7 @@ function setup(tool: 'select' | 'rect' = 'select') {
     sel = useSelection({ mode: 'multi', scene });
     return (
       <SceneCanvas features={['draw']} scene={scene} layers={{}} width={300} height={100} selection={sel}
-        enteredGroup={entered} defaultTools={['select', 'rect']} initialActiveTool={tool}>
+        enteredGroup={entered} defaultTools={['select', 'rect']} defaultActiveTool={tool}>
         <Grab />
       </SceneCanvas>
     );

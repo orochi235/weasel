@@ -35,7 +35,7 @@ function Publish({ values }: { values: ToolOptionValues }) {
 function mount(tool: string, values?: ToolOptionValues) {
   const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
   const { container } = render(
-    <SceneCanvas scene={scene} width={200} height={200} defaultTools={['rect', 'polygon', 'line', 'sticky']} initialActiveTool={tool}>
+    <SceneCanvas scene={scene} width={200} height={200} defaultTools={['rect', 'polygon', 'line', 'sticky']} defaultActiveTool={tool}>
       {values && <Publish values={values} />}
     </SceneCanvas>,
   );

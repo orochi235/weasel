@@ -26,7 +26,7 @@ afterEach(() => {
   delete window.__weaselTest;
 });
 
-function setup(initialActiveTool = 'alpha') {
+function setup(defaultActiveTool = 'alpha') {
   const alpha = defineTool({ id: 'alpha', bindings: [] });
   const beta = defineTool({ id: 'beta', bindings: [] });
   let tools: ReturnType<typeof useTools> | null = null;
@@ -40,7 +40,7 @@ function setup(initialActiveTool = 'alpha') {
         height={200}
         layers={{}}
         tools={{ alpha, beta }}
-        initialActiveTool={initialActiveTool}
+        defaultActiveTool={defaultActiveTool}
         onToolsCreated={(t) => { tools = t; }}
       />
     );

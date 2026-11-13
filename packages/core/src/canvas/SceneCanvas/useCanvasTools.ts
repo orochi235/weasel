@@ -74,7 +74,7 @@ export function useCanvasTools(args: {
   actions: Props['actions'];
   /** `longPress.feedback`. Default true, which installs the kit's own. */
   pressFeedback: NonNullable<Props['longPress']>['feedback'];
-  initialActiveTool: Props['initialActiveTool'];
+  defaultActiveTool: Props['defaultActiveTool'];
   modes: Props['modes'];
   onToolsCreated: Props['onToolsCreated'];
 }): {
@@ -86,7 +86,7 @@ export function useCanvasTools(args: {
   /** The surface's own always-on entries a takeover's ambient leaves out: they apply under it too. */
   surface: readonly SurfaceContribution[];
 } {
-  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, initialActiveTool, modes, onToolsCreated } = args;
+  const { select, enabled, tools: toolsProp, defaultTools, toolOptions, inertia, defaultActiveTool, modes, onToolsCreated } = args;
   const ambient = useWithProvidedAmbient(args.ambient);
 
   const takeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
@@ -114,7 +114,7 @@ export function useCanvasTools(args: {
   );
 
   const internal = useTools({
-    active: initialActiveTool ?? ('select' in registry ? 'select' : null),
+    active: defaultActiveTool ?? ('select' in registry ? 'select' : null),
     registry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
     ...(modes ? { modes } : {}),

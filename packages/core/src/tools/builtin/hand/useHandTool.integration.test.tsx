@@ -119,7 +119,7 @@ describe('the hand under a held modifier', () => {
       const { container, unmount } = render(
         <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200}
           view={start} onViewChange={(v) => { last = v; }}
-          defaultTools={['select', 'hand']} initialActiveTool="hand" />,
+          defaultTools={['select', 'hand']} defaultActiveTool="hand" />,
       );
       const canvas = container.querySelector('canvas')!;
       const fire = (type: string, x: number, y: number) =>

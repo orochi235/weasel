@@ -134,7 +134,7 @@ describe('<SceneCanvas selectTool={{ rotate: false }}>', () => {
     };
     const { seen, canvas, pose } = mount({
       features: ['pick', 'transform'], selectTool: { rotate: false },
-      tools: { spinner }, initialActiveTool: 'spinner',
+      tools: { spinner }, defaultActiveTool: 'spinner',
       chromeVisibility: { 'selection.rotation-handle': always },
     });
     expect(seen.actionIds).toContain('rotate');

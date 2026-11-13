@@ -35,7 +35,7 @@ describe('SceneCanvas tool cursor', () => {
           height={200}
           layers={{}}
           tools={{ cursor: tool }}
-          initialActiveTool="cursor"
+          defaultActiveTool="cursor"
         />
       );
     }
@@ -70,7 +70,7 @@ describe('SceneCanvas tool cursor', () => {
           height={200}
           layers={{}}
           tools={{ cursor: defineTool({ id: 'cursor', cursor: 'crosshair' }) }}
-          initialActiveTool="cursor"
+          defaultActiveTool="cursor"
         />
       );
     }

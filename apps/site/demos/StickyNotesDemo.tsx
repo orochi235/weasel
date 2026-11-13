@@ -37,7 +37,7 @@ export function StickyNotesDemo() {
           selection={selection}
           features={['pick', 'move', 'resize', 'edit']}
           defaultTools={['sticky', 'pencil', 'text']}
-          initialActiveTool="select"
+          defaultActiveTool="select"
           onToolsCreated={setTools}
         />
       </div>

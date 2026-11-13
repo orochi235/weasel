@@ -36,7 +36,7 @@ function penAnchors(enabled: boolean, points: readonly { x: number; y: number }[
   const { container } = render(
     <SceneCanvas
       features={['draw']} scene={scene} width={200} height={200} layers={{}}
-      defaultTools={BUILTIN_TOOL_IDS} initialActiveTool="pen"
+      defaultTools={BUILTIN_TOOL_IDS} defaultActiveTool="pen"
       snap={{ sources: [gridSource(10)], enabled }}
     />,
   );

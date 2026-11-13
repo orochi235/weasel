@@ -177,7 +177,7 @@ export function DitherDemo() {
         <SceneCanvas
           key={snap}
           viewport={ZOOM_RANGE}
-          initialActiveTool="hand"
+          defaultActiveTool="hand"
           view={view}
           onViewChange={setView}
           className="ckd-canvas"

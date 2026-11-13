@@ -235,7 +235,7 @@ export function ForceGraphDemo() {
             selection={selection}
             selectable={false}
             tools={tools}
-            initialActiveTool="pin"
+            defaultActiveTool="pin"
             ambient={PAN_ON_DRAG}
             view={view}
             onViewChange={setView}

@@ -60,7 +60,7 @@ describe('drawing a rect with a modifier held from the press', () => {
   function drawWith(mods: { shiftKey?: boolean; altKey?: boolean }) {
     const scene = createScene<object, 'main', P>({ systemLayers: [{ id: 'main' }] });
     const { container } = render(
-      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200} defaultTools={["rect"]} initialActiveTool="rect" />,
+      <SceneCanvas features={['draw']} scene={scene} layers={{}} width={200} height={200} defaultTools={["rect"]} defaultActiveTool="rect" />,
     );
     const canvas = container.querySelector('canvas')!;
     const at = (type: string, x: number, y: number) =>
