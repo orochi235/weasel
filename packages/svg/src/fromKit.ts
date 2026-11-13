@@ -222,11 +222,13 @@ export interface SvgNodesFromKitOptions<TId extends string = string> {
   roots?: readonly TId[];
   /** `false` leaves a node out, with everything under it — a hidden layer. */
   include?(id: TId): boolean;
-  /** Lower a leaf yourself; `null` leaves it out. Defaults to {@link svgLeafFromKit}.
+  /** Lower a leaf yourself; `null` leaves it out, and `undefined` writes the
+   *  default, {@link svgLeafFromKit} with its `'inherit'` fields resolved: the
+   *  answer for every node but the kinds a consumer painter draws.
    *  `inherited` is what the leaf's `'inherit'` fields resolve to; write those
    *  as these, and the walk marks the result as inheriting where SVG's
    *  cascade can carry them. */
-  leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null;
+  leaf?(id: TId, node: SvgKitTreeNode, inherited: SvgKitInherited): SvgNode | null | undefined;
   /** Decorate the `<g>` written for a scene group, e.g. with `meta`. */
   group?(id: TId, group: SvgGroupNode): SvgGroupNode;
   /** Decorate the `<g>` written for a mark with children, so a reader can
@@ -288,8 +290,9 @@ export function svgNodesFromKit<TId extends string>(
       : stored;
     const own = node.data as SvgKitLeafData | null;
     const isGroup = node.kind === 'group';
+    const custom = isGroup ? null : leaf?.(id, node, up);
     const self = isGroup ? null : markInherits(
-      leaf ? leaf(id, node, up) : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
+      custom !== undefined ? custom : svgLeafFromKit(resolvedData(own ?? {}, up), node.pose), own ?? {}, up,
     );
     const kids = tree.childrenOf(id);
     if (!isGroup && kids.length === 0) return self;
