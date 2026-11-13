@@ -1,4 +1,4 @@
-import { ActionDisabledReason, type Action } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, type Action } from '@weasel-js/routing';
 import type { BoundGesture } from '@weasel-js/routing';
 import type { ImmediateInvoker } from '@weasel-js/routing';
 
@@ -43,6 +43,7 @@ export function buildToolActivateBindings(
         kind: 'key',
         key: keyOpts.key,
         ...(Object.keys(mods).length > 0 ? { mods } : {}),
+        phase: BETWEEN_GESTURES,
       },
       opts: { id, params: { toolId } },
     } as BoundGesture;

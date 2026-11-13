@@ -78,6 +78,7 @@
     "AverageAxis": "type",
     "BASELINE_ACTIONS": "const",
     "BASELINE_ACTION_IDS": "const",
+    "BETWEEN_GESTURES": "const",
     "BOOLEAN_OF_CHILDREN": "const",
     "BUILTIN_MARKERS": "const",
     "BUILTIN_TOOLS": "const",

@@ -3,7 +3,7 @@
  * (`convertSegments`): the selected segments from the keyboard, or the one
  * under a Shift+double-click.
  */
-import { ActionDisabledReason, type Action, type ImmediateInvoker } from '@weasel-js/routing';
+import { ActionDisabledReason, BETWEEN_GESTURES, type Action, type ImmediateInvoker } from '@weasel-js/routing';
 import { convertSegments, editAnchorSetTracked, segmentsBetweenAnchors, type SegmentType } from '@weasel-js/geom';
 import {
   anchorEditWouldChange, commitAnchorEdit, depOf, editingLayer, inPlane, pathOperationTags, segmentUnder,
@@ -33,7 +33,7 @@ export const convertSegmentsAction: Action & { requires: string[] } = {
     { key: 'line', label: 'Make segments straight', icon: icon('straightenSegment'), params: { to: 'line' } },
     { key: 'curve', label: 'Make segments curved', icon: icon('curveSegment'), params: { to: 'curve' } },
   ],
-  defaultBinding: [{ spec: { kind: 'key', key: ['c', 'C'], mods: { shift: true } }, opts: { id: 'convertSegments.key' } }],
+  defaultBinding: [{ spec: { kind: 'key', key: 'c', mods: { shift: true }, phase: BETWEEN_GESTURES }, opts: { id: 'convertSegments.key' } }],
   eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
