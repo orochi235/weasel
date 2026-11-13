@@ -4,8 +4,8 @@ import {
   useScene,
   textCommandFromRuns,
   solid,
-  modeDecorationLayer,
-  workspaceTintLayer,
+  createModeDecorationLayer,
+  createWorkspaceTintLayer,
   type DrawCommand,
   type ToolsApi,
 } from '@weasel-js/core';
@@ -134,8 +134,8 @@ export function ModesDemo() {
     return d;
   }, [registry, scene]);
 
-  const decorationLayer = useMemo(() => modeDecorationLayer(decorations), [decorations]);
-  const tintLayer = useMemo(() => workspaceTintLayer({ registry }), [registry]);
+  const decorationLayer = useMemo(() => createModeDecorationLayer(decorations), [decorations]);
+  const tintLayer = useMemo(() => createWorkspaceTintLayer({ registry }), [registry]);
   const redrawOn = useMemo(() => [scoping], [scoping]);
 
   const allowed = new Set<string>(mode.allows);

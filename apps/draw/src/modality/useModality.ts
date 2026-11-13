@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   asNodeId,
   hasEditablePath,
-  modeDecorationLayer,
+  createModeDecorationLayer,
   type PathEditHost,
   type RenderLayer,
   type Scene,
@@ -106,7 +106,7 @@ export function useModality(
   // zoom, unlike the kit's screen-space ones). Nothing here needs to
   // re-add it.
 
-  const decorationLayer = useMemo(() => modeDecorationLayer(decorations), [decorations]);
+  const decorationLayer = useMemo(() => createModeDecorationLayer(decorations), [decorations]);
 
   const [anchors] = useState(createAnchorSelection);
   const pathEdit = useMemo(() => modePathEdit(

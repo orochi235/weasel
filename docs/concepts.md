@@ -672,7 +672,7 @@ layout, `setPages` replaces it in one undo entry, and `addPage`, `removePage` (w
 `movePage`, `resizePage`, and `renamePage` are built on it. A page's content moves with it for free. A page's `meta`
 holds what other packages keep on it, each under its owner's key (diagram-formats keeps a graph page's notation and
 layout under `'diagram:graph'`); every edit carries it with the page. `layoutPages`, `pageAt`, `pageHolding`,
-`pageInView`, `fitViewToPage`, and `pagesLayer` work on the placed list. `PageTabs` in `@weasel-js/ui` is a strip of
+`pageInView`, `fitViewToPage`, and `createPagesLayer` work on the placed list. `PageTabs` in `@weasel-js/ui` is a strip of
 tabs over any page list.
 
 Specs built in world space go onto the pages with `addOnPages`, or `placeOnPages` once added, each root into the

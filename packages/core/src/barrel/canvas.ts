@@ -152,7 +152,7 @@ export type { WeaselProviderProps } from '../WeaselProvider';
 
 // ─── Layer primitives: RenderLayer, ordered children ────────────────────────
 export * from '../core/layers/render';
-export { workspaceTintLayer, modeDecorationLayer } from '../domains/modes/modeLayers';
+export { createWorkspaceTintLayer, createModeDecorationLayer } from '../domains/modes/modeLayers';
 export type { WorkspaceTintLayerOptions } from '../domains/modes/modeLayers';
 export { modeTriggers } from '../domains/modes/modeTriggers';
 export type { ModeTriggerHandlers } from '../domains/modes/modeTriggers';

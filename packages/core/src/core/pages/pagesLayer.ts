@@ -1,7 +1,7 @@
 import type { RenderLayer } from '../layers/render';
 import type { PlacedPage } from './pages';
 
-/** Options for {@link pagesLayer}. */
+/** Options for {@link createPagesLayer}. */
 export interface PagesLayerOptions {
   /** Each page's color: one for all, or one per page. */
   fill: string | ((page: PlacedPage) => string);
@@ -16,7 +16,7 @@ export interface PagesLayerOptions {
  * filled rect, to sit under the scene. Build it again when the pages or the
  * fill change; its commands are cached on both.
  */
-export function pagesLayer(pages: readonly PlacedPage[], options: PagesLayerOptions): RenderLayer<unknown> {
+export function createPagesLayer(pages: readonly PlacedPage[], options: PagesLayerOptions): RenderLayer<unknown> {
   const { fill, id = 'pages', label = 'Pages' } = options;
   const colorOf = typeof fill === 'function' ? fill : () => fill;
   return {

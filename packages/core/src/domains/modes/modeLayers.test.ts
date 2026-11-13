@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createModeDecorations, createModeRegistry, type ModeDefinition } from '@weasel-js/modes';
-import { modeDecorationLayer, workspaceTintLayer } from './modeLayers';
+import { createModeDecorationLayer, createWorkspaceTintLayer } from './modeLayers';
 import type { View } from 'core/viewport/view';
 
 const MODES: readonly ModeDefinition[] = [
@@ -14,17 +14,17 @@ const VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 200, height: 100, dpr: 1 };
 
 type Cmd = { kind: string; path: { x: number; y: number; width: number; height: number }; fill: Record<string, unknown> };
-const draw = (layer: ReturnType<typeof workspaceTintLayer>, view = VIEW) => layer.draw(undefined, view, DIMS) as unknown as Cmd[];
+const draw = (layer: ReturnType<typeof createWorkspaceTintLayer>, view = VIEW) => layer.draw(undefined, view, DIMS) as unknown as Cmd[];
 
-describe('workspaceTintLayer', () => {
+describe('createWorkspaceTintLayer', () => {
   it('paints nothing in a mode with no workspace tint', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
-    expect(draw(workspaceTintLayer({ registry }))).toEqual([]);
+    expect(draw(createWorkspaceTintLayer({ registry }))).toEqual([]);
   });
 
   it('washes the whole viewport in a solid tint at the mode intensity', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
-    const [cmd, ...rest] = draw(workspaceTintLayer({ registry }));
+    const [cmd, ...rest] = draw(createWorkspaceTintLayer({ registry }));
     expect(rest).toEqual([]);
     expect(cmd!.path).toMatchObject({ x: 0, y: 0, width: 200, height: 100 });
     expect(cmd!.fill).toMatchObject({ paint: { kind: 'solid', color: '#ff0000', opacity: 0.5 } });
@@ -32,7 +32,7 @@ describe('workspaceTintLayer', () => {
 
   it('fades by the declared gradient direction, defaulting intensity to 0.12', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'rise' });
-    const layer = workspaceTintLayer({ registry });
+    const layer = createWorkspaceTintLayer({ registry });
     const [rise] = draw(layer);
     expect(rise!.fill).toMatchObject({ paint: { kind: 'linear-gradient', from: { x: 0, y: 100 }, to: { x: 0, y: 0 }, opacity: 0.12 } });
 
@@ -44,7 +44,7 @@ describe('workspaceTintLayer', () => {
   it('paints the fallback visual in a mode with no tint, and the mode\'s own over it', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
     let on = true;
-    const layer = workspaceTintLayer({ registry, fallback: { visual: () => (on ? { tint: '#8b5cf6', intensity: 0.2 } : null), subscribe: () => () => {} } });
+    const layer = createWorkspaceTintLayer({ registry, fallback: { visual: () => (on ? { tint: '#8b5cf6', intensity: 0.2 } : null), subscribe: () => () => {} } });
     expect(draw(layer)[0]!.fill).toMatchObject({ paint: { kind: 'solid', color: '#8b5cf6', opacity: 0.2 } });
     registry.setMode('wash');
     expect(draw(layer)[0]!.fill).toMatchObject({ paint: { color: '#ff0000' } });
@@ -57,7 +57,7 @@ describe('workspaceTintLayer', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
     const offFallback = vi.fn();
     const subscribe = vi.fn(() => offFallback);
-    const layer = workspaceTintLayer({ registry, fallback: { visual: () => null, subscribe } });
+    const layer = createWorkspaceTintLayer({ registry, fallback: { visual: () => null, subscribe } });
     const repaint = vi.fn();
     const off = layer.subscribe!(repaint);
     expect(subscribe).toHaveBeenCalledWith(repaint);
@@ -69,13 +69,13 @@ describe('workspaceTintLayer', () => {
 
   it('lets the caller override every mode intensity', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
-    const [cmd] = draw(workspaceTintLayer({ registry, intensity: 0.4 }));
+    const [cmd] = draw(createWorkspaceTintLayer({ registry, intensity: 0.4 }));
     expect(cmd!.fill).toMatchObject({ paint: { opacity: 0.4 } });
   });
 
   it('leaves the page uncovered, tinting the four strips around it', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'rise' });
-    const layer = workspaceTintLayer({ registry, page: () => ({ x: 50, y: 20, width: 100, height: 60 }) });
+    const layer = createWorkspaceTintLayer({ registry, page: () => ({ x: 50, y: 20, width: 100, height: 60 }) });
     const rects = draw(layer).map((c) => c.path);
     expect(rects).toEqual([
       { kind: 'rect', x: 0, y: 0, width: 200, height: 20 },
@@ -87,7 +87,7 @@ describe('workspaceTintLayer', () => {
 
   it('projects the page through the view', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
-    const layer = workspaceTintLayer({ registry, page: () => ({ x: 0, y: 0, width: 50, height: 25 }) });
+    const layer = createWorkspaceTintLayer({ registry, page: () => ({ x: 0, y: 0, width: 50, height: 25 }) });
     const zoomed: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
     const rects = draw(layer, zoomed).map((c) => c.path);
     expect(rects[0]).toMatchObject({ x: 0, y: 50, width: 200, height: 50 });
@@ -95,7 +95,7 @@ describe('workspaceTintLayer', () => {
 
   it('washes the whole viewport when the page is scrolled out of it', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'wash' });
-    const layer = workspaceTintLayer({ registry, page: () => ({ x: 500, y: 500, width: 10, height: 10 }) });
+    const layer = createWorkspaceTintLayer({ registry, page: () => ({ x: 500, y: 500, width: 10, height: 10 }) });
     const cmds = draw(layer);
     expect(cmds).toHaveLength(1);
     expect(cmds[0]!.path).toMatchObject({ x: 0, y: 0, width: 200, height: 100 });
@@ -103,14 +103,14 @@ describe('workspaceTintLayer', () => {
 
   it('keeps the mode\'s gradient when the page is scrolled out of the viewport', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'rise' });
-    const off = workspaceTintLayer({ registry, page: () => ({ x: 500, y: 500, width: 10, height: 10 }) });
-    const none = workspaceTintLayer({ registry });
+    const off = createWorkspaceTintLayer({ registry, page: () => ({ x: 500, y: 500, width: 10, height: 10 }) });
+    const none = createWorkspaceTintLayer({ registry });
     expect(draw(off)).toEqual(draw(none));
   });
 
   it('is a screen-space layer that follows the registry', () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
-    const layer = workspaceTintLayer({ registry });
+    const layer = createWorkspaceTintLayer({ registry });
     expect(layer.space).toBe('screen');
     const listener = vi.fn();
     const off = layer.subscribe!(listener);
@@ -120,13 +120,13 @@ describe('workspaceTintLayer', () => {
   });
 });
 
-describe('modeDecorationLayer', () => {
+describe('createModeDecorationLayer', () => {
   it("draws the active mode's decorations and follows the decoration registry", () => {
     const registry = createModeRegistry({ modes: MODES, initial: 'plain' });
     const decorations = createModeDecorations({ registry });
     const cmd = { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 } };
     decorations.register('wash', () => [cmd]);
-    const layer = modeDecorationLayer(decorations);
+    const layer = createModeDecorationLayer(decorations);
     expect(layer.draw(undefined, VIEW, DIMS)).toEqual([]);
 
     const listener = vi.fn();

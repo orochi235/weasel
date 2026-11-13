@@ -8,7 +8,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useState, type ReactElement } from 'react';
 import {
-  SceneCanvas, asNodeId, createScene, pathFromD, solid, useSelection, workspaceTintLayer,
+  SceneCanvas, asNodeId, createScene, pathFromD, solid, useSelection, createWorkspaceTintLayer,
   type PolygonPath, type SelectionApi,
 } from '@weasel-js/core';
 import { TextEditDepPublisher } from '@weasel-js/editor';
@@ -115,7 +115,7 @@ describe('the entered group in draw', () => {
     const { alphaFor, group, modality } = t.live();
     expect(alphaFor('f')).toBe(0.3);
     expect(alphaFor('a')).toBe(1);
-    const tint = workspaceTintLayer({ registry: modality.machine.registry, fallback: group.tint });
+    const tint = createWorkspaceTintLayer({ registry: modality.machine.registry, fallback: group.tint });
     expect(tint.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 40, dpr: 1 })).not.toEqual([]);
     expect(screen.getByText('Group')).toBeTruthy();
     expect(screen.getByText('Logo')).toBeTruthy();

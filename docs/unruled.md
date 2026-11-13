@@ -344,7 +344,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-10-13 (pass 6): A scene slot's `toPose` is handed the node at its effective pose, and a
   dependency's `path` in a scene that composes frames answers a pose override's path.
 - 2026-10-13 (pass 6): Pages are rects in one world space over one scene, in core: `layoutPages`,
-  `pageAt`, `pageOfBounds`, `pagesBounds`, `adjacentPage`, `pagesLayer`, and `fitViewToPage`. An
+  `pageAt`, `pageOfBounds`, `pagesBounds`, `adjacentPage`, `createPagesLayer`, and `fitViewToPage`. An
   object is on the page it overlaps most.
 - 2026-10-13 (pass 6): A slider drag in `SelectionPanel` is one undo step: moves are written
   through `scene.untracked`, and letting go records one batch. `PropertyRenderContext` gains

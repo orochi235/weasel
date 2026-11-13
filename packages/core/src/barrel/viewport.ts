@@ -71,7 +71,7 @@ export { HOME_VIEW, resetView } from '../core/viewport/homeView';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from '../core/viewport/fitViewToBounds';
 export { adjacentPage, layoutPages, pageAt, pageHolding, pageName, pageOfBounds, pagesBounds } from '../core/pages/pages';
 export type { Page, PageLayoutOptions, PlacedPage } from '../core/pages/pages';
-export { pagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
+export { createPagesLayer, type PagesLayerOptions } from '../core/pages/pagesLayer';
 export { fitViewToPage, pageInView } from '../core/pages/fitViewToPage';
 export {
   PAGES_DOC_KEY, addPage, movePage, nextPageId, pageMembers, pagesOf, placedPagesOf, removePage, renamePage, resizePage,

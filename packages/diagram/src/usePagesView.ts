@@ -1,4 +1,4 @@
-import { pagesBounds, pagesLayer } from '@weasel-js/core';
+import { pagesBounds, createPagesLayer } from '@weasel-js/core';
 import { useMemo } from 'react';
 import type { DiagramViewProps } from './diagramViewProps';
 
@@ -10,7 +10,7 @@ export function usePagesView(pages: DiagramViewProps['pages']) {
   return useMemo(() => {
     if (placed === undefined || fill === undefined) return { layers: undefined, box: undefined };
     return {
-      layers: { pages: { layer: pagesLayer(placed, { fill }), before: 'scene' as const } },
+      layers: { pages: { layer: createPagesLayer(placed, { fill }), before: 'scene' as const } },
       box: pagesBounds(placed) ?? undefined,
     };
   }, [placed, fill]);
