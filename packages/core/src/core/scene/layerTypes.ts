@@ -63,3 +63,30 @@ export interface AddLayerSpec<TLayer extends string> {
   /** Render-stack position. Default: top of stack (highest render index). */
   index?: number;
 }
+
+/** The scene's layer edits. Each is one undoable step. */
+export interface SceneLayerMembers<TLayer extends string> {
+  /** Show or hide a layer. Hiding drops its nodes from the selection. */
+  setLayerVisible(layer: TLayer, visible: boolean): void;
+  /** Lock or unlock a layer. A locked layer still paints, but its nodes are
+   *  out of reach: picking and area selection pass over them, the selection
+   *  drops them, and every node mutation on them throws. Locking is never
+   *  blocked by the lock, and neither are the other layer operations. */
+  setLayerLocked(layer: TLayer, locked: boolean): void;
+  /** Set or clear (`undefined`) a layer's parallax — see
+   *  `LayerRecord.parallax`. Undoable; an animation tweening it writes inside
+   *  `Scene.untracked` so no frame becomes an undo step. */
+  setLayerParallax(layer: TLayer, parallax: ParallaxOptions | undefined): void;
+  /** Add a user layer, at `spec.index` in the stack or on top, as one
+   *  undoable step. Throws when a layer already has the id. */
+  addLayer(spec: AddLayerSpec<TLayer>): void;
+  /** Drop a user layer and every node tagged to it, as one undoable step.
+   *  Removal cascades, so this also deletes nodes **on other layers** that
+   *  derive from a node on this one. */
+  removeLayer(layer: TLayer): void;
+  /** Rename a user layer, as one undoable step. Throws on a system layer. */
+  renameLayer(layer: TLayer, name: string): void;
+  /** Move a layer to `index` in the stack, held to either end, as one
+   *  undoable step. Throws when that would paint a child below its parent. */
+  moveLayer(layer: TLayer, index: number): void;
+}

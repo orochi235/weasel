@@ -3,7 +3,10 @@ import type { PathEditHost, PathEditOpening } from './pathEditHost';
 import type { SceneCanvasGeometry } from './geometryProps';
 import type { SceneCanvasHit, SceneCanvasPointerProps } from './pointerProps';
 import type { Paint } from '@weasel-js/paint';
-import type { SceneCanvasActionProps } from './actionProps'; import type { SceneCanvasSampleProps } from './sampleProps';
+import type { SceneCanvasActionProps } from './actionProps';
+import type { SceneCanvasLongPress } from './longPressProps';
+import type { SceneCanvasSampleProps } from './sampleProps';
+export type { SceneCanvasLongPress } from './longPressProps';
 import { Yoke } from '@weasel-js/routing/react';
 import type { PasteOmission } from 'core/adapters/types';
 import type { Op } from 'core/ops/types';
@@ -52,24 +55,6 @@ export interface BridgeAdapter {
  *  hit-test radius, at `targetScale = 1`. Deliberately unscaled; kit-internal
  *  use sites multiply by `DeviceProfile.targetScale`. */
 export const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
-
-/** `<SceneCanvas longPress>`. */
-export interface SceneCanvasLongPress {
-  /**
-   * Shown while a long-press is held and some binding would fire on it.
-   * Default: a ring that fills around the press point
-   * (`createLongPressFeedbackContribution()`), static under
-   * `prefers-reduced-motion`. `false` shows nothing; a contribution replaces
-   * it, reading the `longPress` dep. Installed beside `ambient` and beside a `tools`
-   * takeover, unless the takeover's ambient holds an entry of the same id.
-   */
-  feedback?: boolean | SurfaceContribution;
-  /** Default true. A long-press some binding handled pulses
-   *  `navigator.vibrate` briefly, for touch and pen, where the API exists. */
-  haptics?: boolean;
-  /** Hold time in ms. Default `LONG_PRESS_MS` (500). */
-  duration?: number;
-}
 
 /** `<SceneCanvas layers>`: a {@link LayersMap} whose scene slot may be partial,
  *  since the defaults fill in whatever it leaves out. */
