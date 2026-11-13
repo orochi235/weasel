@@ -59,7 +59,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const labkitExports = Object.keys(JSON.parse(readFileSync(join(root, 'packages/labkit/package.json'), 'utf8')).exports);
   const problems = findViolations({ labkitExports, files });
   if (problems.length > 0) {
-    console.error(`forge boundary: ${problems.length} violation(s)\n${problems.join('\n')}`);
+    console.error(
+      `forge boundary: ${problems.length} violation(s)\n${problems.join('\n')}\n\n` +
+        "forge builds on labkit, so labkit's source never imports forge (its stories may), and forge reaches\n" +
+        "labkit only through an entry in labkit's package.json `exports`. Add the entry, or move the code.",
+    );
     process.exit(1);
   }
   console.log('forge boundary: clean');

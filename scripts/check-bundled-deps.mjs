@@ -45,7 +45,7 @@ for (const { dir, manifest } of publishableWorkspaces(root)) {
 if (unread.length > 0) {
   console.error('check:bundled-deps — no .js.map to read, so nothing says what these builds took in:');
   console.error(unread.join('\n'));
-  console.error('\nBuild first, and keep `sourcemap: true` in the package\'s build config.');
+  console.error('\nRun `npm run build` first, and keep `sourcemap: true` in the package\'s build config.');
   process.exit(1);
 }
 if (found.length > 0) {
