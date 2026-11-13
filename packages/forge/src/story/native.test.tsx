@@ -8,7 +8,7 @@ describe('loadNativeModule', () => {
     default: meta({ title: 'ui/Slider', layout: 'padded' }),
     Basic: story({
       config: f.schema({ value: f.number(50) }),
-      state: (c) => ({ drags: 0, start: c.value }),
+      initialState: (c) => ({ drags: 0, start: c.value }),
       render: ({ config }) => <p>{config.value}</p>,
     }),
     WithName: story({ name: 'Custom name', render: () => null, layout: 'fullscreen' }),

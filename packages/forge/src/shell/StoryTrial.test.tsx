@@ -19,7 +19,7 @@ const [counter] = loadNativeModule(
     default: meta({ title: 'Test/Counter' }),
     Counter: story({
       config: f.schema({ label: f.string('clicks') }),
-      state: (config) => ({ n: config.label.length }),
+      initialState: (config) => ({ n: config.label.length }),
       render: ({ config, state, setState, setConfig, globals }) => (
         <>
           <button type="button" onClick={() => setState({ n: state.n + 1 })}>
@@ -162,7 +162,7 @@ describe('StoryTrial', () => {
     const [seeded] = loadNativeModule(
       {
         default: meta({ title: 'Test/Seeded' }),
-        Seeded: story({ config: f.schema({ n: f.number(1) }), state: (config) => seen(config), render: () => null }),
+        Seeded: story({ config: f.schema({ n: f.number(1) }), initialState: (config) => seen(config), render: () => null }),
       },
       'Test/Seeded',
     );

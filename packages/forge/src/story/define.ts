@@ -7,7 +7,7 @@ export function meta(spec: MetaSpec): MetaSpec {
   return Object.assign({}, spec, { [NATIVE]: 'meta' as const });
 }
 
-/** Declares one native story; export the result under the story's name. `C` and `S` come from `config` and `state`. */
+/** Declares one native story; export the result under the story's name. `C` and `S` come from `config` and `initialState`. */
 export function story<C = Record<string, never>, S = undefined>(spec: StorySpec<C, S>): StorySpec<C, S> {
   return Object.assign({}, spec, { [NATIVE]: 'story' as const });
 }
