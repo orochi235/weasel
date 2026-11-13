@@ -15,10 +15,14 @@ export function eligibleTool(reg: ModeRegistry, tool: ToolLike): boolean {
   return eligibleForMode(reg.current(), tool.capabilities ?? []);
 }
 
+/** The part of a contribution this package needs in order to judge eligibility: its id and
+ *  the capabilities its eligibility claims. Structural, as {@link ToolLike} is. */
+export interface ContributionLike {
+  id: string;
+  eligibility?: { capabilities?: readonly CapabilityTag[] };
+}
+
 /** True iff a contribution is usable in the registry's active mode. */
-export function eligibleContribution(
-  reg: ModeRegistry,
-  entry: { id: string; eligibility?: { capabilities?: readonly CapabilityTag[] } },
-): boolean {
+export function eligibleContribution(reg: ModeRegistry, entry: ContributionLike): boolean {
   return eligibleForMode(reg.current(), entry.eligibility?.capabilities ?? []);
 }

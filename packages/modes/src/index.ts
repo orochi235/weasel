@@ -8,6 +8,6 @@ export type { ModeRegistry, CreateModeRegistryOptions, ActiveMode } from './regi
 export { createModeDecorations } from './decorations';
 export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptions, ModeDrawCommand } from './decorations';
 export { eligibleTool, eligibleContribution } from './eligibility';
-export type { ToolLike } from './eligibility';
+export type { ToolLike, ContributionLike } from './eligibility';
 export { createScopingDim, OUT_OF_SCOPE_ALPHA } from './scopingLayer';
 export type { ScopingDim, CreateScopingDimOptions, NodeScope } from './scopingLayer';
