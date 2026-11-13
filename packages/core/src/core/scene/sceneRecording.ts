@@ -75,7 +75,7 @@ export function createSceneRecording(env: SceneRecordingEnv): SceneRecording {
   });
 
   const outer = createOuterOps({
-    own: (name, args) => (ops.handlers.has(name) ? ops.op(name, args) : null),
+    own: ops.rebuild,
     recorder: () => recorder,
     // Deferred rather than muted, so a throwing op cannot strand subscribers
     // after earlier ops in the batch already mutated state.

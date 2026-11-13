@@ -373,14 +373,11 @@ Owner tags, after the priority (2026-10-26):
   draw has no PNG or PDF export. Closes when a page of any scene exports through a package
   that does not depend on diagram, and diagram-formats builds its exports on it (filed 2026-11-12).
 - **(P2) [agent] A sync layer can hear a scene's ops but cannot apply them to another scene.**
-  `scene.history.observe` reports each entry's ops as `{ name, args }` (`kit:add`, `kit:setPose`, …), but
-  those are the scene's registered ops, which `rebuildOp` (`@weasel-js/core/engine`) does not know, and no
-  public call applies one to a peer scene; only `restoreHistory` rebuilds them, into a history. The inverse
-  of a registered op also keeps the forward op's `name` and `args` (`invert` in
-  `packages/core/src/core/scene/opTable.ts`), so an undo shipped as its inverted ops replays as a redo on
-  the peer, unlike the adapter ops (`createTransformOp`), whose inverse swaps its args. Closes when a
-  scene can apply a serialized op another scene emitted, an undo included, without recording it
-  (filed 2026-11-12).
+  `scene.history.observe` reports each entry's ops as `{ name, args }` (`kit:add`, `kit:setPose`, and an
+  inverse as `revert:<kind>`), but those are the scene's registered ops, which `rebuildOp`
+  (`@weasel-js/core/engine`) does not know, and no public call applies one to a peer scene; only
+  `restoreHistory` rebuilds them (`OpTable.rebuild`), into a history. Closes when a scene can apply a
+  serialized op another scene emitted, an undo included, without recording it (filed 2026-11-12).
 - **(P3) [maintainer] A container with an output-grid `drawn` pose clips its children at its stored
   pose.** `buildSceneTree` paints and culls a node at the quantize rule's drawn pose (2026-11-11), but
   takes its `clip: 'outline'` (`ownClipOf`) from the pose it is stored at, so the clip can sit up to
