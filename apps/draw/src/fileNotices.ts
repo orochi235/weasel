@@ -20,7 +20,7 @@ export function reportSaveFailure(err: unknown): void {
 }
 
 /** Tells the user an export produced no file. */
-export function reportExportFailure(format: 'PNG' | 'PDF', err: unknown): void {
+export function reportExportFailure(format: string, err: unknown): void {
   toast.danger(`The ${format} was not exported`, {
     id: 'export-failed',
     description: err instanceof Error ? err.message : String(err),

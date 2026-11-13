@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   boundsOfPath, createPageRun, createScene, type NodeId, pageNodeOf, pageOfNode, pageRunOf, pagesOf, placedPagesOf, solid,
 } from '@weasel-js/core';
-import { parseSvg, type SvgGroupNode } from '@weasel-js/svg';
+import { exportRegionSvg, parseSvg, type SvgGroupNode } from '@weasel-js/svg';
 import type { DrawScene, WeaselDrawData, WeaselDrawLayer, WeaselDrawPose } from './drawDocument';
 import { backgroundOf } from './docBackground';
 import { openSvgText } from './openSvg';
-import { pageToSvgString, sceneToSvgString } from './svgExport';
+import { sceneToSvgString } from './svgExport';
 import { SWILL_NAMESPACES } from './svgInterop';
 
 const PAGES = [{ id: 'page-1', width: 816, height: 1056 }, { id: 'cover', name: 'Back & "cover"', width: 794, height: 1123 }];
@@ -115,11 +115,12 @@ describe('opening a file from before pages', () => {
   });
 });
 
+// File › Export writes a page through the registered `svg` format, which is `exportRegionSvg`.
 describe('exporting one page', () => {
   it('frames the page, and writes what is on it', async () => {
     const scene = twoPages();
     const page = placedPagesOf(scene)[1]!;
-    const parsed = parseSvg(await pageToSvgString(scene, page, { backgroundColor: '#ffffff' }));
+    const parsed = parseSvg(await exportRegionSvg(scene, page));
     expect(parsed.viewBox).toEqual({ x: 856, y: 0, width: 794, height: 1123 });
     expect(parsed.nodes).toHaveLength(1);
     expect(parsed.nodes[0]).toMatchObject({ fill: { color: '#0000ff' } });
@@ -133,7 +134,7 @@ describe('exporting one page', () => {
       pose: { x: 900, y: 500, width: 20, height: 20 },
       data: { path: { kind: 'rect', x: 0, y: 0, width: 20, height: 20 }, fill: { paint: solid('#00ff00') } },
     });
-    const colors = async (page: typeof p1) => parseSvg(await pageToSvgString(scene, page!, { backgroundColor: '#ffffff' }))
+    const colors = async (page: typeof p1) => parseSvg(await exportRegionSvg(scene, page!))
       .nodes.map((n) => (n as { fill?: { color?: string } }).fill?.color);
     expect(await colors(p2)).toEqual(['#0000ff', '#00ff00']);
     expect(await colors(p1)).toEqual(['#ff0000']);
@@ -148,7 +149,7 @@ describe('exporting one page', () => {
     createPageRun(scene, PAGES);
     square(scene, pageNodeOf(scene, 'cover')!, '#0000ff');
     const cover = placedPagesOf(scene).find((p) => p.id === 'cover')!;
-    const parsed = parseSvg(await pageToSvgString(scene, cover, { backgroundColor: '#ffffff' }));
+    const parsed = parseSvg(await exportRegionSvg(scene, cover));
     expect(parsed.nodes.map((n) => (n as { fill?: { color?: string } }).fill?.color)).toEqual(['#0000ff']);
   });
 });

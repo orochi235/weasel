@@ -1,6 +1,6 @@
 import { editorMenuBar, type MenuContributions, menuRun, type MenuTitle } from '@weasel-js/editor';
 import { pref, type PrefGroup } from '@weasel-js/prefs';
-import { FILE_ACTIONS, FILE_NEW_MENU } from './fileCommands';
+import { FILE_ACTIONS, FILE_EXPORT_MENU, FILE_NEW_MENU } from './fileCommands';
 import { CHROME_ITEMS, chromeActionId } from './surfaces/chrome';
 
 const act = (id: string) => pref.action(id);
@@ -17,9 +17,7 @@ export const DRAW_MENU_TITLES: readonly MenuTitle[] = [
 export const DRAW_MENU_CONTRIBUTIONS: MenuContributions = {
   file: {
     open: pref.group('', { new: FILE_NEW_MENU, open: act(FILE_ACTIONS.open), import: act(FILE_ACTIONS.import) }),
-    save: menuRun({
-      save: FILE_ACTIONS.save, exportPage: FILE_ACTIONS.exportPage, exportPng: FILE_ACTIONS.exportPng, exportPdf: FILE_ACTIONS.exportPdf,
-    }),
+    save: pref.group('', { save: act(FILE_ACTIONS.save), export: FILE_EXPORT_MENU }),
   },
   edit: {
     history: menuRun({ undo: 'undo', redo: 'redo' }),
