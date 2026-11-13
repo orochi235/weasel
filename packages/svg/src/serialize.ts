@@ -29,6 +29,7 @@ import {
   writesOutline, strokeGroupXml, strokeOutlineXml, outlinedStrokeAttrs, writesOutlines,
 } from './strokeOutlineSvg';
 import { textXml } from './serializeText';
+import { fontFacesXml, withTextMode } from './textModes';
 import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
@@ -42,13 +43,6 @@ import { RAD_TO_DEG } from '@weasel-js/geom';
  */
 export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): string {
   const registry = new PaintServerRegistry();
-  const nodes = withTrimsDrawn(withDashesResolved(given));
-  registerPaintServers(nodes, registry);
-
-  const bounds = opts.viewBox ?? computeBounds(given);
-  const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
-  const namespaces = opts.namespaces ?? {};
-
   // Once per message: a hundred inner-aligned strokes are one fact.
   const said = new Set<string>();
   const warn: Warn = (m) => {
@@ -56,6 +50,13 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
     said.add(m);
     opts.onWarn(m);
   };
+  const text = withTextMode(given, opts.text ?? 'live', warn);
+  const nodes = withTrimsDrawn(withDashesResolved(text.nodes));
+  registerPaintServers(nodes, registry);
+
+  const bounds = opts.viewBox ?? computeBounds(given);
+  const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
+  const namespaces = opts.namespaces ?? {};
   if (holdsNonXmlChar(stringsIn([given, opts.title, opts.documentMeta]))) {
     warn('text holds characters XML cannot hold (a control character, U+FFFE, U+FFFF, or half a surrogate pair); each is written as U+FFFD');
   }
@@ -95,7 +96,7 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
     ? `<title>${escapeText(opts.title)}</title>`
     : '';
 
-  const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${defsXml}${docMetaXml}${bodyXml}</svg>`;
+  const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${fontFacesXml(text.faces)}${defsXml}${docMetaXml}${bodyXml}</svg>`;
   return opts.pretty ? prettyXml(xml) : xml;
 }
 

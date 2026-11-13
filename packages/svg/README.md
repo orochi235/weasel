@@ -72,6 +72,16 @@ its own `x`, and a line holding a larger run sits where the renderer puts it.
 The layout measures with the registered fonts, so `await warmSvg(nodes, {
 textLayout })` first; a node no face could measure is written the default way.
 
+**A `<text>` is set in whatever face the reader has.** `serializeSvg(nodes, {
+text: 'outline' })` writes each text node as its glyph outlines instead, one
+filled path per paint, placed exactly as the canvas places them. `text:
+'embed'` keeps the text live and writes an `@font-face` rule for each face it
+is set in, carrying the font file as a data URL; text set in a face whose
+license forbids embedding, or that has no font file behind it, is written as
+outlines, and `onWarn` names the face. Both read the faces' outlines, so
+`await warmSvg(nodes, { text })` first. `svgTextOutlines(node)` is the
+lowering on its own, for a `svgNodesFromKit` `leaf` that wants it.
+
 ## Paints SVG cannot express
 
 SVG has `<linearGradient>`, `<radialGradient>` and `<pattern>` and nothing

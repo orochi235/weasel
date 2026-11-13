@@ -292,15 +292,6 @@ Owner tags, after the priority (2026-10-26):
   an audit pass (found building a poster designer, audit round 20, 2026-11-12). Closes when a node with
   `fit: 'shrink'` paints, outlines and opens its editor at the fitted size under a test.
 
-- **(P2) [agent] SVG export can neither embed the faces its text is set in nor write the text as outlines.**
-  `serializeSvg` writes `<text font-family="…">`, which another renderer sets in whatever face it has. For
-  outlines a consumer writes a `svgNodesFromKit` `leaf` over `textToPathsByPaint` and `svgPaintFromKit`; for an
-  embedded face there is no way at all, though `fontEmbedding(family, weight, style)` already hands back the sfnt
-  and its `embeddable` license bit. The seam: a `svgNodesFromKit` option lowering text leaves to their outline
-  paths, and a `serializeSvg` option writing an `@font-face` per face from `fontEmbedding`, loaded by `warmSvg`
-  (found building a poster designer, audit round 20, 2026-11-12). Closes when both write a text node set in a
-  registered outline face, under a test, and an unembeddable face falls back to outlines with a warning.
-
 ## Scene, adapters & layout
 
 - **(P3) [agent] Moving a node along a path takes a hand-built pose descriptor.** `tweenPose` follows
