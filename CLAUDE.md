@@ -288,11 +288,6 @@ Things that pass every test and are still wrong.
 worktree can pop another session's work into it. Use a throwaway worktree for a baseline instead;
 if you must stash, `push -u -m <tag>`, `apply` by SHA, and drop your own entry by tag.
 
-**A worktree with no `node_modules` of its own builds against the main checkout's.** Node resolves
-`@weasel-js/*` up the tree, so a package build there reads main's stale `dist` for its siblings, and
-`test:smoke:consumer` calls `<repo>/node_modules/.bin/tsc` and fails with an empty error. Run
-`npm ci` in the worktree before building or smoke-testing anything in it.
-
 Read the file for the area before changing anything in it:
 
 | Touching | Read |

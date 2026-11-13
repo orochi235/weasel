@@ -28,6 +28,9 @@ import { cssCacheKey } from './scripts/vitest-css-cache-key.ts';
 import { HOST_GPU_ARGS } from './scripts/chromium-gpu-args.ts';
 import { spreadPlaywright } from './scripts/vitest-browser-spread.mjs';
 import { browserShape } from './scripts/lib/browser-shape.mjs';
+import { assertOwnInstall } from './scripts/lib/own-install.mjs';
+
+assertOwnInstall(import.meta.dirname);
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).

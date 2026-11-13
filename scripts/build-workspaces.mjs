@@ -3,7 +3,8 @@
 // on past a failure, so every dependent fails too and the log ends on a
 // downstream TS7016 instead of the cause. `check:build-order` reads this list.
 import { spawnSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 
 export const BUILD_ORDER = [
   '@weasel-js/registry',
@@ -78,6 +79,7 @@ export function buildInOrder(names, build) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  exitUnlessOwnInstall(fileURLToPath(new URL('..', import.meta.url)));
   const failed = buildInOrder(BUILD_ORDER, (name) => {
     const { status } = spawnSync('npm', ['run', 'build', '-w', name], { stdio: 'inherit' });
     return status ?? 1;

@@ -15,6 +15,9 @@ import { defineConfig, type Plugin } from 'vite';
 import { entries } from './entries.ts';
 import { weaselIcons } from '../icons-plugin/src/index.ts';
 import { stableScopedName } from '../../scripts/vite-css-modules.ts';
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
+
+assertOwnInstall(resolve(import.meta.dirname, '../..'));
 
 const pkg = JSON.parse(readFileSync(resolve(import.meta.dirname, 'package.json'), 'utf8')) as {
   version: string;

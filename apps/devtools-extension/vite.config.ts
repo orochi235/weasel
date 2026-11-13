@@ -7,9 +7,11 @@ import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases.ts';
 import { weaselDefines } from '../../scripts/vite-build-info.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
 
 const here = import.meta.dirname;
 const repoRoot = resolve(here, '../..');
+assertOwnInstall(repoRoot);
 const OUT = resolve(here, 'dist/chrome');
 
 const SCRIPTS = { content: 'src/content/main.ts', background: 'src/background/main.ts' } as const;

@@ -16,8 +16,10 @@ import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 import { LAN_SERVER } from '../../scripts/vite-lan.ts';
 import { symbolRoute } from '../shared/packageRoutes.ts';
 import pkg from '../../package.json' with { type: 'json' };
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
+assertOwnInstall(repoRoot);
 const storyTrees = stories.map((glob) => glob.split('/**')[0]!);
 /** Story trees whose stories reach their package through specifiers, so `WEASEL_DEV_BUNDLE_STORIES=1` can bundle it. */
 const BUNDLED_STORIES = ['packages/ui/src', 'packages/labkit/src'];

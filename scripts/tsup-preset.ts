@@ -9,7 +9,9 @@
  * in the consuming package's `dependencies`, and tsup externalizes deps +
  * peerDeps by default for both the JS bundle and the .d.ts.
  */
+import { fileURLToPath } from 'node:url';
 import type { Options } from 'tsup';
+import { assertOwnInstall } from './lib/own-install.mjs';
 // From source, so a preset build needs no built @weasel-js/icons.
 import { weaselIcons } from '../packages/icons-plugin/src/index';
 
@@ -25,6 +27,7 @@ export interface PackagePresetOptions {
 const ALWAYS_EXTERNAL = ['react', 'react-dom'];
 
 export function packagePreset({ entry, external = [] }: PackagePresetOptions): Options {
+  assertOwnInstall(fileURLToPath(new URL('..', import.meta.url)));
   return {
     entry,
     format: ['esm'],

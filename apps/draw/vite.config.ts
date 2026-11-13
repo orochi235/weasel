@@ -13,8 +13,10 @@ import { watchProbe } from '../../packages/forge/src/vite/watchProbe.ts';
 import { weaselIcons } from '../../packages/icons-plugin/src/index.ts';
 import ports from '../../scripts/dev-ports.json' with { type: 'json' };
 import { LAN_SERVER } from '../../scripts/vite-lan.ts';
+import { assertOwnInstall } from '../../scripts/lib/own-install.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '../..');
+assertOwnInstall(repoRoot);
 
 export default defineConfig({
   root: import.meta.dirname,

@@ -12,9 +12,11 @@ import { spawn } from 'node:child_process';
 import { copyFileSync, existsSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fleetBranch } from './lib/fleet-tree.mjs';
+import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 import { tscArgv } from './lib/tsc.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
+exitUnlessOwnInstall(ROOT);
 const INFO = join(ROOT, '.tsbuildinfo');
 const BRANCH_PREFIX = 'branch--';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
