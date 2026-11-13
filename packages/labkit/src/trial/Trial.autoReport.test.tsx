@@ -34,7 +34,7 @@ const quoted = (): string | null => {
   return text;
 };
 
-const pin = () => screen.getByRole('button', { name: /Count/ });
+const pin = () => screen.getByRole('button', { name: 'Pin Count' });
 
 describe('an instrument reporting an auto value', () => {
   it('has its settings row quote the report, never storing it', async () => {

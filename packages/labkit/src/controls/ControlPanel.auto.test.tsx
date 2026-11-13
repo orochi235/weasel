@@ -122,7 +122,7 @@ describe('<ControlPanel> auto', () => {
         setConfig={setConfig}
       />,
     );
-    await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
     expect(setConfig).toHaveBeenCalledWith('gap', auto);
   });
 
@@ -135,9 +135,12 @@ describe('<ControlPanel> auto', () => {
         setConfig={setConfig}
       />,
     );
-    await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
     expect(setConfig).not.toHaveBeenCalled();
-    expect(screen.getByText('auto')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pin Gap' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 
   it('pins at the value the row draws when the dot un-autos it: the default, where nothing else is known', async () => {
@@ -150,7 +153,7 @@ describe('<ControlPanel> auto', () => {
         setConfig={setConfig}
       />,
     );
-    await userEvent.click(screen.getByRole('button', { name: /Gap/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Pin Gap' }));
     expect(setConfig).toHaveBeenCalledWith('gap', 12);
   });
 

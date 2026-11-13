@@ -31,7 +31,7 @@ const counted = (suggested: unknown) =>
   });
 
 const readout = () => document.querySelector('.lk-control-panel [class*=readoutAfter]');
-const pin = () => screen.getByRole('button', { name: /Count/ });
+const pin = () => screen.getByRole('button', { name: 'Pin Count' });
 
 describe('a report made in the commit that turns its path auto', () => {
   it('reads out again after the path is pinned and unpinned', async () => {

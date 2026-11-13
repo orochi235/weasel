@@ -173,8 +173,8 @@ export function panelRows<TC extends Record<string, unknown>>(source: PanelRowsS
     if (found.name === '' || found.as === 'fragment' || found.name === rows.heading)
       return <Fragment key={path}>{body(found, path, rows)}</Fragment>;
     const lifted = lift(found.name, loosePaths(found, path));
-    const reset = resolved.resettable?.has(path) ? (
-      <ResetGroup {...{ group: found, path, config, setConfig }} />
+    const reset = found.resettable ? (
+      <ResetGroup {...{ group: found, path, config, auto, setConfig }} />
     ) : undefined;
     // `as: 'section'` is a heading over the rows, unframed: the panel's motif doesn't reach it.
     if (found.as === 'section') {

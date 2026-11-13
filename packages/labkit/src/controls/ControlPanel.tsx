@@ -11,9 +11,10 @@ import {
   type PropertyRowLayout,
 } from '@weasel-js/ui/components/Properties';
 import { type ReactNode, useMemo, useState } from 'react';
-import { auto as autoValue } from '../config/auto';
-import { resolveAutoConfig } from '../config/autoConfig';
+import { auto as autoValue, isAuto } from '../config/auto';
+import { applyConfigWrite, resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
+import { valueAtPath } from '../config/path';
 import type { ControlRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
@@ -133,6 +134,7 @@ type Write = (path: string, value: unknown) => void;
  */
 function usePanelAuto(
   given: ReadonlySet<string> | undefined,
+  config: Record<string, unknown>,
   writes: { setConfig: Write; draftConfig?: Write },
 ) {
   const [ownAuto, setOwnAuto] = useState<ReadonlySet<string>>(NO_AUTO);
@@ -144,13 +146,19 @@ function usePanelAuto(
       else now.delete(path);
       return now;
     });
-  // An owner tracking the set hears every edit as a write that pins; a panel tracking its own pins it here.
+  // An owner tracking the set hears every edit as a write that pins, and a sentinel in a group's value (a
+  // reset) as unpinning that leaf; a panel tracking its own does both here, as `applyConfigWrite` says.
   const pinning = (write: Write): Write =>
     given
       ? write
       : (path, value) => {
-          mark(path, false);
-          write(path, value);
+          const next = applyConfigWrite(config, [...ownAuto], path, value);
+          setOwnAuto(
+            next.autoPaths.length === ownAuto.size && next.autoPaths.every((p) => ownAuto.has(p))
+              ? ownAuto
+              : new Set(next.autoPaths),
+          );
+          if (!isAuto(value)) write(path, valueAtPath(next.config, path));
         };
   const setRowAuto = (path: string, next: boolean, value: unknown): void => {
     if (given) {
@@ -223,7 +231,7 @@ export function ControlPanel<TC extends Record<string, unknown>>({
   const choices = useFieldChoicesOf(resolved.group);
   const over = overGiven ?? resolved.over;
 
-  const { auto, setRowAuto, ...writes } = usePanelAuto(given, { setConfig, draftConfig });
+  const { auto, setRowAuto, ...writes } = usePanelAuto(given, config, { setConfig, draftConfig });
 
   const shown = useShown(resolved, config, auto, reported);
 

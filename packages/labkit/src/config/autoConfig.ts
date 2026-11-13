@@ -1,7 +1,8 @@
-import type { PrefLeaf } from '@weasel-js/prefs';
+import { type PrefLeaf, prefAutoValue, prefStartsAuto } from '@weasel-js/prefs';
 import { isAuto } from './auto';
 import { configLeaves } from './leaves';
-import { isRecord, withValueAtPath } from './path';
+import { isRecord, setOwn, valueAtPath, withValueAtPath } from './path';
+import { storedDefault } from './storedDefault';
 import type { ResolvedConfig } from './types';
 
 type Resolver = (config: Record<string, unknown>) => unknown;
@@ -12,13 +13,10 @@ function extra<T>(leaf: PrefLeaf, key: string): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** What computes a leaf while it is auto: its `.auto()` resolver, or failing
- *  that the `auto.value` it declares as data. */
+/** The resolver a leaf's `.auto(fn)` declared, which computes it while it is auto ahead of anything the
+ *  schema says (`prefAutoValue`). */
 export function autoResolverOf(leaf: PrefLeaf): Resolver | undefined {
-  const resolve = extra<Resolver>(leaf, 'autoResolve');
-  if (resolve !== undefined) return resolve;
-  const value = leaf.auto === false ? undefined : leaf.auto?.value;
-  return value === undefined ? undefined : () => value;
+  return extra<Resolver>(leaf, 'autoResolve');
 }
 
 /** Whether a leaf's auto row reads out its value beside the word: `.quote()`. */
@@ -26,25 +24,22 @@ export function autoQuotes(leaf: PrefLeaf): boolean {
   return extra<boolean>(leaf, 'autoQuote') === true;
 }
 
-/** Whether a leaf may be auto: `.auto()` and `.initial(auto)` write an object to `auto`, and every other
- *  resolved leaf says `false`. */
-export function leafCanAuto(leaf: PrefLeaf): boolean {
-  return typeof leaf.auto === 'object';
-}
-
 /** The dotted paths a schema declares as starting auto — every leaf that said
  *  `.initial(auto)`. This is what seeds a new trial's unpinned set. */
 export function autoPathsOf(resolved: ResolvedConfig): string[] {
   const out: string[] = [];
   for (const [path, leaf] of configLeaves(resolved.group)) {
-    if (leaf.auto !== false && leaf.auto?.on === true) out.push(path);
+    if (prefStartsAuto(leaf)) out.push(path);
   }
   return out;
 }
 
 /**
- * The config an instrument reads: the stored one, with every unpinned path
- * either computed by its resolver or removed.
+ * The config an instrument reads: the stored one, with every unpinned path at
+ * what it reads while auto (`prefAutoValue`): its resolver's value, else its
+ * `auto.value`, else its default. A path with no resolver and no `auto.value`
+ * is removed instead: the instrument is that leaf's resolver (`.auto()`), and
+ * reading `undefined` is how it knows to work the value out.
  *
  * Resolution is demand-driven — a resolver reading another unpinned path
  * forces that one first, whatever order the schema declared them in — so a
@@ -58,8 +53,11 @@ export function resolveAutoConfig<TC>(
   if (autoPaths.size === 0) return config;
 
   const resolvers = new Map<string, Resolver | undefined>();
+  const leaves = new Map<string, PrefLeaf>();
   for (const [path, leaf] of configLeaves(resolved.group)) {
-    if (autoPaths.has(path)) resolvers.set(path, autoResolverOf(leaf));
+    if (!autoPaths.has(path)) continue;
+    resolvers.set(path, autoResolverOf(leaf));
+    leaves.set(path, leaf);
   }
   if (resolvers.size === 0) return config;
 
@@ -77,7 +75,8 @@ export function resolveAutoConfig<TC>(
       throw new Error(`[labkit] auto resolver cycle at "${path}"`);
     }
     const resolve = resolvers.get(path);
-    if (!resolve) {
+    const leaf = leaves.get(path);
+    if (leaf === undefined) {
       done.add(path);
       return;
     }
@@ -85,8 +84,11 @@ export function resolveAutoConfig<TC>(
     try {
       // Read `out` only after the resolver has run: it forces its own
       // dependencies, and each of those replaced `out`.
-      const value = resolve(demand(() => out, resolvers, need));
-      out = withValueAtPath(out, path, value);
+      const computed = resolve?.(demand(() => out, resolvers, need));
+      const value = prefAutoValue(leaf, computed, () =>
+        resolve ? storedDefault(leaf) : undefined,
+      );
+      if (value !== undefined) out = withValueAtPath(out, path, value);
     } finally {
       inFlight.delete(path);
     }
@@ -144,9 +146,11 @@ function dropAtPath(config: Record<string, unknown>, path: string): Record<strin
 
 /**
  * What writing `value` at `path` makes of a trial's raw config and its set of
- * unpinned paths. `auto` pins nothing and joins the set; any other value is
- * written and leaves it. Both the store and the chrome go through this, so
- * they cannot disagree about what a write meant.
+ * unpinned paths. A write pins every leaf at or under `path`, except where it
+ * holds the `auto` sentinel: that leaf joins the set and keeps what it last
+ * held, so a group's value can unpin some leaves and pin the rest in one write
+ * (a reset). Both the store and the chrome go through this, so they cannot
+ * disagree about what a write meant.
  */
 export function applyConfigWrite<TC>(
   config: TC,
@@ -154,12 +158,31 @@ export function applyConfigWrite<TC>(
   path: string,
   value: unknown,
 ): { config: TC; autoPaths: readonly string[] } {
-  if (isAuto(value)) {
-    if (autoPaths.includes(path)) return { config, autoPaths };
-    return { config, autoPaths: [...autoPaths, path] };
-  }
+  const unpin: string[] = [];
+  const held = valueAtPath(config as Record<string, unknown>, path);
+  const stored = withoutAuto(value, path, held, unpin);
+  const under = (p: string): boolean => p === path || p.startsWith(`${path}.`);
+  const next = [...autoPaths.filter((p) => !under(p)), ...unpin];
+  const same = next.length === autoPaths.length && next.every((p) => autoPaths.includes(p));
   return {
-    config: withValueAtPath(config, path, value),
-    autoPaths: autoPaths.includes(path) ? autoPaths.filter((p) => p !== path) : autoPaths,
+    config: isAuto(value) ? config : withValueAtPath(config, path, stored),
+    autoPaths: same ? autoPaths : next,
   };
+}
+
+/** `value` with each `auto` sentinel in it replaced by what `held` has there, its path added to `unpin`. */
+function withoutAuto(value: unknown, at: string, held: unknown, unpin: string[]): unknown {
+  if (isAuto(value)) {
+    unpin.push(at);
+    return held;
+  }
+  if (!isRecord(value)) return value;
+  let out: Record<string, unknown> | undefined;
+  for (const [key, child] of Object.entries(value)) {
+    const next = withoutAuto(child, `${at}.${key}`, isRecord(held) ? held[key] : undefined, unpin);
+    if (next === child) continue;
+    out ??= { ...value };
+    setOwn(out, key, next);
+  }
+  return out ?? value;
 }

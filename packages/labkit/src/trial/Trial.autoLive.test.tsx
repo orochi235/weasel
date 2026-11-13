@@ -14,7 +14,7 @@ const counted = defineInstrument({
   render: (ctx) => <output>{String((ctx.config as { count?: number }).count)}</output>,
 });
 
-const pin = () => screen.getByRole('button', { name: /Count/ });
+const pin = () => screen.getByRole('button', { name: 'Pin Count' });
 
 describe('an auto setting in a trial falls off when edited', () => {
   it('pins on a drag of its live slider, and goes back to auto from its label', async () => {

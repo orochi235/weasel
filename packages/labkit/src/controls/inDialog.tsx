@@ -6,6 +6,7 @@ import {
   type PrefNumber,
   type PrefObject,
   type PrefUnion,
+  prefCanAuto,
   prefSectionLeaves,
   prefVariantOf,
   resolvePrefUnit,
@@ -13,7 +14,6 @@ import {
 import { qty, withUnit } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { stepDisplay } from '@weasel-js/ui/components/Properties';
-import { leafCanAuto } from '../config/autoConfig';
 import type { ControlRenderer, InDialogOptions } from '../config/types';
 import { DraftDialogRow } from './DraftDialogRow';
 import { extra } from './fields';
@@ -110,7 +110,7 @@ export function inDialog(body: ControlRenderer, opts: InDialogOptions = {}): Con
   return (ctx) => {
     const { pref, value, auto, setAuto } = ctx;
     const summary = opts.summary ?? ((v: unknown) => summarizeLeaf(pref, v));
-    const pinned = !leafCanAuto(pref);
+    const pinned = !prefCanAuto(pref);
     return (
       <DraftDialogRow
         label={pref.name}

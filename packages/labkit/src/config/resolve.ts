@@ -45,7 +45,6 @@ interface Sink {
   enableIf: Map<string, ConfigPredicate>;
   renderers: Record<string, ControlRenderer>;
   dialogs: Record<string, DialogSpec>;
-  resettable: Set<string>;
   motifs: Map<string, Motif>;
   chain: readonly ConfigRule[];
 }
@@ -70,7 +69,6 @@ export function resolveConfigSchema<TC>(
     enableIf: new Map(),
     renderers: {},
     dialogs: {},
-    resettable: new Set(),
     motifs: new Map(),
     chain: [...rules, ...builtinRules],
   };
@@ -92,7 +90,6 @@ export function resolveConfigSchema<TC>(
     enableIf: sink.enableIf,
     renderers: sink.renderers,
     dialogs: sink.dialogs,
-    resettable: sink.resettable,
     motifs: sink.motifs,
     ...(drawnOver === undefined ? {} : { over: drawnOver }),
   };
@@ -132,7 +129,6 @@ function resolveShape(shape: ConfigShape, at: string, name: string, sink: Sink):
     }
     if (predicate) sink.showIf.set(path, predicate);
     if (enableIf) sink.enableIf.set(path, enableIf);
-    if (isConfigBranch(entry) && entry.options.resettable) sink.resettable.add(path);
     if (isConfigBranch(entry) && entry.options.motif) sink.motifs.set(path, entry.options.motif);
     if (!isConfigBranch(entry) && entry.options.render)
       setOwn(sink.renderers, path, entry.options.render);
@@ -157,7 +153,11 @@ function resolveEntry(
       sink,
     );
     const { name: _name, ...said } = entry.annotations;
-    return { ...group, ...defined(said) } as PrefGroup;
+    return {
+      ...group,
+      ...defined(said),
+      ...(entry.options.resettable ? { resettable: true } : {}),
+    } as PrefGroup;
   }
   const seed: LeafPatch = defined({
     ...entry.annotations,

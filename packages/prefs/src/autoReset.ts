@@ -18,13 +18,13 @@ export function prefStartsAuto(leaf: PrefLeaf): boolean {
 
 /**
  * What a leaf reads while it is auto: what its owner `computed`, where it computed one; else its `auto.value`;
- * else its default, which is `otherwise` where a reader holds the default in another form (a store, a split
- * default as a scope).
+ * else its default, which `otherwise` gives where a reader holds the default in another form (a split default
+ * as a scope, an encoded leaf's stored form) or computes it elsewhere.
  */
-export function prefAutoValue(leaf: PrefLeaf, computed?: unknown, otherwise: unknown = leaf.default): unknown {
+export function prefAutoValue(leaf: PrefLeaf, computed?: unknown, otherwise: () => unknown = () => leaf.default): unknown {
   if (computed !== undefined) return computed;
   const declared = leaf.auto === false ? undefined : leaf.auto?.value;
-  return declared !== undefined ? declared : otherwise;
+  return declared !== undefined ? declared : otherwise();
 }
 
 /** What a reset makes of a leaf: unpinned (`auto`) where its schema starts it so, else pinned at its default.

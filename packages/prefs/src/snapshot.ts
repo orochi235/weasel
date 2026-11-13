@@ -82,9 +82,8 @@ export function createSnapshots(source: SnapshotSource): { current: () => Snapsh
   /** What an auto leaf holds: its `auto.value`, repaired once, else what it holds unset. */
   const autoHeld = (path: string, leaf: PrefLeaf): unknown => {
     if (!autoValues.has(path)) {
-      const otherwise = unsetHeld(path, leaf);
-      const value = prefAutoValue(leaf, undefined, otherwise);
-      autoValues.set(path, value === otherwise ? value : readStored(source, leaf, value));
+      const declared = prefAutoValue(leaf, undefined, () => undefined);
+      autoValues.set(path, declared === undefined ? unsetHeld(path, leaf) : readStored(source, leaf, declared));
     }
     return autoValues.get(path);
   };

@@ -295,7 +295,17 @@ function LeafRow<TC extends Record<string, unknown>>({
   const textWaitMs = useTextWaitMs(leaf);
   const pinned = leafValueAt(config, path, leaf);
 
-  const rowAuto = useRowAuto({ path, leaf, resolved, config, shown, pinned, auto, setRowAuto });
+  const rowAuto = useRowAuto({
+    path,
+    leaf,
+    resolved,
+    config,
+    shown,
+    pinned,
+    auto,
+    setRowAuto,
+    setConfig,
+  });
   const { isAutoRow, value, setAuto, readout: autoReadout, props: autoProps } = rowAuto;
 
   const changed = changedPaths?.has(path) === true;

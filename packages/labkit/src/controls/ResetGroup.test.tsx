@@ -13,7 +13,7 @@ const italic = {
     write: (on: boolean) => (on ? 'italic' : 'normal'),
   },
 } as const;
-const group = { kind: 'group', name: 'Type', children: { italic } } as unknown as PrefGroup;
+const group = { name: 'Type', children: { italic } } as unknown as PrefGroup;
 
 describe('ResetGroup over an encoded leaf', () => {
   it('reads the stored value through its encoding, and resets it to holding nothing', () => {
@@ -23,15 +23,20 @@ describe('ResetGroup over an encoded leaf', () => {
         group={group}
         path="type"
         config={{ type: { italic: 'normal' } }}
+        auto={new Set()}
         setConfig={setConfig}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Reset Type' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reset Type' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     rerender(
       <ResetGroup
         group={group}
         path="type"
         config={{ type: { italic: 'italic' } }}
+        auto={new Set()}
         setConfig={setConfig}
       />,
     );

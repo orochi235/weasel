@@ -67,7 +67,7 @@ describe('a schema built with f', () => {
             expect(Object.keys(node?.children ?? {}).sort()).toEqual(
               group.children.map(([k]) => k).sort(),
             );
-            expect(resolved.resettable?.has(path)).toBe(group.resettable ?? false);
+            expect(node?.resettable ?? false).toBe(group.resettable ?? false);
           }
           expect(Object.keys(resolved.group.children).sort()).toEqual(
             [...FLAGS, ...spec.map(([k]) => k)].sort(),
@@ -94,7 +94,6 @@ describe('a schema built with f', () => {
           expect(sectionsByAt(again)).toEqual(sectionsByAt(resolved));
           expect([...again.showIf].sort()).toEqual([...resolved.showIf].sort());
           expect([...(again.enableIf ?? [])].sort()).toEqual([...(resolved.enableIf ?? [])].sort());
-          expect(again.resettable).toEqual(resolved.resettable);
           expect(back.defaults()).toEqual(schema.defaults());
           if (resolved.sections.length > 0) t.count('sectioned');
           if (groupsOf(spec).length > 0) t.count('grouped');
