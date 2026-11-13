@@ -2130,3 +2130,24 @@ Calls the lanes made without a ruling:
   pointers (`pinchDolly.integration.test.tsx`).
 - Chart's command keys (grid, undo and redo, group and ungroup, the page keys) take `<action>.key` ids, as draw's do
   (2026-11-13, in the batch).
+
+## Audit round twenty-three (2026-11-13): prefs over time and at the edges
+
+- A stored value reads the same in every bundled settings store: prefs stores through `repairPrefValue`, and a lab's
+  trials and snapshots through the same call on the way in (`repairedConfig`, run after a config's migration and
+  its defaults). A number clamps into its range; a value of the wrong kind, an option no longer offered, a color no
+  color reader reads, or a paint that is no paint reads as the default; a string past its `maxLength` is cut. A key
+  no leaf describes is kept by both, so a schema rolled back finds it (2026-11-13).
+- A `color` leaf keeps any CSS color the kit's `tryParseColor` reads, not only hex: `ColorField` reads the same set,
+  and labkit schemas default to names like `'red'` (2026-11-13).
+- A labkit number's `.suffix()` is the prefs leaf's `unit: { scale: 1, suffix }`, the form the kit settings schemas
+  already use; a number's `placeholder` and a string's `maxLength` are prefs fields. Labkit keeps one extra the
+  schema lacks, `debounceMs`, since ui sets how long typed text waits per surface (`textWaitMs`), not per leaf
+  (2026-11-13).
+- Open: "Auto" means two things. In a store-bound form (`usePrefsValues(store).form`) it is the leaf following its
+  default, and turning it on resets the leaf; in labkit's `ControlPanel` it is a resolver computing the value. A
+  store never reads `PrefAuto.value` or `PrefAuto.on`, which only labkit honors; no bundled store's schema declares
+  either. Whether a store reads `auto.value` while a leaf is unset, or the two meanings get two names.
+- Open: reset differs by surface. A store-bound `PrefsForm` resets one leaf through its Auto toggle and has no group
+  reset; `ControlPanel` resets a `.resettable()` group from its heading and has no per-row reset for a leaf that
+  cannot go auto. Whether both surfaces offer both.
