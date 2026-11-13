@@ -21,7 +21,7 @@ export function byteHex(v: number): string {
 /** A hex color's red, green, and blue as 0..255, its alpha dropped. Throws on anything {@link parseHexBytes} does not read. */
 export function hexToRgbBytes(input: string): [number, number, number] {
   const bytes = parseHexBytes(input);
-  if (!bytes) throw new Error(`not a hex color: "${input}"`);
+  if (!bytes) throw new Error(`hexToRgbBytes: not a hex color "${input}"; pass #rgb, #rgba, #rrggbb or #rrggbbaa, or use parseColor for any CSS color`);
   return [bytes[0], bytes[1], bytes[2]];
 }
 
