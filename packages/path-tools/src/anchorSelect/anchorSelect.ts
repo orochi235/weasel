@@ -14,6 +14,7 @@ import {
   depOf, pathOperationTags, requiresAnchorSelection, type EditAnchorsDep, type KeySpec,
 } from '@weasel-js/core';
 import { icon, type PathToolsIconName } from '../icons.gen';
+import { pref, type PrefGroup } from '@weasel-js/prefs';
 
 /** The group every action here is in, which an `ActionBar` can show. */
 export const ANCHOR_SELECTION_GROUP = 'anchorSelection';
@@ -32,7 +33,7 @@ const pathOpen = (deps?: ActionDeps): true | ActionDisabledReason =>
 /** A selection command bound to `key`; `needsSelection` when `pick` reads
  *  the current selection and so has nothing to do without one. */
 function makeSelectCommand(
-  id: PathToolsIconName, label: string, key: KeySpec, needsSelection: boolean, pick: Pick,
+  id: PathToolsIconName, label: string, key: KeySpec, needsSelection: boolean, pick: Pick, params?: PrefGroup,
 ): Action & { requires: string[] } {
   const enabled = needsSelection ? requiresAnchorSelection : pathOpen;
   return {
@@ -44,6 +45,7 @@ function makeSelectCommand(
     defaultBinding: [{ spec: { ...key, phase: BETWEEN_GESTURES }, opts: { id: `${id}.key` } }],
     eligible: { capability: 'edits-anchors' },
     requires: ['editAnchors'],
+    ...(params ? { params } : {}),
     invoker: {
       timing: 'immediate',
       run: (deps, params) => {
@@ -60,10 +62,16 @@ function makeSelectCommand(
  *  key reads as another glyph. */
 const altKey = (key: string, code: string): KeySpec => ({ kind: 'key', key, code, mods: { alt: true } });
 
-/** The count `params.n` asks for, 2 when it names none. */
+/** Select every Nth anchor's params as a form. Selecting anchors is no undo step, so no last-operation panel
+ *  shows it; a bar or a menu driving the action reads its range here. */
+export const SELECT_EVERY_NTH_ANCHOR_PARAMS = pref.group('Select every Nth anchor', {
+  n: pref.number('Every', 2, { description: 'Select one anchor in this many along each subpath.', min: 1, max: 100, step: 1 }),
+});
+
+/** The count `params.n` asks for, the form's default when it names none. */
 const stepOf = (params: Record<string, unknown> | undefined): number => {
   const n = params?.n;
-  return typeof n === 'number' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : 2;
+  return typeof n === 'number' && Number.isFinite(n) && n >= 1 ? Math.floor(n) : SELECT_EVERY_NTH_ANCHOR_PARAMS.children.n.default;
 };
 
 /** Add each selected anchor's neighbors along the path. `]`. */
@@ -79,13 +87,13 @@ export const shrinkAnchorSelectionAction = makeSelectCommand(
 );
 
 /**
- * Select every `params.n`th anchor (default 2) along each subpath, counting
+ * Select every `params.n`th anchor along each subpath, counting
  * from its first selected anchor, or from the start of every subpath when
  * none is selected. Alt+N.
  */
 export const selectEveryNthAnchorAction = makeSelectCommand(
   'selectEveryNthAnchor', 'Select every Nth anchor', altKey('n', 'KeyN'), false,
-  (set, selected, params) => everyNthAnchor(set, stepOf(params), selected),
+  (set, selected, params) => everyNthAnchor(set, stepOf(params), selected), SELECT_EVERY_NTH_ANCHOR_PARAMS,
 );
 
 /** Select every corner anchor of the edited path. Alt+C. */

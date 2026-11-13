@@ -65,7 +65,7 @@ export { harmonizeAnchorsAction } from './harmonize/harmonize';
 export { reversePathAction, setPathStartAction } from './pathStructure/pathStructure';
 export { convertSegmentAtAction, convertSegmentsAction } from './segmentType/convertSegments';
 export {
-  ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, selectCornerAnchorsAction,
+  ANCHOR_SELECTION_GROUP, growAnchorSelectionAction, invertAnchorSelectionAction, SELECT_EVERY_NTH_ANCHOR_PARAMS, selectCornerAnchorsAction,
   selectEveryNthAnchorAction, selectSmoothAnchorsAction, shrinkAnchorSelectionAction,
 } from './anchorSelect/anchorSelect';
 export { RESAMPLE_PARAMS, resamplePathAction, type ResamplePathParams } from './resample/resample';
