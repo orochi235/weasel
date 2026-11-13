@@ -110,14 +110,14 @@ describe('trimmedRuns', () => {
 
   it('keeps one stroke unless asked to part closed runs from open ones', () => {
     const whole = cut(D, {});
-    expect(trimmedRuns(whole, true, false)).toEqual([{ path: whole.path, dashPhase: 0, fromClosed: true }]);
-    expect(trimmedRuns(whole, true, true).map((r) => [r.dashPhase, r.fromClosed])).toEqual([[0, true], [0, false]]);
+    expect(trimmedRuns(whole, { dashed: true })).toEqual([{ path: whole.path, dashPhase: 0, fromClosed: true }]);
+    expect(trimmedRuns(whole, { dashed: true, byClosed: true }).map((r) => [r.dashPhase, r.fromClosed])).toEqual([[0, true], [0, false]]);
   });
 
   it('parts runs whose dash phases differ only when dashed', () => {
     const late = cut(D, { start: { length: 10 } });
     expect(late.dashPhases).toEqual([10, 0]);
-    expect(trimmedRuns(late, false, false)).toHaveLength(1);
-    expect(trimmedRuns(late, true, false).map((r) => r.dashPhase)).toEqual([10, 0]);
+    expect(trimmedRuns(late)).toHaveLength(1);
+    expect(trimmedRuns(late, { dashed: true }).map((r) => r.dashPhase)).toEqual([10, 0]);
   });
 });

@@ -65,7 +65,7 @@ function writeNative(ctx: PageCtx, path: Path, stroke: CommandStroke, state: Dra
   // The untrimmed length decides a dash too fine to draw, as it does in the renderer.
   const length = stroke.dash ? dashLength(path) : undefined;
   const insets = strokeInsets(stroke as Stroke, width);
-  for (const run of trimmedRuns(cut, stroke.dash !== undefined, true)) {
+  for (const run of trimmedRuns(cut, { dashed: stroke.dash !== undefined, byClosed: true })) {
     const shaft = run.fromClosed ? run.path : shaftOf(run.path, insets.start, insets.end);
     if (!shaft) continue;
     strokeStyleOps(ctx, stroke, width, length, run.dashPhase);

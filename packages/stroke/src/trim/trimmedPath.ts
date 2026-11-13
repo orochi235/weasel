@@ -65,13 +65,17 @@ export interface TrimmedRun {
   fromClosed: boolean;
 }
 
-/**
- * `cut` as the strokes a writer states separately: the whole path as one,
- * unless its subpaths differ in dash phase (when `dashed`) or, with
- * `byClosed`, in whether they came from a closed subpath. A writer that
- * restarts a dash on every subpath, or sets markers per element, needs those apart.
- */
-export function trimmedRuns(cut: TrimmedPath, dashed: boolean, byClosed: boolean): TrimmedRun[] {
+/** What splits a {@link TrimmedPath} into separate {@link TrimmedRun}s. Both default to false. */
+export interface TrimmedRunsOptions {
+  /** Split where subpaths differ in dash phase: for a writer that restarts a dash on every subpath. */
+  dashed?: boolean;
+  /** Split where subpaths differ in whether they came from a closed subpath: for a writer that sets markers per element. */
+  byClosed?: boolean;
+}
+
+/** `cut` as the strokes a writer states separately: the whole path as one, unless `opts` asks it split. */
+export function trimmedRuns(cut: TrimmedPath, opts: TrimmedRunsOptions = {}): TrimmedRun[] {
+  const { dashed = false, byClosed = false } = opts;
   const { dashPhases: phases, fromClosed } = cut;
   const alike = (i: number) => (!byClosed || fromClosed[i] === fromClosed[0]) && (!dashed || phases[i] === phases[0]);
   if (phases.every((_p, i) => alike(i))) {
