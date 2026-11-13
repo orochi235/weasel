@@ -1,4 +1,4 @@
-import '../../../../../apps/forge/labkitStyles';
+import '@weasel-js/labkit/styles.css';
 import '../shell.css';
 import './live.browser.test.css';
 import { createMemoryAdapter, Lab, TrialIdContext } from '@weasel-js/labkit';

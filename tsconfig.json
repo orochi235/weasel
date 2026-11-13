@@ -123,7 +123,7 @@
       "@weasel-js/labkit/overview": ["./packages/labkit/src/overview/index.ts"],
       "@weasel-js/labkit/weasel-ui": ["./packages/labkit/src/passthrough/weasel-ui.ts"],
       "@weasel-js/labkit/weasel-canvas": ["./packages/labkit/src/passthrough/weasel-canvas.ts"],
-      "@weasel-js/labkit/styles.css": ["./packages/labkit/src/styles.less"],
+      "@weasel-js/labkit/styles.css": ["./packages/labkit/src/styles.dev.ts"],
       "@weasel-js/labkit/loupe": ["./packages/labkit/src/loupe/index.ts"],
       "@weasel-js/labkit/testing/*": ["./packages/labkit/src/testing/*"],
       "@weasel-js/loupe": ["./packages/loupe/src/index.ts"],

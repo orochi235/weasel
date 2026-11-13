@@ -1,4 +1,4 @@
-import '../../../../../apps/forge/labkitStyles';
+import '@weasel-js/labkit/styles.css';
 import '../shell.css';
 import './readouts.browser.test.css';
 import { createMemoryAdapter } from '@weasel-js/labkit';

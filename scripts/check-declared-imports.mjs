@@ -171,21 +171,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
 
   // An app is not published, but its source is what a demo teaches: it reaches a package the way a
   // consumer would. Its build configs load plugins from source before any dist exists, so they may not,
-  // nor may a dev server's stand-in for a built file, nor a test helper named `test…`.
+  // nor may a test helper named `test…`.
   const APPS = join(ROOT, 'apps');
-  const DEV_STAND_INS = ['apps/forge/labkitStyles.ts'];
-  for (const file of DEV_STAND_INS) {
-    if (!existsSync(join(ROOT, file))) {
-      console.error(`[declared-imports] ${file} is listed as a dev stand-in and does not exist.`);
-      process.exit(1);
-    }
-  }
   for (const name of readdirSync(APPS).sort()) {
     const dir = join(APPS, name);
     if (!statSync(dir).isDirectory()) continue;
     for (const file of walk(dir)) {
       const rel = relative(ROOT, file);
-      if (!/\.tsx?$/.test(rel) || NOT_SHIPPED.test(rel) || DEV_STAND_INS.includes(rel)) continue;
+      if (!/\.tsx?$/.test(rel) || NOT_SHIPPED.test(rel)) continue;
       if (/\.config\.[cm]?ts$/.test(rel) || /(^|\/)test[A-Z][^/]*$/.test(rel)) continue;
       for (const written of importSpecifiers(readFileSync(file, 'utf8'), file)) {
         const specifier = written.replace(/\?.*$/, '');

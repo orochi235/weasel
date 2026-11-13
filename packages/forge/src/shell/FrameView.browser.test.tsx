@@ -1,4 +1,4 @@
-import '../../../../apps/forge/labkitStyles';
+import '@weasel-js/labkit/styles.css';
 import './shell.css';
 import { Lab, LabContext, type LabContextValue } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';

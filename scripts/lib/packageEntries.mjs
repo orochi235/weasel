@@ -20,7 +20,7 @@ const BUILT_FROM = {
     './frame.css': 'src/frame/frame.css',
   },
   'icons-plugin': { './virtual': 'virtual.d.ts' },
-  labkit: { './styles.css': 'src/styles.less' },
+  labkit: { './styles.css': 'src/styles.dev.ts' },
   theme: { './tokens.css': 'src/generated/tokens.css' },
 };
 
