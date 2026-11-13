@@ -45,7 +45,7 @@ Tag: `path-click`
 | Cut path at anchor | `cutPathAtAnchor` | Opens the path there | Alt+Shift+click | main | core |
 | Equalize handles | `equalizeHandles` | Gives a segment's two handles one proportion of the way to their corner | Double-click a balance grip | main | path-tools |
 | Trim segment | `trimPath` | Removes the piece between the nearest crossings | Click with the Trim tool (Y) | main | path-tools |
-| Extend to next path | `extendToMeet` | Carries an open end to the next stroke | Click with the Extend tool (U) | main | path-tools |
+| Extend to next path | `extendToMeet` | Carries an open end to the next stroke | Click with the Extend tool (Shift+U) | main | path-tools |
 | Convert segment | `convertSegmentAt` | Flips the segment between straight and curved | Shift+double-click in path edit | main | path-tools |
 | Slice | `slice` | Cuts shapes along a drawn line | Slice tool (K) | main | core |
 
@@ -56,7 +56,7 @@ Tag: `path-brush`
 | Operation | Action id | What the brush does | Default binding | Status | Package |
 |---|---|---|---|---|---|
 | Simplify brush | `simplifyBrush` | Removes anchors it passes over, refitting the curve | Drag with the brush | main | path-tools |
-| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (S) | main | path-tools |
+| Smudge brush | `smudgeBrush` | Pushes the outline along with the pointer | Drag with the Smudge tool (U) | main | path-tools |
 | Puppet warp | `puppet.drag`, `puppet.addPin`, `puppet.removePin` | Pins the path and bends it when a pin is dragged | Puppet warp tool (B): click pins, Alt+click a pin takes it out, drag a pin bends | main | path-tools |
 
 ## Handles on the box around a selection

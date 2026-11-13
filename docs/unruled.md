@@ -1911,9 +1911,8 @@ Calls the lanes made without a ruling:
   no `navigator` where `isApplePlatform` answers false (documented as the docs convention), and lookups such as
   `pickMenu` returning `undefined` where others return `null` (routing has no rule, and the `find`-shaped ones
   follow `Array.find`).
-- Open: the smudge brush's default key, S, is also the sticky tool's; a canvas mounting `TYPE_TOOLS` and
-  `usePathToolsTools` has two tools on S. The key is the maintainer's to pick, in the smudge tuning entry in
-  `docs/TODO.md`. The star tool has no default key at all.
+- Sticky keeps S, the smudge brush moves to U, and Extend moves from U to Shift+U, on the maintainer's call
+  (2026-11-12). The star tool has no default key at all.
 - Open: two tool sets are not named for their tools' palette group, which `BUILTIN_TOOL_GROUPS` says each set is:
   `RESHAPE_TOOLS` (`reshape`) holds tools in the `path` group, and `RIG_TOOLS` (`rig`) tools in `shape`. Renaming
   the groups moves where the tools sit on a palette; renaming the sets does not.

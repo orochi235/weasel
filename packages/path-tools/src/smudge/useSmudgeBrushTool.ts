@@ -15,14 +15,14 @@ export const SMUDGE_BRUSH_TOOL_OPTIONS = {
 
 /** Options for `useSmudgeBrushTool`. */
 export interface UseSmudgeBrushToolOptions {
-  /** Override the default keybinding (`{ key: 'S' }`). Pass `null` to omit. */
+  /** Override the default keybinding (`{ key: 'U' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
   /** Laid over its options' shares: `{ radiusPx: BRUSH_SIZE_PX }` (`@weasel-js/brush`) gives it the size every
    *  brush naming that key shares. Keep it stable across renders. */
   share?: ToolOptionShare;
 }
 
-const SMUDGE_KEY: ToolKeybinding = { key: 'S' };
+const SMUDGE_KEY: ToolKeybinding = { key: 'U' };
 
 /**
  * Smudge brush tool. A round brush that pushes the outline of the selected
