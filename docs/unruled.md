@@ -1837,3 +1837,13 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): every kit `<Canvas>` that takes input sets `touch-action: none` at zero specificity, so
   a `<SceneCanvas>` inside a labkit camera with `data-lk-touch='scroll'` keeps one-finger touch for its own tools
   rather than scrolling the page. A consumer class can set `touch-action` back.
+
+## Audit round twenty (2026-11-12): an animated presentation
+
+- 2026-11-12 (the lane's call): a timeline's `seek` or `edit` between frames shows the targets its tracks hold
+  before it returns, as it already called a track's `onTick`; a seek inside a frame still shows with that frame.
+  Before, the target read the new value at once but showed it at the next frame, so a render right after a seek drew
+  the frame before.
+- Open: scrubbing `<AnimatedTransport>` or `<AnimatedTimeline>` seeks a playing timeline and leaves it playing, as
+  `<AnimatedTimeline>` always has. The timeline demo, which wired `<Transport>` by hand until 2026-11-12, paused on a
+  scrub. Whether a scrub pauses playback.
