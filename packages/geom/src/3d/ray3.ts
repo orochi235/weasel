@@ -90,9 +90,10 @@ export function pointOnRay(ray: Ray, t: number): Vec3 {
   return add(ray.origin, scale(ray.direction, t));
 }
 
-/** The smallest box containing every point. No points gives an inverted
- *  box, `min` at +Infinity and `max` at -Infinity. */
-export function aabbOfPoints(points: readonly Vec3[]): Aabb {
+/** The smallest box containing every point, or null for none, as the 2D
+ *  barrel's `boundsOfCoords` and `unionRects` answer. */
+export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
+  if (points.length === 0) return null;
   const min = { x: Infinity, y: Infinity, z: Infinity };
   const max = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const p of points) {
