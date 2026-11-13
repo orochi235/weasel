@@ -294,6 +294,8 @@ export { radial } from './radial';
 export { grid, type GridOptions } from './grid';
 export { outlinePolyline, portsOnOutline, rayHit } from './onOutline';
 export {
+  DEFAULT_PORT_FILL,
+  DEFAULT_PORT_STROKE,
   PORT_AFFORDANCE_KIND,
   PORT_LAYER_ID,
   createPortAffordance,
@@ -325,10 +327,11 @@ export { isBodyOrRegion, isDiagramBody } from './bodyNode';
 export type { DiagramGroup, DiagramNode, Port, PortAnchor, PortSite, PortSpec } from './types';
 export { DiagramView, fitDiagram } from './DiagramView';
 export type {
-  ContainerEdit, DeleteReport, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
+  ContainerEdit, DeleteReport, DiagramEdit, DiagramFit, DiagramLayout, DiagramOverlay, DiagramViewApi, DiagramViewProps, EdgeRoute, LabelMove, NodeMove, NodeResize,
   ReconnectChange, ReorderChange, RouteChange,
 } from './DiagramView';
 export { diagramLayoutOf } from './sceneSync';
+export { applyDiagramEdit, applyNodeResizes, type ApplyEditOptions } from './applyEdit';
 export { useMirroredSelection } from './mirrorSelection';
 export { DIAGRAM_ROLES, DIAGRAM_THEME_KEY } from './theme/types';
 export type { DiagramFont, DiagramRole, DiagramTheme, FontField, StyleField } from './theme/types';

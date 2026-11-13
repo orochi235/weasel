@@ -11,6 +11,7 @@ import type { LayoutFn, LayoutPlanner } from './layout';
 import type { LiveLayout, UseLiveLayoutOptions } from './live';
 import type { DiagramOverlay } from './overlays';
 import type { ReorderChange } from './groupReorder';
+import type { DiagramEdit } from './batchedEdits';
 import type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
 import type { SequenceEdit } from './sequence/commit';
 
@@ -82,10 +83,12 @@ export interface DiagramViewProps {
    *  `'multiple'` agrees with a pick of several whose latest it is, so handing
    *  back what `onSelect` reports as `id` leaves the rest picked. */
   selected?: string | null | readonly string[];
-  /** Reports what each click leaves picked: its latest pick, `null` for none,
-   *  and every id picked, in the order they were — a re-click on the
-   *  picked node reports it again. The canvas keeps the pick even if
-   *  `selected` does not follow it; only a change to `selected` is pushed in. */
+  /** Reports what each click leaves picked, and each change to the pick made
+   *  any other way, such as a drag that picks the node it moves: its latest
+   *  pick, `null` for none, and every id picked, in the order they were — a
+   *  re-click on the picked node reports it again. A change pushed in through
+   *  `selected` is not reported. The canvas keeps the pick even if `selected`
+   *  does not follow it; only a change to `selected` is pushed in. */
   onSelect?: (id: string | null, ids: readonly string[]) => void;
   /** Reports a click (not a drag) on a node's header band — its `header` row —
    *  with the node's id, after `onSelect`. To collapse it, write `collapsed`. */
@@ -109,6 +112,13 @@ export interface DiagramViewProps {
    *  the data edge's `routed` and `routedPorts`, or the next `diagramScene`
    *  lays them out again. */
   onMove?: (moves: readonly NodeMove[], routes: readonly EdgeRoute[]) => void;
+  /** Hears what `onMove` and `onEditContainer` hear, one gesture or layout
+   *  run at a time: a container dragged with its members, or a lane resized
+   *  with the shapes it shifts, is one edit rather than several reports, so a
+   *  host can keep it as one undo entry. It arrives once the gesture is done
+   *  reporting, a microtask after the last of them. Setting it turns on what
+   *  setting both of those does. */
+  onEdit?: (edit: DiagramEdit) => void;
   /** Set to give a selected node resize handles. The box resizes live while
    *  a handle is dragged; on release the new box is reported and the view
    *  draws it only once the specs do. Store it as the data node's `width`,

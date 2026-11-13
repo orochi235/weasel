@@ -39,8 +39,8 @@ export interface EffectEditorBaseProps {
    *  every edit comes back through `onChange` and shows once `doc` follows. */
   doc: EffectDoc;
   /** Hears each edit as the doc it makes, and a name for it fit for an undo
-   *  entry: 'Move', 'Connect', 'Delete', 'Reconnect', 'Edit route', 'Add stage',
-   *  'Reorder', 'Reorder lanes', 'Resize group', 'Group', 'Ungroup' or 'Rename group'. */
+   *  entry: 'Move', 'Connect', 'Delete', 'Reconnect', 'Edit route', 'Move label', 'Add stage',
+   *  'Reorder', 'Reorder group', 'Reorder lanes', 'Resize group', 'Group', 'Ungroup' or 'Rename group'. */
   onChange: (next: EffectDoc, label: string) => void;
   /** One run of the pipeline, drawn over it as `EffectChart` draws its
    *  `run`, with the stage it is `at` outlined. */
@@ -48,7 +48,8 @@ export interface EffectEditorBaseProps {
   /** A stage id, or null for none. */
   selected?: string | null;
   /** Hears each pick: a stage's id, or `null` for anything else, a wire included; and every stage and group
-   *  picked, in the order they were, for `EffectEditorApi.group`. Shift-click adds one, or takes it out. */
+   *  picked, in the order they were, for `EffectEditorApi.group`. Cmd-click (Ctrl off macOS) adds one, or
+   *  takes it out, and Shift-click picks everything between it and the last one clicked. */
   onSelect?: (stage: string | null, picked: readonly string[]) => void;
   /** A group id, or null for none: drawn picked while no stage is. */
   selectedGroup?: string | null;
@@ -196,8 +197,7 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       onEditRoute={handlers.onEditRoute}
       onMoveLabel={handlers.onMoveLabel}
       onDelete={handlers.onDelete}
-      {...(look === 'nodeGraph' ? { onMove: handlers.onMove } : { ambient })}
-      {...(look === 'nodeGraph' ? { onEditContainer: handlers.onEditContainer } : {})}
+      {...(look === 'nodeGraph' ? { onEdit: handlers.onEdit } : { ambient })}
       selectionMode="multiple"
       onSelect={picks.pick}
       {...(picks.shown !== undefined ? { selected: picks.shown } : {})}

@@ -8,6 +8,7 @@
  */
 import { AUTO_POSE_DESCRIPTOR, type PoseDescriptor, type Vec2 } from '@weasel-js/core/math';
 import { expandGroupEdges, insetOf, type GroupInset } from './cluster';
+import { diagramContainerOf } from './containers/trait';
 import { diagramEdgeOf, layoutOwnsRoute } from './edgeTrait';
 import { nestGroups } from './groupTree';
 import { diagramLabelOf, type DiagramLabel } from './labelTrait';
@@ -20,6 +21,8 @@ import type { PortSpec } from './types';
  *  on are the dependencies the derivation already runs on. */
 export interface GraphNodeLike extends DiagramNodeLike {
   dependsOn?: readonly string[] | 'children';
+  /** The scene node it is a child of: a container holding it, say. */
+  parent?: string | null;
 }
 
 /** Where the graph gets its nodes. The same thunk shape the port affordance
@@ -147,18 +150,23 @@ export function buildGraph<TPose>(
   const groupNodes: { id: string; members: readonly string[]; inset: GroupInset; minWidth?: number; reorders?: boolean }[] = [];
   const routed = new Set<string>();
   const rooms = new Map<string, EdgeLabelRoom>();
+  const items = [...source()];
+  const outer = outermostRegions(items);
 
-  for (const { node, pose } of source()) {
+  for (const { node, pose } of items) {
     const edge = diagramEdgeOf(node);
     if (edge !== null) {
       const deps = node.dependsOn;
       if (Array.isArray(deps) && deps.length === 2) {
+        // An end inside a region ranks against the outermost region holding it.
+        const from = outer.get(deps[0]!), to = outer.get(deps[1]!);
+        if (from !== undefined && from === to) continue;
         candidates.push({
           id: node.id,
-          from: deps[0]!,
-          to: deps[1]!,
-          ...(edge.from.port !== undefined ? { fromPort: edge.from.port } : {}),
-          ...(edge.to.port !== undefined ? { toPort: edge.to.port } : {}),
+          from: from ?? deps[0]!,
+          to: to ?? deps[1]!,
+          ...(edge.from.port !== undefined && from === undefined ? { fromPort: edge.from.port } : {}),
+          ...(edge.to.port !== undefined && to === undefined ? { toPort: edge.to.port } : {}),
           ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
           ...(layoutOwnsRoute(edge) ? {} : { authored: true }),
         });
@@ -176,7 +184,7 @@ export function buildGraph<TPose>(
       continue;
     }
     const trait = diagramNodeOf(node, opts.read);
-    if (trait === null) continue;
+    if (trait === null || outer.has(node.id)) continue;
     if (trait.group !== undefined) {
       const deps = node.dependsOn;
       groupNodes.push({
@@ -223,6 +231,26 @@ export function buildGraph<TPose>(
     return room !== undefined && routed.has(e.id) ? { ...e, label: room } : e;
   });
   return graphOf(nodes, expandGroupEdges(roomed.filter((e) => known(e.from) && known(e.to)), live), live);
+}
+
+/** For each node inside a container or a pool, the outermost one holding it.
+ *  A region is laid out as one node of its box, and what it holds rides
+ *  along with it, as `diagramScene` lays out a boxed region. */
+function outermostRegions(items: readonly { node: GraphNodeLike }[]): Map<string, string> {
+  const parentOf = new Map<string, string>();
+  const regions = new Set<string>();
+  for (const { node } of items) {
+    if (typeof node.parent === 'string') parentOf.set(node.id, node.parent);
+    const c = diagramContainerOf(node);
+    if (c !== null && c.role !== 'lane') regions.add(node.id);
+  }
+  const out = new Map<string, string>();
+  for (const { node } of items) {
+    let found: string | undefined;
+    for (let p = parentOf.get(node.id); p !== undefined; p = parentOf.get(p)) if (regions.has(p)) found = p;
+    if (found !== undefined) out.set(node.id, found);
+  }
+  return out;
 }
 
 const NONE: readonly GraphEdge[] = Object.freeze([]);

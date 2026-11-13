@@ -30,6 +30,7 @@ import { useItemDrop } from './itemDrop';
 import { useLiveLayout, type LiveLayout } from './live';
 import { usePagesView } from './usePagesView';
 import { DEFAULT_FIT_PADDING, diagramViewBounds, useDiagramFit } from './diagramFit';
+import { useBatchedEdits } from './batchedEdits';
 import { useMirroredSelection } from './mirrorSelection';
 import { useOverlayPlacement, worldRectOf } from './overlays';
 import { sceneParticipants } from './portLayer';
@@ -42,6 +43,7 @@ import { useSequenceTextEdit } from './sequence/textEdit';
 const SHAPE_OUTLINE = { outline: { follow: 'shape' as const } };
 
 export type { ContainerEdit, EdgeRoute, NodeMove } from './sceneSync';
+export type { DiagramEdit } from './batchedEdits';
 export type {
   DeleteReport, DiagramLayout, DiagramViewApi, DiagramViewProps, LabelMove, NodeResize, ReconnectChange, RouteChange,
 } from './diagramViewProps';
@@ -67,10 +69,11 @@ const adoptViewRule = (el: HTMLElement | null) => {
  *  written: change the specs to keep it. Labels paint only in a registered
  *  font family; `diagramScene` defaults to sans-serif, so call
  *  `registerCanvasFont('sans-serif')` or text renders blank. */
-export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView(props, ref) {
+export const DiagramView = forwardRef<DiagramViewApi, DiagramViewProps>(function DiagramView({ onEdit, ...props }, ref) {
+  const reports = useBatchedEdits(props.onMove, props.onEditContainer, onEdit);
   return (
     <WeaselProvider>
-      <Inner {...props} apiRef={ref} />
+      <Inner {...props} {...reports} apiRef={ref} />
     </WeaselProvider>
   );
 });
@@ -107,7 +110,7 @@ function Inner({
   const selection = useSelection({ scene, mode: selectionMode === 'multiple' ? 'multi' : 'single' });
   useSceneSync(scene, specs, { onMove, onEditContainer });
   // After the sync, so a `selected` naming a node these specs add finds it in the scene.
-  const mirror = useMirroredSelection(selection, selected, onSelect);
+  const mirror = useMirroredSelection(selection, selected, onSelect, scene.subscribe);
   useReleasedImages(specs);
 
   const source = useMemo(() => sceneParticipants<RectPose>(scene), [scene]);
