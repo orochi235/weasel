@@ -14,7 +14,8 @@ import {
   intersectRayPlane,
   invert,
   len,
-  lerp,
+  lerpPoint,
+  distance2,
   lookAt,
   multiply,
   normalize,
@@ -209,41 +210,41 @@ describe('intersectRayAabb', () => {
   const max: Vec3 = { x: 1, y: 1, z: 1 };
 
   it('hits a box dead ahead at the near face', () => {
-    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max);
+    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, { min, max });
     expect(t).toBeCloseTo(4, 6);
   });
 
   it('misses a box off to the side', () => {
-    expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, { min, max })).toBeNull();
   });
 
   it('misses a box behind the ray', () => {
-    expect(intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: 1 } }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: 1 } }, { min, max })).toBeNull();
   });
 
   it('hits from inside the box at t=0', () => {
-    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 0, z: -1 } }, min, max);
+    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 0, z: -1 } }, { min, max });
     expect(t).toBeCloseTo(0, 6);
   });
 
   it('hits along a tiny, unnormalized direction', () => {
-    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1e-10 } }, min, max);
+    const t = intersectRayAabb({ origin: { x: 0, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1e-10 } }, { min, max });
     expect(t).toBeCloseTo(4e10, -1);
   });
 
   it('hits along a slab boundary it runs parallel to', () => {
-    const t = intersectRayAabb({ origin: { x: 1, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max);
+    const t = intersectRayAabb({ origin: { x: 1, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, { min, max });
     expect(t).toBeCloseTo(4, 6);
   });
 
   it('survives an axis-parallel ray that never enters a slab', () => {
-    expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: { x: 5, y: 0, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, { min, max })).toBeNull();
   });
 
   it('misses with a ray that is not a number anywhere, as intersectRayPlane does', () => {
     const far = { x: 50, y: 50, z: 50 };
-    expect(intersectRayAabb({ origin: far, direction: { x: NaN, y: NaN, z: NaN } }, min, max)).toBeNull();
-    expect(intersectRayAabb({ origin: { x: NaN, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, min, max)).toBeNull();
+    expect(intersectRayAabb({ origin: far, direction: { x: NaN, y: NaN, z: NaN } }, { min, max })).toBeNull();
+    expect(intersectRayAabb({ origin: { x: NaN, y: 0, z: 5 }, direction: { x: 0, y: 0, z: -1 } }, { min, max })).toBeNull();
   });
 });
 
@@ -347,11 +348,13 @@ describe('closest points', () => {
 
   it('measures, interpolates, and bounds points', () => {
     expect(distance({ x: 1, y: 2, z: 3 }, { x: 4, y: 6, z: 3 })).toBeCloseTo(5, 12);
-    expectVecClose(lerp({ x: 0, y: 0, z: 0 }, { x: 4, y: 2, z: -2 }, 0.25), { x: 1, y: 0.5, z: -0.5 });
+    expect(distance2({ x: 1, y: 2, z: 3 }, { x: 4, y: 6, z: 3 })).toBe(25);
+    expectVecClose(lerpPoint({ x: 0, y: 0, z: 0 }, { x: 4, y: 2, z: -2 }, 0.25), { x: 1, y: 0.5, z: -0.5 });
     expectVecClose(pointOnRay({ origin: { x: 1, y: 1, z: 1 }, direction: { x: 0, y: 2, z: 0 } }, 1.5), { x: 1, y: 4, z: 1 });
     const box = aabbOfPoints([{ x: 1, y: -2, z: 3 }, { x: -1, y: 5, z: 0 }]);
-    expectVecClose(box.min, { x: -1, y: -2, z: 0 });
-    expectVecClose(box.max, { x: 1, y: 5, z: 3 });
+    expectVecClose(box!.min, { x: -1, y: -2, z: 0 });
+    expectVecClose(box!.max, { x: 1, y: 5, z: 3 });
+    expect(aabbOfPoints([])).toBeNull();
   });
 });
 

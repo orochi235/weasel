@@ -7,7 +7,7 @@
  * the four corners are baked into world coords.
  */
 
-import { applyToPoint, boxToBox } from '../affine';
+import { transformPoint, boxToBox } from '../affine';
 import type { Path, PolygonPath } from '../path';
 import { poseFrameInverseOf, poseFrameOf, type PoseLinear } from '../poseFrame';
 import { boundsOfPath } from './bounds';
@@ -92,7 +92,7 @@ export function worldEditToStorage<P extends PathInWorldPose>(
   const aligned = translatePath(unrotated, -b.x, -b.y);
   let x = b.x, y = b.y;
   if (frame) {
-    const [cx, cy] = applyToPoint(frame, b.x + b.width / 2, b.y + b.height / 2);
+    const [cx, cy] = transformPoint(frame, b.x + b.width / 2, b.y + b.height / 2);
     x = cx - b.width / 2;
     y = cy - b.height / 2;
   }

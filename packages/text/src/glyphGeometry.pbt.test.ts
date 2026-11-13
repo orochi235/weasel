@@ -59,7 +59,7 @@ function edgesInsideFill(p: PolygonPath, e: number): number {
       const dy = c[7] + c[5] - c[3] - c[1];
       const l = Math.hypot(dx, dy);
       if (l < 1e-9) continue;
-      const inside = (u: number, v: number) => pointInPath(p, u, v, { tolerance: 1e-9 });
+      const inside = (u: number, v: number) => pointInPath(p, u, v, { flattenTolerance: 1e-9 });
       if (inside(x + (dy / l) * e, y - (dx / l) * e) && inside(x - (dy / l) * e, y + (dx / l) * e)) n++;
     }
   }

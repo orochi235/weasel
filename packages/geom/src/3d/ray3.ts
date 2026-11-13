@@ -19,7 +19,8 @@ export interface Aabb {
 }
 
 /** Distance along the ray to the box, or null; null too for a ray with a NaN component. A ray starting inside returns 0. */
-export function intersectRayAabb(ray: Ray, min: Vec3, max: Vec3): number | null {
+export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
+  const { min, max } = box;
   let tMin = Number.NEGATIVE_INFINITY;
   let tMax = Number.POSITIVE_INFINITY;
 
@@ -89,9 +90,10 @@ export function pointOnRay(ray: Ray, t: number): Vec3 {
   return add(ray.origin, scale(ray.direction, t));
 }
 
-/** The smallest box containing every point. No points gives an inverted
- *  box, `min` at +Infinity and `max` at -Infinity. */
-export function aabbOfPoints(points: readonly Vec3[]): Aabb {
+/** The smallest box containing every point, or null for none, as the 2D
+ *  barrel's `boundsOfCoords` and `unionRects` answer. */
+export function aabbOfPoints(points: readonly Vec3[]): Aabb | null {
+  if (points.length === 0) return null;
   const min = { x: Infinity, y: Infinity, z: Infinity };
   const max = { x: -Infinity, y: -Infinity, z: -Infinity };
   for (const p of points) {

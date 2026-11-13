@@ -6,7 +6,7 @@
 
 import {
   PORT_REACH,
-  cubicAt as cubicAtN,
+  cubicPointAt as cubicAtN,
   portControls as portControlsN,
   portCurvePoints as portCurvePointsN,
 } from '../portCurve';
@@ -56,8 +56,8 @@ export function portCurvePoints(
   ).map(fromComps);
 }
 
-/** A cubic evaluated at `t`. The 2D barrel's `cubicEvalAt`, one dimension up. */
-export function cubicAt(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
+/** A cubic evaluated at `t`. The 2D barrel's `cubicPointAt`, one dimension up. */
+export function cubicPointAt(p0: Vec3, p1: Vec3, p2: Vec3, p3: Vec3, t: number): Vec3 {
   const p = cubicAtN(comps(p0), comps(p1), comps(p2), comps(p3), t);
   return fromComps(p);
 }

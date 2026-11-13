@@ -9,7 +9,7 @@
  * @packageDocumentation
  */
 export {
-  add, sub, scale, dot, cross, len, len2, normalize, vec3, distance, lerp,
+  add, sub, scale, dot, cross, len, len2, normalize, vec3, distance, distance2, lerpPoint,
   quatIdentity, quatFromAxisAngle, quatMultiply, quatConjugate, quatRotate,
   type Vec3, type Quat,
 } from './vec3';
@@ -23,5 +23,5 @@ export {
   pointOnRay, aabbOfPoints, closestPointOnLine, closestPointOnSegment, closestPointsRayLine,
   type Ray, type Aabb,
 } from './ray3';
-export { PORT_REACH, portControls, portCurvePoints, cubicAt } from './portCurve3';
-export { pointAtLength3 } from './along3';
+export { PORT_REACH, portControls, portCurvePoints, cubicPointAt } from './portCurve3';
+export { pointAtLength } from './along3';

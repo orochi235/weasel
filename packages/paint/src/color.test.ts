@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { hslToSrgb } from './hsl';
-import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
+import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorBytes, rgbaToHex, __resetParseColorCache } from './color';
 
 // Reference chroma-form HSL→RGB — the previous duplicate implementation that
 // lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
@@ -34,17 +34,17 @@ describe('hslToSrgb', () => {
   });
 });
 
-describe('parseColorToRgba255', () => {
+describe('parseColorBytes', () => {
   it('returns integer 0..255 components for #ffffff', () => {
-    expect(parseColorToRgba255('#ffffff')).toEqual([255, 255, 255, 255]);
+    expect(parseColorBytes('#ffffff')).toEqual([255, 255, 255, 255]);
   });
 
   it('returns [0,0,0,255] for #000000', () => {
-    expect(parseColorToRgba255('#000000')).toEqual([0, 0, 0, 255]);
+    expect(parseColorBytes('#000000')).toEqual([0, 0, 0, 255]);
   });
 
   it('handles rgba with fractional alpha', () => {
-    const [r, g, b, a] = parseColorToRgba255('rgba(255, 0, 0, 0.5)');
+    const [r, g, b, a] = parseColorBytes('rgba(255, 0, 0, 0.5)');
     expect(r).toBe(255);
     expect(g).toBe(0);
     expect(b).toBe(0);
@@ -255,8 +255,8 @@ describe('normalizeHex', () => {
 
 describe('tryNormalizeHex', () => {
   it('returns undefined where normalizeHex throws', () => {
-    expect(tryNormalizeHex('#xyz')).toBeUndefined();
-    expect(tryNormalizeHex('red', 'rgba')).toBeUndefined();
+    expect(tryNormalizeHex('#xyz')).toBeNull();
+    expect(tryNormalizeHex('red', 'rgba')).toBeNull();
     expect(tryNormalizeHex(' #ABC ', 'rgb')).toBe('#aabbcc');
   });
 });
@@ -299,34 +299,27 @@ describe('rgbaToHex', () => {
   });
 });
 
-describe('resolveColor', () => {
-  beforeEach(() => __resetResolveColorCache());
-
-  it('returns the same values as parseColor', () => {
-    const known = '#ff0000';
-    const direct = parseColor(known);
-    const cached = resolveColor(known);
-    expect([...cached]).toEqual(direct);
-  });
+describe('parseColor cache', () => {
+  beforeEach(() => __resetParseColorCache());
 
   it('returns the same array reference for repeated calls (memoization)', () => {
-    const a = resolveColor('#00ff00');
-    const b = resolveColor('#00ff00');
+    const a = parseColor('#00ff00');
+    const b = parseColor('#00ff00');
     expect(a).toBe(b);
   });
 
   it('different inputs return different references', () => {
-    const a = resolveColor('#ff0000');
-    const b = resolveColor('#00ff00');
+    const a = parseColor('#ff0000');
+    const b = parseColor('#00ff00');
     expect(a).not.toBe(b);
   });
 
   it('clears the cache when it exceeds the cap', () => {
-    const before = resolveColor('#00ff00');
+    const before = parseColor('#00ff00');
     for (let i = 0; i < 1024; i++) {
-      resolveColor(`#${i.toString(16).padStart(6, '0')}`);
+      parseColor(`#${i.toString(16).padStart(6, '0')}`);
     }
-    const after = resolveColor('#00ff00');
+    const after = parseColor('#00ff00');
     expect(after).not.toBe(before);
     expect([...after]).toEqual([...before]);
   });

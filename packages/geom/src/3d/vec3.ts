@@ -79,13 +79,18 @@ export function normalize(a: Vec3): Vec3 {
   return { x: b.x / lb, y: b.y / lb, z: b.z / lb };
 }
 
+/** Squared distance between two points. Compare distances with this and skip the square root. */
+export function distance2(a: Vec3, b: Vec3): number {
+  return len2(sub(a, b));
+}
+
 /** Euclidean distance between two points. */
 export function distance(a: Vec3, b: Vec3): number {
   return len(sub(a, b));
 }
 
 /** The point `t` of the way from `a` to `b`; `t` outside [0, 1] extrapolates. */
-export function lerp(a: Vec3, b: Vec3, t: number): Vec3 {
+export function lerpPoint(a: Vec3, b: Vec3, t: number): Vec3 {
   return { x: lerpScalar(a.x, b.x, t), y: lerpScalar(a.y, b.y, t), z: lerpScalar(a.z, b.z, t) };
 }
 

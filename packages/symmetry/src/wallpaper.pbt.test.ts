@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, invert, multiply } from '@weasel-js/geom';
+import { transformPoint, invert, multiply } from '@weasel-js/geom';
 import { DEFAULT_SYMMETRY, symmetryTransforms, type SymmetrySpec } from './kinds';
 import { MAX_WALLPAPER_COPIES, WALLPAPER_GROUPS, latticePoints, wallpaperSpec, type LatticePoint, type WallpaperGroup } from './wallpaper';
 import { ID, angle, lookup, point, runs, spec, tally, timeoutFor } from './pbt.fixture';
@@ -124,7 +124,7 @@ describe('the wallpaper presets', () => {
       const group = [ID, ...symmetryTransforms(s, c)];
       const has = lookup(group, s.spacing / 4, c);
       const inside = (m: readonly number[]) => {
-        const [x, y] = applyToPoint(m as never, c.x, c.y);
+        const [x, y] = transformPoint(m as never, c.x, c.y);
         return Math.abs(x - c.x) < r - 1e-6 * r && Math.abs(y - c.y) < r - 1e-6 * r;
       };
       for (const [i, j] of pairs) {

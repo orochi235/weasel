@@ -224,7 +224,7 @@ describe('rays and boxes, property', () => {
       const target = pointIn(b, f);
       const direction = vec3(target.x - origin.x, target.y - origin.y, target.z - origin.z);
       fc.pre(len(direction) > 1e-6);
-      const t = intersectRayAabb({ origin, direction }, b.min, b.max);
+      const t = intersectRayAabb({ origin, direction }, b);
       expect(t).not.toBeNull();
       expect(t!).toBeLessThanOrEqual(1 + 1e-9);
       expect(inside(b, pointOnRay({ origin, direction }, t!), (len(origin) + len(target) + 1) * 1e-9)).toBe(true);
@@ -234,16 +234,16 @@ describe('rays and boxes, property', () => {
   it('moving the ray and the box together leaves the hit distance alone', () => {
     fc.assert(fc.property(aabb, v3(), v3(), v3(), (b, origin, direction, by) => {
       fc.pre(len(direction) > 1e-3);
-      const t = intersectRayAabb({ origin, direction }, b.min, b.max);
+      const t = intersectRayAabb({ origin, direction }, b);
       const move = (p: Vec3): Vec3 => vec3(p.x + by.x, p.y + by.y, p.z + by.z);
-      const u = intersectRayAabb({ origin: move(origin), direction }, move(b.min), move(b.max));
+      const u = intersectRayAabb({ origin: move(origin), direction }, { min: move(b.min), max: move(b.max) });
       // Translation rounds the slabs, so only a ray grazing the box may flip between hit and miss.
       const slack = (len(origin) + len(by) + 2000) * 1e-9;
-      const grow = (k: number): [Vec3, Vec3] => [
-        vec3(b.min.x - k, b.min.y - k, b.min.z - k), vec3(b.max.x + k, b.max.y + k, b.max.z + k)];
-      const wide = intersectRayAabb({ origin, direction }, ...grow(slack)) !== null;
+      const grow = (k: number): Aabb => ({
+        min: vec3(b.min.x - k, b.min.y - k, b.min.z - k), max: vec3(b.max.x + k, b.max.y + k, b.max.z + k) });
+      const wide = intersectRayAabb({ origin, direction }, grow(slack)) !== null;
       const tight = b.max.x - b.min.x > 2 * slack && b.max.y - b.min.y > 2 * slack && b.max.z - b.min.z > 2 * slack
-        && intersectRayAabb({ origin, direction }, ...grow(-slack)) !== null;
+        && intersectRayAabb({ origin, direction }, grow(-slack)) !== null;
       if (wide !== tight) return;
       expect(t === null).toBe(u === null);
       if (t === null || u === null) return;

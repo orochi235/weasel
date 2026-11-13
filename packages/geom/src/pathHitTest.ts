@@ -25,7 +25,7 @@ import { capsuleWithinPx, isSimilarity, stretchOf, type Linear2 } from './screen
 /** Options for the path hit-tests. */
 export interface PointInPathOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
-  tolerance?: number;
+  flattenTolerance?: number;
 }
 
 /** Options for {@link polygonIntersectsPath}. */
@@ -38,7 +38,7 @@ export interface PolygonIntersectsPathOptions extends PointInPathOptions {
 /** Options for {@link strokeHitTest}. */
 export interface StrokeHitTestOptions {
   /** Bezier flattening tolerance in world units. Default 0.5. */
-  tolerance?: number;
+  flattenTolerance?: number;
   /** Extra reach past the band measured in screen pixels rather than world
    *  units: `px` pixels, after `transform` carries the path's frame to the
    *  screen (only its linear part matters). A pointer's forgiveness is a
@@ -47,7 +47,7 @@ export interface StrokeHitTestOptions {
   slop?: { px: number; transform: Affine };
   /** Only the stretch of the outline between these curve positions counts,
    *  as `pathLengthTable` numbers them: a visible window of a trimmed stroke,
-   *  cut at the same points whatever `tolerance` flattens the outline at. */
+   *  cut at the same points whatever `flattenTolerance` flattens the outline at. */
   span?: CurveSpan;
 }
 
@@ -102,7 +102,7 @@ export function strokeHitTest(
     // A view collapsed to a point shows nothing to hit, and a pixel there is no world length.
     if (st.s1 === 0) return false;
     if (isSimilarity(st)) {
-      return strokeHitTest(path, x, y, threshold + slop.px / st.s1, { tolerance: opts.tolerance, span: opts.span });
+      return strokeHitTest(path, x, y, threshold + slop.px / st.s1, { flattenTolerance: opts.flattenTolerance, span: opts.span });
     }
     const sx = a * x + c * y, sy = b * x + d * y;
     return walk(path, opts, (ax, ay, bx, by) =>
@@ -114,7 +114,7 @@ export function strokeHitTest(
 }
 
 function walk(path: Path, opts: StrokeHitTestOptions, visit: SegmentVisit): boolean {
-  return someSegment(path, opts.tolerance, opts.span, visit);
+  return someSegment(path, opts.flattenTolerance, opts.span, visit);
 }
 
 // ─── Region vs path ─────────────────────────────────────────────────────────

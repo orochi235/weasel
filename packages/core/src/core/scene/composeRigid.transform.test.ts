@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, multiply, poseFrameOf, translate, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, poseFrameOf, translate, type Affine } from '@weasel-js/geom';
 import { composeRigidPose, decomposeRigidPose } from 'core/scene/composePose';
 import type { RectPose } from 'core/scene/types';
 
@@ -9,7 +9,7 @@ const IDENTITY: Affine = [1, 0, 0, 1, 0, 0];
 function corners(p: RectPose, outer: Affine = IDENTITY): [number, number][] {
   const m = multiply(outer, poseFrameOf(p) ?? IDENTITY);
   return ([[p.x, p.y], [p.x + p.width, p.y], [p.x + p.width, p.y + p.height], [p.x, p.y + p.height]] as const)
-    .map(([x, y]) => applyToPoint(m, x, y));
+    .map(([x, y]) => transformPoint(m, x, y));
 }
 
 /** The matrix a container's pose puts its children through: its own frame,

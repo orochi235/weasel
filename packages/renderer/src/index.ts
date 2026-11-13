@@ -36,7 +36,7 @@ export type {
 export type { CommandFill, CommandPaint, CommandStroke, CommandPaintUnits, PosedPaint, SolidPaint } from '@weasel-js/paint';
 export { SPRITE_STRIDE } from './DrawCommand';
 export { frameRect, type SpriteSheet } from './spriteSheet';
-export { mat3, viewToMat3, type GlMat3, type View as ViewLike } from '@weasel-js/geom';
+export { mat3, viewToMat3, type GlMat3, type View } from '@weasel-js/geom';
 export { cullDrawCommands, type CullRect } from './cullDrawCommands';
 export { commandsBounds } from './retain/contentBounds';
 export { tessellate, type TessellateOptions } from '@weasel-js/geom/tessellate';
@@ -109,7 +109,7 @@ export {
 export { fillInPoseFrame, fillToBoundsFrame, type FillPoseBox } from './fillInPoseFrame';
 export { commandFill, commandPaint, commandStroke } from './patterns/commandPaint';
 export { dropShadowCommand, dropShadowLayers, spreadRadius, type DropShadow } from './dropShadow';
-export { createTilePattern, type TilePatternOpts } from './patterns';
+export { createTilePattern, type TilePatternOptions } from './patterns';
 export { resolveFillPattern, resolvePatternSpec } from './patterns/resolveSpec';
 export { textCommand, textCommandFromPose, textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
 export {

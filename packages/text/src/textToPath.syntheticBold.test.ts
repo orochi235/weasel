@@ -123,7 +123,7 @@ describe('textToPath — synthetic bold', () => {
         const l = Math.hypot(dx, dy);
         if (l === 0) continue;
         const [nx, ny] = [(dy / l) * e, (-dx / l) * e];
-        const filled = (px: number, py: number) => pointInPath(path, px, py, { tolerance: 0.01 });
+        const filled = (px: number, py: number) => pointInPath(path, px, py, { flattenTolerance: 0.01 });
         if (filled(x + nx, y + ny) && filled(x - nx, y - ny)) inside.push(`${x.toFixed(1)},${y.toFixed(1)}`);
       }
     }

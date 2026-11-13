@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, multiply, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, type Affine } from '@weasel-js/geom';
 import { DEFAULT_SYMMETRY, SYMMETRY_KINDS, symmetryTransforms, type SymmetryKind, type SymmetrySpec } from './kinds';
 import { MAX_WALLPAPER_COPIES, WALLPAPER_GROUPS, latticePoints, wallpaperSpec, type WallpaperGroup } from './wallpaper';
 
@@ -10,7 +10,7 @@ const square = (over: Partial<SymmetrySpec> = {}): SymmetrySpec => ({
   extent: { x: -150, y: -150, width: 300, height: 300 }, ...over,
 });
 const at = (m: Affine, x: number, y: number) => {
-  const [px, py] = applyToPoint(m, x, y);
+  const [px, py] = transformPoint(m, x, y);
   return { x: Math.round(px * 1e6) / 1e6, y: Math.round(py * 1e6) / 1e6 };
 };
 const key = (m: Affine) => m.map((v) => Math.round(v * 1e4) / 1e4 + 0).join(',');

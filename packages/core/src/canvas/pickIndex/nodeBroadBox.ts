@@ -8,7 +8,7 @@
  * grown in the pose's own frame by the ink's `outset`. A derived node is read
  * by its path alone, as both queries read it.
  */
-import { applyToPoint, boundsOfPath, poseFrameOf, type Path } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, poseFrameOf, type Path } from '@weasel-js/geom';
 import { findShapeInk } from 'canvas/NodeShape';
 import { AUTO_POSE_DESCRIPTOR, isPathLike, isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { framedBounds } from 'core/geometry/poseDescriptor';
@@ -42,7 +42,7 @@ function framedBox(out: Box2, pose: unknown, d: PoseDescriptor<unknown>, by: num
   const x0 = local.x - by, y0 = local.y - by;
   const x1 = local.x + local.width + by, y1 = local.y + local.height + by;
   for (const [x, y] of [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as const) {
-    const [wx, wy] = applyToPoint(frame, x, y);
+    const [wx, wy] = transformPoint(frame, x, y);
     grow(out, { x: wx, y: wy, width: 0, height: 0 }, 0);
   }
 }

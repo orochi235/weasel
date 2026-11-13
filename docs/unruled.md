@@ -1926,3 +1926,11 @@ Calls the lanes made without a ruling:
   they read, if with marks placed less well.
 - `fittedTextPose` is renamed `fitTextToBox`, on the maintainer's call (2026-11-12): `fitTextPose` sizes a text
   pose's box to its text, and the renamed one sizes the text to its box.
+
+## Audit round twenty-one (2026-11-12): geometry and drawing
+
+- Open: `StrokeNib.angle` turns counterclockwise on a y-down screen, as the measure readout and the Nib panel
+  ("counterclockwise from level") read angles, where every other angle in geom, paint, stroke and symmetry (a
+  conic gradient's `angle`, `SymmetrySpec.angle`, `RepeatStation.angle`, a marker's) turns clockwise, from +x toward
+  +y. Flipping it changes every saved nib and the panel's reading. Whether the nib follows the geometry rule, or
+  stays with the readout.

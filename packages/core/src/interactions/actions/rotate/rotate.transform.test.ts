@@ -4,7 +4,7 @@
  * writes `rotation` alone and the drawn shape orbits the center rigidly.
  */
 import { describe, it, expect } from 'vitest';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
@@ -17,7 +17,7 @@ const CENTER = { x: 50, y: 30 };
 function drawnCorners(p: RectPose): [number, number][] {
   const frame = poseFrameOf(p)!;
   return [[p.x, p.y], [p.x + p.width, p.y], [p.x + p.width, p.y + p.height], [p.x, p.y + p.height]]
-    .map(([x, y]) => applyToPoint(frame, x, y));
+    .map(([x, y]) => transformPoint(frame, x, y));
 }
 
 function turn(delta: number): RectPose {

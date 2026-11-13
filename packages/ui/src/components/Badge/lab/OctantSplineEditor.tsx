@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useLatest } from '@weasel-js/core';
-import { applyToPoint, invert } from '@weasel-js/geom';
+import { transformPoint, invert } from '@weasel-js/geom';
 import { OCTANT_SPLINE_MAX_ANCHORS } from '../bases/OctantSpline';
 import type { SplineAnchor, SplineMode } from './splineAnchors';
 import {
@@ -19,7 +19,7 @@ function toViewBox(svg: SVGSVGElement | null, clientX: number, clientY: number):
   const ctm = svg?.getScreenCTM();
   const inverse = ctm && invert([ctm.a, ctm.b, ctm.c, ctm.d, ctm.e, ctm.f]);
   if (!inverse) return null;
-  const [x, y] = applyToPoint(inverse, clientX, clientY);
+  const [x, y] = transformPoint(inverse, clientX, clientY);
   return { x, y };
 }
 

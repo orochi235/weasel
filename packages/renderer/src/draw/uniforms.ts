@@ -1,6 +1,6 @@
 import type { ShaderProgram } from '../shaders/ShaderProgram';
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import { resolveColor } from '@weasel-js/paint';
+import { parseColor } from '@weasel-js/paint';
 import type { DrawContext } from './drawContext';
 
 /**
@@ -213,7 +213,7 @@ export function setSolidPaintUniforms(
   ctx: DrawContext, prog: ShaderProgram,
   color: string, opacity: number | undefined,
 ): void {
-  const [r, g, b, a] = resolveColor(color);
+  const [r, g, b, a] = parseColor(color);
   setColorUniform(ctx, prog, r, g, b, a * (opacity ?? 1));
   setAlphaUniform(ctx, prog, ctx.state.alpha);
 }

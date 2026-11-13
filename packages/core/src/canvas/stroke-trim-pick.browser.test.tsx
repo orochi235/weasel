@@ -7,7 +7,7 @@ import { createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
 import {
-  applyToPoint, asPolygonPath, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf, resolveCorners, type PolygonPath,
+  transformPoint, asPolygonPath, pathLengthTable, pointAtLength, polylineFromPoints, poseFrameOf, resolveCorners, type PolygonPath,
 } from '@weasel-js/geom';
 import type { Stroke } from '@weasel-js/paint';
 import { SceneCanvas, createScene, solid } from '@weasel-js/core';
@@ -40,7 +40,7 @@ const STROKE: Stroke = { paint: solid('#222'), width: 6, trim: { end: 0.5 } };
 function drawnAt(pose: Pose, fraction: number): [number, number] {
   const table = pathLengthTable(resolveCorners(PATH));
   const { point } = pointAtLength(table, table.total * fraction);
-  return applyToPoint(poseFrameOf(pose)!, point[0], point[1]);
+  return transformPoint(poseFrameOf(pose)!, point[0], point[1]);
 }
 
 async function mount(pose: Pose) {

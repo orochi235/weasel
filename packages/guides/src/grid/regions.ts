@@ -1,7 +1,7 @@
 import {
   sceneBoxFrames, scenePoseFrame, sceneUnitScopes, type NodeId, type Scene, type ScopedScene, type UnitScope,
 } from '@weasel-js/core';
-import { applyToPoint, pointInPolygon, type Affine } from '@weasel-js/geom';
+import { transformPoint, pointInPolygon, type Affine } from '@weasel-js/geom';
 import type { GridSpacing } from './axes';
 
 type Point = { x: number; y: number };
@@ -55,7 +55,7 @@ export function sceneGridRegions(
   const boxOutline = (id: NodeId, frame: Affine): Point[] => {
     const { width, height } = poses.world(id) as { width: number; height: number };
     return [[0, 0], [width, 0], [width, height], [0, height]].map(([x, y]) => {
-      const [wx, wy] = applyToPoint(frame, x!, y!);
+      const [wx, wy] = transformPoint(frame, x!, y!);
       return { x: wx, y: wy };
     });
   };

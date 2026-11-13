@@ -67,6 +67,18 @@ export interface ClipRibbon {
   metric?: StrokeMetric;
 }
 
+/** How {@link clipRibbon} builds a ribbon. */
+export interface ClipRibbonOptions {
+  /** Bezier flattening tolerance, read as `StrokeOptions.flattenTolerance` is. */
+  flattenTolerance?: number;
+  /** How far each open run's start is held back, as `ClipRibbon.startInset` reports it. Default 0. */
+  startInset?: number;
+  /** How far each open run's end is held back. Default 0. */
+  endInset?: number;
+  /** The space to build the ribbon in; world when left out. */
+  metric?: StrokeMetric;
+}
+
 /**
  * `stroke`'s ribbon along `path`, untrimmed but for its insets, with the
  * lengths a trim clips it by. Under `metric` it is built in that metric's
@@ -76,7 +88,7 @@ export interface ClipRibbon {
  */
 export function clipRibbon(
   path: Path, stroke: Stroke,
-  opts: { flattenTolerance?: number; startInset?: number; endInset?: number; metric?: StrokeMetric } = {},
+  opts: ClipRibbonOptions = {},
 ): ClipRibbon {
   const style: RibbonStyle = { ...ribbonStyle(stroke), meet: false };
   const si = Math.max(0, opts.startInset ?? 0);

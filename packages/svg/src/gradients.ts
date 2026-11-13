@@ -6,6 +6,7 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
+import { pathToD } from '@weasel-js/geom';
 import { getPaintKind, getMarker, isPatternPaint, isTileKind } from '@weasel-js/core';
 import type {
   Paint, GradStop, PaintUnits, MarkerRef, Path,
@@ -15,7 +16,6 @@ import { trimNumber } from './transform';
 import { resolveLength, type LengthAxis } from './lengths';
 import { patternXml } from './patterns';
 import { collectElementsByTag, type ElementTable } from './elements';
-import { serializePathD } from './path-serializer';
 import { SUPPORTED_LEAF_TAGS } from './lowerLeaf';
 import { defUsesPrivateNamespace, markerDefOf, markerDefXml, type MarkerDef } from './markerDefs';
 
@@ -431,7 +431,7 @@ export class PaintServerRegistry {
     for (const path of this.clips) {
       parts.push(
         `<clipPath id="${this.clipIds.get(path)!}">`
-        + `<path d="${serializePathD(path)}"${path.kind === 'polygon' && path.fillRule === 'evenodd' ? ' clip-rule="evenodd"' : ''}/>`
+        + `<path d="${pathToD(path)}"${path.kind === 'polygon' && path.fillRule === 'evenodd' ? ' clip-rule="evenodd"' : ''}/>`
         + '</clipPath>',
       );
     }

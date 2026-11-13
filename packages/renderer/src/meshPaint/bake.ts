@@ -7,7 +7,7 @@
  * premultiplies.
  */
 
-import { resolveColor } from '@weasel-js/paint';
+import { parseColor } from '@weasel-js/paint';
 import { lerpColorArray, type ColorSpace } from '@weasel-js/paint';
 import { evalPatch, isValidPatch, patchBounds, type MeshPatch } from './surface';
 
@@ -99,7 +99,7 @@ export function bakeMesh(
 
   for (const patch of patches) {
     if (!isValidPatch(patch)) continue;
-    const corners = patch.colors.map((c) => resolveColor(c)) as Rgba[];
+    const corners = patch.colors.map((c) => parseColor(c)) as Rgba[];
 
     for (let i = 0; i < grid; i++) {
       for (let j = 0; j < grid; j++) {

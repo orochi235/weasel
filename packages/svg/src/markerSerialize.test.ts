@@ -43,7 +43,7 @@ describe('marker serialization', () => {
   });
 
   it('emits full-length path data, not the trimmed geometry', () => {
-    // serializePathD joins commands with no separator (established
+    // pathToD joins commands with no separator (established
     // elsewhere in this package), so the untrimmed 50-unit line reads
     // "M0 0L50 0" rather than "M0 0 L50 0".
     const out = serializeSvg(line({ markerEnd: 'arrow' }));

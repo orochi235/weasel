@@ -17,7 +17,7 @@ import {
   type Dims,
   type View,
 } from '@weasel-js/core';
-import { applyToPoint, invert, mat3, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
+import { transformPoint, invert, mat3, PATH_L, PATH_M, PATH_Z, type PolygonPath } from '@weasel-js/geom';
 import { mapLines, type GridLines, type GridSpacing } from './axes';
 import { hasArea, intersect, lattice, outlineBox, type LatticeStyles, type Rect } from './lattice';
 import type { GridRegion } from './regions';
@@ -165,7 +165,7 @@ function regionLattice(
   const back = invert(r.frame);
   if (!back) return [];
   const local = (ps: readonly Point[]) => outlineBox(ps.map((p) => {
-    const [x, y] = applyToPoint(back, p.x, p.y);
+    const [x, y] = transformPoint(back, p.x, p.y);
     return { x, y };
   }));
   const box = intersect(local(r.outline), local(rectOutline(area)));

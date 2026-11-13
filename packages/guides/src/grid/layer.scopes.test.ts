@@ -8,7 +8,7 @@ import {
   type PathDrawCommand,
   type UnitScope,
 } from '@weasel-js/core';
-import { applyToPoint, mat3, multiply, PATH_Z, rotateAboutPoint, scale, translate, type Affine } from '@weasel-js/geom';
+import { transformPoint, mat3, multiply, PATH_Z, rotateAboutPoint, scale, translate, type Affine } from '@weasel-js/geom';
 import { createCellHighlightLayer } from './cellHighlight';
 import { createGridLayer } from './layer';
 import { pointToGridCell } from './pointToGridCell';
@@ -135,7 +135,7 @@ describe('a hovered cell in a scoped grid', () => {
 /** `square`, in a frame's own coordinates, carried to world. */
 const squareIn = (frame: Affine, x: number, y: number, size: number) =>
   square(x, y, size).map((p) => {
-    const [wx, wy] = applyToPoint(frame, p.x, p.y);
+    const [wx, wy] = transformPoint(frame, p.x, p.y);
     return { x: wx, y: wy };
   });
 
@@ -207,7 +207,7 @@ describe('a hovered cell in a turned region', () => {
   const regions: GridRegion[] = [{ outline: squareIn(frame, 0, 0, 40), chain: [ROOT, HALF], frame }];
 
   it('is counted in the region\'s frame, and carries it', () => {
-    const [x, y] = applyToPoint(frame, 12, 7);
+    const [x, y] = transformPoint(frame, 12, 7);
     expect(pointToGridCell({ x, y }, 10, undefined, undefined, { scopes: { root: ROOT }, regions }))
       .toEqual({ col: 2, row: 1, box: { x: 10, y: 5, width: 5, height: 5 }, frame });
   });

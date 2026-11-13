@@ -5,7 +5,7 @@
  * the kind, the controls of a fresh one are shown where it would start.
  */
 import {
-  applyToPoint, ellipsePath, pathFromD, polylineFromPoints, type Affine, type Point, type PolygonPath,
+  transformPoint, ellipsePath, pathFromD, polylineFromPoints, type Affine, type Point, type PolygonPath,
 } from '@weasel-js/geom';
 import { pathWarpMap, warpControls, type PathWarp } from '@weasel-js/geom/warp';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -77,7 +77,7 @@ function groupsOf(src: WarpHandleLayerSource, state: ChromeState): ControlGroup[
 }
 
 const toWorld = (m: Affine, p: Point): Point => {
-  const [x, y] = applyToPoint(m, p.x, p.y);
+  const [x, y] = transformPoint(m, p.x, p.y);
   return { x, y };
 };
 

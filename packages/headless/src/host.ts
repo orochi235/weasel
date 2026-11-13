@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { Browser, BrowserContext, LaunchOptions, Page } from 'playwright-core';
+import type { RasterImage } from '@weasel-js/core';
 import { PAGE_GLOBAL, readPageRequest, sceneToWire, type PageApi, type PageRequest, type PageResult, type SerializableRenderArgs } from './protocol';
 
 /** Where a {@link NodeRasterHost} renders. */
@@ -15,12 +16,6 @@ export interface NodeRasterHostOptions {
   pageScript?: string;
 }
 
-/** Straight RGBA, top-down, 4 bytes a pixel: core's `RasterImage`. */
-export interface RasterImage {
-  width: number;
-  height: number;
-  data: Uint8ClampedArray;
-}
 
 /** One render: `renderSceneToPixels`'s arguments, the scene as JSON and no function-valued fields. */
 export interface NodeRenderArgs extends SerializableRenderArgs {

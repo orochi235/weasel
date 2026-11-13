@@ -6,7 +6,7 @@
 
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from '@weasel-js/renderer';
-export type { TilePatternOpts } from '@weasel-js/renderer';
+export type { TilePatternOptions } from '@weasel-js/renderer';
 
 // Mesh gradients live on `@weasel-js/core/mesh`, off the root barrel.
 export {
@@ -175,9 +175,8 @@ export { strokedBounds } from '../canvas/nodeShapes/strokedBounds';
 // ─── Color helpers (parse / normalize / convert) ────────────────────────────
 export {
   parseColor,
-  parseColorToRgba255,
+  parseColorBytes,
   tryParseColor,
-  resolveColor,
   normalizeHex,
   hexToRgba,
   rgbaToHex,

@@ -50,12 +50,12 @@ describe('one trim measure for every reader', () => {
       near(exportEnd(trim), exact, 1e-3);
       // A coarse pick still ends its last capsule on the exact point, and not past it.
       const span = trimSpan(CUBIC, trim)!;
-      expect(strokeHitTest(CUBIC, exact[0], exact[1], 1e-4, { span, tolerance: 2 })).toBe(true);
+      expect(strokeHitTest(CUBIC, exact[0], exact[1], 1e-4, { span, flattenTolerance: 2 })).toBe(true);
       const t = segmentTAtLength(C, 2, length);
       const ahead = cubicEvalAt(C[0], C[1], C[2], C[3], C[4], C[5], C[6], C[7], Math.min(1, t + 3e-3 / 150));
       const gap = Math.hypot(ahead[0] - exact[0], ahead[1] - exact[1]);
       expect(gap).toBeGreaterThan(1e-3);
-      expect(strokeHitTest(CUBIC, ahead[0], ahead[1], gap / 3, { span, tolerance: 1e-4 })).toBe(false);
+      expect(strokeHitTest(CUBIC, ahead[0], ahead[1], gap / 3, { span, flattenTolerance: 1e-4 })).toBe(false);
     });
   }
 });

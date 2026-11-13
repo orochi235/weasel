@@ -1,8 +1,5 @@
 import { viewScreenToWorld, type View } from '@weasel-js/geom';
 
-/** The view `clientToWorld` reads: geom's `View`, under the name the renderer exports it as too. */
-export type ViewLike = View;
-
 /**
  * Map a browser client coord pair to world coords.
  *
@@ -20,7 +17,7 @@ export function clientToWorld(
   clientX: number,
   clientY: number,
   origin: { left: number; top: number; scale?: { x: number; y: number } },
-  view: ViewLike,
+  view: View,
 ): [number, number] {
   const sx = origin.scale?.x ?? 1;
   const sy = origin.scale?.y ?? 1;

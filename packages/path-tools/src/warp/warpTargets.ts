@@ -5,7 +5,7 @@
  */
 import type { ActionDeps } from '@weasel-js/routing';
 import {
-  applyToPoint,
+  transformPoint,
   boundsOfPath,
   identity,
   transformPath,
@@ -130,8 +130,8 @@ function samePlacement(a: WarpTarget, b: WarpTarget): boolean {
   const tol = 1e-3 * Math.max(1, box ? Math.abs(box.x) + box.width + Math.abs(box.y) + box.height : 1);
   if (Math.hypot(m[4] - n[4], m[5] - n[5]) > tol * scale) return false;
   return ca.every((p, i) => {
-    const [ax, ay] = applyToPoint(m, p.x, p.y);
-    const [bx, by] = applyToPoint(n, cb[i].x, cb[i].y);
+    const [ax, ay] = transformPoint(m, p.x, p.y);
+    const [bx, by] = transformPoint(n, cb[i].x, cb[i].y);
     return Math.hypot(ax - bx, ay - by) <= tol;
   });
 }

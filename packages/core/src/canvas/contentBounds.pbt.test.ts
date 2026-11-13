@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, multiply, rotateAboutPoint, translate, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, rotateAboutPoint, translate, type Affine } from '@weasel-js/geom';
 import { IDENTITY_POSE_COMPOSITION } from 'core/scene/composeFrame';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId } from 'core/scene/types';
@@ -129,7 +129,7 @@ describe('sceneContentBounds', () => {
 });
 
 function cornersBox(b: Box, m: Affine): Box {
-  const pts = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].map(([x, y]) => applyToPoint(m, x!, y!));
+  const pts = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].map(([x, y]) => transformPoint(m, x!, y!));
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
   return { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
 }

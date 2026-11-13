@@ -3,7 +3,7 @@ import {
   asNodeId, composeWorldPose, createScene, findShapeSilhouette, RECT_POSE_COMPOSITION, scenePoseAdapter, sceneFromJSON, type NodeId, type RectPose, type RenderLayer,
   type SceneRegistry,
 } from '@weasel-js/core';
-import { applyToPoint, boundsOfPath, rectPath } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, rectPath } from '@weasel-js/geom';
 import { createSymmetry } from './controller';
 import { editSymmetries, isSymmetryGroup, symmetryCopies, symmetryGroupSpec, symmetryRegistry } from './group';
 import { VERTICAL_AXIS } from './kinds';
@@ -283,7 +283,7 @@ describe('a group inside a frame', () => {
   it('keeps an edited path symmetric about the center its copies turn about', () => {
     const { scene, group } = framed();
     const [m] = editSymmetries(scene as never, group);
-    expect(applyToPoint(m!, 270, 50)).toEqual([250, 50]);
+    expect(transformPoint(m!, 270, 50)).toEqual([250, 50]);
   });
 
   it('draws its guide\'s center handle at the center', () => {

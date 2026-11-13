@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, multiply, type Affine } from '@weasel-js/geom';
+import { transformPoint, multiply, type Affine } from '@weasel-js/geom';
 import {
   DEFAULT_SYMMETRY, HORIZONTAL_AXIS, SYMMETRY_KINDS, VERTICAL_AXIS, symmetryTransforms,
   type SymmetryKind, type SymmetrySpec,
@@ -11,7 +11,7 @@ const spec = (kind: SymmetryKind, over: Partial<SymmetrySpec> = {}): SymmetrySpe
 const same = (a: Affine, b: Affine) => a.every((v, i) => Math.abs(v - b[i]) < 1e-9);
 const ID: Affine = [1, 0, 0, 1, 0, 0];
 const at = (m: Affine, x: number, y: number) => {
-  const [px, py] = applyToPoint(m, x, y);
+  const [px, py] = transformPoint(m, x, y);
   return { x: Math.round(px * 1e6) / 1e6, y: Math.round(py * 1e6) / 1e6 };
 };
 

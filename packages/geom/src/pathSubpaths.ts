@@ -80,8 +80,8 @@ function flatten(path: PolygonPath, tolerance: number): FlatSubpaths {
 }
 
 /** `flatSubpaths`, with each open run a fill closes moved among the closed. */
-export function regionSubpaths(path: PolygonPath, opts: { tolerance?: number }): FlatSubpaths {
-  const flat = flatSubpaths(path, opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE);
+export function regionSubpaths(path: PolygonPath, opts: { flattenTolerance?: number }): FlatSubpaths {
+  const flat = flatSubpaths(path, opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE);
   if (!fillsOpenSubpaths(path)) return flat;
   return {
     closed: [...flat.closed, ...flat.open.filter((sub) => sub.length >= 6)],
@@ -91,7 +91,7 @@ export function regionSubpaths(path: PolygonPath, opts: { tolerance?: number }):
 
 export function closedSubpaths(
   path: PolygonPath,
-  opts: { tolerance?: number },
+  opts: { flattenTolerance?: number },
 ): readonly (readonly number[])[] {
   return regionSubpaths(path, opts).closed;
 }

@@ -4,7 +4,7 @@
  * it, not on its unskewed box.
  */
 import { describe, expect, it } from 'vitest';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from '@weasel-js/renderer';
 import { createSelectionOverlayLayer } from './overlay';
 import { rotationHandle } from 'interactions/actions/rotate/handle';
@@ -23,7 +23,7 @@ function drawnCorners(pose: RectPose): { x: number; y: number }[] {
     [pose.x, pose.y], [pose.x + pose.width, pose.y],
     [pose.x + pose.width, pose.y + pose.height], [pose.x, pose.y + pose.height],
   ].map(([lx, ly]) => {
-    const [wx, wy] = applyToPoint(frame, lx, ly);
+    const [wx, wy] = transformPoint(frame, lx, ly);
     return { x: (wx - VIEW.x) * VIEW.scale.x, y: (wy - VIEW.y) * VIEW.scale.y };
   });
 }

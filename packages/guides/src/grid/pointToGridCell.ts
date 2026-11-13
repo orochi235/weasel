@@ -1,5 +1,5 @@
 import type { PlaneUnits } from '@weasel-js/core';
-import { applyToPoint, invert, type Affine } from '@weasel-js/geom';
+import { transformPoint, invert, type Affine } from '@weasel-js/geom';
 import { cellOf, type GridLines, type GridSpacing } from './axes';
 import { outlineBox, type Rect } from './lattice';
 import { containerLines, gridLines, type GridScopes } from './reading';
@@ -50,7 +50,7 @@ export function pointToGridCell(
   // Without a frame the region's lattice is world-aligned through `origin`, as the root's is.
   const local = (p: { x: number; y: number }) => {
     if (!back) return { x: p.x - origin.x, y: p.y - origin.y };
-    const [x, y] = applyToPoint(back, p.x, p.y);
+    const [x, y] = transformPoint(back, p.x, p.y);
     return { x, y };
   };
   const at = local(point);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyToPoint, lengthAtCurve, pathContainsPoint, pathFromD, pathLengthTable, pointAtLength, polygonFromPoints,
+  transformPoint, lengthAtCurve, pathContainsPoint, pathFromD, pathLengthTable, pointAtLength, polygonFromPoints,
   polylineFromPoints, poseFrameOf, resolveCorners, transformPath, type PolygonPath,
 } from '@weasel-js/geom';
 import { trimSpan } from '@weasel-js/stroke';
@@ -137,7 +137,7 @@ describe('shapeCoversPoint under a stroke trim and a stretch', () => {
   function canvasEnd(): [number, number] {
     const table = pathLengthTable(nearlyStraight);
     const { point } = pointAtLength(table, lengthAtCurve(table, trimSpan(nearlyStraight, trim)!.to));
-    return applyToPoint(poseFrameOf(pose)!, point[0], point[1]);
+    return transformPoint(poseFrameOf(pose)!, point[0], point[1]);
   }
 
   it("ends the picked span at the canvas's point on a corner the stretch would straighten", () => {
@@ -161,7 +161,7 @@ describe('shapeCoversPoint on a stretched rounded fill', () => {
     const afterFrame = transformPath(box, frame);
     const n = node({ path: box, fill: { paint: solid('#fff') }, stroke: null }, pose);
     // Inward along the stretched diagonal from the top-left corner, across both corners' arcs.
-    const [cx, cy] = applyToPoint(frame, 0, 0);
+    const [cx, cy] = transformPoint(frame, 0, 0);
     let differs = 0;
     for (let k = 0; k <= 400; k++) {
       const x = cx + k * 0.05;

@@ -4,7 +4,7 @@
  * of outline whose triangle has turned over.
  */
 import type { EditableShape } from '@weasel-js/core';
-import { applyToPoint } from '@weasel-js/geom';
+import { transformPoint } from '@weasel-js/geom';
 import type { ArapStage } from '@weasel-js/geom/warp';
 import { resolvePathWarp } from '@weasel-js/path-tools';
 import { solverTrace } from './solverTrace';
@@ -64,7 +64,7 @@ export function meshModelOf(node: EditableShape | null | undefined, pick: StepPi
   if (!outline) { outline = outlineOf(T, n); outlines.set(T, outline); }
   const world = new Float64Array(2 * n);
   for (let i = 0; i < n; i++) {
-    const [x, y] = applyToPoint(resolved.toWorld, at[2 * i], at[2 * i + 1]);
+    const [x, y] = transformPoint(resolved.toWorld, at[2 * i], at[2 * i + 1]);
     world[2 * i] = x; world[2 * i + 1] = y;
   }
   const ratio = new Float64Array(T.length / 3);

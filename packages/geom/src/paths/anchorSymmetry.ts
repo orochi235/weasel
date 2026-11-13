@@ -1,4 +1,4 @@
-import { applyToPoint, type Affine } from '../affine';
+import { transformPoint, type Affine } from '../affine';
 import { anchorAt, anchorCount, translateAnchorBy, type AnchorSet } from './anchorEdits';
 import { isAnchorSmooth, type PenAnchor } from './anchors';
 import type { Point } from './cubicMath';
@@ -27,7 +27,7 @@ function image(m: Affine, p: Point): Point;
 function image(m: Affine, p: Point | undefined): Point | undefined;
 function image(m: Affine, p: Point | undefined): Point | undefined {
   if (!p) return undefined;
-  const [x, y] = applyToPoint(m, p.x, p.y);
+  const [x, y] = transformPoint(m, p.x, p.y);
   return { x, y };
 }
 

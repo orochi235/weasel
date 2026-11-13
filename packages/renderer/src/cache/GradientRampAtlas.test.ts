@@ -6,7 +6,7 @@ import {
 } from './GradientRampAtlas';
 import type { GradStop } from '@weasel-js/paint';
 import { sampleGradientStops } from '@weasel-js/paint';
-import { parseColorToRgba255 } from '@weasel-js/paint';
+import { parseColorBytes } from '@weasel-js/paint';
 
 const BLACK_WHITE: GradStop[] = [
   { offset: 0, color: '#000000' },
@@ -252,7 +252,7 @@ describe('ramp / editor agreement', () => {
   }
 
   function editorAt(stops: GradStop[], texel: number): number[] {
-    return parseColorToRgba255(sampleGradientStops(stops, texel / 255));
+    return parseColorBytes(sampleGradientStops(stops, texel / 255));
   }
 
   function expectAgreement(stops: GradStop[], texels: number[]): void {

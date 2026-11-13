@@ -6,7 +6,7 @@
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { lengthTable } from '@weasel-js/geom';
-import { pointAtLength3, type Vec3 } from '@weasel-js/geom/3d';
+import { pointAtLength, type Vec3 } from '@weasel-js/geom/3d';
 import { cameraEye, cameraViewProjection, createCamera, projectPoint, packLines, type Line3, createLinePass, type LinePass } from '@weasel-js/kernel3d';
 
 const W = 160;
@@ -59,7 +59,7 @@ const offset = (p: P, d: P, along: number, across: number): P =>
 const BENT: Vec3[] = [{ x: -2, y: 0, z: 0 }, { x: 0, y: 0, z: 1.2 }, { x: 2, y: 0, z: 0 }];
 const at = (points: Vec3[], f: number): Vec3 => {
   const t = lengthTable([{ points: points.flatMap((p) => [p.x, p.y, p.z]), closed: false }], 3);
-  return pointAtLength3(t, f * t.total).point;
+  return pointAtLength(t, f * t.total).point;
 };
 
 describe('the line pass', () => {

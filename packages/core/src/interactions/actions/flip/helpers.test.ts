@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyToPoint } from '@weasel-js/geom';
+import { transformPoint } from '@weasel-js/geom';
 import { RECT_POSE_DESCRIPTOR } from 'core/geometry/poseDescriptor';
 import { poseFrameOf } from '@weasel-js/geom';
 import type { RectPose } from 'core/scene/types';
@@ -18,8 +18,8 @@ describe('flipping a pose that carries a transform', () => {
     const mirror = ([x, y]: [number, number]): [number, number] =>
       (axis === 'x' ? [2 * cx - x, y] : [x, 2 * cy - y]);
     // Each local corner's mirror image is drawn at the mirror of where it was drawn.
-    const before = corners(pose).map(([x, y]) => mirror(applyToPoint(poseFrameOf(pose)!, x, y)));
-    const after = corners(pose).map((c) => applyToPoint(poseFrameOf(flipped)!, ...mirror(c)));
+    const before = corners(pose).map(([x, y]) => mirror(transformPoint(poseFrameOf(pose)!, x, y)));
+    const after = corners(pose).map((c) => transformPoint(poseFrameOf(flipped)!, ...mirror(c)));
     after.forEach(([x, y], i) => {
       expect(x).toBeCloseTo(before[i][0], 9);
       expect(y).toBeCloseTo(before[i][1], 9);

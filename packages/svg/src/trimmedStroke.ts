@@ -56,7 +56,7 @@ export function withTrimsDrawn(nodes: readonly SvgNode[]): SvgNode[] {
  *  or in taking end markers, which SVG states per element. */
 function strokeRuns(cut: TrimmedPath, stroke: SvgStroke): SvgPathNode[] {
   const dashed = (stroke.dash?.length ?? 0) > 0;
-  return trimmedRuns(cut, dashed, true).map(({ path, dashPhase, fromClosed }) => {
+  return trimmedRuns(cut, { dashed, byClosed: true }).map(({ path, dashPhase, fromClosed }) => {
     const s = fromClosed ? withoutEndMarkers(stroke) : stroke;
     return { kind: 'path', path, fill: NONE, stroke: dashed && dashPhase > 0 ? { ...s, dashOffset: dashPhase + (s.dashOffset ?? 0) } : s };
   });

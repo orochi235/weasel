@@ -1,4 +1,4 @@
-import { mat3 } from '@weasel-js/geom';
+import { mat3, type Rect } from '@weasel-js/geom';
 import type { CommandPaint } from '@weasel-js/paint';
 import {
   type ImageDrawCommand,
@@ -12,7 +12,7 @@ import { type DrawState, type PageCtx, pageFlip, skip } from './drawCommands';
 import { affinePlaces, ContentStream } from './content';
 import { name, type PdfDict, PdfReal, type PdfRef } from './objects';
 import { paintToFrame } from './shading';
-import type { RasterPixels, Rect } from './writePdf';
+import type { RasterPixels } from './writePdf';
 
 /** A texture paint as a draw command carries it, its units already resolved. */
 export type TextureFill = Extract<CommandPaint, { kind: 'texture' }>;

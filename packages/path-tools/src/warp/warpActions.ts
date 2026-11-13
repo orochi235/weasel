@@ -8,7 +8,7 @@ import {
   type Action, type ActionDeps, ActionDisabledReason, type BindingOpts, type ImmediateInvoker, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { createEmitter } from '@weasel-js/registry';
-import { applyToPoint, invert, type Point } from '@weasel-js/geom';
+import { transformPoint, invert, type Point } from '@weasel-js/geom';
 import { moveWarpControl, pathWarpMap, unwarpPoint, warpControls } from '@weasel-js/geom/warp';
 import { commitOps, createSetDataOp, type Op, quantizedShape, type Scene, reshapeTo, pathOperationTags } from '@weasel-js/core';
 import { heldPathWarpOf, resolvePathWarp, withoutPathWarp } from './pathWarp';
@@ -99,7 +99,7 @@ function grabControl(deps: ActionDeps, kind: WarpKind, label: string, scratch: W
     session.cancel();
     return null;
   }
-  const [x, y] = applyToPoint(first.toWorld, control.x, control.y);
+  const [x, y] = transformPoint(first.toWorld, control.x, control.y);
   return { session, targets, control: { x, y } };
 }
 
@@ -112,7 +112,7 @@ function shapesWith(
   for (const target of targets) {
     const back = invert(target.toWorld);
     if (!back) continue;
-    const [lx, ly] = applyToPoint(back, world.x, world.y);
+    const [lx, ly] = transformPoint(back, world.x, world.y);
     const moved = { ...target.held, warp: moveWarpControl(target.held.warp, index, { x: lx, y: ly }) };
     const shape = storeWarp(target.node, tuned ? withWarpSettings(moved, tuned) : moved, target.toWorld);
     if (shape) out.set(target.node.id, { target, shape: scene ? quantizedShape(scene, shape) : shape });
@@ -219,7 +219,7 @@ export function createAddPinAction(): Action {
           const { warp } = target.held;
           const back = invert(target.toWorld);
           if (warp.kind !== 'puppet' || !back) continue;
-          const [lx, ly] = applyToPoint(back, at.x, at.y);
+          const [lx, ly] = transformPoint(back, at.x, at.y);
           const to = { x: lx, y: ly };
           const from = unwarpPoint(pathWarpMap(warp, target.held.source), to);
           const held = { ...target.held, warp: { ...warp, pins: [...warp.pins, { from, to }] } };

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import { close, coord, positive, runs, tally, timeoutFor } from '../pbt.fixture';
 import { axisAlignedBounds, positiveBox, unionAABB, unionBounds } from './unionBounds';
 import { RECT_POSE_DESCRIPTOR, remapRotatedLeaf, translatePoseViaDescriptor, type RotatedPose } from './poseDescriptor';
@@ -33,7 +33,7 @@ const framed = fc.record({
 function inkCorners(b: Bounds): [number, number][] {
   const frame = poseFrameOf(b);
   const corners: [number, number][] = [[b.x, b.y], [b.x + b.width, b.y], [b.x + b.width, b.y + b.height], [b.x, b.y + b.height]];
-  return frame ? corners.map(([x, y]) => applyToPoint(frame, x, y) as [number, number]) : corners;
+  return frame ? corners.map(([x, y]) => transformPoint(frame, x, y) as [number, number]) : corners;
 }
 
 const slack = (...ns: number[]) => 1e-9 * Math.max(1, ...ns.map(Math.abs));

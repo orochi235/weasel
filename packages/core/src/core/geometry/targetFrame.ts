@@ -3,7 +3,7 @@
  * target's bounds, with the helpers the outline, the handles, their hit
  * regions, and the resize and rotate actions all place themselves by.
  */
-import { applyToPoint, invert, poseFrameOf, pxExtentInFrame, type Affine, type Scale2 } from '@weasel-js/geom';
+import { transformPoint, invert, poseFrameOf, pxExtentInFrame, type Affine, type Scale2 } from '@weasel-js/geom';
 
 /** Local↔world maps for a chrome target. Local is the target's unrotated box
  *  frame; world is where the node is drawn. */
@@ -43,7 +43,7 @@ export function isRigid(xf: TargetTransform): boolean {
 /** local point → world point. */
 export function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: number; y: number } {
   if (xf.identity) return { x: lx, y: ly };
-  const [x, y] = applyToPoint(xf.toWorld, lx, ly);
+  const [x, y] = transformPoint(xf.toWorld, lx, ly);
   return { x, y };
 }
 
@@ -51,7 +51,7 @@ export function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: 
 export function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number; y: number } | null {
   if (xf.identity) return { x: wx, y: wy };
   if (!xf.toLocal) return null;
-  const [x, y] = applyToPoint(xf.toLocal, wx, wy);
+  const [x, y] = transformPoint(xf.toLocal, wx, wy);
   return { x, y };
 }
 

@@ -33,7 +33,7 @@ export type MultiPolygon = Polygon[];
 /** Options for `pathToMultiPolygon`. */
 export interface PathToMultiPolygonOptions {
   /** Flattening tolerance for bezier segments. Default: `DEFAULT_FLATTEN_TOLERANCE`. */
-  tolerance?: number;
+  flattenTolerance?: number;
 }
 
 /** Convert a `Path` to a `MultiPolygon` suitable for `polygon-clipping`. */
@@ -54,7 +54,7 @@ export function pathToMultiPolygon(
     return [[ring]];
   }
 
-  const tolerance = opts.tolerance ?? DEFAULT_FLATTEN_TOLERANCE;
+  const tolerance = opts.flattenTolerance ?? DEFAULT_FLATTEN_TOLERANCE;
   const rings: Ring[] = [];
   let current: Ring | null = null;
   let cx = 0, cy = 0;

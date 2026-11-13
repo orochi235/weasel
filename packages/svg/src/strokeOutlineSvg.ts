@@ -14,9 +14,8 @@
  * layer.
  */
 import { dashPattern, strokeToPath, vertexHalfWidths, type Stroke, type VertexWidth } from '@weasel-js/core';
-import type { Path } from '@weasel-js/geom';
+import { pathToD, type Path } from '@weasel-js/geom';
 import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
-import { serializePathD } from './path-serializer';
 import { trimNumber } from './transform';
 import type { SvgNode, SvgStroke } from './types';
 
@@ -110,7 +109,7 @@ export function kitStroke(stroke: SvgStroke): Stroke {
  *  `fillAttrs` paint it in the stroke's paint; `transform` is the path's own. */
 export function strokeOutlineXml(path: Path, stroke: SvgStroke, fillAttrs: readonly string[], transform: string | null): string {
   const outline = strokeToPath(path, kitStroke(stroke));
-  const attrs = [`d="${serializePathD(outline)}"`, ...fillAttrs, 'stroke="none"'];
+  const attrs = [`d="${pathToD(outline)}"`, ...fillAttrs, 'stroke="none"'];
   if (transform) attrs.push(transform);
   attrs.push(`${WEASEL_NS_PREFIX}:${ROLE}="${OUTLINE}"`);
   return `<path ${attrs.join(' ')}/>`;

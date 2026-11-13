@@ -3,7 +3,7 @@
  * color out of a stop list, and moving a gradient between its three kinds.
  */
 
-import { resolveColor, rgbaToHex } from './color';
+import { parseColor, rgbaToHex } from './color';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
 import type { Paint, GradStop, GradientPaint, GradientKind } from './paint';
 
@@ -24,13 +24,13 @@ export function isGradientPaint(fill: Paint | null | undefined): fill is Gradien
 /**
  * Sort a stop list by offset and parse each color to 0..1 RGBA, so a caller
  * sampling many positions parses each color once. Colors go through
- * `resolveColor`, so any CSS color the kit understands is a legal stop, not
+ * `parseColor`, so any CSS color the kit understands is a legal stop, not
  * just hex.
  */
 export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradientStop[] {
   return [...stops]
     .sort((a, b) => a.offset - b.offset)
-    .map((s) => ({ offset: s.offset, rgba: resolveColor(s.color) }));
+    .map((s) => ({ offset: s.offset, rgba: parseColor(s.color) }));
 }
 
 /**

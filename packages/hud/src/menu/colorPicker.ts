@@ -19,7 +19,7 @@ export interface HudColorPickers {
  *  Without `alpha`, an alpha typed is dropped; with it, a color typed without one takes `keep`'s, else opaque. */
 export function hexColor(text: string, alpha: boolean, keep?: string): string | undefined {
   const written = tryNormalizeHex(text);
-  if (written === undefined) return undefined;
+  if (written === null) return undefined;
   if (!alpha) return written.slice(0, 7);
   if (written.length === 9) return written;
   return `${written}${(keep && tryNormalizeHex(keep, 'rgba')?.slice(7)) || 'ff'}`;

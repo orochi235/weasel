@@ -110,7 +110,7 @@ function scanRay(world: W, point: { x: number; y: number }): NodeId | null {
   let bestT = Infinity;
   for (const node of world.scene.renderOrderNodes() as readonly Node3d<Data, L>[]) {
     const box = boxAt(world, node, poseOf(node.id));
-    const t = box && intersectRayAabb(ray, box.min, box.max);
+    const t = box && intersectRayAabb(ray, box);
     if (t !== null && t !== undefined && t < bestT) {
       bestT = t;
       best = node.id;

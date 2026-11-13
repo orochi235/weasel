@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { cubicBounds, cubicEvalAt, elevateQuadraticToCubic } from './curve';
 import { flattenCubic } from './flatten';
-import { identity, invert, multiply, applyToPoint, rotateAboutPoint, boxToBox, type Affine } from './affine';
+import { identity, invert, multiply, transformPoint, rotateAboutPoint, boxToBox, type Affine } from './affine';
 import { approxEq } from './scalar';
 import { boundsOfCoords, boxContainsPoint } from './box';
 import { transformCoords } from './affine';
@@ -118,7 +118,7 @@ describe('affine', () => {
     const r = rng(7);
     for (let i = 0; i < RUNS; i++) {
       const cx = (r() - 0.5) * 2000, cy = (r() - 0.5) * 2000;
-      const [x, y] = applyToPoint(rotateAboutPoint(cx, cy, (r() - 0.5) * 20), cx, cy);
+      const [x, y] = transformPoint(rotateAboutPoint(cx, cy, (r() - 0.5) * 20), cx, cy);
       expect(approxEq(x, cx, 1e-6)).toBe(true);
       expect(approxEq(y, cy, 1e-6)).toBe(true);
     }
@@ -131,8 +131,8 @@ describe('affine', () => {
       const sw = (r() - 0.5) * 500 || 1, sh = (r() - 0.5) * 500 || 1;
       const dw = (r() - 0.5) * 500, dh = (r() - 0.5) * 500;
       const m = boxToBox(sx, sy, sw, sh, dx, dy, dw, dh);
-      const near = applyToPoint(m, sx, sy);
-      const far = applyToPoint(m, sx + sw, sy + sh);
+      const near = transformPoint(m, sx, sy);
+      const far = transformPoint(m, sx + sw, sy + sh);
       expect(approxEq(near[0], dx, 1e-6)).toBe(true);
       expect(approxEq(near[1], dy, 1e-6)).toBe(true);
       expect(approxEq(far[0], dx + dw, 1e-6)).toBe(true);
@@ -140,7 +140,7 @@ describe('affine', () => {
     }
   });
 
-  it('transformCoords agrees with applyToPoint', () => {
+  it('transformCoords agrees with transformPoint', () => {
     const r = rng(9);
     for (let i = 0; i < RUNS; i++) {
       const c = () => (r() - 0.5) * 20;
@@ -148,7 +148,7 @@ describe('affine', () => {
       const coords = Array.from({ length: 10 }, () => (r() - 0.5) * 2000);
       const out = transformCoords(coords, m);
       for (let k = 0; k < coords.length; k += 2) {
-        const [x, y] = applyToPoint(m, coords[k], coords[k + 1]);
+        const [x, y] = transformPoint(m, coords[k], coords[k + 1]);
         expect(out[k]).toBe(x);
         expect(out[k + 1]).toBe(y);
       }

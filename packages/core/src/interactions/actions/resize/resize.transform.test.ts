@@ -5,7 +5,7 @@
  * leaves the `transform` alone.
  */
 import { describe, it, expect } from 'vitest';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import type { InvocationCtx } from '@weasel-js/routing';
 import { createScene } from 'core/scene/scene';
 import { asNodeId, type NodeId, type RectPose, type Scene } from 'core/scene/types';
@@ -25,7 +25,7 @@ function makeScene(pose: RectPose) {
 function drawn(pose: RectPose, lx: number, ly: number): { x: number; y: number } {
   const frame = poseFrameOf(pose);
   if (!frame) return { x: lx, y: ly };
-  const [x, y] = applyToPoint(frame, lx, ly);
+  const [x, y] = transformPoint(frame, lx, ly);
   return { x, y };
 }
 const corners = (p: RectPose) => ({

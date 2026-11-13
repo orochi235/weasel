@@ -4,7 +4,7 @@ import {
   type Bounds, type InsertDep, type InvocationCtx, type NodeId, type OngoingInvoker, type Scene, type SnapDep, type UnitScope,
 } from '@weasel-js/core';
 import { createSnapSession2dForTests } from '@weasel-js/core/test-seams';
-import { applyToPoint, invert, rotateAboutPoint, type Affine } from '@weasel-js/geom';
+import { transformPoint, invert, rotateAboutPoint, type Affine } from '@weasel-js/geom';
 import { gridSnapSource } from './grid';
 import { drive, expectNear, moveBy } from './testing/session';
 
@@ -103,7 +103,7 @@ function framed(pose: Bounds & { rotation?: number }) {
 }
 
 const through = (m: Affine, p: { x: number; y: number }) => {
-  const [x, y] = applyToPoint(m, p.x, p.y);
+  const [x, y] = transformPoint(m, p.x, p.y);
   return { x, y };
 };
 

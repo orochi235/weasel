@@ -106,7 +106,7 @@ describe('picks through view changes, stateful', () => {
           const s = projectPoint(center, v);
           if (!s || !inPane(s)) continue;
           const ray = rayAt(v, s)!;
-          const own = intersectRayAabb(ray, box.min, box.max);
+          const own = intersectRayAabb(ray, box);
           if (own === null || own > 1) continue;
           seen.count(PROTO_IDS.includes(id) ? 'proto picked' : 'picked');
           const got = pick(s);
@@ -114,7 +114,7 @@ describe('picks through view changes, stateful', () => {
           expect(got).not.toBeNull();
           expect(pickEvery(s)).toBe(got);
           const gotBox = boxOf(scene.get(got!)!);
-          const t = intersectRayAabb(ray, gotBox.min, gotBox.max);
+          const t = intersectRayAabb(ray, gotBox);
           expect(t).not.toBeNull();
           expect(t!).toBeLessThanOrEqual(own * (1 + 1e-9) + 1e-12);
           const sb = screenBoxOf(world, id, v)!;

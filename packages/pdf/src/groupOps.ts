@@ -1,4 +1,4 @@
-import { mat3 } from '@weasel-js/geom';
+import { mat3, type Rect } from '@weasel-js/geom';
 import {
   commandsBounds,
   type DrawCommand,
@@ -16,7 +16,7 @@ import { fitsPixels, writeRaster } from './images';
 import { name } from './objects';
 import { fillPathOps } from './pathOps';
 import { PageResources } from './resources';
-import type { RasterPixels, Rect } from './writePdf';
+import type { RasterPixels } from './writePdf';
 
 /** Rasters are made at twice the page's point scale. */
 const RASTER_SCALE = 2;

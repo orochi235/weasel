@@ -11,8 +11,7 @@
 
 import { getMarker, resolveMarkerSize } from '@weasel-js/core';
 import type { MarkerEntry, MarkerPaint, MarkerRef, ScreenLength } from '@weasel-js/core';
-import { RAD_TO_DEG } from '@weasel-js/geom';
-import { serializePathD } from './path-serializer';
+import { RAD_TO_DEG, pathToD } from '@weasel-js/geom';
 import { trimNumber } from './transform';
 import { escapeAttr } from './xmlEscape';
 
@@ -91,7 +90,7 @@ export function markerDefXml(id: string, entry: MarkerEntry, def: MarkerDef, onW
   const { key, size, seated } = def;
   const unit = size === undefined ? 1 : resolveMarkerSize({ key, size }, 1);
   const path = entry.path({ size: unit, stroke: { paint: { kind: 'solid', color: '#000' } } });
-  const d = serializePathD(path);
+  const d = pathToD(path);
   const fill = markerPaintAttrs('fill', entry.fill, id, onWarn);
   const outline = entry.outline
     ? ` ${markerPaintAttrs('stroke', entry.outline.paint, id, onWarn)} stroke-width="${trimNumber(entry.outline.width * unit)}"`

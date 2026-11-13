@@ -72,7 +72,7 @@ const runs = fileURLToPath(new URL('./faceArrangement.bench.runs.jsonl', import.
 const sets = [['digits', DIGITS], ['A–Z', UPPER], ['printable ASCII', ASCII]] as const;
 const cases = sets.flatMap(([name, chars]) => {
   const curves = glyphCell(chars, CELL);
-  const flat = curves.map((p) => multiPolygonToPath(pathToMultiPolygon(p, { tolerance: FLAT_TOLERANCE })));
+  const flat = curves.map((p) => multiPolygonToPath(pathToMultiPolygon(p, { flattenTolerance: FLAT_TOLERANCE })));
   return [
     ...Object.keys(RUNNERS).map((runner) => ({ name, input: 'curves', runner, paths: curves })),
     { name, input: 'flattened', runner: 'arrangement', paths: flat },

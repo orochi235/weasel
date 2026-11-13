@@ -31,13 +31,20 @@ function sharedEnd(a: PathSegment, b: PathSegment, ta: number, tb: number): bool
   return (ta > 1 - END && tb < END) || (ta < END && tb > 1 - END);
 }
 
+/** Which crossings {@link pathCrossings} reports. */
+export interface PathCrossingsOptions {
+  /** False leaves out where a path crosses itself. Default true. */
+  self?: boolean;
+  /** Only the crossings involving `paths[of]`. */
+  of?: number;
+}
+
 /**
- * Every crossing among `paths`: between each pair, and — unless `self` is
- * false — of a path with itself, leaving out the joint where one segment
- * meets the next. Points where strokes merely touch count too. With `of`,
- * only the crossings involving that one path.
+ * Every crossing among `paths`: between each pair, and of a path with itself,
+ * leaving out the joint where one segment meets the next. Points where strokes
+ * merely touch count too.
  */
-export function pathCrossings(paths: readonly Path[], opts: { self?: boolean; of?: number } = {}): PathCrossing[] {
+export function pathCrossings(paths: readonly Path[], opts: PathCrossingsOptions = {}): PathCrossing[] {
   const segs = paths.map(pathSegments);
   const out: PathCrossing[] = [];
   for (let i = 0; i < segs.length; i++) {

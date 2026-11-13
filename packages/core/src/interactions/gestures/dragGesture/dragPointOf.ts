@@ -1,8 +1,9 @@
 import { layoutBoxOf, type ShownElement } from '@weasel-js/routing';
-import { clientToWorld, type ViewLike } from 'core/viewport/clientToWorld';
+import type { View } from '@weasel-js/geom';
+import { clientToWorld } from 'core/viewport/clientToWorld';
 import type { DragGesturePoint } from './dragGesture';
 
-const IDENTITY: ViewLike = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /**
  * The {@link DragGesturePoint} a pointer event stands for, for feeding
@@ -13,7 +14,7 @@ const IDENTITY: ViewLike = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 export function dragPointOf(
   event: { clientX: number; clientY: number },
   element: ShownElement,
-  view: ViewLike = IDENTITY,
+  view: View = IDENTITY,
 ): DragGesturePoint {
   const [worldX, worldY] = clientToWorld(event.clientX, event.clientY, layoutBoxOf(element), view);
   return { clientX: event.clientX, clientY: event.clientY, worldX, worldY };

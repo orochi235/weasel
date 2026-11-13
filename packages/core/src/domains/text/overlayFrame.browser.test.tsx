@@ -7,7 +7,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { createElement, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { flushSync } from 'react-dom';
-import { applyToPoint, poseFrameOf } from '@weasel-js/geom';
+import { transformPoint, poseFrameOf } from '@weasel-js/geom';
 import { createScene, asNodeId, type RectPose, type Scene, useSceneTextEdit, type DefaultTextData } from '@weasel-js/core';
 import type { View } from '../../core/viewport/view';
 
@@ -55,7 +55,7 @@ function drawnExtent(pose: RectPose) {
     [pose.x, pose.y], [pose.x + pose.width, pose.y],
     [pose.x + pose.width, pose.y + pose.height], [pose.x, pose.y + pose.height],
   ].map(([x, y]) => {
-    const [wx, wy] = frame ? applyToPoint(frame, x, y) : [x, y];
+    const [wx, wy] = frame ? transformPoint(frame, x, y) : [x, y];
     return [(wx - VIEW.x) * VIEW.scale.x, (wy - VIEW.y) * VIEW.scale.y];
   });
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);

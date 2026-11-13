@@ -1,5 +1,5 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
-import { applyToPoint, poseFrameInverseOf, poseFrameOf, type Affine } from '@weasel-js/geom';
+import { transformPoint, poseFrameInverseOf, poseFrameOf, type Affine } from '@weasel-js/geom';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import type { PoseDescriptor } from '../../core/geometry/poseDescriptor';
 import type { NodeId } from '../../core/scene/types';
@@ -44,7 +44,7 @@ interface Reading extends RigNodeParts {
   refs: unknown[];
 }
 
-const through = (m: Affine | null, x: number, y: number): [number, number] => (m ? applyToPoint(m, x, y) : [x, y]);
+const through = (m: Affine | null, x: number, y: number): [number, number] => (m ? transformPoint(m, x, y) : [x, y]);
 
 /**
  * A skeleton as a rig node's data keeps it, moved to where the node's pose puts it: its root

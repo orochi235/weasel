@@ -79,6 +79,6 @@ export type {
   TextDrawCommand,
   TextureEntry,
   TextureHandle,
-  ViewLike,
+  View,
   WeaselRendererOptions,
 } from '@weasel-js/renderer';

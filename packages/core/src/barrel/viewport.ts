@@ -104,7 +104,6 @@ export * from '../core/viewport/wheelHandler';
 export {
   canvasToClient, clientScaleOf, clientToCanvas, layoutBoxOf, type LayoutBox, type ShownElement,
 } from '@weasel-js/routing';
-export type { ViewLike } from '../core/viewport/clientToWorld';
 export { useVelocityTracker } from '../core/viewport/useVelocityTracker';
 export { createVelocityTracker } from '../core/viewport/createVelocityTracker';
 export type { VelocityTracker } from '../core/viewport/createVelocityTracker';

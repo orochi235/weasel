@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { applyToPoint, identity, invert, multiply, type Affine } from './affine';
+import { transformPoint, identity, invert, multiply, type Affine } from './affine';
 import { affine, conditioned, coord, decades, maxDiff, norm1, runs } from './pbt.fixture';
 
 const RUNS = runs(300);
@@ -23,8 +23,8 @@ describe('invert (2D), property', () => {
 
   it('carries a point back where it started', () => {
     fc.assert(fc.property(affine, coord(), coord(), (m, x, y) => {
-      const [u, v] = applyToPoint(m, x, y);
-      const [bx, by] = applyToPoint(invert(m)!, u, v);
+      const [u, v] = transformPoint(m, x, y);
+      const [bx, by] = transformPoint(invert(m)!, u, v);
       const reach = (Math.abs(x) + Math.abs(y) + Math.abs(m[4]) + Math.abs(m[5]) + 1) * 1e-9;
       expect(Math.abs(bx - x)).toBeLessThan(reach);
       expect(Math.abs(by - y)).toBeLessThan(reach);

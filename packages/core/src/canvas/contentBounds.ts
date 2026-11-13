@@ -1,4 +1,4 @@
-import { applyToPoint, boundsOfCoords, type Affine } from '@weasel-js/geom';
+import { transformPoint, boundsOfCoords, type Affine } from '@weasel-js/geom';
 import { axisAlignedBounds, unionAABB } from 'core/geometry/unionBounds';
 import { nodeGates } from 'core/scene/nodeGates';
 import type { Node, NodeId, Scene } from 'core/scene/types';
@@ -40,7 +40,7 @@ function carried(b: Bounds, m: Affine): Bounds | null {
   const { x, y, width, height } = axisAlignedBounds(b);
   const coords: number[] = [];
   for (const [px, py] of [[x, y], [x + width, y], [x, y + height], [x + width, y + height]] as const) {
-    coords.push(...applyToPoint(m, px, py));
+    coords.push(...transformPoint(m, px, py));
   }
   const box = boundsOfCoords(coords);
   return box && { x: box[0], y: box[1], width: box[2] - box[0], height: box[3] - box[1] };

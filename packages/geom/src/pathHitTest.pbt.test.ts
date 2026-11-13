@@ -3,12 +3,12 @@ import fc from 'fast-check';
 import { pointInPath, strokeHitTest } from './pathHitTest';
 import { transformPath } from './paths/transformPath';
 import { PathBuilder } from './paths/builder';
-import { applyToPoint, multiply, rotate, scale, translate, type Affine } from './affine';
+import { transformPoint, multiply, rotate, scale, translate, type Affine } from './affine';
 import type { Path, PathFillRule } from './path';
 import { affine, angle, coord, runs } from './pbt.fixture';
 
 const RUNS = runs(200);
-const FINE = { tolerance: 0.01 };
+const FINE = { flattenTolerance: 0.01 };
 
 /** A polygon of straight edges, self-crossing as often as not. */
 const polyline = fc.record({
@@ -61,7 +61,7 @@ describe('hit-testing under a transform, property', () => {
     fc.assert(fc.property(shape, affine, coord(150), coord(150), (path, m, x, y) => {
       // Flattening and float32 coords move the outline a little; only points clear of it have to agree.
       fc.pre(!strokeHitTest(path, x, y, 0.05, FINE));
-      const [u, v] = applyToPoint(m, x, y);
+      const [u, v] = transformPoint(m, x, y);
       const moved = transformPath(path, m);
       fc.pre(!strokeHitTest(moved, u, v, 0.05 * shrink(m), FINE));
       expect(pointInPath(moved, u, v, FINE)).toBe(pointInPath(path, x, y, FINE));
@@ -73,7 +73,7 @@ describe('hit-testing under a transform, property', () => {
       const moved = transformPath(path, m);
       expect(moved.kind).toBe('rect');
       fc.pre(!strokeHitTest(path, x, y, 1e-6 * 1000));
-      const [u, v] = applyToPoint(m, x, y);
+      const [u, v] = transformPoint(m, x, y);
       expect(pointInPath(moved, u, v)).toBe(pointInPath(path, x, y));
     }), RUNS);
   });
@@ -86,7 +86,7 @@ describe('hit-testing under a transform, property', () => {
         const hit = strokeHitTest(path, x, y, r);
         // Off the band's edge, where rounding could put the point either side.
         fc.pre(strokeHitTest(path, x, y, r * 0.999) === hit && strokeHitTest(path, x, y, r * 1.001) === hit);
-        const [u, v] = applyToPoint(m, x, y);
+        const [u, v] = transformPoint(m, x, y);
         expect(strokeHitTest(transformPath(path, m), u, v, r * k)).toBe(hit);
       }), RUNS);
   });
@@ -96,7 +96,7 @@ describe('hit-testing under a transform, property', () => {
       (path, m, x, y, px) => {
         const lin: Affine = [m[0], m[1], m[2], m[3], 0, 0];
         const screen = transformPath(path, lin);
-        const [u, v] = applyToPoint(lin, x, y);
+        const [u, v] = transformPoint(lin, x, y);
         const onScreen = strokeHitTest(screen, u, v, px);
         fc.pre(strokeHitTest(screen, u, v, px * 0.999) === onScreen && strokeHitTest(screen, u, v, px * 1.001) === onScreen);
         expect(strokeHitTest(path, x, y, 0, { slop: { px, transform: m } })).toBe(onScreen);

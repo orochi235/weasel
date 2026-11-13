@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
-  closestPointOnSegment, distance, distance2, lerp, pointSegmentDist, pointSegmentDist2, segmentT,
+  closestPointOnSegment, distance, distance2, lerpPoint as lerpN, pointSegmentDist, pointSegmentDist2, segmentT,
 } from './points';
 import {
   distance as distance2D, distance2 as distance2D2, lerpPoint, pointSegmentDist as pointSegmentDist2D,
   pointSegmentDist2 as pointSegmentDist2D2, segmentT as segmentT2D,
 } from './points2';
 import { nearestOnLine } from './nearest';
-import { closestPointOnSegment as closestPointOnSegment3, distance as distance3, lerp as lerp3 } from './3d';
+import { closestPointOnSegment as closestPointOnSegment3, distance as distance3, lerpPoint as lerp3 } from './3d';
 
 describe('the nearest point of a segment', () => {
   it('projects onto the segment and clamps to its ends', () => {
@@ -72,7 +72,7 @@ describe('point distance and lerp', () => {
     expect(distance2D(pa, pb)).toBe(distance(a, b));
     expect(distance3({ x: 1.5, y: -2.25, z: 0 }, { x: -3.75, y: 4.125, z: 0 })).toBe(distance(a, b));
     for (const t of [0, 0.3, 1, 1.7]) {
-      const l = lerp(a, b, t);
+      const l = lerpN(a, b, t);
       expect(lerpPoint(pa, pb, t)).toEqual({ x: l[0], y: l[1] });
       expect(lerp3({ x: 1.5, y: -2.25, z: 0 }, { x: -3.75, y: 4.125, z: 0 }, t)).toEqual({ x: l[0], y: l[1], z: l[2] });
     }

@@ -96,9 +96,8 @@ export { lerpFill, lerpPaint, lerpStroke } from './lerpPaint';
 export { byteHex, parseHexBytes, hexToRgbBytes, rgbaHex } from './hex';
 export {
   parseColor,
-  parseColorToRgba255,
+  parseColorBytes,
   tryParseColor,
-  resolveColor,
   normalizeHex,
   tryNormalizeHex,
   hexToRgba,

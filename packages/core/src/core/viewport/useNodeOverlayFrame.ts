@@ -10,7 +10,7 @@
  * in its box by definition.
  */
 import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
-import { applyToPoint, invert, multiply, poseFrameOf, type Affine } from '@weasel-js/geom';
+import { transformPoint, invert, multiply, poseFrameOf, type Affine } from '@weasel-js/geom';
 import type { Node, RectPose, Scene } from '../scene/types';
 import { useCanvasSize } from './useCanvasSize';
 import type { View } from './view';
@@ -83,7 +83,7 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
   const toScreen = useCallback((p: OverlayPoint): OverlayPoint => {
     const m = project();
     if (!m) return p;
-    const [x, y] = applyToPoint(m, p.x, p.y);
+    const [x, y] = transformPoint(m, p.x, p.y);
     return { x, y };
   }, [project]);
 
@@ -94,7 +94,7 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
     const inverse = m && invert(m);
     if (inverse) lastInverse.current = inverse;
     // Published by the commit that handed this toLocal out, so there is one.
-    const [x, y] = applyToPoint(inverse ?? lastInverse.current!, p.x, p.y);
+    const [x, y] = transformPoint(inverse ?? lastInverse.current!, p.x, p.y);
     return { x, y };
   }, [project]);
 

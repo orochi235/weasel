@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveColor } from '@weasel-js/paint';
+import { parseColor } from '@weasel-js/paint';
 import { edgeColor, textFrameOf, textShadowBox } from './textFrame';
 
 const BOX = { x: 10, y: 20, width: 100, height: 50 };
@@ -14,8 +14,8 @@ describe('textFrameOf', () => {
   it('sets the edge just inside the box, in a darker shade of the same hue', () => {
     const { edge } = textFrameOf({ background: PAPER, edge: { width: 2, shade: 0.3 } }, BOX);
     expect(edge!.path).toEqual({ kind: 'rect', x: 11, y: 21, width: 98, height: 48 });
-    const [r, g, b] = resolveColor(edge!.color);
-    const [pr, pg, pb] = resolveColor('#ffd6e0');
+    const [r, g, b] = parseColor(edge!.color);
+    const [pr, pg, pb] = parseColor('#ffd6e0');
     // Darker, and still red-leaning pink: the channels keep their order.
     expect(r).toBeLessThan(pr);
     expect(r).toBeGreaterThan(b);

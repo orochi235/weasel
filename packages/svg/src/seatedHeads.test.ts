@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   boundsOfPath, getMarker, pathFromD, registerMarker, type PolygonPath,
 } from '@weasel-js/core';
-import { pathLengthTable } from '@weasel-js/geom';
+import { pathLengthTable, pathToD } from '@weasel-js/geom';
 import { parseSvg } from './parse';
-import { serializePathD } from './path-serializer';
 import { serializeSvg } from './serialize';
 import type { SvgPathNode } from './types';
 
@@ -21,7 +20,7 @@ describe('svg export seats an inset head on the cut shaft', () => {
   it('cuts the shaft back by the inset and keeps the path as authored', () => {
     const svg = serializeSvg([arc({ paint: INK, width: 4, markerEnd: 'arrow' })]);
     const [el] = elements(svg);
-    const authored = serializePathD(pathFromD(ARC));
+    const authored = pathToD(pathFromD(ARC));
     expect(attr(el, 'wzl:d')).toBe(authored);
     const total = pathLengthTable(pathFromD(ARC)).total;
     expect(pathLengthTable(pathFromD(attr(el, 'd')!)).total).toBeCloseTo(total - 3 * 4, 3);
@@ -52,7 +51,7 @@ describe('svg export seats an inset head on the cut shaft', () => {
 
   it('writes a fill whole, under the cut shaft', () => {
     const [fill, shaft] = elements(serializeSvg([arc({ paint: INK, width: 4, markerEnd: 'arrow' }, { fill: { kind: 'solid', color: '#ff0000' } })]));
-    expect(attr(fill, 'd')).toBe(serializePathD(pathFromD(ARC)));
+    expect(attr(fill, 'd')).toBe(pathToD(pathFromD(ARC)));
     expect(attr(fill, 'stroke')).toBe('none');
     expect(attr(shaft, 'fill')).toBe('none');
     expect(attr(shaft, 'wzl:d')).toBe(attr(fill, 'd'));
@@ -61,7 +60,7 @@ describe('svg export seats an inset head on the cut shaft', () => {
   it('reads the authored path and the kit markers back', () => {
     const svg = serializeSvg([arc({ paint: INK, width: 4, markerMid: 'arrow', markerEnd: 'arrow' })]);
     const [node] = parseSvg(svg).nodes as SvgPathNode[];
-    expect(serializePathD(node.path)).toBe(serializePathD(pathFromD(ARC)));
+    expect(pathToD(node.path)).toBe(pathToD(pathFromD(ARC)));
     expect(node.stroke?.markerEnd).toBe('arrow');
     expect(node.stroke?.markerMid).toBe('arrow');
   });

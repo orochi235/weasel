@@ -7,7 +7,7 @@
  * rect, rotated if the pose is.
  */
 import type { Scene, NodeId } from 'core/scene/types';
-import { applyToPoint, boundsOfPath, pathIntersectsRect, type Affine } from '@weasel-js/geom';
+import { transformPoint, boundsOfPath, pathIntersectsRect, type Affine } from '@weasel-js/geom';
 import type { LassoHitMode } from 'core/adapters/types';
 import {
   poseDescriptorForNode,
@@ -189,7 +189,7 @@ function regionInCopy(r: SelectRegion, m: Affine): SelectRegion {
   const coords: number[] = [];
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const v of r.verts) {
-    const [x, y] = applyToPoint(m, v.x, v.y);
+    const [x, y] = transformPoint(m, v.x, v.y);
     coords.push(x, y);
     x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
   }

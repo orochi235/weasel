@@ -4,7 +4,7 @@
  * geometry at parse time.
  */
 
-import { DEG_TO_RAD, applyToPoint, invert, multiply, trimNumber } from '@weasel-js/geom';
+import { DEG_TO_RAD, transformPoint, invert, multiply, trimNumber } from '@weasel-js/geom';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 
@@ -12,9 +12,9 @@ import { IDENTITY_MATRIX } from './types';
  *  kernel's own composition — `Matrix` is `Affine`, so nothing converts. */
 export { multiply };
 
-/** geom's `applyToPoint` in the `{x, y}` spelling the rest of this package works in. */
+/** geom's `transformPoint` in the `{x, y}` spelling the rest of this package works in. */
 export function applyMatrix(m: Matrix, x: number, y: number): { x: number; y: number } {
-  const [px, py] = applyToPoint(m, x, y);
+  const [px, py] = transformPoint(m, x, y);
   return { x: px, y: py };
 }
 
