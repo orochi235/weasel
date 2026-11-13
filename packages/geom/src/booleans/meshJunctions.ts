@@ -11,6 +11,40 @@ import type { Ring } from './adapter';
  *  largest coordinate. */
 const ON_EDGE = 2 ** -20;
 
+/** Vertices a tree node holds before it splits. */
+const LEAF = 8;
+
+/** A box of vertices, split in four once it holds more than `LEAF`. A wide stroke's pivots crowd one small spot
+ *  that its longest edges all pass, so a uniform grid's cell there holds most of the mesh. */
+interface Node {
+  x0: number; y0: number; x1: number; y1: number;
+  ids: number[] | null;
+  kids: Node[] | null;
+}
+
+function build(vertices: ArrayLike<number>, ids: number[], x0: number, y0: number, x1: number, y1: number, depth: number): Node {
+  if (ids.length <= LEAF || depth >= 40) return { x0, y0, x1, y1, ids, kids: null };
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  const parts: number[][] = [[], [], [], []];
+  for (const i of ids) parts[(vertices[i * 2] >= mx ? 1 : 0) + (vertices[i * 2 + 1] >= my ? 2 : 0)]!.push(i);
+  const boxes = [[x0, y0, mx, my], [mx, y0, x1, my], [x0, my, mx, y1], [mx, my, x1, y1]];
+  return { x0, y0, x1, y1, ids: null, kids: parts.map((p, k) => build(vertices, p, ...(boxes[k] as [number, number, number, number]), depth + 1)) };
+}
+
+/** Whether the box of `n`, grown by `eps`, meets the segment from `(px, py)` along `(dx, dy)`. */
+function meets(n: Node, px: number, py: number, dx: number, dy: number, len: number, eps: number): boolean {
+  const x0 = n.x0 - eps, y0 = n.y0 - eps, x1 = n.x1 + eps, y1 = n.y1 + eps;
+  if (Math.max(px, px + dx) < x0 || Math.min(px, px + dx) > x1 || Math.max(py, py + dy) < y0 || Math.min(py, py + dy) > y1) return false;
+  // The box's corners on both sides of the segment's line, or within `eps` of it.
+  let pos = false, neg = false;
+  for (const [cx, cy] of [[x0, y0], [x1, y0], [x0, y1], [x1, y1]] as const) {
+    const side = (dx * (cy - py) - dy * (cx - px)) / len;
+    if (side >= -eps) pos = true;
+    if (side <= eps) neg = true;
+  }
+  return pos && neg;
+}
+
 /**
  * Each triangle of the mesh as a closed ring, with every mesh vertex lying on
  * one of its edges inserted into that edge, so that neighbors meeting along
@@ -27,14 +61,7 @@ export function junctionRings(vertices: ArrayLike<number>, triangles: readonly n
     maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
   }
   const eps = scale * ON_EDGE;
-  const cell = Math.max(maxX - minX, maxY - minY, eps) / Math.max(1, Math.sqrt(n));
-  const grid = new Map<string, number[]>();
-  const key = (cx: number, cy: number) => `${cx},${cy}`;
-  for (const i of new Set(triangles)) {
-    const k = key(Math.floor((vertices[i * 2] - minX) / cell), Math.floor((vertices[i * 2 + 1] - minY) / cell));
-    const bucket = grid.get(k);
-    if (bucket) bucket.push(i); else grid.set(k, [i]);
-  }
+  const root = build(vertices, [...new Set(triangles)], minX, minY, maxX, maxY, 0);
 
   const onEdge = (p: number, q: number): number[] => {
     const px = vertices[p * 2], py = vertices[p * 2 + 1];
@@ -43,18 +70,17 @@ export function junctionRings(vertices: ArrayLike<number>, triangles: readonly n
     if (len2 === 0) return [];
     const len = Math.sqrt(len2);
     const hits: { i: number; t: number }[] = [];
-    const x0 = Math.floor((Math.min(px, px + dx) - eps - minX) / cell), x1 = Math.floor((Math.max(px, px + dx) + eps - minX) / cell);
-    const y0 = Math.floor((Math.min(py, py + dy) - eps - minY) / cell), y1 = Math.floor((Math.max(py, py + dy) + eps - minY) / cell);
-    for (let cx = x0; cx <= x1; cx++) {
-      for (let cy = y0; cy <= y1; cy++) {
-        for (const i of grid.get(key(cx, cy)) ?? []) {
-          const vx = vertices[i * 2] - px, vy = vertices[i * 2 + 1] - py;
-          const t = (vx * dx + vy * dy) / len2;
-          if (t * len <= eps || (1 - t) * len <= eps) continue;
-          if (Math.abs(vx * dy - vy * dx) / len <= eps) hits.push({ i, t });
-        }
+    const visit = (node: Node): void => {
+      if (!meets(node, px, py, dx, dy, len, eps)) return;
+      if (node.kids) { for (const kid of node.kids) visit(kid); return; }
+      for (const i of node.ids!) {
+        const vx = vertices[i * 2] - px, vy = vertices[i * 2 + 1] - py;
+        const t = (vx * dx + vy * dy) / len2;
+        if (t * len <= eps || (1 - t) * len <= eps) continue;
+        if (Math.abs(vx * dy - vy * dx) / len <= eps) hits.push({ i, t });
       }
-    }
+    };
+    visit(root);
     return hits.sort((a, b) => a.t - b.t).map((h) => h.i);
   };
 

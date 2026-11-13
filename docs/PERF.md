@@ -38,24 +38,6 @@ When work merges, retire its entry here in the same change.
 
 ---
 
-## Geometry
-
-- **(P3) [agent] `trianglesToPath` slows faster than the triangle count grows.** `strokeToPath` unions the
-  stroke's ribbon triangles with it, and a round-capped stroke gains triangles with its width, since its caps
-  flatten at a fixed tolerance. Measured 2026-11-10, one shape stroked wider each time (pdf's writer
-  property tests): 478 triangles took 316 ms, 646 took 795 ms, 1,105 took 4.2 s, and 3,484 (a width of 1e6)
-  had not finished after 45 s. pdf outlines every stroke it cannot draw natively this way, so one wide
-  gradient stroke can stall `writePdf`; its property tests keep outlined widths under 50 for this reason.
-  Closes when 3,484 triangles from that shape union in under a second.
-- **(P3) [agent] `serializeSvg` takes up to half a second to box one stroked path of huge extent.** Its
-  fallback viewBox comes from `strokedBounds`, which tessellates the stroke, and a curve flattens to more
-  pieces the larger it is. Measured 2026-11-10 (svg's path-data property tests): a 1-wide stroke along a
-  handful of curves whose coordinates reach 1e30 to 1e37 took 200 to 500 ms to serialize, nearly all in the
-  bounds; the same path unstroked takes under a millisecond. The property strokes nothing for this reason.
-  Closes when such a path serializes in under 20 ms.
-
----
-
 ## Benchmarks in CI
 
 - **(P3) [maintainer] The pull request benchmark job has never run on GitHub.** All 46 `perf-pr.yml` runs from 2026-10-11

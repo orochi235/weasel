@@ -288,7 +288,7 @@ export type {
   ZigzagEffect,
 } from '../core/scene/pathEffects';
 export { PATH_EFFECT_DERIVATIONS, readEffectSource, withPathEffectsRegistry } from '../domains/pathEffects';
-export { effectSourceFor } from '../domains/pathEffects/effectSources';
+export { effectSourceFor, effectsShowing } from '../domains/pathEffects/effectSources';
 export { hiddenSourcesTakenWith, sourcesHiddenBy } from '../domains/pathEffects/hiddenSources';
 export { sourcesOf } from '../core/scene/dependents';
 export { useEffectSourcesLayer } from '../domains/pathEffects/useEffectSourcesLayer';
