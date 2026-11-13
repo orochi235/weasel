@@ -108,15 +108,19 @@ function slotKey(family: string, weight: number, style: FontStyle): string {
  * deliberately *not* a fallback chain. Painting 400-weight outlines at
  * 700-weight advances looks worse than the SDF it replaced; a miss falls back
  * to SDF instead.
+ *
+ * Returns a function that drops this registration again, as
+ * {@link unregisterFontOutlines} does, unless a later one replaced it.
  */
 export function registerFontOutlines(
   family: string,
   variant: FontVariant,
   source: OutlineSource,
   opts: OutlineFontOptions = {},
-): void {
+): () => void {
   const { weight, style } = normalizeVariant(variant);
-  slots.set(slotKey(family, weight, style), {
+  const key = slotKey(family, weight, style);
+  const slot: FaceSlot = {
     family, weight, style, source,
     cssSrc: opts.cssSrc,
     parser: opts.parser ?? openTypeParser,
@@ -124,11 +128,15 @@ export function registerFontOutlines(
     face: null,
     glyphs: new Map(),
     load: null,
-  });
+  };
+  slots.set(key, slot);
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
   // to know when to drop it; a registration that leaves it still is invisible.
   notifyGlyphReady();
-  if (isArrayBuffer(source)) announceBytes(slots.get(slotKey(family, weight, style))!, source);
+  if (isArrayBuffer(source)) announceBytes(slot, source);
+  return () => {
+    if (slots.get(key) === slot && slots.delete(key)) notifyGlyphReady();
+  };
 }
 
 /** Drop a registration. Glyphs already handed out stay valid — they are

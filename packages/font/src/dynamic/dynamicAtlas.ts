@@ -104,13 +104,16 @@ function getRasterizer(): GlyphRasterizer {
 }
 
 /** Mark `family` as canvas-sourced: when no baked atlas covers it,
- *  resolveFontVariant serves it from this dynamic atlas. */
-export function registerCanvasFont(family: string): void {
-  if (isExplicitCanvasFont(family)) return;
+ *  resolveFontVariant serves it from this dynamic atlas. Returns a function
+ *  that takes it out again, as {@link unregisterCanvasFont} does; a call for
+ *  a family already registered returns one that does nothing. */
+export function registerCanvasFont(family: string): () => void {
+  if (isExplicitCanvasFont(family)) return () => {};
   canvasFamilies.add(family);
   // An explicit call promotes a previously auto-enrolled family for good.
   autoEnrolledFamilies.delete(family);
   notifyGlyphReady();
+  return () => unregisterCanvasFont(family);
 }
 
 /**
