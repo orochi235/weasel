@@ -34,6 +34,11 @@ Both stylesheets are required: component styles ship as one bundled file, and re
 `@weasel-js/theme/tokens.css` declares. Each component has its own entry, `@weasel-js/ui/components/<Name>`,
 so a bundle holds only the ones it imports; the main entry re-exports them all.
 
+Components that draw glyphs — `ThemeSwitcher`, the paint and stroke rows of `SelectionPanel`, tool palettes — look
+them up by name in the icon registry. Register ui's table, and core's where a panel shows scene properties, as
+`@weasel-js/icons` describes: `<IconRegistryProvider icons={[coreIcons, uiIcons]}>`, with `uiIcons` from
+`@weasel-js/ui/icons`. In development a glyph left unregistered draws a question mark and warns once in the console.
+
 A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
 scale from `@weasel-js/plot/scales`: `<Slider scale={logScale} … />`. `Plot2D`'s
 generated ticks and the `Timeline` ruler's come from the same scales, and a
