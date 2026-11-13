@@ -340,6 +340,20 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
+- **(P3) [agent] Moving a node along a path takes a hand-built pose descriptor.** `tweenPose` follows
+  `geometry.lerp`, so a node rides a path when the caller builds a descriptor whose `lerp` reads
+  `pointAtLength(pathLengthTable(path), t * total)` and places the pose there (2026-11-12, audit round
+  20). The kit has every piece but no seam: what point of the pose rides the path, whether the node
+  turns with the tangent, and a 3D pose on a `@weasel-js/geom/3d` path. `springPose` cannot take it on a
+  pose target, whose spring moves each axis on its own. Closes when core exports a path-motion
+  descriptor (or a `tweenPose` option) that a consumer passes a `Path` to, with a demo on it.
+- **(P3) [agent] Exporting a timeline as frames or video is hand-written.** A consumer pauses the
+  timeline, `seek`s it per frame and renders each through `createRasterSession().render`, then
+  encodes the rasters itself; nothing in the kit steps a `TimelineHandle` at a frame rate or
+  hands frames to `VideoEncoder` or `MediaRecorder` (2026-11-12, audit round 20). Closes when a
+  helper renders a timeline span at a given rate to a sequence of rasters, with a site demo that
+  saves the frames.
+
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
   stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
   scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene
