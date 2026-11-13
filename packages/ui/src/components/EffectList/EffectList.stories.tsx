@@ -44,7 +44,7 @@ function Stages({ args }: { args: Story['args'] }): ReactElement {
         kinds={KINDS}
         onChange={setItems}
         selected={selected}
-        onSelect={setSelected}
+        onSelectionChange={setSelected}
         onDuplicate={(st) => ({ ...st, id: `copy-${++minted}`, name: `${st.name} copy` })}
         renderBody={(st) => (
           <PropertyControl

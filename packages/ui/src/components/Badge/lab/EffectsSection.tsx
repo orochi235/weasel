@@ -91,7 +91,7 @@ export function EffectsSection({ effects, nextId, onAdd, onEffects, onList }: {
         kinds={EFFECT_KINDS}
         onChange={(next) => onList(next.map(effectOf))}
         selected={selected}
-        onSelect={setSelected}
+        onSelectionChange={setSelected}
         onDuplicate={(card) => ({ ...card, id: String(nextId), name: `${card.name} copy` })}
         renderBody={(card) => <EffectBody effect={card.effect} onEffects={onEffects} />}
       />

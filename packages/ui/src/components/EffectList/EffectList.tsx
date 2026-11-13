@@ -37,7 +37,7 @@ export interface EffectListProps<T extends EffectListItem> {
   /** The id of the card that is open. */
   selected?: string | null;
   /** A press on a card's number that does not drag it: its id, or `null` when it was the open card. */
-  onSelect?(id: string | null): void;
+  onSelectionChange?(id: string | null): void;
   /** The open card's settings, drawn under its header. */
   renderBody?(item: T): ReactNode;
   /** A copy of `item` with an id of its own, inserted after it. Unset, cards have no duplicate button. */
@@ -59,7 +59,7 @@ export function EffectList<T extends EffectListItem>({
   kinds,
   onChange,
   selected = null,
-  onSelect,
+  onSelectionChange,
   renderBody,
   onDuplicate,
   removable = true,
@@ -73,7 +73,7 @@ export function EffectList<T extends EffectListItem>({
     items: reorderItems,
     selectedIds: [],
     onReorder: ([id], to) => onChange(moveItems(items, [items.findIndex((it) => it.id === id)], to)),
-    onPress: (id) => onSelect?.(selected === id ? null : id),
+    onPress: (id) => onSelectionChange?.(selected === id ? null : id),
   });
   const { targetIndex, draggedIds } = drag.state;
   // A card removed with focus in it hands focus to the remove button of the card that takes its place, else its number.
@@ -102,7 +102,7 @@ export function EffectList<T extends EffectListItem>({
     onChange(items.map((it) => (it.id === id ? { ...it, ...next } : it)));
   const remove = (item: T): void => {
     onChange(items.filter((it) => it.id !== item.id));
-    if (selected === item.id) onSelect?.(null);
+    if (selected === item.id) onSelectionChange?.(null);
   };
   const duplicate = onDuplicate
     ? (item: T, i: number): void => onChange([...items.slice(0, i + 1), onDuplicate(item), ...items.slice(i + 1)])
@@ -131,7 +131,7 @@ export function EffectList<T extends EffectListItem>({
             dragging={draggedIds?.includes(item.id) ?? false}
             drop={side}
             onGripDown={drag.rowProps(item.id, i).onPointerDown}
-            onToggleOpen={() => onSelect?.(selected === item.id ? null : item.id)}
+            onToggleOpen={() => onSelectionChange?.(selected === item.id ? null : item.id)}
             onKeyDown={(e) => nudge(e, item, i)}
             onPatch={(next) => patch(item.id, next)}
             onDuplicate={duplicate && (() => duplicate(item, i))}

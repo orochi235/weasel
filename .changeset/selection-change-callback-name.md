@@ -2,7 +2,7 @@
 '@weasel-js/ui': major
 ---
 
-`LayerList`, `Timeline` and `BandEditor` report a selection through `onSelectionChange`, as `Tree`, `Select` and `ComboBox` do.
+`LayerList`, `Timeline`, `BandEditor` and `EffectList` report a selection through `onSelectionChange`, as `Tree`, `Select` and `ComboBox` do.
 
 ```tsx
 // before
