@@ -5,6 +5,7 @@ import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 import { matchIngestTypes } from './ingestTypes';
 import { matchTarget } from './matchTarget';
+import { isApplePlatform } from './platform';
 import { chordKey, codeLetter } from '@weasel-js/ui-input';
 
 export { matchTarget, parseTargetSpec } from './matchTarget';
@@ -35,7 +36,7 @@ function resolveSpecValue(value: boolean | 'optional' | undefined): KeyRequireme
 export function matchModifiers(
   e: ModifiersEvent,
   mods: ModSpec | undefined,
-  isMac: boolean,
+  isMac: boolean = isApplePlatform(),
 ): boolean {
   // Start strict: every modifier is forbidden unless the spec opts in.
   let alt: KeyRequirement = 'forbidden';
@@ -206,7 +207,7 @@ function matchPress(
 export function matchSpec(
   e: InputEvent,
   spec: GestureSpec,
-  isMac: boolean,
+  isMac: boolean = isApplePlatform(),
   phaseCtx?: PhaseContext,
 ): boolean {
   // With no phase ctx nothing is engaged and the spec has no owner: an

@@ -3,8 +3,8 @@
  * not Ctrl. iPhone and iPad count: with a keyboard attached their shortcuts
  * are Command shortcuts. False where there is no `navigator`.
  *
- * Pass the answer to {@link matchModifiers} / {@link matchSpec} as `isMac`,
- * and read it wherever a `mod` shortcut is drawn, so a label names the key
+ * The default `isMac` of {@link matchModifiers}, {@link matchSpec} and `specificity`;
+ * read it wherever a `mod` shortcut is drawn, so a label names the key
  * the matcher listens for.
  */
 export function isApplePlatform(): boolean {
