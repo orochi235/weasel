@@ -1,6 +1,7 @@
 import { useMemo, type ReactElement } from 'react';
 import { endlessTrack, qty, type Quantity } from '@weasel-js/quantity';
 import { QuantityText } from '../QuantityText';
+import { useFieldLocale } from '../../useFieldLocale';
 import { SliderBody } from './SliderBody';
 import { READOUT } from './stops';
 import { retagThumb, thumbDisplay, untagThumb, type PlainThumb } from './tagged';
@@ -34,6 +35,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>): ReactElement {
   const { endless, display, renderReadout, renderRegion, onInput, onChange, keyStep, onAddThumb } = props;
   const span = useSpan(props);
+  const locale = useFieldLocale();
   const { stopList } = span;
   // Evenly spaced stops are a stop apart whatever their values, so the added
   // one takes the last gap; a linear track takes a step.
@@ -53,13 +55,13 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
   const stops = useMemo(() => {
     if (stopList.length === 0) return props.stops;
     const labeled = span.even || stopList.some(stop => stop.label !== undefined);
-    const end = (value: number, sign: number) => (labeled ? { value, label: qty(sign * Infinity, display ?? READOUT).text } : { value });
+    const end = (value: number, sign: number) => (labeled ? { value, label: qty(sign * Infinity, display ?? READOUT, { locale }).text } : { value });
     return [
       ...(track.min < span.min ? [end(track.min, -1)] : []),
       ...stopList,
       ...(track.max > span.max ? [end(track.max, 1)] : []),
     ];
-  }, [span.even, stopList, props.stops, track.min, track.max, span.min, span.max, display]);
+  }, [span.even, stopList, props.stops, track.min, track.max, span.min, span.max, display, locale]);
   const plain = props as unknown as SliderProps<PlainThumb>;
   if (endless === undefined && !tagged) return <SliderBody {...plain} thumbs={thumbs} />;
   const shown = (t: PlainThumb): T => retagThumb<T>(endless === undefined ? t : { ...t, value: fromTrack(t.value) });
@@ -74,12 +76,12 @@ export function Slider<T extends Thumb<Quantity> = Thumb>(props: SliderProps<T>)
       keyStep={keyStep && ((t, steps, i) => keyStep(retagThumb<T>(t), steps, i))}
       onAddThumb={onAddThumb && (at => { const made = onAddThumb(at); return made && untagThumb(made); })}
       renderRegion={renderRegion && endless !== undefined ? (r => renderRegion({ ...r, from: fromTrack(r.from), to: fromTrack(r.to) })) : renderRegion}
-      renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : <QuantityText value={shown(t).value} display={display ?? READOUT} mute />)}
+      renderReadout={(t, i) => (renderReadout ? renderReadout(shown(t), i) : <QuantityText value={shown(t).value} display={display ?? READOUT} locale={locale} mute />)}
       spokenAt={(v, t) => {
         const at = endless === undefined ? v : fromTrack(v);
         const own = thumbDisplay(t);
-        if (own !== undefined) return qty(at, own).spoken;
-        return Number.isFinite(at) ? undefined : qty(at, display ?? READOUT).spoken;
+        if (own !== undefined) return qty(at, own, { locale }).spoken;
+        return Number.isFinite(at) ? undefined : qty(at, display ?? READOUT, { locale }).spoken;
       }}
     />
   );

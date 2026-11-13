@@ -3,6 +3,7 @@ import { useTrackShape } from '../Along/alongContext';
 import { useInlineDirection } from '../Along/useRowRun';
 import { screenDirection } from '../Along/rowRun';
 import { QuantityText } from '../QuantityText';
+import { useFieldLocale } from '../../useFieldLocale';
 import { ReadoutsAlong } from './ReadoutsAlong';
 import { ReadoutsBelow } from './ReadoutsBelow';
 import s from './Slider.module.css';
@@ -73,7 +74,8 @@ export function SliderBody<T extends Thumb = Thumb>(
 
   const placement = props.readoutPlacement ?? 'none';
   const { renderReadout, display } = props;
-  const readoutOf = (t: T, i: number) => (renderReadout ? renderReadout(t, i) : <QuantityText value={t.value} display={display ?? READOUT} mute />);
+  const locale = useFieldLocale();
+  const readoutOf = (t: T, i: number) => (renderReadout ? renderReadout(t, i) : <QuantityText value={t.value} display={display ?? READOUT} locale={locale} mute />);
 
   const labeled = labeledStopsOf(stopList, props.stopLabels ?? 'all');
   const curved = geometry.curved && shape !== undefined;
@@ -99,6 +101,7 @@ export function SliderBody<T extends Thumb = Thumb>(
           max={max}
           ariaLabel={props.ariaLabel}
           display={display}
+          locale={locale}
           spoken={props.spokenAt?.(thumb.value, thumb)}
           active={drags.dragged === i}
           box={{ width: boxes[i + 3]?.width ?? 0, height: boxes[i + 3]?.height ?? 0 }}
