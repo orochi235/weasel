@@ -30,7 +30,7 @@ export function AddEntry<T>({
       <MenuButton
         buttonRef={buttonRef}
         label={label}
-        isDisabled={disabled}
+        disabled={disabled}
         items={kinds.map((kind, i) => ({ value: String(i), label: kind.label }))}
         onAction={(i) => {
           const kind = kinds[Number(i)];

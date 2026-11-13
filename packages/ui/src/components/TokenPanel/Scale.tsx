@@ -58,7 +58,7 @@ function ScaleRuleControls({
         />
       </span>
       <ToggleBar
-        ariaLabel={`${group} rule`}
+        aria-label={`${group} rule`}
         size="sm"
         items={RULES}
         value={rule.kind}

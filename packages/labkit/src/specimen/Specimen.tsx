@@ -188,7 +188,7 @@ function ButtonsAndToggles() {
           <Button>Cancel</Button>
           <Button variant="ghost">Ghost</Button>
           <Button disabled>Disabled</Button>
-          <Button iconOnly ariaLabel="Add">
+          <Button iconOnly aria-label="Add">
             <Dot />
           </Button>
         </div>
@@ -229,9 +229,9 @@ function ButtonsAndToggles() {
         </RadioGroup>
       </Cell>
       <Cell label="ToggleBar">
-        <ToggleBar ariaLabel="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
+        <ToggleBar aria-label="Align" value={align} onChange={setAlign} items={ALIGN_ITEMS} />
         <ToggleBar
-          ariaLabel="Align, flat"
+          aria-label="Align, flat"
           variant="flat"
           value={align}
           onChange={setAlign}
@@ -241,7 +241,7 @@ function ButtonsAndToggles() {
       <Cell label="OptionsBar, ButtonBar">
         <div className="lk-specimen__row">
           <OptionsBar
-            ariaLabel="Text style"
+            aria-label="Text style"
             items={[
               { value: 'b', label: 'B', selected: bold, onChange: setBold },
               { value: 'i', label: 'I', selected: italic, onChange: setItalic },
@@ -348,7 +348,7 @@ function FieldsAndPickers() {
           formatOutput={(v) => `${v}%`}
         />
         <Slider
-          ariaLabel="Pair"
+          aria-label="Pair"
           min={0}
           max={1}
           step={0.01}
@@ -362,10 +362,10 @@ function FieldsAndPickers() {
         <DetentSlider
           items={[0.25, 0.5, 1, 2, 4]}
           value={rate}
-          onChange={setRate}
+          onInput={setRate}
           formatLabel={(r) => `${r}×`}
           labels="all"
-          ariaLabel="Playback rate"
+          aria-label="Playback rate"
         />
         <InlineRange
           aria-label="Width"
@@ -507,11 +507,11 @@ function PanelsAndRows() {
       </Cell>
       <Cell label="Sidebar, SidebarPanel">
         <div className="lk-specimen__box">
-          <Sidebar side="right" ariaLabel="Specimen sidebar">
+          <Sidebar side="right" aria-label="Specimen sidebar">
             <SidebarPanel
               title="Selection"
               collapsed={panelCollapsed}
-              onToggleCollapse={() => setPanelCollapsed((v) => !v)}
+              onCollapsedChange={setPanelCollapsed}
               onHide={() => {}}
             >
               <div className="lk-specimen__pad">2 items selected</div>
@@ -585,7 +585,7 @@ function OverlaysAndFeedback() {
         />
       </Cell>
       <Cell label="StatusBar">
-        <UiStatusBar ariaLabel="Editor status">
+        <UiStatusBar aria-label="Editor status">
           <StatusBarItem>tool: select</StatusBarItem>
           <StatusBarItem>sel: 3</StatusBarItem>
           <StatusBarSpacer />
@@ -633,7 +633,7 @@ function ToolChrome() {
   return (
     <Section title="Tool chrome">
       <Cell label="ToolGroup, ToolButton">
-        <ToolGroup orientation="horizontal" ariaLabel="Tools">
+        <ToolGroup orientation="horizontal" aria-label="Tools">
           {['select', 'rect', 'ellipse'].map((id) => (
             <ToolButton
               key={id}
@@ -648,10 +648,10 @@ function ToolChrome() {
       </Cell>
       <Cell label="ToolOptionsBar">
         <ToolOptionsBar label="Text">
-          <Button size="sm" variant="ghost" iconOnly ariaLabel="Bold">
+          <Button size="sm" variant="ghost" iconOnly aria-label="Bold">
             B
           </Button>
-          <Button size="sm" variant="ghost" iconOnly ariaLabel="Italic">
+          <Button size="sm" variant="ghost" iconOnly aria-label="Italic">
             I
           </Button>
         </ToolOptionsBar>
@@ -665,7 +665,7 @@ function ToolChrome() {
             max={220}
             invert
             onInput={setPaneWidth}
-            ariaLabel="Resize"
+            aria-label="Resize"
           />
           <div
             className="lk-specimen__pane"
@@ -768,7 +768,7 @@ function EditorsAndPlots() {
           value={bands}
           onChange={setBands}
           selectedIndex={band}
-          onSelect={setBand}
+          onSelectionChange={setBand}
           renderBand={(b) => b.data.name}
           ticks={[1 / 24, 1 / 12, 1 / 6].map((at) => ({ at, label: `1/${Math.round(1 / at)}` }))}
         />

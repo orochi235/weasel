@@ -146,7 +146,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
             )}
           >
             <LoupeProvider canvasRef={canvasRef} ready={canvasReady} source={loupeSource}>
-              <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+              <CommandPalette isOpen={paletteOpen} onOpenChange={setPaletteOpen} />
               <StripDock className="wd-dock">
                 <div className="wd-dock-main">
                   <div ref={optionsRef}>
@@ -155,7 +155,7 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                   </div>
                   <div className="wd-body">
                     <ShowChrome id={FIXED_CHROME.tools.id}>
-                      <Sidebar side="left" className="wd-sidebar left" ariaLabel={FIXED_CHROME.tools.label}>
+                      <Sidebar side="left" className="wd-sidebar left" aria-label={FIXED_CHROME.tools.label}>
                         {tools && <DrawToolPalette tools={tools} modeRegistry={modality.machine.registry} />}
                         {inPathEdit && <ActionBar group={PATH_OVERLAYS_GROUP} orientation="vertical" className="wd-path-overlays" />}
                         <ActiveSwatches />
@@ -187,12 +187,12 @@ export function Editor({ scene, selection, modality }: EditorProps): ReactElemen
                       invert
                       onInput={rightSidebar.onInput}
                       onChange={rightSidebar.onChange}
-                      ariaLabel="Resize properties sidebar"
+                      aria-label="Resize properties sidebar"
                     />
                     <Sidebar
                       side="right"
                       className="wd-sidebar right"
-                      ariaLabel="Properties"
+                      aria-label="Properties"
                       // Width lives in a custom property so app.css keeps ownership of the
                       // clamp; only the number crosses the boundary.
                       style={{ '--wd-right-width': `${rightSidebar.width}px` } as CSSProperties}

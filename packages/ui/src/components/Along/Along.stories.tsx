@@ -25,7 +25,7 @@ function AlongDemo({ config: c }: { config: AlongConfig }) {
   return (
     <div className={s.box} style={{ '--box': `${c.size}px` } as CSSProperties}>
       <Along arc={arc} align={c.align}>
-        <ToggleBar items={ITEMS} value={value} onChange={setValue} ariaLabel="Alignment" />
+        <ToggleBar items={ITEMS} value={value} onChange={setValue} aria-label="Alignment" />
       </Along>
     </div>
   );

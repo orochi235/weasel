@@ -9,10 +9,11 @@ import s from './Prefs.module.css';
  */
 export interface PrefsDialogProps extends PrefsFormProps {
   /** Ignored when `inline`. */
-  isOpen: boolean;
+  isOpen?: boolean;
   /** Draw the dialog in place rather than as a modal, as `Dialog`'s `inline`. */
   inline?: boolean;
-  onOpenChange: (open: boolean) => void;
+  /** Wired, the dialog draws its close button, as `Dialog` does. */
+  onOpenChange?: (open: boolean) => void;
   /** Dialog heading. Defaults to the schema root's `name`. */
   title?: ReactNode;
   /** Extra chrome rendered at the end of the title row (e.g. a dev-mode

@@ -30,5 +30,5 @@ type Story = StoryObj<typeof ToolGroup>;
 export const Vertical: Story = {};
 export const Horizontal: Story = { args: { orientation: 'horizontal' } };
 export const Labeled: Story = {
-  args: { groupKey: 'shape', ariaLabel: 'Shape tools' },
+  args: { groupKey: 'shape', 'aria-label': 'Shape tools' },
 };

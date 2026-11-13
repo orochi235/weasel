@@ -54,18 +54,18 @@ export const Tooltips: Story = {
     <div style={{ display: 'flex', gap: 12 }}>
       <MenuButton {...args} label="New" shortcut="⌘N" items={INSTRUMENTS} onAction={() => {}} />
       <MenuButton {...args} label="Debug" tooltip="Debug surfaces" items={INSTRUMENTS} onAction={() => {}} />
-      <MenuButton {...args} label="Export" isDisabled disabledReason="Nothing to export" items={INSTRUMENTS} onAction={() => {}} />
+      <MenuButton {...args} label="Export" disabled disabledReason="Nothing to export" items={INSTRUMENTS} onAction={() => {}} />
     </div>
   ),
 };
 
 const PAGES = [
   { value: 'wall', label: 'Wall', href: '#wall' },
-  { value: 'stats', label: 'Dashboard', href: '#stats', isCurrent: true },
+  { value: 'stats', label: 'Dashboard', href: '#stats', current: true },
   { value: 'ingest', label: 'Ingestion', href: '#ingest' },
 ];
 
-/** A row with an `href` is a link, and `isCurrent` marks the page that is
+/** A row with an `href` is a link, and `current` marks the page that is
  *  open. `bare` drops the field frame, so a heading can be the trigger. */
 export const HeadingOfLinks: Story = {
   render: (args) => (

@@ -50,7 +50,7 @@ export const HeaderControlsLineUp: Story = {
       <>
         <button type="button">Add</button>
         <ToggleBar
-          ariaLabel="Mode"
+          aria-label="Mode"
           items={[
             { value: 'a', label: 'A' },
             { value: 'b', label: 'B' },

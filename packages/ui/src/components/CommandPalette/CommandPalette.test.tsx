@@ -64,7 +64,7 @@ function Harness({ sizes = false, spelled = false }: { sizes?: boolean; spelled?
       {sizes && <Sizes />}
       {spelled && <Spelled />}
       <button type="button" onClick={() => setOpen(true)}>open</button>
-      <CommandPalette open={open} onClose={() => setOpen(false)} />
+      <CommandPalette isOpen={open} onOpenChange={setOpen} />
     </ActionsProvider>
   );
 }
@@ -165,7 +165,7 @@ describe('CommandPalette', () => {
         <ActionsProvider>
           <Full />
           <button type="button" onClick={() => setOpen(true)}>open</button>
-          <CommandPalette open={open} onClose={() => setOpen(false)} />
+          <CommandPalette isOpen={open} onOpenChange={setOpen} />
         </ActionsProvider>
       );
     }
@@ -194,7 +194,7 @@ describe('CommandPalette', () => {
         <ActionsProvider>
           <DisabledFirst />
           <button type="button" onClick={() => setOpen(true)}>open</button>
-          <CommandPalette open={open} onClose={() => setOpen(false)} />
+          <CommandPalette isOpen={open} onOpenChange={setOpen} />
         </ActionsProvider>
       );
     }
@@ -313,7 +313,7 @@ describe('CommandPalette: per entry', () => {
       <ActionsProvider>
         <Order />
         <button type="button" onClick={() => setOpen(true)}>open</button>
-        <CommandPalette open={open} onClose={() => setOpen(false)} />
+        <CommandPalette isOpen={open} onOpenChange={setOpen} />
       </ActionsProvider>
     );
   }

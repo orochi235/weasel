@@ -35,7 +35,7 @@ describe('ColorModeControl', () => {
 
   it('takes its own accessible name and a className', () => {
     const { container } = renderWithIcons(
-      <ColorModeControl value="auto" onChange={() => {}} ariaLabel="Theme" className="mine" />,
+      <ColorModeControl value="auto" onChange={() => {}} aria-label="Theme" className="mine" />,
     );
     expect(screen.getByRole('radiogroup', { name: 'Theme' })).toBeTruthy();
     expect(container.querySelector('.mine')).not.toBeNull();

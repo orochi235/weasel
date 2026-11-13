@@ -118,7 +118,7 @@ function D3SortableDemoInner() {
           value={sortKey}
           onChange={(k) => setSortKey(k ?? 'index')}
           allowDeselect
-          ariaLabel="Order"
+          aria-label="Order"
           size="sm"
         />
         <span className="ckd-hint">

@@ -10,7 +10,7 @@ export interface StatusBarProps {
    * unusable. Screen-reader users reach the same facts through the controls
    * that own them.
    */
-  ariaLabel?: string;
+  'aria-label'?: string;
   /** Draw a hairline between neighboring items. A spacer stands in for one. */
   divided?: boolean;
   children?: ReactNode;
@@ -26,7 +26,7 @@ export interface StatusBarProps {
  * `<StatusBarItem>` and `<StatusBarSpacer>`.
  */
 export function StatusBar(props: StatusBarProps) {
-  const { ariaLabel, divided, children, className } = props;
+  const { 'aria-label': ariaLabel, divided, children, className } = props;
   return (
     <footer className={[s.bar, divided && s.divided, className].filter(Boolean).join(' ')} aria-label={ariaLabel}>
       {children}

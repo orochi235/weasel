@@ -352,7 +352,7 @@ export function GesturesDemo() {
         items={MODE_ITEMS}
         value={mode}
         onChange={(id) => id && selectMode(id)}
-        ariaLabel="Gesture"
+        aria-label="Gesture"
         size="sm"
       />
 

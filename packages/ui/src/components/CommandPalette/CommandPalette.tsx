@@ -60,8 +60,9 @@ function PaletteFooter({ selection }: { selection: string | null }) {
 
 /** Props for {@link CommandPalette}. */
 export interface CommandPaletteProps {
-  open: boolean;
-  onClose: () => void;
+  isOpen: boolean;
+  /** The palette asks to close, after running an entry or on Escape, as `Dialog`'s does. */
+  onOpenChange: (isOpen: boolean) => void;
   /** Override the default symbolic-reason → display-string map. */
   reasonLabels?: Record<string, string>;
 }
@@ -147,13 +148,13 @@ function PaletteRow({ id, idx, item, items, highlighted, reasonLabels, onHighlig
 /**
  * A dialog that lists every action registered with the surrounding
  * `<ActionsProvider>`, filters by label or tag, and runs the chosen one. The host
- * owns `open`. The list and each row's `enabled` state are read when it
+ * owns `isOpen`. The list and each row's `enabled` state are read when it
  * opens and not again while it is open. A row found by a tag and not its
  * label names that tag beside the label. An entry whose action carries
  * settings opens their form in a dialog rather than running bare. With a `<SelectionContextProvider>`
  * in scope the footer says how much is selected.
  */
-export function CommandPalette({ open, onClose, reasonLabels }: CommandPaletteProps) {
+export function CommandPalette({ isOpen: open, onOpenChange, reasonLabels }: CommandPaletteProps) {
   const selectionCtx = useSelectionContext();
   const [query, setQuery] = useState('');
   // `null` until a key or the pointer picks a row: the first enabled one.
@@ -190,7 +191,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
 
   const run = (item: ActionItem) => {
     if (!items.enabledOf(item).enabled) return;
-    onClose();
+    onOpenChange(false);
     if (item.action.settings) {
       setSettingsOf(item);
       return;
@@ -223,7 +224,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
       <ActionSettingsDialog item={settingsOf} onClose={() => setSettingsOf(null)} />
       <Dialog
         isOpen={open}
-        onOpenChange={(next) => { if (!next) onClose(); }}
+        onOpenChange={onOpenChange}
         isDismissable
         title="Commands"
         showCloseButton={false}

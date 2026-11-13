@@ -20,23 +20,23 @@ const alignItems = [
 ];
 
 export const Single: Story = {
-  args: { ariaLabel: 'Text alignment' },
-  render: ({ ariaLabel, height, size, variant }) => {
+  args: { 'aria-label': 'Text alignment' },
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} aria-label={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
 export const Boolean2Segment: Story = {
-  args: { ariaLabel: 'Power' },
-  render: ({ ariaLabel, height, size, variant }) => {
+  args: { 'aria-label': 'Power' },
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('on');
     return (
       <ToggleBar
         items={[{ value: 'off', label: 'Off' }, { value: 'on', label: 'On' }]}
         value={v}
         onChange={setV}
-        ariaLabel={ariaLabel}
+        aria-label={ariaLabel}
         height={height}
         size={size}
         variant={variant}
@@ -46,8 +46,8 @@ export const Boolean2Segment: Story = {
 };
 
 export const Multiple: Story = {
-  args: { ariaLabel: 'Text style' },
-  render: ({ ariaLabel, height, size, variant }) => {
+  args: { 'aria-label': 'Text style' },
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string[]>(['b']);
     return (
       <ToggleBar
@@ -59,7 +59,7 @@ export const Multiple: Story = {
         ]}
         value={v}
         onChange={setV}
-        ariaLabel={ariaLabel}
+        aria-label={ariaLabel}
         height={height}
         size={size}
         variant={variant}
@@ -91,7 +91,7 @@ export const MultipleWithMixed: Story = {
           // whose on/off state didn't change.
           setMixed((m) => m.filter((x) => next.includes(x) === v.includes(x)));
         }}
-        ariaLabel="Text style"
+        aria-label="Text style"
       />
     );
   },
@@ -102,8 +102,8 @@ const steps = Array.from({ length: 32 }, (_, i) => ({ value: String(i + 1), labe
 /** Drag across the steps, in any direction: a press on an off step turns on every step the drag reaches, one on an on
  *  step turns them off. */
 export const Sweep: Story = {
-  args: { ariaLabel: 'Steps' },
-  render: ({ ariaLabel, height, size, variant }) => {
+  args: { 'aria-label': 'Steps' },
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string[]>(['1', '5', '9', '13', '17', '21', '25', '29']);
     return (
       <ToggleBar
@@ -113,7 +113,7 @@ export const Sweep: Story = {
         items={steps}
         value={v}
         onChange={setV}
-        ariaLabel={ariaLabel}
+        aria-label={ariaLabel}
         height={height}
         size={size}
         variant={variant}
@@ -126,8 +126,8 @@ const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => ({ val
 
 /** Seven segments four across: `lastRow` places the short row, or `'fill'` stretches it so the well stays a rectangle. */
 export const Wrapped: Story = {
-  args: { ariaLabel: 'Days', lastRow: 'fill' },
-  render: ({ ariaLabel, height, size, variant, lastRow }) => {
+  args: { 'aria-label': 'Days', lastRow: 'fill' },
+  render: ({ 'aria-label': ariaLabel, height, size, variant, lastRow }) => {
     const [v, setV] = useState<string[]>(['Sat', 'Sun']);
     return (
       <ToggleBar
@@ -137,7 +137,7 @@ export const Wrapped: Story = {
         items={days}
         value={v}
         onChange={setV}
-        ariaLabel={ariaLabel}
+        aria-label={ariaLabel}
         height={height}
         size={size}
         variant={variant}
@@ -147,7 +147,7 @@ export const Wrapped: Story = {
 };
 
 export const Disabled: Story = {
-  render: ({ ariaLabel, height, size, variant }) => {
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('a');
     return (
       <ToggleBar
@@ -158,7 +158,7 @@ export const Disabled: Story = {
         ]}
         value={v}
         onChange={setV}
-        ariaLabel={ariaLabel}
+        aria-label={ariaLabel}
         height={height}
         size={size}
         variant={variant}
@@ -169,24 +169,24 @@ export const Disabled: Story = {
 
 export const Tall: Story = {
   args: { height: 32 },
-  render: ({ ariaLabel, height, size, variant }) => {
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} aria-label={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
 export const Minimal: Story = {
   args: { variant: 'minimal' },
-  render: ({ ariaLabel, height, size, variant }) => {
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} aria-label={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
 export const AllowDeselect: Story = {
-  render: ({ ariaLabel, height, size, variant }) => {
+  render: ({ 'aria-label': ariaLabel, height, size, variant }) => {
     const [v, setV] = useState<string | null>('center');
-    return <ToggleBar items={alignItems} value={v} onChange={setV} allowDeselect ariaLabel={ariaLabel} height={height} size={size} variant={variant} />;
+    return <ToggleBar items={alignItems} value={v} onChange={setV} allowDeselect aria-label={ariaLabel} height={height} size={size} variant={variant} />;
   },
 };
 
@@ -208,7 +208,7 @@ export const Tooltips: Story = {
         ]}
         value={v}
         onChange={setV}
-        ariaLabel="Text style"
+        aria-label="Text style"
       />
     );
   },

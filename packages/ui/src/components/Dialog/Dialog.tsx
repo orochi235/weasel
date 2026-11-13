@@ -89,7 +89,7 @@ export function Dialog(props: DialogProps) {
             <Heading slot="title" className={s.title}>{title}</Heading>
           )}
           {showClose && (
-            <CloseButton ariaLabel="Close dialog" onClick={close} />
+            <CloseButton aria-label="Close dialog" onClick={close} />
           )}
         </header>
       )}

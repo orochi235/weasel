@@ -2,6 +2,8 @@
 export interface DragGripProps {
   /** Height in px; width scales with it. Default 16. */
   size?: number;
+  /** Class on the `<svg>`. */
+  className?: string;
 }
 
 /** The two-column dot grip used on anything draggable by a handle.
@@ -9,7 +11,7 @@ export interface DragGripProps {
  *  Deliberately not part of the icon register: that register is outline strokes
  *  at a fixed weight, and a grip is filled dots. Forcing it in would either
  *  break the register's rule or produce a worse glyph. */
-export function DragGrip({ size = 16 }: DragGripProps) {
+export function DragGrip({ size = 16, className }: DragGripProps) {
   return (
     <svg
       width={(size * 8) / 16}
@@ -17,6 +19,7 @@ export function DragGrip({ size = 16 }: DragGripProps) {
       viewBox="0 0 8 16"
       fill="currentColor"
       aria-hidden="true"
+      className={className}
     >
       <circle cx="2" cy="3" r="1.1" />
       <circle cx="6" cy="3" r="1.1" />

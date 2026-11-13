@@ -17,7 +17,7 @@ export interface PrefsRailProps {
   /** A page's entry was chosen: open it. */
   onOpen: (path: string) => void;
   /** Accessible name for the rail's landmark. */
-  ariaLabel: string;
+  'aria-label': string;
   /** Rendered above the list — the filter field, when there is one. */
   header?: ReactNode;
   /** Show each entry's match count. Only meaningful while filtering. */
@@ -43,7 +43,7 @@ export interface PrefsRailProps {
  * `data-rail-mark="current"`.
  */
 export function PrefsRail(props: PrefsRailProps) {
-  const { items, section, onOpen, ariaLabel, header, showCounts, dropInto, hidden } = props;
+  const { items, section, onOpen, 'aria-label': ariaLabel, header, showCounts, dropInto, hidden } = props;
   const foldable = props.foldable === true;
   const holds = (path: string): boolean => {
     for (let at: string | null = section; at !== null; at = prefRailAbove(items, at)) if (at === path) return true;

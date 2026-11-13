@@ -71,7 +71,7 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
             value={a.lightness}
             onChange={(v) => setNumber(i, 'lightness', v)}
           />
-          <CloseButton ariaLabel={`Unpin ${a.name}`} tooltip={`Unpin ${a.name}`} onClick={() => remove(i)} />
+          <CloseButton aria-label={`Unpin ${a.name}`} tooltip={`Unpin ${a.name}`} onClick={() => remove(i)} />
         </div>
       ))}
 

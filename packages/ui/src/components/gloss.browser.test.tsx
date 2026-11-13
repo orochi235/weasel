@@ -17,7 +17,7 @@ function Controls({ gloss }: { gloss?: number }) {
       <Button stance="confirm">Save</Button>
       <Button>Cancel</Button>
       <ToggleBar
-        ariaLabel="View"
+        aria-label="View"
         items={[
           { value: 'tree', label: 'Tree' },
           { value: 'list', label: 'List' },

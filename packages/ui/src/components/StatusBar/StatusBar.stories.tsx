@@ -4,7 +4,7 @@ import { StatusBar, StatusBarItem, StatusBarSpacer } from '@weasel-js/ui/compone
 const meta: Meta<typeof StatusBar> = {
   title: 'ui/StatusBar',
   component: StatusBar,
-  args: { ariaLabel: 'Editor status' },
+  args: { 'aria-label': 'Editor status' },
 };
 export default meta;
 

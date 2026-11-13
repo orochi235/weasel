@@ -35,7 +35,7 @@ describe('LayerList rows under a card', () => {
   });
 
   it('say they take a multi-selection when the list selects', () => {
-    render(<LayerList items={UNDER} renderBody={body(['a', 'b'])} selectedIds={[]} onSelect={() => {}} />);
+    render(<LayerList items={UNDER} renderBody={body(['a', 'b'])} selectedIds={[]} onSelectionChange={() => {}} />);
     expect(screen.getByRole('treegrid', { name: 'Alpha' })).toHaveAttribute('aria-multiselectable', 'true');
   });
 });

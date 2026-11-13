@@ -136,7 +136,7 @@ export function EasingsDemo() {
               min={300} max={4000} step={100}
               thumbs={[{ value: duration }]}
               onInput={ts => setDuration(ts[0].value)}
-              ariaLabel="Duration"
+              aria-label="Duration"
               readoutPlacement="none"
             />
           </div>

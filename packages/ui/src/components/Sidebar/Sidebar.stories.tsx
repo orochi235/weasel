@@ -26,7 +26,7 @@ const PanelStack = () => (
 );
 
 export const LeftDock: Story = {
-  args: { side: 'left', ariaLabel: 'Left sidebar', children: <PanelStack /> },
+  args: { side: 'left', 'aria-label': 'Left sidebar', children: <PanelStack /> },
   render: (args) => (
     <div style={{ display: 'flex', height: 320 }}>
       <Sidebar {...args} />
@@ -36,7 +36,7 @@ export const LeftDock: Story = {
 };
 
 export const RightDock: Story = {
-  args: { side: 'right', ariaLabel: 'Right sidebar', children: <PanelStack /> },
+  args: { side: 'right', 'aria-label': 'Right sidebar', children: <PanelStack /> },
   render: (args) => (
     <div style={{ display: 'flex', height: 320 }}>
       <div style={{ flex: 1, padding: 16, fontSize: 12 }}>Stage area</div>

@@ -20,7 +20,7 @@ export interface ToolGroupProps {
    */
   groupKey?: string;
   /** Accessible name for the group (rendered as `aria-label`). */
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
 }
 
@@ -30,7 +30,7 @@ export interface ToolGroupProps {
  * beyond layout; theming lives on the buttons.
  */
 export function ToolGroup(props: ToolGroupProps) {
-  const { children, orientation = 'vertical', columns, groupKey, ariaLabel, className } = props;
+  const { children, orientation = 'vertical', columns, groupKey, 'aria-label': ariaLabel, className } = props;
   const tiles = columns ? tiling(Children.count(children), { columns }) : null;
   const cls = [s.group, tiles ? tiles.className : orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');

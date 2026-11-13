@@ -27,7 +27,7 @@ describe('a DOM button is the box measureButton gives', () => {
     ['a label', { children: 'Save changes' }],
     ['a small label', { children: 'Save', size: 'sm' }],
     ['icons either side', { children: 'Export', leadingIcon: ICON, trailingIcon: ICON }],
-    ['an icon alone', { iconOnly: true, ariaLabel: 'Add', children: ICON }],
+    ['an icon alone', { iconOnly: true, 'aria-label': 'Add', children: ICON }],
     ['a spinner', { children: 'Saving', loading: true }],
   ])('%s', (_, props) => {
     render(<div data-testid="host"><Button {...props} /></div>);

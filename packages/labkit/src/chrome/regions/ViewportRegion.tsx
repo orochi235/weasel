@@ -38,7 +38,7 @@ export function ViewportRegion({ contributions, ctx }: ViewportRegionProps) {
             key={c.id}
             variant="ghost"
             iconOnly
-            ariaLabel={label}
+            aria-label={label}
             tooltip={shortcut ? undefined : label}
             shortcut={shortcut}
             grade={danger ? 'danger' : undefined}

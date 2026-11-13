@@ -226,7 +226,7 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
       <div className="fg-css-vars__controls">
         <div className="fg-css-vars__bar">
           <ToggleBar
-            ariaLabel="Variables"
+            aria-label="Variables"
             variant="flat"
             size="sm"
             items={TABS}
@@ -244,10 +244,10 @@ export function CssVarsPanel({ globals = NO_GLOBALS, themeApi }: CssVarsPanelPro
             leadingAdornment={<Icon name={icon('ui:search')} size={12} />}
           />
           <div className="fg-css-vars__steps" role="group" aria-label="History">
-            <Button iconOnly ariaLabel="Undo" variant="ghost" size="sm" disabled={!history.canUndo} onClick={() => history.step('undo')}>
+            <Button iconOnly aria-label="Undo" variant="ghost" size="sm" disabled={!history.canUndo} onClick={() => history.step('undo')}>
               <Icon name={icon('core:undo')} size={14} />
             </Button>
-            <Button iconOnly ariaLabel="Redo" variant="ghost" size="sm" disabled={!history.canRedo} onClick={() => history.step('redo')}>
+            <Button iconOnly aria-label="Redo" variant="ghost" size="sm" disabled={!history.canRedo} onClick={() => history.step('redo')}>
               <Icon name={icon('core:redo')} size={14} />
             </Button>
           </div>

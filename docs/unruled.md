@@ -1993,3 +1993,15 @@ Calls the lanes made without a ruling:
 - Open: `ActiveToolContextProvider`'s `initialActive` (tools lane) still uses `initial` where `<SceneCanvas>`
   now says `defaultActiveTool`.
 
+## Audit round twenty-one (2026-11-12): the component kit
+
+- Components take `'aria-label'` rather than `ariaLabel`, the DOM's and React Aria's spelling, since MenuButton, Toolbar
+  and PaintInput already did and a prop spread onto the element needs no translation. A data field of a row or
+  segment (`ToggleBarItem.ariaLabel`) stays camelCase, since a quoted key in every item literal buys nothing
+  (2026-11-12).
+- `Checkbox` keeps `isDisabled`, `isReadOnly` and `isSelected`, though the kit draws it, because `Switch`, its
+  sibling, is React Aria's and the two are swapped for each other (2026-11-12).
+- A `SidebarPanel` given `collapsed` and no `onCollapsedChange` now draws its toggle, as a `PropertyGroup` does;
+  before, it drew a static title. labkit's sidebar sections pass `collapsible` so theirs stay static (2026-11-12).
+- The schema editor's inline `PrefsDialog` preview keeps a do-nothing `onOpenChange`, so the preview still draws
+  the close button a real one has (2026-11-12).

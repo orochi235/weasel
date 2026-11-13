@@ -18,18 +18,18 @@ const START: EffectListItem[] = [
 
 type HeldProps = Partial<EffectListProps<EffectListItem>> & { onItems?: (v: EffectListItem[]) => void };
 
-function Held({ onItems, onSelect, ...rest }: HeldProps) {
+function Held({ onItems, onSelectionChange, ...rest }: HeldProps) {
   const [items, setItems] = useState(START);
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <EffectList
-      ariaLabel="Stages"
+      aria-label="Stages"
       kinds={KINDS}
       items={items}
       selected={selected}
-      onSelect={(id) => {
+      onSelectionChange={(id) => {
         setSelected(id);
-        onSelect?.(id);
+        onSelectionChange?.(id);
       }}
       renderBody={(item) => <p>Settings of {item.name}</p>}
       {...rest}
@@ -71,20 +71,20 @@ describe('EffectList', () => {
   });
 
   it('opens a card on a press of its number that does not drag, and closes it on a second', () => {
-    const onSelect = vi.fn();
-    renderWithIcons(<Held onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    renderWithIcons(<Held onSelectionChange={onSelectionChange} />);
     stubRows();
     const press = () => {
       fireEvent.pointerDown(handle('B'), { pointerId: 1, button: 0, clientX: 10, clientY: 60 });
       fireEvent.pointerUp(document, { pointerId: 1, clientX: 10, clientY: 60 });
     };
     press();
-    expect(onSelect).toHaveBeenLastCalledWith('b');
+    expect(onSelectionChange).toHaveBeenLastCalledWith('b');
     expect(handle('B')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Settings of B')).toBeInTheDocument();
     expect(screen.queryByText('Settings of A')).toBeNull();
     press();
-    expect(onSelect).toHaveBeenLastCalledWith(null);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
     expect(screen.queryByText('Settings of B')).toBeNull();
   });
 
@@ -146,12 +146,12 @@ describe('EffectList', () => {
 
   it('removes a card, closing it when it was open', () => {
     const onItems = vi.fn();
-    const onSelect = vi.fn();
-    renderWithIcons(<Held onItems={onItems} onSelect={onSelect} />);
+    const onSelectionChange = vi.fn();
+    renderWithIcons(<Held onItems={onItems} onSelectionChange={onSelectionChange} />);
     fireEvent.click(handle('B'));
     fireEvent.click(screen.getByRole('button', { name: 'Remove B' }));
     expect(ids(onItems.mock.lastCall![0])).toEqual(['a', 'c']);
-    expect(onSelect).toHaveBeenLastCalledWith(null);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
   });
 
   it('hands focus to the next card\'s remove button when a card is removed, else the previous one\'s', () => {
@@ -168,7 +168,7 @@ describe('EffectList', () => {
       const [items, setItems] = useState(START);
       return (
         <>
-          <EffectList ariaLabel="Stages" kinds={KINDS} items={items} onChange={setItems} removable={false} />
+          <EffectList aria-label="Stages" kinds={KINDS} items={items} onChange={setItems} removable={false} />
           <button type="button" onClick={() => setItems((v) => v.filter((it) => it.id !== 'b'))}>Drop B</button>
         </>
       );
@@ -190,7 +190,7 @@ describe('EffectList', () => {
         <Held
           onItems={outer}
           renderBody={() => (
-            <EffectList ariaLabel="Inner" kinds={KINDS} items={items} onChange={(next) => { setItems(next); inner(next); }} />
+            <EffectList aria-label="Inner" kinds={KINDS} items={items} onChange={(next) => { setItems(next); inner(next); }} />
           )}
         />
       );

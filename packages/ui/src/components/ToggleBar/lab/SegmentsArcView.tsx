@@ -36,12 +36,12 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
     <div className={s.page}>
       <div className={s.box} style={{ '--box': `${box}px` } as CSSProperties}>
         <Along arc={{ at: 0, span, direction, inset: 24 }}>
-          <ToggleBar ariaLabel="Tool" items={words.map((w) => ({ value: w, label: w }))} value={tool} onChange={setTool} {...common} />
+          <ToggleBar aria-label="Tool" items={words.map((w) => ({ value: w, label: w }))} value={tool} onChange={setTool} {...common} />
         </Along>
         <Along arc={{ at: 180, span, direction, inset: 24 }}>
           <ToggleBar
             mode="multiple"
-            ariaLabel="Style"
+            aria-label="Style"
             items={['Bold', 'Italic', 'Under'].map((w) => ({ value: w, label: w }))}
             value={styles}
             mixedValues={['Italic']}
@@ -50,10 +50,10 @@ export function SegmentsArcView({ config }: { config: SegmentsArcConfig }): Reac
           />
         </Along>
         <Along arc={{ at: 90, span: `${Math.min(sweep, 100)}deg`, direction, inset: 24 }}>
-          <ButtonBar ariaLabel="Edit" items={['Cut', 'Copy', 'Paste'].map((w) => ({ value: w, label: w, onAction: () => setPressed(w) }))} {...common} />
+          <ButtonBar aria-label="Edit" items={['Cut', 'Copy', 'Paste'].map((w) => ({ value: w, label: w, onAction: () => setPressed(w) }))} {...common} />
         </Along>
         <Along arc={{ at: 270, span: `${Math.min(sweep, 100)}deg`, direction, inset: 24 }}>
-          <OptionsBar ariaLabel="Snap" items={[{ value: 'grid', label: 'Grid', selected: true, onChange: () => {} }, { value: 'guides', label: 'Guides', selected: false, onChange: () => {} }]} {...common} />
+          <OptionsBar aria-label="Snap" items={[{ value: 'grid', label: 'Grid', selected: true, onChange: () => {} }, { value: 'guides', label: 'Guides', selected: false, onChange: () => {} }]} {...common} />
         </Along>
       </div>
       <p data-readout="pressed">Pressed: {pressed}</p>

@@ -82,7 +82,7 @@ export function FontFallbackDemo() {
           items={POLICIES}
           value={policy}
           onChange={(v) => v && setPolicy(v)}
-          ariaLabel="Fallback policy"
+          aria-label="Fallback policy"
           size="sm"
         />
       </div>

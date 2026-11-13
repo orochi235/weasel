@@ -27,7 +27,7 @@ export type OptionsBarVariant = SegmentedVariant;
 /** Props for {@link OptionsBar}. */
 export type OptionsBarProps<V extends string | number = string> = SegmentedGridProps & {
   items: readonly OptionsBarItem<V>[];
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
   height?: number;
   /** Size variant. `sm` is ~60% of the default height with reduced padding
@@ -48,7 +48,7 @@ export type OptionsBarProps<V extends string | number = string> = SegmentedGridP
  * are values of one setting.
  */
 export function OptionsBar<V extends string | number = string>(props: OptionsBarProps<V>): ReactElement {
-  const { items, ariaLabel, className, height, size, variant } = props;
+  const { items, 'aria-label': ariaLabel, className, height, size, variant } = props;
 
   const model = selectionOfEach(items);
   const usable = (i: number): boolean => items[i] !== undefined && !items[i].disabled;

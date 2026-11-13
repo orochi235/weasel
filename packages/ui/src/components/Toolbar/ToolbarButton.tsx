@@ -35,11 +35,11 @@ export function ToolbarButton(props: ToolbarButtonProps) {
   const name = ariaLabel ?? title;
   const common = { variant: 'ghost', onClick, disabled, disabledReason, grade, pressed, shortcut, tooltip: shortcut ? undefined : title } as const;
   return iconOnly ? (
-    <Button {...common} iconOnly ariaLabel={name!}>
+    <Button {...common} iconOnly aria-label={name!}>
       {children}
     </Button>
   ) : (
-    <Button {...common} ariaLabel={name} leadingIcon={icon}>
+    <Button {...common} aria-label={name} leadingIcon={icon}>
       {children}
     </Button>
   );

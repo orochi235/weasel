@@ -37,7 +37,7 @@ function renderMenu<TCtx>(id: string, item: ToolbarMenuItem<TCtx>, ctx: TCtx): R
         )
       }
       shortcut={shortcut}
-      isDisabled={disabled}
+      disabled={disabled}
       disabledReason={disabledReason}
       entries={typeof entries === 'function' ? () => entries(ctx) : entries}
     />

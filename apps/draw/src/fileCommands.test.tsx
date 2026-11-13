@@ -210,7 +210,7 @@ describe('useFileCommands', () => {
       return (
         <>
           <button type="button" onClick={() => setOpen(true)}>open</button>
-          <CommandPalette open={open} onClose={() => setOpen(false)} />
+          <CommandPalette isOpen={open} onOpenChange={setOpen} />
         </>
       );
     }

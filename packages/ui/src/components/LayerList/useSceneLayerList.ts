@@ -20,7 +20,7 @@ export interface SceneLayerListAnnotations {
 }
 
 /** Arguments for {@link useSceneLayerList}. */
-export interface UseSceneLayerListArgs<TData, TLayer extends string, TPose> {
+export interface UseSceneLayerListOptions<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   selection: SelectionApi;
   /** What the reorder op is dispatched against. Default: the scene itself, as one history entry. */
@@ -41,7 +41,7 @@ export interface UseSceneLayerListArgs<TData, TLayer extends string, TPose> {
 }
 
 /** The `<LayerList>` props `useSceneLayerList` answers. */
-export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelect' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
+export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selectedIds' | 'onSelectionChange' | 'onReorder' | 'onVisibilityChange' | 'onLockChange'>>
   & Pick<LayerListProps, 'onRemove' | 'onRename'>;
 
 /**
@@ -53,7 +53,7 @@ export type SceneLayerListProps = Required<Pick<LayerListProps, 'items' | 'selec
  * Annotation layers are left out unless `annotations` says how to show them.
  */
 export function useSceneLayerList<TData, TLayer extends string, TPose>(
-  args: UseSceneLayerListArgs<TData, TLayer, TPose>,
+  args: UseSceneLayerListOptions<TData, TLayer, TPose>,
 ): SceneLayerListProps {
   const { scene, selection, adapter, itemFor, rename, label = 'Reorder', annotations } = args;
   const annotationLayers = scene.layers.filter(isAnnotationLayer);
@@ -114,7 +114,7 @@ export function useSceneLayerList<TData, TLayer extends string, TPose>(
   return {
     items: [...annotationRows, ...content],
     selectedIds: [...selection.current.map(String), ...(picked !== null ? [picked] : [])],
-    onSelect: (ids) => {
+    onSelectionChange: (ids) => {
       const notes = ids.filter(isAnnotation);
       if (notes.length > 0) {
         annotations?.pick(notes.at(-1)!);

@@ -41,7 +41,7 @@ export function RegistryDemo() {
   return (
     <div className={s.demo}>
       <div className={s.controls}>
-        <ToggleBar items={TOOLS} value={tool} onChange={(v) => v && setTool(v)} ariaLabel="Key" size="sm" />
+        <ToggleBar items={TOOLS} value={tool} onChange={(v) => v && setTool(v)} aria-label="Key" size="sm" />
         <Button size="sm" onClick={() => push('kit')}>push as kit</Button>
         <Button size="sm" onClick={() => push('plugin')}>push as plugin</Button>
         <Button size="sm" onClick={() => cursors.set(tool, 'wait', { source: 'app' })}>set as app</Button>

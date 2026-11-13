@@ -44,7 +44,7 @@ export function ResetGroup({
       iconOnly
       variant="ghost"
       size="sm"
-      ariaLabel={`Reset ${group.name}`}
+      aria-label={`Reset ${group.name}`}
       tooltip={`Reset ${group.name} to defaults`}
       disabled={changed.length === 0}
       onClick={() => {

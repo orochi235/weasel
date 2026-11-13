@@ -34,7 +34,7 @@ function froms<T>(next: Band<T>[]): number[] {
 function setup(overrides: Partial<Parameters<typeof BandEditor<string>>[0]> = {}) {
   const onInput = vi.fn();
   const onChange = vi.fn();
-  const onSelect = vi.fn();
+  const onSelectionChange = vi.fn();
   const result = render(
     <BandEditor
       value={bands()}
@@ -43,14 +43,14 @@ function setup(overrides: Partial<Parameters<typeof BandEditor<string>>[0]> = {}
       scale="linear"
       onInput={onInput}
       onChange={onChange}
-      onSelect={onSelect}
+      onSelectionChange={onSelectionChange}
       {...overrides}
     />,
   );
   const seams = () => [...result.container.querySelectorAll<HTMLElement>('[role="slider"]')];
   const bodies = () => [...result.container.querySelectorAll<HTMLElement>('[data-band-index]')];
   const ruler = () => result.container.querySelector<HTMLElement>('[data-band-ruler]')!;
-  return { ...result, onInput, onChange, onSelect, seams, bodies, ruler };
+  return { ...result, onInput, onChange, onSelectionChange, seams, bodies, ruler };
 }
 
 /** Where a band body's region starts and ends along the track, as the strip lays it out. */
@@ -242,9 +242,9 @@ describe('band body drag', () => {
   });
 
   it('treats a press that barely moves as a click, leaving the band where it is', () => {
-    const { bodies, onInput, onChange, onSelect } = setup();
+    const { bodies, onInput, onChange, onSelectionChange } = setup();
     drag(bodies()[1], 100, [101]);
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
     expect(onInput).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -280,16 +280,16 @@ describe('split', () => {
   });
 
   it('keeps the selection on the band it named when a split lands to its left', () => {
-    const { ruler, onSelect } = setup({ selectedIndex: 2 });
+    const { ruler, onSelectionChange } = setup({ selectedIndex: 2 });
     fireEvent.pointerDown(ruler(), { clientX: 40, clientY: 5, button: 0 });
-    expect(onSelect.mock.calls).toEqual([[3]]);
+    expect(onSelectionChange.mock.calls).toEqual([[3]]);
   });
 
   it('leaves the selection alone when a split lands in or right of the selected band', () => {
-    const { ruler, onSelect } = setup({ selectedIndex: 0 });
+    const { ruler, onSelectionChange } = setup({ selectedIndex: 0 });
     fireEvent.pointerDown(ruler(), { clientX: 40, clientY: 5, button: 0 });
     fireEvent.pointerDown(ruler(), { clientX: 160, clientY: 5, button: 0 });
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 
   it('duplicates the split band payload by default', () => {
@@ -307,15 +307,15 @@ describe('split', () => {
 
 describe('selection', () => {
   it('selects the band that was clicked', () => {
-    const { bodies, onSelect } = setup();
+    const { bodies, onSelectionChange } = setup();
     fireEvent.pointerDown(bodies()[2], { clientX: 300, clientY: 20, button: 0 });
-    expect(onSelect).toHaveBeenCalledWith(2);
+    expect(onSelectionChange).toHaveBeenCalledWith(2);
   });
 
   it('follows focus, so a band reached by keyboard is the one x acts on', () => {
-    const { bodies, onSelect } = setup();
+    const { bodies, onSelectionChange } = setup();
     fireEvent.focus(bodies()[1]);
-    expect(onSelect).toHaveBeenCalledWith(1);
+    expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
   it('marks the selected band pressed', () => {
@@ -324,9 +324,9 @@ describe('selection', () => {
   });
 
   it('does not re-announce a selection that is already current', () => {
-    const { bodies, onSelect } = setup({ selectedIndex: 1 });
+    const { bodies, onSelectionChange } = setup({ selectedIndex: 1 });
     fireEvent.pointerDown(bodies()[1], { clientX: 160, clientY: 20, button: 0 });
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 });
 
@@ -359,22 +359,22 @@ describe('keyboard', () => {
 
   it('merges the selected band into its left neighbour on Delete and on x', () => {
     for (const key of ['Delete', 'x']) {
-      const { bodies, onChange, onSelect } = setup({ selectedIndex: 2 });
+      const { bodies, onChange, onSelectionChange } = setup({ selectedIndex: 2 });
       fireEvent.keyDown(bodies()[2], { key });
       const next = onChange.mock.calls[0][0];
       expect(next).toHaveLength(2);
       expect(next.map((b: Band<string>) => b.data)).toEqual(['a', 'b']);
-      expect(onSelect).toHaveBeenCalledWith(1);
+      expect(onSelectionChange).toHaveBeenCalledWith(1);
     }
   });
 
   it('moves focus to the band that absorbed a merged one', () => {
-    const { bodies, onSelect, rerender, onChange } = setup({ selectedIndex: 2 });
+    const { bodies, onSelectionChange, rerender, onChange } = setup({ selectedIndex: 2 });
     bodies()[2].focus();
-    onSelect.mockClear();
+    onSelectionChange.mockClear();
     fireEvent.keyDown(bodies()[2], { key: 'x' });
     expect(document.activeElement).toBe(bodies()[1]);
-    expect(onSelect.mock.calls).toEqual([[1]]);
+    expect(onSelectionChange.mock.calls).toEqual([[1]]);
     rerender(
       <BandEditor value={onChange.mock.calls[0][0]} min={MIN} max={MAX} scale="linear" onChange={onChange} selectedIndex={1} />,
     );
@@ -425,12 +425,12 @@ describe('keyboard', () => {
   });
 
   it('splits the selected band at its midpoint on s, keeping the selection on its left half', () => {
-    const { bodies, onChange, onSelect } = setup({ selectedIndex: 1 });
+    const { bodies, onChange, onSelectionChange } = setup({ selectedIndex: 1 });
     fireEvent.keyDown(bodies()[1], { key: 's' });
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(froms(onChange.mock.calls[0][0])).toEqual([0, 20, 40, 60]);
     expect(onChange.mock.calls[0][0].map((b: Band<string>) => b.data)).toEqual(['a', 'b', 'b', 'c']);
-    expect(onSelect).not.toHaveBeenCalled();
+    expect(onSelectionChange).not.toHaveBeenCalled();
   });
 
   it('puts a keyboard split at the middle of the band on the track, which a log scale makes its geometric mean', () => {
@@ -694,7 +694,7 @@ describe('controlled round trip', () => {
         scale="linear"
         onChange={setValue}
         selectedIndex={selected}
-        onSelect={setSelected}
+        onSelectionChange={setSelected}
         renderBand={(band) => <span>{band.data}</span>}
       />
     );

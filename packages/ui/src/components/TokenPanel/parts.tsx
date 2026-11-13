@@ -22,7 +22,7 @@ export function tipOf(token: TokenEntry): string {
 
 export function Reset({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Button className={s.reset} variant="ghost" size="sm" iconOnly ariaLabel={label} onClick={onPress}>
+    <Button className={s.reset} variant="ghost" size="sm" iconOnly aria-label={label} onClick={onPress}>
       <Icon name={icon('reset')} size={12} />
     </Button>
   );

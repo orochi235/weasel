@@ -2,25 +2,13 @@ import type { ReactNode, Ref } from 'react';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { CloseButton } from '../CloseButton';
 import { DisclosureMark } from '../Disclosure';
-import { useCollapse } from '../Properties/collapse';
+import { type CollapseProps, useCollapse } from '../Properties/collapse';
 import s from './SidebarPanel.module.css';
 
 /** Props for {@link SidebarPanel}. */
-export interface SidebarPanelProps extends AppearanceProps {
+export interface SidebarPanelProps extends AppearanceProps, Omit<CollapseProps, 'twisty'> {
   /** Title rendered in the panel's header row. */
   title?: ReactNode;
-  /**
-   * Collapsed state — when true, only the header paints; the body is
-   * unmounted, so a heavy body costs nothing while folded. Caller owns the
-   * state (typically via prefs) and flips it back via `onToggleCollapse`.
-   */
-  collapsed?: boolean;
-  /**
-   * Click handler for the title row. When provided, the header renders
-   * as a button (fold mark + label) and acts as the collapse toggle.
-   * When omitted, the title is static text and the panel can't collapse.
-   */
-  onToggleCollapse?(): void;
   /**
    * Optional close handler — when provided, the header gains a close
    * button on the trailing edge. Caller flips its "hidden" state and
@@ -54,16 +42,17 @@ export interface SidebarPanelProps extends AppearanceProps {
 const cx = (...names: (string | false | undefined)[]) => names.filter(Boolean).join(' ');
 
 /**
- * Generic collapsible panel section for sidebars. Pure presentation —
- * caller manages `collapsed`/`hidden` state externally (the pattern is
- * to drive it from app prefs so the Preferences modal and inline
- * fold marks toggle the same map).
+ * Generic collapsible panel section for sidebars. It folds as `PropertyGroup`
+ * does: `collapsed` and `onCollapsedChange` held by the caller (driven from app
+ * prefs, so the Preferences modal and the fold mark toggle the same map), or
+ * `defaultCollapsed` held by the panel. Folded, the body is unmounted.
  *
  * Pair with `<Sidebar>` for the docked column layout.
  */
 export function SidebarPanel(props: SidebarPanelProps) {
-  const { title, collapsed = false, onToggleCollapse, onHide, actions, trailing, fill, headerRef, children } = props;
-  const fold = useCollapse({ collapsed, onCollapsedChange: onToggleCollapse && (() => onToggleCollapse()) });
+  const { title, onHide, actions, trailing, fill, headerRef, children } = props;
+  const fold = useCollapse(props);
+  const collapsed = fold.folded;
   const appearance = useAppearance(props);
   const titleBox = cx(s.titleBox, props.titleClassName);
   return (
@@ -74,7 +63,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
     >
       {title !== undefined && (
         <div className={cx(s.titleRow, props.headerClassName)} ref={headerRef}>
-          {onToggleCollapse !== undefined ? (
+          {fold.folds ? (
             <button
               type="button"
               className={cx(s.titleButton, titleBox)}
@@ -93,7 +82,7 @@ export function SidebarPanel(props: SidebarPanelProps) {
           {onHide !== undefined && (
             <CloseButton
               className={s.hideButton}
-              ariaLabel="Hide panel"
+              aria-label="Hide panel"
               tooltip="Hide panel"
               onClick={onHide}
             />

@@ -214,6 +214,31 @@ package fills across the boundary go on an `internal` entry
 (`@weasel-js/routing/internal`). Neither is public API, and the audit treats an
 `@internal` symbol there as placed rather than leaked.
 
+## Component prop names
+
+A kit component's props use the DOM's and React Aria's names where one exists
+(2026-11-12):
+
+- **Accessible name**: a component takes `'aria-label'`, as the element it
+  renders does. A field of a data object describing one row or segment
+  (`ToggleBarItem`, `DetentItem`) is `ariaLabel`, since a quoted key in every
+  item literal buys nothing.
+- **Off and current**: a component the kit draws itself takes `disabled`,
+  `readOnly` and `current`, and so does a row shape it defines
+  (`MenuButtonItem`, `PropertyOption`, `@weasel-js/menu`'s entries). A
+  component whose props extend React Aria's (`Select`, `Switch`, `NumberField`)
+  keeps React Aria's `isDisabled`, `isReadOnly` and `isSelected`, and
+  `Checkbox` mirrors them as Switch's sibling.
+- **Controlled pairs**: a held value `x` reports through `onXChange`
+  (`collapsedIds`/`onCollapsedChange`, `window`/`onWindowChange`). A selection
+  reports through `onSelectionChange`, as React Aria's does, whatever its prop
+  is called. `onSelect` is left for a pick that is not a held selection, such
+  as a row clicked with how it was clicked. A modal surface is held by
+  `isOpen`/`onOpenChange`, as `Dialog` is.
+- **Live and committed**: a value that moves through a gesture reports each
+  step through `onInput` and the finished gesture through `onChange`
+  (`Slider`, `Timeline`, `DetentSlider`).
+
 ## Design tokens
 
 `--wzl-*` tokens are generated. Edit `packages/theme/themes/<theme>.json`

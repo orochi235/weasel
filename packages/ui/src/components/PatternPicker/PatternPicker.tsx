@@ -202,7 +202,7 @@ export function PatternPicker(props: PatternPickerProps): ReactElement {
         items={image ? IMAGE_TILE_SIZES : TILE_SIZES}
         value={image ? longestSide(image) : size}
         size="sm"
-        ariaLabel="Tile size"
+        aria-label="Tile size"
         onChange={(v) => v != null && resize(v)}
       />
       <div className={`${f.field} ${f.control} ${f.fit} ${f.row}`}>

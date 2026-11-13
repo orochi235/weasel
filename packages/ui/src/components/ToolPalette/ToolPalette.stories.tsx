@@ -82,7 +82,7 @@ function SplitDemo({ args }: { args: Story['args'] }) {
   return (
     <div style={{ display: 'flex', gap: 16 }}>
       <ToolPalette {...args} tools={tools} include={(t) => !DRAWING.has(t.id)} />
-      <ToolPalette {...args} tools={tools} include={(t) => DRAWING.has(t.id)} ariaLabel="Drawing tools" />
+      <ToolPalette {...args} tools={tools} include={(t) => DRAWING.has(t.id)} aria-label="Drawing tools" />
     </div>
   );
 }

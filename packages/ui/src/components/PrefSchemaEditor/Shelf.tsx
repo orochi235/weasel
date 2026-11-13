@@ -22,7 +22,7 @@ export function Shelf({ slot, children }: { slot(el: HTMLDivElement | null): voi
   const height = useEditorSize('shelfHeight');
   return (
     <>
-      <ResizeHandle className={s.shelfHandle} orientation="horizontal" invert {...height} min={80} max={600} ariaLabel="Resize shelf" />
+      <ResizeHandle className={s.shelfHandle} orientation="horizontal" invert {...height} min={80} max={600} aria-label="Resize shelf" />
       <div className={s.shelf} style={{ '--shelf-h': `${height.value}px` } as CSSProperties}>
         <div className={s.shelfSlot} ref={slot} />
         {children}
@@ -39,7 +39,7 @@ function ShelfList({ title, size, tools, children }: { title: string; size: 'she
   return (
     <>
       <ListPane title={title} tools={tools} className={s.shelfPane} style={{ '--shelf-pane-w': `${width.value}px` } as CSSProperties}>{children}</ListPane>
-      <ResizeHandle {...width} min={120} max={800} ariaLabel={`Resize ${title.toLowerCase()}`} />
+      <ResizeHandle {...width} min={120} max={800} aria-label={`Resize ${title.toLowerCase()}`} />
     </>
   );
 }
@@ -58,8 +58,8 @@ export function ShelfLists({ slot, over, layout, actions, parts, ...drag }: List
   // What sorts the catalog, where there is one to sort.
   const tools = actions?.editable && (
     <>
-      <Button iconOnly variant="ghost" size="sm" ariaLabel="Add action group" tooltip="Add group" onClick={actions.addGroup}><Icon name={GROUP_ICON.section} mark={icon('markAdd')} size={16} /></Button>
-      <Button iconOnly variant="ghost" size="sm" ariaLabel="Remove from actions" tooltip="Remove: a group gives up what it holds, and an action that is gone leaves the list"
+      <Button iconOnly variant="ghost" size="sm" aria-label="Add action group" tooltip="Add group" onClick={actions.addGroup}><Icon name={GROUP_ICON.section} mark={icon('markAdd')} size={16} /></Button>
+      <Button iconOnly variant="ghost" size="sm" aria-label="Remove from actions" tooltip="Remove: a group gives up what it holds, and an action that is gone leaves the list"
         disabled={actions.selected.length === 0} onClick={actions.remove}><Icon name={icon('core:delete')} size={16} /></Button>
     </>
   );

@@ -104,7 +104,7 @@ export const HeaderSlots: StoryObj<typeof PropertyGroup> = {
             collapsible
             leading={<DragGrip />}
             actions={
-              <CloseButton ariaLabel={`Remove ${name}`} />
+              <CloseButton aria-label={`Remove ${name}`} />
             }
           >
             <PropertyField kind="number" control="slider" label="Size" value={8} min={0} max={32} unit="px" onChange={() => {}} />

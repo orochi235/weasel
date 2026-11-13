@@ -41,7 +41,7 @@ function TokenReference({ ctx, refer, onOpen }: {
           {themeTokenOf(path)}
         </Badge>
       )}
-      <Button size="sm" variant="ghost" disabled={ctx.disabled} ariaLabel={`Edit ${ctx.pref.name} as text`} onClick={() => setEditing(true)}>
+      <Button size="sm" variant="ghost" disabled={ctx.disabled} aria-label={`Edit ${ctx.pref.name} as text`} onClick={() => setEditing(true)}>
         Edit
       </Button>
     </span>

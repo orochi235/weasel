@@ -52,7 +52,7 @@ export function StopEditor(props: {
         onChange={props.onColorChange}
       />
       <CloseButton
-        ariaLabel={`Remove stop ${place}`}
+        aria-label={`Remove stop ${place}`}
         tooltip="Remove stop"
         disabled={!removable}
         onClick={props.onRemove}

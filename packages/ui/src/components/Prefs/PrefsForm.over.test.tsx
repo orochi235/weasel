@@ -60,7 +60,7 @@ describe('PrefsForm over another schema', () => {
   });
 
   it('is handed on by a dialog to its form', () => {
-    renderWithIcons(<PrefsDialog inline isOpen onOpenChange={() => {}} schema={panel} values={{}} over={dialog} onChange={() => {}} />);
+    renderWithIcons(<PrefsDialog inline schema={panel} values={{}} over={dialog} onChange={() => {}} />);
     expect(screen.getByRole('checkbox', { name: 'Show grid' })).toBeInTheDocument();
   });
 

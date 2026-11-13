@@ -59,7 +59,7 @@ export const Glass: Story = {
       <Button {...args} stance="confirm">Save</Button>
       <Button {...args}>Cancel</Button>
       <KitToggleBar
-        ariaLabel="View"
+        aria-label="View"
         items={[
           { value: 'tree', label: 'Tree' },
           { value: 'list', label: 'List' },
@@ -144,10 +144,10 @@ export const WithIcons: Story = {
 export const IconOnly: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <Button {...args} iconOnly ariaLabel="Add" stance="confirm"><PlusIcon /></Button>
-      <Button {...args} iconOnly ariaLabel="Add"><PlusIcon /></Button>
-      <Button {...args} iconOnly ariaLabel="Add" variant="ghost"><PlusIcon /></Button>
-      <Button {...args} iconOnly ariaLabel="Delete" size="sm"><TrashIcon /></Button>
+      <Button {...args} iconOnly aria-label="Add" stance="confirm"><PlusIcon /></Button>
+      <Button {...args} iconOnly aria-label="Add"><PlusIcon /></Button>
+      <Button {...args} iconOnly aria-label="Add" variant="ghost"><PlusIcon /></Button>
+      <Button {...args} iconOnly aria-label="Delete" size="sm"><TrashIcon /></Button>
     </div>
   ),
 };
@@ -157,7 +157,7 @@ export const Tooltips: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
       <Button {...args} shortcut="⌘S">Save</Button>
-      <Button {...args} iconOnly ariaLabel="Add layer" shortcut="⇧⌘N"><PlusIcon /></Button>
+      <Button {...args} iconOnly aria-label="Add layer" shortcut="⇧⌘N"><PlusIcon /></Button>
       <Button {...args} variant="ghost" leadingIcon={<TrashIcon />} tooltip="Removes the selection from the document">
         Delete
       </Button>
@@ -185,7 +185,7 @@ export const DisabledWithReason: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
       <Button {...args} disabled disabledReason="Nothing has changed since the last save">Save</Button>
-      <Button {...args} iconOnly ariaLabel="Add layer" shortcut="⇧⌘N" disabled disabledReason="The document is locked">
+      <Button {...args} iconOnly aria-label="Add layer" shortcut="⇧⌘N" disabled disabledReason="The document is locked">
         <PlusIcon />
       </Button>
       <Button {...args} disabled shortcut="⌘Z">Undo</Button>

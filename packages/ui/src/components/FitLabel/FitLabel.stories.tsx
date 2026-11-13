@@ -26,7 +26,7 @@ export const InAToggleBar: Story = {
     return (
       <div className={s.room}>
         <ToggleBar
-          ariaLabel="Case"
+          aria-label="Case"
           items={CASES.map((c) => ({ value: c.value, label: <FitLabel {...args} forms={c.forms} />, ariaLabel: c.forms[0] }))}
           value={v}
           onChange={setV}

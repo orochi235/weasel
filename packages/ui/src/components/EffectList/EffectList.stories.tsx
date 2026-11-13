@@ -39,12 +39,12 @@ function Stages({ args }: { args: Story['args'] }): ReactElement {
     <div className={s.frame}>
       <EffectList<Stage>
         {...(args as Partial<EffectListProps<Stage>>)}
-        ariaLabel="Stages"
+        aria-label="Stages"
         items={items}
         kinds={KINDS}
         onChange={setItems}
         selected={selected}
-        onSelect={setSelected}
+        onSelectionChange={setSelected}
         onDuplicate={(st) => ({ ...st, id: `copy-${++minted}`, name: `${st.name} copy` })}
         renderBody={(st) => (
           <PropertyControl

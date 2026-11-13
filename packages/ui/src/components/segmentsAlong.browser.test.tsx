@@ -37,7 +37,7 @@ function Bar({ c }: { c: Case }) {
   return (
     <div style={{ position: 'relative', width: 280, height: 280 }}>
       <Along arc={{ at: 0, span: `${c.span}deg`, direction: c.direction }} align={c.align}>
-        <ToggleBar ariaLabel="Alignment" items={WORDS.map((w) => ({ value: w, label: w }))} value={value} onChange={() => {}} />
+        <ToggleBar aria-label="Alignment" items={WORDS.map((w) => ({ value: w, label: w }))} value={value} onChange={() => {}} />
       </Along>
     </div>
   );

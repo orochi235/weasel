@@ -48,7 +48,7 @@ export function ConditionGroupRows({ name, group, scope, onChange, onRemove, too
           {quantified && <Select className={s.quantifier} aria-label={`Which rows${of} must hold`} options={QUANTIFIERS} selectedKey={quantifier}
             onSelectionChange={(next) => { if (next !== quantifier) onChange({ quantifier: next as Quantifier, parts }); }} />}
           {tools}
-          {onRemove && name && <CloseButton ariaLabel={`Remove ${name.toLowerCase()}`} onClick={onRemove} />}
+          {onRemove && name && <CloseButton aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />}
         </div>
       )}
       {name !== undefined && parts.length === 0 && (
@@ -76,7 +76,7 @@ export function ConditionGroupRows({ name, group, scope, onChange, onRemove, too
             const found = scope.leaves.find((l) => leafKey(l) === key);
             if (found) write([...parts, rowCondition(rowAt(found))]);
           }} />
-        <Button variant="ghost" size="sm" ariaLabel={`Add ${inner.toLowerCase()} rows${to}`}
+        <Button variant="ghost" size="sm" aria-label={`Add ${inner.toLowerCase()} rows${to}`}
           onClick={() => write([...parts, groupCondition({ quantifier: nestedQuantifier(quantifier), parts: [] })])}>
           {inner}…
         </Button>

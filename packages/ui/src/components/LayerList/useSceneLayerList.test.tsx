@@ -36,7 +36,7 @@ describe('useSceneLayerList', () => {
   it('reads and writes the selection', () => {
     const { hook, selection } = setup();
     expect(hook.result.current.selectedIds).toEqual(['b']);
-    hook.result.current.onSelect(['a']);
+    hook.result.current.onSelectionChange(['a']);
     expect(selection.set).toHaveBeenCalledWith(['a']);
   });
 
@@ -137,7 +137,7 @@ describe('useSceneLayerList — annotation layers', () => {
     const pick = vi.fn();
     const { hook, selection } = annotated({ picked: 'n1', pick });
     expect(hook.result.current.selectedIds).toEqual(['box', 'n1']);
-    hook.result.current.onSelect(['n2']);
+    hook.result.current.onSelectionChange(['n2']);
     expect(pick).toHaveBeenCalledWith('n2');
     expect(selection.set).not.toHaveBeenCalled();
   });
@@ -205,7 +205,7 @@ describe('useSceneLayerList in a paged scene', () => {
 
   it('selects no page from a page row', () => {
     const { hook, selection } = paged();
-    hook.result.current.onSelect(['p1', 'a']);
+    hook.result.current.onSelectionChange(['p1', 'a']);
     expect(selection.set).toHaveBeenCalledWith(['a']);
   });
 

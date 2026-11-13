@@ -15,7 +15,7 @@ export interface SidebarProps {
    * apps with a single sidebar but ambiguous when there's both a left
    * and a right.
    */
-  ariaLabel?: string;
+  'aria-label'?: string;
   children?: ReactNode;
   className?: string;
   /** Inline style — useful for width-as-custom-property handles or any
@@ -32,7 +32,7 @@ export interface SidebarProps {
  * Pair with `<SidebarPanel>` for collapsible sections.
  */
 export function Sidebar(props: SidebarProps) {
-  const { side, ariaLabel, children, className, style } = props;
+  const { side, 'aria-label': ariaLabel, children, className, style } = props;
   const cls = [s.sidebar, side === 'left' && s.left, side === 'right' && s.right, className]
     .filter(Boolean).join(' ');
   return (

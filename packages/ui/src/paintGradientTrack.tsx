@@ -14,7 +14,7 @@ import { sampledCssStops } from './paintPreview';
  * `activeRange`, given in the slider's own value units, keeps that span at
  * full strength and dims + hatches the rest.
  */
-export type GradientTrackOpts = {
+export type GradientTrackOptions = {
   gradient: (t: number) => string;
   samples?: number;
   activeRange?: [number, number];
@@ -36,7 +36,7 @@ const DEFAULT_HATCH = { angleDeg: 135, stripe: 2, gap: 4, dim: 75 };
  * Along a shape it strokes the band along it with the same ramp, dimming and
  * hatching.
  */
-export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => ReactNode {
+export function paintGradientTrack(opts: GradientTrackOptions): (ctx: TrackCtx) => ReactNode {
   const { gradient, samples = 16, activeRange, hatch } = opts;
 
   return (ctx: TrackCtx) => {

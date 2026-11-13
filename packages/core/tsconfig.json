@@ -134,6 +134,7 @@
       "@weasel-js/prefs/vite": ["../prefs/src/vite.ts"],
       "@weasel-js/quantity": ["../quantity/src/index.ts"],
       "@weasel-js/react": ["../react/src/index.ts"],
+      "@weasel-js/react/test-seams": ["../react/src/test-seams.ts"],
       "@weasel-js/react/testing/*": ["../react/src/testing/*"],
       "@weasel-js/registry": ["../registry/src/index.ts"],
       "@weasel-js/renderer": ["../renderer/src/index.ts"],

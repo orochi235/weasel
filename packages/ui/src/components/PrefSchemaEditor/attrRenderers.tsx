@@ -85,7 +85,7 @@ function PairEditor({ ctx }: { ctx: PrefRenderContext }) {
           <Select aria-label={`Paired field ${i + 1}`} selectedKey={path}
             options={options.some((o) => o.value === path) ? options : [{ value: path, label: path }, ...options]}
             onSelectionChange={(k) => write(partners.map((p, j) => (j === i ? String(k) : p)), label)} />
-          <CloseButton ariaLabel={`Remove paired field ${i + 1}`} onClick={() => write(partners.filter((_, j) => j !== i), label)} />
+          <CloseButton aria-label={`Remove paired field ${i + 1}`} onClick={() => write(partners.filter((_, j) => j !== i), label)} />
         </div>
       ))}
       <Select aria-label="Add a paired field" placeholder="Add field…" selectedKey={null} options={options}

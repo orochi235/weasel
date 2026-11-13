@@ -29,7 +29,7 @@ export type ButtonBarVariant = SegmentedVariant;
 /** Props for {@link ButtonBar}. */
 export type ButtonBarProps<V extends string | number = string> = SegmentedGridProps & {
   items: readonly ButtonBarItem<V>[];
-  ariaLabel?: string;
+  'aria-label'?: string;
   className?: string;
   height?: number;
   size?: ButtonBarSize;
@@ -45,7 +45,7 @@ export type ButtonBarProps<V extends string | number = string> = SegmentedGridPr
  * registry, use `ActionBar` instead.
  */
 export function ButtonBar<V extends string | number = string>(props: ButtonBarProps<V>): ReactElement {
-  const { items, ariaLabel, className, height, size, variant } = props;
+  const { items, 'aria-label': ariaLabel, className, height, size, variant } = props;
 
   const fire = (index: number) => {
     const item = items[index];

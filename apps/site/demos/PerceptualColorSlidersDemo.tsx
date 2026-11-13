@@ -251,7 +251,7 @@ export function PerceptualColorSlidersDemo() {
             min={0} max={360} step={1}
             thumbs={[{ value: hue }]}
             onInput={ts => setHue(ts[0].value)}
-            ariaLabel="Hue"
+            aria-label="Hue"
             readoutPlacement="inline-after"
             renderReadout={t => `${t.value}°`}
             renderTrack={paintGradientTrack({ gradient: t => oklchToHex(midL, peakC, t * 360) })}
@@ -326,7 +326,7 @@ export function PerceptualColorSlidersDemo() {
           items={BOUNDS_MODES}
           value={boundsMode}
           onChange={(m) => m && changeBoundsMode(m)}
-          ariaLabel="OKLCH bounds mode"
+          aria-label="OKLCH bounds mode"
           size="sm"
         />
         <ChromaCurveDiagram params={params} bounds={chromaBounds} />

@@ -34,7 +34,7 @@ export const Selectable: Story = {
           {...args}
           items={items}
           selectedIds={selected}
-          onSelect={setSelected}
+          onSelectionChange={setSelected}
           onReorder={(move) => setItems(moveLayers(items, move))}
         />
       </div>

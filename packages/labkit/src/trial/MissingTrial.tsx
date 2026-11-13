@@ -10,7 +10,7 @@ export function MissingTrial({ id, children }: { id: string; children: string })
   return (
     <div className="lk-trial lk-trial--unknown">
       <span>{children}</span>
-      <CloseButton ariaLabel="Close trial" onClick={() => lab.closeTrial(id)} />
+      <CloseButton aria-label="Close trial" onClick={() => lab.closeTrial(id)} />
     </div>
   );
 }

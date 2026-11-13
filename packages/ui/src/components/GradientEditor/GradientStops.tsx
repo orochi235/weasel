@@ -115,7 +115,7 @@ export function GradientStops(props: GradientStopsProps): ReactElement {
           step={0.005}
           constraint="free"
           thumbs={thumbs}
-          ariaLabel="Gradient stop"
+          aria-label="Gradient stop"
           readoutPlacement="none"
           onInput={(next) => onInput?.(fromThumbs(next))}
           onChange={(next) => onChange(fromThumbs(next))}

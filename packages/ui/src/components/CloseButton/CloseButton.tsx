@@ -8,7 +8,7 @@ import { icon } from '../../icons.gen';
 export interface CloseButtonProps {
   /** Accessible name — what the press closes or removes: `Close dialog`,
    *  `Remove Glow`. Required, since the button shows only a glyph. */
-  ariaLabel: string;
+  'aria-label': string;
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>['onClick'];
   /** Kit tooltip content. None by default. */
   tooltip?: ReactNode;
@@ -27,7 +27,7 @@ export interface CloseButtonProps {
  * `ref` forwards to the underlying `<button>`.
  */
 export const CloseButton = forwardRef(function CloseButton(
-  { ariaLabel, onClick, tooltip, disabled, disabledReason, className }: CloseButtonProps,
+  { 'aria-label': ariaLabel, onClick, tooltip, disabled, disabledReason, className }: CloseButtonProps,
   ref: Ref<HTMLButtonElement>,
 ) {
   return (

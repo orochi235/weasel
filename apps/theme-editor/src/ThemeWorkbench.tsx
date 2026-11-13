@@ -278,7 +278,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     </div>
   );
   const saveButton = (
-    <Button stance="confirm" size="sm" disabled={!dirty || saving} onClick={save} ariaLabel={dirty ? 'Save, with unsaved changes' : 'Save'}>
+    <Button stance="confirm" size="sm" disabled={!dirty || saving} onClick={save} aria-label={dirty ? 'Save, with unsaved changes' : 'Save'}>
       {dirty && <span className={styles.dirtyDot} aria-hidden="true" />}
       Save
     </Button>

@@ -31,7 +31,7 @@ const frames = () =>
 function FitBar() {
   return (
     <ToggleBar
-      ariaLabel="Case"
+      aria-label="Case"
       items={CASES.map((c) => ({ value: c.value, label: <FitLabel forms={c.forms} />, ariaLabel: c.forms[0] }))}
       value="none"
       onChange={() => {}}
@@ -44,7 +44,7 @@ function widthAt(step: number): number {
   const labels = tier(step);
   const { unmount } = render(
     <ToggleBar
-      ariaLabel="Probe"
+      aria-label="Probe"
       items={CASES.map((c, i) => ({ value: c.value, label: labels[i] }))}
       value="none"
       onChange={() => {}}

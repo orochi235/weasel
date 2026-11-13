@@ -21,7 +21,7 @@ test('hovering a disabled segment opens its tooltip', async () => {
   render(
     <div style={{ margin: 40 }}>
       <ToggleBar
-        ariaLabel="Align"
+        aria-label="Align"
         value="l"
         onChange={() => {}}
         items={[

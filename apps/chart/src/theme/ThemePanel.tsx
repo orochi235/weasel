@@ -13,7 +13,7 @@ export function ThemePanel({ scene, onClose }: { scene: ChartScene; onClose: () 
   const edit = useThemeEdit(scene);
   const { theme } = edit;
   return (
-    <PropertyPanel title="Theme" actions={<CloseButton ariaLabel="Close theme" onClick={onClose} />}>
+    <PropertyPanel title="Theme" actions={<CloseButton aria-label="Close theme" onClick={onClose} />}>
       <PropertyList pack="one-up">
         <PropertyNote>
           {isShippedTheme(theme) ? `${theme.name}. The first edit makes a copy kept in this chart.` : theme.name}

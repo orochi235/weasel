@@ -70,7 +70,7 @@ export function LensChrome<C>({
       ) : null}
       <span className="lk-lens-chrome__toggles">
         <ToggleBar
-          ariaLabel="Source"
+          aria-label="Source"
           size="sm"
           variant="minimal"
           items={SOURCE_TOGGLES.map((t) => ({ value: t.kind, label: t.label }))}
@@ -82,7 +82,7 @@ export function LensChrome<C>({
           }
         />
         <ToggleBar
-          ariaLabel="Readouts"
+          aria-label="Readouts"
           mode="multiple"
           size="sm"
           variant="minimal"
@@ -104,7 +104,7 @@ export function LensChrome<C>({
         />
         {settings.compare !== null ? (
           <ToggleBar
-            ariaLabel="View"
+            aria-label="View"
             size="sm"
             variant="minimal"
             items={VIEW_TOGGLES.map((t) => ({ value: t.view, label: t.label }))}

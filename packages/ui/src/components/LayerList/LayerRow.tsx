@@ -52,7 +52,7 @@ export function Row({ item, shared, level, ghosted, selected, open, childId, onP
             role: 'row',
             'aria-level': level,
             ...(branch ? { 'aria-expanded': open } : {}),
-            ...(props.onSelect ? { 'aria-selected': selected } : {}),
+            ...(props.onSelectionChange ? { 'aria-selected': selected } : {}),
             tabIndex: shared.keys.tabStop === item.id ? 0 : -1,
             ref: shared.keys.register(item.id),
             onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
@@ -171,7 +171,7 @@ function Remove({ item, shared }: { item: LayerListItem; shared: Shared }) {
   return (
     <span className={s.stop} onPointerDown={stop}>
       <CloseButton
-        ariaLabel={`Remove ${item.label}`}
+        aria-label={`Remove ${item.label}`}
         onClick={() => onRemove(item.id)}
       />
     </span>

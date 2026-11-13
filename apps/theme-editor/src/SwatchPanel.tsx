@@ -130,7 +130,7 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
             thumbSize="var(--wzl-slider-thumb-size)"
             readoutPlacement="inline-after"
             renderReadout={(t) => <span className={styles.bandValue}>{t.value === 1 ? 'off' : t.value}</span>}
-            ariaLabel="Number of chroma bands to group into"
+            aria-label="Number of chroma bands to group into"
           />
         </div>
         <span className={styles.swatchHover}>{hovered ?? ''}</span>

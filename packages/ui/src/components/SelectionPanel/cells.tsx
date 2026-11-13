@@ -140,7 +140,7 @@ function FlagBar({ run, ariaLabel }: { run: readonly LeafCell[]; ariaLabel: stri
       size="sm"
       variant="flat"
       className={s.flagToggle}
-      ariaLabel={ariaLabel}
+      aria-label={ariaLabel}
       items={flags.map(({ cell, field }) => ({
         value: cell.key,
         label: field.glyph ?? <FitLabel forms={labelForms(cell.leaf.name, field.short)} />,

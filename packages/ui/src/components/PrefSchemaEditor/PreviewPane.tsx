@@ -163,7 +163,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         <Switch isSelected={showHidden} onChange={setShowHidden}>Show hidden</Switch>
       </PaneHeader>
       <div className={s.previewStage} ref={stage} onPointerDown={onStagePointerDown} {...held} style={{ '--preview-w': `${size.value}px`, ...heldAt } as CSSProperties}>
-      <PrefsDialog inline isOpen onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
+      <PrefsDialog inline onOpenChange={() => {}} layout="rail" rowsAcross={2} resizableRail dialogClassName={s.previewDialog}
         schema={placed} values={NO_VALUES} renderers={renderers} showHidden={showHidden} over={over}
         // An empty group is drawn too: it is somewhere to drop into.
         showEmpty markHidden drop={drop}
@@ -171,7 +171,7 @@ function GroupPreview({ schema, renderers, selected, onSelect, onDefaults, stage
         selected={marked}
         onSelect={onSelect && ((path, how) => onSelect(path === '' ? null : pathOf(path.split('.')), rangeIn(how, (at) => pathOf(at.split('.')))))}
         onChange={(path, v) => onDefaults([[path.split('.'), v]])} />
-      <ResizeHandle {...size} min={360} max={900} ariaLabel="Resize preview" />
+      <ResizeHandle {...size} min={360} max={900} aria-label="Resize preview" />
       <PreviewDragGhost ghost={ghost} stageRef={stageRef} drop={drop} renderers={renderers} over={over} />
       </div>
     </section>

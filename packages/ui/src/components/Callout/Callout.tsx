@@ -193,7 +193,7 @@ export function Callout(props: CalloutProps) {
                       )}
                       {showClose && (
                         <CloseButton
-                          ariaLabel="Close callout"
+                          aria-label="Close callout"
                           onClick={() => {
                             // `close()` resolves OverlayTriggerStateContext, only
                             // provided by DialogTrigger (composed mode). In

@@ -152,7 +152,7 @@ export function ModesDemo() {
           }))}
           value={mode.id}
           onChange={(id) => id && enter(id)}
-          ariaLabel="Mode"
+          aria-label="Mode"
           size="sm"
         />
         {tools && <ToolPalette tools={tools} orientation="horizontal" modeRegistry={registry} />}

@@ -17,7 +17,7 @@ type Story = StoryObj<typeof ResizeHandle>;
  * inverted — dragging left makes the panel wider.
  */
 export const RightSidebar: Story = {
-  args: { value: 260, min: 200, max: 600, invert: true, ariaLabel: 'Resize sidebar' },
+  args: { value: 260, min: 200, max: 600, invert: true, 'aria-label': 'Resize sidebar' },
   render: (args) => {
     const [width, setWidth] = useState(args.value);
     return (
@@ -27,7 +27,7 @@ export const RightSidebar: Story = {
           (Shift for a coarse step, Home/End for the bounds). Width: {width}px
         </div>
         <ResizeHandle {...args} value={width} onInput={setWidth} />
-        <Sidebar side="right" ariaLabel="Demo sidebar" style={{ width }}>
+        <Sidebar side="right" aria-label="Demo sidebar" style={{ width }}>
           <SidebarPanel title="Properties">
             <div style={{ padding: '4px 6px', fontSize: 12 }}>{width}px</div>
           </SidebarPanel>
@@ -41,7 +41,7 @@ export const RightSidebar: Story = {
 export const BottomDrawer: Story = {
   args: {
     orientation: 'horizontal', value: 80, min: 40, max: 200, invert: true,
-    ariaLabel: 'Resize drawer',
+    'aria-label': 'Resize drawer',
   },
   render: (args) => {
     const [height, setHeight] = useState(args.value);

@@ -68,14 +68,14 @@ export function SliderArcView({ config, onPreset }: { config: SliderArcConfig; o
           <h3 className={lab.sectionTitle}>Along the arc</h3>
           <div ref={curvedRoot} className={s.box} data-twin="curved">
             <Along arc={arc}>
-              <Slider {...props} {...addRemove('curved')} ariaLabel="Curved" thumbs={of('curved')} onInput={set('curved')} />
+              <Slider {...props} {...addRemove('curved')} aria-label="Curved" thumbs={of('curved')} onInput={set('curved')} />
             </Along>
           </div>
         </section>
         <section className={lab.section} aria-label="Straight">
           <h3 className={lab.sectionTitle}>Straight, as long as the arc</h3>
           <div ref={straightRoot} className={s.line} data-twin="straight">
-            <Slider {...props} {...addRemove('straight')} ariaLabel="Straight" thumbs={of('straight')} onInput={set('straight')} />
+            <Slider {...props} {...addRemove('straight')} aria-label="Straight" thumbs={of('straight')} onInput={set('straight')} />
           </div>
         </section>
         <Presets presets={SLIDER_ARC_PRESETS} onLoad={onPreset} />

@@ -111,7 +111,7 @@ export function ChartWorkspace(): ReactElement {
     <div className="wc-workspace">
       <ChartToolbar tools={tools} include={isPaletteTool} view={view} setView={setView} dims={dims} />
       <div className="wc-body">
-        <Sidebar side="left" className="wc-sidebar" ariaLabel="Shapes">
+        <Sidebar side="left" className="wc-sidebar" aria-label="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
           {tools && (
             <SequencePanel tools={tools} scene={scene} selected={selection.current} choices={sequence.choices} onChoose={sequence.set} />
@@ -153,7 +153,7 @@ export function ChartWorkspace(): ReactElement {
           </div>
           <ChartPageStrip scene={scene} pages={pages} theme={theme} />
         </div>
-        <Sidebar side="right" className="wc-sidebar wc-format" ariaLabel="Format">
+        <Sidebar side="right" className="wc-sidebar wc-format" aria-label="Format">
           <PlotDataSection scene={scene} selected={selection.current} />
           <StylePanel scene={scene} selected={selection.current} theme={theme} />
           {themeOpen && <ThemePanel scene={scene} onClose={() => setThemeOpen(false)} />}

@@ -56,10 +56,10 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         aria-label={named}
         label={reads}
         current={held !== undefined}
-        isDisabled={p.disabled}
+        disabled={p.disabled}
         disabledReason={p.disabledReason}
         items={choices(p).map((o) => ({
-          value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, isDisabled: o.disabled,
+          value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, disabled: o.disabled,
           description: o.description, disabledReason: o.disabledReason,
         }))}
         onAction={choose(p)}
@@ -72,7 +72,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         size="sm"
         variant="flat"
         className={p.className ? `${s.toggleBar} ${p.className}` : s.toggleBar}
-        ariaLabel={p.name}
+        aria-label={p.name}
         items={p.options.map((o) => ({
           value: o.value,
           label: o.glyph ?? <FitLabel forms={labelForms(o.label, o.short)} />,

@@ -46,7 +46,7 @@ export function ZoomControl({
     <div className={`lk-zoom${className ? ` ${className}` : ''}`}>
       <Slider
         className="lk-zoom__slider"
-        ariaLabel="Zoom"
+        aria-label="Zoom"
         thumbShape="dot"
         trackHeight="var(--wzl-slider-track-h)"
         thumbSize="var(--wzl-slider-thumb-size)"

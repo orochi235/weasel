@@ -86,12 +86,12 @@ export function EffectsSection({ effects, nextId, onAdd, onEffects, onList }: {
       </div>
       {effects.length === 0 && <p className={s.empty}>No effects. Add one from the dropdown.</p>}
       <EffectList<Card>
-        ariaLabel="Effects"
+        aria-label="Effects"
         items={cards}
         kinds={EFFECT_KINDS}
         onChange={(next) => onList(next.map(effectOf))}
         selected={selected}
-        onSelect={setSelected}
+        onSelectionChange={setSelected}
         onDuplicate={(card) => ({ ...card, id: String(nextId), name: `${card.name} copy` })}
         renderBody={(card) => <EffectBody effect={card.effect} onEffects={onEffects} />}
       />

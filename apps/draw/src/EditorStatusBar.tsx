@@ -38,7 +38,7 @@ export function EditorStatusBar({
   const engaged = activeTool.hotkeyStack[activeTool.hotkeyStack.length - 1];
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (
-    <StatusBar ariaLabel="Editor status" className="wd-statusbar">
+    <StatusBar aria-label="Editor status" className="wd-statusbar">
       <ModeStatusIndicator mode={machine.registry.byId(modeId)} />
       <StatusBarItem>tool: {toolLabel}</StatusBarItem>
       <StatusBarItem>sel: {selection.current.length}</StatusBarItem>

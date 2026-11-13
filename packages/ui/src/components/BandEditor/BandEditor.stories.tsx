@@ -72,7 +72,7 @@ function Wrapper({ initial, selectedIndex, ...rest }: WrapperProps) {
       value={value}
       onChange={setValue}
       selectedIndex={selected}
-      onSelect={setSelected}
+      onSelectionChange={setSelected}
     />
   );
 }
@@ -146,7 +146,7 @@ function RangeWrapper({ initial, selectedIndex, min, max, ...rest }: WrapperProp
         setValue(bands);
       }}
       selectedIndex={selected}
-      onSelect={setSelected}
+      onSelectionChange={setSelected}
     />
   );
 }

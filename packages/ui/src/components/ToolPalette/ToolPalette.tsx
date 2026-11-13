@@ -56,7 +56,7 @@ export interface ToolPaletteProps {
    *  complementary filters split a canvas's tools between two toolbars. */
   include?: ToolSet | ((tool: Tool) => boolean);
   /** The toolbar's accessible name. Default `"Tools"`. */
-  ariaLabel?: string;
+  'aria-label'?: string;
   /**
    * Tools that share one button, each stack a list of tool ids in menu order. The button shows
    * the stack's tool in use, or the one last used from it; a click opens a menu of the stack, and
@@ -104,7 +104,7 @@ const slotTools = (slot: PaletteSlot): Tool[] => (slot.kind === 'tool' ? [slot.t
 export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry, ineligible = 'dim',
-    groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, ariaLabel = 'Tools', stacks, stackCycle = 'alt',
+    groupOrder = TOOL_GROUP_ORDER, toolOrder = BUILTIN_TOOL_IDS, include, 'aria-label': ariaLabel = 'Tools', stacks, stackCycle = 'alt',
     columns, onToolDragStart, carryTool, carryGhost,
   } = props;
   const carry = useToolCarry(carryTool, carryGhost);

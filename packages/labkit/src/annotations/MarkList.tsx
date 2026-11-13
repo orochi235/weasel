@@ -37,7 +37,7 @@ export function MarkList({ meaning, config }: MarkListProps) {
               {stale ? <span className="lk-mark-list__stale">stale</span> : null}
               <CloseButton
                 className="lk-mark-list__drop"
-                ariaLabel={`Remove ${a.kind} on ${a.target}`}
+                aria-label={`Remove ${a.kind} on ${a.target}`}
                 onClick={() => marks.remove(a.id)}
               />
             </div>

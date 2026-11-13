@@ -134,7 +134,7 @@ function PresetRow({
         items={PRESET_NAMES.map((p) => ({ value: p, label: p }))}
         value={value}
         onChange={(p) => p && onChange(p)}
-        ariaLabel={`${label} preset`}
+        aria-label={`${label} preset`}
         size="sm"
       />
     </div>

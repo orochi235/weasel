@@ -27,8 +27,8 @@ export function ConditionClipboard({ clipboard, value, onPaste }: { clipboard: C
   return (
     <div className={s.clipboard}>
       {said && <span className={s.said} role="status">{said}</span>}
-      <Button variant="ghost" size="sm" ariaLabel="Copy condition" disabled={value === undefined} onClick={copy}>Copy</Button>
-      <Button variant="ghost" size="sm" ariaLabel="Paste condition" onClick={() => { void paste(); }}>Paste</Button>
+      <Button variant="ghost" size="sm" aria-label="Copy condition" disabled={value === undefined} onClick={copy}>Copy</Button>
+      <Button variant="ghost" size="sm" aria-label="Paste condition" onClick={() => { void paste(); }}>Paste</Button>
     </div>
   );
 }

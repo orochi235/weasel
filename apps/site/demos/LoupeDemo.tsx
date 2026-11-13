@@ -145,7 +145,7 @@ function Demo() {
           items={MODES}
           value={mode}
           onChange={(m) => { if (m) { setMode(m); loupeRef.current?.setMode(m); } }}
-          ariaLabel="Loupe mode"
+          aria-label="Loupe mode"
           size="sm"
         />
         <label className="ckd-field">

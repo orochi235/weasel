@@ -86,7 +86,7 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
   const bound = found && clauses ? openBound(found.leaf, clauses) : undefined;
   const write = (next: TestRow) => onChange(rowCondition(next));
   const nth = (i: number) => (i === 0 ? '' : ` ${i + 1}`);
-  const remove = <CloseButton className={s.removeRow} ariaLabel={`Remove ${name.toLowerCase()}`} onClick={onRemove} />;
+  const remove = <CloseButton className={s.removeRow} aria-label={`Remove ${name.toLowerCase()}`} onClick={onRemove} />;
   return (
     <div className={s.row} role="group" aria-label={name} data-invalid={problems.length > 0 || undefined}>
       <Select className={s.pref} aria-label={`${name} pref`} selectedKey={leafKey(test)}
@@ -109,11 +109,11 @@ export function ConditionRow({ name, row, scope, onChange, onRemove }: Condition
               <div className={s.value}>
                 {value}
                 {bound && i === clauses.length - 1 && (
-                  <Button variant="ghost" size="sm" ariaLabel={`Add a bound to ${name.toLowerCase()}`} onClick={() => write(withBound(row, bound))}>and…</Button>
+                  <Button variant="ghost" size="sm" aria-label={`Add a bound to ${name.toLowerCase()}`} onClick={() => write(withBound(row, bound))}>and…</Button>
                 )}
               </div>
             )}
-            {i === 0 ? remove : <CloseButton ariaLabel={`Remove ${name.toLowerCase()} comparison ${i + 1}`} onClick={() => write(withoutClause(row, comparison))} />}
+            {i === 0 ? remove : <CloseButton aria-label={`Remove ${name.toLowerCase()} comparison ${i + 1}`} onClick={() => write(withoutClause(row, comparison))} />}
             {!beside && value}
           </Fragment>
         );

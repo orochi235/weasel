@@ -42,7 +42,7 @@ type Story = StoryObj<typeof PrefsRail>;
 
 function Live({ foldable }: { foldable?: boolean }) {
   const [section, setSection] = useState(ITEMS[0]?.path ?? '');
-  return <PrefsRail items={ITEMS} section={section} onOpen={setSection} ariaLabel="Preference pages" foldable={foldable} />;
+  return <PrefsRail items={ITEMS} section={section} onOpen={setSection} aria-label="Preference pages" foldable={foldable} />;
 }
 
 /** Each page's entry, followed by those of the pages nested in it. The open page's entry is marked current. */

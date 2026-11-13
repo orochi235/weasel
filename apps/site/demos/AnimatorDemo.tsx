@@ -100,7 +100,7 @@ export function AnimatorDemo() {
           items={SPEEDS}
           value={speed}
           onChange={(v) => { if (v) { animator.setTimeScale(v); setSpeed(v); } }}
-          ariaLabel="Time scale"
+          aria-label="Time scale"
           size="sm"
         />
       </div>

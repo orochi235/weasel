@@ -84,7 +84,7 @@ export function MeshEditor(props: MeshEditorProps): ReactElement {
           items={SPACES}
           value={space}
           size="sm"
-          ariaLabel="Blend space"
+          aria-label="Blend space"
           onChange={(next) => next && onChange(asPaint({ ...value, interpolate: next }))}
         />
       )}

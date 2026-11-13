@@ -36,7 +36,7 @@ const parts = (value: string) => value.split('rgb').length - 1;
 type Variant = 'default' | 'minimal' | 'flat';
 const Segments = ({ variant }: { variant: Variant }) => (
   <OptionsBar
-    ariaLabel={variant}
+    aria-label={variant}
     variant={variant}
     items={['On', 'Off'].map((label, i) => ({ value: label, label, selected: i === 0, onChange: () => {} }))}
   />
