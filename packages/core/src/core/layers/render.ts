@@ -117,8 +117,8 @@ export interface RenderLayer<TData> {
   /**
    * Optional hit-test for **consumer-attached** layers.
    *
-   * Only layers registered through `CanvasExtensionApi.registerLayer` are
-   * hit-tested, last-registered-first, ahead of the kit's own selection
+   * Only layers registered through `CanvasExtensionApi.registerLayer`, or
+   * carried in a `SurfaceContribution`'s `layers`, are hit-tested, last-registered-first, ahead of the kit's own selection
    * chrome. First non-null result wins; null means "I don't claim this hit,
    * try the next layer."
    *

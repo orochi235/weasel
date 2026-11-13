@@ -10,7 +10,7 @@ the common extension points, and mounting tools in a host of your own.
 | **Action** | An operation: `start`/`onMove`/`onEnd` for a gesture, or one `run` | Named by a binding, or registered as a contribution's `actions` |
 | **Binding** | A gesture spec bound to an action id, optionally scoped to views (`opts.views`) | A contribution's `bindings`, or an action's `defaultBinding` |
 | **Layer** | A `RenderLayer`: draw commands for one frame, told which view it is drawing for (`data.viewId`) | A contribution's `overlay`, or the `layers` prop |
-| **Registered layer** | A layer that also hit-tests, painted above every view | `api.registerLayer`, usually from `attach` |
+| **Registered layer** | A layer that also hit-tests, painted above every view | A contribution's `layers`, or `api.registerLayer` |
 | **Dep** | A named live source actions read (`view`, `scene`, `rootView`, `pointer`, …) | A contribution's `deps`, or `useDepSource` |
 | **View** | A second camera over a rect of the surface, with input routed to it | A contribution's `views`, the `views` prop, or `<CanvasView>` |
 | **Tool** | A contribution the user switches into (`eligibility.focus`), with scratch and previews | `useTools` / the `tools` prop |
@@ -29,6 +29,7 @@ interface SurfaceContribution {
   actions?: Action[];
   deps?: { [name]: () => value };     // live while the entry is installed
   overlay?: RenderLayer | RenderLayer[];
+  layers?: RenderLayer[];             // registered and hit-tested, in entry order
   views?: CanvasViewProps[];
   attach?: (api, deps) => () => void; // anything the roles cannot say
   beforePaint?: (ctx) => void;        // every frame, before it paints
@@ -202,7 +203,7 @@ Rules it depends on, each general:
   the surface and every view; a layer that belongs in one view checks
   `data.viewId`. Registered layers are the exception: they paint above every
   view and inside none, so chrome that has to appear inside a view is an
-  `overlay`, never `attach` → `registerLayer`.
+  `overlay`, never a registered layer.
 
 The HUD is the other example: `useHudContribution(hud)` is one entry carrying
 its input routing and an `attach` that binds its registered layer.
