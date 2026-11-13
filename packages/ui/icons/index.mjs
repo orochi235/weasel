@@ -1,6 +1,5 @@
 import { BASE } from './base-glyphs.mjs';
 import { ARROWS, HIERARCHY } from './arrows.mjs';
-import { CAMERA } from './camera.mjs';
 import { CHROME } from './chrome.mjs';
 import { FILES } from './files.mjs';
 import { SIZE } from './size.mjs';
@@ -37,7 +36,6 @@ export const groups = [
   ['Key legends', KEYS],
   ['Hierarchy', HIERARCHY],
   ['Size', SIZE],
-  ['Camera moves', CAMERA],
   ['App chrome', CHROME],
   ['Files', FILES],
   ['State', STATUS],

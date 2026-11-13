@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from '@weasel-js/core';
+import { toolGaps, type ActionDeps, type ImmediateInvoker, type InvocationCtx, type OngoingInvoker } from '@weasel-js/core';
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { dollyAction, homeAction, orbitAction, panAction, pinchDollyAction, useOrbitTool } from './tools';
@@ -19,6 +19,12 @@ describe('useOrbitTool', () => {
   it('carries the actions its bindings name', () => {
     const { result } = renderHook(() => useOrbitTool());
     expect(result.current.actions).toEqual([orbitAction, panAction]);
+  });
+
+  it('is a complete tool, its glyph drawn here', () => {
+    const { result } = renderHook(() => useOrbitTool());
+    expect(toolGaps(result.current, () => false)).toEqual([]);
+    expect(result.current.presentation?.icon).toBe('kernel3d:orbit');
   });
 });
 

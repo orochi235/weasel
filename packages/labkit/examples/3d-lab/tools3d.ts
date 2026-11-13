@@ -8,6 +8,7 @@
 
 import { useMemo } from 'react';
 import { defineTool, type Tool } from '@weasel-js/routing';
+import { icon } from '../../src/icons.gen';
 
 export function useBoxTool(): Tool {
   return useMemo(() => defineTool({
@@ -15,9 +16,9 @@ export function useBoxTool(): Tool {
     capabilities: ['creates-shapes'],
     hookName: 'useBoxTool',
     cursor: 'crosshair',
-    presentation: { label: 'Box', group: 'shape' },
+    presentation: { label: 'Box', icon: icon('ui:cube'), group: 'shape' },
     bindings: [
-      { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'rect' } } },
+      { spec: { kind: 'drag' }, actionId: 'insert', opts: { id: 'box.drag', params: { kind: 'rect' } } },
     ],
   }), []);
 }

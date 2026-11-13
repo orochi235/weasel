@@ -10,11 +10,9 @@ import {
 import { CANVAS_CONTEXT_ATTRIBUTES, WeaselProvider, createPoseFeed, createSnapOutcomeStore, useSelectToolWith, selectionMoveContribution, useStandardDeps, useActionSet, ENGINE_STANDARD_ACTIONS } from '@weasel-js/core/engine';
 import { DEFAULT_ALLOWED_CAPABILITIES, buildRuleCtx, createDispatcher, type Dispatcher, type NodeId, type Tool, type WorldPoint } from '@weasel-js/routing';
 import { useAction, useActionsRegistry, useActiveToolContext, useDepSource, useGestureDispatcher, useTools } from '@weasel-js/routing/react';
-import type { IconRef } from '@weasel-js/icons';
 import { ToolPalette } from '@weasel-js/ui/components/ToolPalette';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { f } from '../../src/config';
-import { icon } from '../../src/icons.gen';
 import { defineInstrument } from '../../src/instrument/defineInstrument';
 import type { RenderContext } from '../../src/instrument/types';
 import { useSurface, useSurfaceCanvas, useSurfaceTile, useTileId } from '../../src/surface';
@@ -66,10 +64,6 @@ const HOME = createCamera({ distance: 14, pitch: 0.45, yaw: 0.6, target: { x: 0,
  * dispatcher, core's actions, core's select tool, and a set of deps that read
  * the same two numbers the 2D kit reads and turn them into rays.
  */
-/** `tool` showing `glyph` in a palette. */
-function withIcon(tool: Tool, glyph: IconRef): Tool {
-  return { ...tool, presentation: { ...tool.presentation, icon: glyph } };
-}
 
 function Viewport({ config }: { config: SolidConfig }): ReactNode {
   const paneRef = useRef<HTMLDivElement | null>(null);
@@ -337,11 +331,8 @@ function Viewport({ config }: { config: SolidConfig }): ReactNode {
   );
 
   const select = useSelectToolWith(selectAdapter, { pickEvery, pickBest, poseDescriptor });
-  // kernel3d's orbit tool and the lab's box tool name no glyph; the palette shows ui's.
-  const orbitTool = useOrbitTool();
-  const boxTool = useBoxTool();
-  const orbit = useMemo(() => withIcon(orbitTool as Tool, icon('ui:orbit')), [orbitTool]);
-  const box = useMemo(() => withIcon(boxTool, icon('ui:cube')), [boxTool]);
+  const orbit = useOrbitTool() as Tool;
+  const box = useBoxTool();
   // The select tool only picks; dragging a solid to move it is the
   // selection's own ambient binding, live under every tool here.
   const selectionMove = useMemo(() => selectionMoveContribution() as Tool, []);
