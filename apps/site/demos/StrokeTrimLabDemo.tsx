@@ -5,12 +5,12 @@ import {
   pathFromD,
   rectPath,
   solid,
+  type ExportScene,
   type Path,
   type RectPose,
   type Stroke,
   type StrokeAlign,
 } from '@weasel-js/core';
-import { exportPageSvg, exportPagesPdf, type PageExportScene } from '@weasel-js/export';
 import { asPolygonPath } from '@weasel-js/geom';
 import {
   type ConfigOf,
@@ -23,6 +23,8 @@ import {
   useTrialScene,
 } from '@weasel-js/labkit';
 import { dashForStrokeStyle } from '@weasel-js/paint';
+import { exportRegionsPdf } from '@weasel-js/pdf';
+import { exportRegionSvg } from '@weasel-js/svg';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import s from './StrokeTrimLabDemo.module.css';
@@ -105,11 +107,11 @@ const createLabScene = (cfg: Config) => () =>
   });
 
 /** The scene as the SVG export writes it, drawn by the browser's own SVG renderer. */
-function SvgExport({ scene, version }: { scene: PageExportScene; version: string }) {
+function SvgExport({ scene, version }: { scene: ExportScene; version: string }) {
   const [svg, setSvg] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    void exportPageSvg(scene, PAGE, { background: '#ffffff' }).then((text) => live && setSvg(text));
+    void exportRegionSvg(scene, PAGE, { background: '#ffffff' }).then((text) => live && setSvg(text));
     return () => { live = false; };
   }, [scene, version]);
   return svg === null ? null : (
@@ -118,7 +120,7 @@ function SvgExport({ scene, version }: { scene: PageExportScene; version: string
 }
 
 /** Writes the scene as a PDF and opens it in the browser's viewer. */
-function PdfExport({ scene }: { scene: PageExportScene }) {
+function PdfExport({ scene }: { scene: ExportScene }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
   const live = useRef(false);
@@ -127,7 +129,7 @@ function PdfExport({ scene }: { scene: PageExportScene }) {
     return () => { live.current = false; };
   }, []);
   const write = async () => {
-    const { blob } = await exportPagesPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
+    const { blob } = await exportRegionsPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
     if (live.current) setUrl(URL.createObjectURL(blob));
   };
   return (
@@ -151,7 +153,7 @@ function TrimTrial({ ctx }: { ctx: RenderContext<State, Config> }) {
     // `version` stands for `cfg`, whose identity changes on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene, version]);
-  const page = scene as unknown as PageExportScene;
+  const page = scene as unknown as ExportScene;
   return (
     <div className={s.trial}>
       <div className={s.canvas}>

@@ -43,7 +43,6 @@ export const BUILD_ORDER = [
   '@weasel-js/headless',
   '@weasel-js/loupe',
   '@weasel-js/svg',
-  '@weasel-js/export',
   '@weasel-js/d3',
   '@weasel-js/diagram',
   '@weasel-js/diagram-elk',

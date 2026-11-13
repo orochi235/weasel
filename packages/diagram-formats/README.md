@@ -4,7 +4,8 @@ Turns `@weasel-js/diagram` scenes into files and files into scenes. Every
 format reads and writes one interchange document, built on the diagram
 package's `DiagramData`. One page at a time exports as an SVG document or a
 PNG image, and every page together as one PDF, each showing the page as the
-canvas draws it, through `@weasel-js/export`.
+canvas draws it, through the region exports of `@weasel-js/core`,
+`@weasel-js/svg` and `@weasel-js/pdf`.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -387,12 +388,13 @@ is written as its own `activate` or `deactivate` line.
 ## Exporting a page
 
 `exportPageSvg`, `exportPagePng`, `exportPagesPdf` and `pageSvgNodes` are
-`@weasel-js/export`'s page exports, which work on any scene; its README covers
-pages, options and what each format carries. The ones here add what a diagram
-needs:
+the region exports that work on any scene, taken a page at a time: core's
+`exportRegionPng`, `@weasel-js/svg`'s `exportRegionSvg` and `regionSvgNodes`,
+and `@weasel-js/pdf`'s `exportRegionsPdf`, whose READMEs cover options and
+what each format carries. The ones here add what a diagram needs:
 
 - `background` defaults to the page color of the scene's diagram theme
-  (`diagram:theme`), where `@weasel-js/export` paints none. `null` paints none.
+  (`diagram:theme`), where the region exports paint none. `null` paints none.
 - The SVG draws diagram outlines and drawn marks with the diagram painters
   whether or not they are registered.
 
