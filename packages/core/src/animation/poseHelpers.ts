@@ -52,6 +52,9 @@ export interface SpringPoseOptions<TPose> {
   stiffness?: number;
   damping?: number;
   mass?: number;
+  /** Supplies the pose's axes. On an adapter with `poseTarget` the spring moves each axis on its
+   *  own, so a `lerp` here does not bend the move; `tweenPose` follows one. Only an adapter
+   *  without `poseTarget` springs along `lerp`. */
   geometry?: PoseDescriptor<TPose>;
   recordOp?: boolean;
   opLabel?: string;
@@ -216,6 +219,9 @@ export interface StaggerSpringPoseOptions<TItem, TPose> extends StaggerOptions {
   stiffness?: number;
   damping?: number;
   mass?: number;
+  /** Supplies the pose's axes. On an adapter with `poseTarget` the spring moves each axis on its
+   *  own, so a `lerp` here does not bend the move; `tweenPose` follows one. Only an adapter
+   *  without `poseTarget` springs along `lerp`. */
   geometry?: PoseDescriptor<TPose>;
   recordOp?: boolean;
   opLabel?: string;
