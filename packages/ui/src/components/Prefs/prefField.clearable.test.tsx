@@ -33,6 +33,11 @@ describe('prefFieldProps for a clearable number', () => {
     expect(input).toHaveValue('3');
   });
 
+  it('shows its placeholder while unset', () => {
+    const { input } = field(number({ clearable: true, placeholder: 'auto' }), undefined);
+    expect(input).toHaveAttribute('placeholder', 'auto');
+  });
+
   it('bounds the value by a minimum alone', () => {
     const { setValue, input } = field(number({ min: 2 }), 3);
     input.focus();

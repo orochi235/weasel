@@ -65,6 +65,12 @@ describe('repairPrefValue', () => {
     expect(repairPrefValue(c, 0xffffff)).toBe('#000');
   });
 
+  it('cuts a stored string to the leaf\'s maxLength', () => {
+    const s = { kind: 'string', name: 'S', description: '', default: 'x', maxLength: 3 } as PrefLeaf;
+    expect(repairPrefValue(s, 'abcdef')).toBe('abc');
+    expect(repairPrefValue(s, 'ab')).toBe('ab');
+  });
+
   it('defaults a color no color reader reads, and keeps any CSS color the kit reads', () => {
     const c = { kind: 'color', name: 'C', description: '', default: '#000' } as PrefLeaf;
     expect(repairPrefValue(c, 'notacolor')).toBe('#000');

@@ -50,8 +50,7 @@ export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unkn
 }
 
 /**
- * A leaf as the field it draws, with the labkit-only extras `prefFieldProps`
- * knows nothing of. Given `draft`, a control the lab leaves live sends the
+ * A leaf as the field it draws. Given `draft`, a control the lab leaves live sends the
  * values its edit passes through there and the one it settles on to `write`;
  * without it, a typed field writes only that settled value. `null` for a kind with no one field: a paint, which a
  * hex swatch would flatten to a solid and the panel declines, and an object,
@@ -82,7 +81,7 @@ export function labField(
     textWaitMs,
   );
   if (settled === null) return null;
-  const field = draft
+  return draft
     ? withDrafts(
         settled,
         prefFieldProps(leaf, { ...state, setValue: draft }, 'lab', settles),
@@ -90,23 +89,6 @@ export function labField(
         settles,
       )
     : settled;
-  switch (field.kind) {
-    case 'number':
-      // `prefFieldProps` clamps what it stores, so an instrument is never
-      // handed a value outside the range it asked for.
-      return {
-        ...field,
-        placeholder: extra<string>(leaf, 'placeholder'),
-      };
-    case 'string':
-      return {
-        ...field,
-        placeholder: extra<string>(leaf, 'placeholder'),
-        maxLength: extra<number>(leaf, 'maxLength'),
-      };
-    default:
-      return field;
-  }
 }
 
 /** A leaf's control without the row chrome a whole row of its own would
