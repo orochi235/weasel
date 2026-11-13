@@ -90,7 +90,7 @@ describe('EffectEditor groups under nodeGraph', () => {
     expect(onSelectGroup).toHaveBeenLastCalledWith(null);
   });
 
-  it('picks several under Shift, and reports every stage and group picked, wires left out', () => {
+  it('picks several, and reports every stage and group picked, wires left out', () => {
     const onSelect = vi.fn();
     const api = createRef<EffectEditorApi>();
     render(<EffectEditor ref={api} doc={DOC} onChange={vi.fn()} onSelect={onSelect} width={800} height={600} />);
