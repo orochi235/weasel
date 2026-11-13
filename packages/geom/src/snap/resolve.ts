@@ -51,7 +51,7 @@ export interface SnapProblem<M> {
    *  which are all kept. Default 24. */
   poolSize?: number;
   /** World-space tolerance for "on the locus". Default 1e-6. */
-  eps?: number;
+  tolerance?: number;
 }
 
 /** The move `resolveSnap` chose and the candidates it meets. */
@@ -266,7 +266,7 @@ export function resolveSnap<M>(problem: SnapProblem<M>): SnapResolution<M> {
   const { input, delta0 } = problem;
   let base = closestOnFlat(input, delta0);
   if (!isFiniteVec(base)) base = isFiniteVec(input.at) ? input.at : input.at.map(() => 0);
-  const m = makeMeasure(problem, base, problem.eps ?? DEFAULT_EPS);
+  const m = makeMeasure(problem, base, problem.tolerance ?? DEFAULT_EPS);
   const hDim = flatDim(input);
   const root: Combo<M> = {
     members: [], flat: input, dim: hDim, targetFlat: input, delta: base, codim: 0, targetCodim: 0, px: 0,
