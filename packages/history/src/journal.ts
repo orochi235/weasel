@@ -35,7 +35,8 @@ export function _resumeJournalInternal(j: Journal): void {
 
 /** Options for `history.beginJournal()`. */
 export interface BeginJournalOptions {
-  /** Label for the single parent-history entry the journal flushes on commit. */
+  /** Label for the single parent-history entry the journal flushes on commit, unless
+   *  `commit` names another. */
   label: string;
   /** Caller-supplied tag naming what this journal is scoped to — typically the
    *  id of the node being edited. The history layer only carries it; callers
@@ -91,8 +92,9 @@ export interface Journal {
   subscribe(listener: () => void): () => void;
 
   // Lifecycle
-  /** Throws while a journal opened inside this one is still active or suspended. */
-  commit(label: string): void;
+  /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
+   *  opened with. Throws while a journal opened inside this one is still active or suspended. */
+  commit(label?: string): void;
   /** Cancels every journal still open inside this one first, suspended ones included. */
   cancel(): void;
   suspend(): void;
@@ -176,7 +178,7 @@ export function createJournalInternal(
     },
     getVersion: () => version,
     subscribe: changed.subscribe,
-    commit(label: string): void {
+    commit(label: string = opts.label): void {
       if (state !== 'active') throw new Error('Journal is not active');
       // Its ops are applied but recorded nowhere this commit reads.
       if (openChildren().length > 0) throw new Error('A journal inside this one is still active or suspended — commit or cancel it first');

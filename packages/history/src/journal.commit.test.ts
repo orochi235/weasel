@@ -50,6 +50,14 @@ describe('Journal.commit', () => {
     expect(adapter.values).toEqual([]);
   });
 
+  it('labels the entry with the label the journal opened with when commit names none', () => {
+    const parent = createHistory({ values: [] as number[] });
+    const j = parent.beginJournal({ label: 'session' });
+    j.applyBatch([pushOp(1)], 'a');
+    j.commit();
+    expect(parent.entries().undo[0].label).toBe('session');
+  });
+
   it('committing an empty journal pushes nothing to parent', () => {
     const adapter = { values: [] as number[] };
     const parent = createHistory(adapter);
