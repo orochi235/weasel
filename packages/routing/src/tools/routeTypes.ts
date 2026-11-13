@@ -47,7 +47,8 @@ export interface ToolDef<TOverlay = KernelOverlay> {
    *  while this is the active tool: chrome its own controls stand in for. */
   hides?: readonly string[];
 
-  /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
+  /** The export that builds this tool, as the kit barrel names it: its hook (`'useHandTool'`),
+   *  or the constant for a tool that needs none (`'anchorsTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored
    *  tools may set this to surface their hook name; omitted is fine.
    *  Introspection-only — do not make this load-bearing in production.
