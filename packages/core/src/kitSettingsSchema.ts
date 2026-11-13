@@ -1,4 +1,4 @@
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import {
   DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, DRAG_THRESHOLD_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX,
 } from '@weasel-js/gestures';
@@ -15,8 +15,8 @@ import { DEFAULT_SNAP_PX } from 'domains/snap/session2d';
 import { SLICE_CLOSE_HIT_PX, VERTEX_RADIUS_PX } from 'tools/builtin/slice/useSliceTool';
 
 const ms = { scale: 1, suffix: 'ms' };
-const px = { scale: 1, suffix: 'px' };
-const pxLeaf = (name: string, def: number, max = 48) => pref.number(name, def, { unit: px, min: 1, max, step: 0.5 });
+
+const pxLeaf = (name: string, def: number, max = 48) => pref.number(name, def, { unit: PX_UNIT, min: 1, max, step: 0.5 });
 const msLeaf = (name: string, def: number, min = 50, max = 2000) => pref.number(name, def, { unit: ms, min, max, step: 10 });
 
 /**
@@ -42,8 +42,8 @@ export const coreKitSettingsSchema = pref.group('Canvas', {
     rotationDistancePx: pxLeaf('Rotation handle distance', ROTATION_HANDLE_BASE_PX, 96),
     segmentHitPx: pxLeaf('Segment reach', SEGMENT_HIT_PX),
     anchorClickPx: pxLeaf('Anchor click reach', ANCHOR_CLICK_PX),
-    pickTolerancePx: pref.number('Shape pick slop', DEFAULT_PICK_TOLERANCE_PX, { unit: px, min: 0, max: 24, step: 0.5 }),
-    snapPx: pref.number('Snap reach', DEFAULT_SNAP_PX, { unit: px, min: 0, max: 48, step: 0.5 }),
+    pickTolerancePx: pref.number('Shape pick slop', DEFAULT_PICK_TOLERANCE_PX, { unit: PX_UNIT, min: 0, max: 24, step: 0.5 }),
+    snapPx: pref.number('Snap reach', DEFAULT_SNAP_PX, { unit: PX_UNIT, min: 0, max: 48, step: 0.5 }),
     penAnchorRadiusPx: pxLeaf('Pen anchor dot', ANCHOR_RADIUS_PX, 16),
     penHandleDotRadiusPx: pxLeaf('Pen handle dot', HANDLE_DOT_RADIUS_PX, 16),
     penCloseHintRadiusPx: pxLeaf('Pen close hint', CLOSE_HINT_RADIUS_PX, 24),

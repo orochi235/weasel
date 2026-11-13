@@ -1,5 +1,5 @@
 import type {} from '@weasel-js/react';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { JOINT_RADIUS_PX } from './bone/boneOverlay';
 import { POINT_RADIUS_PX } from './weight/weightOverlay';
 
@@ -15,7 +15,7 @@ declare module '@weasel-js/react' {
 }
 
 const pxLeaf = (name: string, def: number) =>
-  pref.number(name, def, { unit: { scale: 1, suffix: 'px' }, min: 1, max: 16, step: 0.5 });
+  pref.number(name, def, { unit: PX_UNIT, min: 1, max: 16, step: 0.5 });
 
 /** The rig tools' `targets` leaves as a prefs group whose paths are the `KitSettings` paths. */
 export const rigKitSettingsSchema = pref.group('Rig', {

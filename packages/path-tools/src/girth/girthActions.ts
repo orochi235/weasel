@@ -1,6 +1,6 @@
 import type { Action, ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { ActionDisabledReason, resolveParams } from '@weasel-js/routing';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import { meanScale, pathToAnchors, pxReach, type PolygonPath, type Point } from '@weasel-js/geom';
 import type { VertexWidth } from '@weasel-js/paint';
 import { commitOps, reshapeTo, type Scene } from '@weasel-js/core';
@@ -53,7 +53,7 @@ export const DEFAULT_GIRTH_REACH_PX = 6;
 export const GIRTH_DRAG_PARAMS = pref.group('Stroke width', {
   reach: pref.number('Grab reach', DEFAULT_GIRTH_REACH_PX, {
     description: 'How near the edge, and how near an anchor along the path, a press has to land to take the anchor there rather than add a width point.',
-    min: 1, max: 30, step: 1, control: 'slider', unit: { scale: 1, suffix: 'px' },
+    min: 1, max: 30, step: 1, control: 'slider', unit: PX_UNIT,
   }),
   oneSided: pref.boolean('One edge only', false, { description: 'Move only the edge you dragged, leaving the other where it was. Alt during the drag flips it.' }),
 });

@@ -2,7 +2,7 @@ import {
   type Action, ActionDisabledReason, type InvocationCtx, type OngoingHandle, resolveParams,
 } from '@weasel-js/routing';
 import { brushRing } from '@weasel-js/cursor';
-import { pref } from '@weasel-js/prefs';
+import { pref, PX_UNIT } from '@weasel-js/prefs';
 import {
   anchorsUnderBrush, editAnchorSetTracked, pathToAnchors, simplifyAnchorsAt,
   type AnchorSet, type PointOrigin, type PolygonPath,
@@ -20,7 +20,7 @@ const LABEL = 'Simplify brush';
  *  (`SIMPLIFY_BRUSH_TOOL_OPTIONS`), which are one setting. */
 export const SIMPLIFY_BRUSH_PARAMS = pref.group(LABEL, {
   radiusPx: pref.number('Size', SIMPLIFY_BRUSH_RADIUS_PX, {
-    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider',
+    description: 'The brush radius, in screen pixels.', min: 2, max: 400, step: 1, control: 'slider', unit: PX_UNIT,
   }),
   tolerance: pref.number('Tolerance', DEFAULT_SIMPLIFY_TOLERANCE, {
     description: 'How far the refit outline may stray from the anchors it replaces.', min: 0.1, max: 20, step: 0.1, control: 'slider',
