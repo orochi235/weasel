@@ -57,6 +57,8 @@ export interface WalkCtx {
   targets?: PrefAliasTargets;
   /** Paths of the rows whose labels are drawn as changed. */
   changed?: ReadonlySet<string>;
+  /** What is wrong with a row's value, by its path. */
+  errors?: ReadonlyMap<string, ReactNode>;
   /** Paths of the rows and groups the form marks as selected. */
   selected?: readonly string[];
   /** The one of `selected` the form brings into view and opens the page of. */
@@ -216,6 +218,7 @@ function LeafRow({ ctx, path: own, pref, at }: { ctx: WalkCtx; path: string; pre
     <PropertyRow
       label={pref.name}
       changed={ctx.changed?.has(path)}
+      error={ctx.errors?.get(path)}
       mixed={renderCtx.mixedAt?.(path, true)}
       description={pref.description}
       layout={stacked ? 'block' : 'inline'}
