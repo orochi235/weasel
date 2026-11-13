@@ -1,6 +1,6 @@
 import {
-  SceneCanvas, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
-  type Tool, type ToolsApi,
+  SceneCanvas, createToolOptionValues, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
+  useToolOptionValues, type Tool, type ToolOptionValues, type ToolsApi,
 } from '@weasel-js/core';
 import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
@@ -23,7 +23,7 @@ import { PlotDataSection } from './PlotDataSection';
 import { ChartPageStrip } from './pages/ChartPageStrip';
 import { useChartPages } from './pages/useChartPages';
 import { useFittedView } from './pages/useFittedView';
-import { isSequenceTool, SequencePanel, useSequenceChoices } from './SequencePanel';
+import { isSequenceTool, SequencePanel } from './SequencePanel';
 import { isStencilTool, StencilPanel } from './StencilPanel';
 import { StylePanel } from './theme/StylePanel';
 import { ChartToolbar } from './toolbar/ChartToolbar';
@@ -49,6 +49,12 @@ const isEditableText = (data: ChartData): boolean =>
 
 /** What closing a text edit writes besides the text: an emptied edge label removed, a sequence's or a chart's text folded
  *  into its data. */
+/** Publishes `values` as the canvas's `toolOptionValues` dep, which the Sequence panel's pickers write. */
+function ToolOptionValuesPublisher({ values }: { values: ToolOptionValues }): null {
+  useToolOptionValues(values);
+  return null;
+}
+
 function endTextEdit(scene: ChartScene, id: string): void {
   dropEmptyEdgeLabel(scene, id);
   const loose = scene as never;
@@ -69,8 +75,8 @@ export function ChartWorkspace(): ReactElement {
   const selection = useSelection({ mode: 'multi', scene });
   useSessionPersistence(scene, { ...CHART_SESSION, onSaved: reportChartSave });
   const theme = chartThemeOf(scene);
-  const sequence = useSequenceChoices();
-  const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene), sequence.readers);
+  const [toolOptionValues] = useState(createToolOptionValues);
+  const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene));
   const plot = useMemo(() => plotEditing({ scene: scene as never }), [scene]);
   // The plot's handles first, so a diagram handle beside one is hit over it.
   const ambient = useMemo(() => [plot, ...diagram.ambient], [diagram.ambient, plot]);
@@ -108,7 +114,7 @@ export function ChartWorkspace(): ReactElement {
         <Sidebar side="left" className="wc-sidebar" aria-label="Shapes">
           {tools && <StencilPanel tools={tools} scene={scene} theme={theme} scale={Math.abs(view.scale.x)} />}
           {tools && (
-            <SequencePanel tools={tools} scene={scene} selected={selection.current} choices={sequence.choices} onChoose={sequence.set} />
+            <SequencePanel tools={tools} scene={scene} selected={selection.current} values={toolOptionValues} />
           )}
         </Sidebar>
         <div className="wc-stage">
@@ -134,6 +140,7 @@ export function ChartWorkspace(): ReactElement {
                 alphaFor={alphaFor}
                 layers={layers}
               >
+                <ToolOptionValuesPublisher values={toolOptionValues} />
                 <StencilInsertPublisher theme={theme} />
                 <WaypointFollowerPublisher scene={scene} />
                 <BodyFollowerPublisher scene={scene} />

@@ -7,7 +7,6 @@ import {
   registerDiagramShape, roleStyle, sceneParticipants, stencilKind, stencilTool, themeFont,
   themeLabelStyle, useAvoidRouting, useFaceRemeasure, useHops, useLabelPlacement, rendererMeasure, useConnectorTool, useOffPageMarkers,
   useSequenceTools, useStencilInsert, waypointFollower, type DiagramStencil, type DiagramTheme, type DiagramType,
-  type SequenceToolsOptions,
 } from '@weasel-js/diagram';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useAutoLayoutCommand } from './autoLayout';
@@ -49,10 +48,9 @@ export interface ChartDiagram {
 /** The diagram editing chart mode adds to its canvas: ports, route handles, edge ends, edge labels, where they
  *  settle and dragging them, lanes, off-page tags, the connector and the stencils, a stencil carried in from the
  *  Shapes panel, a sequence diagram's parts dragged and its tools, and Arrange › Auto layout. What it inserts is
- *  drawn in `theme`, its connectors as `type` starts them, its sequence parts as `sequence` reads them. */
+ *  drawn in `theme`, and its connectors as `type` starts them. */
 export function useChartDiagram(
   scene: ChartScene, selection: SelectionApi, theme: DiagramTheme, type: DiagramType,
-  sequence: Pick<SequenceToolsOptions, 'participant' | 'arrow' | 'fragment' | 'mark'>,
 ): ChartDiagram {
   useEffect(() => registerDiagramShape<ChartPose>(), []);
   useFaceRemeasure(scene, LABEL_PLACEMENT);
@@ -78,7 +76,7 @@ export function useChartDiagram(
   const label = useMemo(() => edgeLabel(theme), [theme]);
   const drop = useMemo(() => stencilDrop(participants), [participants]);
   const sequenceEdit = useMemo(() => diagramSequence({ scene: scene as never, measure: rendererMeasure }), [scene]);
-  const sequenceTools = useSequenceTools({ measure: rendererMeasure, ...sequence });
+  const sequenceTools = useSequenceTools({ measure: rendererMeasure });
   useOffPageMarkers<ChartPose>(scene as never, { theme: CHART_DEFAULT_THEME });
   return useMemo(() => ({
     // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and a press on it must start

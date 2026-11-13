@@ -10,6 +10,7 @@ import { addParticipant, newParticipant, type SeqParticipantKind } from './autho
 import { insertMark, insertNote } from './authorSteps';
 import { columnIndexAt, columnNear, sequenceAt, slotNear, type SequenceHit } from './authorPlace';
 import { sequenceCommitOf, startSequence, type SequenceEditOptions } from './commit';
+import { SEQUENCE_MARK_PARAMS, SEQUENCE_PARTICIPANT_PARAMS } from './authorParams';
 
 import type { SeqMark, SequenceData } from './types';
 
@@ -66,7 +67,7 @@ export function createAddParticipantAction(opts: SequenceAuthorOptions = {}): Ac
       if (deps.scene !== undefined) startSequence(deps.scene as AnyScene, at, data, 'Add sequence', opts);
     };
   return {
-    id: ADD_PARTICIPANT_ACTION_ID, label: 'Add participant', group: 'diagram', requires: ['scene'],
+    id: ADD_PARTICIPANT_ACTION_ID, label: 'Add participant', group: 'diagram', requires: ['scene'], params: SEQUENCE_PARTICIPANT_PARAMS,
     invoker: {
       timing: 'immediate',
       run(deps, params) {
@@ -132,7 +133,7 @@ const MARKS: ReadonlySet<string> = new Set<SeqMark['kind']>(['activate', 'deacti
 export function createAddMarkAction(opts: SequenceEditOptions = {}): Action {
   const commit = sequenceCommitOf(opts);
   return {
-    id: ADD_MARK_ACTION_ID, label: 'Add lifeline mark', group: 'diagram', requires: ['scene'],
+    id: ADD_MARK_ACTION_ID, label: 'Add lifeline mark', group: 'diagram', requires: ['scene'], params: SEQUENCE_MARK_PARAMS,
     invoker: {
       timing: 'immediate',
       run(deps, params) {
