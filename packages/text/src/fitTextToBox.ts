@@ -15,7 +15,7 @@ function scaled(v: ScreenLength, k: number): ScreenLength {
  * reader that writes the sizes out rather than laying the text out, such as
  * an export; a pose with nothing to shrink comes back without `fit`, as is.
  */
-export function fittedTextPose(pose: TextPose, scale = 1): TextPose {
+export function fitTextToBox(pose: TextPose, scale = 1): TextPose {
   const { fit: _, ...rest } = pose;
   const k = textFitScale(pose, scale);
   if (k === 1) return rest;

@@ -62,7 +62,7 @@ export {
   layoutTextPose,
   textPoseLayoutInput,
   textFitScale,
-  fittedTextPose,
+  fitTextToBox,
   TEXT_FIT_TOLERANCE,
   measureText,
   measuredWidth,

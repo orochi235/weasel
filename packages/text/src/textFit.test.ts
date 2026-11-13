@@ -12,7 +12,7 @@ import { _resetLayoutCacheForTests } from './test-seams';
 import { layoutTextPose, textFitScale, textPoseLayoutInput } from './layout/textPoseLayout';
 import { TEXT_FIT_TOLERANCE, scaleRuns } from './layout/textFit';
 import { layoutRuns } from './layout/layoutRuns';
-import { fittedTextPose } from './fittedTextPose';
+import { fitTextToBox } from './fitTextToBox';
 import { fitTextPose } from './fitTextPose';
 import { measureTextBounds } from './measure/measureTextBounds';
 import { textLineBoxes } from './measure/lineBoxes';
@@ -122,7 +122,7 @@ describe("fit: 'shrink'", () => {
 
   it('settles into a pose that states the fitted sizes and lays out alike', () => {
     const pose = headline({ runs: [{ text: 'HEAD' }, { text: 'LINE', fontSize: { px: 80 } }] });
-    const settled = fittedTextPose(pose);
+    const settled = fitTextToBox(pose);
     expect(settled.fit).toBeUndefined();
     expect(boundsOf(settled).width).toBeCloseTo(boundsOf(pose).width, 6);
     expect(settled.runs![1]!.fontSize).toEqual({ px: 80 * textFitScale(pose) });

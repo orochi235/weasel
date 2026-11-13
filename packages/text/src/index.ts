@@ -53,7 +53,7 @@ export {
 } from './layout/layoutCache';
 export { layoutTextPose, textPoseLayoutInput, textFitScale } from './layout/textPoseLayout';
 export { TEXT_FIT_TOLERANCE, type TextFit } from './layout/textFit';
-export { fittedTextPose } from './fittedTextPose';
+export { fitTextToBox } from './fitTextToBox';
 export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
 export type { BidiEngine, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export { registerBidi, registeredBidi, paragraphDirection, warnRtlWithoutEngine } from './layout/bidiRegistry';
