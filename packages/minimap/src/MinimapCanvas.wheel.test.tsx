@@ -39,7 +39,7 @@ const drawOne = (): DrawCommand[] => [];
 const MAIN: View = { x: 10, y: 20, scale: { x: 2, y: 2 } };
 const MAIN_DIMS = { width: 400, height: 300 };
 
-function mount(wheelZoom?: boolean | ZoomClampOptions, mainView: View = MAIN) {
+function mount(zoom?: boolean | ZoomClampOptions, mainView: View = MAIN) {
   const scene = makeScene();
   const onChange = vi.fn<(v: View) => void>();
   const { container } = render(
@@ -52,7 +52,7 @@ function mount(wheelZoom?: boolean | ZoomClampOptions, mainView: View = MAIN) {
       height={100}
       drawOne={drawOne}
       poseDescriptor={descriptor}
-      {...(wheelZoom === undefined ? {} : { wheelZoom })}
+      {...(zoom === undefined ? {} : { zoom })}
     />,
   );
   const fit = computeFitView(scene, { width: 100, height: 100 }, 'scene', descriptor);

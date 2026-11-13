@@ -16,7 +16,7 @@ import {
   computeFitView, FALLBACK_FIT_VIEW, type IndicatorStyle, type MinimapFit,
 } from './minimapMath';
 import {
-  minimapBindings, minimapCenterAction, minimapPanAction, minimapZoomAction,
+  minimapBindings, minimapCenterAction, minimapPanAction, minimapPinchAction, minimapZoomAction,
 } from './actions';
 import { createIndicatorLayer, createLinkedCursorLayer } from './layers';
 import { accentColorOf, FALLBACK_ACCENT, watchThemeOf } from '@weasel-js/core';
@@ -103,10 +103,10 @@ export interface MinimapContributionOptions<TData = unknown, TLayer extends stri
   background?: string;
   /** The visible-rect indicator's stroke. */
   indicatorStyle?: IndicatorStyle;
-  /** The wheel, and a trackpad pinch, over the minimap zoom the main camera about the world point under the
-   *  cursor, as `<MinimapCanvas wheelZoom>` does. Pass the main view's zoom limits to clamp to them, or `false`
-   *  to bind no wheel. Default `true`. */
-  wheelZoom?: boolean | ZoomClampOptions;
+  /** The wheel, a trackpad pinch and a two-finger touch pinch over the minimap zoom the main camera about the
+   *  world point under the cursor or between the fingers, as `<MinimapCanvas zoom>` does. Pass the main view's
+   *  zoom limits to clamp to them, or `false` to bind none of them. Default `true`. */
+  zoom?: boolean | ZoomClampOptions;
 }
 
 const DEFAULT_BACKGROUND = '#18181c';
@@ -120,7 +120,7 @@ const DEFAULT_BACKGROUND = '#18181c';
  * ```
  *
  * Press in it to center the main camera on that point, drag to keep it there,
- * and wheel to zoom the main camera about the point under the cursor. It shows the main camera's visible rect, and a crosshair where the pointer is
+ * and wheel or pinch to zoom the main camera about the point under the cursor or between the fingers. It shows the main camera's visible rect, and a crosshair where the pointer is
  * over the other view. Build it once — each instance keeps the live state its
  * layers read.
  */
@@ -128,8 +128,8 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
   opts: MinimapContributionOptions<TData, TLayer, TPose>,
 ): SurfaceContribution {
   const id = opts.id ?? 'minimap';
-  const wheel = opts.wheelZoom ?? true;
-  const zoom = wheel === false ? null : { clamp: typeof wheel === 'object' ? wheel : undefined };
+  const zoomOpt = opts.zoom ?? true;
+  const zoom = zoomOpt === false ? null : { clamp: typeof zoomOpt === 'object' ? zoomOpt : undefined };
   const fit = (opts.fit ?? 'scene') as MinimapFit<unknown, string, unknown>;
   let deps: ContributionDepReader | null = null;
 
@@ -176,7 +176,10 @@ export function createMinimapContribution<TData = unknown, TLayer extends string
       background: opts.background ?? DEFAULT_BACKGROUND,
       ...(opts.layers ? { layers: opts.layers } : {}),
     }],
-    actions: [minimapCenterAction(), minimapPanAction(), ...(zoom ? [minimapZoomAction(zoom.clamp)] : [])],
+    actions: [
+      minimapCenterAction(), minimapPanAction(),
+      ...(zoom ? [minimapZoomAction(zoom.clamp), minimapPinchAction(zoom.clamp)] : []),
+    ],
     bindings: minimapBindings(id, zoom !== null, [id]),
     overlay: [indicator, cursor.layer],
     attach: (api, reader) => {
