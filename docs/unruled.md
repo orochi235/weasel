@@ -2034,3 +2034,19 @@ Calls the lanes made without a ruling:
 - Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
   `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
   ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.
+
+## Audit round twenty-two (2026-11-13): the prefs schema
+
+- A store-bound form binds through `usePrefsValues(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
+  bundled one offers Auto and splits scoped leaves the same way. Theme-editor's form keeps its own binding: its
+  writes go through its undo history and only its token rows inherit. `PrefsSplit.stories.tsx` keeps its explicit
+  props, since spreading `form` would add Auto toggles to a story about split rows (2026-11-13).
+- labkit's lab config stays its own schema, bridged both ways by `prefsFromConfig` and `configFromPrefs` and tested
+  there, rather than declaring through `pref` (2026-11-13).
+- The kit settings of ui, core, rig, kernel3d and labkit are tested together from the site
+  (`apps/site/__tests__/kitSettingsSchemas.test.tsx`), the one test project that imports every package: their paths
+  must equal `KitSettingPath` between them, each declared once (2026-11-13).
+- Open: draw's preferences do not include any kit settings schema, so a draw user cannot change a gesture timing or
+  a target size. Whether draw's dialog should carry them is a product call.
+- Open: the sticky tool's `ink` and the shared `textFill` default to `#000`, where the shared `stroke` is
+  `#000000ff`. Both read as black; the spelling belongs to the tools lane.
