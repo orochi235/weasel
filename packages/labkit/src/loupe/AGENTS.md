@@ -102,7 +102,8 @@ The lens actions (`lens/lensActionDefs.ts`) live in one keymap,
 `code: 'KeyL'` because Alt changes the produced character on macOS. Inside it
 the keys are plain (`LENS_KEYS`), each binding's `opts.id` is its action id so
 `bindingOverrides` can rebind it, and Escape closes it (`docs/taxonomy.md`,
-"Keymap and leader"). The host supplies a `LensActionApi` and mounts
+"Keymap and leader"). One action binds outside the keymap: `loupe.quick`, on `QUICK_KEY`
+(F2), opens a Follow lens with no leader and closes the one it opened on the next press. The host supplies a `LensActionApi` and mounts
 `<LensActions>`; `loupe.seam` alone registers on the lens canvas, since a drag
 on the seam reaches that dispatcher and not the lab's.
 

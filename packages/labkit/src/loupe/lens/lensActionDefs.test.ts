@@ -56,6 +56,7 @@ describe('lens actions', () => {
   it('declines every lens key but add while no lens is up', () => {
     for (const a of actions) {
       if (a.id === LENS_ACTION_IDS.add) expect(a.enabled!(deps)).toBe(true);
+      else if (a.id === LENS_ACTION_IDS.quick) expect(a.enabled).toBeUndefined();
       else expect(a.enabled!(deps), a.id).toBe(ActionDisabledReason.NotApplicable);
     }
   });
@@ -116,6 +117,16 @@ describe('lens actions', () => {
     expect(api.scene.overrides.read('l0:reticle' as never)).toBeUndefined();
   });
 
+  it('opens a Follow lens on the quick key and closes that one on the next', () => {
+    trigger(LENS_ACTION_IDS.add);
+    trigger(LENS_ACTION_IDS.quick);
+    expect(lensesOf(api.scene)).toHaveLength(2);
+    expect(settingsOf(api.scene, api.current()!)!.aim).toBe('follow');
+    trigger(LENS_ACTION_IDS.quick);
+    expect(lensesOf(api.scene)).toHaveLength(1);
+    expect(settingsOf(api.scene, 'l0')).not.toBeNull();
+  });
+
   it('opens the compare menu on the current lens', () => {
     trigger(LENS_ACTION_IDS.add);
     trigger(LENS_ACTION_IDS.compareMenu);
@@ -143,5 +154,9 @@ describe('createLoupeKeymap', () => {
     expect(glass.spec).toEqual({ kind: 'key', key: 'b' });
     // The follow hover is no key: it binds outside the keymap.
     expect(keymap!.bindings!.some((b) => b.actionId === LENS_ACTION_IDS.followMove)).toBe(false);
+    // The quick key binds outside it too, with no leader before it.
+    const quick = leader!.actions!.find((a) => a.id === LENS_ACTION_IDS.quick)!;
+    expect(quick.defaultBinding).toEqual([expect.objectContaining({ spec: { kind: 'key', key: 'F2' } })]);
+    expect(keymap!.bindings!.some((b) => b.actionId === LENS_ACTION_IDS.quick)).toBe(false);
   });
 });
