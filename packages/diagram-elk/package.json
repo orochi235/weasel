@@ -3,7 +3,7 @@
   "version": "1.19.1",
   "description": "An ELK layout adapter for @weasel-js/diagram: lays a diagram's graph out once with elkjs, ports, labels and nested groups included, and answers with a diagram layout plan.",
   "weasel": {
-    "tier": "plugin"
+    "tier": "other"
   },
   "license": "MIT",
   "type": "module",

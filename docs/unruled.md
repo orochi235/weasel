@@ -1890,3 +1890,21 @@ Calls the lanes made without a ruling:
   its place in hit order. `attach` → `registerLayer` would have moved a rebuilt entry's layer to the top. Every diagram
   editing helper and `plot`'s `plotEditing` return one entry; `createDiagramContribution`, the connect half without
   its layer, is gone rather than kept beside `diagramPorts` (2026-11-12).
+- `d3` and `diagram-elk` are `weasel.tier: "other"`, not `plugin`: neither hands a canvas a layer, tool, action, dep or
+  draw command. d3 joins data into a scene and diagram-elk is a layout planner for diagram. `kernel3d` stays `other`
+  as a host for 3D scenes, though it ships a tool and deps (2026-11-12).
+- A timeline's `loop: n` now counts passes, as a clock's does, rather than laps after the first; `loop()` reads the
+  passes left counting the one under way, so `setLoop(loop())` changes nothing (2026-11-12).
+- Audio keeps `stopAll()` beside the renamed `cancelKey(key)`: it stops sound, and the animator's `cancelAll` names
+  animations. Its `NoisePatch.noise` stays beside the graph's `NoiseNodeOptions.color`, since patterns are saved as
+  data (2026-11-12).
+- Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
+  itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
+  have one, now in `docs/conventions.md` (2026-11-12).
+- A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they
+  keep `spacing` and `alignment`, so a canvas with one preset reads as before (2026-11-12).
+- Open: whether `BindingOpts` (routing), and `ParallaxOpts` and `ZoomClampOpts` (core) take the `Options` suffix.
+  This lane's packages only import them, so the rename belongs to core's and routing's lane.
+- Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
+  `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
+  ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.
