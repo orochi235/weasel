@@ -6,7 +6,7 @@ import {
   type Rect,
 } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
-import type { StyledRun, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
+import type { StyledRun, TextFit, TextPose, TextStyle, TextVerticalAlign } from '@weasel-js/text';
 import { textLineBoxes } from '@weasel-js/text';
 import type { NodeShapeEntry } from 'canvas/NodeShape';
 import { nodeMemo } from 'core/scene/nodeMemo';
@@ -36,6 +36,9 @@ export interface TextNodeData {
   /** What happens to text that runs past the pose box: `'visible'` (the
    *  default) draws it there, `'clip'` cuts it at the box's edge. */
   overflow?: TextOverflow;
+  /** `'shrink'` sets the text at the largest size, at most its own, whose
+   *  lines fit the box inside `padding`. Default `'none'`. */
+  fit?: TextFit;
   /** A rule just inside the box in a shade of `background`. Needs a solid background. */
   edge?: TextEdge;
   /** The shadow `background` casts. Needs a background. */
@@ -82,6 +85,7 @@ export function textPoseOf(d: TextNodeData, p: RectPose, inherited?: InheritedPa
     fill: d.fill === INHERIT ? resolveFill(d.fill, inherited?.fill) : d.fill,
     stroke: resolveStroke(d.stroke, inherited?.stroke) ?? undefined,
     verticalAlign: d.verticalAlign,
+    fit: d.fit,
   };
 }
 

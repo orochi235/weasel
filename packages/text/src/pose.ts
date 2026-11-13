@@ -2,6 +2,7 @@ import type { StyledRun } from './runs';
 import type { TextStyle } from './textStyle';
 import type { Stroke, Fill } from '@weasel-js/paint';
 import type { TextVerticalAlign } from './measure/verticalAlign';
+import type { TextFit } from './layout/textFit';
 
 /** Pose for a text node: bounding rect plus the text and optional style. */
 export interface TextPose {
@@ -19,4 +20,6 @@ export interface TextPose {
   stroke?: Stroke | null;
   /** Box vertical alignment within `[y, y+height]`. Default 'top'. */
   verticalAlign?: TextVerticalAlign;
+  /** How the text's size answers to the box. Default `'none'`. */
+  fit?: TextFit;
 }

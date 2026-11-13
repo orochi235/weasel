@@ -51,7 +51,9 @@ export {
   LAYOUT_CACHE_VARIANT_LIMIT,
   LAYOUT_CACHE_STRUCTURAL_LIMIT,
 } from './layout/layoutCache';
-export { layoutTextPose, textPoseLayoutInput } from './layout/textPoseLayout';
+export { layoutTextPose, textPoseLayoutInput, textFitScale } from './layout/textPoseLayout';
+export { TEXT_FIT_TOLERANCE, type TextFit } from './layout/textFit';
+export { fittedTextPose } from './fittedTextPose';
 export type { TextPoseLayout, TextPoseLayoutInput } from './layout/textPoseLayout';
 export type { BidiResolver, BidiReordering, BidiAnalysis } from './layout/bidiSeam';
 export { registerBidi, registeredBidi, paragraphDirection, warnRtlWithoutEngine } from './layout/bidiRegistry';

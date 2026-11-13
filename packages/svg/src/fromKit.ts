@@ -24,6 +24,7 @@ import {
   type StyledRun,
   type TextStyle,
   type TextVerticalAlign,
+  type TextFit,
   type Fill,
   type Inherit,
   INHERIT,
@@ -58,6 +59,8 @@ export interface SvgKitLeafData {
   style?: TextStyle;
   runs?: readonly StyledRun[];
   verticalAlign?: TextVerticalAlign;
+  /** `'shrink'` sets a text node's text at the size that fits its box. */
+  fit?: TextFit;
   /** A text node's paint over its whole box, under the glyphs. */
   background?: Fill | null;
   /** A text node's inset from its box to its text, on every side. */
@@ -171,6 +174,7 @@ function svgTextFromKit(data: SvgKitLeafData & { text: string }, pose: SvgKitPos
   if (data.style) node.style = data.style;
   if (data.runs) node.runs = data.runs.map((r) => runInPoseFrame(r, pose));
   if (data.verticalAlign) node.verticalAlign = data.verticalAlign;
+  if (data.fit === 'shrink') node.fit = 'shrink';
   const fill = resolveFill(data.fill);
   node.fill = fill && mapFillPaint(fill, (p) => fillInPoseFrame(p, pose));
   const stroke = resolveStroke(data.stroke);

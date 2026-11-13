@@ -45,6 +45,7 @@
     "provenance": true
   },
   "dependencies": {
+    "@weasel-js/font": "1.19.1",
     "@weasel-js/geom": "1.19.1",
     "@weasel-js/stroke": "1.19.1"
   },

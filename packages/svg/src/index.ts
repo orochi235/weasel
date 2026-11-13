@@ -21,6 +21,7 @@ export { serializeSvg } from './serialize';
 export { serializePathD } from './path-serializer';
 export { escapeAttr, escapeText } from './xmlEscape';
 export { svgNeeds, warmSvg } from './warm';
+export { svgTextOutlines } from './textOutlines';
 export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export { nativeSvgKind, nativeSvgSpace } from './gradients';
 export { specificity, compareSpecificity, type Specificity } from './specificity';
@@ -56,6 +57,7 @@ export type {
   ParseOptions,
   ParseResult,
   SerializeOptions,
+  SvgTextMode,
   SvgNode,
   SvgGroupNode,
   SvgPathNode,

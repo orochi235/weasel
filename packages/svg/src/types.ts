@@ -9,7 +9,7 @@ import type { SvgMediaEnvironment } from './media';
 import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, StyledRun, TextStyle,
   TextVerticalAlign,
-  TextPoseLayout,
+  TextFit,
   Fill,
   StrokeNib,
   VertexWidth,
@@ -212,6 +212,9 @@ export interface SvgTextNode {
    *  `data.verticalAlign`. SVG text has no box to align in, so this rides in
    *  `data-weasel-vertical-align` and other readers draw the text top-aligned. */
   verticalAlign?: TextVerticalAlign;
+  /** `kit:text`'s `data.fit`. `serializeSvg` writes the text at the size it
+   *  resolves to, which is what is read back. */
+  fit?: TextFit;
   /**
    * Node-wide glyph paint, as the kit's `Fill` / `Stroke` rather than
    * the path nodes' `SvgPaint`. `StyledRun.fill` / `.stroke` override these
@@ -344,50 +347,4 @@ export interface ParseResult {
   markers?: MarkerEntry[];
 }
 
-/** Options for {@link serializeSvg}. */
-export interface SerializeOptions {
-  /** The root `viewBox`. Default: a tight bounding box around the nodes. */
-  viewBox?: { x: number; y: number; width: number; height: number };
-  /**
-   * Called for what the document cannot carry the way weasel draws it: a
-   * paint SVG cannot express (a pattern carrying a `TextureHandle` instead of
-   * a `TilePatternSpec`), a stroke aligned off its edge, text that wraps or
-   * sits lower than the top of its box. Each message is said once per call.
-   * Without this the loss is silent.
-   */
-  onWarn?: (message: string) => void;
-  /** Emit `width="..."` on the root `<svg>`. */
-  width?: number;
-  /** Emit `height="..."` on the root `<svg>`. */
-  height?: number;
-  /** Emit `<title>` as the first child of the root `<svg>`. Empty strings are skipped. */
-  title?: string;
-  /**
-   * Map of prefix → URI for XML namespaces to declare on the root `<svg>`.
-   * Only `documentMeta` and `node.meta` entries under a declared prefix are written.
-   */
-  namespaces?: Record<string, string>;
-  /**
-   * Per-document namespaced extras: `attrs` go on the root `<svg>`, and
-   * `elements` become children placed immediately before any geometry.
-   */
-  documentMeta?: NamespaceMeta;
-  /**
-   * Put each element on its own line, indented two spaces per level. A
-   * `<text>` element, and any element holding character data, stays on one
-   * line, since whitespace inside it is content.
-   */
-  pretty?: boolean;
-  /**
-   * The lines a text node lays out into — pass core's `layoutTextPose`, the
-   * layout the renderer draws with. With it, each line is written as a
-   * `<tspan>` at the layout's own `x` and baseline `y`, a justified line
-   * gives each word its own `x`, and a line holding a larger run is pitched
-   * as the renderer pitches it, so a reader that cannot wrap draws the lines
-   * where weasel does. A node it returns nothing for, or lays out to zero
-   * width because no face could measure it, is written without it: one line
-   * per hard break, at the node's own pitch. Fonts it reads must have loaded;
-   * `warmSvg(nodes, { textLayout })` loads them.
-   */
-  textLayout?: (node: SvgTextNode) => TextPoseLayout | null | undefined;
-}
+export type { SerializeOptions, SvgTextMode } from './serializeOptions';

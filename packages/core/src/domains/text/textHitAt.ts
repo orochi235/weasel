@@ -6,7 +6,7 @@ import { derivedPartsOf } from '../../core/scene/derivedParts';
 import { nodesAsShown, shownLookup } from '../../core/scene/nodeAsShown';
 import { effectSourceFor } from '../pathEffects/effectSources';
 import { targetTransformOf, worldToLocal } from 'core/geometry/targetFrame';
-import { caretIndexAt, pointInTextPose, type StyledRun, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
+import { caretIndexAt, pointInTextPose, type StyledRun, type TextFit, type TextStyle, type TextVerticalAlign } from '@weasel-js/text';
 import { textBoxOf } from '../../canvas/nodeShapes/textPainter';
 import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 import { indexedCandidates } from '../../canvas/pickIndex/scenePickIndex';
@@ -19,6 +19,8 @@ export interface TextReads<TData> {
   runs(data: TData): readonly StyledRun[] | undefined;
   verticalAlign(data: TData): TextVerticalAlign | undefined;
   padding(data: TData): number | undefined;
+  /** How the text's size answers to its box. Absent reads none. */
+  fit?(data: TData): TextFit | undefined;
 }
 
 /**
@@ -69,6 +71,7 @@ export function textHitAt<TData, TPose extends RectPose>(
       runs: read.runs(node.data) as StyledRun[] | undefined,
       style: read.style(node.data),
       verticalAlign: read.verticalAlign(node.data),
+      fit: read.fit?.(node.data),
     };
     const box = { x: at.x, y: at.y, width: at.width, height: at.height };
     if (!pointInTextPose(p.x, p.y, { ...pose, ...box })) continue;

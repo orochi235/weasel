@@ -16,12 +16,15 @@ import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { toRuns } from '../runs';
 import { verticalAlignOffset } from '../measure/verticalAlign';
 import type { TextPose } from '../pose';
+import { scaleRuns, scaleStyle, shrinkScale } from './textFit';
 
 /** What {@link layoutTextPose} hands `cachedLayoutRuns`. */
 export interface TextPoseLayoutInput {
   style: ResolvedTextStyle;
   runs: ResolvedRun[];
   opts: LayoutRunsOpts & { justify: boolean };
+  /** What `pose.fit` scaled every size in `style` and `runs` by: 1 unless it shrank them. */
+  fitScale: number;
 }
 
 /**
@@ -33,25 +36,33 @@ export interface TextPoseLayoutInput {
  * against. Everything past this point is world units, so a caller that
  * measures, hit-tests or paints one pose has to pass the same scale to each
  * or they disagree.
+ *
+ * `pose.fit: 'shrink'` is resolved here, so every reader sets the text at the
+ * fitted size: `style` and `runs` come back already scaled by `fitScale`.
  */
 export function textPoseLayoutInput(pose: TextPose, scale = 1): TextPoseLayoutInput {
   const style = resolveTextStyle(pose.style, { fill: pose.fill, stroke: pose.stroke }, scale);
   // Empty runs are not a styling, so they fall back to the plain string
   // rather than lay out nothing.
   const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
-  return {
-    style,
-    runs: resolveRuns(toRuns(source), style, scale),
-    opts: {
-      maxWidth: style.wrap ? pose.width : Infinity,
-      alignWidth: pose.width,
-      lineHeight: style.lineHeight,
-      align: style.align,
-      direction: style.direction,
-      tabSize: style.tabSize,
-      justify: style.align === 'justify',
-    },
+  const runs = resolveRuns(toRuns(source), style, scale);
+  const opts = {
+    maxWidth: style.wrap ? pose.width : Infinity,
+    alignWidth: pose.width,
+    lineHeight: style.lineHeight,
+    align: style.align,
+    direction: style.direction,
+    tabSize: style.tabSize,
+    justify: style.align === 'justify',
   };
+  const k = pose.fit === 'shrink' ? shrinkScale(runs, opts, pose.width, pose.height) : 1;
+  if (k === 1) return { style, runs, opts, fitScale: 1 };
+  return { style: scaleStyle(style, k), runs: scaleRuns(runs, k), opts, fitScale: k };
+}
+
+/** What `pose.fit` scales its text by, as {@link textPoseLayoutInput} resolves it: 1 unless it shrinks. */
+export function textFitScale(pose: TextPose, scale = 1): number {
+  return pose.fit === 'shrink' ? textPoseLayoutInput(pose, scale).fitScale : 1;
 }
 
 /** A text pose laid out. */
