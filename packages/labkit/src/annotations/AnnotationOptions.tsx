@@ -1,7 +1,7 @@
 import { useToolOptionParams } from '@weasel-js/core';
 import { setToolOption } from '@weasel-js/routing';
 import { ToolOptionsBar } from '@weasel-js/ui/components/ToolOptionsBar';
-import { useRef } from 'react';
+import { useDeferredValue, useRef } from 'react';
 import { useLabChromeContext } from '../chrome/LabChrome';
 import { FloatingPanel } from '../primitives/FloatingPanel';
 import type { TrialTool } from '../tools/types';
@@ -58,53 +58,52 @@ export function AnnotationOptions({ tools }: AnnotationOptionsProps) {
   const values = useLabToolOptionValues();
   const stores = useLabMarkStores();
   const tool = tools.find((t) => t.id === activeToolId);
-  const withOptions = tool?.options ? tool : undefined;
-  const params = useToolOptionParams(withOptions, values);
+  const options = tool?.options;
+  const params = useToolOptionParams(options && tool, values);
   const gesture = useRestyleGesture();
 
-  if (withOptions?.options && params) {
-    const options = withOptions.options;
-    return (
-      <FloatingPanel
-        className="lk-annotation-options"
-        anchor="bottom-right"
-        persist="annotation-options"
-      >
-        <ToolOptionsBar
-          label={withOptions.label}
-          schema={options.prefs}
-          values={params}
-          onChange={(path, value) => setToolOption(withOptions.id, options, values, path, value)}
-        />
-      </FloatingPanel>
-    );
-  }
-
-  const selected = activeToolId === 'select' ? selectedMarks(stores) : [];
-  const style = selectionStyle(selected.map((s) => s.mark));
-  if (!style) return null;
-  const ids = selected.map((s) => s.mark.id).join(' ');
-  const restyle = (path: string, value: unknown) => {
-    const field = path as MarkStyleField;
-    const coalesceKey = gesture(field, ids);
-    for (const { store, mark } of selected) {
-      if (markHasField(mark.kind, field))
-        store.update(mark.id, { [field]: value }, { coalesceKey });
-    }
-  };
+  const bar =
+    tool && options && params
+      ? {
+          label: tool.label,
+          schema: options.prefs,
+          values: params,
+          onChange: (path: string, value: unknown) =>
+            setToolOption(tool.id, options, values, path, value),
+        }
+      : selectionBar(activeToolId === 'select' ? selectedMarks(stores) : [], gesture);
+  // Mounted a render late: a tool or a selection set while a trial lays out arrives inside that layout's
+  // ResizeObserver callback, and the panel's own observer begun there is reported as a loop.
+  const shown = useDeferredValue(bar !== null);
+  if (!bar || !shown) return null;
   return (
     <FloatingPanel
       className="lk-annotation-options"
       anchor="bottom-right"
       persist="annotation-options"
     >
-      <ToolOptionsBar
-        label={selected.length === 1 ? 'Mark' : `${selected.length} marks`}
-        schema={style.schema}
-        values={style.values}
-        mixed={style.mixed}
-        onChange={restyle}
-      />
+      <ToolOptionsBar {...bar} />
     </FloatingPanel>
   );
+}
+
+/** The bar for Select's selection: its marks' style, restyling every mark that has the field edited. */
+function selectionBar(selected: Selected[], gesture: (field: string, ids: string) => string) {
+  const style = selectionStyle(selected.map((s) => s.mark));
+  if (!style) return null;
+  const ids = selected.map((s) => s.mark.id).join(' ');
+  return {
+    label: selected.length === 1 ? 'Mark' : `${selected.length} marks`,
+    schema: style.schema,
+    values: style.values,
+    mixed: style.mixed,
+    onChange: (path: string, value: unknown) => {
+      const field = path as MarkStyleField;
+      const coalesceKey = gesture(field, ids);
+      for (const { store, mark } of selected) {
+        if (markHasField(mark.kind, field))
+          store.update(mark.id, { [field]: value }, { coalesceKey });
+      }
+    },
+  };
 }
