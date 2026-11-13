@@ -40,12 +40,12 @@ function Specimens() {
 
 export function KitSettingsDemo() {
   const store = usePrefsStore(SCHEMA, { storage: localStorageAdapter, prefix: 'weasel-demo-kit-settings.' });
-  const { values, set, reset } = usePrefsValues(store);
+  const { form, reset } = usePrefsValues(store);
   return (
     <KitSettingsFromPrefs store={store} css>
       <div className={s.demo}>
         <div className={s.form}>
-          <PrefsForm layout="list" schema={SCHEMA} values={values} onChange={set} />
+          <PrefsForm layout="list" {...form} />
           <Button onClick={() => reset()}>Reset</Button>
         </div>
         <div className={s.side}>

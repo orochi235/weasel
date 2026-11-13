@@ -6,6 +6,9 @@
 import type {} from '@weasel-js/react';
 import type { KeymapUnbound } from './keymaps/keymapStack';
 
+/** What a key an open keymap does not bind does when neither the keymap nor the `gestures.keymapUnbound` kit setting says. */
+export const DEFAULT_KEYMAP_UNBOUND: KeymapUnbound = 'modal';
+
 /** Pointer gesture timings and travel; each falls back to its constant in `@weasel-js/gestures`. */
 export interface GestureKitSettings {
   /** Longest gap between the clicks of a double click, in ms. */

@@ -178,7 +178,7 @@ export type {
 export {
   DRAG_THRESHOLD_PX, pastDragThreshold, CONTROL_SELECTOR, isInControlWithin, isPrimaryPress,
 } from '@weasel-js/gestures';
-export type { GestureKitSettings } from './kitSettings';
+export { DEFAULT_KEYMAP_UNBOUND, type GestureKitSettings } from './kitSettings';
 export { openPointerSession } from './interactions/pointerSession';
 export { startCarry } from './interactions/carry';
 export type { Carry, CarryCallbacks, CarryPayload, CarryPointer, CarryStage } from './interactions/carry';

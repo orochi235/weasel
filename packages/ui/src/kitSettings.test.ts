@@ -6,11 +6,11 @@ import { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './components/CurveEdito
 import { REPEAT_DELAY_MS, REPEAT_EVERY_MS } from '@weasel-js/ui-input';
 import { PARAMS_SETTLES, PARAMS_TEXT_WAIT_MS, type ParamsSurface } from './components/Prefs/commitPolicy';
 import { COALESCE_MS } from './components/PrefSchemaEditor/useDocument';
-import { FOCUS_DELAY } from './components/Properties/rowHelp';
+import { FOCUS_DELAY, HELP_ICON } from './components/Properties/rowHelp';
 import { STOP_SNAP_PX } from './components/Slider/stops';
 import { DEFAULT_TTL_MS } from './components/Toast/queue';
 import { TYPEAHEAD_MS } from './useTypeahead';
-import { IDLE_SETTLE_MS } from './useIdleSettle';
+import { IDLE_SETTLE_MS, SETTLE_WHEN_IDLE } from './useIdleSettle';
 import { REST_MS } from './components/Tree/useRowTip';
 import { HOVER_EXPAND_MS } from './components/Tree/useTreeDrag';
 import { uiKitSettingsSchema } from './kitSettings';
@@ -24,7 +24,7 @@ const surfaces: ParamsSurface[] = ['form', 'panel', 'lab'];
 const expected: Record<string, unknown> = {
   'numberField.repeatDelayMs': REPEAT_DELAY_MS,
   'numberField.repeatEveryMs': REPEAT_EVERY_MS,
-  'typing.settleWhenIdle': true,
+  'typing.settleWhenIdle': SETTLE_WHEN_IDLE,
   'typing.idleMs': IDLE_SETTLE_MS,
   ...Object.fromEntries(
     surfaces.flatMap((s) => [
@@ -36,7 +36,7 @@ const expected: Record<string, unknown> = {
   'tree.hoverExpandMs': HOVER_EXPAND_MS,
   'tree.tipRestMs': REST_MS,
   'help.focusDelayMs': FOCUS_DELAY,
-  'help.icon': false,
+  'help.icon': HELP_ICON,
   'toast.ttlMs': DEFAULT_TTL_MS,
   'targets.curveKeyHitPx': KEY_HIT_PX,
   'targets.curveHandleHitPx': HANDLE_HIT_PX,

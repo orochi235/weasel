@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { PrefPath, PrefValueAt } from './paths';
 import type { PrefGroup } from './groups';
 import type { PrefScope, PrefSelection } from './scope';
@@ -29,10 +29,22 @@ export function usePref<S extends PrefGroup, P extends PrefPath<S>>(
   return [value, set];
 }
 
-/** The whole of `store` as React state, shaped for `PrefsForm`: `values`,
- *  `onChange={set}`, `auto={unset}`, and `onAutoChange={setAuto}`, which pins a
- *  leaf at the value it reads now or, given true, resets it; for its scoped
- *  values, `scopes` and `onChangeAt={setAt}`. `stored` is `store.stored()`. */
+/** Everything a `PrefsForm` or `PrefsDialog` takes from a store, under the props' own names. */
+export interface PrefsFormBinding<S extends PrefGroup = PrefGroup> {
+  schema: S;
+  values: Record<string, unknown>;
+  onChange: (path: string, value: unknown) => void;
+  auto: ReadonlySet<string>;
+  onAutoChange: (path: string, next: boolean) => void;
+  scopes: ReadonlyMap<string, PrefScope>;
+  onChangeAt: (path: string, value: unknown, at: PrefSelection) => void;
+}
+
+/** The whole of `store` as React state: `values`, `set`, `unset` (the leaves
+ *  that follow their default), and `setAuto`, which pins a leaf at the value it
+ *  reads now or, given true, resets it; for its scoped values, `scopes` and
+ *  `setAt`. `stored` is `store.stored()`. `form` is all of it under
+ *  `PrefsForm`'s prop names, to spread on: `<PrefsForm {...form} />`. */
 export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   values: Record<string, unknown>;
   set: (path: string, value: unknown) => void;
@@ -42,6 +54,7 @@ export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
   setAuto: (path: string, next: boolean) => void;
   scopes: ReadonlyMap<string, PrefScope>;
   setAt: (path: string, value: unknown, at: PrefSelection) => void;
+  form: PrefsFormBinding<S>;
 } {
   const subscribe = useCallback((onChange: () => void) => store.subscribe(onChange), [store]);
   const values = useSyncExternalStore(subscribe, store.values, store.values);
@@ -61,5 +74,9 @@ export function usePrefsValues<S extends PrefGroup>(store: PrefsStore<S>): {
     (path: string, value: unknown, at: PrefSelection) => store.set(path as PrefPath<S>, value as never, { at }),
     [store],
   );
-  return { values, set, unset, stored, reset, setAuto, scopes, setAt };
+  const form = useMemo<PrefsFormBinding<S>>(
+    () => ({ schema: store.schema, values, onChange: set, auto: unset, onAutoChange: setAuto, scopes, onChangeAt: setAt }),
+    [store, values, set, unset, setAuto, scopes, setAt],
+  );
+  return { values, set, unset, stored, reset, setAuto, scopes, setAt, form };
 }

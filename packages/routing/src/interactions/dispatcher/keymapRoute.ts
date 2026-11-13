@@ -8,6 +8,7 @@ import type { InputEvent } from './matcher';
 import type { DispatcherContext } from './dispatcherApi';
 import { capabilitiesAllowed, type CapabilityTag } from '@weasel-js/modes';
 import { liveScope } from '../../contributions/eligibility';
+import { DEFAULT_KEYMAP_UNBOUND } from '../../kitSettings';
 
 type Outcome = 'handled' | 'unhandled';
 
@@ -90,7 +91,7 @@ export function routeThroughKeymap(
     }
     const entry = ctx.entriesById.get(open.id)?.eligibility.keymap;
     const own = typeof entry === 'object' ? entry.unbound : undefined;
-    if ((own ?? ctx.leaderUnbound ?? 'modal') === 'modal') {
+    if ((own ?? ctx.leaderUnbound ?? DEFAULT_KEYMAP_UNBOUND) === 'modal') {
       stack.swallowed();
       return 'handled';
     }

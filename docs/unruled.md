@@ -2042,3 +2042,19 @@ Calls the lanes made without a ruling:
   count. `platform` stays the name of a `Platform` (`'macos' | 'windows' | 'linux'`), which `formatShortcut` and
   `describeKeymap` take because a legend tells Windows from Linux (`⊞` against Super) and a matcher does not. The
   two are different types, not two spellings of one.
+
+## Audit round twenty-two (2026-11-13): the prefs schema
+
+- A store-bound form binds through `usePrefsValues(store).form`, spread on `PrefsForm` or `PrefsDialog`, so every
+  bundled one offers Auto and splits scoped leaves the same way. Theme-editor's form keeps its own binding: its
+  writes go through its undo history and only its token rows inherit. `PrefsSplit.stories.tsx` keeps its explicit
+  props, since spreading `form` would add Auto toggles to a story about split rows (2026-11-13).
+- labkit's lab config stays its own schema, bridged both ways by `prefsFromConfig` and `configFromPrefs` and tested
+  there, rather than declaring through `pref` (2026-11-13).
+- The kit settings of ui, core, rig, kernel3d and labkit are tested together from the site
+  (`apps/site/__tests__/kitSettingsSchemas.test.tsx`), the one test project that imports every package: their paths
+  must equal `KitSettingPath` between them, each declared once (2026-11-13).
+- Open: draw's preferences do not include any kit settings schema, so a draw user cannot change a gesture timing or
+  a target size. Whether draw's dialog should carry them is a product call.
+- Open: the sticky tool's `ink` and the shared `textFill` default to `#000`, where the shared `stroke` is
+  `#000000ff`. Both read as black; the spelling belongs to the tools lane.

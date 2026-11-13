@@ -6,6 +6,9 @@ const CONTROLS = 'input, select, textarea, button, [tabindex]:not([tabindex="-1"
 /** How long keyboard focus rests on a row's control before its help opens. */
 export const FOCUS_DELAY = 600;
 
+/** Whether a described row marks itself with an ⓘ beside its label when the `help.icon` kit setting does not say. */
+export const HELP_ICON = false;
+
 /** What {@link useRowHelp} hands the help it serves. */
 export interface RowHelp {
   /** The id of the element holding the help's text, which the row's control is described by. */

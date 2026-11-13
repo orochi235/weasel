@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DOUBLE_CLICK_MAX_MS, DOUBLE_CLICK_MAX_PX, DRAG_THRESHOLD_PX, LONG_PRESS_MS, TAP_THRESHOLD_PX,
 } from '@weasel-js/gestures';
+import { DEFAULT_KEYMAP_UNBOUND } from '@weasel-js/routing';
 import type { KitSettings } from '@weasel-js/react';
 import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX, ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
 import { DEFAULT_VIEW_ANIMATION_MS } from 'core/viewport/useViewAnimation';
@@ -22,7 +23,7 @@ const CONSTANTS: Pick<KitSettings, 'gestures' | 'view'> & { targets: Record<stri
     longPressMs: LONG_PRESS_MS,
     tapPx: TAP_THRESHOLD_PX,
     dragPx: DRAG_THRESHOLD_PX,
-    keymapUnbound: 'modal',
+    keymapUnbound: DEFAULT_KEYMAP_UNBOUND,
   },
   targets: {
     handlePx: HANDLE_BASE_PX,
