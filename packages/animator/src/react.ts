@@ -4,3 +4,4 @@
  * @packageDocumentation
  */
 export { useAnimator } from './useAnimator';
+export type { UseAnimatorOptions } from './useAnimatorOptions';

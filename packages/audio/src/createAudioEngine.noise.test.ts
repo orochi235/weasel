@@ -80,7 +80,7 @@ describe('engine.playNoise', () => {
     expect(engine.activeVoices()).toBe(2);
     ctx._advance(25);
     expect(onDone).toHaveBeenCalledTimes(1);
-    engine.stopKey('hiss');
+    engine.cancelKey('hiss');
     expect(held.isPlaying()).toBe(false);
     expect(engine.activeVoices()).toBe(0);
   });

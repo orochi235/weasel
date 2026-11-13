@@ -12,13 +12,12 @@ import {
   rebaseLocalPose,
   sceneViewPoseAdapter,
   type Action,
-  type Contribution,
+  type SurfaceContribution,
   type GestureBinding,
   type InvocationCtx,
   type NodeId,
   type OngoingHandle,
   type OngoingOverlay,
-  type RenderLayer,
   type Scene,
   type Vec2,
 } from '@weasel-js/core';
@@ -216,25 +215,23 @@ export function reconnectBinding(actionId: string = RECONNECT_ACTION_ID): Gestur
 }
 
 /**
- * Both halves of reconnect: the handle layer to `registerLayer` — after the
- * port layer, since an edge's end sits on a port — and the contribution to
- * pass as `ambient`. Like `diagramPorts`, one without the other fails quietly.
+ * Reconnecting an edge end, as one entry to pass as `ambient` — after
+ * `diagramPorts` and `diagramWaypoints`, since an edge's end sits on a port and
+ * beside a route handle. It carries the handle layer and the drag.
  */
 export function diagramEdgeEnds<TPose>(
   opts: ReconnectOptions<TPose> & Omit<EdgeEndAffordanceOptions<TPose>, 'id'>,
-): { layer: RenderLayer<unknown>; contribution: Contribution } {
+): SurfaceContribution {
   const actionId = opts.id ?? RECONNECT_ACTION_ID;
   return {
+    id: 'weasel-diagram-edge-ends',
+    eligibility: { claimed: true },
     // `opts.id` names the action; the layer keeps its own id.
-    layer: edgeEndLayer(opts.participants, opts.selected, { ...opts, id: EDGE_END_LAYER_ID }),
-    contribution: {
-      id: 'weasel-diagram-edge-ends',
-      eligibility: { claimed: true },
-      actions: [createReconnectAction({ ...opts, id: actionId }), grabPortAction(GRAB_EDGE_END_ACTION_ID)],
-      bindings: [
-        reconnectBinding(actionId),
-        ...grabPortBindings(GRAB_EDGE_END_ACTION_ID, EDGE_END_AFFORDANCE_KIND),
-      ],
-    },
+    layers: [edgeEndLayer(opts.participants, opts.selected, { ...opts, id: EDGE_END_LAYER_ID })],
+    actions: [createReconnectAction({ ...opts, id: actionId }), grabPortAction(GRAB_EDGE_END_ACTION_ID)],
+    bindings: [
+      reconnectBinding(actionId),
+      ...grabPortBindings(GRAB_EDGE_END_ACTION_ID, EDGE_END_AFFORDANCE_KIND),
+    ],
   };
 }

@@ -83,7 +83,7 @@ describe('plot.dragValue', () => {
 
   it('is bound to a drag on the handle layer\'s kind', () => {
     const { scene } = setup();
-    const { contribution } = plotEditing({ scene: scene as never });
+    const contribution = plotEditing({ scene: scene as never });
     expect(contribution.bindings?.find((b) => b.spec.kind === 'drag')).toMatchObject({
       spec: { target: 'affordance:layer:plot-handles' }, actionId: 'plot.dragValue',
     });

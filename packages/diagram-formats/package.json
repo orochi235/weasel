@@ -1,7 +1,7 @@
 {
   "name": "@weasel-js/diagram-formats",
   "version": "1.19.1",
-  "description": "Converts @weasel-js/diagram scenes to and from files: an interchange document every format reads and writes, and one page as an SVG document or a PNG image.",
+  "description": "Converts @weasel-js/diagram scenes to and from files: an interchange document every format reads and writes, and its pages as an SVG document, a PNG image or a PDF.",
   "weasel": {
     "tier": "other"
   },

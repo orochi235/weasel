@@ -1,6 +1,6 @@
 import {
   SceneCanvas, isTextData, useCanvasSize, useLatest, useScene, useSceneTextEdit, useSelection,
-  type SceneCanvasApi, type Tool, type ToolsApi,
+  type Tool, type ToolsApi,
 } from '@weasel-js/core';
 import {
   commitSequence, createSequenceDeleteAction, diagramResizable, diagramTypeOf, dropEmptyEdgeLabel, foldSequenceText, isSequenceText,
@@ -9,7 +9,7 @@ import {
 import { foldPlotText, isPlotText, plotEditing, plotMarkOf, replacePlotData } from '@weasel-js/plot';
 import { Sidebar } from '@weasel-js/ui/components/Sidebar';
 import { TextEditDepPublisher, usePaperLayer, useSessionPersistence } from '@weasel-js/editor';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useChartCommands } from './chartCommands';
 import { useExportCommands } from './exportCommands';
 import { ImportExportCommands } from './importExport';
@@ -72,7 +72,8 @@ export function ChartWorkspace(): ReactElement {
   const sequence = useSequenceChoices();
   const diagram = useChartDiagram(scene, selection, theme, diagramTypeOf(scene), sequence.readers);
   const plot = useMemo(() => plotEditing({ scene: scene as never }), [scene]);
-  const ambient = useMemo(() => [...diagram.ambient, plot.contribution], [diagram.ambient, plot]);
+  // The plot's handles first, so a diagram handle beside one is hit over it.
+  const ambient = useMemo(() => [plot, ...diagram.ambient], [diagram.ambient, plot]);
   const selectTool = useMemo(() => ({ resize: { resizable: diagramResizable(scene) } }), [scene]);
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -99,13 +100,6 @@ export function ChartWorkspace(): ReactElement {
   const editingId = textEdit.editingId;
   const alphaFor = useCallback((id: string) => (id === editingId ? 0 : 1), [editingId]);
 
-  // `registerLayer` is the only attach route that is hit-tested, and the canvas mounts once the host has a size.
-  const [canvas, setCanvas] = useState<SceneCanvasApi | null>(null);
-  useEffect(() => {
-    if (canvas === null) return;
-    const disposers = [plot.layer, ...diagram.layers].map((layer) => canvas.registerLayer(layer));
-    return () => disposers.forEach((dispose) => dispose());
-  }, [canvas, diagram.layers, plot]);
 
   return (
     <div className="wc-workspace">
@@ -122,7 +116,6 @@ export function ChartWorkspace(): ReactElement {
             {dims.width > 0 && dims.height > 0 && (
               <SceneCanvas<ChartData, ChartLayer, ChartPose>
                 aria-label="Chart"
-                ref={setCanvas}
                 features={features}
                 snap={snap}
                 claimKeys

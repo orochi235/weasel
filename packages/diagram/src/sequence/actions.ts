@@ -4,7 +4,7 @@
  * parts it carries and, on release, hands one edit of the root's data to
  * `commit`, which by default replaces it in the scene as one undo entry.
  */
-import type { Action, Contribution, InvocationCtx, OngoingHandle, RectPose, RenderLayer, Scene, Vec2 } from '@weasel-js/core';
+import type { Action, InvocationCtx, OngoingHandle, RectPose, Scene, SurfaceContribution, Vec2 } from '@weasel-js/core';
 import { moveParticipant, moveStep, reconnectMessage } from './edit';
 import { sequenceCommitOf, type SequenceEditOptions } from './commit';
 import { SELECT_SEQUENCE_PART_ACTION_ID, selectSequencePartAction } from './select';
@@ -144,28 +144,23 @@ const grab: Action = {
 };
 
 /**
- * Both halves of sequence editing: the layer to `registerLayer` — last, so a
- * sequence part wins over anything beside it — and the contribution to pass
- * as `ambient`, which carries the drag. Like `diagramPorts`, one without the
- * other fails quietly. Text is edited in place by the host's text editor,
- * through `foldSequenceText`.
+ * Sequence editing, as one entry to pass as `ambient` — last, so a sequence
+ * part wins over anything beside it. It carries the part layer and the drag.
+ * Text is edited in place by the host's text editor, through
+ * `foldSequenceText`.
  */
-export function diagramSequence(opts: SequenceEditOptions & { scene: Scene<unknown, string, unknown> }): {
-  layer: RenderLayer<unknown>; contribution: Contribution;
-} {
+export function diagramSequence(opts: SequenceEditOptions & { scene: Scene<unknown, string, unknown> }): SurfaceContribution {
   const actionId = opts.id ?? SEQUENCE_DRAG_ACTION_ID;
   const target = `affordance:${SEQUENCE_AFFORDANCE_KIND}` as const;
   return {
-    layer: sequenceLayer(opts.scene),
-    contribution: {
-      id: 'weasel-diagram-sequence',
-      eligibility: { claimed: true },
-      actions: [createSequenceDragAction({ ...opts, id: actionId }), grab, selectSequencePartAction],
-      bindings: [
-        { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-sequence.drag' } },
-        { spec: { kind: 'pointerDown', target }, actionId: GRAB_SEQUENCE_ACTION_ID, opts: { id: 'weasel-diagram-sequence.pointerDown' } },
-        { spec: { kind: 'click', target, mods: { shift: 'optional' } }, actionId: SELECT_SEQUENCE_PART_ACTION_ID, opts: { id: 'weasel-diagram-sequence.click' } },
-      ],
-    },
+    id: 'weasel-diagram-sequence',
+    eligibility: { claimed: true },
+    layers: [sequenceLayer(opts.scene)],
+    actions: [createSequenceDragAction({ ...opts, id: actionId }), grab, selectSequencePartAction],
+    bindings: [
+      { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-diagram-sequence.drag' } },
+      { spec: { kind: 'pointerDown', target }, actionId: GRAB_SEQUENCE_ACTION_ID, opts: { id: 'weasel-diagram-sequence.pointerDown' } },
+      { spec: { kind: 'click', target, mods: { shift: 'optional' } }, actionId: SELECT_SEQUENCE_PART_ACTION_ID, opts: { id: 'weasel-diagram-sequence.click' } },
+    ],
   };
 }

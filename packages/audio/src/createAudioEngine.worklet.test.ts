@@ -203,13 +203,13 @@ describe("synthVoices: 'worklet'", () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
-  it('reports a stopKey of a voice started inside a stall as done, not dropped', async () => {
+  it('reports a cancelKey of a voice started inside a stall as done, not dropped', async () => {
     const h = await harness();
     const onDone = vi.fn();
     const onDrop = vi.fn();
     h.engine.playNote({ pitch: 440, when: 150, cancelKey: 'k', onDone, onDrop });
     h.ctx._advance(400);
-    h.engine.stopKey('k');
+    h.engine.cancelKey('k');
     h.node()._ended(1);
     await h.flush();
     expect(onDrop).not.toHaveBeenCalled();

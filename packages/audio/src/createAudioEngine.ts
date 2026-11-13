@@ -60,10 +60,12 @@ export interface AudioEngine {
   stream(media: HTMLMediaElement | string, opts?: StreamOptions): VoiceHandle;
   /** Book a callback against the audio clock through the engine's lookahead
    *  scheduler; it receives its own `when` to hand on to `play` or `playNote`.
-   *  `stopKey(key)` cancels it. One that came due during a suspension fires
+   *  `cancelKey(key)` cancels it. One that came due during a suspension fires
    *  late on resume, with its original `when`, so compare against `now()`. */
   schedule(when: number, fire: (when: number) => void, key?: string): void;
-  stopKey(key: string): void;
+  /** Stop every voice played with this `cancelKey`, and cancel every callback `schedule`d under it. */
+  cancelKey(key: string): void;
+  /** Stop every voice. */
   stopAll(): void;
   bus(name: string): BusHandle;
   /** The configured bus names, in order. The first is `play()`'s default. */
@@ -268,9 +270,9 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       if (disposed) return;
       scheduler.schedule(when, fire, key);
     },
-    stopKey(key) {
+    cancelKey(key) {
       scheduler.cancelKey(key);
-      voices.stopKey(key);
+      voices.cancelKey(key);
     },
     stopAll: () => voices.stopAll('stopped'),
     bus: graph.bus,

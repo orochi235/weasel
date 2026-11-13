@@ -11,6 +11,7 @@ import type { CanvasViewProps } from './CanvasView';
 import type { ViewMarkerProps } from '../domains/viewports/viewMarker';
 import type { View } from '../core/viewport/view';
 import type { KitRequirements } from './kitRequirements';
+import type { RenderLayer } from '../core/layers/render';
 
 /** Reads the surface's deps from inside `SurfaceContribution.attach`. */
 export interface ContributionDepReader {
@@ -43,8 +44,21 @@ export interface SurfaceContribution extends Contribution {
   /** Markers this entry draws, as `<ViewMarker>` elements would. */
   markers?: readonly ViewMarkerProps[];
   /**
+   * Layers this entry registers on the mounted canvas, as `registerLayer`
+   * would: painted above every view and, where a layer has `hitTest`, hit-tested
+   * as an affordance its bindings can target. Unlike `overlay`, which is only
+   * painted, these take presses.
+   *
+   * The last registered is hit first: every entry's layers register in the
+   * surface's entry order (registered tools, then `ambient` in array order),
+   * and an entry's own in array order. When any entry's list changes, every
+   * entry's layers register again, so that order holds however often an entry
+   * is rebuilt.
+   */
+  layers?: readonly RenderLayer<unknown>[];
+  /**
    * Runs once the surface mounts; returns its teardown. For what the roles
-   * above cannot say — a registered (hit-testable) layer, a subscription.
+   * above cannot say — a subscription, a listener on the canvas element.
    *
    * Keyed by the function's identity, so a contribution built once (in a
    * `useMemo`, or at module scope) attaches once however often the host

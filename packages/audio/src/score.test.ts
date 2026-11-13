@@ -85,7 +85,7 @@ describe('createScore', () => {
     score.start(0);
     await run(4100);
     score.stop();
-    expect(score.playing()).toBe(false);
+    expect(score.isPlaying()).toBe(false);
     for (const o of ctx._oscillators) expect(o.stopped.length).toBeGreaterThan(0);
     await run(5000);
     expect(starts()).toHaveLength(6);

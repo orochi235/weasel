@@ -1,5 +1,5 @@
 import {
-  useDepSource, useTransformFollower, type Contribution, type RenderLayer, type SelectionApi, type Tool,
+  useDepSource, useTransformFollower, type Contribution, type SelectionApi, type SurfaceContribution, type Tool,
 } from '@weasel-js/core';
 import {
   CONNECTOR_TOOL_ID, STENCIL_GROUPS, bodyFollower, diagramSequence, diagramCanDropInto, diagramTypeEdgeStroke, isContainerStencil, diagramContainers, diagramEdgeEnds,
@@ -28,7 +28,7 @@ const edgeLabel = (theme: DiagramTheme): Contribution => ({
 });
 
 /** Double-click an off-page tag to go to the other page. */
-const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING }).contribution;
+const OFF_PAGE = diagramOffPage({ padding: PAGE_FIT_PADDING });
 
 /** Labels sized by the renderer's own text metrics, as stencil rows are, and everything measured again when a face lands. */
 const LABEL_PLACEMENT = { measure: rendererMeasure };
@@ -41,9 +41,8 @@ const CONTAINER_STENCILS = ALL_STENCILS.filter(isContainerStencil);
 const STENCIL_TOOLS: Record<string, Tool> = Object.fromEntries(ALL_STENCILS.map((s) => [stencilKind(s.id), stencilTool(s)]));
 
 export interface ChartDiagram {
-  /** For `registerLayer`, in order: the last registered is hit first. */
-  layers: readonly RenderLayer<unknown>[];
-  ambient: readonly Contribution[];
+  /** The entries' layers register in this order: the last is hit first. */
+  ambient: readonly SurfaceContribution[];
   tools: Record<string, Tool>;
 }
 
@@ -84,11 +83,7 @@ export function useChartDiagram(
   return useMemo(() => ({
     // Edge ends after ports and routes: an edge's end sits on a port and beside a route handle, and a press on it must start
     // neither. A sequence's parts last: nothing else takes a press on them.
-    layers: [containers.layer, labelDrag.layer, ports.layer, route.layer, ends.layer, sequenceEdit.layer],
-    ambient: [
-      containers.contribution, labelDrag.contribution, ports.contribution, route.contribution, ends.contribution, label,
-      OFF_PAGE, drop, sequenceEdit.contribution,
-    ],
+    ambient: [containers, labelDrag, ports, route, ends, label, OFF_PAGE, drop, sequenceEdit],
     tools: { [CONNECTOR_TOOL_ID]: connector, ...STENCIL_TOOLS, ...sequenceTools },
   }), [containers, labelDrag, ports, route, ends, connector, label, drop, sequenceEdit, sequenceTools]);
 }

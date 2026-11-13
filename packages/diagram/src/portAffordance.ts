@@ -144,8 +144,8 @@ function withPaint(paint: AffordanceRegion['paint']): { paint?: NonNullable<Affo
 
 /**
  * The affordance. Compose it into a layer with `composeAffordanceLayer` and
- * attach that with `CanvasExtensionApi.registerLayer` — the only attach route
- * that is hit-tested. A `Contribution.overlay` is painted and never hit.
+ * register that, in a contribution's `layers` or with `registerLayer`, the
+ * routes that are hit-tested. A `Contribution.overlay` is painted and never hit.
  */
 export function createPortAffordance<TPose>(
   participants: ParticipantSource<TPose>,

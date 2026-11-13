@@ -1762,17 +1762,6 @@ Calls the lanes made without a ruling:
   copied nodes every time, while the Paste button steps on from its last paste or lands at the pointer. Both put
   the same nodes in history, but a run of Cmd+V stacks every paste on one spot.
 
-## Audit round seventeen (2026-11-12): consumer setup
-
-- Open: diagram's paired helpers (`diagramPorts`, `diagramWaypoints`, `diagramEdgeEnds`, `diagramLabelDrag`, the
-  container and sequence ones) hand back a layer to `registerLayer` and a contribution for `ambient`, so the README
-  has a consumer hold a canvas ref and register the layer in an effect. `SurfaceContribution.attach` exists for
-  exactly this ("a registered (hit-testable) layer"), and the minimap registers through it. Moving each layer into
-  its contribution's `attach` makes one `ambient` entry the whole install, but breaks a consumer who also
-  registers the layer, and `DiagramView` would have to stop registering its own; hit order would then follow
-  `ambient` order rather than `useDiagramEditing`'s `layers` order. The other answer is core hit-testing a
-  contribution's `overlay`, which it paints and never hit-tests.
-
 ## Audit round eighteen (2026-11-12): a lab's trials
 
 - The lab store's `setTrialInstrument` is gone (`major` changeset): it kept the old instrument's state, config, view
@@ -2018,3 +2007,29 @@ Calls the lanes made without a ruling:
   label above, with no label beside it (2026-11-12).
 - A disabled `CurveField` dims its plot and buttons the way a disabled `Button` does (half opacity and
   `--wzl-disabled-filter`) and ignores the pointer (2026-11-12).
+
+## Audit round twenty-one (2026-11-12): plugin packages
+
+- Settles round seventeen's open question on diagram's paired helpers: a `SurfaceContribution` now carries hit-tested
+  layers in `layers`, registered in entry order and all again when any entry's list changes, so a rebuilt entry keeps
+  its place in hit order. `attach` → `registerLayer` would have moved a rebuilt entry's layer to the top. Every diagram
+  editing helper and `plot`'s `plotEditing` return one entry; `createDiagramContribution`, the connect half without
+  its layer, is gone rather than kept beside `diagramPorts` (2026-11-12).
+- `d3` and `diagram-elk` are `weasel.tier: "other"`, not `plugin`: neither hands a canvas a layer, tool, action, dep or
+  draw command. d3 joins data into a scene and diagram-elk is a layout planner for diagram. `kernel3d` stays `other`
+  as a host for 3D scenes, though it ships a tool and deps (2026-11-12).
+- A timeline's `loop: n` now counts passes, as a clock's does, rather than laps after the first; `loop()` reads the
+  passes left counting the one under way, so `setLoop(loop())` changes nothing (2026-11-12).
+- Audio keeps `stopAll()` beside the renamed `cancelKey(key)`: it stops sound, and the animator's `cancelAll` names
+  animations. Its `NoisePatch.noise` stays beside the graph's `NoiseNodeOptions.color`, since patterns are saved as
+  data (2026-11-12).
+- Contribution factories keep their packages' names (`diagramPorts`, `plotEditing`, `createMinimapContribution`): core
+  itself mixes `dragPanContribution` and `createPresentationContribution`, and no convention picks one. Presets do
+  have one, now in `docs/conventions.md` (2026-11-12).
+- A `createSpacingHintsPreset` given an `id` names its sources `<id>.spacing` and `<id>.alignment`; with none they
+  keep `spacing` and `alignment`, so a canvas with one preset reads as before (2026-11-12).
+- Open: whether `BindingOpts` (routing), and `ParallaxOpts` and `ZoomClampOpts` (core) take the `Options` suffix.
+  This lane's packages only import them, so the rename belongs to core's and routing's lane.
+- Open: audio's reverb and impulse lengths are seconds (`impulseResponse(ctx, seconds)`, the reverb insert's
+  `seconds`) where every other audio duration is ms, and the animator's `slew` steps in seconds where its tweens take
+  ms. Changing either is a unit change inside an option that keeps its name, which a caller would not see break.

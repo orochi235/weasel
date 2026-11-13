@@ -147,7 +147,7 @@ describe('event tracks', () => {
     const fired: string[] = [];
     createTimeline(h.register, 1, {
       duration: 100,
-      loop: 20,
+      loop: 21,
       tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }] }],
     });
     h.advance(60);
@@ -160,7 +160,7 @@ describe('event tracks', () => {
     const fired: string[] = [];
     createTimeline(h.register, 1, {
       duration: 100,
-      loop: 3,
+      loop: 4,
       tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }, { t: 98, fire: () => fired.push('tail') }] }],
     });
     h.advance(60);

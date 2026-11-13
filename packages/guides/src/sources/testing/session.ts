@@ -34,7 +34,7 @@ export function sceneOf(shapes: readonly Shape[] = []): { scene: AnyScene; ids: 
   return { scene: scene as unknown as AnyScene, ids };
 }
 
-interface DriveOpts {
+interface DriveOptions {
   sources: readonly SnapSource[];
   gesture?: SnapGesture;
   press?: Point;
@@ -53,7 +53,7 @@ interface DriveOpts {
 }
 
 /** A snap session over `opts.scene`, as a host without `<SceneCanvas>` runs one. */
-export function drive(opts: DriveOpts) {
+export function drive(opts: DriveOptions) {
   const scale = opts.scale ?? 1;
   const session = createSnapSession2dForTests({
     scene: opts.scene ?? sceneOf().scene,
@@ -74,7 +74,7 @@ export function drive(opts: DriveOpts) {
 
 /** A move dragged by `by`, from a press at the origin: the delta it settles
  *  on. With no `scene`, the subject is one unstroked rect at `box`. */
-export function moveBy(opts: Omit<DriveOpts, 'gesture' | 'press'> & { box?: Bounds }) {
+export function moveBy(opts: Omit<DriveOptions, 'gesture' | 'press'> & { box?: Bounds }) {
   const own = opts.scene ? null : sceneOf(opts.box ? [opts.box] : []);
   const d = drive({
     ...opts,

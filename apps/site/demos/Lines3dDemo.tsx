@@ -3,8 +3,8 @@ import { type CanvasSize, SceneCanvas, type SurfaceContribution, useLatest, useS
 import { useVisibleRaf } from '@weasel-js/react';
 import { quatFromAxisAngle, type Vec3 } from '@weasel-js/geom/3d';
 import {
-  POSE3_COMPOSITION, cameraViewProjection, createCamera, createLinePass, dollyAction, orbitAction, packLines,
-  panAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
+  POSE3_COMPOSITION, cameraViewProjection, createCamera, createLinePass, dollyAction, packLines,
+  pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Camera3dDep, type Line3, type LinePass, type Pose3,
 } from '@weasel-js/kernel3d';
 import styles from './Lines3dDemo.module.css';
@@ -90,7 +90,7 @@ export function Lines3dDemo() {
     return {
       id: 'camera3d',
       eligibility: { always: true },
-      actions: [orbitAction, panAction, dollyAction],
+      actions: [dollyAction],
       deps: { camera3d: () => camera3d },
     };
   }, [cameraRef]);

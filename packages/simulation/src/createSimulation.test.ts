@@ -84,4 +84,13 @@ describe('createSimulation', () => {
     exact.tick();
     expect(exact.alpha()).toBe(5e-324);
   });
+
+  it('refuses a rate, threshold or tick count that is not a finite number', () => {
+    expect(() => createSimulation<TestNode>({ nodes: [], alphaDecay: Number.NaN })).toThrow(RangeError);
+    const sim = createSimulation<TestNode>({ nodes: [node('a')], forces: [inert] });
+    expect(() => sim.alpha(Number.NaN)).toThrow(/alpha is a finite number, not NaN/);
+    expect(() => sim.velocityDecay(Infinity)).toThrow(RangeError);
+    expect(() => sim.tick(Infinity)).toThrow(RangeError);
+    expect(sim.alpha()).toBe(1);
+  });
 });

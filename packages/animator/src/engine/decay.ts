@@ -4,8 +4,8 @@ import type { DecayOptions, PhysicsOptions, TargetDecayOptions, TargetPhysicsOpt
  *  m*dv/dt = -c*v with c = -ln(friction), m = 1, k = 0. */
 export function decayAsPhysics<T>(o: DecayOptions<T> | TargetDecayOptions<T>): PhysicsOptions<T> | TargetPhysicsOptions<T> {
   const friction = o.friction ?? 0.95;
-  if (!(friction > 0 && friction <= 1)) throw new Error(`decay: friction is a multiplier in (0, 1] a second, not ${friction}`);
-  if (o.target && friction === 1) throw new Error('decay: a coast on a target needs friction below 1, which it stops by');
+  if (!(friction > 0 && friction <= 1)) throw new RangeError(`decay: friction is a multiplier in (0, 1] a second, not ${friction}`);
+  if (o.target && friction === 1) throw new RangeError('decay: a coast on a target needs friction below 1, which it stops by');
   const shared = {
     from: o.from, to: null, velocity: o.velocity,
     stiffness: 0, damping: -Math.log(friction), mass: 1, restThreshold: o.threshold ?? 0.5,

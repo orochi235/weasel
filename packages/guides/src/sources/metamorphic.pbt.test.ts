@@ -44,8 +44,8 @@ const sibSources = () => [alignmentSnapSource(), spacingSnapSource()];
 describe('snap sources through a session, metamorphic', () => {
   it('a pointer snaps to guides moved with it by the same move', () => {
     fc.assert(fc.property(guideList, view, eighth(60), eighth(60), shift, (gs, v, x, y, t) => {
-      const a = drive({ sources: [guideSnapSource(() => gs)], ...v }).at({ x, y }).point;
-      const b = drive({ sources: [guideSnapSource(() => shiftGuides(gs, t))], ...v }).at({ x: x + t.x, y: y + t.y }).point;
+      const a = drive({ sources: [guideSnapSource({ getGuides: () => gs })], ...v }).at({ x, y }).point;
+      const b = drive({ sources: [guideSnapSource({ getGuides: () => shiftGuides(gs, t) })], ...v }).at({ x: x + t.x, y: y + t.y }).point;
       expect(b).toEqual({ x: a.x + t.x, y: a.y + t.y });
     }), RUNS);
   }, TIMEOUT);
@@ -87,8 +87,8 @@ describe('snap sources through a session, metamorphic', () => {
         const j = picks.next().value % (i + 1);
         [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
       }
-      const a = drive({ sources: [guideSnapSource(() => gs)], ...v }).at({ x, y }).point;
-      const b = drive({ sources: [guideSnapSource(() => shuffled)], ...v }).at({ x, y }).point;
+      const a = drive({ sources: [guideSnapSource({ getGuides: () => gs })], ...v }).at({ x, y }).point;
+      const b = drive({ sources: [guideSnapSource({ getGuides: () => shuffled })], ...v }).at({ x, y }).point;
       // Coincident guides, or one on each axis as near, tie; either may win.
       expect(Math.hypot(b.x - x, b.y - y)).toBe(Math.hypot(a.x - x, a.y - y));
     }), RUNS);
@@ -106,8 +106,8 @@ describe('snap sources through a session, metamorphic', () => {
   it('a pointer already snapped to guides stays on each axis it snapped on, and on a grid alone, stays put', () => {
     const t0 = tally();
     fc.assert(fc.property(guideList, view, eighth(60), eighth(60), (gs, v, x, y) => {
-      const q = drive({ sources: [guideSnapSource(() => gs)], ...v }).at({ x, y }).point;
-      const again = drive({ sources: [guideSnapSource(() => gs)], ...v }).at(q).point;
+      const q = drive({ sources: [guideSnapSource({ getGuides: () => gs })], ...v }).at({ x, y }).point;
+      const again = drive({ sources: [guideSnapSource({ getGuides: () => gs })], ...v }).at(q).point;
       // An axis left free can come in reach once the other has snapped: reach is a disc about the pointer.
       if (q.x !== x) expect(again.x).toBe(q.x);
       if (q.y !== y) expect(again.y).toBe(q.y);

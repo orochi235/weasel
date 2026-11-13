@@ -309,10 +309,10 @@ describe('createAudioGraph lifetime', () => {
     const s1 = testNode(ctx, [], true);
     graph.add('s1', s1.def);
     expect(s1.start).not.toHaveBeenCalled();
-    expect(graph.playing()).toBe(false);
+    expect(graph.isPlaying()).toBe(false);
     ctx._advance(3);
     graph.start();
-    expect(graph.playing()).toBe(true);
+    expect(graph.isPlaying()).toBe(true);
     expect(s1.start).toHaveBeenCalledWith(ctx.currentTime, expect.any(Function));
     graph.start();
     expect(s1.start).toHaveBeenCalledTimes(1);
@@ -323,7 +323,7 @@ describe('createAudioGraph lifetime', () => {
     const out = dest.connectedFrom[0] as FakeGain;
     const now = ctx.currentTime;
     graph.stop();
-    expect(graph.playing()).toBe(false);
+    expect(graph.isPlaying()).toBe(false);
     expect(out.gain.ramps.at(-1)).toEqual({ value: 0, at: now + FADE / 1000 });
     expect(s1.stop).not.toHaveBeenCalled();
     settle();
@@ -358,7 +358,7 @@ describe('createAudioGraph lifetime', () => {
     settle();
     expect(s.stop).not.toHaveBeenCalled();
     expect(s.start).toHaveBeenCalledTimes(1);
-    expect(graph.playing()).toBe(true);
+    expect(graph.isPlaying()).toBe(true);
     expect((dest.connectedFrom[0] as FakeGain).gain.ramps.at(-1)!.value).toBe(1);
   });
 

@@ -183,14 +183,14 @@ function sweepKit(): Sweep {
   s.value(minimap.createMinimapContribution({} as never), 'minimap.createMinimapContribution');
   s.value(minimap.createLinkedCursorContribution(), 'minimap.createLinkedCursorContribution');
   s.value(symmetry.createSymmetry(scene), 'symmetry.createSymmetry');
-  s.value(diagram.createDiagramContribution({} as never), 'diagram.createDiagramContribution');
+  s.value(diagram.diagramPorts({ participants: () => [] } as never), 'diagram.diagramPorts');
   s.value(diagram.diagramWaypoints({} as never), 'diagram.diagramWaypoints');
   s.value(diagram.diagramLabelDrag({} as never), 'diagram.diagramLabelDrag');
   s.value(diagram.diagramEdgeEnds({} as never), 'diagram.diagramEdgeEnds');
   s.value(diagram.reorderContribution({} as never), 'diagram.reorderContribution');
   s.value(diagram.groupReorderContribution(() => {}), 'diagram.groupReorderContribution');
-  s.value(diagram.reorderPreset({} as never), 'diagram.reorderPreset');
-  s.value(diagram.groupReorderPreset(() => {}), 'diagram.groupReorderPreset');
+  s.value(diagram.createReorderPreset({} as never), 'diagram.createReorderPreset');
+  s.value(diagram.createGroupReorderPreset(() => {}), 'diagram.createGroupReorderPreset');
   s.value(diagram.diagramContainers({} as never), 'diagram.diagramContainers');
   s.value(diagram.diagramOffPage(), 'diagram.diagramOffPage');
   s.value(diagram.connectorTool({} as never), 'diagram.connectorTool');

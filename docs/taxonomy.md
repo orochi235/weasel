@@ -106,7 +106,8 @@ layer, `presentation` for a palette. An entry that only routes input declares
 only the first two. See `packages/routing/src/contributions/types.ts`.
 
 **`SurfaceContribution`** is the canvas's form, and the kit's unit for shipping
-a feature: it adds `views` (cameras over rects of the surface), `attach`
+a feature: it adds `views` (cameras over rects of the surface), `layers`
+(registered, hit-tested layers, hit in entry order with the last first), `attach`
 (runs against the mounted canvas, returns its teardown, for what the other
 roles cannot say), `beforePaint` / `afterPaint` (run on the surface's frame
 loop) and `requires` (the kit versions it was written against). `<SceneCanvas ambient>` installs every role an entry

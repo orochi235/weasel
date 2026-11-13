@@ -20,7 +20,7 @@ export interface PlayOptions {
   position?: SpatialPoint;
   /** Engine time in ms (see `engine.now()`). Default: as soon as possible. Throws when not finite. */
   when?: number;
-  /** `stopKey(key)` stops every voice sharing this key. */
+  /** `cancelKey(key)` stops every voice sharing this key. */
   cancelKey?: string;
   /** The voice's source ended: it played out, or was stopped, faded, released
    *  or stolen after it started. */
@@ -35,7 +35,7 @@ export interface PlayOptions {
  *
  * - `locked` — the context was not running when it was played.
  * - `disposed` — the engine was disposed, before the play or while it waited.
- * - `stopped` — stopped, released or `stopKey`ed before it came due.
+ * - `stopped` — stopped, released or `cancelKey`ed before it came due.
  * - `unready` — its sound was not loaded in this engine when it came due.
  * - `failed` — its node threw as it started.
  * - `stale` — it came due while the context was suspended.

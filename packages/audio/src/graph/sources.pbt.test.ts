@@ -85,11 +85,11 @@ describe('a source node in a graph', () => {
           const bad = !Number.isFinite(w.value) || !Number.isFinite(w.ramp);
           if (bad) {
             expect(() => graph.set('s', w.param, w.value, w.ramp)).toThrow(RangeError);
-            seen.count(`refused ${graph.playing() ? 'playing' : 'stopped'}`);
+            seen.count(`refused ${graph.isPlaying() ? 'playing' : 'stopped'}`);
           } else graph.set('s', w.param, w.value, w.ramp);
         }
       }
-      expect(graph.playing()).toBe(true);
+      expect(graph.isPlaying()).toBe(true);
     }), runs(400));
     seen.atLeast('refused stopped', 20);
     seen.atLeast('refused playing', 20);

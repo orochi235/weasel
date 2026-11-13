@@ -17,7 +17,7 @@ import { RAD_TO_DEG, wrapAngle } from '@weasel-js/geom';
 import { dot, multiply, quatFromAxisAngle, sub, transformPoint4, type Mat4, type Vec3 } from '@weasel-js/geom/3d';
 import {
   cameraEye, cameraViewProjection, createCamera, createCameraDep, createPickEvery, createPoseDescriptor,
-  dollyAction, ndcToScreen, orbitAction, panAction, pose3, poseMatrix, useOrbitTool, worldPoseOf,
+  dollyAction, ndcToScreen, pose3, poseMatrix, useOrbitTool, worldPoseOf,
   type Camera3d, type Pose3, type Scene3d, type Viewport3d,
 } from '@weasel-js/kernel3d';
 import styles from './Kernel3dDemo.module.css';
@@ -143,7 +143,7 @@ export function Kernel3dDemo() {
     return {
       id: 'camera3d',
       eligibility: { always: true },
-      actions: [orbitAction, panAction, dollyAction],
+      actions: [dollyAction],
       deps: { camera3d: () => camera3d },
     };
   }, [world]);

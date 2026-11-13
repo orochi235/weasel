@@ -65,7 +65,7 @@ export function ScoreDemo() {
   // Built on the first press, not at mount: a context made before a gesture
   // starts suspended, and jsdom has none.
   const toggle = (): void => {
-    if (kit.current?.score.playing()) {
+    if (kit.current?.score.isPlaying()) {
       kit.current.score.stop();
       setHeard(null);
       return;

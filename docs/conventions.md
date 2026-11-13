@@ -162,6 +162,13 @@ A function that builds a `RenderLayer` is `create<What>Layer`
 it changed is named for what it does to it (`gateLayer`,
 `composeAffordanceLayer`).
 
+## Preset names
+
+A ready-made `FeaturePreset` is a constant named `xPreset` (`reorderPreset`,
+`balancePreset`); a function that builds one from options is `createXPreset`
+(`createBalancePreset`, `createGridPreset`). A package's factory never takes a
+name core already gives a constant, so the two can be imported side by side.
+
 ## Stores notify through `createEmitter`
 
 A store keeps its subscribers in `createEmitter()` from `@weasel-js/registry`,

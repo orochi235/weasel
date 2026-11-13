@@ -242,7 +242,7 @@ const cmd = (name: string, check: (m: Model) => boolean, run: (m: Model, r: Real
     run(m, r);
     expect([...r.graph.ids()].sort()).toEqual([...m.nodes.keys()].sort());
     for (const i of IDS) expect(r.graph.has(i)).toBe(m.nodes.has(i));
-    expect(r.graph.playing()).toBe(m.playing);
+    expect(r.graph.isPlaying()).toBe(m.playing);
   },
   toString: () => name,
 });

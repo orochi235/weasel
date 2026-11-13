@@ -19,7 +19,7 @@ describe('setLoop', () => {
 
   it('sets a finite lap count', () => {
     const { handle, advance } = makeTimeline({ duration: 100, loop: false });
-    handle.setLoop(2);
+    handle.setLoop(3);
     advance(350);
     expect(handle.time()).toBe(100);
   });

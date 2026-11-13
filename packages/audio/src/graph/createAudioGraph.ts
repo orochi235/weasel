@@ -92,7 +92,7 @@ export function createAudioGraph(
     }),
     start: guard(transport.start),
     stop: guard(transport.stop),
-    playing: transport.playing,
+    isPlaying: transport.playing,
     has: edits.has,
     ids: edits.ids,
     tap: guard((id: string, tapOpts?: AnalyserTapOptions): AnalyserTap =>

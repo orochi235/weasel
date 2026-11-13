@@ -8,7 +8,6 @@ import {
   WeaselProvider,
   type FeatureEntry,
   type RectPose,
-  type RenderLayer,
   type CanvasSize,
   type Scene,
   type SceneCanvasApi,
@@ -160,7 +159,6 @@ function Inner({
   });
   const itemDrop = useItemDrop(source, { onDropItem, canDropItem });
   const ambient = useMemo(() => (itemDrop === null ? editing.ambient : [...editing.ambient, itemDrop]), [editing.ambient, itemDrop]);
-  useRegisteredLayers(canvasRef, editing.layers);
   const moves = onMove !== undefined || onEditContainer !== undefined;
   const resizes = onResize !== undefined || onEditContainer !== undefined;
   const sequences = onEditSequence !== undefined;
@@ -228,16 +226,6 @@ function setOnly<T extends object>(props: T): { [K in keyof T]?: Exclude<T[K], u
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(props)) if (value !== undefined && value !== null) out[key] = value;
   return out as { [K in keyof T]?: Exclude<T[K], undefined | null> };
-}
-
-/** Registers `layers` on the canvas, the only attach route that is hit-tested, in order: the last is hit first. */
-function useRegisteredLayers(canvasRef: RefObject<SceneCanvasApi | null>, layers: readonly RenderLayer<unknown>[]): void {
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas === null) return;
-    const disposers = layers.map((layer) => canvas.registerLayer(layer));
-    return () => disposers.forEach((dispose) => dispose());
-  }, [canvasRef, layers]);
 }
 
 /** Shapes drop only into containers and lanes, and lanes only into pools. A child of `<SceneCanvas>`, so its dep source registers after the canvas's own. */

@@ -34,8 +34,8 @@ async function mount(extra: Partial<DiagramViewProps>): Promise<HTMLCanvasElemen
     portOptions: { fill: { paint: { color: '#ff0000' } }, sizePx: 10 },
     ...extra,
   })));
-  await frame();
-  await frame();
+  // The canvas reports ready a render after it mounts, and its entries' layers register then.
+  for (let i = 0; i < 4; i++) await frame();
   return host.querySelector('canvas')!;
 }
 

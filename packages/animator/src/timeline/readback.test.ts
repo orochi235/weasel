@@ -19,9 +19,9 @@ describe('TimelineHandle.loop', () => {
   });
 
   it('counts down as a finite loop consumes its laps', () => {
-    const { handle, advance } = makeTimeline({ duration: 100, loop: 2 });
+    const { handle, advance } = makeTimeline({ duration: 100, loop: 3 });
     advance(150);
-    expect(handle.loop()).toBe(1);
+    expect(handle.loop()).toBe(2);
     advance(250);
     expect(handle.loop()).toBe(false);
   });

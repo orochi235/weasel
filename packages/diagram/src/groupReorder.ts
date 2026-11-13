@@ -19,7 +19,7 @@ import { moveItems, nudgeGap } from '@weasel-js/ui-input';
 import { diagramContainerOf } from './containers/trait';
 import { worldRectOf } from './overlays';
 import type { DiagramSceneData } from './dataTypes';
-import { reorderContribution, reorderPreset, sequenceSlots, type ReorderOptions, type ReorderSlots } from './reorder';
+import { reorderContribution, createReorderPreset, sequenceSlots, type ReorderOptions, type ReorderSlots } from './reorder';
 import { carriedWith, reorderTargetOf, type ReorderTarget } from './reorderModel';
 
 /** Alt and an arrow key: the selected member one place along. */
@@ -119,7 +119,7 @@ function groupReorderOptions(report: (change: ReorderChange) => void): ReorderOp
 }
 
 /** The reorder drag and the step action, as an entry to pass in `ambient`. Beside the `move` feature the move takes
- *  every press first; {@link groupReorderPreset} is the form that works beside it. */
+ *  every press first; {@link createGroupReorderPreset} is the form that works beside it. */
 export function groupReorderContribution(report: (change: ReorderChange) => void): Contribution {
   const drag = reorderContribution(groupReorderOptions(report));
   return { ...drag, id: 'weasel-diagram-reorder', actions: [...(drag.actions ?? []), createStepReorderAction(report)] };
@@ -127,9 +127,9 @@ export function groupReorderContribution(report: (change: ReorderChange) => void
 
 /** Everything `DiagramView` installs for `onReorder`, as a preset to pass in `features`: the reorder drag, tried
  *  ahead of the `move` feature's on the same press, and the step action. */
-export function groupReorderPreset(report: (change: ReorderChange) => void): FeaturePreset {
+export function createGroupReorderPreset(report: (change: ReorderChange) => void): FeaturePreset {
   const id = 'weasel-diagram-reorder';
-  const drag = reorderPreset(groupReorderOptions(report));
+  const drag = createReorderPreset(groupReorderOptions(report));
   const entry = { ...drag.ambient!({}), id };
   return { ...drag, id, actions: [...(drag.actions ?? []), createStepReorderAction(report)], ambient: () => entry };
 }

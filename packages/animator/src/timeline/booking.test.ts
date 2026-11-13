@@ -252,7 +252,7 @@ describe('event booking on a loop', () => {
   });
 
   it('does not book into a lap the loop policy will not play', () => {
-    const r = withEvents({ duration: 100, loop: 1 }, [10]);
+    const r = withEvents({ duration: 100, loop: 2 }, [10]);
     for (const wall of [0, 50, 150, 190]) r.frame(wall);
     expect(r.whens()).toEqual([START + 10, START + 110]);
   });

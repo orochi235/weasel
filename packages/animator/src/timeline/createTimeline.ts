@@ -35,8 +35,8 @@ const finite = (t: number): number => {
   return t;
 };
 
-/** The laps a loop policy allows past the first pass. */
-const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : loop);
+/** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is. */
+const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : Math.max(1, loop) - 1);
 
 /** Where `t` stands in its lap of `duration`. */
 const inLap = (t: number, duration: number): number => ((t % duration) + duration) % duration;
@@ -253,7 +253,7 @@ export function createTimeline(
       booker?.retract();
       playbackChanged();
     },
-    loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft),
+    loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft + 1),
     edit(fn) {
       fn();
       sampler.edited();

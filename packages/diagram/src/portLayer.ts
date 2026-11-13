@@ -82,8 +82,8 @@ export function sceneParticipants<TPose>(
 }
 
 /**
- * The composed layer, ready for `CanvasExtensionApi.registerLayer` — the only
- * attach route that is hit-tested. Handing this to `SceneCanvas`'s `layers`
+ * The composed layer, for a contribution's `layers` or `registerLayer`, the
+ * routes that are hit-tested. Handing this to `SceneCanvas`'s `layers`
  * prop, or to a `Contribution.overlay`, paints the ports and makes none of them
  * grabbable.
  */

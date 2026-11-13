@@ -16,7 +16,7 @@ export interface BindOptions<TData, TPose> {
   /** Pose descriptor with `lerp(from, to, t)`. Default `RECT_POSE_DESCRIPTOR`
    *  (interpolates x/y/width/height linearly). Override for non-rect poses
    *  (e.g. `pathPoseDescriptor`). */
-  geometry?: PoseDescriptor<TPose>;
+  poseDescriptor?: PoseDescriptor<TPose>;
 }
 
 /**

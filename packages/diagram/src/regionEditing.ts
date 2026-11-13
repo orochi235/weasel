@@ -3,7 +3,7 @@
  * with every commit swapped for a report, and the header double-click.
  */
 import { isDiagramBody } from './bodyNode';
-import type { Contribution, NodeId, RectPose, RenderLayer, Scene } from '@weasel-js/core';
+import type { Contribution, NodeId, RectPose, Scene, SurfaceContribution } from '@weasel-js/core';
 import { worldWith } from './worldWith';
 import { diagramContainers, laneResizeFrame, type LaneResize } from './containers/containerActions';
 import { editContainerTitleAction, editContainerTitleBinding } from './containers/containerTitle';
@@ -51,12 +51,12 @@ export function laneResizeReports(scene: AnyScene, resize: LaneResize): { lanes:
   return { lanes: { kind: 'lanes', pool: pool.id, lanes }, moves, boxes };
 }
 
-/** The lane layer and the contributions that report region edits through `reports`. */
+/** The contributions that report region edits through `reports`: the lanes', which carries their layer, and the title's. */
 export function regionEditing(
   scene: AnyScene,
   selected: () => readonly string[],
   reports: { readonly current: RegionReports },
-): { layer: RenderLayer<unknown>; contributions: Contribution[] } {
+): SurfaceContribution[] {
   const edit = (e: ContainerEdit) => reports.current.onEditContainer?.(e);
   const containers = diagramContainers({
     scene,
@@ -80,7 +80,7 @@ export function regionEditing(
     actions: [editContainerTitleAction((id) => edit({ kind: 'title', id }))],
     bindings: [editContainerTitleBinding()],
   };
-  return { layer: containers.layer, contributions: [containers.contribution, title] };
+  return [containers, title];
 }
 
 /** Every node under `id`, each after its parent. */

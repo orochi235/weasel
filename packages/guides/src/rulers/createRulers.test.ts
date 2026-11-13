@@ -31,9 +31,8 @@ function store() {
 function fixture(opts: Partial<RulersOptions> = {}) {
   const guides = store();
   const rulers = createRulers({ guides, root: PT, newGuideId: () => 'g1', ...opts });
-  const layers: RenderLayer<unknown>[] = [];
+  const layers: readonly RenderLayer<unknown>[] = rulers.contribution.layers ?? [];
   const api = {
-    registerLayer: (l: RenderLayer<unknown>) => { layers.push(l); return () => {}; },
     requestRedraw: () => {},
     getSurfaceRect: () => ({ x: 0, y: 0, width: 400, height: 300 }),
   } as unknown as CanvasExtensionApi;

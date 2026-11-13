@@ -42,7 +42,8 @@ const insert = createInsert({
 const rig: SurfaceContribution = {
   id: 'rig',
   eligibility: { always: true },
-  actions: [orbitAction, panAction, dollyAction],
+  // The orbit tool carries orbit and pan; these are the wheel, the pinch and the double-click.
+  actions: [dollyAction, pinchDollyAction, homeAction],
   deps: {
     // Reads the camera, the pane and the up from `world`, as every other dep does.
     camera3d: () => createCameraDep(world, { set: setCamera }),

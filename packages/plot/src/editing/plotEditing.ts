@@ -1,4 +1,4 @@
-import type { Action, Contribution, RenderLayer, Scene } from '@weasel-js/core';
+import type { Action, Scene, SurfaceContribution } from '@weasel-js/core';
 import { PLOT_DRAG_ACTION_ID, createPlotDragAction, type PlotDragOptions } from './dragAction';
 import { PLOT_HANDLE_AFFORDANCE_KIND, plotHandleLayer } from './handleLayer';
 
@@ -14,28 +14,23 @@ const grabHandleAction: Action = {
 };
 
 /**
- * Both halves of editing a scene's plots by dragging: the handle layer to
- * `registerLayer`, and the contribution to pass as `ambient`, which binds a
- * drag on a handle to `plot.dragValue`. One without the other fails quietly:
- * the layer alone claims presses that start nothing, the contribution alone
- * binds a kind nothing reports.
+ * Editing a scene's plots by dragging, as one entry to pass as `ambient`: the
+ * handle layer, and a drag on a handle bound to `plot.dragValue`.
  */
 export function plotEditing(
   opts: PlotDragOptions & { scene: Scene<unknown, string, unknown> },
-): { layer: RenderLayer<unknown>; contribution: Contribution } {
+): SurfaceContribution {
   const actionId = opts.id ?? PLOT_DRAG_ACTION_ID;
   const target = `affordance:${PLOT_HANDLE_AFFORDANCE_KIND}` as const;
   return {
-    layer: plotHandleLayer(opts.scene),
-    contribution: {
-      id: 'weasel-plot-editing',
-      eligibility: { claimed: true },
-      actions: [createPlotDragAction({ ...opts, id: actionId }), grabHandleAction],
-      bindings: [
-        { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-plot-editing.drag' } },
-        { spec: { kind: 'pointerDown', target }, actionId: GRAB_PLOT_HANDLE_ACTION_ID, opts: { id: 'weasel-plot-editing.pointerDown' } },
-        { spec: { kind: 'click', target }, actionId: GRAB_PLOT_HANDLE_ACTION_ID, opts: { id: 'weasel-plot-editing.click' } },
-      ],
-    },
+    id: 'weasel-plot-editing',
+    eligibility: { claimed: true },
+    layers: [plotHandleLayer(opts.scene)],
+    actions: [createPlotDragAction({ ...opts, id: actionId }), grabHandleAction],
+    bindings: [
+      { spec: { kind: 'drag', target }, actionId, opts: { id: 'weasel-plot-editing.drag' } },
+      { spec: { kind: 'pointerDown', target }, actionId: GRAB_PLOT_HANDLE_ACTION_ID, opts: { id: 'weasel-plot-editing.pointerDown' } },
+      { spec: { kind: 'click', target }, actionId: GRAB_PLOT_HANDLE_ACTION_ID, opts: { id: 'weasel-plot-editing.click' } },
+    ],
   };
 }

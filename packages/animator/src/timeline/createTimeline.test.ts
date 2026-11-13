@@ -104,7 +104,7 @@ describe('createTimeline', () => {
   });
 
   it('lands a seek past the last lap on its end', () => {
-    const { handle } = makeTimeline({ loop: 2, tracks: [numberTrack(() => {})] });
+    const { handle } = makeTimeline({ loop: 3, tracks: [numberTrack(() => {})] });
     handle.seek(530);
     expect(handle.time()).toBe(100);
     expect(handle.loop()).toBe(false);
@@ -134,7 +134,7 @@ describe('createTimeline', () => {
 
   it('stops after n additional loops', () => {
     const onDone = vi.fn();
-    const { advance } = makeTimeline({ tracks: [numberTrack(() => {})], loop: 1, onDone });
+    const { advance } = makeTimeline({ tracks: [numberTrack(() => {})], loop: 2, onDone });
     expect(advance(150)).toBe(false);   // first wrap consumes the one loop
     expect(advance(260)).toBe(true);    // second pass ends
     expect(onDone).toHaveBeenCalledTimes(1);

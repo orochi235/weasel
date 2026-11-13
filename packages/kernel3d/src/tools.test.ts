@@ -4,6 +4,7 @@ import type { ActionDeps, ImmediateInvoker, InvocationCtx, OngoingInvoker } from
 import { createCamera, type Camera3d } from './camera';
 import type { Camera3dDep } from './cameraDep';
 import { dollyAction, homeAction, orbitAction, panAction, pinchDollyAction, useOrbitTool } from './tools';
+import { KERNEL3D_TOOLS, useKernel3dTools } from './toolSets';
 
 describe('useOrbitTool', () => {
   it('returns the same tool on every render', () => {
@@ -11,6 +12,21 @@ describe('useOrbitTool', () => {
     // which loops a canvas whose onToolsCreated sets state.
     const { result, rerender } = renderHook(() => useOrbitTool());
     const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
+
+  it('carries the actions its bindings name', () => {
+    const { result } = renderHook(() => useOrbitTool());
+    expect(result.current.actions).toEqual([orbitAction, panAction]);
+  });
+});
+
+describe('useKernel3dTools', () => {
+  it('keys every tool in KERNEL3D_TOOLS by its id, the same object each render', () => {
+    const { result, rerender } = renderHook(() => useKernel3dTools());
+    const first = result.current;
+    expect(Object.keys(first)).toEqual([...KERNEL3D_TOOLS.members]);
     rerender();
     expect(result.current).toBe(first);
   });

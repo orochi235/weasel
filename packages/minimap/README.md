@@ -22,8 +22,8 @@ It is the worked example of a `SurfaceContribution` that uses every role:
 | Role | What it holds |
 |---|---|
 | `views` | The minimap: a `<CanvasView>` at `rect`, its camera a fit over the scene |
-| `actions` | `minimap.center` (press) and `minimap.pan` (drag), which move `rootView` |
-| `bindings` | `pointerDown` and `drag`, scoped with `views: [id]` so they outrank the active tool inside the minimap and never fire outside it |
+| `actions` | `minimap.center` (press) and `minimap.pan` (drag), which move `rootView`, and `minimap.zoom` (wheel and trackpad pinch, unless `wheelZoom: false`), which zooms it about the point under the cursor |
+| `bindings` | `pointerDown`, `drag` and `wheel`, scoped with `views: [id]` so they outrank the active tool inside the minimap and never fire outside it |
 | `overlay` | The visible-rect indicator, painted only in the minimap; the linked crosshair, painted in whichever view the pointer is not over |
 | `attach` | Reads the `scene` and `pointer` deps, and repaints while the crosshair shows |
 

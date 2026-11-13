@@ -83,7 +83,7 @@ function handleAffordance(scene: AnyScene): Affordance {
   return { id: PLOT_HANDLE_LAYER_ID, regions, regionsAt: regions };
 }
 
-/** The handle layer, for `CanvasExtensionApi.registerLayer`. */
+/** The handle layer, for a contribution's `layers` (as `plotEditing` carries it) or `registerLayer`. */
 export function plotHandleLayer(scene: Scene<unknown, string, unknown>): RenderLayer<unknown> {
   return composeAffordanceLayer(PLOT_HANDLE_LAYER_ID, 'Plot handles', [handleAffordance(scene)]) as unknown as RenderLayer<unknown>;
 }

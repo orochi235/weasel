@@ -59,7 +59,7 @@ export interface PatternPlayer {
   start(when?: number): void;
   /** Book nothing further, and release every voice the player started. */
   stop(): void;
-  playing(): boolean;
+  isPlaying(): boolean;
   tempo(): number;
   /** Takes effect from the next step not yet booked. Called from `onStep`,
    *  that is the step after the one reported, which keeps its own length. */
@@ -179,7 +179,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       opts.onStep?.(step, when, count);
     } finally {
       inStep = false;
-      // Booked even when `onStep` throws, or `playing()` stays true over a silent player.
+      // Booked even when `onStep` throws, or `isPlaying()` stays true over a silent player.
       if (running && run === ran) {
         count += 1;
         lastAt = when;
@@ -204,18 +204,18 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
     stop() {
       if (!running) return;
       running = false;
-      engine.stopKey(key);
+      engine.cancelKey(key);
       for (const v of voices) v.release();
       voices.clear();
     },
-    playing: () => running,
+    isPlaying: () => running,
     tempo: () => bpm,
     setTempo(next) {
       checkTempo(next);
       bpm = next;
       // From inside `onStep` the step after this one is about to be booked.
       if (!running || lastAt === null || inStep) return;
-      engine.stopKey(key);
+      engine.cancelKey(key);
       nextAt = Math.max(lastAt + stepMs(), engine.now());
       book();
     },

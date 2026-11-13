@@ -167,7 +167,7 @@ describe('animator.watch', () => {
     act(() => {
       animator().timeline({
         label: 'intro',
-        loop: 1,
+        loop: 2,
         duration: 40,
         tracks: [
           { kind: 'sampled', keys: [{ t: 0, value: 0 }], onTick: () => {} },

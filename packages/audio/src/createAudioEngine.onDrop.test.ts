@@ -65,7 +65,7 @@ describe('a voice that never played', () => {
     engine.playNoise({ noise: 'white', ...byKey, when: 5000, cancelKey: 'k' });
     voice.stop();
     voice.stop();
-    engine.stopKey('k');
+    engine.cancelKey('k');
     tick();
     await endOfTask();
     expect(byHandle.onDrop.mock.calls).toEqual([['stopped']]);

@@ -1,8 +1,8 @@
 /**
  * `useContributionRoles` — installs the roles of every entry in the tools
  * registry that a surface owns rather than the dispatcher: its actions into the
- * `<ActionsProvider>`, its deps into the dep registry, and its `attach` against
- * the mounted canvas. Views are the fourth such role; `<SceneCanvas>` renders
+ * `<ActionsProvider>`, its deps into the dep registry, its `layers` and its
+ * `attach` against the mounted canvas. Views are the fourth such role; `<SceneCanvas>` renders
  * those itself, because a view is a component.
  *
  * Tool hooks run wherever the consumer calls them, which may be outside any
@@ -19,7 +19,9 @@ import type { CanvasExtensionApi } from '../canvasExtension';
 import type { SurfaceContribution } from '../surfaceContribution';
 import { checkRequirements, type RequirementMismatch } from '../kitRequirements';
 import { useContributionFrameHooks } from './contributionFrameHooks';
-import { isDev } from '@weasel-js/react';
+import { isDev, useStableByContent } from '@weasel-js/react';
+import { sameList } from '@weasel-js/registry';
+import type { RenderLayer } from '../../core/layers/render';
 
 /** How a surface treats an entry whose `requires` the running kit does not
  *  meet: warn in development (the default), throw, or not check. */
@@ -155,11 +157,25 @@ export function useContributionRoles(
     for (const layer of Array.isArray(overlay) ? overlay : [overlay]) installs.set(layer, () => api.registerLayer(layer));
   }
   useKeyedInstall(installs);
+  useOrderedLayers(entries, api);
   useContributionFrameHooks(entries, api, reader);
 
   // Tool assembly runs above the provider too, so its own registration of
   // held-key engagement finds no registry unless the consumer mounted one.
   useOffhandAction(contributionEntries(tools));
+}
+
+/** Registers every entry's `layers` in entry order, and all of them again
+ *  whenever the list changes, so a rebuilt entry keeps its place in hit order. */
+function useOrderedLayers(entries: readonly SurfaceContribution[], api: CanvasExtensionApi | null): void {
+  const current = useStableByContent<readonly RenderLayer<unknown>[]>(
+    entries.flatMap((entry) => entry.layers ?? []), sameList,
+  );
+  useEffect(() => {
+    if (!api || current.length === 0) return;
+    const disposers = current.map((layer) => api.registerLayer(layer));
+    return () => { for (const dispose of disposers) dispose(); };
+  }, [api, current]);
 }
 
 function registerDeps(

@@ -135,7 +135,7 @@ describe('createAudioEngine booking a voice already inside the window', () => {
     const sound = await engine.load('/a.wav');
     engine.play(sound).stop();
     engine.play(sound, { cancelKey: 'k' });
-    engine.stopKey('k');
+    engine.cancelKey('k');
     await endOfTask();
     tick();
     expect(ctx._sources).toHaveLength(0);
