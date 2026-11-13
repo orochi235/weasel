@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 export type { FocusScope, FocusScopeOptions } from './focus';
-export { UNBOUNDED, exactly, fixedWidth, clampTo, envPx, envNumber, centeredBaseline, offsetRect } from './measure';
+export { UNBOUNDED, exactly, fixedWidth, envPx, envNumber, centeredBaseline, offsetRect } from './measure';
 export type { Constraints, FontSpec, TextExtent, MeasureEnv, Measured, HeadlessComponent } from './measure';
 export {
   buttonParts, buttonMetrics, measureButton, BUTTON_SPINNER_SIZE, IDLE_PRESS, pressStep, isPressKey,
