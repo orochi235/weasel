@@ -78,7 +78,7 @@ function ShellBody({
         {children}
         {store && preferences !== null && <PreferencesCommand options={preferences} open={open} />}
         {store && (
-          <EditorPrefsDialog store={store} open={prefsOpen} onClose={() => setPrefsOpen(false)} dialog={prefsDialog} />
+          <EditorPrefsDialog store={store} isOpen={prefsOpen} onOpenChange={setPrefsOpen} dialog={prefsDialog} />
         )}
         <ContextMenuHost />
       </AmbientContributionsProvider>

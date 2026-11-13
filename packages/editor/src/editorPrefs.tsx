@@ -45,10 +45,10 @@ export function useOpenPreferences(): () => void {
 }
 
 /** `PrefsDialog` bound to `store`: each change is written at once, and turning a leaf's Auto on resets it. */
-export function EditorPrefsDialog({ store, open, onClose, dialog }: {
+export function EditorPrefsDialog({ store, isOpen, onOpenChange, dialog }: {
   store: PrefsStore<PrefGroup>;
-  open: boolean;
-  onClose: () => void;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
   dialog?: EditorPrefsDialogProps;
 }) {
   const { values, set, unset, setAuto } = usePrefsValues(store);
@@ -56,8 +56,8 @@ export function EditorPrefsDialog({ store, open, onClose, dialog }: {
     <PrefsDialog
       layout="rail"
       {...dialog}
-      isOpen={open}
-      onOpenChange={(next) => { if (!next) onClose(); }}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
       schema={store.schema}
       values={values}
       onChange={set}
