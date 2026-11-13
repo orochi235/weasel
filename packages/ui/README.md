@@ -31,7 +31,20 @@ export function Toolbar({ snap, setSnap }: { snap: boolean; setSnap: (on: boolea
 ```
 
 Both stylesheets are required: component styles ship as one bundled file, and read the design tokens
-`@weasel-js/theme/tokens.css` declares. Each component has its own entry, `@weasel-js/ui/components/<Name>`,
+`@weasel-js/theme/tokens.css` declares.
+
+Components that draw a glyph (`Transport`'s play and pause buttons, among others) read it from an icon
+registry, and draw nothing without one. Mount one at the app's root:
+
+```tsx
+import { IconRegistryProvider } from '@weasel-js/core';
+import { kitIcons } from '@weasel-js/ui/kit-icons';
+
+<IconRegistryProvider icons={kitIcons}><App /></IconRegistryProvider>
+```
+
+The build plugin that trims the tables to the glyphs an app uses is in
+[icons](https://github.com/orochi235/weasel/blob/main/docs/icons.md). Each component has its own entry, `@weasel-js/ui/components/<Name>`,
 so a bundle holds only the ones it imports; the main entry re-exports them all.
 
 A `Slider` or `BandEditor` that maps values onto its track non-linearly takes a
