@@ -536,6 +536,27 @@ Style your own surfaces against the `--wzl-*` tokens so they follow the mode the
 lab is in. Class names are `lk-*` and are not public API — every component takes
 a `className`.
 
+## A lab with no trials
+
+A page that is one editor rather than a grid of trials is still a `<Lab>`: leave
+out `instruments`, and its `children` become the body, beside the lab's header,
+menus, mode switch, pages switcher, and `labChrome`. A history the body hands over
+with `useTrialHistory` gets the lab's Undo and Redo and their keys;
+`trialHistoryOf` makes one of a weasel `History`.
+
+```tsx
+import { Lab, trialHistoryOf, useTrialHistory } from '@weasel-js/labkit';
+
+function Editor({ history }: { history: History }) {
+  useTrialHistory(useMemo(() => trialHistoryOf(history), [history]));
+  return <MyEditor history={history} />;
+}
+
+<Lab title="Palette" pages={PAGES} path={PALETTE.href}>
+  <Editor history={history} />
+</Lab>;
+```
+
 ## Without the runtime
 
 The presentational pieces work on their own. `<LabShell>` is a titled page

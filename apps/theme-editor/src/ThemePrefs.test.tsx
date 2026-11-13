@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
@@ -57,5 +58,23 @@ describe('<ThemePrefs>', () => {
     const rules = [...document.querySelectorAll('style')].map((el) => el.textContent ?? '').join('\n');
     const adopted = (document.adoptedStyleSheets ?? []).flatMap((sheet) => [...sheet.cssRules].map((r) => r.cssText)).join('\n');
     expect(`${rules}\n${adopted}`).toMatch(/weasel-prefs[^{]*\{[^}]*--wzl-gray-50:\s*#ff3366/i);
+  });
+
+  it('takes an edit back with Undo and makes it again with Redo', () => {
+    mount();
+    fireEvent.click(within(screen.getByRole('navigation')).getByText('Gray'));
+    const undo = () => screen.getByRole('button', { name: 'Undo' });
+    const redo = () => screen.getByRole('button', { name: 'Redo' });
+    const gray50 = () => (screen.getByLabelText('50') as HTMLInputElement).value.toLowerCase();
+    const before = gray50();
+    expect(undo()).toBeDisabled();
+    fireEvent.input(screen.getByLabelText('50'), { target: { value: '#ff3366' } });
+    fireEvent.change(screen.getByLabelText('50'), { target: { value: '#ff3366' } });
+    expect(gray50()).toBe('#ff3366');
+    fireEvent.click(undo());
+    expect(gray50()).toBe(before);
+    expect(redo()).toBeEnabled();
+    fireEvent.click(redo());
+    expect(gray50()).toBe('#ff3366');
   });
 });

@@ -20,7 +20,7 @@ function mount(schema: PrefSection, data: Record<string, unknown>) {
 }
 
 // The classes are a proxy: the CSS-module proxy answers any key, so these show only that a title asked to dim.
-const dimmed = (el: Element): boolean => el.closest('[class*="_off_"], [class*="_titleOff_"]') !== null;
+const dimmed = (el: Element): boolean => el.closest('[class*="_disabled_"], [class*="_titleDisabled_"]') !== null;
 
 const switched = (as?: PrefSection['as']): PrefSection => ({
   name: 'Thing',

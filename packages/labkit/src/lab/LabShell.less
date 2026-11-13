@@ -88,6 +88,16 @@
   }
 }
 
+// A lab with no trials: its children, boxed as a bare shell's body boxes them.
+.lk-lab__page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}
+
 .lk-lab__panes {
   flex: 1;
   min-width: 0;

@@ -36,7 +36,11 @@ export interface LabContextValue {
    *  trial's Marks section and export, and the drawing tools in its rail. The
    *  marks themselves are kept either way. */
   marks: boolean;
+  /** Turn the Marks switch on or off. A hold still shows marks while it lasts. */
   setMarks: (shown: boolean) => void;
+  /** Show marks whatever the Marks switch says, until the returned release is
+   *  called. Never stored. `useHoldMarks` is the hook over it. */
+  holdMarks: () => () => void;
   /** Lab-wide rules run over every instrument's config leaves, before
    *  labkit's own inference. */
   configRules?: readonly ConfigRule[];

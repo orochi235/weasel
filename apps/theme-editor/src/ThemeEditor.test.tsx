@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -35,7 +36,7 @@ describe('<ThemeEditor>', () => {
   it('falls back to the built themes, read-only, when no dev server answers', async () => {
     const failing: ThemeApi = { list: () => Promise.reject(new Error('404')), get: vi.fn(), put: vi.fn() };
     renderWithIcons(<ThemeEditor api={failing} />);
-    expect(await screen.findByText('23 of 181 overridden')).toBeInTheDocument();
+    expect(await screen.findByText('23 of 182 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     expect(failing.put).not.toHaveBeenCalled();
   });
@@ -102,7 +103,7 @@ describe('<ThemeEditor>', () => {
     renderWithIcons(<ThemeEditor api={{ list: async () => [stored], get, put: vi.fn() }} />);
     expect(await screen.findByText(/harbor does not derive/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Discard this unsaved theme' }));
-    expect(await screen.findByText('23 of 181 overridden')).toBeInTheDocument();
+    expect(await screen.findByText('23 of 182 overridden')).toBeInTheDocument();
     expect(get).not.toHaveBeenCalled();
     expect(loadDraft('harbor')).toBeNull();
     expect(draftHistory('harbor').load()).toBeNull();
@@ -115,7 +116,7 @@ describe('<ThemeEditor>', () => {
     const other: StoredTheme = { name: 'harbor', hash: 'h2', emits: true, definition: starterDefinition('harbor') };
     renderWithIcons(<ThemeEditor api={{ list: async () => [stored, other], get: vi.fn(), put: vi.fn() }} />);
     expect(await screen.findByText(/weasel does not derive/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /Theme/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^weasel/ }));
     await userEvent.click(await screen.findByRole('option', { name: 'harbor' }));
     expect(await screen.findByText('0 of 13 overridden')).toBeInTheDocument();
   });

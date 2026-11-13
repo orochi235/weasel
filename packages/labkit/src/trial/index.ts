@@ -13,6 +13,7 @@ export type {
 export { TrialChrome } from './TrialChrome';
 export type { MountTrialHistory, TrialHistorySource } from './trialHistory';
 export { TrialHistoryContext, useTrialHistory } from './trialHistory';
+export { trialHistoryOf } from './trialHistoryOf';
 export type { AddTrialOptions } from './trialOps';
 export {
   addTrial,

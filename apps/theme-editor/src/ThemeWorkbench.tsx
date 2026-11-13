@@ -1,4 +1,5 @@
-import { LabShell, ToolbarRegion, type LabContribution } from '@weasel-js/labkit';
+import { Lab, type LabContribution } from '@weasel-js/labkit';
+import { LABS, THEME_EDITOR_LAB } from '../../shared/labs';
 import { fullSelection, type Selection, type ThemeDefinition } from '@weasel-js/theme';
 import { deepEqual } from '@weasel-js/registry';
 import type { IssueReport, Lookup, PutResult, StoredTheme } from '@weasel-js/theme/engine';
@@ -6,7 +7,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Dialog } from '@weasel-js/ui/components/Dialog';
 import { Input } from '@weasel-js/ui/components/Input';
 import { Select } from '@weasel-js/ui/components/Select';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { LayerRail } from './LayerRail';
 import { RampsLayer } from './layers/RampsLayer';
 import { ScalesLayer } from './layers/ScalesLayer';
@@ -22,7 +23,8 @@ import { EXPORTS, download, exportFile } from './theme/exportFiles';
 import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
 import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
-import { useLabHistory, type LabHistory } from './useLabHistory';
+import { HistorySlot } from './HistorySlot';
+import { useLabHistory } from './useLabHistory';
 import { icon } from './icons.gen';
 
 export interface WorkbenchProps {
@@ -84,9 +86,12 @@ function SaveReport({ report, onReload, onDismiss }: { report: PutResult; onRelo
   );
 }
 
+/** Header content drawn as it stands each render. */
+const headerPart = (id: string, node: ReactNode): LabContribution => ({ id, region: 'header', render: () => node });
+
 export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, onReload, onDiscard, onNew }: WorkbenchProps) {
   const history = useLabHistory<ThemeDefinition>(start.definition, draftHistory(stored.name));
-  const { state: draft, canUndo, canRedo } = history;
+  const { state: draft } = history;
   const [saved, setSaved] = useState<ThemeDefinition>(() => (sameJson(start.definition, stored.definition) ? start.definition : stored.definition));
   const [baseHash, setBaseHash] = useState(start.baseHash);
   const [report, setReport] = useState<PutResult | null>(null);
@@ -150,10 +155,8 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     else if (error === null) setUnkept(!persistDraft({ definition: draft, baseHash }));
   }, [dirty, draft, baseHash, error]);
 
-  const contributions = useMemo<readonly LabContribution<LabHistory<ThemeDefinition>>[]>(
+  const contributions = useMemo<readonly LabContribution[]>(
     () => [
-      { id: 'undo', group: 'history', region: 'header', item: { icon: icon('core:undo'), label: 'Undo', shortcut: '⌘Z', disabled: !canUndo, onActivate: (h) => h.undo() } },
-      { id: 'redo', group: 'history', region: 'header', item: { icon: icon('core:redo'), label: 'Redo', shortcut: '⇧⌘Z', disabled: !canRedo, onActivate: (h) => h.redo() } },
       {
         id: 'export',
         region: 'header',
@@ -169,7 +172,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       },
       { id: 'new', region: 'header', item: { icon: icon('ui:add'), label: 'New theme', showLabel: true, onActivate: () => setCreating(true) } },
     ],
-    [canUndo, canRedo],
+    [],
   );
 
   const generatedTheme = useMemo(
@@ -177,16 +180,13 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     [focusRamp, draft, lookup],
   );
 
+  const themePick = (
+    <Select aria-label="Theme" width="fit" options={themes.map((t) => ({ value: t.name, label: t.name }))} selectedKey={stored.name} onSelectionChange={onPick} />
+  );
   if (!derived) {
     return (
-      <LabShell
-        title="Theme editor"
-        header={
-          <div className={styles.header}>
-            <Select aria-label="Theme" width="fit" options={themes.map((t) => ({ value: t.name, label: t.name }))} selectedKey={stored.name} onSelectionChange={onPick} />
-          </div>
-        }
-      >
+      <Lab title="Theme editor" pages={LABS} path={THEME_EDITOR_LAB.href} labChrome={[headerPart('pick', themePick)]}>
+        <HistorySlot history={history.history} />
         <div className={styles.deadDraft}>
           <div role="alert" className={styles.status}>
             <p>
@@ -203,7 +203,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
           {reloadError && <p role="status" className={styles.status}>{reloadError}</p>}
           <PinRepair draft={draft} error={error ?? ''} onChange={history.update} />
         </div>
-      </LabShell>
+      </Lab>
     );
   }
 
@@ -259,7 +259,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
 
   const header = (
     <div className={styles.header}>
-      <Select aria-label="Theme" width="fit" options={themes.map((t) => ({ value: t.name, label: t.name }))} selectedKey={stored.name} onSelectionChange={onPick} />
+      {themePick}
       {Object.entries(derived.axes)
         .filter(([axis]) => axis !== 'mode')
         .map(([axis, def]) => (
@@ -275,16 +275,23 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       <span className={styles.overridden}>
         {counts.overridden} of {counts.total} overridden
       </span>
-      <ToolbarRegion region="header" label="Theme actions" contributions={contributions} ctx={history} />
-      <Button stance="confirm" size="sm" disabled={!dirty || saving} onClick={save} ariaLabel={dirty ? 'Save, with unsaved changes' : 'Save'}>
-        {dirty && <span className={styles.dirtyDot} aria-hidden="true" />}
-        Save
-      </Button>
     </div>
+  );
+  const saveButton = (
+    <Button stance="confirm" size="sm" disabled={!dirty || saving} onClick={save} ariaLabel={dirty ? 'Save, with unsaved changes' : 'Save'}>
+      {dirty && <span className={styles.dirtyDot} aria-hidden="true" />}
+      Save
+    </Button>
   );
 
   return (
-    <LabShell title="Theme editor" header={header}>
+    <Lab
+      title="Theme editor"
+      pages={LABS}
+      path={THEME_EDITOR_LAB.href}
+      labChrome={[headerPart('theme', header), ...contributions, headerPart('save', saveButton)]}
+    >
+      <HistorySlot history={history.history} />
       <div className={styles.workbench}>
         <LayerRail counts={counts.layers} selected={layer} onSelect={setLayer} />
         <section className={styles.editor} aria-label={`${layerLabel} layer`}>
@@ -373,6 +380,6 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
         <p>It extends weasel, starts from three seeds, and stays a draft until you save it into packages/theme/themes/.</p>
         <Input label="Name" value={newName} onChange={setNewName} errorMessage={newProblem ?? undefined} isInvalid={newProblem !== null} />
       </Dialog>
-    </LabShell>
+    </Lab>
   );
 }

@@ -127,6 +127,8 @@
   --wzl-stance-preview-title-size: var(--wzl-font-size-xs);
   --wzl-stance-preview-title-case: none;
   --wzl-stance-preview-title-inset: 6px 10px 0;
+  /* A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled). */
+  --wzl-disabled-filter: grayscale(1);
   --wzl-danger-base: #d94a3f;
   --wzl-warning-base: #d99a3f;
   --wzl-success-base: #2ec27e;

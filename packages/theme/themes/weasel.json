@@ -563,6 +563,11 @@
     "stance-preview-title-inset": {
       "value": "6px 10px 0",
       "type": "dimension"
+    },
+    "disabled-filter": {
+      "value": "grayscale(1)",
+      "type": "string",
+      "description": "A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled)."
     }
   },
   "pins": {

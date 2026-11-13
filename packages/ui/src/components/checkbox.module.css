@@ -61,6 +61,7 @@
 
 .checkbox:disabled {
   opacity: 0.5;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 

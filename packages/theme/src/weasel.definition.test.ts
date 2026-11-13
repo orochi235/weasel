@@ -52,7 +52,7 @@ const EXPECTED_NAMES = [
   'stance-aside-surface', 'stance-aside-border-color', 'stance-aside-blur', 'stance-aside-title-color',
   'stance-advanced-title-color', 'stance-debug-border-style', 'stance-debug-title-font',
   'stance-debug-title-case', 'stance-preview-pad',
-  'stance-preview-title-size', 'stance-preview-title-case', 'stance-preview-title-inset',
+  'stance-preview-title-size', 'stance-preview-title-case', 'stance-preview-title-inset', 'disabled-filter',
 ].sort();
 
 describe('weasel theme definition', () => {

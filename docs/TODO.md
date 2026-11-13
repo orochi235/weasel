@@ -40,17 +40,6 @@ Owner tags, after the priority (2026-10-26):
   pointer, clears on Esc, on leave and on drop, and looks right.
 
 
-- **(P3) [agent] `apps/theme-editor` cannot become a `<Lab>` without being rebuilt.** `<Lab>` is the trial
-  runtime: it requires a non-empty `instruments` list, seeds a trial, and renders `children` into
-  the header while its body is fixed as the surface buffers plus a `Workspace` of trials.
-  PaletteLab's page *is* the shell body, and the `#/theme` workbench beside it is a second bare
-  `LabShell` page. Moving them in means making each an instrument and running it in a trial pane,
-  with labkit's per-trial store and persistence beside its own, and a trial titlebar beside its own
-  `PropertyPanel`. Its own arc, and the first question is whether labkit should support a lab with
-  no trials at all.
-  Ruled (2026-11-07): labkit supports a lab with no trials, rendering its children as the body.
-  Closes when `<Lab>` takes no instruments and `apps/theme-editor` runs as one.
-
 - **(P3) [maintainer] Long-press: the native `contextmenu` a touch hold sends is unseen on a real device.**
   `useGestureDispatcher` treats a `contextmenu` that arrives while a touch or pen hold is in
   progress as that hold's long-press, so a `contextMenu` binding runs once. Tested only in jsdom
@@ -365,13 +354,6 @@ Owner tags, after the priority (2026-10-26):
   Closes when an app animates a selector's weights through `prefWeightAxes`, or on 2026-12-31 with none,
   delete it.
 
-- **(P3) [agent] Disabled has no signal of its own, now that emphasis is an alpha.** Disabled is `opacity:
-  0.4`–`0.5` on the whole control, and subtle text is 0.54–0.64 alpha, so a disabled control and a
-  subtle label can read alike. Ruled 2026-10-11: disabled gets a second cue besides fading. Which
-  cue is not chosen yet; that leaves choosing it and giving it to every control that fades when
-  disabled.
-  Ruled (2026-11-07): the second cue is desaturation onto the neutral ramp. Closes when every control that
-  fades when disabled also desaturates.
 
 - **(P3) [maintainer] labkit and the apps hand-build what weasel-ui already draws.** Each waits on something
   the ui component lacks, or on a look at the result in a browser:
@@ -468,12 +450,6 @@ renders in an iframe ("frame") instead; that path is frozen, kept for as long
 as any story needs it, and `check:forge-isolate` holds the count. It is the
 only story runner in the repo.
 
-- **(P3) [agent] The workshop's marks come back, to draw on a reported issue's screenshot**
-  (2026-10-25). The Issues panel lists a component's `forge:<component>` issues through the dev server's `gh` and
-  opens GitHub's new-issue page for a report, where the reporter pastes a screenshot (2026-10-28). The workshop
-  turns labkit's marks off (`marks={false}` in `packages/forge/src/shell/Workshop.tsx`), so nothing in it can mark
-  up the trial before that screenshot is taken. Not decided: whether marks come back for that; deferred (2026-10-28).
-  Ruled (2026-11-07): yes. Closes when the workshop draws marks on the trial while Report is open.
 
 - **(P3) [waiting] What holds `fseventsd` when macOS file events stop arriving is not known.** Measured
   2026-10-13 with `fseventsd` at 98% CPU and 2.6 GB: a write in a temp directory reached neither

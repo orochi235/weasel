@@ -22,9 +22,10 @@
   touch-action: none;
 }
 
-/* Applied to ineligible tool buttons in the active mode. */
-.ineligibleBtn {
+/* A tool button the active mode makes ineligible: disabled, as far as the eye goes. */
+.disabledBtn {
   opacity: 0.35;
+  filter: var(--wzl-disabled-filter);
   cursor: not-allowed;
 }
 

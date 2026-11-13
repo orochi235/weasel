@@ -1,3 +1,4 @@
+import './labTestSetup';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ThemeDefinition } from '@weasel-js/theme';
@@ -89,7 +90,7 @@ describe('<ThemeWorkbench>', () => {
 
   it('reports how many own tokens a pin overrides, and each layer in the rail', () => {
     renderBench();
-    expect(screen.getByText('23 of 181 overridden')).toBeInTheDocument();
+    expect(screen.getByText('23 of 182 overridden')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Ramps/ })).toHaveTextContent('23 pinned');
   });
 
