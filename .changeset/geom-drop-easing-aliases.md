@@ -3,7 +3,7 @@
 '@weasel-js/core': major
 ---
 
-The `easeIn`, `easeOut` and `easeInOut` aliases are removed from geom and core; use `easeInQuad`, `easeOutQuad` and `easeInOutQuad`, the curves they named.
+The `easeIn`, `easeOut` and `easeInOut` aliases are removed from geom and core; use `easeInQuad`, `easeOutQuad` and `easeInOutQuad`.
 
 ```ts
 // before

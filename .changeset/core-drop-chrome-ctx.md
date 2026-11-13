@@ -2,7 +2,9 @@
 '@weasel-js/core': major
 ---
 
-`ChromeCtx` and `buildChromeCtx` are removed: `resolveVisibility` takes a `RuleCtx`, which `buildRuleCtx` assembles, and no longer fills in a mode for a context without one.
+`ChromeCtx` and `buildChromeCtx` are removed; `resolveVisibility` takes a `RuleCtx`, which `buildRuleCtx` assembles.
+
+It no longer fills in normal mode for a context without one.
 
 ```ts
 // before
