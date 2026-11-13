@@ -88,6 +88,7 @@ export {
 export { WARP_SETTINGS_SCHEMA, warpSettingsForm } from './warp/warpSettingsForm';
 export { configureWarpParams, settingsOfWarp, WARP_SETTING_FIELDS, warpDragParams } from './warp/warpParams';
 export { PATH_EFFECT_SETTINGS_SCHEMA, pathEffectSettingsForm } from './pathEffects/settingsForm';
+export { PATH_EFFECT_PARAMS } from './pathEffects/effectForms';
 export {
   CORNER_SHAPE_OPTIONS, DEFAULT_CORNER_SHAPE, EDIT_CORNER_PARAMS, editCornerAction, type EditCornerParams,
 } from './cornerShape/editCorner';

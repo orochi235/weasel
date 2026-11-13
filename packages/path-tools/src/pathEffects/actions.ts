@@ -12,6 +12,7 @@ import { newEffect, withEffectSettings } from './params';
 import { hiddenOnItsOwn, hiddenOps } from './hiding';
 import { icon } from '../icons.gen';
 import { pathEffectSettingsForm } from './settingsForm';
+import { PATH_EFFECT_PARAMS } from './effectForms';
 
 type AnyScene = Scene<unknown, string, unknown>;
 type AnyNode = Node<unknown, string, unknown>;
@@ -80,6 +81,7 @@ function createEffectAction(spec: CreateSpec): Action & { requires: string[] } {
     icon: spec.icon,
     tags: pathOperationTags('command'),
     group: PATH_EFFECTS_GROUP,
+    params: PATH_EFFECT_PARAMS[spec.kind],
     // Alt+Shift, which no major browser takes for these letters (see
     // `BROWSER_RESERVED_CHORDS`); `code` too, since with Alt held on a Mac the
     // key reads as another glyph.
