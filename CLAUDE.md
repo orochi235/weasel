@@ -215,8 +215,9 @@ from the diff against the merge-base. Green, `main` fast-forwards to that tip, a
 `main`'s post-merge run, since `main` is then the commit it tested. Red, the failing file says whose it
 is: fix that branch or drop it, and rerun the batch. Hold a ready branch for the next batch rather
 than running one for it alone; a batch touching a `triggers` path, dependencies or build tooling gets a
-full run, which is one more reason to fold such a change in rather than run it separately. Never run
-`npm run test:gate` itself: it runs typecheck, lint and every check on this machine. Perf measurements
+full run, which is one more reason to fold such a change in rather than run it separately. The
+`gate` project runs typecheck, lint and every check at once, so it has no npm script and runs only
+inside a fleet run. Perf measurements
 are not test runs and still go to the fleet, one job at a time. On 2026-10-30, seven agents each
 finishing with a branch run and then a run of `main` per merge put 2–3 suite-sized runs behind every
 change.
