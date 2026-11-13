@@ -231,6 +231,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   readonly registry: SceneRegistry<TPose, TData, TLayer>;
   /** See {@link SceneOptions.composition}. */
   readonly composition: PoseComposition<TPose>;
+  /** The node `id` names, or `undefined` when it is not in the scene. */
   get(id: NodeId): Node<TData, TLayer, TPose> | undefined;
   /** A token for the node `id` names right now, for telling one node from a
    *  later one that reuses its id. It holds for as long as the node stays in
@@ -239,8 +240,12 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  by `loadState`. `undefined` when `id` is not in the scene. Compare tokens
    *  for equality only; their order means nothing. */
   incarnation(id: NodeId): number | undefined;
+  /** `id`'s children, first painted first; empty for a mark or an unknown id. */
   childrenOf(id: NodeId): readonly NodeId[];
+  /** `id`'s parent, its parent's parent, and so on up to a root. */
   ancestorsOf(id: NodeId): readonly NodeId[];
+  /** Every node id in paint order: layer by layer from the bottom, and
+   *  depth-first within a layer, a parent before its children. */
   renderOrder(): Iterable<NodeId>;
   /** The same layer-major sequence as {@link Scene.renderOrder}, as the nodes
    *  themselves. Prefer this wherever the ids are only going to be resolved
@@ -259,6 +264,8 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   mintId(): NodeId;
 
   // Mutations (all auto-undoable)
+  /** Add a node, under `spec.parent` when it names one, as one undoable step.
+   *  Returns its id: `spec.id`, or a fresh one from {@link Scene.mintId}. */
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;
   /** Delete `id`, its **entire subtree**, and **everything that derives from**
    *  any of those nodes — a node listing one of them in `dependsOn` goes too,
@@ -280,7 +287,13 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  A set, not a restore order: a dependent can be reached before the parent
    *  it sits under, which is also in the closure. */
   removalClosure(ids: readonly NodeId[]): readonly NodeId[];
+  /** Replace `id`'s `data` with `patch.data`, as one undoable step. Throws
+   *  on a locked node; data equal to what the node holds records nothing. */
   update(id: NodeId, patch: { data: TData }): void;
+  /** Write `id`'s pose, as one undoable step. Throws on a locked node; the
+   *  pose it already holds records nothing. A container with a layout
+   *  re-arranges in the same step, whether the write moves one of its
+   *  children or resizes the container. */
   setPose(id: NodeId, pose: TPose): void;
   /** Retag `id` to `layer`. On a **container this cascades**: every descendant
    *  is moved to the same layer, recorded as a **single** undo step.
@@ -362,16 +375,25 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
   /** Run `fn` with the lock guard lifted, for a programmatic edit that has to
    *  reach a locked node. Undo and redo never need it. */
   unlocked<T>(fn: () => T): T;
+  /** Add a user layer, at `spec.index` in the stack or on top, as one
+   *  undoable step. Throws when a layer already has the id. */
   addLayer(spec: AddLayerSpec<TLayer>): void;
   /** Drop a user layer and every node tagged to it, as one undoable step.
    *  Removal cascades, so this also deletes nodes **on other layers** that
    *  derive from a node on this one. */
   removeLayer(layer: TLayer): void;
+  /** Rename a user layer, as one undoable step. Throws on a system layer. */
   renameLayer(layer: TLayer, name: string): void;
+  /** Move a layer to `index` in the stack, held to either end, as one
+   *  undoable step. Throws when that would paint a child below its parent. */
   moveLayer(layer: TLayer, index: number): void;
 
   // Custom op seam
+  /** Teach the scene an op kind of its own: how to apply a payload and how to
+   *  revert it. `kit:` kinds are reserved and throw. */
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
+  /** Apply a payload of a kind {@link Scene.registerOp} taught, recorded as
+   *  any other edit is: one undoable step, or part of the open `batch`. */
   recordOp<P>(op: { kind: string; payload: P }): void;
 
   /** Install (or clear with `null`) the active-journal accessor after scene
@@ -421,10 +443,17 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose>
    *  {@link Scene.undo} does; `getVersion` / `subscribe` on it report the
    *  engine's history version, not the scene's. */
   readonly history: History;
+  /** Step back one history entry. Returns false when there is none. */
   undo(): boolean;
+  /** Step forward one history entry. Returns false when there is none. */
   redo(): boolean;
+  /** Whether {@link Scene.undo} has an entry to step back. */
   canUndo(): boolean;
+  /** Whether {@link Scene.redo} has an entry to step forward. */
   canRedo(): boolean;
+  /** Run `fn`, recording every edit it makes as one undo entry labeled
+   *  `label`, and return what it returns. A batch inside another joins it.
+   *  When `fn` throws, its edits are reverted and nothing is recorded. */
   batch<T>(label: string, fn: () => T, options?: import('./recorder').SceneBatchOptions): T;
   /** The layout group `id` declares, or `null` for a mark or a group with none. */
   layoutOf(id: NodeId): LayoutStrategy<TPose> | null;
