@@ -358,16 +358,13 @@ Owner tags, after the priority (2026-10-26):
 
 ## Scene, adapters & layout
 
-- **(P2) [agent] A saved 3D scene loads under the 2D composition unless the caller remembers to name one.**
-  `createScene` and `useScene` refuse to compile a non-rect `TPose` without a `composition`
-  (`NamesComposition` in `packages/core/src/core/scene/useSceneOptions.ts`), but `sceneFromJSON` takes it as
-  optional and falls back to `RIGID_POSE_COMPOSITION`: a nested `Pose3` child loaded that way reads back from
-  `worldPoseOf` at its local position, with `rotation: "0,0,0,10,0,0,1"` and `x`/`y` of `NaN` (measured). `<SceneCanvas scene={json}>` bakes through
-  `sceneFromJSON(json, {})` (`useBakedScene`), so a serialized 3D scene handed to a canvas can never compose,
-  and has no prop to name one (found building a z-up editor, audit round 20, 2026-11-12). Not fixed in the
-  pass: giving `sceneFromJSON` the same guard breaks its generic callers (`useBakedScene`, the render worker's
-  `sceneMirror`, headless's `page.ts`), each of which needs a composition source of its own first. Closes when
-  `sceneFromJSON` requires a composition for a non-rect pose and those callers pass one through.
+- **(P3) [agent] `<SceneCanvas scene={json}>` cannot load a scene that needs its own composition.**
+  `useBakedScene` bakes through `sceneFromJSON(json, {})`, and `<SceneCanvas>` has no prop naming a
+  composition, so a serialized scene with nested non-rect poses (a kernel3d `Pose3` scene with groups) is
+  refused there; `sceneFromJSON` throws on one rather than fold it under `RIGID_POSE_COMPOSITION` (audit
+  round 20, 2026-11-12). It never worked: before the throw it loaded with `NaN` in every nested pose. Pass a
+  live `Scene` instead. Closes when the serialized `scene` prop can be given a composition, or is documented
+  as rect-only and refuses with that message.
 - **(P3) [maintainer] A scene's pick ids are never given back, so a scene that keeps minting node ids
   stops painting.** `scenePickIds` numbers each node on its first paint and keeps the number for the
   scene's life, so an id learned from an id frame stays good. Nodes removed keep theirs, and once a scene
