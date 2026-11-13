@@ -36,7 +36,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
 
   if (p.control === 'radio') {
     return (
-      <RadioGroup className={p.className} value={current ?? (p.onClear && !p.mixed ? UNSET : null)} isDisabled={p.disabled} onChange={choose(p)} aria-label={p.name}>
+      <RadioGroup className={p.className} value={current ?? (p.onClear && !p.mixed ? UNSET : null)} isDisabled={p.disabled} onChange={choose(p)} ariaLabel={p.name}>
         {choices(p).map((o) => (
           <Radio key={o.value} value={o.value} isDisabled={o.disabled} description={o.description} disabledReason={o.disabledReason}>
             {o.label}
@@ -56,10 +56,10 @@ export function EnumControl(p: PropertyEnumFieldProps) {
         aria-label={named}
         label={reads}
         current={held !== undefined}
-        isDisabled={p.disabled}
+        disabled={p.disabled}
         disabledReason={p.disabledReason}
         items={choices(p).map((o) => ({
-          value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, isDisabled: o.disabled,
+          value: o.value, label: nameOf(o.label) ?? o.short?.[0] ?? o.value, disabled: o.disabled,
           description: o.description, disabledReason: o.disabledReason,
         }))}
         onAction={choose(p)}
@@ -99,7 +99,7 @@ export function EnumControl(p: PropertyEnumFieldProps) {
       className={p.className ? `${s.select} ${p.className}` : s.select}
       triggerId={p.id}
       isDisabled={p.disabled}
-      aria-label={p.name}
+      ariaLabel={p.name}
       placeholder={p.placeholder ?? (p.unset ? '—' : 'Choose option…')}
       mixed={p.mixed}
       selectedKey={current}

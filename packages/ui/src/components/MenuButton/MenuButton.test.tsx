@@ -5,7 +5,7 @@ import { MenuButton } from './MenuButton';
 const ITEMS = [
   { value: 'sine', label: 'Sine wave' },
   { value: 'garden', label: 'Garden' },
-  { value: 'locked', label: 'Locked', isDisabled: true },
+  { value: 'locked', label: 'Locked', disabled: true },
 ];
 
 const trigger = (name: RegExp | string) => screen.getByRole('button', { name });
@@ -126,7 +126,7 @@ describe('MenuButton', () => {
   });
 
   it('does not open when disabled', () => {
-    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} isDisabled />);
+    render(<MenuButton label="Add trial…" items={ITEMS} onAction={() => {}} disabled />);
     press(trigger(/Add trial…/));
     expect(screen.queryByRole('menu')).toBeNull();
   });
@@ -135,7 +135,7 @@ describe('MenuButton', () => {
 describe('MenuButton link rows', () => {
   const PAGES = [
     { value: 'wall', label: 'Wall', href: '/corpus' },
-    { value: 'stats', label: 'Dashboard', href: '/stats', isCurrent: true },
+    { value: 'stats', label: 'Dashboard', href: '/stats', current: true },
   ];
   const open = () => press(trigger(/Labs/));
 

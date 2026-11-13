@@ -12,16 +12,17 @@ import { SegmentTooltip, segmentTooltipContent, type SegmentTooltipFields } from
 export type MenuButtonItem<T extends string = string> = {
   value: T;
   label: string;
-  isDisabled?: boolean;
+  disabled?: boolean;
   /** Makes the row a link: an `<a>` that goes here when chosen, and that a
    *  middle or modified click opens as it opens any link. */
   href?: string;
   /** The row for the page that is open: `aria-current="page"`, drawn bold. */
-  isCurrent?: boolean;
+  current?: boolean;
   /** Makes the row a check row, ticked while true. */
-  checked?: boolean;  /** What the row does, read as its hint and accessible description. */
+  checked?: boolean;
+  /** What the row does, read as its hint and accessible description. */
   description?: string;
-  /** Why the row is disabled, while `isDisabled`. */
+  /** Why the row is disabled, while `disabled`. */
   disabledReason?: string;
 };
 
@@ -37,7 +38,7 @@ export type MenuButtonProps<T extends string = string> = {
   /** Draws the trigger as its label and a caret in the type around it, with
    *  no field frame: for a heading that opens a list. */
   bare?: boolean;
-  isDisabled?: boolean;
+  disabled?: boolean;
   /** Why it is disabled. Given, a disabled one keeps its tooltip, which reads the reason after its name, stays
    *  focusable, and gives the reason to assistive tech as its description; without one it is natively disabled. */
   disabledReason?: string;
@@ -70,7 +71,7 @@ export function MenuButton<T extends string = string>({
   items,
   entries,
   onAction,
-  isDisabled,
+  disabled,
   bare,
   className,
   'aria-label': ariaLabel,
@@ -94,11 +95,11 @@ export function MenuButton<T extends string = string>({
       kind: 'item',
       key: item.value,
       label: item.label,
-      ...(item.isDisabled ? { disabled: true } : {}),
-      ...(item.isDisabled && item.disabledReason !== undefined ? { disabledReason: item.disabledReason } : {}),
+      ...(item.disabled ? { disabled: true } : {}),
+      ...(item.disabled && item.disabledReason !== undefined ? { disabledReason: item.disabledReason } : {}),
       ...(item.description !== undefined ? { description: item.description } : {}),
       ...(item.href !== undefined ? { href: item.href } : {}),
-      ...(item.isCurrent ? { current: true } : {}),
+      ...(item.current ? { current: true } : {}),
       ...(item.checked !== undefined ? { checked: item.checked } : {}),
       run: () => onAction?.(item.value),
     })) : null,
@@ -110,8 +111,8 @@ export function MenuButton<T extends string = string>({
     <>
       {trigger.anchor}
       <SegmentTooltip
-        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label, disabled: isDisabled, disabledReason })}
-        disabled={isDisabled}
+        content={segmentTooltipContent({ tooltip, shortcut, ariaLabel, label, disabled, disabledReason })}
+        disabled={disabled}
         disabledReason={disabledReason}
       >
         <button
@@ -119,8 +120,8 @@ export function MenuButton<T extends string = string>({
           id={trigger.id}
           type="button"
           className={[bare ? s.bare : f.frame, s.trigger, className].filter(Boolean).join(' ')}
-          disabled={isDisabled}
-          {...(isDisabled ? { 'data-disabled': '' } : {})}
+          disabled={disabled}
+          {...(disabled ? { 'data-disabled': '' } : {})}
           aria-label={ariaLabel}
           aria-haspopup="menu"
           aria-expanded={trigger.open}

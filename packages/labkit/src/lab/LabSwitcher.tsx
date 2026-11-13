@@ -106,7 +106,7 @@ export function LabSwitcher({ title, pages, path, className }: LabSwitcherProps)
           value: page.href,
           label: page.label,
           href: page.href,
-          isCurrent: i === here,
+          current: i === here,
         }))}
       />
     </h1>
