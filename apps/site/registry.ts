@@ -1345,7 +1345,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'loupe-model',
     title: 'Loupe model',
     package: 'loupe',
-    description: "The magnifier's model on its own: where the loupe is aimed, how far it magnifies, and what color is under the aim. The mosaic and the lens are one plain SVG. The whole painter is a `LoupeSurface` that knows each cell's color, plus an SVG `viewBox` set from `loupeInnerView`. The Loupe (hud window) and Loupe (lab capability) demos are painters over this same model, for a WebGL canvas and a lab.",
+    description: "The magnifier's model on its own: where the loupe is aimed, how far it magnifies, and what color is under the aim. The mosaic and the lens are one plain SVG, and plain pointer and wheel handlers on it aim, zoom and pick, since the model takes no input of its own and this demo has no dispatcher on purpose. The whole painter is a `LoupeSurface` that knows each cell's color, plus an SVG `viewBox` set from `loupeInnerView`. The Loupe (hud window) and Loupe (lab capability) demos are painters over this same model, for a WebGL canvas and a lab.",
     hint: 'Move over the mosaic to aim, scroll to change the magnification, and click inside the lens to pick a color.',
     load: () => import('./demos/LoupeModelDemo').then((m) => m.LoupeModelDemo),
     path: 'apps/site/demos/LoupeModelDemo.tsx',
