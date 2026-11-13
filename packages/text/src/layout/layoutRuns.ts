@@ -37,8 +37,8 @@ import { analyzeParagraphs, isParagraphSeparator, orderLine } from './bidiLines'
 import { directionOfLevel, warnRtlWithoutEngine } from './bidiRegistry';
 import { LayoutColumns } from './layoutColumns';
 import { measureRuns, mirrorEntries, type Entry } from './layoutEntries';
-import { breakLines, placeLine, type LineOpts } from './layoutLines';
-import { resolveLayoutOpts, type LayoutRunsOpts } from './layoutOpts';
+import { breakLines, placeLine, type LineOptions } from './layoutLines';
+import { resolveLayoutOpts, type LayoutRunsOptions } from './layoutOpts';
 import { rejoinSplitPairs } from '../runs/codePointCuts';
 import type { BidiEngine } from './bidiSeam';
 import type { ShapedCluster } from './shaperSeam';
@@ -201,7 +201,7 @@ const CPS: number[] = [];
  *  else can lay out. */
 const OPTS = resolveLayoutOpts({ maxWidth: 0, lineHeight: 0, align: 'left' });
 /** The ones its lines read, set once measuring is done. */
-const LINE_OPTS: LineOpts = { maxWidth: 0.5, alignWidth: 0.5, lineHeight: 0.5, justify: false };
+const LINE_OPTS: LineOptions = { maxWidth: 0.5, alignWidth: 0.5, lineHeight: 0.5, justify: false };
 
 // Neither closure is built inside `layoutRuns`: one that captured its locals
 // made every call allocate the scope they live in, bidi engine or not.
@@ -221,7 +221,7 @@ function mirrorLine(
  */
 export function layoutRuns(
   authored: readonly ResolvedRun[],
-  opts: LayoutRunsOpts,
+  opts: LayoutRunsOptions,
 ): LaidOutRuns {
   const runs = rejoinSplitPairs(authored);
   const {

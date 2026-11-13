@@ -29,7 +29,7 @@ export type TextDirection = 'ltr' | 'rtl';
  * Collapse a possibly reading-order-relative alignment to an absolute edge.
  * `justify` collapses to the start edge, which is where it sets every line it
  * does not spread; whether to spread is carried separately, as
- * `LayoutRunsOpts.justify`.
+ * `LayoutRunsOptions.justify`.
  */
 export function resolveAlign(
   align: TextAlign,

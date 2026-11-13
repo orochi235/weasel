@@ -10,7 +10,7 @@ import {
 import {
   _resetDynamicFontsForTests, _resetFontOutlinesForTests, _resetFontRegistryForTests, __setGlyphRasterizerForTests,
 } from '@weasel-js/font/test-seams';
-import { layoutRuns, paintRuns, registerShaper, type PaintRunsOpts, type ResolvedRun } from '@weasel-js/text';
+import { layoutRuns, paintRuns, registerShaper, type PaintRunsOptions, type ResolvedRun } from '@weasel-js/text';
 import { _resetLayoutCacheForTests } from '@weasel-js/text/test-seams';
 import { loadShaper, type TextShaper } from './index';
 import { DEVANAGARI } from './__fixtures__/fonts';
@@ -24,7 +24,7 @@ const run = (text: string): ResolvedRun => ({
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 
-function layoutAndPaint(runs: ResolvedRun[], opts: typeof OPTS & PaintRunsOpts) {
+function layoutAndPaint(runs: ResolvedRun[], opts: typeof OPTS & PaintRunsOptions) {
   const { outlineMinSize, ...layout } = opts;
   const laid = layoutRuns(runs, layout);
   return { ...laid, ...paintRuns(laid, runs, { outlineMinSize }) };

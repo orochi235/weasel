@@ -1,5 +1,5 @@
 import {
-  DEFAULT_TEXT_STYLE, cachedLayoutRuns, verticalAlignOffset, type LaidOutRuns, type LayoutRunsOpts,
+  DEFAULT_TEXT_STYLE, cachedLayoutRuns, verticalAlignOffset, type LaidOutRuns, type LayoutRunsOptions,
 } from '@weasel-js/text';
 import type { TextDrawCommand } from './DrawCommand';
 
@@ -9,7 +9,7 @@ export interface LaidOutText { laid: LaidOutRuns; dx: number; dy: number }
 // Both refilled on every call, which every text command makes every frame:
 // `cachedLayoutRuns` copies what it keeps out of the options, and both callers
 // read the result before anything calls again.
-const opts: LayoutRunsOpts = {
+const opts: LayoutRunsOptions = {
   maxWidth: 0, alignWidth: undefined, lineHeight: 0, align: 'left', direction: 'auto', tabSize: 0, justify: undefined,
 };
 const out = { laid: null as unknown as LaidOutRuns, dx: 0, dy: 0 };

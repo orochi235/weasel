@@ -3,7 +3,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import { layoutRuns } from './layoutRuns';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { cachedLayoutRuns, _resetLayoutCacheForTests } from './layoutCache';
 import { layoutTextPose } from './textPoseLayout';
 import { registerBidi, paragraphDirection, _resetBidiWarningForTests } from './bidiRegistry';
@@ -30,7 +30,7 @@ const RUN = (text: string): ResolvedRun => ({
   fill: { paint: { kind: 'solid', color: '#000' } }, letterSpacing: 0,
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
-const OPTS: LayoutRunsOpts = { maxWidth: 400, lineHeight: 1.2, align: 'left' };
+const OPTS: LayoutRunsOptions = { maxWidth: 400, lineHeight: 1.2, align: 'left' };
 const HEBREW = 'אבג';
 
 /** Cell indices of line `n`, sorted by where they were painted. */
@@ -113,7 +113,7 @@ describe('registerBidi', () => {
 });
 
 describe('layoutRuns — an omitted direction is the paragraph\'s own', () => {
-  const start: LayoutRunsOpts = { ...OPTS, align: 'start' };
+  const start: LayoutRunsOptions = { ...OPTS, align: 'start' };
 
   it('sets a right-to-left paragraph from the right edge under `start`', () => {
     registerBidi(bidi);

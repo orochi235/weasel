@@ -38,7 +38,7 @@ function caretCells(cells: readonly LaidOutCell[]): LaidOutCell[] {
 }
 
 /** Options for `pointInTextPose`. */
-export interface PointInTextPoseOpts {
+export interface PointInTextPoseOptions {
   /** Extra padding (world units) added to the rect on all sides. Default 0. */
   padding?: number;
 }
@@ -48,7 +48,7 @@ export function pointInTextPose(
   x: number,
   y: number,
   pose: TextPose,
-  opts: PointInTextPoseOpts = {},
+  opts: PointInTextPoseOptions = {},
 ): boolean {
   const p = opts.padding ?? 0;
   return (

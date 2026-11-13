@@ -14,7 +14,7 @@ import { tabAdvance, widthWithTabs } from './tabStops';
 /** What breaking and placing lines read of the layout's options. Handed over
  *  in an object, not as arguments: a number passed to a call V8 does not
  *  inline is boxed on every call. */
-export interface LineOpts {
+export interface LineOptions {
   maxWidth: number;
   alignWidth: number;
   lineHeight: number;
@@ -119,7 +119,7 @@ function pushSpan(start: number, end: number, wrapped: boolean): void {
 export function breakLines(
   entries: readonly Entry[],
   cps: readonly number[],
-  opts: LineOpts,
+  opts: LineOptions,
 ): Line[] {
   const { lineHeight } = opts;
   if (sum.length < entries.length + 1) sum = doubles(entries.length + 1);
@@ -246,7 +246,7 @@ export function placeLine(
   y: number,
   order: LineOrder,
   align: 'left' | 'center' | 'right',
-  opts: LineOpts,
+  opts: LineOptions,
   cols: LayoutColumns,
   start: number,
   at: number,

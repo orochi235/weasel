@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { stubFetch, registerFixture, RUN_PLAIN } from './testing/fontFixtures';
 
 beforeEach(() => {
@@ -156,7 +156,7 @@ describe('layoutRuns — hung trailing whitespace and bounds', () => {
 });
 
 describe('layoutRuns — alignWidth', () => {
-  const at = (text: string, opts: Partial<LayoutRunsOpts>) =>
+  const at = (text: string, opts: Partial<LayoutRunsOptions>) =>
     layoutAndPaint([RUN_PLAIN(text)], { maxWidth: Infinity, lineHeight: 1.2, align: 'left', ...opts });
 
   it('aligns within alignWidth exactly as within a finite maxWidth', async () => {

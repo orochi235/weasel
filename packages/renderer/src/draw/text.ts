@@ -1,5 +1,5 @@
 import type { Paint, TexturePaint } from '@weasel-js/paint';
-import { type LaidOutGroup, type LaidOutDecoration, type PaintRunsOpts, cachedPaintRuns } from '@weasel-js/text';
+import { type LaidOutGroup, type LaidOutDecoration, type PaintRunsOptions, cachedPaintRuns } from '@weasel-js/text';
 import { laidOutText } from '../textLayout';
 import type { TextDrawCommand } from '../DrawCommand';
 import type { ShaderProgram } from '../shaders/ShaderProgram';
@@ -53,7 +53,7 @@ import { type ScreenRect, renderPaintToScratch, bindScratchPaint } from './scrat
 export const OUTLINE_MIN_SCREEN_PX = 48;
 
 /** Refilled per command: `cachedPaintRuns` reads it and keeps nothing of it. */
-const paintOpts: PaintRunsOpts = { outlineMinSize: undefined };
+const paintOpts: PaintRunsOptions = { outlineMinSize: undefined };
 
 export function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   // Screen threshold → world threshold: a 12px label at 8× zoom is 96 screen

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutRuns } from './layoutRuns';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 // FIXTURE_FONT at fontSize 32 (scale 1) — A 23, B 22, A→B kerning -1, space
@@ -32,7 +32,7 @@ const RUN = (text: string): ResolvedRun => ({
 });
 
 /** Each line's text, from its cells. */
-function lineTexts(text: string, opts: Omit<LayoutRunsOpts, 'align'>): string[] {
+function lineTexts(text: string, opts: Omit<LayoutRunsOptions, 'align'>): string[] {
   return layoutRuns([RUN(text)], { align: 'left', ...opts }).lines.map((l) => String.fromCodePoint(...l.cells.map((c) => c.cp)));
 }
 
@@ -57,7 +57,7 @@ describe('layoutRuns — wrap at UAX #14 break opportunities', () => {
 });
 
 describe('layoutRuns — hard line breaks', () => {
-  const laid = (texts: string[], opts: Partial<LayoutRunsOpts> = {}) =>
+  const laid = (texts: string[], opts: Partial<LayoutRunsOptions> = {}) =>
     layoutRuns(texts.map(RUN), { align: 'left', maxWidth: Infinity, lineHeight: 1.2, ...opts });
 
   for (const [name, sep] of [

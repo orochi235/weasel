@@ -13,7 +13,7 @@ import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { bidi } from '@weasel-js/bidi';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import type { BidiEngine } from './bidiSeam';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
@@ -48,7 +48,7 @@ const RUN = (text: string): ResolvedRun => ({
   underline: false, strikethrough: false, overline: false, baselineShift: 0,
 });
 
-const OPTS: LayoutRunsOpts = {
+const OPTS: LayoutRunsOptions = {
   maxWidth: 400, lineHeight: 1.2, align: 'left', bidi: engine,
 };
 /** Cell indices sorted by where they were painted, left to right. */
@@ -143,7 +143,7 @@ describe('L4 — mirroring', () => {
 
 describe('paragraphs', () => {
   /** Cell indices of `line`, sorted by where they were painted. */
-  const visualOf = (text: string, line: number, opts: LayoutRunsOpts = OPTS) => {
+  const visualOf = (text: string, line: number, opts: LayoutRunsOptions = OPTS) => {
     const cells = layoutAndPaint([RUN(text)], opts).lines[line].cells;
     return { cells, order: cells.map((_, i) => i).sort((a, b) => cells[a].x - cells[b].x) };
   };
@@ -210,7 +210,7 @@ describe('characters the engine removes', () => {
 });
 
 describe('a wrapped right-to-left line', () => {
-  const RTL: LayoutRunsOpts = { ...OPTS, direction: 'rtl', align: 'right' };
+  const RTL: LayoutRunsOptions = { ...OPTS, direction: 'rtl', align: 'right' };
   /** A box that fits `אבג ` and part of the next word, so the text wraps once. */
   const boxFor = (text: string): number => {
     const cells = layoutAndPaint([RUN(text)], { ...RTL, maxWidth: Infinity }).lines[0].cells;

@@ -18,7 +18,7 @@ import { layoutTextPose } from '../layout/textPoseLayout';
 import type { TextPose } from '../pose';
 
 /** Options for {@link textLineBoxes}. */
-export interface TextLineBoxesOpts {
+export interface TextLineBoxesOptions {
   /** Grow every box by this much on all four sides (world units). Default 0.
    *  Picking wants a little slack so a single hairline row of text is still
    *  grabbable; clipping and export want none. */
@@ -30,7 +30,7 @@ export interface TextLineBoxesOpts {
 }
 
 /** Per-line rectangles for a text pose, in world units, in layout order. */
-export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOpts = {}): Rect[] {
+export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOptions = {}): Rect[] {
   const padding = opts.padding ?? 0;
   const { laid, x: dx, y: dy } = layoutTextPose(pose);
 

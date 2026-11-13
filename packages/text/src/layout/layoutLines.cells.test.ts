@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setFontFallbackPolicy } from '@weasel-js/font';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { layoutAndPaint } from './testing/layoutAndPaint';
-import type { LayoutRunsOpts } from './layoutOpts';
+import type { LayoutRunsOptions } from './layoutOpts';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';
 import { stubFetch, registerFixture, RUN_PLAIN } from './testing/fontFixtures';
@@ -119,7 +119,7 @@ describe('layoutRuns — one cell per code point', () => {
 });
 
 describe('layoutRuns — a cell says whether it closes a grapheme cluster', () => {
-  const OPTS: LayoutRunsOpts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
+  const OPTS: LayoutRunsOptions = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' };
   const closes = (text: string, more: Partial<ResolvedRun> = {}): boolean[] => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const out = layoutAndPaint([{ ...RUN_PLAIN(text), ...more }], OPTS);
