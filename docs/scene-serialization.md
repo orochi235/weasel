@@ -2,15 +2,16 @@
 
 `scene.toJSON()` and `sceneFromJSON()` let you snapshot and restore a scene's
 current state — nodes, hierarchy, layer visibility/locked state, and function
-fields like `clipFromPose`. The snapshot is plain JSON, so it round-trips
-through `JSON.stringify` / `JSON.parse`, `localStorage`, `fetch`, or a static
-import. History (undo/redo stacks) is not captured; a restored scene starts
-with empty history.
+fields like `clipFromPose`. The snapshot is plain data that a structured clone (IndexedDB, `postMessage`) carries
+as it is. A kit path keeps its commands and coords in typed arrays, which `JSON.stringify` writes as plain objects,
+so text goes through `@weasel-js/editor`'s `serializeReplacer` and comes back through its `reviveTypedArrays`.
+History (undo/redo stacks) is not captured; a restored scene starts with empty history.
 
 ## Quick example
 
 ```ts
 import { createScene, sceneFromJSON } from '@weasel-js/core';
+import { reviveTypedArrays, serializeReplacer } from '@weasel-js/editor';
 
 // Build a scene however you like, then save it:
 const scene = createScene({
@@ -18,14 +19,10 @@ const scene = createScene({
   initial: [/* ... */],
 });
 
-const json = scene.toJSON();
-localStorage.setItem('mySaved', JSON.stringify(json));
+localStorage.setItem('mySaved', JSON.stringify(scene.toJSON(), serializeReplacer));
 
 // Later, in a different session:
-const loaded = sceneFromJSON(
-  JSON.parse(localStorage.getItem('mySaved')!),
-  {},
-);
+const loaded = sceneFromJSON(reviveTypedArrays(JSON.parse(localStorage.getItem('mySaved')!)), {});
 ```
 
 ## JSON shape
@@ -37,7 +34,7 @@ import type { SerializedScene, SerializedNode } from '@weasel-js/core';
 
 // Example value for a scene with two layers and three nodes:
 const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
-  version: 2,
+  version: 3,
 
   // One entry per layer, in layer order. Fields that match the default
   // (visible: true, locked: false) are omitted.
@@ -82,7 +79,7 @@ const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
 
 | Field | Type | Notes |
 |---|---|---|
-| `version` | `2` | `toJSON` writes 2; `sceneFromJSON` also reads 1 (see Versioning) and throws on any other value. |
+| `version` | `3` | `toJSON` writes 3; `sceneFromJSON` and `loadState` also read 1 and 2 (see Versioning) and throw on any other value. |
 | `systemLayers` | `SystemLayerSpec[]` | Layer ids and optional visibility/locked overrides. |
 | `nodes` | `SerializedNode[]` | All nodes in tree preorder: parents before children, siblings in sibling order. A reader painting straight from `nodes` derives paint order from layers: paint each `systemLayers` entry in turn, taking that layer's nodes in the order they appear here. |
 | `nodes[i].id` | `string` | Node id. Stable across save/load. |
@@ -170,8 +167,9 @@ that outlived the code that registered it; `onSkip` hears each key left out, as 
 
 ## What is NOT serialized
 
-- **History.** A restored scene starts with empty history — the user cannot
-  undo past the load point.
+- **History.** A restored scene starts with empty history. To keep undo across a reload, save
+  `scene.serializeHistory()` beside the snapshot and hand it to `scene.restoreHistory()` once the
+  snapshot has loaded; `useSessionPersistence` (`@weasel-js/editor`) does both.
 - **Selection.** Selection lives in `useSelection`, outside the `Scene`
   primitive; restoring it is the caller's job.
 - **Pose overrides** (`scene.overrides`) — ephemeral per-node pose/alpha for a
@@ -183,7 +181,8 @@ that outlived the code that registered it; `onSkip` hears each key left out, as 
 - **View / viewport.** Camera position and zoom are not captured.
 - **`TData` / `TPose` JSON-safety.** The kit serializes whatever is in `data`
   and `pose` as-is. `JSON.stringify` silently drops or corrupts values JSON
-  cannot carry (functions, class instances, `undefined`).
+  cannot carry (functions, class instances, `undefined`), and writes a typed
+  array as an object unless `serializeReplacer` tags it.
 
 ## Error cases
 
@@ -192,10 +191,10 @@ than silently losing data.
 
 | Condition | Thrown by | Message pattern |
 |---|---|---|
-| Unknown JSON version | `sceneFromJSON` | `Scene: unsupported version <n>; versions 1 and 2 are supported` |
-| Unknown registry key, without `unknownKeys: 'skip'` | `sceneFromJSON` | `Scene: unknown <field> key '<key>'. Register a function with this key in the registry option.` |
-| Child on a layer below its parent's | `sceneFromJSON` | `Scene: cannot place node '<id>' on layer '<layer>' under parent '<pid>' on layer '<plyr>' — a child may not render below its parent's layer` |
-| Node with `clipFromPose` not registered in the scene's registry | `scene.toJSON()` | `Scene.toJSON: node '<id>' has clipFromPose but no matching registry key. The function must be registered via createScene's registry option to round-trip.` |
+| Unknown JSON version, or a snapshot missing a field every reader needs (`SnapshotShapeError`) | `sceneFromJSON`, `loadState` | `Scene: malformed snapshot: unsupported version <n>; versions 1, 2 and 3 are supported` |
+| Unknown registry key, without `unknownKeys: 'skip'` (`SnapshotKeyError`) | `sceneFromJSON`, `loadState` | `Scene: unknown <field> key '<key>'. Register a function with this key in the registry option.` |
+| Child on a layer below its parent's | `sceneFromJSON`, `loadState` | `Scene: cannot place node '<id>' on layer '<layer>' under parent '<pid>' on layer '<plyr>' — a child may not render below its parent's layer` |
+| Node with a function field (`clipFromPose`, `layout`, …) not registered in the scene's registry | `scene.toJSON()` | `Scene.toJSON: node '<id>' has <field> but no matching registry key. The function must be registered via createScene's registry option to round-trip.` |
 
 ## Loading demo data from a JSON file
 
@@ -228,10 +227,26 @@ const scene = sceneFromJSON(sceneData, {});
 
 ## Versioning
 
-`toJSON()` writes version 2. `sceneFromJSON` and `loadState` read versions 1 and 2, so consumers write no
-migration code. Version 1 named the kinds `leaf` and `container`: a `leaf` loads as a mark, and a `container` as a
+`toJSON()` writes version 3, which stores a child's pose in its container's frame. `sceneFromJSON` and `loadState`
+read versions 1, 2 and 3, so consumers write no migration code for the scene's own format. Versions 1 and 2 stored
+world poses, and a load makes them local through the scene's composition (the `composition` option; rigid by
+default). Version 1 named the kinds `leaf` and `container`: a `leaf` loads as a mark, and a `container` as a
 group, unless the `classifyV1` option returns `'mark'` for it, which is how a consumer keeps a container that drew
 itself drawing. Version 1 clipped every container with no `clipFromPose` to its outline, so such a container that
 loads as a group gets `clip: 'outline'`, and so does one whose clip key was skipped. One that `classifyV1` makes a
 mark gets no clip: the loader cannot know which painter will claim it, so a consumer whose marks should clip sets
 `clip` itself.
+
+### Your own data's versions
+
+The shape of `data` is the app's, and so is its version. Keep the version as a document value
+(`scene.doc.set('myapp:schema', 2)`), and migrate older data as the nodes load: `nodeSpecsFromSnapshot`
+(`@weasel-js/editor`) hands each node's data to the reviver it is given.
+
+```ts
+import { docFromSnapshot, nodeSpecsFromSnapshot, reviveTypedArrays } from '@weasel-js/editor';
+
+const schema = Number(docFromSnapshot(json)?.['myapp:schema'] ?? 1);
+const migrate = (data: MyData): MyData => (schema < 2 ? upgradeToV2(reviveTypedArrays(data)) : reviveTypedArrays(data));
+const scene = useScene({ systemLayers, initial: nodeSpecsFromSnapshot(json, registry, migrate), doc: { ...docFromSnapshot(json), 'myapp:schema': 2 } });
+```
