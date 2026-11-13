@@ -92,10 +92,9 @@ describe('a control panel row for a leaf made of other leaves', () => {
 
 describe('a control panel row for a list of strings', () => {
   it('draws each entry as a textarea when the item asks for one', () => {
-    const schema = f.schema({ notes: f.list(['a'], f.string('')) });
-    const resolved = resolveConfigSchema(schema);
-    const list = resolved.group.children.notes as unknown as { item: { control?: string } };
-    list.item.control = 'textarea';
+    const resolved = resolveConfigSchema(
+      f.schema({ notes: f.list(['a'], f.string('').textarea()) }),
+    );
     renderWithIcons(
       <ControlPanel schema={resolved} config={{ notes: ['a'] }} setConfig={() => {}} />,
     );

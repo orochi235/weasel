@@ -32,6 +32,14 @@ describe('builder', () => {
     });
   });
 
+  it('names the control each chain asks for', () => {
+    expect(f.boolean(true).switch().annotations.control).toBe('switch');
+    expect(f.string('').textarea().annotations.control).toBe('textarea');
+    expect(f.enum('a', ['a', 'b']).radio().annotations.control).toBe('radio');
+    expect(f.enum('a', ['a', 'b']).toggle().annotations.control).toBe('toggle');
+    expect(f.enum('a', ['a', 'b']).menu().annotations.control).toBe('menu');
+  });
+
   it('annotates a number with a display suffix', () => {
     const n = f.number(20).suffix('px');
     expect(n.annotations.suffix).toBe('px');
