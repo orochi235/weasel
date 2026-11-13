@@ -1837,3 +1837,14 @@ Calls the lanes made without a ruling:
 - 2026-11-12 (the lane's call): every kit `<Canvas>` that takes input sets `touch-action: none` at zero specificity, so
   a `<SceneCanvas>` inside a labkit camera with `data-lk-touch='scroll'` keeps one-finger touch for its own tools
   rather than scrolling the page. A consumer class can set `touch-action` back.
+
+## Audit round twenty (2026-11-12): a poster designer
+
+- Open: copying a styled range out of one text box and pasting it into another keeps only bold, italic, the rules
+  and super- and subscript; a run's own face, size, color and letter spacing take the destination's, because the
+  paste reads the browser's copied markup, where those cannot be told from the source page's defaults (text-dom's
+  README says so). Whether a copy made in the edit overlay should keep them. If so, the overlay writes its own runs
+  to the clipboard on copy and cut, beside `text/plain` and `text/html`, and `clipboardRuns` prefers them.
+- Open, and seen again (see the 2026-11-10 entry on italic and weight): a consumer who registers one face of a
+  custom font with `registerFontOutlines` and bolds a word gets the word set in the default family, or not drawn
+  where there is none or under the `'none'` policy, where an atlas face would fake the weight (run in jsdom).
