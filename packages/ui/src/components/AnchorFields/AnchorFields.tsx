@@ -23,6 +23,8 @@ export interface AnchorFieldsProps {
   emptyState?: ReactNode;
   /** The fields to show and write, in place of the canvas in scope's. */
   fields?: AnchorFieldsApi;
+  /** Class on the property list. */
+  className?: string;
 }
 
 const COORD_OPTIONS = [
@@ -47,6 +49,7 @@ export function AnchorFields({
   defaultHandleCoords = 'xy',
   emptyState = null,
   fields: given,
+  className,
 }: AnchorFieldsProps) {
   const own = useAnchorFields();
   const { values, write } = given ?? own;
@@ -77,7 +80,7 @@ export function AnchorFields({
   };
   const hasHandle = values.inX !== undefined || values.outX !== undefined;
   return (
-    <PropertyList>
+    <PropertyList className={className}>
       {field('x', 'X')}
       {field('y', 'Y')}
       {hasHandle && (
