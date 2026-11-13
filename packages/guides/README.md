@@ -77,19 +77,20 @@ frame under the pointer, so inside a frame that declares `drawnAt` they show its
 true lengths.
 
 ```tsx
-const { addGuide, removeGuide, getGuides } = useGuides();
+const { addGuide, removeGuide, getGuides, subscribe } = useGuides();
 const rulers = useMemo(
   () => createRulers({ guides: { addGuide, removeGuide, getGuides }, root: { system: IMPERIAL_INCHES } }),
   [addGuide, removeGuide, getGuides],
 );
 // The guide being moved is drawn by the rulers where it is going.
 const guidesLayer = useMemo(
-  () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), extent: 'full' }),
-  [rulers, getGuides],
+  () => createGuidesLayer({ getGuides: () => rulers.settled(getGuides()), subscribe, extent: 'full' }),
+  [rulers, getGuides, subscribe],
 );
+const snap = useMemo(() => ({ sources: [guideSnapSource({ getGuides })] }), [getGuides]);
 
 <div className="host">
-  <SceneCanvas /* … */ ambient={[rulers.contribution]} layers={{ guides: { layer: guidesLayer, after: 'scene' } }} />
+  <SceneCanvas /* … */ ambient={[rulers.contribution]} snap={snap} layers={{ guides: { layer: guidesLayer, after: 'scene' } }} />
   <Rulers rulers={rulers} />
 </div>;
 ```

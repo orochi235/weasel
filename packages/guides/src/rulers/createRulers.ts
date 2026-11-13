@@ -117,13 +117,12 @@ export function createRulers(opts: RulersOptions): Rulers {
     eligibility: { always: true },
     actions: [pointer, guide],
     bindings,
+    layers: [draftLayer, rulersHitLayer(hitLayerId, size, opts.guides.getGuides)],
     attach: (canvas) => {
       if (api !== null) throw new Error(`[guides] rulers '${id}' are attached to a canvas already; createRulers serves one canvas, so build one per canvas`);
       api = canvas;
-      const offs = [canvas.registerLayer(draftLayer), canvas.registerLayer(rulersHitLayer(hitLayerId, size, opts.guides.getGuides))];
       canvas.requestRedraw();
       return () => {
-        for (const off of offs) off();
         api = null;
       };
     },
