@@ -2,7 +2,7 @@
 '@weasel-js/core': major
 ---
 
-`<SceneCanvas initialActiveTool>` is renamed `defaultActiveTool`, beside `defaultView` and `defaultPathEdit`, the canvas's other read-once starting values.
+`<SceneCanvas initialActiveTool>` is renamed `defaultActiveTool`, as `defaultView` and `defaultPathEdit` are named.
 
 ```tsx
 // before

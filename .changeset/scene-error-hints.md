@@ -2,6 +2,8 @@
 '@weasel-js/core': patch
 ---
 
-A scene's errors for a locked node or layer, an unknown layer, and a scene with no layers say what to do: unlock it or edit inside `scene.unlocked()`, which layers the scene has, and that `{ items }` builds a one-layer scene.
+A scene's lock, unknown-layer and no-layer errors say how to fix them.
+
+A locked edit points at unlocking or `scene.unlocked()`, an unknown layer lists the scene's layers, and a scene with none points at `{ items }`.
 
 <!-- entry: fix -->

@@ -2,7 +2,9 @@
 '@weasel-js/core': major
 ---
 
-`pagesLayer`, `workspaceTintLayer` and `modeDecorationLayer` are renamed `createPagesLayer`, `createWorkspaceTintLayer` and `createModeDecorationLayer`, as core's other layer factories are named.
+Three layer factories take the `create*Layer` name core's others have: `createPagesLayer`, `createWorkspaceTintLayer`, `createModeDecorationLayer`.
+
+They were `pagesLayer`, `workspaceTintLayer` and `modeDecorationLayer`.
 
 ```ts
 // before
