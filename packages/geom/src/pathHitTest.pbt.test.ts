@@ -8,7 +8,7 @@ import type { Path, PathFillRule } from './path';
 import { affine, angle, coord, runs } from './pbt.fixture';
 
 const RUNS = runs(200);
-const FINE = { tolerance: 0.01 };
+const FINE = { flattenTolerance: 0.01 };
 
 /** A polygon of straight edges, self-crossing as often as not. */
 const polyline = fc.record({
